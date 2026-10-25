@@ -5,7 +5,7 @@
 // confetti (plan/work-stream.md).
 {"demo": 1, "title": "The work stream"}
 {"agent": "prompt", "text": "Clean up the old payment handlers and get the tests green", "reading": {"kind": "cleanup", "tone": "calm", "phrases": ["old payment handlers"]}}
-{"brain": {"react.mood": "engaged", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "engaged", "say": "start", "react.intensity": "medium"}}
 {"agent": "read", "file": "src/payments/handlers.js", "after": 2}
 {"agent": "run", "cmd": "grep -rn legacyHandler src", "about": "Find the old handlers", "after": 1}
 {"agent": "run", "cmd": "sed -n '1,80p' src/payments/routes.js", "about": "Read the routes", "after": 1}
@@ -20,5 +20,5 @@
 {"agent": "edit", "file": "src/payments/routes.js", "old": "legacyHandler3", "new": "handler", "after": 2}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests again", "takes": 2, "after": 3, "note": "Green: confetti"}
 {"agent": "reply", "text": "The old handlers are gone and the tests pass.", "after": 3}
-{"brain": {"react.mood": "proud", "react.animation": "success", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "react.move": "success", "say": "glad", "react.intensity": "big"}, "mood": "proud"}
 {"agent": "reply", "session": "docs", "text": "The payments docs name the new handlers.", "after": 2}

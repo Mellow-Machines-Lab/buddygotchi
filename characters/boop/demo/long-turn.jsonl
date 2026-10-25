@@ -6,7 +6,7 @@
 // tower of blocks, then sleep.
 {"demo": 1, "title": "The long haul"}
 {"agent": "prompt", "text": "Migrate the payments service to the new queue"}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "todo", "todos": "1/4", "after": 1}
 {"agent": "read", "file": "src/payments/queue.js", "say": "I'll start with the old queue."}
 {"you": "wait", "minutes": 2, "after": 2, "note": "Two minutes in: headphones on"}
@@ -17,7 +17,7 @@
 {"you": "wait", "minutes": 5, "after": 2, "note": "Ten minutes in: the camp"}
 {"agent": "todo", "todos": "4/4", "after": 6}
 {"agent": "reply", "text": "The payments service runs on the new queue, and its tests pass.", "after": 2}
-{"brain": {"react.mood": "proud", "react.animation": "success", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "react.move": "success", "say": "glad", "react.intensity": "big"}, "mood": "proud"}
 {"you": "wait", "minutes": 0.5, "after": 5, "note": "Half a minute idle: it looks round"}
 {"you": "wait", "minutes": 1.5, "after": 6, "note": "Two minutes idle: a book, a plant"}
 {"you": "wait", "minutes": 3, "after": 6, "note": "Five minutes idle: a tower, a dance"}

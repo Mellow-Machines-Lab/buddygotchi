@@ -1,11 +1,11 @@
 {
   "name": "A failure after a fix is a bigger cuss than the first",
   "case": "The agent's tests fail, then pass, and then, a minute and a half later, the whole turn fails on an error anyway. That stings more than a first failure: Boop makes a grumpy, irritated or whiny face played as a failure, held twice or more, and says something about it. Its mood ends up put out: grumpy, irritated, annoyed, whiny or determined.",
-  "why": "PERSONALITY: a failure is held longer than the win before it, and longer again when it follows other failures; the finish line says the failed check (after a failed check). characters/boop/steering/mood/: a failed turn moves the mood on toward grumpy",
+  "why": "PERSONALITY: a failure is bigger than the win before it, and bigger again after other failures; the finish line says the failed check (after a failed check). characters/boop/steering/mood/: a failed turn moves the mood on toward grumpy",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": true},
     {"event": "command", "at": "2m", "topic": "tests", "failed": false},
-    {"event": "turn failed", "at": "3m30s", "error": "api_error", "expect": {"react": "grumpy|irritated|whiny|annoyed", "animation": "failure", "said": "some", "loops": "twice|three times|four times", "mood": "grumpy|irritated|annoyed|whiny|determined"}}
+    {"event": "turn failed", "at": "3m30s", "error": "api_error", "expect": {"react": "grumpy|irritated|whiny|annoyed", "move": "failure", "said": "some", "intensity": "medium|big|huge", "mood": "grumpy|irritated|annoyed|whiny|determined"}}
   ]
 }

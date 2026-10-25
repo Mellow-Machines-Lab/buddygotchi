@@ -2,7 +2,7 @@
 MOOD
 Comfy. Safe and snug: all is quiet, and it's nice.
 Its faces lean comfy and pleased; a failure gets an annoyed face.
-Says quiet in a sound: a contented hum.
+Says quiet, small: a contented hum.
 Stays comfy through idle check-ins, quick wins and kind words.
 Leaves for affectionate at kind words or a gentle poke; lazy as nothing
 goes on; pleased at a win; surprised at a big event. Fades to calm once

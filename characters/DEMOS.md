@@ -25,11 +25,11 @@ This is all of `hello.jsonl`:
 // Half a minute: a read, an approved test run, done. A quick check that a demo plays end to end.
 {"demo": 1, "title": "Run the tests"}
 {"agent": "prompt", "text": "Run the tests"}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "read", "file": "README.md", "say": "Let me look at the project first."}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests", "ask": 2, "say": "I'll run the tests."}
 {"agent": "reply", "text": "The one test passes."}
-{"brain": {"react.mood": "proud", "react.animation": "success", "say.about": "done", "say.kind": "word"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "react.move": "success", "say": "done", "react.intensity": "medium"}, "mood": "proud"}
 ```
 
 ## Steps
@@ -59,7 +59,7 @@ creature's brain.
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
 | `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (headphones at 2 minutes, a sweatband at 5, the camp at 10) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
-| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. After a `talk`, `react.reply` is its reply (`hello`, `status`…), in place of `say.feeling`, `say.about` and `react.animation`: the board plays the reply's clip, and its sign is looked up, the pack's `replies.md` line or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
+| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. After a `talk`, `react.move` is its reply (`hello`, `status`, `nap`…): the board plays the reply's clip, and its sign is looked up, the pack's `replies.md` line or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
 On any agent step, `say` is what the agent says before it acts,
@@ -114,7 +114,7 @@ default, in a session of its own) and maybe its `name`. Boop's
 ```json
 {"demo": 1, "title": "Not my turn", "buddies": [{"place": "left", "pack": "pixel", "agents": ["claude"]}, {"place": "right", "pack": "boop", "agents": ["codex"]}]}
 {"agent": "prompt", "buddy": "left", "text": "Add a dark mode toggle"}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}, "buddy": "left"}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}, "buddy": "left"}
 ```
 
 Play it headless on two simulated boards, each on its own cable
@@ -140,14 +140,14 @@ A brain step answers the questions that the real brain gets:
 
 | Key | Choices |
 | --- | --- |
-| `react.mood` | a mood of the pack that has a face, or `none` |
-| `react.animation` | `success`, `failure` or `reply` for a turn that ended, `wake up` for you back after a long or very long break, else `none` |
-| `react.loops` | `once`, `twice`, `three times`, `four times` |
-| `say.feeling`, `say.about`, `say.kind` | what it says; only a pack with a voice says it |
+| `react.face` | a mood of the pack that has a face, or `none` |
+| `react.move` | `success`, `failure` or `reply` for a turn that ended, `wake up` for you back after a long or very long break, `notice` for a prompt that says its name, else `none`; after talk, its reply (`yes`, `hello`, `status`, `nap`…) |
+| `react.intensity` | `small`, `medium`, `big`, `huge`: how long the face holds and how big what it says is |
+| `say` | what it says: `none`, a feeling (`glad`, `upset`, `tickled`), `swear`, or a topic (`start`, `tests`, `done`…); only a pack with a voice says it |
 
 The choices and what each means are in
 `app/BoopKit/Outputs/ReactOutput.swift`. `boopdev check` lists them when
-an answer is wrong. A pack with no voice ignores the `say.*` answers, so
+an answer is wrong. A pack with no voice ignores the `say` answer, so
 one script plays with or without a voice.
 
 ## Play it

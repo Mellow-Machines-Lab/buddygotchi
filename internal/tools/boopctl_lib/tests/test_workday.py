@@ -76,7 +76,7 @@ def entry(seq: int, at_min: int, view: dict | None = None, action: dict | None =
     if view is not None:
         body = {"view": {"id": seq, "from": [seq], "notes": [], **view}}
     elif action is not None:
-        data = {"for": action["for"], "ok": action["ok"], "message": "not a fact → sad held four times, said \"Nope\".",
+        data = {"for": action["for"], "ok": action["ok"], "message": "not a fact → a sad face (huge), and said \"Nope\".",
                 "by": action.get("by", "brain"), **({"takes": action["takes"]} if "takes" in action else {})}
         data.update({"action": action["name"], **({"open": True} if action.get("pending") else {})})
         body = {"event": {"seq": seq, "at": at, "source": "self", "kind": "did", "data": data}}
@@ -86,11 +86,10 @@ def entry(seq: int, at_min: int, view: dict | None = None, action: dict | None =
     return json.dumps({"received_at_ms": at, **body})
 
 
-def picks(event: int, at_min: int, mood: str = "calm", face: str = "none", held: str = "once",
-          finish: str = "none") -> str:
+def picks(event: int, at_min: int, mood: str = "calm", face: str = "none", intensity: str = "small",
+          move: str = "none") -> str:
     """The brain's pass for `event`, with its answers."""
-    answers = {"mood": mood, "react.mood": face, "react.animation": finish, "react.loops": held,
-               "say.feeling": "none", "say.about": "none", "say.kind": "sound"}
+    answers = {"mood": mood, "react.face": face, "react.move": move, "react.intensity": intensity, "say": "none"}
     return entry(0, at_min, **{"pass": {"for": event, "dropped": None, "brain": "scripted",
                                         "questions": list(answers),
                                         "answers": {k: {"choice": v, "p": {v: 1}} for k, v in answers.items()}}})
@@ -114,7 +113,7 @@ class ReportTests(unittest.TestCase):
             entry(4, 1, view=short),
             picks(4, 1, mood="excited"),
             entry(6, 2, view=fail),
-            picks(6, 2, mood="grumpy", face="grumpy", held="twice"),
+            picks(6, 2, mood="grumpy", face="grumpy", intensity="medium"),
             entry(8, 2, action={"for": 6, "name": "react", "ok": True, "pending": True, "takes": ["no-such-take"]}),
             entry(9, 2, settle={"for": 8, "end": "done"}),
             entry(10, 2, action={"for": 6, "name": "mood", "ok": True}),
@@ -132,26 +131,34 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(t["reacted"], Counter({"notable": 1}))
         self.assertEqual(t["lines"], Counter({"start": 1, "short": 1, "notable": 1}))
         self.assertEqual(t["faces"], Counter({"grumpy": 1}))
-        self.assertEqual(t["loops"], Counter({"twice": 1}))
+        self.assertEqual(t["intensities"], Counter({"medium": 1}))
         self.assertEqual(t["words"], Counter({"no-such-take": 1}), "a take the pack doesn't have, by its id")
         self.assertEqual(r["reactions"][0]["word"], "no-such-take")
         # Excited from the first event to the failure 2 minutes later, then
         # grumpy to the last event, the same failure.
         self.assertEqual(r["mood_minutes"], {"excited": 2, "calm": 0, "grumpy": 0})
 
-    def test_a_finish_is_its_passs_animation(self) -> None:
-        """A reaction's finish is `react.animation`'s pick: success, failure
-        or reply; a face alone has none."""
+    def test_a_move_is_its_passs(self) -> None:
+        """A reaction's move is `react.move`'s pick: a finish (success,
+        failure or reply) here; a face alone has none."""
         end = {"type": "turn", "phase": "end", "line": "claude finished turn 1 on \"api\": done, a short turn.",
                "wakes_brain": True, "facts": {"outcome": "done", "length_ms": 50_000, "tools_failed": 0}}
-        lines = [entry(1, 0, view=end), picks(1, 0, face="calm", finish="success"),
+        # An older log asked the move `react.animation` and the intensity
+        # `react.loops`, by how long the face held.
+        older = {"react.mood": "proud", "react.animation": "failure", "react.loops": "three times"}
+        lines = [entry(1, 0, view=end), picks(1, 0, face="calm", move="success"),
                  entry(2, 0, action={"for": 1, "name": "react", "ok": True, "pending": True}),
                  entry(3, 1, view=end), picks(3, 1, face="happy"),
-                 entry(4, 1, action={"for": 3, "name": "react", "ok": True, "pending": True})]
+                 entry(4, 1, action={"for": 3, "name": "react", "ok": True, "pending": True}),
+                 entry(5, 2, view=end),
+                 entry(0, 2, **{"pass": {"for": 5, "dropped": None, "brain": "scripted", "questions": list(older),
+                                         "answers": {k: {"choice": v, "p": {v: 1}} for k, v in older.items()}}}),
+                 entry(6, 2, action={"for": 5, "name": "react", "ok": True, "pending": True})]
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "debug.jsonl"
             path.write_text("\n".join(lines) + "\n")
-            self.assertEqual([r["finish"] for r in workday.summarize(path)["reactions"]], ["success", None])
+            got = [(r["face"], r["move"], r["intensity"]) for r in workday.summarize(path)["reactions"]]
+        self.assertEqual(got, [("calm", "success", "small"), ("happy", None, "small"), ("proud", "failure", "big")])
 
     @needs_voice
     def test_the_takes_are_the_actions_and_a_reaction_that_said_nothing_is_none(self) -> None:
@@ -251,8 +258,8 @@ class ReportTests(unittest.TestCase):
             entry(2, 1, view=start),
             entry(0, 1, **{"pass": {"for": 2, "dropped": None, "brain": "scripted", "held": "something needs you",
                                     "answers": {}}}),
-            entry(0, 2, **{"pass": {"for": None, "dropped": None, "by": "dashboard", "questions": ["react.mood"],
-                                    "answers": {"react.mood": {"choice": "happy", "p": {"happy": 1}}}}}),
+            entry(0, 2, **{"pass": {"for": None, "dropped": None, "by": "dashboard", "questions": ["react.face"],
+                                    "answers": {"react.face": {"choice": "happy", "p": {"happy": 1}}}}}),
         ]
         with tempfile.TemporaryDirectory() as d:
             path = Path(d) / "debug.jsonl"

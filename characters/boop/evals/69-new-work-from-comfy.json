@@ -3,19 +3,9 @@
   "case": "New work may change a settled mood only through an offered neighbor.",
   "why": "characters/boop/steering/guide.md: the mood moves a step at a time, never for a routine turn alone; the mood question offers only the mood's moves on the graph",
   "mood": "comfy",
-  "checks": {
-    "moves_on_graph": true
-  },
+  "checks": {"moves_on_graph": true},
   "steps": [
-    {
-      "event": "turn started",
-      "at": "1m"
-    },
-    {
-      "event": "command",
-      "at": "1m10s",
-      "topic": "tests",
-      "failed": false
-    }
+    {"event": "turn started", "at": "1m"},
+    {"event": "command", "at": "1m10s", "topic": "tests", "failed": false}
   ]
 }

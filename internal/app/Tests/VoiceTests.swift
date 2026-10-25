@@ -1,4 +1,5 @@
 import Foundation
+import MellowHarness
 import XCTest
 @testable import BoopKit
 import BoopDevKit
@@ -36,8 +37,8 @@ final class VoiceTests: XCTestCase {
             XCTAssertFalse(t.moods.isEmpty, t.id)
             XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")
             switch t.part {
-            case .feeling: XCTAssertTrue(feelings.contains(t.meaning), "\(t.id) feels \(t.meaning), which say.feeling doesn't offer")
-            case .about: XCTAssertTrue(topics.contains(t.meaning), "\(t.id) is about \(t.meaning), which say.about doesn't offer")
+            case .feeling: XCTAssertTrue(feelings.contains(t.meaning), "\(t.id) feels \(t.meaning), which say doesn't offer")
+            case .about: XCTAssertTrue(topics.contains(t.meaning), "\(t.id) is about \(t.meaning), which say doesn't offer")
             case .attention: XCTAssertEqual(t.meaning, "attention")
             }
             XCTAssertTrue((300...3000).contains(t.ms), "\(t.id) is \(t.ms) ms")
@@ -160,44 +161,27 @@ final class VoiceTests: XCTestCase {
         }
     }
 
-    /// The feeling, then the topic; a phrase alone; and a pair
-    /// no longer than `maxSayMs`.
-    func testALineIsTheFeelingThenTheTopic() {
+    /// What Boop says is one thing, `say`'s answer, as big as the moment:
+    /// a sound when it's small, a word medium, a phrase big or huge; a
+    /// swear is an upset take sworn, at any size.
+    func testWhatItSaysIsOneTakeAsBigAsTheMoment() {
+        func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 0.9]) }
+        XCTAssertEqual(ReactOutput.sizes.map(\.loops), [1, 2, 3, 4], "small to huge hold once to four times")
+        XCTAssertEqual(ReactOutput.sizes.map(\.kind), [.sound, .word, .phrase, .phrase])
+        XCTAssertEqual(ReactOutput.intensity([:]).name, "small", "no answer is a small moment")
+        XCTAssertEqual(ReactOutput.intensity([ReactOutput.intensityKey: a("big")]).loops, 3)
+        XCTAssertTrue(ReactOutput.said([ReactOutput.sayKey: a("tests")])! == (.about, "tests", false))
+        XCTAssertTrue(ReactOutput.said([ReactOutput.sayKey: a("glad")])! == (.feeling, "glad", false))
+        XCTAssertTrue(ReactOutput.said([ReactOutput.sayKey: a("swear")])! == (.feeling, "upset", true))
+        XCTAssertNil(ReactOutput.said([ReactOutput.sayKey: a("none")]))
+        XCTAssertNil(ReactOutput.said([ReactOutput.sayKey: Answer(choice: "glad", probabilities: ["glad": 0.2])]), "below the floor: nothing")
         var rng = SplitMix64(seed: 5)
-        for _ in 0..<50 {
-            let line = Voice.say(feeling: "upset", about: "tests", kind: .sound, face: "annoyed", finish: nil, rng: &rng)
-            XCTAssertFalse(line.isEmpty)
-            XCTAssertEqual(line[0].part, .feeling)
-            if line.count == 2 {
-                XCTAssertEqual(line[1].part, .about)
-                XCTAssertEqual(line[1].meaning, "tests")
-                XCTAssertLessThanOrEqual(line[0].ms + Voice.joinGapMs + line[1].ms, Voice.maxSayMs)
-            }
-            XCTAssertLessThanOrEqual(line.count, 2)
-        }
-        // A phrase plays alone.
-        let phrase = Voice.say(feeling: "upset", about: "tests", kind: .phrase, face: "grumpy", finish: nil, rng: &rng)
-        XCTAssertEqual(phrase.map(\.kind), [.phrase])
-        // A phrase asked for is the topic's when only the topic has one:
-        // curious and happy have no glad phrase.
-        XCTAssertEqual(Voice.say(feeling: "glad", about: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng).map(\.text),
-                       ["Fingers crossed"])
-        let done = Voice.say(feeling: "glad", about: "done", kind: .phrase, face: "happy", finish: "success", rng: &rng)
-        XCTAssertEqual(done.map { "\($0.part) \($0.kind)" }, ["about phrase"])
-        // Any other ask keeps the feeling's take, so a swear asked for with
-        // none to say stays upset: the feeling's phrase in sad, and in calm
-        // its word, not the topic's phrase ("Tiny steps").
-        let sad = Voice.say(feeling: "upset", about: "stopped", kind: .swear, face: "sad", finish: "failure", rng: &rng)
-        XCTAssertEqual(sad.map { "\($0.part) \($0.kind)" }, ["feeling phrase"])
-        for _ in 0..<20 {
-            let calm = Voice.say(feeling: "upset", about: "start", kind: .swear, face: "calm", finish: nil, rng: &rng)
-            XCTAssertEqual(calm.map { "\($0.part) \($0.kind)" }, ["feeling word"])
-        }
-        // Only a topic: its take alone.
-        let topic = Voice.say(feeling: nil, about: "tests", kind: .sound, face: "calm", finish: nil, rng: &rng)
-        XCTAssertEqual(topic.map(\.part), [.about])
-        XCTAssertEqual(Voice.say(feeling: nil, about: nil, kind: .sound, face: "calm", finish: nil, rng: &rng), [])
-        // Two takes on the wire.
+        // A phrase asked for is a topic's too: "Fingers crossed".
+        XCTAssertEqual(Voice.take(.about, meaning: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng)?.kind, .phrase)
+    }
+
+    /// Two takes on the wire, as the board still takes them.
+    func testTwoTakesOnTheWire() {
         let two = DeviceReaction.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
         XCTAssertEqual(two.json.json, #"{"take":"previous.tsk","then":"phase1.word.test.test__annoyed__contained"}"#)
         XCTAssertEqual(two.text, "Tsk... Test")

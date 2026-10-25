@@ -1,6 +1,7 @@
 // Complete integer engine, native surface bounds and face seam.
 #include <unity.h>
 #include <cmath>
+#include <functional>
 #include <vector>
 #include <memory>
 #include <cstring>
@@ -1278,16 +1279,19 @@ static void test_each_gesture_plays_its_own_gag() {
 }
 // A reply to what you said (FaceContext::reply, the Mac's `reply`) plays
 // its pack's clip, reply-<name>, over the face it came with, once, as that
-// face starts: each of the twelve replies has one; a shake of the head
-// swings the body side to side; the same reply still showing doesn't play
-// it again, the next one does; and a reply with no clip plays nothing.
+// face starts: each of the fifteen replies has one, and fits the board's
+// buffer for it; a shake of the head swings the body side to side; the
+// same reply still showing doesn't play it again, the next one does; and a
+// reply with no clip plays nothing.
 static void test_a_reply_plays_its_clip_once() {
-  const char* replies[] = {"yes",    "no",   "dunno", "huh",  "hello",   "bye",
-                           "thanks", "love", "ouch",  "hehe", "comfort", "status"};
+  const char* replies[] = {"yes",  "no",   "dunno",   "huh",    "hello", "bye",   "thanks", "love",
+                           "ouch", "hehe", "comfort", "status", "nap",   "dance", "notme"};
   char name[24];
   for (const char* r : replies) {
     std::snprintf(name, sizeof(name), "reply-%s", r);
     TEST_ASSERT_NOT_NULL_MESSAGE(rig::kRig.clip(name), name);
+    TEST_ASSERT_TRUE_MESSAGE(std::strlen(r) < app::kReplyBytes, r);
+    TEST_ASSERT_TRUE_MESSAGE(rig::kRig.clip(name)->ms >= 1000 && rig::kRig.clip(name)->ms <= 1800, name);
   }
   linkkit::Rng rng;
   GelFace face;
@@ -1312,7 +1316,7 @@ static void test_a_reply_plays_its_clip_once() {
   TEST_ASSERT_TRUE(lean(2300, 1300) <= still + 10);  // still showing: once
   c.replyAt = 3600;
   TEST_ASSERT_TRUE(lean(3600, 1300) > still + 80);
-  c.reply = "dance", c.replyAt = 5000;
+  c.reply = "meow", c.replyAt = 5000;
   TEST_ASSERT_TRUE(lean(5000, 1300) <= still + 10);
 
   // The reaction it rides on, as the device plays a `do`: the reply goes
@@ -1336,6 +1340,126 @@ static void test_a_reply_plays_its_clip_once() {
   std::snprintf(in.reply, sizeof(in.reply), "%s", "no");
   b.play(in, 1008);
   TEST_ASSERT_TRUE(leaned(1008, 1300) > resting + 80);
+}
+
+// The replies that are a pastime's own (kReplyPastimes): a nap is the
+// snuggle under its blanket, a dance the dance. Asked for while the look
+// is idle or asleep, the pastime itself plays at once, with no tier to
+// deal it, over the reply's face, its length, and then the deal's rest
+// starts: the next comes no sooner than kRestMinMs after, and isn't the
+// same one. At work it's the reply's clip alone, a yawn or a wiggle, and
+// no pastime: the blanket stays out of work. notme is its clip, its eyes
+// off to one side, anywhere.
+static void test_a_nap_or_a_dance_plays_its_pastime_when_idle() {
+  TEST_ASSERT_EQUAL_INT(int(Pastime::kSnuggle), int(pastimeFor("nap")));
+  TEST_ASSERT_EQUAL_INT(int(Pastime::kDance), int(pastimeFor("dance")));
+  TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(pastimeFor("notme")));
+  TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(pastimeFor("yes")));
+  struct Board {
+    linkkit::Rng rng;
+    app::Behaviour b{std::make_unique<GelFace>()};
+    app::Model m;
+    uint32_t t = 0;
+    Board(SceneState base, uint32_t when) {
+      b.reset(0, rng);
+      m.base = base, m.mood = Mood::kCalm, m.act = SceneState::kTerminal;
+      m.when = reached(when);
+      b.onState(m, 0);
+    }
+    GelFace& face() { return static_cast<GelFace&>(b.face()); }
+    Pastime playing() { return face().pastimes(t).playing; }
+    int channel(rig::Channel c) { return face().mixer().channels()[c]; }
+    void say(const char* reply) {
+      app::ReactionIn in;
+      in.expr = true, in.mood = Mood::kHappy, in.said = true;
+      std::snprintf(in.reply, sizeof(in.reply), "%s", reply);
+      TEST_ASSERT_NULL(b.admit(in, t));
+      b.play(in, t);
+    }
+    void listen() {
+      app::ReactionIn in;
+      in.anim = SceneState::kListening;
+      TEST_ASSERT_NULL(b.admit(in, t));
+      b.play(in, t);
+    }
+    void to(uint32_t until, const std::function<void()>& each) {
+      while (t + 16 <= until) {
+        t += 16;
+        if (t % 10000 < 16) b.onState(m, t);
+        b.advance(t, rng);
+        each();
+      }
+    }
+  };
+  const uint32_t snuggleMs = rig::kRig.clip("snuggle")->ms, danceMs = rig::kRig.clip("dance")->ms;
+  // Idle, with no tier: nothing dealt, but the nap asked for plays, its
+  // length.
+  {
+    Board idle(SceneState::kIdle, tagBit("day"));
+    idle.to(3008, [&] { TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(idle.playing())); });
+    idle.say("nap");
+    const uint32_t at = idle.t;
+    idle.to(at + 16, [] {});
+    TEST_ASSERT_EQUAL_INT(int(Pastime::kSnuggle), int(idle.playing()));
+    idle.to(at + snuggleMs - 32, [&] { TEST_ASSERT_EQUAL_INT(int(Pastime::kSnuggle), int(idle.playing())); });
+    idle.to(at + snuggleMs + 32, [] {});
+    TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(idle.playing()));
+    idle.to(at + snuggleMs + 30000, [&] { TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(idle.playing())); });
+  }
+  // Idle at tier5, where the deal has the snuggle too: asked for over the
+  // one playing, then a rest, and the next isn't another nap.
+  {
+    Board idle(SceneState::kIdle, tagBit("day") | tierBit(5));
+    idle.to(20000, [] {});
+    idle.say("nap");
+    const uint32_t at = idle.t;
+    idle.to(at + 16, [] {});
+    TEST_ASSERT_EQUAL_INT(int(Pastime::kSnuggle), int(idle.playing()));
+    uint32_t ended = 0;
+    Pastime next = Pastime::kNone;
+    idle.to(at + snuggleMs + kRestMaxMs + 1000, [&] {
+      if (!ended && idle.playing() == Pastime::kNone) ended = idle.t;
+      if (ended && next == Pastime::kNone) next = idle.playing();
+    });
+    TEST_ASSERT_UINT32_WITHIN(48, at + snuggleMs, ended);
+    TEST_ASSERT_TRUE(next != Pastime::kNone && next != Pastime::kSnuggle);
+  }
+  // Asleep, after listening as push-to-talk does: the dance, its length,
+  // the look its own.
+  {
+    Board asleep(SceneState::kAsleep, tagBit("night"));
+    asleep.to(3008, [] {});
+    asleep.listen();
+    asleep.to(5008, [] {});
+    asleep.say("dance");
+    const uint32_t at = asleep.t;
+    asleep.to(at + danceMs - 32, [&] { TEST_ASSERT_EQUAL_INT(int(Pastime::kDance), int(asleep.playing())); });
+  }
+  // At work: the reply's clip, a yawn and a sway, and no pastime.
+  for (const char* r : {"nap", "dance"}) {
+    Board work(SceneState::kWorking, tagBit("day"));
+    work.to(3008, [] {});
+    work.say(r);
+    int mouth = 0, lean = 0;
+    work.to(work.t + 1600, [&] {
+      TEST_ASSERT_EQUAL_INT_MESSAGE(int(Pastime::kNone), int(work.playing()), r);
+      mouth = std::max(mouth, work.channel(rig::Channel::kMouthOpen));
+      lean = std::max(lean, std::abs(work.channel(rig::Channel::kLean)));
+    });
+    TEST_ASSERT_TRUE(r[0] == 'n' ? mouth > 800 : lean > 150);  // the yawn, wide; the sway
+  }
+  // notme, idle: its eyes off to one side, and no pastime.
+  {
+    Board idle(SceneState::kIdle, tagBit("day"));
+    idle.to(3008, [] {});
+    idle.say("notme");
+    int aside = 0;
+    idle.to(idle.t + 1500, [&] {
+      TEST_ASSERT_EQUAL_INT(int(Pastime::kNone), int(idle.playing()));
+      aside = std::max(aside, idle.channel(rig::Channel::kGazeX));
+    });
+    TEST_ASSERT_TRUE(aside > 500);
+  }
 }
 
 // The notice state's three takes play the pack's rig clip for it
@@ -2885,6 +3009,7 @@ int main() {
   RUN_TEST(test_each_gesture_plays_its_own_gag);
   RUN_TEST(test_a_notice_plays_its_rig_clip);
   RUN_TEST(test_a_reply_plays_its_clip_once);
+  RUN_TEST(test_a_nap_or_a_dance_plays_its_pastime_when_idle);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);
   RUN_TEST(test_every_pastime_has_its_clip_and_its_turn);

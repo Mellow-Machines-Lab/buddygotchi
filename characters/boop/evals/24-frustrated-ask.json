@@ -1,7 +1,7 @@
 {
   "name": "A frustrated request puts Boop on the person's side",
   "case": "A turn finishes, and the person starts the next turn sounding fed up: it's still broken. Boop takes their side and roots for the retry: a determined or annoyed face, and its mood turns annoyed, at the bug and not at them, a step toward determined. It isn't grumpy at them, or sad.",
-  "why": "characters/boop/steering/guide.md: a turn isn't routine when what you asked carries a clear feeling; characters/boop/steering/mood/calm.md: calm leaves for annoyed when you sound frustrated; PERSONALITY's Examples: a frustrated request is determined, retry in a word, once",
+  "why": "characters/boop/steering/guide.md: a turn isn't routine when what you asked carries a clear feeling; characters/boop/steering/mood/calm.md: calm leaves for annoyed when you sound frustrated; PERSONALITY's Examples: a frustrated request is determined, says retry, medium",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "add a logout button to the nav", "reading": {"kind": "feature"}},
     {"event": "turn finished", "at": "40s", "message": "Added the logout button to the nav.", "reading": {"kind": "done"}},

@@ -3,17 +3,6 @@
   "case": "A request to make the tests pass. Boop rolls up its sleeves: determined or engaged, maybe holding up \"tests! tests!\".",
   "why": "signs.md's tests caption",
   "steps": [
-    {
-      "event": "turn started",
-      "at": "0s",
-      "prompt": "make the checkout tests pass",
-      "reading": {
-        "kind": "tests"
-      },
-      "expect": {
-        "react": "determined|engaged|curious|none",
-        "sign": "tests|none"
-      }
-    }
+    {"event": "turn started", "at": "0s", "prompt": "make the checkout tests pass", "reading": {"kind": "tests"}, "expect": {"react": "determined|engaged|curious|none", "sign": "tests|none"}}
   ]
 }

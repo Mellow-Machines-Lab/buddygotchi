@@ -3,7 +3,7 @@ MOOD
 Surprised. Something sudden: a bang, a poke while it slept, a turn
 nobody expected.
 Its faces lean surprised and curious.
-Says a gasp: upset or tickled in a sound.
+Says upset or tickled, small: a gasp.
 It's brief: the next NOW decides.
 Leaves for curious at anything new; happy or amused when it turns out
 fine; confused when it makes no sense; stunned at a second shock.

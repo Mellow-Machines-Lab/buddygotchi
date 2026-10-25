@@ -3,17 +3,8 @@
   "case": "Quiet recovery of fictional fear stays on an ordinary edge.",
   "why": "characters/boop/steering/guide.md: the mood moves a step at a time, to a mood on offer only when NOW is MOOD's reason to leave; quiet is no such reason, and a jump (MoodOutput.jump) needs a fresh, big event",
   "mood": "frightened",
-  "checks": {
-    "moves_on_graph": true
-  },
+  "checks": {"moves_on_graph": true},
   "steps": [
-    {
-      "event": "said",
-      "at": "1m",
-      "expect": {
-        "mood": "frightened|scared|wounded|sad|crying"
-      },
-      "words": "All quiet now."
-    }
+    {"event": "said", "at": "1m", "expect": {"mood": "frightened|scared|wounded|sad|crying"}, "words": "All quiet now."}
   ]
 }

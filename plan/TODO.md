@@ -25,6 +25,29 @@ rather than a conversation ([talk-back.md](talk-back.md)).
       nod, a shake of the head, a shrug and the rest
       (`make demo NAME=talk-back FACE=gel` plays them in the simulator).
 
+## Now: four questions, and talking back, part two (2026-10-25)
+
+Every reaction asks the same four things, and talk covers what it
+didn't ([talk-back.md](talk-back.md), Part two).
+
+- [x] **Four questions**: `react.face`, `react.move`, `react.intensity`
+      and `say`, in place of six; steering, evals, demos and the tools
+      in their words. Checked by Boop's tests, the expect brain's
+      108/108 and Jev's 101/108 ([talk-back.md](talk-back.md), How it
+      was checked).
+- [x] **Replies**: `nap`, `dance`, `notme`; `huh` takes `dunno`;
+      `thanks` your good news, `love` a sorry; signs that know the
+      moment.
+- [x] **On the gel**: the nap and the dance on request when idle, their
+      clips at work, and `notme`'s.
+- [x] **`status`**: what an agent is doing, and how long you've been at
+      it.
+- [ ] Quiet: with `say` one question, TALK's text doesn't keep a quiet
+      Boop from naming what NOW is about (eval `122`). Taking topics and
+      the swear out of `say` on Quiet, in code, is the owner's call.
+- [ ] On the real AMOLED: the new clips, and the nap and dance on
+      request.
+
 ## Now: the polish pass (2026-10-25)
 
 The owner asked for smoother animation, crisper pictures, quicker touch

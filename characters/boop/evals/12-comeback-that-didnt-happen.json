@@ -7,6 +7,6 @@
     {"event": "command", "at": "1m", "topic": "tests", "failed": true},
     {"event": "command", "at": "3m", "topic": "tests", "failed": true},
     {"event": "command", "at": "5m", "topic": "tests", "failed": false, "reaction": "failed: waited too long", "expect": {"react": "proud|happy|excited"}},
-    {"event": "turn finished", "at": "5m20s", "expect": {"react": "proud|happy|excited", "feeling": "glad"}}
+    {"event": "turn finished", "at": "5m20s", "expect": {"react": "proud|happy|excited", "say": "glad"}}
   ]
 }

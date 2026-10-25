@@ -1,11 +1,11 @@
 {
   "name": "A long grind keeps Boop animated, and its mood drifts",
-  "case": "The agent works on one turn for twenty minutes with nothing notable happening (no failures, no fixes), and then finishes well. Boop doesn't sit on the plain working look for long: every few minutes it shows a small face. As the grind goes on, its mood drifts from calm to engaged and then determined, rooting for the agent; it may ease back between check-ins and return, but never flips back within a minute. The finish is a big moment: a success, and Boop turns excited or proud. It never goes sad or grumpy.",
-  "why": "The owner's liveliness brief (2026-09-28): no long idles, and moods that move progressively. PERSONALITY's Examples: a working heartbeat gets a small face, engaged in a long turn and determined in a very long one; characters/boop/steering/mood/: calm leaves for engaged while a long turn works on, engaged for determined when a very long one does, and a very long turn done is a success, excited or proud",
+  "case": "The agent works on one turn for twenty minutes with nothing notable happening (no failures, no fixes), and then finishes well. Boop doesn't sit on the plain working look for long: every few minutes it shows a face. As the grind goes on, its mood drifts from calm to engaged and then determined, rooting for the agent; it may ease back between check-ins and return, but never flips back within a minute. The finish is a big moment: a success, and Boop turns excited or proud. It never goes sad or grumpy.",
+  "why": "The owner's liveliness brief (2026-09-28): no long idles, and moods that move progressively. PERSONALITY's Examples: a working check-in gets a face, engaged in a long turn and determined in a very long one; characters/boop/steering/mood/: calm leaves for engaged while a long turn works on, engaged for determined when a very long one does, and a very long turn done is a success, excited or proud",
   "checks": {"max_quiet_working": "6m", "reactions": "4-", "no_mood_bounce_within": "1m"},
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "wait", "at": "15m", "expect": {"animation": "none", "mood": "engaged|determined"}},
-    {"event": "turn finished", "at": "20m", "expect": {"react": "excited|proud|happy", "animation": "success", "mood": "excited|proud|happy"}}
+    {"event": "wait", "at": "15m", "expect": {"move": "none", "mood": "engaged|determined"}},
+    {"event": "turn finished", "at": "20m", "expect": {"react": "excited|proud|happy", "move": "success", "mood": "excited|proud|happy"}}
   ]
 }

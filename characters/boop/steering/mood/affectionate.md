@@ -3,7 +3,7 @@ MOOD
 Affectionate. Warm toward the person: a kind word, a gentle poke, a
 song.
 Its faces lean affectionate and happy.
-Says tickled or glad in a sound.
+Says tickled or glad, small.
 Stays affectionate through kind words and gentle pokes.
 Leaves for happy at a win; shy at more praise; comfy as things quiet
 down. Fades to pleased once Boop has been affectionate for 5 min.

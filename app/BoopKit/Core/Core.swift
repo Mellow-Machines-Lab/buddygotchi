@@ -582,19 +582,32 @@ public final class Core {
     }
 
     /// The sessions as a `status` reply reads them at `now`, with each
-    /// one's latest result from `results`, by session: whether it waits on
-    /// you, since when it works and its to-do list. A request you
-    /// dismissed still waits on you; one that shows holds every reaction
-    /// back, the screen answering for it.
-    public func status(at now: Int64, results: [String: StatusReply.Result]) -> [StatusReply.Agent] {
+    /// one's latest result from `results` and what you last asked it for
+    /// from `asked`, by session: whether it waits on you, since when it
+    /// works and its to-do list. A request you dismissed still waits on
+    /// you; one that shows holds every reaction back, the screen answering
+    /// for it.
+    public func status(at now: Int64, results: [String: StatusReply.Result],
+                       asked: [String: PromptReading.Kind] = [:]) -> [StatusReply.Agent] {
         let (shown, dismissed, working, idle) = groups(at: now)
         let needs = Set((shown + dismissed).map(\.key)), works = Set(working.map(\.key))
         return (shown + working + dismissed + idle).map { s in
             StatusReply.Agent(agent: s.agent.rawValue, places: [s.project, s.workspace, s.name].compactMap { $0 },
                          needsYou: needs.contains(s.key), workingSince: works.contains(s.key) ? s.turn.startedAt ?? now : nil,
                          todo: works.contains(s.key) ? s.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) } : nil,
-                         result: results[s.key])
+                         result: results[s.key], asked: asked[s.key])
         }
+    }
+
+    /// When the agents' working stretch at `now` began, the one the
+    /// working tiers count from; nil while nothing works.
+    public func stretchSince(at now: Int64) -> Int64? { stretchStart(groups(at: now).working, at: now) }
+
+    /// The moment's tags for a reply's sign at `now`: `waiting` while
+    /// something waits on you, `working` while an agent works.
+    public func moment(at now: Int64) -> [String] {
+        let (shown, dismissed, working, _) = groups(at: now)
+        return (shown.isEmpty && dismissed.isEmpty ? [] : ["waiting"]) + (working.isEmpty ? [] : ["working"])
     }
 
     /// Whether the board's agents' drawer is open: it said so within

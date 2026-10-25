@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from boopctl_lib.common import FINISHES, call
-from boopctl_lib.dash.feed import action, action_end, kind, sent_by, view_name
+from boopctl_lib.dash.feed import FACE, action, action_end, choice, kind, sent_by, view_name
 
 Line = dict[str, Any]
 LOG = "debug.jsonl"
@@ -340,10 +340,9 @@ def span(ms: int) -> str:
 
 
 def face(p: dict) -> str | None:
-    """A pass's reaction face: `react.mood`, which older logs name
-    `react`."""
-    answers = p.get("answers") or {}
-    return (answers.get("react.mood") or answers.get("react") or {}).get("choice")
+    """A pass's reaction face: `react.face`, as the dashboard reads it, or
+    an older log's `react.mood` or `react`."""
+    return choice(p, FACE)
 
 
 def minutes(ms: int) -> str:

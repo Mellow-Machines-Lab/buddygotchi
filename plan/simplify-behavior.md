@@ -14,7 +14,7 @@ Three things decide what the board shows:
 - **Mac rules** (the core): the look, needs you, the tags, the work
   stream, and four reactions of their own.
 - **The brain** (Jev): the mood, and every reaction it picks. A pass asks
-  up to nine questions: the mood's, six about a reaction (seven when a
+  up to seven questions: the mood's, four about a reaction (five when a
   sign fits), and the diary's, once a day.
 - **The board**: what a touch or a shake is, the queue, which variation
   plays, busy and frantic, and the screen with no Mac.
@@ -106,7 +106,8 @@ one. Keep a change only if the scenarios hold.
    read the data instead. *Removes:* the prose that duplicates the graph,
    and fades that happen only when Jev notices. You'd see fades come on
    time.
-8. **One "how big" in place of `react.loops` and `say.kind`.** Both
+8. **Done (2026-10-25, [talk-back.md](talk-back.md), Part two):
+   `react.intensity`, and `say` one question too.** One "how big" in place of `react.loops` and `say.kind`. Both
    answer the same question: how much the moment matters. Ask it once:
    small, stands out, big, biggest. Derive the loops (1–4) and the size
    of what it says (sound, word, phrase; a swear only for biggest and

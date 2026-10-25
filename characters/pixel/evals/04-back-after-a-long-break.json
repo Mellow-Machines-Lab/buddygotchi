@@ -4,6 +4,6 @@
   "why": "characters/pixel/steering/personality/pixel.md: you back at the Mac after a long break, a happy face, and it wakes up for you",
   "steps": [
     {"event": "away", "at": "0s"},
-    {"event": "back", "at": "3h", "expect": {"react": "happy|excited|curious", "animation": "wake up"}}
+    {"event": "back", "at": "3h", "expect": {"react": "happy|excited|curious", "move": "wake up"}}
   ]
 }

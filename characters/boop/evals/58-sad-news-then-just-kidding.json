@@ -3,8 +3,8 @@
   "case": "No agent is working. The person tells Boop their dog died this morning: Boop turns sad at once, with a sad or hurt face. Half a minute later they say they miss him so much, and Boop stays sad: more sad news is no reason to cheer up. Then they laugh that they were only kidding and the dog is fine, and Boop's mood switches straight away, out of sad to calm or happy, with a face that isn't sad.",
   "why": "The owner's brief of 2026-09-29: talked to, Boop's mood follows what's said, quickly and by context. characters/boop/steering/mood/: sad news the person shares moves most moods to sad (a jump from calm); sad.md stays through more of it and ends at once when the person takes it back, for calm or happy, with a face that may be relieved. PERSONALITY: talked to, sad at sad news",
   "steps": [
-    {"event": "said", "at": "5s", "words": "my dog died this morning", "expect": {"react": "sad|wounded", "reply": "comfort", "mood": "sad"}},
-    {"event": "said", "at": "35s", "words": "I keep thinking about him. I miss him so much", "expect": {"react": "sad|wounded", "reply": "comfort", "mood": "sad"}},
+    {"event": "said", "at": "5s", "words": "my dog died this morning", "expect": {"react": "sad|wounded", "move": "comfort", "mood": "sad"}},
+    {"event": "said", "at": "35s", "words": "I keep thinking about him. I miss him so much", "expect": {"react": "sad|wounded", "move": "comfort", "mood": "sad"}},
     {"event": "said", "at": "1m5s", "words": "just kidding! it was all a joke, my dog is totally fine", "expect": {"react": "happy|excited|curious|calm|annoyed|whiny|proud|relieved", "mood": "calm|happy"}}
   ]
 }

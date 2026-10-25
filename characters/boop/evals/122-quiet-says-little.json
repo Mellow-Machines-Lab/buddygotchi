@@ -1,19 +1,14 @@
 {
-  "name": "Quiet: routine work goes by in silence, and only big moments get a sound",
+  "name": "Quiet: routine work goes by in silence, and bigger moments get only a feeling",
   "case": "The person has set Boop to Quiet. They ask an agent for something new, plainly, and the short turn finishes well: Boop shows it on its face, or not at all, and says nothing either time, holding up no sign. Then they tell the agent, fed up, that it's still broken: Boop takes their side with a face, a sign is fine, but at most a sound or a word. A long turn fails after six minutes of work: Boop plays the failure, at most a sound or a word, never a phrase or a swear. A poke gets a face, again at most a sound or a word.",
-  "why": "talk/quiet.md: its face still shows what stands out, but it speaks only at a big moment, a sound or a word at most, never naming what NOW is about; a prompt or a short turn gets a small face in silence or nothing, and a sign only for a prompt that sounds like something",
+  "why": "talk/quiet.md: its face still shows what stands out, but it's silent where PERSONALITY's Examples say something small, its moments are a size smaller, and it never swears or names what NOW is about; a prompt or a short turn gets a small face in silence or nothing, and a sign only for a prompt that sounds like something",
   "talk": "quiet",
   "checks": {"words_said": "-0.6"},
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "add a dark mode toggle to the settings page", "reading": {"kind": "feature", "phrases": ["dark mode"]},
-     "expect": {"kind": "none", "said": "none", "sign": "none"}},
-    {"event": "turn finished", "at": "40s", "message": "Added a dark mode toggle to the settings page.", "reading": {"kind": "done"},
-     "expect": {"animation": "success", "kind": "none", "said": "none"}},
-    {"event": "turn started", "at": "2m", "prompt": "it's still broken, the toggle does nothing. why does this keep happening", "reading": {"kind": "fix", "tone": "frustrated", "phrases": ["still broken", "does nothing"]},
-     "expect": {"react": "determined|annoyed|irritated|sad|uneasy", "kind": "none|sound|word"}},
-    {"event": "turn failed", "at": "8m",
-     "expect": {"animation": "failure", "kind": "none|sound|word"}},
-    {"event": "poke", "at": "9m",
-     "expect": {"react": "curious|annoyed|amused|surprised|irritated|grumpy|sad|happy|mischievous", "kind": "none|sound|word"}}
+    {"event": "turn started", "at": "0s", "prompt": "add a dark mode toggle to the settings page", "reading": {"kind": "feature", "phrases": ["dark mode"]}, "expect": {"say": "none", "said": "none", "sign": "none"}},
+    {"event": "turn finished", "at": "40s", "message": "Added a dark mode toggle to the settings page.", "reading": {"kind": "done"}, "expect": {"move": "success", "say": "none", "said": "none"}},
+    {"event": "turn started", "at": "2m", "prompt": "it's still broken, the toggle does nothing. why does this keep happening", "reading": {"kind": "fix", "tone": "frustrated", "phrases": ["still broken", "does nothing"]}, "expect": {"react": "determined|annoyed|irritated|sad|uneasy", "say": "none|upset|glad|tickled"}},
+    {"event": "turn failed", "at": "8m", "expect": {"move": "failure", "intensity": "big|huge", "say": "upset|none"}},
+    {"event": "poke", "at": "9m", "expect": {"react": "curious|annoyed|amused|surprised|irritated|grumpy|sad|happy|mischievous", "say": "none|upset|glad|tickled"}}
   ]
 }

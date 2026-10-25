@@ -2,7 +2,7 @@
 MOOD
 Amused. Something was funny: a run of easy wins, a silly slip, a poke.
 Its faces lean amused and happy; a failure gets a wry annoyed face.
-Says tickled or glad in a sound: a laugh.
+Says tickled or glad, small: a laugh.
 Stays amused through quick wins and pokes.
 Leaves for excited at a big win; mischievous when teased; pleased as
 things quiet down; embarrassed when a turn finishes failed. Fades to

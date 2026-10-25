@@ -2,16 +2,16 @@
 // little over a minute, with a poke, an approval, a failed deploy and a question on the way.
 {"demo": 1, "title": "Keyboard shortcuts"}
 {"agent": "prompt", "text": "Add keyboard shortcuts", "after": 2}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests", "after": 4, "takes": 5}
-{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.about": "tests", "say.kind": "word"}}
+{"brain": {"react.face": "happy", "say": "glad", "react.intensity": "medium"}}
 {"you": "poke", "after": 6}
 {"agent": "run", "cmd": "vercel deploy", "about": "Deploy", "ask": 7, "fails": true, "after": 6, "takes": 5}
-{"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "sound"}}
+{"brain": {"react.face": "annoyed", "say": "upset", "react.intensity": "small"}}
 {"you": "talk", "text": "how's it going?", "after": 7}
-{"brain": {"react.mood": "determined", "react.reply": "status", "say.kind": "phrase"}, "after": 0.7}
+{"brain": {"react.face": "determined", "react.move": "status", "react.intensity": "big"}, "after": 0.7}
 {"agent": "run", "cmd": "vercel deploy", "about": "Deploy again", "after": 8, "takes": 5}
-{"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}}
+{"brain": {"react.face": "happy", "say": "glad", "react.intensity": "small"}}
 {"agent": "reply", "text": "Shortcuts are in, and the deploy went through.", "after": 7}
-{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}}
+{"brain": {"react.face": "excited", "react.move": "success", "react.intensity": "big", "say": "glad"}}
 {"mood": "proud", "after": 10, "note": "A good day's work"}

@@ -4,10 +4,10 @@
 // first task: a read, the tests, done.
 {"demo": 1, "title": "Good morning"}
 {"you": "back", "minutes": 600, "after": 2, "note": "You sit down at the Mac in the morning"}
-{"brain": {"react.mood": "happy", "react.animation": "wake up", "say.feeling": "glad", "say.about": "hello", "say.kind": "word"}, "mood": "happy"}
+{"brain": {"react.face": "happy", "react.move": "wake up", "say": "glad", "react.intensity": "medium"}, "mood": "happy"}
 {"agent": "prompt", "text": "Run the tests", "after": 8}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "read", "file": "README.md", "say": "Let me look at the project first."}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests", "say": "I'll run the tests."}
 {"agent": "reply", "text": "The one test passes."}
-{"brain": {"react.mood": "proud", "react.animation": "success", "say.about": "done", "say.kind": "word"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "react.move": "success", "say": "done", "react.intensity": "medium"}, "mood": "proud"}

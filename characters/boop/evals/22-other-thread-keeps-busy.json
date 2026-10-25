@@ -17,6 +17,6 @@
     {"event": "turn finished", "at": "10m20s", "session": "s2", "workspace": "docs"},
     {"event": "turn started", "at": "12m", "session": "s2", "workspace": "docs"},
     {"event": "turn finished", "at": "12m20s", "session": "s2", "workspace": "docs"},
-    {"event": "turn finished", "at": "15m", "expect": {"animation": "success", "mood": "excited|proud|happy"}}
+    {"event": "turn finished", "at": "15m", "expect": {"move": "success", "mood": "excited|proud|happy"}}
   ]
 }

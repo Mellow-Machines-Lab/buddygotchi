@@ -2,7 +2,7 @@
 MOOD
 Disgusted. A messy bug or a gross situation: yuck, never at the person.
 Its faces lean disgusted and annoyed.
-Says upset in a sound: "Ugh".
+Says upset, small: "Ugh".
 Stays disgusted while the mess goes on failing.
 Leaves for annoyed when it fails again; grumpy when failures pile up;
 skeptical at a fix it doubts; amused when the fix lands. Fades to

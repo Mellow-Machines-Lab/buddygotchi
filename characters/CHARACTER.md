@@ -343,10 +343,12 @@ What the brain reads, in plain Markdown:
 - `talk/quiet.md`, `talk/normal.md` and `talk/chatty.md` (optional): how
   much it says, which the person picks in Settings (`Talk`, normal at
   first). The chosen one's TALK section goes last, after MOOD, and
-  outranks what PERSONALITY and MOOD say of words: Boop's quiet says a
-  size smaller than its Examples, chatty a size bigger, and normal
-  keeps a feeling and a topic together for big moments. It steers only
-  what the brain says; nothing in code holds a reaction back. Its front
+  outranks what PERSONALITY and MOOD say of words: Boop's quiet says
+  nothing at a small moment and never names what NOW is about, chatty
+  says something at every face, and normal keeps to the Examples. It
+  steers only what Boop says (the brain's `say`, which judges by TALK
+  first), never how big a moment is; nothing in code holds a reaction
+  back. Its front
   matter may set `working_heartbeat` and `idle_heartbeat` over the
   personality's (Boop's quiet looks in less often, chatty more). A level
   without a file leaves the personality as written, a pack with none
@@ -381,24 +383,28 @@ What the brain reads, in plain Markdown:
   sign (the `do`'s `sign`). A pack without the file holds up no signs.
 - `replies.md` (optional): what the creature holds up replying to what
   you said on push-to-talk (`Signs.reply`). The brain picks a reply (the
-  `react.reply` question, asked only of what you said, in place of the
-  feeling, the topic and the animation): yes, no, dunno, huh, hello, bye,
-  thanks, love, ouch, comfort, hehe or status (`ReactOutput.replies`).
-  Each line is `- [reply tags] words`: its first tag the reply, any more
-  the calendar's, and the app picks one that fits, those with the most
-  tags first, at random among them and never the one it showed last
-  while another fits; at most 18 characters, none of your words, and
-  none goes to the brain. A `status` reply holds up instead the one fact
+  `react.move` question's options for what you said): yes, no, huh,
+  hello, bye, thanks, love, ouch, comfort, hehe, status, nap, dance or
+  notme (`ReactOutput.replies`); a `huh` to a question plays as `dunno`,
+  a shrug. Each line is `- [reply tags] words`: its first tag the reply,
+  any more the calendar's or the moment's (`working` while an agent
+  works, `waiting` while something waits on you, `makeup` within 10
+  minutes of an `ouch`), and the app picks one that fits, those with the
+  most tags first, at random among them and never the one it showed
+  last while another fits; at most 18 characters, none of your words,
+  and none goes to the brain. A `status` reply holds up instead the one fact
   about the agents that answers what you said (`StatusReply`): something
-  waiting on you, the work going on (the latest check of its turn, else
-  its to-do list, else how long), how the last of it came out within 10
-  minutes, else all quiet, counting only the agents or places you named.
-  Name none with several sessions open ("how many are running?") and it
-  counts them instead, who needs you, else how many work and how many
-  rest (`2 working, 1 idle`), and asks the board to show every one in its
-  agents' drawer (the `do`'s `show`). Whatever the reply, the board plays its clip (§15) and Voice says the
-  feeling or topic it borrows, since no take is recorded for a reply. A
-  pack without the file holds up nothing for a reply but the facts.
+  waiting on you, how long you've been at it when you ask that, the work
+  going on (what you asked it for when you ask what it's doing, else the
+  latest check of its turn, else its to-do list, else how long), how the
+  last of it came out within 10 minutes, else all quiet, counting only
+  the agents or places you named. Name none with several sessions open
+  ("how many are running?") and it counts them instead, who needs you,
+  else how many work and how many rest (`2 working, 1 idle`), and asks
+  the board to show every one in its agents' drawer (the `do`'s `show`).
+  Whatever the reply, the board plays its clip (§15), and Voice says
+  what `say` picked, as for any reaction. A pack without the file holds
+  up nothing for a reply but the facts.
 
 Each file has a budget in tokens, the same for every pack
 (`Steering.Budget`, in `app/BoopKit/Harness/Steering.swift`). The app
@@ -407,7 +413,9 @@ logs a file over its budget and still uses it.
 ## 8. Voice (optional)
 
 A pack with a voice has recorded takes, each tagged with the moods it
-plays in, a feeling, a topic and a kind:
+plays in, a feeling or a topic (what the brain's `say` picks) and a
+kind (sound, word, phrase or swear, which the reaction's intensity
+picks: a sound when it's small, a word medium, a phrase big or huge):
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take. Its
@@ -423,7 +431,7 @@ nothing of Boop's, and Boop's needs Pixel's for its face and its voice,
 one way only.
 
 A pack without a voice leaves both out. The brain is then never asked
-what to say (`react` drops its `say.*` questions), and reactions play
+what to say (`react` drops its `say` question), and reactions play
 faces and sound effects only. A pack with a voice has takes for every
 mood: Voice picks only takes whose moods include the face's. A take
 recorded in one mood may play in others: the table's moods column lists
@@ -914,10 +922,12 @@ mood's eyes and mouth, the looks idle, working and asleep, a blink, and
 working's stretch from `tier4`. Boop's is the same, since Boop wears
 Pixel's face on the CYD, with its notice besides, which the gel plays
 (§16's reference became it), the clips for its replies to what you said,
-which the gel plays over the face (`reply-yes` … `reply-status`: a nod, a
-shake of the head, a shrug, a head tilt and so on, one for each of
-`ReactOutput.replies`), and the gel's pastimes' clips (below, The gel on
-the rig).
+which the gel plays over the face (`reply-yes` … `reply-notme`: a nod, a
+shake of the head, a shrug, a head tilt, a yawn, a wiggle and so on, one
+for each of `ReactOutput.replies` and `dunno`; a `nap` or a `dance` while
+the look is idle or asleep plays the gel's own pastime instead, the
+snuggle under its blanket or the dance), and the gel's pastimes' clips
+(below, The gel on the rig).
 
 **Channels.** The body's `squash`, `lean` and `lift`; the eyes'
 `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's

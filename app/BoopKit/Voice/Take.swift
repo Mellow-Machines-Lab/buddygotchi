@@ -11,8 +11,8 @@ public struct Take: Equatable, Sendable {
         case sound, word, phrase, swear
     }
 
-    /// Which of the brain's questions a take answers:
-    /// how Boop feels (`say.feeling`) or what NOW is about (`say.about`).
+    /// Which of `say`'s answers a take says: how Boop feels, or what NOW
+    /// is about.
     /// Needs you's takes are in the pack, but Boop never says them.
     public enum Part: String, CaseIterable, Sendable {
         case feeling, about, attention

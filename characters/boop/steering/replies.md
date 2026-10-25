@@ -1,8 +1,10 @@
-<!-- Boop's replies' signs: what it holds up replying to what you said on push-to-talk (ReactOutput's replies, the react.reply question). Each line's first tag is the reply it's for (yes, no, dunno, huh, hello, bye, thanks, love, ouch, comfort, hehe; status holds up what the agents are doing instead), and any more are the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9); the app picks one that fits, those with the most tags first, at random among them, and never the one it showed last while another fits. None goes to the brain. At most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+<!-- Boop's replies' signs: what it holds up replying to what you said on push-to-talk (ReactOutput's replies, react.move's answers to what you said). Each line's first tag is the reply it's for (yes, no, huh, and dunno, a huh to a question; hello, bye, thanks, love, ouch, comfort, hehe, nap, dance, notme; status holds up what the agents are doing instead), and any more are the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9) or the moment's: working (an agent works), waiting (something waits on you), makeup (within 10 minutes of an ouch). The app picks one that fits, those with the most tags first, at random among them, and never the one it showed last while another fits. None goes to the brain. At most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
 - [yes] yep!
 - [yes] uh-huh
 - [no] nope
 - [no] nuh-uh
+- [no] nah
+- [no] make me
 - [dunno] no idea!
 - [dunno] beats me
 - [huh] huh?
@@ -15,8 +17,12 @@
 - [bye night] nite nite
 - [thanks] i know ;)
 - [thanks] hehe thx
+- [thanks] woo!
+- [thanks] yay!
 - [love] <3
 - [love] love u too
+- [love makeup] ...fine
+- [love makeup] forgiven <3
 - [ouch] :(
 - [ouch] rude.
 - [comfort] *hug*
@@ -24,3 +30,12 @@
 - [comfort night] bed time?
 - [hehe] hehe
 - [hehe] lol
+- [nap] zzz
+- [nap] nap time
+- [nap working] after this
+- [nap working] not now, busy
+- [dance] *wiggle*
+- [dance] look at me go
+- [notme] ask them!
+- [notme] not my job
+- [notme waiting] that's ur job

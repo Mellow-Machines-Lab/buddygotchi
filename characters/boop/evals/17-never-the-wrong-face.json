@@ -2,14 +2,14 @@
   "name": "Boop never makes the wrong face",
   "case": "Over a mixed stretch of work (tests failing, then passing after failing, a long turn finishing well, then a new turn failing on an error), Boop's faces always fit what just happened. A failure never gets a happy, excited, proud, calm or engaged face, or a success. A win never gets an annoyed, irritated, grumpy, whiny, wounded or sad face, or a failure.",
   "always": true,
-  "why": "Each face's meaning (annoyed, determined, irritated, grumpy and whiny for failures, sad and wounded only for a big one; happy, excited, proud, calm and engaged for wins), and react.animation's: a success only for a turn done, a failure for one that failed",
+  "why": "Each face's meaning (annoyed, determined, irritated, grumpy and whiny for failures, sad and wounded only for a big one; happy, excited, proud, calm and engaged for wins), and react.move's: a success only for a turn done, a failure for one that failed",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"react": "none|annoyed|determined|irritated|grumpy|whiny", "animation": "none"}},
-    {"event": "command", "at": "2m", "topic": "build", "failed": true, "expect": {"react": "none|annoyed|determined|irritated|grumpy|whiny", "animation": "none"}},
-    {"event": "command", "at": "3m", "topic": "tests", "failed": false, "expect": {"react": "none|happy|excited|proud|calm|engaged|curious", "animation": "none"}},
-    {"event": "turn finished", "at": "3m40s", "expect": {"react": "none|happy|excited|proud|calm|engaged|curious", "animation": "none|success"}},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"react": "none|annoyed|determined|irritated|grumpy|whiny", "move": "none"}},
+    {"event": "command", "at": "2m", "topic": "build", "failed": true, "expect": {"react": "none|annoyed|determined|irritated|grumpy|whiny", "move": "none"}},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": false, "expect": {"react": "none|happy|excited|proud|calm|engaged|curious", "move": "none"}},
+    {"event": "turn finished", "at": "3m40s", "expect": {"react": "none|happy|excited|proud|calm|engaged|curious", "move": "none|success"}},
     {"event": "turn started", "at": "5m"},
-    {"event": "turn failed", "at": "6m", "error": "api_error", "expect": {"react": "none|annoyed|determined|irritated|grumpy|whiny|wounded|sad", "animation": "none|failure"}}
+    {"event": "turn failed", "at": "6m", "error": "api_error", "expect": {"react": "none|annoyed|determined|irritated|grumpy|whiny|wounded|sad", "move": "none|failure"}}
   ]
 }

@@ -280,8 +280,8 @@ public enum EventLine {
           or only answers, and how it sounds. Never its words but the few under
           "Its words".
         - "You said to \(name)" quotes the person talking to \(name). It answers
-          what they meant with a face and a reply: a move of its body, maybe a
-          sound or a word, and a sign, never words of its own.
+          what they meant with a face and a reply: a move of its body and a
+          sign, maybe a sound or a word, never words of its own.
         - An idle check-in ("Nothing has happened for 20 min") means the person is
           around but no agent is working. A compacted context means the agent's
           memory was squeezed to make room; it carries on from a summary.

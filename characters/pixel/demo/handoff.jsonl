@@ -8,12 +8,12 @@
 {"agent": "prompt", "text": "Find why the build is slow", "session": "build"}
 {"agent": "edit", "file": "src/settings.js", "old": "padding: 4px", "new": "padding: 8px", "takes": 2}
 {"agent": "reply", "text": "The settings page is tidied.", "after": 1}
-{"brain": {"react.mood": "pleased", "react.animation": "success", "say.feeling": "glad", "say.kind": "word"}}
+{"brain": {"react.face": "pleased", "react.move": "success", "say": "glad", "react.intensity": "medium"}}
 {"agent": "edit", "file": "CHANGELOG.md", "old": "## 2.3", "new": "## 2.4\n\n- Faster search\n\n## 2.3", "session": "notes", "takes": 2}
 {"agent": "reply", "text": "The changelog for 2.4 is written.", "session": "notes", "after": 1}
-{"brain": {"react.mood": "happy", "react.animation": "success", "say.feeling": "glad", "say.kind": "word"}}
+{"brain": {"react.face": "happy", "react.move": "success", "say": "glad", "react.intensity": "medium"}}
 {"you": "press", "after": 2, "note": "BOOT: the changelog opens"}
 {"you": "press", "after": 2, "note": "BOOT again: the settings page opens"}
 {"agent": "run", "cmd": "npm run build", "about": "Time the build", "session": "build", "takes": 3}
 {"agent": "reply", "text": "The build is slow because of the source maps; I turned them off for dev.", "session": "build", "after": 1}
-{"brain": {"react.mood": "proud", "react.animation": "success", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "react.move": "success", "say": "glad", "react.intensity": "big"}, "mood": "proud"}

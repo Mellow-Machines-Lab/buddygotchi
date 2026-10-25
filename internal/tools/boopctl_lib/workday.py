@@ -21,8 +21,8 @@ pass and every reaction to finish before moving on, so no event is
 replaced while Jev thinks.
 
 The report reads debug.jsonl as `boopctl day` and the dashboard do
-(dash/feed.py): a mood change's new mood, and a reaction's face, finish
-and hold, from the answers of the pass whose action it is; what it said
+(dash/feed.py): a mood change's new mood, and a reaction's face, move
+and intensity, from the answers of the pass whose action it is; what it said
 from the takes its action recorded; never from an action's message."""
 from __future__ import annotations
 
@@ -654,15 +654,16 @@ def classify(event: dict[str, Any]) -> str | None:
 def new_hour() -> dict[str, Any]:
     return {"turns": 0, "passes": 0, "dropped": 0, "held": 0, "reactions": 0, "mood_changes": 0, "mood_after_routine": 0,
             "back_to_rest": 0, "check_ins": 0, "lines": Counter(), "reacted": Counter(), "said": Counter(), "faces": Counter(),
-            "loops": Counter(), "words": Counter()}
+            "intensities": Counter(), "words": Counter()}
 
 
 def reaction(p: dict[str, Any]) -> dict[str, Any]:
-    """A reaction's face, finish (success, failure or reply; None for a
-    face alone) and hold, from its pass's answers as the dashboard reads
-    them (dash/feed.py). What it said is the takes its action recorded."""
-    return {"face": feed.choice(p, feed.FACE) or "?", "finish": feed.animation(p),
-            "held": feed.choice(p, "react.loops") or "once"}
+    """A reaction's face, move (a finish, a wake up or a notice, or a reply
+    to what you said; None for a face alone) and intensity, from its
+    pass's answers as the dashboard reads them (dash/feed.py). What it
+    said is the takes its action recorded."""
+    return {"face": feed.choice(p, feed.FACE) or "?", "move": feed.move(p),
+            "intensity": feed.choice(p, feed.INTENSITY) or "small"}
 
 
 def summarize(path: Path) -> dict[str, Any]:
@@ -736,7 +737,7 @@ def summarize(path: Path) -> dict[str, Any]:
                 hr["reactions"] += 1
                 hr["reacted"][ev["class"]] += 1
                 hr["faces"][r["face"]] += 1
-                hr["loops"][r["held"]] += 1
+                hr["intensities"][r["intensity"]] += 1
                 # What it said: the takes its action's start records.
                 word = feed.said(act["takes"])
                 hr["words"][word or "none"] += 1
@@ -787,7 +788,7 @@ LIMITS = {
     "mood_bounces": 1,            # a mood changing back to the one it left within a minute
     "min_mood_changes": 10,       # over the day
     "longest_rest_working_min": 45,  # the longest stretch of work in the resting mood all through
-    "repeat_pct": 40,             # reactions the same as the one before (face, finish and what it said)
+    "repeat_pct": 40,             # reactions the same as the one before (face, move and what it said)
     "longest_same_run": 3,        # the same reaction in a row
     "min_words_said": 0.5,        # the share of reactions that said something
     "plain_prompts_said_pct": 25,          # plain prompts Boop said something about
@@ -796,8 +797,8 @@ LIMITS = {
 
 
 def kind(r: dict[str, Any]) -> tuple[str, str, str]:
-    """A reaction's kind: its face, its finish and what it said."""
-    return (r["face"], r["finish"], r["word"])
+    """A reaction's kind: its face, its move and what it said."""
+    return (r["face"], r["move"], r["word"])
 
 
 def same_runs(reactions: list[dict[str, Any]]) -> list[int]:
@@ -823,7 +824,7 @@ def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
     best_what = ""
     if runs:
         r = reactions[runs.index(best)]
-        best_what = r["face"] + (f" {r['finish']}" if r["finish"] else "") + (f' "{r["word"]}"' if r["word"] else "")
+        best_what = r["face"] + (f" {r['move']}" if r["move"] else "") + (f' "{r["word"]}"' if r["word"] else "")
     repeats = sum(1 for n in runs if n > 1)
     bounces = [f'{a["at"]} {a["from"]} → {a["to"]}, back at {b["at"]}' for a, b in zip(changes, changes[1:])
                if b["to"] == a["from"] and b["ms"] - a["ms"] < 60_000]
@@ -857,7 +858,7 @@ def liveliness(working: list[list[int]], reactions: list[dict[str, Any]],
 
 def ledger(reactions: list[dict[str, Any]], hours: dict[int, dict[str, Any]]) -> list[str]:
     """The fun ledger, an hour a row: reactions, how many said something,
-    how many kinds (face, finish and what it said), the longest run of the
+    how many kinds (face, move and what it said), the longest run of the
     same, and the idle check-ins."""
     out = ["| Hour | Reactions | Said something | Kinds | Longest same run | Idle check-ins |",
            "| --- | --- | --- | --- | --- | --- |"]
@@ -928,7 +929,7 @@ def report(paths: list[Path], as_json: bool = False) -> str:
                 f'{lv["mood_bounces"]} mood bounces; longest stretch of work {REST} all through '
                 f'{lv["longest_rest_working_min"]} min (from {lv["longest_rest_working_at"]})']
         out += ["", "Fun ledger:", ""] + ledger(r["reactions"], r["hours"])
-        out += ["", "Holds: " + fmt(all_hours["loops"]),
+        out += ["", "Intensities: " + fmt(all_hours["intensities"]),
                 "", "Takes said (none: a reaction that said nothing): " + fmt(all_hours["words"]),
                 "", "Time in each mood: " + ", ".join(f"{k} {v} min" for k, v in r["mood_minutes"].items()),
                 "", "Mood changes:"]

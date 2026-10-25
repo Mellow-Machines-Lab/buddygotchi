@@ -23,8 +23,8 @@ checked in there; Boop's pack uses Pixel's voice (characters/CHARACTER.md
 The recordings stay here, in Boop's pack; Pixel's holds only the two
 built files, so it stands alone.
 
-Every take answers one of the brain's two questions: how Boop feels
-(`say.feeling`) or what NOW is about (`say.about`),
+Every take is one of the brain's answers to `say`: how Boop feels or
+what NOW is about,
 by the bank's intent (FEELING, ABOUT), or for a few entries by their
 words (ABOUT_OF_ENTRY): the greetings are the `hello` topic. Needs you's
 other takes (`attention`) are in the pack, but Boop never says them. Six takes were recorded in

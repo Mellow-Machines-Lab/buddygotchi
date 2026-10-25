@@ -87,11 +87,11 @@ final class SignTests: XCTestCase {
         func answer(_ choices: [String: String]) -> OutputResult? {
             react.run(choices.mapValues { Answer(choice: $0, probabilities: [$0: 1]) }, now: reading, log: log)
         }
-        let did = try XCTUnwrap(answer(["react.mood": "happy", Signs.questionKey: "bye bye code"])).message
+        let did = try XCTUnwrap(answer(["react.face": "happy", Signs.questionKey: "bye bye code"])).message
         XCTAssertTrue(did.contains(#"holding up a sign: "bye bye code""#), did)
         XCTAssertEqual(queued.last?.sign, "bye bye code")
         XCTAssertEqual(queued.last?.args.json, #"{"sign":"bye bye code","say":{},"mood":"happy","loops":1}"#)
-        _ = answer(["react.mood": "happy", Signs.questionKey: "something else"])
+        _ = answer(["react.face": "happy", Signs.questionKey: "something else"])
         XCTAssertNil(queued.last?.sign, "only an offered caption")
     }
 
@@ -138,16 +138,17 @@ final class SignTests: XCTestCase {
 
     /// Every line in each pack's replies.md fits a sign as it is, in the
     /// board's fonts, its first tag a reply (not `status`, which holds up
-    /// the agents' facts), any more the calendar's, and none of your words.
+    /// the agents' facts; `dunno` too, a huh at a question), any more the
+    /// calendar's or the moment's, and none of your words.
     func testThePacksRepliesFit() throws {
-        let replies = Set(ReactOutput.replies.map(\.name)).subtracting(["status"])
+        let replies = Set(ReactOutput.replies.map(\.name)).subtracting(["status"]).union(["dunno"])
         let file = CharacterPackTests.repo.appendingPathComponent("characters/boop/steering/replies.md")
         let lines = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
         XCTAssertEqual(Set(lines.compactMap(\.tags.first)), replies, "a line or more for every reply")
         for line in lines {
             XCTAssertLessThanOrEqual(line.text.count, Signs.maxLength, line.text)
             XCTAssertNotNil(Signs.drawn(line.text), line.text)
-            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Occasions.calendarTags), "\(line.tags)")
+            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Occasions.calendarTags + ReactOutput.momentTags), "\(line.tags)")
             XCTAssertFalse(line.hasWords, line.text)
         }
     }
@@ -162,7 +163,7 @@ final class SignTests: XCTestCase {
         }
         XCTAssertEqual(a.reading, .init(kind: .fix, phrases: ["still broken"]))
         try XCTAssertThrowsError(try DemoScript(#"{"agent": "reply", "text": "ok", "reading": {"kind": "fix"}}"#))
-        try XCTAssertEqual(try DemoScript(#"{"brain": {"react.mood": "happy", "react.sign": "still broken :("}}"#).problems(), [])
+        try XCTAssertEqual(try DemoScript(#"{"brain": {"react.face": "happy", "react.sign": "still broken :("}}"#).problems(), [])
         try XCTAssertEqual(try DemoScript(#"{"brain": {"react.sign": "a sign that is far too long"}}"#).problems().count, 1)
     }
 }

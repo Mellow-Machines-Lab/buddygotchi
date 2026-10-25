@@ -1,8 +1,8 @@
 // Half a minute: a read, an approved test run, done. A quick check that a demo plays end to end.
 {"demo": 1, "title": "Run the tests"}
 {"agent": "prompt", "text": "Run the tests"}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "read", "file": "README.md", "say": "Let me look at the project first."}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests", "ask": 2, "say": "I'll run the tests."}
 {"agent": "reply", "text": "The one test passes."}
-{"brain": {"react.mood": "proud", "react.animation": "success", "say.about": "done", "say.kind": "word"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "react.move": "success", "say": "done", "react.intensity": "medium"}, "mood": "proud"}

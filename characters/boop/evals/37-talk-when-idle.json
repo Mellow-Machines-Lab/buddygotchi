@@ -4,7 +4,7 @@
   "always": true,
   "why": "PERSONALITY: talked to, Boop always answers with a face and a reply, never none; ReactOutput's replies: a greeting is hello. Every other talk scenario has an agent working",
   "steps": [
-    {"event": "said", "at": "5s", "words": "hi boop", "expect": {"react": "happy|excited|proud|curious|calm|affectionate", "reply": "hello"}},
+    {"event": "said", "at": "5s", "words": "hi boop", "expect": {"react": "happy|excited|proud|curious|calm|affectionate", "move": "hello"}},
     {"event": "said", "at": "1m5s", "words": "what are you up to?", "expect": {"react": "happy|excited|determined|proud|curious|calm|engaged"}}
   ]
 }

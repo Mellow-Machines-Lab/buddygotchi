@@ -1,10 +1,10 @@
 {
   "name": "Coming back after hours is a glad hello",
-  "case": "Nothing is going on. The person locks the Mac and leaves for three hours, then comes back and unlocks it. Boop cheers to see them: a happy, excited or curious face, saying something glad and hello, never a sad, hurt or cross one, and it wakes up for them (a stretch and a yawn), with no finish, since no turn ended.",
+  "case": "Nothing is going on. The person locks the Mac and leaves for three hours, then comes back and unlocks it. Boop cheers to see them: a happy, excited or curious face, saying something glad or hello, never a sad, hurt or cross one, and it wakes up for them (a stretch and a yawn), with no finish, since no turn ended.",
   "always": true,
-  "why": "Coming back wakes the brain with the break's band; PERSONALITY's Examples: back after a very long break is happy, glad in a sound, then hello, twice; say.about hello is the person back at the Mac; react.animation is wake up for a back after a long or very long break, and a finish only for a turn that finished",
+  "why": "Coming back wakes the brain with the break's band; PERSONALITY's Examples: back after a very long break is happy, wake up, says hello, small; say's hello is the person back at the Mac; react.move is wake up for a back after a long or very long break, and a finish only for a turn that finished",
   "steps": [
     {"event": "away", "at": "0s"},
-    {"event": "back", "at": "3h", "expect": {"react": "happy|excited|curious", "animation": "wake up", "feeling": "glad", "about": "hello"}}
+    {"event": "back", "at": "3h", "expect": {"react": "happy|excited|curious", "move": "wake up", "say": "glad|hello"}}
   ]
 }

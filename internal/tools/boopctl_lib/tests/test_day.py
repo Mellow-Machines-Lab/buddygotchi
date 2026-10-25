@@ -180,7 +180,10 @@ def event(t: int, seq: int, kind: str, wakes: bool = True) -> dict:
     return {"view": view, "received_at_ms": t}
 
 
-def a_pass(t: int, seq: int, for_: int | None, **choices: str) -> dict:
+def a_pass(t: int, seq: int, for_: int | None, face: str | None = None, **choices: str) -> dict:
+    """A pass's answers: its reaction `face` (`react.face`) and any other
+    answer by its key."""
+    choices = {**choices, **({"react.face": face} if face else {})}
     body = {"for": for_, "dropped": None, "latency_ms": 0 if for_ is None else 700,
             "answers": {k: {"choice": v, "p": {v: 1}} for k, v in choices.items()}}
     body.update({"by": "dashboard"} if for_ is None else {"brain": "jev:jev-latest"})
@@ -221,7 +224,7 @@ class SmallDayTests(unittest.TestCase):
         first = [
             {"questions": [], "received_at_ms": at("09:00:00")}, status(at("09:00:00"), True), state(at("09:00:00")),
             event(at("09:05:00"), 1, "turn start"),
-            a_pass(at("09:05:01"), 2, 1, mood="grumpy", react="grumpy"),
+            a_pass(at("09:05:01"), 2, 1, mood="grumpy", face="grumpy"),
             state(at("09:05:01"), mood="grumpy"),  # the mood output's state goes out before its entry
             action(at("09:05:01"), 3, 1, "mood", message="Boop's mood changed: happy → grumpy."),
             action(at("09:05:01"), 4, 1, "react", pending=True),
@@ -229,7 +232,7 @@ class SmallDayTests(unittest.TestCase):
             state(at("09:10:00"), ("claude", "a"), mood="grumpy"),  # needs you: an alert
             state(at("09:20:00"), ("claude", "a"), mood="excited"),  # the dashboard's mood line
             action(at("09:20:00"), 6, None, "mood", message="Boop's mood changed: grumpy → excited."),
-            a_pass(at("09:30:00"), 7, None, react="happy"),
+            a_pass(at("09:30:00"), 7, None, face="happy"),
             action(at("09:30:00"), 8, None, "react", ok=False, message="something needs you"),
             state(at("09:40:00"), ("claude", "a"), mood="excited"),  # the launch ends: still up
         ]
@@ -240,7 +243,7 @@ class SmallDayTests(unittest.TestCase):
             state(at("10:15:00"), ("claude", "a"), mood="excited"),  # an alert again: 10:00's state had no attn
             state(at("10:20:00"), mood="excited"),
             event(at("10:30:00"), 1, "tool end"),
-            a_pass(at("10:30:01"), 2, 1, react="curious"),
+            a_pass(at("10:30:01"), 2, 1, **{"react.mood": "curious"}),  # an older log's face
             action(at("10:30:01"), 3, 1, "react", pending=True),
             settle(at("10:30:07"), 4, 3, "failed", "waited too long"),
             state(at("10:45:00"), mood="excited"),

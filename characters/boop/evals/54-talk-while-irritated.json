@@ -5,6 +5,6 @@
   "mood": "irritated",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "said", "at": "2m", "words": "hey boop, how's it going?", "expect": {"react": "irritated|annoyed|curious|calm", "reply": "status|hello", "mood": "irritated|annoyed"}}
+    {"event": "said", "at": "2m", "words": "hey boop, how's it going?", "expect": {"react": "irritated|annoyed|curious|calm", "move": "status|hello", "mood": "irritated|annoyed"}}
   ]
 }

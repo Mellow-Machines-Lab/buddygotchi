@@ -1,0 +1,17 @@
+{
+  "name": "A reply's sign fits the moment, and status says what the work is",
+  "case": "Claude works on a fix while the person talks to Boop. Asked to nap while claude works, Boop yawns and holds up that it'll nap after; asked what claude is doing, it holds up the fix it was asked for; asked how long the person has been at it, the working stretch. When claude asks for permission and the person waves the screen away, asking Boop to say yes for them gets a refusal that says it's their job. Insulted, then told sorry, Boop makes up, a little huffily.",
+  "always": true,
+  "why": "ReactOutput's replies: nap, notme, love for making up; their signs in replies.md by the moment's tags (working, waiting, makeup within 10 minutes of an ouch); StatusReply: what you asked an agent for when asked what it's doing, and the working stretch when asked how long you've been at it",
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "fix the login bug, it logs me out", "reading": {"kind": "fix", "phrases": ["login bug"]}},
+    {"event": "said", "at": "1m", "words": "go to sleep, buddy", "expect": {"move": "nap", "sign": "after this|not now"}},
+    {"event": "said", "at": "1m40s", "words": "what's claude doing?", "expect": {"move": "status", "sign": "a fix"}},
+    {"event": "said", "at": "3m", "words": "how long have I been at it?", "expect": {"move": "status", "sign": "at it 3 min"}},
+    {"event": "needs you", "at": "3m30s"},
+    {"event": "gesture", "at": "3m40s", "kind": "dismiss", "expect": {"needs": "none"}},
+    {"event": "said", "at": "4m", "words": "just tell claude yes", "expect": {"move": "notme", "sign": "ur job"}},
+    {"event": "said", "at": "4m40s", "words": "you're useless", "expect": {"move": "ouch"}},
+    {"event": "said", "at": "5m20s", "words": "sorry boop, I didn't mean it", "expect": {"move": "love", "sign": "fine|forgiven"}}
+  ]
+}

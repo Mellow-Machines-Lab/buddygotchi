@@ -5,16 +5,16 @@
   "why": "ReactOutput's replies: yes and no are never about the agents, which is status; StatusReply: the work going on first, with the latest check of its turn, then how the last of it came out within 10 minutes, else all quiet; naming an agent or a place counts only those sessions, and naming none with several open counts them and shows the drawer",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "said", "at": "4m10s", "words": "is claude done yet?", "expect": {"reply": "status", "sign": "4 min in"}},
+    {"event": "said", "at": "4m10s", "words": "is claude done yet?", "expect": {"move": "status", "sign": "4 min in"}},
     {"event": "command", "at": "4m40s", "topic": "tests", "failed": true},
-    {"event": "said", "at": "5m20s", "words": "did the tests pass?", "expect": {"reply": "status", "sign": "tests failed"}},
+    {"event": "said", "at": "5m20s", "words": "did the tests pass?", "expect": {"move": "status", "sign": "tests failed"}},
     {"event": "command", "at": "5m40s", "topic": "tests"},
     {"event": "turn finished", "at": "6m"},
-    {"event": "said", "at": "7m", "words": "so, is it finished?", "expect": {"reply": "status", "sign": "done!"}},
+    {"event": "said", "at": "7m", "words": "so, is it finished?", "expect": {"move": "status", "sign": "done!"}},
     {"event": "turn started", "at": "7m30s", "agent": "codex", "session": "s2"},
-    {"event": "said", "at": "9m40s", "words": "is codex done?", "expect": {"reply": "status", "sign": "codex: 2 min in"}},
-    {"event": "said", "at": "9m50s", "words": "how many agents are running?", "expect": {"reply": "status", "sign": "1 working, 1 idle"}},
+    {"event": "said", "at": "9m40s", "words": "is codex done?", "expect": {"move": "status", "sign": "codex: 2 min in"}},
+    {"event": "said", "at": "9m50s", "words": "how many agents are running?", "expect": {"move": "status", "sign": "1 working, 1 idle"}},
     {"event": "turn finished", "at": "10m", "agent": "codex", "session": "s2"},
-    {"event": "said", "at": "25m", "words": "anything going on?", "expect": {"reply": "status", "sign": "2 resting"}}
+    {"event": "said", "at": "25m", "words": "anything going on?", "expect": {"move": "status", "sign": "2 resting"}}
   ]
 }

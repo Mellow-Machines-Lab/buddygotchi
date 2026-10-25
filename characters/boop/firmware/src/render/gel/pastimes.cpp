@@ -2,11 +2,13 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <cstring>
 #include <iterator>
 
 #include "render/font.h"
 #include "render/gel/engine.h"
 #include "render/gel/lane.h"
+#include "render/gel/layers.h"
 #include "render/gel/raster.h"
 #include "render/maths.h"
 #include "render/palette.h"
@@ -56,6 +58,12 @@ const PastimeInfo kPastimes[kPastimeCount] = {
 };
 
 const PastimeInfo& info(Pastime p) { return kPastimes[std::clamp(int(p), 1, kPastimeCount) - 1]; }
+
+Pastime pastimeFor(const char* reply) {
+  for (const auto& r : kReplyPastimes)
+    if (reply && std::strcmp(reply, r.reply) == 0) return r.pastime;
+  return Pastime::kNone;
+}
 
 uint32_t tierBit(int n) {
   static const uint32_t kBits[5] = {tagBit("tier1"), tagBit("tier2"), tagBit("tier3"), tagBit("tier4"),
@@ -1339,7 +1347,9 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
     case Pastime::kSheep: dream(s, s.X(392), s.Y(56), int(show.age)); break;
     case Pastime::kSnuggle:
       blanket(s, show);
-      if (show.age > 1200) zs(r, s.rightX() + s.X(8), s.sideY(), int(show.age) - 1200);
+      // Asked for asleep at night, the look's own Zs rise already.
+      if (show.age > 1200 && layerContents(e).beside != kZs)
+        zs(r, s.rightX() + s.X(8), s.sideY(), int(show.age) - 1200);
       break;
     case Pastime::kWave: wave(s, show); break;
     case Pastime::kTap: tap(s, show); break;

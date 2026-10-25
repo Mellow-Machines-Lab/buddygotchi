@@ -188,10 +188,9 @@ struct SoakWork {
             Answer(choice: pick, probabilities: Dictionary(uniqueKeysWithValues: names.map { ($0, $0 == pick ? 0.62 : 0.38 / Double(names.count - 1)) }))
         }
         let animations = ["none", "success", "failure", "wiggle", "nod", "shrug", "gasp", "cheer", "sulk", "yawn", "bounce", "spin"]
-        return ["mood": spread(moods, moods[n % moods.count]), "react.mood": spread(moods, "happy"),
-                "react.animation": spread(animations, "success"), "react.loops": spread(["once", "twice", "loop"], "once"),
-                "say.feeling": spread(["none", "glad", "proud", "sorry", "wow", "hmm", "ugh", "yay"], "none"),
-                "say.about": spread((0..<16).map { "topic\($0)" }, "topic3"), "say.kind": spread(["word", "sound", "none"], "word")]
+        return ["mood": spread(moods, moods[n % moods.count]), ReactOutput.faceKey: spread(moods, "happy"),
+                ReactOutput.moveKey: spread(animations, "success"), ReactOutput.intensityKey: spread(["small", "medium", "big", "huge"], "small"),
+                ReactOutput.sayKey: spread(["none", "glad", "upset", "tickled"] + (0..<16).map { "topic\($0)" }, "topic3")]
     }
 
     /// Writes every event from the work's start until `end`, one file a

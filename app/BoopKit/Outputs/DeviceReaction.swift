@@ -84,7 +84,7 @@ public struct DeviceReaction: Equatable, Sendable {
     /// for none.
     public var sign: String?
     /// With a brain reaction to what you said, its reply
-    /// (`ReactOutput.Reply`): the board plays its pack's clip for it
+    /// (`ReactOutput.replies`): the board plays its pack's clip for it
     /// over the face. Nil sends none.
     public var reply: String?
     /// With a reply, one of the board's own screens that shows the rest of

@@ -235,10 +235,8 @@ final class PresenceTests: XCTestCase {
         }
         var rng = SplitMix64(seed: 1)
         for _ in 0..<20 {
-            let line = Voice.say(feeling: "glad", about: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
-            XCTAssertEqual(line.count, 2, "\(line.map(\.text))")
-            XCTAssertEqual(line.first?.kind, .sound)
-            XCTAssertTrue(greetings.contains(line.last?.text ?? ""), "\(line.map(\.text))")
+            let take = Voice.take(.about, meaning: "hello", kind: .sound, face: "happy", finish: nil, rng: &rng)
+            XCTAssertTrue(greetings.contains(take?.text ?? ""), "\(take?.text ?? "nothing")")
         }
     }
 

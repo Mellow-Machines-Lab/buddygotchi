@@ -96,6 +96,19 @@ constexpr int kPastimeCount = int(Pastime::kCount) - 1;
 extern const PastimeInfo kPastimes[kPastimeCount];
 const PastimeInfo& info(Pastime p);
 
+// The replies to what you said (FaceContext::reply) that are a pastime's
+// own: asked for while the look is idle or asleep, the face plays the
+// pastime itself, at once, whatever its tier; at work, the reply's clip
+// alone (rig/clips/reply-<name>.json). A nap is the snuggle under its
+// blanket, a dance the dance.
+struct ReplyPastime {
+  const char* reply;
+  Pastime pastime;
+};
+constexpr ReplyPastime kReplyPastimes[] = {{"nap", Pastime::kSnuggle}, {"dance", Pastime::kDance}};
+// The pastime a reply asks for, kNone for one that asks for none.
+Pastime pastimeFor(const char* reply);
+
 // The rest between two, in ms of the device's clock, and how often the
 // newest tier's are dealt while an older one's fit too, in percent.
 constexpr uint32_t kRestMinMs = 4000, kRestMaxMs = 10000;

@@ -3,8 +3,7 @@ MOOD
 Proud. Boop is pleased with itself: something hard-won worked.
 Its faces lean proud, a little smug; a failure gets a determined face,
 but the pride holds. A turn ending just after its fix is no new win.
-Says glad in a word at a win, glad in a phrase at a big one, glad in a sound
-at kind words.
+Says glad: medium at a win, big at a big one, small at kind words.
 Stays proud through routine turns and a failed check, but only for 5
 min: once Boop has been proud for 5 min, it fades to happy at whatever
 NOW is, a win too.

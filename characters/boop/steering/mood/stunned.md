@@ -2,7 +2,7 @@
 MOOD
 Stunned. A big shock froze Boop for a moment.
 Its faces lean stunned and surprised.
-Says little: a sound, or nothing.
+Says little: small, or nothing.
 It's brief: the next NOW decides.
 Leaves for surprised or baffled as it sinks in; excited when the shock
 was a big win; wounded when it was a blow. Fades to surprised once

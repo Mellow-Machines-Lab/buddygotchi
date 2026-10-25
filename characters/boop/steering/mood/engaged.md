@@ -4,7 +4,7 @@ Engaged. Boop is in the flow, following steady work. At ease: nothing
 has failed.
 Its faces lean engaged; a failure gets a determined face, a very
 long turn failing a sad one.
-Says work: a word or grunt.
+Says work, medium: a grunt.
 Stays engaged while the work goes on, through routine finishes.
 Leaves for determined when a very long turn works on, a check fails or
 the person sounds frustrated; proud when a check passes after failing

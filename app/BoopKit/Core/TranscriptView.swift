@@ -157,6 +157,9 @@ public final class TranscriptView {
         /// Each session's latest check or finished turn, by how it came
         /// out, for what Boop says when you ask (`StatusReply`).
         var results: [String: StatusReply.Result] = [:]
+        /// What your latest prompt to each session asked for, its reading's
+        /// kind, for "what's it doing?" (`StatusReply`).
+        var asked: [String: PromptReading.Kind] = [:]
 
         /// Its tracker never asks whether an agent's process runs or its
         /// thread was archived: the core records a session that's gone as
@@ -645,7 +648,9 @@ public final class TranscriptView {
     func promptRead(_ e: Event) -> Line? {
         guard let reading = PromptReading(facts: e.data) else { return nil }
         noteActivity(e.at)
-        let t = Self.about(e, facts: nil).flatMap { fold.sessions.sessions[$0] }.map(Thread.init)
+        let key = Self.about(e, facts: nil)
+        if let key { fold.asked[key] = reading.kind }
+        let t = key.flatMap { fold.sessions.sessions[$0] }.map(Thread.init)
         return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine)),
                     notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
                     facts: e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a })
@@ -921,6 +926,13 @@ public final class TranscriptView {
     public func results(_ log: LogView) -> [String: StatusReply.Result] {
         catchUp(log)
         return fold.results
+    }
+
+    /// What your latest prompt to each session asked for, caught up to
+    /// `log`, by session.
+    public func asked(_ log: LogView) -> [String: PromptReading.Kind] {
+        catchUp(log)
+        return fold.asked
     }
 
     /// The sessions as the fold has them, caught up to `log` (tests).

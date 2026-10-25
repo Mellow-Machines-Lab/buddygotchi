@@ -115,8 +115,9 @@ final class HarnessTests: XCTestCase {
 
     /// `none` does nothing; the meaning counts over 0.35,
     /// and Voice says a take of it in the face's mood, else nothing; the
-    /// reaction carries the expression as its `mood`, `react.loops`' pick as
-    /// its loops (once to four times: 1–4, and once when it's missing) and
+    /// reaction carries the expression as its `mood`, `react.intensity`'s
+    /// pick as its loops (small to huge: 1–4, and small when it's missing),
+    /// the take as big as it, and
     /// a `say` whether or not there's a take, and goes to the queue with
     /// the handle the result is started with; a blocked reaction fails,
     /// with no handle.
@@ -172,41 +173,38 @@ final class HarnessTests: XCTestCase {
                          facts: ["takes": .array((q.reaction.say?.takes ?? []).map { .string($0.id) })])
             }, line: line)
         }
-        XCTAssertNil(react.run(["react.mood": a("none")], now: nil, log: Self.log))
-        starts(["react.mood": a("grumpy"), "say.feeling": a("upset", 0.57), "say.about": a("tests", 0.8), "say.kind": a("sound"),
-                "react.loops": a("twice")],
-               #"\#(creature) made a grumpy face, held twice, and said "SAID"."#)
-        starts(["react.mood": a("proud"), "say.feeling": a("glad", 0.31), "say.about": a("none"), "say.kind": a("phrase")],
-               "\(creature) made a proud face, held once.")
-        starts(["react.mood": a("happy"), "say.feeling": a("none"), "react.loops": a("four times")],
-               "\(creature) made a happy face, held four times.")
+        XCTAssertNil(react.run(["react.face": a("none")], now: nil, log: Self.log))
+        starts(["react.face": a("grumpy"), "say": a("upset", 0.57), "react.intensity": a("medium")],
+               #"\#(creature) made a grumpy face (medium), and said "SAID"."#)
+        starts(["react.face": a("proud"), "say": a("glad", 0.31), "react.intensity": a("big")],
+               "\(creature) made a proud face (big).")
+        starts(["react.face": a("happy"), "say": a("none"), "react.intensity": a("huge")],
+               "\(creature) made a happy face (huge).")
         XCTAssertEqual(sent.count, 3)
         XCTAssertEqual(Set(queued.map { ObjectIdentifier($0.pending) }).count, 3, "a handle each")
         let grumbled = try! XCTUnwrap(sent[0].say?.takes)
-        XCTAssertEqual(grumbled.first?.part, .feeling, "the feeling first")
-        XCTAssertEqual(grumbled.first?.meaning, "upset")
+        XCTAssertEqual(grumbled.map(\.meaning), ["upset"], "one thing said")
+        XCTAssertEqual(grumbled.first?.kind, .word, "as big as the moment: medium is a word")
         XCTAssertTrue(grumbled.allSatisfy { $0.moods.contains("grumpy") }, "in the face's mood")
-        XCTAssertTrue(grumbled.count == 1 || grumbled[1].meaning == "tests", "then the topic")
         XCTAssertNotNil(sent[1].say, "a reaction that says nothing still has a say")
         XCTAssertEqual(sent[1].say?.takes, [], "below the floor, Jev is guessing: nothing")
         XCTAssertNil(sent[0].anim, "it plays over the face")
         XCTAssertEqual(sent.map(\.mood), ["grumpy", "proud", "happy"], "each wears its face")
-        // Saying nothing is a kind: the face, and a finish, play in silence
-        // however sure the feeling and the topic are.
-        starts(["react.mood": a("pleased"), "say.feeling": a("glad"), "say.about": a("done"), "say.kind": a("none"),
-                "react.animation": a("success")],
-               "\(creature) played a success in a pleased face, held once.")
+        // Saying nothing is `say`'s none: the face, and a finish, play in
+        // silence.
+        starts(["react.face": a("pleased"), "say": a("none"), "react.move": a("success")],
+               "\(creature) played a success in a pleased face (small).")
         XCTAssertEqual(sent.last?.say?.takes, [], "a face in silence")
         XCTAssertEqual(sent.last?.anim, "task_complete", "with its finish")
         queued.removeLast()
-        XCTAssertEqual(sent.map(\.loops), [2, 1, 4], "for its loops")
+        XCTAssertEqual(sent.map(\.loops), [2, 3, 4], "held as long as the moment is big")
         XCTAssertTrue(sent[0].args.json.hasSuffix(#","mood":"grumpy","loops":2}"#), sent[0].args.json)
         XCTAssertEqual(sent[0].name, "react")
-        XCTAssertEqual(react.run(["react.mood": a("sulky")], now: nil, log: Self.log), nil, "not a face")
-        starts(["react.mood": a("excited"), "react.loops": a("three times")], "\(creature) made an excited face, held three times.")
-        XCTAssertEqual(queued.last?.reaction.loops, 3)
+        XCTAssertEqual(react.run(["react.face": a("sulky")], now: nil, log: Self.log), nil, "not a face")
+        starts(["react.face": a("excited"), "react.intensity": a("whopping")], "\(creature) made an excited face (small).")
+        XCTAssertEqual(queued.last?.reaction.loops, 1, "an intensity it doesn't offer is small")
         queued.removeLast()
-        // `react.animation` judges a turn's finish, you back after a long
+        // `react.move` judges a turn's finish, you back after a long
         // break, or your prompt saying its name, and plays it in the face:
         // a success or a failure is the face's task_complete for that
         // outcome, a reply its reply_ready, a wake up its wake_up, a notice
@@ -216,87 +214,81 @@ final class HarnessTests: XCTestCase {
         // argues against one.
         XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(Set(ReactOutput.scenes.keys), Set(ReactOutput.animations.map(\.name)), "each plays a scene")
-        let animation = try! XCTUnwrap(ReactOutput.questions().first { $0.key == "react.animation" })
-        XCTAssertTrue(animation.text.contains("or your prompt saying \(creature)'s name?"), animation.text)
-        XCTAssertTrue(animation.options[0].what.contains("or a prompt that says \(creature)'s name."), animation.options[0].what)
-        starts(["react.mood": a("proud"), "react.animation": a("success"), "react.loops": a("twice"), "say.feeling": a("glad"),
-                "say.kind": a("phrase")],
-               #"\#(creature) played a success in a proud face, held twice, and said "SAID"."#)
-        XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase, "a proud phrase, at a success")
+        let move = try! XCTUnwrap(ReactOutput.questions().first { $0.key == "react.move" })
+        XCTAssertTrue(move.text.contains("or your prompt saying \(creature)'s name?"), move.text)
+        XCTAssertTrue(move.options[0].what.contains("or a prompt that says \(creature)'s name."), move.options[0].what)
+        starts(["react.face": a("proud"), "react.move": a("success"), "react.intensity": a("big"), "say": a("glad")],
+               #"\#(creature) played a success in a proud face (big), and said "SAID"."#)
+        XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase, "a proud phrase, at a big success")
         let success = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(success.anim, "task_complete")
         XCTAssertEqual(success.outcome, "success")
         let line = success.line(id: 7, play: .next)
         XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","turn":4,"who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
-        XCTAssertTrue(line.hasSuffix(#","mood":"proud","loops":2}}"#), line)
+        XCTAssertTrue(line.hasSuffix(#","mood":"proud","loops":3}}"#), line)
         queued.removeLast()
-        starts(["react.mood": a("whiny"), "react.animation": a("failure")], "\(creature) played a failure in a whiny face, held once.")
+        starts(["react.face": a("whiny"), "react.move": a("failure")], "\(creature) played a failure in a whiny face (small).")
         let failure = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual([failure.anim, failure.outcome], ["task_complete", "failure"])
         XCTAssertEqual(failure.who, .init(agent: "codex", thread: "fix-nav"))
         XCTAssertEqual(failure.turn, 4, "a finish says how long its turn ran: 9 minutes is tier4")
         queued.removeLast()
-        starts(["react.mood": a("curious"), "react.animation": a("reply"), "say.about": a("answer")],
-               #"\#(creature) played a reply in a curious face, held once, and said "SAID"."#)
-        XCTAssertEqual(queued.last?.reaction.say?.takes.map(\.meaning), ["answer"])
+        starts(["react.face": a("curious"), "react.move": a("reply"), "say": a("answer"), "react.intensity": a("medium")],
+               #"\#(creature) played a reply in a curious face (medium), and said "SAID"."#)
+        XCTAssertEqual(queued.last?.reaction.say?.takes.map(\.meaning), ["answer"], "what NOW is about, alone")
         let reply = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(reply.anim, "reply_ready")
         XCTAssertNil(reply.outcome, "a reply has no outcome")
         XCTAssertNil(reply.turn, "nor a turn to size it by")
         XCTAssertEqual(reply.who, .init(agent: "codex", thread: "fix-nav"))
         queued.removeLast()
-        starts(["react.mood": a("happy"), "react.animation": a("wake up"), "say.about": a("hello")],
-               #"\#(creature) played a wake up in a happy face, held once, and said "SAID"."#)
+        starts(["react.face": a("happy"), "react.move": a("wake up"), "say": a("hello")],
+               #"\#(creature) played a wake up in a happy face (small), and said "SAID"."#)
         let woke = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(woke.anim, "wake_up")
         XCTAssertNil(woke.outcome, "a wake-up has no outcome")
         XCTAssertEqual(woke.who, .init(agent: "codex", thread: "fix-nav"), "the thread NOW is about, which a back never is (PresenceTests)")
         queued.removeLast()
-        // A face with no animation names whose turn it was when NOW
-        // finished one, and only then: the device marks the turn it's about.
+        // A face with no move names whose turn it was when NOW finished
+        // one, and only then: the device marks the turn it's about.
         for pick in ["none", "cheer", "wiggle", "confetti"] {
-            starts(["react.mood": a("happy"), "react.animation": a(pick)], "\(creature) made a happy face, held once.")
+            starts(["react.face": a("happy"), "react.move": a(pick)], "\(creature) made a happy face (small).")
             XCTAssertNil(queued.last?.reaction.anim, pick)
             XCTAssertEqual(queued.last?.reaction.who, .init(agent: "codex", thread: "fix-nav"), "a face for a finished turn names it")
             XCTAssertNil(queued.last?.reaction.outcome, "with no outcome of its own")
             queued.removeLast()
         }
         turnMs = nil
-        starts(["react.mood": a("happy")], "\(creature) made a happy face, held once.")
+        starts(["react.face": a("happy")], "\(creature) made a happy face (small).")
         XCTAssertNil(queued.last?.reaction.who, "a face for anything else names no turn")
         queued.removeLast()
         turnMs = 9 * 60_000
-        XCTAssertNil(react.run(["react.mood": a("proud-success")], now: nil, log: Self.log), "a face and an animation are separate questions")
+        XCTAssertNil(react.run(["react.face": a("proud-success")], now: nil, log: Self.log), "a face and a move are separate questions")
         why = "something needs you"
         for expression in ReactOutput.expressions.map(\.name) {
-            XCTAssertEqual(react.run(["react.mood": a(expression)], now: nil, log: Self.log), .failed("something needs you"))
+            XCTAssertEqual(react.run(["react.face": a(expression)], now: nil, log: Self.log), .failed("something needs you"))
         }
         XCTAssertEqual(sent.count, 3, "no face or take while something needs you")
         why = nil
-        // A success take only on a success, a swear only on a
-        // failure: an irritated swear asked for at a check failing
-        // mid-turn is a phrase, and at a failed turn a swear.
-        starts(["react.mood": a("irritated"), "say.feeling": a("upset"), "say.kind": a("swear")],
-               #"\#(creature) made an irritated face, held once, and said "SAID"."#)
+        // A success take only on a success, a swear only on a failure: an
+        // irritated swear at a check failing mid-turn is a phrase, and at
+        // a failed turn a swear, however small the moment.
+        starts(["react.face": a("irritated"), "say": a("swear")],
+               #"\#(creature) made an irritated face (small), and said "SAID"."#)
         XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase)
-        let swore = react.run(["react.mood": a("irritated"), "react.animation": a("failure"), "say.feeling": a("upset"),
-                               "say.kind": a("swear")], now: nil, log: Self.log)
+        let swore = react.run(["react.face": a("irritated"), "react.move": a("failure"), "say": a("swear")], now: nil, log: Self.log)
         XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .swear, "\(String(describing: swore))")
-        starts(["react.mood": a("happy"), "say.about": a("done"), "say.kind": a("word")], "\(creature) made a happy face, held once.")
         queued.removeAll()
-        XCTAssertEqual(react.questions(now: nil, log: Self.log).map(\.key), ["react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"])
+        // The four questions, the same at every event.
+        XCTAssertEqual(react.questions(now: nil, log: Self.log).map(\.key), ["react.face", "react.move", "react.intensity", "say"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + MoodOutput.moods.map(\.name),
                        "the faces are every mood's")
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["once", "twice", "three times", "four times"])
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name), ["none", "upset", "glad", "tickled"])
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[4].options.map(\.name), ["none"] + ReactOutput.topics.map(\.name))
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[4].options.count, 17, "none and the 16 topics, hello included")
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[5].options.map(\.name), ["none", "sound", "word", "phrase", "swear"], "none: the face in silence")
-        XCTAssertEqual(ReactOutput.holds.indices.map { ReactOutput.loops(["react.loops": a(ReactOutput.holds[$0].name)]) },
-                       [1, 2, 3, 4])
-        XCTAssertEqual(ReactOutput.loops([:]), 1)
-        XCTAssertLessThanOrEqual(ReactOutput.holds.count, DeviceReaction.maxLoops, "the device plays them all")
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big", "huge"])
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name),
+                       ["none", "swear", "upset", "glad", "tickled"] + ReactOutput.topics.map(\.name))
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.count, 21, "none, 3 feelings, a swear and the 16 topics")
+        XCTAssertLessThanOrEqual(ReactOutput.sizes.map(\.loops).max() ?? 0, DeviceReaction.maxLoops, "the device plays them all")
         XCTAssertEqual(Set(ReactOutput.feelings.map(\.name)), Voice.answers(.feeling), "a feeling for every take's, and none without one")
         XCTAssertEqual(Set(ReactOutput.topics.map(\.name)), Voice.answers(.about), "a topic for every take's, and none without one")
     }

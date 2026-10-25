@@ -8,25 +8,25 @@
 {"agent": "prompt", "text": "Fix the typo in the README"}
 {"agent": "edit", "file": "README.md", "old": "Instal the app", "new": "Install the app", "takes": 1}
 {"agent": "reply", "text": "Fixed the typo.", "after": 1}
-{"brain": {"react.mood": "pleased", "react.animation": "success", "react.loops": "once", "say.feeling": "glad", "say.kind": "sound"}, "note": "Once: Little Win"}
+{"brain": {"react.face": "pleased", "react.move": "success", "react.intensity": "small", "say": "glad"}, "note": "Once: Little Win"}
 {"agent": "prompt", "text": "Add a dark mode toggle to the settings page"}
 {"agent": "edit", "file": "src/settings/Theme.tsx", "old": "theme: 'light'", "new": "theme: prefersDark ? 'dark' : 'light'", "takes": 2}
 {"you": "wait", "minutes": 3, "after": 1}
 {"agent": "reply", "text": "Settings has a dark mode toggle now, and it follows the system by default.", "after": 1}
-{"brain": {"react.mood": "happy", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.kind": "word"}, "note": "Twice: confetti"}
+{"brain": {"react.face": "happy", "react.move": "success", "react.intensity": "medium", "say": "glad"}, "note": "Twice: confetti"}
 {"agent": "prompt", "text": "Move the data layer onto the new query builder"}
 {"agent": "edit", "file": "src/db/users.js", "old": "db.raw(sql)", "new": "db.select('users').where(filter)", "takes": 2}
 {"agent": "run", "cmd": "npm test", "about": "Run the data tests", "takes": 2}
 {"you": "wait", "minutes": 9, "after": 1, "note": "Nine minutes in: the fourth tier"}
 {"agent": "reply", "text": "Every query goes through the builder now, and the data tests pass.", "after": 1}
-{"brain": {"react.mood": "happy", "react.animation": "success", "react.loops": "once", "say.feeling": "glad", "say.kind": "word"}, "note": "The fourth tier, held once: the gold rush"}
+{"brain": {"react.face": "happy", "react.move": "success", "react.intensity": "medium", "say": "glad"}, "note": "The fourth tier, held once: the gold rush"}
 {"agent": "prompt", "text": "Find out why the checkout test is flaky"}
 {"agent": "run", "cmd": "npm test", "about": "Run the checkout tests", "fails": true, "takes": 2}
-{"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.about": "tests", "say.kind": "sound"}, "mood": "annoyed"}
+{"brain": {"react.face": "annoyed", "say": "upset", "react.intensity": "small"}, "mood": "annoyed"}
 {"agent": "run", "cmd": "npm test", "about": "Run the checkout tests again", "fails": true, "takes": 2}
-{"brain": {"react.mood": "determined", "say.feeling": "upset", "say.about": "retry", "say.kind": "word"}, "mood": "determined"}
+{"brain": {"react.face": "determined", "say": "upset", "react.intensity": "medium"}, "mood": "determined"}
 {"agent": "edit", "file": "test/checkout.test.js", "old": "await sleep(100)", "new": "await paymentMock.ready()", "takes": 2}
 {"agent": "run", "cmd": "npm test", "about": "Run the checkout tests", "takes": 2}
 {"you": "wait", "minutes": 16, "after": 1, "note": "Sixteen minutes in: the fifth tier"}
 {"agent": "reply", "text": "The checkout test waits for the payment mock now, and it passes every time.", "after": 1}
-{"brain": {"react.mood": "proud", "react.animation": "success", "react.loops": "four times", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud", "note": "Hard-won, held four times: Mega Boop"}
+{"brain": {"react.face": "proud", "react.move": "success", "react.intensity": "huge", "say": "glad"}, "mood": "proud", "note": "Hard-won, held four times: Mega Boop"}

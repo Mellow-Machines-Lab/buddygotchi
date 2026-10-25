@@ -14,7 +14,7 @@ import Foundation
 /// of the three:
 ///
 ///     {"agent": "prompt", "text": "Add keyboard shortcuts"}
-///     {"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
+///     {"brain": {"react.face": "calm", "say": "start", "react.intensity": "medium"}}
 ///     {"you": "poke"}
 ///     {"agent": "read", "file": "src/editor.js", "say": "I'll start by reading the editor."}
 ///     {"you": "talk", "text": "You suck at this!", "hold": 2}
@@ -22,7 +22,7 @@ import Foundation
 ///     {"agent": "todo", "todos": "2/4"}
 ///     {"you": "wait", "minutes": 8}
 ///     {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}
-///     {"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed"}
+///     {"brain": {"react.face": "annoyed", "say": "upset", "react.intensity": "medium"}, "mood": "annoyed"}
 ///
 /// - `agent` steps are what the agent does, in words both agents share:
 ///   `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's
@@ -419,17 +419,16 @@ extension DemoScript {
     /// Each question a brain step may answer, and its choices in `pack`.
     public static func choices(in pack: CharacterPack = .active) -> [String: [String]] {
         var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
-        offered["react.mood"] = ["none"] + pack.faces.map(\.name)
-        // What you said is asked for a reply in place of the feeling and
-        // the topic.
-        offered["react.reply"] = ReactOutput.replies(of: pack.name).map(\.name)
+        offered[ReactOutput.faceKey] = ["none"] + pack.faces.map(\.name)
+        // What you said is answered with a reply for its move.
+        offered[ReactOutput.moveKey]? += ReactOutput.replies(of: pack.name).map(\.name)
         return offered
     }
 
     /// What in the script `pack` can't play, each with its line: an answer
     /// to a question the brain is never asked, a choice it isn't offered,
     /// or a mood the pack doesn't have. Empty when every step plays. A
-    /// pack with no voice takes `say.*` answers and leaves them out
+    /// pack with no voice takes `say` answers and leaves them out
     /// (characters/CHARACTER.md §8), so one script plays with or without.
     public func problems(for pack: CharacterPack = .active) -> [String] {
         let offered = Self.choices(in: pack)

@@ -6,18 +6,18 @@
   "steps": [
     {"event": "turn started", "at": "0m"},
     {"event": "command", "at": "0m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "0m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "happy|pleased|calm"}},
+    {"event": "turn finished", "at": "0m30s", "expect": {"move": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "happy|pleased|calm"}},
     {"event": "turn started", "at": "1m"},
     {"event": "command", "at": "1m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "1m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "pleased|happy|excited"}},
+    {"event": "turn finished", "at": "1m30s", "expect": {"move": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "pleased|happy|excited"}},
     {"event": "turn started", "at": "2m"},
     {"event": "command", "at": "2m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "2m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "excited|amused|pleased|happy"}},
+    {"event": "turn finished", "at": "2m30s", "expect": {"move": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "excited|amused|pleased|happy"}},
     {"event": "turn started", "at": "3m"},
     {"event": "command", "at": "3m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "3m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "amused|pleased|happy|excited|comfy"}},
+    {"event": "turn finished", "at": "3m30s", "expect": {"move": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "amused|pleased|happy|excited|comfy"}},
     {"event": "turn started", "at": "4m"},
     {"event": "command", "at": "4m20s", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "4m30s", "expect": {"animation": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "comfy|calm|pleased|amused|happy|none"}}
+    {"event": "turn finished", "at": "4m30s", "expect": {"move": "success|none", "mood": "calm|happy|excited|curious|engaged", "react": "comfy|calm|pleased|amused|happy|none"}}
   ]
 }

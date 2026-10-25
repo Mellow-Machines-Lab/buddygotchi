@@ -2,7 +2,7 @@
 MOOD
 Happy. Boop is in good spirits: things are going well.
 Its faces lean happy and excited; a failure gets an annoyed face.
-Says glad at wins, glad in a sound at a comeback, tickled at a
+Says glad at wins, glad, small, at a comeback, tickled at a
 poke.
 Stays happy through plain finishes, questions and routine work.
 Leaves for excited when a very long turn finishes done or the person

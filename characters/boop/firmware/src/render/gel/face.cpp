@@ -146,17 +146,20 @@ void GelFace::endOccasion(uint32_t t, bool early) {
   restUntil_ = t + kRestMinMs + roll(kRestMaxMs - kRestMinMs);
 }
 
-void GelFace::occasions(uint32_t t) {
+bool GelFace::showsLook(SceneState anim, SceneState& look) const {
   const Engine& e = *engine_;
+  const bool needsYou = e.router.facts.attention.on;
+  look = needsYou ? SceneState::kNeedsYou : e.router.facts.base;
   const Route& route = e.scenes.route;
+  return anim == SceneState::kNone && !route.moment &&
+         route.state == (needsYou ? SceneState::kNeedsYou : e.router.facts.look());
+}
+
+void GelFace::occasions(uint32_t t) {
   if (stopped_ && !within(t, stoppedAt_, rig::kFadeMs)) stopped_ = false, pastime_ = Pastime::kNone;
   if (occasion_ && !after(occasionEnds_, t)) endOccasion(t, false);
-  // The look itself shows: needs you's screen, or the base's look, with no
-  // moment over it.
-  const bool needsYou = e.router.facts.attention.on;
-  const SceneState look = needsYou ? SceneState::kNeedsYou : e.router.facts.base;
-  const bool shows = source_.anim == SceneState::kNone && !route.moment &&
-                     route.state == (needsYou ? SceneState::kNeedsYou : e.router.facts.look());
+  SceneState look;
+  const bool shows = showsLook(source_.anim, look);
   if (occasion_ && (!shows || look != occasionLook_)) endOccasion(t, true);
   // A new look rests before its first.
   if (look != dealtLook_) dealtLook_ = look, restUntil_ = t + kRestMinMs + roll(kRestMaxMs - kRestMinMs);
@@ -204,30 +207,43 @@ void GelFace::deal(SceneState look, uint32_t t) {
   const Option* chosen = nullptr;
   for (int i = 0; i < n && !chosen; ++i)
     if ((options[i].rank == top) == fresh && pick-- == 0) chosen = &options[i];
-  occasion_ = lastClip_ = chosen->clip;
-  pastime_ = chosen->pastime;
+  start(*chosen->clip, chosen->pastime, look, t);
+  holdGestures(*chosen->clip);
+}
+
+void GelFace::start(const rig::Clip& clip, Pastime p, SceneState look, uint32_t t) {
+  if (occasion_) endOccasion(t, true);
+  occasion_ = lastClip_ = &clip;
+  pastime_ = p;
   stopped_ = false;
-  occasionLook_ = look;
+  occasionLook_ = dealtLook_ = look;
   occasionAt_ = t;
-  occasionEnds_ = t + occasion_->ms;
-  play(*occasion_);
-  // The engine's own idle gestures wait for it.
+  occasionEnds_ = t + clip.ms;
+  play(clip);
+}
+
+void GelFace::holdGestures(const rig::Clip& clip) {
   auto& acting = engine_->acting;
-  acting.nextPerformance = max(acting.nextPerformance, engine_->motion.time + int(occasion_->ms / 1000) + 2);
+  acting.nextPerformance = max(acting.nextPerformance, engine_->motion.time + int(clip.ms / 1000) + 2);
 }
 
 void GelFace::playPastime(Pastime p, uint32_t t) {
-  if (occasion_) endOccasion(t, true);
   const PastimeInfo& i = info(p);
-  const rig::Clip* clip = rig::kRig.clip(i.clip);
-  if (!clip) return;
-  occasion_ = lastClip_ = clip;
-  pastime_ = p;
-  stopped_ = false;
-  occasionLook_ = dealtLook_ = i.look;
-  occasionAt_ = t;
-  occasionEnds_ = t + clip->ms;
-  play(*clip);
+  if (const rig::Clip* clip = rig::kRig.clip(i.clip)) start(*clip, p, i.look, t);
+}
+
+void GelFace::reply(const char* name, SceneState anim, uint32_t t) {
+  SceneState look;
+  const Pastime p = pastimeFor(name);
+  const rig::Clip* trick = p != Pastime::kNone ? rig::kRig.clip(info(p).clip) : nullptr;
+  if (trick && showsLook(anim, look) && (look == SceneState::kIdle || look == SceneState::kAsleep)) {
+    start(*trick, p, look, t);
+    holdGestures(*trick);
+    return;
+  }
+  char clip[24];
+  std::snprintf(clip, sizeof(clip), "reply-%s", name);
+  if (const rig::Clip* c = rig::kRig.clip(clip)) play(*c);
 }
 
 void GelFace::showKit(uint32_t t) {
@@ -431,13 +447,12 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     restartCues();
   }
   e.holdExpression(borrowed);
-  // A reply to what you said: its clip over the face it came with, once,
-  // as that face starts. A pack with none for it plays the face alone.
+  // A reply to what you said: its clip over the face it came with, or the
+  // pastime it asks for, once, as that face starts. A pack with none for
+  // it plays the face alone.
   if (context.reply[0] && !(replied_ && context.replyAt == replyAt_)) {
     replied_ = true, replyAt_ = context.replyAt;
-    char clip[24];
-    std::snprintf(clip, sizeof(clip), "reply-%s", context.reply);
-    if (const rig::Clip* c = rig::kRig.clip(clip)) play(*c);
+    reply(context.reply, source.anim, t);
   }
   if (source.state() != source_.state()) {
     lookAt_ = t;

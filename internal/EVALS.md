@@ -75,15 +75,12 @@ a scenario holds wherever more than one answer is right:
 
 | Checked | Against |
 | --- | --- |
-| `react` | Jev's pick for the `react.mood` question: `none` or a mood's face |
-| `animation` | The animation the reaction played, Jev's `react.animation` pick (a finish, `success`, `failure` or `reply`, `wake up`, or `notice`, when your prompt says its name), or `none` when it played none or Boop didn't react |
+| `react` | Jev's pick for the `react.face` question: `none` or a mood's face |
+| `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
+| `intensity` | How big the moment was, Jev's `react.intensity` pick (`small` to `huge`: how long the face held and how big what it said), or `none` when `react` didn't react |
+| `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, the reply's, from the pack's `replies.md` or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
-| `feeling` | How Boop felt, `say.feeling`'s pick when it reached the floor, or `none` |
-| `about` | What NOW was about, `say.about`'s pick when it reached the floor, or `none` |
-| `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when it picked saying nothing, the face in silence, or `react` didn't react |
-| `reply` | What it replied to what you said, Jev's `react.reply` pick (`huh` below the floor), or `none` when it didn't react; a pass about anything else has none |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
-| `loops` | How long the face held, Jev's `react.loops` pick (`once` to `four times`), or `none` when `react` didn't react |
 | `mood` | Boop's mood after the pass |
 | `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every move the graph has from it, so a scenario can pin the graph |
 
@@ -248,7 +245,7 @@ file-name order:
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
-| `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.mood": "amused"}`), ahead of its `expect` |
+| `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.face": "amused"}`), ahead of its `expect` |
 | `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
@@ -271,7 +268,7 @@ lives there: `boopdev eval --list` prints them all. They come in three
 kinds, all with the `boop` personality unless the file says otherwise:
 
 - **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`): Boop's character. It never swears
+  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`, `128`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -286,7 +283,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   with a face and a reply, even while it's still making one (`35`–`40`),
   and asked about the agents it holds up what they're really doing, how
   long, a check's result, done, how many work and rest when asked about
-  them all, or all quiet, never a guessed yes or no (`127`); each
+  them all, or all quiet, never a guessed yes or no (`127`), and a
+  reply's sign fits the moment: a nap after the work while claude works,
+  "that's ur job" when you'd have it answer claude for you, a huffy
+  "...fine" when you say sorry after an insult, and what claude is doing
+  or how long you've been at it when you ask (`128`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
   (`41`–`43`); and its mood only moves along
@@ -361,16 +362,17 @@ kinds, all with the `boop` personality unless the file says otherwise:
   how much it says, chosen in Settings: on Quiet routine work goes by
   in silence and only big moments get a sound or a word (`122`), on
   Chatty almost every face comes with words and every prompt gets one
-  (`123`), and on Normal a routine moment gets a feeling, not a feeling
-  and a topic (`124`). A turn that finally worked after its tests failed
+  (`123`), and on Normal a routine moment gets one small thing said (`124`). A turn that finally worked after its tests failed
   twice is a hard-won finish: a success, proud, held three or four times
   (`125`), which the gel plays big. And what you say gets the reply that
   answers what you meant: a hello, to a greeting that asks how it's
-  going too, yes to a question about Boop itself,
-  thanks at praise, love, ouch at an insult, comfort at bad news or
-  tiredness, hehe at a joke, dunno at what it can't know, huh at
-  nonsense, bye, and status for a question about the agents, how many
-  are running included (`126`).
+  going too, yes to a question about Boop itself, thanks at praise and
+  at your own good news, love at affection and at a sorry, ouch at an
+  insult, comfort at bad news or tiredness, hehe at a joke, huh at what
+  it can't know or at nonsense, a nap or a dance when asked (or no, to a
+  trick it won't do), notme when asked to answer an agent for you, bye,
+  and status for a question about the agents, how many are running
+  included (`126`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
@@ -432,7 +434,7 @@ scripted` runs it without a key, and `--talk quiet` or `--talk chatty`
 with that level of talk.
 
 **The report** reads `debug.jsonl` as `boopctl day` and the dashboard
-do: a mood change's new mood and a reaction's face, finish and hold from
+do: a mood change's new mood and a reaction's face, move and intensity from
 the answers of the pass it ran for, and what it said from the takes its
 output recorded, never
 from an output's message. It gives, for each hour of the app's clock: turns ended,
@@ -444,7 +446,7 @@ kind of step that woke the brain: notable (a failure, a fix, a failed or
 stopped turn, a turn of 5 minutes or more, a poke), a finish
 done in 1 to 5 minutes, one under a minute, a turn start, your
 prompt toned (its line says how you sound or a name you said) and
-plain, and a heartbeat; and the faces used. Then how long the reactions held and
+plain, and a heartbeat; and the faces used. Then how big the reactions were and
 the takes they said over the day (`none` for a reaction that said
 nothing), how long each mood
 lasted, and every mood change with the step that brought it. `--json`

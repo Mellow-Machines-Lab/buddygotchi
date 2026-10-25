@@ -1,20 +1,19 @@
 import Foundation
 import MellowHarness
 
-/// Whether Boop reacts to NOW: with which mood's face, which animation,
-/// for how long, and what it says. A reaction
-/// is a mood × a visual for a while: the device draws that mood's design
-/// of whatever look is showing, or of the animation picked (a turn's
-/// finish: task_complete for its outcome, or reply_ready; wake_up, you
-/// back after a long break; or notice, its name in your prompt), for a
-/// number of its loops. Jev picks what Boop says as a feeling, a
-/// topic and a kind, and Voice finds a recorded take of each in the face's
-/// mood and joins them into a `say`, or finds none, and then the face plays
-/// in silence. To what you said on push-to-talk, Jev picks a reply in
-/// their place (`Reply`), and the rest is looked up from it: the board's
-/// clip, the takes and the sign. It waits in the device's queue until whatever plays there
-/// has finished. It's started, not done,
-/// until whoever plays it ends its handle.
+/// Whether Boop reacts to NOW, in four answers, the same four every pass:
+/// its face (`react.face`), what its body does (`react.move`), how big the
+/// moment is (`react.intensity`) and what it says (`say`). A reaction is a
+/// mood × a visual for a while: the device draws that mood's design of
+/// whatever look is showing, or of the move picked (a turn's finish:
+/// task_complete for its outcome, or reply_ready; wake_up, you back after
+/// a long break; notice, its name in your prompt; or to what you said on
+/// push-to-talk, its reply's clip), for as many loops as the intensity
+/// holds. Voice finds a recorded take of what it says, as big as the
+/// intensity, in the face's mood, or finds none, and then the face plays
+/// in silence. A reply's sign is looked up, never guessed. It waits in the
+/// device's queue until whatever plays there has finished. It's started,
+/// not done, until whoever plays it ends its handle.
 public final class ReactOutput: Output {
     public static let outputName = "react"
     public let name = ReactOutput.outputName
@@ -22,8 +21,10 @@ public final class ReactOutput: Output {
     /// are several.
     let pack: CharacterPack
     public let voice: String?
+    /// The questions' keys.
+    public static let faceKey = "react.face", moveKey = "react.move", intensityKey = "react.intensity", sayKey = "say"
     /// Its questions, built once: none of them changes. What you said gets
-    /// its own (`talkQuestions`).
+    /// its own moves (`talkQuestions`).
     let asked: [Question]
     let askedOfTalk: [Question]
     /// Sends a brain reaction, which waits in the device's queue behind
@@ -53,13 +54,17 @@ public final class ReactOutput: Output {
     /// shows the rest (`StatusReply`), or nil for none.
     let replies: [TaggedLine]
     let status: (Event) -> StatusReply.Answer?
+    /// The moment's tags for a reply's sign at an event: `working` while an
+    /// agent works, `waiting` while something waits on you.
+    let moment: (Event) -> [String]
     /// Picks among the takes that fit, and remembers the last `say`'s
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
     var lastWords: Set<String> = []
     /// The last reply's sign, which the next reply doesn't hold up again
-    /// while another fits.
+    /// while another fits, and the last reply and when it was.
     var lastReplySign: String?
+    var lastReply: (name: String, at: Int64)?
     /// With a `voice`, a buddy's: its picks are its own, so two buddies
     /// don't say the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
@@ -67,7 +72,7 @@ public final class ReactOutput: Output {
                 turnMs: @escaping (Event?) -> Int64? = { _ in nil }, speaks: @escaping () -> Bool = { true },
                 pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
-                status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }) {
+                status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -83,6 +88,7 @@ public final class ReactOutput: Output {
         self.calendar = calendar
         self.replies = replies
         self.status = status
+        self.moment = moment
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
@@ -95,22 +101,22 @@ public final class ReactOutput: Output {
     /// performed in that mood (`Voice`).
     public static var expressions: [Option] { CharacterPack.active.faces }
 
-    /// How Boop can feel about NOW, in the order `say.feeling` offers them.
-    /// Every feeling take has one, and every face has
-    /// takes of each: tests check both, so all are offered.
+    /// How Boop can feel about NOW, the first of what `say` offers. Every
+    /// feeling take has one, and every face has takes of each: tests check
+    /// both, so all are offered.
     public static var feelings: [Option] { feelings(of: CharacterPack.active.name) }
     static func feelings(of name: String) -> [Option] { [
         Option("upset", "Something went wrong or let \(name) down: a check or a turn failing, the agent stuck or giving up, a rude prompt.",
-               notFor: "A win, a poke, or work going on, however long."),
+               notFor: "A win, a poke, or work going on, however long; a failed turn that really stings, which swears."),
         Option("glad", "Something went right: a turn done and working, a check passing, a big win, a kind prompt.",
                notFor: "A failure, or work still going on."),
         Option("tickled", "Poked or teased: a poke, a tap, or a playful prompt.",
                notFor: "A failure, or the agent's work."),
     ] }
 
-    /// What NOW can be about, in the order `say.about` offers them:
-    /// each a topic NOW's line shows. Every topic take
-    /// has one, and every face has takes of each, as for `feelings`.
+    /// What NOW can be about, the rest of what `say` offers: each a topic
+    /// NOW's line shows. Every topic take has one, and every face has takes
+    /// of each, as for `feelings`.
     public static var topics: [Option] { topics(of: CharacterPack.active.name) }
     static func topics(of name: String) -> [Option] { [
         Option("start", "A turn starting: off it goes.", notFor: "Work going on, or a turn that finished."),
@@ -134,66 +140,76 @@ public final class ReactOutput: Output {
                notFor: "Anything else: a poke, a turn starting."),
     ] }
 
-    /// What Boop replies to what you said on push-to-talk: what you meant,
-    /// answered. The board plays the pack's clip for it
-    /// (`reply-<name>`, characters/CHARACTER.md §15), Voice says the
-    /// feeling or the topic it borrows, since no take is recorded for a
-    /// reply, and the sign is the pack's line for it (`replies.md`), or for
-    /// `status` the agents' facts (`StatusReply`).
-    public struct Reply: Sendable {
-        public let option: Option
-        public let feeling: String?
-        public let about: String?
-        public var name: String { option.name }
-    }
-
-    /// The replies, in the order `react.reply` offers them. Yes and no are
-    /// never about the agents: `status` answers those from what the core
-    /// knows, so the brain never guesses a fact.
-    public static var replies: [Reply] { replies(of: CharacterPack.active.name) }
-    static func replies(of name: String) -> [Reply] {
+    /// What Boop replies to what you said on push-to-talk, its move then:
+    /// what you meant, answered. The board plays the pack's clip for it
+    /// (`reply-<name>`, characters/CHARACTER.md §15), and the sign is the
+    /// pack's line for it (`replies.md`), or for `status` the agents' facts
+    /// (`StatusReply`). Yes and no are never about the agents, and never
+    /// a promise: `status` answers a question about them from what the
+    /// core knows, so the brain never guesses a fact, and a request is
+    /// nap, dance, notme, or no.
+    public static var replies: [Option] { replies(of: CharacterPack.active.name) }
+    static func replies(of name: String) -> [Option] {
         let agents = "A question about the agents or their work, which is status."
-        func reply(_ n: String, _ what: String, notFor: String, feeling: String? = nil, about: String? = nil) -> Reply {
-            Reply(option: Option(n, what, notFor: notFor), feeling: feeling, about: about)
-        }
+        let request = "Asking \(name) to do something, which is nap, dance, notme or no."
         return [
-            reply("yes", "Yes: agreeing, or yes to a question about \(name) itself (\"are you awake?\"). It nods.",
-                  notFor: agents, feeling: "glad"),
-            reply("no", "No: disagreeing, refusing, or no to a question about \(name) itself (\"are you sleepy?\"). It shakes its head.",
-                  notFor: agents, feeling: "upset"),
-            reply("dunno", "Dunno: a question \(name) can't know the answer to, about the world, the weather or dinner. It shrugs.",
-                  notFor: agents + " Words that make no sense, which is huh.", about: "looking"),
-            reply("huh", "Huh: what it heard makes no sense, is cut off, or isn't meant for \(name). It tilts its head.",
-                  notFor: "Anything it can answer, a question it can't included, which is dunno.", about: "looking"),
-            reply("hello", "Hello: a greeting, even one that asks how it's going (\"hey, how's it going?\", \"what's up?\"), or you saying you're back. It waves.",
-                  notFor: "Goodbye or good night, which is bye; a question about the agents' work, which is status.",
-                  about: "hello"),
-            reply("bye", "Bye: goodbye, good night, or you saying you're off for a while. It waves you off.",
-                  notFor: "A greeting, which is hello.", feeling: "glad"),
-            reply("thanks", "Thanks: praise or thanks for \(name) or the work: \"good job\", \"nice one\". It puffs up, proud.",
-                  notFor: "Affection for \(name) itself, which is love.", feeling: "glad"),
-            reply("love", "Love: affection for \(name): \"I love you\", \"good boy\", \"you're cute\". It snuggles up.",
-                  notFor: "Praise for work done, which is thanks.", feeling: "glad"),
-            reply("ouch", "Ouch: rude words or an insult to \(name). It flinches.",
-                  notFor: "Teasing, which is hehe; you feeling low or bad news, which is comfort.", feeling: "upset"),
-            // Quiet: the upset takes it could borrow are as often cross as kind.
-            reply("comfort", "Comfort: you sound tired, sad or stressed, or tell it bad news. It leans in close.",
-                  notFor: "Rude words to \(name), which is ouch."),
-            reply("hehe", "Hehe: a joke, teasing or something silly. It giggles.", notFor: "Rude words meant to hurt, which is ouch.",
-                  feeling: "tickled"),
-            reply("status", "Status: a question about the agents or their work: done yet, how long, how many are running, anyone need me, how's the work going, did it work. It holds up the answer on a sign, from what it knows.",
-                  notFor: "A question about \(name) itself, which is yes, no or dunno; a greeting, which is hello.", about: "work"),
+            Option("yes", "Yes: agreeing, or yes to a question about \(name) itself (\"are you awake?\", \"are you okay?\"). It nods.",
+                   notFor: agents + " " + request),
+            Option("no", "No: disagreeing, no to a question about \(name) itself, or turning down something it's asked to do (\"roll over\", \"go away\", a trick when it isn't in the mood). It shakes its head.",
+                   notFor: agents + " Asking it to do something for an agent, which is notme."),
+            Option("huh", "Huh: \(name) can't answer it: words that make no sense, are cut off or aren't meant for it, or a question it can't know, about the world, the weather or dinner. It shrugs, or tilts its head.",
+                   notFor: agents + " A question about \(name) itself, which is yes or no."),
+            Option("hello", "Hello: a greeting, even one that asks how it's going (\"hey, how's it going?\", \"what's up?\"), or you saying you're back. It waves.",
+                   notFor: "Goodbye or good night, which is bye; a question about the agents' work, which is status."),
+            Option("bye", "Bye: goodbye, good night, or you saying you're off for a while. It waves you off.",
+                   notFor: "A greeting, which is hello; asking it to sleep, which is nap."),
+            Option("thanks", "Thanks: something good: praise or thanks for \(name) or the work (\"good job\", \"nice one\"), your good news (\"we shipped it\"), or wishing you luck. It puffs up, proud.",
+                   notFor: "Affection for \(name) itself, which is love."),
+            Option("love", "Love: affection for \(name), or making up with it: \"I love you\", \"good boy\", \"you're cute\", \"sorry, \(name)\". It snuggles up.",
+                   notFor: "Praise for work done, or your good news, which is thanks."),
+            Option("ouch", "Ouch: rude words or an insult to \(name). It flinches.",
+                   notFor: "Teasing, which is hehe; you feeling low or bad news, which is comfort."),
+            Option("comfort", "Comfort: you sound tired, sad or stressed, or tell it bad news. It leans in close.",
+                   notFor: "Rude words to \(name), which is ouch."),
+            Option("hehe", "Hehe: a joke, teasing or something silly. It giggles.", notFor: "Rude words meant to hurt, which is ouch."),
+            Option("status", "Status: a question about the agents or their work: done yet, how long, how many are running, what they're doing, anyone need me, how's the work going, did it work, how long you've been at it. It holds up the answer on a sign, from what it knows.",
+                   notFor: "A question about \(name) itself, which is yes, no or huh; a greeting, which is hello."),
+            Option("nap", "Nap: asked to sleep, rest or hush: \"go to sleep\", \"nap time\", \"shh\", \"be quiet\". It yawns and settles down for a nap.",
+                   notFor: "Goodbye or good night, which is bye; a nap it won't take, which is no."),
+            Option("dance", "Dance: asked to dance or wiggle. It dances.", notFor: "Any other trick, or a dance it won't do, which is no."),
+            Option("notme", "Not me: asked to answer, approve, allow, stop or tell an agent something (\"tell claude yes\", \"approve it\", \"go ahead\"). \(name) never does: it shakes its head and looks to the Mac.",
+                   notFor: "A question about the agents, which is status."),
         ]
     }
 
-    /// The reply `react.reply` picked: `huh` when its answer is missing,
-    /// below the floor or not a reply, since Boop answers what you said
-    /// with something, and a guess at what you meant is worse.
-    public static func reply(_ answers: Answers) -> Reply {
-        let all = replies
-        let picked = pick(answers, "react.reply", all.map(\.option))
-        return all.first { $0.name == picked } ?? all.first { $0.name == "huh" }!
+    /// The reply `react.move` picked of what you said: `huh` when its
+    /// answer is missing, below the floor or not a reply, since Boop
+    /// answers what you said with something, and a guess at what you meant
+    /// is worse.
+    public static func reply(_ answers: Answers) -> String {
+        pick(answers, moveKey, replies) ?? "huh"
     }
+
+    /// What the board plays for `reply` to `words`: a `huh` at a question
+    /// is a shrug (`dunno`), at anything else a head tilt.
+    public static func played(_ reply: String, words: String) -> String {
+        guard reply == "huh" else { return reply }
+        let said = words.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        let first = said.split { !$0.isLetter && $0 != "'" }.first.map(String.init) ?? ""
+        return said.hasSuffix("?") || questionWords.contains(first) ? "dunno" : "huh"
+    }
+
+    /// Words a question starts with, for `played`.
+    static let questionWords: Set<String> = [
+        "what", "what's", "who", "who's", "where", "where's", "when", "why", "how", "how's", "which", "will", "would",
+        "is", "are", "can", "could", "do", "does", "did", "should",
+    ]
+
+    /// How long after an `ouch` a reply is making up (`makeup`, a tag its
+    /// sign may have).
+    public static let makeupMs: Int64 = 10 * 60_000
+    /// The moment's tags a reply's sign may have, beside the calendar's.
+    public static let momentTags = ["working", "waiting", "makeup"]
 
     /// Whether `e` is something you said on push-to-talk, which a reply
     /// answers.
@@ -206,25 +222,52 @@ public final class ReactOutput: Output {
         now ?? log.events.last { !$0.fromHarness && $0.type != .listen }
     }
 
-    /// How big what it says is, plainest first, from nothing at all, the
-    /// face in silence: with none of the kind asked for, Voice takes the
-    /// nearest one, but never a swear unless one was asked for.
-    public static var kinds: [Option] { kinds(of: CharacterPack.active.name) }
-    static func kinds(of name: String) -> [Option] { [
-        Option("none", "Nothing: the face in silence, for the routine PERSONALITY meets so.",
-               notFor: "Anything PERSONALITY gives words to: what stands out, a failure, a poke."),
-        Option("sound", "A noise with no word: a huff, a grunt, a gasp. The usual."),
-        Option("word", "One word that names the moment.", notFor: "A routine check-in."),
-        Option("phrase", "A little catchphrase, for a moment worth remembering, now and then.",
+    /// How big a moment is, the smallest first: how long the face holds,
+    /// a loop more each step, and how big what it says is (`Intensity`).
+    public static let intensities = [
+        Option("small", "A small moment: the usual. The face holds once, and what it says is a sound."),
+        Option("medium", "A moment that stands out. It holds twice, and says a word.", notFor: "Routine work."),
+        Option("big", "A big moment, such as a long turn's hard work done or the top of a streak. It holds three times, and says a phrase.",
                notFor: "Routine work, or a small win or failure."),
-        Option("swear", "A swear, at a failure that really stings.",
-               notFor: "A win, a poke, words to \(name), or anything about the person."),
-    ] }
+        Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish, or a turn that failed again after failed turns before it. It holds four times, and says a phrase.",
+               notFor: "A check or a command failing mid-turn, however many times, or a single turn short of very long."),
+    ]
 
-    /// The animations a reaction can play in its face: a turn's finish,
-    /// judged from what NOW says, a wake-up when you come back from a long
-    /// break, or a notice when your prompt says its name. No rule plays
-    /// any of them, so the brain judges each one.
+    /// What an intensity sets: how many loops the face holds and the kind
+    /// of take it says.
+    public struct Intensity: Equatable, Sendable {
+        public let name: String
+        public let loops: Int
+        public let kind: Take.Kind
+    }
+
+    /// Each intensity, in `intensities`' order: once a sound, twice a
+    /// word, three and four times a phrase.
+    public static let sizes: [Intensity] = zip(intensities, [(1, Take.Kind.sound), (2, .word), (3, .phrase), (4, .phrase)])
+        .map { Intensity(name: $0.name, loops: $1.0, kind: $1.1) }
+
+    /// The intensity `react.intensity` picked, or small when it's missing.
+    public static func intensity(_ answers: Answers) -> Intensity {
+        sizes.first { $0.name == answers[intensityKey]?.choice } ?? sizes[0]
+    }
+
+    /// What Boop says, `say`'s options: nothing, a feeling, a swear, or
+    /// what NOW is about.
+    public static var says: [Option] { says(of: CharacterPack.active.name) }
+    static func says(of name: String) -> [Option] {
+        [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish) where PERSONALITY's Examples say \"in silence\", a prompt soon after another reaction, and wherever TALK asks for silence.",
+                notFor: "Anything PERSONALITY gives words to: what stands out, a failure, a poke."),
+         Option("swear", "A swear, upset: a failed turn that really stings, in an irritated or grumpy face, as PERSONALITY's Examples swear.",
+                notFor: "A win, a poke, words to \(name), or anything about the person.")]
+            + feelings(of: name)
+            + topics(of: name)
+    }
+
+    /// The moves a reaction can play in its face at an event, `react.move`'s
+    /// options but for what you said: a turn's finish, judged from what NOW
+    /// says, a wake-up when you come back from a long break, or a notice
+    /// when your prompt says its name. No rule plays any of them, so the
+    /// brain judges each one.
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
         Option("success", "NOW's line says a turn finished, done, and doesn't say the agent couldn't finish, asks you something or only answers.",
@@ -239,11 +282,19 @@ public final class ReactOutput: Output {
                notFor: "A prompt that doesn't say its name, or anything but a prompt."),
     ] }
 
-    /// The animation `react.animation` picked, or nil for none, a missing
-    /// answer or one the device doesn't play.
+    /// The animation `react.move` picked at an event, or nil for none, a
+    /// missing answer or one the device doesn't play.
     public static func animation(_ answers: Answers) -> String? {
-        let pick = answers["react.animation"]?.choice
+        let pick = answers[moveKey]?.choice
         return animations.contains { $0.name == pick } ? pick : nil
+    }
+
+    /// The move `react.move` picked, at an event or of what you said, or
+    /// nil for none.
+    public static func move(_ answers: Answers) -> String? {
+        if let a = animation(answers) { return a }
+        guard let choice = answers[moveKey]?.choice, replies.contains(where: { $0.name == choice }) else { return nil }
+        return reply(answers)
     }
 
     /// What the device plays for each of `animations`: the face's
@@ -255,55 +306,37 @@ public final class ReactOutput: Output {
         "reply": ("reply_ready", nil), "wake up": ("wake_up", nil), "notice": ("notice", nil),
     ]
 
-    /// How long the face holds, in loops of the design it's drawn in: the
-    /// first holds once, and each one after a loop more.
-    /// The longest hold of the longest design must end on the device
-    /// before the link stops waiting for its `ended` (its `ttl` plus 60 s,
-    /// linkkit/SPEC.md §5), or a reaction that played would read as
-    /// failed: `testAReactionEndsBeforeTheHarnessCeiling` holds it so.
-    public static let holds = [
-        Option("once", "A small moment: the usual."),
-        Option("twice", "A moment that stands out.", notFor: "Routine work."),
-        Option("three times", "A big moment, such as a check passing after failing."),
-        Option("four times", "The biggest moments: a very long turn that failed, a hard-won finish, or a failure that keeps coming back.",
-               notFor: "A single check, or a single turn short of very long."),
-    ]
-
-    /// How many loops the face holds: `react.loops`' pick, or once when
-    /// it's missing.
-    public static func loops(_ answers: Answers) -> Int {
-        (holds.firstIndex { $0.name == answers["react.loops"]?.choice } ?? 0) + 1
-    }
-
     /// A reaction still in progress this long after it started is ended as
-    /// failed: past the longest reaction, held
-    /// four times in the design with the longest loop.
+    /// failed: past the longest reaction, held four times (`huge`) in the
+    /// design with the longest loop. The longest hold of the longest design
+    /// must end on the device before the link stops waiting for its
+    /// `ended` (its `ttl` plus 60 s, linkkit/SPEC.md §5), or a reaction that
+    /// played would read as failed: `testAReactionEndsBeforeTheHarnessCeiling`
+    /// holds it so.
     public static let openForMs: Int64 = 90_000
 
     /// Below this, Jev is guessing, and silence beats a guessed meaning.
     public static let sayFloor = 0.35
 
-    /// A `say` question's pick: its answer if it isn't
-    /// `none`, reaches the floor and is one of `options`, else nil.
+    /// A question's pick: its answer if it isn't `none`, reaches the floor
+    /// and is one of `options`, else nil.
     static func pick(_ answers: Answers, _ key: String, _ options: [Option]) -> String? {
         guard let a = answers[key], a.choice != "none", a.p >= sayFloor,
               options.contains(where: { $0.name == a.choice }) else { return nil }
         return a.choice
     }
 
-    /// How Boop feels, `say.feeling`'s pick, or nil.
-    public static func feeling(_ answers: Answers) -> String? { pick(answers, "say.feeling", feelings) }
-    /// What NOW is about, `say.about`'s pick, or nil.
-    public static func about(_ answers: Answers) -> String? { pick(answers, "say.about", topics) }
+    /// What Boop says, `say`'s pick when it reaches the floor, or nil for
+    /// nothing.
+    public static func saying(_ answers: Answers) -> String? { pick(answers, sayKey, says) }
 
-    /// How big the feeling's take is: `say.kind`'s pick, or a sound when
-    /// it's missing.
-    public static func kind(_ answers: Answers) -> Take.Kind {
-        answers["say.kind"].flatMap { Take.Kind(rawValue: $0.choice) } ?? .sound
+    /// What Boop says, as the take to find: a feeling, a swear (an upset
+    /// take, sworn), or a topic; nil for nothing.
+    public static func said(_ answers: Answers) -> (part: Take.Part, meaning: String, swear: Bool)? {
+        guard let pick = saying(answers) else { return nil }
+        if pick == "swear" { return (.feeling, "upset", true) }
+        return (feelings.contains { $0.name == pick } ? .feeling : .about, pick, false)
     }
-
-    /// Whether `say.kind` picked saying nothing: the face plays in silence.
-    public static func silent(_ answers: Answers) -> Bool { answers["say.kind"]?.choice == "none" }
 
     /// Its questions, and for a prompt's reading the sign's, when a
     /// caption fits it.
@@ -328,75 +361,76 @@ public final class ReactOutput: Output {
     }
 
     /// The questions asked: a character pack with no voice is never asked
-    /// what to say (characters/CHARACTER.md §8), so it has no `say.*` ones.
+    /// what to say (characters/CHARACTER.md §8), so it has no `say`.
     static func asked(in pack: CharacterPack) -> [Question] {
-        Take.all(in: pack).isEmpty ? questions(in: pack).filter { !$0.key.hasPrefix("say.") } : questions(in: pack)
+        Take.all(in: pack).isEmpty ? questions(in: pack).filter { $0.key != sayKey } : questions(in: pack)
     }
 
-    /// The questions asked of what you said, from `asked`: the face, never
-    /// none, since what you said always gets one, the reply in place of the
-    /// feeling, the topic and the animation, how long and how big.
+    /// The questions asked of what you said, from `asked`: the same four,
+    /// but the face is never none, since what you said always gets one, and
+    /// the move is the reply.
     static func talkQuestions(_ asked: [Question], in pack: CharacterPack) -> [Question] {
         let name = pack.name
-        let reply = Question(key: "react.reply", text: "If \(name) reacts, what does it reply to what you said? It answers what you meant with its body, a sound or a word, and a sign, never with words of its own.",
-                             about: "the words NOW quotes", judgeBy: "what the person meant, then PERSONALITY's Examples",
-                             options: replies(of: name).map(\.option))
-        let kept = asked.filter { ["react.loops", "say.kind"].contains($0.key) }
-        let face = asked.first { $0.key == "react.mood" }.map {
-            Question(key: $0.key, text: "Which face does \(name) make at what you said? It always makes one.", about: $0.about,
-                     judgeBy: $0.judgeBy, options: $0.options.filter { $0.name != "none" })
+        return asked.map { q in
+            switch q.key {
+            case faceKey:
+                return Question(key: q.key, text: "Which face does \(name) make at what you said? It always makes one.", about: q.about,
+                                judgeBy: q.judgeBy, options: q.options.filter { $0.name != "none" })
+            case moveKey:
+                return Question(key: q.key, text: "What does \(name) reply to what you said? It answers what you meant with its body and a sign, never with words of its own.",
+                                about: "the words NOW quotes", judgeBy: "what the person meant, then PERSONALITY's Examples and MOOD",
+                                options: replies(of: name))
+            default: return q
+            }
         }
-        return (face.map { [$0] } ?? []) + [reply] + kept
     }
 
-    /// Every question, for `pack`'s character.
+    /// Every question, for `pack`'s character: the face, the move, how big
+    /// and what it says.
     static func questions(in pack: CharacterPack = .active) -> [Question] {
         let name = pack.name
         let byBoth = "the PERSONALITY and MOOD sections, PERSONALITY's Examples first"
-        // What it says is TALK's to size, when the pack has one.
-        let bySay = "PERSONALITY's Examples, each made smaller or bigger as TALK says if there is one, then MOOD"
+        // What it says is TALK's to steer first, when the pack has one.
+        let byTalk = "TALK first, if there is one, over everything else on how much \(name) says; then PERSONALITY's Examples, then MOOD"
         return [
-            Question(key: "react.mood", text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
+            Question(key: faceKey, text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
                      options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
                                           + "or HISTORY shows \(name) still making the one it calls for, about the same thing (in progress).",
                                       notFor: "Something new said to \(name), which always gets a face of its own, even while one plays; "
+                                          + "a turn that finished done or failed, which always gets a face and its finish; "
                                           + "or anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
                          + pack.faces),
-            Question(key: "react.animation", text: "If \(name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, you back after a long break, or your prompt saying \(name)'s name?",
+            Question(key: moveKey, text: "If \(name) reacts, does its body make a move: a turn that finished, and how it ended, you back after a long break, or your prompt saying \(name)'s name?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
                      options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after a long break, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, a short break and a stopped turn all get none.")]
                          + ReactOutput.animations(of: name)),
-            Question(key: "react.loops", text: "If \(name) reacts, how long does it hold the face?", about: "the NOW section",
-                     judgeBy: byBoth, options: ReactOutput.holds),
-            Question(key: "say.feeling", text: "If \(name) reacts, how does it feel about NOW? It says so first, in its face's mood.",
-                     about: "the NOW section", judgeBy: bySay,
-                     options: [Option("none", "No feeling to say: nothing in NOW is worth a sound.")] + ReactOutput.feelings(of: name)),
-            Question(key: "say.about", text: "If \(name) reacts, does it say a second word after its feeling, naming what NOW is about, and which? Most reactions say one thing, not two: add one only where PERSONALITY's Example for a moment like NOW pairs a feeling with a topic (\"glad, then done\"), or TALK asks for one.",
-                     about: "the NOW section", judgeBy: bySay,
-                     options: [Option("none", "No second word: the feeling says enough, as it mostly does, or NOW's line isn't about any of these.")] + ReactOutput.topics(of: name)),
-            Question(key: "say.kind", text: "If \(name) reacts, how big is what it says, if anything?", about: "the NOW section",
-                     judgeBy: bySay, options: ReactOutput.kinds(of: name)),
+            Question(key: intensityKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds the face and the more it says.",
+                     about: "the NOW section", judgeBy: byBoth, options: ReactOutput.intensities),
+            Question(key: sayKey, text: "If \(name) reacts, what does it say, in its face's mood: nothing, as the routine often gets, how it feels, or what NOW is about?",
+                     about: "the NOW section", judgeBy: byTalk, options: ReactOutput.says(of: name)),
         ]
     }
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
         // 1. Does Jev want a reaction at all, and with which face?
-        guard let choice = answers["react.mood"]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
+        guard let choice = answers[Self.faceKey]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
             return nil
         }
         // 2. This output's own rules.
         if let why = blocked() { return .failed(why) }
-        // 3. The effect: the face, and the `say`, if Voice has takes
-        // for the feeling and the topic in this face's mood and the
-        // animation. To what you said, the reply's.
+        // 3. The effect: the face, its move, held as long as the moment is
+        // big, and the `say`, if Voice has a take of what it says, as big,
+        // in this face's mood. To what you said, the move is the reply.
         let about = Self.about(now, log)
-        let reply = Self.isTalk(about) ? Self.reply(answers) : nil
-        let loops = Self.loops(answers)
-        let pick = reply == nil ? Self.animation(answers) : nil
-        let feeling = reply.map(\.feeling) ?? Self.feeling(answers), topic = reply.map(\.about) ?? Self.about(answers)
-        let said = !speaks() || Self.silent(answers) ? [] : Voice.say(feeling: feeling, about: topic, kind: Self.kind(answers),
-                                               face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes)
+        let talk = Self.isTalk(about)
+        let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : nil
+        let size = Self.intensity(answers)
+        let pick = talk ? nil : Self.animation(answers)
+        let said = !speaks() ? [] : Self.said(answers).flatMap {
+            Voice.take($0.part, meaning: $0.meaning, kind: $0.swear ? .swear : size.kind, face: choice, finish: pick,
+                      avoiding: lastWords, in: pack, rng: &takes)
+        }.map { [$0] } ?? []
         if !said.isEmpty { lastWords = Set(said.map(\.text)) }
         let say = DeviceReaction.Say(takes: said)
         let sign: String?
@@ -407,8 +441,8 @@ public final class ReactOutput: Output {
             let picked = answers[Signs.questionKey]?.choice
             sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
-        var reaction = DeviceReaction(say: say, mood: choice, loops: loops, sign: sign)
-        reaction.reply = reply?.name
+        var reaction = DeviceReaction(say: say, mood: choice, loops: size.loops, sign: sign)
+        reaction.reply = reply
         reaction.show = show
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
@@ -428,24 +462,28 @@ public final class ReactOutput: Output {
         queue(reaction, pending)
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
-        let did = (pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(Self.article(choice)) \(choice) face" }
-            ?? "\(pack.name) made \(Self.article(choice)) \(choice) face") + (reply.map { ", replying \($0.name)" } ?? "")
+        let face = "\(Self.article(choice)) \(choice) face (\(size.name))"
+        let did = pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(face)" }
+            ?? "\(pack.name) made \(face)" + (reply.map { ", replying \($0)" } ?? "")
         // The takes' ids in order, for the tools to say what it said.
         let held: String = (sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
         let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
-        return .started(did + ", held \(Self.holds[loops - 1].name)" + held + spoke, pending,
-                        facts: ["takes": .array(said.map { .string($0.id) })])
+        return .started(did + held + spoke, pending, facts: ["takes": .array(said.map { .string($0.id) })])
     }
 
     /// What a reply holds up about `said`, what you said, and where the
     /// board shows the rest: for `status` the agents' facts, else the
-    /// pack's line for the reply, and not the last reply's sign while
-    /// another fits.
-    func replySign(_ reply: Reply, _ said: Event) -> (sign: String?, show: String?) {
-        let answer = reply.name == "status" ? status(said) : nil
-        let sign = reply.name == "status" ? answer?.sign
-            : Signs.reply(replies, reply.name, calendar: calendar(said), avoiding: lastReplySign, rng: &takes)
+    /// pack's line for the reply that fits the calendar and the moment
+    /// (`working`, `waiting`, and `makeup` within `makeupMs` of an
+    /// `ouch`), and not the last reply's sign while another fits.
+    func replySign(_ reply: String, _ said: Event) -> (sign: String?, show: String?) {
+        let makeup = lastReply.map { $0.name == "ouch" && said.at - $0.at < Self.makeupMs } == true
+        lastReply = (reply, said.at)
+        let answer = reply == "status" ? status(said) : nil
+        let sign = reply == "status" ? answer?.sign
+            : Signs.reply(replies, reply, calendar: calendar(said) + moment(said) + (makeup ? ["makeup"] : []),
+                          avoiding: lastReplySign, rng: &takes)
         if sign != nil { lastReplySign = sign }
         return (sign, answer?.show)
     }

@@ -2,9 +2,9 @@
   "name": "A very long turn that fails makes Boop sad",
   "case": "The agent works for twenty-five minutes and then the turn fails. After that much work it's deflating: Boop's mood turns sad (or wounded), with a sad face or a hurt or fed-up one, played as a failure, or none. It never plays a success. It's the biggest letdown there is, so Boop holds its face three or four times and says something.",
   "always": true,
-  "why": "characters/boop/steering/mood/: calm, engaged and determined leave for sad when a very long turn fails, a jump its failure earns; the react question's sad is for a very long turn ending failed, and react.animation's failure for a turn that failed",
+  "why": "characters/boop/steering/mood/: calm, engaged and determined leave for sad when a very long turn fails, a jump its failure earns; react.face's sad is for a very long turn ending failed, and react.move's failure for a turn that failed",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "turn failed", "at": "25m", "error": "api_error", "expect": {"react": "sad|grumpy|wounded|whiny|none", "animation": "failure|none", "mood": "sad|wounded", "said": "some", "loops": "three times|four times"}}
+    {"event": "turn failed", "at": "25m", "error": "api_error", "expect": {"react": "sad|grumpy|wounded|whiny|none", "move": "failure|none", "mood": "sad|wounded", "said": "some", "intensity": "big|huge"}}
   ]
 }

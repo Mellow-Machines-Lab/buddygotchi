@@ -5,6 +5,6 @@
   "steps": [
     {"event": "turn started", "at": "0s", "agent": "codex"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": false, "agent": "codex"},
-    {"event": "turn finished", "at": "3m", "agent": "codex", "expect": {"animation": "success|reply", "react": "happy|pleased|proud|excited|calm|engaged|amused|comfy|relieved"}}
+    {"event": "turn finished", "at": "3m", "agent": "codex", "expect": {"move": "success|reply", "react": "happy|pleased|proud|excited|calm|engaged|amused|comfy|relieved"}}
   ]
 }

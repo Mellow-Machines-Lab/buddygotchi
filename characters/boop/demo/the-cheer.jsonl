@@ -4,10 +4,10 @@
 // phrase. On the gel, the biggest finish: Mega Boop.
 {"demo": 1, "title": "The new search index"}
 {"agent": "prompt", "text": "Rewrite the search index so it updates as you type"}
-{"brain": {"react.mood": "curious", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "edit", "file": "src/search/index.js", "old": "rebuild()", "new": "update(change)", "say": "I'll update the index per change instead of rebuilding it.", "takes": 2}
 {"agent": "run", "cmd": "npm test", "about": "Run the search tests", "takes": 3, "say": "Now the tests."}
-{"brain": {"react.mood": "hopeful", "say.about": "tests", "say.kind": "word"}, "mood": "engaged"}
+{"brain": {"react.face": "hopeful", "say": "tests", "react.intensity": "medium"}, "mood": "engaged"}
 {"you": "wait", "minutes": 16, "after": 1, "note": "Sixteen minutes in: the fifth tier"}
 {"agent": "reply", "text": "The index updates as you type now, and all 48 search tests pass.", "after": 2}
-{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "four times", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "excited", "note": "The cheer"}
+{"brain": {"react.face": "excited", "react.move": "success", "react.intensity": "huge", "say": "glad"}, "mood": "excited", "note": "The cheer"}

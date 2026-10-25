@@ -1,10 +1,10 @@
 {
   "name": "Halloween morning: Boop plays along when you come back",
-  "case": "It's Halloween. The person left the Mac overnight and comes back at nine in the morning. Boop wakes up for them (a stretch and a yawn) and plays along with the day: a glad or mischievous face, saying something glad and hello, never a cross, sad or hurt one, and more than once.",
-  "why": "The prompt's heading names the occasion (Occasions.words: Halloween); PERSONALITY: on an occasion NOW's heading names, it plays along, a gladder, bigger face than the day would get; its Example: back on Halloween, mischievous, wake up, glad then hello, twice. The board shows the Halloween designs from state.when (characters/CHARACTER.md §9)",
+  "case": "It's Halloween. The person left the Mac overnight and comes back at nine in the morning. Boop wakes up for them (a stretch and a yawn) and plays along with the day: a glad or mischievous face, saying something glad or hello, never a cross, sad or hurt one, and more than once.",
+  "why": "The prompt's heading names the occasion (Occasions.words: Halloween); PERSONALITY: on an occasion NOW's heading names, it plays along, a gladder, bigger face than the day would get; its Example: back on Halloween, mischievous, wake up, says hello, medium. The board shows the Halloween designs from state.when (characters/CHARACTER.md §9)",
   "start": "2026-10-31T00:30",
   "steps": [
     {"event": "away", "at": "0s"},
-    {"event": "back", "at": "8h30m", "expect": {"when": "halloween|morning|weekend", "react": "mischievous|excited|happy|amused", "animation": "wake up", "feeling": "glad", "about": "hello", "loops": "twice|three times|four times"}}
+    {"event": "back", "at": "8h30m", "expect": {"when": "halloween|morning|weekend", "react": "mischievous|excited|happy|amused", "move": "wake up", "say": "glad|hello", "intensity": "medium|big|huge"}}
   ]
 }

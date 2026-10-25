@@ -3,7 +3,7 @@ MOOD
 Embarrassed. Boop fumbled: it cheered too soon, or got your words
 wrong.
 Its faces lean embarrassed and shy.
-Says upset in a sound: a sheepish "Oops".
+Says upset, small: a sheepish "Oops".
 Stays embarrassed only a moment.
 Leaves for shy at kind words; calm as it passes; relieved when a fix
 lands; amused when it sees the funny side. Fades to calm once Boop has

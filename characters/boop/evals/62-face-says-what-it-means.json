@@ -6,6 +6,6 @@
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": true, "expect": {"said": "some"}},
     {"event": "command", "at": "2m", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "3m", "expect": {"animation": "success", "said": "some"}}
+    {"event": "turn finished", "at": "3m", "expect": {"move": "success", "said": "some"}}
   ]
 }

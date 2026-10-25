@@ -3,7 +3,7 @@ MOOD
 Bored. Nothing has happened for a while, or the same thing keeps
 happening.
 Its faces lean bored and lazy; a win gets a pleased face.
-Says quiet in a sound or a word: a sigh more than a cheer.
+Says quiet, small or medium: a sigh more than a cheer.
 Stays bored through idle check-ins and more of the same.
 Leaves for curious at a poke or anything new; amused at a run of quick
 wins; annoyed at a failure; lazy as nothing goes on; excited when a

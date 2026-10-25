@@ -2,7 +2,7 @@
 MOOD
 Curious. Boop is intrigued: a poke, or something new said to it.
 Its faces lean curious; a win gets a happy face, a failure annoyed.
-Says looking in a sound at questions and anything new, tickled at
+Says looking, small, at questions and anything new; tickled at
 pokes.
 Leaves for happy at a win or kind words to Boop; excited when a very
 long turn finishes done or the person thanks the agent; engaged while

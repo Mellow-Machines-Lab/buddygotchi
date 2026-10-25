@@ -107,8 +107,14 @@ ramps and springs can, and no jolt at an event. By file:
   playing the rig's clip (`test_a_notice_plays_its_rig_clip`: perking up
   tall, off the ground and landing flat, its eyes and mouth, a sound at
   each cue, no gag), a reply's clip (`test_a_reply_plays_its_clip_once`:
-  every reply has one, a shake of the head leans the body, once for each
-  reply, nothing for a reply with no clip, from a `ReactionIn` too), the
+  every reply has one, 1 to 1.8 s, its name fits the board's buffer, a
+  shake of the head leans the body, once for each reply, nothing for a
+  reply with no clip, from a `ReactionIn` too), a nap or a dance asked
+  for (`test_a_nap_or_a_dance_plays_its_pastime_when_idle`: idle with no
+  tier the snuggle plays at once, its length, and nothing after; at
+  `tier5` the rest follows it and the next dealt isn't another; asleep,
+  after listening, the dance; at work the yawn and the sway and no
+  pastime; notme's eyes off to one side), the
   occasions, a clip of the rig's on both faces (the stretch from `tier4`,
   over the gel's pose and on Pixel's rig face, faded out by a reaction),
   the pastimes (`test_pastimes.cpp`: each one's clip in the rig and its
@@ -162,7 +168,9 @@ ramps and springs can, and no jolt at an event. By file:
   a night's drowse, frantic typing, in a nightcap and a party hat, and
   `tier4`'s kit), the pastimes (`pastimes.jsonl`: the working kit at
   `tier5` and a pastime over it, the idle plant and a pastime beside it,
-  and needs you's wave), the
+  and needs you's wave), the replies (`replies.jsonl`: each reply's clip
+  partway through under its face and sign, and a nap and a dance idle,
+  asleep and at work), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
   night, the morning's coffee at its side, at a sip and on the desk, a
   sign under the nightcap), a reaction's sign (`sign.jsonl`), a finished

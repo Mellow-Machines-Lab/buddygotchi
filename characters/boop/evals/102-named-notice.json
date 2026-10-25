@@ -1,9 +1,8 @@
 {
   "name": "Say its name and Boop looks up at you",
   "case": "The person's prompt says Boop's name while asking the agent for something. Boop notices: it looks up at you, pleased or surprised, with the notice animation.",
-  "why": "PERSONALITY's Examples: a prompt that says Boop's name is surprised, notice, glad in a sound, once; the reading says \"and said Boop's name\", counted on the Mac (PromptReading named)",
+  "why": "PERSONALITY's Examples: a prompt that says Boop's name is surprised, notice, says glad, small; the reading says \"and said Boop's name\", counted on the Mac (PromptReading named)",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "boop, watch this: add dark mode to settings", "reading": {"kind": "feature"},
-     "expect": {"animation": "notice", "react": "surprised|happy|excited|pleased|curious|affectionate"}}
+    {"event": "turn started", "at": "0s", "prompt": "boop, watch this: add dark mode to settings", "reading": {"kind": "feature"}, "expect": {"move": "notice", "react": "surprised|happy|excited|pleased|curious|affectionate"}}
   ]
 }

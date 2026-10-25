@@ -674,13 +674,30 @@ shake of the head for no, a shrug for dunno, a head tilt with one eye
 narrowed for huh, a little hop and a sway for hello, a slow sway for bye,
 puffing up tall for thanks, snuggling down with its eyes shut for love,
 a flinch for ouch, leaning in low for comfort, giggling bounces for
-hehe, and looking down at its sign and back up for status, after which a
+hehe, looking down at its sign and back up for status, after which a
 status reply about every agent (`show`) has the board bring up the
-agents' drawer. The clips
-move only the body, eyes and mouth: there's no new drawing, and the face
-and its sign are the reaction's. A reply the pack has no clip for plays
-the face alone. `tests/scenarios-gel/replies.jsonl` catches each partway
-through.
+agents' drawer, and for notme a
+firm little shake of the head, its eyes off down to one side, then a
+lean that way (not mine: ask the Mac). The clips move only the body,
+eyes and mouth: there's no new drawing, and the face and its sign are
+the reaction's. A reply the pack has no clip for plays the face alone.
+
+A nap and a dance are tricks the gel already knows, its pastimes (below,
+Pastimes): the pack's table `kReplyPastimes` (`render/gel/pastimes.h`)
+maps `nap` to the snuggle under its blanket and `dance` to the dance
+under its disco ball. Asked for while the look is idle or asleep and
+shows with nothing over it, the face plays that pastime itself at once,
+with its drawing, whatever the tier and outside the deal
+(`GelFace::reply`, which starts it as a dealt one starts): it cuts short
+the one playing, counts as the last dealt, so the deal doesn't play it
+again next, and the rest before the next starts as it ends. Asleep at
+night, the snuggle leaves its Zs to the look's. At work its clip plays
+instead, `reply-nap` a yawn (stretching up, its mouth open and its eyes
+drooping shut, then sinking flat) and `reply-dance` a wiggle (a sway and
+a bounce on each beat, eyes squeezed), and no pastime: the blanket stays
+out of work. While something needs you the face doesn't play, so
+neither does its reply. `tests/scenarios-gel/replies.jsonl` catches each
+partway through, and a nap and a dance idle, asleep and at work.
 
 ## Occasions
 
@@ -737,7 +754,8 @@ finger, a word of the work stream in flight), after a rest of 4 to 10 s,
 the newest tier's 60% of the time and an older one's the rest, never the
 same twice running, with the rig look's occasions among them; and holds
 the engine's own idle gestures off while one plays. The one playing
-fades out when the look gives way.
+fades out when the look gives way. A reply may ask for the snuggle or the
+dance outside the deal (Replies, above).
 
 | Look | From | Kit | Pastimes |
 | --- | --- | --- | --- |

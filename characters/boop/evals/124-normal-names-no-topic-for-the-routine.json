@@ -1,14 +1,11 @@
 {
-  "name": "Normal: a feeling for the routine, not a feeling and a topic",
-  "case": "With Boop on Normal, the person asks an agent to clean up some dead code: Boop is delighted, a face and a sound or a word, and a sign, but it doesn't tack on a second word naming what's going on. The agent's tests then fail mid-turn: Boop is put out, a sound or a word, again without naming the tests. They pass two minutes later. Only the long turn's finish, eight minutes in, the agent saying it's done, may get both a feeling and what it's about.",
-  "why": "PERSONALITY: it says how it feels, mostly in a sound or a word, and names what NOW is about too only where an Example does; its Examples: a clean-up is glad in a word, failing tests upset in a sound, and a long turn done glad in a word, then done. Taken from the owner's complaint (2026-10-25) that Boop says random pairs of words",
+  "name": "Normal: one small thing said for the routine",
+  "case": "With Boop on Normal, the person asks an agent to clean up some dead code: Boop is delighted, a face, a glad sound or word or nothing, and a sign, never a big moment and never naming what's going on. The agent's tests then fail mid-turn: Boop is put out, an upset sound or word or nothing, again a small moment. They pass two minutes later. Only the long turn's finish, eight minutes in, the agent saying it's done, is a success.",
+  "why": "TALK (normal): Boop says how it feels or names what NOW is about as PERSONALITY's Examples do; its Examples: a clean-up is excited, says glad, medium; failing tests annoyed, says upset, small. Taken from the owner's complaint (2026-10-25) that Boop says random pairs of words, which now can't happen: it says one thing",
   "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "delete the old exporter, we don't need it anymore", "reading": {"kind": "cleanup"},
-     "expect": {"react": "excited|happy|proud|pleased|amused", "about": "none", "sign": "some"}},
-    {"event": "command", "at": "4m", "topic": "tests", "failed": true,
-     "expect": {"react": "annoyed|determined|irritated|uneasy", "about": "none"}},
+    {"event": "turn started", "at": "0s", "prompt": "delete the old exporter, we don't need it anymore", "reading": {"kind": "cleanup"}, "expect": {"react": "excited|happy|proud|pleased|amused", "say": "none|glad|tickled", "intensity": "small|medium", "sign": "some"}},
+    {"event": "command", "at": "4m", "topic": "tests", "failed": true, "expect": {"react": "annoyed|determined|irritated|uneasy", "say": "none|upset", "intensity": "small|medium"}},
     {"event": "command", "at": "6m", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "8m", "message": "Deleted the old exporter and fixed the two tests that used it; everything passes.", "reading": {"kind": "done"},
-     "expect": {"animation": "success"}}
+    {"event": "turn finished", "at": "8m", "message": "Deleted the old exporter and fixed the two tests that used it; everything passes.", "reading": {"kind": "done"}, "expect": {"move": "success"}}
   ]
 }

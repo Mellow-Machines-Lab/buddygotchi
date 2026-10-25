@@ -73,20 +73,21 @@ def preview_state(latest: Line | None, look: str, mood: str | None = None) -> Li
     return state
 
 
-# What `react.animation` picks, as the device plays it: its animation
-# and a finish's outcome (ReactOutput.scenes).
+# What `react.move` picks at an event, as the device plays it: its
+# animation and a finish's outcome (ReactOutput.scenes).
 SCENES = {"success": ("task_complete", "success"), "failure": ("task_complete", "failure"), "reply": ("reply_ready", None),
-          "wake up": ("wake_up", None)}
+          "wake up": ("wake_up", None), "notice": ("notice", None)}
 
 
-def preview_reaction(face: str, take: str | None, loops: int = 1, animation: str | None = None) -> Line:
+def preview_reaction(face: str, take: str | None, loops: int = 1, move: str | None = None) -> Line:
     """A reaction as the react output sends it: `react`
-    with the face as its `mood`, held `loops` times, and the take with id
-    `take`, or `{}` for one that says nothing; with an `animation` picked
-    (react.animation's success, failure, reply or wake up), its scene in
-    the face instead. Played `now`, so it replaces what the sim shows."""
+    with the face as its `mood`, held `loops` times (its intensity's), and
+    the take with id `take`, or `{}` for one that says nothing; with a
+    `move` picked (react.move's success, failure, reply, wake up or
+    notice), its scene in the face instead. Played `now`, so it replaces
+    what the sim shows."""
     args: Line = {"mood": face, "loops": loops, "say": {"take": take} if take else {}}
-    name, outcome = SCENES.get(animation or "", ("react", None))
+    name, outcome = SCENES.get(move or "", ("react", None))
     if outcome:
         args["outcome"] = outcome
     return do(name, **args)

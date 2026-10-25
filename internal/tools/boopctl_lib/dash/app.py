@@ -1,8 +1,8 @@
 """`boopctl dash`: Boop's live dashboard. Boop now, with
 the face, and three columns side by side: the mood, the automatic reactions
 (reflexes) and the decided ones (Jev's), all from debug.jsonl, with the raw
-timeline a key away; and keys that force a mood, a reaction or an
-animation, or preview any look on the dashboard's own sim. A bug report the
+timeline a key away; and keys that force a mood or a reaction (its face,
+move, intensity and what it says), or preview any look on the dashboard's own sim. A bug report the
 app saves (its ladybug, or `b` here) gets the device's screen, screen.png,
 when the app reaches its device through a socket: the simulator's, or a
 board's bridge."""
@@ -29,7 +29,7 @@ from boopctl_lib.common import MOODS, send_line
 from boopctl_lib.dash import controls
 from boopctl_lib.device import Device, DeviceError
 from boopctl_lib.image import save_shot
-from boopctl_lib.dash.feed import Board, Follower, clock, kind
+from boopctl_lib.dash.feed import INTENSITY, MOVE, Board, Follower, clock, kind
 
 STYLES = {"event": "bold", "pass": "cyan", "ok": "green", "fail": "red", "sent": "magenta", "status": "yellow",
           "head": "bold underline", "dim": "grey62", "mood": "bold yellow", "attn": "bold magenta",
@@ -366,20 +366,21 @@ class Dash(App[None]):
         if not asked:
             return
         if self.look:
-            # Preview: any reaction, its face, its animation, how long it
-            # holds and the take it says, straight to the dashboard's sim.
+            # Preview: any reaction, its face, its move, how big it is (how
+            # long it holds) and the take it says, straight to the
+            # dashboard's sim.
             face = await self.pick("Preview a reaction: the face", [o for o in controls.options(asked[0]) if o != "none"])
-            anims = [o for q in asked if q["key"] == "react.animation" for o in controls.options(q)]
-            anim = face and (await self.pick("…its animation", anims) if anims else "none")
-            holds = [o for q in asked if q["key"] == "react.loops" for o in controls.options(q)]
-            hold = anim and (await self.pick("…how long it holds", holds) if holds else "once")
+            moves = [o for q in asked if q["key"] == MOVE for o in controls.options(q)]
+            move = face and (await self.pick("…its move", moves) if moves else "none")
+            sizes = [o for q in asked if q["key"] == INTENSITY for o in controls.options(q)]
+            size = move and (await self.pick("…how big it is", sizes) if sizes else "small")
             said = {f"{t.text} ({t.id})": t.id for t in controls.takes()}
-            take = hold and await self.pick("…and what it says", ["nothing"] + list(said))
+            take = size and await self.pick("…and what it says", ["nothing"] + list(said))
             if take and self.face:
-                loops = holds.index(hold) + 1 if hold in holds else 1
+                loops = sizes.index(size) + 1 if size in sizes else 1
                 try:
                     line = controls.preview_reaction(face, said.get(take), loops,
-                                                     None if anim == "none" else anim)
+                                                     None if move == "none" else move)
                     self.face.send(line)
                 except DeviceError as exc:
                     self.notify(str(exc), severity="error")

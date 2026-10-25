@@ -8,6 +8,8 @@ import Foundation
 /// done?", "how's the api going?") and only those sessions count. Name
 /// none with several sessions open ("how many are running?") and the
 /// sign counts them, and the board shows them all in its agents' drawer.
+/// Ask what it's doing and the work going on says what you asked it for;
+/// ask how long you've been at it and the working stretch answers.
 public enum StatusReply {
     /// What a status reply holds up, and where the board shows the rest
     /// of it: one of its own screens, or nil for the sign alone.
@@ -37,15 +39,18 @@ public enum StatusReply {
         public var todo: StateSnapshot.Todo?
         /// The latest thing of its that came out one way or another.
         public var result: Result?
+        /// What your latest prompt to it asked for, its reading's kind.
+        public var asked: PromptReading.Kind?
 
         public init(agent: String, places: [String], needsYou: Bool = false, workingSince: Int64? = nil,
-                    todo: StateSnapshot.Todo? = nil, result: Result? = nil) {
+                    todo: StateSnapshot.Todo? = nil, result: Result? = nil, asked: PromptReading.Kind? = nil) {
             self.agent = agent
             self.places = places
             self.needsYou = needsYou
             self.workingSince = workingSince
             self.todo = todo
             self.result = result
+            self.asked = asked
         }
     }
 
@@ -82,16 +87,45 @@ public enum StatusReply {
     /// ("ui", "x") turn up in ordinary words.
     public static let shortestPlace = 3
 
-    /// The answer to `words`, what you said, about `sessions` at `now`:
-    /// a sign of at most `Signs.maxLength` characters, naming the agent
-    /// when it fits; with nothing named and several sessions, their count
-    /// and the drawer.
-    public static func answer(_ sessions: [Agent], words: String, at now: Int64) -> Answer {
+    /// What a sign calls each kind of prompt, for "what's it doing?"; none
+    /// for one it can't say in a word or two.
+    static let doing: [PromptReading.Kind: String] = [
+        .fix: "a fix", .feature: "new stuff", .cleanup: "cleanup", .refactor: "a refactor", .tests: "tests",
+        .deploy: "shipping", .docs: "docs", .question: "a question", .carryOn: "carrying on",
+    ]
+
+    /// Whether `said` asks what the work is: "doing", "working on", "up to".
+    static func asksDoing(_ said: [String]) -> Bool {
+        said.contains("doing") || zip(said, said.dropFirst()).contains { $0 == ("working", "on") || $0 == ("up", "to") }
+    }
+
+    /// Whether `said` asks how long you've been at it: "how long" with
+    /// "I" or "we".
+    static func asksStretch(_ said: [String]) -> Bool {
+        zip(said, said.dropFirst()).contains { $0 == ("how", "long") } && (said.contains("i") || said.contains("we"))
+    }
+
+    /// `ms` as a sign says it: `25 min`, `1 h 20`, `2 h`.
+    static func duration(_ ms: Int64) -> String {
+        let m = ms / 60_000
+        return m < 60 ? "\(m) min" : m % 60 == 0 ? "\(m / 60) h" : "\(m / 60) h \(m % 60)"
+    }
+
+    /// The answer to `words`, what you said, about `sessions` at `now`,
+    /// with the working stretch's start if one is on: a sign of at most
+    /// `Signs.maxLength` characters, naming the agent when it fits; with
+    /// nothing named and several sessions, their count and the drawer;
+    /// asked how long you've been at it, the stretch, once nothing waits on
+    /// you.
+    public static func answer(_ sessions: [Agent], words: String, at now: Int64, stretchSince: Int64? = nil) -> Answer {
         let said = tokens(words)
         let named = agents.filter { said.contains($0) }
         let asked = sessions.filter { s in named.contains(s.agent) || s.places.contains { mentions(said, $0) } }
+        if asksStretch(said), let since = stretchSince, !sessions.contains(where: \.needsYou) {
+            return Answer(sign: now - since < 60_000 ? "just started" : "at it \(duration(now - since))")
+        }
         if named.isEmpty, asked.isEmpty, sessions.count > 1 { return Answer(sign: count(sessions), show: drawer) }
-        return Answer(sign: sign(asked.isEmpty ? sessions : asked, named: named, asked: !asked.isEmpty, at: now))
+        return Answer(sign: sign(asked.isEmpty ? sessions : asked, said: said, named: named, asked: !asked.isEmpty, at: now))
     }
 
     /// Several sessions, counted: who needs you, else how many work and
@@ -107,8 +141,8 @@ public enum StatusReply {
     }
 
     /// The one fact about `these`, the sessions you asked about (`asked`)
-    /// or every one, with `named` the agents you said.
-    static func sign(_ these: [Agent], named: [String], asked: Bool, at now: Int64) -> String {
+    /// or every one, with `said` your words and `named` the agents in them.
+    static func sign(_ these: [Agent], said: [String], named: [String], asked: Bool, at now: Int64) -> String {
         func about(_ s: Agent, _ fact: String) -> String {
             let full = "\(s.agent): \(fact)"
             return full.count <= Signs.maxLength ? full : String(fact.prefix(Signs.maxLength))
@@ -127,6 +161,7 @@ public enum StatusReply {
             return !theirs.isEmpty && theirs.count <= Signs.maxLength ? theirs : "\(working.count) working"
         }
         if let s = working.first, let since = s.workingSince {
+            if asksDoing(said), let kind = s.asked, let what = doing[kind] { return about(s, what) }
             if let r = s.result, r.topic != nil, r.at >= since { return about(s, r.words) }
             if let todo = s.todo { return about(s, "\(todo.text) done") }
             let minutes = (now - since) / 60_000

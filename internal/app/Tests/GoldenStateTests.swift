@@ -44,20 +44,16 @@ final class GoldenStateTests: XCTestCase {
             case "mood":
                 let i = failed || poked ? 1 : won ? 2 : 0
                 out[q.key] = pick(q, q.options[min(i, q.options.count - 1)].name)
-            case "react.mood":
+            case ReactOutput.faceKey:
                 out[q.key] = pick(q, now.contains(" started turn ") ? "none" : failed ? "annoyed" : won ? "happy"
                                   : poked ? "curious" : said ? "proud" : "engaged")
-            case "react.animation":
+            case ReactOutput.moveKey:
                 out[q.key] = pick(q, !now.contains(" finished turn ") ? "none" : failed ? "failure" : "success")
-            case "react.loops":
-                out[q.key] = pick(q, failed ? "twice" : "once")
-            case "say.feeling":
-                out[q.key] = pick(q, failed ? "upset" : won ? "glad" : poked ? "tickled" : "none")
-            case "say.about":
-                out[q.key] = pick(q, now.contains("tests") ? "tests" : now.contains(" finished turn ") ? "done"
-                                  : now.contains(" started turn ") ? "start" : "work")
-            case "say.kind":
-                out[q.key] = pick(q, failed ? "word" : "sound")
+            case ReactOutput.intensityKey:
+                out[q.key] = pick(q, failed ? "medium" : "small")
+            case ReactOutput.sayKey:
+                out[q.key] = pick(q, failed ? "upset" : won ? "glad" : poked ? "tickled" : now.contains("tests") ? "tests"
+                                  : now.contains(" finished turn ") ? "done" : now.contains(" started turn ") ? "start" : "work")
             default:
                 out[q.key] = pick(q, q.options[0].name)
             }

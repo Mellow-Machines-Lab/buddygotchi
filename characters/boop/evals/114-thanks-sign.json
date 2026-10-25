@@ -3,22 +3,6 @@
   "case": "The person thanks the agent. Boop is touched: happy, affectionate or pleased, and may hold up their words with a heart: \"thank you <3\".",
   "why": "signs.md's [polite] caption with your words; PERSONALITY: manners warm it",
   "steps": [
-    {
-      "event": "turn started",
-      "at": "0s",
-      "prompt": "perfect, thank you!",
-      "reading": {
-        "kind": "carry_on",
-        "tone": "polite",
-        "phrases": [
-          "perfect",
-          "thank you"
-        ]
-      },
-      "expect": {
-        "react": "happy|affectionate|pleased|excited",
-        "sign": "thank you|perfect|none"
-      }
-    }
+    {"event": "turn started", "at": "0s", "prompt": "perfect, thank you!", "reading": {"kind": "carry_on", "tone": "polite", "phrases": ["perfect", "thank you"]}, "expect": {"react": "happy|affectionate|pleased|excited", "sign": "thank you|perfect|none"}}
   ]
 }

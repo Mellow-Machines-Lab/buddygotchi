@@ -1,0 +1,11 @@
+{
+  "about": "A reply to what you said, nap: a big yawn, its mouth opening wide and slow as it stretches up, its eyes drooping shut, then sinking low and settling.",
+  "ms": 1600,
+  "tracks": {
+    "mouthOpen": [[0, 0], [650, 1000, "in"], [950, 1000], [1250, 0], [1600, 0]],
+    "eyeOpen": [[0, 0], [400, -450], [950, -700], [1200, -1000], [1450, -1000], [1600, 0]],
+    "gazeY": [[0, 0], [600, -250], [950, -250], [1200, 0], [1600, 0]],
+    "squash": [[0, 0], [650, -140, "out"], [950, -140], [1250, 200, "in"], [1450, 180], [1600, 0]],
+    "lift": [[0, 0], [650, 4, "out"], [950, 4], [1250, -6, "in"], [1450, -6], [1600, 0]]
+  }
+}

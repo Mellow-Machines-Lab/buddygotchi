@@ -143,9 +143,9 @@ def _takes(ids: list[str]) -> list[Take | None] | None:
 
 
 def said(ids: list[str] | None) -> str | None:
-    """What a reaction said: its takes' texts, the feeling's then the
-    topic's, or their ids with no voice file here; None for
-    no line."""
+    """What a reaction said: its takes' texts in order (an older log's
+    feeling's then topic's), or their ids with no voice file here; None
+    for no line."""
     if not ids:
         return None
     found = _takes(ids) or [None] * len(ids)
@@ -493,17 +493,35 @@ def fate(row: Line) -> tuple[str, str]:
     return "ok", "  ✓ played"
 
 
-# The reaction's face is `react.mood`, and its animation `react.animation`.
-# Older logs name the face `react`, and for a while it carried the cheer
-# too (`proud-cheer`); `answer` reads either.
-FACE = "react.mood"
+# A reaction's four questions: its face, its move (a finish, a wake-up or
+# a notice, or to what you said the reply), how big the moment is (how
+# long the face held and how big what it said) and what it says.
+FACE, MOVE, INTENSITY, SAY = "react.face", "react.move", "react.intensity", "say"
+# What older logs name them, which `answer` reads after today's: the face
+# `react.mood`, and before that `react` (for a while carrying the cheer
+# too, `proud-cheer`); the move `react.animation`, or to what you said
+# `react.reply`; the intensity `react.loops`, by how long it held.
+OLDER = {FACE: ("react.mood", "react"), MOVE: ("react.animation", "react.reply"), INTENSITY: ("react.loops",)}
+# The intensities, smallest first, and how long each held, as
+# `react.loops` named them.
+INTENSITIES = ["small", "medium", "big", "huge"]
+HOLDS = ["once", "twice", "three times", "four times"]
+# The moves at an event (ReactOutput.animations); any other move is a
+# reply to what you said.
+MOVES = ["success", "failure", "reply", "wake up", "notice"]
 
 
 def answer(p: Line, key: str) -> Line:
+    """A question's answer, under its key or an older one: the first that
+    picked something, else the first there; `react.loops`' as the
+    intensity of its hold."""
     answers = p.get("answers") or {}
-    if key == FACE and key not in answers:
-        key = "react"
-    return answers.get(key, {})
+    found = [(k, answers[k]) for k in (key, *OLDER.get(key, ())) if k in answers]
+    k, a = next(((k, a) for k, a in found if a.get("choice") not in (None, "none")), found[0] if found else (key, {}))
+    if k == "react.loops":
+        size = lambda c: INTENSITIES[HOLDS.index(c)] if c in HOLDS else c  # noqa: E731
+        a = {"choice": size(a.get("choice")), "p": {size(c): v for c, v in a.get("p", {}).items()}}
+    return a
 
 
 def choice(p: Line, key: str) -> str | None:
@@ -515,45 +533,52 @@ def prob(p: Line, key: str) -> float:
     return a.get("p", {}).get(a.get("choice"), 0.0)
 
 
-def animation(p: Line) -> str | None:
-    """The animation a reaction played (success, failure, reply or wake
-    up), its `react.animation`; None for a face alone."""
-    pick = choice(p, "react.animation")
+def move(p: Line) -> str | None:
+    """The move a reaction played: at an event a finish (success, failure
+    or reply), a wake up or a notice; to what you said its reply (yes,
+    hello, status…); None for a face alone."""
+    pick = choice(p, MOVE)
     return None if pick in (None, "none") else pick
 
 
-def word_keys(p: Line) -> list[str]:
-    """A pass's line questions: `say.feeling` and `say.about`;
-    older logs asked for words, `word.feeling` and `word.about`."""
-    return [k for k in p.get("questions") or p.get("answers", {}) if k.startswith(("word.", "say.")) and k != "say.kind"]
+def say_keys(p: Line) -> list[str]:
+    """A pass's questions of what it says: `say`; older logs asked a
+    feeling and a topic, `say.feeling` and `say.about`, and before that
+    for words, `word.feeling` and `word.about`."""
+    return [k for k in p.get("questions") or p.get("answers", {})
+            if k == SAY or k.startswith(("word.", "say.")) and k != "say.kind"]
 
 
 def picks_text(p: Line) -> str:
-    """The face, its animation, what its line means (an older log's words in
-    quotes) and its hold, each with its probability: `proud 0.82 · success
-    0.90 · glad 0.71 · three times 0.64`. What the line said is the
-    reaction's takes (`said`): Voice picks a take of that meaning."""
+    """The face, its move, how big and what it says (an older log's words
+    in quotes), each with its probability: `proud 0.82 · success 0.90 ·
+    big 0.64 · glad 0.71`. What it said is the reaction's takes (`said`):
+    Voice picks a take of that meaning."""
     parts = [f"{choice(p, FACE)} {prob(p, FACE):.2f}"]
-    if animation(p):
-        parts.append(f"{animation(p)} {prob(p, 'react.animation'):.2f}")
-    words = [(k, choice(p, k), prob(p, k)) for k in word_keys(p) if choice(p, k) not in (None, "none")]
-    parts += [(f"“{w}”" if k.startswith("word.") else w) + f" {v:.2f}" for k, w, v in words] or ["no word"]
-    if choice(p, "react.loops"):
-        parts.append(f"{choice(p, 'react.loops')} {prob(p, 'react.loops'):.2f}")
+    if move(p):
+        parts.append(f"{move(p)} {prob(p, MOVE):.2f}")
+    if choice(p, INTENSITY):
+        parts.append(f"{choice(p, INTENSITY)} {prob(p, INTENSITY):.2f}")
+    words = [(k, choice(p, k), prob(p, k)) for k in say_keys(p) if choice(p, k) not in (None, "none")]
+    parts += [(f"“{w}”" if k.startswith("word.") else w) + f" {v:.2f}" for k, w, v in words] or ["says nothing"]
     return " · ".join(parts)
 
 
 def reaction_text(row: Line, takes: list[str] | None = None) -> str:
-    """A playing reaction: `a proud reaction face, three times, “Done”`, or
-    `a success in a proud face, …`, saying what its takes said."""
+    """A playing reaction as HISTORY says it: `a proud reaction face (big),
+    “Done”`, `a success in a proud face (big), …` or `a glad reaction face
+    (small), replying hello`, saying what its takes said."""
     p = row["pass"]
-    loops = choice(p, "react.loops")
+    size = choice(p, INTENSITY)
     face, _, anim = (choice(p, FACE) or "?").partition("-")
-    anim = animation(p) or anim
+    picked = move(p)
+    anim = (picked if picked in MOVES else None) or anim
+    reply = picked if picked and picked not in MOVES else None
     what = (f"a {anim} in " if anim else "") + f"{'an' if face[0] in 'aeiou' else 'a'} {face}"
     what += " face" if anim else " reaction face"
     words = said(takes)
-    return what + (f", {loops}" if loops else "") + (f", “{words}”" if words else "")
+    return (what + (f" ({size})" if size else "") + (f", replying {reply}" if reply else "")
+            + (f", “{words}”" if words else ""))
 
 
 def brain_name(brain: str | None) -> str:
@@ -570,8 +595,8 @@ def state_text(s: Line) -> str:
 
 
 def say_text(say: Line) -> str:
-    """A line as the board plays it: its takes' words, and their ids (the
-    feeling's, then the topic's), or just the ids with no voice
+    """A line as the board plays it: its takes' words, and their ids (a
+    `say` has up to two), or just the ids with no voice
     pack here. `no take` for a `say` without a take the pack has."""
     ids = [i for i in (say.get("take"), say.get("then")) if i]
     found = _takes(ids)

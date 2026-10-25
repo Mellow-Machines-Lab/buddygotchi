@@ -124,8 +124,8 @@ class GelFace final : public Face {
   rig::Ramp mug_, headphones_, sweatband_, camp_, plant_;
   uint32_t campSince_ = 0;
   int grown_ = 1;
-  // The reply whose clip it played last (FaceContext::reply), by when it
-  // started, so each plays once.
+  // The reply it played last (FaceContext::reply), its clip or its
+  // pastime, by when it started, so each plays once.
   uint32_t replyAt_ = 0;
   bool replied_ = false;
   // The clip it last played, whose cues sound as it crosses them, and how
@@ -158,9 +158,23 @@ class GelFace final : public Face {
   // body: once the rest is over, a look's occasion or a pastime that fits;
   // the one playing fades out when the look gives way.
   void occasions(uint32_t t);
+  // Whether the engine shows the look itself, with nothing over it (no
+  // moment, listening or reaction, `anim` the one playing), and which look
+  // that is: needs you's screen, or the base's.
+  bool showsLook(SceneState anim, SceneState& look) const;
   // One of those that fit the look now, the newest tier's kNewestPct of the
   // time; none dealt while none fits.
   void deal(SceneState look, uint32_t t);
+  // A clip starts as the one playing over `look`, the pastime's (kNone for
+  // an occasion's): dealt, asked for by a reply or by a test. It counts as
+  // the last dealt, so the deal doesn't play it again next, and the rest
+  // before the next starts as it ends.
+  void start(const rig::Clip& clip, Pastime p, SceneState look, uint32_t t);
+  // The engine's own idle gestures wait for the clip dealt or asked for.
+  void holdGestures(const rig::Clip& clip);
+  // A reply asked for at t: its pastime (kReplyPastimes) while the look is
+  // idle or asleep and shows, else its pack's clip, reply-<name>.
+  void reply(const char* name, SceneState anim, uint32_t t);
   // The playing one stops, fading out unless it ran its length; the rest
   // before the next starts now.
   void endOccasion(uint32_t t, bool early);

@@ -2,7 +2,7 @@
 MOOD
 Pleased. Quietly delighted with itself: a small thing went right.
 Its faces lean pleased and happy; a failure gets an annoyed face.
-Says glad in a sound or a small word.
+Says glad, small.
 Stays pleased through quick wins and routine turns.
 Leaves for happy at a bigger win; amused at a run of quick wins; proud
 when a check passes after failing; affectionate at kind words; wounded

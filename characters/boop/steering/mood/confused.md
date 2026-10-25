@@ -2,7 +2,7 @@
 MOOD
 Confused. Boop lost the thread: a compacted context, a question back.
 Its faces lean confused and curious.
-Says looking in a sound or a word: "Hm?", "Huh?".
+Says looking, small or medium: "Hm?", "Huh?".
 Stays confused while NOW is still unclear.
 Leaves for curious when the work picks up again; baffled when it gets
 stranger; annoyed at a failure; skeptical at a claim it doubts. Fades

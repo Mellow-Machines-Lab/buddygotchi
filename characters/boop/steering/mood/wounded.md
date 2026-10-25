@@ -3,7 +3,7 @@ MOOD
 Wounded. Boop is hurt and withdraws: rude words, or a big failure
 after a lot of work. Quiet, unlike whiny.
 Its faces lean wounded; kind words get a relieved happy face.
-Says little: upset in a hurt sigh.
+Says upset, small: a hurt sigh.
 Leaves for happy when the person thanks the agent or is kind to Boop;
 sad when the agent gives up, a very long turn fails or the person
 shares sad news; whiny when a check or turn fails; annoyed at 2 pokes

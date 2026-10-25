@@ -1,11 +1,11 @@
 {
   "name": "A failure that really stings gets a swear",
   "case": "Boop is already fed up, grumpy, after a failed check. The agent works for four minutes, its tests fail again, and then the whole turn fails (a long turn, not a very long one, which would make Boop sad). That's a failure that really stings: Boop makes a grumpy or irritated face, played as a failure, and swears at it ('Shit', 'Fuck', 'Damn', 'Crap' or 'Shiba'), or at least says a grumbling phrase ('Mamma mia', 'Oh, come on'). It swears at the situation, never at the person.",
-  "why": "characters/boop/steering/personality/boop.md: a failure that really stings, in an irritated or grumpy face, gets a swear; say.kind's swear is a failure that really stings; a swear only on a failed turn, and irritated and grumpy faces have them",
+  "why": "characters/boop/steering/personality/boop.md: a failure that really stings, in an irritated or grumpy face, gets a swear; say's swear is a failure that really stings; a swear only on a failed turn, and irritated and grumpy faces have them",
   "mood": "grumpy",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "get the checkout flow passing again", "reading": {"kind": "fix"}},
     {"event": "command", "at": "2m", "topic": "tests", "failed": true},
-    {"event": "turn failed", "at": "4m", "error": "server_error", "expect": {"react": "grumpy|irritated", "animation": "failure", "feeling": "upset", "kind": "swear|phrase", "said": "Shit|Fuck|Damn|Crap|Shiba|Mamma mia|Ay ay ay|This thing|Bruh moment|Rude machine|Yare yare|Oh, come on"}}
+    {"event": "turn failed", "at": "4m", "error": "server_error", "expect": {"react": "grumpy|irritated", "move": "failure", "say": "swear|upset", "intensity": "big|huge|medium", "said": "Shit|Fuck|Damn|Crap|Shiba|Mamma mia|Ay ay ay|This thing|Bruh moment|Rude machine|Yare yare|Oh, come on"}}
   ]
 }

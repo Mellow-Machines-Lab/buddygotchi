@@ -1,12 +1,12 @@
 {
   "name": "A turn that finally works after failed checks is a hard-won finish",
   "case": "The agent's tests fail twice early in a long turn; it keeps at it until they pass, and the turn finishes done ten minutes in. That's hard-won: Boop plays the finish as a success in a proud face (or an excited or happy one), glad, held long, three or four times.",
-  "why": "PERSONALITY's Examples: a long turn done after failed checks is a success in a proud face, held four times; the finish's line says its failed checks (after 2 failed checks); react.loops: the biggest moments are a hard-won finish",
+  "why": "PERSONALITY's Examples: a long turn done after failed checks is proud, success, says glad, huge; the finish's line says its failed checks (after 2 failed checks); react.intensity: the biggest moments are a hard-won finish",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": true},
     {"event": "command", "at": "3m", "topic": "tests", "failed": true},
     {"event": "command", "at": "5m", "topic": "tests", "failed": false},
-    {"event": "turn finished", "at": "10m", "expect": {"react": "proud|excited|happy", "animation": "success", "feeling": "glad", "loops": "three times|four times"}}
+    {"event": "turn finished", "at": "10m", "expect": {"react": "proud|excited|happy", "move": "success", "say": "glad", "intensity": "big|huge"}}
   ]
 }

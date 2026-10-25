@@ -5,8 +5,8 @@
   "why": "PERSONALITY: when the person talks to Boop it always answers with a face and a reply, never none, and its Examples give each; ReactOutput's replies: praise is thanks, an insult ouch, a question about the agents status. What you said always wakes the brain",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "said", "at": "20s", "words": "good job, buddy", "expect": {"react": "proud|happy|excited", "reply": "thanks|love"}},
-    {"event": "said", "at": "40s", "words": "are the tests passing yet?", "expect": {"react": "happy|determined|proud|excited|curious|engaged|calm", "reply": "status"}},
-    {"event": "said", "at": "60s", "words": "you're useless", "expect": {"react": "wounded|sad|grumpy|annoyed|irritated|whiny", "reply": "ouch"}}
+    {"event": "said", "at": "20s", "words": "good job, buddy", "expect": {"react": "proud|happy|excited", "move": "thanks|love"}},
+    {"event": "said", "at": "40s", "words": "are the tests passing yet?", "expect": {"react": "happy|determined|proud|excited|curious|engaged|calm", "move": "status"}},
+    {"event": "said", "at": "60s", "words": "you're useless", "expect": {"react": "wounded|sad|grumpy|annoyed|irritated|whiny", "move": "ouch"}}
   ]
 }

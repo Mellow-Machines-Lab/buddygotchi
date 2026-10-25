@@ -14,7 +14,7 @@
     {"event": "command", "at": "5m30s", "topic": "tests", "failed": false},
     {"event": "turn finished", "at": "6m"},
     {"event": "turn started", "at": "7m"},
-    {"event": "turn finished", "at": "19m", "expect": {"animation": "success", "mood": "excited|proud|happy"}},
+    {"event": "turn finished", "at": "19m", "expect": {"move": "success", "mood": "excited|proud|happy"}},
     {"event": "turn started", "at": "20m"},
     {"event": "command", "at": "20m20s", "topic": "tests", "failed": false},
     {"event": "turn finished", "at": "20m40s"},

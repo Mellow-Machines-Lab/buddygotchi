@@ -6,9 +6,9 @@
 // it always does.
 {"demo": 1, "title": "Deploy the docs"}
 {"agent": "prompt", "text": "Deploy the docs site"}
-{"brain": {"react.mood": "calm", "say.about": "start", "say.kind": "word"}}
+{"brain": {"react.face": "calm", "say": "start", "react.intensity": "medium"}}
 {"agent": "read", "file": "README.md", "say": "Let me check how the docs deploy."}
 {"agent": "run", "cmd": "npm run deploy", "about": "Deploy the docs site", "ask": 25, "say": "Now the deploy.", "takes": 1}
 {"agent": "reply", "text": "The docs are deployed.", "after": 0.5}
-{"brain": {"react.mood": "excited", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.about": "done", "say.kind": "phrase"}}
+{"brain": {"react.face": "excited", "react.move": "success", "react.intensity": "big", "say": "glad"}}
 {"brain": {}, "mood": "proud", "after": 8, "note": "Finally"}

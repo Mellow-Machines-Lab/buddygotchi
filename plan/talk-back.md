@@ -206,3 +206,128 @@ simulated board; and Jev's evals: `126` (16 things said, 2 runs), `127`
 (3 runs), the talk scenarios, the always-on set and the prompt-sign ones.
 
 The board's look of each clip on the AMOLED is the owner's to see.
+
+## Part two: four questions, and what talk didn't cover (2026-10-25)
+
+Using it showed seven kinds of things you say that the twelve replies
+answered badly. Covering them as more replies made one question of
+seventeen options, so the owner asked for the questions as a whole to
+make sense first: one about the mood, one about the face, one about
+what the body does, one about what it says, and one about how big the
+moment is, from which how long it holds follows. Jev still makes every
+choice, so all of it stays steerable; the app adds only facts.
+
+### What went wrong
+
+| You say | What happened |
+| --- | --- |
+| "tell claude yes", "approve it" | `yes`, a nod: as if Boop approved something, which it never does |
+| "we shipped it!", "wish me luck" | `thanks` or `hehe`: your good news had no reply |
+| "dance!", "go to sleep", "shh" | `yes`, a nod, then nothing: a promise it didn't keep |
+| "sorry, boop" after an insult | `love` or `thanks`, as if nothing happened |
+| "how are you?" | `hello`, `dunno` or `status` |
+| "what's claude doing?" | `status`: how long, not what |
+| "how long have I been at it?" | `status` about the agents, or `dunno` |
+
+### The questions
+
+Every pass asks the same four of a reaction, after the mood's:
+
+| Question | Asks | Options |
+| --- | --- | --- |
+| `react.face` | Which face, if any | none, or the pack's faces; never none to what you said |
+| `react.move` | What its body does | at an event, none or a turn's finish (success, failure, reply), a wake-up or a notice; to what you said, its reply |
+| `react.intensity` | How big the moment is | small, medium, big, huge |
+| `say` | What it says | none, a feeling (upset, glad, tickled), a swear, or a topic (start, tests, done…) |
+
+They replace six: `react.mood`, `react.animation` and `react.reply`
+became the face and the move, `say.feeling` and `say.about` became one
+`say` (one thing said, never a feeling and then a topic), and
+`react.loops` and `say.kind` became the intensity. The intensity sets
+both how long the face holds and how big the take is
+(`ReactOutput.sizes`): small once and a sound, medium twice and a word,
+big three times and a phrase, huge four times and a phrase. A swear is
+`say`'s, at any size. TALK still only steers Jev, and only what it says
+(`say` judges by TALK first): quiet says nothing at a small moment and
+never names what NOW is about, chatty says something at every face; how
+big a moment is stays the Examples'. PERSONALITY's Examples read the
+same way, an Example with no size being small: `→ grumpy, failure,
+swears, huge`, `→ engaged, says work, medium`, `→ proud, replies thanks,
+says glad, medium`.
+
+### The replies
+
+Fourteen, `react.move`'s options to what you said:
+
+- **New:** `nap` ("go to sleep", "shh"), `dance`, and `notme` (asked to
+  answer, approve or tell an agent something: Boop never does, and looks
+  to the Mac).
+- **`yes` and `no` are never a promise.** `yes` is never a request;
+  `no` turns down any other trick, and a trick it isn't in the mood for
+  (the cheeky personality turns one down as often as it does it).
+- **`thanks` takes your good news** and wishing you luck; **`love` takes
+  a sorry**.
+- **`huh` takes `dunno`**: Boop can't answer it. The board plays a shrug
+  (`dunno`) when your words are a question and a head tilt when not
+  (`ReactOutput.played`), its clip and signs as before.
+- "How are you?" is `yes` or `no` by its mood, its face saying the rest.
+
+### Signs that know the moment
+
+`replies.md` lines take the moment's tags beside the calendar's
+(`ReactOutput.momentTags`): `working` while an agent works, `waiting`
+while something waits on you (`Core.moment`), and `makeup` within 10
+minutes of an `ouch` (`makeupMs`). So a nap while claude works holds up
+"after this", notme while a request waits "that's ur job", and a sorry
+after an insult "...fine".
+
+### Tricks the gel knows
+
+On the gel, `nap` and `dance` while the look is idle or asleep play its
+own pastimes, the snuggle under its blanket and the dance
+(`kReplyPastimes`, `GelFace::reply`), started as a dealt one is: they
+cut the one playing short, count as the last dealt and rest after. At
+work they play their clips, a yawn and a wiggle; the blanket stays out
+of work. `notme` is a firm little head shake, its eyes off to one side.
+
+### More from `status`
+
+Asked what an agent is doing ("doing", "working on", "up to"), the work
+going on says what you last asked it for, its prompt's reading
+(`claude: a fix`, `TranscriptView.asked`). Asked how long you've been at
+it ("how long" with "I" or "we"), the working stretch the tiers count
+from answers (`at it 1 h 20`, `Core.stretchSince`), ahead of counting
+the agents, but never ahead of something waiting on you.
+
+### How it was checked
+
+Boop's Swift tests (492 passed, the soak skipped), with `ReplyTests`
+for the fourteen replies, `huh` played as `dunno` at a question, the
+moment's signs and `makeupMs`, and what an agent is doing and how long
+you've been at it; `HarnessTests` and `VoiceTests` for the four
+questions, the intensities' holds and sizes, and one take said. The
+gel's firmware tests, with a nap and a dance playing their pastime when
+idle and their clips at work; the simulator's scenarios, with
+`replies.jsonl`'s new frames looked at; the mirror rebuilt; both
+boards' firmware; `boopctl`'s tests, which still read logs from before;
+the evals with the expect brain (108/108); and `make -C internal check`.
+
+Jev, by full runs of every scenario: 92/110 at first, 101/108 at the
+end. Comparing like with like on main (the same scenarios, 3 to 6 runs
+each) found the four questions shifted a few marginal judgements, which
+the steering now states plainly: a sorry or a thanks moves the mood at
+once (grumpy, calm, whiny), a long failed turn is big and swears, a
+failed turn that calls itself done is still a failure (an Example), and
+an Example gives no size when it's small, since "small" read as
+routine. What still fails, and how often, on the last run: Quiet (`122`)
+still names what NOW is about at a frustrated prompt and gives a short
+finish a word, as PERSONALITY's Examples do: with what to say and
+whether to say it one question, TALK's text alone doesn't hold it, and
+doing better means Quiet taking options out of `say` in code, the
+owner's call. `08` and `27` (a very long failure or giving up makes Boop
+sad) and `103` and `124`'s first step (a clean-up prompt gets a face)
+are marginal choices that pass in some runs and not others, as `56`
+and `57` are on main.
+
+The board's look of the new clips, and the nap and dance on request, on
+the real AMOLED is the owner's to see.

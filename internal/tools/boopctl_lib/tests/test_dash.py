@@ -30,7 +30,7 @@ from boopctl_lib.dash.face import CROP, SCALE, blocks, render  # noqa: E402
 from boopctl_lib.dash import feed  # noqa: E402
 from boopctl_lib.dash.feed import STALE_S, Board, Follower, clock, kind  # noqa: E402
 from boopctl_lib.scenario import GOLDEN  # noqa: E402
-from old_logs import as_do  # noqa: E402
+from old_logs import as_do, with_old_keys  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "headless-debug.jsonl"
@@ -88,7 +88,7 @@ class FeedTests(unittest.TestCase):
         self.assertIn("failed (rate limit)", events[4])
         self.assertIn(("fail", "  ✗ react (by dashboard): something needs you"), rows)
         self.assertIn(("ok", "  ✓ mood (by dashboard): Boop's mood changed: happy → grumpy."), rows)
-        self.assertIn(("pass", "  pass forced by dashboard: react grumpy · word.feeling again"), rows)
+        self.assertIn(("pass", "  pass forced by dashboard: react.face grumpy · say retry"), rows)
         self.assertIn(("sent", "→ moment wiggle"), rows)
         self.assertIn(("sent", "→ state idle grumpy · busy 0 · vol 6"), rows, "a state carries the mood")
         self.assertIn(("sent", "→ state idle happy · busy 0 · needs you: claude jetpack · vol 6"), rows)
@@ -351,8 +351,8 @@ class ColumnsTests(unittest.TestCase):
         self.assertTrue(feed.say_text({"take": "new.d15"}).endswith("” (new.d15)"))
 
     def test_the_decided_reactions(self):
-        """Each pass that could react: its event, the face, word and hold
-        with their probabilities, and what became of it."""
+        """Each pass that could react: its event, the face, move, intensity
+        and what it says with their probabilities, and what became of it."""
         decided = self.texts(self.board.decided_column())
         blocks, block = [], []
         for text in decided:
@@ -363,24 +363,24 @@ class ColumnsTests(unittest.TestCase):
         blocks.append(block)
         blocks = [[text if text.startswith("  ") else text[9:] for text in b] for b in blocks]  # without the times
         self.assertEqual(blocks, [
-            ["▸ You poked Boop 4 times in 3 s.", "  excited 1.00 · “yay” 1.00 · once 1.00", "  ✓ played",
+            ["▸ You poked Boop 4 times in 3 s.", "  excited 1.00 · small 1.00 · glad 1.00", "  ✓ played",
              "  the mood sat this pass out"],
             ["forced by dashboard", "  stayed quiet · none 1.00"],
-            ["forced by dashboard", "  proud 1.00 · “finally” 1.00 · three times 1.00", "  ✓ played"],
+            ["forced by dashboard", "  proud 1.00 · big 1.00 · glad 1.00", "  ✓ played"],
             ['▸ claude finished turn 2 on "jetpack": failed (rate limit) after 41 s, a long turn, 1 tool (1 failed). '
-             "Deploy failing.", "  excited 1.00 · “yay” 1.00 · once 1.00", "  ✓ played"],
+             "Deploy failing.", "  excited 1.00 · small 1.00 · glad 1.00", "  ✓ played"],
             ['▸ claude\'s deploy failed on "jetpack".', "  ✗ pass dropped: late: no answer within 1500 ms"],
-            ['▸ claude started turn 2 on "jetpack", right after its last one.', "  excited 1.00 · “yay” 1.00 · once 1.00",
+            ['▸ claude started turn 2 on "jetpack", right after its last one.', "  excited 1.00 · small 1.00 · glad 1.00",
              "  ✗ didn't happen: the device never said it ended"],
             ['▸ claude finished turn 1 on "jetpack": done after 6 min, a very long turn, 3 tools. Tests passing.',
-             "  excited 0.82 · “yay” 0.71 · once 0.64", "  ✓ played"],
-            ['▸ claude started turn 1 on "jetpack".', "  excited 1.00 · “yay” 1.00 · once 1.00", "  ✓ played"],
+             "  excited 0.82 · small 0.64 · glad 0.71", "  ✓ played"],
+            ['▸ claude started turn 1 on "jetpack".', "  excited 1.00 · small 1.00 · glad 1.00", "  ✓ played"],
         ])
         self.assertEqual(self.board.dropped, 1)
         # A forced reaction refused while something needs you (the old fixture's).
         refused = [line for line in fixture_lines() if line.get("pass", {}).get("by") or dashboard_action(line)]
         board, _ = board_after(fixture_lines(COLUMNS) + refused[-2:])
-        self.assertEqual(self.texts(board.decided_column())[1:3], ["  happy 1.00 · no word",
+        self.assertEqual(self.texts(board.decided_column())[1:3], ["  happy 1.00 · says nothing",
                                                                    "  ✗ didn't happen: something needs you"])
 
     @needs_voice
@@ -392,7 +392,7 @@ class ColumnsTests(unittest.TestCase):
             "Boop made a proud face"))
         board, _ = board_after(lines[: forced + 1])
         # What it said is the take its action recorded (new.d03), not the word it picked.
-        self.assertEqual(dict(board.facts(board.newest_ms))["showing"], "a proud reaction face, three times, “Done”")
+        self.assertEqual(dict(board.facts(board.newest_ms))["showing"], "a proud reaction face (big), “Done”")
         board = self.board
         self.assertEqual(dict(board.facts(self.at[31] + 1000))["showing"], "Boop wiggled on its own.")
         self.assertEqual(dict(board.facts(self.at[31] + 60_000))["showing"], "its idle look")
@@ -402,6 +402,19 @@ class ColumnsTests(unittest.TestCase):
         Boop now and the three columns read the same from either."""
         lines = [as_do(line) for line in fixture_lines(COLUMNS)]
         self.assertTrue([line for line in lines if line.get("sent", {}).get("t") == "do"])
+        board, _ = board_after(lines)
+        for column in ("mood_column", "reflex_column", "decided_column"):
+            self.assertEqual(getattr(board, column)(), getattr(self.board, column)(), column)
+        for at in (self.board.newest_ms, self.at[31] + 1000):
+            self.assertEqual(board.facts(at), self.board.facts(at))
+
+    def test_the_same_columns_from_older_keys(self):
+        """Logs from before the reaction's questions were regrouped
+        (old_logs.with_old_keys) ask `react.mood`, `react.animation`,
+        `react.loops`, `say.feeling` and `say.about`: Boop now and the three
+        columns read the same from them."""
+        lines = [with_old_keys(line) for line in fixture_lines(COLUMNS)]
+        self.assertTrue([line for line in lines if "react.loops" in line.get("pass", {}).get("answers", {})])
         board, _ = board_after(lines)
         for column in ("mood_column", "reflex_column", "decided_column"):
             self.assertEqual(getattr(board, column)(), getattr(self.board, column)(), column)
@@ -521,7 +534,7 @@ class ControlsTests(unittest.TestCase):
         self.assertEqual(controls.options(controls.asked_by(QUESTIONS, "mood")[0]),
                          ["happy", "excited", "proud", "curious", "determined", "grumpy", "sad"])
         react = controls.asked_by(QUESTIONS, "react")
-        self.assertEqual([q["key"] for q in react], ["react", "word.feeling", "word.about"])
+        self.assertEqual([q["key"] for q in react], ["react.face", "react.move", "react.intensity", "say"])
         self.assertEqual(controls.options(react[0])[0], "none")
 
     def test_preview_lines(self):
@@ -536,8 +549,8 @@ class ControlsTests(unittest.TestCase):
 
     def test_a_preview_reaction_says_its_take(self):
         """As the react output sends it, played `now` so
-        it replaces what the sim shows; what react.animation picks is
-        its scene, with a finish's outcome (ReactOutput.scenes)."""
+        it replaces what the sim shows; what react.move picks is its
+        scene, with a finish's outcome (ReactOutput.scenes)."""
         line = controls.preview_reaction("grumpy", "new.d14", 3)
         self.assertEqual(line, {"t": "do", "name": "react", "play": "now",
                                 "args": {"mood": "grumpy", "loops": 3, "say": {"take": "new.d14"}}})
@@ -549,11 +562,12 @@ class ControlsTests(unittest.TestCase):
         self.assertEqual(controls.preview_reaction("sad", None, 1, "failure")["args"]["outcome"], "failure")
         reply = controls.preview_reaction("curious", None, 2, "reply")
         self.assertEqual((reply["name"], "outcome" in reply["args"]), ("reply_ready", False))
+        self.assertEqual(controls.preview_reaction("happy", None, 1, "notice")["name"], "notice")
 
     def test_confirmations(self):
         pending = controls.Pending()
         pending.add({"dev": "mood", "mood": "grumpy"}, now=0)
-        pending.add({"dev": "answer", "answers": {"react": "happy"}}, now=0)
+        pending.add({"dev": "answer", "answers": {"react.face": "happy"}}, now=0)
         lines = fixture_lines()
         first = next(i for i, line in enumerate(lines) if dashboard_action(line))
         seen = [pending.seen(line) for line in lines[first:]]
@@ -674,7 +688,7 @@ class AppTests(unittest.TestCase):
                 self.assertRegex(plain(app.query_one("#facts")), r"board +not connected")
                 self.assertIn("happy since", plain(app.query_one("#mood")))
                 self.assertIn("cheer", plain(app.query_one("#reflexes")))
-                self.assertIn("excited 1.00 · “yay” 1.00", plain(app.query_one("#decided")))
+                self.assertIn("excited 1.00 · small 1.00 · glad 1.00", plain(app.query_one("#decided")))
                 self.assertEqual(app.query_one("#timeline").size.height, 0, "the timeline waits for t")
                 await pilot.press("t")
                 await pilot.pause()
@@ -693,11 +707,11 @@ class AppTests(unittest.TestCase):
 
                 from boopctl_lib.common import MOODS
                 await pick("m", MOODS.index("grumpy"))
-                await pick("r", 6, 4, 0)  # grumpy, again, none
+                await pick("r", 6, 0, 1, 8)  # grumpy, no move, medium, retry
                 got = server.wait(2)
                 self.assertEqual(got, [{"dev": "mood", "mood": "grumpy"},
-                                       {"dev": "answer", "answers": {"react": "grumpy", "word.feeling": "again",
-                                                                     "word.about": "none"}}])
+                                       {"dev": "answer", "answers": {"react.face": "grumpy", "react.move": "none",
+                                                                     "react.intensity": "medium", "say": "retry"}}])
                 self.assertEqual(len(app.pending.waiting), 2)
                 with log.open("a") as f:
                     f.write('{"event":{"seq":28,"at":1790498700000,"source":"self","kind":"did","data":{"action":"mood",'
@@ -722,12 +736,13 @@ class AppTests(unittest.TestCase):
                             '"received_at_ms":1790498700002}\n')
                 app.poll()
                 self.assertEqual(face.sent[-1]["mood"], "sad", "the app's lines wait")
-                await pick("r", 5, 0)  # grumpy's face, saying nothing: a `react` with its `mood`
+                await pick("r", 5, 0, 2, 0)  # grumpy's face, no move, big, saying nothing: a `react` with its `mood`
                 for _ in range(100):
                     if face.sent[-1]["t"] == "do":
                         break
                     await pilot.pause(0.05)
                 self.assertEqual((face.sent[-1]["name"], face.sent[-1]["args"]["mood"]), ("react", "grumpy"))
+                self.assertEqual(face.sent[-1]["args"]["loops"], 3, "big holds three times")
                 self.assertEqual(face.sent[-1]["args"]["say"], {}, "saying nothing, as react sends it")
                 # Resent well inside the device's 30 s no-app timeout.
                 self.assertEqual(PREVIEW_RESEND_S, 10)
@@ -765,24 +780,45 @@ if __name__ == "__main__":
 
 
 class ReactionKeysTests(unittest.TestCase):
-    """A reaction is `react.mood` and `react.animation`; older logs name
-    the face `react`."""
+    """A reaction is `react.face`, `react.move`, `react.intensity` and
+    `say`; older logs name them otherwise, and read the same."""
 
     @needs_voice
-    def test_the_face_and_its_finish(self) -> None:
-        from boopctl_lib.dash.feed import choice, picks_text, reaction_text
+    def test_the_face_and_its_move(self) -> None:
+        from boopctl_lib.dash.feed import picks_text, reaction_text
         a = lambda c, p=1.0: {"choice": c, "p": {c: p}}  # noqa: E731
-        now = {"answers": {"react.mood": a("proud", 0.82), "react.animation": a("success", 0.9),
-                           "react.loops": a("twice"), "word.feeling": a("finally", 0.71)},
-               "questions": ["react.mood", "react.animation", "react.loops", "word.feeling"]}
-        self.assertEqual(picks_text(now), "proud 0.82 · success 0.90 · “finally” 0.71 · twice 1.00")
-        self.assertEqual(reaction_text({"pass": now}), "a success in a proud face, twice", "no takes recorded")
+        now = {"answers": {"react.face": a("proud", 0.82), "react.move": a("success", 0.9),
+                           "react.intensity": a("big", 0.64), "say": a("glad", 0.71)},
+               "questions": ["react.face", "react.move", "react.intensity", "say"]}
+        self.assertEqual(picks_text(now), "proud 0.82 · success 0.90 · big 0.64 · glad 0.71")
+        self.assertEqual(reaction_text({"pass": now}), "a success in a proud face (big)", "no takes recorded")
         self.assertEqual(reaction_text({"pass": now}, ["new.d03", "gone"]),
-                         "a success in a proud face, twice, “Done gone”", "a take the pack lacks, by its id")
-        today = {"answers": {"react.mood": a("calm"), "react.animation": a("none"), "say.feeling": a("glad", 0.6),
-                             "say.about": a("none"), "say.kind": a("sound")},
-                 "questions": ["react.mood", "react.animation", "say.feeling", "say.about", "say.kind"]}
-        self.assertEqual(picks_text(today), "calm 1.00 · glad 0.60")
-        old = {"answers": {"react": a("grumpy"), "react.loops": a("once")}, "questions": ["react", "react.loops"]}
-        self.assertEqual(choice(old, "react.mood"), "grumpy", "an older log's `react`")
-        self.assertEqual(reaction_text({"pass": old}), "a grumpy reaction face, once")
+                         "a success in a proud face (big), “Done gone”", "a take the pack lacks, by its id")
+        quiet = {"answers": {"react.face": a("calm"), "react.move": a("none"), "react.intensity": a("small"),
+                             "say": a("none")}, "questions": ["react.face", "react.move", "react.intensity", "say"]}
+        self.assertEqual(picks_text(quiet), "calm 1.00 · small 1.00 · says nothing")
+        talk = {"answers": {"react.face": a("happy"), "react.move": a("hello", 0.8), "react.intensity": a("small"),
+                            "say": a("none")}, "questions": ["react.face", "react.move", "react.intensity", "say"]}
+        self.assertEqual(reaction_text({"pass": talk}), "a happy reaction face (small), replying hello",
+                         "to what you said, the move is the reply")
+
+    def test_older_keys(self) -> None:
+        """`react.mood`, `react.animation` or `react.reply`, `react.loops`
+        (its hold as the intensity it is now), `say.feeling` and
+        `say.about`; and before them `react` and the words, `word.*`."""
+        from boopctl_lib.dash.feed import FACE, INTENSITY, choice, move, picks_text, reaction_text
+        a = lambda c, p=1.0: {"choice": c, "p": {c: p}}  # noqa: E731
+        before = {"answers": {"react.mood": a("proud", 0.82), "react.animation": a("success", 0.9),
+                              "react.loops": {"choice": "twice", "p": {"twice": 0.6, "once": 0.4}},
+                              "say.feeling": a("glad", 0.7), "say.about": a("none"), "say.kind": a("sound")},
+                  "questions": ["react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"]}
+        self.assertEqual(picks_text(before), "proud 0.82 · success 0.90 · medium 0.60 · glad 0.70")
+        self.assertEqual(reaction_text({"pass": before}), "a success in a proud face (medium)")
+        talked = {"answers": {"react.mood": a("happy"), "react.animation": a("none"), "react.reply": a("love")}}
+        self.assertEqual(move(talked), "love", "an older log's reply to what you said")
+        self.assertEqual(reaction_text({"pass": talked}), "a happy reaction face, replying love")
+        oldest = {"answers": {"react": a("grumpy"), "react.loops": a("once"), "word.feeling": a("again")},
+                  "questions": ["react", "react.loops", "word.feeling"]}
+        self.assertEqual((choice(oldest, FACE), choice(oldest, INTENSITY)), ("grumpy", "small"))
+        self.assertEqual(picks_text(oldest), "grumpy 1.00 · small 1.00 · “again” 1.00")
+        self.assertEqual(reaction_text({"pass": oldest}), "a grumpy reaction face (small)")

@@ -6,7 +6,7 @@
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "30s", "topic": "tests", "failed": true},
     {"event": "command", "at": "1m30s", "topic": "tests", "failed": true},
-    {"event": "command", "at": "2m30s", "topic": "tests", "failed": false, "reaction": "in progress", "expect": {"react": "proud|happy|excited", "feeling": "glad"}},
-    {"event": "turn finished", "at": "2m50s", "expect": {"react": "none|happy|excited|calm|engaged|proud", "feeling": "none|glad"}}
+    {"event": "command", "at": "2m30s", "topic": "tests", "failed": false, "reaction": "in progress", "expect": {"react": "proud|happy|excited", "say": "glad"}},
+    {"event": "turn finished", "at": "2m50s", "expect": {"react": "none|happy|excited|calm|engaged|proud", "say": "none|glad"}}
   ]
 }

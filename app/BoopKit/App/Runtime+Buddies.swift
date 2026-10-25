@@ -135,9 +135,10 @@ extension Runtime {
                 // What this buddy's agents are up to as you ask, and how
                 // each one's latest check or turn came out.
                 guard let h, let words = said["words"]?.string else { return nil }
-                let now = h.clock.now()
-                return StatusReply.answer(core.status(at: now, results: view.results(h.log.view(now: now))), words: words, at: now)
-            })
+                let now = h.clock.now(), log = h.log.view(now: now)
+                return StatusReply.answer(core.status(at: now, results: view.results(log), asked: view.asked(log)), words: words, at: now,
+                                          stretchSince: core.stretchSince(at: now))
+            }, moment: { core.moment(at: $0.at) })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             if let write = m.diary, !m.steering.diary.isEmpty {

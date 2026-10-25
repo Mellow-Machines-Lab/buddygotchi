@@ -2,7 +2,7 @@
 MOOD
 Hopeful. Rooting for a retry: maybe this time.
 Its faces lean hopeful and determined.
-Says work or retry in a word, and tests at a check-in that runs them.
+Says work or retry, medium; tests at a check-in that runs them.
 Stays hopeful while checks run again after a failure.
 Leaves for determined when a check fails again; pleased when it
 passes; relieved at a long-awaited fix; disappointed when the turn

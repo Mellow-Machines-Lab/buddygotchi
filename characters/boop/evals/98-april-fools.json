@@ -1,11 +1,11 @@
 {
   "name": "April Fools' Day: Boop gets a finish wrong on purpose",
   "case": "It's April Fools' Day, and the agent finishes a short turn well. Boop plays along with the day: a mischievous or amused face, and it may play the finish wrong on purpose, as a failure, with a tickled sound. Never a cross or sad face.",
-  "why": "The heading names the day (Occasions.words: April Fools' Day); PERSONALITY: on an occasion it plays along; its Example: on April Fools' Day, a done turn gets mischievous, failure, tickled in a sound, once",
+  "why": "The heading names the day (Occasions.words: April Fools' Day); PERSONALITY: on an occasion it plays along; its Example: on April Fools' Day, a done turn gets mischievous, failure, says tickled, small",
   "start": "2027-04-01T11:00",
   "runs": 2,
   "steps": [
     {"event": "turn started", "at": "0s", "workspace": "api"},
-    {"event": "turn finished", "at": "20s", "workspace": "api", "expect": {"when": "aprilfools", "react": "mischievous|amused|happy|excited", "animation": "failure|success"}}
+    {"event": "turn finished", "at": "20s", "workspace": "api", "expect": {"when": "aprilfools", "react": "mischievous|amused|happy|excited", "move": "failure|success"}}
   ]
 }

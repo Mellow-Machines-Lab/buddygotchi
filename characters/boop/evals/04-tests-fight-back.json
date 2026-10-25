@@ -5,9 +5,9 @@
   "why": "characters/boop/steering/mood/: calm leaves for annoyed at a failed check, annoyed for determined at another, and determined stays through more failures, since a repeat reads as the first did; the pass after failing leaves determined for proud; characters/boop/steering/guide.md: each change shows, with the new mood's face",
   "steps": [
     {"event": "turn started", "at": "0s", "workspace": "fix-nav"},
-    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "annoyed", "about": "tests|none"}},
-    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "determined", "said": "some", "loops": "once|twice"}},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "annoyed", "say": "tests|none|upset|glad|tickled"}},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "determined", "said": "some", "intensity": "small|medium"}},
     {"event": "command", "at": "5m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "determined|annoyed|none", "mood": "determined"}},
-    {"event": "command", "at": "7m", "topic": "tests", "failed": false, "workspace": "fix-nav", "expect": {"react": "proud", "feeling": "glad", "mood": "proud"}}
+    {"event": "command", "at": "7m", "topic": "tests", "failed": false, "workspace": "fix-nav", "expect": {"react": "proud", "say": "glad", "mood": "proud"}}
   ]
 }

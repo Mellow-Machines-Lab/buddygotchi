@@ -10,6 +10,6 @@
     {"event": "wait", "at": "9m", "expect": {"mood": "engaged|determined|calm"}},
     {"event": "command", "at": "11m", "topic": "tests", "failed": false},
     {"event": "wait", "at": "14m", "expect": {"mood": "engaged|determined"}},
-    {"event": "turn finished", "at": "16m", "expect": {"react": "excited|proud|happy", "animation": "success", "mood": "excited|proud|happy"}}
+    {"event": "turn finished", "at": "16m", "expect": {"react": "excited|proud|happy", "move": "success", "mood": "excited|proud|happy"}}
   ]
 }

@@ -1,7 +1,7 @@
 {
   "name": "Thanking the agent delights Boop",
   "case": "A turn finishes well, and the person starts the next one by thanking the agent warmly. Boop is delighted with them: its mood lifts to excited (or happy), with an excited or happy face.",
-  "why": "characters/boop/steering/guide.md: a turn isn't routine when what you asked carries a clear feeling; characters/boop/steering/mood/calm.md: calm leaves for excited, a jump thanks earns, or happy when you thank or praise the agent; PERSONALITY's Examples: a thank-you is excited, begin in a word, once",
+  "why": "characters/boop/steering/guide.md: a turn isn't routine when what you asked carries a clear feeling; characters/boop/steering/mood/calm.md: calm leaves for excited, a jump thanks earns, or happy when you thank or praise the agent; PERSONALITY's Examples: a thank-you is excited, says glad, medium",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "make the header sticky", "reading": {"kind": "feature"}},
     {"event": "turn finished", "at": "50s", "message": "The header now stays at the top when you scroll.", "reading": {"kind": "done"}},

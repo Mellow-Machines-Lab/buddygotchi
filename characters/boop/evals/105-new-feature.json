@@ -3,17 +3,6 @@
   "case": "A request for a new feature. Boop is excited or curious about something new, and may hold up \"new thing!\" or \"ooh, shiny\".",
   "why": "signs.md's feature captions; PERSONALITY: something new is a small adventure",
   "steps": [
-    {
-      "event": "turn started",
-      "at": "0s",
-      "prompt": "add a dark mode toggle to the settings page",
-      "reading": {
-        "kind": "feature"
-      },
-      "expect": {
-        "react": "excited|curious|happy|engaged|pleased|none",
-        "sign": "new thing|shiny|none"
-      }
-    }
+    {"event": "turn started", "at": "0s", "prompt": "add a dark mode toggle to the settings page", "reading": {"kind": "feature"}, "expect": {"react": "excited|curious|happy|engaged|pleased|none", "sign": "new thing|shiny|none"}}
   ]
 }

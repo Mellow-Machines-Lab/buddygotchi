@@ -13,7 +13,7 @@ final class DemoTests: XCTestCase {
             // A comment, and a blank line.
 
             {"agent": "prompt", "text": "Add shortcuts"}
-            {"brain": {"react.mood": "curious"}, "mood": "curious", "after": 0.5}
+            {"brain": {"react.face": "curious"}, "mood": "curious", "after": 0.5}
             {"you": "talk", "text": "how's it going?", "hold": 2}
             {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true, "takes": 3}
             {"agent": "run", "cmd": "npm run setup", "ask": 4}
@@ -23,7 +23,7 @@ final class DemoTests: XCTestCase {
         XCTAssertEqual(script.title, "Keyboard shortcuts")
         XCTAssertEqual(script.agent, "codex")
         XCTAssertEqual(script.steps.map(\.number), [4, 5, 6, 7, 8, 9, 10], "in the file's order")
-        XCTAssertEqual(script.steps[1].what, .brain(["react.mood": "curious"], mood: "curious"))
+        XCTAssertEqual(script.steps[1].what, .brain(["react.face": "curious"], mood: "curious"))
         XCTAssertEqual(script.steps[1].after, 0.5)
         XCTAssertEqual(script.steps[2].what, .talk("how's it going?", hold: 2))
         guard case .agent(let run) = script.steps[3].what else { XCTFail("an agent step"); return }
@@ -184,7 +184,7 @@ final class DemoTests: XCTestCase {
             .steps[1].cause(creature: "Pip", agent: "codex"), .init(kind: "compact", text: "Codex's context is full: it compacts the conversation"))
         try XCTAssertEqual(cause(#"{"agent": "reply", "text": "ok", "by": "reviewer"}"#), .init(kind: "tool", text: "The reviewer reports back"))
         try XCTAssertEqual(cause(#"{"agent": "reply", "text": "Done."}"#), .init(kind: "done", text: "Claude finishes"))
-        try XCTAssertNil(cause(#"{"brain": {"react.mood": "happy"}}"#), "the brain's answers show in what the creature does")
+        try XCTAssertNil(cause(#"{"brain": {"react.face": "happy"}}"#), "the brain's answers show in what the creature does")
         try XCTAssertEqual(cause(#"{"you": "poke", "note": "A poke"}"#), .init(kind: "tap", text: "A poke"))
     }
 
@@ -245,17 +245,17 @@ final class DemoTests: XCTestCase {
     func testAScriptThePackCantPlaySaysWhere() throws {
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go"}
-            {"brain": {"react.mood": "jolly", "say.kind": "word", "react.dance": "yes"}}
+            {"brain": {"react.face": "jolly", "react.intensity": "medium", "react.dance": "yes"}}
             {"mood": "ecstatic"}
-            {"brain": {"react.mood": "none", "say.kind": "wrod"}, "mood": "calm"}
+            {"brain": {"react.face": "none", "react.intensity": "medim"}, "mood": "calm"}
             """)
         let pack = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel"))
         let problems = script.problems(for: pack)
         XCTAssertEqual(problems.count, 4, "\(problems)")
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
-        XCTAssertTrue(problems[1].hasPrefix("line 2: react.mood has no choice jolly; it has none, \(pack.moods[0].id)"))
+        XCTAssertTrue(problems[1].hasPrefix("line 2: react.face has no choice jolly; it has none, \(pack.moods[0].id)"))
         XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
-        XCTAssertTrue(problems[3].hasPrefix("line 4: say.kind has no choice wrod"))
+        XCTAssertTrue(problems[3].hasPrefix("line 4: react.intensity has no choice medim"))
     }
 
     /// characters/DEMOS.md: a header's `start` is when the demo's clock

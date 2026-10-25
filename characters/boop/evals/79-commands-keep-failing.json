@@ -6,7 +6,7 @@
     {"event": "turn started", "at": "0s", "prompt": "get the importer running again", "reading": {"kind": "fix"}},
     {"event": "command", "at": "20s", "failed": true},
     {"event": "command", "at": "40s", "failed": true},
-    {"event": "command", "at": "60s", "failed": true, "expect": {"react": "annoyed|determined|irritated|grumpy|skeptical", "animation": "none", "feeling": "upset|none", "kind": "sound|word|swear|phrase", "loops": "once|twice"}},
-    {"event": "command", "at": "80s", "failed": true, "expect": {"react": "none|annoyed|determined|irritated|grumpy|skeptical", "animation": "none"}}
+    {"event": "command", "at": "60s", "failed": true, "expect": {"react": "annoyed|determined|irritated|grumpy|skeptical", "move": "none", "say": "upset|swear", "intensity": "small|medium", "said": "some"}},
+    {"event": "command", "at": "80s", "failed": true, "expect": {"react": "none|annoyed|determined|irritated|grumpy|skeptical", "move": "none"}}
   ]
 }

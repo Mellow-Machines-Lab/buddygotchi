@@ -73,8 +73,8 @@ public enum DemoFromScenario {
                 // answers, the step's own over them.
                 let finish = step.event == "turn finished" ? "success" : step.event == "turn failed" ? "failure" : "none"
                 let wanted = Self.playable(ExpectBrain.wanted(step))
-                var brain = ["react.mood": "excited", "react.animation": finish, "react.loops": "once", "say.feeling": "none",
-                             "say.about": "start", "say.kind": "word"].merging(wanted) { $1 }
+                var brain = [ReactOutput.faceKey: "excited", ReactOutput.moveKey: finish, ReactOutput.intensityKey: "small",
+                             ReactOutput.sayKey: "start"].merging(wanted) { $1 }
                 if let want = step.expectOrder["sign"], let prompt = step.prompt {
                     // As the eval offers them: its calendar at the step's time.
                     let reading = PromptReading(text: prompt, names: [CharacterPack.active.name], labels: step.labels?.prompt)
@@ -95,8 +95,7 @@ public enum DemoFromScenario {
     }
 
     /// The first of each question's wanted values that the brain can be
-    /// asked to play (`DemoScript.problems`): `none` holds no face, so it
-    /// isn't a hold.
+    /// asked to play (`DemoScript.problems`): `none` isn't an intensity.
     static func playable(_ wanted: [String: [String]], in pack: CharacterPack = .active) -> [String: String] {
         var offered = DemoScript.choices(in: pack)
         offered[MoodOutput.outputName] = pack.moods.map(\.id)
