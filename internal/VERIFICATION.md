@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-24. How we check that Boop works, including what's on its
+Updated 2026-10-25. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -222,7 +222,7 @@ turn's holder and waiting calls included), screenshots, a frozen clock,
 injected presses and touches, the test pattern, the lights, touch
 calibration and a reset. LinkKit answers the generic ones
 ([linkkit/SPEC.md](../linkkit/SPEC.md) §7) and Boop's app the rest
-(`firmware/src/app/device.cpp`). The board ignores them over Bluetooth.
+(`firmware/src/app/device_debug.cpp`). The board ignores them over Bluetooth.
 
 The board handles waiting lines in order before it draws the next frame,
 and a debug message ends the batch. So a

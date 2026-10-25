@@ -23,7 +23,7 @@ from boopctl_lib.device import DeviceError, Link
 
 # Bytes per `put`: with base64 and the rest of the message, the line stays
 # under the 512 bytes the board reads (the board takes up to kCardChunk in
-# firmware/src/app/device.cpp).
+# firmware/src/app/device_debug.cpp).
 CHUNK = 324
 # `put`s in flight: about 1.5 KB, under the board's 2 KB serial buffer.
 WINDOW = 3
