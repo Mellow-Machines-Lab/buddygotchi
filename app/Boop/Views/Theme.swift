@@ -376,10 +376,6 @@ extension ButtonStyle where Self == QuietButtonStyle {
     static var quiet: QuietButtonStyle { QuietButtonStyle() }
 }
 
-extension ButtonStyle where Self == ProminentButtonStyle {
-    static var prominent: ProminentButtonStyle { ProminentButtonStyle() }
-}
-
 extension ButtonStyle where Self == RowButtonStyle {
     static var row: RowButtonStyle { RowButtonStyle() }
     static var rowFilled: RowButtonStyle { RowButtonStyle(filled: true) }
