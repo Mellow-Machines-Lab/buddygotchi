@@ -355,7 +355,7 @@ extension DebugLog {
     /// The state's head (the guide, PERSONALITY and MOOD), which changes
     /// only with the personality or the mood, and its HISTORY and NOW,
     /// which `debug.jsonl` logs apart.
-    static func split(_ state: String) -> (head: String, last: String) {
+    public static func split(_ state: String) -> (head: String, last: String) {
         guard let r = state.range(of: "HISTORY (") else { return ("", state) }
         return (String(state[..<r.lowerBound]), String(state[r.lowerBound...]))
     }

@@ -62,7 +62,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 
 | Target | What it does |
 | --- | --- |
-| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), and beside it the simulator (built again only when its sources changed, and left alone if one already runs), its page, the studio's matrix and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; Settings' Simulator row switches to the simulator and back. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. `dash`'s `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would. Ctrl-C stops the app, the simulator and the dashboard |
+| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), and beside it the simulator (built again only when its sources changed, and left alone if one already runs), its page, the studio's matrix (with what the brain reads in each eval, `boopdev prompts`, written first) and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; Settings' Simulator row switches to the simulator and back. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. `dash`'s `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would. Ctrl-C stops the app, the simulator and the dashboard |
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 15.0 at least, so it still opens on macOS 15. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
 | `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
@@ -104,7 +104,9 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   `internal/app/Tests/Fixtures/readings.json`, on a Mac that has
   it: their kind, tone and phrases scored against floors, prompts and messages apart, planted
   secrets that must never come back, and how long a typical reading
-  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`) and `hooks` (Boop's hook installer, against any `--home`).
+  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`), `prompts` (every eval scenario
+  run with the expect brain, no key, and each pass's prompt, questions and answers written to
+  `characters/studio/prompts.js` for the Character Studio's Brain view; `make dev` writes it) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
   popover's panes, onboarding's acts and their states, gel frames and
@@ -161,8 +163,9 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   everyday transitions on the board in the page by the same rule
   ([characters/studio/README.md](../characters/studio/README.md)).
 - `node characters/studio/check.cjs`: the Character Studio in a headless
-  browser, the character's own views, its matrix and its board's views
-  (its README, Checking it).
+  browser, the character's own views, its behaviour map and brain, its
+  matrix and its board's views (its README, Checking it). It needs
+  `boopdev prompts` run first.
 - `internal/tools/fontgen/fontgen.py` (the device's fonts) and
   `internal/tools/mediagen/mediagen.py` (the READMEs' GIFs, from real
   runs, [its README](tools/mediagen/README.md)), with

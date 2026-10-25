@@ -341,7 +341,7 @@
     switchCard:card=>switchCard(sel.pack,card),
     record:options=>instance?.record?instance.record(options):Promise.reject(Error(`${label(sel.card)} isn't a board.`)),
     open(patch){setView('scene');change({face:null,...patch});}};
-  const views=Object.fromEntries(Object.entries({...window.StudioCharacterViews,...window.StudioViews}).map(([name,make])=>[name,make(api)]));
+  const views=Object.fromEntries(Object.entries({...window.StudioCharacterViews,...window.StudioBehaviorViews,...window.StudioViews}).map(([name,make])=>[name,make(api)]));
   // The tabs, each its views in the order its own buttons show them: a
   // tab's first view is where it opens. A view a pack has nothing for
   // (`views[name].empty()`) leaves its tab's buttons.
@@ -349,6 +349,8 @@
     {id:'overview',label:'Overview',views:{overview:'Overview'}},
     {id:'personality',label:'Personality',views:{personality:'Personality'}},
     {id:'moods',label:'Moods',views:{moods:'Moods'}},
+    {id:'behavior',label:'Behavior',views:{behavior:'Map',brain:'Brain'},
+      about:'What it does and why: what sets each thing off and who decides, a rule on the Mac, the brain or the board, and what the brain reads and answers.'},
     {id:'animations',label:'Animations',views:{scene:'Scene',matrix:'Matrix',transitions:'Transitions',stills:'Stills'},
       about:'How it looks: one mood and state, all of them at once, the board between two, and the frames its tests hold it to.'},
     {id:'words',label:'Words',views:{signs:'Signs',diary:'Diary',voice:'Voice'},

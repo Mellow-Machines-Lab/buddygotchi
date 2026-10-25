@@ -516,12 +516,16 @@
             h('div', {className: 'eval-body'},
               h('p', {}, e.case),
               h('ol', {className: 'steps'}, (e.steps || []).map(step)),
-              e.why && h('p', {className: 'why'}, h('strong', {}, 'Why. '), e.why)))))]));
+              e.why && h('p', {className: 'why'}, h('strong', {}, 'Why. '), e.why),
+              window.StudioPrompts?.scenarios?.[e.id] && window.StudioPrompts.pack === api.sel.pack
+                && h('p', {}, h('a', {href: '#', 'data-prompts': e.id}, 'What the brain reads and answers'))))))]));
     }
     root.addEventListener('click', e => {
       const o = e.target.closest('[data-only]');
       if (o) { s.only = o.dataset.only; render(); }
       if (e.target.closest('[data-unmood]')) { s.mood = null; render(); }
+      const prompts = e.target.closest('[data-prompts]');
+      if (prompts) { e.preventDefault(); api.go('brain', null, new URLSearchParams({scenario: prompts.dataset.prompts})); }
     });
     root.addEventListener('toggle', e => { const d = e.target.closest?.('[data-eval]'); if (d) d.open ? s.open.add(d.dataset.eval) : s.open.delete(d.dataset.eval); }, true);
     root.addEventListener('change', e => { if (e.target.matches('[data-find]')) { s.find = e.target.value; render(); } });
@@ -608,4 +612,6 @@
   }
 
   window.StudioCharacterViews = {overview, personality, moods, signs, diary, voice, evals, demos, stills};
+  // The Map says a personality's settings as Personality does.
+  window.StudioSpan = span;
 })();
