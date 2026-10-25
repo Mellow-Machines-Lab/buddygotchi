@@ -39,18 +39,13 @@ struct Surface {
   // Drawing records each row's written span. The next frame only erases those
   // pixels; direct whole-surface writers must invalidate this history. A
   // surface taller than this is cleared whole every frame. Outside its
-  // spans and the lane, a row is black: what the push plans by
-  // (render/push.h).
+  // spans, a row is black: what the push plans by (render/push.h).
   struct Span {
     uint16_t first = 0, last = 0;
   };
   static constexpr int kTrackedRows = 512;
   std::array<Span, kTrackedRows> written{};
   bool invalid = true;
-  // The rows from here down hold the canvas, written whole by blit since
-  // the last clear (the shared lane under a native face, or a whole test
-  // pattern); -1 when blit hasn't run since.
-  int lane = -1;
   // A lane a face draws itself, from row `laneKeyFrom` down, where nothing
   // else draws: `laneKey` names what it shows (a hash, never 0), so two
   // frames with the same key hold the same pixels there and the push
@@ -85,9 +80,7 @@ struct Surface {
   // drawn covers anyway: `keep`'s boxes, which it fills with
   // opaque ink, and its own lane, when `keepLane` names what this surface's
   // lane already shows (laneKey), whose rows and spans are then left as
-  // they are. The rows blit wrote are left as it wrote them, since blit
-  // writes them whole again; until it does, they count as written, so a
-  // frame that skips blit erases them next time.
+  // they are.
   void clear(const Box* keep = nullptr, int keepCount = 0, uint32_t keepLane = 0) {
     const Erasing e = beginClear(keep, keepCount, keepLane);
     erase(e, 0, height);
@@ -106,16 +99,13 @@ struct Surface {
   Erasing beginClear(const Box* keep = nullptr, int keepCount = 0, uint32_t keepLane = 0) {
     Erasing e;
     if (!pixels) return e;
-    const int canvasFrom = lane >= 0 && lane < height && height <= kTrackedRows ? lane : height;
     if (invalid || height > kTrackedRows || keepCount <= 0) cardKey = 0;
     const bool laneKept = !invalid && height <= kTrackedRows && keepLane && keepLane == laneKey && laneKeyFrom >= 0 &&
-                          laneKeyFrom <= canvasFrom;
+                          laneKeyFrom <= height;
     e.whole = invalid || height > kTrackedRows;
-    e.to = e.whole ? height : laneKept ? laneKeyFrom : canvasFrom;
+    e.to = laneKept ? laneKeyFrom : height;
     e.keep = keep, e.keepCount = e.whole ? 0 : std::clamp(keepCount, 0, kMaxKeep);
-    for (int y = canvasFrom; y < std::min(height, kTrackedRows); ++y) written[y] = invalid ? Span{} : Span{0, uint16_t(width)};
     invalid = false;
-    lane = -1;
     if (!laneKept) laneKey = 0, laneKeyFrom = -1;
     return e;
   }
@@ -148,9 +138,9 @@ struct Surface {
     for (int y = from; y < std::min(to, kTrackedRows); ++y) written[y] = {};
   }
 };
-// The canvas, stretched to the surface's size (nearest pixel), into its
-// rows from `fromRow` down: the shared lane under a native face, or a
-// whole test pattern. Rows it writes are written whole every time, so they
-// need no tracked clearing; it records them as the surface's `lane`.
-void blit(const Canvas& canvas, Surface& surface, int fromRow);
+// The canvas, stretched to the whole surface (nearest pixel): the test
+// pattern under a native face. It writes past what drawing tracks, so it
+// invalidates the surface: the next clear erases it whole, and the push
+// sends it whole.
+void blit(const Canvas& canvas, Surface& surface);
 }  // namespace render

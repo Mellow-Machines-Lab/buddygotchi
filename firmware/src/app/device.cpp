@@ -1021,10 +1021,7 @@ void Device::render(uint32_t t) {
     } else {
       render::drawPattern(canvas_);
     }
-    if (native) {
-      native->back().invalidate();  // written whole, past what drawing tracks
-      render::blit(canvas_, native->back(), 0);
-    }
+    if (native) render::blit(canvas_, native->back());
   } else {
     b_.face().watch(&b_.stream());
     // The drawer as it is now: how far open, the Mac's rows, and the paw

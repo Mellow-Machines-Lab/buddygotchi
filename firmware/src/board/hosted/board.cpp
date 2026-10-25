@@ -50,7 +50,7 @@ bool Board::tick() {
   // A native face's frames turn as on the board, so a screenshot comes
   // from the same two surfaces.
   if (drew) {
-    if (auto* frames = device_->frames()) frames->present(device_->canvas());
+    if (auto* frames = device_->frames()) frames->present();
   }
   lines();
   return drew;

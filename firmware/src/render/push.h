@@ -22,7 +22,7 @@ struct PushPlan {
   static constexpr int kMaxBands = (Surface::kTrackedRows + kRows - 1) / kRows;
   int width = 0, height = 0;  // the surface's
   int bands = 0;
-  bool full = false;  // the whole surface: the first frame, a test pattern, the lane moved
+  bool full = false;  // the whole surface: the first frame, or a test pattern on either side
   std::array<Span, kMaxBands> spans{};
   int rows(int band) const { return height - band * kRows < kRows ? height - band * kRows : kRows; }
   uint32_t pixels() const;
@@ -58,18 +58,16 @@ class SurfacePair {
   // A frame was drawn into back().
   void drew() { drawn_ = true; }
   // Sends the newest frame: plans what of it may differ from front's, the
-  // frame the panel shows, then swaps, so it is front. `canvas` is the
-  // lane's source (blit): its changes since the last present say which
-  // lane columns changed. With nothing drawn since, it plans nothing. The
-  // caller sends the plan before drawing into the new back().
-  const PushPlan& present(const Canvas& canvas);
+  // frame the panel shows, then swaps, so it is front. With nothing drawn
+  // since, it plans nothing. The caller sends the plan before drawing into
+  // the new back().
+  const PushPlan& present();
   const PushPlan& plan() const { return plan_; }
 
  private:
   Surface s_[2];
   int back_ = 0;
   bool drawn_ = false;
-  Changes lane_;  // the canvas as of the last present
   PushPlan plan_;
 };
 
