@@ -2117,8 +2117,8 @@ static void test_no_app_at_30s_and_reconnect_comes_back() {
 }
 
 // The brain's finish with `who` names that agent and
-// thread in the strip while it plays, and no longer, after a mark for what
-// its design is for: a tick for a success, a cross for a failure, none for
+// thread in the strip while it plays and kFinishLingerMs after, and no
+// longer, after a mark for what its design is for: a tick for a success, a cross for a failure, none for
 // a reply. A poke, or a finish without one, names nobody.
 static void test_a_cheer_names_whose_turn_in_the_strip() {
   Rig r;
@@ -2139,10 +2139,16 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
   TEST_ASSERT_EQUAL(1, strip.busy);
   uint32_t left;
   r.b.reaction(r.t, left);
-  r.at(r.t + left - 1);
+  const uint32_t end = r.t + left;
+  r.at(end - 1);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
-  r.at(r.t + 1);
-  TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);  // gone with the finish
+  r.at(end);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  TEST_ASSERT_EQUAL_STRING("fix-nav", r.b.strip(r.t).doneThread);  // lingering
+  r.at(end + Behaviour::kFinishLingerMs - 1);
+  TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
+  r.at(end + Behaviour::kFinishLingerMs);
+  TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);  // gone after its linger
   onReaction(r.b, in, r.t);
   r.b.tap(r.t, r.rng);  // a tap's poke replaces it
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
@@ -2164,8 +2170,8 @@ static void test_a_cheer_names_whose_turn_in_the_strip() {
   TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
 }
 
-// A tap while the brain's finish names whose turn it
-// was takes you to that thread: the press dip only, the finish plays on,
+// A tap while the brain's finish names whose turn it was, as it plays or
+// lingers after, takes you to that thread: the press dip only, the finish plays on,
 // and the tap carries its id for the Mac. A finish the Mac doesn't wait on (no id) or that names nobody is poked.
 // The lane's fade, decided once for every face: the strip fades in over the
 // rig's 200 ms from the millisecond it came, and out from the one it went,
@@ -2220,7 +2226,8 @@ static void test_the_lane_fades_as_the_strip_comes_and_goes() {
   r.at(3000 + kFade);
   TEST_ASSERT_EQUAL(0, r.b.strip(r.t).opacity);
   TEST_ASSERT_FALSE(r.b.strip(r.t).shows());  // gone, it's bare glass again
-  // A finish naming whose turn: in as it starts, out as it ends, named.
+  // A finish naming whose turn: in as it starts, out as its linger ends,
+  // named.
   ReactionIn in;
   in.anim = SceneState::kTaskComplete, in.whoAgent = "codex", in.whoThread = "fix-nav";
   onReaction(r.b, in, r.t);
@@ -2231,7 +2238,10 @@ static void test_the_lane_fades_as_the_strip_comes_and_goes() {
   r.at(start + left);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
   TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
-  r.at(start + left + kFade / 2);
+  r.at(start + left + Behaviour::kFinishLingerMs);
+  TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).doneAgent);
+  TEST_ASSERT_EQUAL(1000, r.b.strip(r.t).opacity);
+  r.at(start + left + Behaviour::kFinishLingerMs + kFade / 2);
   TEST_ASSERT_EQUAL_STRING("fix-nav", r.b.strip(r.t).doneThread);
   TEST_ASSERT_INT_WITHIN(5, 500, r.b.strip(r.t).opacity);
   // No app: the plug from the moment the Mac's silence turns into it.
@@ -2338,9 +2348,17 @@ static void test_a_tap_on_a_named_finish_opens_its_thread() {
   r.b.tap(r.t, r.rng);
   uint32_t left;
   r.b.reaction(r.t, left);
-  r.at(r.t + left);
+  const uint32_t end = r.t + left;
+  r.at(end);
+  TEST_ASSERT_EQUAL_STRING("9 done", ended(r).c_str());  // played out: the queue moves on
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  // Lingering: still named, and a tap still opens it, with only the dip.
+  r.at(end + Behaviour::kFinishLingerMs - 1);
+  TEST_ASSERT_EQUAL_UINT32(9, r.b.finishShown(r.t));
+  TEST_ASSERT_EQUAL_STRING("dip", r.b.tap(r.t, r.rng));
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  r.at(end + Behaviour::kFinishLingerMs);
   TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));  // over
-  TEST_ASSERT_EQUAL_STRING("9 done", ended(r).c_str());
   r.at(r.t + 5000);
   in.key = 0, in.id = 0;  // one the Mac doesn't wait on
   onReaction(r.b, in, r.t);
@@ -2353,6 +2371,55 @@ static void test_a_tap_on_a_named_finish_opens_its_thread() {
   TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
   r.b.tap(r.t, r.rng);
   TEST_ASSERT_EQUAL(SceneState::kPoked, r.anim());
+}
+
+// A finish's linger ends early when the face is taken: another
+// animation (a newer finish names its own turn), or a needs-you; one cut
+// short never lingers.
+static void test_a_finish_linger_ends_when_the_face_is_taken() {
+  Rig r;
+  r.at(1000);
+  r.state(base("idle"));
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete, in.whoAgent = "claude", in.whoThread = "fix-nav", in.key = 9, in.id = 9;
+  auto playOut = [&] {
+    onReaction(r.b, in, r.t);
+    uint32_t left;
+    r.b.reaction(r.t, left);
+    r.at(r.t + left + 100);
+    TEST_ASSERT_EQUAL_UINT32(in.id, r.b.finishShown(r.t));
+  };
+  playOut();
+  in.key = 10, in.id = 10, in.whoAgent = "codex", in.whoThread = "landing";
+  onReaction(r.b, in, r.t);  // a newer finish: its own turn
+  TEST_ASSERT_EQUAL_UINT32(10, r.b.finishShown(r.t));
+  TEST_ASSERT_EQUAL_STRING("landing", r.b.strip(r.t).doneThread);
+  uint32_t left;
+  r.b.reaction(r.t, left);
+  r.at(r.t + left + 100);
+  r.react(SceneState::kStarting);  // another animation
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
+  TEST_ASSERT_TRUE(r.b.strip(r.t).opacity > 0);  // fading out from what it showed
+  r.at(r.t + render::rig::kFadeMs);
+  TEST_ASSERT_NULL(r.b.strip(r.t).doneAgent);
+  r.at(r.t + 5000);
+  r.state(base("idle"));
+  in.key = 11, in.id = 11;
+  playOut();
+  Model m = base("idle");
+  m.attn = true, m.attnId = 1;
+  app::copyStr(m.agent, sizeof(m.agent), "claude");
+  r.state(m);  // a needs-you
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
+  r.at(r.t + 5000);
+  r.state(base("idle"));
+  in.key = 12, in.id = 12;
+  onReaction(r.b, in, r.t);
+  r.at(r.t + 100);
+  r.state(m);  // cut short by a needs-you as it plays
+  r.state(base("idle"));
+  r.at(r.t + 100);
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
 }
 
 static void test_press_shows_within_20ms() {
@@ -3096,6 +3163,7 @@ int main() {
   RUN_TEST(test_a_todo_list_alone_shows_the_strip);
   RUN_TEST(test_the_lane_is_the_same_whatever_the_draw_cadence);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);
+  RUN_TEST(test_a_finish_linger_ends_when_the_face_is_taken);
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_is_a_tap);

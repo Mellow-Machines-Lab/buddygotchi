@@ -47,6 +47,11 @@ face-down) are the ones that vanish.
   terminal the CLI was started in.
 - **Terminal sessions** open at their tab (iTerm2, Terminal, tmux),
   from AgentHooks' `TerminalTab`.
+- **A tap on the brain's finish** opens the thread it names as it plays
+  and for a moment after it plays out (`Behaviour::kFinishLingerMs`),
+  the strip still naming it, unless another animation or a needs-you
+  takes the face first. A finish with no cheer has no tap; BOOT still
+  hands you the one that finished last.
 
 ## 3. Something new at every glance
 

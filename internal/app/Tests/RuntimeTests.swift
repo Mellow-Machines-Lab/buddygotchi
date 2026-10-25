@@ -1561,9 +1561,9 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// Where a tap on the brain's finish opens its
-    /// thread is kept until the device says the finish ended, or the link
-    /// would have given up on it (its ttl plus 60 s); a reaction your tap
-    /// cut is held until the pokes stop.
+    /// thread is kept until the link would have given up on it (its ttl
+    /// plus 60 s), past its `ended`, since the device names it as it
+    /// lingers after; a reaction your tap cut is held until the pokes stop.
     func testReactionsKeepWhereATapOpens() {
         let reactions = Reactions()
         let thread = ThreadRef(agent: "claude", session: "s1")
@@ -1571,12 +1571,11 @@ final class RuntimeTests: XCTestCase {
         reactions.sent(8, opens: thread, ttl: 5000, now: 1000)
         XCTAssertEqual(reactions.opens(finish: 7), thread)
         XCTAssertNil(reactions.opens(finish: 9))
-        reactions.ended(7)
-        XCTAssertNil(reactions.opens(finish: 7), "over")
         reactions.tick(now: 1000 + 5000 + DeviceLink.answerGraceMs - 1)
         XCTAssertEqual(reactions.opens(finish: 8), thread)
         reactions.tick(now: 1000 + 5000 + DeviceLink.answerGraceMs)
         XCTAssertNil(reactions.opens(finish: 8), "given up on")
+        XCTAssertNil(reactions.opens(finish: 7))
 
         var ends: [Pending.End] = []
         let cut = Pending()
@@ -1777,8 +1776,10 @@ final class RuntimeTests: XCTestCase {
     /// moment (the USB bridge reconnecting, or a Bluetooth blip) doesn't
     /// stop what the device plays, so a tap on the brain's finish still
     /// playing once the link is back still opens its thread, though HISTORY
-    /// already says it didn't happen. Once the device says it ended, a
-    /// tap is a poke.
+    /// already says it didn't happen. After the device says it ended, a
+    /// tap it names still opens it, as the board names the finish while it
+    /// lingers (`Behaviour::kFinishLingerMs`); one it doesn't name is a
+    /// poke.
     func testALinkBlipKeepsATapOnTheFinishPlaying() throws {
         let transport = FakeTransport()
         var options = try options(transport)
@@ -1816,7 +1817,10 @@ final class RuntimeTests: XCTestCase {
         device(FakeTransport.ended(id, "done"))
         XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } })
         device(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
-        XCTAssertEqual(opened.all.count, 1, "over")
+        eventually("lingering, it opens again") { opened.all.count == 2 }
+        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } })
+        device(#"{"t":"ev","kind":"tap","did":"poked"}"#)
+        XCTAssertEqual(opened.all.count, 2, "over")
         XCTAssertTrue(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } }, "a poke")
     }
 

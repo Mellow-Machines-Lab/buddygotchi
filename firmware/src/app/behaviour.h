@@ -149,6 +149,10 @@ class Behaviour {
   // A reaction's sign shows from its start for as long as any part of it
   // plays, and at least this long, to be read.
   static constexpr uint32_t kSignMinMs = 2500;
+  // The brain's finish naming whose turn it was stays named in the strip
+  // this long after it plays out, and a tap still opens its thread, unless
+  // another animation or a needs-you takes the face first.
+  static constexpr uint32_t kFinishLingerMs = 2000;
 
   void reset(uint32_t t, Rng& rng);
   // At power-on no Mac has spoken: "no app" from the start, until the
@@ -196,8 +200,9 @@ class Behaviour {
   // tap or another animation doesn't take the face over, and a touch is a
   // tap, never a gesture.
   bool held(uint32_t t) const;
-  // The id of the brain's finish showing whose turn it was at t, which a
-  // tap opens on the Mac instead of poking; 0 for none.
+  // The id of the brain's finish showing whose turn it was at t, as it
+  // plays or lingers after, which a tap opens on the Mac instead of
+  // poking; 0 for none.
   uint32_t finishShown(uint32_t t) const;
   // Push-to-talk: BOOT held (talk_on) and let go, or capped (talk_off).
   void talkOn(uint32_t t, Rng& rng);
@@ -355,8 +360,11 @@ class Behaviour {
   bool holds(uint32_t key, uint32_t t) const;
   void resync(uint32_t t);
   bool reactionOn(uint32_t t) const;
-  // The brain's finish plays, naming whose turn it was (the strip shows it).
-  bool finishOn(uint32_t t) const;
+  // A finish (task_complete or reply_ready) that names whose turn it was.
+  static bool named(const Reaction& r);
+  // The brain's finish naming whose turn it was, as it plays or lingers
+  // after (the strip shows it); null for none.
+  const Reaction* finishOn(uint32_t t) const;
   bool listening(uint32_t t) const;  // `listening` is playing
   uint8_t blTarget(uint32_t t) const;  // the level the state asks for at t
   bool sayOn(uint32_t t) const;        // the `say` plays, or its bubble shows
@@ -367,7 +375,7 @@ class Behaviour {
   // What the strip shows: what the Mac last said, with no app or not, and
   // the brain's finish playing (null for none), whole.
   static render::Strip stripOf(const Model& m, bool noApp, const Reaction* finish);
-  render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t) ? &reaction_ : nullptr); }
+  render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t)); }
   // At every change: the strip kept while it shows, and its fade turned
   // when it comes or goes.
   void followLane(uint32_t t);
@@ -393,6 +401,9 @@ class Behaviour {
   uint8_t blFrom_ = 255;
   uint32_t blAt_ = 0;
   Reaction reaction_;
+  // The finish that played out on its own, lingering from `at` for `ms`
+  // (kFinishLingerMs); anim kNone for none.
+  Reaction lingering_;
   Say say_;
   Sign sign_;
   // The reaction's expression: its mood from exprAt_ for exprMs_: as long

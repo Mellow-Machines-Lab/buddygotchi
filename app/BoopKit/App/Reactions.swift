@@ -10,8 +10,10 @@ import LinkKit
 /// reads that as its handle's end, holds a reaction your tap cut short in
 /// progress until the pokes stop, and keeps where a tap on the brain's
 /// finish opens its thread while the finish may still
-/// play, a link that drops briefly included, since the device plays
-/// on.
+/// play or linger after, a link that drops briefly included, since the
+/// device plays on. The device alone says a tap landed on a finish, so
+/// this keeps each until the link would have given up on it, past its
+/// `ended`.
 ///
 /// On the runtime's queue and clock. Its bookkeeping is done before any
 /// handle is finished, so what an end sets off may call back in.
@@ -25,7 +27,7 @@ public final class Reactions {
     /// once they stop (`pokesStopped`).
     public private(set) var cutByTap: [Pending] = []
     /// Where a tap on each finish sent opens its thread, by its `do` id,
-    /// until its `ended` comes or the link would have given up on it.
+    /// until the link would have given up on it.
     public private(set) var opens: [Int: (thread: ThreadRef, until: Int64)] = [:]
 
     public init() {}
@@ -36,19 +38,14 @@ public final class Reactions {
         opens[id] = (thread, now + Int64(ttl) + DeviceLink.answerGraceMs)
     }
 
-    /// The device said the `do` `id` ended, even one the link had failed
-    /// when it dropped: a tap can't land on it any more.
-    public func ended(_ id: Int) {
-        opens[id] = nil
-    }
-
     /// Once a second: forgets the finishes the link has given up on.
     public func tick(now: Int64) {
         opens = opens.filter { $0.value.until > now }
     }
 
     /// The thread a tap on the finish `id` opens: the device said the tap
-    /// landed on it. Nil once it's over.
+    /// landed on it, as it played or lingered after. Nil once the link
+    /// has given up on it.
     public func opens(finish id: Int) -> ThreadRef? { opens[id]?.thread }
 
     /// How the reaction whose handle is `pending` came out: its end, or

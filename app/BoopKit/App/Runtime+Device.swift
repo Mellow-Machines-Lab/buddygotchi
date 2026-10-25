@@ -29,7 +29,6 @@ extension Runtime {
         case .ended(let ended):
             options.log("device\(Runtime.whose(rig)): do \(ended.id) ended \(ended.how.rawValue)" + (ended.why.map { " (\($0))" } ?? ""))
             emit(DebugLog.ended(ended, at: now))
-            rig.reactions.ended(ended.id)
         default:
             break
         }
