@@ -18,13 +18,17 @@
   // A new board shows its first `state` this long on a frozen clock, as a
   // scenario's shot waits, so it starts settled in it; then it runs.
   const SETTLE_MS = 1504;
+  // At most this many frames a second: the board draws up to 60, more
+  // than a tile shows. A refresh a little early still draws, so a 60 or
+  // 120 Hz display draws every second or fourth.
+  const FPS = 30, EARLY_MS = 4;
   // A finger in the canvas's 320×240, beside the nose (a boop on it is a
   // gesture), and BOOT, each held as long as a tap.
   const TAP = '{"t":"dbg.touch","x":80,"y":120,"ms":100}', PRESS = '{"t":"dbg.press","ms":100}';
 
   const canvas = document.getElementById('screen'), context = canvas.getContext('2d');
   const panel = document.createElement('canvas'), panelContext = panel.getContext('2d');  // the board's own pixels
-  let core, usb, image = null, state = null, powered = false, shown = false, still = false, loop = 0;
+  let core, usb, image = null, state = null, powered = false, shown = false, still = false, loop = 0, drewAt = -Infinity;
 
   const ready = BoopMirrorBoard().then(made => {
     core = made;
@@ -56,15 +60,16 @@
     return JSON.parse(said.split('\n').find(l => l.startsWith('{"t":"dbg.state"')) || '{}');
   }
 
-  // One pass of the board's loop, and the frame if it drew one.
+  // One pass of the board's loop, and the frame if it drew one: its
+  // pixels where the board keeps them, with no copy, until its memory
+  // grows or the frame changes size.
   function tick() {
     if (!core._mirror_tick()) return;
     const w = core._mirror_width(), h = core._mirror_height(), at = core._mirror_frame();
-    if (image?.width !== w || image?.height !== h) {
-      image = new ImageData(w, h);
+    if (image?.data.buffer !== core.HEAPU8.buffer || image.data.byteOffset !== at || image.width !== w || image.height !== h) {
+      image = new ImageData(new Uint8ClampedArray(core.HEAPU8.buffer, at, w * h * 4), w, h);
       panel.width = w, panel.height = h;
     }
-    image.data.set(core.HEAPU8.subarray(at, at + w * h * 4));
     panelContext.putImageData(image, 0, 0);
     paint();
   }
@@ -84,11 +89,11 @@
   }
   new ResizeObserver(paint).observe(canvas);
 
-  // Each display refresh while shown; the board draws at most every 16 ms.
-  function frame() {
+  // Each display refresh while shown, a pass of the board's loop at FPS.
+  function frame(now) {
     loop = 0;
     if (!shown || still) return;
-    if (powered) tick();
+    if (powered && now - drewAt >= 1000 / FPS - EARLY_MS) drewAt = now, tick();
     loop = requestAnimationFrame(frame);
   }
 

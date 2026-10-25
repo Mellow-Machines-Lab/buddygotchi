@@ -11,13 +11,14 @@ const mirror = new URL('../../mac/mirror/', import.meta.url);
 const read = name => fs.readFileSync(new URL(name, mirror), 'utf8');
 const WORKING = '{"t":"state","base":"working","act":"terminal","mood":"happy","busy":1,"vol":6}';
 
-// A page with the mirror in it: its canvas counts what's drawn, and time
-// moves only by `run`, display refreshes and timers included.
+// A page with the mirror in it: its canvas counts what's drawn and keeps
+// the last picture put in, and time moves only by `run`, display
+// refreshes and timers included.
 async function page() {
   let clock = 1000, frames = [], timers = [];
-  const drawn = {count: 0};
+  const drawn = {count: 0, image: null};
   const canvas = () => ({clientWidth: 46, clientHeight: 46, width: 0, height: 0,
-    getContext: () => ({clearRect() {}, putImageData() {}, drawImage() { drawn.count++; }})});
+    getContext: () => ({clearRect() {}, putImageData(image) { drawn.image = image; }, drawImage() { drawn.count++; }})});
   const screen = canvas();
   const context = vm.createContext({
     console, devicePixelRatio: 2, WebAssembly,
@@ -25,7 +26,7 @@ async function page() {
     setInterval: (fn, ms) => timers.push({fn, ms, at: clock + ms}),
     requestAnimationFrame: fn => frames.push(fn),
     ResizeObserver: class { observe() {} },
-    ImageData: class { constructor(w, h) { this.width = w, this.height = h, this.data = new Uint8ClampedArray(w * h * 4); } },
+    ImageData: class { constructor(data, w, h) { this.data = data, this.width = w, this.height = h; } },
     document: {getElementById: () => screen, createElement: canvas},
   });
   context.window = context;
@@ -50,7 +51,8 @@ async function page() {
   };
 }
 
-test('draws only while shown, at most a frame each 16 ms', async () => {
+// The page's cap: 30 frames a second, on any display.
+test('draws only while shown, at most 30 frames a second', async () => {
   const p = await page();
   const settled = p.drawn.count;
   assert.equal(settled, 1, 'a new board draws its settled frame');
@@ -59,14 +61,21 @@ test('draws only while shown, at most a frame each 16 ms', async () => {
   p.mirror.shown(true);
   p.run(1, 120);
   const promotion = p.drawn.count - settled;
-  assert.ok(promotion >= 55 && promotion <= 61, `ProMotion's 120 Hz drew ${promotion} frames in a second`);
+  assert.ok(promotion >= 29 && promotion <= 31, `ProMotion's 120 Hz drew ${promotion} frames in a second`);
   p.run(1, 60);
   const standard = p.drawn.count - settled - promotion;
-  assert.ok(standard >= 55 && standard <= 61, `60 Hz drew ${standard} frames in a second`);
+  assert.ok(standard >= 29 && standard <= 31, `60 Hz drew ${standard} frames in a second`);
   p.mirror.shown(false);
   const closed = p.drawn.count;
   p.run(2);
   assert.equal(p.drawn.count, closed, 'hiding stops the drawing');
+});
+
+test("draws the board's whole screen from where the board keeps it", async () => {
+  const p = await page();
+  const {width, height, data} = p.drawn.image;
+  assert.deepEqual([width, height], [502, 410], "the panel's own size, lane and all, whatever the tile");
+  assert.ok(data.buffer.byteLength > data.byteLength, "a view of the board's memory, not a copy");
 });
 
 test('starts settled in its first state, then runs', async () => {

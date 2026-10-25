@@ -606,8 +606,14 @@ so wasm32 and arm64 agree).
   the twin's 9.3% and 11.9% (WebGL); onboarding's 236 × 177 demo, 4.8%
   and 3.9%, against 10.9% and 15.3%. Hidden: 0.2%, the 8 s heartbeat and nothing else, against the
   twin's 1.8%. A frame and its RGBA take 0.42 ms under Node; the board
-  draws at most every 16 ms, so the page draws at most 60 a second on
-  any display.
+  draws at most every 16 ms, so the page drew at most 60 a second on
+  any display. Since the simplify review the page draws at most 30, from
+  where the board keeps its pixels: the tile 3.2% and 2.4%, against 4.6%
+  and 3.6% measured beside it, onboarding's demo 3.1% and 2.5%, against
+  4.6% and 3.9%, and hidden nothing, the heartbeat gone (medians of five
+  or six 20 s runs, taken in turn on a busy Mac); in the tile it drew 38
+  frames a second, and 25 now. It still draws the board's whole 502 ×
+  410 screen: at a tile's size the lane wouldn't fit (plan/TODO.md, Later).
 
 **Phase 2, retiring the JavaScript engine** (`design/slime-blob/engine/`,
 `render/`, `preview/`): nothing ships it now. What still reads it:

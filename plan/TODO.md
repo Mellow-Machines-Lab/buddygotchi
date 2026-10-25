@@ -202,3 +202,9 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
 - [x] The rig channels `x`, `y`, `tilt` and `mouthWidth` were read by
       Pixel's face but set by no clip or input: dropped, with the face
       code that read them (test_rig, test_rig_face).
+- [ ] The gel's lane scales with its panel (lane.cpp's fonts, margins
+      and bubble are fixed px), then the Mac mirror renders at the
+      tile's size (about 20× fewer pixels). Drawn at the popover tile's
+      113 × 92 (2026-10-24, the simulator's `BOOP_SIM_NATIVE`), the
+      slime, desk and needs-you plate scale, but the lane's text, dots
+      and sign come out several times too big and run off the panel.
