@@ -40,7 +40,7 @@ public final class Core {
         /// for none.
         public var hatched: String?
         /// The growth stage Boop reached last and the day it did: that day
-        /// is a party (`Occasions`).
+        /// is a party, unless it's the day Boop hatched (`Occasions`).
         public var stageReached: (name: String, day: String)?
         /// Whether the board shows the work stream (`WorkStream`): the
         /// setting's, on unless you turn it off.
@@ -447,7 +447,8 @@ public final class Core {
     /// default): the rest of that day is a party, which a `state` carries
     /// at once. Reached just now (`celebrate`), Boop celebrates it then,
     /// with the confetti and a sign saying what it grew into, so the party
-    /// has a moment you can see.
+    /// has a moment you can see. Not on the day Boop hatched, your first
+    /// with it: then it's no occasion (`Occasions.occasions`).
     @discardableResult
     public func reachedStage(_ name: String, day: String? = nil, celebrate: Bool = false, at now: Int64) -> [CoreEffect] {
         config.stageReached = (name, day ?? self.day(now))

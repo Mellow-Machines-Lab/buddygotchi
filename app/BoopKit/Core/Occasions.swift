@@ -106,14 +106,16 @@ public enum Occasions {
 
     /// The calendar's tags on at `ms`: `hatched` is the day Boop was set up
     /// (`yyyy-MM-dd`), and `party` any other reason for one (a stage
-    /// reached today).
+    /// reached today), which the day Boop hatched isn't: that's your first
+    /// day with it, and only New Year's Day makes it a party.
     public static func tags(at ms: Int64, hatched: String?, party: Bool = false, time: LocalTime) -> [String] {
-        let c = time.components(ms)
+        let c = time.components(ms), today = time.day(ms)
         var on = [dayParts.last { c.hour >= $0.from }?.tag ?? "night"]
         if c.weekday == 6 { on.append("friday") }
         if c.weekday == 7 || c.weekday == 1 { on.append("weekend") }
         on += calendar(c, at: ms, time: time).compactMap(\.tag)
-        if party || on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: time.day(ms)) }) == true {
+        let party = party && hatched != today
+        if party || on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: today) }) == true {
             on.append("party")
         }
         return all.filter(on.contains)
@@ -121,7 +123,8 @@ public enum Occasions {
 
     /// Today's occasions at `ms`: the calendar's, then Boop's own days, its
     /// anniversary or a milestone day since it hatched (`hatched`), then
-    /// the growth stage it reached today (`stage`). Empty on an ordinary
+    /// the growth stage it reached today (`stage`), unless it hatched today
+    /// too: your first day with it is no celebration. Empty on an ordinary
     /// day.
     public static func occasions(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
                                  time: LocalTime) -> [Occasion] {
@@ -137,7 +140,7 @@ public enum Occasions {
                 out.append(Occasion(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
             }
         }
-        if let stage, stage.day == today { out.append(Occasion(words: "\(name) became a \(stage.name)", sign: "I'm a \(stage.name)!")) }
+        if let stage, stage.day == today, hatched != today { out.append(Occasion(words: "\(name) became a \(stage.name)", sign: "I'm a \(stage.name)!")) }
         return out
     }
 

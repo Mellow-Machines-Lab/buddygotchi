@@ -509,9 +509,10 @@ Besides drawing each mood and state, a face:
   `evening`, `night`), `friday`, `weekend`, `friday13`, the holidays
   (`newyear`, `valentines`, `piday`, `aprilfools`, `may4`, `halloween`,
   `winter`, `programmers`, `lunar`), `party` (a milestone day since
-  hatching, New Year's Day, the day a growth stage was reached; the Mac
-  greets a day with an occasion with its sign, and celebrates a stage the
-  moment it's reached, so a hat worn all day has a moment you saw), the tiers
+  hatching, New Year's Day, the day a growth stage was reached, but never
+  the day it hatched, your first with it; the Mac greets a day with an
+  occasion with its sign, and celebrates a stage the moment it's reached,
+  so a hat worn all day has a moment you saw), the tiers
   (`tier1` from 30 seconds, `tier2` from a minute, `tier3` from 2,
   `tier4` from 5 and `tier5` from 10, `Occasions.tiers`: how long the
   agents' working stretch has run, from the first turn of it, a rest of

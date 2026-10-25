@@ -189,6 +189,22 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
     }
 
+    /// The day Boop hatched is your first with it, so a stage reached that
+    /// day is no occasion: no party hat or confetti, no cheer, no greeting
+    /// and nothing in the popover. New Year's Day is still a party.
+    func testTheDayItHatchedIsNoParty() {
+        let core = Core(config: .init(time: utc, hatched: "2026-10-22"), lastActiveDay: "2026-10-22")
+        let now = ms(2026, 10, 22, 10)
+        core.setWallClock(now, at: now)
+        XCTAssertEqual(deviceReactions(core.reachedStage("Sprout", celebrate: true, at: now)), [], "no cheer")
+        XCTAssertFalse(core.snapshot(at: now).when.contains("party"), "a Sprout on the day it hatched")
+        XCTAssertEqual(core.occasions(at: now), [], "no greeting, and nothing for the popover")
+        XCTAssertTrue(Occasions.tags(at: ms(2027, 1, 1), hatched: "2027-01-01", party: true, time: utc).contains("party"),
+                      "hatched on New Year's Day")
+        XCTAssertTrue(Occasions.tags(at: ms(2026, 10, 23), hatched: "2026-10-22", party: true, time: utc).contains("party"),
+                      "a stage reached the day after")
+    }
+
     /// Pins `Occasions.tiers`: `tier1` from 30 seconds, `tier2` from a
     /// minute, `tier3` from 2, `tier4` from 5 and `tier5` from 10, the last.
     /// The last reached is sent; the board takes the ones below it as on.
