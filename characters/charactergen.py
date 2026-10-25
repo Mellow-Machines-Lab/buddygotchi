@@ -28,7 +28,7 @@ build beside the staged pack's (simulator/web/build.sh PACK).
 after a build reads (in_use()).
 
 Every form but --which and --firmware-to also checks the board's states
-where they're named (CHARACTER.md §9 and each pack's mac/faces.json), each
+against CHARACTER.md §9, each
 pack's studio entry (§12), references and review queue (§16), and writes
 characters/studio/packs.js, the studio page's data for the packs in this
 checkout, which git ignores. --check fails on a problem with any of them;
@@ -881,10 +881,9 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
     return problems
 
 
-def state_problems(packs: list[Path], source: Path = FIRMWARE_STATES, spec: Path = CHARACTERS / "CHARACTER.md") -> list[str]:
-    """The board's states against what names them elsewhere: CHARACTER.md's
-    tables of every state a face is asked for (§9), and each pack's
-    mac/faces.json, whose designs have a row for each."""
+def state_problems(source: Path = FIRMWARE_STATES, spec: Path = CHARACTERS / "CHARACTER.md") -> list[str]:
+    """The board's states against CHARACTER.md's tables of every state a
+    face is asked for (§9)."""
     board = firmware_states(source)
     problems = []
     text = spec.read_text()
@@ -894,17 +893,6 @@ def state_problems(packs: list[Path], source: Path = FIRMWARE_STATES, spec: Path
     if sorted(listed) != sorted(board):
         missing, extra = sorted(set(board) - set(listed)), sorted(set(listed) - set(board))
         problems.append(f"{spec.name} §9 doesn't list the board's states (missing {missing}, extra {extra})")
-    for pack in packs:
-        faces = pack / "mac" / "faces.json"
-        if not faces.is_file():
-            continue
-        table = json.loads(faces.read_text())
-        if table.get("states") != board:
-            problems.append(f"{pack.name}: mac/faces.json's states aren't the board's, in its order")
-        rows = {m: len(r) for m, r in table.get("designs", {}).items()}
-        short = sorted(m for m in table.get("moods", []) if rows.get(m) != len(board))
-        if short:
-            problems.append(f"{pack.name}: mac/faces.json has no row for each state in {', '.join(short)}")
     return problems
 
 
@@ -1215,7 +1203,7 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
     """Checks the studio's data and writes characters/studio/packs.js, which
     opens on `pack`. Problems fail --check and only warn otherwise."""
     packs, reads = local_packs(pack), reads or Reads()
-    problems = studio_problems(packs, reads=reads) + state_problems(packs) + behavior()[1]
+    problems = studio_problems(packs, reads=reads) + state_problems() + behavior()[1]
     for problem in problems:
         print(("CHARACTERGEN FAIL: " if check else "charactergen: warning: ") + problem, file=sys.stderr)
     data = json.dumps(studio_data(packs, pack, reads=reads), indent=1)

@@ -20,7 +20,7 @@ What a pack holds, and what it must have:
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
-| `mac/faces.json` | yes, or used (§6) | The pixel face's timings and the popover's still faces (§9) |
+| `mac/faces.json` | yes, or used (§6) | The pixel face's moods and the popover's still faces (§9) |
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
@@ -679,16 +679,9 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
 
-- `moods` and `states`: every mood, in the pack's order, and the 25
-  states above, in the designs' order.
-- `designs`: for each mood, a row for each state (a borrowing mood has
-  the designs it wears), with each variation's
-  loop length (`ms`), voice window (`voice_ms`), fact (`outcome` or
-  `ctx`), tags (`when`) and wait (`after`, in seconds). The board has the
-  same numbers (`faces.h`, `sfx.h`). The Mac times reactions and picks
-  their variations by them, never one with tags or a wait (the board
-  swaps one in itself). A fact no design is for plays any of the state's
-  designs.
+- `moods`: every mood, in the pack's order. The Mac never times a
+  reaction or picks its variation: the board does, by `faces.h` and
+  `sfx.h`.
 - `box`, `colors` and `faces`: the popover's still faces, each as
   `<mood>/<look>` for `idle`, `working` and `needs_you`, and
   `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.

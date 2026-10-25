@@ -111,7 +111,7 @@ function timeline(d) {
   }
   const guarded = protectedSoundStates.includes(d.state);
   // The voice window, as facegen lists it (by the bank's rule, mood-art.mjs
-  // voiceStart), so the Mac's FaceLoops has the same.
+  // voiceStart).
   const voiceMs = d.voiceMs;
   if (!Number.isInteger(voiceMs) || voiceMs < 0 || voiceMs >= 65536) {
     throw new Error(`${d.id}: no voice window in the manifest: run make -C internal faces first`);
