@@ -980,8 +980,9 @@ final class RuntimeTests: XCTestCase {
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
         XCTAssertEqual(none["what"] as? String, "Stay quiet: nothing in NOW is worth a face, "
-                       + "or HISTORY shows \(Self.name) still making the one it calls for (in progress).")
-        XCTAssertEqual(none["not_for"] as? String, "Anything PERSONALITY's Examples react to that \(Self.name) isn't already doing.")
+                       + "or HISTORY shows \(Self.name) still making the one it calls for, about the same thing (in progress).")
+        XCTAssertEqual(none["not_for"] as? String, "Something new said to \(Self.name), which always gets a face of its own, even while one plays; "
+                       + "or anything PERSONALITY's Examples react to that \(Self.name) isn't already doing.")
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
         // Sent: every line the link sent, verbatim and in order, and by whom.

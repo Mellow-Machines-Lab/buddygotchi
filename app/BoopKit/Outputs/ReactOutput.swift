@@ -168,8 +168,8 @@ public final class ReactOutput: Output {
         Option("once", "A small moment: the usual."),
         Option("twice", "A moment that stands out.", notFor: "Routine work."),
         Option("three times", "A big moment, such as a check passing after failing."),
-        Option("four times", "The biggest moments: a hard-won finish, or a failure that keeps coming back.",
-               notFor: "A single win or failure."),
+        Option("four times", "The biggest moments: a very long turn that failed, a hard-won finish, or a failure that keeps coming back.",
+               notFor: "A single check, or a single turn short of very long."),
     ]
 
     /// How many loops the face holds: `react.loops`' pick, or once when
@@ -240,8 +240,9 @@ public final class ReactOutput: Output {
             Question(key: "react.mood", text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
                      options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
-                                          + "or HISTORY shows \(name) still making the one it calls for (in progress).",
-                                      notFor: "Anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
+                                          + "or HISTORY shows \(name) still making the one it calls for, about the same thing (in progress).",
+                                      notFor: "Something new said to \(name), which always gets a face of its own, even while one plays; "
+                                          + "or anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
                          + pack.faces),
             Question(key: "react.animation", text: "If \(name) reacts, does NOW's line call for an animation: a turn that finished, and how it ended, you back after a long break, or your prompt saying \(name)'s name?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",

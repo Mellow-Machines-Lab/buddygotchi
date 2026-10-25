@@ -296,7 +296,12 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(mood.questions(now: nil, log: view()).map(\.key), ["mood"])
         XCTAssertEqual(offered(), ["calm"] + MoodGraph.moves["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
         let stay = try XCTUnwrap(mood.questions(now: nil, log: view())[0].options.first)
-        XCTAssertEqual(stay, Option("calm", "Stay calm: NOW is no reason MOOD gives to leave it, nor are its minutes up. No change is fine."))
+        XCTAssertEqual(stay, Option("calm", "Stay calm: NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine."),
+                       "the resting mood never fades")
+        XCTAssertEqual(MoodOutput.options(from: "grumpy").first,
+                       Option("grumpy", "Stay grumpy: NOW is no reason MOOD gives to leave it, whatever face it gets, and \(creature) hasn't been grumpy as long as MOOD says it lasts. No change is fine.",
+                              notFor: "\(creature) grumpy for as long as MOOD says it lasts, or longer, as HISTORY's last line says: then it fades, as MOOD says."),
+                       "any other mood stays only until its minutes are up")
         for m in MoodGraph.moods {
             let options = MoodOutput.options(from: m)
             XCTAssertEqual(options.map(\.name), [m] + MoodGraph.moves[m]!.ordinary + MoodGraph.moves[m]!.dramatic, m)

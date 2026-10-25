@@ -39,6 +39,18 @@ public enum MoodOutput {
     /// only a fresh, big event earns.
     public static let jump = "A check failing or passing, routine work, or a fade: this jump needs a fresh, big event in NOW, such as a turn that finished failed, the agent giving up, a barrage of pokes, a long turn finishing, thanks, rude words or sad news."
 
+    /// Staying in `mood`: when NOW is no reason MOOD gives to leave it. The
+    /// resting mood never fades; every other one does once it has lasted
+    /// MOOD's minutes, which HISTORY's last line (`sinceLine`) measures, and
+    /// its staying says it isn't for then.
+    static func stay(_ mood: String, in pack: CharacterPack) -> Option {
+        guard mood != pack.defaultMood else {
+            return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine.")
+        }
+        return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets, and \(pack.name) hasn't been \(mood) as long as MOOD says it lasts. No change is fine.",
+                      notFor: "\(pack.name) \(mood) for as long as MOOD says it lasts, or longer, as HISTORY's last line says: then it fades, as MOOD says.")
+    }
+
     /// The `mood` question's options for `mood`: stay, then each of its
     /// neighbours with its meaning, the dramatic ones also saying they're a
     /// jump. Nothing else: Jev never sees a move the graph doesn't have.
@@ -46,7 +58,7 @@ public enum MoodOutput {
         let moods = pack.options
         let meaning = { (name: String) in moods.first { $0.name == name }! }
         let moves = MoodGraph.mood(mood, in: pack)?.moves ?? MoodGraph.mood(pack.defaultMood, in: pack)!.moves
-        return [Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, nor are its minutes up. No change is fine.")]
+        return [stay(mood, in: pack)]
             + moves.ordinary.map(meaning)
             + moves.dramatic.map(meaning).map { o in
                 Option(o.name, o.what, notFor: [o.notFor, jump].compactMap { $0 }.joined(separator: " "))

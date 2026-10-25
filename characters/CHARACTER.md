@@ -266,9 +266,11 @@ Each mood in `moods`:
 | `moves` | yes | `ordinary` and `dramatic` neighbours: the moods it can move to in one step. Staying is always allowed. A dramatic move needs a fresh, big event |
 
 The `mood` question offers staying and every move from the current
-mood, the dramatic ones saying they need a fresh, big event; pacing, how
-long a mood holds and when it fades, is the steering's (§7). Pixel's
-moves are the same as Boop's.
+mood, the dramatic ones saying they need a fresh, big event, and
+staying, in any mood but the resting one, saying it ends when the
+minutes the mood's file gives are up; pacing, how long a mood holds and
+when it fades, is the steering's (§7). Pixel's moves are the same as
+Boop's.
 
 ## 6. A pack stands alone or names what it uses
 
