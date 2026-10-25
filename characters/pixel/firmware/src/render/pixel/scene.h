@@ -96,6 +96,9 @@ struct FaceMove {
   int mx = 0, my = 0;
 };
 FaceMove faceMove(const SceneShow& s);
+// `in` thousandths of the way from a to b, shut as b is: the move a
+// dissolve between two of the rig face's designs shows.
+FaceMove lerp(const FaceMove& a, const FaceMove& b, int in);
 // `faceless`, the face that shows is left out but for its decorations, for
 // the rig face to draw in its place, and so are its blink and talking.
 SceneFrame sceneFrame(const SceneShow& s, bool faceless = false);

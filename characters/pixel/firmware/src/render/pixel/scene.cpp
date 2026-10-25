@@ -239,6 +239,16 @@ FaceMove faceMove(const SceneShow& s) {
   return {v[0], v[1], v[2], v[3], v[4] != 0, v[5], v[6]};
 }
 
+FaceMove lerp(const FaceMove& a, const FaceMove& b, int in) {
+  return {lerp(a.dx, b.dx, in, 1000),
+          lerp(a.dy, b.dy, in, 1000),
+          lerp(a.ex, b.ex, in, 1000),
+          lerp(a.ey, b.ey, in, 1000),
+          b.shut,
+          lerp(a.mx, b.mx, in, 1000),
+          lerp(a.my, b.my, in, 1000)};
+}
+
 uint8_t sceneInk(int color) { return color > 0 && color < kColorCount ? toCanvas(color) : kBlack; }
 
 bool blinksItself(Mood m, SceneState s, int variant) {

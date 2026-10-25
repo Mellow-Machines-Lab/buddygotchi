@@ -52,19 +52,36 @@ int nextGlyph(const char*& p) {
 
 namespace {
 
-void drawGlyph(Canvas& c, const Font& f, int x, int y, int g, int ink) {
-  int rowBytes = (f.w + 1) / 2;
+// The palette index of each of a font's 16 coverages in an ink, worked out
+// once for a string: 0 for none, since no ink's ramp starts at black.
+struct Inked {
+  uint8_t at[16];
+  explicit Inked(int ink) {
+    for (int v = 0; v < 16; ++v) {
+      const int level = (v * kLevels + 7) / 15;
+      at[v] = level > 0 ? textAt(ink, level) : 0;
+    }
+  }
+};
+static_assert(textAt(kInkEye, 1) != kBlack && textAt(kInkOnAmber, 1) != kBlack, "an ink's first step isn't black");
+
+void drawGlyph(Canvas& c, const Font& f, int x, int y, int g, const Inked& ink) {
+  const int rowBytes = (f.w + 1) / 2;
   const uint8_t* src = f.data + size_t(g) * rowBytes * f.h;
-  for (int row = 0; row < f.h; ++row) {
-    int yy = y + row;
-    if (yy < 0 || yy >= kHeight) continue;
-    for (int col = 0; col < f.w; ++col) {
-      int xx = x + col;
-      if (xx < 0 || xx >= kWidth) continue;
-      uint8_t b = src[row * rowBytes + col / 2];
-      int v = (col & 1) ? (b & 15) : (b >> 4);
-      int level = (v * kLevels + 7) / 15;
-      if (level > 0) c.plot(xx, yy, textAt(ink, level));
+  const int row0 = std::max(0, -y), row1 = std::min<int>(f.h, kHeight - y);
+  const int col0 = std::max(0, -x), col1 = std::min<int>(f.w, kWidth - x);
+  // Drawn whole, the mask is no test.
+  const bool whole = c.mask().all();
+  for (int row = row0; row < row1; ++row) {
+    const uint8_t* bits = src + row * rowBytes;
+    uint8_t* line = c.pixels() + (y + row) * kWidth;
+    for (int col = col0; col < col1; ++col) {
+      const uint8_t color = ink.at[(col & 1) ? (bits[col / 2] & 15) : (bits[col / 2] >> 4)];
+      if (!color) continue;
+      if (whole)
+        line[x + col] = color;
+      else
+        c.plot(x + col, y + row, color);
     }
   }
 }
@@ -72,7 +89,8 @@ void drawGlyph(Canvas& c, const Font& f, int x, int y, int g, int ink) {
 }  // namespace
 
 int drawString(Canvas& c, const Font& f, int x, int y, const char* text, int ink) {
-  for (int g; (g = nextGlyph(text)) >= 0; x += f.w) drawGlyph(c, f, x, y, g, ink);
+  const Inked inked(ink);
+  for (int g; (g = nextGlyph(text)) >= 0; x += f.w) drawGlyph(c, f, x, y, g, inked);
   return x;
 }
 
@@ -80,9 +98,10 @@ int stringWidth(const Font& f, const char* text) { return glyphCount(text) * f.w
 
 int drawStringFit(Canvas& c, const Font& f, int x, int y, const char* text, int ink, int maxWidth) {
   if (stringWidth(f, text) <= maxWidth) return drawString(c, f, x, y, text, ink);
+  const Inked inked(ink);
   for (int keep = cutAt(text, maxWidth / f.w - 2), g; keep > 0 && (g = nextGlyph(text)) >= 0; --keep, x += f.w)
-    drawGlyph(c, f, x, y, g, ink);
-  for (int i = 0; i < 2; ++i, x += f.w) drawGlyph(c, f, x, y, '.' - 0x20, ink);
+    drawGlyph(c, f, x, y, g, inked);
+  for (int i = 0; i < 2; ++i, x += f.w) drawGlyph(c, f, x, y, '.' - 0x20, inked);
   return x;
 }
 

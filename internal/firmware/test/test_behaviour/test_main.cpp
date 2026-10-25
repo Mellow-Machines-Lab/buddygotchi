@@ -347,15 +347,19 @@ static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
 }
 // The needs-you screen shows.
 static bool needsYouShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
+// How many pixels above the lane two frames share.
+static int alike(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b) {
+  int n = 0;
+  for (int i = 0; i < render::kWidth * render::kLaneTop; ++i) n += a[i] == b[i];
+  return n;
+}
 // A switch of design doesn't cut hard: it dissolves over the rig's fade,
 // its first frame a sixteenth of the new design's pixels, so the frame
 // just after it is the frame before but for at most an eighth of the
 // pixels above the lane (the strip and the bubble come and go on their
 // own).
 static bool dissolves(const std::vector<uint8_t>& before, const std::vector<uint8_t>& after) {
-  int changed = 0;
-  for (int i = 0; i < render::kWidth * render::kLaneTop; ++i) changed += before[i] != after[i];
-  return changed <= render::kWidth * render::kLaneTop / 8;
+  return render::kWidth * render::kLaneTop - alike(before, after) <= render::kWidth * render::kLaneTop / 8;
 }
 
 // A brain's reaction: a `say` with a mood, held for
@@ -523,13 +527,6 @@ static void drawWhole(const SceneShow& s, std::vector<uint8_t>& px) {
   c.fill(render::kBlack);
   render::drawScene(c, s);
 }
-// How many pixels above the lane two frames share.
-static int alike(const std::vector<uint8_t>& a, const std::vector<uint8_t>& b) {
-  int n = 0;
-  for (int i = 0; i < render::kWidth * render::kLaneTop; ++i) n += a[i] == b[i];
-  return n;
-}
-
 // A second switch mid-way through a dissolve dissolves from the picture
 // that shows more, as it last showed, whole: 100 ms (half way) and 190 ms
 // (all but a frame) into idle's rig face dissolving into a finish, a

@@ -115,9 +115,10 @@ static_assert(sizeof(NeedsYouPose) == 9 * 2 + 8, "a pose has no padding to compa
 NeedsYouPose needsYouPose(uint32_t ms, bool eyesShut = false, int dy = 0);
 // The needs-you screen: the strip until the placard covers it, the head, the
 // placard over it with the strip's agent, thread (else project) and "+N more",
-// and the mitts either side of the head, or one of them waving. Only the
-// pixels the canvas's mask draws, its black too, so it dissolves as a
-// picture.
+// and the mitts either side of the head, or one of them waving. Drawn
+// whole over the black the face clears the canvas to; under a mask (a
+// dissolve), only the pixels the mask draws, its black too, so it
+// dissolves as a picture.
 void drawNeedsYouScreen(Canvas& c, const NeedsYouPose& p, const Strip& s);
 
 }  // namespace render

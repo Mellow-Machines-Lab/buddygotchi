@@ -45,6 +45,21 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(Int((mac * 1000).rounded()), board)
     }
 
+    /// The board's finish marks, a success's sage tick and a failure's clay
+    /// cross (firmware/src/render/palette.h), are the Mac's own inks for
+    /// them on dark (Theme.swift's `sageInkDark` and `clayInkDark`), so the
+    /// two show a result alike: changing either fails here.
+    func testTheBoardsFinishMarksAreTheMacsInks() throws {
+        let palette = try String(contentsOf: Self.repo.appendingPathComponent("firmware/src/render/palette.h"), encoding: .utf8)
+        let theme = try String(contentsOf: Self.repo.appendingPathComponent("app/Boop/Views/Theme.swift"), encoding: .utf8)
+        for (board, mac) in [("kSageRgb", "sageInkDark"), ("kClayRgb", "clayInkDark")] {
+            let rgb = try XCTUnwrap(palette.firstMatch(of: try Regex("\(board) = \\{([0-9]+), ([0-9]+), ([0-9]+)\\};")), board)
+            let hex = try XCTUnwrap(theme.firstMatch(of: try Regex("\(mac) = \"#([0-9A-F]{6})\"")), mac)
+            let channels = (1...3).map { Int(rgb.output[$0].substring!)! }
+            XCTAssertEqual(channels.map { String(format: "%02X", $0) }.joined(), String(hex.output[1].substring!), board)
+        }
+    }
+
     /// CHARACTER.md §5: Boop's moods are the slime design's host graph, in
     /// its order, with its meanings (slimegen writes them), and every edge
     /// the design draws is one of the pack's moves.
