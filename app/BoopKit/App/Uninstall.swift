@@ -24,17 +24,10 @@ public enum Uninstall {
     public static func run(installer: HookInstaller, stateDir: URL, loginItem: LoginItem,
                            environment: [String: String] = ProcessInfo.processInfo.environment) -> Result {
         var result = Result()
-        let fm = FileManager.default
-        // The listing is a link to Boop's socket: only that one goes.
-        let link = HookSocket.directory(environment: environment) + "/boop.sock"
-        let socket = stateDir.appendingPathComponent("boop.sock").path
-        if (try? fm.destinationOfSymbolicLink(atPath: link)) == socket {
-            do {
-                try fm.removeItem(atPath: link)
-                result.removed.append("the socket's listing")
-            } catch {
-                result.problems.append("the socket's listing: \(error)")
-            }
+        do {
+            if try removeListing("boop", stateDir: stateDir, environment: environment) { result.removed.append("the socket's listing") }
+        } catch {
+            result.problems.append("the socket's listing: \(error)")
         }
         // A copy of Boop on another folder (`AppSettings.copyName`) hears the
         // everyday Boop's entries, so it doesn't keep them.
@@ -53,6 +46,20 @@ public enum Uninstall {
             }
         }
         return result
+    }
+
+    /// Takes out the listing `name` in agent-hooks' folder
+    /// (`HookSocket.register`) only when it's the link to the Boop on
+    /// `stateDir`'s socket: another app's, or another copy's, stays. True
+    /// when it took it out.
+    @discardableResult
+    public static func removeListing(_ name: String, stateDir: URL,
+                                     environment: [String: String] = ProcessInfo.processInfo.environment) throws -> Bool {
+        let listing = HookSocket.directory(environment: environment) + "/\(name).sock"
+        let socket = stateDir.appendingPathComponent("boop.sock").path
+        guard (try? FileManager.default.destinationOfSymbolicLink(atPath: listing)) == socket else { return false }
+        try FileManager.default.removeItem(atPath: listing)
+        return true
     }
 
     /// Each agent's hooks, then the `agent-hook` they ran.
