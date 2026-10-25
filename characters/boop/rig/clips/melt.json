@@ -1,0 +1,12 @@
+{
+  "about": "A move at work: it lets go and melts into a puddle, drips running down, its eyes peeking over the keys, then pulls itself back up tall and wobbles into shape.",
+  "ms": 6200,
+  "tracks": {
+    "melt": [[0, 0], [600, 0], [2300, 1000, "in"], [4200, 1000], [4900, 0, "out"], [6200, 0]],
+    "squash": [[0, 0], [300, -60], [600, 0], [4200, 0], [4900, -400, "out"], [5250, 150], [5550, -90], [5850, 40], [6200, 0]],
+    "lift": [[0, 0], [4200, 0], [4900, 8, "out"], [5250, 0], [6200, 0]],
+    "eyeOpen": [[0, 0], [400, -700], [2300, -900], [2600, 0], [3900, 0], [4200, -900], [5000, -900], [5300, 0], [6200, 0]],
+    "gazeX": [[0, 0], [2600, 0], [3100, -700], [3600, 700], [3900, 0], [6200, 0]]
+  },
+  "cues": [[2300, "body_contact"], [5250, "body_contact"]]
+}

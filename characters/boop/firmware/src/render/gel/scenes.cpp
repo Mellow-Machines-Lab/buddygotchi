@@ -72,8 +72,6 @@ bool Scenes::wants(Prop prop) const {
              !(route.state == SceneState::kTaskComplete && route.outcome == Outcome::kSuccess);
     case kStartProp:
       return route.state == SceneState::kStarting;
-    case kHelpersProp:
-      return route.group == Family::kHelpers;
     case kListeningProp:
       return route.state == SceneState::kListening;
     default:
@@ -109,14 +107,6 @@ void Scenes::refresh(Prop prop) {
     case kStartProp:
       startProp.label = recipe.label;
       break;
-    case kHelpersProp:
-      helpersProp.returning = route.state == SceneState::kHelperReturn;
-      helpersProp.count = recipe.helpers;
-      helpersProp.progress = smooth(ageMs / (recipe.count ? recipe.contacts[recipe.count - 1].at : recipe.duration));
-      helpersProp.report = helpersProp.returning && resultRevealed;
-      helpersProp.direction = recipe.direction;
-      helpersProp.presence = recovery();
-      break;
     case kListeningProp:
       listeningPulse = focus();
       break;
@@ -141,20 +131,18 @@ void Scenes::cardReveal(Ramp& reveal) const {
     reveal.retarget(1, started + revealAt, kCardRevealMs);
 }
 // A prop whose route ends fades out with its last content (a card's reveal
-// going on as it was), so it never stops dead. New content (a new request,
-// or the helpers' next cycle) waits until nothing of the old is drawn, then
-// fades in from zero.
+// going on as it was), so it never stops dead. New content (a new
+// request) waits until nothing of the old is drawn, then fades in from
+// zero.
 void Scenes::updateProps(T time) {
   for (int p = 0; p < kProps; ++p) {
     const Prop prop = Prop(p);
     auto& slot = slots[p];
     const bool want = wants(prop);
-    bool same = slot.on == want && (!want || prop == kAlertProp ||
-                                    (slot.id == requestId && (prop != kHelpersProp || slot.iteration == iteration)));
+    bool same = slot.on == want && (!want || prop == kAlertProp || slot.id == requestId);
     if (!same && visible(prop, time).raw == 0) {
       slot.on = want;
       if (want && slot.id != requestId) slot.id = requestId;
-      slot.iteration = iteration;
       slot.ramp.reset();
       slot.reveal.reset();
       same = true;

@@ -97,12 +97,12 @@
 {"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "docs", "as": "page"}}
 {"clock": 44100}
 {"shot": "page"}
-// A helper: a little one runs off with it.
+// A helper's word lands like any other.
 {"clock": 46500}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "helper", "as": "helper"}}
 {"clock": 47400}
 {"shot": "helper"}
-// And comes back.
+// And so does its return's.
 {"clock": 49500}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "done", "as": "back"}}
 {"clock": 49900}

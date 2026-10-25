@@ -1,0 +1,10 @@
+{
+  "about": "Working's base at tier3, on the gel: leaning in, focused, its lids lower.",
+  "ms": 4000,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, -60], [1000, -30], [3000, -90], [4000, -60]],
+    "eyeOpen": [[0, -260], [4000, -260]],
+    "squash": [[0, 0], [2000, -20], [4000, 0]]
+  }
+}

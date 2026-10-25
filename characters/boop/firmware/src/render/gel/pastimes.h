@@ -14,17 +14,22 @@
 // occasions (the rig's looks.json, which both faces play), one at a time,
 // a rest of kRestMinMs to kRestMaxMs between them, the newest tier's
 // kNewestPct of the time and an older one's the rest, never the same twice
-// in a row.
+// in a row. A few are moves, the whole body going somewhere (reaching
+// for its coffee, melting, a stretch break off the screen), rarer than the
+// rest: never within kMoveGapMs of the last. While a pastime moves the
+// desk's paws (Enter pressed, the hands up at its head, spread as it
+// melts, away with it), they're where it puts them (pawsFor).
 //
 // The kit stays out while its tier lasts, fading in and out on the rig's
 // fade: at work a mug on the desk (tier1; in the morning its coffee is in
-// its hand instead, so neither the mug nor a sip or refill from it),
-// headphones (tier3) and a
-// sweatband (tier4), the hat winning where it has one, and from tier5 a
-// camp beside the desk, a tent with its fire, and a mug more on the stack
-// every kMugEveryMs; idle, a plant that grows (tier3 to tier5). Behind the
-// body: the camp, the plant and what a pastime sets beside it (the stars,
-// the tower). In front: everything else, at the body's anchors.
+// its hand instead, so neither the mug nor a sip or refill from it), a
+// mug more stacked on it every kMugEveryMs from tier5, and headphones
+// from tier3, the hat winning where it has one: put on where you can see
+// it (kPhonesOn, the first pastime dealt once they're wanted), so they
+// say it has settled in, and on from then while they're wanted; and in
+// the zone (tier5) a few motes drifting up beside it, kMotes of them, each
+// over kMoteMs. Idle, a plant that grows (tier3 to tier5). Behind the
+// body: the plant. In front: everything else, at the body's anchors.
 #pragma once
 #include <cstdint>
 
@@ -42,18 +47,19 @@ enum class Pastime : uint8_t {
   kSip,
   kPeek,
   kHum,
+  kDone,
   kPonder,
-  kTongue,
+  kRead,
   kNod,
   kBop,
   kDrum,
   kSticky,
+  kPhonesOn,
+  kReach,
   kRefill,
   kSnack,
-  kSecondWind,
-  kMarshmallow,
-  kPizza,
-  kStargaze,
+  kMelt,
+  kStretch,
   // Idle.
   kLookAround,
   kHopeful,
@@ -84,13 +90,15 @@ enum class Pastime : uint8_t {
 };
 
 // A pastime: the rig clip its body plays, the look it's for, the tier it
-// needs (1 to 5, 0 for none) and the wait, in seconds of its look.
+// needs (1 to 5, 0 for none), the wait, in seconds of its look, and
+// whether it's a move.
 struct PastimeInfo {
   Pastime id;
   const char* clip;
   SceneState look;
   uint8_t tier;
   uint16_t afterS;
+  bool move = false;
 };
 constexpr int kPastimeCount = int(Pastime::kCount) - 1;
 extern const PastimeInfo kPastimes[kPastimeCount];
@@ -113,9 +121,21 @@ Pastime pastimeFor(const char* reply);
 // newest tier's are dealt while an older one's fit too, in percent.
 constexpr uint32_t kRestMinMs = 4000, kRestMaxMs = 10000;
 constexpr int kNewestPct = 60;
-// A mug more on the camp's stack every this long, up to kMostMugs.
+// A move starts at least this long after the last one did.
+constexpr uint32_t kMoveGapMs = 90000;
+// From tier5, a mug more on the desk's stack every this long, up to kMostMugs.
 constexpr uint32_t kMugEveryMs = 10 * 60 * 1000;
 constexpr int kMostMugs = 4;
+// In the zone, this many motes beside it, each drifting up over this long.
+constexpr int kMotes = 5;
+constexpr uint32_t kMoteMs = 4500;
+// Putting the headphones on: they come down from kPhonesDropPx above its
+// ears, held by a hand at each, and are on kPhonesOnMs in. While it melts
+// they're off its head (it has none to hold them): gone over kMeltOffMs
+// from kMeltOffAt, back over kMeltOnMs by kMeltOnBy.
+constexpr int kPhonesDropPx = 120;
+constexpr uint32_t kPhonesOnMs = 1300;
+constexpr int kMeltOffAt = 600, kMeltOffMs = 600, kMeltOnBy = 5400, kMeltOnMs = 500;
 
 // While the headphones are on, a note floats up from each cup in turn: a
 // pair every kTuneEveryMs, the right's kTuneGapMs after the left's, each
@@ -135,27 +155,37 @@ uint32_t tierBit(int n);
 // the pastime playing (or a look's occasion, with no drawing of its own)
 // and how far in, at `fade` (0 … 255), and the kit, each at its opacity
 // (0 … 255): the desk's mug and how many are stacked, the headphones, the
-// sweatband, the camp, and the plant and how far it has grown (1 to 3).
+// zone's motes, and the plant and how far it has grown (1 to 3).
 struct PastimeShow {
   Pastime playing = Pastime::kNone;
   uint32_t age = 0, ms = 1;
   int fade = 0;
   uint32_t t = 0, when = 0;
-  int mug = 0, mugs = 1, headphones = 0, sweatband = 0, camp = 0, plant = 0, grown = 1;
+  int mug = 0, mugs = 1, headphones = 0, zone = 0, plant = 0, grown = 1;
+  // How far above its ears the headphones are, in px: coming down while
+  // they're put on.
+  int drop = 0;
 };
+// Where a pastime puts the desk's paws, each (0 left, 1 right) in the
+// thousandths of the surface paintProps draws them in: lifted, moved out
+// and at an opacity (0 … 255). At rest, typing as they do.
+struct Paws {
+  int lift[2] = {0, 0}, dx[2] = {0, 0}, alpha[2] = {255, 255};
+};
+Paws pawsFor(const PastimeShow& show);
 
-// The camp, the plant and the stars a pastime puts out: drawn after the
-// clear and before the body, so the body covers them.
+// The plant: drawn after the clear and before the body, so the body
+// covers it.
 void paintScenery(Surface& surface, const PastimeShow& show);
 // Whether paintScenery draws anything: only then is the whole surface
 // erased before the body (render/gel/painter.cpp), rather than a band at
 // a time as the body draws.
 bool showsScenery(const PastimeShow& show);
-// The kit it wears, the headphones and their tune and the sweatband, after what it wears
+// The kit it wears, the headphones and their tune, after what it wears
 // for the tags (render/gel/layers.h) and before the cards.
 void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at);
-// In front: the desk's mugs, then what the pastime playing holds, throws,
-// blows or dreams, at the body's anchors.
+// In front: the desk's mugs and the zone's motes, then what the pastime
+// playing holds, throws, blows or dreams, at the body's anchors.
 void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors& at, const Engine& e);
 
 }  // namespace render::gel

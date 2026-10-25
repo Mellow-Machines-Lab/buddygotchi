@@ -20,18 +20,19 @@ const PastimeInfo kPastimes[kPastimeCount] = {
     {Pastime::kSip, "sip", SceneState::kWorking, 1, 0},
     {Pastime::kPeek, "peek", SceneState::kWorking, 1, 0},
     {Pastime::kHum, "hum", SceneState::kWorking, 1, 0},
+    {Pastime::kDone, "done-beat", SceneState::kWorking, 1, 0},
     {Pastime::kPonder, "ponder", SceneState::kWorking, 2, 0},
-    {Pastime::kTongue, "tongue", SceneState::kWorking, 2, 0},
+    {Pastime::kRead, "read", SceneState::kWorking, 2, 0},
     {Pastime::kNod, "nod", SceneState::kWorking, 2, 0},
     {Pastime::kBop, "bop", SceneState::kWorking, 3, 0},
     {Pastime::kDrum, "drum", SceneState::kWorking, 3, 0},
     {Pastime::kSticky, "sticky", SceneState::kWorking, 3, 0},
+    {Pastime::kPhonesOn, "phones-on", SceneState::kWorking, 3, 0},
+    {Pastime::kReach, "coffee-reach", SceneState::kWorking, 3, 0, true},
     {Pastime::kRefill, "refill", SceneState::kWorking, 4, 0},
     {Pastime::kSnack, "snack", SceneState::kWorking, 4, 0},
-    {Pastime::kSecondWind, "second-wind", SceneState::kWorking, 4, 0},
-    {Pastime::kMarshmallow, "marshmallow", SceneState::kWorking, 5, 0},
-    {Pastime::kPizza, "pizza", SceneState::kWorking, 5, 0},
-    {Pastime::kStargaze, "stargaze", SceneState::kWorking, 5, 0},
+    {Pastime::kMelt, "melt", SceneState::kWorking, 4, 0, true},
+    {Pastime::kStretch, "stretch-break", SceneState::kWorking, 5, 0, true},
     {Pastime::kLookAround, "look-around", SceneState::kIdle, 1, 0},
     {Pastime::kHopeful, "hopeful", SceneState::kIdle, 1, 0},
     {Pastime::kHop, "hop", SceneState::kIdle, 1, 0},
@@ -85,14 +86,12 @@ constexpr uint16_t kGel = rgb565(89, 169, 224), kShine = rgb565(184, 233, 245), 
                    kWords = rgb565(184, 233, 245), kAmber = rgb565(239, 189, 103);
 constexpr uint16_t kMug = rgb565(214, 92, 84), kMugDark = rgb565(150, 56, 52), kCoffee = rgb565(110, 66, 40),
                    kSteam = rgb565(200, 210, 220), kPhones = rgb565(46, 48, 60), kPhonesCap = rgb565(86, 90, 110),
-                   kCushion = rgb565(236, 104, 140), kCushionShade = rgb565(196, 82, 116), kBand = rgb565(226, 64, 72),
-                   kSweat = rgb565(150, 220, 255), kTent = rgb565(232, 128, 72), kTentDark = rgb565(120, 52, 36),
-                   kLog = rgb565(120, 74, 40), kFlame = rgb565(250, 150, 40), kFlameCore = rgb565(255, 222, 100),
+                   kCushion = rgb565(236, 104, 140), kCushionShade = rgb565(196, 82, 116),
                    kLeaf = rgb565(96, 196, 112), kLeafDark = rgb565(60, 140, 80), kPot = rgb565(204, 112, 72),
                    kSoil = rgb565(70, 46, 32), kPetal = rgb565(250, 130, 180), kNote = rgb565(255, 214, 120),
                    kHeart = rgb565(240, 96, 140), kBulb = rgb565(255, 228, 110), kTick = rgb565(110, 220, 140),
-                   kTongue = rgb565(240, 110, 130), kCookie = rgb565(206, 150, 88), kChip = rgb565(90, 54, 30),
-                   kGlass = rgb565(170, 196, 206), kPizzaBox = rgb565(222, 190, 140), kCrust = rgb565(232, 172, 90),
+                   kCookie = rgb565(206, 150, 88), kChip = rgb565(90, 54, 30),
+                   kGlass = rgb565(170, 196, 206),
                    kCheese = rgb565(255, 214, 96), kPepperoni = rgb565(200, 60, 50), kStar = rgb565(255, 240, 170),
                    kBlanket = rgb565(150, 104, 200), kBlanketDark = rgb565(104, 66, 150),
                    kPlaid = rgb565(214, 186, 240), kFly = rgb565(30, 30, 36),
@@ -100,8 +99,7 @@ constexpr uint16_t kMug = rgb565(214, 92, 84), kMugDark = rgb565(150, 56, 52), k
                    kPage = rgb565(250, 246, 232), kLine = rgb565(170, 170, 190), kConsole = rgb565(124, 104, 210),
                    kScreen = rgb565(150, 230, 170), kCan = rgb565(90, 180, 120), kWater = rgb565(110, 190, 255),
                    kPaper = rgb565(250, 250, 255), kGold = rgb565(232, 190, 80), kSheep = rgb565(250, 250, 246),
-                   kFence = rgb565(170, 120, 70), kGrass = rgb565(80, 170, 90), kGrey = rgb565(150, 150, 160),
-                   kMoon = rgb565(255, 236, 170);
+                   kFence = rgb565(170, 120, 70), kGrass = rgb565(80, 170, 90), kGrey = rgb565(150, 150, 160);
 constexpr uint16_t kBlocks[] = {rgb565(240, 96, 96),  rgb565(250, 200, 70),  rgb565(100, 200, 120),
                                 rgb565(90, 160, 240), rgb565(170, 110, 230), rgb565(250, 150, 60)};
 constexpr uint16_t kLights[] = {rgb565(255, 90, 160), rgb565(90, 220, 255), rgb565(255, 220, 80),
@@ -282,10 +280,29 @@ void mug(Raster& r, int x, int base, int fill, uint32_t t, bool steam = true) {
   r.alpha = a;
 }
 
-// The mugs on the desk's right end: one, or a stack.
+// In the zone: motes drifting up beside it, by turns on its left and its
+// right, each from its lap's height to above its brim over kMoteMs,
+// swaying, fading in and out.
+void motes(const Stage& s, uint32_t t) {
+  constexpr int kEnd = rig::Anchors::kRingPoints - 1;
+  Raster& r = s.r;
+  const int a = r.alpha;
+  for (int i = 0; i < kMotes; ++i) {
+    const int age = int((t + uint32_t(i) * kMoteMs / kMotes) % kMoteMs), side = i % 2 ? 1 : -1;
+    const rig::Point& from = side > 0 ? s.at.lap[kEnd] : s.at.lap[0];
+    const int x = from.x / 16 + side * (s.X(16) + (i * 7) % 11) + wobble(age + i * 300, 1800, 4);
+    const int y = from.y / 16 - (from.y / 16 - s.sideY() + s.Y(30)) * age / int(kMoteMs);
+    r.alpha = a * window(age, 0, int(kMoteMs), 900, 1400) / 255 * 4 / 5;
+    r.disk(x, y, 2 + i % 2, kCream);
+  }
+  r.alpha = a;
+}
+
+// The mugs on the desk's right end: one, or a stack; the top one's base.
 void mugs(Raster& r, const Stage& s, int n, uint32_t t) {
   for (int i = 0; i < n; ++i) mug(r, s.X(400), s.deskY() - i * 18, 1024, t, i == n - 1);
 }
+int topMug(const Stage& s, int n) { return s.deskY() - (n - 1) * 18; }
 
 // An oval, filled, `rx` and `ry` its radii, all in sixteenths of a px.
 constexpr Point kUnitCircle[24] = {{1000, 0},  {966, 259},   {866, 500},   {707, 707},   {500, 866},   {259, 966},
@@ -379,70 +396,6 @@ void tune(Raster& r, const rig::Anchors& at, uint32_t t) {
   r.alpha = a;
 }
 
-// A sweatband round its brow, its tails flapping, and now and then a drop
-// of sweat running down.
-void sweatband(Raster& r, const rig::Anchors& at, uint32_t t) {
-  Point band[9];
-  const int lx = at.brimL.x, rx = at.brimR.x, down = (rx - lx) / 18;
-  const int fx = at.brimF.x, fy = at.brimF.y + down;
-  const int cx = 2 * fx - (lx + rx) / 2, cy = 2 * fy - (at.brimL.y + at.brimR.y) / 2 - down;
-  for (int i = 0; i <= 8; ++i) {
-    const int64_t u = i, v = 8 - i;
-    band[i] = {int((v * v * lx + 2 * u * v * cx + u * u * rx) / 64),
-               int((v * v * (at.brimL.y + down) + 2 * u * v * cy + u * u * (at.brimR.y + down)) / 64)};
-  }
-  const int width = std::max(16, rx - lx);
-  r.stroke16(band, 9, width / 12, kBand);
-  r.stroke16(band + 2, 5, width / 60 + 8, kCream);
-  const int flap = wobble(int(t), 700, width / 40);
-  for (int k : {0, 1}) {
-    const Point tail[] = {band[8], {band[8].x + width / 9, band[8].y + width / 20 + k * width / 18 + flap}};
-    r.stroke16(tail, 2, width / 28, kBand);
-  }
-  const int age = int(t % 3600);
-  if (age < 1200) {
-    const int x = at.brimL.x / 16 + 14, y = at.brimL.y / 16 + 14 + age / 30;
-    const int a = r.alpha;
-    r.alpha = a * std::min(255, (1200 - age) / 3) / 255;
-    r.disk(x, y + 3, 4, kSweat);
-    const Point tip[] = {{x - 3, y + 2}, {x + 3, y + 2}, {x, y - 5}};
-    r.polygon(tip, 3, kSweat);
-    r.alpha = a;
-  }
-}
-
-// A campfire's flames at (x, base), flickering.
-void fire(Raster& r, int x, int base, uint32_t t, int size = 10) {
-  const int a = r.alpha;
-  r.alpha = a * 36 / 255;
-  r.disk(x, base - size, size * 2, kFlame);
-  r.alpha = a;
-  r.line({x - size, base}, {x + size, base - 3}, 3, kLog);
-  r.line({x - size, base - 3}, {x + size, base}, 3, kLog);
-  for (int i = 0; i < 3; ++i) {
-    const int fx = x + (i - 1) * size / 2, fh = size * (12 + (i == 1) * 6) / 10 + wobble(int(t) + i * 170, 380, 3);
-    const Point flame[] = {
-        {fx - size / 3, base - 2}, {fx + size / 3, base - 2}, {fx + wobble(int(t) + i * 90, 260, 2), base - 2 - fh}};
-    r.polygon(flame, 3, kFlame);
-    const Point core[] = {{fx - size / 6, base - 2}, {fx + size / 6, base - 2}, {fx, base - 2 - fh * 3 / 5}};
-    r.polygon(core, 3, kFlameCore);
-  }
-}
-
-// The camp beside the desk: a tent, its door open, a pennant, and its fire
-// in front.
-void camp(Raster& r, const Stage& s, uint32_t t) {
-  const int x0 = s.X(446), x1 = s.X(502), base = s.floorY(), top = base - s.Y(56), mid = (x0 + x1) / 2;
-  const Point tent[] = {{x0, base}, {x1, base}, {mid, top}};
-  r.polygon(tent, 3, kTent);
-  const Point door[] = {{mid - 11, base}, {mid + 11, base}, {mid, top + 24}};
-  r.polygon(door, 3, kTentDark);
-  r.line({mid, top}, {mid, top - 10}, 2, kLog);
-  const Point pennant[] = {{mid, top - 10}, {mid + 10 + wobble(int(t), 900, 2), top - 7}, {mid, top - 4}};
-  r.polygon(pennant, 3, kCream);
-  fire(r, s.X(434), base, t, 7);
-}
-
 // The plant beside it, grown `grown` (1 a sprout, 2 leafy, 3 in flower),
 // swaying a little; `wiggle`, being watered.
 void plant(Raster& r, const Stage& s, int grown, uint32_t t, int wiggle = 0) {
@@ -491,31 +444,6 @@ void coffeePot(Raster& r, int x, int y, int tilt, Point& spout) {
   spout = at(-20, -14);
 }
 
-// The pizza box at (x, base), its lid `open` (0 … 1024): the lid rising
-// behind it, then the pizza inside showing over its front.
-void pizzaBox(Raster& r, int x, int base, int open) {
-  if (open > 0) {
-    const int lift = 40 * open / 1024;
-    const Point lid[] = {{x - 30, base - 9}, {x + 30, base - 9}, {x + 27, base - 9 - lift}, {x - 27, base - 9 - lift}};
-    r.polygon(lid, 4, rgb565(196, 160, 112));
-    if (lift > 20) r.disk(x, base - 9 - lift / 2, 6, kPepperoni);  // the pizzeria's mark
-    r.round(x - 28, base - 15, 56, 12, 6, kCrust);
-    r.round(x - 24, base - 14, 48, 9, 4, kCheese);
-    for (int i = 0; i < 4; ++i) r.disk(x - 15 + i * 10, base - 11 + (i % 2) * 2, 2, kPepperoni);
-  }
-  r.round(x - 32, base - 9, 64, 9, 2, kPizzaBox);
-  if (open == 0) r.line({x - 30, base - 8}, {x + 30, base - 8}, 1, rgb565(196, 160, 112));
-}
-
-// A slice of pizza, its point at (x, y), `left` of it uneaten (0 … 1024).
-void slice(Raster& r, int x, int y, int left) {
-  const int len = 8 + 16 * left / 1024;
-  const Point v[] = {{x, y}, {x + len, y - len / 2 - 4}, {x + len, y + len / 2 + 4}};
-  r.polygon(v, 3, kCheese);
-  r.line({x + len, y - len / 2 - 4}, {x + len, y + len / 2 + 4}, 4, kCrust);
-  r.disk(x + len * 2 / 3, y, 2, kPepperoni);
-}
-
 // A paper plane at (x, y), flying toward `dir` thousandths of a turn (0
 // right, 250 down).
 void plane(Raster& r, int x, int y, int dir) {
@@ -551,7 +479,7 @@ void sip(const Stage& s, const PastimeShow& p) {
   Raster& r = s.r;
   const int age = int(p.age);
   const int up = eased(age, 0, 600) - eased(age, 2200, 2800);
-  const int x = mix(s.X(400), s.mouthX() + s.X(50), up), base = mix(s.deskY(), s.mouthY() + s.Y(10), up);
+  const int x = mix(s.X(400), s.mouthX() + s.X(50), up), base = mix(topMug(s, p.mugs), s.mouthY() + s.Y(10), up);
   mug(r, x, base, 1024 - span(age, 700, 2000) / 4, p.t, up < 200);
   if (up > 100) hand(r, x - 11, base - 8);
   if (const int a = window(age, 2200, 2900); a) {
@@ -608,16 +536,54 @@ void ponder(const Stage& s, const PastimeShow& p) {
   r.alpha = 255;
 }
 
-void tongue(const Stage& s, const PastimeShow& p) {
+// Something finished: a tick on the monitor as Enter goes down, and a
+// sparkle off its corner.
+void done(const Stage& s, const PastimeShow& p) {
   Raster& r = s.r;
-  const int age = int(p.age), out = eased(age, 200, 500) - eased(age, int(p.ms) - 500, int(p.ms) - 200);
-  if (out <= 0) return;
-  const int x = s.mouthX() + s.X(16) + wobble(age, 600, 2), y = s.mouthY() + s.Y(16);
-  r.round(x - 7, y, 14, 4 + 9 * out / 1024, 6, kTongue);
-  r.line({x, y + 2}, {x, y + 2 + 5 * out / 1024}, 1, rgb565(200, 70, 96));
-  for (int i = 0; i < 3; ++i)
-    r.line({s.at.eyeL.x / 16 - s.X(30) - i * 2, s.at.eyeL.y / 16 - s.Y(18) + i * 9},
-           {s.at.eyeL.x / 16 - s.X(40) - i * 2, s.at.eyeL.y / 16 - s.Y(22) + i * 9}, 2, kCream);
+  const int age = int(p.age);
+  if (const int a = window(age, 600, 2300, 80, 500)) {
+    r.alpha = a;
+    const int x = s.X(96), y = s.Y(268), k = eased(age, 600, 800);
+    r.line({x - 8, y}, {x - 8 + 6 * k / 1024, y + 6 * k / 1024}, 3, kTick);
+    if (k == 1024) {
+      const int up = eased(age, 800, 950);
+      r.line({x - 2, y + 6}, {x - 2 + 14 * up / 1024, y + 6 - 14 * up / 1024}, 3, kTick);
+    }
+    if (const int b = window(age, 750, 1500, 80, 400)) {
+      r.alpha = b;
+      sparkle(r, s.X(140), s.Y(244), 4 + 3 * eased(age, 750, 950) / 1024, kShine);
+    }
+  }
+  r.alpha = 255;
+}
+
+// Reading closely: the line its eyes are on lit on the monitor, a line
+// further down every 700 ms; from tier4 it's close enough to fog the glass.
+void read(const Stage& s, const PastimeShow& p) {
+  Raster& r = s.r;
+  const int age = int(p.age);
+  if (const int a = window(age, 800, 3900, 150, 200)) {
+    const int line = std::min(2, (age - 800) / 1050);
+    r.alpha = a * 110 / 255;
+    r.round(s.X(62), s.Y(265) + line * s.Y(5), s.X(56) - line * s.X(12), s.Y(5), 2, kShine);
+    if (tierOf(p.when) >= 4)  // soft at its edge: rings of breath, thinner further out
+      for (int ring = 0; ring < 3; ++ring) {
+        r.alpha = a * (16 + ring * 14) / 255;
+        r.disk(s.X(122), s.Y(270), 18 - ring * 5, kCream);
+      }
+  }
+  r.alpha = 255;
+}
+
+// Putting the headphones on: a hand at each cup, bringing them down over
+// its ears (the cups themselves are the kit's, dropped: paintWorn).
+void phonesOn(const Stage& s, const PastimeShow& p) {
+  const int a = window(int(p.age), 0, int(kPhonesOnMs) + 200, 150, 300);
+  if (!a) return;
+  const Cups c = cupsOf(s.at);
+  s.r.alpha = a;
+  for (int side : {0, 1}) hand(s.r, c.outer[side] / 16 + (side ? 4 : -4), c.y[side] / 16 - p.drop + 6, 10);
+  s.r.alpha = 255;
 }
 
 void nod(const Stage& s, const PastimeShow& p) {
@@ -686,11 +652,70 @@ void refill(const Stage& s, const PastimeShow& p) {
   Point spout;
   coffeePot(r, x, y, tilt % 1000, spout);
   if (age > 950 && age < 2500) {
-    const int top = s.deskY() - 18;
+    const int top = topMug(s, p.mugs) - 18;
     const Point pour[] = {
         {spout.x * 16, spout.y * 16}, {(spout.x - 4) * 16, (spout.y + 8) * 16}, {s.X(398) * 16, top * 16}};
     r.stroke16(pour, 3, 40, kCoffee);
   }
+}
+
+// The coffee reach: the top mug in its hand from when it reaches it till
+// it lets go (kReachHolds), brought in to its mouth for the sip between,
+// "ahh" after; on the stack, before and after, the kit's.
+constexpr int kReachHolds = 1000, kReachLets = 4100;
+void reach(const Stage& s, const PastimeShow& p) {
+  Raster& r = s.r;
+  const int age = int(p.age);
+  const int in = eased(age, 1300, 1900) - eased(age, 3300, 3800);
+  const int x = mix(s.X(400), s.mouthX() + s.X(44), in), base = mix(topMug(s, p.mugs), s.mouthY() + s.Y(12), in);
+  if (age >= kReachHolds && age < kReachLets) {
+    mug(r, x, base, 1024 - span(age, 1900, 3300) / 4, p.t, false);
+    hand(r, x - 11, base - 8);
+  }
+  if (const int a = window(age, 3100, 3800)) {
+    r.alpha = a;
+    say(r, "ahh", s.mouthX() - s.X(48), s.mouthY() - s.Y(10), kCream);
+    r.alpha = 255;
+  }
+}
+
+// The melt: drips running down its sides to the desk as it goes, then,
+// while it's a puddle, bubbles rising in it.
+void melt(const Stage& s, const PastimeShow& p) {
+  Raster& r = s.r;
+  const int age = int(p.age);
+  for (int i = 0; i < 6; ++i) {
+    const int from = 800 + i * 230, k = span(age, from, from + 900);
+    if (k <= 0 || k >= 1024) continue;
+    const int side = i % 2 ? 1 : -1;
+    const int x = (side > 0 ? s.rightX() : s.leftX()) - side * s.X(10 + i * 3) + side * k * 14 / 1024;
+    const int y = mix(s.sideY() + s.Y(10), s.deskY() - 5, k * k / 1024);
+    r.alpha = 255 - std::max(0, k - 800) * 255 / 224;
+    r.disk(x, y, 4, kGel);
+    const Point tip[] = {{x - 3, y - 1}, {x + 3, y - 1}, {x, y - 9}};
+    r.polygon(tip, 3, kGel);
+    r.disk(x - 1, y - 1, 1, kShine);
+  }
+  for (int i = 0; i < 4; ++i) {
+    const int from = 2500 + i * 380, k = span(age, from, from + 900);
+    if (k <= 0 || k >= 1024) continue;
+    r.alpha = window(age, from, from + 900, 150, 300);
+    bubble(r, s.crownX() + (i - 2) * s.X(34) + s.X(17), s.crownY() + s.Y(14) - k * s.Y(22) / 1024, 3 + i % 2);
+  }
+  r.alpha = 255;
+}
+
+// The stretch break: back at the desk, its hands up high either side of
+// its head as it stretches tall, and down as it lets go.
+void stretch(const Stage& s, const PastimeShow& p) {
+  const int age = int(p.age), up = eased(age, 7250, 8000) - eased(age, 9000, 9400);
+  if (!up) return;
+  s.r.alpha = window(age, 7250, 9400, 150, 250);
+  for (int side : {-1, 1}) {
+    const int x = (side > 0 ? s.rightX() : s.leftX()) + side * (s.X(6) + s.X(8) * up / 1024);
+    hand(s.r, x, s.sideY() - s.Y(10) - s.Y(46) * up / 1024, 10);
+  }
+  s.r.alpha = 255;
 }
 
 void snack(const Stage& s, const PastimeShow& p) {
@@ -714,83 +739,6 @@ void snack(const Stage& s, const PastimeShow& p) {
         r.disk(x - 12 + i * 6, y + 4 + fall, 2, kCookie);
       }
   r.alpha = 255;
-}
-
-void secondWind(const Stage& s, const PastimeShow& p) {
-  Raster& r = s.r;
-  const int age = int(p.age);
-  if (const int a = window(age, 900, 2200, 100, 500)) {
-    r.alpha = a;
-    for (int i = 0; i < 6; ++i) {
-      const int k = i * 167 + age / 8, reach = s.X(150) + eased(age, 900, 1300) * s.X(20) / 1024;
-      sparkle(r, s.eyesX() + reach * cosT(k) / 1000, s.eyesY() - s.Y(30) + reach * 7 / 10 * sinT(k) / 1000,
-              5 + (i + age / 120) % 3 * 2, kStar);
-    }
-    say(r, "!", s.crownX() + s.X(90), s.crownY() + s.Y(20), kAmber, kSign);
-  }
-  r.alpha = 255;
-}
-
-void marshmallow(const Stage& s, const PastimeShow& p) {
-  Raster& r = s.r;
-  const int age = int(p.age);
-  const int out = eased(age, 0, 600), eat = eased(age, 3000, 3600);
-  const Point grip{s.rightX() + s.X(4), s.deskY() - s.Y(24)};
-  const Point fireTip{s.X(434), s.floorY() - s.Y(22)}, mouth{s.mouthX() + s.X(26), s.mouthY()};
-  const Point tip{mix(mix(grip.x, fireTip.x, out), mouth.x, eat), mix(mix(grip.y, fireTip.y, out), mouth.y, eat)};
-  r.line(grip, tip, 2, kLog);
-  hand(r, grip.x, grip.y);
-  if (age < 3800) {
-    const int toast = span(age, 600, 3000);
-    const uint16_t ink =
-        toast < 512 ? blend(kCream, kGold, toast * 2) : blend(kGold, rgb565(150, 92, 52), (toast - 512) * 2);
-    r.round(tip.x - 6, tip.y - 5, 12, 10, 4, ink);
-  }
-  if (const int a = window(age, 3900, int(p.ms), 150, 500)) {
-    r.alpha = a;
-    heart(r, s.mouthX() - s.X(46), s.mouthY() - s.Y(20) - (age - 3900) / 40, 5, kHeart);
-    r.alpha = 255;
-  }
-}
-
-void pizza(const Stage& s, const PastimeShow& p) {
-  Raster& r = s.r;
-  const int age = int(p.age);
-  const int in = eased(age, 0, 600) - eased(age, 4000, 4600);
-  const int open = eased(age, 600, 1000) - eased(age, 3400, 3800);
-  const int x = mix(s.X(580), s.X(366), in);
-  pizzaBox(r, x, s.deskY(), open);
-  if (age >= 1100 && age < 3200) {
-    const int up = eased(age, 1100, 1800);
-    int left = 1024;
-    for (int at : {2000, 2500, 3000}) left -= age >= at ? 340 : 0;
-    const int sx = mix(x - s.X(10), s.mouthX() + s.X(18), up), sy = mix(s.deskY() - 10, s.mouthY() + s.Y(4), up);
-    if (left > 0) slice(r, sx, sy, left);
-    if (up > 512) hand(r, sx + s.X(34), sy + 4);
-  }
-}
-
-// The stars and a moon behind it, and a shooting star; at night, the
-// night sky's (render/gel/layers.h) and the shooting star.
-void stargaze(const Stage& s, const PastimeShow& p) {
-  Raster& r = s.r;
-  const int age = int(p.age);
-  static constexpr Point kStars[] = {{40, 26},  {96, 14},  {150, 40}, {210, 18}, {290, 30}, {350, 12},
-                                     {410, 36}, {468, 20}, {22, 90},  {480, 84}, {70, 150}, {446, 140}};
-  if (!hasTag(p.when, "night")) {
-    for (int i = 0; i < int(std::size(kStars)); ++i) {
-      const int tw = 3 + (int(p.t) / 150 + i * 3) % 4;
-      sparkle(r, s.X(kStars[i].x), s.Y(kStars[i].y), tw, kStar);
-    }
-    r.disk(s.X(56), s.Y(60), 15, kMoon);
-    r.disk(s.X(64), s.Y(54), 13, 0);
-  }
-  if (age >= 1800 && age < 2700) {
-    const int k = span(age, 1800, 2700), x = mix(s.X(60), s.X(470), k), y = mix(s.Y(20), s.Y(110), k);
-    r.alpha = r.alpha * (1024 - k / 2) / 1024;
-    r.line({x - 30, y - 7}, {x, y}, 2, kStar);
-    star(r, x, y, 6, age, kStar);
-  }
 }
 
 // A blanket tucked in round it as it naps: pulled up from the floor to
@@ -1264,25 +1212,15 @@ int tuneNoteAge(uint32_t t, int side) {
   return age >= from && age < from + kTuneNoteMs ? int(age - from) : -1;
 }
 
-bool showsScenery(const PastimeShow& show) {
-  return show.camp || show.plant || (show.fade && show.playing == Pastime::kStargaze);
-}
+bool showsScenery(const PastimeShow& show) { return show.plant; }
 
 void paintScenery(Surface& surface, const PastimeShow& show) {
   if (!surface.pixels || !showsScenery(show)) return;
   Raster r{surface};
   rig::Anchors none;
   const Stage s{r, surface.width, surface.height, none};
-  if (show.camp) {
-    r.fade = show.camp;
-    camp(r, s, show.t);
-  }
-  if (show.plant) {
-    r.fade = show.plant;
-    plant(r, s, show.grown, show.t, show.playing == Pastime::kWater ? wobble(int(show.age), 300, 2) : 0);
-  }
-  r.fade = show.fade;
-  if (show.fade && show.playing == Pastime::kStargaze) stargaze(s, show);
+  r.fade = show.plant;
+  plant(r, s, show.grown, show.t, show.playing == Pastime::kWater ? wobble(int(show.age), 300, 2) : 0);
 }
 
 void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at) {
@@ -1290,13 +1228,44 @@ void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at
   Raster r{surface};
   if (show.headphones) {
     r.fade = show.headphones;
-    headphones(r, at);
-    if (show.playing != Pastime::kBop) tune(r, at, show.t);  // bopping's notes are its own
+    rig::Anchors up = at;
+    for (rig::Point* q : {&up.crown, &up.brimL, &up.brimR, &up.eyeL, &up.eyeR}) q->y -= show.drop * 16;
+    headphones(r, up);
+    // Bopping's notes are its own; none while they come down.
+    if (show.playing != Pastime::kBop && !show.drop) tune(r, at, show.t);
   }
-  if (show.sweatband) {
-    r.fade = show.sweatband;
-    sweatband(r, at, show.t);
+}
+
+Paws pawsFor(const PastimeShow& show) {
+  Paws paws;
+  const int age = int(show.age);
+  switch (show.playing) {
+    case Pastime::kDone:  // the right one up, and down on Enter
+      paws.lift[1] = 60 * (eased(age, 0, 450) - eased(age, 450, 600)) / 1024;
+      break;
+    case Pastime::kPhonesOn:  // both up at its head, holding them
+      paws.alpha[0] = paws.alpha[1] = 255 - window(age, 0, int(kPhonesOnMs) + 200, 150, 300);
+      break;
+    case Pastime::kReach:  // the right one has the mug
+      paws.alpha[1] = 255 - window(age, 700, 4400, 200, 200);
+      break;
+    case Pastime::kMelt: {  // spread out and down with the puddle
+      const int spread = eased(age, 600, 2300) - eased(age, 4200, 4900);
+      paws.dx[0] = -70 * spread / 1024, paws.dx[1] = 70 * spread / 1024;
+      paws.lift[0] = paws.lift[1] = -10 * spread / 1024;
+      break;
+    }
+    case Pastime::kStretch:  // away with it, then up high
+      paws.alpha[0] = paws.alpha[1] = 255 - window(age, 250, 9400, 200, 300);
+      break;
+    default: return paws;
   }
+  // A pastime stopped early gives them back as it fades.
+  for (int side : {0, 1}) {
+    paws.lift[side] = paws.lift[side] * show.fade / 255;
+    paws.alpha[side] = 255 - (255 - paws.alpha[side]) * show.fade / 255;
+  }
+  return paws;
 }
 
 void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors& at, const Engine& e) {
@@ -1305,9 +1274,15 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
   const Stage s{r, surface.width, surface.height, at};
   // The desk's kit fades with the desk.
   const int desk = std::clamp((e.scenes.desk.x * 255).integer(), 0, 255);
-  if (show.mug && show.playing != Pastime::kSip) {
+  if (show.mug) {  // the top one's in its hand while it sips or reaches for it
     r.fade = show.mug * desk / 255;
-    mugs(r, s, show.mugs, show.t);
+    const bool held = show.playing == Pastime::kSip ||
+                      (show.playing == Pastime::kReach && show.age >= kReachHolds && show.age < kReachLets);
+    mugs(r, s, show.mugs - held, show.t);
+  }
+  if (show.zone) {
+    r.fade = show.zone;
+    motes(s, show.t);
   }
   r.fade = show.fade;
   if (!show.fade) return;
@@ -1316,16 +1291,18 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
     case Pastime::kPeek: peek(s, show); break;
     case Pastime::kHum: hum(s, show); break;
     case Pastime::kPonder: ponder(s, show); break;
-    case Pastime::kTongue: tongue(s, show); break;
+    case Pastime::kDone: done(s, show); break;
+    case Pastime::kRead: read(s, show); break;
+    case Pastime::kPhonesOn: phonesOn(s, show); break;
     case Pastime::kNod: nod(s, show); break;
     case Pastime::kBop: bop(s, show, show.headphones > 0); break;
     case Pastime::kDrum: drum(s, show); break;
     case Pastime::kSticky: sticky(s, show); break;
     case Pastime::kRefill: refill(s, show); break;
     case Pastime::kSnack: snack(s, show); break;
-    case Pastime::kSecondWind: secondWind(s, show); break;
-    case Pastime::kMarshmallow: marshmallow(s, show); break;
-    case Pastime::kPizza: pizza(s, show); break;
+    case Pastime::kReach: reach(s, show); break;
+    case Pastime::kMelt: melt(s, show); break;
+    case Pastime::kStretch: stretch(s, show); break;
     case Pastime::kLookAround: lookAround(s, show); break;
     case Pastime::kHopeful: hopeful(s, show); break;
     case Pastime::kHop: hop(s, show); break;

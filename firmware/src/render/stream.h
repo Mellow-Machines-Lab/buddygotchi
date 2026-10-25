@@ -61,8 +61,6 @@ enum class CallMove : uint8_t {
   kPlane,    // a paper plane from the edge, caught
   kPhone,    // a phone beside it ringing, the word its call
   kPage,     // a page beside it, turning
-  kHelper,   // carried off by a little one
-  kBack,     // brought back by a little one
   kHit,      // between the eyes: knocked back, dizzy, stars
   kShrug,    // beside the head, then an empty bubble: a shrug
   kShatter,  // above the crown, bursting into bits it swallows

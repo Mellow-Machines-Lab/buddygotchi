@@ -62,6 +62,15 @@ const Look* Rig::look(SceneState state) const {
   return find(looks, [&](const Look& l) { return l.state == state; });
 }
 
+// tags.h numbers the tiers in order, so the last reached has the highest bit.
+const Clip* Look::tiered(uint32_t when) const {
+  const Clip* base = nullptr;
+  uint32_t last = 0;
+  for (const TierClip& t : tiers)
+    if ((when & t.when) == t.when && t.when > last) last = t.when, base = t.clip;
+  return base;
+}
+
 int Look::fitting(uint32_t when, uint32_t lookMs) const {
   int n = 0;
   for (const Occasion& o : occasions) n += fits(o.when, o.afterS, when, lookMs);

@@ -15,6 +15,12 @@ inline int root(uint32_t n) {
   }
 }
 inline int product(int a, int b) { return a * b / 4096; }
+// The dome's radius at its widest, in world units (Q12); how far the rig's
+// reach carries its reaching side out at its middle, and pinches the other
+// in, and moves all of it toward the reach, at full reach; and how much of
+// its height a full melt takes away, and how much wider it spreads.
+constexpr int kDomeRadius = 4506, kReachOut = 1900, kReachIn = 600, kReachShift = 260;
+constexpr int kMeltDrop = 2540, kMeltSpread = 1720;
 struct World {
   int x, y, z;
 };
@@ -43,6 +49,16 @@ struct Projector {
     p.x = product(x, cs) - product(y, sn);
     p.y = std::max(74, product(x, sn) + product(y, cs) + 2540 + c.lift);
     p.z += product(c.forward, h2);
+    if (c.reach) {
+      // Its middle, between base and crown, most: the reaching side out
+      // (kReachOut, a cube's ease from its middle), the other pinched in
+      // (kReachIn), and all of it a little toward the reach (kReachShift).
+      const int at = product(4 * h, 4096 - h), side = c.reach > 0 ? 1 : -1, k = std::abs(c.reach);
+      const int t = std::clamp(side * p.x * 4096 / kDomeRadius, -4096, 4096);
+      if (t > 0) p.x += side * product(product(k, kReachOut), product(product(product(t, t), t), at));
+      else p.x -= product(product(k, kReachIn), product(p.x, at));
+      p.x += product(product(c.reach, kReachShift), at);
+    }
     p.x += c.slide;
     return p;
   }
@@ -62,6 +78,11 @@ struct Projector {
       const int top = restBodyTop(surface.height) * 16, bottom = restBodyBottom(surface.height) * 16;
       py = c.squeezeTop * 16 + int(int64_t(py - top) * (c.squeezeBottom - c.squeezeTop) * 16 / (bottom - top));
       px = surface.width * 8 + product(px - surface.width * 8, c.widen);
+    } else if (c.melt) {  // melted down onto the desk: its base stays, the rest sinks and spreads
+      const int top = restBodyTop(surface.height) * 16, bottom = restBodyBottom(surface.height) * 16;
+      const int height = bottom - top, left = height - product(height, product(c.melt, kMeltDrop));
+      py = bottom + int(int64_t(py - bottom) * left / height);
+      px = surface.width * 8 + product(px - surface.width * 8, 4096 + product(c.melt, kMeltSpread));
     }
     return {px, py};
   }

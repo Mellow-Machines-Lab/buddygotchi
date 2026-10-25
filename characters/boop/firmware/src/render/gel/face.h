@@ -92,6 +92,7 @@ class GelFace final : public Face {
   // A pastime, from t, whoever's turn it would be (the face deals the rest
   // itself): for tests and pictures of each.
   void playPastime(Pastime p, uint32_t t);
+  bool playPastime(const char* clip, uint32_t t) override;
   // What it shows of the pastimes at t: the one playing, and the kit.
   PastimeShow pastimes(uint32_t t) const;
 
@@ -118,11 +119,20 @@ class GelFace final : public Face {
   SceneState occasionLook_ = SceneState::kNone, dealtLook_ = SceneState::kNone;
   bool stopped_ = false;
   const rig::Clip* lastClip_ = nullptr;
+  // The base clip on the mixer (showBase).
+  const rig::Clip* base_ = nullptr;
   // The kit, each easing in and out, as the tiers and the look call for
-  // it (showKit): when the camp came out, for its stack of mugs, and how
-  // far the plant has grown.
-  rig::Ramp mug_, headphones_, sweatband_, camp_, plant_;
-  uint32_t campSince_ = 0;
+  // it (showKit): when the work reached tier5, for the stack of mugs, and
+  // how far the plant has grown.
+  rig::Ramp mug_, headphones_, zone_, plant_;
+  uint32_t zoneSince_ = 0;
+  bool inZone_ = false;
+  // Whether it wants the headphones on (working from tier3, its head free),
+  // and has put them on since it last took them off (kPhonesOn).
+  bool phonesWanted_ = false, phonesOn_ = false;
+  // When the last move started (kMoveGapMs), if one has.
+  uint32_t movedAt_ = 0;
+  bool moved_ = false;
   int grown_ = 1;
   // The reply it played last (FaceContext::reply), its clip or its
   // pastime, by when it started, so each plays once.
@@ -154,6 +164,9 @@ class GelFace final : public Face {
   uint32_t landedAt_ = 0;
   bool landed_ = true;
   void advanceTo(uint32_t);
+  // While the look shows: its tier's base clip on the mixer (the rig's
+  // looks.json tiers), none otherwise, the old one fading out.
+  void showBase();
   // While the engine shows the look itself, and nothing else holds the
   // body: once the rest is over, a look's occasion or a pastime that fits;
   // the one playing fades out when the look gives way.

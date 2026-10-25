@@ -926,15 +926,19 @@ which the gel plays over the face (`reply-yes` … `reply-notme`: a nod, a
 shake of the head, a shrug, a head tilt, a yawn, a wiggle and so on, one
 for each of `ReactOutput.replies` and `dunno`; a `nap` or a `dance` while
 the look is idle or asleep plays the gel's own pastime instead, the
-snuggle under its blanket or the dance), and the gel's pastimes' clips
-(below, The gel on the rig).
+snuggle under its blanket or the dance), working's base for each tier,
+which only the gel loops, and the gel's pastimes' clips (below, The gel
+on the rig).
 
-**Channels.** The body's `squash`, `lean` and `lift`; the eyes'
-`eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's
-`mouthOpen`: those a clip or a finger moves. Each is a whole number, in
-thousandths but for `lift` (px), with a range and a value at rest, where
-a face draws its art as drawn: `kChannelInfo` in `rig.h` says what each
-means, and `charactergen.py` checks the files by it. In the files,
+**Channels.** The body's `squash`, `lean`, `lift`, `x` (sideways, far
+enough to leave the screen), `reach` (one side stretched out, the other
+pinched in) and `melt` (let down into a puddle); the eyes' `eyeOpenL`,
+`eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's `mouthOpen`:
+those a clip or a finger moves. Each is a whole number, in thousandths
+but for `lift` and `x` (px), with a range and a value at rest, where a
+face draws its art as drawn: `kChannelInfo` in `rig.h` says what each
+means, and `charactergen.py` checks the files by it. A face may draw only
+some: Pixel's draws neither `x`, `reach` nor `melt`. In the files,
 `eyeOpen` sets both eyes. A face also has two **styles**, the eyes' and
 the mouth's: which of its drawings it draws, for the shapes no channel
 reaches (hearts, X eyes). A new style cross-fades in. The pixel face's
@@ -983,16 +987,21 @@ curves on some channels, timed in ms, with cues. Boop's notice:
 | `about` | no | What it is, for people |
 
 **`looks.json`**: for each look (§9's Looks), the clip it loops under
-the reactions (`clip`, one that loops, or null), and its `occasions`:
-each a clip that doesn't loop, which the look plays now and then while
-every tag it needs is on (`when`, §9's tags, as `render/tags.h` names
-them) and once it has shown `after` seconds, as a design's occasion
-fits (§9). Each needs a tag or a wait. Boop's:
+the reactions (`clip`, one that loops, or null), its `occasions`: each a
+clip that doesn't loop, which the look plays now and then while every
+tag it needs is on (`when`, §9's tags, as `render/tags.h` names them)
+and once it has shown `after` seconds, as a design's occasion fits (§9),
+each needing a tag or a wait; and its `tiers`: for a tier (`tier1` to
+`tier5`), a clip that loops in place of its own while that's the last
+tier reached, which the gel plays (below, The gel on the rig) and
+Pixel's face doesn't. Boop's:
 
 ```json
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}]},
+  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}],
+              "tiers": {"tier1": "work-easy", "tier2": "work-leaning", "tier3": "work-focused",
+                        "tier4": "work-content", "tier5": "work-zone"}},
   "asleep": {"clip": "doze"}
 }
 ```
@@ -1008,7 +1017,8 @@ Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state,
 clip or tag, a style that isn't a mood the pixel face the pack has or uses
 draws (its `faces.h`'s), a value out of its range, keys out of order, a
-loop that doesn't close, an occasion that loops or would always fit and a
+loop that doesn't close, an occasion that loops or would always fit, a
+tier's clip that doesn't loop or a key of `tiers` that isn't a tier and a
 cue that isn't a name before `ms`, each with its file and key
 (`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
 `rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
@@ -1117,34 +1127,47 @@ CONTINUITY.md). Its face (`render/gel/face.h`) holds a mixer of its own,
 which plays the staged rig's clips, and the painter lays the mixer's
 channels over the pose the engine gives (`applyRig`): `squash` (the
 rig's tall is the dome's up), `lean`, `lift` (canvas px, 85 a body unit,
-never into the floor: the whole dome rises), `eyeOpen` (its lids, shut
-as far as the more shut eye), `eyeSize` (the eyes about their middles),
-`gazeX` and `gazeY` (where the eyes look) and `mouthOpen` (its one open
-mouth, once it's open enough). It draws no other channel yet, and its
-expressions aren't the rig's: a mood is the gel's own art. At rest the
-mixer adds nothing, so a frame with no clip playing is the engine's
-alone. Its pastimes (`render/gel/pastimes.h`) are clips of the pack's
-rig with drawing of the gel's own in time with them: at work a sip from
-its mug, a hum, an idea, a sticky note, a coffee refill, a cookie, a
-marshmallow at the camp, stargazing; idle, a bubble, a fly, a book, a
-game, a tower of blocks, a dance, a paper plane, counting sheep; a wave
-and a tap on the glass while something needs you; rolling over and a
-snore bubble asleep. Each is for one look, at work and idle from a tier
-(three or more for each), while something needs you or asleep from a
-wait. The gel deals them and the rig look's occasions together, one at a
-time while the engine shows the look itself, after a rest of 4 to 10 s
-(`kRestMinMs`, `kRestMaxMs`), the newest tier's 60% of the time
-(`kNewestPct`) and an older one's the rest, never the same twice running,
-with dice of their own, so the engine's randomness goes as it always
-has; none starts while a finger holds it or a word of the work stream
-flies, and the one playing fades out when the look gives way. Its kit
-stays out while its tier lasts: at work a mug on the desk (`tier1`, but
-not in the morning, when its coffee is in its hand), headphones
-(`tier3`) and a sweatband (`tier4`), the hat winning the head, and from
-`tier5` a camp beside the desk, a tent and its fire, a mug more on the
-stack every 10 minutes; idle, a plant from `tier3` that grows to
-`tier5`. A reaction whose state names a clip of the rig (Boop's
-`notice`) plays it once, as its moment starts, and the clip's cues sound
+never into the floor: the whole dome rises), `x` (canvas px, the whole
+dome sideways), `reach` (its side stretched out low, where it reaches
+for the desk, the other pinched in), `melt` (its height let down toward
+the desk and its base spread, its bottom where it was), `eyeOpen` (its
+lids, shut as far as the more shut eye), `eyeSize` (the eyes about their
+middles), `gazeX` and `gazeY` (where the eyes look) and `mouthOpen` (its
+one open mouth, once it's open enough). It draws no other channel yet,
+and its expressions aren't the rig's: a mood is the gel's own art. At
+rest the mixer adds nothing, so a frame with no clip playing is the
+engine's alone. While its look shows (no moment over it) it loops the
+look's base for the last tier reached (`tiers`, above), none without one,
+the old fading out: Boop's working settles from an easy, open-eyed sway
+at `tier1` to low, calm lids and a slow, wide sway at `tier5`. Its
+pastimes (`render/gel/pastimes.h`) are clips of the pack's rig with
+drawing of the gel's own in time with them: at work a sip from its mug,
+a hum, Enter on something done, an idea, reading the screen closely, a
+sticky note, putting its headphones on, a coffee refill, a cookie;
+idle, a bubble, a fly, a book, a game, a tower of blocks, a dance, a
+paper plane, counting sheep; a wave and a tap on the glass while
+something needs you; rolling over and a snore bubble asleep. Three of
+work's are moves, the whole body going somewhere: reaching for its
+coffee (`tier3`), melting into a puddle (`tier4`) and a stretch break
+off the screen (`tier5`), never within 90 s of the last
+(`kMoveGapMs`). Each is for one look, at work and idle from a tier,
+while something needs you or asleep from a wait. The gel deals them and
+the rig look's occasions together, one at a time while the engine shows
+the look itself, after a rest of 4 to 10 s (`kRestMinMs`,
+`kRestMaxMs`), the newest tier's 60% of the time (`kNewestPct`) and an
+older one's the rest, never the same twice running, with dice of their
+own, so the engine's randomness goes as it always has; none starts
+while a finger holds it or a word of the work stream flies, and the one
+playing fades out when the look gives way. The desk's paws type on the
+recipe's key contacts and softly between them, and go where a pastime
+puts them (`pawsFor`). Its kit stays out while its tier lasts: at work a
+mug on the desk (`tier1`, but not in the morning, when its coffee is in
+its hand), headphones from `tier3`, which it puts on first where you can
+see it, the hat winning the head, and from `tier5` a mug more on the
+stack every 10 minutes and a few motes drifting up beside it; idle, a
+plant from `tier3` that grows to `tier5`. `dbg.pastime` plays one by its
+clip's name, for scenarios and tools. A reaction whose state names a
+clip of the rig (Boop's `notice`) plays it once, as its moment starts, and the clip's cues sound
 the contacts they name (the slime's contact kinds). The gel's recipe for
 that state times it, the clip's length and a little more for the body to
 settle (slimegen), with no gag or contact of its own, and its takes are

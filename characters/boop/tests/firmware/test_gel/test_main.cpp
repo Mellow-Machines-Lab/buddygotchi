@@ -1635,6 +1635,7 @@ static void test_a_rig_clip_plays_on_both_faces() {
   // The tallest squash and the most shut eyes each face's mixer reaches at
   // work, over a minute, the gel's over two while no pastime of its own
   // plays (a look's occasion, then), and when the gel's first left rest.
+  // The Mac's state comes every 10 s, as it does, so the link stays up.
   struct Seen {
     int squash = 0, open = 1000;
     uint32_t moved = 0;
@@ -1653,6 +1654,7 @@ static void test_a_rig_clip_plays_on_both_faces() {
     b.onState(m, 0);
     Seen seen;
     for (uint32_t t = 16; t <= (gel ? 120000u : 60000u); t += 16) {
+      if (t % 10000 < 16) b.onState(m, t);
       if (pokeAt && t == pokeAt) {
         app::ReactionIn in;
         in.anim = SceneState::kPoked;
@@ -1693,9 +1695,13 @@ static void test_a_rig_clip_plays_on_both_faces() {
   // crown higher, and its lids down; at rest, nothing.
   auto e = std::make_unique<Engine>();
   for (uint32_t t = 0; t <= 1600; t += 16) e->step(t);
-  PaintControls rest, moved;
+  // Its padding zeroed, which the comparison reads too, and its members
+  // their defaults, which only they are written with.
+  alignas(PaintControls) unsigned char room[sizeof(PaintControls)] = {};
+  PaintControls& rest = *new (room) PaintControls;
+  PaintControls moved;
   rest.squash = 100, rest.lean = -40, rest.lift = 20, rest.blink = 300;
-  moved = rest;
+  std::memcpy(&moved, &rest, sizeof rest);
   applyRig(rest, rig::kRest);
   TEST_ASSERT_EQUAL_MEMORY(&moved, &rest, sizeof rest);
   rig::Mixer m;
@@ -1710,6 +1716,42 @@ static void test_a_rig_clip_plays_on_both_faces() {
   paint(s, *e, false, 0, 0, &still);
   paint(s, *e, false, 0, 0, &stretched, m.channels());
   TEST_ASSERT_TRUE(stretched.crown.y < still.crown.y - 16 * 8);
+}
+// Pins the rig's x, reach and melt on the gel (applyRig, geometry.h's
+// kReachOut, kReachIn, kMeltDrop and kMeltSpread): x carries the whole body
+// sideways, 100 canvas px about 150 of the panel's and 400 off its edge;
+// a full reach carries its right side out over 30 px low on its side,
+// where it reaches for the desk, and pinches its left in; a full melt brings its crown down most of the way
+// to the desk and spreads its base wider, its base where it was.
+static void test_the_rig_carries_reaches_and_melts_the_gel() {
+  auto e = std::make_unique<Engine>();
+  for (uint32_t t = 0; t <= 1600; t += 16) e->step(t);
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto anchors = [&](rig::Channel ch, int value) {
+    rig::Channels c = rig::kRest;
+    c[ch] = int16_t(value);
+    rig::Anchors at;
+    paint(s, *e, false, 0, 0, &at, c);
+    return at;
+  };
+  constexpr int kEnd = rig::Anchors::kRingPoints - 1;
+  const rig::Anchors still = anchors(rig::Channel::kX, 0);
+  const rig::Anchors right = anchors(rig::Channel::kX, 100), away = anchors(rig::Channel::kX, 400);
+  const int moved = (right.crown.x - still.crown.x) / 16;
+  TEST_ASSERT_TRUE(moved > 120 && moved < 180);
+  TEST_ASSERT_INT_WITHIN(16, still.crown.y, right.crown.y);
+  TEST_ASSERT_TRUE(away.brimL.x / 16 > 502 && away.hem[0].x / 16 > 502);
+  const rig::Anchors reach = anchors(rig::Channel::kReach, 1000), back = anchors(rig::Channel::kReach, -1000);
+  TEST_ASSERT_TRUE(reach.lap[kEnd].x - still.lap[kEnd].x > 30 * 16);
+  TEST_ASSERT_TRUE(reach.lap[0].x > still.lap[0].x);
+  TEST_ASSERT_TRUE(still.lap[0].x - back.lap[0].x > 30 * 16);
+  const rig::Anchors melt = anchors(rig::Channel::kMelt, 1000), half = anchors(rig::Channel::kMelt, 500);
+  const int height = (still.hem[kEnd / 2].y - still.crown.y) / 16, low = (melt.hem[kEnd / 2].y - melt.crown.y) / 16;
+  TEST_ASSERT_TRUE(low < height / 2 && low > height / 4);
+  TEST_ASSERT_TRUE(half.crown.y > still.crown.y && half.crown.y < melt.crown.y);
+  TEST_ASSERT_INT_WITHIN(2 * 16, still.hem[kEnd / 2].y, melt.hem[kEnd / 2].y);
+  TEST_ASSERT_TRUE((melt.hem[kEnd].x - melt.hem[0].x) * 4 > (still.hem[kEnd].x - still.hem[0].x) * 5);
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
@@ -1749,6 +1791,10 @@ void test_each_pastime_draws_and_ends();
 void test_pastimes_are_dealt_by_tier_after_a_rest();
 void test_the_kit_follows_the_tiers();
 void test_the_headphones_play_a_tune();
+void test_work_settles_by_tier();
+void test_the_headphones_go_on_where_you_see_them();
+void test_moves_are_rare();
+void test_the_paws_type_on_the_keys();
 // test_drawer.cpp
 void test_a_pull_up_the_strip_opens_the_drawer();
 void test_a_swipe_up_the_face_isnt_the_drawers();
@@ -3012,11 +3058,16 @@ int main() {
   RUN_TEST(test_a_nap_or_a_dance_plays_its_pastime_when_idle);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);
+  RUN_TEST(test_the_rig_carries_reaches_and_melts_the_gel);
   RUN_TEST(test_every_pastime_has_its_clip_and_its_turn);
   RUN_TEST(test_each_pastime_draws_and_ends);
   RUN_TEST(test_pastimes_are_dealt_by_tier_after_a_rest);
   RUN_TEST(test_the_kit_follows_the_tiers);
   RUN_TEST(test_the_headphones_play_a_tune);
+  RUN_TEST(test_work_settles_by_tier);
+  RUN_TEST(test_the_headphones_go_on_where_you_see_them);
+  RUN_TEST(test_moves_are_rare);
+  RUN_TEST(test_the_paws_type_on_the_keys);
   RUN_TEST(test_the_layers_come_and_go_through_the_stack);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_face_projection_and_pose_bounds);

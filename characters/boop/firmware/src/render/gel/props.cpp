@@ -1,5 +1,6 @@
 #include "render/gel/painter.h"
 #include "render/gel/engine.h"
+#include "render/gel/pastimes.h"
 #include "render/gel/raster.h"
 #include "render/gel/subpixel.h"
 namespace render::gel {
@@ -60,6 +61,23 @@ int firstDrawnRow(const Surface& surface, const Placed& c) {
 }
 }  // namespace
 
+int tapLift(const Scenes& s, int side) {
+  const int age = F(s.ageMs).integer();
+  for (int i = 0; i < s.recipe.count; ++i) {
+    const auto& k = s.recipe.contacts[i];
+    if (k.kind != kKey || k.side != side) continue;
+    const int d = F(k.at).integer() - age;
+    if (d >= 0 && d < kTapMs) return kTapLift * 4 * d * (kTapMs - d) / (kTapMs * kTapMs);
+  }
+  return 0;
+}
+
+int typeLift(uint32_t ms, int side) {
+  // Each paw taps every other kTypeMs, the right's between the left's.
+  const int period = 2 * kTypeMs, p = int((ms + (side > 0 ? kTypeMs : 0)) % period), d = (period - p) % period;
+  return d < kTapMs ? kTypeLift * 4 * d * (kTapMs - d) / (kTapMs * kTapMs) : 0;
+}
+
 int opaqueCards(const Surface& surface, const Engine& e, Box* out) {
   const auto& s = e.scenes;
   const T now = e.timeMs();
@@ -82,7 +100,7 @@ int opaqueCards(const Surface& surface, const Engine& e, Box* out) {
   return count;
 }
 
-void paintProps(Surface& surface, const Engine& e) {
+void paintProps(Surface& surface, const Engine& e, const Paws* paws) {
   if (!surface.pixels) return;
   Raster r{surface};
   auto& s = e.scenes;
@@ -175,35 +193,18 @@ void paintProps(Surface& surface, const Engine& e) {
         round(397 + key * 26, 718 + row * 10, 19, 6, 2, pressed ? light : rgb565(144, 170, 176));
       }
     for (int side : {-1, 1}) {
-      int yy = 711 + (s.hasLast && s.last.side == side ? (contact * 9).integer() : 0);
-      round(500 + side * 78 - 30, yy - 12, 60, 25, 13, rgb565(93, 166, 219));
+      const int i = side > 0, alpha = paws ? paws->alpha[i] : 255;
+      if (alpha < 3) continue;
+      const int lift = std::max(tapLift(s, side), typeLift(uint32_t(F(e.timeMs()).integer()), side)) +
+                       (paws ? paws->lift[i] : 0);
+      int yy = 711 + (s.hasLast && s.last.side == side ? (contact * 9).integer() : 0) - lift;
+      r.alpha = (s.desk.x * alpha).integer();
+      round(500 + side * 78 - 30 + (paws ? paws->dx[i] : 0), yy - 12, 60, 25, 13, rgb565(93, 166, 219));
     }
   }
   // Each prop's alpha is its ramped visibility; one fading out still draws
   // the content it last showed.
   const T now = e.timeMs();
-  r.alpha = 255;
-  if (F helpers = s.visible(Scenes::kHelpersProp, now); helpers > F(0)) {
-    r.alpha = (helpers * 255).integer();
-    int direction = s.helpersProp.direction;
-    F hp = s.helpersProp.progress;
-    bool returning = s.helpersProp.returning;
-    // They run in sixteenths of a pixel.
-    for (int i = 0; i < s.helpersProp.count; ++i) {
-      const int inner = 500 + direction * 170, outer = 500 + direction * (300 + i * 67),
-                xx = returning ? outer * 16 + ((inner - outer) * 16 * hp).integer()
-                               : inner * 16 + ((outer - inner) * 16 * hp).integer(),
-                yy = (direction < 0 ? 510 : 645) - (i % 2) * 32;
-      auto x16 = [&](int p16) { return w * p16 / 1000; };
-      round16(r, x16(xx - 32 * 16), y(yy - 45) * 16, x(68) * 16, y(68) * 16, x(25) * 16, rgb565(89, 169, 224));
-      for (int side : {-1, 1}) r.disk16(x16(xx + side * 11 * 16) + 8, y(yy - 5) * 16 + 8, 2 * 16 + 8, dark);
-    }
-    if (returning && s.helpersProp.report) {
-      int xx = direction < 0 ? 130 : 775, yy = direction < 0 ? 545 : 699;
-      round(xx, yy, 95, 65, 10, dark);
-      for (int i = 0; i < 3; ++i) round(xx + 17, yy + 15 + i * 13, 60 - i * 14, 4, 2, light);
-    }
-  }
   r.alpha = 255;
   if (F listening = s.visible(Scenes::kListeningProp, now); listening > F(0)) {
     r.alpha = (listening * 255).integer();

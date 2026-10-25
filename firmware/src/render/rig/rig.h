@@ -19,6 +19,9 @@ enum class Channel : uint8_t {
   kSquash,
   kLean,
   kLift,
+  kX,
+  kReach,
+  kMelt,
   kEyeOpenL,
   kEyeOpenR,
   kEyeSize,
@@ -30,21 +33,26 @@ enum class Channel : uint8_t {
 constexpr int kChannelCount = int(Channel::kCount);
 
 // Each channel's name in a pack's rig/ files, its range and its value at
-// rest, where a face draws its art as drawn. In thousandths, but for lift:
-// px of the 320 × 240 canvas, up. squash runs from tall (-1000) to flat;
-// lean, the body's, from left to right; eyeOpen from shut (0); gaze from
-// left or up (-1000) to right or down; eyeSize around the art's own
-// (1000). charactergen.py reads this table to check a pack's files.
+// rest, where a face draws its art as drawn. In thousandths, but for lift
+// and x: px of the 320 × 240 canvas, lift up and x to the right, far
+// enough to leave the screen. squash runs from tall (-1000) to flat;
+// lean, the body's, from left to right; reach stretches the body's right
+// side out (1000) or its left (-1000), pinching the other in; melt lets
+// it down into a puddle (1000); eyeOpen from shut (0); gaze from left or
+// up (-1000) to right or down; eyeSize around the art's own (1000). A
+// face may draw only some: Pixel's draws neither x, reach nor melt.
+// charactergen.py reads this table to check a pack's files.
 struct ChannelInfo {
   const char* name;
   int16_t lo, hi, rest;
 };
 constexpr ChannelInfo kChannelInfo[kChannelCount] = {
     {"squash", -1000, 1000, 0},  {"lean", -1000, 1000, 0},    {"lift", -240, 240, 0},
+    {"x", -400, 400, 0},         {"reach", -1000, 1000, 0},   {"melt", 0, 1000, 0},
     {"eyeOpenL", 0, 1000, 1000}, {"eyeOpenR", 0, 1000, 1000}, {"eyeSize", 500, 1500, 1000},
     {"gazeX", -1000, 1000, 0},   {"gazeY", -1000, 1000, 0},   {"mouthOpen", 0, 1000, 0}};
 // The body's channels, whose springs are slower than the face's.
-constexpr bool body(Channel c) { return c <= Channel::kLift; }
+constexpr bool body(Channel c) { return c <= Channel::kMelt; }
 
 // A value for every channel.
 struct Channels {
@@ -137,11 +145,23 @@ struct Occasion {
 // its plays), one of those that fit this many percent of the time, any one
 // alike. The gel deals them its own way, with its pastimes.
 constexpr int kOccasionPct = 67;
-// A look: the base clip it loops, nullptr for none, and its occasions.
+// A base clip a look loops in place of its own while its tier (one of
+// render/tags.h's tier bits) is the last reached.
+struct TierClip {
+  const Clip* clip;
+  uint32_t when;
+};
+// A look: the base clip it loops, nullptr for none, its occasions, and its
+// tiers' base clips. Pixel's face loops its clip; the gel loops a tier's
+// (its engine moves the body otherwise).
 struct Look {
   SceneState state;
   const Clip* clip;
   List<Occasion> occasions;
+  List<TierClip> tiers{};
+  // The base clip of the last tier reached of those the look names, by
+  // the tags on (render::reached sets every tier below), or nullptr.
+  const Clip* tiered(uint32_t when) const;
   // How many of its occasions fit now; and the clip of the i-th of those.
   int fitting(uint32_t when, uint32_t lookMs) const;
   const Clip* fitting(uint32_t when, uint32_t lookMs, int i) const;

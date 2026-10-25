@@ -1,0 +1,10 @@
+{
+  "about": "Working's base at tier5, on the gel: in the zone, its lids low and calm, a slow, wide sway, breathing deep.",
+  "ms": 5200,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, -30], [1300, 20], [3900, -80], [5200, -30]],
+    "eyeOpen": [[0, -380], [5200, -380]],
+    "squash": [[0, 0], [2600, -28], [5200, 0]]
+  }
+}
