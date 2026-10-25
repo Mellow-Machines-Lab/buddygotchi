@@ -57,10 +57,11 @@ struct Model {
   render::Stream::Lane lanes[render::Stream::kLanes];
   int laneCount = 0;
   // The agents' drawer's rows (`list`, render/drawer.h), which the Mac
-  // sends while the board says it's open, and the sessions they leave out
-  // (`unlisted`); `listed` when the state had a list at all.
+  // sends while the board says it's open, and the sessions before them
+  // (`skip`) and after (`unlisted`); `listed` when the state had a list at
+  // all.
   render::Drawer::Row list[render::Drawer::kRows];
-  int listCount = 0, unlisted = 0;
+  int listCount = 0, listSkip = 0, unlisted = 0;
   bool listed = false;
   // The look while nothing needs you: what the agents are doing while
   // they work, else the base.

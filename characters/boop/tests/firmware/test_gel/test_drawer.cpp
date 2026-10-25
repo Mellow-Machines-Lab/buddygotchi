@@ -81,6 +81,29 @@ struct Board {
     const size_t i = usb.text.find("\"drawer\":{\"open\":");
     return i == std::string::npos ? -9999 : std::atoi(usb.text.c_str() + i + 17);
   }
+  // How far its rows are scrolled (dbg.state's drawer.scroll), leaving
+  // what the board said before.
+  int scroll() {
+    const size_t from = usb.text.size();
+    line("{\"t\":\"dbg.state\"}");
+    const size_t i = usb.text.find("\"scroll\":", usb.text.find("\"drawer\":{", from));
+    const int at = i == std::string::npos ? -9999 : std::atoi(usb.text.c_str() + i + 9);
+    usb.text.resize(from);
+    return at;
+  }
+  // The Mac's state listing `total` sessions, numbered 100 on, from the
+  // `skip`th: as many as the board takes.
+  void list(int skip, int total) {
+    std::string s = "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"vol\":0,\"list\":[";
+    const int rows = std::min(Drawer::kRows, total - skip);
+    for (int i = skip; i < skip + rows; ++i) {
+      char row[64];
+      std::snprintf(row, sizeof(row), "%s[%d,\"w\",-1,\"claude\",\"Thread %d\",\"p\"]", i > skip ? "," : "", 100 + i, i);
+      s += row;
+    }
+    s += "],\"skip\":" + std::to_string(skip) + ",\"unlisted\":" + std::to_string(total - skip - rows) + "}";
+    line(s.c_str());
+  }
   int count(const char* needle) const {
     int n = 0;
     for (size_t at = usb.text.find(needle); at != std::string::npos; at = usb.text.find(needle, at + 1)) ++n;
@@ -202,24 +225,151 @@ void test_boot_shuts_it() {
   TEST_ASSERT_EQUAL_INT(0, b.open());
 }
 
-// Its rows on the AMOLED: five, each whole inside the panel's rounded
-// corners, the second where the panel reads a finger at canvas (160, 112),
+// Its rows on the AMOLED: a screenful of five, each whole inside the
+// panel's rounded corners, and the Mac's six, the sixth peeking under
+// them; the second where the panel reads a finger at canvas (160, 112),
 // and none under one beside them; the sheet shut is the strip's rule.
 void test_the_drawers_rows_on_the_panel() {
   const DrawerLayout l(502, 410, 110);
   TEST_ASSERT_EQUAL_INT(410 * kStripTop / kHeight, l.top(0));
   TEST_ASSERT_EQUAL_INT(66, l.top(1000));
-  const int last = l.rowTop(1000, Drawer::kRows - 1);
+  TEST_ASSERT_EQUAL_INT(5, l.fits());
+  TEST_ASSERT_EQUAL_INT(l.fits() + 1, Drawer::kRows);
+  const int last = l.rowTop(1000, l.fits() - 1);
   TEST_ASSERT_TRUE(last + l.rowH() <= 410 - 4);
+  TEST_ASSERT_TRUE(l.rowTop(1000, l.fits()) < 410);
   TEST_ASSERT_TRUE(l.margin() >= Surface::insetOf(502, 410, 110, last, last + l.rowH(), 10));
   Drawer d;
-  d.count = 3;
+  d.open = 1000, d.count = 3;
   TEST_ASSERT_EQUAL_INT(1, l.rowAt(d, 160, 112));
   TEST_ASSERT_EQUAL_INT(0, l.rowAt(d, 160, 78));
   TEST_ASSERT_EQUAL_INT(-1, l.rowAt(d, 160, 230));
   TEST_ASSERT_EQUAL_INT(-1, l.rowAt(d, 2, 112));
-  d.count = Drawer::kRows, d.unlisted = 2;  // the last row's place says how many more
-  TEST_ASSERT_EQUAL_INT(-1, l.rowAt(d, 160, l.rowTop(1000, Drawer::kRows - 1) * 2 / 3 - 8));
+  int first, shown;
+  l.shown(d, first, shown);
+  TEST_ASSERT_EQUAL_INT(0, first);
+  TEST_ASSERT_EQUAL_INT(2, shown);
+}
+
+// With more sessions than a screenful, its rows scroll till the last is
+// in the screenful's last place; scrolled, the rows under the lid are cut
+// off, a finger finds the session under it by its place in the whole list,
+// whether or not its row has come, and none over the lid.
+void test_a_long_drawers_rows_scroll() {
+  const DrawerLayout l(502, 410, 110);
+  TEST_ASSERT_EQUAL_INT(0, l.scrollMax(5));
+  TEST_ASSERT_EQUAL_INT(7 * l.pitch() * 2 / 3, l.scrollMax(12));
+  TEST_ASSERT_EQUAL_INT(l.scrolledBy(3), l.snap(l.scrolledBy(3) + l.pitch() / 3 - 1));
+  TEST_ASSERT_EQUAL_INT(l.scrolledBy(4), l.snap(l.scrolledBy(3) + l.pitch() / 3 + 1));
+  Drawer d;
+  d.open = 1000, d.count = 6, d.unlisted = 6;
+  int first, last;
+  l.shown(d, first, last);
+  TEST_ASSERT_EQUAL_INT(0, first);
+  TEST_ASSERT_EQUAL_INT(5, last);
+  d.scroll = l.pitch() * 2 / 3 * 3;  // three rows up, near enough
+  l.shown(d, first, last);
+  TEST_ASSERT_EQUAL_INT(3, first);
+  TEST_ASSERT_EQUAL_INT(8, last);
+  TEST_ASSERT_NULL(d.at(8));
+  TEST_ASSERT_EQUAL_INT(3, l.rowAt(d, 160, 82));
+  TEST_ASSERT_EQUAL_INT(-1, l.rowAt(d, 160, 60));
+  d.scroll = l.scrollMax(12);
+  l.shown(d, first, last);
+  TEST_ASSERT_EQUAL_INT(11, last);
+}
+
+// A finger up a long open drawer scrolls its rows, not the drawer, and
+// the board asks the Mac for the rows from the first that shows; let go,
+// they come to rest on a whole row, a screenful the Mac's rows fill, and
+// once they've come it asks no more. Let go quickly, they glide on
+// (kDrawerGlideMs) to the last; pushed past it, they spring back. A finger
+// down a glide stops it on the nearest whole row and picks nothing; a tap
+// on a scrolled row picks that session; flung back to the top, a finger
+// down pulls the drawer shut.
+void test_a_finger_scrolls_a_long_drawer() {
+  TEST_ASSERT_EQUAL_UINT32(600, app::Device::kDrawerGlideMs);
+  TEST_ASSERT_EQUAL_UINT32(1000, app::Device::kDrawerReaskMs);
+  Board b;
+  b.touch(160, 232, 160, 40, 320);
+  b.run(400);
+  b.list(0, 12);
+  b.run(app::Device::kDrawerMs + 100);
+  const int most = DrawerLayout(502, 410, 110).scrollMax(12);
+  b.usb.text.clear();
+  b.touch(160, 200, 160, 100, 400);  // slowly, 250 px/s
+  b.run(400 + app::Device::kDrawerGlideMs + 100);
+  const DrawerLayout l(502, 410, 110);
+  const int slow = b.scroll();
+  TEST_ASSERT_TRUE(slow > 100 && slow < most);
+  TEST_ASSERT_EQUAL_INT(l.snap(slow), slow);
+  TEST_ASSERT_EQUAL_INT(0, b.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"did\":\"pick\""));
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"kind\":\"tap\""));
+  Drawer d;
+  d.open = 1000, d.count = 12, d.scroll = slow;
+  int first, last;
+  l.shown(d, first, last);
+  TEST_ASSERT_EQUAL_INT(Drawer::kRows - 1, last - first);
+  char asked[64];
+  std::snprintf(asked, sizeof(asked), "\"did\":\"open\",\"data\":{\"from\":%d}", first);
+  TEST_ASSERT_EQUAL_INT(1, b.count(asked));
+  b.list(first, 12);
+  b.usb.text.clear();
+  b.run(app::Device::kDrawerReaskMs + 200);
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"did\":\"open\""));
+  TEST_ASSERT_EQUAL_INT(1000, b.open());
+
+  b.touch(160, 200, 160, 40, 100);  // flung, 1600 px/s
+  b.run(100 + app::Device::kDrawerGlideMs + 100);
+  TEST_ASSERT_EQUAL_INT(most, b.scroll());
+  b.touch(160, 200, 160, 120, 200);  // pushed past the end
+  b.run(180);
+  TEST_ASSERT_TRUE(b.scroll() > most);
+  b.run(app::Device::kDrawerGlideMs + 100);
+  TEST_ASSERT_EQUAL_INT(most, b.scroll());
+
+  b.list(6, 12);
+  b.touch(160, 80, 160, 220, 100);  // flung down, then caught
+  b.run(200);
+  const int caught = b.scroll();
+  TEST_ASSERT_TRUE(caught > 0 && caught < most);
+  b.usb.text.clear();
+  b.touch(160, 150, 160, 150, 60);
+  b.run(100);
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"did\":\"pick\""));
+  b.run(app::Device::kDrawerGlideMs);
+  const int stopped = b.scroll();
+  TEST_ASSERT_EQUAL_INT(1000, b.open());
+  TEST_ASSERT_TRUE(stopped > 0 && stopped < most);
+  TEST_ASSERT_EQUAL_INT(l.snap(stopped), stopped);
+
+  d.scroll = stopped;
+  DrawerLayout(502, 410, 110).shown(d, first, last);
+  b.list(first, 12);
+  b.run(40);
+  d.scroll = stopped;
+  const int row = DrawerLayout(502, 410, 110).rowAt(d, 160, 150);
+  TEST_ASSERT_TRUE(row >= first && row < first + Drawer::kRows);
+  b.usb.text.clear();
+  b.touch(160, 150, 160, 150, 60);
+  b.run(100);
+  char picked[64];
+  std::snprintf(picked, sizeof(picked), "\"did\":\"pick\",\"data\":{\"id\":%d}", 100 + row);
+  TEST_ASSERT_EQUAL_INT(1, b.count(picked));
+  TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
+  b.run(app::Device::kDrawerMs);
+
+  b.touch(160, 232, 160, 40, 320);  // open again: at the top
+  b.run(400);
+  b.list(0, 12);
+  b.run(app::Device::kDrawerMs + 100);
+  TEST_ASSERT_EQUAL_INT(0, b.scroll());
+  b.usb.text.clear();
+  b.touch(160, 100, 160, 220, 200);
+  b.run(200 + app::Device::kDrawerMs + 100);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(0, b.open());
 }
 
 // Pressed flat under it, the body fills the rows above the sheet's edge

@@ -3,6 +3,7 @@
 
 #include <ArduinoJson.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -36,7 +37,8 @@ bool sameRow(const render::Drawer::Row& a, const render::Drawer::Row& b) {
 }
 
 bool sameModel(const Model& a, const Model& b) {
-  if (a.listed != b.listed || a.listCount != b.listCount || a.unlisted != b.unlisted) return false;
+  if (a.listed != b.listed || a.listCount != b.listCount || a.listSkip != b.listSkip || a.unlisted != b.unlisted)
+    return false;
   for (int i = 0; i < a.listCount; ++i)
     if (!sameRow(a.list[i], b.list[i])) return false;
   return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
@@ -186,7 +188,8 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   }
   // The agents' drawer's rows, `[id, status, slot, agent, title,
   // project]`: status "n" needs you, "w" working, else idle; slot -1 for
-  // no lane; project "" when the title is it.
+  // no lane; project "" when the title is it. The sessions before them,
+  // `skip`, and after, `unlisted`.
   m.listed = doc["list"].is<JsonArrayConst>();
   for (JsonArrayConst row : doc["list"].as<JsonArrayConst>()) {
     if (m.listCount >= render::Drawer::kRows) break;
@@ -201,6 +204,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     render::foldText(row[4] | "", int(sizeof(r.title)) - 2, r.title, sizeof(r.title));
     render::foldText(row[5] | "", int(sizeof(r.project)) - 2, r.project, sizeof(r.project));
   }
+  m.listSkip = heldTo(doc["skip"], 0, 999, 0);
   m.unlisted = heldTo(doc["unlisted"], 0, 999, 0);
   if (!sameModel(m, b_.model()) || live_.pattern || b_.noApp(at))
     dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
@@ -435,9 +439,15 @@ void Device::readInputs(uint32_t t) {
     // starts on the strip, should it go up; neither moves the face.
     const int open = drawerOpen(t);
     live_.drawerTouch = faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || y >= kDrawerFromY);
-    live_.drawerPulling = false;
-    if (live_.drawerTouch)
+    live_.drawerPulling = live_.scrolling = false;
+    if (live_.drawerTouch) {
       live_.drawerGrabbed = open, live_.drawerTouchedAt = t, live_.drawerInjected = live_.injTouch;
+      // A finger down on gliding rows stops them where they are.
+      const int at = drawerScroll(t);
+      live_.scrollCaught = at != live_.scrollTo;
+      live_.scrollGrabbed = live_.scrolled = at;
+      glideDrawer(at, t);
+    }
     // Only a touch that began on the screen holds it: a request that comes
     // up under a finger already down isn't dismissed by it.
     live_.touchOnNeedsYou = faced && needsYouShows(t) && open <= 0;
@@ -453,11 +463,23 @@ void Device::readInputs(uint32_t t) {
     if (live_.drawerTouch) {
       // Up opens it: once the finger has gone kDrawerPullPx (either way,
       // when it's open already), the drawer follows it, with a little give
-      // past either end.
+      // past either end. Open, with more rows than show, it scrolls them
+      // instead, as far as they go, with the same give.
       const int pulled = live_.touchPath.path().y0 - y;
-      if (!live_.drawerPulling && (live_.drawerGrabbed > 0 ? std::abs(pulled) : pulled) >= kDrawerPullPx) {
-        live_.drawerPulling = true;
-        if (!live_.drawerToldOpen) sayDrawer("open", nullptr, t);
+      const int most = b_.face().drawerScrollMax(drawer_.total());
+      if (!live_.drawerPulling && !live_.scrolling &&
+          (live_.drawerGrabbed > 0 ? std::abs(pulled) : pulled) >= kDrawerPullPx) {
+        if (live_.drawerGrabbed >= 900 && most > 0 && (pulled > 0 || live_.scrollGrabbed > 0))
+          live_.scrolling = true;
+        else
+          live_.drawerPulling = true;
+        if (!live_.drawerToldOpen) sayOpen(0, t);
+      }
+      if (live_.scrolling) {
+        int at = live_.scrollGrabbed + pulled;
+        if (at > most) at = most + (at - most) / 4;
+        if (at < 0) at /= 4;
+        live_.scrolled = at;
       }
       if (live_.drawerPulling) {
         int open = live_.drawerGrabbed + pulled * 1000 / std::max(1, b_.face().drawerTravel());
@@ -505,6 +527,10 @@ void Device::readInputs(uint32_t t) {
         live_.lastTouchWas = "drawer";
         if (live_.drawerPulling)
           letGoDrawer(t, vy);
+        else if (live_.scrolling)
+          letGoScroll(t, vy);
+        else if (live_.scrollCaught)
+          letGoScroll(t, 0);  // it only stopped the rows, on the nearest whole one
         else
           tapDrawer(live_.lastTouch.x0, live_.lastTouch.y0, t);
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
@@ -516,7 +542,7 @@ void Device::readInputs(uint32_t t) {
       }
     }
   }
-  if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = false;
+  if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = live_.scrolling = false;
   if (touching != live_.touchDown) dirty_ = true;
   live_.touchDown = touching;
 }
@@ -539,7 +565,7 @@ void Device::moveDrawer(int to, uint32_t t, bool injected) {
   live_.drawerTo = to;
   live_.drawerAt = t;
   live_.drawerInjected = injected;
-  if (to > 0 && !live_.drawerToldOpen) sayDrawer("open", nullptr, t);
+  if (to > 0 && !live_.drawerToldOpen) sayOpen(0, t);
   if (to <= 0 && live_.drawerToldOpen) sayDrawer("closed", nullptr, t);
   dirty_ = true;
 }
@@ -548,6 +574,52 @@ void Device::sayDrawer(const char* did, const char* data, uint32_t t) {
   if (!std::strcmp(did, "open")) live_.drawerToldOpen = true, live_.drawerSaidAt = t;
   if (!std::strcmp(did, "closed")) live_.drawerToldOpen = false;
   kit().emit(kDrawerEvent, did, data, live_.drawerInjected);
+}
+
+// Opening, its rows start at the top.
+void Device::sayOpen(int from, uint32_t t) {
+  if (!live_.drawerToldOpen) from = 0, live_.scrollGrabbed = live_.scrolled = live_.scrollFrom = live_.scrollTo = 0;
+  live_.drawerAsked = from, live_.drawerAskedAt = t;
+  char data[24];
+  std::snprintf(data, sizeof(data), "{\"from\":%d}", from);
+  sayDrawer("open", from > 0 ? data : nullptr, t);
+}
+
+int Device::drawerScroll(uint32_t t) const {
+  if (live_.scrolling) return live_.scrolled;
+  const uint32_t age = t - live_.scrollAt;
+  if (live_.scrollFrom == live_.scrollTo || age >= kDrawerGlideMs) return live_.scrollTo;
+  // Easing out, as a glide slows: (1 - u)³ of the way left.
+  const int64_t left = int64_t(kDrawerGlideMs - age), all = int64_t(kDrawerGlideMs);
+  return int(live_.scrollTo + (live_.scrollFrom - live_.scrollTo) * left * left * left / (all * all * all));
+}
+
+void Device::glideDrawer(int to, uint32_t t) {
+  live_.scrollFrom = drawerScroll(t);
+  live_.scrolling = false;
+  live_.scrollTo = to;
+  live_.scrollAt = t;
+  dirty_ = true;
+}
+
+void Device::makeDrawer(uint32_t t) {
+  const Model& m = b_.model();
+  drawer_.open = drawerOpen(t);
+  drawer_.count = m.listCount;
+  for (int i = 0; i < m.listCount; ++i) drawer_.rows[i] = m.list[i];
+  drawer_.skip = m.listSkip;
+  drawer_.unlisted = m.unlisted;
+  drawer_.listed = m.listed;
+  drawer_.picked = live_.drawerPicked;
+  // Fewer rows than it was scrolled for (sessions gone): back as far as
+  // they go.
+  const int most = b_.face().drawerScrollMax(drawer_.total());
+  if (!live_.scrolling && live_.scrollTo > most) glideDrawer(most, t);
+  drawer_.scroll = drawerScroll(t);
+  const int32_t settled = int32_t(t - live_.drawerAt - kDrawerMs);
+  drawer_.paw = live_.drawerTo > 0 && !live_.drawerPulling && settled > 0
+                    ? std::min(1000, int(settled * 1000 / int32_t(kDrawerPawMs)))
+                    : 0;
 }
 
 // A pull let go: it springs open when it went up quickly, or is more than
@@ -559,14 +631,28 @@ void Device::letGoDrawer(uint32_t t, int vy) {
   moveDrawer(speed > 1500 || (speed > -1500 && open > 400) ? 1000 : 0, t, live_.drawerInjected);
 }
 
+// A scroll let go: its rows glide on as far as the finger was going, as a
+// glide easing out over kDrawerGlideMs starts at three times its distance
+// a glide's time, to the nearest whole row, up to either end; from past
+// one, they spring back. Resting on a whole row, the glass shows the rows
+// the Mac sends for it.
+void Device::letGoScroll(uint32_t t, int vy) {
+  live_.drawerTouchedAt = t;
+  const int most = b_.face().drawerScrollMax(drawer_.total()), at = live_.scrolled;
+  const int to = at < 0 || at > most ? at : at - int(int64_t(vy) * kDrawerGlideMs / 3000);
+  glideDrawer(std::clamp(b_.face().drawerSnap(to), 0, most), t);
+}
+
 // A tap on the open drawer: on a row, the Mac opens that session's thread
 // and Boop hands it over as the drawer shuts; anywhere else, it shuts.
 void Device::tapDrawer(int x, int y, uint32_t t) {
   live_.drawerTouchedAt = t;
+  makeDrawer(t);
   const int row = live_.drawerGrabbed >= 900 ? b_.face().drawerRow(drawer_, x, y) : -1;
+  if (row >= 0 && !drawer_.at(row)) return;  // a row still coming: nothing to open yet
   if (row >= 0) {
     char data[32];
-    std::snprintf(data, sizeof(data), "{\"id\":%lu}", (unsigned long)drawer_.rows[row].id);
+    std::snprintf(data, sizeof(data), "{\"id\":%lu}", (unsigned long)drawer_.at(row)->id);
     input("drawer", t, x, y);
     sayDrawer("pick", data, t);
     live_.drawerPicked = row;
@@ -577,15 +663,24 @@ void Device::tapDrawer(int x, int y, uint32_t t) {
 }
 
 // Each tick: shut kDrawerShutMs after the last touch, and while open, say
-// so again now and then, or soon when the Mac has sent no rows.
+// so again now and then, or soon when the Mac has sent no rows, and ask
+// for the rows that show when the Mac's don't start with them and leave
+// some out.
 void Device::tendDrawer(uint32_t t) {
   const int open = drawerOpen(t);
   if (live_.drawerTo > 0 && !live_.drawerPulling && !live_.touchDown &&
       int32_t(t - live_.drawerTouchedAt) >= int32_t(kDrawerShutMs))
     moveDrawer(0, t, live_.drawerInjected);
   if (live_.drawerToldOpen && live_.drawerTo > 0) {
+    const Model& m = b_.model();
     const uint32_t since = t - live_.drawerSaidAt;
-    if (since >= kDrawerSayMs || (!b_.model().listed && since >= kDrawerAskMs)) sayDrawer("open", nullptr, t);
+    int first = 0, last = -1;
+    if (m.listed) makeDrawer(t), b_.face().drawerShown(drawer_, first, last);
+    const bool missing = last >= first && first != m.listSkip && (first < m.listSkip || last >= m.listSkip + m.listCount);
+    if (missing && (first != live_.drawerAsked || t - live_.drawerAskedAt >= kDrawerReaskMs))
+      sayOpen(first, t);
+    else if (since >= kDrawerSayMs || (!m.listed && since >= kDrawerAskMs))
+      sayOpen(live_.drawerAsked, t);
   }
   if (open <= 0 && live_.drawerTo <= 0) live_.drawerPicked = -1;
   if (open > 0 || (live_.drawerFrom != live_.drawerTo && t - live_.drawerAt < kDrawerMs)) dirty_ = true;
@@ -723,19 +818,9 @@ void Device::render(uint32_t t) {
     if (native) render::blit(canvas_, native->back());
   } else {
     b_.face().watch(&b_.stream());
-    // The drawer as it is now: how far open, the Mac's rows, and the paw
-    // dropping over its edge once it has sprung open.
-    const Model& m = b_.model();
-    drawer_.open = drawerOpen(t);
-    drawer_.count = m.listCount;
-    for (int i = 0; i < m.listCount; ++i) drawer_.rows[i] = m.list[i];
-    drawer_.unlisted = m.unlisted;
-    drawer_.listed = m.listed;
-    drawer_.picked = live_.drawerPicked;
-    const int32_t settled = int32_t(t - live_.drawerAt - kDrawerMs);
-    drawer_.paw = live_.drawerTo > 0 && !live_.drawerPulling && settled > 0
-                      ? std::min(1000, int(settled * 1000 / int32_t(kDrawerPawMs)))
-                      : 0;
+    // The drawer as it is now: how far open, the Mac's rows and their
+    // scroll, and the paw dropping over its edge once it has sprung open.
+    makeDrawer(t);
     b_.face().drawer(&drawer_);
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
                         b_.strip(t), dirty_))

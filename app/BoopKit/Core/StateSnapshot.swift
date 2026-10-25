@@ -166,19 +166,22 @@ public struct StateSnapshot: Equatable, Sendable {
     }
 
     /// The drawer's rows, only while the board says it's open: then an
-    /// empty list is sent too, so the board knows the Mac heard. The board
-    /// shows at most `maxRows`.
+    /// empty list is sent too, so the board knows the Mac heard. A window
+    /// of at most `maxRows`, from the row the board asked for, as it
+    /// scrolls.
     public var list: [Row]?
-    /// The sessions the rows leave out: the board says how many more.
+    /// The sessions before the rows and after them: the board scrolls
+    /// through them all, asking for the rows it comes to.
+    public var skip: Int
     public var unlisted: Int
-    public static let maxRows = 5
+    public static let maxRows = 6
     /// The longest title and project a row carries, in bytes, as the
     /// board's fields hold them.
     public static let maxTitleBytes = 30, maxProjectBytes = 22
 
     public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,
                 vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
-                unlisted: Int = 0) {
+                skip: Int = 0, unlisted: Int = 0) {
         self.base = base
         self.act = act
         self.mood = mood
@@ -191,6 +194,7 @@ public struct StateSnapshot: Equatable, Sendable {
         self.todo = todo
         self.calls = calls
         self.list = list
+        self.skip = skip
         self.unlisted = unlisted
     }
 
@@ -234,6 +238,7 @@ public struct StateSnapshot: Equatable, Sendable {
                         .string($0.project)])
             })
         }
+        if skip > 0 { fields["skip"] = .int(skip) }
         if unlisted > 0 { fields["unlisted"] = .int(unlisted) }
         return fields
     }

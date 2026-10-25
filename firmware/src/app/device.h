@@ -148,8 +148,16 @@ class Device : public linkkit::App {
   // with the row's `id`, the Mac's number for the session, which the Mac
   // opens; the drawer shuts then, as Boop hands it over. A finger pulls it
   // shut, and it shuts itself kDrawerShutMs after the last touch.
+  // With more sessions than the glass shows, a finger up or down the open
+  // drawer scrolls its rows instead (down, only while the first row is
+  // scrolled off: else it pulls the drawer shut), gliding on as it lets go, kDrawerGlideMs at
+  // most, and springing back from past either end. The Mac sends only a
+  // window of the rows, so as they scroll the board asks for the rows from
+  // the first that shows ("open" with `data.from`), again after
+  // kDrawerReaskMs while they haven't come.
   static constexpr const char* kDrawerEvent = "drawer";
   static constexpr uint32_t kDrawerShutMs = 15000, kDrawerSayMs = 10000, kDrawerAskMs = 2000;
+  static constexpr uint32_t kDrawerGlideMs = 600, kDrawerReaskMs = 1000;
   // How long it springs open or shut, past the end and back; and how far a
   // finger goes (canvas px) before it pulls the drawer rather than taps.
   static constexpr uint32_t kDrawerMs = 380, kDrawerPawMs = 260;
@@ -282,6 +290,15 @@ class Device : public linkkit::App {
     uint32_t drawerTouchedAt = 0, drawerSaidAt = 0;
     bool drawerInjected = false, drawerToldOpen = false;
     int drawerPicked = -1;
+    // Its rows' scroll, canvas px: under a finger (scrolling) at scrolled,
+    // moved from scrollGrabbed; else gliding from scrollFrom to scrollTo
+    // since scrollAt. A touch that stopped a glide (scrollCaught) picks
+    // nothing. The first row it last asked the Mac for, and when.
+    bool scrolling = false, scrollCaught = false;
+    int scrollGrabbed = 0, scrolled = 0, scrollFrom = 0, scrollTo = 0;
+    uint32_t scrollAt = 0;
+    int drawerAsked = 0;
+    uint32_t drawerAskedAt = 0;
     // The reaction (Behaviour::reactionSeq) whose `say` has started or been
     // dropped: a newer one's starts when its bubble shows.
     uint32_t saidSeq = 0;
@@ -313,9 +330,18 @@ class Device : public linkkit::App {
   void moveDrawer(int to, uint32_t t, bool injected);
   void tendDrawer(uint32_t t);
   void sayDrawer(const char* did, const char* data, uint32_t t);
-  // A touch on it that let go: a pull's end, or a tap on a row or beside
-  // them.
+  // "open", asking for the rows from session `from` (the first, on the
+  // drawer's first "open").
+  void sayOpen(int from, uint32_t t);
+  // Its rows' scroll at t, and a glide from where it is to `to`.
+  int drawerScroll(uint32_t t) const;
+  void glideDrawer(int to, uint32_t t);
+  // drawer_, as it is at t.
+  void makeDrawer(uint32_t t);
+  // A touch on it that let go: a pull's end, a scroll's, or a tap on a
+  // row or beside them.
   void letGoDrawer(uint32_t t, int vy);
+  void letGoScroll(uint32_t t, int vy);
   void tapDrawer(int x, int y, uint32_t t);
 
   Hal& hal_;

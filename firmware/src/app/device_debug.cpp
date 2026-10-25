@@ -198,6 +198,8 @@ void Device::state(JsonObject d, uint32_t t) {
   // The agents' drawer: how far open, and the rows the Mac sent.
   d["drawer"]["open"] = drawerOpen(t);
   d["drawer"]["rows"] = m.listCount;
+  d["drawer"]["skip"] = m.listSkip;
+  d["drawer"]["scroll"] = drawerScroll(t);
   d["idle"] = m.idle;
   d["helpers"] = m.helpers;
   JsonArray when = d["when"].to<JsonArray>();

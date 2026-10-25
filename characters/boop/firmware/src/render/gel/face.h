@@ -59,6 +59,13 @@ class GelFace final : public Face {
   int drawerRow(const Drawer& drawer, int x, int y) const override {
     return DrawerLayout(size_.width, size_.height, size_.corner).rowAt(drawer, x, y);
   }
+  int drawerScrollMax(int total) const override {
+    return DrawerLayout(size_.width, size_.height, size_.corner).scrollMax(total);
+  }
+  int drawerSnap(int scroll) const override { return DrawerLayout(size_.width, size_.height, size_.corner).snap(scroll); }
+  void drawerShown(const Drawer& drawer, int& first, int& last) const override {
+    DrawerLayout(size_.width, size_.height, size_.corner).shown(drawer, first, last);
+  }
   void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
   int variants(Mood, SceneState) const override;
   uint32_t loopMs(Mood, SceneState, int variant) const override;

@@ -92,8 +92,10 @@ public final class Core {
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
     /// When the board last said its agents' drawer is open (`ev drawer`),
-    /// until it says it shut: the snapshot lists the sessions while it is.
+    /// until it says it shut: the snapshot lists the sessions while it is,
+    /// from the row it asked for last.
     var drawerHeardAt: Int64?
+    var drawerFrom = 0
     /// Each session's number on the drawer, by session key: what a tap on
     /// its row sends back. They count up from where this launch's requests
     /// start (`Config.firstAsk`), so a row a board still shows from the
@@ -541,8 +543,9 @@ public final class Core {
     /// The drawer's rows, in what needs you first: the requests that show
     /// (oldest first), then the sessions working, then those resting (a
     /// request you dismissed, or idle), the latest to come to rest first;
-    /// as many as fit the board's line, and `maxRows`, or one fewer when
-    /// there are more, so its last row can say how many more.
+    /// from the row the board asked for (`drawerFrom`), or as near it as
+    /// still fills `maxRows`; `maxRows` of them, their names cut shorter
+    /// (`rowCuts`) till they fit the board's line, and only then fewer.
     func list(into snapshot: inout StateSnapshot, at now: Int64) {
         let (shown, dismissed, working, idle) = groups(at: now)
         let rested = (dismissed + idle).sorted {
@@ -550,22 +553,36 @@ public final class Core {
                 > (notes[$1.key]?.dismissed?.at ?? $1.turn.lastEndedAt ?? $1.lastEventAt, $1.order)
         }
         let all = shown.map { ($0, "n") } + working.map { ($0, "w") } + rested.map { ($0, "i") }
-        let room = all.count <= StateSnapshot.maxRows ? all.count : StateSnapshot.maxRows - 1
-        snapshot.list = []
-        for (s, status) in all.prefix(room) {
-            let named = s.name.map { !$0.isEmpty } ?? false
-            let row = StateSnapshot.Row(
-                id: rows[s.key] ?? 0, status: status,
-                slot: status == "w" && config.workStream ? stream.lanes[s.key]?.slot ?? -1 : -1, agent: s.agent.rawValue,
-                title: StateSnapshot.clip(named ? s.name! : s.project, marked: true, max: StateSnapshot.maxTitleBytes),
-                project: named ? StateSnapshot.clip(s.project, marked: true, max: StateSnapshot.maxProjectBytes) : "")
-            var next = snapshot
-            next.list?.append(row)
-            guard next.fits else { break }
-            snapshot = next
+        let skip = max(0, min(drawerFrom, all.count - StateSnapshot.maxRows))
+        let window = all.dropFirst(skip).prefix(StateSnapshot.maxRows)
+        snapshot.skip = skip
+        for (i, cut) in Self.rowCuts.enumerated() {
+            let last = i == Self.rowCuts.count - 1
+            snapshot.list = []
+            snapshot.unlisted = all.count - skip
+            for (s, status) in window {
+                let named = s.name.map { !$0.isEmpty } ?? false
+                let row = StateSnapshot.Row(
+                    id: rows[s.key] ?? 0, status: status,
+                    slot: status == "w" && config.workStream ? stream.lanes[s.key]?.slot ?? -1 : -1, agent: s.agent.rawValue,
+                    title: StateSnapshot.clip(named ? s.name! : s.project, marked: true, max: cut.title),
+                    project: named && cut.project > 0 ? StateSnapshot.clip(s.project, marked: true, max: cut.project) : "")
+                var next = snapshot
+                next.list?.append(row)
+                next.unlisted -= 1
+                guard next.fits else { break }
+                snapshot = next
+            }
+            if last || snapshot.list?.count == window.count { break }
         }
-        snapshot.unlisted = all.count - (snapshot.list?.count ?? 0)
     }
+
+    /// The longest title and project a drawer's row carries, in bytes,
+    /// each tried in turn till its rows all fit the line: as the board's
+    /// fields hold them first, the project left out last.
+    static let rowCuts: [(title: Int, project: Int)] = [
+        (StateSnapshot.maxTitleBytes, StateSnapshot.maxProjectBytes), (22, 14), (16, 8), (12, 0),
+    ]
 
     /// When the working stretch that `working`, the sessions working at
     /// `now`, are in began: the earliest start among their turns, or the
@@ -717,12 +734,14 @@ public final class Core {
     }
 
     /// The board's agents' drawer opened, or shut (`ev drawer`): while it's
-    /// open the snapshot lists the sessions (`list`).
+    /// open the snapshot lists the sessions (`list`), from the row the
+    /// board asked for, `from`, as it scrolls.
     @discardableResult
-    public func drawer(open: Bool, at now: Int64) -> [CoreEffect] {
+    public func drawer(open: Bool, from: Int = 0, at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
         drawerHeardAt = open ? now : nil
+        drawerFrom = open ? max(0, from) : 0
         publish(now, &fx)
         return fx
     }

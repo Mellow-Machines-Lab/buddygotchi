@@ -243,10 +243,11 @@ public final class Pipeline {
     }
 
     /// The board's agents' drawer opened or shut (`ev drawer`): logged
-    /// only, and while it's open the board's state lists the sessions.
+    /// only, and while it's open the board's state lists the sessions, from
+    /// the row it asked for, `from`.
     @discardableResult
-    public func drawer(open: Bool, at now: Int64, buddy: String? = nil) -> Step {
-        input(at: now) { run(core(buddy).drawer(open: open, at: now), buddy: buddy) }
+    public func drawer(open: Bool, from: Int = 0, at now: Int64, buddy: String? = nil) -> Step {
+        input(at: now) { run(core(buddy).drawer(open: open, from: from, at: now), buddy: buddy) }
     }
 
     /// A row picked in the board's drawer (`pick`, the session's number

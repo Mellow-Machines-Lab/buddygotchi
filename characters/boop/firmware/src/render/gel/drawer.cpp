@@ -38,9 +38,10 @@ void row(Raster& r, const DrawerLayout& l, const Drawer::Row& row, int y, bool p
   const int x = l.margin(), w = l.w - 2 * l.margin(), h = l.rowH();
   const bool needs = row.status == Drawer::Status::kNeedsYou, idle = row.status == Drawer::Status::kIdle;
   r.round(x, y, w, h, kRowRadius, picked ? kRowPicked : needs ? kRowNeedsYou : kRow);
-  r.bounds = {x, y, x + kBar, y + h};  // the bar is the row's own rounded left end
+  const Box list = r.bounds;  // the bar is the row's own rounded left end
+  r.bounds = {x, std::max(y, list.y0), x + kBar, std::min(y + h, list.y1)};
   r.round(x, y, kRowRadius * 2, h, kRowRadius, barInk(row));
-  r.bounds = Raster::kEverywhere;
+  r.bounds = list;
   // The chip: filled amber for needs you, else an outline.
   const char* label = needs ? "NEEDS YOU" : idle ? "IDLE" : "WORKING";
   const int chipW = glyphCount(label) * kSmall.w + 14, chipH = kSmall.h + 6;
@@ -69,17 +70,23 @@ DrawerLayout::DrawerLayout(int width, int height, int cornerRadius) : w(width), 
 int DrawerLayout::restTop() const { return h * kStripTop / kHeight; }
 
 int DrawerLayout::margin() const {
-  const int last = rowTop(1000, Drawer::kRows - 1);
+  const int last = rowTop(1000, fits() - 1);
   return std::max(kMargin, Surface::insetOf(w, h, corner, last, last + rowH(), kRowRadius) + kCornerGap);
+}
+
+void DrawerLayout::shown(const Drawer& d, int& first, int& last) const {
+  const int scrolled = d.scroll * 3 / 2, hidden = scrolled - rowH();  // under the lid, past the first row's end
+  first = hidden < 0 ? 0 : hidden / pitch() + 1;
+  last = std::min(d.total() - 1, (h - 1 - listTop(d.open) + scrolled) / pitch());
 }
 
 int DrawerLayout::rowAt(const Drawer& d, int canvasX, int canvasY) const {
   const int x = nativeX(canvasX), y = nativeY(canvasY);
-  if (x < margin() || x >= w - margin()) return -1;
-  const int rows = d.unlisted > 0 ? std::min(d.count, Drawer::kRows - 1) : d.count;
-  for (int i = 0; i < rows; ++i)
-    if (y >= rowTop(1000, i) && y < rowTop(1000, i) + rowH()) return i;
-  return -1;
+  if (x < margin() || x >= w - margin() || y < listTop(1000)) return -1;
+  const int top = listTop(1000) - d.scroll * 3 / 2;
+  if (y < top) return -1;
+  const int i = (y - top) / pitch();
+  return i < d.total() && y - top - i * pitch() < rowH() ? i : -1;
 }
 
 DrawerPose drawerPose(const Surface& s, const Drawer& d) {
@@ -134,15 +141,19 @@ void paintDrawer(Surface& s, const Drawer& d, const Strip& strip, const rig::Anc
   const int lid = std::max(kMargin, s.inset(cy - 12, cy + 12) + kCornerGap);
   paintRule(r, lid, s.width - lid, top, open > 500, paletteAt(inkAt(kInkDim, kLevels)));
   paintCounts(r, strip, lid, cy);
-  // The rows, and the sessions they leave out.
-  const int rows = d.unlisted > 0 ? std::min(d.count, Drawer::kRows - 1) : d.count;
-  for (int i = 0; i < rows; ++i) row(r, l, d.rows[i], l.rowTop(d.open, i), i == d.picked);
-  if (d.unlisted > 0) {
-    char more[32];
-    std::snprintf(more, sizeof(more), "+%d more on your Mac", d.unlisted);
-    const int y = l.rowTop(d.open, rows) + (l.rowH() - kSmall.h) / 2;
-    text(r, kSmall, (s.width - glyphCount(more) * kSmall.w) / 2, y, more, paletteAt(inkAt(kInkGrey, kLevels)));
+  // The rows, scrolled under the lid; a session whose row hasn't come
+  // yet is an empty one till it does.
+  int first, last;
+  l.shown(d, first, last);
+  r.bounds = {0, l.listTop(d.open), s.width, s.height};
+  for (int i = first; i <= last; ++i) {
+    const int y = l.rowTop(d.open, i) - d.scroll * 3 / 2;
+    if (const Drawer::Row* at = d.at(i))
+      row(r, l, *at, y, i == d.picked);
+    else
+      r.round(l.margin(), y, l.w - 2 * l.margin(), l.rowH(), kRowRadius, kRow);
   }
+  r.bounds = Raster::kEverywhere;
   // The paw, hung over the edge once it's open, dropping into place.
   if (d.paw > 0) {
     // Off to the side of its face, hanging down the sheet's edge.

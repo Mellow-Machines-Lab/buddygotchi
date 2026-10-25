@@ -68,6 +68,13 @@ public enum BoopDevice {
         return id
     }
 
+    /// The first row the board's drawer wants (`data.from`, the place in
+    /// the list it has scrolled to), 0 when it names none.
+    public static func rows(from ev: DeviceEvent) -> Int {
+        guard let from = ev.data["from"]?.int, (0...999).contains(from) else { return 0 }
+        return from
+    }
+
     /// The number of the request a finger held on the needs-you screen
     /// dismisses (`data.attn`, the `attn.id` it showed as the touch began),
     /// or nil when the gesture names none. A request's number fits 32 bits.

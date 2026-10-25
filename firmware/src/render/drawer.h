@@ -1,17 +1,21 @@
 // The agents' drawer: swiped up from the status strip, a sheet listing
 // the agents the Mac knows, each a row you tap to open its thread on the
 // Mac. The Mac sends the rows (`list`) only while the board says the
-// drawer is open; the device keeps the finger, the spring and the clock,
-// and a face that has one draws it (Face::hasDrawer). Fixed sizes, no heap.
+// drawer is open, and only a window of them: as many as fit its line,
+// from the row the board asks for (`ev drawer` "open", `data.from`), so a
+// finger scrolls through every session, the board asking for the rows it
+// comes to. The device keeps the finger, the spring, the scroll and the
+// clock, and a face that has one draws it (Face::hasDrawer). Fixed sizes,
+// no heap.
 #pragma once
 #include <cstdint>
 
 namespace render {
 
 struct Drawer {
-  // The most rows the Mac sends, and the drawer shows: one more session
-  // than it has room for goes as `unlisted`, said in the last row's place.
-  static constexpr int kRows = 5;
+  // The most rows the Mac sends at once: a screenful and the row peeking
+  // under it.
+  static constexpr int kRows = 6;
   enum class Status : uint8_t { kNeedsYou, kWorking, kIdle };
   struct Row {
     uint32_t id = 0;  // the Mac's number for the session: what a tap on the row sends back
@@ -23,15 +27,23 @@ struct Drawer {
   };
   Row rows[kRows];
   int count = 0;
-  int unlisted = 0;     // sessions the rows leave out
+  int skip = 0;         // sessions before the rows (`skip`): rows[0] is session `skip` in the list
+  int unlisted = 0;     // sessions after them
   bool listed = false;  // the Mac has sent a list since the drawer opened
+  // How far the rows are scrolled up, canvas px (as a finger moves), a
+  // little past either end as it springs back.
+  int scroll = 0;
   // How far open, 0 (shut: the strip is the strip) to 1000, a little past
   // either end as it springs; and the paw that hangs over its edge once
   // it's open, 0 to 1000.
   int open = 0;
   int paw = 0;
-  int picked = -1;  // the row a tap picked, lit as the drawer shuts; -1 for none
+  int picked = -1;  // the session a tap picked, by its place in the list, lit as the drawer shuts; -1 for none
   bool shows() const { return open > 0; }
+  int total() const { return skip + count + unlisted; }
+  // Session i in the list, or null when it isn't among the rows the Mac
+  // sent.
+  const Row* at(int i) const { return i >= skip && i < skip + count ? &rows[i - skip] : nullptr; }
 };
 
 }  // namespace render

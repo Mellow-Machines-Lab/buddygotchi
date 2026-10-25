@@ -1472,6 +1472,8 @@ void test_a_tap_on_a_row_picks_it();
 void test_it_shuts_itself_and_says_its_open_till_then();
 void test_boot_shuts_it();
 void test_the_drawers_rows_on_the_panel();
+void test_a_long_drawers_rows_scroll();
+void test_a_finger_scrolls_a_long_drawer();
 void test_the_body_under_the_drawer();
 void test_drawer_frames_allocate_nothing();
 // test_requests.cpp
@@ -2780,6 +2782,8 @@ int main() {
   RUN_TEST(test_it_shuts_itself_and_says_its_open_till_then);
   RUN_TEST(test_boot_shuts_it);
   RUN_TEST(test_the_drawers_rows_on_the_panel);
+  RUN_TEST(test_a_long_drawers_rows_scroll);
+  RUN_TEST(test_a_finger_scrolls_a_long_drawer);
   RUN_TEST(test_the_body_under_the_drawer);
   RUN_TEST(test_drawer_frames_allocate_nothing);
   return UNITY_END();

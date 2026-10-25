@@ -134,7 +134,9 @@ ramps and springs can, and no jolt at an event. By file:
   hears, a swipe up the face staying the face's, a short pull springing
   back, a tap on a row picking it, shutting itself after 15 s and saying
   it's open till then, BOOT shutting it, its rows inside the panel's
-  rounded corners, the body pressed flat under it, and its frames
+  rounded corners, a long list's rows scrolling under a finger, gliding,
+  springing back and resting on a whole row as the board asks for the
+  rows it comes to, the body pressed flat under it, and its frames
   allocating nothing).
 
 ## The board's frames
@@ -166,7 +168,8 @@ ramps and springs can, and no jolt at an event. By file:
   a finger in idle (`swipes.jsonl`), and the agents' drawer
   (`drawer.jsonl`: shut with the strip's chevron, pulled part way, open
   with the body squeezed flat and its paw over the edge, a row picked,
-  handed over, and the rows it leaves out). `--accept` updates only the gel
+  handed over, and a long list scrolled, a row still coming as it
+  scrolls). `--accept` updates only the gel
   goldens, after looking at them.
 - `boopctl mirror` (in `make -C internal mirror`) plays the same scenarios
   on the Mac's mirror of the board (`characters/boop/mac/mirror/board.js`)

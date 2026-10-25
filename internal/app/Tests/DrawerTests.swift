@@ -76,31 +76,77 @@ final class DrawerTests: XCTestCase {
         XCTAssertFalse(snapshot.jsonLine.contains("unlisted\":2,"))
     }
 
-    /// The board shows five rows (`maxRows`): with more sessions, four,
-    /// and the last row's place says how many more (`unlisted`). However
-    /// long and however escaped their names, the line fits the board's
-    /// (`Wire.maxLine`), dropping rows to `unlisted` if it must.
+    /// The state sends six rows at most (`maxRows`, the board's screenful
+    /// and the row peeking under it), and says how many more there are
+    /// (`unlisted`). Long names are cut shorter (`rowCuts`) so all six fit
+    /// the board's line (`Wire.maxLine`) with a request showing; however
+    /// long and however escaped they are, the line fits, dropping rows to
+    /// `unlisted` only once the shortest cut won't do.
     func testTheRowsFitTheBoard() throws {
+        let long = CoreRig(workStream: true)
+        for i in 1...7 { long.send(.turnStart, session: "l\(i)", project: "a-project-whose-name-runs-long-\(i)") }
+        long.send(.needsYou, session: "l1", project: "a-project-whose-name-runs-long-1", tool: "Bash")
+        long.pipeline.drawer(open: true, at: long.now)
+        XCTAssertEqual(long.state.list?.count, StateSnapshot.maxRows, long.state.jsonLine)
+        XCTAssertTrue(long.state.fits, "\(long.state.jsonLine.utf8.count) \(long.state.jsonLine)")
+        XCTAssertEqual(Core.rowCuts.first?.title, StateSnapshot.maxTitleBytes)
+        XCTAssertEqual(Core.rowCuts.last?.project, 0)
+
         let rig = CoreRig(workStream: true)
-        for i in 1...5 { rig.send(.turnStart, session: "s\(i)", project: "p\(i)") }
+        for i in 1...6 { rig.send(.turnStart, session: "s\(i)", project: "p\(i)") }
         rig.pipeline.drawer(open: true, at: rig.now)
-        XCTAssertEqual(StateSnapshot.maxRows, 5)
-        XCTAssertEqual(rig.state.list?.count, 5)
+        XCTAssertEqual(StateSnapshot.maxRows, 6)
+        XCTAssertEqual(rig.state.list?.count, 6)
         XCTAssertEqual(rig.state.unlisted, 0)
-        rig.send(.turnStart, session: "s6", project: "p6")
-        XCTAssertEqual(rig.state.list?.count, 4)
-        XCTAssertEqual(rig.state.unlisted, 2)
+        rig.send(.turnStart, session: "s7", project: "p7")
+        XCTAssertEqual(rig.state.list?.count, 6)
+        XCTAssertEqual(rig.state.unlisted, 1)
         let quotes = String(repeating: "\"", count: 60)
         for i in 1...6 { rig.send(.turnStart, .codex, session: "q\(i)", project: quotes + "\(i)") }
         rig.send(.needsYou, .codex, session: "q1", project: quotes + "1", tool: "Bash")
         let state = rig.state
         XCTAssertTrue(state.fits, "\(state.jsonLine.utf8.count)")
         XCTAssertTrue(state.jsonLine.utf8.count < Wire.maxLine)
-        XCTAssertEqual((state.list?.count ?? 0) + state.unlisted, 12)
+        XCTAssertEqual((state.list?.count ?? 0) + state.unlisted, 13)
         for row in state.list ?? [] {
             XCTAssertTrue(row.title.utf8.count <= StateSnapshot.maxTitleBytes)
             XCTAssertTrue(row.project.utf8.count <= StateSnapshot.maxProjectBytes)
         }
+    }
+
+    /// The board asks for the rows from where it has scrolled to (`from`):
+    /// the state lists them from there, `skip` saying how many come before,
+    /// or from as near it as still fills `maxRows`, near the end. Asked
+    /// again or shut and opened, from the top.
+    func testTheRowsComeFromWhereTheBoardScrolled() throws {
+        let rig = CoreRig()
+        for i in 1...12 { rig.send(.turnStart, session: "s\(i)", project: "p\(i)") }
+        rig.pipeline.drawer(open: true, at: rig.now)
+        let top = try XCTUnwrap(rig.state.list).map(\.id)
+        XCTAssertEqual(rig.state.skip, 0)
+        XCTAssertEqual(rig.state.unlisted, 6)
+        XCTAssertFalse(rig.state.jsonLine.contains(#""skip""#))
+        rig.pipeline.drawer(open: true, from: 3, at: rig.now)
+        let window = try XCTUnwrap(rig.state.list).map(\.id)
+        XCTAssertEqual([rig.state.skip, window.count, rig.state.unlisted], [3, 6, 3])
+        XCTAssertEqual(Array(window.prefix(3)), Array(top.suffix(3)))
+        XCTAssertTrue(rig.state.jsonLine.contains(#"]],"skip":3,"unlisted":3}"#), rig.state.jsonLine)
+        rig.pipeline.drawer(open: true, from: 10, at: rig.now)
+        XCTAssertEqual([rig.state.skip, rig.state.list?.count ?? 0, rig.state.unlisted], [6, 6, 0])
+        rig.pipeline.drawer(open: false, at: rig.now)
+        rig.pipeline.drawer(open: true, at: rig.now)
+        XCTAssertEqual(rig.state.skip, 0)
+    }
+
+    /// The board's `open`: the row it asks for from, 0 for none.
+    func testTheOpenOnTheWire() {
+        func from(_ line: String) -> Int? {
+            guard case .event(let ev) = Wire.decode(line) else { return nil }
+            return BoopDevice.rows(from: ev)
+        }
+        XCTAssertEqual(from(#"{"t":"ev","kind":"drawer","did":"open","data":{"from":7}}"#), 7)
+        XCTAssertEqual(from(#"{"t":"ev","kind":"drawer","did":"open"}"#), 0)
+        XCTAssertEqual(from(#"{"t":"ev","kind":"drawer","did":"open","data":{"from":-2}}"#), 0)
     }
 
     /// A picked row opens its session's thread, recorded as `open_thread`

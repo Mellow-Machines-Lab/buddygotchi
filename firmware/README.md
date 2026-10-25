@@ -201,7 +201,9 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   the strip, the bottom rows of the screen (`app/device.h`'s
   `kDrawerFromY`, canvas rows from 205 down), and go up `kDrawerPullPx`;
   one that starts on the face is the face's swipe. `dbg.state`'s
-  `drawer.open` says how far open it is, 0 to 1000.
+  `drawer.open` says how far open it is, 0 to 1000, and `drawer.scroll`
+  and `drawer.skip` how far its rows are scrolled (canvas px) and where
+  the Mac's window of them starts.
 - **A hold doesn't dismiss the needs-you screen:** the finger must stay
   down a second inside a spot 24 px wide each way
   (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). On the CYD,

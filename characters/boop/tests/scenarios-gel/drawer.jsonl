@@ -4,7 +4,10 @@
 // "open") and the Mac's next state has the rows (`list`). Open, the body's
 // eyes squeeze shut and a paw drops over the sheet's edge. A tap on a row
 // sends its id (`pick`), lights it and shuts the drawer as Boop hands it
-// over; pulled open again, it shuts itself 15 s after the last touch.
+// over. Pulled open again with seven sessions, a screenful of them and
+// the sixth peeking; a finger up the rows scrolls them, the board asks for
+// the rows from where it has scrolled (`from`), and they come to rest on a
+// whole row; it shuts itself 15 s after the last touch.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"working","mood":"calm","busy":2,"idle":1,"vol":0,"attn":{"agent":"codex","project":"landing","name":"Hero copy","more":0,"id":7}}
@@ -46,14 +49,29 @@
 {"clock":9100}
 {"clock":9200}
 {"clock":9300}
-{"t":"state","base":"working","mood":"calm","busy":2,"idle":1,"vol":0,"list":[[12,"w",0,"claude","Fix the lane colours","buddygotchi"],[13,"w",2,"claude","Needs-you lasts","agenthooks"],[15,"i",-1,"codex","dotfiles",""],[16,"i",-1,"claude","Prompt cache","mellowharness"]],"unlisted":3}
+{"t":"state","base":"working","mood":"calm","busy":3,"idle":4,"vol":0,"list":[[12,"w",0,"claude","Fix the lane colours","buddygotchi"],[13,"w",2,"claude","Needs-you lasts","agenthooks"],[17,"w",1,"claude","Scroll the drawer","buddygotchi"],[15,"i",-1,"codex","dotfiles",""],[16,"i",-1,"claude","Prompt cache","mellowharness"],[18,"i",-1,"codex","Hero copy","landing"]],"unlisted":1}
 {"clock":9700}
 {"clock":10000}
 {"shot":"more"}
-{"expect":{"drawer":{"open":1000,"rows":4}}}
-{"clock":24000}
+{"expect":{"drawer":{"open":1000,"rows":6,"skip":0,"scroll":0}}}
+{"t":"dbg.touch","x":160,"y":180,"to_x":160,"to_y":120,"ms":300}
+{"clock":10100}
+{"clock":10200}
+{"shot":"scrolling"}
+{"clock":10300}
+{"clock":10400}
+{"t":"state","base":"working","mood":"calm","busy":3,"idle":4,"vol":0,"list":[[13,"w",2,"claude","Needs-you lasts","agenthooks"],[17,"w",1,"claude","Scroll the drawer","buddygotchi"],[15,"i",-1,"codex","dotfiles",""],[16,"i",-1,"claude","Prompt cache","mellowharness"],[18,"i",-1,"codex","Hero copy","landing"],[19,"i",-1,"claude","Release notes","linkkit"]],"skip":1}
+{"clock":10500}
+{"clock":10600}
+{"clock":10700}
+{"clock":10800}
+{"clock":10900}
+{"clock":11000}
+{"shot":"scrolled"}
+{"expect":{"drawer":{"open":1000,"rows":6,"skip":1,"scroll":70}}}
+{"clock":25000}
 {"expect":{"drawer":{"open":1000}}}
-{"clock":24200}
-{"clock":24400}
-{"clock":24600}
+{"clock":25300}
+{"clock":25500}
+{"clock":25800}
 {"expect":{"drawer":{"open":0}}}

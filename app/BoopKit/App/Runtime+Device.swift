@@ -75,13 +75,14 @@ extension Runtime {
             options.log("device\(Runtime.whose(rig)): gesture \(ev.did ?? "?")")
             if let kind = ev.did { run(pipeline.gesture(kind, request: BoopDevice.request(held: ev), at: now, buddy: rig.tag)) }
         case "drawer":
-            // The agents' drawer, the board's own: open, shut, or a row
-            // picked in it, by its number.
+            // The agents' drawer, the board's own: open (from the row it
+            // has scrolled to), shut, or a row picked in it, by its number.
             options.log("device\(Runtime.whose(rig)): drawer \(ev.did ?? "?")" + (BoopDevice.row(picked: ev).map { " \($0)" } ?? ""))
             // Onboarding's tour hears it open, and a row picked.
             if rig === rigs[0], let did = ev.did, did != "closed" { home.async { [weak self] in self?.onDrawer?(did) } }
             switch ev.did {
-            case "open", "closed": run(pipeline.drawer(open: ev.did == "open", at: now, buddy: rig.tag))
+            case "open", "closed":
+                run(pipeline.drawer(open: ev.did == "open", from: BoopDevice.rows(from: ev), at: now, buddy: rig.tag))
             case "pick": if let row = BoopDevice.row(picked: ev) { run(pipeline.pick(row: row, at: now, buddy: rig.tag)) }
             default: break
             }

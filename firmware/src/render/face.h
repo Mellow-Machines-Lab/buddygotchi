@@ -137,13 +137,19 @@ class Face {
   virtual bool playsSwipe() const { return true; }
   // The agents' drawer (render/drawer.h): whether this face has one, the
   // device's, set before each frame as the stream is, how far a finger
-  // pulls it from shut to open (canvas px), and the row of it open under a
-  // finger at x, y on the canvas (-1 for none). A face with none never
-  // opens one: a swipe up its strip is the swipe it was.
+  // pulls it from shut to open (canvas px), the session open under a
+  // finger at x, y on the canvas, by its place in the list (-1 for none),
+  // how far a list of `total` sessions scrolls (canvas px), the nearest
+  // scroll to `scroll` that starts on a whole row, and the first and last
+  // sessions any of whose rows show, scrolled as `drawer` is. A face with
+  // none never opens one: a swipe up its strip is the swipe it was.
   virtual bool hasDrawer() const { return false; }
   virtual void drawer(const Drawer* drawer) { (void)drawer; }
   virtual int drawerTravel() const { return 0; }
   virtual int drawerRow(const Drawer& drawer, int x, int y) const { return (void)drawer, (void)x, (void)y, -1; }
+  virtual int drawerScrollMax(int total) const { return (void)total, 0; }
+  virtual int drawerSnap(int scroll) const { return scroll; }
+  virtual void drawerShown(const Drawer& drawer, int& first, int& last) const { (void)drawer, first = 0, last = -1; }
 
   // A reaction's variation: pick chooses without changing anything (a
   // refused reaction leaves no trace); started is told what played. A

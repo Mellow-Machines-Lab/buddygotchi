@@ -602,12 +602,17 @@ Besides drawing each mood and state, a face:
   pointing the way, and a sheet of rows comes out under it, one a session
   the Mac lists (`state`'s `list`, sent while the board says the drawer
   is open): its thread's name, its agent and project, and whether it needs
-  you, works or rests, its bar in its lane's colour. A tap on a row has
+  you, works or rests, its bar in its lane's colour. With more than the
+  glass shows, a finger scrolls them, coming to rest on a whole row, and
+  the board asks the Mac for the rows it comes to (the Mac sends a
+  window of them, `skip` before and `unlisted` after). A tap on a row has
   the Mac open that thread and the board hand it over as the drawer
   shuts; a finger pulls it shut, and it shuts itself 15 s after the last
-  touch. The device keeps the finger, the spring and the clock, and hands
-  the face the drawer before each frame (`Face::drawer`); the face lays
-  it out and says where its rows are (`drawerTravel`, `drawerRow`). The
+  touch. The device keeps the finger, the spring, the scroll and the
+  clock, and hands the face the drawer before each frame
+  (`Face::drawer`); the face lays it out and says where its rows are and
+  how far they scroll (`drawerTravel`, `drawerRow`, `drawerScrollMax`,
+  `drawerSnap`, `drawerShown`). The
   gel draws it over its lane, its body pressed flat against the top of
   the glass, eyes squeezed shut, cheeks pink and a paw hung over the
   sheet's edge (`render/gel/drawer.h`). Pixel has none: a swipe up its
