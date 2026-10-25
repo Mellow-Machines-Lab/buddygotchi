@@ -210,7 +210,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
   m.when |= render::busyTags(m.busy);
-  // The work stream's lanes, `[slot, calls, word, project]`, their words
+  // The work stream's lanes, `[slot, calls, word]`, their words
   // as the fonts draw them.
   for (JsonArrayConst lane : doc["calls"].as<JsonArrayConst>()) {
     if (m.laneCount >= render::Stream::kLanes) break;
@@ -218,7 +218,6 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     l.slot = uint8_t(heldTo(lane[0], 0, render::Stream::kLanes - 1, 0));
     l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
     render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
-    render::foldText(lane[3].as<const char*>(), render::Stream::kLabelBytes - 1, l.label, sizeof(l.label));
   }
   if (!sameModel(m, b_.model()) || live_.pattern || b_.noApp(at))
     dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());

@@ -20,14 +20,12 @@ struct Layout {
   int w, h;
   int x(int p) const { return w * p / 502; }
   int y(int p) const { return h * p / 410; }
-  // A lane's column's middle, by its place among the lanes showing.
-  int column(const Stream& s, uint8_t slot) const {
-    const int i = s.column(slot), n = std::max(1, s.laneCount);
-    return i < 0 ? w / 2 : w * (2 * i + 1) / (2 * n);
-  }
+  // A lane's name's middle, by its place among the lanes showing
+  // (render::laneX): clear of the head and its hat.
+  int column(const Stream& s, uint8_t slot) const { return x(laneX(s.column(slot), s.laneCount)); }
 };
 
-constexpr int kTop = 26;  // where words start falling, under the lanes' names
+constexpr int kTop = 10;  // where words start falling, from the top edge
 
 // The props' inks, and a few of the stream's own.
 constexpr uint16_t kPaper = 0xFFDE, kPaperLine = 0xA554, kNavy = 0x10E8, kBrick = 0xC3CA, kBrickRim = 0x8A26,
@@ -318,12 +316,7 @@ void paintStreamBehind(Surface& surface, const Stream& stream, uint32_t t) {
   if (!surface.pixels || !stream.drawn(t)) return;
   const Layout l{surface.width, surface.height};
   const int bottom = surface.height * 4 / 5;  // the lane's top, as Raster's
-  // Each lane's name along the top, in its colour, while they work.
-  for (int i = 0; stream.on && i < stream.laneCount; ++i) {
-    const auto& lane = stream.lanes[i];
-    behind(surface, kSmall, l.column(stream, lane.slot), l.y(13), lane.label, laneInk(lane.slot), 170, bottom);
-  }
-  // The words, dim, easing in as they leave the name and out before the
+  // The words, dim, easing in as they come from the top and out before the
   // lane; held where they are, icy, while a freeze lasts. A word the word
   // forward takes is its to draw.
   for (const auto& w : stream.words) {

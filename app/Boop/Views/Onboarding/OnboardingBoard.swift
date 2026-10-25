@@ -247,7 +247,8 @@ struct HowToAct: View {
                        done: model.lessons.contains(.button), waiting: paired && model.lessons.contains(.tap))
                 lesson(3, "Hold my button and talk", talkDetail, done: model.lessons.contains(.talk),
                        waiting: paired && model.lessons.contains(.button))
-                lesson(4, "When I glow amber, tap me", "An agent is waiting for you. A tap opens it on your Mac.", amber: true)
+                lesson(4, "When I glow amber, tap me", amberDetail, done: model.lessons.contains(.amber),
+                       waiting: paired && model.lessons.isSuperset(of: [.tap, .button, .talk]), amber: true)
             }
             VStack(alignment: .leading, spacing: 6) {
                 Text("WHAT MY FACES MEAN").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkSoft)
@@ -269,6 +270,15 @@ struct HowToAct: View {
                 model.feed.poke()
             }
         }
+    }
+
+    /// The amber lesson's words: once the first three are done on the
+    /// board, it's glowing amber for practice, as if an agent were waiting.
+    private var amberDetail: String {
+        guard paired, model.lessons.isSuperset(of: [.tap, .button, .talk]), !model.lessons.contains(.amber) else {
+            return "An agent is waiting for you. A tap opens it on your Mac."
+        }
+        return "I'm glowing amber now, as if an agent were waiting. Tap me to answer it."
     }
 
     /// The talk lesson's words: how, what the Mac heard, or why it can't

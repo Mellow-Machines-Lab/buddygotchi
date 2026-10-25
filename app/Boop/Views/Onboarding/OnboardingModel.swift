@@ -84,6 +84,8 @@ final class OnboardingModel: ObservableObject {
 
     /// Moves to `to` without saving it.
     private func show(_ to: Onboarding.Act) {
+        // Leaving act 5, its practice request goes.
+        if act == .howTo, to != .howTo, progress.practiceDue { app.runtime?.practice(false) }
         forward = to.index > act.index
         OnboardingSound.play(.step)
         withAnimation(.boopEase(0.45)) { progress.move(to: to) }
@@ -201,7 +203,12 @@ final class OnboardingModel: ObservableObject {
         let tap = next.tapped(boardFound: found, button: button)
         guard tap != .nothing else { return }
         OnboardingSound.play(.success)
+        if tap == .lesson(.amber) {
+            app.runtime?.practice(false)
+            log("onboarding: the practice request was answered; the amber lesson is done")
+        }
         withAnimation(tap == .paired ? .spring(response: 0.55, dampingFraction: 0.6) : .boopPop) { progress = next }
+        if case .lesson = tap { showPractice() }
         if tap == .paired {
             app.runtime?.greet(.wake)
             log("onboarding: the board was tapped; paired")
@@ -220,6 +227,24 @@ final class OnboardingModel: ObservableObject {
             progress = next
         }
         if done { log("onboarding: push-to-talk heard words; the talk lesson is done") }
+        showPractice()
+    }
+
+    /// How long after the third lesson the practice request comes up, so
+    /// its tick is seen first.
+    static let practiceAfter: Duration = .seconds(1.2)
+
+    /// Once the first three lessons are done on a paired board, it glows
+    /// amber with a practice request, as an agent waiting would, and the
+    /// fourth lesson waits for a tap on it.
+    func showPractice() {
+        guard body == .joined, progress.practiceDue else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(for: Self.practiceAfter)
+            guard let self, self.progress.practiceDue else { return }
+            self.app.runtime?.practice(true)
+            self.log("onboarding: practice request on the board")
+        }
     }
 
     func agentHook(_ agent: String) {

@@ -51,8 +51,10 @@ public enum Onboarding {
             case skipped
         }
 
-        /// Act 5's lessons done on the board.
-        public enum Lesson: Hashable, Sendable { case tap, button, talk }
+        /// Act 5's lessons done on the board: the fourth, `amber`, is a tap
+        /// on the practice request the board shows once the first three
+        /// are done (`practiceDue`).
+        public enum Lesson: Hashable, Sendable { case tap, button, talk, amber }
 
         /// What a tap on the board did.
         public enum Tap: Equatable, Sendable {
@@ -87,10 +89,18 @@ public enum Onboarding {
             if act == .body, body == .skipped { body = .intro }
         }
 
+        /// Whether act 5's practice request is due on the board: the
+        /// first three lessons done, the amber one not yet.
+        public var practiceDue: Bool {
+            act == .howTo && lessons.isSuperset(of: [.tap, .button, .talk]) && !lessons.contains(.amber)
+        }
+
         /// A tap on the board: its screen, or its button when `button`. In
         /// act 4, while looking and with a board found, either pairs it,
         /// and counts as its lesson; in act 5 each does its own lesson,
-        /// once; anywhere else it's only a poke.
+        /// once, and once the first three are done either answers the
+        /// practice request, the amber lesson; anywhere else it's only a
+        /// poke.
         public mutating func tapped(boardFound: Bool, button: Bool) -> Tap {
             let lesson: Lesson = button ? .button : .tap
             switch act {
@@ -98,6 +108,9 @@ public enum Onboarding {
                 body = .joined
                 lessons.insert(lesson)
                 return .paired
+            case .howTo where practiceDue:
+                lessons.insert(.amber)
+                return .lesson(.amber)
             case .howTo where !lessons.contains(lesson):
                 lessons.insert(lesson)
                 return .lesson(lesson)

@@ -124,7 +124,7 @@ void Stream::drop(const Lane& lane, int column, int columns, uint32_t t) {
   const uint32_t h = mix(lane.slot * 131u + lane.count * 7919u + uint8_t(lane.word[0]));
   std::snprintf(w->text, sizeof(w->text), "%s", lane.word);
   w->slot = lane.slot;
-  w->x = int16_t(502 * (2 * column + 1) / (2 * (columns > 0 ? columns : 1)) + int(h % 121) - 60);
+  w->x = int16_t(laneX(column, columns) + int(h % 81) - 40);
   w->speed = uint16_t(95 + (h >> 8) % 50);
   w->born = t;
   w->live = true;

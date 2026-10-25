@@ -511,6 +511,15 @@ public final class Runtime: @unchecked Sendable {
         public static let tapMe = "Tap me!"
     }
 
+    /// Onboarding's practice request on the board, or taken down: its
+    /// needs-you screen, with no agent behind it (`Core.setPractice`).
+    public func practice(_ on: Bool) {
+        home.async { [self] in
+            options.log("onboarding: practice request \(on ? "up" : "down")")
+            run(core(rigs[0]).setPractice(on, at: options.clock()), on: rigs[0])
+        }
+    }
+
     public func greet(_ greeting: Greeting) {
         home.async { [self] in
             options.log("onboarding: \(greeting.reaction.name) on the board")

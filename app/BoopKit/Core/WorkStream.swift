@@ -12,12 +12,12 @@ import LinkKit
 struct WorkStream {
     /// A working session's lane on the board: its slot, which picks its
     /// column and colour, how many calls it has made since it got the
-    /// lane, its latest word and its project.
+    /// lane, and its latest word. No name: the colours tell the agents
+    /// apart, and the screen has no room for whose is whose.
     struct Lane: Equatable {
         var slot: Int
         var count: Int
         var word: String
-        var label: String
     }
 
     /// How sure a call is to come forward.
@@ -81,12 +81,10 @@ struct WorkStream {
     static let ladderMs: Int64 = 120_000
     /// An edit of this many lines or more is notable.
     static let bigEdit = 100
-    /// The most lanes the board shows, and the longest word and project
-    /// it gets, in bytes: the whole `state` stays well under the board's
-    /// 512.
+    /// The most lanes the board shows, and the longest word it gets, in
+    /// bytes: the whole `state` stays well under the board's 512.
     static let maxLanes = 4
     static let maxWordBytes = 14
-    static let maxLabelBytes = 12
     /// The `state` carries a lane's new word at most this often.
     static let sendEveryMs: Int64 = 250
 
@@ -182,9 +180,9 @@ struct WorkStream {
     /// A tool call starting in session `key`: its word joins its lane, and
     /// a turn's first call, a check starting or a helper going off may
     /// come forward.
-    mutating func started(_ e: AgentEvent, program: String?, label: String, at now: Int64) -> Forward? {
+    mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program)
-        var lane = lanes[key] ?? Lane(slot: freeSlot(), count: 0, word: word, label: Self.clip(label, Self.maxLabelBytes))
+        var lane = lanes[key] ?? Lane(slot: freeSlot(), count: 0, word: word)
         lane.count = (lane.count + 1) % 1000
         lane.word = word
         lanes[key] = lane
@@ -340,6 +338,6 @@ struct WorkStream {
     /// The lanes of the sessions in `working` for `state`, by slot.
     func calls(_ working: Set<String>) -> [StateSnapshot.Call] {
         lanes.filter { working.contains($0.key) }.values.sorted { $0.slot < $1.slot }.prefix(Self.maxLanes)
-            .map { StateSnapshot.Call(slot: $0.slot, count: $0.count, word: $0.word, label: $0.label) }
+            .map { StateSnapshot.Call(slot: $0.slot, count: $0.count, word: $0.word) }
     }
 }

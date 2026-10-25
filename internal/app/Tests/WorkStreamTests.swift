@@ -185,8 +185,8 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(run(rig, "3", tool: "Edit", added: 3), [], "a small edit is ambient, 3 s after the last")
     }
 
-    /// Each working session has a lane in `state`, `[slot, calls, word,
-    /// project]`, while nothing needs you; a new word alone waits 250 ms
+    /// Each working session has a lane in `state`, `[slot, calls, word]`,
+    /// no project's name, while nothing needs you; a new word alone waits 250 ms
     /// after the last `state` (`sendEveryMs`). The lane goes when its turn
     /// ends.
     func testTheLanesInTheState() throws {
@@ -196,8 +196,9 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart, session: "s2")
         rig.now += 1000
         let first = states(rig.send(call(rig, "1", program: "grep")))
-        XCTAssertEqual(first.last?.calls, [StateSnapshot.Call(slot: 0, count: 1, word: "grep", label: "landing")])
-        XCTAssertTrue(first.last!.jsonLine.contains(#""calls":[[0,1,"grep","landing"]]"#), first.last!.jsonLine)
+        XCTAssertEqual(first.last?.calls, [StateSnapshot.Call(slot: 0, count: 1, word: "grep")])
+        XCTAssertTrue(first.last!.jsonLine.contains(#""calls":[[0,1,"grep"]]"#), first.last!.jsonLine)
+        XCTAssertFalse(first.last!.jsonLine.contains("landing"), "no project's name")
         rig.now += 100
         XCTAssertEqual(states(rig.send(call(rig, "2", program: "sed", session: "s2"))), [], "100 ms after the last state")
         rig.now += 200
@@ -210,12 +211,11 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(rig.state.calls, [], "the needs-you screen clears the stream")
     }
 
-    /// The `state` with four lanes of the longest words and projects, and
+    /// The `state` with four lanes of the longest words, and
     /// many tags, fits the board's 512 bytes with room to spare.
     func testAFullStateFitsTheBoard() {
         let lanes = (0..<WorkStream.maxLanes).map {
-            StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxWordBytes),
-                               label: String(repeating: "p", count: WorkStream.maxLabelBytes))
+            StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxWordBytes))
         }
         let s = StateSnapshot(base: "working", act: "delegating", mood: "overwhelmed", attn: nil, busy: 12, idle: 9,
                               helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "camp", "pal", "chonk", "legend", "reading"],

@@ -1,15 +1,15 @@
-// The work stream on the gel (render/gel/stream.h): two agents' lanes, their
-// names along the top and each new call's word falling behind the body, the
+// The work stream on the gel (render/gel/stream.h): two agents' lanes, each
+// in its colour, each new call's word falling behind the body, the
 // to-do list along the monitor's foot and the turn's clock in its corner; then
 // each gag a word that comes forward plays as it lands. One run on a frozen
 // clock after a reset, the state sent again every 20 s as the Mac does.
 {"t": "dbg.reset"}
 {"clock": 0}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 1, "grep", "buddygotchi"], [1, 1, "edit +18", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 1, "grep"], [1, 1, "edit +18"]]}
 {"clock": 400}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 3, "sed", "buddygotchi"], [1, 2, "git log", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 3, "sed"], [1, 2, "git log"]]}
 {"clock": 900}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python", "buddygotchi"], [1, 3, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python"], [1, 3, "rg"]]}
 {"expect": {"calls": 2}}
 {"clock": 1500}
 {"shot": "falling"}
@@ -50,7 +50,7 @@
 {"clock": 19500}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "FAIL", "as": "hail"}}
 {"clock": 20000}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python", "buddygotchi"], [1, 3, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python"], [1, 3, "rg"]]}
 {"clock": 20500}
 {"shot": "hail"}
 // A lookup, read through a magnifier; the monitor's page scrolls.
@@ -86,7 +86,7 @@
 {"clock": 38300}
 {"shot": "plane-caught"}
 {"clock": 40000}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python", "buddygotchi"], [1, 3, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python"], [1, 3, "rg"]]}
 // An MCP tool: a phone ringing.
 {"clock": 40500}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "linear", "as": "phone"}}
@@ -123,7 +123,7 @@
 {"clock": 59000}
 {"shot": "built"}
 {"clock": 60000}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python", "buddygotchi"], [1, 3, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 4, "python"], [1, 3, "rg"]]}
 // A failing build: the tower comes down on it.
 {"clock": 61500}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "FAIL", "as": "topple"}}
@@ -142,7 +142,7 @@
 // The whole turn's moments, each over the words falling as it comes.
 // A compaction: the words squashed into a cube that drops onto the desk.
 {"clock": 68000}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 6, "python", "buddygotchi"], [1, 5, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 6, "python"], [1, 5, "rg"]]}
 {"clock": 68600}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "context", "as": "compact"}}
 {"clock": 68900}
@@ -151,28 +151,28 @@
 {"shot": "compact-cube"}
 // A rate limit: the words freeze where they are, icy.
 {"clock": 71500}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 8, "python", "buddygotchi"], [1, 7, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 8, "python"], [1, 7, "rg"]]}
 {"clock": 71900}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "rate limit", "as": "freeze"}}
 {"clock": 72800}
 {"shot": "freeze"}
 // You stopped it: the words drop, switched off.
 {"clock": 74500}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 10, "python", "buddygotchi"], [1, 9, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 10, "python"], [1, 9, "rg"]]}
 {"clock": 74800}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 0, "w": "stopped", "as": "drop"}}
 {"clock": 75100}
 {"shot": "drop"}
 // Its context ran out: buried in bricks of its words, to its eyes.
 {"clock": 77500}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 12, "python", "buddygotchi"], [1, 11, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 12, "python"], [1, 11, "rg"]]}
 {"clock": 77800}
 {"t": "do", "name": "call", "play": "now", "args": {"a": 1, "w": "context full", "as": "buried"}}
 {"clock": 79200}
 {"shot": "buried"}
 // The turn's done: the stream goes, its words linger, and it gathers them up.
 {"clock": 81000}
-{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 14, "python", "buddygotchi"], [1, 13, "rg", "landing"]]}
+{"t": "state", "base": "working", "act": "terminal", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "todo": {"done": 3, "total": 7}, "calls": [[0, 14, "python"], [1, 13, "rg"]]}
 {"clock": 81300}
 {"t": "state", "base": "idle", "mood": "engaged", "busy": 0, "idle": 2, "vol": 0, "when": ["day"]}
 {"clock": 81350}
@@ -186,3 +186,11 @@
 {"clock": 84000}
 {"t": "state", "base": "working", "mood": "engaged", "busy": 2, "vol": 0, "when": ["day"], "attn": {"agent": "claude", "project": "landing", "more": 0, "id": 7}}
 {"expect": {"calls": 0, "call": null}}
+// One lane at night: its words on the left, clear of the nightcap.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":1,"vol":0,"when":["night"],"calls":[[0, 1, "grep"]]}
+{"clock":500}
+{"t":"state","base":"working","act":"terminal","mood":"engaged","busy":1,"vol":0,"when":["night"],"calls":[[0, 3, "git log"]]}
+{"clock":1400}
+{"shot":"one-lane-night"}

@@ -17,6 +17,17 @@ on a Mac with no Boop state and both boards powered.
       and to keep holding, or why the mic can't hear, and without a key
       that the answer comes in a couple of steps. Checked by
       OnboardingTests and RuntimeTests, and act 5's snapshots.
+- [x] Act 5's fourth lesson, "When I glow amber, tap me", asked for
+      nothing, so after the talk lesson it looked like it was waiting
+      (the owner's second setup, 2026-10-25). Once the first three are
+      done on a paired board, it glows amber with a practice request (the
+      needs-you screen with no agent behind it, `Core.setPractice`), and a
+      tap or a press answers it and ticks the lesson
+      (`Onboarding.Progress.practiceDue`). Checked by OnboardingTests.
+- [x] The work stream's one lane fell from the middle, where a hat
+      covered its project's name: lanes sit clear of the head now, one on
+      the left (`render::laneX`). Checked in `stream.jsonl`'s
+      `one-lane-night`.
 - [x] Act 7 asked for the microphone again after act 5's push-to-talk
       had it allowed: its card is left out then. Opening at login from
       `make run`'s bare binary says that only Boop.app can, and that this

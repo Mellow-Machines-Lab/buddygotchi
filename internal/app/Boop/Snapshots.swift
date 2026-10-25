@@ -209,6 +209,12 @@ enum Snapshots {
                 $0.progress.lessons = [.tap, .button, .talk]
                 $0.talk = .heard("Hi Boop, can you hear me from all the way over here on my desk?")
             }),
+            // The practice request answered: all four done.
+            ("5-how-to-all-done", at(.howTo, status: status(brain: "none")) {
+                $0.body = .joined
+                $0.progress.lessons = [.tap, .button, .talk, .amber]
+                $0.talk = .heard("Hi Boop")
+            }),
             ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
             ("6-agents-what-gets-added", at(.agents, status: status()) {
                 $0.app.setup.agents = [.claude]

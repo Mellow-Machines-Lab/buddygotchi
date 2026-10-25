@@ -124,19 +124,17 @@ public struct StateSnapshot: Equatable, Sendable {
 
     /// A working session's lane in the work stream (`WorkStream`): its
     /// slot, which picks its column and colour on the board, how many
-    /// calls it has made (the board drops a word for each new one), its
-    /// latest call's word and its project.
+    /// calls it has made (the board drops a word for each new one), and
+    /// its latest call's word. Never whose: its colour tells it apart.
     public struct Call: Equatable, Sendable {
         public var slot: Int
         public var count: Int
         public var word: String
-        public var label: String
 
-        public init(slot: Int, count: Int, word: String, label: String) {
+        public init(slot: Int, count: Int, word: String) {
             self.slot = slot
             self.count = count
             self.word = word
-            self.label = label
         }
     }
 
@@ -191,7 +189,7 @@ public struct StateSnapshot: Equatable, Sendable {
         if !when.isEmpty { fields["when"] = .array(when.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if !calls.isEmpty {
-            fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word), .string($0.label)]) })
+            fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }
         return fields
     }

@@ -75,6 +75,12 @@ public final class Core {
     /// activity of a later one is a new day.
     var lastActiveDay: String?
     var lastPublished: StateSnapshot?
+    /// Onboarding's practice request (act 5's amber lesson): the needs-you
+    /// screen, as an agent's request shows it, with no agent behind it,
+    /// until onboarding takes it down. A real request shows in its place.
+    var practice: StateSnapshot.Attention?
+    /// The practice request's number: past any a launch gives a real one.
+    public static let practiceRequest = 2_000_000_000
     /// When the last `state` went out: a lane's new word waits for
     /// `WorkStream.sendEveryMs` after it.
     var lastPublishedAt: Int64?
@@ -243,7 +249,7 @@ public final class Core {
             stream.turnStarted(e.key)
             return nil
         case (.tool, .start) where e.tool != nil:
-            return stream.started(e, program: program, label: sessions[e.key]?.project ?? "", at: now)
+            return stream.started(e, program: program, at: now)
         case (.tool, .end) where e.tool != nil:
             return stream.ended(e, program: program, at: now)
         case (.subagent, .end):
@@ -544,6 +550,15 @@ public final class Core {
     }
 
     @discardableResult
+    /// Onboarding's practice request up, or down.
+    public func setPractice(_ on: Bool, at now: Int64) -> [CoreEffect] {
+        practice = on ? StateSnapshot.Attention(agent: "practice", project: "Tap me to answer", more: 0,
+                                                id: Core.practiceRequest) : nil
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
     /// The work stream on or off, from the next `state`.
     public func setWorkStream(_ on: Bool, at now: Int64) -> [CoreEffect] {
         config.workStream = on
@@ -628,7 +643,7 @@ public final class Core {
                 agent: $0.agent.rawValue, project: StateSnapshot.clip($0.project, marked: true, max: StateSnapshot.maxSignBytes),
                 name: $0.name.map { StateSnapshot.clip($0, marked: true, max: StateSnapshot.maxSignBytes) } ?? "",
                 more: shown.count - 1, id: $0.request)
-        }
+        } ?? practice
         // What the agents are doing shows only in the working look, and
         // not while something needs you.
         let act = base == "working" && attn == nil ? shownAct?.act.rawValue : nil

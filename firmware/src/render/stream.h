@@ -85,7 +85,6 @@ uint32_t callFlightMs(CallGag gag);
 struct Stream {
   static constexpr int kLanes = 4;        // WorkStream.maxLanes
   static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and room for a combo's count
-  static constexpr int kLabelBytes = 13;  // WorkStream.maxLabelBytes and its end
   static constexpr int kWords = 8;        // falling at once, at most: the frame rate's budget
   // A word falls for this long, and at most this many drop for one `state`
   // however many calls it counts, this far apart.
@@ -109,7 +108,6 @@ struct Stream {
     uint8_t slot = 0;
     uint16_t count = 0;
     char word[kWordBytes] = "";
-    char label[kLabelBytes] = "";
   };
   struct Word {
     char text[kWordBytes] = "";
@@ -168,6 +166,19 @@ struct Stream {
  private:
   void drop(const Lane& lane, int column, int columns, uint32_t t);
 };
+
+// Where lane `column` of `columns` sits across a 502-wide screen, the
+// middle its words fall from: off the middle, where the head and its hat
+// are. One lane
+// on the left; two either side; three or four along both sides.
+inline int laneX(int column, int columns) {
+  static constexpr int kXs[Stream::kLanes][Stream::kLanes] = {
+      {84, 0, 0, 0}, {84, 418, 0, 0}, {62, 158, 420, 0}, {56, 150, 352, 446}};
+  if (columns < 1) columns = 1;
+  if (columns > Stream::kLanes) columns = Stream::kLanes;
+  if (column < 0 || column >= columns) return 251;
+  return kXs[columns - 1][column];
+}
 
 // The lanes' colours by slot, RGB565, the same on the board, its mirror
 // and the lane: teal, amber, lilac, lime.

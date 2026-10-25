@@ -606,8 +606,11 @@ gives it. The layers read the engine and never change it.
 
 While the agents work and nothing needs you, the board draws the Mac's
 work stream (`render/stream.h`, `gel/stream.h`; plan/work-stream.md).
-Behind the body: each working lane's name along the top in its colour
-(teal, amber, lilac, lime by slot), and a dim word falling from it, in
+Behind the body: each working lane's words falling from the top edge in
+its colour (teal, amber, lilac, lime by slot), with no name: the colours
+tell the agents apart, and the screen has no room to say whose is whose.
+Lanes sit clear of the head and its hat (`render::laneX`: one lane on the
+left, two either side, three or four along both sides). A word falls, in
 the large font at most 43% opaque, for each new call a `state` counts
 (at most two a `state`, eight at once), easing in over 200 ms and out
 over its last 600 ms of 3.2 s. They're drawn after the body, onto the

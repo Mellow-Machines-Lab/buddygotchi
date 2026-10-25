@@ -110,6 +110,33 @@ final class OnboardingProgressTests: XCTestCase {
         XCTAssertEqual(later.lessons, [.tap, .button])
     }
 
+    /// The rule: once tap, button and talk are done in act 5, the practice
+    /// request is due, and a tap or a press answers it, the amber lesson,
+    /// once. The core shows it as a needs-you screen with no agent behind
+    /// it, under a real request, until it's taken down.
+    func testTheAmberLessonAnswersThePracticeRequest() {
+        var progress = Onboarding.Progress(act: .howTo)
+        _ = progress.tapped(boardFound: true, button: false)
+        _ = progress.tapped(boardFound: true, button: true)
+        XCTAssertFalse(progress.practiceDue, "not before talking")
+        XCTAssertTrue(progress.talked(heardWords: true))
+        XCTAssertTrue(progress.practiceDue)
+        XCTAssertEqual(progress.tapped(boardFound: true, button: false), .lesson(.amber))
+        XCTAssertEqual(progress.lessons, [.tap, .button, .talk, .amber])
+        XCTAssertFalse(progress.practiceDue)
+        XCTAssertEqual(progress.tapped(boardFound: true, button: true), .nothing, "once")
+
+        let rig = CoreRig()
+        XCTAssertEqual(states(Fx(rig.pipeline.effects(rig.core.setPractice(true, at: rig.now), at: rig.now))).last?.attn,
+                       StateSnapshot.Attention(agent: "practice", project: "Tap me to answer", more: 0, id: Core.practiceRequest))
+        rig.send(.turnStart)
+        rig.send(.needsYou, tool: "Bash")
+        XCTAssertEqual(rig.state.attn?.project, "landing", "a real request shows in its place")
+        _ = rig.core.setPractice(false, at: rig.now)
+        rig.send(.activity, tool: "Bash", failed: false)
+        XCTAssertNil(rig.state.attn)
+    }
+
     /// The rule: "Hold my button and talk" is done by push-to-talk that
     /// heard words, in act 5 only and once; hearing nothing leaves it to
     /// try again, and a tap or press never does it.

@@ -2123,8 +2123,8 @@ static void test_the_work_stream_falls_behind_and_hits_in_front() {
   for (int t = 0; t <= 960; t += 16) e->step(t);
   Stream stream;
   Stream::Lane lanes[2];
-  lanes[0].slot = 0, lanes[0].count = 1, std::strcpy(lanes[0].word, "grep"), std::strcpy(lanes[0].label, "app");
-  lanes[1].slot = 1, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed"), std::strcpy(lanes[1].label, "web");
+  lanes[0].slot = 0, lanes[0].count = 1, std::strcpy(lanes[0].word, "grep");
+  lanes[1].slot = 1, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed");
   stream.setLanes(lanes, 2, true, false, 0);
   const SignShow none;
   const Strip strip;

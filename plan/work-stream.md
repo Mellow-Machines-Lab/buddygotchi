@@ -29,10 +29,11 @@ happens. What makes the stream legible is cause and effect:
 - **Words, not icons.** `grep`, `edit +18`, `tests`, `exit 1`: short,
   big, in the sign font. A buyer reads them without being taught
   (product-ideas.md's ground rules).
-- **Each word comes from a named agent.** Every agent has a colour, the
-  same as its name in the lane and at the top of the screen where its
-  words fall from, so two agents read as two streams and how thick each
-  is says how hard it's working.
+- **Each agent has a colour.** Its words fall in it, so two agents read
+  as two streams and how thick each is says how hard it's working. No
+  names on the board (the owner, 2026-10-25): the screen has no room
+  for whose is whose, and the colours telling them apart is what
+  matters.
 - **The body answers.** A word that comes forward lands on, hits or is
   caught by the slime, and the slime's reaction is about that word. The
   stream is the scene; the creature stays the star.
@@ -40,7 +41,7 @@ happens. What makes the stream legible is cause and effect:
 ## The two planes
 
 - **The background.** Every call, as a small dim word in its agent's
-  colour, falling from the agent's name behind the body and fading
+  colour, falling from the top edge behind the body and fading
   before the lane. No sound. At most about 12 on screen; a burst
   thins out rather than piling up.
 - **The foreground.** At most one word at a time comes forward, big,
@@ -186,8 +187,8 @@ The architecture's split, applied:
 - **The wire: `state` for the background, a `do` for the foreground.**
   The background rides `state`, which the Mac sends on every change
   anyway: a `calls` key with a lane for each working session, `[slot,
-  calls, word, project]` (`"calls":[[0,1,"grep","landing"]]`, from
-  `WorkStreamTests`), so the board drops a word for each new call it
+  calls, word]` (`"calls":[[0,1,"grep"]]`, from `WorkStreamTests`), no
+  project's name, so the board drops a word for each new call it
   counts, a board that reconnects only picks up the count, and four
   calls a second don't each cost a `do` and its `ended`. A `state` whose
   only change is a new word waits 250 ms after the last. A word that
@@ -210,14 +211,14 @@ section.
 its end (`PostToolUse`, or `PostToolUseFailure` with the error's class).
 
 1. At the start the core makes the word (the table above) and sends it
-   in the background: it falls from its agent's name while the call
+   in the background: it falls in its agent's column while the call
    runs. An edit's lines are known at the start (`lines_added`,
    `lines_removed`), so `edit +18` is whole at once.
 2. At the end the core knows how it went, and decides whether the call
    comes forward and as which reaction. If its word is still falling,
    that same word leaves the stream: it brightens, grows and flies at
    the slime, red if it failed. If it has already fallen out of sight
-   (a long build), a fresh one launches from the agent's name.
+   (a long build), a fresh one launches from its column's top.
 
 A check also comes forward at its start (`tests` → fingers crossed),
 since the wait is the joke.
@@ -244,7 +245,7 @@ came forward, about one every 22 s: 8 P0, 28 P1 and 43 P2. For example:
 | Time | Call | Priority | What plays |
 | --- | --- | --- | --- |
 | 20:36:44 | `Edit`, 18 lines added | P2 | `edit +18` lands and is soaked up: nothing had come forward for 8 s |
-| 20:39:01 | A session's first call of a new turn | P1 | `arrive`: the word drops in from that agent's name |
+| 20:39:01 | A session's first call of a new turn | P1 | `arrive`: the word drops in from that agent's column |
 | 20:39:06 | `Bash`, `inspect`, failed `exit_code` (a `grep` that matched nothing) | P0 | `shrug`, where Boop today plays its error face |
 | 20:39:41 | `Bash`, topic `build`, its start | P1 | The build's words start stacking |
 | 20:40:06 | `Bash`, failed `timeout` | P0 | `timeout` falls in slow motion |
@@ -257,9 +258,9 @@ which is why the program's name comes first.
 **Where a word flies, on the board.** The core sends only the word, its
 agent and the reaction (`do`'s `args`); the board flies it:
 
-- Each agent has a column: with `n` agents, their names sit at
-  `x = W·(i + ½)/n` across the top, and their words fall within ±90 px
-  of it at 110 to 160 px/s, on the layer behind the body. A word whose
+- Each agent has a column, clear of the head and its hat
+  (`render::laneX`: one lane on the left, two either side, three or four
+  along both sides), and its words fall within ±40 px of it at 110 to 160 px/s, on the layer behind the body. A word whose
   column crosses the dome passes behind it and comes out below it:
   "through the body" is the layers' order, nothing more.
 - A word that comes forward flies to an anchor the gel's painter
@@ -380,8 +381,8 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    `WorkStreamTests`, which pin each number above. Still to do: the
    replay of the owner's session to the simulator (Checking it reaches
    the board), once the board plays it.
-4. [x] **The board**, on the gel's own engine: the lanes' names and
-   their words behind the body (drawn after it onto the background only,
+4. [x] **The board**, on the gel's own engine: the lanes' words behind
+   the body (drawn after it onto the background only,
    at most eight at once), the word forward flying at the body's
    anchors, and `Engine::jolt` for the body's answer (slime-blob/
    CONTINUITY.md, The work stream). Measured on the AMOLED board: 35 fps

@@ -13,7 +13,7 @@
 namespace render::gel {
 
 class Engine;
-// The lanes' names along the top and their falling words, behind the body:
+// The lanes' falling words, each lane in its colour, behind the body:
 // drawn after it, onto the background only, so the body, its props and
 // what it wears cover them.
 void paintStreamBehind(Surface& surface, const Stream& stream, uint32_t t);
