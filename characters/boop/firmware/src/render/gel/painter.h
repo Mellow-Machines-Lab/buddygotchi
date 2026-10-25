@@ -70,6 +70,8 @@ void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t
            rig::Anchors* anchors = nullptr, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
            uint32_t t = 0, const PastimeShow* pastimes = nullptr, const DrawerPose* squeeze = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
+// The most room a cross-fading group of the art has taken (kCrossingBytes).
+extern int crossingPeak;
 void paintProps(Surface&, const Engine&);
 // The cards paintProps will fill opaque this frame, as boxes of the pixels
 // it covers whole (at most Surface::kMaxKeep), for the clear to leave.

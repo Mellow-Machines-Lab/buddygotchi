@@ -57,19 +57,24 @@ pacing and touch, the Mac app, the architecture) found what's below.
       reports a lift-up event (register 0x03, bits 7:6, masked off in
       `amoled206/touch.cpp`): log it under a real finger, then end the
       touch on it, keeping the 50 ms as the fallback.
-- [ ] Eyes and mouth go see-through mid mood change: groups of different
-      shapes cross-fade drawn one over the other, so w(1-w) of the body
-      shows through, 25% at the midpoint (`art.cpp`). Blend once from
-      both shapes' summed coverage.
+- [x] Eyes and mouth no longer go see-through mid mood change: each
+      look is kept and laid over the body alone, then blended by weight
+      (`raster.h`'s `CrossFade`, in PSRAM). test_gel's never-fades now
+      keeps at least 92% (was 90%; calm→frightened 109%), and every two
+      arts' cross-fade fits half its room.
 - [ ] The body's outline pops by up to ~2.7 px when a triangle's facing
       flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
       silhouette, or 64 sectors (+1-1.5 ms).
 - [ ] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
       replay (`OutfitLayer::kSlack`), Zs switching fonts, the listening
       ring and the helper minis (`props.cpp`).
-- [ ] The face art's edges take 4 sub-rows a pixel (`raster.cpp`
-      `polygon16`): near-horizontal edges step and a lid under 1/4 px
-      flickers. Exact area coverage, about today's cost.
+- [x] The face art's polygons take their exact area in each pixel
+      (`raster.cpp` `polygon16`, a row's signed area summed along it),
+      so a 3/16 px lid keeps its ink wherever it sits and a level edge
+      moves a sixteenth at a time (test_gel). Cheaper than the 4
+      sub-rows: `perf --scenes` art_us frightened 8.0 → 6.6 ms, working
+      3.56 → 3.33, attention 3.92 → 3.75; the raster's scratch moved to
+      PSRAM, internal heap's least 51.5 → 56.8 KB.
 - [ ] The body's material is 513 texels around the whole dome, about
       1.75 px a texel at its middle: bake it at 1025 wide (flash has
       room) and measure `body_us`.

@@ -5,6 +5,7 @@
 #include <memory>
 #include <cstring>
 #include <cstdlib>
+#include <cstdio>
 #include <set>
 #include <string>
 #include "render/gel/painter.h"
@@ -579,11 +580,13 @@ static int faceInk(const Engine& e, Surface& drawn, Surface& bare) {
   return count;
 }
 // The face never fades. Through a cross-fade between differently shaped
-// arts, in frames 40 ms apart, the eyes and the mouth keep at least 85% of
+// arts, in frames 40 ms apart, the eyes and the mouth keep at least 90% of
 // the visible ink of the fainter of the two faces settled; falling asleep,
 // that's its swap from the lines the awake face squashed to into the
-// sleeping face's lids. The least now is 90%, waking (falling asleep's
-// swap keeps 96% of its line, happy to sad 99%).
+// sleeping face's lids. Each look is laid over the body alone and the two
+// blended (CrossFade), so where both ink a pixel none of the body shows
+// through: the least now is 92%, waking (falling asleep 97%; calm to happy,
+// happy to sad and calm to frightened never less than the fainter face).
 static void test_the_face_never_fades_while_arts_cross_over() {
   std::vector<uint16_t> a(502 * 410), b(a.size());
   Surface drawn{502, 410, a.data()}, bare{502, 410, b.data()};
@@ -625,7 +628,7 @@ static void test_the_face_never_fades_while_arts_cross_over() {
     TEST_ASSERT_EQUAL_INT(1, e->face.count);
     const int fainter = std::min(start, faceInk(*e, drawn, bare));
     TEST_ASSERT_TRUE(fainter > 200);  // the line, falling asleep; else over 400
-    TEST_ASSERT_TRUE(least * 100 >= fainter * 85);
+    TEST_ASSERT_TRUE(least * 100 >= fainter * 90);
   }
 }
 // No prop pops: the lane's strip eases in as it comes and out
@@ -2240,8 +2243,106 @@ static void test_polygons_cover_their_area_wherever_they_sit() {
     const double area = ink(px);
     least = std::min(least, area), most = std::max(most, area);
   }
-  TEST_ASSERT_TRUE(std::fabs((least) - (600)) <= 6);
-  TEST_ASSERT_TRUE(std::fabs((most) - (600)) <= 6);
+  TEST_ASSERT_TRUE(std::fabs((least) - (600)) <= 1);
+  TEST_ASSERT_TRUE(std::fabs((most) - (600)) <= 1);
+}
+// A polygon's coverage is its exact area in each pixel, not four sub-rows'
+// worth: a lid 3/16 of a pixel thin keeps its ink wherever it sits, and a
+// near-level edge moved down a sixteenth adds a sixteenth of a pixel's ink
+// to each pixel it crosses, every time, never four sixteenths at once.
+static void test_polygon_edges_move_a_sixteenth_at_a_time() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  double least = 1e9, most = 0, stepLeast = 1e9, stepMost = 0, last = -1;
+  for (int offset = 0; offset < 32; ++offset) {
+    std::fill(px.begin(), px.end(), 0);
+    Raster r{s};
+    // 40 pixels wide, 3/16 tall, a little aslant: 7.5 pixels of ink.
+    const int y = 150 * 16 + offset;
+    Point lid[] = {{100 * 16, y}, {140 * 16, y + 2}, {140 * 16, y + 5}, {100 * 16, y + 3}};
+    r.polygon16(lid, 4, 0xffff);
+    const double area = ink(px);
+    least = std::min(least, area), most = std::max(most, area);
+    // A 40 × 10 box whose bottom edge, at a slope of 1 in 40, comes down a
+    // sixteenth a step: 2.5 pixels more ink each time.
+    std::fill(px.begin(), px.end(), 0);
+    Point box[] = {{200 * 16, 100 * 16}, {240 * 16, 100 * 16}, {240 * 16, 110 * 16 + offset + 16}, {200 * 16, 110 * 16 + offset}};
+    r.polygon16(box, 4, 0xffff);
+    const double grown = ink(px);
+    if (last >= 0) stepLeast = std::min(stepLeast, grown - last), stepMost = std::max(stepMost, grown - last);
+    last = grown;
+  }
+  TEST_ASSERT_TRUE(least >= 7.5 - 0.5 && most <= 7.5 + 0.5);
+  TEST_ASSERT_TRUE(stepLeast >= 2.5 - 0.5 && stepMost <= 2.5 + 0.5);
+}
+// Cut to a clip, a polygon covers what lies inside both: inside a bigger
+// clip, all of itself; under a clip over its left half, half of itself.
+static void test_a_clipped_polygon_covers_what_lies_in_both() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  Raster r{s};
+  Point square[] = {{100 * 16 + 5, 100 * 16 + 3}, {120 * 16 + 5, 100 * 16 + 3}, {120 * 16 + 5, 120 * 16 + 3},
+                    {100 * 16 + 5, 120 * 16 + 3}};
+  Point big[] = {{90 * 16, 90 * 16}, {130 * 16, 90 * 16}, {130 * 16, 130 * 16}, {90 * 16, 130 * 16}};
+  r.polygon16(square, 4, 0xffff, big, 4);
+  TEST_ASSERT_TRUE(std::fabs(ink(px) - 400) <= 1);
+  std::fill(px.begin(), px.end(), 0);
+  Point left[] = {{90 * 16, 90 * 16}, {110 * 16 + 5, 90 * 16}, {110 * 16 + 5, 130 * 16}, {90 * 16, 130 * 16}};
+  r.polygon16(square, 4, 0xffff, left, 4);
+  TEST_ASSERT_TRUE(std::fabs(ink(px) - 200) <= 1);
+}
+// Two looks cross-fading (CrossFade) each laid over what's under them
+// alone, then blended by weight: half and half of the same ink is that
+// ink, with nothing of the black under it showing through, where drawn
+// one over the other at half each it'd be three quarters of it.
+static void test_a_cross_fade_never_shows_through() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  static uint8_t bytes[4096];
+  CrossFade fade{bytes, sizeof bytes};
+  Raster r{s};
+  auto square = [&](int x) {
+    Point v[] = {{x * 16, 100 * 16}, {(x + 20) * 16, 100 * 16}, {(x + 20) * 16, 120 * 16}, {x * 16, 120 * 16}};
+    r.polygon16(v, 4, 0xffff);
+  };
+  fade.look(2048);
+  r.recording = fade.next();
+  square(100);
+  fade.look(2048);
+  r.recording = fade.next();
+  square(110);  // half of it over the first
+  r.recording = nullptr;
+  TEST_ASSERT_TRUE(fade.kept());
+  r.blend(fade);
+  auto green = [&](int x, int y) { return (px[y * 502 + x] >> 5) & 63; };
+  TEST_ASSERT_EQUAL_INT(63, green(115, 110));  // both: all ink
+  TEST_ASSERT_EQUAL_INT(32, green(105, 110));  // one: half
+  TEST_ASSERT_EQUAL_INT(32, green(125, 110));
+  TEST_ASSERT_EQUAL_INT(0, green(135, 110));  // neither
+}
+// Every two arts' cross-fade keeps its groups' looks in half the room it
+// has (kCrossingBytes), so they're blended, not drawn one over the other.
+static void test_every_cross_fade_fits_its_room() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  crossingPeak = 0;
+  const int arts = int(sizeof(slime::kProfile) / sizeof(slime::kProfile[0]));
+  for (int from = 0; from < arts; ++from)
+    for (int to = 0; to < arts; ++to) {
+      if (from == to) continue;
+      SemanticFace f;
+      f.setMood(from);
+      const T frame = T::ratio(16, 1000);
+      for (int i = 0; i < 40; ++i) f.advance(frame);
+      f.setMood(to);
+      for (int i = 0; i < 60 && !(f.count == 2 && f.layers[1].weight >= q(.5)); ++i) f.advance(frame);
+      auto e = std::make_unique<Engine>();
+      e->face = f;
+      PaintControls c;
+      paintArt(s, *e, c, false);
+    }
+  TEST_ASSERT_TRUE(crossingPeak > 0);
+  TEST_ASSERT_TRUE(crossingPeak * 2 <= kCrossingBytes);
 }
 static void test_strokes_keep_their_width_and_blend_once() {
   std::vector<uint16_t> px(502 * 410);
@@ -2429,6 +2530,10 @@ int main() {
   RUN_TEST(test_the_lane_cuts_and_marks_as_the_canvas_does);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
+  RUN_TEST(test_polygon_edges_move_a_sixteenth_at_a_time);
+  RUN_TEST(test_a_clipped_polygon_covers_what_lies_in_both);
+  RUN_TEST(test_a_cross_fade_never_shows_through);
+  RUN_TEST(test_every_cross_fade_fits_its_room);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
   RUN_TEST(test_layers_follow_the_bodys_anchors);

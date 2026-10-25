@@ -108,7 +108,12 @@ ramps and springs can, and no jolt at an event. By file:
   once, cut and marked as the canvas does), the lane clear of the AMOLED's
   rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's
   anchors, coming and going through the rig's layer stack, each at its
-  opacity, the sign fading out at its own, drawing by coverage, tracked
+  opacity, the sign fading out at its own, drawing by coverage (a
+  polygon's exact area in each pixel, so a lid 3/16 of a pixel thin never
+  flickers, `test_polygon_edges_move_a_sixteenth_at_a_time`; arts of
+  different shapes cross-fading with nothing showing through,
+  `test_a_cross_fade_never_shows_through`, every two arts' in their room,
+  `test_every_cross_fade_fits_its_room`), tracked
   clearing and kept cards matching a fresh frame, steady frames
   allocating nothing, and the work stream
   (`test_the_work_stream_falls_behind_and_hits_in_front`: words in their

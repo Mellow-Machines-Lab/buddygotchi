@@ -58,12 +58,22 @@ const Pairing& pairing(const SemanticFace& f) {
   }
   return p;
 }
+// Room for a cross-fading group's looks (kCrossingBytes, raster.h): one block
+// made at start, so on the board it's PSRAM's, not its scarce internal
+// memory's.
+struct Crossing {
+  uint8_t bytes[kCrossingBytes];
+  CrossFade fade{bytes, kCrossingBytes};
+};
+CrossFade& crossing = (new Crossing)->fade;
 }  // namespace
+int crossingPeak = 0;
 // The engine's face layers: settled,
 // one art as authored. While arts cross over, a group (an eye, the mouth,
 // the tears, the cheeks) that has one shape in several layers is drawn once,
 // their points, widths and opacities averaged by weight, at their summed
-// weight; groups of different shapes cross-fade, the newer over the older.
+// weight; groups of different shapes cross-fade, each laid over the body
+// alone and the two blended by weight, so nothing shows through mid-way.
 void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bool mouthOpen, rig::Anchors* anchors) {
   if (!surface.pixels) return;
   Raster raster{surface};
@@ -101,70 +111,127 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
     anchors->eyeL = l, anchors->eyeR = r;
   }
   Point vertices[kMaxPoints], clip[kMaxPoints];
+  // The layers whose art has the group of layer i's path k in its shape,
+  // and their summed weight: drawn once, with the newest of them.
+  auto classWeight = [&](int i, int k) {
+    int weight = 0;
+    for (int j = 0; j < f.count; ++j)
+      if (pairs.path[i][k][j] >= 0) weight += placed[j].weight;
+    return weight;
+  };
+  auto drawn = [&](int i, int k) {
+    const auto& path = slime::kArtPaths[placed[i].range->first + k];
+    const int g = path.group;
+    return pairs.newest[i][k] && path.count <= kMaxPoints && path.clipCount <= kMaxPoints &&
+           (c.eyes || (g != 1 && g != 2)) && classWeight(i, k) > 0;
+  };
+  // Each group's shapes, drawn as one look for each shape the layers give
+  // it; a group with two or more cross-fades. Its looks are drawn together
+  // at the last one's first path, each with its own paths at their own
+  // opacities, then blended by their weights (Raster::blend).
+  int looks[6] = {}, lastLook[6], firstPath[6];
+  for (int i = 0; i < f.count; ++i) {
+    bool counted[6] = {};
+    const auto& range = *placed[i].range;
+    for (int k = 0; k < range.count; ++k) {
+      const int g = slime::kArtPaths[range.first + k].group;
+      if (!drawn(i, k)) continue;
+      if (!counted[g]) ++looks[g], counted[g] = true, lastLook[g] = i, firstPath[g] = k;
+    }
+  }
+  auto draw = [&](int i, int k, bool weighted) {
+    const auto& path = slime::kArtPaths[placed[i].range->first + k];
+    const int g = path.group;
+    int members[kLayers], paths[kLayers], n = 0, weight = 0;
+    for (int j = 0; j < f.count; ++j)
+      if (pairs.path[i][k][j] >= 0) {
+        members[n] = j;
+        paths[n++] = pairs.path[i][k][j];
+        weight += placed[j].weight;
+      }
+    // The weights are shares of one, so they sum to at most 4096 and
+    // every sum by weight below stays far inside 32 bits: an opacity's
+    // under 2^20, a pen's under 2^28, a point's under 2^28.
+    int alpha = 0, width = 0;
+    for (int m = 0; m < n; ++m) {
+      const auto& p = slime::kArtPaths[paths[m]];
+      alpha += p.alpha * placed[members[m]].weight;
+      width += p.width * placed[members[m]].weight;
+    }
+    // Its opacity: the members' averaged, times their summed weight (at
+    // most one) when it's drawn straight over what's under it.
+    alpha /= weighted ? std::max(weight, 4096) : weight;
+    if (g == 4) alpha = alpha * scalar(f.controls[7]) / 4096;
+    if (g == 5) alpha = alpha * scalar(f.controls[6]) / 4096;
+    raster.alpha = alpha;
+    if (!alpha) return;
+    auto blend = [&](Point* out, int count, bool clipped) {
+      if (n == 1) {  // one art's: its own points, as authored
+        const auto& p = slime::kArtPaths[paths[0]];
+        for (int v = 0; v < count; ++v) {
+          const Point q = place(placed[members[0]], slime::kArtPoints[(clipped ? p.clip : p.first) + v], g);
+          out[v] = projection.face(q.x, q.y);
+        }
+        return;
+      }
+      for (int v = 0; v < count; ++v) {
+        int x = 0, y = 0;
+        for (int m = 0; m < n; ++m) {
+          const auto& l = placed[members[m]];
+          const auto& p = slime::kArtPaths[paths[m]];
+          const Point q = place(l, slime::kArtPoints[(clipped ? p.clip : p.first) + v], g);
+          x += q.x * l.weight;
+          y += q.y * l.weight;
+        }
+        // Kept in sixteenths of a pixel: a feature moves smoothly with the
+        // body instead of stepping a whole pixel at a time.
+        out[v] = projection.face(x / weight, y / weight);
+      }
+    };
+    blend(vertices, path.count, false);
+    blend(clip, path.clipCount, true);
+    if (path.width)
+      // The authored width, to a sixteenth, never thinner than 3/4 pixel.
+      raster.stroke16(vertices, path.count,
+                      std::max(12, int(int64_t(width / weight) * unit * 16 / 4096 * c.scale / 4096)), path.color);
+    else
+      raster.polygon16(vertices, path.count, path.color, clip, path.clipCount);
+  };
   for (int i = 0; i < f.count; ++i) {
     const auto& range = *placed[i].range;
     for (int k = 0; k < range.count; ++k) {
-      const auto& path = slime::kArtPaths[range.first + k];
-      const int g = path.group;
-      if (!pairs.newest[i][k] || path.count > kMaxPoints || path.clipCount > kMaxPoints) continue;
-      if (!c.eyes && (g == 1 || g == 2)) continue;
-      // The layers whose art has this group's shape: drawn once, with the
-      // newest of them.
-      int members[kLayers], paths[kLayers], n = 0, weight = 0;
-      for (int j = 0; j < f.count; ++j)
-        if (pairs.path[i][k][j] >= 0) {
-          members[n] = j;
-          paths[n++] = pairs.path[i][k][j];
-          weight += placed[j].weight;
-        }
-      if (weight <= 0) continue;
-      // The weights are shares of one, so they sum to at most 4096 and
-      // every sum by weight below stays far inside 32 bits: an opacity's
-      // under 2^20, a pen's under 2^28, a point's under 2^28.
-      int alpha = 0, width = 0;
-      for (int m = 0; m < n; ++m) {
-        const auto& p = slime::kArtPaths[paths[m]];
-        alpha += p.alpha * placed[members[m]].weight;
-        width += p.width * placed[members[m]].weight;
+      if (!drawn(i, k)) continue;
+      const int g = slime::kArtPaths[range.first + k].group;
+      if (looks[g] < 2) {
+        draw(i, k, true);
+        continue;
       }
-      // Its opacity: the members' averaged, times their summed weight (at
-      // most one).
-      alpha /= std::max(weight, 4096);
-      if (g == 4) alpha = alpha * scalar(f.controls[7]) / 4096;
-      if (g == 5) alpha = alpha * scalar(f.controls[6]) / 4096;
-      raster.alpha = alpha;
-      if (!alpha) continue;
-      auto blend = [&](Point* out, int count, bool clipped) {
-        if (n == 1) {  // one art's: its own points, as authored
-          const auto& p = slime::kArtPaths[paths[0]];
-          for (int v = 0; v < count; ++v) {
-            const Point q = place(placed[members[0]], slime::kArtPoints[(clipped ? p.clip : p.first) + v], g);
-            out[v] = projection.face(q.x, q.y);
-          }
-          return;
+      if (i != lastLook[g] || k != firstPath[g]) continue;
+      // The group's looks, kept, then blended once.
+      crossing.clear();
+      for (int j = 0; j < f.count; ++j) {
+        const auto& own = *placed[j].range;
+        bool started = false;
+        for (int m = 0; m < own.count; ++m) {
+          if (slime::kArtPaths[own.first + m].group != g || !drawn(j, m)) continue;
+          if (!started) crossing.look(classWeight(j, m)), started = true;
+          raster.recording = crossing.next();
+          if (raster.recording) draw(j, m, false);
         }
-        for (int v = 0; v < count; ++v) {
-          int x = 0, y = 0;
-          for (int m = 0; m < n; ++m) {
-            const auto& l = placed[members[m]];
-            const auto& p = slime::kArtPaths[paths[m]];
-            const Point q = place(l, slime::kArtPoints[(clipped ? p.clip : p.first) + v], g);
-            x += q.x * l.weight;
-            y += q.y * l.weight;
-          }
-          // Kept in sixteenths of a pixel: a feature moves smoothly with the
-          // body instead of stepping a whole pixel at a time.
-          out[v] = projection.face(x / weight, y / weight);
-        }
-      };
-      blend(vertices, path.count, false);
-      blend(clip, path.clipCount, true);
-      if (path.width)
-        // The authored width, to a sixteenth, never thinner than 3/4 pixel.
-        raster.stroke16(vertices, path.count,
-                        std::max(12, int(int64_t(width / weight) * unit * 16 / 4096 * c.scale / 4096)), path.color);
-      else
-        raster.polygon16(vertices, path.count, path.color, clip, path.clipCount);
+      }
+      raster.recording = nullptr;
+      crossingPeak = std::max(crossingPeak, crossing.used());
+      if (crossing.kept()) {
+        raster.alpha = 255;
+        raster.blend(crossing);
+        continue;
+      }
+      // Too much to keep: drawn one over the other, as they'd fade alone.
+      for (int j = 0; j < f.count; ++j) {
+        const auto& own = *placed[j].range;
+        for (int m = 0; m < own.count; ++m)
+          if (slime::kArtPaths[own.first + m].group == g && drawn(j, m)) draw(j, m, true);
+      }
     }
   }
   if (mouthOpen) {

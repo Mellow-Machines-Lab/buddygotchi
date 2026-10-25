@@ -906,10 +906,12 @@ features a shape (`slime_art.h`'s `ArtRange::shape`, from their paths'
 point counts, fill or stroke and colour); where layers draw a feature in
 the same shape, it is drawn once, its points, pen widths and opacities
 averaged by weight, at their summed weight: two bean eyes ease into each
-other, a closed arc eases into a droop. Different shapes cross-fade, each
-at its weight, the newer over the older, so the eyes' and the mouth's
-opacity, summed over the arts, stays one: a ring of a mouth gives way to an
-open U. The cheeks and tears are drawn at their opacity controls. (While
+other, a closed arc eases into a droop. Different shapes cross-fade: each
+look is laid over the body alone and the looks blended by their weights
+(`raster.h`'s `CrossFade`), so the eyes' and the mouth's opacity, summed
+over the arts, stays one, and where two looks both ink a pixel none of the
+body shows through (drawn one over the other at half each, a quarter
+would): a ring of a mouth gives way to an open U. The cheeks and tears are drawn at their opacity controls. (While
 the JavaScript reference drew the face, it compared each feature's
 recorded drawing instead, and the two rules disagreed on 80 of the 4,730
 pairs of arts' features; the board's is the one rule now.)
