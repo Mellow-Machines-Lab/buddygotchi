@@ -281,12 +281,12 @@ MellowHarness, LinkKit), is
   the single source, and the app bundles it at build time
   (`Package.swift` copies it into the app's resources).
 - **No code, commands, tool output, file contents or agent transcripts go
-  to the brain.** The only words are what you say to Boop on
-  push-to-talk, cut short, and up to three short phrases each of your
-  prompt and of the agent's last message. Both stay on the Mac:
-  `app/BoopKit/Prompt/` scrubs each, reads it (with Apple Intelligence on
-  macOS 26 while it's on, else by counting only) and passes on only its
-  reading; nothing keeps them.
+  to the brain.** Of your prompt and of the agent's last message only
+  the reading goes, each with up to three short phrases of it; the only
+  other words are what you say to Boop on push-to-talk, cut short. Both
+  texts stay on the Mac: `app/BoopKit/Prompt/` scrubs each, reads it
+  (with Apple Intelligence on macOS 26 while it's on, else by counting
+  only) and passes on only its reading; nothing keeps them.
 - **"Needs you" and the screen priority are plain rules in the core.**
 - **The device renders, reports, and decides when a reaction plays**
   (LinkKit's queue), never what Boop does: the Mac sends each thing to
