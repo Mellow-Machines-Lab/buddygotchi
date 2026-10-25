@@ -127,6 +127,46 @@ static void test_a_reactions_weight_eases_in_and_out() {
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kLean]);
 }
 
+// A reaction's clip stopped fades out over its weight's fade from where its
+// weight is, as a look's old clip does; the look's own plays on, and a clip
+// not playing stops nothing.
+static void test_a_stopped_clip_fades_out() {
+  Mixer m;
+  m.reset(0, 0, &kLeanMore);
+  m.play(kLean);
+  m.advance(400);
+  TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
+  m.stop(kBlink);
+  m.stop(kLeanMore);  // a look's clip stops only by setLook
+  m.advance(0);
+  TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
+  m.stop(kLean);
+  m.advance(75);
+  TEST_ASSERT_EQUAL_INT(450, m.channels()[Channel::kLean]);
+  m.advance(75);
+  TEST_ASSERT_EQUAL_INT(200, m.channels()[Channel::kLean]);
+  m.play(kLean);  // played again: a new play, fading in
+  m.advance(150);
+  TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
+}
+
+// A look's occasions fit while every tag each needs is on and the look has
+// shown its wait (render::fits); the i-th of those that fit is its clip.
+static void test_a_looks_occasions_fit_by_their_tags_and_wait() {
+  static constexpr Occasion kOccasions[] = {
+      {&kLean, 1u << 3, 0}, {&kBlink, 0, 60}, {&kWider, (1u << 3) | (1u << 5), 0}};
+  static constexpr Look kLook = {SceneState::kWorking, nullptr, {kOccasions, 3}};
+  TEST_ASSERT_EQUAL_INT(0, kLook.fitting(0, 0));
+  TEST_ASSERT_EQUAL_INT(1, kLook.fitting(1u << 3, 59999));
+  TEST_ASSERT_EQUAL_PTR(&kLean, kLook.fitting(1u << 3, 59999, 0));
+  TEST_ASSERT_EQUAL_INT(1, kLook.fitting(0, 60000));
+  TEST_ASSERT_EQUAL_PTR(&kBlink, kLook.fitting(0, 60000, 0));
+  TEST_ASSERT_EQUAL_INT(3, kLook.fitting((1u << 3) | (1u << 5) | 1u, 60000));
+  TEST_ASSERT_EQUAL_PTR(&kWider, kLook.fitting((1u << 3) | (1u << 5), 60000, 2));
+  TEST_ASSERT_NULL(kLook.fitting((1u << 3) | (1u << 5), 60000, 3));
+  static_assert(kOccasionPct == 67, "an occasion plays at two in three of its chances");
+}
+
 // A clip shorter than four fades eases in and out over a quarter of itself,
 // so a 180 ms blink still shuts whole for its held keys.
 static void test_a_short_clip_fades_over_a_quarter_of_itself() {
@@ -327,6 +367,7 @@ static void test_the_staged_rig_is_whole() {
   for (const Look& look : kRig.looks) {
     TEST_ASSERT_TRUE(!look.clip || look.clip->loop);
     TEST_ASSERT_EQUAL_PTR(&look, kRig.look(look.state));
+    for (const Occasion& o : look.occasions) TEST_ASSERT_TRUE(!o.clip->loop && (o.when || o.afterS));
   }
 }
 
@@ -351,6 +392,12 @@ static void test_the_staged_rig_is_the_packs_files() {
   TEST_ASSERT_EQUAL(int(Channel::kEyeOpenL), int(blink->tracks[0].channel));  // eyeOpen sets both eyes
   TEST_ASSERT_EQUAL(int(Channel::kEyeOpenR), int(blink->tracks[1].channel));
   TEST_ASSERT_FALSE(kRig.clip("doze")->additive);
+  // Working's stretch on a long turn's marathon, which both faces play.
+  const Look* working = kRig.look(SceneState::kWorking);
+  TEST_ASSERT_EQUAL_INT(1, working->occasions.count);
+  TEST_ASSERT_EQUAL_STRING("stretch", working->occasions[0].clip->id);
+  TEST_ASSERT_EQUAL_UINT32(tagBit("marathon"), working->occasions[0].when);
+  TEST_ASSERT_EQUAL_INT(0, idle->occasions.count);
   TEST_ASSERT_NULL(kRig.clip("cheer"));
 }
 
@@ -360,6 +407,8 @@ int main() {
   RUN_TEST(test_a_track_eases_between_its_keys_and_holds_its_ends);
   RUN_TEST(test_a_clip_loops_or_holds_its_end);
   RUN_TEST(test_a_reactions_weight_eases_in_and_out);
+  RUN_TEST(test_a_stopped_clip_fades_out);
+  RUN_TEST(test_a_looks_occasions_fit_by_their_tags_and_wait);
   RUN_TEST(test_a_short_clip_fades_over_a_quarter_of_itself);
   RUN_TEST(test_additive_and_absolute_clips_blend_by_weight);
   RUN_TEST(test_a_new_look_fades_over_the_old_and_the_same_plays_on);

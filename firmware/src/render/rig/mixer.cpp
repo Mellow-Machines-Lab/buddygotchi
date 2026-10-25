@@ -60,6 +60,11 @@ void Mixer::setLook(const Clip* clip) {
 
 void Mixer::play(const Clip& clip) { start(clip, false); }
 
+void Mixer::stop(const Clip& clip) {
+  for (int i = 0; i < playing_; ++i)
+    if (plays_[i].clip == &clip && !plays_[i].base && !plays_[i].cut) fadeOut(plays_[i]);
+}
+
 void Mixer::impulse(Channel channel, int velocity) {
   Spring& s = springs_[int(channel)];
   s.v = held(s.v + int64_t(velocity) * 256);

@@ -422,7 +422,9 @@ class RigRuleTests(unittest.TestCase):
             "clips/hop.json": {"ms": 400, "tracks": {"lift": [[0, 0], [100, 10, "out"], [400, 0]]}},
             "clips/sway.json": {"ms": 200, "loop": True, "additive": False,
                                 "tracks": {"lean": [[0, 100], [200, 100]], "eyeOpen": [[0, 0], [200, 0]]}},
-            "looks.json": {"idle": {"clip": "sway"}, "working": {"clip": None}},
+            "looks.json": {"idle": {"clip": "sway"},
+                           "working": {"clip": None, "occasions": [{"clip": "hop", "when": ["night", "marathon"]},
+                                                                   {"clip": "hop", "after": 90}]}},
         })
         self.assertEqual(problems, [])
         text = gen.rig_h(self.dir, rig)
@@ -432,7 +434,9 @@ class RigRuleTests(unittest.TestCase):
                     "{Channel::kEyeOpenL, {kKeys + 5, 2}},", "{Channel::kEyeOpenR, {kKeys + 7, 2}},",
                     '{"hop", 400, false, true, {kTracks + 0, 1}},',
                     '{"sway", 200, true, false, {kTracks + 1, 3}},',
-                    "{SceneState::kIdle, kClips + 1},", "{SceneState::kWorking, nullptr},",
+                    # An occasion's tags as tags.h's bits (night 3, marathon 19), its wait in seconds.
+                    f"{{kClips + 0, {(1 << 3) | (1 << 19)}u, 0}},", "{kClips + 0, 0u, 90},",
+                    "{SceneState::kIdle, kClips + 1, {}},", "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}},",
                     "inline constexpr Rig kRig = {{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
@@ -444,7 +448,9 @@ class RigRuleTests(unittest.TestCase):
                                           "lift": [[0, 0], [100, 300], [100, 0], [200, 0, "bouncy"]]}},
             "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 100]]}},
             "clips/Bad Name.json": {"ms": 0},
-            "looks.json": {"idle": {"clip": "hop", "scene": "desk"}, "working": {"clip": "nope"}, "dancing": {}},
+            "looks.json": {"idle": {"clip": "hop", "scene": "desk"}, "working": {"clip": "nope"}, "dancing": {},
+                           "asleep": {"occasions": [{"clip": "sway", "when": ["night"]}, {"clip": "hop"},
+                                                    {"clip": "hop", "when": ["nighttime"], "after": -1}, {"when": []}]}},
         })
         self.assertEqual(problems, [
             "rig/expressions.json: giddy: isn't a mood",
@@ -466,6 +472,11 @@ class RigRuleTests(unittest.TestCase):
             "rig/looks.json: idle.scene: unknown key",
             "rig/looks.json: idle.clip: hop doesn't loop",
             "rig/looks.json: working.clip: 'nope' isn't a clip in rig/clips/",
+            "rig/looks.json: asleep.occasions[0].clip: sway loops, and an occasion plays once",
+            "rig/looks.json: asleep.occasions[1]: needs a tag or a wait, or it would always fit",
+            f"rig/looks.json: asleep.occasions[2].when: isn't a list of tags, each once ({', '.join(gen.tag_names())})",
+            "rig/looks.json: asleep.occasions[2].after: -1 isn't a whole number from 0 to 65535",
+            "rig/looks.json: asleep.occasions[3].clip: missing",
         ])
 
     def test_a_bad_rig_stops_the_pack(self):

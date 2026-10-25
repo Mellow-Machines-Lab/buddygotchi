@@ -15,8 +15,8 @@ class PixelFace final : public Face {
   static constexpr int kTurnPct = 67;
   // While an occasion's variation fits (one with tags, all on), a look
   // turns to one of those this often, so a costume or a coffee shows more
-  // than its share; reactions always take one.
-  static constexpr int kTaggedPct = 67;
+  // than its share, as the rig's occasions play; reactions always take one.
+  static constexpr int kTaggedPct = rig::kOccasionPct;
 
   const char* name() const override { return "pixel"; }
   const voice::EffectClips& clips() const override { return render::pixel::clips(); }
@@ -47,6 +47,7 @@ class PixelFace final : public Face {
   bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const SignShow&, const Strip&,
             bool) override;
   int cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) override;
+  const RigFace& rigFace() const { return rig_; }
 
  private:
   // What a step at nextDue's instant does: a blink, a turn of the look's
@@ -55,6 +56,10 @@ class PixelFace final : public Face {
   uint32_t blinkGap(linkkit::Rng& rng) const;
   uint32_t loopEnd(uint32_t t) const;
   bool turnable() const;
+  // The rig's look (the state's base), while the look shows, else nullptr;
+  // and how many of its occasions fit now.
+  const rig::Look* rigLook() const;
+  int occasionsFit() const;
   // A variation of the look that fits now, never `avoid` while another
   // does, an occasion's kTaggedPct of the time while one fits.
   uint8_t pickLook(Mood m, SceneState s, int avoid, linkkit::Rng& rng) const;
@@ -142,6 +147,12 @@ class PixelFace final : public Face {
   bool arcOn_ = false;
   uint32_t arcCovered_ = 0;
   RigFace rig_;
+  // The rig look's occasion playing on the rig face, until it ends: one
+  // plays at the end of a look's loop, while the rig face draws it, and
+  // fades out when the look gives way.
+  const rig::Clip* occasion_ = nullptr;
+  uint32_t occasionEnds_ = 0;
+  SceneState occasionBase_ = SceneState::kNone;
   // What the last frame drew (coming in, while a switch dissolves) and its
   // picture's key; and what a switch dissolves from, kNone for nothing.
   Shown drawn_, from_;

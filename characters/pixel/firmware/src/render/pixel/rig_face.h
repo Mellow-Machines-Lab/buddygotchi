@@ -68,6 +68,11 @@ class RigFace {
   void advanceTo(uint32_t t);
   // Plays the rig's blink clip, if it has one.
   void blink();
+  // Plays a clip of the rig's over what plays (a look's occasion), and
+  // fades it out.
+  void play(const rig::Clip& clip) { mixer_.play(clip); }
+  void stop(const rig::Clip& clip) { mixer_.stop(clip); }
+  const rig::Mixer& mixer() const { return mixer_; }
   // A finger on the screen: a press squashes the face, a stroke leans it.
   void finger(bool down, int x, int y);
   // The face now, `dy` px lower (the press's dip), with the "o" in its

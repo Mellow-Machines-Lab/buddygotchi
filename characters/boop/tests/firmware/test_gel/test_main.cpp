@@ -21,6 +21,7 @@
 #include "render/gel/raster.h"
 #include "render/tags.h"
 #include "fonts_gel.h"
+#include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 using namespace render;
 using namespace render::gel;
 // Heap allocations while `allocCounting` is on (test_steady_frames_allocate_nothing),
@@ -1171,9 +1172,10 @@ static void test_a_notice_looks_up_at_you() {
 // stretches in the morning, bounces at a party and at New Year's (the
 // party's own bounce), and nods off once it dozes, by that tag alone however
 // long it has shown; with no tag on, or tags none needs, it plays none.
-// Work types busier while busy and frantically while frantic, and stretches
-// on a long turn's marathon; asleep snores deeper at night and dreams after
-// half an hour.
+// Work types busier while busy and frantically while frantic, and plays
+// nothing of its own on a long turn's marathon (the rig's stretch plays
+// there: test_a_rig_clip_plays_on_both_faces); asleep snores deeper at
+// night and dreams after half an hour.
 static void test_occasions_play_only_while_they_fit() {
   // The occasions idle played, by their gags.
   auto idle = [](uint32_t when, uint32_t lookMs) {
@@ -1238,10 +1240,100 @@ static void test_occasions_play_only_while_they_fit() {
   only(work(SceneState::kWorking, busyTags(2), 0), tagBit("busy"), 0, nullptr);
   only(work(SceneState::kWorking, busyTags(5), 0), tagBit("frantic"), 0, nullptr);
   TEST_ASSERT_TRUE(work(SceneState::kWorking, 0, 7200000).empty());
-  only(work(SceneState::kWorking, tagBit("marathon"), 0), tagBit("marathon"), 0, "occasion:work-stretch");
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, tagBit("marathon"), 0).empty());
   only(work(SceneState::kAsleep, tagBit("night"), 0), tagBit("night"), 0, nullptr);
   only(work(SceneState::kAsleep, 0, 1800000), 0, 1800, "occasion:dream");
   TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1799000).empty());
+}
+// A clip authored once in the pack's rig/clips/ plays on both of its faces:
+// the look's occasion (rig/looks.json, working's stretch on a long turn's
+// marathon) through each face's mixer, the gel's laid over the engine's
+// pose (applyRig) and Pixel's on its rig face, at the end of a pass of the
+// look's loop, render::rig::kOccasionPct of the chances. Without the tag
+// neither face plays it; the gel's mixer stays at rest, so nothing it draws
+// changes; and a reaction fades it out.
+static void test_a_rig_clip_plays_on_both_faces() {
+  const rig::Clip* stretch = rig::kRig.clip("stretch");
+  TEST_ASSERT_NOT_NULL(stretch);
+  const rig::Look* working = rig::kRig.look(SceneState::kWorking);
+  TEST_ASSERT_EQUAL_INT(1, working->fitting(tagBit("marathon"), 0));
+  TEST_ASSERT_EQUAL_PTR(stretch, working->fitting(tagBit("marathon") | tagBit("day"), 0, 0));
+  TEST_ASSERT_EQUAL_INT(0, working->fitting(tagBit("camp"), 0));
+  // The tallest squash and the most shut eyes each face's mixer reaches
+  // over a minute at work, and when the gel's first left rest.
+  struct Seen {
+    int squash = 0, open = 1000;
+    uint32_t moved = 0;
+  };
+  auto play = [](bool gel, uint32_t when, uint32_t pokeAt = 0) {
+    linkkit::Rng rng;
+    std::unique_ptr<Face> face;
+    if (gel)
+      face = std::make_unique<GelFace>();
+    else
+      face = std::make_unique<pixel::PixelFace>();
+    app::Behaviour b(std::move(face));
+    b.reset(0, rng);
+    app::Model m;
+    m.base = SceneState::kWorking, m.act = SceneState::kTerminal, m.mood = Mood::kHappy, m.when = when;
+    b.onState(m, 0);
+    Seen seen;
+    for (uint32_t t = 16; t <= 60000; t += 16) {
+      if (pokeAt && t == pokeAt) {
+        app::ReactionIn in;
+        in.anim = SceneState::kPoked;
+        in.id = 7;
+        in.variant = b.pick(in.anim, m.mood, 255, in.outcome, StartCtx::kNone, rng);
+        b.play(in, t);
+      }
+      b.advance(t, rng);
+      const rig::Mixer& mixer = gel ? static_cast<GelFace&>(b.face()).mixer()
+                                    : static_cast<pixel::PixelFace&>(b.face()).rigFace().mixer();
+      const rig::Channels& c = mixer.channels();
+      seen.squash = std::min<int>(seen.squash, c[rig::Channel::kSquash]);
+      seen.open = std::min<int>(seen.open, std::min(c[rig::Channel::kEyeOpenL], c[rig::Channel::kEyeOpenR]));
+      if (gel && !seen.moved && std::memcmp(&c, &rig::kRest, sizeof c)) seen.moved = t;
+      if (pokeAt && t >= pokeAt + 400) {
+        // The poke's reaction faded the stretch out.
+        TEST_ASSERT_TRUE(c[rig::Channel::kSquash] >= -30);
+        TEST_ASSERT_TRUE(c[rig::Channel::kEyeOpenL] > 900);
+      }
+      if (pokeAt && t >= pokeAt + 400) break;
+    }
+    return seen;
+  };
+  for (bool gel : {true, false}) {
+    const Seen marathon = play(gel, tagBit("marathon")), plain = play(gel, tagBit("day"));
+    TEST_ASSERT_TRUE(marathon.squash <= -115);  // up tall: the stretch's -130 at its height
+    TEST_ASSERT_TRUE(marathon.open <= 320);     // eyes squeezed: its -700 on 1000 (and Pixel blinks)
+    TEST_ASSERT_TRUE(plain.squash >= -30);      // the look's own breathing at most (Pixel's)
+    if (gel) {
+      TEST_ASSERT_EQUAL_UINT32(0, plain.moved);  // the gel's mixer at rest throughout
+      TEST_ASSERT_TRUE(marathon.moved > 0);
+      play(gel, tagBit("marathon"), marathon.moved + 608);
+    }
+  }
+  // On the gel the rig's channels move what the painter draws: taller, its
+  // crown higher, and its lids down; at rest, nothing.
+  auto e = std::make_unique<Engine>();
+  for (uint32_t t = 0; t <= 1600; t += 16) e->step(t);
+  PaintControls rest, moved;
+  rest.squash = 100, rest.lean = -40, rest.lift = 20, rest.blink = 300;
+  moved = rest;
+  applyRig(rest, rig::kRest);
+  TEST_ASSERT_EQUAL_MEMORY(&moved, &rest, sizeof rest);
+  rig::Mixer m;
+  m.reset(0, 0, nullptr);
+  m.play(*stretch);
+  m.advance(1000);
+  applyRig(moved, m.channels());
+  TEST_ASSERT_TRUE(moved.squash > rest.squash + 400 && moved.lift > rest.lift + 250 && moved.blink > 2500);
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  rig::Anchors still, stretched;
+  paint(s, *e, false, 0, 0, &still);
+  paint(s, *e, false, 0, 0, &stretched, m.channels());
+  TEST_ASSERT_TRUE(stretched.crown.y < still.crown.y - 16 * 8);
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
@@ -1939,6 +2031,7 @@ int main() {
   RUN_TEST(test_each_gesture_plays_its_own_gag);
   RUN_TEST(test_a_notice_looks_up_at_you);
   RUN_TEST(test_occasions_play_only_while_they_fit);
+  RUN_TEST(test_a_rig_clip_plays_on_both_faces);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_face_projection_and_pose_bounds);
   RUN_TEST(test_tracked_clear_matches_full_clear);

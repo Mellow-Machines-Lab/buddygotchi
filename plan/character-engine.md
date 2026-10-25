@@ -20,13 +20,16 @@ Pixel's designs, into and out of the needs-you screen too, dissolves over
 the rig's 200 ms with no blink, one mid-way through another from the
 picture that shows more; a look's clip
 plays under its own designs only, and a design that blinks on its own
-gets no other blink. The gel stays on its own engine, the C++ one, its
+gets no other blink. The gel keeps its own engine, the C++ one, its
 only one since phase 2 retired the JavaScript reference (The Mac's slime
-on the board's engine, below), falling asleep as a morph, the awake face
-squashing shut to lines, then the sleeping face, alone by about 1.3 s,
-and waking over 180 ms; the Mac shows it as the board's firmware in WebAssembly, and both
-faces share the anchors and the lane's fade. The gel's move onto the
-mixer is next. The
+on the board's engine, below), for its expressions, recipes, gags and
+springs, falling asleep as a morph, the awake face squashing shut to
+lines, then the sleeping face, alone by about 1.3 s, and waking over
+180 ms; it plays the rig's clips through a mixer of its own, laid over
+its pose (checkpoint 5). A look's occasions are the rig's, clips both
+faces play: working's stretch on a long turn's marathon. The Mac shows
+the gel as the board's firmware in WebAssembly, and both faces share
+the anchors and the lane's fade. The
 checkpoint notes below are history, each as it landed: where a later one
 changed an earlier (checkpoint 1's 180 ms to sleep and checkpoint 5's 480, checkpoint 4's
 150 ms switch behind a blink and Boop's poses), this paragraph and the
@@ -377,10 +380,10 @@ from what this step set out to do, and why:
 
 ### Checkpoint 5, as built (2026-10-24)
 
-A scoped checkpoint: the gel's JavaScript reference and its C++ port stay
-matched frame for frame, so the slime's expressions and reactions on the
-mixer wait for the owner's decision on the Mac's mirror (retiring the
-JavaScript twin, checkpoint 6). What landed instead:
+In two parts: what could land while the gel's JavaScript twin had to
+match its C++ port frame for frame (the lane's fade, the gel's cuts, one
+anchors type, first below), and the gel on the rig, once phase 2 had
+retired the twin (The gel on the rig, after them).
 
 - **The lane's fade is decided once, by the app, for both faces.**
   Behaviour stamps when the strip comes or goes (every change goes
@@ -423,10 +426,53 @@ JavaScript twin, checkpoint 6). What landed instead:
 - **One anchors type.** The gel's painter reports `rig::Anchors` (its own
   copy, with its `Spot`, is gone), so both faces' layers sit on one
   type; no picture or trace changed.
-- **Waits for the owner:** the gel's expressions and reactions on the
-  mixer, and its layers through the shared layer stack, which need the
-  JavaScript twin retired (the Mac's mirror running the WebAssembly
-  engine) first.
+
+**The gel on the rig.** The gel's face on the rig's contract (the rig,
+its clips, the anchors), through an adapter, rather than its insides on
+the mixer. Where it differs from the sketch above, and why:
+
+- **The gel keeps its own expressions** (the simplicity fallback). A mood
+  on the gel is up to four arts crossing over on each edge's own windows,
+  each feature morphing or cross-fading, with a bridge on the body
+  (checkpoint 1); the mixer's styles are two, crossing over 200 ms.
+  Driving the gel's face from them would undo checkpoint 1 or pass
+  through a style the gel ignores, so a mood is the gel's own art, and
+  the rig's expressions are the pixel face's (CHARACTER.md §15). The
+  body's springs, recipes and gags stay as they are.
+- **The rig's clips play on the gel through an adapter.** The gel's face
+  holds a mixer of its own, on the board's clock; the painter lays its
+  channels over the pose the engine gives (`applyRig`): `squash`, `lean`,
+  `lift` (canvas px, 85 a body unit) and `eyeOpen` (its lids), each inside
+  the engine's own bounds; `eyeSize`, the gaze and `mouthOpen` are
+  Pixel's for now. At rest the mixer adds nothing, so a frame with no
+  clip is the engine's alone: every golden of both faces was the same
+  before the stretch was added.
+- **A look's occasions are the rig's** (`looks.json`'s `occasions`: a
+  clip, its tags, its wait), so one is authored once for both faces. The
+  rule is one: it fits as a design's occasion does (`render::fits`, now
+  in `tags.h`, the gel's own occasions' too), and at each chance a face
+  gives it, one of those that fit plays 67% of the time
+  (`rig::kOccasionPct`, Pixel's `kTaggedPct` too), drawing no randomness
+  while none fits, and fades out when the look gives way (`Mixer::stop`,
+  11ca4f0's `cut` grown back). A face's chances are its look's loop: the
+  gel's each pass of its scene's recipe, while the engine shows the look
+  itself (idle's start only, since idle has no loop of its own yet: the
+  tier work picks its chances); Pixel's the end of a loop, while the rig
+  face draws the look's design.
+- **The proof: working's stretch on a marathon**
+  (`rig/clips/stretch.json`, in both packs). It's the gel's `work-stretch`
+  gag in channels, which leaves the slime's design. Its desk recipe, a
+  pause with one key at 2.6 s, went with it: the stretch now plays over
+  whichever desk take plays, its keys included; the ripple at its end has
+  no channel. `test_gel` plays it on both faces (the gel taller, its lids
+  down; Pixel's rig face lifted, its eyes shut) and fades it out at a
+  poke; two new goldens show it, `occasions/marathon` on each face. On a
+  marathon Pixel still turns in its drawn stretch (its yawn) now and
+  then, an occasion of its own; checkpoint 6 can retire it.
+- **Found, not changed:** Pixel's blinks fall differently with how often
+  the simulator stops (a shot every 200 ms, or one jump to the time):
+  working, one frame in fifteen differed at its eyes with no occasion at
+  all. The goldens are each one scenario, so they're the same every run.
 
 ### The rig cut to what a face uses (2026-10-24)
 

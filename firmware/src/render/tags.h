@@ -24,6 +24,11 @@ static_assert(kTagCount <= 32, "a set of tags is 32 bits");
 uint32_t tagBit(const char* name);
 // Whether the tag `name` is on in `when`.
 inline bool hasTag(uint32_t when, const char* name) { return (when & tagBit(name)) != 0; }
+// Whether an occasion fits: every tag it needs is on and its look has
+// shown its wait, `afterS` seconds.
+constexpr bool fits(uint32_t needs, uint16_t afterS, uint32_t when, uint32_t lookMs) {
+  return (needs & ~when) == 0 && uint32_t(afterS) * 1000 <= lookMs;
+}
 
 // How busy the agents are, the board's own tags from `state.busy`: busy
 // with this many sessions working, frantic with this many and more.

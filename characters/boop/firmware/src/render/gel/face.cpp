@@ -7,6 +7,7 @@
 #include "render/maths.h"
 #include "render/palette.h"
 #include "render/gel/sounds.h"
+#include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 
 namespace render::gel {
 
@@ -41,6 +42,9 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   finger_ = false;  // the new engine has no drag: a finger still down grabs it afresh
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
+  mixer_.reset(0, 0, nullptr);
+  occasion_ = nullptr;
+  passGeneration_ = passIteration_ = -1;
 }
 
 // Power-on only, right after reset: the same engine with the board's seed.
@@ -69,7 +73,9 @@ void GelFace::advanceTo(uint32_t t) {
   engineMs_ += uint32_t(scaled / 100);
   engineFrac_ = uint32_t(scaled % 100);
   engine_->step(engineMs_);
+  mixer_.advance(t - lastTick_);
   lastTick_ = t;
+  occasions(t);
   int kept = 0;
   for (int i = 0; i < pendingCount_; ++i)
     if (t - pendingAt_[i] <= kCueWaitMs) {
@@ -88,6 +94,26 @@ void GelFace::advanceTo(uint32_t t) {
     e.pitch = uint16_t((cue.pitch * 1000).integer());
     e.duck = !cue.protectedCue;  // needs you's, a finish's and an error's stay up under a line
   }
+}
+
+void GelFace::occasions(uint32_t t) {
+  const Engine& e = *engine_;
+  const Route& route = e.scenes.route;
+  if (occasion_ && !after(occasionEnds_, t)) occasion_ = nullptr;
+  if (source_.anim != SceneState::kNone || route.moment || route.state != e.router.facts.look()) {
+    if (occasion_) mixer_.stop(*occasion_);
+    occasion_ = nullptr;
+    return;
+  }
+  if (e.scenes.generation == passGeneration_ && e.scenes.iteration == passIteration_) return;
+  passGeneration_ = e.scenes.generation, passIteration_ = e.scenes.iteration;
+  const rig::Look* look = rig::kRig.look(e.router.facts.base);
+  const int fit = look && !occasion_ ? look->fitting(e.scenes.when, e.scenes.lookMs) : 0;
+  // The engine's randomness is drawn on only while one fits.
+  if (!fit || engine_->random.unit() >= F::ratio(rig::kOccasionPct, 100)) return;
+  occasion_ = look->fitting(e.scenes.when, e.scenes.lookMs, engine_->random.index(fit));
+  occasionEnds_ = t + occasion_->ms;
+  mixer_.play(*occasion_);
 }
 
 // The finger in the engine's body units, where the dome stands: kPxPerUnit
@@ -240,7 +266,7 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels());
   return true;
 }
 

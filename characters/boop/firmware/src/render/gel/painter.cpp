@@ -237,7 +237,18 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       triangle(s, u[0], u[1], u[2], secondSoft);
     }
 }
-void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors) {
+void applyRig(PaintControls& c, const rig::Channels& rig) {
+  using rig::Channel;
+  const auto off = [&](Channel ch) { return rig[ch] - rig::kRest[ch]; };
+  // The engine's own bounds on its pose and life (Engine::pose, life).
+  c.lean = std::clamp(c.lean + off(Channel::kLean) * 4096 / 1000, -5120, 5120);
+  c.squash = std::clamp(c.squash - off(Channel::kSquash) * 4096 / 1000, -5407, 5407);
+  c.lift = std::clamp(c.lift + off(Channel::kLift) * 4096 / kPxPerUnit, 0, 983);
+  const int open = std::min(rig[Channel::kEyeOpenL], rig[Channel::kEyeOpenR]);
+  c.blink = std::max(c.blink, (1000 - open) * 4096 / 1000);
+}
+void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
+           const rig::Channels& rig) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -255,6 +266,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   c.grabY = scalar(e.pull[1].x);
   c.dy = dy;
   c.blink = std::max(c.blink, sleepyLids(e));
+  applyRig(c, rig);
   rig::Anchors local;
   if (!anchors) anchors = &local;
   {

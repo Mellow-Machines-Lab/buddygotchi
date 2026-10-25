@@ -782,11 +782,14 @@ engine's half is `firmware/src/render/rig/`: the channels, the tables'
 types, the ramp its fades ease on and the anchors a face reports
 (`rig.h`), and the mixer that plays them (`mixer.h`). The pixel face
 draws its face from it wherever a design's face is its mood's resting
-face (below, Pixel's face on the rig); the gel moves onto it next.
+face (below, Pixel's face on the rig), and the gel plays its clips over
+its own engine (below, The gel on the rig). A clip in a pack's `clips/`
+plays on every face the pack has.
 Pixel's rig has expressions for its 13 drawn moods, each wearing its own
-mood's eyes and mouth, the looks idle, working and asleep, and a blink.
-Boop's is the same, since Boop wears Pixel's face on the CYD, with its
-notice besides (§16's reference became it).
+mood's eyes and mouth, the looks idle, working and asleep, a blink, and
+working's stretch on a long turn's marathon. Boop's is the same, since
+Boop wears Pixel's face on the CYD, with its notice besides (§16's
+reference became it).
 
 **Channels.** The body's `squash`, `lean` and `lift`; the eyes'
 `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's
@@ -837,21 +840,32 @@ curves on some channels, timed in ms. Boop's notice:
 | `about` | no | What it is, for people |
 
 **`looks.json`**: for each look (§9's Looks), the clip it loops under
-the reactions (`clip`, one that loops, or null). Boop's:
+the reactions (`clip`, one that loops, or null), and its `occasions`:
+each a clip that doesn't loop, which the look plays now and then while
+every tag it needs is on (`when`, §9's tags, as `render/tags.h` names
+them) and once it has shown `after` seconds, as a design's occasion
+fits (§9). Each needs a tag or a wait. Boop's:
 
 ```json
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work"},
+  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["marathon"]}]},
   "asleep": {"clip": "doze"}
 }
 ```
 
+A face gives the look a chance at the end of each pass of its loop,
+while none of its occasions plays: then, while some fit, one of them
+plays 67% of the time (`rig::kOccasionPct`), any one alike, over what
+the look plays, and fades out when the look gives way (a reaction, needs
+you). A face draws no randomness for it while none fits.
+
 Every file is optional, and one that's missing is empty.
-`charactergen.py --check` fails on an unknown key, channel, mood, state
-or clip, a style that isn't a mood the pixel face the pack has or uses
-draws (its `faces.h`'s), a value out of its range, keys out of order and
-a loop that doesn't close, each with its file and key
+`charactergen.py --check` fails on an unknown key, channel, mood, state,
+clip or tag, a style that isn't a mood the pixel face the pack has or uses
+draws (its `faces.h`'s), a value out of its range, keys out of order, a
+loop that doesn't close and an occasion that loops or would always fit,
+each with its file and key
 (`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
 `rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
 with a lookup by mood, clip and look. The app doesn't bundle `rig/`.
@@ -926,6 +940,29 @@ the screen with its own strip and words, the face with its lane and what
 it wears; then the placard rises on its own. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
+
+**Pixel's occasions on the rig.** At the end of its look's loop, while
+the rig face draws the look's design, the pixel face gives the rig
+look's occasions their chance (above), on the rig face, over the look's
+own clip; while one plays, the look turns only from a variation whose
+own occasion is over. Its drawn occasions still turn in
+as they did (§9), so on a marathon it shows its drawn stretch now and
+then, and the rig's stretch over its rig-drawn desks.
+
+**The gel on the rig.** The gel keeps its own engine for what no channel
+reaches: each mood's face is its own art crossing over on its own
+windows, and its scenes, gags and springs move its body (the slime's
+CONTINUITY.md). Its face (`render/gel/face.h`) holds a mixer of its own,
+which plays the staged rig's clips, and the painter lays the mixer's
+channels over the pose the engine gives (`applyRig`): `squash` (the
+rig's tall is the dome's up), `lean`, `lift` (canvas px, 85 a body unit,
+never into the floor) and `eyeOpen` (its lids, shut as far as the more
+shut eye). It draws no other channel yet, and its expressions aren't
+the rig's: a mood is the gel's own art. At rest the mixer adds nothing,
+so a frame with no clip playing is the engine's alone. The gel's look
+gives the rig look's occasions their chance at each pass of its scene's
+recipe (a desk's loop, asleep's breath, and the look's start), while the
+engine shows the look itself, with the engine's own randomness.
 
 ## 16. References and review (optional)
 
