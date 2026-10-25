@@ -228,7 +228,7 @@ public final class Core {
         let reaction = fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
         if let reaction { play(reaction, for: event.seq, now, &fx) }
-        let forward = streamCall(agentEvent, program: event["program"]?.string, at: now)
+        let forward = streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
         if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
         return fx

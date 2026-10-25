@@ -371,10 +371,9 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    (`Core.fold`'s `.callEnded`: topic `inspect` with `exit_code`; in the
    owner's session four lookups that matched nothing played it).
 2. [x] **AgentHooks** (its own repository, first): `program` from the
-   closed list and `words.json`, and the file extension. On its branch
-   `work-stream-program`, for the owner to push; Boop reads `program`
-   from the transcript, so it works before the bump and says `bash`
-   until then.
+   closed list and `words.json`, and the file extension. Pushed on its
+   branch `work-stream-program` (749f05f), and Boop bumped to it; to
+   bump again to its squash-merged commit once the pull request merges.
 3. [x] **The Mac:** the core's call rule (`WorkStream`: the word, the
    priorities and the slot, the ladder, the combo), the `calls` key and
    the `call` `do`, the note the brain hears, the setting, and
@@ -403,8 +402,8 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    a big deletion, a failing then passing test run). Played headless, its
    transcript's words forward are the script's: two arrivals, a shrug, a
    bonk and a harder one, the deletion swallowed, crossed fingers, hail,
-   crossed fingers, a pass. Its commands say `bash` until the AgentHooks
-   bump, after which demos should name the program as agent-hook does.
+   crossed fingers, a pass. Its commands name their programs as agent-hook does
+   (`Program.word`).
    Still to come: the Studio's preview of each gag in every mood.
 
 ## The mock
