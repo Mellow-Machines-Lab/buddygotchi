@@ -907,9 +907,17 @@ point counts, fill or stroke and colour); where layers draw a feature in
 the same shape, it is drawn once, its points, pen widths and opacities
 averaged by weight, at their summed weight: two bean eyes ease into each
 other, a closed arc eases into a droop. Different shapes cross-fade, each
-at its weight, the newer over the older, so the eyes' and the mouth's
-opacity, summed over the arts, stays one: a ring of a mouth gives way to an
-open U. The cheeks and tears are drawn at their opacity controls. (While
+at its weight, so the eyes' and the mouth's opacity, summed over the arts,
+stays one: a ring of a mouth gives way to an open U. Where two arts' shapes
+of a feature overlap, the pixel is the two pictures blended, never one
+drawn over the other showing the gel through: each art's run of paths in
+a row of one ink (an eye's fill and its lid, say) is one picture, and the
+arts' pictures of a feature in one ink are drawn as one, their opacities
+summed by weight (`gel/raster.cpp`'s `Raster::sum`). The arts' paths are
+drawn in one order that keeps each art's own (the most such pictures
+merged, an art's others as late as they can go, over the older's), worked
+out when the arts change, so nothing changes places as an art comes in or
+goes out. The cheeks and tears are drawn at their opacity controls. (While
 the JavaScript reference drew the face, it compared each feature's
 recorded drawing instead, and the two rules disagreed on 80 of the 4,730
 pairs of arts' features; the board's is the one rule now.)
@@ -988,7 +996,9 @@ while the card is drawn):
   (falling asleep's swap 96%, happy to sad 99%; calm to happy and to
   frightened show more than the fainter end, both arts showing). Where two
   shapes don't overlap, the frames half way are dimmer by a stricter count,
-  each shape at about half its strength, which is the cross-fade.
+  each shape at about half its strength, which is the cross-fade. Where
+  they do, the ink holds: a pixel in the ink with either art drawn alone
+  stays within 3% of it at every weight (calm to determined's eyes).
 - **The body never teleports.** Each V1 body mode's position and velocity
   in a frame equal its own spring's integration from the frame before (an
   admitted impulse changes only velocity, at its event).

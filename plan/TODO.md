@@ -38,10 +38,12 @@ pacing and touch, the Mac app, the architecture) found what's below.
       reports a lift-up event (register 0x03, bits 7:6, masked off in
       `amoled206/touch.cpp`): log it under a real finger, then end the
       touch on it, keeping the 50 ms as the fallback.
-- [ ] Eyes and mouth go see-through mid mood change: groups of different
-      shapes cross-fade drawn one over the other, so w(1-w) of the body
-      shows through, 25% at the midpoint (`art.cpp`). Blend once from
-      both shapes' summed coverage.
+- [x] Eyes and mouth went see-through mid mood change: groups of
+      different shapes cross-faded drawn one over the other, so w(1-w) of
+      the body showed through, 25% at the midpoint. Their paths of one ink
+      are drawn as one now, coverage summed by weight (`Raster::sum`),
+      about +2 µs a cross-fading frame natively (≈0.2 ms on the board),
+      2.4 KB of RAM.
 - [ ] The body's outline pops by up to ~2.7 px when a triangle's facing
       flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
       silhouette, or 64 sectors (+1-1.5 ms).

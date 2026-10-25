@@ -79,15 +79,23 @@ uint32_t root64(uint64_t n) {
 // A segment of a stroke, ready for distances: from a pixel centre, the
 // distance to its line is |cross| / length, without a square root, and only
 // its round ends need one. Distances are in 256ths of a pixel, rounded.
+// A segment of a stroke, from a to b, ready for distances: from a pixel
+// centre, the distance to its line is |cross| / length, without a square
+// root, and only its round ends need one. Distances are in 256ths of a
+// pixel, rounded.
 struct Segment {
   Point a, b;
   int abx, aby, length2;
   int64_t reciprocal;  // 2^32 / its length in 256ths
-  void set(Point from, Point to) {
-    a = from, b = to, abx = to.x - from.x, aby = to.y - from.y;
-    length2 = abx * abx + aby * aby;
-    const int64_t length256 = std::max<int64_t>(1, root64(uint64_t(length2) << 8));
-    reciprocal = ((int64_t(1) << 32) + length256 / 2) / length256;
+  Segment(Point from, Point to, const int64_t& r) : a(from), b(to), reciprocal(r) {
+    abx = to.x - from.x, aby = to.y - from.y, length2 = abx * abx + aby * aby;
+  }
+  // 2^32 over the length from `from` to `to`, in 256ths: a segment's setup,
+  // its one square root, kept between the rows.
+  static int64_t reciprocalOf(Point from, Point to) {
+    const int abx = to.x - from.x, aby = to.y - from.y;
+    const int64_t length256 = std::max<int64_t>(1, root64(uint64_t(abx * abx + aby * aby) << 8));
+    return ((int64_t(1) << 32) + length256 / 2) / length256;
   }
   // The distance from (px, py), or -1 when it's at least `beyond` (so no
   // square root was needed); `beyond` and the result in 256ths.
@@ -103,13 +111,90 @@ struct Segment {
   }
 };
 
-// A stroke's segments, prepared once (drawing is single-threaded).
-constexpr int kMaxSegments = 96;  // the longest art path
-Segment segments[kMaxSegments];
+// The strokes' segments' reciprocals, worked out once a stroke (drawing is
+// single-threaded): a stroke has at most kMaxSegments, and the strokes a sum
+// draws at once share kSummedSegments.
+constexpr int kMaxSegments = 96, kSummedSegments = 2 * kMaxSegments;  // the longest art path, twice
+int64_t reciprocals[kSummedSegments];
 
 // A pixel's coverage by a shape whose edge is `inside` sixteenths from its
 // centre (negative outside): a box filter one pixel wide, 0–256.
 int edgeCoverage(int inside) { return std::clamp((inside + 8) * 16, 0, 256); }
+
+// One row of a polygon's coverage (even-odd), cut to its clip when it has
+// one, added to the row's across [x0, x1]: four sub-rows, with exact
+// coverage across each span's ends.
+void polygonRow(const Point* v, int n, const Point* clip, int clipCount, int y, int x0, int x1) {
+  int hits[128], clips[128];
+  uint8_t edges[128][2], clipEdges[128][2];
+  const int active = rowEdges(v, std::min(n, 128), y, edges),
+            clipActive = clipCount ? rowEdges(clip, std::min(clipCount, 128), y, clipEdges) : 0;
+  for (int sub = 0; sub < 4; ++sub) {
+    const int y16 = y * 16 + sub * 4 + 2;
+    const int count = crossings(v, edges, active, y16, hits),
+              clipped = clipCount ? crossings(clip, clipEdges, clipActive, y16, clips) : 0;
+    for (int i = 0; i + 1 < count; i += 2) {
+      if (!clipCount)
+        addSpan(hits[i], hits[i + 1], x0, x1);
+      else
+        for (int j = 0; j + 1 < clipped; j += 2)
+          addSpan(std::max(hits[i], clips[j]), std::min(hits[i + 1], clips[j + 1]), x0, x1);
+    }
+  }
+}
+
+// A stroke `radius` sixteenths wide either side, ready to draw by rows: its
+// segments from `reciprocal`, and the pixels it reaches.
+struct Stroke {
+  const Point* v = nullptr;
+  int n = 0, count = 0, radius = 0, outer = 0;
+  uint64_t whole2 = 0;  // a disk's: within this (in 256ths, squared) of its centre, a pixel is whole
+  const int64_t* reciprocal = nullptr;
+  // Its segments' reciprocals into `r`, at most `room` of them.
+  void set(const Point* points, int pointCount, int width16, int64_t* r, int room) {
+    v = points, n = pointCount, reciprocal = r;
+    radius = std::max(4, width16 / 2), outer = radius + 8;
+    count = std::min(room, std::max(1, n - 1));
+    // A disk (one point): a pixel whose centre is inside its edge's band is
+    // covered whole, with no square root.
+    const int whole = radius * 16 - 128;
+    whole2 = whole > 0 ? uint64_t(whole) * uint64_t(whole) : 0;
+    for (int i = 0; i < count; ++i) r[i] = Segment::reciprocalOf(v[i], v[std::min(i + 1, n - 1)]);
+  }
+  // Row y of its coverage across [x0, x1], into the row's: each pixel the
+  // most any segment gives it.
+  void row(int y, int x0, int x1) const {
+    const int cy = y * 16 + 8;
+    for (int i = 0; i < count; ++i) {
+      const Point a = v[i], b = v[std::min(i + 1, n - 1)];
+      if (cy < std::min(a.y, b.y) - outer || cy > std::max(a.y, b.y) + outer) continue;
+      const Segment segment(a, b, reciprocal[i]);
+      const int from = std::max(x0, floor16(std::min(a.x, b.x) - outer)),
+                to = std::min(x1, floor16(std::max(a.x, b.x) + outer));
+      for (int x = from; x <= to; ++x) {
+        if (coverage[x] >= 256) continue;
+        if (n == 1 && whole2) {
+          const int64_t ex = x * 16 + 8 - a.x, ey = cy - a.y;
+          if (uint64_t(ex * ex + ey * ey) << 8 <= whole2) {
+            coverage[x] = 256;
+            touched(x);
+            continue;
+          }
+        }
+        // 256ths of a pixel: coverage is the share of the pixel inside.
+        const int d = segment.distance(x * 16 + 8, cy, outer * 16);
+        if (d < 0 || d >= outer * 16) continue;
+        coverage[x] = uint16_t(std::max(int(coverage[x]), std::clamp(radius * 16 + 128 - d, 0, 256)));
+        touched(x);
+      }
+    }
+  }
+};
+
+// A sum's row (Raster::sum): the picture being drawn's opacity, 0–255 a
+// pixel, and the pictures' so far, each times its weight, added.
+uint8_t picture[Raster::kMaxWidth];
+uint16_t summed[Raster::kMaxWidth];
 
 }  // namespace
 
@@ -153,84 +238,133 @@ void Raster::fill(int y, int x0, int x1, uint16_t ink) {
     for (int x = x0; x <= x1; ++x) out[x] = mix565(out[x], ink, a);
 }
 
-void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, int clipCount) {
-  if (off() || n < 3 || alpha <= 2) return;
+bool Raster::polygonBox(const Point* v, int n, Box& box) const {
   int minX = INT_MAX, minY = INT_MAX, maxX = INT_MIN, maxY = INT_MIN;
   for (int i = 0; i < n; ++i) {
     minX = std::min(minX, v[i].x), maxX = std::max(maxX, v[i].x);
     minY = std::min(minY, v[i].y), maxY = std::max(maxY, v[i].y);
   }
-  const int y0 = std::max({0, floor16(minY), bounds.y0}),
-            y1 = std::min({bottom(), floor16(maxY - 1) + 1, bounds.y1}) - 1;
-  const int x0 = std::max({0, floor16(minX), bounds.x0}),
-            x1 = std::min({s.width, kMaxWidth, floor16(maxX - 1) + 1, bounds.x1}) - 1;
-  if (y0 > y1 || x0 > x1) return;
-  int hits[128], clips[128];
-  uint8_t edges[128][2], clipEdges[128][2];
-  for (int y = y0; y <= y1; ++y) {
-    const int active = rowEdges(v, std::min(n, 128), y, edges),
-              clipActive = clipCount ? rowEdges(clip, std::min(clipCount, 128), y, clipEdges) : 0;
-    for (int sub = 0; sub < 4; ++sub) {
-      const int y16 = y * 16 + sub * 4 + 2;
-      const int count = crossings(v, edges, active, y16, hits),
-                clipped = clipCount ? crossings(clip, clipEdges, clipActive, y16, clips) : 0;
-      for (int i = 0; i + 1 < count; i += 2) {
-        if (!clipCount)
-          addSpan(hits[i], hits[i + 1], x0, x1);
-        else
-          for (int j = 0; j + 1 < clipped; j += 2)
-            addSpan(std::max(hits[i], clips[j]), std::min(hits[i + 1], clips[j + 1]), x0, x1);
-      }
-    }
+  box.y0 = std::max({0, floor16(minY), bounds.y0}), box.y1 = std::min({bottom(), floor16(maxY - 1) + 1, bounds.y1});
+  box.x0 = std::max({0, floor16(minX), bounds.x0});
+  box.x1 = std::min({s.width, kMaxWidth, floor16(maxX - 1) + 1, bounds.x1});
+  return box.y0 < box.y1 && box.x0 < box.x1;
+}
+
+bool Raster::strokeBox(const Point* v, int n, int width16, Box& box) const {
+  const int outer = std::max(4, width16 / 2) + 8;
+  int minX = INT_MAX, minY = INT_MAX, maxX = INT_MIN, maxY = INT_MIN;
+  for (int i = 0; i < n; ++i) {
+    minX = std::min(minX, v[i].x), maxX = std::max(maxX, v[i].x);
+    minY = std::min(minY, v[i].y), maxY = std::max(maxY, v[i].y);
+  }
+  box.y0 = std::max({0, floor16(minY - outer), bounds.y0});
+  box.y1 = std::min({bottom(), floor16(maxY + outer) + 1, bounds.y1});
+  box.x0 = std::max({0, floor16(minX - outer), bounds.x0});
+  box.x1 = std::min({s.width, kMaxWidth, floor16(maxX + outer) + 1, bounds.x1});
+  return box.y0 < box.y1 && box.x0 < box.x1;
+}
+
+void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, int clipCount) {
+  Box box;
+  if (off() || n < 3 || alpha <= 2 || !polygonBox(v, n, box)) return;
+  for (int y = box.y0; y < box.y1; ++y) {
+    polygonRow(v, n, clip, clipCount, y, box.x0, box.x1 - 1);
     flush(y, ink);
   }
 }
 
 void Raster::stroke16(const Point* v, int n, int width16, uint16_t ink) {
-  if (off() || n < 1 || alpha <= 2) return;
-  const int radius = std::max(4, width16 / 2), outer = radius + 8;
-  int minX = INT_MAX, minY = INT_MAX, maxX = INT_MIN, maxY = INT_MIN;
-  for (int i = 0; i < n; ++i) {
-    minX = std::min(minX, v[i].x), maxX = std::max(maxX, v[i].x);
-    minY = std::min(minY, v[i].y), maxY = std::max(maxY, v[i].y);
-  }
-  const int y0 = std::max({0, floor16(minY - outer), bounds.y0}),
-            y1 = std::min({bottom(), floor16(maxY + outer) + 1, bounds.y1}) - 1;
-  const int x0 = std::max({0, floor16(minX - outer), bounds.x0}),
-            x1 = std::min({s.width, kMaxWidth, floor16(maxX + outer) + 1, bounds.x1}) - 1;
-  if (y0 > y1 || x0 > x1) return;
-  const int count = std::min(kMaxSegments, std::max(1, n - 1));
-  // A disk (one point): a pixel whose centre is inside its edge's band is
-  // covered whole, with no square root.
-  const int whole = radius * 16 - 128;
-  const uint64_t whole2 = whole > 0 ? uint64_t(whole) * uint64_t(whole) : 0;
-  for (int i = 0; i < count; ++i) segments[i].set(v[i], v[std::min(i + 1, n - 1)]);
-  for (int y = y0; y <= y1; ++y) {
-    const int cy = y * 16 + 8;
-    for (int i = 0; i < count; ++i) {
-      const Segment& segment = segments[i];
-      const Point a = segment.a, b = segment.b;
-      if (cy < std::min(a.y, b.y) - outer || cy > std::max(a.y, b.y) + outer) continue;
-      const int from = std::max(x0, floor16(std::min(a.x, b.x) - outer)),
-                to = std::min(x1, floor16(std::max(a.x, b.x) + outer));
-      for (int x = from; x <= to; ++x) {
-        if (coverage[x] >= 256) continue;
-        if (n == 1 && whole2) {
-          const int64_t ex = x * 16 + 8 - a.x, ey = cy - a.y;
-          if (uint64_t(ex * ex + ey * ey) << 8 <= whole2) {
-            coverage[x] = 256;
-            touched(x);
-            continue;
-          }
-        }
-        // 256ths of a pixel: coverage is the share of the pixel inside.
-        const int d = segment.distance(x * 16 + 8, cy, outer * 16);
-        if (d < 0 || d >= outer * 16) continue;
-        coverage[x] = uint16_t(std::max(int(coverage[x]), std::clamp(radius * 16 + 128 - d, 0, 256)));
-        touched(x);
-      }
-    }
+  Box box;
+  if (off() || n < 1 || alpha <= 2 || !strokeBox(v, n, width16, box)) return;
+  Stroke stroke;
+  stroke.set(v, n, width16, reciprocals, kMaxSegments);
+  for (int y = box.y0; y < box.y1; ++y) {
+    stroke.row(y, box.x0, box.x1 - 1);
     flush(y, ink);
+  }
+}
+
+void Raster::sum(const Shape* shapes, int count, uint16_t ink) {
+  constexpr int kMost = 12;
+  if (off() || count <= 0 || alpha <= 2) return;
+  count = std::min(count, kMost);
+  // Each shape's pixels, and its strokes' segments, which must all fit at
+  // once; else each is drawn on its own, at its opacity and weight, one over
+  // the other.
+  Box boxes[kMost], all{INT_MAX, INT_MAX, INT_MIN, INT_MIN};
+  bool drawn[kMost];
+  int segments = 0;
+  for (int i = 0; i < count; ++i) {
+    const Shape& shape = shapes[i];
+    drawn[i] = shape.alpha > 0 && shape.weight > 0 &&
+               (shape.width16 ? shape.n >= 1 && strokeBox(shape.v, shape.n, shape.width16, boxes[i])
+                              : shape.n >= 3 && polygonBox(shape.v, shape.n, boxes[i]));
+    if (!drawn[i]) continue;
+    if (shape.width16) segments += std::min(kMaxSegments, std::max(1, shape.n - 1));
+    all.x0 = std::min(all.x0, boxes[i].x0), all.x1 = std::max(all.x1, boxes[i].x1);
+    all.y0 = std::min(all.y0, boxes[i].y0), all.y1 = std::max(all.y1, boxes[i].y1);
+  }
+  if (all.y0 >= all.y1) return;
+  if (segments > kSummedSegments) {
+    const int old = alpha;
+    for (int i = 0; i < count; ++i) {
+      alpha = old * shapes[i].alpha / 255 * std::min(4096, shapes[i].weight) / 4096;
+      if (shapes[i].width16)
+        stroke16(shapes[i].v, shapes[i].n, shapes[i].width16, ink);
+      else
+        polygon16(shapes[i].v, shapes[i].n, ink, shapes[i].clip, shapes[i].clipCount);
+    }
+    alpha = old;
+    return;
+  }
+  // The strokes, set up once: their segments' reciprocals, one after another.
+  Stroke strokes[kMost];
+  for (int i = 0, used = 0; i < count; ++i)
+    if (drawn[i] && shapes[i].width16) {
+      strokes[i].set(shapes[i].v, shapes[i].n, shapes[i].width16, reciprocals + used, kMaxSegments);
+      used += strokes[i].count;
+    }
+  for (int y = all.y0; y < all.y1; ++y) {
+    int lo = kMaxWidth, hi = -1, pictureLo = kMaxWidth, pictureHi = -1;
+    for (int i = 0; i < count; ++i) {
+      if (drawn[i] && y >= boxes[i].y0 && y < boxes[i].y1) {
+        if (shapes[i].width16)
+          strokes[i].row(y, boxes[i].x0, boxes[i].x1 - 1);
+        else
+          polygonRow(shapes[i].v, shapes[i].n, shapes[i].clip, shapes[i].clipCount, y, boxes[i].x0, boxes[i].x1 - 1);
+        // Over the picture so far: one ink, so only its opacity grows.
+        const int a = shapes[i].alpha;
+        for (int x = touchedLo; x <= touchedHi; ++x) {
+          const int over = std::min<int>(coverage[x], 256) * a >> 8, under = picture[x];
+          picture[x] = uint8_t(under + over - (under * over + 127) / 255);
+          coverage[x] = 0;
+        }
+        pictureLo = std::min(pictureLo, touchedLo), pictureHi = std::max(pictureHi, touchedHi);
+        touchedLo = kMaxWidth, touchedHi = -1;
+      }
+      // A picture's end: its opacity, at its weight, into the sum.
+      if (i + 1 < count && shapes[i + 1].joined) continue;
+      const int w = std::min(4096, shapes[i].weight);
+      for (int x = pictureLo; x <= pictureHi; ++x) {
+        summed[x] = uint16_t(summed[x] + ((picture[x] * w + 2048) >> 12));
+        picture[x] = 0;
+      }
+      lo = std::min(lo, pictureLo), hi = std::max(hi, pictureHi);
+      pictureLo = kMaxWidth, pictureHi = -1;
+    }
+    if (lo > hi) continue;
+    touch(lo, y, hi + 1, y + 1);
+    for (int x = lo; x <= hi; ++x) {
+      const int a = std::min<int>(summed[x], 255) * alpha / 255;
+      summed[x] = 0;
+      if (recording)
+        kept[x - lo] = uint8_t(a);
+      else if (shown(a) >= 253)
+        s.pixels[y * s.width + x] = ink;
+      else if (shown(a) > 2)
+        s.pixels[y * s.width + x] = mix565(s.pixels[y * s.width + x], ink, shown(a));
+    }
+    if (recording) recording->add(y, lo, hi, kept, ink);
   }
 }
 

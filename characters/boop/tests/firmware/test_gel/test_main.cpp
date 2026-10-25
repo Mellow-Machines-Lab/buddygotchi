@@ -24,6 +24,7 @@
 #include "render/tags.h"
 #include "fonts_gel.h"
 #include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
+#include "slime_art.h"
 using namespace render;
 using namespace render::gel;
 // Heap allocations while `allocCounting` is on (test_steady_frames_allocate_nothing),
@@ -627,6 +628,50 @@ static void test_the_face_never_fades_while_arts_cross_over() {
     TEST_ASSERT_TRUE(fainter > 200);  // the line, falling asleep; else over 400
     TEST_ASSERT_TRUE(least * 100 >= fainter * 85);
   }
+}
+// Where two arts' shapes of one feature overlap, a cross-fade keeps the
+// ink. Calm's eyes are beans and determined's narrower beans under a lid,
+// so they cross-fade instead of morphing: through it, a pixel in the ink
+// both ways (each layer drawn alone, as this frame places it) stays within
+// 3% of the ink at every weight. Drawn one over the other, each at its
+// weight, it showed the body through by w(1 - w), a quarter half way.
+static void test_overlapping_shapes_keep_their_ink_while_arts_cross_over() {
+  static_assert(slime::kArt[slime::kCalm].shape[0] != slime::kArt[slime::kDetermined].shape[0],
+                "the eyes cross-fade, not morph");
+  std::vector<uint16_t> a(502 * 410), b(a.size()), c(a.size());
+  Surface blended{502, 410, a.data()}, older{502, 410, b.data()}, newer{502, 410, c.data()};
+  // How far a pixel is from the ink, its furthest channel, out of 255.
+  auto off = [](uint16_t p) {
+    const uint16_t ink = rgb565(13, 43, 72);
+    return std::max({std::abs((p >> 11) - (ink >> 11)) * 255 / 31,
+                     std::abs(((p >> 5) & 63) - ((ink >> 5) & 63)) * 255 / 63, std::abs((p & 31) - (ink & 31)) * 255 / 31});
+  };
+  auto e = std::make_unique<Engine>();
+  e->setMood(slime::kCalm);
+  uint32_t t = 0;
+  for (; t <= 640; t += 16) e->step(t);
+  e->setMood(slime::kDetermined);
+  int frames = 0, inside = 0, worst = 0;
+  F least = 1, most = 0;
+  for (int i = 0; i < 30; ++i) {
+    e->step(t += 16);
+    if (e->face.count != 2) continue;
+    ++frames;
+    const F w = e->face.layers[1].weight;
+    least = min(least, w), most = max(most, w);
+    paint(blended, *e);
+    for (int layer = 0; layer < 2; ++layer) {
+      auto alone = std::make_unique<Engine>(*e);
+      for (int k = 0; k < 2; ++k) alone->face.layers[k].weight = k == layer ? F(1) : F(0);
+      paint(layer ? newer : older, *alone);
+    }
+    for (size_t p = 0; p < a.size(); ++p)
+      if (off(b[p]) <= 3 && off(c[p]) <= 3) ++inside, worst = std::max(worst, off(a[p]));
+  }
+  char message[64];
+  snprintf(message, sizeof message, "%d pixels in both, worst %d of 255 off", inside, worst);
+  TEST_ASSERT_TRUE_MESSAGE(frames >= 8 && least < q(.1) && most > q(.9), "the whole cross-fade");
+  TEST_ASSERT_TRUE_MESSAGE(inside > 200 * frames && worst * 100 <= 255 * 3, message);
 }
 // No prop pops: the lane's strip eases in as it comes and out
 // as it goes, at the opacity Behaviour gives it on the rig's ramp, which is
@@ -2396,6 +2441,7 @@ int main() {
   RUN_TEST(test_face_and_props_move_without_jumps);
   RUN_TEST(test_it_falls_asleep_squashing_shut);
   RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
+  RUN_TEST(test_overlapping_shapes_keep_their_ink_while_arts_cross_over);
   RUN_TEST(test_the_lane_fades_whatever_the_draw_cadence);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);

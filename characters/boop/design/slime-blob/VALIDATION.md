@@ -88,7 +88,10 @@ ramps and springs can, and no jolt at an event. By file:
   deterministic pixels, request identity and bounded caches, alerts
   interrupted by listening or a link timeout at eight points signalling
   exactly once, the face's arts crossing over without jumps and never
-  fading (its visible ink through five cross-fades), falling asleep as a
+  fading (its visible ink through five cross-fades), overlapping shapes
+  keeping their ink while they cross
+  (`test_overlapping_shapes_keep_their_ink_while_arts_cross_over`: within
+  3% of it at every weight), falling asleep as a
   morph (the awake face squashing shut on its slow spring, to lines, the
   sleeping face crossing in once it's 0.9 shut, waking quick, sleep's
   spring kept through a mood change), the night's lids, a finger moving the dome its own

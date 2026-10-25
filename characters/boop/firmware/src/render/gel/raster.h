@@ -47,6 +47,18 @@ struct Recording {
 struct Raster {
   // The widest surface a row of coverage holds.
   static constexpr int kMaxWidth = 512;
+  // One of the shapes sum() draws at once: a polygon (no width), cut to its
+  // clip when it has one, or a polyline `width16` wide, at its own opacity
+  // (0–255). Shapes `joined` to the one before are one picture with it, each
+  // drawn over the last; a picture counts at its `weight` (Q12, a share of
+  // one).
+  struct Shape {
+    const Point* v = nullptr;
+    int n = 0;
+    const Point* clip = nullptr;
+    int clipCount = 0, width16 = 0, alpha = 255, weight = 4096;
+    bool joined = false;
+  };
   Surface& s;
   int alpha = 255;  // the shape's opacity, 0–255, times each pixel's coverage
   // How much of everything drawn on the surface shows, 0–255: a layer's
@@ -93,6 +105,13 @@ struct Raster {
     Point centre{x16, y16};
     stroke16(&centre, 1, 2 * radius16, ink);
   }
+  // Pictures of one ink drawn as one: each pixel takes each picture's
+  // opacity there times its weight, summed, and blends once, at the
+  // raster's alpha over that. Where two pictures at half weight cover a
+  // pixel it's whole, so a feature cross-fading between two shapes keeps
+  // its ink where both are, as the two pictures blended would, instead of
+  // the one drawn over the other showing what's under through it.
+  void sum(const Shape* shapes, int count, uint16_t ink);
 
   // Whole-pixel shapes for the props. A disk of radius r covers the pixels
   // whose centres are within r of (x, y)'s centre, as before, now with
@@ -177,5 +196,9 @@ struct Raster {
   void fill(int y, int x0, int x1, uint16_t ink);
   // Blends one row's coverage (0–256 a pixel) for [x0, x1] with the ink.
   void composite(int y, int x0, int x1, const uint16_t* coverage, uint16_t ink);
+  // The pixels a polygon's or a stroke's coverage reaches, inside the
+  // surface and the bounds: false for none.
+  bool polygonBox(const Point* v, int n, Box& box) const;
+  bool strokeBox(const Point* v, int n, int width16, Box& box) const;
 };
 }  // namespace render::gel
