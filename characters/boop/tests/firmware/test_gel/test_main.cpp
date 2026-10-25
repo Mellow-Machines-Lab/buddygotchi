@@ -1519,7 +1519,7 @@ static void test_layers_follow_the_bodys_anchors() {
   TEST_ASSERT_EQUAL(int(Eyewear::kGlasses), int(eyewearFor(tags({"day", "friday", "reading"}))));
   TEST_ASSERT_EQUAL(int(Eyewear::kShades), int(eyewearFor(tags({"day", "friday"}))));
   TEST_ASSERT_EQUAL(int(Eyewear::kNone), int(eyewearFor(tags({"night", "friday"}))));
-  // The gown's rings: the lap's over the hem's, each from the left side to
+  // The pyjamas' rings: the lap's over the hem's, each from the left side to
   // the right, the hem's front the lowest, under the hands'.
   for (const auto* ring : {at.lap, at.hem}) {
     TEST_ASSERT_TRUE(ring[0].x < ring[8].x && ring[8].x < ring[16].x);
@@ -1547,9 +1547,10 @@ static void test_layers_follow_the_bodys_anchors() {
 
 // What the gel wears, the air and the Zs come and go through the rig's
 // layer stack (the face's), on the rig's 200 ms fade: a winter evening's
-// bobble fades out at night and the nightcap in after it; falling asleep,
-// the gown and the Zs fade in while the hat and the snow stay whole,
-// each layer its own; a sign fades out at its opacity, as Behaviour gives
+// bobble fades out at night and the nightcap in after it, the night sky
+// and the pyjamas fading in with it; falling asleep, the Zs fade in while
+// the sky, the hat, the pyjamas and the snow stay whole, each layer its
+// own; a sign fades out at its opacity, as Behaviour gives
 // it. Each is drawn at its layer's opacity.
 static void test_the_layers_come_and_go_through_the_stack() {
   using rig::Layer;
@@ -1573,10 +1574,15 @@ static void test_the_layers_come_and_go_through_the_stack() {
   TEST_ASSERT_EQUAL_UINT32(bobble, l.content(Layer::kHat, 1000));
   TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1000));
   TEST_ASSERT_EQUAL_UINT32(kSnow, l.content(Layer::kAir, 1000));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kScene, 1000));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kWorn, 1000));
   state(SceneState::kIdle, {"night", "winter"}, 1008);
   for (uint32_t t = 1008; t <= 1500; t += 16) {
     b.advance(t, rng);
     const uint32_t into = t - 1008;
+    const int in = ease1000(std::min(int(into), 200), 200);
+    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kScene, t));  // the sky
+    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kWorn, t));   // the pyjamas
     if (into < rig::kFadeMs) {
       TEST_ASSERT_EQUAL_UINT32(bobble, l.content(Layer::kHat, t));
       TEST_ASSERT_EQUAL_INT(1000 - ease1000(int(into), 200), l.opacity(Layer::kHat, t));
@@ -1587,12 +1593,13 @@ static void test_the_layers_come_and_go_through_the_stack() {
     TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kAir, t));  // the snow stays
   }
   state(SceneState::kAsleep, {"night", "winter"}, 2000);
-  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kWorn, 2000));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kBeside, 2000));
   for (uint32_t t = 2016; t <= 2400; t += 16) {
     b.advance(t, rng);
     const int in = ease1000(std::min(int(t - 2000), 200), 200);
-    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kWorn, t));    // the gown
     TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kBeside, t));  // the Zs
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kScene, t));
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kWorn, t));
     TEST_ASSERT_EQUAL_UINT32(nightcap, l.content(Layer::kHat, t));
     TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, t));
     TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kAir, t));
@@ -1633,9 +1640,10 @@ static void test_the_layers_come_and_go_through_the_stack() {
   TEST_ASSERT_EQUAL_INT(0, sign(0));
 }
 
-// The gown comes with the nightcap while it sleeps, and with no other
-// hat; the reading glasses are on its eyes but while it sleeps.
-static void test_it_sleeps_in_a_gown_and_reads_in_glasses() {
+// The pyjamas come with the nightcap, and with no other hat, but while it
+// wears its reading glasses; the glasses are on its eyes but while it
+// sleeps.
+static void test_it_wears_pyjamas_at_night_and_reads_in_glasses() {
   std::vector<uint16_t> px(502 * 410);
   Surface s{502, 410, px.data()};
   auto e = std::make_unique<Engine>();
@@ -1650,28 +1658,30 @@ static void test_it_sleeps_in_a_gown_and_reads_in_glasses() {
     std::fill(px.begin(), px.end(), 0);
     paintLayers(s, *e, at);
   };
-  // Inside the gown, between the lap's front and the hem's; on the glasses'
-  // left rim.
-  const size_t gown = size_t((at.lap[8].y + at.hem[8].y) / 32) * 502 + size_t(at.hem[8].x / 16);
+  // Inside the pyjamas, between the lap's front and the hem's; on the
+  // glasses' left rim.
+  const size_t pyjamas = size_t((at.lap[8].y + at.hem[8].y) / 32) * 502 + size_t(at.hem[8].x / 16);
   const size_t rim = size_t(at.eyeL.y / 16) * 502 + size_t((at.eyeL.x - (at.eyeR.x - at.eyeL.x) / 5) / 16);
+  layers({"evening"}, SceneState::kIdle);
+  TEST_ASSERT_EQUAL_HEX16(0, px[pyjamas]);
   layers({"night"}, SceneState::kIdle);
-  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  TEST_ASSERT_NOT_EQUAL(0, px[pyjamas]);
   layers({"night"}, SceneState::kAsleep);
-  TEST_ASSERT_NOT_EQUAL(0, px[gown]);
-  layers({"night", "winter"}, SceneState::kAsleep);  // night's cap over winter's bobble, and its gown
-  TEST_ASSERT_NOT_EQUAL(0, px[gown]);
-  layers({"night", "halloween"}, SceneState::kAsleep);  // Halloween's hat wins, and has no gown
-  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  TEST_ASSERT_NOT_EQUAL(0, px[pyjamas]);
+  layers({"night", "winter"}, SceneState::kAsleep);  // night's cap over winter's bobble, and its pyjamas
+  TEST_ASSERT_NOT_EQUAL(0, px[pyjamas]);
+  layers({"night", "halloween"}, SceneState::kAsleep);  // Halloween's hat wins, and has no pyjamas
+  TEST_ASSERT_EQUAL_HEX16(0, px[pyjamas]);
   layers({"day"}, SceneState::kAsleep);
-  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  TEST_ASSERT_EQUAL_HEX16(0, px[pyjamas]);
   layers({"day", "reading"}, SceneState::kWorking);
   TEST_ASSERT_NOT_EQUAL(0, px[rim]);
-  layers({"night", "reading"}, SceneState::kAsleep);  // the gown, its eyes bare
+  layers({"night", "reading"}, SceneState::kAsleep);  // the pyjamas, its eyes bare
   TEST_ASSERT_EQUAL_HEX16(0, px[rim]);
-  TEST_ASSERT_NOT_EQUAL(0, px[gown]);
-  layers({"night", "reading"}, SceneState::kWorking);  // awake: the glasses, and no gown
+  TEST_ASSERT_NOT_EQUAL(0, px[pyjamas]);
+  layers({"night", "reading"}, SceneState::kWorking);  // awake: the glasses, and no pyjamas
   TEST_ASSERT_NOT_EQUAL(0, px[rim]);
-  TEST_ASSERT_EQUAL_HEX16(0, px[gown]);
+  TEST_ASSERT_EQUAL_HEX16(0, px[pyjamas]);
 }
 
 // A recording (render/gel/raster.h) blends again exactly what its shapes
@@ -1744,12 +1754,14 @@ static void test_the_outfit_is_kept_while_the_body_moves() {
   paint(s, *e, false, 0, 0, &home);
   uint32_t night = tagBit("night");
   e->setOccasion(night, 0);
-  // The layers alone, at `at`, `ms` into the engine's clock.
+  // The nightcap alone, whole, at `at`, `ms` into the engine's clock.
+  rig::Layers cap;
+  cap.show(rig::Layer::kHat, uint32_t(Outfit::kNightcap), 0);
   auto frame = [&](const rig::Anchors& at, uint32_t ms) {
     std::fill(px.begin(), px.end(), 0);
     s.invalidate();
     e->elapsedMs = ms;
-    paintLayers(s, *e, at);
+    paintLayers(s, *e, at, &cap, 1000);
     return px;
   };
   auto raised = [&](int crown) {  // the crown alone moved, the brim's front where it was
@@ -1779,6 +1791,40 @@ static void test_the_outfit_is_kept_while_the_body_moves() {
   const auto lower = frame(down, 1230);
   for (int y = 3; y < 410 * 4 / 5; ++y)
     TEST_ASSERT_EQUAL_MEMORY(kept.data() + (y - 3) * 502, lower.data() + y * 502, 502 * 2);
+}
+
+// The night sky (the stack's scene) shows at night only, and behind
+// everything: drawn only onto the background's black, so not a pixel of
+// what's drawn changes, at its layer's opacity.
+static void test_the_night_sky_is_behind_the_body() {
+  using rig::Layer;
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  rig::Anchors at;
+  paint(s, *e, false, 0, 0, &at);
+  TEST_ASSERT_EQUAL_UINT32(0, layerContents(*e).scene);
+  e->setOccasion(tagBit("night"), 0);
+  TEST_ASSERT_EQUAL_UINT32(1, layerContents(*e).scene);
+  const std::vector<uint16_t> body(px);
+  rig::Layers sky;
+  sky.show(Layer::kScene, 1, 0);
+  auto lit = [&](uint32_t t) {
+    px = body;
+    paintSky(s, *e, &sky, t);
+    long n = 0;
+    for (size_t i = 0; i < px.size(); ++i) {
+      if (body[i]) TEST_ASSERT_EQUAL_HEX16(body[i], px[i]);
+      n += (px[i] >> 11) + (px[i] >> 5 & 63) / 2 + (px[i] & 31);
+    }
+    return n;
+  };
+  long bare = 0;
+  for (uint16_t p : body) bare += (p >> 11) + (p >> 5 & 63) / 2 + (p & 31);
+  const long whole = lit(400) - bare, half = lit(100) - bare;
+  TEST_ASSERT_TRUE(whole > 20000);
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, half);
 }
 
 static void test_steady_frames_allocate_nothing() {
@@ -2215,7 +2261,8 @@ int main() {
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
   RUN_TEST(test_layers_follow_the_bodys_anchors);
-  RUN_TEST(test_it_sleeps_in_a_gown_and_reads_in_glasses);
+  RUN_TEST(test_it_wears_pyjamas_at_night_and_reads_in_glasses);
+  RUN_TEST(test_the_night_sky_is_behind_the_body);
   RUN_TEST(test_a_recording_replays_as_drawn);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
   // test_cells.cpp

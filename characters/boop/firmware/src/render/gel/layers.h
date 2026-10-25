@@ -3,9 +3,11 @@
 // (the rig's Anchors, render/gel/painter.h), so each follows the body as it
 // moves, squashes and leaves the screen, and is cut off there with it:
 //
-// - the outfit, by the tags on now (state.when): a nightcap at night, and
-//   its gown on the body's lower rings while it sleeps, a party hat on a
-//   party day, New Year's Day, Lunar New Year and Programmers' Day, a
+// - the night sky behind it at night: a crescent moon and twinkling
+//   stars, only where nothing else is drawn;
+// - the outfit, by the tags on now (state.when): a striped nightcap at
+//   night, and its pyjamas on the body's lower rings but while it wears
+//   reading glasses, a party hat on a party day, New Year's Day, Lunar New Year and Programmers' Day, a
 //   witch hat at Halloween, a bobble hat in winter; reading glasses while
 //   the latest prompt was an essay or for docs, else shades on a Friday's
 //   day, both off while it sleeps;
@@ -17,8 +19,8 @@
 //   up as the reaction starts and bobbing while it's held.
 //
 // Each comes and goes through the rig's layer stack (render/rig/layers.h,
-// the face's), so a hat at midnight, the gown and the Zs as it falls
-// asleep, shades on a Friday and the snow each fade over the rig's fade,
+// the face's), so the sky, a hat and the pyjamas at midnight, the Zs as
+// it falls asleep, shades on a Friday and the snow each fade over the rig's fade,
 // and a new one waits for the old to go; the sign fades out at the
 // opacity Behaviour gives it. A scene may hide a layer: peekaboo's
 // gesture takes the outfit off while the slime comes up from nothing. At
@@ -31,7 +33,7 @@
 
 namespace render::gel {
 
-// Each part of the outfit (the hat, riding the brim's front; the gown,
+// Each part of the outfit (the hat, riding the brim's front; the pyjamas,
 // riding the hem's front, or else what's over its eyes, riding the left
 // eye, since it sleeps with its eyes bare) is drawn into a recording of
 // its own (render/gel/raster.h) when its look changes or the body has
@@ -50,7 +52,7 @@ struct OutfitLayer {
   static constexpr int kSlack = 12, kSwingMs = 400;
   static constexpr uint32_t kMovingMs = 100, kStillMs = 200;
   static constexpr int kFrameY = 288, kFrameHeight = 512;
-  static constexpr int kHatBytes = 5 * 1024, kWornBytes = 7 * 1024;  // the hat's room, and the gown's or eyewear's
+  static constexpr int kHatBytes = 7 * 1024, kWornBytes = 10 * 1024;  // the hat's room, and the pyjamas' or eyewear's
 };
 
 struct SignLayer {
@@ -67,11 +69,12 @@ class Engine;
 int sleepyLids(const Engine& e);
 
 // What the layer stack's layers (render/rig/layers.h) show for the
-// engine's tags and state now: what it wears over its eyes or on its body
-// (worn) and its hat, each a content of its own (0 for none), the air's
-// bits, and the Zs beside its head (1) while it sleeps at night.
+// engine's tags and state now: the night sky behind it (1) at night, what
+// it wears over its eyes or on its body (worn) and its hat, each a content
+// of its own (0 for none), the air's bits, and the Zs beside its head (1)
+// while it sleeps at night.
 struct Contents {
-  uint32_t worn, hat, air, beside;
+  uint32_t scene, worn, hat, air, beside;
 };
 Contents layerContents(const Engine& e);
 // The outfit, the air and the Zs, over the body and its face, under the
@@ -79,6 +82,11 @@ Contents layerContents(const Engine& e);
 // whole in what the engine's tags and state call for.
 void paintLayers(Surface& surface, const Engine& e, const rig::Anchors& at, const rig::Layers* layers = nullptr,
                  uint32_t t = 0);
+// The night sky, as the stack shows it at t (whole in the engine's tags
+// with none), behind everything: drawn last, only onto the background's
+// black, so the body, what it wears, the stream's words and the sign all
+// stay in front, and none of it is drawn over them.
+void paintSky(Surface& surface, const Engine& e, const rig::Layers* layers = nullptr, uint32_t t = 0);
 // How far the card sits below its place `ms` after it went up: sliding up,
 // then bobbing.
 int signOffset(uint32_t ms);

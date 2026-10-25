@@ -169,8 +169,6 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
     Measure measure(profile.clear);
     s.clear(keep, keepCount, keepLane);
   }
-  // The layer stack's scene (rig::Layer::kScene) is drawn here, behind the
-  // body, once the board's state puts something there.
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
   // away. Positions are in sixteenths of a pixel; the UVs follow from the

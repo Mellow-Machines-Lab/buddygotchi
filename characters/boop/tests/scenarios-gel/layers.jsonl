@@ -1,14 +1,16 @@
 // What the gel wears and the air around it, by the tags on
 // (render/gel/layers.h), each on a frozen clock after a reset, idle unless
 // it says. A state every 20 s keeps the link alive.
-// A nightcap at night, its lids a little lower.
+// A night: the moon and stars behind it, a striped nightcap flopping
+// down its side and the pyjamas to match, its lids a little lower.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"calm","vol":0,"when":["night"]}
 {"clock":1200}
 {"shot":"nightcap"}
-// Asleep at night: the nightcap and its gown, and Zs rising; and on a
-// winter's night, night's cap and gown over winter's bobble, in the snow.
+// Asleep at night: the nightcap and its pyjamas, and Zs rising; and on a
+// winter's night, night's cap and pyjamas over winter's bobble, in the
+// snow.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"asleep","mood":"calm","vol":0,"when":["night"]}
@@ -18,7 +20,7 @@
 {"clock":0}
 {"t":"state","base":"asleep","mood":"happy","vol":0,"when":["night","winter"]}
 {"clock":3200}
-{"shot":"gown"}
+{"shot":"pyjamas"}
 // Reading glasses while the latest prompt was an essay or for docs, over
 // working's face; on a Friday they're worn in place of the shades, and at
 // Halloween under the witch hat.

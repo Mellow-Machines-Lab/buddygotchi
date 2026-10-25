@@ -109,6 +109,7 @@ void GelFace::advanceTo(uint32_t t) {
 
 void GelFace::showLayers(uint32_t t) {
   const Contents now = layerContents(*engine_);
+  layers_.show(rig::Layer::kScene, now.scene, t);
   layers_.show(rig::Layer::kWorn, now.worn, t);
   layers_.show(rig::Layer::kHat, now.hat, t);
   layers_.show(rig::Layer::kAir, now.air, t);

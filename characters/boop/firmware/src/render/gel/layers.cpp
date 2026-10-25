@@ -20,8 +20,10 @@ namespace {
 constexpr uint16_t kCardInk = rgb565(27, 55, 78), kCardRim = rgb565(0x78, 0xa4, 0xc8);
 constexpr uint16_t kWords = rgb565(184, 233, 245), kGel = rgb565(89, 169, 224), kShine = rgb565(184, 233, 245);
 constexpr uint16_t kCream = rgb565(246, 240, 226), kInk = rgb565(28, 24, 36);
-// The nightcap's and the gown's cloth, and the reading glasses' wire.
-constexpr uint16_t kNightcloth = rgb565(58, 62, 150), kWire = rgb565(206, 164, 92);
+// The nightcap's and the pyjamas' flannel, its stripes and the cap's
+// cuff, the moon's light, and the reading glasses' wire.
+constexpr uint16_t kNightcloth = rgb565(62, 72, 168), kNightstripe = rgb565(176, 190, 238),
+                   kNightcuff = rgb565(112, 124, 210), kMoonlight = rgb565(250, 230, 160), kWire = rgb565(206, 164, 92);
 
 // The point `i` thirty-seconds of a turn round a circle, as cosine and
 // sine (Q12).
@@ -68,21 +70,44 @@ int wave(int ms, int period, int amp) {
   return (p < period / 2 ? p : period - p) * 2 * amp / period;
 }
 
-// Its tip swings out and back every 2 s: `ms` into the swing.
+// A long sleeping cap in striped flannel: up from a soft cuff, over the
+// crown and flopping down its left side, its tassel hanging by its cheek
+// and swaying out and back every 2 s: `ms` into the sway.
 void nightcap(Raster& r, const Head& h, int ms) {
-  const int w = h.width, swing = wave(ms, 2000, w / 30);
-  const Point tip{h.cx + w * 11 / 20 + swing, h.top - w / 20};
-  Point v[16];
+  const int w = h.width, sway = wave(ms, 2000, w / 24);
+  // Thousandths of the head's width from the crown, and how far down the
+  // flop each is (it sways more the lower it hangs).
+  auto at = [&](int x, int y, int hang = 0) {
+    return Point{h.cx + w * x / 1000 + sway * hang / 4, h.top + w * y / 1000};
+  };
+  Point v[28];
   int n = 0;
   for (const Point& p : h.band) v[n++] = p;
-  v[n++] = {h.cx + w * 9 / 20, h.top - w / 8};  // the droop, down to the tip
-  v[n++] = tip;
-  v[n++] = {h.cx + w * 7 / 20, h.top - w * 7 / 20};
-  v[n++] = {h.cx + w / 6, h.top - w * 9 / 20};  // its peak
-  v[n++] = {h.cx - w / 6, h.top - w * 3 / 10};
+  v[n++] = at(380, -40);  // up its right side
+  v[n++] = at(230, -210);
+  v[n++] = at(80, -320);
+  v[n++] = at(-120, -370);  // over the top, where it bends
+  v[n++] = at(-330, -350, 1);
+  v[n++] = at(-520, -250, 2);  // and down the flop's outside
+  v[n++] = at(-640, -60, 3);
+  v[n++] = at(-690, 150, 4);
+  v[n++] = at(-700, 330, 5);
+  v[n++] = at(-625, 310, 5);  // back up its inside
+  v[n++] = at(-600, 110, 4);
+  v[n++] = at(-545, -80, 3);
+  v[n++] = at(-450, -190, 2);
+  v[n++] = at(-330, -240, 1);
+  v[n++] = at(-420, -60);  // and down the cap's left side to the cuff
   r.polygon16(v, n, kNightcloth);
-  r.stroke16(h.band, 9, w / 9, kCream);  // the band
-  r.disk16(tip.x, tip.y, w / 13, kCream);
+  for (int i = -2; i < 4; ++i) {  // pale stripes across it, cut to the cap
+    const int y0 = h.top + w * (60 - i * 130) / 1000, y1 = y0 - w * 55 / 1000;
+    const Point stripe[] = {{h.cx - w, y0}, {h.cx + w, y0}, {h.cx + w, y1}, {h.cx - w, y1}};
+    r.polygon16(stripe, 4, kNightstripe, v, n);
+  }
+  r.stroke16(h.band, 9, w / 14, kNightcuff);  // the cuff, rolled
+  const Point cord[] = {at(-662, 320, 5), at(-665, 390, 6)};
+  r.stroke16(cord, 2, w / 60 + 8, kNightstripe);
+  r.disk16(cord[1].x, cord[1].y, w / 22, kNightstripe);  // the tassel
 }
 
 // A small cone perched on top: its base the middle of the brim, drawn in
@@ -175,10 +200,10 @@ void glasses(Raster& r, const rig::Anchors& at) {
   r.stroke16(bridge, 3, wire, kWire);
 }
 
-// The nightcap's gown, while it sleeps: from the lap's ring down past the
-// body's hem, flaring out a little to it, in a lighter cloth than the
-// cap's with soft pleats down it and a cream frill along the top.
-void gown(Raster& r, const rig::Anchors& at) {
+// The nightcap's pyjamas: from the lap's ring down past
+// the body's hem, flaring out a little to it, in the cap's striped flannel
+// with a cream frill along the top.
+void pyjamas(Raster& r, const rig::Anchors& at) {
   constexpr int n = rig::Anchors::kRingPoints;
   const int w = std::max(16, at.lap[n - 1].x - at.lap[0].x), flare = w / 22, lip = w / 90 + 8;
   // The hem a lip below the body's outline, flared out to the sides.
@@ -199,14 +224,13 @@ void gown(Raster& r, const rig::Anchors& at) {
   side(at.lap[n - 1], hem[n - 1], w / 24);
   for (int i = n - 1; i >= 0; --i) v[k++] = hem[i];
   side(hem[0], at.lap[0], -w / 24);
-  r.polygon16(v, k, rgb565(88, 92, 184));
-  r.alpha = 110;
-  for (int i : {5, 11}) {  // a pleat from under the frill to the hem
-    const Point &a = at.lap[i], &b = hem[i];
-    const Point pleat[] = {{a.x + (b.x - a.x) / 4, a.y + (b.y - a.y) / 4}, {b.x, b.y - lip}};
-    r.stroke16(pleat, 2, w / 70 + 8, kNightcloth);
+  r.polygon16(v, k, kNightcloth);
+  for (int i = 1; i < n - 1; i += 2) {  // the cap's stripes, down it: a pair of rings' gap wide
+    const Point &a = at.lap[i], &b = hem[i], &c = at.lap[i + 1], &d = hem[i + 1];
+    const Point stripe[] = {
+        {a.x, a.y - lip}, {(a.x + c.x) / 2, c.y - lip}, {(b.x + d.x) / 2, d.y + lip}, {b.x, b.y + lip}};
+    r.polygon16(stripe, 4, kNightstripe, v, k);
   }
-  r.alpha = 255;
   // The frill: a cream band along the top short of the sides, where the
   // ring turns away, and under it a scallop between each two of its
   // points, as one shape: from inside the band, along its lower edge and
@@ -283,29 +307,76 @@ void zs(Raster& r, const rig::Anchors& at, int ms) {
   r.alpha = 255;
 }
 
+// The night sky: a crescent moon high on its left and stars about it,
+// each twinkling on a slow wave of its own, only onto the background's
+// black, at `fade`.
+void sky(Surface& s, int fade, int ms) {
+  const int bottom = s.height * 4 / 5;
+  int bx0 = s.width, by0 = bottom, bx1 = -1, by1 = -1;
+  auto dot = [&](int x, int y, uint16_t ink, int alpha) {
+    if (x < 0 || y < 0 || x >= s.width || y >= bottom || alpha * fade < 255 * 3) return;
+    uint16_t& p = s.pixels[y * s.width + x];
+    if (p) return;
+    p = mix565(0, ink, alpha * fade / 255);
+    bx0 = std::min(bx0, x), bx1 = std::max(bx1, x), by0 = std::min(by0, y), by1 = std::max(by1, y);
+  };
+  // The moon: a disk with a smaller one cut from its upper right, each
+  // edge's coverage from how far inside it a pixel's middle is (sixteenths).
+  const int mx = s.width * 13 * 16 / 100, my = s.height * 15 * 16 / 100, mr = s.width * 6 * 16 / 100;
+  const int cx = mx + mr * 42 / 100, cy = my - mr * 25 / 100, cr = mr * 84 / 100;
+  auto inside = [](int dx, int dy, int radius) {  // 0 … 16
+    return std::clamp((radius * radius - dx * dx - dy * dy) / (2 * radius) + 8, 0, 16);
+  };
+  for (int y = (my - mr) / 16; y <= (my + mr) / 16; ++y)
+    for (int x = (mx - mr) / 16; x <= (mx + mr) / 16; ++x) {
+      const int px = x * 16 + 8, py = y * 16 + 8;
+      const int a = inside(px - mx, py - my, mr) * (16 - inside(px - cx, py - cy, cr));
+      if (a) dot(x, y, kMoonlight, a * 255 / 256);
+    }
+  // The stars: where each is (hundredths of the surface), how long its
+  // rays reach, and a twinkle between dim and bright.
+  static constexpr int8_t kStars[][3] = {{27, 7, 3},  {41, 3, 2}, {65, 6, 2}, {80, 13, 3}, {93, 29, 2},
+                                         {89, 51, 3}, {5, 35, 2}, {9, 58, 3}, {23, 25, 2}};
+  constexpr uint16_t kStarlight = rgb565(222, 230, 255);
+  for (int i = 0; i < int(sizeof kStars / sizeof kStars[0]); ++i) {
+    const int x = s.width * kStars[i][0] / 100, y = s.height * kStars[i][1] / 100, reach = kStars[i][2];
+    const int glow = 110 + wave(ms + i * 737, 2600 + i * 190, 145);
+    dot(x, y, kStarlight, glow);
+    for (int d = 1; d <= reach; ++d) {
+      const int a = glow * (reach + 1 - d) / (reach + 1);
+      dot(x - d, y, kStarlight, a), dot(x + d, y, kStarlight, a), dot(x, y - d, kStarlight, a),
+          dot(x, y + d, kStarlight, a);
+    }
+  }
+  if (bx1 >= 0) s.touch(bx0, by0, bx1 + 1, by1 + 1);
+}
+
 // What it wears besides where it sits: the hat, the party hat's colours,
 // how far into its swing the nightcap is, on a step of kSwingMs (the hat's
-// as one number), what's over its eyes, and the gown under the nightcap
-// while it sleeps.
+// as one number), what's over its eyes, and the pyjamas that go with the
+// nightcap.
 struct Look {
   Outfit hat;
   int colors, swing;
   Eyewear eyes;
-  bool gown;
+  bool pyjamas;
   uint32_t hatKey() const { return uint32_t(hat) | uint32_t(colors) << 4 | uint32_t(swing) << 8; }
 };
 // The nightcap's swing for the engine's clock.
 int swingFor(const Engine& e) { return int(e.elapsedMs % 2000 / OutfitLayer::kSwingMs * OutfitLayer::kSwingMs); }
-// Peekaboo's gesture takes it all off, and it sleeps with its eyes bare.
+// Peekaboo's gesture takes it all off, and it sleeps with its eyes bare;
+// the nightcap comes with its pyjamas, but while it wears its reading
+// glasses.
 Look lookFor(const Engine& e) {
   const uint32_t when = e.scenes.when;
   const SceneState state = e.scenes.route.state;
   if (state == SceneState::kGesture && e.scenes.variant == int(Gesture::kPeekaboo)) return {};
   const Outfit hat = outfitFor(when);
   const int colors = hasTag(when, "lunar") ? 1 : hasTag(when, "programmers") && !hasTag(when, "party") ? 2 : 0;
-  const bool nightcap = hat == Outfit::kNightcap, asleep = state == SceneState::kAsleep;
-  return {hat, hat == Outfit::kPartyHat ? colors : 0, nightcap ? swingFor(e) : 0,
-          asleep ? Eyewear::kNone : eyewearFor(when), nightcap && asleep};
+  const bool nightcap = hat == Outfit::kNightcap;
+  const Eyewear eyes = state == SceneState::kAsleep ? Eyewear::kNone : eyewearFor(when);
+  return {hat, hat == Outfit::kPartyHat ? colors : 0, nightcap ? swingFor(e) : 0, eyes,
+          nightcap && eyes == Eyewear::kNone};
 }
 
 void eyewear(Raster& r, const rig::Anchors& at, Eyewear eyes) {
@@ -357,7 +428,7 @@ struct Kept {
   Point last[kAnchors]{};
 };
 uint8_t hatBytes[OutfitLayer::kHatBytes], wornBytes[OutfitLayer::kWornBytes];
-// The hat, on the brim's front; and the gown, on the hem's front, or else
+// The hat, on the brim's front; and the pyjamas, on the hem's front, or else
 // what's over its eyes, on the left eye (it never wears both).
 Kept keptHat{{hatBytes, OutfitLayer::kHatBytes}}, keptWorn{{wornBytes, OutfitLayer::kWornBytes}};
 
@@ -409,23 +480,23 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
 
 // The worn and hat layers' contents for a look, and the look a pair of
 // them is, its nightcap swinging on the engine's clock.
-constexpr uint32_t kGown = 1u << 8;  // a worn content no eyewear has
+constexpr uint32_t kPyjamas = 1u << 8;  // a worn content no eyewear has
 uint32_t hatOf(const Look& l) { return l.hat == Outfit::kNone ? 0 : uint32_t(l.hat) | uint32_t(l.colors) << 4; }
-uint32_t wornOf(const Look& l) { return l.gown ? kGown : uint32_t(l.eyes); }
+uint32_t wornOf(const Look& l) { return l.pyjamas ? kPyjamas : uint32_t(l.eyes); }
 Look lookOf(uint32_t hat, uint32_t worn, const Engine& e) {
   const Outfit kind = Outfit(hat & 15);
   return {kind, int(hat >> 4 & 15), kind == Outfit::kNightcap ? swingFor(e) : 0,
-          worn == kGown ? Eyewear::kNone : Eyewear(worn), worn == kGown};
+          worn == kPyjamas ? Eyewear::kNone : Eyewear(worn), worn == kPyjamas};
 }
 
-// The gown or what's over its eyes, then the hat, each at its layer's
+// The pyjamas or what's over its eyes, then the hat, each at its layer's
 // fade.
 void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look, int wornFade, int hatFade) {
   constexpr int kEnd = rig::Anchors::kRingPoints - 1;
   r.fade = wornFade;
-  if (look.gown) {
+  if (look.pyjamas) {
     const Point now[] = {at.hem[kEnd / 2], at.hem[0], at.hem[kEnd], at.lap[0], at.lap[kEnd / 2], at.lap[kEnd]};
-    wear(r, keptWorn, e, at, now, 6, 1u << 8, gown);  // a look no eyewear has
+    wear(r, keptWorn, e, at, now, 6, 1u << 8, pyjamas);  // a look no eyewear has
   } else if (look.eyes != Eyewear::kNone) {
     const Point now[] = {at.eyeL, at.eyeR};
     wear(r, keptWorn, e, at, now, 2, uint32_t(look.eyes),
@@ -451,8 +522,8 @@ int sleepyLids(const Engine& e) {
 
 Contents layerContents(const Engine& e) {
   const Look look = lookFor(e);
-  const bool zs = hasTag(e.scenes.when, "night") && e.scenes.route.state == SceneState::kAsleep;
-  return {wornOf(look), hatOf(look), airFor(e.scenes.when), zs ? 1u : 0u};
+  const bool night = hasTag(e.scenes.when, "night"), zs = night && e.scenes.route.state == SceneState::kAsleep;
+  return {night ? 1u : 0u, wornOf(look), hatOf(look), airFor(e.scenes.when), zs ? 1u : 0u};
 }
 
 void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig::Layers* layers, uint32_t t) {
@@ -474,6 +545,14 @@ void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig:
   if (air & kHearts) hearts(r, s.width, bottom, ms);
   r.fade = fade(Layer::kBeside);
   if (content(Layer::kBeside, now.beside)) zs(r, at, ms);
+}
+
+void paintSky(Surface& s, const Engine& e, const rig::Layers* layers, uint32_t t) {
+  if (!s.pixels) return;
+  using rig::Layer;
+  const uint32_t whole = layerContents(e).scene;
+  if (!(layers ? layers->content(Layer::kScene, t) : whole)) return;
+  sky(s, layers ? (layers->opacity(Layer::kScene, t) * 255 + 500) / 1000 : 255, int(e.elapsedMs % 3600000u));
 }
 
 void paintSign(Surface& s, const SignShow& sign, const rig::Anchors& at) {

@@ -268,6 +268,7 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
     paintStreamFront(surface, *stream, at, e, now);
   }
   if (sign.text) paintSign(surface, sign, at);
+  paintSky(surface, e, layers, t);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);
 }

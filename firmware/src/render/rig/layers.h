@@ -16,8 +16,8 @@ namespace render::rig {
 
 // Back to front, as a face draws them.
 enum class Layer : uint8_t {
-  kScene,   // behind the body: what the board's state puts there (nothing yet)
-  kWorn,    // over the eyes or on the body: glasses, a gown
+  kScene,   // behind the body: the gel's night sky
+  kWorn,    // over the eyes or on the body: glasses, pyjamas
   kHat,     // on the head's anchors
   kAir,     // snow, confetti, hearts: screen space
   kBeside,  // beside the head: Zs while it sleeps at night
