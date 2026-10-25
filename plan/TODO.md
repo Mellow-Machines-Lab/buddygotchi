@@ -4,6 +4,25 @@ Updated 2026-10-25. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: calm work (2026-10-25)
+
+The owner found the working look's body boring and its kit cluttered,
+and chose a calm look that works harder the longer the agents do, with
+the whole body moving now and then ([calm-work.md](calm-work.md)).
+
+- [x] **The cuts**: the camp and its pastimes, the sweatband, second
+      wind, the little ones; the mug tower from `tier5`.
+- [x] **Steady typing** by tier, the done beat, reading closely, the
+      headphones put on, and three moves (the coffee reach, the melt,
+      the stretch break), on the rig's new `x`, `reach` and `melt`.
+      Checked by test_gel (`test_work_settles_by_tier`,
+      `test_the_paws_type_on_the_keys`,
+      `test_the_headphones_go_on_where_you_see_them`,
+      `test_moves_are_rare`,
+      `test_the_rig_carries_reaches_and_melts_the_gel`), the gel's
+      scenarios looked at, and each played on the AMOLED.
+- [ ] On the AMOLED: how the moves and the typing feel, by the owner.
+
 ## Now: talking back (2026-10-25)
 
 The owner wanted the buddy to understand what's said to it, a smart pet

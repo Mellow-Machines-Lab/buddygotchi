@@ -124,7 +124,16 @@ ramps and springs can, and no jolt at an event. By file:
   about 60% of the time, and none with no tier; the kit by the tiers, the
   hat winning the head, none while something needs you; the headphones'
   tune, a note from each cup in turn every 3 s, out past the band's ends,
-  and none while bopping),
+  and none while bopping; the headphones put on first, coming down over
+  its ears with its paws away, and on again after a needs-you; the moves
+  at least 90 s apart over half an hour at `tier5`, the paws theirs while
+  they play; working's base by tier, its lids lower the further in and
+  faded out under a reaction or while something needs you; and the paws
+  lifting before each key contact and tapping softly between), the rig's
+  `x`, `reach` and `melt` on the gel
+  (`test_the_rig_carries_reaches_and_melts_the_gel`: x off the screen, the
+  reach's side out and the other in, a melt most of the way down and
+  wider, its base where it was),
   the lane at the panel's size (fading whatever the draw cadence, blended
   once, cut and marked as the canvas does), the lane clear of the AMOLED's
   rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's
@@ -167,10 +176,12 @@ ramps and springs can, and no jolt at an event. By file:
   variation expected), the occasions (`occasions.jsonl`: a party's bounce,
   a night's drowse, frantic typing, in a nightcap and a party hat, and
   `tier4`'s kit), the pastimes (`pastimes.jsonl`: the working kit at
-  `tier5` and a pastime over it, the idle plant and a pastime beside it,
-  and needs you's wave), the replies (`replies.jsonl`: each reply's clip
-  partway through under its face and sign, and a nap and a dance idle,
-  asleep and at work), the
+  `tier5` and a pastime over it, the done beat's tick, reading closely
+  with the glass fogged, the headphones coming down, the coffee reach's
+  sip, a puddle mid-melt, a stretch break's empty desk and its stretch,
+  the idle plant and a pastime beside it, and needs you's wave), the
+  replies (`replies.jsonl`: each reply's clip partway through under its
+  face and sign, and a nap and a dance idle, asleep and at work), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
   night, the morning's coffee at its side, at a sip and on the desk, a
   sign under the nightcap), a reaction's sign (`sign.jsonl`), a finished
@@ -179,7 +190,8 @@ and is taken down (`done.jsonl`), the
   work stream (`stream.jsonl`: two lanes' words falling, the to-do bar and
   the clock, a thought cloud, and every gag as it lands: arrive, bonk and
   its dizzy eyes, helmet, shrug, shatter, pass, hail's umbrella, look,
-  stir, stamp, launch, poof, plane, phone, page, helper, back, combo, the
+  stir, stamp, launch, poof, plane, phone, page, helper and back (landing
+  as a word does), combo, the
   tower's stack, flag and topple, an edit's bars, and the whole turn's
   moments: a compaction's cube, a freeze, a drop, buried, and a turn's
   end gathering its words after the stream goes), and

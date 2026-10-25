@@ -219,19 +219,18 @@ sides as far as the corners reach on its marks' rows, and the bubble
 stands off the panel's foot and in from the curve, its own corners cut
 away like the panel's, which holds the longest take in the sign's font.
 
-Every other prop (the alert, result and start cards, the helpers, the
-listening cue and the touch marks) has a **200 ms visibility ramp** for
+Every other prop (the alert, result and start cards, the listening cue
+and the touch marks) has a **200 ms visibility ramp** for
 entry and exit (`gel/scenes.h` `Ramp`): a cubic Hermite from its current
 value and slope to the target, so from rest it is a smoothstep and a
 reversal keeps its velocity; it ends exactly. Held within zero and one,
 it's flat where it's held, so a retarget never brings back what it held at
 zero. Each prop's visibility is its drawn opacity: the ramp, times a
-card's reveal or the helpers' recovery. When its route ends, a prop fades
-out still carrying the content it last showed (the alert's request, agent,
-project, name and count; a card's state, label and outcome; the helpers'
-mode, count and progress; the listening pulse; the touch kind). New content
-(another request, or the helpers' next cycle) waits until nothing of the
-old is drawn, then fades in from zero; the alert's content follows the
+card's reveal. When its route ends, a prop fades out still carrying the
+content it last showed (the alert's request, agent, project, name and
+count; a card's state, label and outcome; the listening pulse; the touch
+kind). New content (another request) waits until nothing of the old is
+drawn, then fades in from zero; the alert's content follows the
 current request at once. Contact envelopes (the knock, the key and touch
 pulses) stay deliberate impacts.
 
@@ -372,18 +371,15 @@ timings above:
 | --- | --- | --- |
 | Starting | Reveal at [520, 820, 1080] ms by variant | `new_task` → NEW TASK, `session` → START, `continuation` → RESUME, `compacted` → COMPACTED; missing context stays neutral START |
 | Wake up | Stretch [560], [760], [900, 1500] ms, then settle [1180], [1240, 1420], none | You back after a long break: the start family's body, with no card. The stretch is a start reveal (the second of variant 2 at 0.7 strength); a settle is a body contact of strength 0.35, sides 0, then ±1 |
-| Delegating | [660, 1040], [540, 880, 1220], [820, 1640] ms | Dispatch [2, 3, 2] small helpers beside the same hero |
-| Helper return | Reveal at [680, 960, 1240] ms | One returning helper and a neutral report; no assumed success |
+| Delegating | [660, 1040], [540, 880, 1220], [820, 1640] ms | It sends [2, 3, 2] helpers off, a contact each, on its own: none is drawn beside it |
+| Helper return | Reveal at [680, 960, 1240] ms | A neutral reveal as one comes back; no assumed success, and no card |
 | Reply ready/error/stopped | Reveal at [680, 960, 1240] ms | READY / TOOL ERROR / STOPPED, without a trophy |
 | Poked | [160], [200, 480], [160, 520] ms | Bounded local dent/wobble/bounce |
 | Tap spam | [160, 400], [160, 340, 520], [220, 620] ms | Bounded wobble/squash/dodge complaint |
 
 Start, wake-up, helper and status-result contacts receive the mood/profile
-delay; their reveals take its strength. Helper contact sides alternate;
-variant 2 reverses travel direction. Their travel progress is smoothstep
-of age divided by the last contact time, clamped to [0, 1], so arrival
-coincides with the factual report reveal. Helper visibility multiplies the
-entry and recovery envelopes. Touch contacts have strength 0.6 for poked
+delay; their reveals take its strength. Helper contact sides alternate,
+and variant 2 reverses them. Touch contacts have strength 0.6 for poked
 and 0.9 for tap spam, alternating sides and lean targets [0.008, −0.018,
 0.012]; they have no timing jitter or mood-derived delay. Their mood face
 stays the current expression, with the bounded recovery profile where it
@@ -739,6 +735,24 @@ engine has no colour channel, so no occasion tints the gel. The working
 looks' quicker pace while the agents are busy is the board's
 (`render::workPace`), not an occasion.
 
+### Calm work (the board's)
+
+Work is the look on screen most of the day, so it works calmly and
+settles deeper the longer the agents work: effort shows as the eyes
+settling, never as strain. While working shows (no moment over it) the
+gel loops the rig's base for the last tier reached (`looks.json`'s
+`tiers`): at `tier1` an easy sway with its eyes open on the keys
+(`work-easy`), leaning in toward the monitor with its lids a little
+lower at `tier2`, focused at `tier3`, settled with a slower sway at
+`tier4`, and at `tier5`, in the zone, low calm lids, a slow wide sway
+and a deep breath, with a few motes drifting up beside it. Under a
+reaction, or while something needs you, the base fades out over the
+mixer's 150 ms, and back after. The desk's paws type: before each key
+contact of the recipe (its keyboard click) a paw lifts and lands on it
+(`kTapMs`, `kTapLift`), and between them they tap softly by turns,
+lower and without a sound (`kTypeMs`, `kTypeLift`), so the paws work
+even between the recipe's bursts. A pastime may take them (below).
+
 ### Pastimes (the board's)
 
 Something new at every glance, however long the agents work or you're
@@ -755,15 +769,20 @@ the newest tier's 60% of the time and an older one's the rest, never the
 same twice running, with the rig look's occasions among them; and holds
 the engine's own idle gestures off while one plays. The one playing
 fades out when the look gives way. A reply may ask for the snuggle or the
-dance outside the deal (Replies, above).
+dance outside the deal (Replies, above). Three of work's are **moves**,
+the whole body going somewhere on the rig's `x`, `reach` or `melt`, and
+none starts within 90 s of the last (`kMoveGapMs`). While a pastime uses
+the desk's paws they're where it puts them (`pawsFor`): the right one up
+for Enter, both up at its head with the headphones, the right holding
+the mug, spread out flat in the puddle, away on a stretch break.
 
 | Look | From | Kit | Pastimes |
 | --- | --- | --- | --- |
-| working | tier1 | A mug on the desk, steaming (not in the morning, when its coffee is in its hand, nor a sip or a refill) | A sip, eyes shut, "ahh"; a peek up at you and a heart; humming, notes floating up |
-| working | tier2 | | Wondering, a "?" cloud, then a lightbulb and a hop; the tip of its tongue out, concentrating; nodding along as ticks pop from the monitor |
-| working | tier3 | Headphones over its ears, cups side-on, a note floating up from each in turn every 3 s | Bopping to the music, eyes shut, the notes off the cups; drumming on the desk; a sticky note slapped on the monitor |
-| working | tier4 | A sweatband, a drop of sweat now and then | The rig's stretch; a coffee pot pouring a refill; a cookie in three bites; a second wind, sparkling |
-| working | tier5 | A camp beside the desk, a tent and its fire; a mug more on the stack every 10 minutes, up to 4 | A marshmallow toasted on the fire; a pizza; the stars and a shooting star |
+| working | tier1 | A mug on the desk, steaming (not in the morning, when its coffee is in its hand, nor a sip, a reach or a refill) | A sip, eyes shut, "ahh"; a peek up at you and a heart; humming, notes floating up; the done beat: a paw up, Enter, a tick on the monitor with a sparkle off its corner, and a sit back, eyes shut, nodding |
+| working | tier2 | | Wondering, a "?" cloud, then a lightbulb and a hop; reading closely: it leans over the monitor and up, reads line by line, each lit as its eyes reach it, and sits back with a nod; nodding along as ticks pop from the monitor |
+| working | tier3 | Headphones over its ears, cups side-on, a note floating up from each in turn every 3 s, put on first: it looks up as they come down from 120 px above its ears, a hand at each cup and the desk's paws away, on in 1.3 s, and they're on from then while it wants them | Bopping to the music, eyes shut, the notes off the cups; drumming on the desk; a sticky note slapped on the monitor; **the coffee reach** (a move): it squeezes in on one side and stretches out the other to the top mug, brings it in, sips with its eyes shut, "ahh", and puts it back |
+| working | tier4 | | The rig's stretch; a coffee pot pouring a refill; a cookie in three bites; reading closely fogs the glass now; **the melt** (a move): eyes shut, it melts down into a puddle as drips run down its sides, its headphones off its head, peeks round with bubbles rising in it, then pulls itself back up tall, overshoots and wobbles into shape (not in a hat) |
+| working | tier5 | A mug more on the stack every 10 minutes, up to 4; a few motes drifting up beside it | **The stretch break** (a move): it gets up, walks off the screen's right edge, the desk empty while the screen works on, walks back, squeezes down, stretches up tall with its hands high and its mouth open in a yawn, bends each way, and boings back to work |
 | idle | tier1 | | Looking round; looking up at you, "...?"; three hops |
 | idle | tier2 | | A bubble blown and popped; a fly it follows round and snaps at; a heart drawn on the glass |
 | idle | tier3 | A plant that grows, a sprout | A book, its page turning; a handheld game, WIN; watering the plant |
@@ -772,14 +791,14 @@ dance outside the deal (Replies, above).
 | needs you | 30 s, 2, 5, 10 minutes | | A wave; tapping on the glass; checking its watch and sighing; nodding off and jerking awake |
 | asleep | 1, 2, 4 minutes | | Rolling over, mumbling; counting sheep; a snore bubble |
 
-The hat wins the head: the headphones and the sweatband stay off while
-it wears one, and peekaboo's gesture takes them off as it does the hat.
+The hat wins the head: the headphones stay off while it wears one, and
+peekaboo's gesture takes them off as it does the hat.
 The headphones sit low, their cups on its sides between its eyes and its
 brim, so a card over its head hides only the top of the band and they
 still read as headphones.
-The camp, the plant and the stars go behind the body; what it holds,
-throws, blows and dreams goes in front, at the body's anchors, and the
-headphones and sweatband over what it wears, before the cards. No sounds
+The plant goes behind the body; what it holds, throws, blows and dreams
+goes in front, at the body's anchors, and the headphones over what it
+wears, before the cards. No sounds
 of their own but a few landings (`body_contact`), and none while
 something needs you or asleep.
 
@@ -840,7 +859,7 @@ last, `kWordGapPx`, and never faster, so they never overlap, and none
 that would wait over `kMostWaitMs` for that), easing in over 200 ms and out
 over its last 600 ms of 3.2 s, in sixteenths of a pixel, so it glides
 rather than steps (`render::gel::text16`; what moves in front, the word
-forward, the little ones, the listening ring and the helpers, does too). They're drawn after the body, onto the
+forward and the listening ring, does too). They're drawn after the body, onto the
 background's black only, so the body, its props and what it wears cover
 them, and a word hidden behind it costs nothing to draw, clear or push.
 On the desk, while the Mac sends lanes: the to-do list's progress along
@@ -852,13 +871,13 @@ word may still come forward in that time, as a turn's end does to gather
 them; something needing you clears everything at once.
 
 In front, after the props and before the sign: the word a `call` brings
-forward flies from its lane's name (a paper plane or a little one from
-the right-hand edge) and does what its move does (`render::CallMove`),
+forward flies from its lane's name (a paper plane from the edge) and
+does what its move does (`render::CallMove`),
 everything gone by 2.5 s:
 
 | Move | Gags | What plays |
 | --- | --- | --- |
-| Sink, arrive | land, arrive | Onto the crown, sinking in under a spreading ring; a turn's first twinkles; an edit's lines grow as green and red bars on the monitor |
+| Sink, arrive | land, arrive, helper, back | Onto the crown, sinking in under a spreading ring (a subagent's going and its coming back too); a turn's first twinkles; an edit's lines grow as green and red bars on the monitor |
 | Look | look | Beside the head, a magnifier sweeping it; the monitor's page scrolls |
 | Stir | stir | Into a pot at the desk's right end, bubbling and steaming |
 | Stamp | stamp | Onto a card beside it, and a stamp comes down: OK |
@@ -867,7 +886,6 @@ everything gone by 2.5 s:
 | Plane | plane | A paper plane swooping in from the edge, caught at its hands; a globe turns on the monitor |
 | Phone | phone | An old phone ringing beside it, the word its call |
 | Page | page | A page beside it, its corner turning |
-| Helper, back | helper, back | A little one carries it off to the right, or brings `done` back, twinkling |
 | Hit | bonk, bonk2, helmet, throw, no, timeout | Between the eyes: it sticks, slides off (thrown back on the top rung) under three stars, five up the ladder, a helmet on the third; dizzy spiral eyes over its own (the body's colour under them), 1 to 1.3 s; the monitor cracks up the ladder |
 | Shrug | shrug | Beside the head, an empty bubble over it |
 | Shatter | shatter | Bursting into its glyphs, swallowed, and a burp |
@@ -900,8 +918,7 @@ Build a persistent desk and computer once. Working, terminal, searching,
 analyzing, testing, planning and generic tool use are activity submodes,
 not swaps to unrelated sets. Keep desk positions and parent transforms
 stable, change screen cue/cards and contact choreography. Waiting simply
-pauses the work action. Helper blobs enter alongside the hero, never
-replace it. Every state ([STATES.md](STATES.md)) still has its own
+pauses the work action. Every state ([STATES.md](STATES.md)) still has its own
 meaning, variations and audio policy.
 
 An action recipe has phases `enter → act → recover → sustain`. Start

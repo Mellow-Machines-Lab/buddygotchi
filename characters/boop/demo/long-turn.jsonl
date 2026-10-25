@@ -1,20 +1,21 @@
 // A minute and a half: the long haul. The agent ticks off a to-do list of
 // four, its count under the face, while the demo's clock jumps on through
-// the tiers: 2 minutes in, headphones; 5, a sweatband and a stretch; 10,
-// the camp, and the pastimes of each. Then the turn ends, and the quiet
-// after it goes through its own: looking round, a bubble, a book, a
-// tower of blocks, then sleep.
+// the tiers, settling deeper into its work at each: 2 minutes in, it puts
+// its headphones on; 5, lower lids and a stretch; 10, in the zone, motes
+// drifting by, and the pastimes and moves of each. Then the turn ends,
+// and the quiet after it goes through its own: looking round, a bubble, a
+// book, a tower of blocks, then sleep.
 {"demo": 1, "title": "The long haul"}
 {"agent": "prompt", "text": "Migrate the payments service to the new queue"}
 {"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
 {"agent": "todo", "todos": "1/4", "after": 1}
 {"agent": "read", "file": "src/payments/queue.js", "say": "I'll start with the old queue."}
-{"you": "wait", "minutes": 2, "after": 2, "note": "Two minutes in: headphones on"}
+{"you": "wait", "minutes": 2, "after": 2, "note": "Two minutes in: on go the headphones"}
 {"agent": "todo", "todos": "2/4", "after": 1}
 {"agent": "run", "cmd": "npm test", "about": "Run the payments tests", "takes": 3}
-{"you": "wait", "minutes": 3, "after": 1, "note": "Five minutes in: a sweatband"}
+{"you": "wait", "minutes": 3, "after": 1, "note": "Five minutes in: settled in"}
 {"agent": "todo", "todos": "3/4", "after": 6}
-{"you": "wait", "minutes": 5, "after": 2, "note": "Ten minutes in: the camp"}
+{"you": "wait", "minutes": 5, "after": 2, "note": "Ten minutes in: in the zone"}
 {"agent": "todo", "todos": "4/4", "after": 6}
 {"agent": "reply", "text": "The payments service runs on the new queue, and its tests pass.", "after": 2}
 {"brain": {"react.face": "proud", "react.move": "success", "say": "glad", "react.intensity": "big"}, "mood": "proud"}

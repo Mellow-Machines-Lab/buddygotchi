@@ -35,8 +35,8 @@ never as strain, and now and then the whole body does something.
 - Three moves, rarer than a pastime (one every 90 s at most):
   - the coffee reach (`tier3`): it stays put, squeezes in on one side
     and stretches out the other to the mug tower, sips, puts it back;
-  - the melt (`tier4`): it melts into a puddle with drips, its eyes
-    peeking over the keys, then pulls itself back up and wobbles;
+  - the melt (`tier4`): it melts into a puddle with drips, then pulls
+    itself back up tall and wobbles;
   - the stretch break (`tier5`): it walks off the edge, the desk empty
     for a moment while the screen works on, walks back, squeezes down,
     stretches up tall, and boings back to work.
@@ -55,9 +55,18 @@ never as strain, and now and then the whole body does something.
 
 ## Steps
 
-- [ ] The cuts, and the mug tower from `tier5`.
-- [ ] The rig's `x`, `reach` and `melt`.
-- [ ] Steady typing: base clips by tier, typing paws, the zone's motes.
-- [ ] The done beat, reading closely, the headphones put on.
-- [ ] The three moves, and the gap between them.
-- [ ] The docs, the mirror, the board's frame rate.
+- [x] The cuts, and the mug tower from `tier5`.
+- [x] The rig's `x`, `reach` and `melt`.
+- [x] Steady typing: base clips by tier, typing paws, the zone's motes.
+- [x] The done beat, reading closely, the headphones put on.
+- [x] The three moves, and the gap between them.
+- [x] The docs, the mirror, the board's frame rate: on the AMOLED, with
+      the owner's app connected and the agents at work, the working look
+      and every new pastime drew at 21 to 35 fps, its frames 42 to 48.5
+      ms at the most, where main's drew at 18 to 20 (49 to 54 ms); both
+      over the 40 ms the motion budget allows, and the least heap 49 KB
+      on both, under its 60 KB.
+- [ ] The owner, on the board: how each move and the typing feel, and
+      whether the melt's flat slits for eyes read as peeking. The soft
+      glow of the sketches is a few motes instead, which cost nearly
+      nothing to draw.
