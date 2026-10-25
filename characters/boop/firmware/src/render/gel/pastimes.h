@@ -126,6 +126,10 @@ struct PastimeShow {
 // The camp, the plant and the stars a pastime puts out: drawn after the
 // clear and before the body, so the body covers them.
 void paintScenery(Surface& surface, const PastimeShow& show);
+// Whether paintScenery draws anything: only then is the whole surface
+// erased before the body (render/gel/painter.cpp), rather than a band at
+// a time as the body draws.
+bool showsScenery(const PastimeShow& show);
 // The kit it wears, the headphones and the sweatband, after what it wears
 // for the tags (render/gel/layers.h) and before the cards.
 void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at);

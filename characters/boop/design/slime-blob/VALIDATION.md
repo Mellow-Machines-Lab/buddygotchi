@@ -157,6 +157,12 @@ ramps and springs can, and no jolt at an event. By file:
   and on the native simulator, both with no card, and checks every shot is
   the same, pixel for pixel; `firmware/tools/mirror.sh --check` builds the
   mirror again and checks it's the one checked in.
+- `test_gel`'s `test_a_helper_draws_the_same_body` draws the body with a
+  stand-in for the AMOLED's second core, its rows shared out differently
+  every frame, and checks the frame is the same pixels as one core's.
+- On the AMOLED, `internal/tools/boopctl perf --scenes` with the
+  `amoled206_profile` build: each scene's frames a second against its
+  budget, and the body's time (`body_us`, the erase included).
 - `internal/tools/fluid/measure.py` measures how fluid the everyday
   transitions are on the board (`transitions.jsonl`, `idle-swipes.jsonl`),
   and the Character Studio's Transitions view ranks them in the page.
