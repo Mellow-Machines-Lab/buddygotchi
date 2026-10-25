@@ -62,7 +62,10 @@ export function meshCatalog(){
  // RGB565 keeps 5/6/5 bits a channel: error diffusion (Floyd–Steinberg, in
  // texture space, so the grain moves with the surface) turns the dark half's
  // bands into an even gradient at no cost to the board.
- const width=513,height=257,texture=[],levels=[31,63,31];
+ // 1025 around (a texel ~0.9 px across the body's middle on the AMOLED,
+ // where 513 was 1.75) by 257 down (~1.1 px a texel already); each is
+ // 2^n + 1, as the painter's UV shifts need.
+ const width=1025,height=257,texture=[],levels=[31,63,31];
  let error=Array.from({length:2},()=>Array.from({length:width+2},()=>[0,0,0]));
  for(let y=0;y<height;++y){
   const here=error[y&1],next=error[(y+1)&1];for(const e of next)e.fill(0);

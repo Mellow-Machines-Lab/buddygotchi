@@ -1,6 +1,6 @@
 # Slime asset generator
 
-Updated 2026-10-24.
+Updated 2026-10-25.
 
 Run `node characters/boop/tools/slimegen/slimegen.mjs` at the repo root; `--check`
 checks freshness without writing. No dependencies, device or network.
@@ -41,8 +41,12 @@ effects, three takes of each sketch (`sound/sfx.js`) at 11,025 Hz.
 cheeks with the strain mark) a shape from their paths' point counts, fill
 or stroke and colour: two arts of one shape there morph, path by path and
 point by point, and others cross-fade. `slime_mesh.h` samples the dome's
-geometry and analytic studio lighting. None of these are animation frames:
-the board deforms and projects geometry on every draw.
+geometry (24 rings by 32 sectors) and its analytic studio lighting as a
+1025 × 257 RGB565 material (515 KB of flash), dithered in texture space:
+about a texel a pixel across the body's middle on the AMOLED (the painter
+reads its UV shifts from that size, each side 2^n + 1). None of these
+are animation frames: the board deforms and projects geometry on every
+draw.
 
 The Mac's popover and onboarding show the board's own firmware: the pack's
 `mac/mirror/` is the firmware built to WebAssembly

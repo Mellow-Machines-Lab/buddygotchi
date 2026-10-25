@@ -62,9 +62,15 @@ pacing and touch, the Mac app, the architecture) found what's below.
       (its highlight broke into facets). Weighed from the first corner's
       to 30 bits, within 1/32 of a texel (`painter.cpp`'s `uvPlane`,
       `test_the_material_meets_across_the_mesh`); native a little faster.
-- [ ] The body's material is 513 texels around the whole dome, about
-      1.75 px a texel at its middle: bake it at 1025 wide (flash has
-      room) and measure `body_us`.
+- [x] The body's material was 513 texels around the whole dome, about
+      1.75 px a texel at its middle: its highlight's edges stepped two
+      pixels at a time and its dither grain was two pixels wide. Baked
+      at 1025 × 257 (slimegen's `mesh.mjs`; +263 KB of flash, the mirror
+      +350 KB), ~0.9 px a texel. Native +1.5%; on the board the texel
+      reads from flash should roughly double (estimate +1-3 ms of the
+      body's ~14 ms over both cores): measure `body_us` with
+      `boopctl perf --scenes`, and revert this one commit if it costs
+      more than it shows.
 - [ ] No tearing sync: the CO5300's TE line, if the board wires it, and
       the QSPI clock (40 MHz; 80 is untried and needs eyes on the panel).
 
