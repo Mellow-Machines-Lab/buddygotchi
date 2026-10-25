@@ -1719,6 +1719,12 @@ static void test_rgb565_opacity_rounds_to_nearest() {
         TEST_ASSERT_EQUAL_HEX16(channel(11, 31) | channel(5, 63) | channel(0, 31), mix565(old, ink, a));
       }
 }
+// test_cells.cpp
+void test_every_cell_plays_truthfully();
+void test_ten_minutes_of_work();
+void test_held_and_interrupted_contacts();
+void test_card_reveal_trajectory();
+void test_asleep_rests_still_but_for_a_snore();
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_fixed_math_and_motion);
@@ -1768,5 +1774,10 @@ int main() {
   RUN_TEST(test_it_sleeps_in_a_gown_and_reads_in_glasses);
   RUN_TEST(test_a_recording_replays_as_drawn);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
+  RUN_TEST(test_every_cell_plays_truthfully);
+  RUN_TEST(test_ten_minutes_of_work);
+  RUN_TEST(test_held_and_interrupted_contacts);
+  RUN_TEST(test_card_reveal_trajectory);
+  RUN_TEST(test_asleep_rests_still_but_for_a_snore);
   return UNITY_END();
 }
