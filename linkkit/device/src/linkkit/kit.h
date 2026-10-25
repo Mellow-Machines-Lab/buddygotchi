@@ -224,9 +224,8 @@ class Kit {
   size_t helloLength();
   // One message to `to`, such as the reply to an app's dbg.* message.
   void reply(Link to, const char* text, size_t n);
-  // The link the host last spoke on, and whether a link is live: for
-  // Bluetooth, connected; for USB, spoken on in the last kHostGoneMs.
-  Link hostLink() const { return lastLink_; }
+  // Whether a link is live: for Bluetooth, connected; for USB, spoken on
+  // in the last kHostGoneMs.
   bool live(Link l) const;
 
  private:
