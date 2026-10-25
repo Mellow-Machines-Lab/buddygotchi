@@ -310,14 +310,14 @@ void hearts(Raster& r, int w, int bottom, int ms) {
 }
 
 // Zs drifting up and right from beside its head, each for 2.4 s, a new
-// one every 0.8 s, growing and fading as they go.
+// one every 0.8 s, growing from 7 to 16 px tall and fading as they go, by
+// sixteenths of a pixel.
 void zs(Raster& r, const rig::Anchors& at, int ms) {
-  const Font* fonts[] = {&kSmall, &kLarge, &kSign};
   for (int i = 0; i < 3; ++i) {
-    const int age = (ms + i * 800) % 2400, f = age * 3 / 2400;
-    const int x = at.brimR.x / 16 + 24 + age / 40, y = at.brimR.y / 16 - age / 20;
+    const int age = (ms + i * 800) % 2400;
     r.alpha = 255 - age * 200 / 2400;
-    text(r, *fonts[f], x, y - fonts[f]->h, "z", kCream);
+    r.zee(at.brimR.x + 25 * 16 + age * 16 / 40, at.brimR.y - 5 * 16 - age * 16 / 20 - age * 5 * 16 / 2400,
+          7 * 16 + age * 9 * 16 / 2400, kCream);
   }
   r.alpha = 255;
 }
