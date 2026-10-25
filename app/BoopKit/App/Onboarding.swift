@@ -116,14 +116,10 @@ public enum Onboarding {
     }
 
     /// Saves where onboarding stands (`AppSettings.onboarding`), or that
-    /// it's done (nil): through `runtime` while one runs, since it keeps
-    /// the settings it saves, and straight into `stateDir` while none does
-    /// (before the board, or when it couldn't start), so a quit still
-    /// comes back to the act, and a finish stays finished.
-    public static func save(_ act: Act?, runtime: Runtime?, stateDir: URL) throws {
-        if let runtime { return runtime.setOnboarding(act) }
-        var settings = AppSettings.load(from: stateDir)
-        settings.onboarding = act
-        try settings.save(to: stateDir)
+    /// it's done (nil), straight into `stateDir`'s settings, whether the
+    /// runtime runs or not (`AppSettings.update`), so a quit comes back to
+    /// the act, and a finish stays finished.
+    public static func save(_ act: Act?, stateDir: URL) throws {
+        try AppSettings.update(in: stateDir) { $0.onboarding = act }
     }
 }

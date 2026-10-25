@@ -62,6 +62,22 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try encoder.encode(self).write(to: directory.appendingPathComponent(Self.file), options: .atomic)
     }
 
+    /// Reads the settings in `directory`, changes them and writes them
+    /// back, under one lock: the app's two writers, onboarding's window
+    /// and the runtime on its queue, each change only what's theirs, so
+    /// neither undoes the other's change. Returns them as written.
+    @discardableResult
+    public static func update(in directory: URL, _ change: (inout AppSettings) -> Void) throws -> AppSettings {
+        try writing.withLock {
+            var settings = load(from: directory)
+            change(&settings)
+            try settings.save(to: directory)
+            return settings
+        }
+    }
+
+    private static let writing = NSLock()
+
     /// `~/Library/Application Support/Boop`: the everyday app's memory files,
     /// settings and hook socket.
     public static func defaultStateDir(home: String = NSHomeDirectory()) -> URL {

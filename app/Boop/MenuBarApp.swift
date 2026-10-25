@@ -626,7 +626,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// Onboarding's last button: the menu-bar icon appears, the window
     /// shrinks into it, and it blinks twice so you see where Boop went.
     func finishOnboarding() {
-        // Gone before the runtime starts, so it doesn't listen for it.
+        // Gone, so the runtime's taps and hooks reach it no more.
         onboarding = nil
         startRuntime()
         makeStatusItem()
@@ -739,11 +739,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 }
             }
             // Onboarding listens for a tap on the board and an agent's
-            // first hook, until it's done (`setOnboarding(nil)` lets go).
-            if onboarding != nil {
-                runtime.onTap = { [weak self] button in Task { @MainActor in self?.onboarding?.tapped(button: button) } }
-                runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
-            }
+            // first hook, while it's there.
+            runtime.onTap = { [weak self] button in Task { @MainActor in self?.onboarding?.tapped(button: button) } }
+            runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
             presenceSignals.start { runtime.presence($0) }
             // A simulator started or stopped on this Mac: looked for while
             // Settings is open to show it.
