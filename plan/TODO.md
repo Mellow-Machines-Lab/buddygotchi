@@ -66,8 +66,11 @@ pacing and touch, the Mac app, the architecture) found what's below.
       flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
       silhouette, or 64 sectors (+1-1.5 ms).
 - [ ] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
-      replay (`OutfitLayer::kSlack`), Zs switching fonts, the listening
-      ring and the helper minis (`props.cpp`).
+      replay (`OutfitLayer::kSlack`), the listening ring and the helper
+      minis (`props.cpp`).
+- [x] The sleeper's Zs are drawn, not a font's: one rounded pen
+      (`Raster::zee`) growing from 7 to 16 px and drifting by sixteenths,
+      where the font's z jumped 40-47 px of ink between sizes (test_gel).
 - [x] The face art's polygons take their exact area in each pixel
       (`raster.cpp` `polygon16`, a row's signed area summed along it),
       so a 3/16 px lid keeps its ink wherever it sits and a level edge

@@ -175,6 +175,17 @@ struct Raster {
     stroke16(&centre, 1, 2 * radius16, ink);
   }
 
+  // A sleeper's z, `h16` tall and 7/8 as wide, its bottom left corner at
+  // (x16, y16): a top bar, a diagonal and a bottom bar in one rounded pen a
+  // fifth of its height, so it grows and drifts by sixteenths, where a
+  // font's z steps a whole pixel and jumps between sizes.
+  void zee(int x16, int y16, int h16, uint16_t ink) {
+    const int pen = std::max(16, h16 / 5), in = pen / 2, w16 = h16 * 7 / 8;
+    const Point v[] = {
+        {x16 + in, y16 - h16 + in}, {x16 + w16 - in, y16 - h16 + in}, {x16 + in, y16 - in}, {x16 + w16 - in, y16 - in}};
+    stroke16(v, 4, pen, ink);
+  }
+
   // Whole-pixel shapes for the props. A disk of radius r covers the pixels
   // whose centres are within r of (x, y)'s centre, as before, now with
   // soft edges; a line is `width` pixels wide between the two centres.

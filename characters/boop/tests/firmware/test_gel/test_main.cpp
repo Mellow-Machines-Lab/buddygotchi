@@ -2275,6 +2275,31 @@ static void test_polygon_edges_move_a_sixteenth_at_a_time() {
   TEST_ASSERT_TRUE(least >= 7.5 - 0.5 && most <= 7.5 + 0.5);
   TEST_ASSERT_TRUE(stepLeast >= 2.5 - 0.5 && stepMost <= 2.5 + 0.5);
 }
+// A sleeper's z (Raster::zee) grows and drifts by sixteenths of a pixel:
+// from 7 to 16 px tall, a sixteenth taller never takes ink away and adds
+// at most 5 px of it (its pen a sixteenth wider along its 50 px), where
+// the font's z it replaces jumped from one size to the next, 40-47 px more
+// at once; and a sixteenth over leaves its ink as it was.
+static void test_a_z_grows_and_drifts_by_sixteenths() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  Raster r{s};
+  double last = -1, grew = 0, shrank = 0, least = 1e9, most = 0;
+  for (int h16 = 7 * 16; h16 <= 16 * 16; ++h16) {
+    std::fill(px.begin(), px.end(), 0);
+    r.zee(200 * 16, 200 * 16, h16, 0xffff);
+    const double now = ink(px);
+    if (last >= 0) grew = std::max(grew, now - last), shrank = std::max(shrank, last - now);
+    last = now;
+  }
+  TEST_ASSERT_TRUE(grew <= 5 && shrank <= 0.25);
+  for (int dx = 0; dx < 16; ++dx) {
+    std::fill(px.begin(), px.end(), 0);
+    r.zee(200 * 16 + dx, 200 * 16 + dx / 2, 12 * 16, 0xffff);
+    least = std::min(least, ink(px)), most = std::max(most, ink(px));
+  }
+  TEST_ASSERT_TRUE(most - least <= 0.5);
+}
 // Cut to a clip, a polygon covers what lies inside both: inside a bigger
 // clip, all of itself; under a clip over its left half, half of itself.
 static void test_a_clipped_polygon_covers_what_lies_in_both() {
@@ -2531,6 +2556,7 @@ int main() {
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
   RUN_TEST(test_polygon_edges_move_a_sixteenth_at_a_time);
+  RUN_TEST(test_a_z_grows_and_drifts_by_sixteenths);
   RUN_TEST(test_a_clipped_polygon_covers_what_lies_in_both);
   RUN_TEST(test_a_cross_fade_never_shows_through);
   RUN_TEST(test_every_cross_fade_fits_its_room);
