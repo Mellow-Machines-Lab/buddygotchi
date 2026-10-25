@@ -443,7 +443,9 @@ gets at least one scenario. Their pictures are the golden images in
   `.build/debug/Boop --snapshots DIR` and open every PNG and check:
   nothing clipped, no debug data, text readable, the Warm Terminal
   look. The run fails by itself on low contrast.
-  It also checks the name's character limits and validation, and includes
+  It also checks the name's character limits and validation, and that
+  the views' status changes only while the popover or onboarding shows
+  it, only when it changed, and never for the work stream's lanes. It includes
   Unicode names, invalid names, every onboarding act (`onboarding-*`) and
   a crowded Overview at a bounded height.
   There are no goldens.
