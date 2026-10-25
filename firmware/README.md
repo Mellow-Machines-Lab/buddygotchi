@@ -50,9 +50,11 @@ face is its mood's resting face, in the design's place
 use it yet.
 
 The make targets run PlatformIO through `firmware/tools/pio.sh`, which
-keeps its packages in `firmware/.platformio-core`, inside the checkout.
+keeps its packages, a few GB of toolchains, in the main checkout's
+`firmware/.platformio-core` (`firmware/tools/pio-core.sh`), so every
+worktree shares one copy. `PLATFORMIO_CORE_DIR` overrides it.
 It uses the `pio` on your `PATH`; without one, its first run installs
-PlatformIO there too, with pip, into `firmware/.platformio-core/venv`.
+PlatformIO there too, with pip, into that folder's `venv`.
 Either way the ESP32 platform needs Python 3.10 or later, newer than the
 Mac's own 3.9.
 Each build bakes in the version from `VERSION` and the git SHA

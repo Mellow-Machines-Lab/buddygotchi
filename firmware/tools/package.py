@@ -19,6 +19,7 @@ import os
 import re
 import shutil
 import struct
+import subprocess
 import sys
 
 FIRMWARE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -71,7 +72,7 @@ def main(env, out):
     stamp = open(os.path.join(build, "generated", "boop_version.h")).read()
     version = re.search(r'BOOP_FW_VERSION "([^"]+)"', stamp).group(1)
     sha = re.search(r'BOOP_GIT_SHA "([^"]+)"', stamp).group(1)
-    core = os.environ.get("PLATFORMIO_CORE_DIR", os.path.join(FIRMWARE, ".platformio-core"))
+    core = subprocess.check_output([os.path.join(FIRMWARE, "tools", "pio-core.sh")], text=True).strip()
     boot = os.path.join(core, "packages", "framework-arduinoespressif32", "tools", "partitions", "boot_app0.bin")
     dest = os.path.join(out, env)
     os.makedirs(dest, exist_ok=True)

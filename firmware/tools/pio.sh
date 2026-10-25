@@ -1,14 +1,16 @@
 #!/bin/sh
-# Runs PlatformIO with its core and packages inside this checkout, so
-# worktrees don't fight over one shared cache. All paths are git-ignored.
+# Runs PlatformIO with its core and packages in the main checkout's
+# firmware/.platformio-core (tools/pio-core.sh), shared by every worktree,
+# and its builds in this checkout's .pio. All paths are git-ignored.
 #   firmware/tools/pio.sh run -e cyd24
 # Uses the `pio` on PATH if there is one. Without one, the first run
-# installs PlatformIO with pip into firmware/.platformio-core/venv, with
-# the first Python 3.10 or later it finds: the ESP32 platform refuses the
-# Mac's own 3.9.
+# installs PlatformIO with pip into the core's venv, with the first
+# Python 3.10 or later it finds: the ESP32 platform refuses the Mac's
+# own 3.9.
 set -eu
 firmware_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-export PLATFORMIO_CORE_DIR="${PLATFORMIO_CORE_DIR:-$firmware_dir/.platformio-core}"
+PLATFORMIO_CORE_DIR=$("$firmware_dir/tools/pio-core.sh")
+export PLATFORMIO_CORE_DIR
 # The unit tests keep their objects and libraries apart, in each project's
 # .pio/test: `pio test` links every suite as its env's `program`, and
 # installs Unity, which `pio run` then removes as unused. Sharing .pio, the

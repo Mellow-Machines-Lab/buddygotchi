@@ -96,9 +96,10 @@ make -C internal test                                 # Swift unit tests: Boop's
   `/Library/Developer/CommandLineTools/usr/bin/clang-format -i`; older
   files follow it closely and are reformatted only where edited.
 - Call PlatformIO through `firmware/tools/pio.sh` (the make targets
-  do), which keeps its packages in `firmware/.platformio-core`. It uses
+  do), which keeps its packages in the main checkout's
+  `firmware/.platformio-core`, one copy every worktree shares. It uses
   the `pio` on `PATH` (here `/opt/homebrew/bin/pio`), or installs one into
-  `firmware/.platformio-core/venv` on its first run, with Python 3.10 or
+  that folder's `venv` on its first run, with Python 3.10 or
   later (the ESP32 platform refuses 3.9). The board shows up as
   `/dev/cu.usbserial-*` (the AMOLED board, env `amoled206`, as
   `/dev/cu.usbmodem*`; [firmware/README.md](firmware/README.md)), and the serial port needs no
