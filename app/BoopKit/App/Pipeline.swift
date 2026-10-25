@@ -156,12 +156,12 @@ public final class Pipeline {
     /// buddies it goes to the one watching its session (`BuddyBinding`),
     /// tagged with it. It's logged without what its session already has
     /// (`Core.unrepeated`).
-    @discardableResult
     /// One that still carries your prompt or the agent's last message (the
     /// tools', tests' and evals'; the app takes it out first,
-    /// `Runtime.hook`) has its reading at once, labelled with `labels` or
-    /// `messageLabels` if given.
-    public func agent(_ event: Event, labels: PromptReading.Labels? = nil, messageLabels: MessageReading.Labels? = nil) -> Step {
+    /// `Runtime.hook`) has its reading at once, labelled with `labels` if
+    /// they're its text's.
+    @discardableResult
+    public func agent(_ event: Event, labels: PromptIntake.Labels? = nil) -> Step {
         let (event, text) = PromptIntake.split(event)
         return input(at: event.at) {
             var event = event
@@ -170,9 +170,7 @@ public final class Pipeline {
             let core = core(id)
             let e = harness.emit(core.unrepeated(event))
             run(core.handle(e), buddy: id)
-            if let text {
-                emit(PromptIntake.heard(text, names: buddies.map(\.name), labels: labels, messageLabels: messageLabels), about: event, at: event.at)
-            }
+            if let text { emit(PromptIntake.heard(text, names: buddies.map(\.name), labels: labels), about: event, at: event.at) }
         }
     }
 
@@ -201,8 +199,7 @@ public final class Pipeline {
         let id = buddy(watching: turn)
         harness.emit(Event(at: now, source: turn.from ?? .mac, type: heard.kind, specificType: "reading", session: turn.session,
                            buddy: id, data: heard.facts))
-        if heard.kind == .prompt, let reading = PromptReading(facts: heard.facts), let agent = turn.agent,
-           let session = turn.session {
+        if case .prompt(let reading) = heard, let agent = turn.agent, let session = turn.session {
             run(core(id).promptRead(reading, agent: agent, session: session, at: now), buddy: id)
         }
     }

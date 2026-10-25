@@ -30,12 +30,11 @@ public struct Scenario: Sendable {
         public var error: String?
         /// What you asked, on a turn start, and the agent's last message,
         /// on a finish. Each reaches Jev as its reading: counted, and
-        /// labelled with `labels` or `messageLabels` (`reading` in the
-        /// file), which stand in for Apple Intelligence's.
+        /// labelled with `labels` (`reading` in the file), which stand in
+        /// for Apple Intelligence's.
         public var prompt: String?
-        public var labels: PromptReading.Labels?
         public var message: String?
-        public var messageLabels: MessageReading.Labels?
+        public var labels: PromptIntake.Labels?
         /// What you said to Boop, for `said`.
         public var words: String?
         /// How many pokes a `pokes` step makes, 4 unless it says.
@@ -345,7 +344,7 @@ public struct Scenario: Sendable {
                 let finish = event == "turn finished"
                 if finish, step.message == nil { throw badStep("a finish's reading is its message's, and it has none") }
                 do {
-                    if finish { step.messageLabels = try MessageReading.Labels(json: r) } else { step.labels = try PromptReading.Labels(json: r) }
+                    step.labels = finish ? .message(try MessageReading.Labels(json: r)) : .prompt(try PromptReading.Labels(json: r))
                 } catch { throw badStep("\(error)") }
             }
             step.words = s["words"] as? String
@@ -737,8 +736,12 @@ public struct Eval {
             // Each input's view events get their passes before the next, as
             // the app's would once the brain answered.
             var read = step
-            if let labeler, let prompt = step.prompt { read.labels = await labeler.label(Scrubber.scrub(prompt)) }
-            if let labeler, let message = step.message { read.messageLabels = await labeler.label(message: Scrubber.scrub(message)) }
+            if let labeler, let prompt = step.prompt {
+                read.labels = await labeler.label(Scrubber.scrub(prompt), as: PromptText.self).map(PromptIntake.Labels.prompt)
+            }
+            if let labeler, let message = step.message {
+                read.labels = await labeler.label(Scrubber.scrub(message), as: MessageText.self).map(PromptIntake.Labels.message)
+            }
             for input in Eval.inputs(read, at: clock.now) { await respond(home.sync { input(pipeline).views }) }
             scripted?.willRun(nil, ahead: [])
             let session = step.session ?? "s1"
@@ -929,7 +932,7 @@ public struct Eval {
             var data = data
             data["process"] = Eval.agentProcess
             return { $0.agent(Event(at: now, source: source, type: type, phase: phase, specificType: specific, session: session,
-                                    subagent: subagent, cwd: cwd, data: data), labels: step.labels, messageLabels: step.messageLabels) }
+                                    subagent: subagent, cwd: cwd, data: data), labels: step.labels) }
         }
         switch step.event {
         case "turn started": return [hook(.turn, .start, "UserPromptSubmit", step.prompt.map { ["prompt": .string($0)] } ?? [:])]

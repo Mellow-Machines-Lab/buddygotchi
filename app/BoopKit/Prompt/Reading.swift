@@ -15,15 +15,37 @@ public protocol ReadingText: Sendable {
     /// phrase, as it's spelled.
     static var toneCues: [(Tone, [String])] { get }
     /// The kind its words plainly show, if any.
-    static func kind(counting text: String) -> Kind?
-    /// The event its reading is.
-    static var event: Event.Kind { get }
-    /// `labeler`'s answer for `text`, scrubbed.
-    static func label(_ text: String, by labeler: any PromptLabeler) async -> Reading<Self>.Labels?
+    static func kind(counting text: CountedText) -> Kind?
+    /// What a labeler is told: what it labels, from which lists, and
+    /// examples, each quoted after `quoting`, as the text will be.
+    static var instructions: String { get }
+    static var quoting: String { get }
 }
 
 extension ReadingText {
-    public static func kind(counting text: String) -> Kind? { nil }
+    public static func kind(counting text: CountedText) -> Kind? { nil }
+}
+
+/// A text as counting reads it: lowercased and split into words once,
+/// for every cue it's looked for.
+public struct CountedText: Sendable {
+    public let text: String
+    let lower: String
+    let words: Set<String>
+
+    init(_ text: String) {
+        self.text = text
+        lower = text.lowercased()
+        words = Set(lower.split { !$0.isLetter && !$0.isNumber }.map(String.init))
+    }
+
+    /// The first of `cues` it says, with the cue: one with a space or a
+    /// mark anywhere in it, a word as a word, in any case.
+    func first<T>(of cues: [(T, [String])]) -> (T, String)? {
+        cues.lazy.compactMap { value, cues in
+            cues.first { $0.contains(" ") || !$0.allSatisfy(\.isLetter) ? lower.contains($0) : words.contains($0) }.map { (value, $0) }
+        }.first
+    }
 }
 
 /// By characters: a few words under 25, a sentence under 150, a
@@ -49,8 +71,8 @@ public enum ReadingLength: String, CaseIterable, Sendable {
 }
 
 /// What Boop takes from a text, in place of the text: how long it is,
-/// which buddies' names it says and the tone (and, for a message, the
-/// kind) its words plainly show, which are counted, and, when a labeler
+/// which buddies' names a prompt says and the tone (and, for a message,
+/// the kind) its words plainly show, which are counted, and, when a labeler
 /// can, its kind from `Of`'s list, how it sounds, and up to three short
 /// phrases of it for a sign. Only this reaches the transcript and the
 /// brain.
@@ -110,8 +132,8 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
     public static var shoutingLetters: Int { 8 }
 
     public var length: Length
-    /// The buddies' names it says, as they're called: with several, each
-    /// buddy hears whether you said its own.
+    /// The buddies' names a prompt says, as they're called: with several,
+    /// each buddy hears whether you said its own. A message says none.
     public var named: [String]
     public var kind: Kind?
     public var tone: Tone?
@@ -128,28 +150,20 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
 
     /// `text`'s reading: scrubbed before anything reads it, counted, and
     /// labelled with `labels` if given.
-    public init(text: String, names: [String], labels: Labels? = nil) {
+    public init(text: String, names: [String] = [], labels: Labels? = nil) {
+        self.init(scrubbed: Scrubber.scrub(text), names: names, labels: labels)
+    }
+
+    /// The same, labelled by `labeler`, if there is one, which reads it
+    /// scrubbed.
+    public init(text: String, names: [String] = [], labeler: (any PromptLabeler)?) async {
         let text = Scrubber.scrub(text)
+        self.init(scrubbed: text, names: names, labels: await labeler?.label(text, as: Of.self))
+    }
+
+    init(scrubbed text: String, names: [String], labels: Labels?) {
         self.init(counting: text, names: names)
         if let labels { label(labels, in: text) }
-    }
-
-    /// The same, labelled by `labeler`, if there is one.
-    public static func read(_ text: String, names: [String], labeler: (any PromptLabeler)?) async -> Reading {
-        let text = Scrubber.scrub(text)
-        var reading = Reading(counting: text, names: names)
-        if let labeler, let labels = await Of.label(text, by: labeler) { reading.label(labels, in: text) }
-        return reading
-    }
-
-    /// The first of `cues` whose words `text` says, with the cue: one with
-    /// a space or a mark anywhere in it, a word as a word, in any case.
-    static func cue<T>(in text: String, _ cues: [(T, [String])]) -> (T, String)? {
-        let lower = text.lowercased()
-        let words = Set(lower.split { !$0.isLetter && !$0.isNumber }.map(String.init))
-        return cues.lazy.compactMap { value, cues in
-            cues.first { $0.contains(" ") || !$0.allSatisfy(\.isLetter) ? lower.contains($0) : words.contains($0) }.map { (value, $0) }
-        }.first
     }
 
     /// What needs no model: the length, which of `names` `text` says as a
@@ -157,16 +171,16 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
     /// show (`toneCues`; capitals are shouting, for a text that has it),
     /// with the cue itself as a phrase, as it's spelled, if a sign can
     /// draw it.
-    public init(counting text: String, names: [String]) {
-        let words = Set(text.lowercased().split { !$0.isLetter && !$0.isNumber }.map(String.init))
-        let letters = text.filter(\.isLetter)
+    public init(counting text: String, names: [String] = []) {
+        let counted = CountedText(text)
         let shouting = Of.shouting.flatMap { shouted in
-            letters.count >= Self.shoutingLetters && letters.filter(\.isUppercase).count * 4 >= letters.count * 3 ? shouted : nil
+            let letters = text.filter(\.isLetter)
+            return letters.count >= Self.shoutingLetters && letters.filter(\.isUppercase).count * 4 >= letters.count * 3 ? shouted : nil
         }
-        let cue = shouting == nil ? Self.cue(in: text, Of.toneCues) : nil
+        let cue = shouting == nil ? counted.first(of: Of.toneCues) : nil
         let said = cue.flatMap { text.range(of: $0.1, options: .caseInsensitive) }.flatMap { Signs.drawn(String(text[$0])) }
-        self.init(length: Length(text), named: names.filter { words.contains($0.lowercased()) }, kind: Of.kind(counting: text),
-                  tone: shouting ?? cue?.0, phrases: said.map { [$0] } ?? [])
+        self.init(length: Length(text), named: names.filter { counted.words.contains($0.lowercased()) },
+                  kind: Of.kind(counting: counted), tone: shouting ?? cue?.0, phrases: said.map { [$0] } ?? [])
     }
 
     /// Takes a labeler's kind, if it has one, and tone, and the phrases

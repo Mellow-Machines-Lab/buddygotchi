@@ -71,8 +71,8 @@ final class PromptTests: XCTestCase {
     }
 
     /// The app's labeler is there on macOS 26 whether or not Apple
-    /// Intelligence is on at launch, and asks at every prompt: while it's
-    /// off, it labels nothing, at once.
+    /// Intelligence is on at launch, and asks whenever it has no session
+    /// ready: while it's off, it labels nothing, at once.
     func testTheLabelerAsksAtEveryPrompt() async {
         if #available(macOS 26.0, *) {
             XCTAssertNotNil(AppleIntelligenceLabeler.onThisMac)
@@ -81,7 +81,7 @@ final class PromptTests: XCTestCase {
         }
         XCTAssertEqual(AppleIntelligenceLabeler.ifAvailable() != nil, AppleIntelligenceLabeler.isAvailable, "the tools' is there only while it's on")
         guard !AppleIntelligenceLabeler.isAvailable else { return }
-        let labels = await AppleIntelligenceLabeler().label("fix the login redirect")
+        let labels = await AppleIntelligenceLabeler().label("fix the login redirect", as: PromptText.self)
         XCTAssertNil(labels)
     }
 
@@ -196,7 +196,7 @@ final class PromptTests: XCTestCase {
     /// kind: that it couldn't finish before that it's done, and a question
     /// only when it ends with one. The rest needs a labeler.
     func testCountingAMessageCatchesItsStockLinesAndClaims() {
-        func read(_ text: String) -> MessageReading { MessageReading(counting: text, names: []) }
+        func read(_ text: String) -> MessageReading { MessageReading(counting: text) }
         let stock = read("You're absolutely right! I'll fix that.")
         XCTAssertEqual(stock.tone, .fawning)
         XCTAssertEqual(stock.phrases, ["absolutely right"])
@@ -221,12 +221,12 @@ final class PromptTests: XCTestCase {
     /// stock line over its calm; only the phrases really in it.
     func testAMessagesLabelIsCheckedAgainstIt() {
         let text = "You're absolutely right! I'll fix that."
-        var reading = MessageReading(counting: text, names: [])
+        var reading = MessageReading(counting: text)
         reading.label(.init(kind: .answer, tone: .calm, phrases: ["absolutely right", "made up", "fix that"]), in: text)
         XCTAssertEqual(reading.kind, .answer)
         XCTAssertEqual(reading.tone, .fawning, "the counted stock line stands over the labeler's calm")
         XCTAssertEqual(reading.phrases, ["absolutely right", "fix that"])
-        var done = MessageReading(counting: "All done: the tests pass.", names: [])
+        var done = MessageReading(counting: "All done: the tests pass.")
         done.label(.init(tone: .upbeat), in: "All done: the tests pass.")
         XCTAssertEqual(done.kind, .done, "a labeler with no kind keeps the counted one")
         XCTAssertEqual(done.tone, .upbeat)
@@ -379,18 +379,15 @@ final class PromptTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(samples.filter { $0.secret != nil }.count, 7)
         try XCTAssertThrowsError(try ReadCheck.samples(Data(#"[{"message": "Done.", "kind": "fix"}]"#.utf8)), "a message's kind is from its own list")
         struct Quoter: PromptLabeler {
-            func label(_ text: String) async -> PromptReading.Labels? {
-                .init(kind: .fix, tone: .frustrated, phrases: text.split(separator: " ").map(String.init))
-            }
-            func label(message text: String) async -> MessageReading.Labels? {
-                .init(kind: .done, tone: .calm, phrases: text.split(separator: " ").map(String.init))
+            func label<Of: ReadingText>(_ text: String, as: Of.Type) async -> Reading<Of>.Labels? {
+                .init(kind: Of.Kind.allCases.first, tone: Of.calm, phrases: text.split(separator: " ").map(String.init))
             }
         }
         let planted = samples.filter { $0.secret != nil }
         let results = await ReadCheck.run(planted, labeler: Quoter())
-        XCTAssertTrue(results.allSatisfy { !$0.leaked }, "\(results.map(\.reading.phrases))")
+        XCTAssertTrue(results.allSatisfy { !$0.leaked }, "\(results.map(\.phrases))")
         var leaky = results[0]
-        leaky.reading.phrases = [String(leaky.sample.secret!.prefix(10))]
+        leaky.reading = .prompt(PromptReading(length: .words, phrases: [String(leaky.sample.secret!.prefix(10))]))
         XCTAssertTrue(leaky.leaked)
         var score = ReadCheck.score(results + [leaky])
         XCTAssertEqual(score.leaks.count, 1)
@@ -405,12 +402,12 @@ final class PromptTests: XCTestCase {
 private final class Seen: PromptLabeler, @unchecked Sendable {
     var text: String?
     var message: String?
-    func label(_ text: String) async -> PromptReading.Labels? {
+    func label<Of: ReadingText>(_ text: String, as: Of.Type) async -> Reading<Of>.Labels? {
+        if Of.self == MessageText.self {
+            message = text
+            return MessageReading.Labels(kind: .stuck, phrases: ["still broken"]) as? Reading<Of>.Labels
+        }
         self.text = text
-        return .init(kind: .fix, tone: .frustrated, phrases: ["still broken"])
-    }
-    func label(message text: String) async -> MessageReading.Labels? {
-        message = text
-        return .init(kind: .stuck, phrases: ["still broken"])
+        return PromptReading.Labels(kind: .fix, tone: .frustrated, phrases: ["still broken"]) as? Reading<Of>.Labels
     }
 }

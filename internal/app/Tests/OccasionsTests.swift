@@ -153,7 +153,7 @@ final class OccasionsTests: XCTestCase {
         XCTAssertTrue(reading(), "while its turn lasts")
         rig.send(.turnEnd)
         XCTAssertFalse(reading(), "its turn ended")
-        rig.note(Fx(rig.pipeline.agent(rig.event(.turnStart, prompt: "update the readme"), labels: .init(kind: .docs))))
+        rig.note(Fx(rig.pipeline.agent(rig.event(.turnStart, prompt: "update the readme"), labels: .prompt(.init(kind: .docs)))))
         XCTAssertTrue(reading(), "a prompt for docs")
         rig.send(.turnStart, session: "s2", prompt: "fix the login bug")
         XCTAssertFalse(reading(), "the latest prompt is neither")

@@ -327,9 +327,9 @@ func readCheck(_ raw: [String]) async {
         func field(_ got: String?, _ want: String?, _ ok: Bool?) -> String {
             (got ?? "none") + (ok == false ? " (not \(want ?? "none"))" : "")
         }
-        let line = [field(r.reading.kind, r.sample.kind, r.kindOK), field(r.reading.tone, r.sample.tone, r.toneOK),
-                    "\(r.reading.phrases)" + (r.phrasesOK == false ? " (not one of \(r.sample.phrases ?? []))" : ""), r.leaked ? "LEAKED" : nil]
-        let flat = r.sample.text.split(whereSeparator: \.isNewline).joined(separator: " ")
+        let line = [field(r.kind, r.sample.kind, r.kindOK), field(r.tone, r.sample.tone, r.toneOK),
+                    "\(r.phrases)" + (r.phrasesOK == false ? " (not one of \(r.sample.phrases ?? []))" : ""), r.leaked ? "LEAKED" : nil]
+        let flat = r.sample.raw.split(whereSeparator: \.isNewline).joined(separator: " ")
         let ok = r.kindOK != false && r.toneOK != false && r.phrasesOK != false && !r.leaked
         print("\(ok ? "ok  " : "MISS")  \(r.ms) ms  \(r.sample.isMessage ? "message" : "prompt ")  \(line.compactMap { $0 }.joined(separator: ", "))  \"\(flat.prefix(50))\"")
     }

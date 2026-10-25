@@ -414,10 +414,8 @@ struct ScriptLabeler: PromptLabeler {
     let readings: [String: PromptReading.Labels]
     let otherwise: (any PromptLabeler)?
 
-    func label(_ text: String) async -> PromptReading.Labels? {
-        if let reading = readings[text] { return reading }
-        return await otherwise?.label(text)
+    func label<Of: ReadingText>(_ text: String, as: Of.Type) async -> Reading<Of>.Labels? {
+        if let reading = readings[text] as? Reading<Of>.Labels { return reading }
+        return await otherwise?.label(text, as: Of.self)
     }
-
-    func label(message text: String) async -> MessageReading.Labels? { await otherwise?.label(message: text) }
 }

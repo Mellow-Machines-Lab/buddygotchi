@@ -3,22 +3,40 @@ import MellowHarness
 
 /// Where your prompt leaves a turn start, and the agent's last message a
 /// turn end, and each becomes its reading: the text goes no further than
-/// `read`, which hands on only the reading.
-enum PromptIntake {
+/// `heard`, which hands on only the reading.
+public enum PromptIntake {
     /// What a hook brought to read.
-    enum Text: Equatable, Sendable {
+    public enum Text: Equatable, Sendable {
         case prompt(String), message(String)
     }
 
-    /// A reading as its event will hold it: the event's kind, and its
-    /// facts, never the text.
-    struct Heard: Equatable, Sendable {
-        var kind: Event.Kind
-        var facts: [String: JSONValue]
+    /// A labeler's answer for a text, from that text's own lists: what
+    /// the tools, tests and evals give in place of Apple Intelligence's.
+    public enum Labels: Equatable, Sendable {
+        case prompt(PromptReading.Labels), message(MessageReading.Labels)
 
-        init<Of>(_ reading: Reading<Of>) {
-            kind = Of.event
-            facts = reading.facts
+        public var prompt: PromptReading.Labels? { if case .prompt(let labels) = self { labels } else { nil } }
+        public var message: MessageReading.Labels? { if case .message(let labels) = self { labels } else { nil } }
+    }
+
+    /// A text's reading, as its event holds it: never the text.
+    public enum Heard: Equatable, Sendable {
+        case prompt(PromptReading), message(MessageReading)
+
+        /// Its event's kind.
+        public var kind: Event.Kind {
+            switch self {
+            case .prompt: .prompt
+            case .message: .lastMessage
+            }
+        }
+
+        /// Its event's facts.
+        public var facts: [String: JSONValue] {
+            switch self {
+            case .prompt(let reading): reading.facts
+            case .message(let reading): reading.facts
+            }
         }
     }
 
@@ -41,13 +59,20 @@ enum PromptIntake {
     /// The fact on a turn start or end whose text's reading comes next.
     static let readingFollows = "reading_follows"
 
-    /// `text`'s reading at once, labelled with `labels` or `messageLabels`
-    /// if given: your prompt as the buddies called `names` hear it.
-    static func heard(_ text: Text, names: [String], labels: PromptReading.Labels? = nil,
-                      messageLabels: MessageReading.Labels? = nil) -> Heard {
+    /// `text`'s reading at once, labelled with `labels` if they're its
+    /// own: your prompt as the buddies called `names` hear it.
+    static func heard(_ text: Text, names: [String], labels: Labels? = nil) -> Heard {
         switch text {
-        case .prompt(let prompt): Heard(PromptReading(text: prompt, names: names, labels: labels))
-        case .message(let message): Heard(MessageReading(text: message, names: [], labels: messageLabels))
+        case .prompt(let prompt): .prompt(PromptReading(text: prompt, names: names, labels: labels?.prompt))
+        case .message(let message): .message(MessageReading(text: message, labels: labels?.message))
+        }
+    }
+
+    /// The same, labelled by `labeler` if there is one: as the app hears it.
+    public static func heard(_ text: Text, names: [String], labeler: (any PromptLabeler)?) async -> Heard {
+        switch text {
+        case .prompt(let prompt): .prompt(await PromptReading(text: prompt, names: names, labeler: labeler))
+        case .message(let message): .message(await MessageReading(text: message, labeler: labeler))
         }
     }
 
@@ -57,10 +82,7 @@ enum PromptIntake {
                      deliver: @escaping @Sendable (Heard) -> Void) {
         guard let labeler else { return deliver(heard(text, names: names)) }
         Task {
-            let reading = switch text {
-            case .prompt(let prompt): Heard(await PromptReading.read(prompt, names: names, labeler: labeler))
-            case .message(let message): Heard(await MessageReading.read(message, names: [], labeler: labeler))
-            }
+            let reading = await heard(text, names: names, labeler: labeler)
             home.async { deliver(reading) }
         }
     }

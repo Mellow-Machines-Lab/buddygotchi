@@ -2238,13 +2238,9 @@ final class RuntimeTests: XCTestCase {
     /// logged.
     func testAReadingAfterItsTurnIsDropped() throws {
         struct Slow: PromptLabeler {
-            func label(_ text: String) async -> PromptReading.Labels? {
+            func label<Of: ReadingText>(_ text: String, as: Of.Type) async -> Reading<Of>.Labels? {
                 try? await Task.sleep(for: .milliseconds(200))
-                return .init(kind: .fix)
-            }
-            func label(message text: String) async -> MessageReading.Labels? {
-                try? await Task.sleep(for: .milliseconds(200))
-                return .init(kind: .answer)
+                return try? .init(json: ["kind": Of.self == MessageText.self ? "answer" : "fix"])
             }
         }
         var options = try options(nil)

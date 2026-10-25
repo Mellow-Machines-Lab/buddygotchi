@@ -39,7 +39,7 @@ public enum DemoFromScenario {
             switch step.event {
             case "turn started":
                 var o: [String: Any] = ["agent": "prompt", "text": step.prompt ?? "Carry on"]
-                if let l = step.labels { o["reading"] = l.json }
+                if let l = step.labels?.prompt { o["reading"] = l.json }
                 add(o)
             case "turn finished": add(["agent": "reply", "text": step.message ?? "Done."])
             case "turn failed": add(["agent": "reply", "text": "…", "fails": true])
@@ -77,7 +77,7 @@ public enum DemoFromScenario {
                              "say.about": "start", "say.kind": "word"].merging(wanted) { $1 }
                 if let want = step.expectOrder["sign"], let prompt = step.prompt {
                     // As the eval offers them: its calendar at the step's time.
-                    let reading = PromptReading(text: prompt, names: [CharacterPack.active.name], labels: step.labels)
+                    let reading = PromptReading(text: prompt, names: [CharacterPack.active.name], labels: step.labels?.prompt)
                     let at = (scenario.start ?? Replay.defaultStart) + step.atMs
                     let calendar = Occasions.tags(at: at, hatched: scenario.hatched, time: LocalTime(timeZone: TimeZone(identifier: "UTC")!))
                     let captions = Signs.offered(signs, reading: reading, calendar: calendar)
