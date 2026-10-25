@@ -145,6 +145,12 @@ reviewed, simplified and merged. Measure fluidity with
 `internal/tools/fluid/` (baseline 2026-10-23, gel: a mood change's
 largest frame 32x its median, a finish's 33x, going to work 9x).
 
+**The CYD is frozen** (the owner, 2026-10-24): it keeps building and
+gets no new features; new work is the AMOLED board's, on the gel's own
+engine, starting with [work-stream.md](work-stream.md). Pixel's rig face
+on the board waits with it, and checkpoint 5's reason, one clip for both
+faces, is gone, so what's left of it is the owner's call.
+
 - [x] **1. The slime flows**: faces morph or cross-fade, the lane fades.
       Checked on the AMOLED board: `boopctl run` matches the simulator,
       and a cross-fade frame costs 0.5 to 2.6 ms.
