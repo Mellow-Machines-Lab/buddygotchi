@@ -53,6 +53,10 @@ The make targets run PlatformIO through `firmware/tools/pio.sh`, which
 keeps its packages, a few GB of toolchains, in the main checkout's
 `firmware/.platformio-core` (`firmware/tools/pio-core.sh`), so every
 worktree shares one copy. `PLATFORMIO_CORE_DIR` overrides it.
+An upload through it (`-t upload`) builds first, then waits for the
+board's lock, so it never flashes over another session's test, and is
+logged; `internal/tools/boopctl board` says who has the board and what
+was flashed on it ([internal/VERIFICATION.md](../internal/VERIFICATION.md) §2).
 It uses the `pio` on your `PATH`; without one, its first run installs
 PlatformIO there too, with pip, into that folder's `venv`.
 Either way the ESP32 platform needs Python 3.10 or later, newer than the

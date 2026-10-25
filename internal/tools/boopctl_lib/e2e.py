@@ -21,10 +21,12 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import time
 from pathlib import Path
 from typing import Any
 
+from boopctl_lib.board import Busy, Hold
 from boopctl_lib.common import REPO, call, checkout_tmp, restarted
 from boopctl_lib.device import Device, DeviceError
 from boopctl_lib.headless import BIN, Headless, stop_proc
@@ -60,6 +62,7 @@ class Run:
         self.failures: list[str] = []
         self.hooks: list[dict[str, Any]] = []
         self.bridge: subprocess.Popen | None = None
+        self.hold: Hold | None = None
         self.app = Headless(self.state, self.hook_sock, f"usb:{self.bridge_sock}", brain)
         self.last_hook = time.monotonic()
 
@@ -85,6 +88,14 @@ class Run:
         for name in ("Boop", "agent-hook", "linkkit-bridge"):
             if not (BIN / name).exists():
                 raise DeviceError(f"no {BIN / name}; run make -C internal build")
+        # The bridge has the board to itself while it runs: the run holds
+        # the board's lock for it.
+        hold = Hold("boopctl " + " ".join(sys.argv[1:]), port=self.port)
+        try:
+            hold.__enter__()
+        except Busy as exc:
+            raise DeviceError(str(exc)) from None
+        self.hold = hold
         bridge = [str(BIN / "linkkit-bridge"), "--socket", self.bridge_sock] + (["--port", self.port] if self.port else [])
         self.bridge = subprocess.Popen(bridge, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         self.app.wait_for(lambda: os.path.exists(self.bridge_sock), 10, "the bridge's socket")
@@ -102,6 +113,9 @@ class Run:
         if self.bridge and self.bridge.poll() is None:
             self.say(f"linkkit-bridge exit {stop_proc(self.bridge)}")
         self.bridge = None
+        if self.hold is not None:
+            self.hold.__exit__()
+            self.hold = None
 
     # Steps
 

@@ -13,7 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from boopctl_lib import reference, scenario, workday
+from boopctl_lib import board, reference, scenario, workday
 from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, RULE_REACTIONS, TTL_MS, Take, checkout_tmp,
                                 do, ended, restarted, take, takes)
 from boopctl_lib.device import Device, DeviceError, Sim
@@ -35,6 +35,20 @@ def emit(obj: object) -> None:
 def cmd_ping(args: argparse.Namespace) -> int:
     with Device(args.port) as dev:
         emit(dev.request({"t": "dbg.ping"}))
+    return 0
+
+
+def cmd_board(args: argparse.Namespace) -> int:
+    """Who has the board and what was flashed on it, or CMD run holding it (board.py)."""
+    if args.action == "hold":
+        cmd = args.cmd[1:] if args.cmd[:1] == ["--"] else args.cmd
+        if not cmd:
+            raise DeviceError("board hold: no command to run (boopctl board hold -- CMD…)")
+        try:
+            return board.hold(" ".join(cmd), cmd)
+        except board.Busy as exc:
+            raise DeviceError(str(exc)) from None
+    print(board.status(args.last))
     return 0
 
 
@@ -1006,6 +1020,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--port", help="serial port (default: $BOOP_PORT or the first /dev/cu.usbserial-*, /dev/cu.wchusbserial* or /dev/cu.usbmodem*)")
     sub = parser.add_subparsers(dest="command", required=True, metavar="command")
     sub.add_parser("ping", help="firmware version, uptime, heap, fps, link").set_defaults(func=cmd_ping)
+    p = sub.add_parser("board", help="who has the board now and what was last flashed on it; "
+                                     "`board hold -- CMD` keeps it through CMD (a flash, a test, a flash back)")
+    p.add_argument("action", nargs="?", choices=["hold"], help="hold: run CMD holding the board's lock")
+    p.add_argument("cmd", nargs=argparse.REMAINDER, help="with hold: the command, after --")
+    p.add_argument("--last", type=int, default=8, metavar="N", help="how many uploads to list (default 8)")
+    p.set_defaults(func=cmd_board)
     sub.add_parser("state", help="the device's own view of itself").set_defaults(func=cmd_state)
     p = sub.add_parser("factory", help="a board's factory test, pass or fail: firmware, restart, card, voice, Bluetooth "
                                        "and memory, then the screen, speaker and touch, asked of a person")

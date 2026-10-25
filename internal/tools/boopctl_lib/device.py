@@ -1,27 +1,29 @@
 """Links to the board (USB serial at 460800 baud) and to the native simulator: one JSON
 message per line in each direction.
 
-Only one process may hold the port. A lock file in /tmp makes concurrent
-boopctl commands wait for each other instead of corrupting each other's messages.
+Only one process may hold the port. A serial link takes the board's lock
+first (board.py), so concurrent tools, and other sessions' flashes, wait for
+each other instead of corrupting each other's messages. A link through a
+bridge doesn't: whoever started the bridge holds the board for it.
 """
 from __future__ import annotations
 
 import base64
-import fcntl
 import glob
 import json
 import os
-import re
 import socket
 import stat
 import struct
 import subprocess
+import sys
 import time
 import zlib
-from pathlib import Path
 from typing import Any, Callable
 
 import serial
+
+from boopctl_lib.board import Busy, Hold, simulated
 
 BAUD = 460800  # the CH340 on macOS can't do 921600 (firmware/README.md)
 PORT_PATTERNS = ("/dev/cu.usbserial-*", "/dev/cu.wchusbserial*", "/dev/cu.usbmodem*")  # the last: the AMOLED-2.06 board (firmware/README.md)
@@ -275,7 +277,7 @@ class Device(Link):
         super().__init__()
         self._ser: serial.Serial | None = None
         self._sock: socket.socket | None = None
-        self._lock_fd: int | None = None
+        self._hold: Hold | None = None
         self._bridged = bool(bridge) or not port and bridge_running()
         if self._bridged:
             self.port = bridge or bridge_path()
@@ -290,9 +292,12 @@ class Device(Link):
             self._sock.connect(self.port)
             self._sock.setblocking(False)
             return self
-        safe = re.sub(r"[^A-Za-z0-9_.-]", "_", Path(self.port).name)
-        self._lock_fd = os.open(f"/tmp/boopctl-{safe}.lock", os.O_CREAT | os.O_RDWR, 0o666)
-        fcntl.flock(self._lock_fd, fcntl.LOCK_EX)
+        hold = Hold("boopctl " + " ".join(sys.argv[1:]), port=self.port)
+        try:
+            hold.__enter__()
+        except Busy as exc:
+            raise DeviceError(str(exc)) from None
+        self._hold = hold
         try:
             # Leave DTR and RTS as macOS sets them on open (both asserted).
             # Changing one before the other pulses EN through the board's
@@ -301,12 +306,14 @@ class Device(Link):
             ser.port, ser.baudrate, ser.timeout = self.port, BAUD, 0
             # The simulator's port (simulator/README.md) is a pseudo-terminal,
             # which has no rate and refuses the board's: any standard one opens it.
-            if os.path.realpath(self.port).startswith(("/dev/ttys", "/dev/pts/")):
+            if simulated(self.port):
                 ser.baudrate = 115200
             ser.open()
             self._ser = ser
         except serial.SerialException as exc:
             holder = port_holder(self.port)
+            self._hold.__exit__()
+            self._hold = None
             raise DeviceError(f"can't open {self.port}: {exc}" + (f" (held by {holder})" if holder else ""))
         self._ser.reset_input_buffer()
         return self
@@ -316,9 +323,9 @@ class Device(Link):
             self._sock.close()
         if self._ser is not None:
             self._ser.close()
-        if self._lock_fd is not None:
-            fcntl.flock(self._lock_fd, fcntl.LOCK_UN)
-            os.close(self._lock_fd)
+        if self._hold is not None:
+            self._hold.__exit__()
+            self._hold = None
 
     def _write(self, data: bytes) -> None:
         if self._sock is not None:

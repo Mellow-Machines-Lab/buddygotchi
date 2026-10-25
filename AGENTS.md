@@ -114,6 +114,12 @@ make -C internal test                                 # Swift unit tests: Boop's
   tools use `internal/tools/.venv`, which `internal/tools/boopctl` makes
   on its first run (`make -C internal tools` refreshes it), and which
   needs Python 3.10 or later.
+- Other sessions share the board. Everything that talks to it over USB,
+  `make flash` and any `pio.sh … -t upload` included, takes its lock and
+  waits for a session holding it; `internal/tools/boopctl board` says who
+  has it and whose firmware is on it. Keep it through a flash, a test and
+  a flash back with `internal/tools/boopctl board hold -- CMD`
+  ([internal/VERIFICATION.md](internal/VERIFICATION.md) §2).
 - A Unix socket's path has room for 103 bytes, so give `Boop --headless`
   a short state directory (under `/tmp`) or a short `--socket`.
 - Webcam recording works only from a terminal the Claude app opens (its

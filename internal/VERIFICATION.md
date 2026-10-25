@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-24. How we check that Boop works, including what's on its
+Updated 2026-10-25. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -87,7 +87,8 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 **Tools.**
 
 - `internal/tools/boopctl`: the board over USB (`ping`, `state`, `shot`,
-  `send`, `play`, `takes`, `card`, `calibrate`), a board's factory test,
+  `send`, `play`, `takes`, `card`, `calibrate`), who has the board and
+  what was flashed on it (`board`, below), a board's factory test,
   pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`, and `mirror`, which plays the gel's on the Mac's mirror of the
   board and on the simulator, both with no card, and compares every shot), measurements (`perf`, `latency`, `soak`), the pipeline check
@@ -213,6 +214,30 @@ in a terminal of its own:
 own socket, and the app's USB link takes it as
 `--link usb:$TMPDIR/linkkit-bridge.sock`; both can use the board at the
 same time.
+
+**Sharing the board.** Many sessions share one board, so everything that
+talks to it over USB takes the board's lock first,
+`/tmp/boop-board.lock` (`internal/tools/boopctl_lib/board.py`), one for
+every board on the Mac: boopctl's serial link for each command, `e2e`
+and `soak --pipeline` for as long as their bridge runs, and every
+PlatformIO upload, `make flash` and `-e amoled206_profile` included,
+which `firmware/tools/pio.sh` builds first and then uploads holding it.
+A tool that finds it held prints who has it and waits up to a minute
+(`BOOP_BOARD_WAIT=SECONDS`), then stops and says so. The simulator's
+port needs no lock, and nor does a link through a bridge: whoever
+started the bridge holds the board for it.
+
+```sh
+internal/tools/boopctl board                          # who has the board now, and the last uploads: when, env, commit, worktree
+internal/tools/boopctl board hold -- sh -c 'firmware/tools/pio.sh run -e amoled206_profile -t upload && internal/tools/boopctl perf --scenes && make flash'
+internal/tools/boopctl board hold -- .build/debug/linkkit-bridge   # a bridge started by hand
+```
+
+`board hold -- CMD` keeps the board through all of CMD, so no other
+session flashes between its steps; what CMD runs goes straight through
+the lock. Every upload is logged in `/tmp/boop-board-flashes.log`, so
+`board` tells you whose firmware is on the board. `linkkit-flash` and
+the Mac app take no lock: run `linkkit-flash` under `board hold`.
 
 ## 3. The debug channel
 

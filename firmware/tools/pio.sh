@@ -40,4 +40,16 @@ if [ -z "$pio" ]; then
     "$venv/bin/python" -m pip install --quiet --disable-pip-version-check platformio
   fi
 fi
+# An upload builds first, then waits for the board's lock, which every
+# tool that talks to the board over USB takes, so no session flashes over
+# another's test; and it's logged. `internal/tools/boopctl board` says who
+# has the board and what was flashed on it.
+board_py="$firmware_dir/../internal/tools/boopctl_lib/board.py"
+for arg in "$@"; do
+  case "$arg" in
+    upload* | -tupload* | --target=upload*)
+      [ -f "$board_py" ] && exec python3 "$board_py" upload -- "$pio" "$@"
+      ;;
+  esac
+done
 exec "$pio" "$@"
