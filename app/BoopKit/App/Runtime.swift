@@ -182,11 +182,19 @@ public final class Runtime: @unchecked Sendable {
 
     /// After every change the menu bar might show. Called on `home`.
     public var onChange: ((Status) -> Void)?
-    /// What the first buddy's board plays, for the Mac's mirror of it: each
-    /// reaction sent, with its id and play, and the board's own (a tap's
-    /// poke, push-to-talk's `listening`), with id 0 and `now`. Never
-    /// completes a handle.
-    public var onReaction: ((Int, DeviceReaction, Wire.Play) -> Void)?
+    /// The first buddy's board, for the Mac's mirror of it, which never
+    /// completes a handle. On `home`, in order:
+    ///
+    /// - `onBoardLine`: every message its link sends it, as it's sent:
+    ///   each `state`, the keepalive and `hello`'s answer included, and
+    ///   each `do`.
+    /// - `onBoardTap`: a tap on its screen or BOOT (`button`), which it
+    ///   reacted to by itself, and the mirror takes as its own.
+    /// - `onBoardListening`: push-to-talk on its BOOT, which shows
+    ///   `listening` by itself, with no message to say so.
+    public var onBoardLine: ((String) -> Void)?
+    public var onBoardTap: ((_ button: Bool) -> Void)?
+    public var onBoardListening: (() -> Void)?
 
     /// A tap on the board, after the core has taken it: true for its
     /// button (BOOT), false for its screen. Onboarding's pairing and its
@@ -272,13 +280,16 @@ public final class Runtime: @unchecked Sendable {
             : options.buddies
         let several = plans.count > 1
         rigs = plans.map { Rig($0, tag: several ? $0.buddy.id : nil, log: log) }
+        // The first board's lines go to its mirror too, once `self` is whole.
+        var mirror: (String) -> Void = { _ in }
         for rig in rigs {
             // boop.log leaves out a `state` sent again unchanged (the keepalive,
             // a reply to `hello`), which debug.jsonl keeps.
             var lastState: String?
-            let sent = options.onDeviceLine, whose = Runtime.whose(rig)
+            let sent = options.onDeviceLine, whose = Runtime.whose(rig), first = rig === rigs[0]
             rig.link.onSend = { line, sender in
                 sent?(line)
+                if first { mirror(line) }
                 emit(DebugLog.sent(line, by: sender, at: clock()))
                 guard debugLog != nil, line != lastState else { return }
                 if line.hasPrefix(#"{"t":"state""#) { lastState = line }
@@ -355,6 +366,7 @@ public final class Runtime: @unchecked Sendable {
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         personalityNow = { [weak self] in self?.personality ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
+        mirror = { [weak self] line in self?.onBoardLine?(line) }
         for rig in rigs {
             // The core reads the mood where the mood output keeps it. Weak:
             // the harness holds the core.

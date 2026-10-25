@@ -14,7 +14,7 @@ const WORKING = '{"t":"state","base":"working","act":"terminal","mood":"happy","
 // A page with the mirror in it: its canvas counts what's drawn, and time
 // moves only by `run`, display refreshes and timers included.
 async function page() {
-  let clock = 1000, frames = [], timers = [], core = null;
+  let clock = 1000, frames = [], timers = [];
   const drawn = {count: 0};
   const canvas = () => ({clientWidth: 46, clientHeight: 46, width: 0, height: 0,
     getContext: () => ({clearRect() {}, putImageData() {}, drawImage() { drawn.count++; }})});
@@ -30,14 +30,11 @@ async function page() {
   });
   context.window = context;
   vm.runInContext(read('board.js'), context);
-  const make = context.BoopMirrorBoard;
-  context.BoopMirrorBoard = async options => (core = await make(options));
   vm.runInContext(read('mirror.js'), context);
   const mirror = context.BoopMirror;
   await mirror.send(WORKING);  // once the board is ready
-  const usb = core.cwrap('mirror_send', 'number', ['string']);
   return {
-    mirror, drawn,
+    mirror, drawn, timers,
     // `seconds` of time, with the display refreshing `hz` times a second.
     run(seconds, hz = 60) {
       for (let i = 0; i < seconds * hz; i++) {
@@ -48,14 +45,8 @@ async function page() {
         for (const fn of due) fn(clock);
       }
     },
-    // What the board says it shows (dbg.state), as a tool on its USB
-    // asks, with the pass of its loop that ends a dbg.* line's batch.
-    state() {
-      usb('{"t":"dbg.state"}\n');
-      const said = core.UTF8ToString(core._mirror_said());
-      core._mirror_tick();
-      return JSON.parse(said.split('\n').find(l => l.startsWith('{"t":"dbg.state"')));
-    },
+    // What the board says it shows (dbg.state).
+    state: () => mirror.state(),
   };
 }
 
@@ -80,33 +71,42 @@ test('draws only while shown, at most a frame each 16 ms', async () => {
 
 test('starts settled in its first state, then runs', async () => {
   const p = await page();
-  const s = p.state();
+  const s = await p.state();
   assert.equal(s.screen, 'face');
   assert.deepEqual([s.base, s.act, s.mood], ['working', 'terminal', 'happy']);
   p.run(1);
-  assert.equal(p.state().screen, 'face');
+  assert.equal((await p.state()).screen, 'face');
 });
 
-test('says its last state again, so it never takes its Mac for gone', async () => {
+// The Mac's link says its state again every 10 s (DeviceLink.keepaliveMs),
+// and the mirror hears it as the board does: the page says nothing itself.
+test("the Mac's keepalive keeps it, and the page says nothing of its own", async () => {
   const p = await page();
-  p.run(90);  // three times the board's 30 s without its Mac, hidden
-  assert.equal(p.state().screen, 'face');
-  p.mirror.shown(true);
-  p.run(45);
-  assert.equal(p.state().screen, 'face');
+  for (let s = 10; s <= 90; s += 10) {  // three times the board's 30 s without its Mac
+    p.run(10);
+    await p.mirror.send(WORKING);
+    if (s === 40) p.mirror.shown(true);
+  }
+  p.run(1);
+  assert.equal((await p.state()).screen, 'face');
+  assert.equal(p.timers.length, 0, 'no timer of its own');
 });
 
-test("plays a reaction it's sent, and a tap is a finger on its screen", async () => {
+test("plays a reaction it's sent, and a tap is a finger on its screen or BOOT", async () => {
   const p = await page();
   await p.mirror.send('{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success"}}');
-  assert.equal(p.state().moment?.anim, 'task_complete');
+  assert.equal((await p.state()).moment?.anim, 'task_complete');
   p.run(10);
   // The board reads a finger on its passes, which run while it's shown;
   // one that's gone by the next is lost, as a tap that's over is.
   p.mirror.shown(true);
   await p.mirror.tap();
   p.run(0.2);
-  assert.equal(p.state().moment?.anim, 'poked');
+  assert.equal((await p.state()).moment?.anim, 'poked');
+  p.run(10);
+  await p.mirror.tap(true);
+  p.run(0.3);
+  assert.equal((await p.state()).moment?.anim, 'poked', 'BOOT, with no agent to hand over, pokes');
 });
 
 test("a snapshot is a frozen board's frame, and says what it shows", async () => {

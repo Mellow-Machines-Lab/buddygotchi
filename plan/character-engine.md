@@ -552,18 +552,20 @@ retiring the JavaScript engine, below.
   slime.js was. Beside it, written by hand, the page (`index.html`,
   `mirror.css`) and its script (`mirror.js`). Nothing of `simulator/` or
   `internal/` at run time.
-- **Fed what the board gets.** `SlimeFeed` sends the page LinkKit's own
-  lines (`Wire.state`, `Wire.do`): each `state` as the board gets it,
-  and each reaction the board got with its id, play and ttl
-  (`Runtime.onReaction` now says the play), shown or not, so a popover
-  opened mid-reaction shows the board's moment. What the board did on its
-  own is the board's own input on the mirror: a tap's poke is a finger
-  on its screen (`dbg.touch`), so it pokes, or counts a third tap, as the
-  board did; push-to-talk's `listening` is the `do` the board plays. The
-  page says the last `state` again every 8 s, as the Mac does every 10,
-  so the mirror never takes its Mac for gone. A new board shows its
+- **Fed what the board gets.** `SlimeFeed` sends the page the lines the
+  first board's link sends it, as they're sent (`Runtime.onBoardLine`,
+  on `DeviceLink.onSend`): each `state`, the 10 s keepalive's included,
+  so the mirror never takes its Mac for gone, and each `do`, shown or
+  not, so a popover opened mid-reaction shows the board's moment. What
+  the board did on its own is the board's own input on the mirror: a
+  tap is a tap on its screen (`dbg.touch`) or BOOT (`dbg.press`), so it
+  pokes, or counts a third tap, as the board did; push-to-talk's
+  `listening` is the `do` the board plays. Onboarding's, with no board,
+  says what its views show, again every 10 s. A new board shows its
   first `state` 1.5 s on a frozen clock, then runs from there, so a
-  tile starts settled rather than on its start-up.
+  tile starts settled rather than on its start-up. (As first built, the
+  feed made its own copies of the lines and the page its own 8 s
+  heartbeat; the simplify review gave it the link's.)
 - **Silent, and never answers.** No sound. What the board says on USB
   stays in the page, kept only until the next call, and read only by a
   snapshot (its `dbg.state`): no `ended`, tap or gesture of the mirror's

@@ -70,7 +70,7 @@ final class AppModel: ObservableObject {
     @Published var shown = false
     @Published var setup = SetupDraft()
     @Published var status: Runtime.Status?
-    let slime = SlimeFeed()
+    let slime = SlimeFeed(mirrorsBoard: true)
     @Published var hooks: [Agent: HookInstaller.Health] = [:]
     @Published var restartAgents = false
     /// Why the last Connect, Repair or Remove failed, per agent, until its
@@ -730,9 +730,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         do {
             let runtime = try Runtime(options)
             runtime.onChange = { [weak self] status in Task { @MainActor in self?.model.status = status; self?.updateIcon() } }
-            runtime.onReaction = { [weak self] id, reaction, play in
-                Task { @MainActor in self?.model.slime.reaction(reaction, id: id, play: play) }
-            }
+            // The popover's mirror of the board: what the board is sent and
+            // does by itself, in order.
+            let slime = model.slime
+            runtime.onBoardLine = { line in DispatchQueue.main.async { MainActor.assumeIsolated { slime.send(line) } } }
+            runtime.onBoardTap = { button in DispatchQueue.main.async { MainActor.assumeIsolated { slime.tap(button: button) } } }
+            runtime.onBoardListening = { DispatchQueue.main.async { MainActor.assumeIsolated { slime.listening() } } }
             // Push-to-talk: the core says when the mic
             // is on; what it heard goes back to the runtime.
             let listener = SpeechListener(log: { [log] in log.write($0) })

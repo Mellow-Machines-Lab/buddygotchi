@@ -55,8 +55,8 @@ extension Runtime {
         let now = options.clock()
         switch ev.kind {
         case "tap":
-            if rig === rigs[0], ev.did == "poked" || ev.did == "tap_spam" { onReaction?(0, DeviceReaction(anim: ev.did), .now) }
             let finish = BoopDevice.finish(tapped: ev), button = BoopDevice.button(tapped: ev)
+            if rig === rigs[0] { onBoardTap?(button) }
             options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
             remember(on: rig)
             let opens = finish.flatMap { rig.reactions.opens(finish: $0) }
@@ -101,11 +101,7 @@ extension Runtime {
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: DeviceReaction, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
-        let play = BoopDevice.play(reaction.name)
-        if let id = rig.link.do(reaction.name, args: reaction.args, play: play, by: .rule, now: options.clock(), { _ in }),
-           rig === rigs[0] {
-            onReaction?(id, reaction, play)
-        }
+        rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule, now: options.clock()) { _ in }
     }
 
     /// A reaction from the brain, sent at once to wait in the device's
@@ -119,7 +115,6 @@ extension Runtime {
                              now: now) { outcome in
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }
-        if let id, rig === rigs[0] { onReaction?(id, reaction, .next) }
         if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
     }
 

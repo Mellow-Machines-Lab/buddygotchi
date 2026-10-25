@@ -49,28 +49,38 @@ final class RuntimeTests: XCTestCase {
         try Runtime(options(transport, brain: brain, readJevKey: readJevKey))
     }
 
-    /// Mirroring a reaction cannot finish its
-    /// Pending. Only the device's ended drives the reaction lifecycle.
-    func testTheVisualMirrorDoesNotOwnReactionCompletion() throws {
-        let runtime = try makeRuntime(FakeTransport())
+    /// The Mac's mirror of the first board hears exactly what the board is
+    /// sent, the link's keepalive included, and the board's taps and
+    /// push-to-talk as what it did by itself. It never finishes a
+    /// reaction: only the device's `ended` does.
+    func testTheMirrorHearsWhatTheBoardIsSent() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
         runtime.home.sync {
+            var mirrored: [String] = [], taps: [Bool] = [], listened = 0, ends: [Pending.End] = []
+            runtime.onBoardLine = { mirrored.append($0) }
+            runtime.onBoardTap = { taps.append($0) }
+            runtime.onBoardListening = { listened += 1 }
+            let before = transport.sent.count
+            runtime.show(sampleSnapshot(busy: 1))
             runtime.connection(true)
             runtime.device(FakeTransport.hello)
-            var mirrored: [(Int, DeviceReaction, Wire.Play)] = [], ends: [Pending.End] = []
-            runtime.onReaction = { mirrored.append(($0, $1, $2)) }
             let pending = Pending()
             pending.bind { ends.append($0) }
-            let reaction = DeviceReaction(anim: "task_complete", mood: "happy", loops: 2, outcome: "success")
-            runtime.queue(reaction, pending)
-            XCTAssertEqual(mirrored.count, 1)
-            XCTAssertEqual(mirrored[0].1.mood, "happy")
-            XCTAssertEqual(mirrored[0].2, .next)
-            XCTAssertTrue(ends.isEmpty)
-            runtime.device(FakeTransport.ended(mirrored[0].0, "done"))
-            XCTAssertEqual(ends, [.done])
+            runtime.queue(DeviceReaction(anim: "task_complete", mood: "happy", loops: 2, outcome: "success"), pending)
             runtime.playRule(DeviceReaction(anim: "starting"))
-            XCTAssertEqual(mirrored.last?.1.name, "starting")
-            XCTAssertEqual(mirrored.last?.2, .ifFree)
+            runtime.link.tick(now: runtime.options.clock() + DeviceLink.keepaliveMs)
+            XCTAssertEqual(mirrored, Array(transport.sent.dropFirst(before)), "the board's lines, each as sent")
+            XCTAssertEqual(transport.dos.count, 2)
+            XCTAssertEqual(mirrored.last, runtime.link.state.map(Wire.state), "the keepalive")
+            XCTAssertTrue(ends.isEmpty)
+            runtime.device(FakeTransport.ended(FakeTransport.id(transport.dos("task_complete")[0]), "done"))
+            XCTAssertEqual(ends, [.done])
+            runtime.device(#"{"t":"ev","kind":"tap","did":"poked","data":{"src":"screen"}}"#)
+            runtime.device(#"{"t":"ev","kind":"tap","did":"handoff","data":{"src":"button"}}"#)
+            XCTAssertEqual(taps, [false, true], "the screen's, then BOOT's")
+            runtime.device(#"{"t":"ev","kind":"talk_on","did":"listening"}"#)
+            XCTAssertEqual(listened, 1)
         }
     }
 

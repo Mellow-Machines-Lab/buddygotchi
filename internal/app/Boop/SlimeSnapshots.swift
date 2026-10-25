@@ -1,7 +1,6 @@
 import AppKit
 import BoopKit
 import Foundation
-import LinkKit
 import WebKit
 
 /// The pack's mirror of the board in a real WKWebView: a board on a frozen
@@ -26,12 +25,12 @@ enum SlimeSnapshots {
         feed.didFail = { failure = $0 }
         feed.didLoad = {
             view.callAsyncJavaScript("return await window.BoopMirror.snapshot(line)",
-                                     arguments: ["line": Wire.state(snapshot.fields)], in: nil, in: .page) { result in
+                                     arguments: ["line": snapshot.jsonLine], in: nil, in: .page) { result in
                 switch result {
                 case .failure(let error): failure = error.localizedDescription
                 case .success(let raw):
                     guard let said = raw as? [String: Any], shows(snapshot, said) else {
-                        failure = "the mirror's board doesn't show \(Wire.state(snapshot.fields)): it says \(raw)"; return
+                        failure = "the mirror's board doesn't show \(snapshot.jsonLine): it says \(raw)"; return
                     }
                     view.takeSnapshot(with: nil) { result, error in
                         if let error { failure = error.localizedDescription }

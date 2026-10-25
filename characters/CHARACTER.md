@@ -636,11 +636,13 @@ in its tiles and its demo. Boop's has one:
   draws changes: `make -C internal mirror` fails until it's the build of
   its sources.
 - `index.html`, `mirror.css` and `mirror.js`, the page, written by hand.
-  The app hands it the `state` and `do` lines the board gets (`SlimeFeed`),
-  and a tap on the board as a finger on the mirror's screen; the page
-  draws the board's screen as tall as its tile, centred, and only while
-  it's shown. It makes no sound, and nothing the board says leaves the
-  page, so it can't answer the Mac.
+  The app hands it every line the board's link sends the board, its
+  keepalive included, and a tap on the board as a tap on the mirror's
+  screen or BOOT, which it takes as its own (`SlimeFeed`); onboarding's,
+  with no board behind it, is handed what its views show. The page
+  draws the board's whole screen as tall as its tile, centred, and only
+  while it's shown. It makes no sound, and nothing the board says leaves
+  the page, so it can't answer the Mac.
 - `tests/mirror/` holds the page's own tests (`node --test`), and
   `internal/tools/boopctl mirror` plays the gel's scenarios on the mirror
   and the simulator and checks every shot is the same, pixel for pixel.
