@@ -34,7 +34,7 @@
   // A new board, settled in the state `line` says (none: as it starts up).
   function power(line, frozen) {
     powered = true;
-    core._mirror_power(1);
+    core._mirror_power();
     usb((line ? line + '\n' : '') + `{"t":"dbg.clock","freeze":${SETTLE_MS}}\n`);
     tick();
     if (!frozen) debug('{"t":"dbg.clock","run":true}');

@@ -17,14 +17,21 @@
 
 namespace hosted {
 
+// What a board says on USB, kept until a page takes it.
+class Said : public linkkit::Out {
+ public:
+  void write(const char* s, size_t n) override { text_.append(s, n); }
+  // What it said since the last take, or null for nothing. The text
+  // stays until the next take.
+  const char* take();
+  void clear() { text_.clear(); }
+
+ private:
+  std::string text_, taken_;
+};
+
 class Board {
  public:
-  // A frame as the panel takes it: RGB565, row by row.
-  struct Frame {
-    const uint16_t* pixels = nullptr;
-    uint16_t width = 0, height = 0;
-  };
-
   // `hal` must outlive the board; `usb` is where what it says on USB goes.
   // A live board's clock runs, and its randomness starts from the Hal's
   // boot ID; a frozen one's clock starts at 0 and moves only by dbg.*
@@ -41,18 +48,26 @@ class Board {
   // One pass of the board's loop, then the next batch of lines waiting.
   // True when it drew a frame.
   bool tick();
-  // The frame it last drew.
-  Frame frame();
 
-  // A frame's pixels as RGBA, 8 bits each, for a page's canvas.
-  static void rgba(const Frame& f, std::vector<uint8_t>& out);
+  // A frame as a page's canvas takes it: RGBA, 8 bits each, row by row.
+  struct Picture {
+    const uint8_t* rgba = nullptr;
+    int width = 0, height = 0;
+  };
+  // One pass of the loop (tick) for a page that shows the board: when it
+  // drew, its frame is picture(), on the page's panel as soon as it's
+  // taken (dbg.latency), and its time to draw is dbg.ping's fps and
+  // draw_us. True when it drew. The picture stays until the next frame.
+  bool tickRgba();
+  const Picture& picture() const { return picture_; }
 
  private:
-  std::vector<uint8_t> canvas_;
-  std::vector<uint16_t> rgb_;
+  app::Hal& hal_;
+  std::vector<uint8_t> canvas_, rgba_;
   std::unique_ptr<app::Device> device_;
   std::unique_ptr<linkkit::Kit> kit_;
   linkkit::LineReader line_;
+  Picture picture_;
   // The bytes after a batch's dbg.* line, held for after the next tick;
   // `ticked_` is false from that line until then.
   std::string held_;

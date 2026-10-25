@@ -42,9 +42,9 @@ int main(int argc, char** argv) {
   board.setCard(&card);  // the voice file, as on the board's card
   for (int c; (c = std::getchar()) != EOF;) {
     const char byte = char(c);
-    if (!board.usb(&byte, 1)) continue;
+    if (!board.hosted().usb(&byte, 1)) continue;
     // A frame is on the simulator's "panel" as soon as it's taken (dbg.latency).
-    if (board.tick()) board.device().shown(board.hal().realMs());
+    if (board.hosted().tick()) board.hosted().device().shown(board.hal().realMs());
     std::fflush(stdout);
   }
   return 0;

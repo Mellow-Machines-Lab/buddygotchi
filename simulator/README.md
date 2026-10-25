@@ -49,11 +49,13 @@ which the Mac's mirror of the board runs too
 ([characters/CHARACTER.md](../characters/CHARACTER.md) §9). It takes USB's messages as the firmware's loop
 does: in order, with a `dbg.*` message ending the batch, so the messages
 after it wait for the next pass. Both builds run the same `Board` (`board.h`), so
-they show the same board:
+they show the same board: the hosted board itself (`hosted()`: its USB,
+its loop and its frames), with the simulator's card, sound and inputs
+on top.
 
 | Build | By | Runs | For |
 | --- | --- | --- | --- |
-| `boop-sim.wasm` | `web/build.sh` (Emscripten) | In the page, which calls it for each pass of the board's loop and each chunk of sound | The page, here and embedded in a site |
+| `boop-sim.wasm` | `web/build.sh` (Emscripten), on `firmware/tools/wasm.sh`, which builds the mirror's too from the sources `firmware/platformio.ini`'s `[hosted]` lists for the native env | In the page, which calls it for each pass of the board's loop and each chunk of sound | The page, here and embedded in a site |
 | `firmware/.pio/build/native/program --live` | PlatformIO's `native` env (`firmware/tools/pio.sh run -e native`) | A process in real time, its USB a serial port, with nobody looking at it | Tests, `boopctl` and CI, with no browser |
 | `firmware/.pio/build/native/program` | The same | Frozen at 0, moved only by `dbg.*` messages | `boopctl sim` and the golden pictures ([internal/VERIFICATION.md](../internal/VERIFICATION.md) L1) |
 

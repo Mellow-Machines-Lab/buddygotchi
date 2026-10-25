@@ -101,8 +101,8 @@ make -C internal test                                 # Swift unit tests: Boop's
   special permissions.
 - The simulator's page and the Mac's mirror of the board need Emscripten
   (`brew install emscripten`), which builds the firmware's portable code
-  to WebAssembly (`simulator/web/build.sh`, `firmware/tools/mirror.sh`),
-  and Node for their tests. The mirror is checked in, so nothing else in
+  to WebAssembly (`simulator/web/build.sh` and `firmware/tools/mirror.sh`,
+  both on `firmware/tools/wasm.sh`), and Node for their tests. The mirror is checked in, so nothing else in
   the repo needs Emscripten.
 - The build's own scripts run on the Mac's `/usr/bin/python3` (3.9);
   keep them to it. System Python has no pyserial, Pillow or Textual. The

@@ -144,7 +144,10 @@ starts, so a typo can't launch the menu-bar app or run the whole eval.
   assets, [its README](../characters/boop/tools/slimegen/README.md)), and
   the engine's `firmware/tools/mirror.sh` (the Mac's mirror of the
   board, `characters/boop/mac/mirror/board.js`, with Emscripten;
-  `--check` builds it again and compares).
+  `--check` builds it again and compares), on `firmware/tools/wasm.sh`,
+  the WebAssembly build of the hosted board that `simulator/web/build.sh`
+  shares, from the sources `firmware/platformio.ini`'s `[hosted]` lists
+  for the native env.
 - `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
   draws the app's placeholder icon at every size and packs it with
   `iconutil`; a second argument also writes a 1024-pixel PNG to look at.

@@ -75,15 +75,15 @@ int live(Port& port) {
     pollfd usb{port.fd(), POLLIN, 0};
     ::poll(&usb, 1, 1);
     char buf[2048];
-    for (size_t n; (n = port.read(buf, sizeof(buf))) > 0;) board.usb(buf, n);
+    for (size_t n; (n = port.read(buf, sizeof(buf))) > 0;) board.hosted().usb(buf, n);
     const auto from = Clock::now();
-    const bool drew = board.tick();
+    const bool drew = board.hosted().tick();
     port.tick(board.hal().realMs());
     if (!drew) continue;
     // A frame is on this board's "panel" as soon as it's drawn: dbg.ping's
     // fps and draw_us, and dbg.latency.
-    board.device().shown(board.hal().realMs());
-    board.device().noteFrame(us(Clock::now() - from), 0);
+    board.hosted().device().shown(board.hal().realMs());
+    board.hosted().device().noteFrame(us(Clock::now() - from), 0);
   }
   board.hal().speaker = nullptr;
   return 0;

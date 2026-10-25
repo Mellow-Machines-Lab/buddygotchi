@@ -19,12 +19,6 @@ namespace {
 
 using sim::Board;
 
-// What the board says on USB, kept until the page takes it.
-struct Lines : linkkit::Out {
-  std::string said;
-  void write(const char* s, size_t n) override { said.append(s, n); }
-};
-
 // The card: a voice file the page fetched.
 struct MemoryCard : sim::Card, voice::Source {
   std::vector<uint8_t> bytes;
@@ -50,14 +44,14 @@ struct PullSpeaker : sim::ChunkSpeaker {
   int64_t nowUs() override { return int64_t(made * app::Sound::kChunk * 1000000ull / voice::kOutRate); }
 };
 
-Lines lines;
+hosted::Said said;  // what the board says on USB, kept until the page takes it
 MemoryCard card;
 std::unique_ptr<Board> board;
 std::unique_ptr<PullSpeaker> speaker;
-std::vector<uint8_t> rgba;
-int width = 0, height = 0;
-std::string taken, parts;  // what the page was last handed
+std::string parts;  // what the page was last handed
 uint32_t boots = 0;
+const hosted::Board::Picture none;
+const hosted::Board::Picture& picture() { return board ? board->hosted().picture() : none; }
 
 }  // namespace
 
@@ -74,10 +68,11 @@ EMSCRIPTEN_KEEPALIVE void sim_power(int on) {
   speaker.reset();
   board.reset();
   voice::closeFile();
-  lines.said.clear();
+  said.clear();
   if (!on) return;
   parts.clear();
-  board = std::make_unique<Board>(lines, /*frozenClock=*/false, (uint32_t(emscripten_get_now() * 1000) ^ ++boots << 24) | 1);
+  board =
+      std::make_unique<Board>(said, /*frozenClock=*/false, (uint32_t(emscripten_get_now() * 1000) ^ ++boots << 24) | 1);
   speaker = std::make_unique<PullSpeaker>(board->hal());
   board->hal().speaker = speaker.get();
   board->setCard(card.bytes.empty() ? nullptr : &card, out);
@@ -94,32 +89,17 @@ EMSCRIPTEN_KEEPALIVE uint8_t* sim_card(int bytes) {
 
 // One pass of the board's loop. 1 when it drew a frame: sim_frame is its
 // RGBA pixels, sim_width by sim_height.
-EMSCRIPTEN_KEEPALIVE int sim_tick() {
-  if (!board) return 0;
-  const double from = emscripten_get_now();
-  if (!board->tick()) return 0;
-  const Board::Frame f = board->frame();
-  hosted::Board::rgba(f, rgba);
-  width = f.width, height = f.height;
-  board->device().shown(board->hal().realMs());
-  board->device().noteFrame(uint32_t((emscripten_get_now() - from) * 1000), 0);  // dbg.ping's fps and draw_us
-  return 1;
-}
-EMSCRIPTEN_KEEPALIVE const uint8_t* sim_frame() { return rgba.data(); }
-EMSCRIPTEN_KEEPALIVE int sim_width() { return width; }
-EMSCRIPTEN_KEEPALIVE int sim_height() { return height; }
+EMSCRIPTEN_KEEPALIVE int sim_tick() { return board && board->hosted().tickRgba(); }
+EMSCRIPTEN_KEEPALIVE const uint8_t* sim_frame() { return picture().rgba; }
+EMSCRIPTEN_KEEPALIVE int sim_width() { return picture().width; }
+EMSCRIPTEN_KEEPALIVE int sim_height() { return picture().height; }
 
 // USB: text a host sends, each line with its newline, and the lines the
 // board has said since last asked, or null for none.
 EMSCRIPTEN_KEEPALIVE void sim_usb(const char* text) {
-  if (board) board->usb(text, std::strlen(text));
+  if (board) board->hosted().usb(text, std::strlen(text));
 }
-EMSCRIPTEN_KEEPALIVE const char* sim_usb_out() {
-  if (lines.said.empty()) return nullptr;
-  taken.swap(lines.said);
-  lines.said.clear();
-  return taken.c_str();
-}
+EMSCRIPTEN_KEEPALIVE const char* sim_usb_out() { return said.take(); }
 
 // The page's inputs (Board::input).
 EMSCRIPTEN_KEEPALIVE void sim_input(const char* line) {

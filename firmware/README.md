@@ -143,17 +143,24 @@ Two more folders in `src/board/` are boards on a computer, which neither
 board's env builds:
 
 - `hosted/`: the firmware's device on LinkKit, fed what a host sends on
-  its USB, ticked as the firmware's loop ticks it, and its frames read.
+  its USB, ticked as the firmware's loop ticks it, and its frames read,
+  as RGBA for a page, with what it says kept until the page takes it.
   The simulator ([simulator/README.md](../simulator/README.md)) and the
-  Mac's mirror run it, each behind a Hal of its own.
+  Mac's mirror run it, each behind a Hal of its own. `platformio.ini`'s
+  `[hosted]` lists it and the portable code it runs, once: the native
+  env builds from that list, and `tools/wasm.sh` reads it to build a
+  hosted board to WebAssembly with Emscripten (`brew install
+  emscripten`), with a pack's faces, or only the one it gives a board
+  (`--board`), and an entry's own sources and flags.
 - `mirror/`: the Mac's mirror of the board, the face the popover and
   onboarding show: the hosted board with the page's clock and nothing
-  else (no touch, motion sensor, light, sound or card), with the face a
-  character pack gives the AMOLED, built to WebAssembly by
-  `tools/mirror.sh` into the pack's `mac/mirror/board.js`
-  ([characters/CHARACTER.md](../characters/CHARACTER.md) §9). It needs
-  Emscripten (`brew install emscripten`); `tools/mirror.sh --check`
-  builds it again and checks it's the one checked in.
+  else (no touch, motion sensor, light, sound or card), on a frozen
+  clock the page settles and then runs, with the face a character pack
+  gives the AMOLED, built by `tools/mirror.sh` (on `tools/wasm.sh`)
+  into the pack's `mac/mirror/board.js`
+  ([characters/CHARACTER.md](../characters/CHARACTER.md) §9);
+  `tools/mirror.sh --check` builds it again and checks it's the one
+  checked in.
 
 ## Bringing up a board
 

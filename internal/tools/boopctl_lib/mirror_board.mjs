@@ -17,7 +17,7 @@ const said = () => {
   const at = core._mirror_said();
   if (at) process.stdout.write(core.UTF8ToString(at));
 };
-core._mirror_power(1);  // frozen, as the simulator's build starts
+core._mirror_power();  // on a frozen clock, as the simulator's build starts
 for await (const line of readline.createInterface({input: process.stdin})) {
   const handled = usb(line + '\n');
   said();

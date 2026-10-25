@@ -1,11 +1,20 @@
 #include "board/hosted/board.h"
 
+#include <chrono>
+
 #include "render/palette.h"
 
 namespace hosted {
 
+const char* Said::take() {
+  if (text_.empty()) return nullptr;
+  taken_.swap(text_);
+  text_.clear();
+  return taken_.c_str();
+}
+
 Board::Board(app::Hal& hal, linkkit::Out& usb, bool frozenClock)
-    : canvas_(size_t(render::kWidth) * render::kHeight, 0) {
+    : hal_(hal), canvas_(size_t(render::kWidth) * render::kHeight, 0) {
   device_ = std::make_unique<app::Device>(hal, canvas_.data());
   kit_ = std::make_unique<linkkit::Kit>(hal, *device_, frozenClock);
   kit_->setOut(linkkit::Link::kUsb, &usb);
@@ -47,25 +56,33 @@ bool Board::tick() {
   return drew;
 }
 
-Board::Frame Board::frame() {
-  if (auto* s = device_->surface()) return {s->pixels, uint16_t(s->width), uint16_t(s->height)};
-  rgb_.resize(canvas_.size());
-  const uint8_t* index = device_->canvas().pixels();
-  for (size_t i = 0; i < rgb_.size(); ++i) rgb_[i] = render::kPalette.c[index[i]];
-  return {rgb_.data(), render::kWidth, render::kHeight};
-}
-
-void Board::rgba(const Frame& f, std::vector<uint8_t>& out) {
-  const size_t n = size_t(f.width) * f.height;
-  out.resize(n * 4);
-  for (size_t i = 0; i < n; ++i) {
-    const uint16_t p = f.pixels[i];
+bool Board::tickRgba() {
+  using Clock = std::chrono::steady_clock;
+  const auto from = Clock::now();
+  if (!tick()) return false;
+  // A native face's RGB565 surface, or the canvas's palette indices.
+  const render::Surface* native = device_->surface();
+  const int w = native ? native->width : render::kWidth, h = native ? native->height : render::kHeight;
+  const size_t n = size_t(w) * h;
+  rgba_.resize(n * 4);
+  uint8_t* out = rgba_.data();
+  auto put = [out](size_t i, uint16_t p) {
     const uint8_t r = p >> 11, g = (p >> 5) & 0x3f, b = p & 0x1f;
     out[4 * i] = uint8_t(r << 3 | r >> 2);
     out[4 * i + 1] = uint8_t(g << 2 | g >> 4);
     out[4 * i + 2] = uint8_t(b << 3 | b >> 2);
     out[4 * i + 3] = 255;
+  };
+  if (native) {
+    for (size_t i = 0; i < n; ++i) put(i, native->pixels[i]);
+  } else {
+    const uint8_t* index = device_->canvas().pixels();
+    for (size_t i = 0; i < n; ++i) put(i, render::kPalette.c[index[i]]);
   }
+  picture_ = {out, w, h};
+  device_->shown(hal_.realMs());
+  device_->noteFrame(uint32_t(std::chrono::duration_cast<std::chrono::microseconds>(Clock::now() - from).count()), 0);
+  return true;
 }
 
 }  // namespace hosted

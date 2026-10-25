@@ -62,8 +62,9 @@ tests, evals, dev tools and skills.
   and the chosen pack's own (`tests/firmware/test_*`). The
   `native` env's `build_src_filter` adds the hosted board,
   `firmware/src/board/hosted/`, which the Mac's mirror of the board runs
-  too, and the simulator's core on it, `simulator/core/` (the filter is
-  relative to `firmware/src/`). Both envs link LinkKit's
+  too (`[hosted]`, which `firmware/tools/wasm.sh` reads for the
+  WebAssembly builds), and the simulator's core on it, `simulator/core/`
+  (the filter is relative to `firmware/src/`). Both envs link LinkKit's
   device library, `linkkit/device/`, through `lib_deps`
   (`symlink://../linkkit/device`), so the tests and the simulator run the
   same kit as the board. The library's own tests are in its folder, with
