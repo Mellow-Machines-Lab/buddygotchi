@@ -34,12 +34,12 @@ public final class MemoryStore {
 
     /// Creates `long-term.md` for a new Boop, and its copy in
     /// `history/<today>/`. Refuses if one exists.
-    public func setUp(name: String, nature: LongTerm.Nature, seed: UInt64, today: String) throws {
+    public func setUp(name: String, seed: UInt64, today: String) throws {
         guard longTerm == nil else { throw Refusal("already set up") }
         let clean = name.trimmingCharacters(in: .whitespaces)
         guard !clean.isEmpty, clean.count <= 23, !clean.contains("·"), !clean.contains(":"), !clean.contains("\n")
         else { throw Refusal("a name is 1–23 characters, without · or :") }
-        let lt = LongTerm(name: clean, hatched: today, nature: nature, seed: seed)
+        let lt = LongTerm(name: clean, hatched: today, seed: seed)
         try write(lt.markdown, Self.longTermFile)
         longTerm = lt
         try keepCopy(lt.markdown, day: today)

@@ -11,7 +11,7 @@ final class MemoryRig {
     init(setUp: Bool = true) throws {
         dir = tempDir("boop-memory")
         try reopen()
-        if setUp { try store.setUp(name: "Pip", nature: .cheeky, seed: 0x7f3a, today: "2026-10-02") }
+        if setUp { try store.setUp(name: "Pip", seed: 0x7f3a, today: "2026-10-02") }
     }
 
     /// Opens the store as a launch on `today` would.
@@ -35,14 +35,21 @@ final class MemoryRig {
 }
 
 final class MemoryTests: XCTestCase {
-    static let sample = "## Boop\nname: Pip · hatched: 2026-10-02 · nature: cheeky · seed: 7f3a\n"
+    static let sample = "## Boop\nname: Pip · hatched: 2026-10-02 · seed: 7f3a\n"
 
     func testLongTermRoundTrips() throws {
         let lt = try LongTerm.parse(MemoryTests.sample)
         XCTAssertEqual(lt.name, "Pip")
-        XCTAssertEqual(lt.nature, .cheeky)
         XCTAssertEqual(lt.seed, 0x7f3a)
         XCTAssertEqual(lt.markdown, MemoryTests.sample)
+    }
+
+    /// A Boop set up when a nature was chosen at setup still reads, and
+    /// the nature, now the personality's, is left behind.
+    func testALongTermWithANatureStillReads() throws {
+        let old = MemoryTests.sample.replacingOccurrences(of: " · seed:", with: " · nature: sweet · seed:")
+        let (then, now) = (try LongTerm.parse(old), try LongTerm.parse(MemoryTests.sample))
+        XCTAssertEqual(then, now)
     }
 
     /// Files from before 2026-09-27 have Temperament, Moments, About you and
@@ -78,7 +85,6 @@ final class MemoryTests: XCTestCase {
     func testUnreadableFilesThrow() throws {
         try XCTAssertThrowsError(try LongTerm.parse("hello"))
         try XCTAssertThrowsError(try LongTerm.parse(MemoryTests.sample.replacingOccurrences(of: "seed: 7f3a", with: "seed: lots")))
-        try XCTAssertThrowsError(try LongTerm.parse(MemoryTests.sample.replacingOccurrences(of: "nature: cheeky", with: "nature: grumpy")))
     }
 
     func testOnlyARealDayIsADay() {
@@ -92,14 +98,14 @@ final class MemoryTests: XCTestCase {
         let rig = try MemoryRig()
         XCTAssertEqual(rig.file("long-term.md"), MemoryTests.sample)
         XCTAssertTrue(rig.file("history/2026-10-02/long-term.md").contains("name: Pip"))
-        try XCTAssertThrowsError(try rig.store.setUp(name: "Bo", nature: .sweet, seed: 1, today: "2026-10-14"))
+        try XCTAssertThrowsError(try rig.store.setUp(name: "Bo", seed: 1, today: "2026-10-14"))
         XCTAssertEqual(rig.store.longTerm!.seed, 0x7f3a)
     }
 
     func testNamesThatBreakTheBoopLineAreRefused() throws {
         let rig = try MemoryRig(setUp: false)
-        try XCTAssertThrowsError(try rig.store.setUp(name: "Pip · xp: 9", nature: .sweet, seed: 1, today: "2026-10-14"))
-        try XCTAssertThrowsError(try rig.store.setUp(name: "", nature: .sweet, seed: 1, today: "2026-10-14"))
+        try XCTAssertThrowsError(try rig.store.setUp(name: "Pip · xp: 9", seed: 1, today: "2026-10-14"))
+        try XCTAssertThrowsError(try rig.store.setUp(name: "", seed: 1, today: "2026-10-14"))
         XCTAssertFalse(rig.store.isSetUp)
     }
 

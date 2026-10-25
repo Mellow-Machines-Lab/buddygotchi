@@ -15,7 +15,6 @@ What a pack holds, and what it must have:
 | `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
 | `steering/guide.md` | yes | How it reads what happens, for the brain (§7) |
 | `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
-| `steering/nature/sweet.md`, `cheeky.md` | no | What the nature chosen at setup adds to who it is (§7) |
 | `steering/talk/quiet.md`, `normal.md`, `chatty.md` | no | How much it says, chosen in Settings (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
@@ -153,7 +152,6 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
   steering/          what the brain reads (§7)
     guide.md
     personality/<name>.md
-    nature/sweet.md, cheeky.md
     talk/quiet.md, normal.md, chatty.md
     mood/<mood>.md
     diary.md, signs.md, replies.md   optional: the diary's lines and the signs
@@ -334,19 +332,14 @@ What the brain reads, in plain Markdown:
   fix, in a sentence, frustrated.`, and a finish `…, 8 tool calls,
   saying it's done, apologetic.`, each with a few of the words under
   it (`Your words:`, `Its words:`).
-- `nature/sweet.md` and `nature/cheeky.md` (optional): the nature the
-  person chose at setup, saved in `long-term.md`. The chosen one goes
-  into the prompt right after the personality's PERSONALITY section,
-  whatever the personality: sweet is warm and gentle with failures,
-  cheeky playful and teasing, never mean to the person. A file may end
-  with Examples, as a personality does, where the two natures answer
-  the same moment differently. A pack without
-  the file adds nothing; `boopdev check` notes a pack with only one.
 
-  So a **personality** is the pack's: a file in `personality/` (Boop's
-  pack has one, `boop`), picked in Settings when there's more than one.
-  A **nature** is the person's: sweet or cheeky, chosen at setup, a file
-  in `nature/` laid over whichever personality is on.
+  A personality is the whole of who the creature is, its temperament
+  included: Boop's and Pixel's are cheeky, playful and teasing, never
+  mean to the person, in a paragraph that closes the file after its
+  Examples (with a few of its own), so it has the last word. Nothing is laid over it but the mood and how much
+  it says, and `boopdev check` notes a leftover `nature/` file, which
+  nothing reads. The person picks one in Settings when the pack has
+  more than one (Boop's has one, `boop`).
 - `talk/quiet.md`, `talk/normal.md` and `talk/chatty.md` (optional): how
   much it says, which the person picks in Settings (`Talk`, normal at
   first). The chosen one's TALK section goes last, after MOOD, and
@@ -864,7 +857,7 @@ WebAssembly, which the studio's Transitions and References run on too
 adds its families, its icon, and the slime's review sets and sound
 sketches in its drawer), Pixel's `pixel`, which comes with the pixel face,
 and its pixel board. Beside the previews, the studio shows each pack's own character with no
-entry at all: its personalities, natures, talk and guide (§7), each mood's
+entry at all: its personalities, talk and guide (§7), each mood's
 steering in parts and the moods it moves to (§5), its signs and diary,
 its voice's takes (§8, its own or the one it uses), its demos (§13), its
 evals and its golden frames (`tests/golden-*/`).
@@ -887,8 +880,8 @@ words. The app bundles the folder. How to write and play one:
    `studio` entry until you need them.
 2. Change the moods' meanings and moves (§5). Every pack has
    the same moods, so keep every one; its faces must draw them all.
-3. Rewrite `steering/guide.md`, `steering/personality/`, `steering/nature/`
-   and `steering/talk/` in its voice, and a `steering/mood/` file for each mood that needs one.
+3. Rewrite `steering/guide.md`, `steering/personality/` and
+   `steering/talk/` in its voice, and a `steering/mood/` file for each mood that needs one.
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
    its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
    that doesn't speak.

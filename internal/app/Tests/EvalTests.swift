@@ -172,7 +172,7 @@ final class EvalTests: XCTestCase {
                             (#"{"name":"n","case":"c","why":"w","checks":{"max_fun":2},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks has only"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"reactions":"lots"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.reactions"),
                             (#"{"name":"n","case":"c","why":"w","runs":0,"steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "runs is a count"),
-                            (#"{"name":"n","case":"c","why":"w","nature":"grumpy","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "nature is sweet or cheeky"),
+                            (#"{"name":"n","case":"c","why":"w","nature":"sweet","steps":[{"event":"pokes","at":"0s","expect":{"react":"none"}}]}"#, "unknown key nature"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"turn failed","at":"0s","agent":"codex","expect":{"react":"none"}}]}"#, "Codex has no hook"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","count":0,"expect":{"react":"none"}}]}"#, "count is for pokes"),
                             (#"{"name":"n","case":"c","why":"w","checks":{"words_said":"half"},"steps":[{"event":"pokes","at":"0s"}]}"#, "checks.words_said"),
@@ -190,27 +190,6 @@ final class EvalTests: XCTestCase {
             } catch {
                 XCTAssertTrue("\(error)".contains(why), "\(error)")
             }
-        }
-    }
-
-    /// EVALS.md §1: a run's prompt has the NATURE the person chose at
-    /// setup, as the app's always does: cheeky unless the scenario says
-    /// sweet.
-    func testAScenarioRunsWithItsNature() async throws {
-        for (nature, words) in [(nil, "At heart Boop is cheeky."), ("sweet", "At heart Boop is sweet.")] {
-            let states = Lines()
-            let brain = ScriptedBrain { state, _ in
-                states.add(state)
-                return [:]
-            }
-            let field = nature.map { #","nature":"\#($0)""# } ?? ""
-            let file = FileManager.default.temporaryDirectory.appendingPathComponent("nature-\(UUID().uuidString).json")
-            try Data(#"{"name":"n","case":"c","why":"w"\#(field),"steps":[{"event":"poke","at":"0s","expect":{"mood":"calm"}}]}"#.utf8).write(to: file)
-            defer { try? FileManager.default.removeItem(at: file) }
-            let scenario = try Scenario(file: file)
-            XCTAssertEqual(scenario.nature.rawValue, nature ?? "cheeky")
-            _ = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
-            XCTAssertTrue(states.all.first?.contains(words) ?? false, states.all.first ?? "no state")
         }
     }
 

@@ -7,8 +7,6 @@ import SwiftUI
 /// bar read as the same creature.
 enum FaceMood: Hashable {
     case asleep, idle, working, needsYou, happy
-    /// Setup's preview of a cheeky Boop.
-    case cheeky
     /// Boop couldn't start: the menu bar's crossed eyes, so it never passes
     /// for napping.
     case stopped
@@ -59,7 +57,7 @@ struct BoopFace: View {
         case .idle: "\(design)/idle"
         case .working: "\(design)/working"
         case .needsYou: "\(design)/needs_you"
-        case .happy, .cheeky: "\(startup)/idle"
+        case .happy: "\(startup)/idle"
         }
     }
 

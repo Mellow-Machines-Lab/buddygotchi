@@ -57,15 +57,14 @@ enum Headless {
             links.append(l)
         }
         if !links.isEmpty, links.count != buddies.count { fail("--links needs one link for each of the \(buddies.count) buddies") }
-        guard let nature = LongTerm.Nature(rawValue: args["--nature"] ?? "sweet") else { fail("--nature is sweet or cheeky") }
         let log = LogFile(directory: stateDir, echo: true)
 
         let memory = try? MemoryStore(directory: stateDir, log: { log.write($0) })
         if memory?.isSetUp != true {
             let name = args["--name"] ?? "Boop"
             do {
-                try Runtime.setUp(stateDir: stateDir, name: name, nature: nature)
-                log.write("boop: set up \(name) (\(nature.rawValue)) in \(stateDir.path)")
+                try Runtime.setUp(stateDir: stateDir, name: name)
+                log.write("boop: set up \(name) in \(stateDir.path)")
             } catch {
                 fail("can't set up \(stateDir.path): \(error)")
             }

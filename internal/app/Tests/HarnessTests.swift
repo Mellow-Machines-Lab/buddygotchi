@@ -31,30 +31,23 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(Set(keys).count, keys.count)
     }
 
-    /// The nature chosen at setup steers the brain: the pack's
-    /// `steering/nature/<nature>.md` follows PERSONALITY in the state, and
-    /// a pack with no file for it, or no nature, adds nothing.
-    func testTheNatureFollowsThePersonality() throws {
+    /// Only the personality says who the buddy is: MOOD follows
+    /// PERSONALITY in the state, and a pack's leftover `nature/` file adds
+    /// nothing.
+    func testOnlyThePersonalitySaysWhoItIs() throws {
         let steering = RuntimeTests.steering
-        func prompt(_ nature: LongTerm.Nature?, _ steering: Steering) throws -> String {
+        func prompt(_ steering: Steering) throws -> String {
             let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
             let (harness, _) = Runtime.harness(pipeline: pipeline, steering: steering, personality: { .default },
-                                               queue: { _, _ in }, nature: nature)
+                                               queue: { _, _ in })
             return harness.prompt(for: try XCTUnwrap(pipeline.poke(at: 1000).recorded.first))
         }
-        let personality = steering.personality(.default).text
-        for nature in [LongTerm.Nature.sweet, .cheeky] {
-            let text = try XCTUnwrap(steering.nature(nature), "every pack here has both")
-            let whole = try prompt(nature, steering)
-            XCTAssertTrue(whole.contains(personality + "\n\n" + text + "\n\n"), nature.rawValue)
-            XCTAssertFalse(text.contains("<!--"), "comments are left out")
-        }
-        let none = try prompt(nil, steering)
-        XCTAssertTrue(none.contains(personality + "\n\n"))
-        let bare = Steering(files: steering.files.filter { !$0.key.hasPrefix("nature/") }, frontMatter: steering.frontMatter)
-        let missing = try prompt(.cheeky, bare)
-        XCTAssertEqual(missing, none, "a missing file adds nothing")
-        XCTAssertEqual(steering.overBudget().filter { $0.hasPrefix("nature/") }, [], "within \(Steering.Budget.nature) tokens")
+        let whole = try prompt(steering)
+        XCTAssertTrue(whole.contains(steering.personality(.default).text + "\n\n" + steering.mood(MoodOutput.initial)), whole)
+        var files = steering.files
+        files["nature/sweet"] = "At heart it is sweet."
+        let stray = try prompt(Steering(files: files, frontMatter: steering.frontMatter))
+        XCTAssertEqual(stray, whole, "a nature file adds nothing")
     }
 
     /// The printer reads view events, passes and actions, a started action

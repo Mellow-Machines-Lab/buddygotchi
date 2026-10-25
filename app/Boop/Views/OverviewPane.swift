@@ -253,7 +253,7 @@ struct OverviewPane: View {
         return switch FaceMood(model.status) {
         case .needsYou: Theme.amber
         case .working: Theme.inkSoft
-        case .idle, .happy, .asleep, .cheeky, .stopped: Theme.inkFaint
+        case .idle, .happy, .asleep, .stopped: Theme.inkFaint
         }
     }
 

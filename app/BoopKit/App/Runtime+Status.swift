@@ -41,8 +41,6 @@ extension Runtime {
         /// newest first.
         public var daysOld: Int?
         public var diary: [DiaryLine] = []
-        /// Sweet or cheeky, chosen at setup for keeps.
-        public var nature: LongTerm.Nature?
         /// How much it says, chosen in Settings, and whether the pack
         /// offers a choice: none when its steering has no talk file.
         public var talk = Talk.default
@@ -127,7 +125,6 @@ extension Runtime {
                                        occasions: Occasions.occasions(at: wall, hatched: config.hatched, name: name,
                                                                       stage: config.stageReached, time: options.time),
                                        asleep: status.snapshot.base == "asleep", gel: status.device?.face != .pixel)
-        status.nature = memory.longTerm?.nature
         status.talk = talk
         status.talks = options.steering.talks
         status.uncleanExit = uncleanExit

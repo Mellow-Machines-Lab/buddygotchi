@@ -37,12 +37,11 @@ enum Pane: Equatable {
     case overview, settings
 }
 
-/// What the person has chosen so far in onboarding: a name, a nature, and
-/// which agents to watch. It lives in the app's model, so moving between
+/// What the person has chosen so far in onboarding: a name, and which
+/// agents to watch. It lives in the app's model, so moving between
 /// acts loses nothing.
 struct SetupDraft {
     var name = ""
-    var nature = LongTerm.Nature.sweet
     var agents = Set(Agent.allCases)
 
     var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }

@@ -7,23 +7,19 @@ public struct MemoryParseError: Error, Equatable, CustomStringConvertible {
 
 /// `long-term.md`: who this Boop is.
 public struct LongTerm: Equatable, Sendable {
-    public enum Nature: String, Sendable { case sweet, cheeky }
-
     public var name: String
     public var hatched: String
-    public var nature: Nature
     /// Seeds Boop's randomness (the core's and the view's). Written as hex.
     public var seed: UInt64
 
-    public init(name: String, hatched: String, nature: Nature, seed: UInt64) {
+    public init(name: String, hatched: String, seed: UInt64) {
         self.name = name
         self.hatched = hatched
-        self.nature = nature
         self.seed = seed
     }
 
     public var markdown: String {
-        "## Boop\nname: \(name) · hatched: \(hatched) · nature: \(nature.rawValue) · seed: \(String(seed, radix: 16))\n"
+        "## Boop\nname: \(name) · hatched: \(hatched) · seed: \(String(seed, radix: 16))\n"
     }
 
     /// Reads the file. Hand edits are fine as long as the Boop line still
@@ -33,10 +29,9 @@ public struct LongTerm: Equatable, Sendable {
         guard let boop = firstLine(under: "Boop", in: text) else { throw MemoryParseError("no Boop line") }
         let fields = keyValues(boop)
         guard let name = fields["name"], !name.isEmpty, let hatched = fields["hatched"], LocalTime.isDay(hatched),
-              let nature = fields["nature"].flatMap(Nature.init(rawValue:)),
               let seed = fields["seed"].flatMap({ UInt64($0, radix: 16) })
         else { throw MemoryParseError("the Boop line doesn't read: \(boop)") }
-        return LongTerm(name: name, hatched: hatched, nature: nature, seed: seed)
+        return LongTerm(name: name, hatched: hatched, seed: seed)
     }
 }
 

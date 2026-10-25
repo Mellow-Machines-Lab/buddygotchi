@@ -2,7 +2,7 @@ import Darwin
 import Foundation
 
 /// The app's own settings, in `settings.json` next to the memory files. Name
-/// and nature live in `long-term.md`; the API key lives in the Keychain.
+/// lives in `long-term.md`; the API key lives in the Keychain.
 public struct AppSettings: Codable, Equatable, Sendable {
     /// Who Boop is: the personality file it reads.
     public var personality = Personality.default

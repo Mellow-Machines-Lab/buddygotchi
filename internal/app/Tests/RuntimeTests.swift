@@ -34,7 +34,7 @@ final class RuntimeTests: XCTestCase {
     /// A runtime whose brain is `brain` once the key reads, or none.
     func options(_ transport: FakeTransport?, brain: ScriptedBrain = .pipelineCheck,
                  readJevKey: @escaping @Sendable (() -> String?) -> String? = { _ in "k" }) throws -> Runtime.Options {
-        try Runtime.setUp(stateDir: dir, name: Self.name, nature: .sweet)
+        try Runtime.setUp(stateDir: dir, name: Self.name)
         var options = Runtime.Options(stateDir: dir, socketPath: socketPath, link: transport, steering: Self.steering)
         options.devLines = true
         options.readJevKey = readJevKey
@@ -250,9 +250,9 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6))
     }
 
-    /// The popover's status carries the nature chosen at setup, which
-    /// Settings shows, and the diary's days named on the wall clock's day.
-    func testTheStatusCarriesTheNatureAndTheDiarysDays() throws {
+    /// The popover's status carries the diary's days, named on the wall
+    /// clock's day.
+    func testTheStatusCarriesTheDiarysDays() throws {
         var options = try options(FakeTransport())
         options.time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
         options.wallClock = { 1_792_670_400_000 }  // 2026-10-22, noon UTC
@@ -264,7 +264,6 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         eventually("a status") { runtime.home.sync { !statuses.isEmpty } }
         let status = runtime.home.sync { statuses.last }
-        XCTAssertEqual(status?.nature, .sweet)
         XCTAssertEqual(status?.diary.map { "\($0.when): \($0.line)" }, ["Yesterday: Fine."])
     }
 
@@ -1362,14 +1361,14 @@ final class RuntimeTests: XCTestCase {
         try XCTAssertThrowsError(try Runtime(options)) { XCTAssertEqual("\($0)", "\(Runtime.OpenError.notSetUp)") }
     }
 
-    /// characters/boop/steering/ has the guide, a file per mood, both natures, the personality, a talk file
+    /// characters/boop/steering/ has the guide, a file per mood, the personality, a talk file
     /// for each level, the diary's lines, the signs' captions and the replies' signs. The static parts stay within their budgets, and the
     /// personality's settings, with each talk's laid over them, are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "replies.md", "signs.md",
+                               + ["personality/boop.md", "replies.md", "signs.md",
                                   "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")

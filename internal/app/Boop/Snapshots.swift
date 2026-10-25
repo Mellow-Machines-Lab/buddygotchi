@@ -78,10 +78,7 @@ enum Snapshots {
                 settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
                 try? installer.remove(.claude)
-                // Chatty, over the other nature.
-                var chatty = status(talk: .chatty)
-                chatty.nature = .cheeky
-                shot("settings-chatty", model(installer, status: chatty), pane: .settings)
+                shot("settings-chatty", model(installer, status: status(talk: .chatty)), pane: .settings)
                 shot("settings-no-hook", model(unbuilt, status: status()), pane: .settings)
                 // A copy on another folder tried to connect Claude, and the
                 // Overview's notice was closed: the row still says why.
@@ -169,7 +166,6 @@ enum Snapshots {
             ("1-hello", at(.hello)),
             ("2-what-i-do", at(.whatIDo)),
             ("3-name", at(.makeMeYours)),
-            ("3-name-cheeky", at(.makeMeYours) { $0.app.setup.nature = .cheeky }),
             ("3-name-invalid", at(.makeMeYours) { $0.app.setup.editName("Mochi: Pip") }),
             ("3-name-unicode", at(.makeMeYours) { $0.app.setup.editName("우리의작은친구말랑이") }),
             ("4-body-intro", at(.body)),
@@ -477,8 +473,7 @@ enum Snapshots {
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
                               personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
-        // Its nature, its age and the diary's last days, read the day after.
-        status.nature = .sweet
+        // Its age and the diary's last days, read the day after.
         status.talk = talk
         status.talks = true
         status.daysOld = 47

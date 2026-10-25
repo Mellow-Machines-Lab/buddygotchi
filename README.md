@@ -83,9 +83,9 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
 2. **Run it.** From your own terminal, run `make bundle`, then
    `open .build/Boop.app`. The first build takes a few minutes, then
    Boop says hello in a window of its own.
-3. **Meet Boop.** It walks you through what it does, gets a name and a
-   nature (sweet or cheeky), finds its body on your desk (tap its screen
-   when it asks), shows you how to use it, and connects your agents.
+3. **Meet Boop.** It walks you through what it does, gets a name, finds
+   its body on your desk (tap its screen when it asks), shows you how to
+   use it, and connects your agents.
    Then it lives in the menu bar. Restart open agent sessions so they
    pick up Boop's hooks.
 

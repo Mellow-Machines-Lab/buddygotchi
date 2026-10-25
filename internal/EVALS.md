@@ -15,9 +15,7 @@ A scenario is a few hook-level steps on a virtual clock. Each run starts
 fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
-say how long Boop has been in it, its nature (cheeky unless the file
-says sweet), whose NATURE section follows PERSONALITY as the app's
-always does, and how much it says (normal unless the file says quiet
+say how long Boop has been in it, and how much it says (normal unless the file says quiet
 or chatty), whose TALK section comes last, after MOOD. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
@@ -235,7 +233,6 @@ file-name order:
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
 | `personality` | One of the pack's personalities: Boop's has only `boop`, the default |
-| `nature` | `cheeky` (the default) or `sweet`: the nature chosen at setup |
 | `talk` | `normal` (the default), `quiet` or `chatty`: how much it says, chosen in Settings |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
@@ -329,9 +326,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
   new work moves a comfy one only to a mood on offer (`69`). And
   the ladder of failure: a failure after a fix is a bigger cuss than
-  the first, held longer and said aloud (`70`); a sweet Boop is sorry,
-  not cross, at a failed turn (`71`) and gets miffed at pokes, not fed
-  up (`72`). And the moments the view now says: you answering a request
+  the first, held longer and said aloud (`70`). And the moments the view now says: you answering a request
   gets a small pleased face (`74`), a compacted context leaves Boop a
   little lost (`75`), idle check-ins get a small face or nothing
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
