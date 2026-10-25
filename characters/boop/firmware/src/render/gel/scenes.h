@@ -137,6 +137,9 @@ struct Scenes {
     F progress, presence;
   } helpersProp;
   F listeningPulse = q(.5);
+  // The finish playing names whose turn it was, which the face marks
+  // itself (render/gel/done.h): it shows no result card of its own.
+  bool cardless = false;
   SceneState touchKind = SceneState::kIdle;
   // The tags on and how long the look has shown (Engine::setOccasion): a
   // look's occasion (kLookOccasions) is dealt by them, numbered after the

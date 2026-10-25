@@ -1,0 +1,34 @@
+// A finished turn the brain's reaction is about (render/gel/done.h): the
+// panel's rim glows in its outcome's colour, and a ticket naming its
+// thread drops in from the top, in the middle where a failure's card would
+// be, or left of a success's trophy (lane's finish shots). A face for the
+// turn, with Boop talking under it, gets them too, a reply's faint glow
+// and dots. They hold while the reaction plays, and 3 s after it: the glow
+// fading over the last second, the ticket going back up over the last
+// 0.4 s. Excited's face holds till 3.2 s, so they go at 6.2 s.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":21,"name":"react","args":{"who":{"agent":"claude","thread":"fix-nav"},"say":{"take":"previous.yay"},"mood":"excited","loops":1}}
+{"clock":200}
+{"shot":"dropping"}
+{"clock":1000}
+{"shot":"talking"}
+{"clock":4500}
+{"shot":"lingering"}
+{"clock":5700}
+{"shot":"fading"}
+{"clock":6000}
+{"shot":"going-up"}
+{"clock":6300}
+{"shot":"gone"}
+// Another reaction that names no turn, played at once, takes it down: it
+// goes up over 0.4 s.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0}
+{"t":"do","id":22,"name":"react","args":{"who":{"agent":"codex","thread":"landing"},"mood":"excited","loops":1}}
+{"clock":1500}
+{"t":"do","id":23,"name":"react","play":"now","args":{"mood":"grumpy","loops":1}}
+{"clock":1700}
+{"shot":"taken-down"}

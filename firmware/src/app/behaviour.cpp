@@ -111,7 +111,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
       if (after(c, modelT_) && !after(c, t) && (!found || after(next, c))) next = c, found = true;
     };
     if (reaction_.anim != render::SceneState::kNone) consider(reaction_.at + reaction_.ms);
-    if (lingering_.anim != render::SceneState::kNone) consider(lingering_.at + lingering_.ms);
+    if (done_.agent[0] && done_.ending) consider(done_.endAt + done_.endMs);
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
     if (sign_.text[0]) consider(sign_.at + sign_.ms);
@@ -127,28 +127,26 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
   resync(t);
 }
 
-// Time-based changes at t: a reaction or its expression that has ended, a
-// finish's linger with it, and the Mac's silence turning into "no app". First the timers that have run
-// out are cleared, so none comes back when the clock's differences wrap
-// after 2^31 ms (24.9 days); none of them is part of the source, so the
-// face doesn't change.
+// Time-based changes at t: a reaction or its expression that has ended, the
+// finished turn it named lingering, then gone, and the Mac's silence
+// turning into "no app". First the timers that have run out are cleared,
+// so none comes back when the clock's differences wrap after 2^31 ms
+// (24.9 days); none of them is part of the source, so the face doesn't
+// change.
 void Behaviour::resync(uint32_t t) {
   if (say_.take >= 0 && !sayDue(t)) say_ = Say{};
   if (sign_.text[0] && !signOn(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
   change(t, [&] {
-    if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms)) {
-      if (named(reaction_)) {
-        lingering_ = reaction_;
-        lingering_.at = reaction_.at + reaction_.ms;
-        lingering_.ms = kFinishLingerMs;
-      }
+    if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;
-    }
-    if (lingering_.anim != render::SceneState::kNone && !within(t, lingering_.at, lingering_.ms))
-      lingering_ = Reaction{};
     if (expr_ && !within(t, exprAt_, exprMs_)) expr_ = false;
+    // The finished turn lingers from the instant no part of its reaction
+    // plays, then goes.
+    if (done_.agent[0] && !done_.ending && !holds(done_.key, t))
+      done_.ending = true, done_.endAt = t, done_.endMs = kFinishLingerMs;
+    if (done_.agent[0] && done_.ending && !within(t, done_.endAt, done_.endMs)) done_ = Done{};
     if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true;
   });
 }
@@ -219,7 +217,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       // push-to-talk still works.
       if (reactionOn(t) && !listening(t))
         cut(reaction_.key, CutBy::kNeedsYou), reaction_.anim = render::SceneState::kNone;
-      lingering_ = Reaction{};
+      done_ = Done{};  // its own screen takes the face at once
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
       say_ = Say{};  // no `say` or sign while something needs you
       sign_ = gone_ = Sign{};
@@ -279,6 +277,11 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   bool sign = in.sign[0] && !held(t);
   if (!anim && !say && !face && !sign) return false;  // stop_listening: admit did it all
   change(t, [&] {
+    // A reaction from the Mac takes the finished turn named down, unless
+    // it names one itself: its animation a finish, or none.
+    const bool finish = in.anim == render::SceneState::kTaskComplete || in.anim == render::SceneState::kReplyReady;
+    const bool names = in.whoAgent && in.whoAgent[0] && (anim ? finish : in.anim == render::SceneState::kNone);
+    if (!names) takeDown(t);
     const render::Mood mood = in.expr ? in.mood : model_.mood;  // the mood it's drawn in
     uint32_t voice = 0;  // when its `say` starts, from t
     if (anim && listen && listening(t)) {
@@ -290,11 +293,6 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       playAnim(in.anim, t, CutBy::kNone, in.loops, mood, in.variant, in.outcome, in.ctx);
       reaction_.key = in.key;
       reaction_.id = in.id;
-      bool finish = in.anim == render::SceneState::kTaskComplete || in.anim == render::SceneState::kReplyReady;
-      if (finish && in.whoAgent && in.whoAgent[0]) {
-        copyStr(reaction_.agent, sizeof(reaction_.agent), in.whoAgent);
-        copyStr(reaction_.thread, sizeof(reaction_.thread), in.whoThread);
-      }
       if (!listen) voice = face_->voiceMs(mood, in.anim, in.variant);
     }
     if (say) {
@@ -319,6 +317,13 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
       sign_.key = in.key;
     }
+    if (names) {
+      done_ = Done{};
+      copyStr(done_.agent, sizeof(done_.agent), in.whoAgent);
+      copyStr(done_.thread, sizeof(done_.thread), in.whoThread);
+      done_.outcome = anim ? reaction_.outcome : render::Outcome::kNone;
+      done_.id = in.id, done_.key = in.key, done_.at = t;
+    }
     if (in.key) playing_ = PlayedOut{in.key, CutBy::kNone};
   });
   return say;
@@ -335,7 +340,7 @@ void Behaviour::playAnim(render::SceneState a, uint32_t t, CutBy by, int loops, 
                          render::Outcome outcome, render::StartCtx ctx) {
   if (by != CutBy::kNone && reactionOn(t)) cut(reaction_.key, by);
   reaction_ = Reaction{};
-  lingering_ = Reaction{};  // the face is taken
+  takeDown(t);  // the face is taken
   reaction_.anim = a;
   reaction_.variant = variant;
   reaction_.loops = loops;
@@ -478,6 +483,7 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     s.outcome = reaction_.requestedOutcome;
     s.ctx = reaction_.ctx;
     s.playMs = reaction_.playMs;
+    s.named = done_.agent[0] && done_.named && done_.key == reaction_.key;
   }
   return s;
 }
@@ -551,26 +557,38 @@ uint8_t Behaviour::blTarget(uint32_t t) const {
   return 255;
 }
 
-bool Behaviour::named(const Reaction& r) {
-  bool finish = r.anim == render::SceneState::kTaskComplete || r.anim == render::SceneState::kReplyReady;
-  return finish && r.agent[0];
+const Behaviour::Done* Behaviour::finishOn(uint32_t t) const {
+  if (!done_.agent[0] || !done_.named) return nullptr;
+  return !done_.ending || within(t, done_.endAt, done_.endMs) ? &done_ : nullptr;
 }
 
-const Behaviour::Reaction* Behaviour::finishOn(uint32_t t) const {
-  if (reactionOn(t)) return named(reaction_) ? &reaction_ : nullptr;
-  if (lingering_.anim != render::SceneState::kNone && within(t, lingering_.at, lingering_.ms)) return &lingering_;
-  return nullptr;
+void Behaviour::takeDown(uint32_t t) {
+  if (!done_.agent[0] || !done_.named) return;
+  // One already lingering may go sooner than it would leave.
+  const bool sooner = done_.ending && !after(done_.endAt + done_.endMs, t + kDoneLeaveMs);
+  done_.named = false;
+  if (!sooner) done_.ending = true, done_.endAt = t, done_.endMs = kDoneLeaveMs;
 }
 
 uint32_t Behaviour::finishShown(uint32_t t) const {
-  const Reaction* f = finishOn(t);
+  const Done* f = finishOn(t);
   return f ? f->id : 0;
 }
 
+render::DoneShow Behaviour::done(uint32_t t) const {
+  render::DoneShow d;
+  if (!done_.agent[0] || noApp(t) || model_.attn) return d;
+  if (done_.ending && !within(t, done_.endAt, done_.endMs)) return d;
+  d.agent = done_.agent, d.thread = done_.thread, d.outcome = done_.outcome;
+  d.ms = t - done_.at;
+  d.leftMs = done_.ending ? int32_t(done_.endAt + done_.endMs - t) : -1;
+  return d;
+}
+
 // With no app the Mac's counts are stale, so only the unplugged
-// icon shows. While the brain's finish plays, and as it lingers, whose
-// turn it was.
-render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Reaction* finish) {
+// icon shows. While the brain's reaction to a finished turn plays, and as
+// it lingers, whose turn it was.
+render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish) {
   render::Strip s;
   s.noApp = noApp;
   if (s.noApp) return s;
@@ -591,7 +609,7 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Reaction* fin
 // change's that advance stops at (no app, a finish's linger ending).
 void Behaviour::followLane(uint32_t t) {
   const bool shows = stripAt(t).shows();
-  const Reaction* finish = finishOn(t);
+  const Done* finish = finishOn(t);
   if (shows) laneModel_ = model_, laneNoApp_ = noApp(t), laneFinishes_ = finish != nullptr;
   if (shows && finish) laneFinish_ = *finish;
   lane_.retarget(shows ? 1000 : 0, t);

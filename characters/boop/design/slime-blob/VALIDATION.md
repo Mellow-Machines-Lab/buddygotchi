@@ -98,7 +98,12 @@ ramps and springs can, and no jolt at an event. By file:
   morph (the awake face squashing shut on its slow spring, to lines, the
   sleeping face crossing in once it's 0.9 shut, waking quick, sleep's
   spring kept through a mood change), the night's lids, a finger moving the dome its own
-  way, every result card's mark, comedy, the ten gestures, the notice
+  way, every result card's mark and none for a finish that names whose
+  turn it was (`test_a_named_finish_shows_no_card`), a finished turn's
+  glow and ticket (`test_a_finished_turn_glows_and_hangs_a_ticket`: the
+  glow's timing, strength and reach, nothing past the panel's corners,
+  the ticket above the top as it comes, in the middle or left of a
+  success's trophy, and gone back up), comedy, the ten gestures, the notice
   playing the rig's clip (`test_a_notice_plays_its_rig_clip`: perking up
   tall, off the ground and landing flat, its eyes and mouth, a sound at
   each cue, no gag), the
@@ -125,7 +130,8 @@ ramps and springs can, and no jolt at an event. By file:
   pixels (`test_a_recording_replays_between_pixels`,
   `test_text_glides_between_pixels`, the outfit half a pixel down while
   the body moves), tracked
-  clearing and kept cards matching a fresh frame, steady frames
+  clearing and kept cards and lanes matching a fresh frame, a finished
+  turn's ticket and glow coming and going over them, steady frames
   allocating nothing, and the work stream
   (`test_the_work_stream_falls_behind_and_hits_in_front`: words in their
   lanes' columns behind the body, a hit's knock and daze and its lids
@@ -157,7 +163,9 @@ ramps and springs can, and no jolt at an event. By file:
   and needs you's wave), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
   night, the morning's coffee at its side, at a sip and on the desk, a
-  sign under the nightcap), a reaction's sign (`sign.jsonl`), the
+  sign under the nightcap), a reaction's sign (`sign.jsonl`), a finished
+turn's glow and ticket as a face for it talks, lingers, fades, goes up
+and is taken down (`done.jsonl`), the
   work stream (`stream.jsonl`: two lanes' words falling, the to-do bar and
   the clock, a thought cloud, and every gag as it lands: arrive, bonk and
   its dizzy eyes, helmet, shrug, shatter, pass, hail's umbrella, look,

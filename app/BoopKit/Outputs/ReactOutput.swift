@@ -29,11 +29,12 @@ public final class ReactOutput: Output {
     /// Why a reaction can't play now (something needs you), or nil.
     let blocked: () -> String?
     /// The agent and thread the event the brain answers is about, or nil
-    /// (a poke, an idle heartbeat): a finish names it on the device.
+    /// (a poke, an idle heartbeat): a finish, or a face for a finished
+    /// turn, names it on the device.
     let who: (Event?) -> DeviceReaction.Who?
-    /// How long the turn that event finished ran, in ms, or nil: a finish
-    /// sends the tier it reached as its `turn`, which the device may size
-    /// it by.
+    /// How long the turn that event finished ran, in ms, or nil when it
+    /// finished none: a finish sends the tier it reached as its `turn`,
+    /// which the device may size it by.
     let turnMs: (Event?) -> Int64?
     /// Whether the device plays the takes Voice picks from: false while its
     /// card has another pack, or none, and then Boop says
@@ -293,17 +294,22 @@ public final class ReactOutput: Output {
         let picked = answers[Signs.questionKey]?.choice
         let sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         var reaction = DeviceReaction(say: say, mood: choice, loops: loops, sign: sign)
+        // The thread NOW is about, if any (a forced pass's, the latest
+        // event's).
+        let about = now ?? log.events.last(where: { !$0.fromHarness })
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
             // Its scene and a finish's outcome, whose variation the device
-            // picks, and the thread NOW is about, if any (a forced pass's,
-            // the latest event's): a turn's finish names whose turn it was,
-            // and says how long it ran.
-            let about = now ?? log.events.last(where: { !$0.fromHarness })
+            // picks: a turn's finish names whose turn it was, and says how
+            // long it ran.
             reaction.anim = anim
             reaction.outcome = outcome
             reaction.who = who(about)
             if outcome != nil { reaction.turn = turnMs(about).map { DeviceReaction.turn(lengthMs: $0) } }
+        } else if turnMs(about) != nil {
+            // A face for a finished turn names it too: the device marks
+            // the turn it's about while it plays.
+            reaction.who = who(about)
         }
         let pending = Pending()
         queue(reaction, pending)

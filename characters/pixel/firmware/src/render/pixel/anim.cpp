@@ -267,7 +267,7 @@ int PixelFace::cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) 
   return n;
 }
 bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, const char* bubble,
-                     const SignShow& sign, const Strip& strip, bool dirty) {
+                     const SignShow& sign, const DoneShow&, const Strip& strip, bool dirty) {
   rig_.advanceTo(t);
   Picture& p = picture_;
   std::memset(static_cast<void*>(&p), 0, sizeof p);  // its padding too: it's hashed as bytes

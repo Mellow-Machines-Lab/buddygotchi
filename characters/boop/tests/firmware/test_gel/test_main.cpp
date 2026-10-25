@@ -18,6 +18,7 @@
 #include "app/device.h"
 #include "linkkit/kit.h"
 #include <new>
+#include "render/gel/done.h"
 #include "render/gel/lane.h"
 #include "render/gel/layers.h"
 #include "render/gel/raster.h"
@@ -287,6 +288,104 @@ static void test_a_card_revealed_late_rises_then_falls() {
   }
   TEST_ASSERT_TRUE(most > q(.99));
   TEST_ASSERT_TRUE(e->scenes.visible(Scenes::kResultProp, e->timeMs()) == F(0));
+}
+// A failure or a reply whose finish names whose turn it was shows no card:
+// its ticket takes the card's place (render/gel/done.h).
+static void test_a_named_finish_shows_no_card() {
+  for (bool named : {false, true}) {
+    auto e = std::make_unique<Engine>();
+    e->step(0);
+    e->scenes.cardless = named;
+    Request req;
+    req.anim = SceneState::kTaskComplete;
+    req.outcome = Outcome::kFailure;
+    req.hold = true;
+    e->oneShot(req);
+    F most = 0;
+    for (int t = 16; t <= 6400; t += 16) {
+      e->step(uint32_t(t));
+      most = max(most, e->scenes.visible(Scenes::kResultProp, e->timeMs()));
+    }
+    TEST_ASSERT_TRUE(named ? most == F(0) : most > q(.99));
+  }
+}
+// A finished turn's marks (render/gel/done.h). The glow comes over
+// kGlowInMs to kGlowPeak at the panel's edge (a reply's to kGlowPeakFaint),
+// holds while its reaction plays, and fades over the last kGlowOutMs; it
+// reaches kGlowPx in, and nothing shows past the panel's rounded corners.
+// The ticket drops in from above the top over kTicketDropMs and hangs in
+// the middle, or left of a success's trophy, and goes back up over the last
+// kTicketRiseMs.
+static void test_a_finished_turn_glows_and_hangs_a_ticket() {
+  static_assert(kGlowInMs == 300 && kGlowOutMs == 1000 && kGlowPx == 26, "the glow's timing and reach");
+  static_assert(kGlowPeak == 200 && kGlowPeakFaint == 110, "the glow's strength at the edge");
+  static_assert(kTicketDropMs == 700 && kTicketRiseMs == 400, "the ticket's drop and rise");
+  DoneShow d;
+  d.agent = "claude", d.thread = "fix-nav", d.outcome = Outcome::kFailure;
+  TEST_ASSERT_EQUAL_INT(0, doneGlow(d));  // just come
+  d.ms = kGlowInMs;
+  TEST_ASSERT_EQUAL_INT(kGlowPeak, doneGlow(d));
+  d.ms = 9000;
+  TEST_ASSERT_EQUAL_INT(kGlowPeak, doneGlow(d));  // holding while it plays
+  d.leftMs = kGlowOutMs;
+  TEST_ASSERT_EQUAL_INT(kGlowPeak, doneGlow(d));
+  d.leftMs = kGlowOutMs / 2;
+  TEST_ASSERT_INT_WITHIN(2, kGlowPeak / 2, doneGlow(d));
+  d.leftMs = 0;
+  TEST_ASSERT_EQUAL_INT(0, doneGlow(d));
+  d.leftMs = -1, d.outcome = Outcome::kNone;
+  TEST_ASSERT_EQUAL_INT(kGlowPeakFaint, doneGlow(d));
+  TEST_ASSERT_EQUAL_INT(0, doneGlow(DoneShow{}));
+
+  constexpr int kW = 502, kH = 410;
+  std::vector<uint16_t> px(kW * kH);
+  Surface s{kW, kH, px.data()};
+  s.corner = 110;
+  auto at = [&](int x, int y) { return px[size_t(y) * kW + x]; };
+  auto lit = [&](int x0, int y0, int x1, int y1) {
+    int n = 0;
+    for (int y = y0; y < y1; ++y)
+      for (int x = x0; x < x1; ++x) n += at(x, y) != 0;
+    return n;
+  };
+  auto fresh = [&] { std::fill(px.begin(), px.end(), 0), s.invalidate(), s.clear(); };
+  d.outcome = Outcome::kFailure;
+  fresh();
+  paintGlow(s, d, 0, kH);
+  TEST_ASSERT_TRUE(at(kW / 2, 0) != 0 && at(0, kH / 2) != 0 && at(kW - 1, kH / 2) != 0 && at(kW / 2, kH - 1) != 0);
+  // Nothing further in from the straight edges.
+  TEST_ASSERT_EQUAL_INT(0, lit(kGlowPx, 110, kW - kGlowPx, kH - 110));
+  TEST_ASSERT_EQUAL_INT(0, lit(110, kGlowPx + 1, kW - 110, kH - kGlowPx - 1));
+  TEST_ASSERT_EQUAL_INT(0, at(0, 0) | at(kW - 1, 0) | at(0, kH - 1) | at(kW - 1, kH - 1));  // past the corners
+  TEST_ASSERT_TRUE(at(40, 40) != 0);  // round the corner's arc
+  // Only the rows asked for.
+  fresh();
+  paintGlow(s, d, 0, 300);
+  TEST_ASSERT_EQUAL_INT(0, lit(0, 300, kW, kH));
+
+  // The ticket: above the top as it comes, then in, in the middle.
+  d.ms = 0, d.leftMs = -1;
+  fresh();
+  paintTicket(s, d);
+  TEST_ASSERT_EQUAL_INT(0, lit(0, 1, kW, kH));
+  d.ms = kTicketDropMs + 3000;
+  fresh();
+  paintTicket(s, d);
+  const int left = lit(0, 20, kW / 2, 70), right = lit(kW / 2, 20, kW, 70);
+  TEST_ASSERT_TRUE(left > 300 && right > 300);
+  TEST_ASSERT_INT_WITHIN((left + right) / 5, left, right);
+  TEST_ASSERT_EQUAL_INT(0, lit(0, 80, kW, kH));
+  // A success's hangs left of its trophy.
+  d.outcome = Outcome::kSuccess;
+  fresh();
+  paintTicket(s, d);
+  TEST_ASSERT_TRUE(lit(0, 20, kW * 420 / 1000, 70) > 300);
+  TEST_ASSERT_EQUAL_INT(0, lit(kW * 420 / 1000 + 8, 0, kW, kH));
+  // Gone back up.
+  d.leftMs = 0;
+  fresh();
+  paintTicket(s, d);
+  TEST_ASSERT_EQUAL_INT(0, lit(0, 1, kW, kH));
 }
 // Every result card has a mark over its label, none an empty top half: a
 // cross for a failure or a tool error, a soft stop square when stopped,
@@ -682,7 +781,7 @@ static void test_the_lane_fades_whatever_the_draw_cadence() {
           dirty = true;
         }
         b.advance(t, rng);
-        b.face().draw(c, &s, b.show(t), t, b.bubble(t), b.sign(t), b.strip(t), dirty);
+        b.face().draw(c, &s, b.show(t), t, b.bubble(t), b.sign(t), b.done(t), b.strip(t), dirty);
         dirty = false;
         for (uint32_t shot : shots)
           if (shot == t) lanes.emplace_back(px.begin() + kLane * kW, px.end());
@@ -2237,13 +2336,15 @@ static void test_the_lane_cuts_and_marks_as_the_canvas_does() {
 // opaque inside, an unchanged lane) is exactly what clearing it whole and
 // drawing afresh leaves. Two surfaces taking turns, as the board's do,
 // through needs you rising and holding with its strip, a finish's card,
-// the start card, a bubble coming and going and the strip's count
-// changing, equal a third cleared whole before every frame; and the keeps
-// happened.
+// the start card, a bubble coming and going, the strip's count changing
+// and a finished turn's ticket and glow coming, holding and going (render/
+// gel/done.h), on the AMOLED's rounded panel, equal a third cleared whole
+// before every frame; and the keeps happened.
 static void test_kept_cards_and_lanes_match_a_fresh_frame() {
   constexpr int kW = 502, kH = 410;
   std::vector<uint16_t> pa(kW * kH, 0x1234), pb(pa.size(), 0x5678), pf(pa.size());
   Surface turns[2] = {{kW, kH, pa.data()}, {kW, kH, pb.data()}}, fresh{kW, kH, pf.data()};
+  for (Surface* s : {&turns[0], &turns[1], &fresh}) s->corner = 110;
   auto e = std::make_unique<Engine>();
   Facts f;
   f.base = SceneState::kWorking;
@@ -2252,7 +2353,7 @@ static void test_kept_cards_and_lanes_match_a_fresh_frame() {
   Strip asking, working;
   asking.agent = "claude", asking.name = "Fix a test", asking.more = 1, asking.busy = 2;
   working.busy = 1;
-  int cardFrames = 0, laneKeeps = 0, cardKeeps = 0, knockKeeps = 0;
+  int cardFrames = 0, laneKeeps = 0, cardKeeps = 0, knockKeeps = 0, doneFrames = 0, glowKeeps = 0;
   uint32_t t = 0;
   for (int i = 0; i < 400; ++i) {
     if (i == 20) {  // needs you
@@ -2273,23 +2374,40 @@ static void test_kept_cards_and_lanes_match_a_fresh_frame() {
     e->step(t += 33);
     const char* bubble = i >= 300 && i < 330 ? "Technical difficulties" : nullptr;
     const Strip& strip = f.attention.on ? asking : i % 50 < 25 ? working : Strip{};
+    // A finished turn from 150, its reaction played out at 230 and gone
+    // by 330.
+    DoneShow done;
+    if (i >= 150 && i < 330) {
+      done.agent = "claude", done.thread = "fix-nav", done.outcome = Outcome::kFailure;
+      done.ms = uint32_t(i - 150) * 33;
+      if (i >= 230) done.leftMs = (330 - i) * 33;
+      doneFrames += doneGlow(done) > 0;
+    }
     Surface& s = turns[i % 2];
     Box boxes[Surface::kMaxKeep];
     cardFrames += opaqueCards(s, *e, boxes) > 0;
     laneKeeps += s.laneKey && s.laneKey == laneKey(bubble, strip);
-    const uint32_t cardKey = s.cardKey;
-    paintFrame(s, *e, false, 0, bubble, {}, strip);
+    const uint32_t cardKey = s.cardKey, kept = s.laneKey;
+    paintFrame(s, *e, false, 0, bubble, {}, strip, done);
+    glowKeeps += done.shows() && kept && s.laneKey == kept;
     cardKeeps += cardKey && s.cardKey == cardKey;
     knockKeeps += cardKey && s.cardKey == cardKey && e->scenes.envelope(e->timeMs(), kKnock) > 0;
     fresh.invalidate();
-    paintFrame(fresh, *e, false, 0, bubble, {}, strip);
-    if (std::memcmp(s.pixels, fresh.pixels, s.bytes()))
-      TEST_FAIL_MESSAGE(("kept frame differs from a fresh one at " + std::to_string(i)).c_str());
+    paintFrame(fresh, *e, false, 0, bubble, {}, strip, done);
+    if (std::memcmp(s.pixels, fresh.pixels, s.bytes())) {
+      size_t at = 0;
+      while (s.pixels[at] == fresh.pixels[at]) ++at;
+      TEST_FAIL_MESSAGE(("kept frame differs from a fresh one at " + std::to_string(i) + ", first at (" +
+                         std::to_string(at % kW) + ", " + std::to_string(at / kW) + ")")
+                            .c_str());
+    }
   }
   TEST_ASSERT_TRUE(cardFrames > 100);
   TEST_ASSERT_TRUE(laneKeeps > 100);
   TEST_ASSERT_TRUE(cardKeeps > 100);
   TEST_ASSERT_TRUE(knockKeeps > 0);
+  TEST_ASSERT_TRUE(doneFrames > 150);
+  TEST_ASSERT_TRUE(glowKeeps > 20);  // a lane under a steady glow is kept, glow and all
 }
 // A still card a surface already shows isn't drawn again;
 // its inside is what the surface kept. A surface that lost its pixels
@@ -2633,7 +2751,7 @@ static void test_the_work_stream_falls_behind_and_hits_in_front() {
   const Strip strip;
   paintFrame(s, *e, false, 0, nullptr, none, strip);
   const std::vector<uint16_t> bare(px);
-  paintFrame(s, *e, false, 0, nullptr, none, strip, rig::kRest, nullptr, 0, &stream, 600);
+  paintFrame(s, *e, false, 0, nullptr, none, strip, {}, rig::kRest, nullptr, 0, &stream, 600);
   // The words fall in their lanes' columns, a quarter and three quarters
   // across, and the body's middle covers whatever falls behind it.
   int left = 0, right = 0;
@@ -2659,11 +2777,11 @@ static void test_the_work_stream_falls_behind_and_hits_in_front() {
   allocCount = 0;
   allocCounting = true;
   for (uint32_t t = 1000; t < 3500; t += 100)
-    paintFrame(s, *e, false, 0, nullptr, none, strip, rig::kRest, nullptr, 0, &stream, t);
+    paintFrame(s, *e, false, 0, nullptr, none, strip, {}, rig::kRest, nullptr, 0, &stream, t);
   for (int g = 0; g < int(CallGag::kCount); ++g) {
     stream.startCall("x", 0, CallGag(g), 5, 4000);
     for (uint32_t t = 4000; t < 6500; t += 250)
-      paintFrame(s, *e, false, 0, nullptr, none, strip, rig::kRest, nullptr, 0, &stream, t);
+      paintFrame(s, *e, false, 0, nullptr, none, strip, {}, rig::kRest, nullptr, 0, &stream, t);
   }
   allocCounting = false;
   TEST_ASSERT_EQUAL_INT(0, allocCount);
@@ -2714,6 +2832,8 @@ int main() {
   RUN_TEST(test_tracked_clear_matches_full_clear);
   RUN_TEST(test_histories_stay_off_the_heap);
   RUN_TEST(test_kept_cards_and_lanes_match_a_fresh_frame);
+  RUN_TEST(test_a_named_finish_shows_no_card);
+  RUN_TEST(test_a_finished_turn_glows_and_hangs_a_ticket);
   RUN_TEST(test_a_still_card_is_drawn_once_into_each_surface);
   RUN_TEST(test_steady_frames_allocate_nothing);
   RUN_TEST(test_the_lane_is_native_and_tracked);

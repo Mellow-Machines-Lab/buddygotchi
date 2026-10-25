@@ -31,6 +31,10 @@ struct FaceSource {
   // on its last frame after that, while the reaction holds on for its `say`.
   uint32_t playMs = 0;
   uint32_t id = 0;
+  // The animation is a finish that names whose turn it was (DoneShow): a
+  // face that marks that on screen may leave out a result card of its own.
+  // Not part of the design: changing it starts nothing over.
+  bool named = false;
   bool operator==(const FaceSource& o) const {
     return anim == o.anim && at == o.at && look == o.look && lookVariant == o.lookVariant &&
            animVariant == o.animVariant && mood == o.mood && playMs == o.playMs;
@@ -46,6 +50,20 @@ struct SignShow {
   const char* text = nullptr;
   uint32_t ms = 0;
   int opacity = 1000;
+};
+// The finished turn the brain's reaction is about (its `who`), while the
+// reaction plays and lingers after (app/behaviour.h): whose turn, how it
+// ended (kNone for a reply, or a face with no finish of its own), how long
+// it has shown, and how long until it goes, -1 while its reaction still
+// plays. A face may mark it on screen; the strip names it either way. No
+// agent for none: with no app, or while something needs you, there's none.
+struct DoneShow {
+  const char* agent = nullptr;
+  const char* thread = "";
+  Outcome outcome = Outcome::kNone;
+  uint32_t ms = 0;
+  int32_t leftMs = -1;
+  bool shows() const { return agent != nullptr; }
 };
 // How far a sign sits below its place `ms` after it went up, the same on
 // every face: sliding up from `rise` px below, easing out, then lifting
@@ -175,12 +193,13 @@ class Face {
   // What shows at t, with the device's additions: the mouth talking and
   // the press's dip.
   virtual SceneShow show(uint32_t t, bool mouthOpen, int dy) const = 0;
-  // Draws the face, the sign it holds up and the shared lane: into the
-  // canvas, or into `native` when it draws natively. `dirty` when something
-  // besides the face's own clock changed since the last frame. Returns
-  // false when the pixels have not changed.
+  // Draws the face, the sign it holds up, the finished turn its reaction
+  // is about if it marks one, and the shared lane: into the canvas, or into
+  // `native` when it draws natively. `dirty` when something besides the
+  // face's own clock changed since the last frame. Returns false when the
+  // pixels have not changed.
   virtual bool draw(Canvas& canvas, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
-                    const SignShow& sign, const Strip& strip, bool dirty) = 0;
+                    const SignShow& sign, const DoneShow& done, const Strip& strip, bool dirty) = 0;
   // The sounds due at t, each with its own duck, and whether the last
   // ones should stop first; `shown` is false while the test pattern hides
   // the face.

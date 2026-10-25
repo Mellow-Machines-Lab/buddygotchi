@@ -1,4 +1,5 @@
 #include "render/gel/lane.h"
+#include "render/gel/done.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -379,8 +380,8 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
 }
 
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
-                const Strip& s, const rig::Channels& rig, const rig::Layers* layers, uint32_t t, const Stream* stream,
-                uint32_t now, const PastimeShow* pastimes, const Drawer* drawer) {
+                const Strip& s, const DoneShow& done, const rig::Channels& rig, const rig::Layers* layers, uint32_t t,
+                const Stream* stream, uint32_t now, const PastimeShow* pastimes, const Drawer* drawer) {
   rig::Anchors at;
   if (drawer && drawer->shows()) {
     // The lane's rows are the sheet's: erased, and drawn again after.
@@ -392,8 +393,13 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
     return;
   }
   // A lane that shows what this surface's already shows is kept, not
-  // erased and drawn again (Surface::clear).
-  const uint32_t key = laneKey(line, s);
+  // erased and drawn again (Surface::clear): the glow over it too.
+  const int glow = doneGlow(done);
+  uint32_t key = laneKey(line, s);
+  if (glow) key = ((key ^ uint32_t(glow << 8 | int(done.outcome))) * 16777619u) | 1;
+  // The ticket swings over where a card may be, so a card is drawn whole
+  // while it hangs, not kept.
+  if (done.shows()) surface.cardKey = 0;
   paint(surface, e, mouthOpen, dy, key, &at, rig, layers, t, pastimes);
   if (pastimes) {
     Measure measure(profile.props);
@@ -407,8 +413,12 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   }
   if (sign.text) paintSign(surface, sign, at);
   paintSky(surface, e, layers, t);
+  paintTicket(surface, done);
   Measure measure(profile.lane);
-  if (surface.laneKey != key) paintLane(surface, line, s);
+  const bool lane = surface.laneKey != key;
+  if (lane) paintLane(surface, line, s), surface.laneKey = key;
+  // A kept lane keeps its glow.
+  paintGlow(surface, done, 0, lane ? surface.height : surface.laneKeyFrom);
 }
 
 }  // namespace render::gel

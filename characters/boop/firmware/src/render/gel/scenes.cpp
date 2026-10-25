@@ -66,8 +66,9 @@ bool Scenes::wants(Prop prop) const {
     case kAlertProp:
       return route.state == SceneState::kNeedsYou;
     case kResultProp:
-      // A successful finish shows its trophy instead of a card.
-      return route.group == Family::kResult &&
+      // A successful finish shows its trophy instead of a card, and one
+      // that names whose turn it was its ticket.
+      return route.group == Family::kResult && !cardless &&
              !(route.state == SceneState::kTaskComplete && route.outcome == Outcome::kSuccess);
     case kStartProp:
       return route.state == SceneState::kStarting;

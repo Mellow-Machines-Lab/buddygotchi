@@ -343,7 +343,7 @@ static int designOf(const SceneShow& s) { return render::sceneOf(s.mood, s.state
 // after a message, when an unchanged picture is drawn again too.
 static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
   render::Canvas c{px.data()};
-  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.strip(r.t), dirty);
+  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.done(r.t), r.b.strip(r.t), dirty);
 }
 // The needs-you screen shows.
 static bool needsYouShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
@@ -732,7 +732,7 @@ static void test_a_lane_at_the_same_dither_level_isnt_drawn_again() {
   render::Strip strip = r.b.strip(r.t);
   auto draw = [&](int opacity, bool dirty) {
     strip.opacity = opacity;
-    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, r.b.sign(r.t), strip, dirty);
+    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, r.b.sign(r.t), r.b.done(r.t), strip, dirty);
   };
   TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(500, true).hi);
   TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(530, true).hi);
@@ -2319,7 +2319,7 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
           dirty = true;
         }
         r.at(t);
-        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.sign(t), r.b.strip(t), dirty);
+        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.sign(t), r.b.done(t), r.b.strip(t), dirty);
         dirty = false;
         for (uint32_t shot : shots)
           if (shot == t) lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
@@ -2342,6 +2342,72 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
   TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[0]));  // fading in
   TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, lit(often.lanes[2]));  // fading out
   TEST_ASSERT_EQUAL(0, lit(often.lanes[3]));
+}
+
+// A reaction with no animation for a finished turn (its `who`) marks it as
+// a finish does: named in the strip, and the face's DoneShow, from its
+// start while any part of it plays (no end known), then counting down
+// kFinishLingerMs, then nothing. A newer reaction naming nothing takes it
+// down: no longer named, it leaves in kDoneLeaveMs. A new needs-you takes
+// it at once.
+static void test_a_face_for_a_finished_turn_marks_it() {
+  static_assert(Behaviour::kFinishLingerMs == 3000, "a finished turn stays marked 3 s after its reaction");
+  static_assert(Behaviour::kDoneLeaveMs == 400, "taken down, it leaves in 400 ms");
+  Rig r;
+  r.at(1000);
+  r.state(base("idle"));
+  ReactionIn in;
+  in.expr = true, in.mood = render::Mood::kHappy;
+  in.whoAgent = "claude", in.whoThread = "fix-nav";
+  in.key = 5, in.id = 5;
+  const uint32_t start = r.t;
+  onReaction(r.b, in, r.t);
+  render::DoneShow d = r.b.done(r.t);
+  TEST_ASSERT_EQUAL_STRING("claude", d.agent);
+  TEST_ASSERT_EQUAL_STRING("fix-nav", d.thread);
+  TEST_ASSERT_TRUE(d.outcome == render::Outcome::kNone);  // a face has no outcome of its own
+  TEST_ASSERT_EQUAL(-1, d.leftMs);
+  TEST_ASSERT_EQUAL_STRING("claude", r.b.strip(r.t).doneAgent);
+  TEST_ASSERT_EQUAL_UINT32(5, r.b.finishShown(r.t));
+  uint32_t end;
+  TEST_ASSERT_TRUE(r.b.nextEnd(r.t, r.t + 60000, end));  // its face's loop
+  r.at(end - 1);
+  TEST_ASSERT_EQUAL(-1, r.b.done(r.t).leftMs);
+  TEST_ASSERT_EQUAL_UINT32(end - 1 - start, r.b.done(r.t).ms);
+  r.at(end);
+  TEST_ASSERT_EQUAL(int(Behaviour::kFinishLingerMs), r.b.done(r.t).leftMs);
+  r.at(end + Behaviour::kFinishLingerMs - 1);
+  TEST_ASSERT_EQUAL(1, r.b.done(r.t).leftMs);
+  TEST_ASSERT_EQUAL_STRING("fix-nav", r.b.strip(r.t).doneThread);
+  r.at(end + Behaviour::kFinishLingerMs);
+  TEST_ASSERT_FALSE(r.b.done(r.t).shows());
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));  // the strip fades out with it
+  // A face naming nothing takes the next one down.
+  r.at(r.t + 1000);
+  onReaction(r.b, in, r.t);
+  r.at(r.t + 100);
+  ReactionIn other;
+  other.expr = true, other.mood = render::Mood::kGrumpy;
+  other.key = 6, other.id = 6;
+  onReaction(r.b, other, r.t);
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
+  TEST_ASSERT_EQUAL(int(Behaviour::kDoneLeaveMs), r.b.done(r.t).leftMs);  // leaving
+  r.at(r.t + Behaviour::kDoneLeaveMs);
+  TEST_ASSERT_FALSE(r.b.done(r.t).shows());
+  // So does a finish of another turn, which names its own at once.
+  r.at(r.t + 1000);
+  onReaction(r.b, in, r.t);
+  ReactionIn finish = in;
+  finish.expr = false, finish.anim = SceneState::kTaskComplete, finish.whoThread = "landing", finish.key = 7;
+  onReaction(r.b, finish, r.t);
+  TEST_ASSERT_EQUAL_STRING("landing", r.b.done(r.t).thread);
+  TEST_ASSERT_EQUAL(-1, r.b.done(r.t).leftMs);
+  // A new needs-you takes it at once.
+  r.state(attn());
+  TEST_ASSERT_FALSE(r.b.done(r.t).shows());
+  r.state(base("idle"));
+  TEST_ASSERT_FALSE(r.b.done(r.t).shows());
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
 }
 
 static void test_a_tap_on_a_named_finish_opens_its_thread() {
@@ -3285,6 +3351,7 @@ int main() {
   RUN_TEST(test_the_lane_fades_as_the_strip_comes_and_goes);
   RUN_TEST(test_a_todo_list_alone_shows_the_strip);
   RUN_TEST(test_the_lane_is_the_same_whatever_the_draw_cadence);
+  RUN_TEST(test_a_face_for_a_finished_turn_marks_it);
   RUN_TEST(test_a_tap_on_a_named_finish_opens_its_thread);
   RUN_TEST(test_a_finish_linger_ends_when_the_face_is_taken);
   RUN_TEST(test_press_shows_within_20ms);

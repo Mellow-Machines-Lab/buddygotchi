@@ -82,7 +82,7 @@ class GelFace final : public Face {
   }
   // Its engine keeps its own clock: it ignores draw's t and dirty, and
   // cues' t and shown (its contact cues play under the pattern too).
-  bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const SignShow&, const Strip&,
+  bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const SignShow&, const DoneShow&, const Strip&,
             bool) override;
   int cues(uint32_t, bool, voice::FxEvent*, bool&) override;
   int profile(char* out, size_t n, uint32_t frames) override;

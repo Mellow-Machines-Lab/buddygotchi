@@ -11,8 +11,9 @@ import LinkKit
 /// long break) or its notice (its name in your prompt). The rules'
 /// reactions never carry
 /// a mood. Whoever plays an animation or a face says how many `loops` of
-/// its design. The finish for a thread's turn says `who`: the device names
-/// it in the strip while the finish plays.
+/// its design. The finish for a thread's turn, or a face for it, says
+/// `who`: the device names it in the strip, and marks it on the face, while
+/// it plays and for a moment after.
 public struct DeviceReaction: Equatable, Sendable {
     /// The agent and thread the finish is for.
     public struct Who: Equatable, Sendable {
@@ -64,7 +65,8 @@ public struct DeviceReaction: Equatable, Sendable {
     /// and no animation, how many loops of the design it's drawn in the
     /// face holds. Nil sends none, which the device reads as 1.
     public var loops: Int?
-    /// With the finish, whose turn it was; nil sends none.
+    /// With the finish, or a face for a finished turn, whose turn it was;
+    /// nil sends none.
     public var who: Who?
     /// With task_complete, the turn's outcome: `success` or `failure`;
     /// the device plays a variation for it. Nil sends none.

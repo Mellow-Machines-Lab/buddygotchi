@@ -823,7 +823,7 @@ void Device::render(uint32_t t) {
     makeDrawer(t);
     b_.face().drawer(&drawer_);
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
-                        b_.strip(t), dirty_))
+                        b_.done(t), b_.strip(t), dirty_))
       return;
   }
   if (native) native->drew();

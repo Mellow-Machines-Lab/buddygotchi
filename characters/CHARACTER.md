@@ -636,6 +636,19 @@ Besides drawing each mood and state, a face:
   mitts (`render/pixel/held.h`), the gel's a card in front of its body
   with a little gel hand at either side (`render/gel/layers.h`). Each
   slides up as it starts and bobs while it's held.
+- **May mark a finished turn.** The brain's reaction to a finished turn,
+  a finish or only a face, names whose turn it was (the `do`'s `who`),
+  and the engine names it in the strip, and opens its thread on a tap,
+  while any part of the reaction plays and 3 s after
+  (`Behaviour::kFinishLingerMs`); another reaction that names none takes
+  it down, and it leaves in 0.4 s (`kDoneLeaveMs`). A face gets it as
+  `DoneShow` (whose turn, how it ended, how long it has shown and how
+  long until it goes) and may mark it as its own, and while the finish
+  itself plays it's told so (`FaceSource::named`), so it may leave out a
+  card of its own. The gel's rim glows in the outcome's colour and a
+  ticket naming the thread hangs from the top
+  (characters/boop/design/slime-blob/CONTINUITY.md, A finished turn);
+  Pixel marks it in the strip alone.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the

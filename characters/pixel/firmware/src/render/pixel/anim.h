@@ -45,7 +45,7 @@ class PixelFace final : public Face {
   }
   bool blinking(uint32_t t) const override;
   SceneShow show(uint32_t t, bool mouthOpen, int dy) const override;
-  bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const SignShow&, const Strip&,
+  bool draw(Canvas&, Surface*, const SceneShow&, uint32_t, const char*, const SignShow&, const DoneShow&, const Strip&,
             bool) override;
   int cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) override;
   const RigFace& rigFace() const { return rig_; }

@@ -51,12 +51,14 @@ struct PastimeShow;
 // playing in front), the work stream at `now`, the device's time
 // (render/gel/stream.h: its words behind the body, the desk's to-do bar,
 // clock and thought cloud, and the word forward), the sign it holds up
-// (render/gel/layers.h), then the lane, unless this surface already shows
-// it. While the agents' drawer shows (render/gel/drawer.h) it takes the
+// (render/gel/layers.h), the finished turn's ticket, then the lane, unless
+// this surface already shows it, and over all of it the finished turn's
+// glow (render/gel/done.h). While the agents' drawer shows (render/gel/drawer.h) it takes the
 // lane's place, the body pressed flat above it, and the pastimes, the
-// stream, the sign and the sky wait for it to shut.
+// stream, the sign, the sky and the finished turn wait for it to shut.
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* bubble, const SignShow& sign,
-                const Strip& strip, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
+                const Strip& strip, const DoneShow& done = {}, const rig::Channels& rig = rig::kRest,
+                const rig::Layers* layers = nullptr,
                 uint32_t t = 0, const Stream* stream = nullptr, uint32_t now = 0,
                 const PastimeShow* pastimes = nullptr, const Drawer* drawer = nullptr);
 // The widest line the bubble holds on a surface, in px, clear of its

@@ -396,6 +396,7 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     e.setFacts(f);
   }
   e.setMood(expressionFromName(moodName(context.mood)));
+  e.scenes.cardless = source.named;
   bool timeout = source.look == SceneState::kNoApp;
   if (timeout != e.router.timedOut) e.linkTimedOut(timeout);
   e.setOccasion(context.when, context.lookMs);
@@ -512,12 +513,12 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 // The lane is drawn at the panel's size too (render/gel/lane.h), so the
 // canvas is left to the test pattern.
 bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
-                   const SignShow& sign, const Strip& strip, bool) {
+                   const SignShow& sign, const DoneShow& done, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
   const PastimeShow kit = pastimes(lastTick_);
   size_ = {native->width, native->height, native->corner};
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels(), &layers_, lastTick_,
-             stream_, t, &kit, drawer_);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, done, mixer_.channels(), &layers_,
+             lastTick_, stream_, t, &kit, drawer_);
   return true;
 }
 

@@ -488,7 +488,9 @@ onboarding's) is sized by how long it's held (`loops`) instead: once
 small, twice medium, three times big, four times or more biggest. A
 success in a sad mood (disappointed, sad, crying, whiny, wounded) is
 small whatever else: tearful but valid. A failure never plays one: its
-row keeps its card and its three takes.
+row keeps its card and its three takes, unless the finish names whose
+turn it was, when its ticket takes the card's place (A finished turn,
+below).
 
 | Size | Finish | What it does |
 | --- | --- | --- |
@@ -542,6 +544,33 @@ the confetti at 33 to 37, where the look alone draws 40.
 above small cheers at its reveal instead (`cheer`: two chord stabs, a held
 chord, a run up and a rattle of soft claps) and bounces (`bounce`) as it
 lands, once each, never ducked.
+
+## A finished turn
+
+The brain's reaction to a finished turn, a finish or only a face, names
+whose turn it was (the `do`'s `who`), and the board marks it on screen
+for as long as the reaction plays and 3 s after (`Behaviour::done`,
+`kFinishLingerMs`), so a face or a word reads as being about that turn
+(`gel/done.h`):
+
+- **The rim glows** in the outcome's colour, the strip's marks' sage for
+  a success, clay for a failure, and a fainter warm white for a reply or
+  a face with no finish of its own. It comes over 0.3 s, holds, and fades
+  over the last second; strongest at the panel's edge, it reaches 26 px
+  in, following the rounded corners, over everything, the lane too.
+- **A ticket drops in** from the top on a string, with the strip's mark
+  and the thread's name (else the agent's) in the bubble's font, cut to
+  fit. It falls past its place and back over 0.7 s, swings, dying away,
+  and keeps a little sway, then goes back up over the last 0.4 s. It hangs
+  in the middle, where a failure's or a reply's card would be, which the
+  face leaves out while it does (`Scenes::cardless`), or left of a
+  success's trophy, a quarter of the way across.
+
+Another reaction that names no turn takes them down: they leave in 0.4 s,
+and the strip and a tap stop naming the turn at once. A needs-you takes
+them at once. While the ticket hangs, a card is drawn whole rather than
+kept (it may swing over one), and a lane under a steady glow is kept,
+glow and all; while the glow changes, the lane is drawn again.
 
 ## Gestures
 

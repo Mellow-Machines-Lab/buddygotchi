@@ -119,8 +119,9 @@ struct ReactionIn {
   // times its design plays; with an expression and no animation, how many
   // loops of the design it's drawn in the face holds.
   int loops = 1;
-  // With the finish (task_complete or reply_ready), whose turn it is
-  // (`who`): named in the strip while it plays. Null for none.
+  // The finished turn it's about (`who`), with a finish (task_complete or
+  // reply_ready) or with no animation: named in the strip and marked on
+  // the face while it plays (Behaviour::done). Null for none.
   const char* whoAgent = nullptr;
   const char* whoThread = nullptr;
   // The kit's key for the reaction (linkkit::Do::key), 0 for none: its parts
@@ -162,10 +163,13 @@ class Behaviour {
   // A reaction's sign shows from its start for as long as any part of it
   // plays, and at least this long, to be read.
   static constexpr uint32_t kSignMinMs = 2500;
-  // The brain's finish naming whose turn it was stays named in the strip
-  // this long after it plays out, and a tap still opens its thread, unless
-  // another animation or a needs-you takes the face first.
-  static constexpr uint32_t kFinishLingerMs = 2000;
+  // The finished turn the brain's reaction names (its `who`) stays named
+  // in the strip, and marked on the face, this long after the reaction
+  // plays out, and a tap still opens its thread, unless another animation,
+  // another reaction or a needs-you comes first. One taken down early by
+  // anything but a needs-you leaves in kDoneLeaveMs.
+  static constexpr uint32_t kFinishLingerMs = 3000;
+  static constexpr uint32_t kDoneLeaveMs = 400;
 
   void reset(uint32_t t, Rng& rng);
   // At power-on no Mac has spoken: "no app" from the start, until the
@@ -213,7 +217,7 @@ class Behaviour {
   // tap or another animation doesn't take the face over, and a touch is a
   // tap, never a gesture.
   bool held(uint32_t t) const;
-  // The id of the brain's finish showing whose turn it was at t, as it
+  // The id of the brain's reaction naming whose turn it was at t, as it
   // plays or lingers after, which a tap opens on the Mac instead of
   // poking; 0 for none.
   uint32_t finishShown(uint32_t t) const;
@@ -255,6 +259,10 @@ class Behaviour {
   // out: no text with no app or while something needs you, which take it
   // down at once.
   render::SignShow sign(uint32_t t) const;
+  // The finished turn the brain's reaction is about, while it plays,
+  // lingers after and leaves (render::DoneShow): none with no app or while
+  // something needs you.
+  render::DoneShow done(uint32_t t) const;
   // Whether a sign is up, not fading.
   bool signUp(uint32_t t) const { return signOn(t) && !noApp(t) && !model_.attn; }
   // When the sign shown last goes.
@@ -324,8 +332,19 @@ class Behaviour {
     render::StartCtx ctx = render::StartCtx::kNone;
     uint32_t id = 0;  // the Mac's, which a tap on the finish names
     render::Outcome outcome = render::Outcome::kNone;  // what its design is for: a finish's result
-    char agent[12] = "";  // the finish's `who`; empty for none
+  };
+  // The finished turn a brain reaction names (its `who`): a finish
+  // (task_complete or reply_ready), or a reaction with no animation. It
+  // shows while any part of its reaction (`key`) plays; once none does, it
+  // lingers kFinishLingerMs, ending at `endAt` + `endMs`. Taken down early,
+  // it's no longer named (the strip, a tap) and leaves in kDoneLeaveMs.
+  struct Done {
+    char agent[12] = "";  // empty for none
     char thread[24] = "";
+    render::Outcome outcome = render::Outcome::kNone;  // its finish's result; kNone for a reply or a face
+    uint32_t id = 0, key = 0, at = 0;
+    bool ending = false, named = true;
+    uint32_t endAt = 0, endMs = 0;
   };
   // A `say`: its one or two takes, the bubble with their text, and the
   // mouth following their loudness. It plays over whatever face is showing,
@@ -385,11 +404,11 @@ class Behaviour {
   bool holds(uint32_t key, uint32_t t) const;
   void resync(uint32_t t);
   bool reactionOn(uint32_t t) const;
-  // A finish (task_complete or reply_ready) that names whose turn it was.
-  static bool named(const Reaction& r);
-  // The brain's finish naming whose turn it was, as it plays or lingers
-  // after (the strip shows it); null for none.
-  const Reaction* finishOn(uint32_t t) const;
+  // The finished turn named, as its reaction plays or lingers after (the
+  // strip shows it); null for none, or one taken down early.
+  const Done* finishOn(uint32_t t) const;
+  // Something else takes the finished turn's place: it leaves.
+  void takeDown(uint32_t t);
   bool listening(uint32_t t) const;  // `listening` is playing
   uint8_t blTarget(uint32_t t) const;  // the level the state asks for at t
   bool sayOn(uint32_t t) const;        // the `say` plays, or its bubble shows
@@ -398,8 +417,8 @@ class Behaviour {
   bool signOn(uint32_t t) const;
   Source sourceAt(uint32_t t) const;
   // What the strip shows: what the Mac last said, with no app or not, and
-  // the brain's finish playing (null for none), whole.
-  static render::Strip stripOf(const Model& m, bool noApp, const Reaction* finish);
+  // the finished turn named (null for none), whole.
+  static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
   render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t)); }
   // At every change: the strip kept while it shows, and its fade turned
   // when it comes or goes.
@@ -426,9 +445,7 @@ class Behaviour {
   uint8_t blFrom_ = 255;
   uint32_t blAt_ = 0;
   Reaction reaction_;
-  // The finish that played out on its own, lingering from `at` for `ms`
-  // (kFinishLingerMs); anim kNone for none.
-  Reaction lingering_;
+  Done done_;
   Say say_;
   Sign sign_;
   // The sign that went last, fading out from goneAt_ (sign()).
@@ -461,7 +478,7 @@ class Behaviour {
   // last change while it showed, copied, which it shows as it fades out.
   render::rig::Ramp lane_;
   Model laneModel_;
-  Reaction laneFinish_;
+  Done laneFinish_;
   bool laneNoApp_ = false, laneFinishes_ = false;
 };
 

@@ -161,8 +161,10 @@ final class HarnessTests: XCTestCase {
         var queued: [(reaction: DeviceReaction, pending: Pending)] = []
         var sent: [DeviceReaction] { queued.map(\.reaction) }
         var why: String?
+        // NOW finished a turn of 9 minutes, or (nil) none.
+        var turnMs: Int64? = 9 * 60_000
         let react = ReactOutput(queue: { queued.append(($0, $1)) }, blocked: { why },
-                                who: { _ in .init(agent: "codex", thread: "fix-nav") }, turnMs: { _ in 9 * 60_000 })
+                                who: { _ in .init(agent: "codex", thread: "fix-nav") }, turnMs: { _ in turnMs })
         /// Runs `answers`, and checks the result is started with `message`
         /// and the handle its reaction was queued with.
         func starts(_ answers: Answers, _ message: String, line: UInt = #line) {
@@ -257,12 +259,20 @@ final class HarnessTests: XCTestCase {
         XCTAssertNil(woke.outcome, "a wake-up has no outcome")
         XCTAssertEqual(woke.who, .init(agent: "codex", thread: "fix-nav"), "the thread NOW is about, which a back never is (PresenceTests)")
         queued.removeLast()
+        // A face with no animation names whose turn it was when NOW
+        // finished one, and only then: the device marks the turn it's about.
         for pick in ["none", "cheer", "wiggle", "confetti"] {
             starts(["react.mood": a("happy"), "react.animation": a(pick)], "\(creature) made a happy face, held once.")
             XCTAssertNil(queued.last?.reaction.anim, pick)
-            XCTAssertNil(queued.last?.reaction.who, "only a finish names whose turn")
+            XCTAssertEqual(queued.last?.reaction.who, .init(agent: "codex", thread: "fix-nav"), "a face for a finished turn names it")
+            XCTAssertNil(queued.last?.reaction.outcome, "with no outcome of its own")
             queued.removeLast()
         }
+        turnMs = nil
+        starts(["react.mood": a("happy")], "\(creature) made a happy face, held once.")
+        XCTAssertNil(queued.last?.reaction.who, "a face for anything else names no turn")
+        queued.removeLast()
+        turnMs = 9 * 60_000
         XCTAssertNil(react.run(["react.mood": a("proud-success")], now: nil, log: Self.log), "a face and an animation are separate questions")
         why = "something needs you"
         for expression in ReactOutput.expressions.map(\.name) {

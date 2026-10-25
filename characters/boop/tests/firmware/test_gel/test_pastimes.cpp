@@ -120,7 +120,7 @@ void test_each_pastime_draws_and_ends() {
     auto draw = [&](std::vector<uint16_t>& px) {
       Surface s{502, 410, px.data()};
       std::fill(px.begin(), px.end(), 0);
-      face.draw(c, &s, face.show(board.t, false, 0), board.t, nullptr, SignShow{}, Strip{}, false);
+      face.draw(c, &s, face.show(board.t, false, 0), board.t, nullptr, SignShow{}, DoneShow{}, Strip{}, false);
     };
     board.to(3008);
     draw(before);
