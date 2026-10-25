@@ -128,6 +128,18 @@ pacing and touch, the Mac app, the architecture) found what's below.
       the next frame's step onto the other core while this core draws the
       art, layers and props would hide it, but they read the engine: it
       needs a snapshot of what they read.
+- [ ] The board's frame rate, all of the above merged (01ee9a01,
+      `perf --scenes`, 12 s a scene, muted; before is the pass's start,
+      008e5e7d): asleep 45.3 → 42.4 fps, working 38.4 → 37.0, pokes
+      38.2 → 36.8, attention 34.0 → 32.7, frightened 31.3 → 31.9; the
+      new stream scene 31.2 and night 24.4. The sharper material and the
+      outline cost ~1 ms of body, the hat's sub-pixel replay ~3.5 ms at
+      night. Every scene passes; the internal heap's least is 50,968
+      against 50,000, so ~1 KB is left. Owner's call: whether night's
+      24 fps is enough for a smooth hat (whole-pixel replay gives ~28),
+      and whether an even 30 fps reads better than ~37 on the 60 Hz
+      panel. `perf --motion`'s 60 KB heap budget fails, as it already did
+      at 008e5e7d (51.5 KB): the budget or the heap wants a look.
 
 ## Now: the first launch, from the owner's setup
 
