@@ -489,6 +489,29 @@ static void test_a_tap_on_a_named_finish_carries_its_id() {
   TEST_ASSERT_TRUE(has(r.usb.text, "\"anim\":\"task_complete\""));
 }
 
+// A touch on the face's middle is a boop on the nose, but on a named
+// finish it's a tap on it, as anywhere else: it opens that thread, and
+// the finish plays on.
+static void test_the_nose_on_a_named_finish_is_a_tap() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\"}");
+  r.usbLine("{\"t\":\"do\",\"id\":42,\"name\":\"reply_ready\",\"play\":\"now\",\"args\":{"
+            "\"who\":{\"agent\":\"claude\",\"thread\":\"fix-nav\"}}}");
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":134}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"screen\",\"on\":42}}\n"));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ended\""));  // not cut
+  // With no finish, the nose is a boop.
+  r.usbLine("{\"t\":\"dbg.reset\"}");
+  r.usbLine("{\"t\":\"state\"}");
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":134}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"kind\":\"gesture\",\"did\":\"nose\""));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+}
+
 // The resistive panel misses readings under a light press, so a
 // panel touch ends only after 50 ms without contact. A press that flickers
 // is one tap; a new press after a real lift is another.
@@ -2426,6 +2449,7 @@ int main() {
   RUN_TEST(test_a_flickering_touch_is_one_tap);
   RUN_TEST(test_a_lift_the_panel_reports_taps_at_once);
   RUN_TEST(test_a_tap_on_a_named_finish_carries_its_id);
+  RUN_TEST(test_the_nose_on_a_named_finish_is_a_tap);
   RUN_TEST(test_a_reaction_carries_its_expression);
   RUN_TEST(test_a_touch_ends_while_the_clock_is_frozen);
   RUN_TEST(test_a_frozen_clock_runs_again_after_60s_without_debug);

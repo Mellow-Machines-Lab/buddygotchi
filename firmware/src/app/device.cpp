@@ -519,7 +519,9 @@ void Device::readInputs(uint32_t t) {
       // counts the kTouchReleaseMs the device waits to be sure. Its path
       // may make it a gesture: a stroke, a ruffle, a swipe, a tickle, a
       // boop on the nose; then the board reacts as one, but not while the
-      // face is held, where a touch is a tap.
+      // face is held, where a touch is a tap. A boop on the nose while the
+      // brain's finish names whose turn it was is a tap on it too: the
+      // nose is the face's middle, where you tap to open that thread.
       // A touch that began on the needs-you screen was for it: it gives no tap
       // once its hold dismissed it, or once the screen has gone (its request
       // answered or dismissed on the Mac).
@@ -537,7 +539,8 @@ void Device::readInputs(uint32_t t) {
           tapDrawer(live_.lastTouch.x0, live_.lastTouch.y0, t);
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
-        if (kind == TouchGesture::kTap || b_.held(t))
+        const bool noseOnFinish = kind == TouchGesture::kGesture && g == render::Gesture::kNose && b_.finishShown(t);
+        if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
           tapped(t, live_.touchInjected, false);
         else
           gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
