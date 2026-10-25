@@ -657,7 +657,8 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
     paintFinishFront(surface, finish.finish, finish.ageMs, finish.revealMs, *anchors, c.scale, finish.gift);
   {
     Measure measure(profile.props);
-    paintProps(surface, e);
+    const Paws paws = pastimes ? pawsFor(*pastimes) : Paws{};
+    paintProps(surface, e, &paws);
   }
 }
 }  // namespace render::gel

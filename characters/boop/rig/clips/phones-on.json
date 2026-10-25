@@ -1,0 +1,11 @@
+{
+  "about": "At work, once it has worked 2 minutes: it looks up as its headphones come down over its ears, and settles in, eyes shut.",
+  "ms": 2400,
+  "tracks": {
+    "gazeY": [[0, 0], [300, -600], [1100, -600], [1400, 0]],
+    "squash": [[0, 0], [300, -60], [1100, -60], [1300, 60], [1500, -20], [1700, 0]],
+    "lift": [[0, 0], [300, 4], [1100, 4], [1300, 0]],
+    "eyeOpen": [[0, 0], [1200, 0], [1350, -850], [2000, -850], [2300, 0]]
+  },
+  "cues": [[1250, "body_contact"]]
+}

@@ -20,12 +20,14 @@ const PastimeInfo kPastimes[kPastimeCount] = {
     {Pastime::kSip, "sip", SceneState::kWorking, 1, 0},
     {Pastime::kPeek, "peek", SceneState::kWorking, 1, 0},
     {Pastime::kHum, "hum", SceneState::kWorking, 1, 0},
+    {Pastime::kDone, "done-beat", SceneState::kWorking, 1, 0},
     {Pastime::kPonder, "ponder", SceneState::kWorking, 2, 0},
-    {Pastime::kTongue, "tongue", SceneState::kWorking, 2, 0},
+    {Pastime::kRead, "read", SceneState::kWorking, 2, 0},
     {Pastime::kNod, "nod", SceneState::kWorking, 2, 0},
     {Pastime::kBop, "bop", SceneState::kWorking, 3, 0},
     {Pastime::kDrum, "drum", SceneState::kWorking, 3, 0},
     {Pastime::kSticky, "sticky", SceneState::kWorking, 3, 0},
+    {Pastime::kPhonesOn, "phones-on", SceneState::kWorking, 3, 0},
     {Pastime::kRefill, "refill", SceneState::kWorking, 4, 0},
     {Pastime::kSnack, "snack", SceneState::kWorking, 4, 0},
     {Pastime::kLookAround, "look-around", SceneState::kIdle, 1, 0},
@@ -85,7 +87,7 @@ constexpr uint16_t kMug = rgb565(214, 92, 84), kMugDark = rgb565(150, 56, 52), k
                    kLeaf = rgb565(96, 196, 112), kLeafDark = rgb565(60, 140, 80), kPot = rgb565(204, 112, 72),
                    kSoil = rgb565(70, 46, 32), kPetal = rgb565(250, 130, 180), kNote = rgb565(255, 214, 120),
                    kHeart = rgb565(240, 96, 140), kBulb = rgb565(255, 228, 110), kTick = rgb565(110, 220, 140),
-                   kTongue = rgb565(240, 110, 130), kCookie = rgb565(206, 150, 88), kChip = rgb565(90, 54, 30),
+                   kCookie = rgb565(206, 150, 88), kChip = rgb565(90, 54, 30),
                    kGlass = rgb565(170, 196, 206),
                    kCheese = rgb565(255, 214, 96), kPepperoni = rgb565(200, 60, 50), kStar = rgb565(255, 240, 170),
                    kBlanket = rgb565(150, 104, 200), kBlanketDark = rgb565(104, 66, 150),
@@ -530,16 +532,54 @@ void ponder(const Stage& s, const PastimeShow& p) {
   r.alpha = 255;
 }
 
-void tongue(const Stage& s, const PastimeShow& p) {
+// Something finished: a tick on the monitor as Enter goes down, and a
+// sparkle off its corner.
+void done(const Stage& s, const PastimeShow& p) {
   Raster& r = s.r;
-  const int age = int(p.age), out = eased(age, 200, 500) - eased(age, int(p.ms) - 500, int(p.ms) - 200);
-  if (out <= 0) return;
-  const int x = s.mouthX() + s.X(16) + wobble(age, 600, 2), y = s.mouthY() + s.Y(16);
-  r.round(x - 7, y, 14, 4 + 9 * out / 1024, 6, kTongue);
-  r.line({x, y + 2}, {x, y + 2 + 5 * out / 1024}, 1, rgb565(200, 70, 96));
-  for (int i = 0; i < 3; ++i)
-    r.line({s.at.eyeL.x / 16 - s.X(30) - i * 2, s.at.eyeL.y / 16 - s.Y(18) + i * 9},
-           {s.at.eyeL.x / 16 - s.X(40) - i * 2, s.at.eyeL.y / 16 - s.Y(22) + i * 9}, 2, kCream);
+  const int age = int(p.age);
+  if (const int a = window(age, 600, 2300, 80, 500)) {
+    r.alpha = a;
+    const int x = s.X(96), y = s.Y(268), k = eased(age, 600, 800);
+    r.line({x - 8, y}, {x - 8 + 6 * k / 1024, y + 6 * k / 1024}, 3, kTick);
+    if (k == 1024) {
+      const int up = eased(age, 800, 950);
+      r.line({x - 2, y + 6}, {x - 2 + 14 * up / 1024, y + 6 - 14 * up / 1024}, 3, kTick);
+    }
+    if (const int b = window(age, 750, 1500, 80, 400)) {
+      r.alpha = b;
+      sparkle(r, s.X(140), s.Y(244), 4 + 3 * eased(age, 750, 950) / 1024, kShine);
+    }
+  }
+  r.alpha = 255;
+}
+
+// Reading closely: the line its eyes are on lit on the monitor, a line
+// further down every 700 ms; from tier4 it's close enough to fog the glass.
+void read(const Stage& s, const PastimeShow& p) {
+  Raster& r = s.r;
+  const int age = int(p.age);
+  if (const int a = window(age, 800, 3900, 150, 200)) {
+    const int line = std::min(2, (age - 800) / 1050);
+    r.alpha = a * 110 / 255;
+    r.round(s.X(62), s.Y(265) + line * s.Y(5), s.X(56) - line * s.X(12), s.Y(5), 2, kShine);
+    if (tierOf(p.when) >= 4)  // soft at its edge: rings of breath, thinner further out
+      for (int ring = 0; ring < 3; ++ring) {
+        r.alpha = a * (16 + ring * 14) / 255;
+        r.disk(s.X(122), s.Y(270), 18 - ring * 5, kCream);
+      }
+  }
+  r.alpha = 255;
+}
+
+// Putting the headphones on: a hand at each cup, bringing them down over
+// its ears (the cups themselves are the kit's, dropped: paintWorn).
+void phonesOn(const Stage& s, const PastimeShow& p) {
+  const int a = window(int(p.age), 0, int(kPhonesOnMs) + 200, 150, 300);
+  if (!a) return;
+  const Cups c = cupsOf(s.at);
+  s.r.alpha = a;
+  for (int side : {0, 1}) hand(s.r, c.outer[side] / 16 + (side ? 4 : -4), c.y[side] / 16 - p.drop + 6, 10);
+  s.r.alpha = 255;
 }
 
 void nod(const Stage& s, const PastimeShow& p) {
@@ -1125,9 +1165,32 @@ void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at
   Raster r{surface};
   if (show.headphones) {
     r.fade = show.headphones;
-    headphones(r, at);
-    if (show.playing != Pastime::kBop) tune(r, at, show.t);  // bopping's notes are its own
+    rig::Anchors up = at;
+    for (rig::Point* q : {&up.crown, &up.brimL, &up.brimR, &up.eyeL, &up.eyeR}) q->y -= show.drop * 16;
+    headphones(r, up);
+    // Bopping's notes are its own; none while they come down.
+    if (show.playing != Pastime::kBop && !show.drop) tune(r, at, show.t);
   }
+}
+
+Paws pawsFor(const PastimeShow& show) {
+  Paws paws;
+  const int age = int(show.age);
+  switch (show.playing) {
+    case Pastime::kDone:  // the right one up, and down on Enter
+      paws.lift[1] = 60 * (eased(age, 0, 450) - eased(age, 450, 600)) / 1024;
+      break;
+    case Pastime::kPhonesOn:  // both up at its head, holding them
+      paws.alpha[0] = paws.alpha[1] = 255 - window(age, 0, int(kPhonesOnMs) + 200, 150, 300);
+      break;
+    default: return paws;
+  }
+  // A pastime stopped early gives them back as it fades.
+  for (int side : {0, 1}) {
+    paws.lift[side] = paws.lift[side] * show.fade / 255;
+    paws.alpha[side] = 255 - (255 - paws.alpha[side]) * show.fade / 255;
+  }
+  return paws;
 }
 
 void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors& at, const Engine& e) {
@@ -1151,7 +1214,9 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
     case Pastime::kPeek: peek(s, show); break;
     case Pastime::kHum: hum(s, show); break;
     case Pastime::kPonder: ponder(s, show); break;
-    case Pastime::kTongue: tongue(s, show); break;
+    case Pastime::kDone: done(s, show); break;
+    case Pastime::kRead: read(s, show); break;
+    case Pastime::kPhonesOn: phonesOn(s, show); break;
     case Pastime::kNod: nod(s, show); break;
     case Pastime::kBop: bop(s, show, show.headphones > 0); break;
     case Pastime::kDrum: drum(s, show); break;

@@ -14,16 +14,19 @@
 // occasions (the rig's looks.json, which both faces play), one at a time,
 // a rest of kRestMinMs to kRestMaxMs between them, the newest tier's
 // kNewestPct of the time and an older one's the rest, never the same twice
-// in a row.
+// in a row. While a pastime moves the desk's paws (Enter pressed, the
+// hands up at its head), they're where it puts them (pawsFor).
 //
 // The kit stays out while its tier lasts, fading in and out on the rig's
 // fade: at work a mug on the desk (tier1; in the morning its coffee is in
 // its hand instead, so neither the mug nor a sip or refill from it), a
 // mug more stacked on it every kMugEveryMs from tier5, and headphones
-// (tier3), the hat winning where it has one, and in the zone (tier5) a
-// few motes drifting up beside it, kMotes of them, each over kMoteMs;
-// idle, a plant that grows (tier3 to tier5). Behind the body: the plant. In front: everything
-// else, at the body's anchors.
+// from tier3, the hat winning where it has one: put on where you can see
+// it (kPhonesOn, the first pastime dealt once they're wanted), so they
+// say it has settled in, and on from then while they're wanted; and in
+// the zone (tier5) a few motes drifting up beside it, kMotes of them, each
+// over kMoteMs. Idle, a plant that grows (tier3 to tier5). Behind the
+// body: the plant. In front: everything else, at the body's anchors.
 #pragma once
 #include <cstdint>
 
@@ -41,12 +44,14 @@ enum class Pastime : uint8_t {
   kSip,
   kPeek,
   kHum,
+  kDone,
   kPonder,
-  kTongue,
+  kRead,
   kNod,
   kBop,
   kDrum,
   kSticky,
+  kPhonesOn,
   kRefill,
   kSnack,
   // Idle.
@@ -114,6 +119,10 @@ constexpr int kMostMugs = 4;
 // In the zone, this many motes beside it, each drifting up over this long.
 constexpr int kMotes = 5;
 constexpr uint32_t kMoteMs = 4500;
+// Putting the headphones on: they come down from kPhonesDropPx above its
+// ears, held by a hand at each, and are on kPhonesOnMs in.
+constexpr int kPhonesDropPx = 120;
+constexpr uint32_t kPhonesOnMs = 1300;
 
 // While the headphones are on, a note floats up from each cup in turn: a
 // pair every kTuneEveryMs, the right's kTuneGapMs after the left's, each
@@ -140,7 +149,17 @@ struct PastimeShow {
   int fade = 0;
   uint32_t t = 0, when = 0;
   int mug = 0, mugs = 1, headphones = 0, zone = 0, plant = 0, grown = 1;
+  // How far above its ears the headphones are, in px: coming down while
+  // they're put on.
+  int drop = 0;
 };
+// Where a pastime puts the desk's paws, each (0 left, 1 right) in the
+// thousandths of the surface paintProps draws them in: lifted, moved out
+// and at an opacity (0 … 255). At rest, typing as they do.
+struct Paws {
+  int lift[2] = {0, 0}, dx[2] = {0, 0}, alpha[2] = {255, 255};
+};
+Paws pawsFor(const PastimeShow& show);
 
 // The plant: drawn after the clear and before the body, so the body
 // covers it.

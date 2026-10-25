@@ -54,7 +54,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   occasion_ = cueing_ = lastClip_ = base_ = nullptr;
   pastime_ = Pastime::kNone;
   occasionAt_ = occasionEnds_ = stoppedAt_ = restUntil_ = zoneSince_ = 0;
-  inZone_ = false;
+  inZone_ = phonesWanted_ = phonesOn_ = false;
   occasionLook_ = dealtLook_ = SceneState::kNone;
   stopped_ = false;
   dice_ = kSeed;
@@ -201,6 +201,13 @@ void GelFace::deal(SceneState look, uint32_t t) {
         !(morning && (p.id == Pastime::kSip || p.id == Pastime::kRefill)))
       add(rig::kRig.clip(p.clip), p.id, p.tier, p.afterS);
   // Never the one dealt last, while there's another.
+  // The headphones wanted and not yet on: they go on first, and only then.
+  if (look == SceneState::kWorking && phonesWanted_ && !phonesOn_) {
+    playPastime(Pastime::kPhonesOn, t);
+    return;
+  }
+  for (int i = 0; i < n; ++i)
+    if (options[i].pastime == Pastime::kPhonesOn) options[i--] = options[--n];
   if (n > 1)
     for (int i = 0; i < n; ++i)
       if (options[i].clip == lastClip_) {
@@ -284,7 +291,10 @@ void GelFace::showKit(uint32_t t) {
   inZone_ = working && tier >= 5;
   show(zone_, inZone_);
   show(mug_, working && tier >= 1 && !hasTag(when, "morning"));  // the morning's is in its hand
-  show(headphones_, working && tier >= 3 && head);
+  phonesWanted_ = working && tier >= 3 && head;
+  if (!phonesWanted_) phonesOn_ = false;
+  if (pastime_ == Pastime::kPhonesOn && !stopped_ && t - occasionAt_ >= kPhonesOnMs) phonesOn_ = true;
+  show(headphones_, phonesWanted_ && phonesOn_);
   show(plant_, idle && tier >= 3);
   if (idle && tier >= 3) grown_ = std::min(3, tier - 2);
 }
@@ -306,6 +316,10 @@ PastimeShow GelFace::pastimes(uint32_t t) const {
   auto opacity = [t](const rig::Ramp& ramp) { return (ramp.value(t) * 255 + 500) / 1000; };
   s.mug = opacity(mug_);
   s.headphones = opacity(headphones_);
+  if (pastime_ == Pastime::kPhonesOn) {  // coming down over its ears
+    s.headphones = std::max(s.headphones, s.fade);
+    s.drop = kPhonesDropPx - kPhonesDropPx * int(ease(std::min<uint32_t>(s.age, kPhonesOnMs), kPhonesOnMs)) / 1024;
+  }
   s.zone = opacity(zone_);
   s.plant = opacity(plant_);
   s.grown = grown_;

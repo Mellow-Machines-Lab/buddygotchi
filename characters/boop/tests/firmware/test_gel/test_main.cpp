@@ -1792,6 +1792,7 @@ void test_pastimes_are_dealt_by_tier_after_a_rest();
 void test_the_kit_follows_the_tiers();
 void test_the_headphones_play_a_tune();
 void test_work_settles_by_tier();
+void test_the_headphones_go_on_where_you_see_them();
 void test_the_paws_type_on_the_keys();
 // test_drawer.cpp
 void test_a_pull_up_the_strip_opens_the_drawer();
@@ -3063,6 +3064,7 @@ int main() {
   RUN_TEST(test_the_kit_follows_the_tiers);
   RUN_TEST(test_the_headphones_play_a_tune);
   RUN_TEST(test_work_settles_by_tier);
+  RUN_TEST(test_the_headphones_go_on_where_you_see_them);
   RUN_TEST(test_the_paws_type_on_the_keys);
   RUN_TEST(test_the_layers_come_and_go_through_the_stack);
   RUN_TEST(test_gel_draws_natively);

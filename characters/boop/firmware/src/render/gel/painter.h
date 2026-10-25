@@ -83,7 +83,10 @@ void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
 // The most room a cross-fading group of the art has taken (kCrossingBytes).
 extern int crossingPeak;
-void paintProps(Surface&, const Engine&);
+// The desk's paws are where a pastime puts them (render/gel/pastimes.h),
+// typing with none.
+struct Paws;
+void paintProps(Surface&, const Engine&, const Paws* paws = nullptr);
 // A paw types: before each of its key contacts in the recipe playing it
 // lifts and comes back down over kTapMs, kTapLift thousandths of the
 // surface's height at the top, landing on the contact (whose sound and

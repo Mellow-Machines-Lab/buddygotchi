@@ -127,6 +127,9 @@ class GelFace final : public Face {
   rig::Ramp mug_, headphones_, zone_, plant_;
   uint32_t zoneSince_ = 0;
   bool inZone_ = false;
+  // Whether it wants the headphones on (working from tier3, its head free),
+  // and has put them on since it last took them off (kPhonesOn).
+  bool phonesWanted_ = false, phonesOn_ = false;
   int grown_ = 1;
   // The reply it played last (FaceContext::reply), its clip or its
   // pastime, by when it started, so each plays once.

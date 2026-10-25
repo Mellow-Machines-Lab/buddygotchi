@@ -225,8 +225,8 @@ void test_the_headphones_play_a_tune() {
   TEST_ASSERT_EQUAL_INT(0, above(both, Pastime::kBop));
 }
 
-// Pins the kit: at work a mug from tier1, headphones from tier3 (none
-// while it wears a hat), and from tier5 a mug more on the stack every
+// Pins the kit: at work a mug from tier1, headphones from tier3 once it
+// has put them on (none while it wears a hat), and from tier5 a mug more on the stack every
 // kMugEveryMs up to kMostMugs, counted from when the work reached tier5,
 // and the zone's motes;
 // idle, a plant from tier3 that grows to tier5. No mug in the morning,
@@ -244,7 +244,9 @@ void test_the_kit_follows_the_tiers() {
   s = kit(1);
   TEST_ASSERT_TRUE(s.mug == 255 && !s.headphones);
   s = kit(3);
-  TEST_ASSERT_TRUE(s.mug && s.headphones);
+  TEST_ASSERT_TRUE(s.mug && !s.headphones);  // until it puts them on
+  board.to(board.t + 20000);
+  TEST_ASSERT_EQUAL_INT(255, face.pastimes(board.t).headphones);
   s = kit(4);
   TEST_ASSERT_TRUE(s.mug && s.headphones && !s.zone);
   TEST_ASSERT_EQUAL_INT(1, s.mugs);
@@ -257,6 +259,8 @@ void test_the_kit_follows_the_tiers() {
   s = kit(5, tagBit("night"));  // the nightcap wins the head
   TEST_ASSERT_TRUE(s.mug && !s.headphones);
   s = kit(3, tagBit("morning"));  // the morning's coffee is in its hand
+  board.to(board.t + 20000);  // and on go the headphones again
+  s = face.pastimes(board.t);
   TEST_ASSERT_TRUE(!s.mug && s.headphones);
   board.m.attn = true, board.m.attnId = 4;
   s = kit(5);
@@ -330,4 +334,43 @@ void test_the_paws_type_on_the_keys() {
   TEST_ASSERT_EQUAL_INT(kTypeLift, typeLift(kTypeMs - kTapMs / 2, 1));
   TEST_ASSERT_EQUAL_INT(0, typeLift(kTypeMs, 1));
   TEST_ASSERT_TRUE(kTypeLift < kTapLift);
+}
+
+// Pins kPhonesDropPx and kPhonesOnMs: once it wants its headphones
+// (working, tier3, its head free) the first pastime it plays is putting
+// them on: they come down from kPhonesDropPx above its ears, its paws up
+// at its head holding them, on by kPhonesOnMs, and stay on; it isn't dealt
+// again while they're on, and it is once they've been off.
+void test_the_headphones_go_on_where_you_see_them() {
+  Board board(SceneState::kWorking, tagBit("day") | tiers(3));
+  GelFace& face = board.face();
+  int puts = 0, others = 0;
+  uint32_t start = 0;
+  board.to(60000, [&] {
+    const PastimeShow s = face.pastimes(board.t);
+    if (s.playing == Pastime::kPhonesOn) {
+      if (!start) start = board.t, ++puts, TEST_ASSERT_EQUAL_INT(0, others);
+      const uint32_t age = board.t - start;
+      if (age == 16) TEST_ASSERT_TRUE(s.drop > kPhonesDropPx * 9 / 10 && s.headphones > 0);
+      if (age >= kPhonesOnMs) TEST_ASSERT_EQUAL_INT(0, s.drop);
+      if (age == 800) TEST_ASSERT_TRUE(pawsFor(s).alpha[0] == 0 && pawsFor(s).alpha[1] == 0);
+    } else {
+      if (s.playing != Pastime::kNone && start) ++others;
+      if (!start) TEST_ASSERT_EQUAL_INT(0, s.headphones);
+      if (start && board.t > start + 2400 + 300) TEST_ASSERT_EQUAL_INT(255, s.headphones);
+    }
+  });
+  TEST_ASSERT_EQUAL_INT(1, puts);
+  TEST_ASSERT_TRUE(others > 2);
+  // Something needs you, and back to work: on again.
+  board.m.attn = true, board.m.attnId = 5;
+  board.b.onState(board.m, board.t);
+  board.to(board.t + 5000);
+  board.m.attn = false;
+  board.b.onState(board.m, board.t);
+  start = 0;
+  board.to(board.t + 30000, [&] {
+    if (face.pastimes(board.t).playing == Pastime::kPhonesOn && !start) start = board.t;
+  });
+  TEST_ASSERT_TRUE(start > 0);
 }

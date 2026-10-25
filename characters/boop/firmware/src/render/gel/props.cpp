@@ -1,5 +1,6 @@
 #include "render/gel/painter.h"
 #include "render/gel/engine.h"
+#include "render/gel/pastimes.h"
 #include "render/gel/raster.h"
 #include "render/gel/subpixel.h"
 namespace render::gel {
@@ -99,7 +100,7 @@ int opaqueCards(const Surface& surface, const Engine& e, Box* out) {
   return count;
 }
 
-void paintProps(Surface& surface, const Engine& e) {
+void paintProps(Surface& surface, const Engine& e, const Paws* paws) {
   if (!surface.pixels) return;
   Raster r{surface};
   auto& s = e.scenes;
@@ -192,9 +193,13 @@ void paintProps(Surface& surface, const Engine& e) {
         round(397 + key * 26, 718 + row * 10, 19, 6, 2, pressed ? light : rgb565(144, 170, 176));
       }
     for (int side : {-1, 1}) {
-      const int lift = std::max(tapLift(s, side), typeLift(uint32_t(F(e.timeMs()).integer()), side));
+      const int i = side > 0, alpha = paws ? paws->alpha[i] : 255;
+      if (alpha < 3) continue;
+      const int lift = std::max(tapLift(s, side), typeLift(uint32_t(F(e.timeMs()).integer()), side)) +
+                       (paws ? paws->lift[i] : 0);
       int yy = 711 + (s.hasLast && s.last.side == side ? (contact * 9).integer() : 0) - lift;
-      round(500 + side * 78 - 30, yy - 12, 60, 25, 13, rgb565(93, 166, 219));
+      r.alpha = (s.desk.x * alpha).integer();
+      round(500 + side * 78 - 30 + (paws ? paws->dx[i] : 0), yy - 12, 60, 25, 13, rgb565(93, 166, 219));
     }
   }
   // Each prop's alpha is its ramped visibility; one fading out still draws
