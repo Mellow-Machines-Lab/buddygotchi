@@ -95,113 +95,212 @@ void fill(Surface& s, Vertex a, Vertex b, Vertex c, int from, int to) {
   }
 }
 
-// Fills a front-facing triangle by pixel centre, in rows [from, to). Its
-// edges named in `soft` (bit 0: b→c, 1: c→a, 2: a→b) are the body's
-// outline: there each pixel takes the share of its area inside, falling to
-// nothing half a pixel out, over the black the body is drawn on.
-void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned soft, int from, int to) {
-  if (!soft) return fill(s, a, b, c, from, to);
-  int area = edge(a, b, c.x, c.y);
-  if (area <= 0) return;
-  const int pad = soft ? 8 : 0;
-  int x0 = std::max(0, floor16(std::min({a.x, b.x, c.x}) - pad + 7)),
-      x1 = std::min(s.width - 1, floor16(std::max({a.x, b.x, c.x}) + pad - 8));
-  int y0 = std::max(0, floor16(std::min({a.y, b.y, c.y}) - pad + 7)),
-      y1 = std::min(to - 1, floor16(std::max({a.y, b.y, c.y}) + pad - 8));
-  const int start = std::max(y0, from);
-  if (x0 > x1 || start > y1) return;
-  s.touch(x0, start, x1 + 1, y1 + 1);
-  int dx[3] = {(b.y - c.y) * 16, (c.y - a.y) * 16, (a.y - b.y) * 16};
-  int dy[3] = {(c.x - b.x) * 16, (a.x - c.x) * 16, (b.x - a.x) * 16};
-  int e[3] = {edge(b, c, x0 * 16 + 8, y0 * 16 + 8), edge(c, a, x0 * 16 + 8, y0 * 16 + 8),
-              edge(a, b, x0 * 16 + 8, y0 * 16 + 8)};
-  // Half a pixel, in edge-function units, and the edge's length, per edge.
-  int half[3] = {0, 0, 0}, length[3] = {1, 1, 1};
-  for (int k = 0; k < 3; ++k)
-    if (soft >> k & 1) {
-      length[k] = std::max(1, root(uint32_t(dx[k] / 16 * (dx[k] / 16) + dy[k] / 16 * (dy[k] / 16))));
-      half[k] = 8 * length[k];
+// The projected mesh, for the frame being drawn: every vertex, in
+// sixteenths of a pixel. Kept small (internal RAM): 3.3 KB of positions.
+constexpr int kRings = slime::kMeshRings, kSectors = slime::kMeshSectors;
+int16_t px[kRings + 1][kSectors + 1], py[kRings + 1][kSectors + 1];
+Vertex vertex(int ring, int col) {
+  return Vertex{px[ring][col], py[ring][col], col * 4096 / kSectors, ring * 2048 / kRings};
+}
+// The rows each ring's triangles reach.
+int16_t ringTop[kRings + 1], ringLow[kRings + 1];
+
+// The outline: every edge between a front-facing triangle and one that
+// isn't, wound as that triangle winds it, with its UVs as a plane from the
+// pixel holding its first corner. The outline's pixels take the share of
+// their area the body covers, from all of it at once (Outline::row), so
+// the edge moves as smoothly as the mesh does: when a triangle turns away
+// it has no area left, and neither has its share of the outline.
+struct Rim {
+  int16_t x0, y0, x1, y1;  // sixteenths of a pixel, its top end first
+  int16_t ox, oy;          // the plane's origin, in pixels
+  int sign;                // 1 if the triangle winds it downward, else -1
+  int dxdy, dydx;          // its slopes, 16.16
+  int tu, tv, ux, vx, uy, vy;
+};
+// 9 KB; the most a pose has drawn is 138.
+constexpr int kMaxRims = 192;
+Rim rims[kMaxRims];
+int rimCount = 0;
+// Coverage as exact areas, in a 256th of a pixel high by half a 256th
+// wide: a whole pixel is 256 × 512.
+constexpr int kWhole = 256 * 512;
+static_assert(kWhole == 1 << 17, "a pixel's coverage is the sum's top bits");
+// The widest surface whose outline is drawn by coverage; a wider one's
+// edges are drawn by pixel centre.
+constexpr int kMaxWidth = 512;
+// What a core keeps while it draws a band of rows' outline: each pixel the
+// outline crosses, with what was under it and what goes over it.
+struct Outline {
+  int32_t acc[kMaxWidth + 2];
+  uint8_t owner[kMaxWidth + 2];  // 1 + the rim whose plane shades the pixel, or 0
+  struct Cell {
+    int16_t x;
+    uint16_t under;
+    uint8_t alpha, rim;
+  };
+  // A band's rows' worth; a row has at most kMaxWidth.
+  static constexpr int kMaxCells = 640;
+  Cell cells[kMaxCells];
+  int count = 0;
+  int16_t rowStart[17];
+  uint8_t near[kMaxRims];  // the rims in the band, in order of their tops
+  int nearCount = 0;
+  // A run of pixels a row's rims cross, [from, to].
+  struct Run {
+    int16_t from, to;
+  };
+  static constexpr int kMaxRuns = 48;
+  Run runs[kMaxRuns];
+  int runCount = 0;
+  bool spill = false;  // more runs than that: the row's walked from the first
+  int lowest = 0;
+  // Adds rim r's part in pixel row y, in 256ths of a pixel: each pixel it
+  // crosses takes the (signed, doubled) area to its right, the next pixel
+  // the rest, so the sum along the row is the area the body covers.
+  void add(int r, int y, int width) {
+    const Rim& rim = rims[r];
+    const int y0 = rim.y0 * 16, y1 = rim.y1 * 16, sign = rim.sign;
+    const int ya = std::max(y0, y * 256), yb = std::min(y1, y * 256 + 256);
+    if (ya >= yb) return;
+    auto xAt = [&](int at) {
+      return at >= y1 ? rim.x1 * 16 : rim.x0 * 16 + int((int64_t(rim.dxdy) * (at - y0)) >> 16);
+    };
+    int xa = xAt(ya), xb = xAt(yb), ta = ya, tb = yb;
+    if (xa > xb) std::swap(xa, xb), std::swap(ta, tb);  // left to right
+    const int lowY = std::min(ta, tb), highY = std::max(ta, tb);
+    auto yAt = [&](int at) { return std::clamp(ta + int((int64_t(rim.dydx) * (at - xa)) >> 16), lowY, highY); };
+    const int right = width * 256;
+    if (xa >= right) return;  // nothing it covers shows
+    int from = xa, fromY = ta;
+    if (from < 0) {  // left of the surface, the whole row is to its right
+      const int cut = xb <= 0 ? tb : yAt(0);
+      acc[0] += sign * std::abs(cut - ta) * 512;
+      from = 0, fromY = cut;
     }
+    const int to = std::min(std::max(xb, 0), right), first = from >> 8;
+    int last = first;
+    for (int cell = first;; ++cell) {
+      const int end = std::min(to, (cell + 1) * 256), endY = end >= xb ? tb : yAt(end);
+      const int dy = sign * std::abs(endY - fromY), f = from - cell * 256, g = end - cell * 256;
+      acc[cell] += dy * (512 - f - g);
+      acc[cell + 1] += dy * (f + g);
+      owner[cell] = uint8_t(r + 1);
+      from = end, fromY = endY, last = cell;
+      if (end >= to) break;
+    }
+    lowest = std::min(lowest, first);
+    if (runCount < kMaxRuns)
+      runs[runCount++] = {int16_t(first), int16_t(std::min(last + 1, width - 1))};
+    else
+      spill = true;
+  }
+  // Row y's outline pixels into the cells: each with its coverage, what's
+  // under it now and the rim it's shaded by.
+  void row(const Surface& s, int y) {
+    runCount = 0, spill = false, lowest = s.width;
+    for (int i = 0; i < nearCount; ++i) {
+      const Rim& rim = rims[near[i]];
+      if (rim.y0 >= (y + 1) * 16) break;  // in order of their tops: the rest start below
+      if (rim.y1 > y * 16) add(near[i], y, s.width);
+    }
+    if (!runCount && !spill) return;
+    if (spill) {
+      runs[0] = {int16_t(lowest), int16_t(s.width - 1)}, runCount = 1;
+    }
+    for (int i = 1; i < runCount; ++i)  // in order along the row
+      for (int j = i; j > 0 && runs[j - 1].from > runs[j].from; --j) std::swap(runs[j - 1], runs[j]);
+    const uint16_t* pixels = s.pixels + y * s.width;
+    // Between the runs the sum holds: the body's whole there, or none of
+    // it, unless a level edge crosses the row, when those pixels are its
+    // share too.
+    int sum = 0, next = 0, shade = 0, alpha = 0;
+    for (int i = 0; i < runCount; ++i) {
+      const int from = std::max<int>(next, alpha > 0 && alpha < 255 ? next : runs[i].from);
+      for (int x = from; x <= runs[i].to; ++x) {
+        sum += acc[x], acc[x] = 0;
+        if (owner[x]) shade = owner[x], owner[x] = 0;
+        alpha = std::min(255, std::abs(sum) * 255 >> 17);
+        // Wholly covered, its centre is in a triangle, which fills it; a
+        // pixel barely covered may hold a sliver's centre, and is put back.
+        if (alpha >= 253) continue;
+        cells[count++] = {int16_t(x), pixels[x], uint8_t(alpha), uint8_t(shade - 1)};
+      }
+      next = std::max<int>(next, runs[i].to + 1);
+    }
+    acc[s.width] = acc[s.width + 1] = 0, owner[s.width] = owner[s.width + 1] = 0;
+  }
+};
+Outline outlines[2];
+// Each rim's plane, as `fill` steps its triangle's UVs.
+void plane(Rim& rim, Vertex a, Vertex b, Vertex c) {
+  const int area = edge(a, b, c.x, c.y), ox = floor16(a.x), oy = floor16(a.y);
   const int reciprocal = (1 << 24) / area;
   auto color = [&](int ar, int br, int cr, int u, int v, int w) {
     return int((int64_t(ar) * u + int64_t(br) * v + int64_t(cr) * w) * reciprocal / 65536);
   };
-  int tu = color(a.u, b.u, c.u, e[0], e[1], e[2]), tv = color(a.v, b.v, c.v, e[0], e[1], e[2]);
-  int ux = color(a.u, b.u, c.u, dx[0], dx[1], dx[2]), vx = color(a.v, b.v, c.v, dx[0], dx[1], dx[2]);
-  int uy = color(a.u, b.u, c.u, dy[0], dy[1], dy[2]), vy = color(a.v, b.v, c.v, dy[0], dy[1], dy[2]);
-  // The columns from 0 where value + step * x >= 0 stay within [lo, hi].
-  auto clip = [](int value, int step, int& lo, int& hi) {
-    if (step > 0) {
-      if (value < 0) lo = std::max(lo, (-value + step - 1) / step);
-    } else if (step < 0) {
-      if (value < 0)
-        hi = -1;
-      else
-        hi = std::min(hi, value / -step);
-    } else if (value < 0)
-      hi = -1;
-  };
-  const int skip = start - y0;  // as fill's
-  for (int k = 0; k < 3; ++k) e[k] += dy[k] * skip;
-  tu += uy * skip, tv += vy * skip;
-  for (int y = start; y <= y1; ++y) {
-    // [lo, hi] is covered at all, [inLo, inHi] wholly.
-    int lo = 0, hi = x1 - x0, inLo = 0, inHi = x1 - x0;
-    for (int k = 0; k < 3; ++k) {
-      clip(e[k] + half[k], dx[k], lo, hi);
-      clip(e[k] - half[k], dx[k], inLo, inHi);
-    }
-    auto* row = s.pixels + y * s.width + x0;
-    // The outline's pixels, at the ends: each takes its coverage.
-    auto partial = [&](int from, int to) {
-      for (int x = from; x <= to; ++x) {
-        int cover = 255;
-        for (int k = 0; k < 3; ++k)
-          if (soft >> k & 1) {
-            // Within a pixel of the edge, so 32-bit, and the board divides
-            // in hardware.
-            const int inside = std::clamp(e[k] + dx[k] * x + half[k], 0, 2 * half[k]);
-            cover = std::min(cover, inside * 255 / (16 * length[k]));
-          }
-        if (cover > 2) row[x] = mix565(row[x], texel(tu + ux * x, tv + vx * x), cover);
+  const int e0 = edge(b, c, ox * 16 + 8, oy * 16 + 8), e1 = edge(c, a, ox * 16 + 8, oy * 16 + 8),
+            e2 = edge(a, b, ox * 16 + 8, oy * 16 + 8);
+  const int dx0 = (b.y - c.y) * 16, dx1 = (c.y - a.y) * 16, dx2 = (a.y - b.y) * 16;
+  const int dy0 = (c.x - b.x) * 16, dy1 = (a.x - c.x) * 16, dy2 = (b.x - a.x) * 16;
+  rim.ox = int16_t(ox), rim.oy = int16_t(oy);
+  rim.tu = color(a.u, b.u, c.u, e0, e1, e2), rim.tv = color(a.v, b.v, c.v, e0, e1, e2);
+  rim.ux = color(a.u, b.u, c.u, dx0, dx1, dx2), rim.vx = color(a.v, b.v, c.v, dx0, dx1, dx2);
+  rim.uy = color(a.u, b.u, c.u, dy0, dy1, dy2), rim.vy = color(a.v, b.v, c.v, dy0, dy1, dy2);
+}
+// The body's rows [from, to), a band at most: the outline's pixels found
+// and what's under them kept, every front-facing triangle filled by pixel
+// centre, then the outline's pixels laid over by their coverage. All in
+// the same order whichever core draws them, so a row comes out the same.
+void body(Surface& s, Outline& o, int from, int to) {
+  const bool outlined = s.width <= kMaxWidth;
+  o.nearCount = 0;
+  if (outlined)
+    for (int i = 0; i < rimCount; ++i) {
+      const Rim& r = rims[i];
+      if (r.y1 > from * 16 && r.y0 < to * 16) {
+        int j = o.nearCount++;
+        for (; j > 0 && rims[o.near[j - 1]].y0 > r.y0; --j) o.near[j] = o.near[j - 1];
+        o.near[j] = uint8_t(i);
       }
-    };
-    const int fullLo = std::max(lo, inLo), fullHi = std::min(hi, inHi);
-    if (fullLo > fullHi) {
-      partial(lo, hi);
-    } else {
-      partial(lo, fullLo - 1);
-      texture(row + fullLo, tu + ux * fullLo, tv + vx * fullLo, ux, vx, fullHi - fullLo + 1);
-      partial(fullHi + 1, hi);
     }
-    for (int k = 0; k < 3; ++k) e[k] += dy[k];
-    tu += uy;
-    tv += vy;
+  for (int y = from; y < to;) {
+    // As many rows as the cells hold (a row takes at most the surface's
+    // width).
+    o.count = 0;
+    int end = y;
+    static_assert(Outline::kMaxCells >= kMaxWidth, "a row's cells fit");
+    for (; end < to && (!outlined || o.count + s.width <= Outline::kMaxCells); ++end) {
+      o.rowStart[end - y] = int16_t(o.count);
+      if (outlined) o.row(s, end);
+    }
+    o.rowStart[end - y] = int16_t(o.count);
+    // A quad's two triangles: (above[c], here[c], above[c+1]) and
+    // (above[c+1], here[c], here[c+1]).
+    for (int ring = 1; ring <= kRings; ++ring)
+      for (int col = 0; col < kSectors && ringTop[ring] < end && ringLow[ring] >= y; ++col) {
+        fill(s, vertex(ring - 1, col), vertex(ring, col), vertex(ring - 1, col + 1), y, end);
+        fill(s, vertex(ring - 1, col + 1), vertex(ring, col), vertex(ring, col + 1), y, end);
+      }
+    for (int row = y; row < end; ++row) {
+      uint16_t* pixels = s.pixels + row * s.width;
+      int lo = s.width, hi = -1;
+      for (int i = o.rowStart[row - y]; i < o.rowStart[row - y + 1]; ++i) {
+        const auto& cell = o.cells[i];
+        if (cell.alpha <= 2) {
+          pixels[cell.x] = cell.under;
+          continue;
+        }
+        const Rim& rim = rims[cell.rim];
+        const int dx = cell.x - rim.ox, dy = row - rim.oy;
+        const uint16_t ink = texel(rim.tu + rim.ux * dx + rim.uy * dy, rim.tv + rim.vx * dx + rim.vy * dy);
+        pixels[cell.x] = mix565(cell.under, ink, cell.alpha);
+        lo = std::min<int>(lo, cell.x), hi = std::max<int>(hi, cell.x);
+      }
+      if (lo <= hi) s.touch(lo, row, hi + 1, row + 1);
+    }
+    y = end;
   }
-}
-
-// The projected mesh, for the frame being drawn: every vertex, in
-// sixteenths of a pixel, and of each quad's two triangles which of their
-// edges are the outline. Kept small (internal RAM): 3.3 KB of positions,
-// 1.6 KB of edges.
-constexpr int kRings = slime::kMeshRings, kSectors = slime::kMeshSectors;
-int16_t px[kRings + 1][kSectors + 1], py[kRings + 1][kSectors + 1];
-uint8_t softs[kRings + 1][kSectors][2];
-Vertex vertex(int ring, int col) {
-  return Vertex{px[ring][col], py[ring][col], col * 4096 / kSectors, ring * 2048 / kRings};
-}
-// The rows each ring's triangles reach, an outline's half pixel included.
-int16_t ringTop[kRings + 1], ringLow[kRings + 1];
-// The body's rows [from, to): every front-facing triangle there, in the same
-// order whichever core draws them, so a row comes out the same.
-void body(Surface& s, int from, int to) {
-  // A quad's two triangles: (above[c], here[c], above[c+1]) and
-  // (above[c+1], here[c], here[c+1]).
-  for (int ring = 1; ring <= kRings; ++ring)
-    for (int col = 0; col < kSectors && ringTop[ring] < to && ringLow[ring] >= from; ++col) {
-      triangle(s, vertex(ring - 1, col), vertex(ring, col), vertex(ring - 1, col + 1), softs[ring][col][0], from, to);
-      triangle(s, vertex(ring - 1, col + 1), vertex(ring, col), vertex(ring, col + 1), softs[ring][col][1], from, to);
-    }
 }
 // Rows [from, to) of the frame, a band at a time: each band erased
 // (Surface::erase), unless it was before anything was drawn behind the
@@ -210,6 +309,7 @@ void body(Surface& s, int from, int to) {
 struct Rows {
   Surface* s;
   const Surface::Erasing* erasing;
+  Outline* outline;
   int from, to, body;
   uint32_t us;  // how long they took
 };
@@ -218,7 +318,7 @@ void draw(Rows& rows) {
   for (int y = rows.from; y < rows.to; y += kEraseBand) {
     const int end = std::min(rows.to, y + kEraseBand);
     if (rows.erasing) rows.s->erase(*rows.erasing, y, end);
-    if (y < rows.body) body(*rows.s, y, std::min(end, rows.body));
+    if (y < rows.body) body(*rows.s, *rows.outline, y, std::min(end, rows.body));
   }
 }
 // The rows the helper draws (render/helper.h).
@@ -290,23 +390,49 @@ void paintBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const 
       faces[ring][col][0] = sign(edge(a, b, c1.x, c1.y));
       faces[ring][col][1] = sign(edge(c1, b, d.x, d.y));
     }
-  // A neighbour turned away makes the shared edge outline. The dome is
-  // closed: the first ring's first triangles and the last ring's second
-  // ones meet at its poles and have no area, so they never count.
+  // The outline: each front-facing triangle's edges to a neighbour that
+  // isn't. A triangle with no area left counts as turned away, so where it
+  // lies between two that face, the rims on either side of it cancel. The
+  // poles' openings are a sixteenth of a pixel across, and count as closed.
   auto away = [&](int ring, int col, int which) {
-    if (ring < 1 || ring > kRings) return false;
-    col = (col + kSectors) % kSectors;
-    const int facing = faces[ring][col][which];
-    const bool pole = (ring == 1 && which == 0) || (ring == kRings && which == 1);
-    return facing < 0 || (facing == 0 && !pole);
+    return ring >= 1 && ring <= kRings && faces[ring][(col + kSectors) % kSectors][which] <= 0;
   };
-  for (int ring = 1; ring <= kRings; ++ring)
-    for (int col = 0; col < kSectors; ++col) {
-      softs[ring][col][0] = uint8_t((away(ring, col, 1) ? 1u : 0u) | (away(ring - 1, col, 1) ? 2u : 0u) |
-                                    (away(ring, col - 1, 1) ? 4u : 0u));
-      softs[ring][col][1] = uint8_t((away(ring + 1, col, 0) ? 1u : 0u) | (away(ring, col + 1, 0) ? 2u : 0u) |
-                                    (away(ring, col, 0) ? 4u : 0u));
+  rimCount = 0;
+  for (int ring = 1; ring <= kRings && rimCount >= 0; ++ring)
+    for (int col = 0; col < kSectors && rimCount >= 0; ++col) {
+      // A quad's two triangles, (above, here, next) and (next, here,
+      // below); bit k of `soft`, the edge opposite corner k.
+      const unsigned soft[2] = {
+          (away(ring, col, 1) ? 1u : 0u) | (away(ring - 1, col, 1) ? 2u : 0u) | (away(ring, col - 1, 1) ? 4u : 0u),
+          (away(ring + 1, col, 0) ? 1u : 0u) | (away(ring, col + 1, 0) ? 2u : 0u) | (away(ring, col, 0) ? 4u : 0u)};
+      const Vertex above = vertex(ring - 1, col), here = vertex(ring, col), next = vertex(ring - 1, col + 1),
+                   below = vertex(ring, col + 1);
+      for (int which = 0; which < 2; ++which) {
+        if (faces[ring][col][which] <= 0 || !soft[which]) continue;
+        const Vertex v[3] = {which ? next : above, here, which ? below : next};
+        Rim rim{};
+        plane(rim, v[0], v[1], v[2]);
+        for (int k = 0; k < 3; ++k)
+          if (soft[which] >> k & 1) {
+            if (rimCount == kMaxRims) {  // past any pose's: drawn by pixel centre
+              rimCount = -1;
+              break;
+            }
+            const Vertex &from = v[(k + 1) % 3], &to = v[(k + 2) % 3];
+            if (from.y == to.y) continue;  // level: no area to its right changes
+            const bool down = to.y > from.y;
+            const Vertex &top = down ? from : to, &end = down ? to : from;
+            rim.x0 = int16_t(top.x), rim.y0 = int16_t(top.y), rim.x1 = int16_t(end.x), rim.y1 = int16_t(end.y);
+            rim.sign = down ? 1 : -1;
+            const int64_t dx = end.x - top.x, dy = end.y - top.y;
+            rim.dxdy = int(std::clamp<int64_t>((dx << 16) / dy, INT32_MIN, INT32_MAX));
+            rim.dydx = dx ? int(std::clamp<int64_t>((dy << 16) / dx, INT32_MIN, INT32_MAX)) : 0;
+            rims[rimCount++] = rim;
+          }
+        if (rimCount < 0) break;
+      }
     }
+  rimCount = std::max(rimCount, 0);
   for (int ring = 1; ring <= kRings; ++ring) {
     int lo = 1 << 30, hi = -(1 << 30);
     for (int col = 0; col <= kSectors; ++col)
@@ -317,12 +443,12 @@ void paintBody(Surface& s, const PaintControls& c, rig::Anchors* anchors, const 
   // it draws (and erases) the lower rows while this core does the upper
   // ones; the rows it erases are all the surface's.
   const int rows = s.height * 4 / 5;
-  Rows upper{&s, erase, 0, erase ? s.height : rows, rows, 0};
+  Rows upper{&s, erase, &outlines[0], 0, erase ? s.height : rows, rows, 0};
   if (!helper) return draw(upper);
   const int first = std::clamp(top / 16, 0, rows), last = std::clamp(low / 16 + 2, first, rows);
   static Rows lower;
   upper.to = first + (last - first) * share / 1024;
-  lower = {&s, erase, upper.to, erase ? s.height : rows, rows, 0};
+  lower = {&s, erase, &outlines[1], upper.to, erase ? s.height : rows, rows, 0};
   helper.start(helped, &lower);
   const uint32_t start = helper.micros();
   draw(upper);

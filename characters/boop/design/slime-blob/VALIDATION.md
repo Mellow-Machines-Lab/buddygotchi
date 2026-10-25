@@ -160,6 +160,12 @@ ramps and springs can, and no jolt at an event. By file:
 - `test_gel`'s `test_a_helper_draws_the_same_body` draws the body with a
   stand-in for the AMOLED's second core, its rows shared out differently
   every frame, and checks the frame is the same pixels as one core's.
+- `test_gel`'s `test_the_outline_moves_smoothly` squashes the body a
+  1/4096 at a time (short and tall) and leans it 10/4096 at a time, reads
+  each pixel's coverage from the body drawn over black and over white,
+  and checks no pixel's coverage moves more than a half in a step and the
+  outline, along 36 rays from the body's middle, no more than half a
+  pixel.
 - On the AMOLED, `internal/tools/boopctl perf --scenes` with the
   `amoled206_profile` build: each scene's frames a second against its
   budget, and the body's time (`body_us`, the erase included).
