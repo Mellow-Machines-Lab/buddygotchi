@@ -84,17 +84,39 @@ class Step:
     note: str = ""
 
 
+# What the person asks, a turn at a time: mostly plain, and now and then in
+# words the counting reader hears a tone in (a please, thanks, capitals,
+# "ultrathink"), which Boop's personality says get a face however recently
+# it reacted, where a plain one waits for a quiet stretch.
+PLAIN_PROMPTS = [
+    "fix the dropdown on the nav", "run the tests again", "continue", "what does this function do?",
+    "add a loading state to the settings page", "now update the docs", "rename it to fetchUser",
+    "why is the build slow?", "show me the diff", "yes go on", "split that file in two", "try the other way",
+]
+TONED_PROMPTS = [
+    "please add dark mode to settings", "thanks, that's exactly it", "IT'S STILL BROKEN",
+    "ultrathink about the auth flow before you touch it", "lol that's hilarious, now fix it",
+    "quickly, revert that", "sorry, I meant the other file",
+]
+
+
 class Day:
     """Builds the steps, thread by thread; `steps()` merges them by time."""
 
     def __init__(self, seed: int) -> None:
         self.rng = random.Random(seed)
+        # Its own draws, so the prompts never move the day's lengths and gaps.
+        self.asks = random.Random(seed * 7919 + 1)
         self._steps: list[Step] = []
         self._ids = 0
         self.notes: list[tuple[float, str]] = []
 
     def steps(self) -> list[Step]:
         return sorted(self._steps, key=lambda s: s.at)
+
+    def ask(self) -> str:
+        """A turn's prompt: about one in five toned."""
+        return self.asks.choice(TONED_PROMPTS if self.asks.random() < 0.2 else PLAIN_PROMPTS)
 
     def hook(self, at: float, th: Thread, hook: str, note: str = "", **fields: Any) -> None:
         line = {"agent": th.agent, "hook": hook, "session": th.session, "cwd": th.cwd}
@@ -146,7 +168,7 @@ class Day:
         `approval` asks for permission at that offset and is answered 30–70 s
         later. `end` is done, failed (a StopFailure with `error`) or
         stopped (an interrupted call). Returns when it ended."""
-        self.hook(at, th, "UserPromptSubmit")
+        self.hook(at, th, "UserPromptSubmit", prompt=self.ask())
         if note:
             self.notes.append((at, note))
         plays = sorted(plays)
@@ -599,10 +621,13 @@ def run(state: Path, seed: int, brain: str, personality: str | None, out: Path |
 # What a step is, for the report: `notable` steps should almost always get
 # a reaction; `minutes` (a finish done in 1 to 5 minutes) often; `short`
 # (a finish done under a minute) and `start` now and then; `quiet` is the
-# heartbeat. The mood shouldn't move for `start`, `short` or `minutes`.
-# A finish is judged by what its step's line says: its outcome and length.
-CLASSES = ["notable", "minutes", "short", "start", "quiet"]
-ROUTINE = {"start", "short", "minutes"}
+# heartbeat. Your prompt is `toned` when its line says how you sound or a
+# name you said, and gets a face; `plain` otherwise, which gets one only
+# after a quiet stretch. The mood shouldn't move for `start`, `short`,
+# `minutes` or `plain`. A finish is judged by what its step's line says:
+# its outcome and length.
+CLASSES = ["notable", "minutes", "short", "start", "toned", "plain", "quiet"]
+ROUTINE = {"start", "short", "minutes", "plain"}
 
 
 def classify(event: dict[str, Any]) -> str | None:
@@ -611,6 +636,8 @@ def classify(event: dict[str, Any]) -> str | None:
         return "start"
     if kind == "heartbeat":
         return "quiet"
+    if kind == "prompt":
+        return "toned" if f.get("tone") not in (None, "calm") or f.get("named") else "plain"
     if kind == "turn end":
         done = f.get("outcome") == "done"
         length = f.get("length_ms") or 0
@@ -626,7 +653,7 @@ def classify(event: dict[str, Any]) -> str | None:
 
 def new_hour() -> dict[str, Any]:
     return {"turns": 0, "passes": 0, "dropped": 0, "held": 0, "reactions": 0, "mood_changes": 0, "mood_after_routine": 0,
-            "back_to_rest": 0, "check_ins": 0, "lines": Counter(), "reacted": Counter(), "faces": Counter(),
+            "back_to_rest": 0, "check_ins": 0, "lines": Counter(), "reacted": Counter(), "said": Counter(), "faces": Counter(),
             "loops": Counter(), "words": Counter()}
 
 
@@ -713,6 +740,7 @@ def summarize(path: Path) -> dict[str, Any]:
                 # What it said: the takes its action's start records.
                 word = feed.said(act["takes"])
                 hr["words"][word or "none"] += 1
+                hr["said"][ev["class"]] += bool(word)
                 reactions.append({"at": daylog.clock(ev["at"]), "ms": ev["at"], "class": ev["class"], **r,
                                   "after": ev["line"], "word": word})
     # How long each mood lasted, from the first event to the last.
@@ -728,7 +756,19 @@ def summarize(path: Path) -> dict[str, Any]:
     return {"hours": {k: hours[k] for k in sorted(hours)}, "changes": changes, "reactions": reactions,
             "mood_minutes": {k: round(v / 60_000) for k, v in spans.most_common()},
             "lively": {**liveliness(working, reactions, changes),
-                       "min_reactions_per_turn": round(len(reactions) / max(1, sum(h["turns"] for h in hours.values())), 2)}}
+                       "min_reactions_per_turn": round(len(reactions) / max(1, sum(h["turns"] for h in hours.values())), 2),
+                       **prompts_reacted(hours)}}
+
+
+def prompts_reacted(hours: dict[int, dict[str, Any]]) -> dict[str, int]:
+    """The share of plain prompts Boop said something about (it meets most
+    with a small face in silence), and of toned ones it reacted to, in
+    percent; a day with none of a kind missed none."""
+    def pct(c: str, count: str, none: int) -> int:
+        asked = sum(h["lines"][c] for h in hours.values())
+        return round(100 * sum(h[count][c] for h in hours.values()) / asked) if asked else none
+    return {"plain_prompts_said_pct": pct("plain", "said", 0),
+            "min_toned_prompts_reacted_pct": pct("toned", "reacted", 100)}
 
 
 # ------------------------------------------------------------- liveliness
@@ -737,8 +777,9 @@ def summarize(path: Path) -> dict[str, Any]:
 # a clear failure of the owner's brief (2026-09-28, and its fun brief of
 # 2026-10-21), an animated Boop that reacts often, never idles for long,
 # doesn't flail, doesn't say the same thing again and again, and says
-# something more often than not; each is to be tightened once the day
-# meets it.
+# something more often than not, and of the 2026-10-24 one, that it meets
+# the routine prompt in silence and answers the one that sounds like something;
+# each is to be tightened once the day meets it.
 LIMITS = {
     "longest_quiet_min": 8,       # the longest stretch of work with no reaction
     "quiet_over_6_min": 3,        # stretches of work over 6 minutes with no reaction
@@ -749,6 +790,8 @@ LIMITS = {
     "repeat_pct": 40,             # reactions the same as the one before (face, finish and what it said)
     "longest_same_run": 3,        # the same reaction in a row
     "min_words_said": 0.5,        # the share of reactions that said something
+    "plain_prompts_said_pct": 25,          # plain prompts Boop said something about
+    "min_toned_prompts_reacted_pct": 80,   # toned prompts that got a face
 }
 
 
@@ -863,12 +906,12 @@ def report(paths: list[Path], as_json: bool = False) -> str:
         out += [f"## {p}", "",
                 "Reactions are to each kind of step that woke the brain, reacted/all: notable (failures, "
                 "fixes, failed or stopped turns, turns of 5 min or more, pokes), finishes done in 1–5 min, "
-                "finishes done under a minute, turn starts, heartbeats.", "",
-                "Mood changes on a routine step (a turn start, or a finish done under 5 min) are split: back "
+                "finishes done under a minute, turn starts, your prompts toned and plain, heartbeats.", "",
+                "Mood changes on a routine step (a turn start, a plain prompt, or a finish done under 5 min) are split: back "
                 f"to {REST}, the resting mood (a mood fading), and any other (which the step shouldn't cause).", "",
                 f"| Hour | Turns | Passes | Mood changes | … routine, to {REST} | … routine, other | Reactions "
-                "| notable | 1–5 min | short | starts | quiet | Faces |",
-                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+                "| notable | 1–5 min | short | starts | toned | plain | quiet | Faces |",
+                "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
         all_hours = total(r)
         rows = [(f"{h:02d}:00", v) for h, v in r["hours"].items()] + [("all", all_hours)]
         for name, v in rows:

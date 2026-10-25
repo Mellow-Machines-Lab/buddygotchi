@@ -80,7 +80,7 @@ a scenario holds wherever more than one answer is right:
 | `sign` | The sign the reaction held up, Jev's `react.sign` pick (asked only for a prompt's reading, from the pack's `signs.md`): `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `feeling` | How Boop felt, `say.feeling`'s pick when it reached the floor, or `none` |
 | `about` | What NOW was about, `say.about`'s pick when it reached the floor, or `none` |
-| `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when `react` didn't react |
+| `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when it picked saying nothing, the face in silence, or `react` didn't react |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `loops` | How long the face held, Jev's `react.loops` pick (`once` to `four times`), or `none` when `react` didn't react |
 | `mood` | Boop's mood after the pass |
@@ -345,7 +345,12 @@ kinds, all with the `boop` personality unless the file says otherwise:
   runs, and a finger held on the needs-you screen dismisses it
   (`115`); a long turn and the quiet after it go through their tiers
   (`116`); and the to-do count under the face climbs with the list
-  (`117`).
+  (`117`). And Boop meets the routine in silence: a plain prompt a
+  minute after it reacted, in another thread, gets a small face that
+  says nothing (`118`), though a frustrated one gets a face and its words
+  however recently it reacted (`119`), and a turn done in seconds is
+  back-and-forth, its finish played in silence, though one failed as
+  quickly still gets its failure (`120`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
@@ -387,7 +392,10 @@ row, and later two more runs of four a minute and a half apart; a 14-minute turn
 tests still failing, and the next turn fixing them; a coffee break; an
 hour of quick wins with an API error and a passing deploy; and a
 16-minute docs turn. An hour of nothing after it brings the evening's
-heartbeat.
+heartbeat. Every turn opens with a prompt (`PLAIN_PROMPTS` and
+`TONED_PROMPTS` in `workday.py`, drawn apart from the lengths and
+gaps): about one in five in words the counting reader hears a tone in,
+a please, thanks, capitals or "ultrathink"; the rest plain.
 
 **The run** starts `Boop --headless --brain jev --debug` with a fresh
 state directory and a fake device on a Unix socket (`--link usb:`) that
@@ -409,13 +417,14 @@ the answers of the pass it ran for, and what it said from the takes its
 output recorded, never
 from an output's message. It gives, for each hour of the app's clock: turns ended,
 passes (and how many dropped), mood changes, with those on a routine
-step (a turn start, or a finish done under 5 minutes) split into back
+step (a turn start, a plain prompt, or a finish done under 5 minutes) split into back
 to calm, the resting mood (a mood fading, as the guide says), and any
 other (which a routine step shouldn't cause); and reactions, as reacted/all for each
 kind of step that woke the brain: notable (a failure, a fix, a failed or
 stopped turn, a turn of 5 minutes or more, a poke), a finish
-done in 1 to 5 minutes, one under a minute, a turn start, and a
-heartbeat; and the faces used. Then how long the reactions held and
+done in 1 to 5 minutes, one under a minute, a turn start, your
+prompt toned (its line says how you sound or a name you said) and
+plain, and a heartbeat; and the faces used. Then how long the reactions held and
 the takes they said over the day (`none` for a reaction that said
 nothing), how long each mood
 lasted, and every mood change with the step that brought it. `--json`
@@ -443,6 +452,8 @@ limits (`LIMITS` in `internal/tools/boopctl_lib/workday.py`) and exits 1 if one 
 | `repeat_pct` | 40 at most (reactions the same as the one before, in percent) |
 | `longest_same_run` | 3 at most |
 | `min_words_said` | 0.5 at least (the share of reactions that said something) |
+| `plain_prompts_said_pct` | 25 at most (plain prompts Boop said something about, in percent: most get a small face in silence) |
+| `min_toned_prompts_reacted_pct` | 80 at least (toned prompts that got a face, in percent) |
 
 ```sh
 internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl

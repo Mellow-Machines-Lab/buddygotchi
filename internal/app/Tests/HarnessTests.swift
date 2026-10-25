@@ -168,6 +168,14 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(sent[1].say?.takes, [], "below the floor, Jev is guessing: nothing")
         XCTAssertNil(sent[0].anim, "it plays over the face")
         XCTAssertEqual(sent.map(\.mood), ["grumpy", "proud", "happy"], "each wears its face")
+        // Saying nothing is a kind: the face, and a finish, play in silence
+        // however sure the feeling and the topic are.
+        starts(["react.mood": a("pleased"), "say.feeling": a("glad"), "say.about": a("done"), "say.kind": a("none"),
+                "react.animation": a("success")],
+               "\(creature) played a success in a pleased face, held once.")
+        XCTAssertEqual(sent.last?.say?.takes, [], "a face in silence")
+        XCTAssertEqual(sent.last?.anim, "task_complete", "with its finish")
+        queued.removeLast()
         XCTAssertEqual(sent.map(\.loops), [2, 1, 4], "for its loops")
         XCTAssertTrue(sent[0].args.json.hasSuffix(#","mood":"grumpy","loops":2}"#), sent[0].args.json)
         XCTAssertEqual(sent[0].name, "react")
@@ -251,7 +259,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name), ["none", "upset", "glad", "tickled"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[4].options.map(\.name), ["none"] + ReactOutput.topics.map(\.name))
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[4].options.count, 17, "none and the 16 topics, hello included")
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[5].options.map(\.name), ["sound", "word", "phrase", "swear"])
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[5].options.map(\.name), ["none", "sound", "word", "phrase", "swear"], "none: the face in silence")
         XCTAssertEqual(ReactOutput.holds.indices.map { ReactOutput.loops(["react.loops": a(ReactOutput.holds[$0].name)]) },
                        [1, 2, 3, 4])
         XCTAssertEqual(ReactOutput.loops([:]), 1)

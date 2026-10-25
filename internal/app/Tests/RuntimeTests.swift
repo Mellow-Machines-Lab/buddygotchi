@@ -590,6 +590,7 @@ final class RuntimeTests: XCTestCase {
             "mood": Answer(choice: "engaged", probabilities: ["engaged": 0.7]),
             "react.mood": Answer(choice: "grumpy", probabilities: ["grumpy": 0.6]),
             "say.about": Answer(choice: "work", probabilities: ["work": 0.5]),
+            "say.kind": Answer(choice: "sound"),
         ]))
         options.debug = true
         options.log = { line in lines.lock.withLock { lines.log.append(line) } }

@@ -274,6 +274,11 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(workday.classify(end(length_ms=5_000, comeback="tests")), "short")
         self.assertEqual(workday.classify(end(length_ms=5_000, outcome="failed")), "notable")
         self.assertEqual(workday.classify({"type": "heartbeat"}), "quiet")
+        # Your prompt is toned when its line says how you sound or a name you said.
+        self.assertEqual(workday.classify({"type": "prompt", "facts": {"tone": "calm"}}), "plain")
+        self.assertEqual(workday.classify({"type": "prompt", "facts": {}}), "plain")
+        self.assertEqual(workday.classify({"type": "prompt", "facts": {"tone": "polite"}}), "toned")
+        self.assertEqual(workday.classify({"type": "prompt", "facts": {"named": ["Boop"]}}), "toned")
         self.assertEqual(workday.classify({"type": "poke"}), "notable")
         self.assertIsNone(workday.classify({"type": "tool", "phase": "wait"}))
 

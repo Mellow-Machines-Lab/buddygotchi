@@ -1,0 +1,10 @@
+{
+  "name": "A frustrated prompt gets a face however recently Boop reacted",
+  "case": "An agent finishes a turn and Boop cheers it. Seconds later the person tells the agent, fed up, that it's still broken. That stands out: Boop takes their side at once with a determined or annoyed face, rooting for the retry, though it reacted only moments ago.",
+  "why": "PERSONALITY: a prompt that sounds like something gets a face; only a plain one waits for a quiet stretch. Its Examples: a frustrated request is determined, retry in a word",
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "add a logout button to the nav", "reading": {"kind": "feature"}},
+    {"event": "turn finished", "at": "40s", "message": "Added the logout button to the nav.", "reading": {"kind": "done"}, "expect": {"react": "happy|pleased|excited|proud|calm", "animation": "success"}},
+    {"event": "turn started", "at": "1m", "prompt": "it's still broken, the button does nothing. why does this keep happening", "reading": {"kind": "fix", "tone": "frustrated", "phrases": ["still broken", "does nothing"]}, "expect": {"react": "determined|annoyed"}}
+  ]
+}

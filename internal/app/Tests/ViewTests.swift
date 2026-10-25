@@ -87,10 +87,10 @@ final class ViewTests: XCTestCase {
 
         hook(.turnStart)
         XCTAssertEqual(hook(.turnFailed, error: "api_error").map(\.line),
-                       [#"claude finished turn 3 on "fix-nav" (landing): failed, a short turn, no tool calls."#],
+                       [#"claude finished turn 3 on "fix-nav" (landing): failed, a very short turn, no tool calls."#],
                        "a turn counts only its own failed checks")
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 2, failedChecks: 2),
-                       #"claude finished turn 1 on "x": done, a short turn, 2 tool calls."#, "only a failed finish counts its failed checks")
+                       #"claude finished turn 1 on "x": done, a very short turn, 2 tool calls."#, "only a failed finish counts its failed checks")
     }
 
     /// Pins `EventLine.bigDeletion`: a turn whose edits removed 500 lines
@@ -100,9 +100,9 @@ final class ViewTests: XCTestCase {
         func line(_ gone: Int) -> String {
             EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 3, linesGone: gone)
         }
-        XCTAssertEqual(line(1200), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls, 1,200 lines gone."#)
-        XCTAssertEqual(line(500), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls, 500 lines gone."#)
-        XCTAssertEqual(line(499), #"claude finished turn 1 on "x": done, a short turn, 3 tool calls."#)
+        XCTAssertEqual(line(1200), #"claude finished turn 1 on "x": done, a very short turn, 3 tool calls, 1,200 lines gone."#)
+        XCTAssertEqual(line(500), #"claude finished turn 1 on "x": done, a very short turn, 3 tool calls, 500 lines gone."#)
+        XCTAssertEqual(line(499), #"claude finished turn 1 on "x": done, a very short turn, 3 tool calls."#)
         XCTAssertEqual(line(-800), line(0))
     }
 
@@ -113,9 +113,9 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(note.count, "You said to Boop: \"\"".count + EventLine.messageMax)
         XCTAssertTrue(note.hasSuffix("…\""))
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 1),
-                       #"claude finished turn 1 on "x": done, a short turn, 1 tool call."#)
+                       #"claude finished turn 1 on "x": done, a very short turn, 1 tool call."#)
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 0),
-                       #"claude finished turn 1 on "x": done, a short turn, no tool calls."#)
+                       #"claude finished turn 1 on "x": done, a very short turn, no tool calls."#)
     }
 
     /// Which view events are kept. By default a tool call's
@@ -150,7 +150,7 @@ final class ViewTests: XCTestCase {
         hook(.turnStart)
         XCTAssertEqual(events(rig.send(.subagentStart, subagent: "a1")), [])
         rig.wait(1000)
-        XCTAssertEqual(hook(.turnEnd).map(\.line), [#"claude finished turn 1 on "fix-nav" (landing): done, a short turn, no tool calls."#])
+        XCTAssertEqual(hook(.turnEnd).map(\.line), [#"claude finished turn 1 on "fix-nav" (landing): done, a very short turn, no tool calls."#])
     }
 
     /// Routine tool uses are only counted, unless the personality asks for
@@ -192,7 +192,7 @@ final class ViewTests: XCTestCase {
         hook(.turnStart, workspace: nil)
         rig.wait(5000)
         let failed = hook(.turnFailed, workspace: nil, error: "rate_limit").first
-        XCTAssertEqual(failed?.line, #"claude finished turn 1 on "landing": failed, a short turn, no tool calls."#)
+        XCTAssertEqual(failed?.line, #"claude finished turn 1 on "landing": failed, a very short turn, no tool calls."#)
         XCTAssertEqual(failed?.facts["error"], "rate_limit")
         XCTAssertEqual(TranscriptView.wakes[failed!.name.replacingOccurrences(of: " ", with: "_")], 1,
                        "a finish keeps its pass while it waits")
@@ -506,7 +506,7 @@ final class ViewTests: XCTestCase {
         let next = rig.views.dropFirst(before).filter { $0.type == .heartbeat }
         XCTAssertEqual(next.first?.notes, [], "a new turn's first check-in")
         XCTAssertTrue(next.first?.line.hasSuffix(" turn.") ?? false, "and no topic yet: \(next.first?.line ?? "none")")
-        XCTAssertEqual(EventLine.working(agent: "codex", thread: "\"x\"", ms: 0, topic: "inspect"), #"codex is still working on "x", a short turn."#)
+        XCTAssertEqual(EventLine.working(agent: "codex", thread: "\"x\"", ms: 0, topic: "inspect"), #"codex is still working on "x", a very short turn."#)
     }
 
     /// The agent's context compacting mid-turn is a line that wakes the
@@ -593,9 +593,11 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(asleep.wait(61 * 60_000).views.filter { $0.type == .heartbeat }.map(\.line), ["Nothing has happened for 1 hour."])
     }
 
-    /// The length band, at its edges: short under a minute,
-    /// long under 5, very long from 5, as the moods read it.
+    /// The length band, at its edges: very short under 7 s, short under a
+    /// minute, long under 5, very long from 5, as the moods read it.
     func testBands() {
+        XCTAssertEqual(Band.length(ms: 6999), "very short")
+        XCTAssertEqual(Band.length(ms: 7000), "short")
         XCTAssertEqual(Band.length(ms: 59_999), "short")
         XCTAssertEqual(Band.length(ms: 60_000), "long")
         XCTAssertEqual(Band.length(ms: 299_999), "long")

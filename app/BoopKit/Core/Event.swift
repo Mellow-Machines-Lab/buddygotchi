@@ -135,11 +135,16 @@ extension Event {
 
 /// Numbers named, so no brain has to compare them.
 public enum Band {
-    /// A turn's length or a tool call's time, as the moods read it: short
-    /// under a minute, long under 5 minutes, very long past that.
+    /// A turn's length or a tool call's time, as the moods read it: very
+    /// short under `veryShortMs`, a reply in a back-and-forth, short under
+    /// a minute, long under 5 minutes, very long past that.
     public static func length(ms: Int64) -> String {
-        ms < 60_000 ? "short" : ms < 5 * 60_000 ? "long" : "very long"
+        ms < veryShortMs ? "very short" : ms < 60_000 ? "short" : ms < 5 * 60_000 ? "long" : "very long"
     }
+
+    /// A turn done this quickly was the agent answering back: the
+    /// personality lets it go by without a finish.
+    public static let veryShortMs: Int64 = 7000
 
     /// How long you were away from the Mac: short under 15 minutes, long
     /// under 2 hours, very long past that.

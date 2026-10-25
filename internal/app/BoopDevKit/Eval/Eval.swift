@@ -76,8 +76,8 @@ public struct Scenario: Sendable {
         /// What NOW was about (`say.about`'s pick, when it reached the
         /// floor), or `none`.
         public var about: Set<String>?
-        /// How it asked to say it (`say.kind`'s pick), or `none` when Boop
-        /// didn't react.
+        /// How it asked to say it (`say.kind`'s pick), or `none` when it
+        /// picked saying nothing or Boop didn't react.
         public var kind: Set<String>?
         /// A take Boop said, by its text as the bubble shows it (`Tsk...`):
         /// the step passes when any of the `say`'s takes is one of these;
@@ -788,7 +788,7 @@ public struct Eval {
                                 animation: ran ? ReactOutput.animation(record.answers) : nil,
                                 feeling: ran ? ReactOutput.feeling(record.answers) : nil,
                                 about: ran ? ReactOutput.about(record.answers) : nil,
-                                kind: ran ? ReactOutput.kind(record.answers).rawValue : nil,
+                                kind: !ran ? nil : ReactOutput.silent(record.answers) ? "none" : ReactOutput.kind(record.answers).rawValue,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 loops: ran ? ReactOutput.holds[ReactOutput.loops(record.answers) - 1].name : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,

@@ -111,11 +111,13 @@ public final class ReactOutput: Output {
                notFor: "Anything else: a poke, words to \(name), a turn starting."),
     ] }
 
-    /// How big what it says is, plainest first:
-    /// with none of the kind asked for, Voice takes the nearest one, but
-    /// never a swear unless one was asked for.
+    /// How big what it says is, plainest first, from nothing at all, the
+    /// face in silence: with none of the kind asked for, Voice takes the
+    /// nearest one, but never a swear unless one was asked for.
     public static var kinds: [Option] { kinds(of: CharacterPack.active.name) }
     static func kinds(of name: String) -> [Option] { [
+        Option("none", "Nothing: the face in silence, for the routine PERSONALITY meets so.",
+               notFor: "Anything PERSONALITY gives words to: what stands out, a failure, a poke, words to \(name)."),
         Option("sound", "A noise with no word: a huff, a grunt, a gasp. The usual."),
         Option("word", "One word that names the moment.", notFor: "A routine check-in."),
         Option("phrase", "A little catchphrase, for a moment worth remembering, now and then.",
@@ -205,6 +207,9 @@ public final class ReactOutput: Output {
         answers["say.kind"].flatMap { Take.Kind(rawValue: $0.choice) } ?? .sound
     }
 
+    /// Whether `say.kind` picked saying nothing: the face plays in silence.
+    public static func silent(_ answers: Answers) -> Bool { answers["say.kind"]?.choice == "none" }
+
     /// Its questions, and for a prompt's reading the sign's, when a
     /// caption fits it.
     public func questions(now: Event?, log: LogView) -> [Question] {
@@ -256,7 +261,7 @@ public final class ReactOutput: Output {
             Question(key: "say.about", text: "If \(name) reacts, what is NOW about? It names it after the feeling, in its face's mood.",
                      about: "the NOW section", judgeBy: "NOW's line",
                      options: [Option("none", "No topic to name: NOW's line isn't about any of these.")] + ReactOutput.topics(of: name)),
-            Question(key: "say.kind", text: "If \(name) says something, how big is it?", about: "the NOW section",
+            Question(key: "say.kind", text: "If \(name) reacts, how big is what it says, if anything?", about: "the NOW section",
                      judgeBy: byBoth, options: ReactOutput.kinds(of: name)),
         ]
     }
@@ -273,7 +278,7 @@ public final class ReactOutput: Output {
         // animation.
         let loops = Self.loops(answers)
         let pick = Self.animation(answers)
-        let said = !speaks() ? [] : Voice.say(feeling: Self.feeling(answers), about: Self.about(answers), kind: Self.kind(answers),
+        let said = !speaks() || Self.silent(answers) ? [] : Voice.say(feeling: Self.feeling(answers), about: Self.about(answers), kind: Self.kind(answers),
                                                face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes)
         if !said.isEmpty { lastWords = Set(said.map(\.text)) }
         let say = DeviceReaction.Say(takes: said)

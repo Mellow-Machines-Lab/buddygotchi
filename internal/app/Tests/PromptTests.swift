@@ -277,7 +277,7 @@ final class PromptTests: XCTestCase {
         rig.wait(5000)
         rig.send(.turnStart)
         rig.wait(5000)
-        XCTAssertEqual(woke(rig.send(.turnEnd)), [#"claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak."#])
+        XCTAssertEqual(woke(rig.send(.turnEnd)), [#"claude finished turn 2 on "landing": done, a very short turn, no tool calls, the 2nd quick win of a streak."#])
     }
 
     /// Pins the drop: a message's reading that comes once the next turn

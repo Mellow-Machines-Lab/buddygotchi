@@ -549,7 +549,7 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(rig.state.base, "idle")
 
         rig.send(.turnStart, session: "f")
-        XCTAssertEqual(woke(rig.send(.turnEnd, session: "f")), [#"claude finished turn 1 on "landing": done, a short turn, no tool calls."#],
+        XCTAssertEqual(woke(rig.send(.turnEnd, session: "f")), [#"claude finished turn 1 on "landing": done, a very short turn, no tool calls."#],
                        "the next turn, which Boop saw start, is reported")
     }
 
@@ -744,7 +744,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.wait(3000)
         let fx = rig.send(.turnFailed, error: "rate_limit")
         let failed = events(fx).first
-        XCTAssertEqual(failed?.line, #"claude finished turn 1 on "landing": failed, a short turn, no tool calls."#)
+        XCTAssertEqual(failed?.line, #"claude finished turn 1 on "landing": failed, a very short turn, no tool calls."#)
         XCTAssertEqual(failed?.facts["outcome"], "failed")
         XCTAssertEqual(failed?.facts["error"], "rate_limit")
     }
