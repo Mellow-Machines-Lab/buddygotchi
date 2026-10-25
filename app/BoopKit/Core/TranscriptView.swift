@@ -260,13 +260,13 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
     /// opens an agent is the board's own reaction, as a tap that opens a
     /// thread is.
-    public static let quiet = ["presence_start", "needs_you_start", "press"]
+    public static let quiet = ["presence_start", "needs_you_start", "press", "hush_end"]
 
     /// Registers Boop's lines, wakes, holds and heartbeats on `h`. Weakly:
     /// a harness its runtime let go of may still tick once, and does nothing.
@@ -296,6 +296,7 @@ public final class TranscriptView {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
+        if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
@@ -408,6 +409,9 @@ public final class TranscriptView {
         case .heartbeat?: return heartbeat(e)
         case .needsYou?: return needs(e)
         case .reacted?: return e["message"]?.string.map { Line($0) }
+        case .hush?:
+            return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
+                                          : EventLine.unhushed(name: name(e), why: e.specificType))
         case .listen?, nil: return nil
         }
     }

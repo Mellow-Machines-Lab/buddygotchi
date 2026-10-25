@@ -344,11 +344,13 @@ What the brain reads, in plain Markdown:
   much it says, which the person picks in Settings (`Talk`, normal at
   first). The chosen one's TALK section goes last, after MOOD, and
   outranks what PERSONALITY and MOOD say of words: Boop's quiet says
-  nothing at a small moment and never names what NOW is about, chatty
-  says something at every face, and normal keeps to the Examples. It
-  steers only what Boop says (the brain's `say`, which judges by TALK
-  first), never how big a moment is; nothing in code holds a reaction
-  back. Its front
+  nothing at a small moment or a finish and never names what NOW is
+  about, chatty says something at every face, and normal keeps to the
+  Examples. It steers only what Boop says (the brain's `say`, which
+  judges by TALK first), never how big a moment is, and on Quiet the
+  engine holds to it in code (`ReactOutput`): `say` offers no topic and
+  no swear, and a small moment or a finish says nothing. Apart from the
+  hush (§9), nothing in code holds a reaction back. Its front
   matter may set `working_heartbeat` and `idle_heartbeat` over the
   personality's (Boop's quiet looks in less often, chatty more). A level
   without a file leaves the personality as written, a pack with none
@@ -384,9 +386,13 @@ What the brain reads, in plain Markdown:
 - `replies.md` (optional): what the creature holds up replying to what
   you said on push-to-talk (`Signs.reply`). The brain picks a reply (the
   `react.move` question's options for what you said): yes, no, huh,
-  hello, bye, thanks, love, ouch, comfort, hehe, status, nap, dance or
-  notme (`ReactOutput.replies`); a `huh` to a question plays as `dunno`,
-  a shrug. Each line is `- [reply tags] words`: its first tag the reply,
+  hello, bye, thanks, love, ouch, comfort, hehe, status, nap, hush, dance
+  or notme (`ReactOutput.replies`), and while hushed unhush; a `huh` to a
+  question plays as `dunno`, a shrug. A `hush` hushes the creature for
+  as long as the moment is big (`Core.hushMsBySize`: 15 minutes small to
+  two hours huge; the app's Hush button, 30): it says nothing until then,
+  its faces going on, `unhush` or the popover lets it talk again, and the
+  board shows the `hushed` tag (the gel zips its mouth). Each line is `- [reply tags] words`: its first tag the reply,
   any more the calendar's or the moment's (`working` while an agent
   works, `waiting` while something waits on you, `makeup` within 10
   minutes of an `ouch` until a `love` makes up), and the app picks one that fits, those with the
@@ -546,7 +552,8 @@ Besides drawing each mood and state, a face:
   reached (`sprout`, `buddy`, `pal`, `chonk`, `legend`, so a design for
   `pal` shows from Pal on), and `reading` while the turn the latest
   prompt's reading came for lasts, when you wrote it an essay or asked for
-  docs (`Occasions.reads`), from the Mac's `state.when`, and `busy` (2–3
+  docs (`Occasions.reads`), and `hushed` while the creature is hushed
+  (`Core.Hush`), from the Mac's `state.when`, and `busy` (2–3
   sessions working) and `frantic` (4 or more), which the board adds from
   `state.busy`. A design that fits
   only while its tags are on shows only then; a look starts on one while

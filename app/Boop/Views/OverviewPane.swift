@@ -119,7 +119,10 @@ struct OverviewPane: View {
                 if model.status != nil {
                     VStack(alignment: .trailing, spacing: 6) {
                         deviceLine
-                        talkButton
+                        HStack(spacing: 4) {
+                            hushButton
+                            talkButton
+                        }
                     }
                 }
             }
@@ -172,8 +175,9 @@ struct OverviewPane: View {
                 s.vol == 0 ? ("speaker.slash.fill", "Muted") : nil,
             ]
             let chips = all.compactMap { $0 }
-            if !chips.isEmpty {
+            if !chips.isEmpty || status.hushedUntil != nil {
                 HStack(spacing: 4) {
+                    if let until = status.hushedUntil { hushChip(until) }
                     ForEach(chips, id: \.1) { icon, text in
                         HStack(spacing: 4) {
                             Image(systemName: icon)
@@ -226,6 +230,44 @@ struct OverviewPane: View {
         .padding(.trailing, 2)
         .help(device.detail)
         .animation(.boopSettle, value: device.short)
+    }
+
+    /// While hushed, how long until it may talk again, counting down; a
+    /// click lets it talk now.
+    private func hushChip(_ until: Date) -> some View {
+        Button { model.runtime?.unhush() } label: {
+            TimelineView(.periodic(from: .now, by: 15)) { context in
+                let minutes = max(1, Int((until.timeIntervalSince(context.date) / 60).rounded(.up)))
+                HStack(spacing: 4) {
+                    Image(systemName: "mouth.fill")
+                    Text("Hushed · \(minutes) min")
+                    Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                }
+            }
+            .font(.system(size: 10, weight: .medium))
+            .foregroundStyle(Theme.inkSoft)
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, 7).padding(.vertical, 3)
+            .background(Theme.well, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .help("\(model.name) says nothing until the time's up. Click to let it talk now")
+        .accessibilityLabel("Hushed. Let \(model.name) talk again")
+    }
+
+    /// Hush for half an hour (`Core.hushMs`): it says nothing, though its
+    /// faces go on. Hidden while hushed, when the chip ends it.
+    @ViewBuilder private var hushButton: some View {
+        if model.status?.hushedUntil == nil {
+            Button { model.runtime?.hush() } label: {
+                Image(systemName: "mouth").frame(width: 14)
+            }
+            .buttonStyle(RowButtonStyle(filled: false))
+            .fixedSize()
+            .help("Hush \(model.name) for \(Core.hushMs / 60_000) min: it keeps making faces, but says nothing")
+            .accessibilityLabel("Hush \(model.name)")
+        }
     }
 
     /// Push-to-talk from the Mac: click to talk, click

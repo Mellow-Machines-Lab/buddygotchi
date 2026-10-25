@@ -291,6 +291,16 @@ public enum EventLine {
         """
     }
 
+    /// Boop hushed: from the Mac's button, or by what you said.
+    public static func hushed(name: String, minutes: Int64, byApp: Bool) -> String {
+        "You hushed \(name)\(byApp ? " from the Mac" : ""): it says nothing for \(minutes) min."
+    }
+
+    /// Boop free to talk again: its time ran out, or you said so.
+    public static func unhushed(name: String, why: String) -> String {
+        why == Core.By.timer.rawValue ? "\(name)'s hush ran out: it may talk again." : "You let \(name) talk again."
+    }
+
     public static func needsYou(agent: String, thread: String) -> String {
         "\(agent) needs you on \(thread)."
     }

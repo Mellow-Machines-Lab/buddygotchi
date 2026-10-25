@@ -421,7 +421,7 @@ extension DemoScript {
         var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
         offered[ReactOutput.faceKey] = ["none"] + pack.faces.map(\.name)
         // What you said is answered with a reply for its move.
-        offered[ReactOutput.moveKey]? += ReactOutput.replies(of: pack.name).map(\.name)
+        offered[ReactOutput.moveKey]? += ReactOutput.replies(of: pack.name).map(\.name) + ["unhush"]
         return offered
     }
 

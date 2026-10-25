@@ -2,6 +2,7 @@
 #include "render/gel/geometry.h"
 #include "render/gel/painter.h"
 #include "render/gel/raster.h"
+#include "render/tags.h"
 #include "slime_art.h"
 namespace render::gel {
 namespace {
@@ -119,11 +120,13 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
       if (pairs.path[i][k][j] >= 0) weight += placed[j].weight;
     return weight;
   };
+  // Hushed, its mouth is the zipped one, not the art's (paintZip).
+  const bool zipped = hushed(engine);
   auto drawn = [&](int i, int k) {
     const auto& path = slime::kArtPaths[placed[i].range->first + k];
     const int g = path.group;
     return pairs.newest[i][k] && path.count <= kMaxPoints && path.clipCount <= kMaxPoints &&
-           (c.eyes || (g != 1 && g != 2)) && classWeight(i, k) > 0;
+           (c.eyes || (g != 1 && g != 2)) && !(zipped && g == 3) && classWeight(i, k) > 0;
   };
   // Each group's shapes, drawn as one look for each shape the layers give
   // it; a group with two or more cross-fades. Its looks are drawn together
@@ -234,12 +237,44 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
       }
     }
   }
-  if (mouthOpen) {
+  if (zipped) {
+    paintZip(surface, engine, c);
+  } else if (mouthOpen) {
     raster.alpha = 255;
     const auto& top = placed[f.count - 1];
     const Point p = place(top, {0, int16_t(top.baseM)}, 3);
     const Point at = projection.face(p.x, p.y);
     raster.disk16(at.x, at.y, (4 * 16 + 8) * c.scale / 4096, rgb565(13, 43, 72));
+  }
+}
+bool hushed(const Engine& e) { return hasTag(e.scenes.when, "hushed"); }
+void paintZip(Surface& surface, const Engine& e, const PaintControls& c) {
+  if (!surface.pixels) return;
+  // The mouth's ink: its lines', as the calm art draws them.
+  static const uint16_t ink = [] {
+    const auto& calm = slime::kArt[slime::kCalm];
+    for (int k = 0; k < calm.count; ++k) {
+      const auto& p = slime::kArtPaths[calm.first + k];
+      if (p.group == 3 && p.width) return p.color;
+    }
+    return uint16_t(0);
+  }();
+  Raster raster{surface};
+  const Projector projection(surface, c);
+  const int mouthY = scalar(e.face.controls[3]);
+  // A pen in the art's widths, in sixteenths of a pixel, as paintArt
+  // strokes them.
+  const int unit = surface.height * 3 / 5;
+  auto pen = [&](int width) { return std::max(12, int(int64_t(width) * unit * 16 / 4096 * c.scale / 4096)); };
+  // The line in a few steps, so it bends over the dome as the face does.
+  constexpr int kSteps = 4;
+  Point line[kSteps + 1];
+  for (int i = 0; i <= kSteps; ++i) line[i] = projection.face(-kZipHalf + 2 * kZipHalf * i / kSteps, mouthY);
+  raster.stroke16(line, kSteps + 1, pen(kZipPen), ink);
+  for (int i = 0; i < kZipTicks; ++i) {
+    const int x = -kZipHalf + 2 * kZipHalf * (i + 1) / (kZipTicks + 1);
+    const Point tick[2] = {projection.face(x, mouthY + kZipTick), projection.face(x, mouthY - kZipTick)};
+    raster.stroke16(tick, 2, pen(kZipTickPen), ink);
   }
 }
 }  // namespace render::gel

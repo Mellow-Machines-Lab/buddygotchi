@@ -57,6 +57,14 @@ public final class ReactOutput: Output {
     /// The moment's tags for a reply's sign at an event: `working` while an
     /// agent works, `waiting` while something waits on you.
     let moment: (Event) -> [String]
+    /// Whether Boop is hushed at a time (`Core.Hush`): it says nothing, and
+    /// may be let talk again. `hush` hushes it for so many ms from a time,
+    /// or with nil lets it talk.
+    let hushed: (Int64) -> Bool
+    let hush: (_ ms: Int64?, _ at: Int64) -> Void
+    /// How much it says, chosen in Settings: on Quiet, `say` offers no
+    /// topic and no swear, and a small moment or a finish says nothing.
+    let talk: () -> Talk
     /// Picks among the takes that fit, and remembers the last `say`'s
     /// words, which aren't said again while another fits.
     var takes = SplitMix64(seed: 0x7A4E)
@@ -72,7 +80,9 @@ public final class ReactOutput: Output {
                 turnMs: @escaping (Event?) -> Int64? = { _ in nil }, speaks: @escaping () -> Bool = { true },
                 pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
-                status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] }) {
+                status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
+                hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
+                talk: @escaping () -> Talk = { .default }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -89,6 +99,9 @@ public final class ReactOutput: Output {
         self.replies = replies
         self.status = status
         self.moment = moment
+        self.hushed = hushed
+        self.hush = hush
+        self.talk = talk
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
@@ -174,12 +187,20 @@ public final class ReactOutput: Output {
             Option("hehe", "Hehe: a joke, teasing or something silly. It giggles.", notFor: "Rude words meant to hurt, which is ouch."),
             Option("status", "Status: a question about the agents or their work: done yet, how long, how many are running, what they're doing, anyone need me, how's the work going, did it work, how long you've been at it. It holds up the answer on a sign, from what it knows.",
                    notFor: "A question about \(name) itself, which is yes, no or huh; a greeting, which is hello."),
-            Option("nap", "Nap: asked to sleep, rest or hush: \"go to sleep\", \"nap time\", \"shh\", \"be quiet\". It yawns and settles down for a nap.",
-                   notFor: "Goodbye or good night, which is bye; a nap it won't take, which is no."),
+            Option("nap", "Nap: asked to sleep or rest: \"go to sleep\", \"nap time\". It yawns and settles down for a nap.",
+                   notFor: "Goodbye or good night, which is bye; asked to be quiet, which is hush; a nap it won't take, which is no."),
+            Option("hush", "Hush: asked to stop talking: \"shh\", \"be quiet\", \"shut up\", \"stop talking\". It zips its lips and says nothing for a while, as long as the moment is big: 15 min small, 30 medium, an hour big, two hours huge.",
+                   notFor: "Asked to go to sleep or take a nap, which is nap, even at night; rude words that aren't asking for quiet, which is ouch."),
             Option("dance", "Dance: asked to dance or wiggle. It dances.", notFor: "Any other trick, or a dance it won't do, which is no."),
             Option("notme", "Not me: asked to answer, approve, allow, stop or tell an agent something (\"tell claude yes\", \"approve it\", \"go ahead\"). \(name) never does: it shakes its head and looks to the Mac.",
                    notFor: "A question about the agents, which is status."),
         ]
+    }
+
+    /// Asked to talk again while hushed, offered only then.
+    static func unhush(of name: String) -> Option {
+        Option("unhush", "Unhush: you let \(name) talk again: \"you can talk now\", \"speak!\", \"I'm sorry, say something\". It perks up.",
+               notFor: "Anything else said while it's hushed, which gets its own reply in silence.")
     }
 
     /// The reply `react.move` picked of what you said: `huh` when its
@@ -187,7 +208,7 @@ public final class ReactOutput: Output {
     /// answers what you said with something, and a guess at what you meant
     /// is worse.
     public static func reply(_ answers: Answers) -> String {
-        pick(answers, moveKey, replies) ?? "huh"
+        pick(answers, moveKey, replies + [unhush(of: CharacterPack.active.name)]) ?? "huh"
     }
 
     /// What the board plays for `reply` to `words`: a `huh` at a question
@@ -293,7 +314,8 @@ public final class ReactOutput: Output {
     /// nil for none.
     public static func move(_ answers: Answers) -> String? {
         if let a = animation(answers) { return a }
-        guard let choice = answers[moveKey]?.choice, replies.contains(where: { $0.name == choice }) else { return nil }
+        guard let choice = answers[moveKey]?.choice, (replies + [unhush(of: CharacterPack.active.name)]).contains(where: { $0.name == choice })
+        else { return nil }
         return reply(answers)
     }
 
@@ -341,7 +363,10 @@ public final class ReactOutput: Output {
     /// Its questions, and for a prompt's reading the sign's, when a
     /// caption fits it.
     public func questions(now: Event?, log: LogView) -> [Question] {
-        if Self.isTalk(Self.about(now, log)) { return askedOfTalk }
+        let about = Self.about(now, log)
+        let hushedNow = about.map { hushed($0.at) } ?? false
+        if Self.isTalk(about) { return Self.speech(askedOfTalk, hushed: hushedNow, talk: talk(), in: pack) }
+        let asked = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
         let captions = offered(now, log)
         guard !captions.isEmpty else { return asked }
         return asked + [Question(key: Signs.questionKey,
@@ -364,6 +389,25 @@ public final class ReactOutput: Output {
     /// what to say (characters/CHARACTER.md §8), so it has no `say`.
     static func asked(in pack: CharacterPack) -> [Question] {
         Take.all(in: pack).isEmpty ? questions(in: pack).filter { $0.key != sayKey } : questions(in: pack)
+    }
+
+    /// `questions` as Boop may speak: while hushed, no `say` but to what
+    /// you said, whose reply may be `unhush`, letting it talk (and else says
+    /// nothing, `run`); on Quiet, `say` without the topics and the swear.
+    static func speech(_ questions: [Question], hushed: Bool, talk: Talk, in pack: CharacterPack) -> [Question] {
+        let talking = questions.contains { $0.key == moveKey && $0.options.contains { $0.name == "hush" } }
+        return questions.compactMap { q in
+            if q.key == sayKey {
+                if hushed, !talking { return nil }
+                guard talk == .quiet else { return q }
+                let quiet = Set(topics(of: pack.name).map(\.name) + ["swear"])
+                return Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy, options: q.options.filter { !quiet.contains($0.name) })
+            }
+            if q.key == moveKey, hushed, q.options.contains(where: { $0.name == "hush" }) {
+                return Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy, options: q.options + [unhush(of: pack.name)])
+            }
+            return q
+        }
     }
 
     /// The questions asked of what you said, from `asked`: the same four,
@@ -427,7 +471,11 @@ public final class ReactOutput: Output {
         let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : nil
         let size = Self.intensity(answers)
         let pick = talk ? nil : Self.animation(answers)
-        let said = !speaks() ? [] : Self.said(answers).flatMap {
+        let at = about?.at ?? 0
+        // What it says: nothing while hushed, unless this is you letting it
+        // talk; on Quiet, nothing at a small moment or a finish.
+        let silent = (hushed(at) && reply != "unhush") || (self.talk() == .quiet && (size.name == "small" || pick != nil))
+        let said = !speaks() || silent ? [] : Self.said(answers).flatMap {
             Voice.take($0.part, meaning: $0.meaning, kind: $0.swear ? .swear : size.kind, face: choice, finish: pick,
                       avoiding: lastWords, in: pack, rng: &takes)
         }.map { [$0] } ?? []
@@ -460,6 +508,9 @@ public final class ReactOutput: Output {
         }
         let pending = Pending()
         queue(reaction, pending)
+        // Hushed for as long as the moment is big, or let talk again.
+        if reply == "hush" { hush(Core.hushMsBySize[Self.sizes.firstIndex(of: size) ?? 1], at) }
+        if reply == "unhush" { hush(nil, at) }
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
         let face = "\(Self.article(choice)) \(choice) face (\(size.name))"

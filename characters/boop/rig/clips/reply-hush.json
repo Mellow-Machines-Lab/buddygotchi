@@ -1,0 +1,10 @@
+{
+  "about": "A reply to what you said, hush: ok, I'll be quiet. It presses its lips together and squeezes its eyes shut, sinking a little with a small nod, then settles, still.",
+  "ms": 1300,
+  "tracks": {
+    "squash": [[0, 0], [150, -40], [350, 160, "out"], [550, 110], [700, 170], [900, 120], [1150, 0], [1300, 0]],
+    "eyeOpen": [[0, 0], [200, -850, "out"], [900, -850], [1150, 0], [1300, 0]],
+    "eyeSize": [[0, 0], [200, -150], [900, -150], [1150, 0], [1300, 0]],
+    "gazeY": [[0, 0], [350, 150], [550, 350, "out"], [750, 100], [1000, 0], [1300, 0]]
+  }
+}

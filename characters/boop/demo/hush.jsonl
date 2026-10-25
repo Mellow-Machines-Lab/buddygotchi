@@ -1,0 +1,16 @@
+// Forty seconds: shh. You tell Boop to be quiet: it zips its lips,
+// sulks a step, and for the half hour says nothing, though it still
+// makes faces at a poke and at claude's finish. Then you let it talk
+// again, and it perks up and says so.
+{"demo": 1, "title": "Shh"}
+{"agent": "prompt", "text": "Tidy up the settings page", "after": 1}
+{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
+{"you": "talk", "text": "shh, be quiet for a bit", "after": 2}
+{"brain": {"react.face": "disappointed", "react.move": "hush", "react.intensity": "medium"}, "mood": "tired", "after": 0.7, "note": "Zipped for half an hour"}
+{"you": "poke", "after": 4}
+{"brain": {"react.face": "amused", "say": "tickled", "react.intensity": "small"}, "note": "A face, and nothing said"}
+{"agent": "edit", "file": "src/settings/page.js", "old": "legacy()", "new": "tidy()", "say": "I'll drop the old layout code.", "takes": 3}
+{"agent": "reply", "text": "The settings page is tidied up.", "after": 1}
+{"brain": {"react.face": "happy", "react.move": "success", "say": "glad", "react.intensity": "medium"}, "note": "Its finish, in silence"}
+{"you": "talk", "text": "okay, you can talk now", "after": 3}
+{"brain": {"react.face": "happy", "react.move": "unhush", "say": "glad", "react.intensity": "medium"}, "mood": "calm", "after": 0.7, "note": "Talking again"}

@@ -674,7 +674,10 @@ hehe, looking down at its sign and back up for status, after which a
 status reply about every agent (`show`) has the board bring up the
 agents' drawer, and for notme a
 firm little shake of the head, its eyes off down to one side, then a
-lean that way (not mine: ask the Mac). The clips move only the body,
+lean that way (not mine: ask the Mac), for hush (ok, I'll be quiet) its
+lips pressed together, its eyes squeezed shut, sinking a little in a
+small nod, and for unhush a perk-up, lifting tall with its eyes wide and
+up at you, then a little bounce. The clips move only the body,
 eyes and mouth: there's no new drawing, and the face and its sign are
 the reaction's. A reply the pack has no clip for plays the face alone.
 
@@ -843,6 +846,20 @@ pixel with the anchor it rides (`OutfitLayer::kSlack`), so a hat glides
 with the body rather than stepping a pixel at a time; the Zs, drawn with
 one rounded pen (`Raster::zee`), grow from 7 to 16 px as they drift, fading
 in over their first 200 ms and out to nothing by their last.
+
+### Hushed (the board's)
+
+While you've told Boop to be quiet (the Mac's `hushed` tag), it says
+nothing, which the Mac keeps, and the board shows it with zipped lips:
+in the mouth's place and ink, on the face as the mouth is, so it moves,
+squashes and bends over the dome with it, a short closed line
+(`kZipHalf` face units either side of the middle, `render/gel/painter.h`)
+with three little ticks across it (`kZipTicks`), whatever mouth the
+mood's art has, asleep under its closed lids too. A clip that opens the
+mouth (`mouthOpen`, a giggle's or a yawn's) leaves it zipped, and the
+art's mouth comes back the frame the tag goes (`paintArt`, which leaves
+the art's mouth out while `hushed` is on, and `paintZip`, which draws
+the zip). The eyes, the body and every layer play as ever.
 
 ### The work stream (the board's)
 

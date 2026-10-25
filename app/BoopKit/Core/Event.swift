@@ -45,6 +45,11 @@ extension Event {
         /// stroke, a boop on the nose, a shake, a pick-up, face down…, as the
         /// event's `specific_type` (render::Gesture's names, and `facedown`).
         case gesture
+        /// Boop hushed: told to be quiet (`start`, by `app` or `talk` as
+        /// its `specific_type`, with `until`), and free to talk again
+        /// (`end`, why as its `specific_type`). The core's: it reads them
+        /// back on launch.
+        case hush
         /// Your prompt's reading, after the turn start it came with: its
         /// facts are `PromptReading`'s, never the prompt.
         case prompt

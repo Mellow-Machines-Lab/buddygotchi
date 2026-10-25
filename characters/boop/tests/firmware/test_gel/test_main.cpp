@@ -1284,8 +1284,8 @@ static void test_each_gesture_plays_its_own_gag() {
 // same reply still showing doesn't play it again, the next one does; and a
 // reply with no clip plays nothing.
 static void test_a_reply_plays_its_clip_once() {
-  const char* replies[] = {"yes",  "no",   "dunno",   "huh",    "hello", "bye",   "thanks", "love",
-                           "ouch", "hehe", "comfort", "status", "nap",   "dance", "notme"};
+  const char* replies[] = {"yes",  "no",      "dunno",  "huh", "hello", "bye",   "thanks", "love",  "ouch",
+                           "hehe", "comfort", "status", "nap", "dance", "notme", "hush",   "unhush"};
   char name[24];
   for (const char* r : replies) {
     std::snprintf(name, sizeof(name), "reply-%s", r);
@@ -2071,6 +2071,61 @@ static void test_the_layers_come_and_go_through_the_stack() {
 // The pyjamas come with the nightcap, and with no other hat, but while it
 // wears its reading glasses; the glasses are on its eyes but while it
 // sleeps.
+// Hushed (the `hushed` tag), its lips are zipped: a short line across the
+// mouth's place with kZipTicks ticks across it, in the mouth's ink,
+// whatever its art's mouth or a clip opening it; not hushed, its own.
+static void test_hushed_its_lips_are_zipped() {
+  TEST_ASSERT_EQUAL_INT(30, tagIndex("hushed"));  // last, after reading: the Mac's list (Occasions.all) agrees
+  TEST_ASSERT_EQUAL_INT(31, kTagCount);
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  const uint32_t day = tagBit("day"), hush = day | tagBit("hushed");
+  // The face art alone, over black, at rest.
+  PaintControls c;
+  auto art = [&](uint32_t when, bool mouthOpen) {
+    e->setOccasion(when, 0);
+    std::fill(px.begin(), px.end(), 0);
+    paintArt(s, *e, c, mouthOpen);
+    return px;
+  };
+  const auto plain = art(day, false), open = art(day, true), zipped = art(hush, false), zippedOpen = art(hush, true);
+  TEST_ASSERT_TRUE(hushed(*e));
+  TEST_ASSERT_TRUE(plain != open);
+  TEST_ASSERT_TRUE(zipped != plain);
+  TEST_ASSERT_TRUE(zipped == zippedOpen);  // opened, it stays zipped
+  // Its ends and its first tick's tip: inked hushed, bare not.
+  const Projector at(s, c);
+  const int mouthY = scalar(e->face.controls[3]);
+  auto ink = [&](const std::vector<uint16_t>& f, int x, int y) {
+    const Point p = at.face(x, y);
+    return f[size_t(p.y / 16) * 502 + size_t(p.x / 16)];
+  };
+  const int end = kZipHalf - 30, tickX = -kZipHalf + 2 * kZipHalf / (kZipTicks + 1), tip = kZipTick * 7 / 8;
+  for (int x : {-end, end}) {
+    TEST_ASSERT_NOT_EQUAL(0, ink(zipped, x, mouthY));
+    TEST_ASSERT_EQUAL_HEX16(0, ink(plain, x, mouthY));
+  }
+  TEST_ASSERT_NOT_EQUAL(0, ink(zipped, tickX, mouthY + tip));
+  TEST_ASSERT_NOT_EQUAL(0, ink(zipped, tickX, mouthY - tip));
+  TEST_ASSERT_EQUAL_HEX16(0, ink(zipped, tickX / 2, mouthY + tip));  // between the first two ticks, nothing
+  // The whole frame: a clip opening its mouth opens its own, never the
+  // zipped one; the eyes are the same either way.
+  auto frame = [&](uint32_t when, int mouth) {
+    e->setOccasion(when, 0);
+    rig::Channels rig = rig::kRest;
+    rig[rig::Channel::kMouthOpen] = int16_t(mouth);
+    std::fill(px.begin(), px.end(), 0);
+    paint(s, *e, false, 0, 0, nullptr, rig);
+    return px;
+  };
+  TEST_ASSERT_TRUE(frame(day, 0) != frame(day, 1000));
+  TEST_ASSERT_TRUE(frame(hush, 0) == frame(hush, 1000));
+  e->setOccasion(day, 0);
+  TEST_ASSERT_FALSE(hushed(*e));
+}
+
 static void test_it_wears_pyjamas_at_night_and_reads_in_glasses() {
   std::vector<uint16_t> px(502 * 410);
   Surface s{502, 410, px.data()};
@@ -3055,6 +3110,7 @@ int main() {
   RUN_TEST(test_each_gesture_plays_its_own_gag);
   RUN_TEST(test_a_notice_plays_its_rig_clip);
   RUN_TEST(test_a_reply_plays_its_clip_once);
+  RUN_TEST(test_hushed_its_lips_are_zipped);
   RUN_TEST(test_a_nap_or_a_dance_plays_its_pastime_when_idle);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);

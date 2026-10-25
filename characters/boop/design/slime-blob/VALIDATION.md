@@ -114,7 +114,10 @@ ramps and springs can, and no jolt at an event. By file:
   tier the snuggle plays at once, its length, and nothing after; at
   `tier5` the rest follows it and the next dealt isn't another; asleep,
   after listening, the dance; at work the yawn and the sway and no
-  pastime; notme's eyes off to one side), the
+  pastime; notme's eyes off to one side), hushed lips
+  (`test_hushed_its_lips_are_zipped`: `hushed` the tags' last, the zip's
+  ends and its ticks' tips inked only while it's on, nothing between the
+  ticks, and the same frame whether a clip opens the mouth or not), the
   occasions, a clip of the rig's on both faces (the stretch from `tier4`,
   over the gel's pose and on Pixel's rig face, faded out by a reaction),
   the pastimes (`test_pastimes.cpp`: each one's clip in the rig and its
@@ -181,7 +184,10 @@ ramps and springs can, and no jolt at an event. By file:
   sip, a puddle mid-melt, a stretch break's empty desk and its stretch,
   the idle plant and a pastime beside it, and needs you's wave), the
   replies (`replies.jsonl`: each reply's clip partway through under its
-  face and sign, and a nap and a dance idle, asleep and at work), the
+  face and sign, and a nap and a dance idle, asleep and at work), hushed
+  (`hush.jsonl`: the zipped lips idle, happy and asleep, still zipped
+  through a giggle that opens the mouth, the hush reply's squeeze and
+  nod, and unhush's perk-up with its own mouth back), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
   night, the morning's coffee at its side, at a sip and on the desk, a
   sign under the nightcap), a reaction's sign (`sign.jsonl`), a finished

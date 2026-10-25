@@ -61,10 +61,11 @@ didn't ([talk-back.md](talk-back.md), Part two).
       clips at work, and `notme`'s.
 - [x] **`status`**: what an agent is doing, and how long you've been at
       it.
-- [ ] Quiet: with `say` one question, TALK's text doesn't keep a quiet
-      Boop from naming what NOW is about (eval `122`). The owner chose a
-      hush in code for it: speech held back for a set time, shown in the
-      app with a countdown, built in a thread of its own.
+- [x] **The hush, and Quiet in code**: "shh" or the popover's button
+      hushes Boop for a while, shown by a countdown and the gel's zipped
+      mouth; Quiet holds in code ([talk-back.md](talk-back.md), Part
+      three). Checked by `HushTests` and Jev's `129`, `122`.
+- [ ] On the real AMOLED: the zipped mouth while hushed.
 - [ ] On the real AMOLED: the new clips, and the nap and dance on
       request.
 

@@ -83,7 +83,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -219,6 +221,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -274,9 +278,9 @@ at rude words to Boop.
 TALK
 Quiet: the person asked Boop to say less, and this outranks what
 PERSONALITY and MOOD say of words. Its faces, and how big each moment
-is, stay as they give them, but a small moment says nothing, whatever
-its Example says; a bigger one says how it feels, never what NOW is
-about, and never swears. A prompt, a short
+is, stay as they give them, but a small moment and a finish say
+nothing, whatever their Example says; a bigger one says how it feels,
+never what NOW is about, and never swears. A prompt, a short
 turn or a check-in gets a face in silence or nothing, and a sign only
 for a prompt that sounds like something or says its name.
 Examples:
@@ -303,7 +307,7 @@ HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
 just now: You asked claude on "landing" for something new, in a sentence.
   Your words: "dark mode".
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small).
 just now: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 
 NOW (14:00, Wednesday)
@@ -394,7 +398,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -530,6 +536,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -582,9 +590,9 @@ Boop has been curious for 2 min.
 TALK
 Quiet: the person asked Boop to say less, and this outranks what
 PERSONALITY and MOOD say of words. Its faces, and how big each moment
-is, stay as they give them, but a small moment says nothing, whatever
-its Example says; a bigger one says how it feels, never what NOW is
-about, and never swears. A prompt, a short
+is, stay as they give them, but a small moment and a finish say
+nothing, whatever their Example says; a bigger one says how it feels,
+never what NOW is about, and never swears. A prompt, a short
 turn or a check-in gets a face in silence or nothing, and a sign only
 for a prompt that sounds like something or says its name.
 Examples:
@@ -603,11 +611,11 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 2 min ago: You asked claude on "landing" for something new, in a sentence.
   Your words: "dark mode".
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small).
 1 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 1 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
+  Boop played a success in a happy face (small).
 just now: claude started turn 2 on "landing".
 Boop has been curious for 1 min.
 
@@ -620,15 +628,15 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 5 min ago: You asked claude on "landing" for something new, in a sentence.
   Your words: "dark mode".
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small).
 4 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 4 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
+  Boop played a success in a happy face (small).
 3 min ago: claude started turn 2 on "landing".
 3 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "does nothing".
-  Boop made an engaged face (small), and said "Rrr... tik".
+  Boop made an engaged face (small).
 Boop has been curious for 4 min.
 
 NOW (14:05, Wednesday)
@@ -639,17 +647,17 @@ HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
 8 min ago: You asked claude on "landing" for something new, in a sentence.
   Your words: "dark mode".
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small).
 7 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 7 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
+  Boop played a success in a happy face (small).
 6 min ago: claude started turn 2 on "landing".
 6 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "does nothing".
-  Boop made an engaged face (small), and said "Rrr... tik".
+  Boop made an engaged face (small).
 2 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Hup".
+  Boop made an engaged face (small).
 Boop has been curious for 7 min.
 
 NOW (14:08, Wednesday)
@@ -740,7 +748,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -876,6 +886,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -931,9 +943,9 @@ at rude words to Boop.
 TALK
 Quiet: the person asked Boop to say less, and this outranks what
 PERSONALITY and MOOD say of words. Its faces, and how big each moment
-is, stay as they give them, but a small moment says nothing, whatever
-its Example says; a bigger one says how it feels, never what NOW is
-about, and never swears. A prompt, a short
+is, stay as they give them, but a small moment and a finish say
+nothing, whatever their Example says; a bigger one says how it feels,
+never what NOW is about, and never swears. A prompt, a short
 turn or a check-in gets a face in silence or nothing, and a sign only
 for a prompt that sounds like something or says its name.
 Examples:
@@ -952,20 +964,20 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 1 on "landing".
 9 min ago: You asked claude on "landing" for something new, in a sentence.
   Your words: "dark mode".
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small).
 8 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
 8 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
+  Boop played a success in a happy face (small).
 7 min ago: claude started turn 2 on "landing".
 7 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "does nothing".
-  Boop made an engaged face (small), and said "Rrr... tik".
+  Boop made an engaged face (small).
 3 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Hup".
+  Boop made an engaged face (small).
 1 min ago: claude finished turn 2 on "landing": failed, a very long turn, no tool calls.
   Boop's mood changed: curious → calm.
-  Boop played a failure in an annoyed face (medium), and said "Drat".
+  Boop played a failure in an annoyed face (medium).
 
 NOW (14:09, Wednesday)
 You poked Boop.

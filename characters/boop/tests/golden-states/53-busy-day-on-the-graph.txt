@@ -83,7 +83,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -219,6 +221,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -379,7 +383,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -515,6 +521,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -665,7 +673,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -801,6 +811,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -960,7 +972,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1096,6 +1110,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -1257,7 +1273,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1393,6 +1411,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -1560,7 +1580,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1696,6 +1718,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -1866,7 +1890,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -2002,6 +2028,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -2170,7 +2198,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -2306,6 +2336,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -2563,7 +2595,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -2699,6 +2733,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -2975,7 +3011,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -3111,6 +3149,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -3321,7 +3361,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -3457,6 +3499,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -3652,7 +3696,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -3788,6 +3834,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -4087,7 +4135,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -4223,6 +4273,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.
@@ -4416,7 +4468,9 @@ check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
 while one is in progress: the reply answers what you meant. Asked for a
-trick, its mood decides; it never does anything for an agent.
+trick, its mood decides; it never does anything for an agent. Hushed,
+it sulks a little: its mood takes one ordinary step down (calm to
+tired, happy to calm, annoyed to whiny), never a jump.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -4552,6 +4606,8 @@ Examples:
   → excited, replies dance, says tickled, medium
 - NOW (Boop is grumpy): You said to Boop: "dance for me".
   → grumpy, replies no, says upset
+- NOW: You said to Boop: "shh, be quiet".
+  → disappointed, replies hush, medium
 - NOW: You said to Boop: "tell claude yes".
   → skeptical, replies notme, in silence
 - NOW: You came back to the Mac after a very long break.

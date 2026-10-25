@@ -215,7 +215,7 @@ public struct Scenario: Sendable {
     /// none.
     public var hatched: String?
 
-    public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "pokes", "said",
+    public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
                                 "to-do list", "wait"]
 
@@ -391,7 +391,7 @@ public struct Scenario: Sendable {
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, ReactOutput.says.map(\.name)),
                                              ("intensity", step.expect?.intensity, ReactOutput.intensities.map(\.name)),
-                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name))] {
+                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush"])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -939,6 +939,7 @@ public struct Eval {
                                              "todos_total": .int(Int64(step.todos?.total ?? 0))]
             return [hook(.tool, .start, "PreToolUse", list), hook(.tool, .end, "PostToolUse", ["tool": "TodoWrite", "failed": false])]
         case "poke": return [{ $0.poke(at: now) }]
+        case "hush": return [{ $0.effects($0.core.hush(forMs: Core.hushMs, by: .app, at: now), at: now) }]
         case "pokes": return (0..<(step.count ?? 4)).map { _ in { $0.poke(at: now) } }
         // A Claude session opens with no turn yet: Boop is awake and idle,
         // not asleep. No line, so no pass.

@@ -177,6 +177,9 @@ public final class Core {
     /// Push-to-talk, as the core keeps it (`Talk`).
     public internal(set) var talk = Talk()
 
+    /// While Boop is hushed: who hushed it and until when (`Hush`).
+    public internal(set) var hush: Hush?
+
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
     /// `place` names a working directory's project. `isRunning` says
@@ -305,6 +308,7 @@ public final class Core {
            let reading = PromptReading(facts: event.data) {
             noteReading(reading, key: SessionFold.key(agent, session))
         }
+        if event.type == .hush { replayHush(event) }
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
@@ -532,6 +536,7 @@ public final class Core {
     public func tick(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
+        expireHush(now, &fx)
         if let mic = talk.mic, now - mic.since >= Self.listenLimitMs {
             // The device's own button hits the same limit.
             stopListening(ListenWhy.limit, now, &fx)
@@ -700,6 +705,7 @@ public final class Core {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Occasions.tier(after: now - since) { on.append(tier) }
         on += Occasions.stages(stage())
+        if hushed(at: now) != nil { on.append(Occasions.hushed) }
         if let r = readingTurn, let s = sessions[r.key], s.turn.startedAt != nil, s.turn.number == r.number {
             on.append(Occasions.reading)
         }

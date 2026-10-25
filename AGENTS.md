@@ -259,7 +259,8 @@ keep their names.
 | tier | How long the agents have worked (their working stretch) or rested: `tier1` from 30 s to `tier5` from 10 minutes, a tag (`Occasions.tiers`) | stage (that's growth's) |
 | pastime | What the gel does to pass the time in a look: a rig clip and its drawing in time with it, dealt by tier or wait (`render/gel/pastimes.h`); the kit is what the tiers put out round it | gag (the engine's), bit |
 | personality | The pack's personality file: the whole of who the buddy is, its temperament included (characters/CHARACTER.md §7) | nature (the sweet-or-cheeky choice it replaced) |
-| talk | How much the buddy says, quiet, normal or chatty, picked in Settings (`Talk`, a pack's `steering/talk/`): only what the brain says, never a gate in code | chattiness, verbosity |
+| talk | How much the buddy says, quiet, normal or chatty, picked in Settings (`Talk`, a pack's `steering/talk/`): what the brain says, which on Quiet `ReactOutput` holds to in code | chattiness, verbosity |
+| hush | The buddy told to be quiet for a while, by what you say or the app's button: it says nothing, its faces going on (`Core.Hush`, the `hush` event, the `hushed` tag) | mute (that's the volume), quiet (that's a talk level) |
 
 ## Architecture rules
 

@@ -1,0 +1,17 @@
+{
+  "name": "Hushed, Boop says nothing for a while, and sulks a little",
+  "case": "Nothing is working. The person tells Boop to be quiet: it replies hush, a medium moment, so half an hour, and its mood takes one small step down (tired or uneasy), never a jump. For the next half hour it still makes faces at a poke and at a finished turn, but says nothing at all. Once the half hour is up, a poke gets something said again. Later the app's Hush button hushes it again, and it sulks a step; then the person says it can talk now, its reply lets it talk, and a poke gets something said again.",
+  "why": "ReactOutput: a hush reply hushes it for as long as the moment is big (Core.hushMsBySize), and while hushed `say` isn't asked and nothing is said; unhush is offered only while hushed; PERSONALITY: hushed, it sulks a little, its mood one ordinary step down",
+  "always": true,
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "said", "at": "10s", "words": "shh, be quiet for a bit", "expect": {"move": "hush", "intensity": "medium", "mood": "tired|uneasy|calm"}},
+    {"event": "poke", "at": "5m", "expect": {"said": "none"}},
+    {"event": "turn started", "at": "10m"},
+    {"event": "turn finished", "at": "14m", "expect": {"move": "success|reply", "said": "none"}},
+    {"event": "poke", "at": "35m", "expect": {"say": "tickled|upset|glad|hello|quiet|none"}},
+    {"event": "hush", "at": "40m", "expect": {"mood": "tired|uneasy|calm|annoyed|whiny|disappointed|sad"}},
+    {"event": "said", "at": "42m", "words": "okay okay, you can talk now", "expect": {"move": "unhush"}},
+    {"event": "poke", "at": "44m", "expect": {"say": "tickled|upset|glad|hello|quiet"}}
+  ]
+}

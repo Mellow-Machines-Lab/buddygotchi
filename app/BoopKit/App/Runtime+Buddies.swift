@@ -78,11 +78,16 @@ extension Runtime {
         /// Writes a day's diary line, for the buddy that keeps one (the
         /// first, the one long-term.md set up); nil for none.
         public var diary: ((_ day: String, _ line: String) -> Void)?
+        /// Carries out the core's effects an output's choice caused (a hush):
+        /// the app's show on the board; nil logs their records only.
+        public var effects: (([CoreEffect]) -> Void)?
 
         public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
-                    talk: @escaping () -> Talk = { .default }, diary: ((_ day: String, _ line: String) -> Void)? = nil) {
+                    talk: @escaping () -> Talk = { .default }, diary: ((_ day: String, _ line: String) -> Void)? = nil,
+                    effects: (([CoreEffect]) -> Void)? = nil) {
             self.diary = diary
+            self.effects = effects
             self.buddy = buddy
             self.steering = steering
             self.personality = personality
@@ -138,7 +143,11 @@ extension Runtime {
                 let now = h.clock.now(), log = h.log.view(now: now)
                 return StatusReply.answer(core.status(at: now, results: view.results(log), asked: view.asked(log)), words: words, at: now,
                                           stretchSince: core.stretchSince(at: now))
-            }, moment: { core.moment(at: $0.at) })
+            }, moment: { core.moment(at: $0.at) }, hushed: { core.hushed(at: $0) != nil }, hush: { [weak pipeline] ms, at in
+                // What you said hushed it, or let it talk again.
+                let fx = ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at)
+                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+            }, talk: m.talk)
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             if let write = m.diary, !m.steering.diary.isEmpty {

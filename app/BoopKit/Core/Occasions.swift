@@ -14,11 +14,13 @@ public enum Occasions {
     /// Every tag, in the firmware's order: the calendar's, the board's own
     /// two for how busy the agents are, the tiers, the stages, then the
     /// latest turn's `reading`.
-    public static let all = calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [reading]
+    public static let all = calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [reading, hushed]
 
     /// On while the latest turn you prompted lasts, when its prompt's
     /// reading `reads`: the board's reading glasses.
     public static let reading = "reading"
+    /// On while Boop is hushed (`Core.Hush`): the gel zips its mouth.
+    public static let hushed = "hushed"
     /// Whether a prompt's reading puts `reading` on for its turn: you wrote
     /// an essay of a prompt, or asked for docs.
     public static func reads(_ prompt: PromptReading) -> Bool { prompt.length == .essay || prompt.kind == .docs }

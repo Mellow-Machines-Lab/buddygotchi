@@ -49,6 +49,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
+| `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
 | `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
@@ -269,7 +270,7 @@ lives there: `boopdev eval --list` prints them all. They come in three
 kinds, all with the `boop` personality unless the file says otherwise:
 
 - **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`, `128`): Boop's character. It never swears
+  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`129`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -288,7 +289,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   reply's sign fits the moment: a nap after the work while claude works,
   "that's ur job" when you'd have it answer claude for you, a huffy
   "...fine" when you say sorry after an insult, and what claude is doing
-  or how long you've been at it when you ask (`128`); each
+  or how long you've been at it when you ask (`128`); told to hush, it
+  says nothing for the half hour, still making faces, sulks a step, and
+  talks again when the time's up or you say so (`129`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
   (`41`–`43`); and its mood only moves along
@@ -360,9 +363,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   agents, plain prompts each a paragraph with a few of your words under
   it get at most a small face, with nothing said and no sign, while the
   polite and playful ones around them still get theirs (`121`). And
-  how much it says, chosen in Settings: on Quiet routine work goes by
-  in silence and bigger moments say only how Boop feels, never a swear
-or what's going on (`122`), on
+  how much it says, chosen in Settings: on Quiet routine work and
+  finishes go by in silence and a bigger moment gets only a feeling,
+  which the engine holds to in code (`122`), on
   Chatty almost every face comes with words and every prompt gets one
   (`123`), and on Normal a routine moment gets one small thing said (`124`). A turn that finally worked after its tests failed
   twice is a hard-won finish: a success, proud, held three or four times

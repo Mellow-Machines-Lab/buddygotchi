@@ -1,0 +1,10 @@
+{
+  "about": "A reply to what you said, unhush: it perks up, lifting tall with its eyes wide and looking up at you, then a little bounce, ready to talk again.",
+  "ms": 1200,
+  "tracks": {
+    "squash": [[0, 0], [120, 80], [320, -180, "out"], [600, -150], [720, 110], [840, -60], [960, 30], [1200, 0]],
+    "lift": [[0, 0], [120, 0], [320, 8, "out"], [600, 7], [720, 0, "in"], [840, 3, "out"], [960, 0, "in"], [1200, 0]],
+    "eyeSize": [[0, 0], [150, 0], [300, 350, "out"], [700, 280], [1000, 0], [1200, 0]],
+    "gazeY": [[0, 0], [300, -300, "out"], [700, -250], [1000, 0], [1200, 0]]
+  }
+}

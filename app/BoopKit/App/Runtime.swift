@@ -334,6 +334,7 @@ public final class Runtime: @unchecked Sendable {
         var personalityNow: () -> Personality = { .default }
         var talkNow: () -> Talk = { .default }
         var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
+        var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
         let rigs = self.rigs
         let moods = Runtime.brain(pipeline, rigs.map { rig in
             let link = rig.link, pack = rig.buddy.pack
@@ -347,7 +348,7 @@ public final class Runtime: @unchecked Sendable {
                         diary: rig === rigs[0] ? { day, line in
                             // The pass that wrote it changes the popover.
                             do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
-                        } : nil)
+                        } : nil, effects: { effected(rig, $0) })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -382,6 +383,7 @@ public final class Runtime: @unchecked Sendable {
         personalityNow = { [weak self] in self?.personality ?? .default }
         talkNow = { [weak self] in self?.talk ?? .default }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
+        effected = { [weak self] rig, fx in self?.run(fx, on: rig) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
         for rig in rigs {
             // The core reads the mood where the mood output keeps it. Weak:
@@ -759,6 +761,25 @@ public final class Runtime: @unchecked Sendable {
             view.setRules(options.steering.rules(personality, talk: talk))
             options.log("talk \(talk.rawValue)")
             changed()
+        }
+    }
+
+    /// Hushes every buddy for `ms` (`Core.hushMs`) from the app's button:
+    /// it says nothing until then, and the brain hears of it.
+    public func hush(forMs ms: Int64 = Core.hushMs) {
+        home.async { [self] in
+            let now = options.clock()
+            for rig in rigs { run(core(rig).hush(forMs: ms, by: .app, at: now), on: rig) }
+            options.log("hush \(ms / 60_000) min")
+        }
+    }
+
+    /// Lets every buddy talk again before its hush runs out.
+    public func unhush() {
+        home.async { [self] in
+            let now = options.clock()
+            for rig in rigs { run(core(rig).unhush(by: .app, at: now), on: rig) }
+            options.log("unhush")
         }
     }
 

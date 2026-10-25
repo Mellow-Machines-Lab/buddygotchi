@@ -81,6 +81,15 @@ void paint(Surface&, const Engine&, bool mouthOpen = false, int dy = 0, uint32_t
            rig::Anchors* anchors = nullptr, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
            uint32_t t = 0, const PastimeShow* pastimes = nullptr, const DrawerPose* squeeze = nullptr);
 void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig::Anchors* anchors = nullptr);
+// Hushed (the `hushed` tag, render/tags.h), its lips are zipped: in the
+// mouth's place, in its ink and following the face as it does, whatever
+// mouth its art has or a clip opens, a short closed line kZipHalf face
+// units (Q12) either side of the middle, with kZipTicks little ticks
+// across it kZipTick either side, the line's pen kZipPen and the ticks'
+// kZipTickPen in the art's widths (paintZip).
+constexpr int kZipHalf = 270, kZipTicks = 3, kZipTick = 85, kZipPen = 80, kZipTickPen = 48;
+bool hushed(const Engine&);
+void paintZip(Surface&, const Engine&, const PaintControls&);
 // The most room a cross-fading group of the art has taken (kCrossingBytes).
 extern int crossingPeak;
 // The desk's paws are where a pastime puts them (render/gel/pastimes.h),

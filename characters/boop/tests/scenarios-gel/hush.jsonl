@@ -1,0 +1,46 @@
+// Hushed (the `hushed` tag, while you've told Boop to be quiet), each on a
+// frozen clock after a reset: idle, calm, its lips zipped, a short closed
+// line with three little ticks across it where its mouth was; happy, the
+// same zip, never its wide smile; asleep, zipped under its closed lids;
+// mid-reply, giggling (reply-hehe, whose clip opens its mouth), still
+// zipped; telling it to hush, the reply-hush clip squeezing its eyes and
+// sinking in a little nod; and told it may talk again, unhushed, the
+// reply-unhush clip perking up tall, eyes wide, its own mouth back. The
+// replies carry no sign here, which would hide the mouth (replies.jsonl
+// has theirs).
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day","hushed"]}
+{"clock":1000}
+{"shot":"idle"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","hushed"]}
+{"clock":1000}
+{"shot":"happy"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"asleep","mood":"calm","vol":0,"when":["day","hushed"]}
+{"clock":3000}
+{"shot":"asleep"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day","hushed"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"reply":"hehe","say":{},"mood":"happy","loops":1}}
+{"clock":1500}
+{"shot":"giggle"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day","hushed"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"reply":"hush","say":{},"mood":"calm","loops":1}}
+{"clock":1600}
+{"shot":"hush"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"reply":"unhush","say":{},"mood":"happy","loops":1}}
+{"clock":1450}
+{"shot":"unhush"}

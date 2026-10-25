@@ -331,3 +331,32 @@ and `57` are on main.
 
 The board's look of the new clips, and the nap and dance on request, on
 the real AMOLED is the owner's to see.
+
+## Part three: the hush, and Quiet in code (2026-10-25)
+
+With what to say and whether to say it one question, TALK's text alone
+couldn't keep a quiet Boop quiet (eval `122`): Jev followed
+PERSONALITY's Examples over it. The owner reversed "Talk is never a
+gate in code" for this, and asked for a way to tell Boop to be quiet
+that holds, and shows.
+
+- **The hush is a state, not a mood.** Moods are Boop's feelings, moved
+  a step at a time and fading on their own; a hush is your instruction
+  with a clock. The core keeps it (`Core.Hush`: who, until when),
+  records it starting and ending (the `hush` event), reads it back on
+  launch, and sends the board `hushed` while it lasts, for which the gel
+  zips its mouth.
+- **Started** by the reply `hush` ("shh", "be quiet", "shut up"), for
+  as long as the moment is big (`Core.hushMsBySize`: 15 minutes small,
+  30 medium, an hour big, two hours huge), or by the popover's Hush
+  button, for 30 (`Core.hushMs`), which wakes the brain once. **Ended**
+  by the time running out, the popover's chip, or the reply `unhush`
+  ("you can talk now"), offered only while hushed.
+- **While hushed**, `ReactOutput` asks no `say` but of what you said,
+  and says nothing but an `unhush`; faces, moves and signs go on. The
+  popover shows "Hushed · 23 min", which ends it on a click.
+- **Boop sulks a little**: PERSONALITY moves its mood one ordinary step
+  down (calm to tired, happy to calm, annoyed to whiny).
+- **Quiet in code**: `say` offers no topic and no swear, and a small
+  moment or a finish says nothing, the cheer still playing.
+

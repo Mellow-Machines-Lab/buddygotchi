@@ -562,6 +562,12 @@ enum Snapshots {
             // Every chip at once (Chatty and Muted), under the longest kind of name.
             ("all-chips", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], vol: 0,
                                                           talk: .chatty, name: "Wobblebottom McSnugs"))),
+            // Hushed: its countdown chip, and no Hush button beside Talk.
+            ("hushed", {
+                let m = model(installer, status: status(sessions: [["claude", "jetpack", "work"]]))
+                m.status?.hushedUntil = Date().addingTimeInterval(23 * 60 + 10)
+                return m
+            }()),
             // Many sessions, a long project, two in one project told apart
             // by their threads' names, and one needing you from no folder.
             ("crowded", model(installer, status: status(sessions: [

@@ -21,12 +21,13 @@ final class ReplyTests: XCTestCase {
         - [night bye] not first
         """)
 
-    /// The fourteen replies, in the order the question offers them; what
+    /// The fifteen replies, in the order the question offers them, and
+    /// `unhush` while hushed (`HushTests`); what
     /// you said is asked the same four questions as anything, but its face
     /// is never none and its move is the reply.
     func testWhatYouSaidIsAskedForAReply() {
         XCTAssertEqual(ReactOutput.replies.map(\.name),
-                       ["yes", "no", "huh", "hello", "bye", "thanks", "love", "ouch", "comfort", "hehe", "status", "nap", "dance", "notme"])
+                       ["yes", "no", "huh", "hello", "bye", "thanks", "love", "ouch", "comfort", "hehe", "status", "nap", "hush", "dance", "notme"])
         let react = ReactOutput(queue: { _, _ in }, blocked: { nil })
         XCTAssertEqual(react.questions(now: said, log: Self.log).map(\.key), askedKeys.filter { $0 != MoodOutput.outputName })
         XCTAssertEqual(react.questions(now: said, log: Self.log)[1].options.map(\.name), ReactOutput.replies.map(\.name), "no none: talk gets a reply")
