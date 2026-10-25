@@ -72,26 +72,32 @@ final class BoardFirmwareTests: XCTestCase {
     /// guess from the port's name.
     func testTheImageFollowsTheChipTheBootloaderReports() throws {
         let all = BoardFirmware.all(in: dir)
-        XCTAssertEqual(try? BoardFirmware.pick(.esp32s3, among: all).board, "amoled206")
-        XCTAssertEqual(try? BoardFirmware.pick(.esp32, among: all).board, "cyd24")
-        try XCTAssertThrowsError(try BoardFirmware.pick(.esp32, among: [all[0]])) {
+        let s3 = Flasher.Board(chip: .esp32s3, mac: Self.mac), cyd = Flasher.Board(chip: .esp32, mac: Self.mac)
+        XCTAssertEqual(try? BoardFirmware.pick(s3, among: all, for: nil).board, "amoled206")
+        XCTAssertEqual(try? BoardFirmware.pick(cyd, among: all, for: nil).board, "cyd24")
+        try XCTAssertThrowsError(try BoardFirmware.pick(cyd, among: [all[0]], for: nil)) {
             XCTAssertEqual($0 as? BoardFirmware.Refusal, .noFirmware(.esp32))
         }
     }
 
-    /// The rule: the update is offered for the board on Bluetooth and
-    /// written to the one on USB, so the one on USB must say it's that
-    /// board; another, or one that says nothing, is refused, by the names
-    /// they advertise.
+    /// A board's base MAC, as its bootloader reports it: its Bluetooth
+    /// MAC, and so its `hello.id`, ends in `54fe`.
+    static let mac: [UInt8] = [0x24, 0x6F, 0x28, 0x01, 0x54, 0xFC]
+
+    /// The rule: the update is offered for the board on Bluetooth, by its
+    /// `hello.id`, whether its firmware fits or not, and written to the
+    /// one on USB, so the one on USB must be that board, as the MAC its
+    /// bootloader reports says; another is refused, by the names they
+    /// advertise. A board a failed write left half written says no
+    /// `hello` but keeps its MAC, so Try again is matched the same way
+    /// (LinkKit's FlasherTests write one).
     func testOnlyTheBoardOfferedTheUpdateIsWritten() throws {
-        func hello(_ id: String) -> Hello { Hello(app: "boop", id: id, fw: "1.0.0", does: []) }
-        try BoardFirmware.confirm(hello("b00p-54fe"), is: "b00p-54fe")
-        try XCTAssertThrowsError(try BoardFirmware.confirm(hello("b00p-0001"), is: "b00p-54fe")) {
-            XCTAssertEqual($0 as? BoardFirmware.Refusal, .otherBoard(found: "Boop-0001", wanted: "Boop-54FE"))
-            XCTAssertEqual("\($0)", "the board on USB is Boop-0001, not Boop-54FE. Plug in Boop-54FE instead, then try again.")
-        }
-        try XCTAssertThrowsError(try BoardFirmware.confirm(nil, is: "b00p-54fe")) {
-            XCTAssertEqual($0 as? BoardFirmware.Refusal, .noHello)
+        let all = BoardFirmware.all(in: dir)
+        let board = Flasher.Board(chip: .esp32s3, mac: Self.mac)
+        XCTAssertEqual(try? BoardFirmware.pick(board, among: all, for: "b00p-54fe").board, "amoled206")
+        try XCTAssertThrowsError(try BoardFirmware.pick(board, among: all, for: "b00p-0001")) {
+            XCTAssertEqual($0 as? BoardFirmware.Refusal, .otherBoard(found: "Boop-54FE", wanted: "Boop-0001"))
+            XCTAssertEqual("\($0)", "the board on USB is Boop-54FE, not Boop-0001. Plug in Boop-0001 instead, then try again.")
         }
     }
 }

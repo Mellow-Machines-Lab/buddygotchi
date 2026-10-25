@@ -20,6 +20,38 @@ public final class Flasher {
         public var imageId: UInt16 { self == .esp32 ? 0 : 9 }
         /// What `CHIP_DETECT_MAGIC_REG` reads on it in the bootloader.
         var magic: UInt32 { self == .esp32 ? 0x00F0_1D83 : 0x9 }
+        /// The eFuse word with the low four bytes of its MAC; the next
+        /// word's low two bytes are the first two.
+        var macRegister: UInt32 { self == .esp32 ? 0x3FF5_A004 : 0x6000_7044 }
+    }
+
+    /// The board as its bootloader reports it, before anything is written:
+    /// its chip, and its MAC, which a board half written by a write that
+    /// failed still has.
+    public struct Board: Equatable, Sendable {
+        public var chip: Chip
+        /// Its base MAC, six bytes from its eFuses, as esptool reads it.
+        public var mac: [UInt8]
+
+        public init(chip: Chip, mac: [UInt8]) {
+            self.chip = chip
+            self.mac = mac
+        }
+
+        /// The last two bytes of its Bluetooth MAC, which ESP-IDF makes of
+        /// the base one by adding 2 to its last byte (`ESP_MAC_BT`), in
+        /// lowercase hex: `54fe`.
+        var bluetoothEnd: String { String(format: "%02x%02x", mac[4], mac[5] &+ 2) }
+
+        /// Whether `id`, a device's `hello.id`, is this board's: the device
+        /// library names it for the last two bytes of its Bluetooth MAC
+        /// (SPEC.md §8), so `lamp-54fe` is the board whose Bluetooth MAC
+        /// ends in `54fe`.
+        public func isDevice(_ id: String) -> Bool { id.hasSuffix("-" + bluetoothEnd) }
+
+        /// The name it advertises over Bluetooth as a device of `prefix`'s
+        /// (SPEC.md §8): `Lamp-54FE`.
+        public func advertised(_ prefix: String) -> String { prefix + "-" + bluetoothEnd.uppercased() }
     }
 
     /// One image and where it goes in flash.
@@ -91,15 +123,17 @@ public final class Flasher {
         // One built for the other board is refused before anything is touched.
         try Self.check(images, for: chip)
         try flash(progress: progress) { found in
-            guard found == chip else { throw Failure.wrongChip(expected: chip, found: found.rawValue) }
-            return (images, flashSize)
+            guard found.chip == chip else { throw Failure.wrongChip(expected: chip, found: found.chip.rawValue) }
+            return ((), images, flashSize)
         }
     }
 
-    /// Writes the images `pick` gives for the chip the bootloader says the
-    /// board has, with the size of its flash, then restarts it into them.
-    public func flash(progress: (Double) -> Void = { _ in },
-                      pick: (Chip) throws -> (images: [Image], flashSize: Int)) throws {
+    /// Writes the images `pick` gives for the board the bootloader reports
+    /// (its chip, and its MAC, to refuse a board that isn't the one meant
+    /// by throwing), with the size of its flash, then restarts it into
+    /// them. Returns what `pick` picked them from.
+    public func flash<Picked>(progress: (Double) -> Void = { _ in },
+                              pick: (Board) throws -> (picked: Picked, images: [Image], flashSize: Int)) throws -> Picked {
         // Out of the bootloader whatever happens: a `pick` that throws or
         // a write that fails partway restarts the board too, rather than
         // leave it in its bootloader, its screen dark.
@@ -108,7 +142,7 @@ public final class Flasher {
         let magic = try readRegister(Self.chipMagicRegister)
         guard let chip = Chip.allCases.first(where: { $0.magic == magic }) else { throw Failure.unknownChip(magic) }
         log("flash: \(chip.rawValue) in its bootloader")
-        let (images, flashSize) = try pick(chip)
+        let (picked, images, flashSize) = try pick(Board(chip: chip, mac: try readMAC(chip)))
         try Self.check(images, for: chip)
         // The ROM wants four more bytes after the SPI pins here.
         try command(.spiAttach, Data(count: 8))
@@ -129,6 +163,7 @@ public final class Flasher {
             log("flash: wrote and checked \(image.data.count) bytes at \(String(image.offset, radix: 16))")
         }
         progress(1)
+        return picked
     }
 
     /// An image with Espressif's header names its chip: one for another
@@ -205,6 +240,13 @@ public final class Flasher {
 
     func readRegister(_ address: UInt32) throws -> UInt32 {
         try command(.readReg, le(address)).value
+    }
+
+    /// The chip's base MAC, from the two eFuse words that hold it, first
+    /// byte first, as esptool reads it.
+    func readMAC(_ chip: Chip) throws -> [UInt8] {
+        let low = try readRegister(chip.macRegister), high = try readRegister(chip.macRegister + 4)
+        return [high >> 8, high, low >> 24, low >> 16, low >> 8, low].map { UInt8(truncatingIfNeeded: $0) }
     }
 
     /// Erases as it goes, then takes the compressed image a block at a time.

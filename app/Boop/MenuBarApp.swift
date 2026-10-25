@@ -151,24 +151,23 @@ final class AppModel: ObservableObject {
 
     /// The firmware the board should take: its board's, when it runs an
     /// older version than the app carries, or another character pack; or,
-    /// when its firmware doesn't fit the app at all, the app's, for
-    /// whichever board is on USB when it's written.
+    /// when its firmware doesn't fit the app at all, the app's, whichever
+    /// fits its chip once it's on USB.
     var firmwareOffer: BoardFirmware? {
         if let device = status?.device { return BoardFirmware.update(for: device, among: boardFirmware) }
         return status?.deviceTrouble == nil ? nil : boardFirmware.first
     }
 
-    /// A write that began and didn't finish, for Try again: where, and the
-    /// firmware it chose from.
-    private var unfinished: (port: String, firmware: [BoardFirmware])?
+    /// The update a write that began and didn't finish was for, for Try
+    /// again: the board, half written, has left Bluetooth and its offer
+    /// with it, but its MAC still says which board it is.
+    private var unfinished: (board: String?, firmware: [BoardFirmware])?
 
     /// Writes the app's firmware onto the board on USB, off the main
     /// thread, and says how it goes in `firmwareWrite`. The offer is for
-    /// the board on Bluetooth, so the one on USB must say it's that one
-    /// when the app knows which (one whose firmware doesn't fit gives the
-    /// link no `hello` to keep); it gets the image for the chip its
-    /// bootloader reports. Try again after a write that began goes to the
-    /// same port without asking, since a half-written board says nothing.
+    /// the board on Bluetooth, whether its firmware fits or not, so the
+    /// one on USB must be that one, as its MAC says; it gets the image for
+    /// the chip its bootloader reports.
     func updateFirmware() {
         if case .usb = link {
             firmwareWrite = .failed("this Boop is using the board's USB port itself. Update it from Boop.app, over Bluetooth.")
@@ -183,21 +182,20 @@ final class AppModel: ObservableObject {
             firmwareWrite = .failed("more than one board is plugged in. Leave only \(name)'s, then try again.")
             return
         }
-        let retry = unfinished?.port == port ? unfinished : nil
-        // A board the app knows takes its board's firmware; one it doesn't, whichever fits its chip.
-        guard let firmware = retry?.firmware ?? firmwareOffer.map({ status?.device == nil ? boardFirmware : [$0] }) else {
+        // A board whose firmware fits takes its board's firmware; one whose doesn't, whichever fits its chip.
+        guard let update = unfinished ?? firmwareOffer.map({ offer in
+            (board: status?.device?.id ?? status?.misfit, firmware: status?.device == nil ? boardFirmware : [offer])
+        }) else {
             firmwareWrite = .idle  // nothing to offer any more
             return
         }
-        let board = retry == nil ? status?.device?.id : nil
-        unfinished = (port, firmware)
+        unfinished = update
         firmwareWrite = .writing(0)
         let log = self.log
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             var shown = -1
             do {
-                if let board { try BoardFirmware.confirm(port: port, is: board) }
-                let written = try BoardFirmware.install(firmware, port: port, log: log) { done in
+                let written = try BoardFirmware.install(update.firmware, on: update.board, port: port, log: log) { done in
                     let percent = Int(done * 100)
                     guard percent != shown else { return }
                     shown = percent

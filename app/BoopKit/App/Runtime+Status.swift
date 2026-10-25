@@ -20,6 +20,9 @@ extension Runtime {
         /// Why the device connected gets no reactions: its firmware doesn't
         /// fit the app (linkkit/SPEC.md §6), in the link's words.
         public var deviceTrouble: String?
+        /// That device's `hello.id`, when it gave one: the board its
+        /// firmware update is for.
+        public var misfit: String?
         public var personality: Personality
         /// The brain as it runs: `jev:jev-latest`, or `none` without a key.
         public var brain: String
@@ -113,6 +116,7 @@ extension Runtime {
         status.nature = memory.longTerm?.nature
         status.uncleanExit = uncleanExit
         status.board = settings.board
+        status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }
         if pipeline.several {
             status.buddies = rigs.map { rig in
                 Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),
