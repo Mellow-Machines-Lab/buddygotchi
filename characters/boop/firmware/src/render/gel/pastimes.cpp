@@ -210,12 +210,13 @@ void cloud(Raster& r, int x, int y, int w, int h, int tx, int ty, uint16_t ink) 
 void say(Raster& r, const char* s, int x, int y, uint16_t ink, const Font& f = kSmall) { r.text(s, x, y, ink, f); }
 
 // Zs drifting up and right from (x, y), a new one every 900 ms, each for
-// 2.7 s, growing from 7 to 16 px tall and fading, by sixteenths of a pixel.
+// 2.7 s, growing from 7 to 16 px tall by sixteenths of a pixel, fading in
+// over its first 200 ms and out to nothing by its last.
 void zs(Raster& r, int x, int y, int ms) {
   const int a = r.alpha;
   for (int i = 0; i < 3; ++i) {
     const int age = (ms + i * 900) % 2700;
-    r.alpha = a * (255 - age * 200 / 2700) / 255;
+    r.alpha = a * std::min(age * 255 / 200, 255 - age * 255 / 2700) / 255;
     r.zee(x * 16 + 16 + age * 16 / 40, y * 16 - 5 * 16 - age * 16 / 22 - age * 5 * 16 / 2700,
           7 * 16 + age * 9 * 16 / 2700, kCream);
   }

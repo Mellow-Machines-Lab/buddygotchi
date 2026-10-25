@@ -81,6 +81,48 @@ int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, in
   return x;
 }
 
+void text16(Raster& r, const Font& f, int x16, int y16, const char* s, uint16_t ink, bool behind) {
+  constexpr int kMostGlyphs = 24, kMostCells = kMostGlyphs * 24 + 1;
+  if (!r.s.pixels || r.alpha <= 2 || f.w * kMostGlyphs >= kMostCells) return;
+  int glyphs[kMostGlyphs], n = 0;
+  for (int g; n < kMostGlyphs && (g = nextGlyph(s)) >= 0;) glyphs[n++] = g;
+  const int x0 = x16 >> 4, y0 = y16 >> 4, fx = x16 & 15, fy = y16 & 15;
+  const int cells = n * f.w, cols = cells + (fx ? 1 : 0), rows = f.h + (fy ? 1 : 0), rowBytes = (f.w + 1) / 2;
+  // A row of the string's cells (0–15), and a column of 0 before it.
+  uint8_t above[kMostCells + 1] = {}, here[kMostCells + 1] = {};
+  auto decode = [&](int v, uint8_t* out) {
+    if (v < 0 || v >= f.h) return void(std::fill(out, out + cells + 1, 0));
+    for (int i = 0; i < n; ++i) {
+      const uint8_t* src = f.data + size_t(glyphs[i]) * rowBytes * f.h + v * rowBytes;
+      for (int xx = 0; xx < f.w; ++xx) out[1 + i * f.w + xx] = xx & 1 ? src[xx >> 1] & 15 : src[xx >> 1] >> 4;
+    }
+  };
+  const int opacity = r.alpha, wx = 16 - fx, wy = 16 - fy;
+  int bx0 = 1 << 30, by0 = 1 << 30, bx1 = -1, by1 = -1;
+  for (int v = 0; v < rows; ++v) {
+    std::copy(here, here + cells + 1, above);
+    decode(v, here);
+    const int y = y0 + v;
+    if (y < 0 || y >= r.s.height) continue;
+    uint16_t* row = r.s.pixels + y * r.s.width;
+    for (int u = 0; u < cols; ++u) {
+      const int x = x0 + u;
+      if (x < 0 || x >= r.s.width) continue;
+      // The cells at u and u − 1 (index u + 1 and u): past the last, none.
+      const int a = u < cells ? here[u + 1] : 0, c = u < cells ? above[u + 1] : 0;
+      const int sum = (wx * a + fx * here[u]) * wy + (wx * c + fx * above[u]) * fy;  // at most 15 × 256
+      if (!sum || (behind && row[x])) continue;
+      r.alpha = opacity * sum / (15 * 256);
+      const uint16_t was = row[x];
+      r.pixel(x, y, ink);
+      if (row[x] == was) continue;
+      bx0 = std::min(bx0, x), bx1 = std::max(bx1, x), by0 = std::min(by0, y), by1 = std::max(by1, y);
+    }
+  }
+  r.alpha = opacity;
+  if (bx1 >= 0) r.touch(bx0, by0, bx1 + 1, by1 + 1);
+}
+
 namespace {
 
 // The line in its bubble, which takes the whole lane: a box with round

@@ -65,9 +65,16 @@ pacing and touch, the Mac app, the architecture) found what's below.
 - [ ] The body's outline pops by up to ~2.7 px when a triangle's facing
       flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
       silhouette, or 64 sectors (+1-1.5 ms).
-- [ ] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
+- [x] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
       replay (`OutfitLayer::kSlack`), the listening ring and the helper
-      minis (`props.cpp`).
+      minis (`props.cpp`). Now in sixteenths: text by `text16` (bilinear
+      between pixels, text()'s own on a whole pixel), the word forward's
+      flights and landings, the little ones, the rocket, the monitor's
+      page and bars (`subpixel.h`'s `round16`), the outfit replayed with
+      `Raster::replay16`; the Zs fade in and out fully rather than pop.
+      Checked by test_gel's `test_a_recording_replays_between_pixels`,
+      `test_text_glides_between_pixels` and the outfit gliding half a
+      pixel, and the stream, states and layers goldens looked at.
 - [x] The sleeper's Zs are drawn, not a font's: one rounded pen
       (`Raster::zee`) growing from 7 to 16 px and drifting by sixteenths,
       where the font's z jumped 40-47 px of ink between sizes (test_gel).

@@ -642,4 +642,93 @@ void Raster::blend(const CrossFade& f) {
   }
 }
 
+void Raster::replay16(const Recording& r, int dx16, int dy16) {
+  const int fx = dx16 & 15, fy = dy16 & 15, dx = dx16 >> 4, dy = dy16 >> 4;
+  if (!fx && !fy) return replay(r, dx, dy);
+  if (!s.pixels) return;
+  const int top = std::max(0, bounds.y0), under = std::min(bottom(), bounds.y1);
+  const int left = std::max(0, bounds.x0), right = std::min({s.width, kMaxWidth, bounds.x1});
+  // A shape's row being gathered and the row above it, each pixel's opacity
+  // at its kept column plus one (so column −1 is a zero), zero outside
+  // [lo, hi].
+  static uint8_t rows[2][kMaxWidth + 2];
+  uint8_t *here = rows[0], *above = rows[1];
+  int hereY = 0, hereLo = 1 << 30, hereHi = -1, aboveLo = 1 << 30, aboveHi = -1;
+  uint16_t ink = 0;
+  bool gathering = false, hasAbove = false;
+  // Blends kept row y's pixels (from `here` and `above`, the row before it)
+  // into the surface, each the bilinear sample of the four around it.
+  auto emit = [&](int y, const uint8_t* lower, const uint8_t* upper, int lo, int hi) {
+    const int out = y + dy;
+    if (out < top || out >= under || lo > hi) return;
+    uint16_t* row = s.pixels + out * s.width;
+    const int from = std::max(lo + dx, left), to = std::min(hi + 1 + dx, right - 1);
+    if (from > to) return;
+    touch(from, out, to + 1, out + 1);
+    for (int x = from; x <= to; ++x) {
+      const int k = x - dx + 1;  // the kept column, plus one
+      const int a =
+          ((16 - fx) * lower[k] + fx * lower[k - 1]) * (16 - fy) + ((16 - fx) * upper[k] + fx * upper[k - 1]) * fy;
+      const int alpha = shown((a + 128) >> 8);
+      if (alpha >= 253)
+        row[x] = ink;
+      else if (alpha > 2)
+        row[x] = mix565(row[x], ink, alpha);
+    }
+  };
+  static const uint8_t kNone[kMaxWidth + 2] = {};
+  // The row gathered, blended with the one above it; then it's the one above.
+  auto finishRow = [&]() {
+    if (!gathering) return;
+    const int lo = std::min(hereLo, hasAbove ? aboveLo : hereLo), hi = std::max(hereHi, hasAbove ? aboveHi : hereHi);
+    emit(hereY, here, hasAbove ? above : kNone, lo, hi);
+    if (hasAbove) std::fill(above + aboveLo, above + aboveHi + 2, 0);
+    std::swap(here, above);
+    aboveLo = hereLo, aboveHi = hereHi, hasAbove = true, gathering = false;
+    hereLo = 1 << 30, hereHi = -1;
+  };
+  // The shape's last row reaches fy sixteenths into the row under it.
+  auto finishShape = [&]() {
+    finishRow();
+    if (!hasAbove) return;
+    if (fy) emit(hereY + 1, kNone, above, aboveLo, aboveHi);
+    std::fill(above + aboveLo, above + aboveHi + 2, 0);
+    hasAbove = false;
+  };
+  for (const uint8_t* code = r.data; code + sizeof(Span) <= r.data + r.used;) {
+    Span span;
+    std::memcpy(&span, code, sizeof span);
+    code += sizeof span;
+    // A row of one ink after the row above it in that ink: the same shape.
+    if (!(gathering && span.ink == ink && span.y == hereY)) {
+      const bool next = span.ink == ink && span.y == hereY + 1 && (gathering || hasAbove);
+      if (next)
+        finishRow();
+      else
+        finishShape();
+      ink = span.ink, hereY = span.y, gathering = true;
+    }
+    const int x0 = std::clamp(int(span.x0), 0, kMaxWidth - 1);
+    hereLo = std::min(hereLo, x0), hereHi = std::max(hereHi, std::min(kMaxWidth - 1, span.x0 + span.n - 1));
+    // Two shapes of one ink on one row: their union.
+    auto put = [&](int x, int a) {
+      if (x < 0 || x >= kMaxWidth) return;
+      uint8_t& v = here[x + 1];
+      v = uint8_t(v + a - v * a / 255);
+    };
+    for (int x = span.x0, end = x + span.n; x < end;) {
+      const int c = *code++;
+      if (c & kRun) {
+        const int length = (c & (kRun - 1)) + 1;
+        for (int k = 0; k < length; ++k) put(x + k, *code);
+        ++code, x += length;
+      } else {
+        for (int k = 0; k <= c; ++k) put(x + k, code[k]);
+        code += c + 1, x += c + 1;
+      }
+    }
+  }
+  finishShape();
+}
+
 }  // namespace render::gel

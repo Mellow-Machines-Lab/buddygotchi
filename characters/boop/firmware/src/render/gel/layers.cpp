@@ -310,12 +310,13 @@ void hearts(Raster& r, int w, int bottom, int ms) {
 }
 
 // Zs drifting up and right from beside its head, each for 2.4 s, a new
-// one every 0.8 s, growing from 7 to 16 px tall and fading as they go, by
-// sixteenths of a pixel.
+// one every 0.8 s, growing from 7 to 16 px tall by sixteenths of a pixel,
+// fading in over its first 200 ms and out to nothing by its last, so none
+// pops in or off.
 void zs(Raster& r, const rig::Anchors& at, int ms) {
   for (int i = 0; i < 3; ++i) {
     const int age = (ms + i * 800) % 2400;
-    r.alpha = 255 - age * 200 / 2400;
+    r.alpha = std::min(age * 255 / 200, 255 - age * 255 / 2400);
     r.zee(at.brimR.x + 25 * 16 + age * 16 / 40, at.brimR.y - 5 * 16 - age * 16 / 20 - age * 5 * 16 / 2400,
           7 * 16 + age * 9 * 16 / 2400, kCream);
   }
@@ -558,16 +559,19 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
                       t - kept.movedAt < OutfitLayer::kStillMs;
   kept.engine = &e, kept.ms = t;
   std::copy(now, now + n, kept.last);
-  // How far the body has moved it since it was kept, to the nearest pixel,
-  // by the anchor it rides, and the most any is off once it's moved that far.
+  // How far the body has moved it since it was kept, in sixteenths, by the
+  // anchor it rides, and the most any other is off once it's moved that
+  // far: how far its shape has changed. Still, it's drawn afresh unless it
+  // moved whole pixels and kept its shape.
   int ox = 0, oy = 0, off = INT_MAX;
   if (kept.valid && kept.look == look) {
-    ox = floor16(now[0].x - kept.at[0].x + 8), oy = floor16(now[0].y - kept.at[0].y + 8);
+    ox = now[0].x - kept.at[0].x, oy = now[0].y - kept.at[0].y;
     off = 0;
     for (int i = 0; i < n; ++i)
-      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox * 16), std::abs(now[i].y - kept.at[i].y - oy * 16)});
+      off = std::max({off, std::abs(now[i].x - kept.at[i].x - ox), std::abs(now[i].y - kept.at[i].y - oy)});
   }
-  if (off != 0 && !(moving && off <= OutfitLayer::kSlack)) {
+  const bool whole = off == 0 && ox % 16 == 0 && oy % 16 == 0;
+  if (!whole && !(moving && off <= OutfitLayer::kSlack)) {
     // Kept in a frame as wide as the surface and taller, the anchor it rides
     // a whole number of pixels from its middle, as far into its pixel as it
     // is.
@@ -583,7 +587,7 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
     kept.look = look, kept.dx = -fx, kept.dy = -fy, ox = oy = 0;
     std::copy(now, now + n, kept.at);
   }
-  r.replay(kept.shapes, kept.dx + ox, kept.dy + oy);
+  r.replay16(kept.shapes, kept.dx * 16 + ox, kept.dy * 16 + oy);
 }
 
 // The worn and hat layers' contents for a look, and the look a pair of

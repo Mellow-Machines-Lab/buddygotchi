@@ -19,6 +19,13 @@ struct Raster;
 // (x, y): at most `room` px of it, cut as render::cutAt cuts it, as the
 // canvas's drawStringFit. Returns the x after it.
 int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room = 1 << 20);
+// The same text, its cells' top left at (x16, y16), sixteenths of a pixel,
+// so a word that moves glides rather than steps: on a whole pixel it's
+// text()'s, and between them each pixel takes its four nearest cells'
+// coverage, each by how near it is. `behind`: only onto the background's
+// black, as words behind the body are. It touches only the pixels it
+// draws.
+void text16(Raster& r, const Font& f, int x16, int y16, const char* s, uint16_t ink, bool behind = false);
 // The bubble's font, the gel's largest (fonts_gel.h, which only lane.cpp
 // holds).
 const Font& bubbleFont();

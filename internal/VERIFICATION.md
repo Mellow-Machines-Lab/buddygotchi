@@ -502,7 +502,9 @@ accepted; the mirror's shots are the simulator's.
    prints the board's own figures beside its own and the frame-to-frame
    time, and the error of its clock match, a few ms at most. On the
    AMOLED, with the `amoled206_profile` build flashed,
-   `internal/tools/boopctl perf --scenes` (and again with `--sound`): each
+   `internal/tools/boopctl perf --scenes` (and again with `--sound`; its
+   `stream` scene keeps the work stream's words falling and a word coming
+   forward every 2 s): each
    scene's slowest second reaches its frames a second, working draws no
    frame over 50 ms, at least 50 KB of internal heap stays free and the
    DAC has no write errors. Flash the everyday build (`make flash`)

@@ -1806,6 +1806,76 @@ static void test_a_recording_replays_as_drawn() {
   TEST_ASSERT_TRUE(small.used <= small.room);
 }
 
+// A recording replayed between pixels (Raster::replay16) is, for one shape
+// over black, the mean of it replayed on the four whole pixels around, to
+// within rounding; on a whole pixel it's replay() exactly.
+static void test_a_recording_replays_between_pixels() {
+  constexpr int kW = 120, kH = 100;
+  const uint16_t ink = rgb565(246, 240, 226);
+  static uint8_t bytes[4 * 1024];
+  Recording kept{bytes, int(sizeof bytes)};
+  kept.clear();
+  Surface frame{kW, kH, nullptr};
+  Raster record{frame};
+  record.limit = kH;
+  record.recording = &kept;
+  const Point cap[] = {{600, 900}, {1500, 260}, {1700, 1300}, {400, 1500}};
+  record.polygon16(cap, 4, ink);
+  std::vector<uint16_t> whole[4], between(kW * kH, 0);
+  for (int i = 0; i < 4; ++i) {
+    whole[i].assign(kW * kH, 0);
+    Surface s{kW, kH, whole[i].data()};
+    Raster r{s};
+    r.replay(kept, 10 + i % 2, 6 + i / 2);
+  }
+  Surface s{kW, kH, between.data()};
+  Raster r{s};
+  r.replay16(kept, 10 * 16 + 8, 6 * 16 + 8);
+  for (int p = 0; p < kW * kH; ++p) {
+    int mean = 0;
+    for (const auto& w : whole) mean += w[p] >> 5 & 63;
+    TEST_ASSERT_INT_WITHIN(2, mean / 4, between[p] >> 5 & 63);
+  }
+  std::vector<uint16_t> again(kW * kH, 0);
+  Surface sa{kW, kH, again.data()};
+  Raster ra{sa};
+  ra.replay16(kept, 10 * 16, 6 * 16);
+  TEST_ASSERT_EQUAL_MEMORY(whole[0].data(), again.data(), again.size() * 2);
+}
+
+// Text placed in sixteenths (text16) is Raster::text's on a whole pixel,
+// and between pixels glides: a falling word's ink moves down in every
+// frame, however little the frame, rather than a pixel at a time.
+static void test_text_glides_between_pixels() {
+  std::vector<uint16_t> a(502 * 410, 0), b(502 * 410, 0);
+  Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
+  Raster ra{sa}, rb{sb};
+  ra.text("grep x", 200, 100, rgb565(140, 223, 203), kLarge);
+  text16(rb, kLarge, (200 - 6 * kLarge.w / 2) * 16, (100 - kLarge.h / 2) * 16, "grep x", rgb565(140, 223, 203));
+  TEST_ASSERT_EQUAL_MEMORY(a.data(), b.data(), a.size() * 2);
+  // One lane's word, falling at 95 to 145 px a second: its ink's middle,
+  // every 3 ms (under half a pixel), is lower each time.
+  Stream stream;
+  Stream::Lane lane;
+  lane.slot = 0, lane.count = 1, std::strcpy(lane.word, "grep");
+  stream.setLanes(&lane, 1, true, false, 0);
+  double last = -1;
+  for (uint32_t t = 600; t <= 660; t += 3) {
+    std::fill(a.begin(), a.end(), 0);
+    sa.invalidate();
+    paintStreamBehind(sa, stream, t);
+    double mass = 0, moment = 0;
+    for (int y = 0; y < 300; ++y)
+      for (int x = 0; x < 502; ++x)
+        if (const int g = a[size_t(y) * 502 + x] >> 5 & 63) mass += g, moment += double(g) * y;
+    TEST_ASSERT_TRUE(mass > 0);
+    const double middle = moment / mass;
+    TEST_ASSERT_TRUE(middle > last);
+    if (last >= 0) TEST_ASSERT_TRUE(middle - last < 0.6);
+    last = middle;
+  }
+}
+
 // The outfit is drawn into a recording and blended from it
 // (OutfitLayer): while the body moves, a frame shows it as kept within
 // kSlack (12 sixteenths) of where it is; once it's still (the same time,
@@ -1861,6 +1931,21 @@ static void test_the_outfit_is_kept_while_the_body_moves() {
   const auto lower = frame(down, 1230);
   for (int y = 3; y < 410 * 4 / 5; ++y)
     TEST_ASSERT_EQUAL_MEMORY(kept.data() + (y - 3) * 502, lower.data() + y * 502, 502 * 2);
+  // Moving half a pixel down, it's the kept one half a pixel down (Raster::
+  // replay16): its ink's middle half a pixel lower, not where it was or a
+  // pixel on.
+  auto middle = [](const std::vector<uint16_t>& p) {
+    double mass = 0, moment = 0;
+    for (int y = 0; y < 410 * 4 / 5; ++y)
+      for (int x = 0; x < 502; ++x)
+        if (const int g = p[size_t(y) * 502 + x] >> 5 & 63) mass += g, moment += double(g) * y;
+    return moment / mass;
+  };
+  frame(home, 1200);
+  rig::Anchors half = home;
+  for (rig::Point* p : {&half.crown, &half.brimL, &half.brimF, &half.brimR}) p->y += 8;
+  const double glide = middle(frame(half, 1230)) - middle(kept);
+  TEST_ASSERT_TRUE(glide > 0.4 && glide < 0.6);
 }
 
 // The sky (the stack's scene) is the night's at night and the sunrise in
@@ -2567,6 +2652,8 @@ int main() {
   RUN_TEST(test_the_sky_is_behind_the_body);
   RUN_TEST(test_it_has_its_coffee_in_the_morning);
   RUN_TEST(test_a_recording_replays_as_drawn);
+  RUN_TEST(test_a_recording_replays_between_pixels);
+  RUN_TEST(test_text_glides_between_pixels);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
   // test_cells.cpp
   RUN_TEST(test_every_cell_plays_truthfully);

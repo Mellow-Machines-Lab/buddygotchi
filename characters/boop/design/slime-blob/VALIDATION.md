@@ -113,7 +113,10 @@ ramps and springs can, and no jolt at an event. By file:
   flickers, `test_polygon_edges_move_a_sixteenth_at_a_time`; arts of
   different shapes cross-fading with nothing showing through,
   `test_a_cross_fade_never_shows_through`, every two arts' in their room,
-  `test_every_cross_fade_fits_its_room`), tracked
+  `test_every_cross_fade_fits_its_room`), what moves gliding between
+  pixels (`test_a_recording_replays_between_pixels`,
+  `test_text_glides_between_pixels`, the outfit half a pixel down while
+  the body moves), tracked
   clearing and kept cards matching a fresh frame, steady frames
   allocating nothing, and the work stream
   (`test_the_work_stream_falls_behind_and_hits_in_front`: words in their
@@ -167,7 +170,9 @@ ramps and springs can, and no jolt at an event. By file:
   every frame, and checks the frame is the same pixels as one core's.
 - On the AMOLED, `internal/tools/boopctl perf --scenes` with the
   `amoled206_profile` build: each scene's frames a second against its
-  budget, and the body's time (`body_us`, the erase included).
+  budget, and the body's time (`body_us`, the erase included); its
+  `stream` scene keeps two lanes' words falling and a word coming forward
+  every 2 s (`stream_us`).
 - `internal/tools/fluid/measure.py` measures how fluid the everyday
   transitions are on the board (`transitions.jsonl`, `idle-swipes.jsonl`),
   and the Character Studio's Transitions view ranks them in the page.

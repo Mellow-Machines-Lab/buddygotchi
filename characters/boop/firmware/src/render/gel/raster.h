@@ -147,6 +147,12 @@ struct Raster {
   // becomes the sum of each look's shapes laid over it, by the look's
   // weight, and of itself by what's left of the weight.
   void blend(const CrossFade& f);
+  // The same, `dx16`, `dy16` sixteenths of a pixel away, so what's kept
+  // glides with what it rides: on a whole pixel it's replay(); between,
+  // each shape's opacities (its spans of one ink, a row apiece down it)
+  // are sampled between its four nearest kept pixels, weighted by how near
+  // (bilinear), and blended once a pixel.
+  void replay16(const Recording& r, int dx16, int dy16);
 
   void touch(int x0, int y0, int x1, int y1) {
     if (!recording) s.touch(x0, y0, x1, std::min(y1, bottom()));
