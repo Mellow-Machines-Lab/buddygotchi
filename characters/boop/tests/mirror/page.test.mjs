@@ -92,6 +92,23 @@ test('draws every refresh at 60 Hz however late each pass runs', async () => {
   assert.ok(drawn >= 58 && drawn <= 61, `passes late by 0.2 and 2.5 ms in turn drew ${drawn} frames in a second, not 60`);
 });
 
+// WebKit asks for 72 frames a second on a 144 Hz display: more often than
+// the board's 16 ms between frames, which drew every other one, 36 a
+// second. A slower display gets a frame every refresh, on its own time.
+test('draws 60 a second at 72 Hz, and one a refresh at 50 Hz', async () => {
+  const p = await page();
+  p.mirror.shown(true);
+  p.run(0.5, 72);
+  let from = p.drawn.count;
+  p.run(1, 72);
+  const at72 = p.drawn.count - from;
+  assert.ok(at72 >= 58 && at72 <= 61, `72 Hz drew ${at72} frames in a second, not the board's 60`);
+  p.run(0.5, 50);
+  from = p.drawn.count;
+  p.run(1, 50);
+  assert.equal(p.drawn.count - from, 50, '50 Hz draws every refresh');
+});
+
 test("draws the board's whole screen from where the board keeps it", async () => {
   const p = await page();
   const {width, height, data} = p.drawn.image;
