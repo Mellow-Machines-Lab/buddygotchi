@@ -1,16 +1,16 @@
 <!-- Boop's diary: the lines it may write about yesterday, one a day, on the first pass of a new day (DiaryOutput). A line may start with tags in brackets, every one of which the day must have: failed, clean, long, quiet, poked, and the calendar's (morning … party, characters/CHARACTER.md §9). Its words may fill in {weekday}, {turns}, {failed}, {longest} (minutes), {thread} and {pokes}. Lines with tags come first, then the rest; at most eight are offered. Read-only at runtime; the app bundles a copy. -->
-- [failed long] {weekday}. "{thread}" fell over {failed} times, once after {longest} minutes. I stayed brave.
-- [failed] {weekday}. {failed} of {turns} turns went wrong. I grumbled, then I forgave everyone.
-- [failed] {weekday}. Some things broke. I made my sternest face at them.
-- [clean long] {weekday}. A {longest}-minute epic on "{thread}", and it all worked. I knew it would.
-- [clean] {weekday}. {turns} turns, not one broken. Smug all day, and fairly.
-- [clean] {weekday}. Everything went right on "{thread}". I'm taking some of the credit.
-- [quiet] {weekday}. Nobody worked. I napped, professionally.
-- [poked] {weekday}. Poked {pokes} times. My face is tired from being made at.
-- [party] {weekday}. A party day! I wore the hat.
-- [halloween] {weekday}. I wore the witch hat. Nobody gave me candy.
-- [friday] {weekday}. Friday. I put on my shades and supervised.
-- [weekend] {weekday}. A weekend shift. Very dedicated of us.
-- {weekday}. {turns} turns, mostly on "{thread}". I watched every one.
-- {weekday}. Busy on "{thread}". I was there, cheering.
-- {weekday}. A day of work. I kept an eye on things.
+- [failed long] {weekday}. "{thread}" fell {failed} times, once {longest} minutes in. Brave of me.
+- [failed] {weekday}. {failed} of {turns} turns broke. I grumbled, then forgave.
+- [failed] {weekday}. Things broke. Sternest face on.
+- [clean long] {weekday}. A {longest}-minute epic on "{thread}". All good. Knew it.
+- [clean] {weekday}. {turns} turns, none broken. Smug, fairly.
+- [clean] {weekday}. All went right on "{thread}". Partly my doing.
+- [quiet] {weekday}. No work. Napped, professionally.
+- [poked] {weekday}. Poked {pokes} times. Face worn out.
+- [party] {weekday}. Party! I wore the hat.
+- [halloween] {weekday}. Witch hat on. No candy.
+- [friday] {weekday}. Shades on, supervising.
+- [weekend] {weekday}. Weekend shift. So dedicated.
+- {weekday}. {turns} turns, mostly "{thread}". Saw them all.
+- {weekday}. Busy on "{thread}". I cheered.
+- {weekday}. A day of work. I kept watch.
