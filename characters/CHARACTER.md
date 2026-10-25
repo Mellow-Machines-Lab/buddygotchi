@@ -710,8 +710,12 @@ in its tiles and its demo. Boop's has one:
   keepalive included, and a tap on the board as a tap on the mirror's
   screen or BOOT, which it takes as its own (`SlimeFeed`); onboarding's,
   with no board behind it, is handed what its views show. The page
-  draws the board's whole screen as big as its tile fits, centred, at most
-  30 frames a second, and only while it's shown. It makes no sound, and
+  draws the board's whole screen as big as its tile fits, centred, or,
+  in a tile too small for that (the popover's), the slime alone, zoomed;
+  a shrink of more than 2× goes in halves, so it doesn't shimmer. It
+  draws only while it's shown, at once when it's shown again, and asks
+  the board for a frame on every display refresh: the board draws when
+  it has one, up to its 60 a second. It makes no sound, and
   nothing the board says leaves the page, so it can't answer the Mac.
 - `tests/mirror/` holds the page's own tests (`node --test`), and
   `internal/tools/boopctl mirror` plays the gel's scenarios on the mirror
