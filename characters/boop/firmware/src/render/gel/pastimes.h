@@ -20,8 +20,9 @@
 // fade: at work a mug on the desk (tier1; in the morning its coffee is in
 // its hand instead, so neither the mug nor a sip or refill from it), a
 // mug more stacked on it every kMugEveryMs from tier5, and headphones
-// (tier3), the hat winning where it has one; idle, a plant that grows
-// (tier3 to tier5). Behind the body: the plant. In front: everything
+// (tier3), the hat winning where it has one, and in the zone (tier5) a
+// few motes drifting up beside it, kMotes of them, each over kMoteMs;
+// idle, a plant that grows (tier3 to tier5). Behind the body: the plant. In front: everything
 // else, at the body's anchors.
 #pragma once
 #include <cstdint>
@@ -110,6 +111,9 @@ constexpr int kNewestPct = 60;
 // From tier5, a mug more on the desk's stack every this long, up to kMostMugs.
 constexpr uint32_t kMugEveryMs = 10 * 60 * 1000;
 constexpr int kMostMugs = 4;
+// In the zone, this many motes beside it, each drifting up over this long.
+constexpr int kMotes = 5;
+constexpr uint32_t kMoteMs = 4500;
 
 // While the headphones are on, a note floats up from each cup in turn: a
 // pair every kTuneEveryMs, the right's kTuneGapMs after the left's, each
@@ -128,14 +132,14 @@ uint32_t tierBit(int n);
 // What the face shows of them at the device's time `t`, with the tags on:
 // the pastime playing (or a look's occasion, with no drawing of its own)
 // and how far in, at `fade` (0 … 255), and the kit, each at its opacity
-// (0 … 255): the desk's mug and how many are stacked, the headphones, and
-// the plant and how far it has grown (1 to 3).
+// (0 … 255): the desk's mug and how many are stacked, the headphones, the
+// zone's motes, and the plant and how far it has grown (1 to 3).
 struct PastimeShow {
   Pastime playing = Pastime::kNone;
   uint32_t age = 0, ms = 1;
   int fade = 0;
   uint32_t t = 0, when = 0;
-  int mug = 0, mugs = 1, headphones = 0, plant = 0, grown = 1;
+  int mug = 0, mugs = 1, headphones = 0, zone = 0, plant = 0, grown = 1;
 };
 
 // The plant: drawn after the clear and before the body, so the body
@@ -148,8 +152,8 @@ bool showsScenery(const PastimeShow& show);
 // The kit it wears, the headphones and their tune, after what it wears
 // for the tags (render/gel/layers.h) and before the cards.
 void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at);
-// In front: the desk's mugs, then what the pastime playing holds, throws,
-// blows or dreams, at the body's anchors.
+// In front: the desk's mugs and the zone's motes, then what the pastime
+// playing holds, throws, blows or dreams, at the body's anchors.
 void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors& at, const Engine& e);
 
 }  // namespace render::gel

@@ -275,6 +275,24 @@ void mug(Raster& r, int x, int base, int fill, uint32_t t, bool steam = true) {
   r.alpha = a;
 }
 
+// In the zone: motes drifting up beside it, by turns on its left and its
+// right, each from its lap's height to above its brim over kMoteMs,
+// swaying, fading in and out.
+void motes(const Stage& s, uint32_t t) {
+  constexpr int kEnd = rig::Anchors::kRingPoints - 1;
+  Raster& r = s.r;
+  const int a = r.alpha;
+  for (int i = 0; i < kMotes; ++i) {
+    const int age = int((t + uint32_t(i) * kMoteMs / kMotes) % kMoteMs), side = i % 2 ? 1 : -1;
+    const rig::Point& from = side > 0 ? s.at.lap[kEnd] : s.at.lap[0];
+    const int x = from.x / 16 + side * (s.X(16) + (i * 7) % 11) + wobble(age + i * 300, 1800, 4);
+    const int y = from.y / 16 - (from.y / 16 - s.sideY() + s.Y(30)) * age / int(kMoteMs);
+    r.alpha = a * window(age, 0, int(kMoteMs), 900, 1400) / 255 * 4 / 5;
+    r.disk(x, y, 2 + i % 2, kCream);
+  }
+  r.alpha = a;
+}
+
 // The mugs on the desk's right end: one, or a stack.
 void mugs(Raster& r, const Stage& s, int n, uint32_t t) {
   for (int i = 0; i < n; ++i) mug(r, s.X(400), s.deskY() - i * 18, 1024, t, i == n - 1);
@@ -1121,6 +1139,10 @@ void paintPastimes(Surface& surface, const PastimeShow& show, const rig::Anchors
   if (show.mug && show.playing != Pastime::kSip) {
     r.fade = show.mug * desk / 255;
     mugs(r, s, show.mugs, show.t);
+  }
+  if (show.zone) {
+    r.fade = show.zone;
+    motes(s, show.t);
   }
   r.fade = show.fade;
   if (!show.fade) return;

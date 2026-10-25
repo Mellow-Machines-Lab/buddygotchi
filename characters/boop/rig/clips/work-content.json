@@ -1,0 +1,10 @@
+{
+  "about": "Working's base at tier4, on the gel: settled in, its sway slower.",
+  "ms": 4400,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, -55], [1100, -20], [3300, -90], [4400, -55]],
+    "eyeOpen": [[0, -280], [4400, -280]],
+    "squash": [[0, 0], [2200, -22], [4400, 0]]
+  }
+}

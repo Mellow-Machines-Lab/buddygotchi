@@ -84,6 +84,18 @@ void paintArt(Surface&, const Engine&, const PaintControls&, bool mouthOpen, rig
 // The most room a cross-fading group of the art has taken (kCrossingBytes).
 extern int crossingPeak;
 void paintProps(Surface&, const Engine&);
+// A paw types: before each of its key contacts in the recipe playing it
+// lifts and comes back down over kTapMs, kTapLift thousandths of the
+// surface's height at the top, landing on the contact (whose sound and
+// dip it is). How far up the paw on `side` (-1 left, 1 right) is now.
+constexpr int kTapMs = 180, kTapLift = 24;
+struct Scenes;
+int tapLift(const Scenes& scenes, int side);
+// Between them it types on softly, without a sound: a tap every kTypeMs,
+// the paws by turns, each lifting kTypeLift over kTapMs, at `ms` of the
+// engine's clock.
+constexpr int kTypeMs = 340, kTypeLift = 12;
+int typeLift(uint32_t ms, int side);
 // The cards paintProps will fill opaque this frame, as boxes of the pixels
 // it covers whole (at most Surface::kMaxKeep), for the clear to leave.
 int opaqueCards(const Surface&, const Engine&, Box* out);

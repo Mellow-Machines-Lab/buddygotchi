@@ -1,0 +1,10 @@
+{
+  "about": "Working's base at tier2, on the gel: leaning in toward the monitor, its lids a little lower, swaying.",
+  "ms": 3600,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, -50], [900, -25], [2700, -80], [3600, -50]],
+    "eyeOpen": [[0, -160], [3600, -160]],
+    "squash": [[0, 0], [1800, -18], [3600, 0]]
+  }
+}

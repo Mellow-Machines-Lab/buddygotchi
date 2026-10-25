@@ -145,6 +145,13 @@ class Face {
   // Shows the look's variation v (from 0) until it turns: dbg.look's, for
   // scenarios and tools. A face that picks by its own clock may ignore it.
   virtual void showLookVariant(uint8_t v) { (void)v; }
+  // Plays the pastime whose clip is `clip` from t, whoever's turn it would
+  // be: dbg.pastime's, for scenarios and tools. False for one the face
+  // hasn't (a face with none has none).
+  virtual bool playPastime(const char* clip, uint32_t t) {
+    (void)clip, (void)t;
+    return false;
+  }
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }

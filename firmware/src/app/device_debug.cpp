@@ -84,6 +84,13 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1));
     dirty_ = true;
     kit().reply(from, "{\"t\":\"dbg.look\"}", 16);
+  } else if (!std::strcmp(type, "dbg.pastime")) {
+    // A pastime, by its clip's name, played now: for scenarios and tools,
+    // since the face deals its own.
+    const char* reply = b_.face().playPastime(doc["name"] | "", kit().now()) ? "{\"t\":\"dbg.pastime\",\"ok\":true}"
+                                                                              : "{\"t\":\"dbg.pastime\",\"ok\":false}";
+    dirty_ = true;
+    kit().reply(from, reply, std::strlen(reply));
   } else if (!std::strcmp(type, "dbg.press")) {
     live_.injPress = true;
     live_.injPressUntil = kit().now() + (doc["ms"] | kDefaultPressMs);

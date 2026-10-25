@@ -60,6 +60,23 @@ int firstDrawnRow(const Surface& surface, const Placed& c) {
 }
 }  // namespace
 
+int tapLift(const Scenes& s, int side) {
+  const int age = F(s.ageMs).integer();
+  for (int i = 0; i < s.recipe.count; ++i) {
+    const auto& k = s.recipe.contacts[i];
+    if (k.kind != kKey || k.side != side) continue;
+    const int d = F(k.at).integer() - age;
+    if (d >= 0 && d < kTapMs) return kTapLift * 4 * d * (kTapMs - d) / (kTapMs * kTapMs);
+  }
+  return 0;
+}
+
+int typeLift(uint32_t ms, int side) {
+  // Each paw taps every other kTypeMs, the right's between the left's.
+  const int period = 2 * kTypeMs, p = int((ms + (side > 0 ? kTypeMs : 0)) % period), d = (period - p) % period;
+  return d < kTapMs ? kTypeLift * 4 * d * (kTapMs - d) / (kTapMs * kTapMs) : 0;
+}
+
 int opaqueCards(const Surface& surface, const Engine& e, Box* out) {
   const auto& s = e.scenes;
   const T now = e.timeMs();
@@ -175,7 +192,8 @@ void paintProps(Surface& surface, const Engine& e) {
         round(397 + key * 26, 718 + row * 10, 19, 6, 2, pressed ? light : rgb565(144, 170, 176));
       }
     for (int side : {-1, 1}) {
-      int yy = 711 + (s.hasLast && s.last.side == side ? (contact * 9).integer() : 0);
+      const int lift = std::max(tapLift(s, side), typeLift(uint32_t(F(e.timeMs()).integer()), side));
+      int yy = 711 + (s.hasLast && s.last.side == side ? (contact * 9).integer() : 0) - lift;
       round(500 + side * 78 - 30, yy - 12, 60, 25, 13, rgb565(93, 166, 219));
     }
   }

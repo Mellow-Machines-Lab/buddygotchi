@@ -1,5 +1,7 @@
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}]},
+  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}],
+              "tiers": {"tier1": "work-easy", "tier2": "work-leaning", "tier3": "work-focused",
+                        "tier4": "work-content", "tier5": "work-zone"}},
   "asleep": {"clip": "doze"}
 }

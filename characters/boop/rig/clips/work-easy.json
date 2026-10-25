@@ -1,0 +1,9 @@
+{
+  "about": "Working's base at tier1, on the gel: easy, eyes open on the keys, a slow sway.",
+  "ms": 3200,
+  "loop": true,
+  "tracks": {
+    "lean": [[0, 0], [800, 30], [2400, -30], [3200, 0]],
+    "squash": [[0, 0], [1600, -18], [3200, 0]]
+  }
+}

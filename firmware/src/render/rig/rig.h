@@ -145,11 +145,23 @@ struct Occasion {
 // its plays), one of those that fit this many percent of the time, any one
 // alike. The gel deals them its own way, with its pastimes.
 constexpr int kOccasionPct = 67;
-// A look: the base clip it loops, nullptr for none, and its occasions.
+// A base clip a look loops in place of its own while its tier (one of
+// render/tags.h's tier bits) is the last reached.
+struct TierClip {
+  const Clip* clip;
+  uint32_t when;
+};
+// A look: the base clip it loops, nullptr for none, its occasions, and its
+// tiers' base clips. Pixel's face loops its clip; the gel loops a tier's
+// (its engine moves the body otherwise).
 struct Look {
   SceneState state;
   const Clip* clip;
   List<Occasion> occasions;
+  List<TierClip> tiers{};
+  // The base clip of the last tier reached of those the look names, by
+  // the tags on (render::reached sets every tier below), or nullptr.
+  const Clip* tiered(uint32_t when) const;
   // How many of its occasions fit now; and the clip of the i-th of those.
   int fitting(uint32_t when, uint32_t lookMs) const;
   const Clip* fitting(uint32_t when, uint32_t lookMs, int i) const;

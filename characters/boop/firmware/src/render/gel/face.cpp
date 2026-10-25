@@ -51,14 +51,14 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   revision_ = cueRevision_ = 0;
   mixer_.reset(0, 0, nullptr);
   layers_ = {};
-  occasion_ = cueing_ = lastClip_ = nullptr;
+  occasion_ = cueing_ = lastClip_ = base_ = nullptr;
   pastime_ = Pastime::kNone;
   occasionAt_ = occasionEnds_ = stoppedAt_ = restUntil_ = zoneSince_ = 0;
-  zone_ = false;
+  inZone_ = false;
   occasionLook_ = dealtLook_ = SceneState::kNone;
   stopped_ = false;
   dice_ = kSeed;
-  mug_ = headphones_ = plant_ = rig::Ramp{};
+  mug_ = headphones_ = zone_ = plant_ = rig::Ramp{};
   grown_ = 1;
 }
 
@@ -102,6 +102,7 @@ void GelFace::advanceTo(uint32_t t) {
   mixer_.advance(t - lastTick_);
   lastTick_ = t;
   occasions(t);
+  showBase();
   showLayers(t);
   showKit(t);
   int kept = 0;
@@ -154,6 +155,14 @@ bool GelFace::showsLook(SceneState anim, SceneState& look) const {
   const Route& route = e.scenes.route;
   return anim == SceneState::kNone && !route.moment &&
          route.state == (needsYou ? SceneState::kNeedsYou : e.router.facts.look());
+}
+
+void GelFace::showBase() {
+  SceneState look;
+  const bool shows = showsLook(source_.anim, look);
+  const rig::Look* l = rig::kRig.look(look);
+  const rig::Clip* clip = l && shows ? l->tiered(engine_->scenes.when) : nullptr;
+  if (clip != base_) mixer_.setLook(base_ = clip);
 }
 
 void GelFace::occasions(uint32_t t) {
@@ -247,6 +256,16 @@ void GelFace::reply(const char* name, SceneState anim, uint32_t t) {
   if (const rig::Clip* c = rig::kRig.clip(clip)) play(*c);
 }
 
+bool GelFace::playPastime(const char* clip, uint32_t t) {
+  for (const PastimeInfo& p : kPastimes)
+    if (!std::strcmp(p.clip, clip)) {
+      advanceTo(t);
+      playPastime(p.id, t);
+      return true;
+    }
+  return false;
+}
+
 void GelFace::showKit(uint32_t t) {
   const Engine& e = *engine_;
   const auto& facts = e.router.facts;
@@ -261,8 +280,9 @@ void GelFace::showKit(uint32_t t) {
   auto show = [t](rig::Ramp& ramp, bool on) {
     if (ramp.target() != (on ? 1000 : 0)) ramp.retarget(on ? 1000 : 0, t);
   };
-  if (working && tier >= 5 && !zone_) zoneSince_ = t;
-  zone_ = working && tier >= 5;
+  if (working && tier >= 5 && !inZone_) zoneSince_ = t;
+  inZone_ = working && tier >= 5;
+  show(zone_, inZone_);
   show(mug_, working && tier >= 1 && !hasTag(when, "morning"));  // the morning's is in its hand
   show(headphones_, working && tier >= 3 && head);
   show(plant_, idle && tier >= 3);
@@ -286,9 +306,10 @@ PastimeShow GelFace::pastimes(uint32_t t) const {
   auto opacity = [t](const rig::Ramp& ramp) { return (ramp.value(t) * 255 + 500) / 1000; };
   s.mug = opacity(mug_);
   s.headphones = opacity(headphones_);
+  s.zone = opacity(zone_);
   s.plant = opacity(plant_);
   s.grown = grown_;
-  if (zone_) s.mugs = 1 + int(std::min<uint32_t>(kMostMugs - 1, (t - zoneSince_) / kMugEveryMs));
+  if (inZone_) s.mugs = 1 + int(std::min<uint32_t>(kMostMugs - 1, (t - zoneSince_) / kMugEveryMs));
   return s;
 }
 

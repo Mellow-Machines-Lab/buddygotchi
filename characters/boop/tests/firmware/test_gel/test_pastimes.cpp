@@ -10,6 +10,7 @@
 #include "app/behaviour.h"
 #include "render/canvas.h"
 #include "render/gel/face.h"
+#include "render/gel/painter.h"
 #include "render/gel/pastimes.h"
 #include "render/tags.h"
 #include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
@@ -226,7 +227,8 @@ void test_the_headphones_play_a_tune() {
 
 // Pins the kit: at work a mug from tier1, headphones from tier3 (none
 // while it wears a hat), and from tier5 a mug more on the stack every
-// kMugEveryMs up to kMostMugs, counted from when the work reached tier5;
+// kMugEveryMs up to kMostMugs, counted from when the work reached tier5,
+// and the zone's motes;
 // idle, a plant from tier3 that grows to tier5. No mug in the morning,
 // when its coffee is in its hand; none while something needs you.
 void test_the_kit_follows_the_tiers() {
@@ -244,11 +246,11 @@ void test_the_kit_follows_the_tiers() {
   s = kit(3);
   TEST_ASSERT_TRUE(s.mug && s.headphones);
   s = kit(4);
-  TEST_ASSERT_TRUE(s.mug && s.headphones);
+  TEST_ASSERT_TRUE(s.mug && s.headphones && !s.zone);
   TEST_ASSERT_EQUAL_INT(1, s.mugs);
   TEST_ASSERT_EQUAL_INT(1, face.pastimes(board.t + kMugEveryMs).mugs);  // not before tier5
   s = kit(5);
-  TEST_ASSERT_TRUE(s.mug && s.headphones);
+  TEST_ASSERT_TRUE(s.mug && s.headphones && s.zone == 255);
   TEST_ASSERT_EQUAL_INT(1, s.mugs);
   TEST_ASSERT_EQUAL_INT(2, face.pastimes(board.t + kMugEveryMs).mugs);
   TEST_ASSERT_EQUAL_INT(kMostMugs, face.pastimes(board.t + 10 * kMugEveryMs).mugs);
@@ -258,7 +260,7 @@ void test_the_kit_follows_the_tiers() {
   TEST_ASSERT_TRUE(!s.mug && s.headphones);
   board.m.attn = true, board.m.attnId = 4;
   s = kit(5);
-  TEST_ASSERT_TRUE(!s.mug && !s.headphones);
+  TEST_ASSERT_TRUE(!s.mug && !s.headphones && !s.zone);
   board.m.attn = false, board.m.base = SceneState::kIdle;
   for (int tier : {2, 3, 4, 5}) {
     s = kit(tier);
@@ -266,4 +268,66 @@ void test_the_kit_follows_the_tiers() {
     TEST_ASSERT_EQUAL_INT(tier >= 3 ? 255 : 0, s.plant);
     if (tier >= 3) TEST_ASSERT_EQUAL_INT(tier - 2, s.grown);
   }
+}
+
+// Pins working's base by tier (the rig's looks.json tiers): the last tier
+// reached names it, none with no tier; the gel loops it while the look
+// shows, its lids lower the further in (tier1's open, tier5's at 620 of
+// 1000), and fades it out under a reaction and while something needs you.
+void test_work_settles_by_tier() {
+  const rig::Look* working = rig::kRig.look(SceneState::kWorking);
+  TEST_ASSERT_NULL(working->tiered(tagBit("day")));
+  TEST_ASSERT_EQUAL_PTR(rig::kRig.clip("work-easy"), working->tiered(reached(tierBit(1))));
+  TEST_ASSERT_EQUAL_PTR(rig::kRig.clip("work-focused"), working->tiered(reached(tierBit(3))));
+  TEST_ASSERT_EQUAL_PTR(rig::kRig.clip("work-zone"), working->tiered(reached(tierBit(5)) | tagBit("night")));
+  TEST_ASSERT_NULL(rig::kRig.look(SceneState::kIdle)->tiered(reached(tierBit(5))));
+  // Two seconds in, before any pastime's rest is over.
+  auto at2s = [](SceneState look, uint32_t when) {
+    Board board(look, when);
+    board.to(2000);
+    return board.face().mixer().channels();
+  };
+  const rig::Channels none = at2s(SceneState::kWorking, tagBit("day"));
+  TEST_ASSERT_EQUAL_MEMORY(&rig::kRest, &none, sizeof none);
+  TEST_ASSERT_EQUAL_INT(1000, at2s(SceneState::kWorking, tagBit("day") | tiers(1))[rig::Channel::kEyeOpenL]);
+  TEST_ASSERT_INT_WITHIN(30, 620, at2s(SceneState::kWorking, tagBit("day") | tiers(5))[rig::Channel::kEyeOpenL]);
+  TEST_ASSERT_TRUE(at2s(SceneState::kWorking, tagBit("day") | tiers(3))[rig::Channel::kEyeOpenL] < 800);
+  TEST_ASSERT_EQUAL_INT(1000, at2s(SceneState::kNeedsYou, tagBit("day") | tiers(5))[rig::Channel::kEyeOpenL]);
+  // A poke's reaction: the base fades out under it, and back after.
+  Board board(SceneState::kWorking, tagBit("day") | tiers(5));
+  board.to(2000);
+  app::ReactionIn in;
+  in.anim = SceneState::kPoked;
+  in.id = 9;
+  in.variant = board.b.pick(in.anim, board.m.mood, 255, in.outcome, StartCtx::kNone, board.rng);
+  board.b.play(in, board.t);
+  board.to(board.t + 600);
+  TEST_ASSERT_TRUE(board.face().mixer().channels()[rig::Channel::kEyeOpenL] > 950);
+}
+
+// Pins kTapMs, kTapLift, kTypeMs and kTypeLift: a paw lifts before each
+// of its own key contacts and lands on it, its highest halfway; the other
+// paw stays down. Between them the paws tap softly by turns, each every
+// other kTypeMs, lower.
+void test_the_paws_type_on_the_keys() {
+  Scenes s;
+  s.recipe.count = 2;
+  s.recipe.contacts[0] = {T::literal(1000), uint8_t(kKey), int8_t(1), F(1)};
+  s.recipe.contacts[1] = {T::literal(1400), uint8_t(kKnock), int8_t(-1), F(1)};
+  auto at = [&](int ms, int side) {
+    s.ageMs = T::literal(ms);
+    return tapLift(s, side);
+  };
+  TEST_ASSERT_EQUAL_INT(0, at(1000 - kTapMs - 1, 1));
+  TEST_ASSERT_EQUAL_INT(kTapLift, at(1000 - kTapMs / 2, 1));
+  TEST_ASSERT_TRUE(at(1000 - kTapMs / 4, 1) > 0 && at(1000 - kTapMs / 4, 1) < kTapLift);
+  TEST_ASSERT_EQUAL_INT(0, at(1000, 1));
+  TEST_ASSERT_EQUAL_INT(0, at(1000 - kTapMs / 2, -1));
+  TEST_ASSERT_EQUAL_INT(0, at(1400 - kTapMs / 2, -1));  // a knock isn't a key
+  TEST_ASSERT_EQUAL_INT(0, typeLift(0, -1));
+  TEST_ASSERT_EQUAL_INT(kTypeLift, typeLift(2 * kTypeMs - kTapMs / 2, -1));
+  TEST_ASSERT_EQUAL_INT(0, typeLift(2 * kTypeMs - kTapMs / 2, 1));
+  TEST_ASSERT_EQUAL_INT(kTypeLift, typeLift(kTypeMs - kTapMs / 2, 1));
+  TEST_ASSERT_EQUAL_INT(0, typeLift(kTypeMs, 1));
+  TEST_ASSERT_TRUE(kTypeLift < kTapLift);
 }
