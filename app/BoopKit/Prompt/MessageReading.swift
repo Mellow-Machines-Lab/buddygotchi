@@ -41,10 +41,12 @@ public enum MessageText: ReadingText {
     public static let shouting: Tone? = nil
 
     /// The tones its own words show, first match first: an agent's stock
-    /// lines, then an apology.
+    /// lines, then an apology, as one says it, so a message that only
+    /// mentions apologies ("apologies don't soften it") isn't one.
     public static let toneCues: [(Tone, [String])] = [
         (.fawning, ["absolutely right", "you're right", "you are right", "great question", "good catch", "great catch"]),
-        (.apologetic, ["sorry", "apologize", "apologies", "my mistake", "my bad"]),
+        (.apologetic, ["sorry,", "sorry.", "sorry!", "sorry about", "sorry for", "i'm sorry", "i am sorry", "i apologize",
+                       "my apologies", "apologies for", "my mistake", "my bad"]),
     ]
 
     /// What it plainly claims, first match first, so a message that
@@ -68,8 +70,8 @@ public enum MessageText: ReadingText {
         tone: one of \(Tone.choices)
         phrases: up to 3 short phrases copied exactly from the message that carry its feeling, separated by |, or none
 
-        kind is done when it says the work is finished and working, not only planned or promised; stuck when it says it couldn't finish or something is still broken; question when it asks the person something; answer when it only answers or explains, with no work done; other for anything else, such as a promise.
-        tone is fawning when it flatters the person or agrees with them over the top; apologetic when it apologizes; upbeat when it's cheerful or excited; calm for anything plain.
+        kind is done when it says the work is finished and working, not only planned or promised; stuck when it says its own work this turn couldn't be finished or is still broken, not when it reports problems it found or lists what's left to do; question when it asks the person something; answer when it only answers, explains or reports, with no work done, such as a list of open problems; other for anything else, such as a promise.
+        tone is fawning when it flatters the person or agrees with them over the top; apologetic when it apologizes for something it did, not when the word only comes up; upbeat when it's cheerful or excited; calm for anything plain.
 
         Examples:
         Message: "Shipped: the cache layer is in and every test passes."
@@ -103,6 +105,11 @@ public enum MessageText: ReadingText {
         phrases: none
 
         Message: "The retry helper waits a second, then doubles each time."
+        kind: answer
+        tone: calm
+        phrases: none
+
+        Message: "Three things are still open: a flicker at mood changes, two evals that fail, and apologies that don't soften a grumpy user."
         kind: answer
         tone: calm
         phrases: none
