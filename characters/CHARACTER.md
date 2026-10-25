@@ -694,9 +694,11 @@ facegen writes it into the Pixel pack. It holds:
   `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.
 
 `mac/mirror/`, if present, is the board's own firmware in a web page,
-which the popover shows as the face in place of the still one while a
-board drawing a native face (the gel) is connected, and onboarding shows
-in its tiles and its demo. Boop's has one:
+which the popover shows as the face in place of the still one, whether
+or not a board is connected (unless the one connected draws the pixel
+face), and onboarding shows in its tiles and its demo. Each feed keeps
+one page, its board running, which each view showing it takes from the
+one before, so the slime carries on from act to act. Boop's has one:
 
 - `board.js`, the firmware for a board with no hardware
   (`firmware/src/board/mirror/`) with the face the pack gives the AMOLED,
