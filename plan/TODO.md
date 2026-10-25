@@ -4,6 +4,39 @@ Updated 2026-10-24. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: the first launch, from the owner's setup
+
+What the owner's own first-time setup on 2026-10-24 ran into, `make run`
+on a Mac with no Boop state and both boards powered.
+
+- [ ] Act 5's third lesson, "Hold my button and talk", does nothing in
+      the window: unlike the tap's and the button's, it waits on nothing
+      and never ticks, so holding BOOT shows `listening` on the board,
+      and the Mac's mic hears (`talk_on`, `talk_off`, "said 2
+      characters"), but the window stays as it was. It also promises an
+      answer that can't come yet: Jev's key is asked in act 7. Tick it
+      when the board's talk ends, show what the Mac heard (or that it
+      heard nothing, and to hold a little longer), and say the answer
+      comes once Boop has a brain, or ask for the key before act 5. The
+      first hold probably ran into macOS's Speech Recognition and
+      Microphone prompts, and every hold was about a second long.
+- [ ] With two boards powered, act 4 takes the first one it hears
+      (`ble: found Boop-54FE`, the CYD) and names it only in small print,
+      "FOUND BOOP-54FE", while the board itself gives no sign that it's
+      the one: the CYD's sleeping face holds still (0 fps), so it looks
+      frozen, and a tap on the AMOLED, the board in hand, did nothing,
+      since it wasn't connected. The found board should beckon, and the
+      window should say which board it is (its kind, not only its name).
+      Another board can't be heard until it's connected, so offering
+      each board found, or letting go of one nobody taps, is the way to
+      the other.
+- [ ] Onboarding has no Dock icon: the app is `.accessory`
+      (`MenuBarApp.swift`, and `LSUIElement` in `Info.plist`), and there's
+      no menu-bar icon until onboarding finishes, so the window, once
+      behind others, has no Dock icon or Command-Tab entry to bring it
+      back. Run as `.regular` while onboarding shows, and `.accessory`
+      once it's done.
+
 ## Now: the prompt, read on the Mac
 
 The plan: your prompt is scrubbed of secrets and read by Apple
