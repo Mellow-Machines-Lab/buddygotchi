@@ -61,8 +61,9 @@ uint32_t tiers(int n) { return n ? reached(tierBit(n)) : 0; }
 }  // namespace
 
 // Pins the catalog: each pastime's clip is in the pack's rig and plays
-// once, a few seconds; working's and idle's each need a tier and have at
-// least three for every one of the five, and needs you's and asleep's
+// once, a few seconds; working's and idle's each need a tier, idle's
+// at least three for every one of the five and working's at least two for
+// each of the first four, and needs you's and asleep's
 // wait: a wave from 30 s, a tap on the glass from 2 minutes, the watch
 // from 5 and nodding off from 10; asleep rolls over from a minute, dreams
 // of sheep from 2 and blows a snore bubble from 4.
@@ -86,7 +87,7 @@ void test_every_pastime_has_its_clip_and_its_turn() {
       TEST_ASSERT_EQUAL_INT(0, p.tier);
     }
   }
-  for (int n = 1; n <= 5; ++n) TEST_ASSERT_TRUE(count[0][n] >= 3 && count[1][n] >= 3);
+  for (int n = 1; n <= 5; ++n) TEST_ASSERT_TRUE((n == 5 || count[0][n] >= 2) && count[1][n] >= 3);
   TEST_ASSERT_EQUAL_INT(30, info(Pastime::kWave).afterS);
   TEST_ASSERT_EQUAL_INT(120, info(Pastime::kTap).afterS);
   TEST_ASSERT_EQUAL_INT(300, info(Pastime::kWatch).afterS);
@@ -223,9 +224,9 @@ void test_the_headphones_play_a_tune() {
   TEST_ASSERT_EQUAL_INT(0, above(both, Pastime::kBop));
 }
 
-// Pins the kit: at work a mug from tier1, headphones from tier3 and a
-// sweatband from tier4 (none while it wears a hat), and from tier5 the
-// camp, with a mug more on the stack every kMugEveryMs up to kMostMugs;
+// Pins the kit: at work a mug from tier1, headphones from tier3 (none
+// while it wears a hat), and from tier5 a mug more on the stack every
+// kMugEveryMs up to kMostMugs, counted from when the work reached tier5;
 // idle, a plant from tier3 that grows to tier5. No mug in the morning,
 // when its coffee is in its hand; none while something needs you.
 void test_the_kit_follows_the_tiers() {
@@ -237,29 +238,31 @@ void test_the_kit_follows_the_tiers() {
     return face.pastimes(board.t);
   };
   PastimeShow s = kit(0);
-  TEST_ASSERT_TRUE(!s.mug && !s.headphones && !s.sweatband && !s.camp && !s.plant);
+  TEST_ASSERT_TRUE(!s.mug && !s.headphones && !s.plant);
   s = kit(1);
-  TEST_ASSERT_TRUE(s.mug == 255 && !s.headphones && !s.sweatband && !s.camp);
+  TEST_ASSERT_TRUE(s.mug == 255 && !s.headphones);
   s = kit(3);
-  TEST_ASSERT_TRUE(s.mug && s.headphones && !s.sweatband);
+  TEST_ASSERT_TRUE(s.mug && s.headphones);
   s = kit(4);
-  TEST_ASSERT_TRUE(s.headphones && s.sweatband && !s.camp);
+  TEST_ASSERT_TRUE(s.mug && s.headphones);
+  TEST_ASSERT_EQUAL_INT(1, s.mugs);
+  TEST_ASSERT_EQUAL_INT(1, face.pastimes(board.t + kMugEveryMs).mugs);  // not before tier5
   s = kit(5);
-  TEST_ASSERT_TRUE(s.camp && s.mug);
+  TEST_ASSERT_TRUE(s.mug && s.headphones);
   TEST_ASSERT_EQUAL_INT(1, s.mugs);
   TEST_ASSERT_EQUAL_INT(2, face.pastimes(board.t + kMugEveryMs).mugs);
   TEST_ASSERT_EQUAL_INT(kMostMugs, face.pastimes(board.t + 10 * kMugEveryMs).mugs);
   s = kit(5, tagBit("night"));  // the nightcap wins the head
-  TEST_ASSERT_TRUE(s.camp && !s.headphones && !s.sweatband);
+  TEST_ASSERT_TRUE(s.mug && !s.headphones);
   s = kit(3, tagBit("morning"));  // the morning's coffee is in its hand
   TEST_ASSERT_TRUE(!s.mug && s.headphones);
   board.m.attn = true, board.m.attnId = 4;
   s = kit(5);
-  TEST_ASSERT_TRUE(!s.mug && !s.headphones && !s.camp);
+  TEST_ASSERT_TRUE(!s.mug && !s.headphones);
   board.m.attn = false, board.m.base = SceneState::kIdle;
   for (int tier : {2, 3, 4, 5}) {
     s = kit(tier);
-    TEST_ASSERT_TRUE(!s.mug && !s.camp);
+    TEST_ASSERT_TRUE(!s.mug && !s.headphones);
     TEST_ASSERT_EQUAL_INT(tier >= 3 ? 255 : 0, s.plant);
     if (tier >= 3) TEST_ASSERT_EQUAL_INT(tier - 2, s.grown);
   }

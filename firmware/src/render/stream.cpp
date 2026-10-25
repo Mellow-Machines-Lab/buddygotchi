@@ -43,8 +43,6 @@ CallMove callMove(CallGag gag) {
     case CallGag::kPlane: return CallMove::kPlane;
     case CallGag::kPhone: return CallMove::kPhone;
     case CallGag::kPage: return CallMove::kPage;
-    case CallGag::kHelper: return CallMove::kHelper;
-    case CallGag::kBack: return CallMove::kBack;
     case CallGag::kBonk:
     case CallGag::kBonk2:
     case CallGag::kHelmet:
@@ -81,7 +79,6 @@ uint32_t callFlightMs(CallGag gag) {
     case CallMove::kDrop: return 300;
     case CallMove::kPlane:
     case CallMove::kGather: return 700;  // the words reach its mouth
-    case CallMove::kBack: return 650;
     case CallMove::kTopple: return 1000;  // its wobble, then the fall
     case CallMove::kCompact: return 900;  // squashed, then the cube's drop
     case CallMove::kBuried: return 1200;  // the pile reaching its eyes

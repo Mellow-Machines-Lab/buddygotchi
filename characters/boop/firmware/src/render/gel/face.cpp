@@ -53,11 +53,12 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   layers_ = {};
   occasion_ = cueing_ = lastClip_ = nullptr;
   pastime_ = Pastime::kNone;
-  occasionAt_ = occasionEnds_ = stoppedAt_ = restUntil_ = campSince_ = 0;
+  occasionAt_ = occasionEnds_ = stoppedAt_ = restUntil_ = zoneSince_ = 0;
+  zone_ = false;
   occasionLook_ = dealtLook_ = SceneState::kNone;
   stopped_ = false;
   dice_ = kSeed;
-  mug_ = headphones_ = sweatband_ = camp_ = plant_ = rig::Ramp{};
+  mug_ = headphones_ = plant_ = rig::Ramp{};
   grown_ = 1;
 }
 
@@ -260,11 +261,10 @@ void GelFace::showKit(uint32_t t) {
   auto show = [t](rig::Ramp& ramp, bool on) {
     if (ramp.target() != (on ? 1000 : 0)) ramp.retarget(on ? 1000 : 0, t);
   };
-  if (working && tier >= 5 && camp_.target() == 0) campSince_ = t;
+  if (working && tier >= 5 && !zone_) zoneSince_ = t;
+  zone_ = working && tier >= 5;
   show(mug_, working && tier >= 1 && !hasTag(when, "morning"));  // the morning's is in its hand
   show(headphones_, working && tier >= 3 && head);
-  show(sweatband_, working && tier >= 4 && head);
-  show(camp_, working && tier >= 5);
   show(plant_, idle && tier >= 3);
   if (idle && tier >= 3) grown_ = std::min(3, tier - 2);
 }
@@ -286,11 +286,9 @@ PastimeShow GelFace::pastimes(uint32_t t) const {
   auto opacity = [t](const rig::Ramp& ramp) { return (ramp.value(t) * 255 + 500) / 1000; };
   s.mug = opacity(mug_);
   s.headphones = opacity(headphones_);
-  s.sweatband = opacity(sweatband_);
-  s.camp = opacity(camp_);
   s.plant = opacity(plant_);
   s.grown = grown_;
-  if (s.camp) s.mugs = 1 + int(std::min<uint32_t>(kMostMugs - 1, (t - campSince_) / kMugEveryMs));
+  if (zone_) s.mugs = 1 + int(std::min<uint32_t>(kMostMugs - 1, (t - zoneSince_) / kMugEveryMs));
   return s;
 }
 
@@ -356,14 +354,12 @@ void GelFace::land(CallGag gag) {
     case CallMove::kTopple: e.jolt(q(-1.4), q(3.4), q(-2.6)); break;
     case CallMove::kSink:
     case CallMove::kArrive: e.jolt(0, q(1.8), 0); break;
-    case CallMove::kBack: e.jolt(0, q(1.6), 0); break;
     case CallMove::kStamp: e.jolt(side * q(.4), q(1.2), 0); break;
     case CallMove::kPlane: e.jolt(side * q(.9), q(1.2), 0); break;
     case CallMove::kLook:
     case CallMove::kPhone:
     case CallMove::kPage: e.jolt(side * q(.8), q(-.4), q(.6)); break;
     case CallMove::kStir: e.jolt(q(.9), 0, q(.6)); break;
-    case CallMove::kHelper: e.jolt(side * q(-.6), q(-.6), 0); break;
     case CallMove::kShatter: e.jolt(0, q(1.4), 0); break;
     case CallMove::kHail: e.jolt(q(.4), q(1.2), 0); break;
     case CallMove::kShrug:

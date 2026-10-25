@@ -109,11 +109,10 @@ struct Scenes {
   };
   History<Saved, 64> alerts, moments;
   // Each prop keeps the content it last showed while its ramp fades it out.
-  enum Prop { kAlertProp, kResultProp, kStartProp, kHelpersProp, kListeningProp, kTouchProp, kProps };
+  enum Prop { kAlertProp, kResultProp, kStartProp, kListeningProp, kTouchProp, kProps };
   struct Slot {
     bool on = false;
     std::string id;
-    int iteration = 0;
     Ramp ramp;
     Ramp reveal;  // a card's (cardReveal)
   } slots[kProps];
@@ -131,11 +130,6 @@ struct Scenes {
   struct {
     const char* label = "START";
   } startProp;
-  struct {
-    bool returning = false, report = false;
-    int count = 0, direction = 1;
-    F progress, presence;
-  } helpersProp;
   F listeningPulse = q(.5);
   // The finish playing names whose turn it was, which the face marks
   // itself (render/gel/done.h): it shows no result card of its own.
@@ -161,12 +155,10 @@ struct Scenes {
   }
   F entry() const { return smooth(ageMs / 240); }
   F focus() const { return q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus); }
-  // A prop's drawn opacity: its ramp, times a card's reveal or the helpers' recovery.
+  // A prop's drawn opacity: its ramp, times a card's reveal.
   F visible(Prop prop, T time) const {
     const auto& slot = slots[prop];
-    return slot.ramp.value(time) * (card(prop)             ? slot.reveal.value(time)
-                                    : prop == kHelpersProp ? helpersProp.presence
-                                                           : F(1));
+    return slot.ramp.value(time) * (card(prop) ? slot.reveal.value(time) : F(1));
   }
   static bool card(Prop prop) { return prop == kResultProp || prop == kStartProp; }
 

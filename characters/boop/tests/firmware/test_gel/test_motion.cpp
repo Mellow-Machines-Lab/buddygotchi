@@ -692,8 +692,7 @@ std::array<double, 3> aim(const Engine& e) {
 // A scene's activity is a spring (12 and 10, within lean 0.08, squash 0.06
 // and forward 0.05, at 1.2 a second) toward what the scene aims at in that
 // frame (aim, above), across the looks, the reactions and a mood's own
-// recovery. The helpers' report fills by the last helper's contact and
-// stays full. A desk's contacts play up to 40 ms either side of their time,
+// recovery. A desk's contacts play up to 40 ms either side of their time,
 // at 0.9 to 1.1 of their strength, and other recipes' as written. A gag's
 // keys ease from rest, a smoothstep to each, then hold the last, each
 // channel's keys in order and the last at rest; a channel with none stays
@@ -719,7 +718,7 @@ void test_the_scenes_formulas() {
       {slime::kCalm, facts(SceneState::kAsleep), SceneState::kNone, Outcome::kNone, 90000},
   };
   const double limit[] = {.08, .06, .05};
-  int checked = 0, filled = 0, jittered = 0, picks = 0;
+  int checked = 0, jittered = 0, picks = 0;
   for (const auto& run : runs) {
     auto e = std::make_unique<Engine>();
     e->step(0);
@@ -746,13 +745,6 @@ void test_the_scenes_formulas() {
         }
         ++checked;
       }
-      const auto& helpers = s.slots[Scenes::kHelpersProp];
-      if (s.route.state == SceneState::kDelegating && s.recipe.count && helpers.on && helpers.id == s.requestId &&
-          helpers.iteration == s.iteration) {
-        const bool done = s.ageMs >= s.recipe.contacts[s.recipe.count - 1].at;
-        TEST_ASSERT_TRUE(done ? s.helpersProp.progress == F(1) : s.helpersProp.progress < F(1));
-        filled += done;
-      }
       // Each pick of a recipe: as written, or a desk's jittered within its
       // bounds.
       if (s.generation != generation || s.iteration != iteration) {
@@ -776,7 +768,7 @@ void test_the_scenes_formulas() {
       }
     }
   }
-  TEST_ASSERT_TRUE(checked > 10000 && filled > 0 && jittered > 0 && picks > 20);
+  TEST_ASSERT_TRUE(checked > 10000 && jittered > 0 && picks > 20);
   // Every gag keys its channels inside their bounds (the gestures' lean,
   // squash and ripple .42, lift .24, roll .12, forward .18, the slide .7 and
   // the lids 1), which the springs would otherwise clamp, and times its

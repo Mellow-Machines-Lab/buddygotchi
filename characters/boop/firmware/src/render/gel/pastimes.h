@@ -18,13 +18,11 @@
 //
 // The kit stays out while its tier lasts, fading in and out on the rig's
 // fade: at work a mug on the desk (tier1; in the morning its coffee is in
-// its hand instead, so neither the mug nor a sip or refill from it),
-// headphones (tier3) and a
-// sweatband (tier4), the hat winning where it has one, and from tier5 a
-// camp beside the desk, a tent with its fire, and a mug more on the stack
-// every kMugEveryMs; idle, a plant that grows (tier3 to tier5). Behind the
-// body: the camp, the plant and what a pastime sets beside it (the stars,
-// the tower). In front: everything else, at the body's anchors.
+// its hand instead, so neither the mug nor a sip or refill from it), a
+// mug more stacked on it every kMugEveryMs from tier5, and headphones
+// (tier3), the hat winning where it has one; idle, a plant that grows
+// (tier3 to tier5). Behind the body: the plant. In front: everything
+// else, at the body's anchors.
 #pragma once
 #include <cstdint>
 
@@ -50,10 +48,6 @@ enum class Pastime : uint8_t {
   kSticky,
   kRefill,
   kSnack,
-  kSecondWind,
-  kMarshmallow,
-  kPizza,
-  kStargaze,
   // Idle.
   kLookAround,
   kHopeful,
@@ -113,7 +107,7 @@ Pastime pastimeFor(const char* reply);
 // newest tier's are dealt while an older one's fit too, in percent.
 constexpr uint32_t kRestMinMs = 4000, kRestMaxMs = 10000;
 constexpr int kNewestPct = 60;
-// A mug more on the camp's stack every this long, up to kMostMugs.
+// From tier5, a mug more on the desk's stack every this long, up to kMostMugs.
 constexpr uint32_t kMugEveryMs = 10 * 60 * 1000;
 constexpr int kMostMugs = 4;
 
@@ -134,24 +128,24 @@ uint32_t tierBit(int n);
 // What the face shows of them at the device's time `t`, with the tags on:
 // the pastime playing (or a look's occasion, with no drawing of its own)
 // and how far in, at `fade` (0 … 255), and the kit, each at its opacity
-// (0 … 255): the desk's mug and how many are stacked, the headphones, the
-// sweatband, the camp, and the plant and how far it has grown (1 to 3).
+// (0 … 255): the desk's mug and how many are stacked, the headphones, and
+// the plant and how far it has grown (1 to 3).
 struct PastimeShow {
   Pastime playing = Pastime::kNone;
   uint32_t age = 0, ms = 1;
   int fade = 0;
   uint32_t t = 0, when = 0;
-  int mug = 0, mugs = 1, headphones = 0, sweatband = 0, camp = 0, plant = 0, grown = 1;
+  int mug = 0, mugs = 1, headphones = 0, plant = 0, grown = 1;
 };
 
-// The camp, the plant and the stars a pastime puts out: drawn after the
-// clear and before the body, so the body covers them.
+// The plant: drawn after the clear and before the body, so the body
+// covers it.
 void paintScenery(Surface& surface, const PastimeShow& show);
 // Whether paintScenery draws anything: only then is the whole surface
 // erased before the body (render/gel/painter.cpp), rather than a band at
 // a time as the body draws.
 bool showsScenery(const PastimeShow& show);
-// The kit it wears, the headphones and their tune and the sweatband, after what it wears
+// The kit it wears, the headphones and their tune, after what it wears
 // for the tags (render/gel/layers.h) and before the cards.
 void paintWorn(Surface& surface, const PastimeShow& show, const rig::Anchors& at);
 // In front: the desk's mugs, then what the pastime playing holds, throws,

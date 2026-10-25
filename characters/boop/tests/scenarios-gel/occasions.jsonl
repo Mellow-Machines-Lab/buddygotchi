@@ -2,8 +2,8 @@
 // after a reset: a party day's idle bounces (lifted mid-hop, eyes
 // squinting), a night's idle drowses (lids heavy, sunk a little), five
 // agents at work type frantically, and five minutes into the agents' work
-// (tier4) it has its mug, headphones and sweatband out (the pastimes'
-// own pictures: pastimes.jsonl). A state every 20 s keeps the link alive.
+// (tier4) it has its mug and headphones out (the pastimes' own
+// pictures: pastimes.jsonl). A state every 20 s keeps the link alive.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"happy","vol":0,"when":["day","party"]}

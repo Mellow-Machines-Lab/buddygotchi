@@ -1635,6 +1635,7 @@ static void test_a_rig_clip_plays_on_both_faces() {
   // The tallest squash and the most shut eyes each face's mixer reaches at
   // work, over a minute, the gel's over two while no pastime of its own
   // plays (a look's occasion, then), and when the gel's first left rest.
+  // The Mac's state comes every 10 s, as it does, so the link stays up.
   struct Seen {
     int squash = 0, open = 1000;
     uint32_t moved = 0;
@@ -1653,6 +1654,7 @@ static void test_a_rig_clip_plays_on_both_faces() {
     b.onState(m, 0);
     Seen seen;
     for (uint32_t t = 16; t <= (gel ? 120000u : 60000u); t += 16) {
+      if (t % 10000 < 16) b.onState(m, t);
       if (pokeAt && t == pokeAt) {
         app::ReactionIn in;
         in.anim = SceneState::kPoked;

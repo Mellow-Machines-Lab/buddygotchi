@@ -121,17 +121,6 @@ void twinkle(Raster& r, const Layout& l, int cx, int cy, int ms, int alpha) {
   }
 }
 
-// A little one: a small dome of the gel's blue with two eyes, hopping; its
-// middle and foot in sixteenths of a pixel.
-void mini(Raster& r, const Layout& l, int cx16, int bottom16, int ms) {
-  const int hop = l.y16(std::abs(sin40(ms / 12)) * 8 * 16 / 1000), w = l.x(38) * 16, h = l.y(28) * 16;
-  const int x = cx16 - w / 2, foot = bottom16 - hop, eyes = foot - h * 3 / 5 + 8;
-  round16(r, x, foot - h, w, h, h / 2, rgb565(70, 150, 230));
-  round16(r, x, foot - h / 2, w, h / 2, l.y16(6 * 16), rgb565(70, 150, 230));
-  r.disk16(cx16 - l.x16(7 * 16) + 8, eyes, l.x16(3 * 16) + 8, kNavy);
-  r.disk16(cx16 + l.x16(7 * 16) + 8, eyes, l.x16(3 * 16) + 8, kNavy);
-}
-
 // A puff: grey balls swelling, rising and thinning, `ms` in of `over`, in
 // sixteenths of a pixel.
 void puff(Raster& r, const Layout& l, int cx, int cy, int ms, int over) {
@@ -179,8 +168,7 @@ void editSize(const char* word, int& added, int& removed) {
 
 // The monitor answering the word forward: a check's spinner, crawl, count,
 // tick or cross; a failure's crack up the ladder; the page a lookup reads
-// scrolling; an edit's lines as bars; a globe for the web; the little ones
-// out.
+// scrolling; an edit's lines as bars; a globe for the web.
 void monitor(Raster& r, const Surface& s, const Engine& e, const Stream::Call& c, int age) {
   const Screen m = screen(s, e);
   const int flight = int(callFlightMs(c.gag));
@@ -528,12 +516,6 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       sx = right ? surface.width + l.x(40) : -l.x(40), sy = l.y(150);
       toX = at.handF.x / 16 + l.x(right ? 70 : -70), toY = at.handF.y / 16 - l.y(30);
       break;
-    // The little ones come and go on the right, clear of the monitor.
-    case CallMove::kHelper: toX = at.hem[16].x / 16 + l.x(30), toY = deskY - l.y(48); break;
-    case CallMove::kBack:
-      sx = surface.width + l.x(30), sy = deskY;
-      toX = at.hem[16].x / 16, toY = deskY;
-      break;
     case CallMove::kDesk:
       if (c.gag == CallGag::kStack) {
         toX = l.x(456), toY = deskY - l.y(110);
@@ -546,7 +528,7 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
     default: break;
   }
 
-  // In flight: a word from its lane; a plane or a little one from the edge.
+  // In flight: a word from its lane; a plane from the edge.
   if (after < 0) {
     if (move == CallMove::kTopple) {  // the tower, built, wobbling
       const int wobble = l.x(10) * sin40(age / 12) / 1000 * age / flight;
@@ -570,12 +552,6 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       const Point crease[2] = {{x + dir * l.x16(26 * 16), y}, {x - dir * l.x16(14 * 16), y + l.y16(2 * 16)}};
       r.stroke16(crease, 2, 16, kPaperLine);
       centred16(r, kLarge, x, y - l.y16(26 * 16), word, ink);
-      return;
-    }
-    if (move == CallMove::kBack) {  // a little one running in with it
-      r.alpha = 255;
-      mini(r, l, x, y, age);
-      centred16(r, kLarge, x, y - l.y16(46 * 16), word, ink);
       return;
     }
     r.alpha = 255;
@@ -759,25 +735,6 @@ void paintStreamFront(Surface& surface, const Stream& stream, const rig::Anchors
       const int turn = (after / 450) % 2, fold = l.x(turn ? 22 : 14);
       const Point corner[3] = {{px + pw - fold, py}, {px + pw, py + fold}, {px + pw - fold, py + fold}};
       r.polygon(corner, 3, kPaperLine);
-      break;
-    }
-    case CallMove::kHelper: {  // a little one takes it and runs off
-      const int run = std::max(0, after - 200),
-                x = toX * 16 + l.x16(easeIn(std::min(run, 1200), 1200) * 260 * 16 / 1200);
-      r.alpha = 255;
-      mini(r, l, x, deskY * 16, age);
-      centred16(r, kLarge, x, (deskY - l.y(46)) * 16 - (run ? l.y16(std::abs(sin40(age / 12)) * 6 * 16 / 1000) : 0),
-                word, ink);
-      break;
-    }
-    case CallMove::kBack: {  // the little one brings it home, and is gone into it
-      const int k = std::min(400, after);
-      r.alpha = 255 - k * 255 / 400;
-      if (r.alpha > 2) {
-        mini(r, l, toX * 16, toY * 16, age);
-        centred16(r, kLarge, toX * 16, (toY - l.y(46)) * 16 - l.y16(k * 2), word, ink);
-      }
-      if (after < 700) twinkle(r, l, toX, toY - l.y(30), age, fadeBy(after, 700, 300));
       break;
     }
     case CallMove::kShrug: {  // beside its head, and an empty bubble over it

@@ -119,10 +119,11 @@ class GelFace final : public Face {
   bool stopped_ = false;
   const rig::Clip* lastClip_ = nullptr;
   // The kit, each easing in and out, as the tiers and the look call for
-  // it (showKit): when the camp came out, for its stack of mugs, and how
-  // far the plant has grown.
-  rig::Ramp mug_, headphones_, sweatband_, camp_, plant_;
-  uint32_t campSince_ = 0;
+  // it (showKit): when the work reached tier5, for the stack of mugs, and
+  // how far the plant has grown.
+  rig::Ramp mug_, headphones_, plant_;
+  uint32_t zoneSince_ = 0;
+  bool zone_ = false;
   int grown_ = 1;
   // The reply it played last (FaceContext::reply), its clip or its
   // pastime, by when it started, so each plays once.
