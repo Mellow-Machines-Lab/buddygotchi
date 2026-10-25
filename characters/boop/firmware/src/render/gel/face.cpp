@@ -115,7 +115,37 @@ void GelFace::letGo(int vx, int vy) {
 }
 
 // At every stop of Behaviour's, on the grid or not.
-void GelFace::step(uint32_t t, linkkit::Rng&) { advanceTo(t); }
+void GelFace::step(uint32_t t, linkkit::Rng&) {
+  advanceTo(t);
+  if (!stream_ || !stream_->on || !stream_->call.live) return;
+  const auto& c = stream_->call;
+  if (c.at != landedAt_) landed_ = false, landedAt_ = c.at;
+  if (!landed_ && int32_t(t - c.at) >= int32_t(callFlightMs(c.gag))) {
+    landed_ = true;
+    land(c.gag);
+  }
+}
+
+// What the body does as a word lands, in the pull's body units a second:
+// knocked back and dazed by a failure, longer up the ladder; a squash as a
+// word sinks in or a bit of hail lands; stretched up by a shrug or a cheer.
+void GelFace::land(CallGag gag) {
+  auto& e = *engine_;
+  switch (callMove(gag)) {
+    case CallMove::kHit: {
+      const uint32_t daze = gag == CallGag::kBonk2 ? 1300 : gag == CallGag::kNo ? 500 : gag == CallGag::kThrow ? 600 : 900;
+      const F lids = gag == CallGag::kTimeout ? q(.9) : q(.75);
+      e.jolt(gag == CallGag::kNo ? q(-1.5) : q(1.2), q(3.2), q(-3), lids, daze);
+      break;
+    }
+    case CallMove::kSink: e.jolt(0, q(1.8), 0); break;
+    case CallMove::kShatter: e.jolt(0, q(1.4), 0); break;
+    case CallMove::kHail: e.jolt(q(.4), q(1.2), 0); break;
+    case CallMove::kShrug: e.jolt(0, q(-1.6), 0); break;
+    case CallMove::kCheer: e.jolt(0, q(-2.6), 0); break;
+    case CallMove::kDesk: e.jolt(q(-.6), 0, q(1)); break;
+  }
+}
 
 // Compares without building the engine's facts, so an unchanged state
 // (every tick's sync) allocates nothing.
@@ -237,10 +267,10 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 
 // The lane is drawn at the panel's size too (render/gel/lane.h), so the
 // canvas is left to the test pattern.
-bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
+bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, stream_, t);
   return true;
 }
 

@@ -381,14 +381,23 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
    `WorkStreamTests`, which pin each number above. Still to do: the
    replay of the owner's session to the simulator (Checking it reaches
    the board), once the board plays it.
-4. **The board:** the background layer behind the body (pre-drawn
-   words, one sprite per word, never typeset per frame), measured with
-   `boopctl ping`'s `draw_us` (the gel with a hat already draws at 27
-   to 30 fps).
-5. **The reactions as gags**, most frequent first: the arrival, the
-   shrug, the landing, the check's start and result (crossed fingers,
-   hail and umbrella, confetti, the tower), the bonk and its ladder;
-   then the rest. Then the monitor.
+4. [x] **The board** (first version, on the gel's own engine): the
+   lanes' names and their words behind the body, the word forward flying
+   at the body's anchors in front of it, and `Engine::jolt` for the
+   body's answer (slime-blob/CONTINUITY.md, The work stream). Words are
+   typeset per frame from the fonts, not pre-drawn: still to measure on
+   the AMOLED board (`boopctl ping`'s `draw_us`), and to cache as sprites
+   if they cost.
+5. [x] **The gags, first version**, by seven moves (`render::CallMove`):
+   a hit (stars, five up the ladder, a helmet, thrown back), sinking in,
+   a shrug's bubble, a deletion swallowed, hail, a cheer's confetti, and
+   to the monitor, which answers a check (spinner, crawling bar, count,
+   tick, cross) and a failure up the ladder (a crack). Still to come: the
+   families' own gags, which sink in for now (stir, stamp, paper plane,
+   phone, page, poof, a helper running off); the umbrella and the tower;
+   the monitor's pictures of what the agent is doing, its to-do bar and
+   its turn clock; and a dizzy face of its own for the hit, which
+   half-shuts the lids for now.
 6. **A demo** (`characters/boop/demo/work-stream.jsonl`: two agents, a
    run of lookups, an edit, a failing then passing test run, an exit 1
    twice, a big deletion) and the Studio's preview of each reaction in

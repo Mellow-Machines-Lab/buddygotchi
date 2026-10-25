@@ -87,7 +87,10 @@ ramps and springs can, and no jolt at an event. By file:
   occasions, the lane at the panel's size (fading whatever the draw
   cadence, blended once, cut and marked as the canvas does), the layers on
   the body's anchors, drawing by coverage, tracked clearing and kept cards
-  matching a fresh frame, and steady frames allocating nothing.
+  matching a fresh frame, steady frames allocating nothing, and the work
+  stream (`test_the_work_stream_falls_behind_and_hits_in_front`: words in
+  their lanes' columns behind the body, a hit's knock and daze and its
+  lids opening after, every gag drawn off the heap).
 
 ## The board's frames
 
@@ -103,7 +106,9 @@ ramps and springs can, and no jolt at an event. By file:
   variation expected), the occasions (`occasions.jsonl`: a party's bounce,
   a night's drowse, frantic typing, in a nightcap and a party hat), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
-  night, a sign under the nightcap), a reaction's sign (`sign.jsonl`), and
+  night, a sign under the nightcap), a reaction's sign (`sign.jsonl`), the
+  work stream (`stream.jsonl`: two lanes' words falling, a bonk flying and
+  landing, a helmet, a shrug, a deletion swallowed, a pass and a hail), and
   a finger in idle (`swipes.jsonl`). `--accept` updates only the gel
   goldens, after looking at them.
 - `boopctl mirror` (in `make -C internal mirror`) plays the same scenarios

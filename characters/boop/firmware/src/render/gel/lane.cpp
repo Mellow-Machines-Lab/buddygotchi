@@ -10,6 +10,7 @@
 #include "render/gel/painter.h"
 #include "render/gel/profile.h"
 #include "render/gel/raster.h"
+#include "render/gel/stream.h"
 #include "render/palette.h"
 
 namespace render::gel {
@@ -49,6 +50,8 @@ void glyph(Raster& r, const Font& f, int x, int y, int g, uint16_t ink) {
 }
 
 }  // namespace
+
+const Font& bubbleFont() { return kFontBubble; }
 
 int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room) {
   const int n = glyphCount(s);
@@ -251,12 +254,23 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
 }
 
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
-                const Strip& s) {
+                const Strip& s, const Stream* stream, uint32_t t) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
   rig::Anchors at;
-  paint(surface, e, mouthOpen, dy, key, &at);
+  struct Behind {
+    const Stream* stream;
+    uint32_t t;
+  } behind{stream, t};
+  paint(surface, e, mouthOpen, dy, key, &at,
+        stream ? +[](Surface& to, const void* b) {
+          auto* x = static_cast<const Behind*>(b);
+          paintStreamBehind(to, *x->stream, x->t);
+        }
+               : nullptr,
+        &behind);
+  if (stream) paintStreamFront(surface, *stream, at, e, t);
   if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);

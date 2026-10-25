@@ -163,12 +163,13 @@ void triangle(Surface& s, Vertex a, Vertex b, Vertex c, unsigned soft) {
 }
 }  // namespace
 void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, uint32_t keepLane,
-           rig::Anchors* anchors) {
+           rig::Anchors* anchors, Behind behind, const void* context) {
   if (!s.pixels) return;
   {
     Measure measure(profile.clear);
     s.clear(keep, keepCount, keepLane);
   }
+  if (behind) behind(s, context);
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
   // away. Positions are in sixteenths of a pixel; the UVs follow from the
@@ -237,7 +238,8 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       triangle(s, u[0], u[1], u[2], secondSoft);
     }
 }
-void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors) {
+void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
+           Behind behind, const void* context) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -260,7 +262,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   {
     Measure measure(profile.body);
     Box cards[Surface::kMaxKeep];
-    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane, anchors);
+    paint(surface, c, cards, opaqueCards(surface, e, cards), keepLane, anchors, behind, context);
   }
   {
     Measure measure(profile.art);

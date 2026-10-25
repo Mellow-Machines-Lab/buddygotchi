@@ -449,6 +449,7 @@ the brain's, a rule's, or the board's own.
 | `stopped` | A turn is interrupted | the Mac |
 | `error` | A tool fails (the task may still succeed) | the Mac |
 | `helper_return` | A helper agent comes back | the Mac |
+| `call` | A word of the work stream comes forward (plan/work-stream.md): `w` the word, `a` its lane's slot, `as` its gag (`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It plays at once over the agents' work and holds nothing up; with no lane working or while something needs you it's skipped `hidden`. A face draws it if it draws the stream (`Face::watch`); a board that plays it gets it in place of `error` | the Mac |
 | `poked` | A tap on the screen | the board |
 | `tap_spam` | The third tap in a row, and each after | the board |
 | `listening` | You hold the button to talk; it plays until the reply (at most 30 s, then 8 s) | the board |
@@ -465,6 +466,11 @@ speak.
 The engine's interface is `render::Face` (`firmware/src/render/face.h`).
 Besides drawing each mood and state, a face:
 
+- **Draws the work stream, if it can.** Before each frame the device
+  hands it the stream (`Face::watch`, `render/stream.h`): each working
+  lane's latest word and call count from `state`'s `calls`, the words
+  falling and the word a `call` brought forward. The gel draws them
+  behind and in front of the body; a face that doesn't ignores them.
 - **Has variations.** A state may have several designs, numbered from 1.
   The face picks a look's itself: a new look starts on its first, and at
   the end of a loop it may turn to another. It picks a reaction's too,

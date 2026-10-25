@@ -585,6 +585,36 @@ easing out as it squashes shut, gone by when it's a line, and back as it
 wakes. The
 layers read the engine and never change it.
 
+### The work stream (the board's)
+
+While the agents work and nothing needs you, the board draws the Mac's
+work stream (`render/stream.h`, `gel/stream.h`; plan/work-stream.md).
+Behind the body, after the clear and before its triangles: each working
+lane's name along the top in its colour (teal, amber, lilac, lime by
+slot), and a dim word falling from it, in the large font at most 43%
+opaque, for each new call a `state` counts (at most two a `state`),
+easing in over 200 ms and out over its last 600 ms of 3.2 s; the body
+covers what falls behind it, its soft outline blending over. In front,
+after the props and before the sign: the word a `call` brings forward,
+in the bubble's font, flying from its lane's name to the body's anchors
+(between the eyes for a hit, the crown for a word that sinks in, a burst
+or a cheer, beside the head for a shrug, the monitor for a check
+starting), in 380 ms for a hit, 1.4 s for a timeout, 300 to 520 ms for
+the rest, then what it does as it lands: a hit sticks 250 ms and slides
+off (thrown back up on the ladder's top rung) under three stars going
+round, five up the ladder, and a helmet on its third rung; a shrug's
+empty bubble; a deletion's glyphs bursting out and swallowed; four more
+FAILs raining and bouncing off; a cheer's confetti; and the monitor's
+spinner, crawling bar, count, tick, cross or crack. Everything is gone by
+2.5 s. As it lands the body answers through the engine (`Engine::jolt`):
+a push on the finger's pull springs, as a fling let go (knocked back and
+squashed by a hit, squashed by a word sinking in, stretched up by a
+shrug or a cheer), and a hit's daze, the lids shut to 0.75 (0.9 for a
+timeout) for 0.5 to 1.3 s of the engine's time, opening over its last
+300 ms; nothing while a finger holds it. The stream moves on the device's
+clock, not the engine's paced one, so a word falls as fast however busy
+the agents.
+
 ## States share one scene
 
 Build a persistent desk and computer once. Working, terminal, searching,
