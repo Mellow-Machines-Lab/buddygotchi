@@ -648,51 +648,100 @@ void Raster::replay16(const Recording& r, int dx16, int dy16) {
   if (!s.pixels) return;
   const int top = std::max(0, bounds.y0), under = std::min(bottom(), bounds.y1);
   const int left = std::max(0, bounds.x0), right = std::min({s.width, kMaxWidth, bounds.x1});
-  // A shape's row being gathered and the row above it, each pixel's opacity
-  // at its kept column plus one (so column −1 is a zero), zero outside
-  // [lo, hi].
-  static uint8_t rows[2][kMaxWidth + 2];
-  uint8_t *here = rows[0], *above = rows[1];
-  int hereY = 0, hereLo = 1 << 30, hereHi = -1, aboveLo = 1 << 30, aboveHi = -1;
+  // A shape's row: each pixel's opacity at its kept column plus one (so
+  // column −1 is a zero), zero outside [lo, hi]; and its runs wholly clear
+  // or wholly opaque, [a, b) in kept columns and the opacity, in order
+  // (`runs` −1 when they're not known: two shapes of one ink met on it).
+  // Most of a shape's row is one or the other, as most of a stroke's row is
+  // clear between its segments.
+  //
+  // No memory of its own past a little stack (the board's internal heap
+  // has little to spare): the two rows are the shapes' scratch, the
+  // recording's row (`kept`) and the first half of the coverage row, both
+  // cleared here; the coverage row's second half, never written, is the
+  // row of nothing, and it's all zero again after, as shapes expect. So a
+  // kept column is at most kMaxWidth − 3: a row's last sample reads two
+  // past it.
+  constexpr int kMostRuns = 16;
+  struct Row {
+    uint8_t* alpha;
+    int lo, hi, runs;
+    int16_t run[kMostRuns][3];
+    void reset() { lo = 1 << 30, hi = -1, runs = 0; }
+  };
+  static_assert(sizeof(coverage) >= 2 * kMaxWidth && sizeof(kept) >= kMaxWidth, "the scratch replay16 borrows");
+  uint8_t* const scratch = reinterpret_cast<uint8_t*>(coverage);
+  std::memset(kept, 0, sizeof(kept));
+  std::memset(coverage, 0, sizeof(coverage));
+  Row rows[2], none;
+  Row *here = &rows[0], *above = &rows[1];
+  here->alpha = kept, above->alpha = scratch, none.alpha = scratch + kMaxWidth;
+  here->reset(), above->reset(), none.reset();
+  int hereY = 0;
   uint16_t ink = 0;
   bool gathering = false, hasAbove = false;
-  // Blends kept row y's pixels (from `here` and `above`, the row before it)
-  // into the surface, each the bilinear sample of the four around it.
-  auto emit = [&](int y, const uint8_t* lower, const uint8_t* upper, int lo, int hi) {
-    const int out = y + dy;
+  const bool wholeShows = shown(255) >= 253;
+  const int wx = 16 - fx, wy = 16 - fy;
+  // Kept row y's pixel at x on the surface: the bilinear sample of its
+  // four kept pixels around it, from `lower` and `upper` (the row before).
+  auto sample = [&](uint16_t* out, int x, const uint8_t* lower, const uint8_t* upper) {
+    const int k = x - dx + 1;  // the kept column, plus one
+    const int l1 = lower[k], l0 = lower[k - 1], u1 = upper[k], u0 = upper[k - 1];
+    if (!(l1 | l0 | u1 | u0)) return;
+    const int alpha = shown(((wx * l1 + fx * l0) * wy + (wx * u1 + fx * u0) * fy + 128) >> 8);
+    if (alpha >= 253)
+      out[x] = ink;
+    else if (alpha > 2)
+      out[x] = mix565(out[x], ink, alpha);
+  };
+  // Blends kept row y into the surface: where the four samples are all
+  // wholly opaque (both rows' runs, and the column before when fx), a fill;
+  // where they're all clear, nothing; elsewhere sample by sample.
+  auto emit = [&](int y, const Row& lower, const Row& upper) {
+    const int out = y + dy, lo = std::min(lower.lo, upper.lo), hi = std::max(lower.hi, upper.hi);
     if (out < top || out >= under || lo > hi) return;
     uint16_t* row = s.pixels + out * s.width;
     const int from = std::max(lo + dx, left), to = std::min(hi + 1 + dx, right - 1);
     if (from > to) return;
     touch(from, out, to + 1, out + 1);
-    for (int x = from; x <= to; ++x) {
-      const int k = x - dx + 1;  // the kept column, plus one
-      const int a =
-          ((16 - fx) * lower[k] + fx * lower[k - 1]) * (16 - fy) + ((16 - fx) * upper[k] + fx * upper[k - 1]) * fy;
-      const int alpha = shown((a + 128) >> 8);
-      if (alpha >= 253)
-        row[x] = ink;
-      else if (alpha > 2)
-        row[x] = mix565(row[x], ink, alpha);
+    int x = from;
+    if (lower.runs > 0 && (!fy || upper.runs > 0)) {
+      const Row& other = fy ? upper : lower;
+      for (int i = 0, j = 0; i < lower.runs && j < other.runs;) {
+        const int a = std::max(lower.run[i][0], other.run[j][0]) + (fx ? 1 : 0),
+                  b = std::min(lower.run[i][1], other.run[j][1]), v = lower.run[i][2];
+        const bool same = v == other.run[j][2];
+        if (lower.run[i][1] < other.run[j][1])
+          ++i;
+        else
+          ++j;
+        const int runFrom = std::max(a + dx, x), runTo = std::min(b + dx, to + 1);
+        if (!same || runFrom >= runTo || (v && !wholeShows)) continue;
+        for (; x < runFrom; ++x) sample(row, x, lower.alpha, upper.alpha);
+        if (v) std::fill(row + runFrom, row + runTo, ink);
+        x = runTo;
+      }
     }
+    for (; x <= to; ++x) sample(row, x, lower.alpha, upper.alpha);
   };
-  static const uint8_t kNone[kMaxWidth + 2] = {};
+  auto clear = [](Row* row) {
+    if (row->hi >= row->lo) std::fill(row->alpha + row->lo, row->alpha + row->hi + 2, 0);
+    row->reset();
+  };
   // The row gathered, blended with the one above it; then it's the one above.
   auto finishRow = [&]() {
     if (!gathering) return;
-    const int lo = std::min(hereLo, hasAbove ? aboveLo : hereLo), hi = std::max(hereHi, hasAbove ? aboveHi : hereHi);
-    emit(hereY, here, hasAbove ? above : kNone, lo, hi);
-    if (hasAbove) std::fill(above + aboveLo, above + aboveHi + 2, 0);
+    emit(hereY, *here, hasAbove ? *above : none);
+    clear(above);
     std::swap(here, above);
-    aboveLo = hereLo, aboveHi = hereHi, hasAbove = true, gathering = false;
-    hereLo = 1 << 30, hereHi = -1;
+    hasAbove = true, gathering = false;
   };
   // The shape's last row reaches fy sixteenths into the row under it.
   auto finishShape = [&]() {
     finishRow();
     if (!hasAbove) return;
-    if (fy) emit(hereY + 1, kNone, above, aboveLo, aboveHi);
-    std::fill(above + aboveLo, above + aboveHi + 2, 0);
+    if (fy) emit(hereY + 1, none, *above);
+    clear(above);
     hasAbove = false;
   };
   for (const uint8_t* code = r.data; code + sizeof(Span) <= r.data + r.used;) {
@@ -708,22 +757,49 @@ void Raster::replay16(const Recording& r, int dx16, int dy16) {
         finishShape();
       ink = span.ink, hereY = span.y, gathering = true;
     }
-    const int x0 = std::clamp(int(span.x0), 0, kMaxWidth - 1);
-    hereLo = std::min(hereLo, x0), hereHi = std::max(hereHi, std::min(kMaxWidth - 1, span.x0 + span.n - 1));
-    // Two shapes of one ink on one row: their union.
-    auto put = [&](int x, int a) {
-      if (x < 0 || x >= kMaxWidth) return;
-      uint8_t& v = here[x + 1];
-      v = uint8_t(v + a - v * a / 255);
+    // The span's kept columns, which a recording keeps on the surface.
+    const int x0 = std::max(0, int(span.x0)), x1 = std::min(kMaxWidth - 3, span.x0 + span.n - 1);
+    if (x0 > x1) {  // past the scratch: read past
+      for (int x = span.x0, end = x + span.n; x < end;) {
+        const int c = *code++;
+        const int length = c & kRun ? (c & (kRun - 1)) + 1 : c + 1;
+        code += c & kRun ? 1 : length, x += length;
+      }
+      continue;
+    }
+    // Two shapes of one ink on one row: where they meet, their union.
+    const bool meets = x0 <= here->hi && x1 >= here->lo;
+    if (meets) here->runs = -1;
+    here->lo = std::min(here->lo, x0), here->hi = std::max(here->hi, x1);
+    // [x, x + n) at the opacities `a` (one for all when `same`).
+    auto put = [&](int x, int n, const uint8_t* a, bool same) {
+      const int from = std::max(x, x0), to = std::min(x + n, x1 + 1);
+      if (from >= to) return;
+      uint8_t* v = here->alpha + 1 + from;
+      if (!meets) {
+        if (!same) return void(std::memcpy(v, a + (from - x), size_t(to - from)));
+        std::memset(v, *a, size_t(to - from));
+        if (*a != 0 && *a != 255) return;
+        auto& runs = here->runs;
+        if (runs > 0 && here->run[runs - 1][1] == from && here->run[runs - 1][2] == *a)
+          here->run[runs - 1][1] = int16_t(to);
+        else if (runs >= 0 && runs < kMostRuns)
+          here->run[runs][0] = int16_t(from), here->run[runs][1] = int16_t(to), here->run[runs][2] = *a, ++runs;
+        return;
+      }
+      for (int i = 0; i < to - from; ++i) {
+        const int b = same ? *a : a[from - x + i];
+        v[i] = uint8_t(v[i] ? v[i] + b - v[i] * b / 255 : b);
+      }
     };
     for (int x = span.x0, end = x + span.n; x < end;) {
       const int c = *code++;
       if (c & kRun) {
         const int length = (c & (kRun - 1)) + 1;
-        for (int k = 0; k < length; ++k) put(x + k, *code);
+        put(x, length, code, true);
         ++code, x += length;
       } else {
-        for (int k = 0; k <= c; ++k) put(x + k, code[k]);
+        put(x, c + 1, code, false);
         code += c + 1, x += c + 1;
       }
     }

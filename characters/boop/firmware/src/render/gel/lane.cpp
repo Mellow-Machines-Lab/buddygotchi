@@ -82,7 +82,9 @@ int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, in
 }
 
 void text16(Raster& r, const Font& f, int x16, int y16, const char* s, uint16_t ink, bool behind) {
-  constexpr int kMostGlyphs = 24, kMostCells = kMostGlyphs * 24 + 1;
+  // On the stack, not the board's scarce internal heap: a word forward and
+  // a combo's count, in the widest font (the bubble's, 20 px).
+  constexpr int kMostGlyphs = 20, kMostCells = kMostGlyphs * 20 + 1;
   if (!r.s.pixels || r.alpha <= 2 || f.w * kMostGlyphs >= kMostCells) return;
   int glyphs[kMostGlyphs], n = 0;
   for (int g; n < kMostGlyphs && (g = nextGlyph(s)) >= 0;) glyphs[n++] = g;

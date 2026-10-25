@@ -747,7 +747,9 @@ tell the agents apart, and the screen has no room to say whose is whose.
 Lanes sit clear of the head and its hat (`render::laneX`: one lane on the
 left, two either side, three or four along both sides). A word falls, in
 the large font at most 43% opaque, for each new call a `state` counts
-(at most two a `state`, eight at once), easing in over 200 ms and out
+(at most two a `state`, eight at once; each a line behind its lane's
+last, `kWordGapPx`, and never faster, so they never overlap, and none
+that would wait over `kMostWaitMs` for that), easing in over 200 ms and out
 over its last 600 ms of 3.2 s, in sixteenths of a pixel, so it glides
 rather than steps (`render::gel::text16`; what moves in front, the word
 forward, the little ones, the listening ring and the helpers, does too). They're drawn after the body, onto the

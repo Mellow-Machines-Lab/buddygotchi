@@ -1,5 +1,6 @@
 #include "render/stream.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <cstring>
 
@@ -112,6 +113,20 @@ bool Stream::taken(const Word& w) const {
 }
 
 void Stream::drop(const Lane& lane, int column, int columns, uint32_t t) {
+  // The newest of its lane's words still falling (or waiting to): this one
+  // drops kWordGapPx behind it, no faster.
+  const Word* ahead = nullptr;
+  for (const auto& o : words)
+    if (o.live && o.slot == lane.slot && (!ahead || int32_t(o.born - ahead->born) > 0)) ahead = &o;
+  const uint32_t h = mix(lane.slot * 131u + lane.count * 7919u + uint8_t(lane.word[0]));
+  uint16_t speed = uint16_t(95 + (h >> 8) % 50);
+  uint32_t born = t;
+  if (ahead) {
+    speed = std::min(speed, ahead->speed);
+    const uint32_t due = ahead->born + (uint32_t(kWordGapPx) * 1000 + ahead->speed - 1) / ahead->speed;
+    if (int32_t(due - t) > 0) born = due;
+    if (int32_t(born - t) > int32_t(kMostWaitMs)) return;
+  }
   // The slot reused longest ago, or a free one.
   Word* w = &words[0];
   for (auto& o : words) {
@@ -121,12 +136,11 @@ void Stream::drop(const Lane& lane, int column, int columns, uint32_t t) {
     }
     if (o.born < w->born) w = &o;
   }
-  const uint32_t h = mix(lane.slot * 131u + lane.count * 7919u + uint8_t(lane.word[0]));
   std::snprintf(w->text, sizeof(w->text), "%s", lane.word);
   w->slot = lane.slot;
   w->x = int16_t(laneX(column, columns) + int(h % 81) - 40);
-  w->speed = uint16_t(95 + (h >> 8) % 50);
-  w->born = t;
+  w->speed = speed;
+  w->born = born;
   w->live = true;
 }
 
@@ -150,7 +164,7 @@ void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_
     for (int k = 0; k < moved && k < kDropsPerState; ++k) {
       Lane l = next;
       l.count = uint16_t(next.count + 1000 - k);
-      drop(l, i, n, t + uint32_t(k) * kDropGapMs);
+      drop(l, i, n, t);
     }
   }
   for (int i = 0; i < n; ++i) lanes[i] = in[i];

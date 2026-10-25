@@ -3114,12 +3114,16 @@ static void test_boot_hands_over_while_someone_waits() {
 }
 
 // The work stream's model (render/stream.h): a lane whose count moves drops
-// a word for each new call, at most kDropsPerState a `state`; a new lane
-// drops its latest; a lane gone, or the stream hidden (needs you), takes
-// its words; a word falls for kFallMs and a word forward lasts kCallMs.
+// a word for each new call, at most kDropsPerState a `state`, each
+// kWordGapPx behind its lane's newest and never faster, so they never
+// overlap, or none if that's over kMostWaitMs away; a new lane drops its
+// latest; a lane gone, or the stream hidden (needs you), takes its words; a
+// word falls for kFallMs and a word forward lasts kCallMs.
 static void test_the_work_streams_words() {
   TEST_ASSERT_EQUAL_UINT32(3200, render::Stream::kFallMs);
   TEST_ASSERT_EQUAL_INT(2, render::Stream::kDropsPerState);
+  TEST_ASSERT_EQUAL_INT(36, render::Stream::kWordGapPx);
+  TEST_ASSERT_EQUAL_UINT32(800, render::Stream::kMostWaitMs);
   TEST_ASSERT_EQUAL_UINT32(2500, render::Stream::kCallMs);
   render::Stream s;
   render::Stream::Lane lanes[2];
@@ -3134,9 +3138,20 @@ static void test_the_work_streams_words() {
   lanes[0].count = 5;
   s.setLanes(lanes, 1, true, false, 100);
   TEST_ASSERT_EQUAL_INT(2, live());
-  lanes[0].count = 15;  // ten calls in one state: two words, at 200 and 340
+  lanes[0].count = 15;  // ten calls in one state: two words
   s.setLanes(lanes, 1, true, false, 200);
   TEST_ASSERT_EQUAL_INT(4, live());
+  // Each a word behind the one before: dropping once it's fallen
+  // kWordGapPx, never faster.
+  const render::Stream::Word* byAge[4];
+  for (int i = 0; i < 4; ++i) byAge[i] = &s.words[i];
+  std::sort(byAge, byAge + 4, [](auto* a, auto* b) { return int32_t(a->born - b->born) < 0; });
+  for (int i = 1; i < 4; ++i) {
+    const auto &before = *byAge[i - 1], &after = *byAge[i];
+    TEST_ASSERT_TRUE(after.speed <= before.speed);
+    TEST_ASSERT_TRUE(int(after.born - before.born) * before.speed >= render::Stream::kWordGapPx * 1000);
+  }
+  const uint32_t last = byAge[3]->born;
   s.setLanes(lanes, 1, true, false, 300);  // the same count: none
   TEST_ASSERT_EQUAL_INT(4, live());
   lanes[1].slot = 2, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed");
@@ -3149,9 +3164,9 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_EQUAL_INT(5, live());
   TEST_ASSERT_EQUAL_INT(-1, s.column(0));
   TEST_ASSERT_EQUAL_INT(x, s.words[0].x);
-  s.prune(340 + render::Stream::kFallMs - 1);
+  s.prune(last + render::Stream::kFallMs - 1);
   TEST_ASSERT_EQUAL_INT(1, live());
-  s.prune(340 + render::Stream::kFallMs);
+  s.prune(last + render::Stream::kFallMs);
   TEST_ASSERT_EQUAL_INT(0, live());
   s.startCall("make", 2, render::callGagFromName("bonk"), 0, 5000);
   TEST_ASSERT_TRUE(s.call.live && s.call.gag == render::CallGag::kBonk);
