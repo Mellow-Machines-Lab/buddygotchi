@@ -141,10 +141,15 @@ class Face {
   virtual int drawerRow(const Drawer& drawer, int x, int y) const { return (void)drawer, (void)x, (void)y, -1; }
 
   // A reaction's variation: pick chooses without changing anything (a
-  // refused reaction leaves no trace); started is told what played.
-  virtual uint8_t pick(SceneState anim, Mood mood, int wanted, Outcome outcome, StartCtx ctx,
-                       linkkit::Rng& rng) const = 0;
+  // refused reaction leaves no trace); started is told what played. A
+  // finish also says how long it's held (`loops`) and the tier its turn
+  // reached (`turn`), which a face may size it by.
+  virtual uint8_t pick(SceneState anim, Mood mood, int wanted, Outcome outcome, StartCtx ctx, linkkit::Rng& rng,
+                       int loops = 1, int turn = kNoTurn) const = 0;
   virtual void started(SceneState anim, Mood mood, uint8_t variant, Outcome outcome, StartCtx ctx) = 0;
+  // How many times variation `variant` of `anim` plays when it's asked to
+  // play `loops` times: a design sized by them plays once.
+  virtual int plays(SceneState anim, uint8_t variant, int loops) const { return (void)anim, (void)variant, loops; }
 
   // Its designs' timing, which Behaviour plays reactions and `say`s by.
   virtual int variants(Mood mood, SceneState state) const = 0;

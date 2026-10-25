@@ -14,7 +14,7 @@
 {"expect":{"sign":"bye bye code"}}
 {"clock":3500}
 {"expect":{"sign":null}}
-// The longest, 18 glyphs, over a finish and its card.
+// The longest, 18 glyphs, over a finish and its trophy.
 {"t":"dbg.reset"}
 {"clock":0}
 {"t":"state","base":"idle","mood":"happy","vol":0,"when":["day"]}

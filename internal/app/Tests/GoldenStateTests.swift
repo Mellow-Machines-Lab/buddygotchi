@@ -29,7 +29,8 @@ final class GoldenStateTests: XCTestCase {
     /// animation, takes said.
     nonisolated static let brain = ScriptedBrain(id: "golden") { state, questions in
         let now = state.components(separatedBy: "\nNOW (").last ?? ""
-        let failed = now.contains("failed") || now.contains("gave up")
+        // A turn done after failed checks is a win, however it got there.
+        let failed = (now.contains("failed") && !now.contains(": done, ")) || now.contains("gave up")
         let won = now.contains("passed") || now.contains(": done, ")
         let poked = now.contains("poked")
         let said = now.contains("You said to Boop")

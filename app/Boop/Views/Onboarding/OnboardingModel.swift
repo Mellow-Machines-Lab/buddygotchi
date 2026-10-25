@@ -253,7 +253,7 @@ final class OnboardingModel: ObservableObject {
         withAnimation(.boopPop) { progress = next }
         // Act 6 sent you to your terminal: the window comes back for the hello.
         bringForward()
-        app.runtime?.greet(.celebrate)
+        app.runtime?.greet(.hello)
         celebrate()
         log("onboarding: heard \(agent)'s first hook")
     }
@@ -294,7 +294,7 @@ final class OnboardingModel: ObservableObject {
     func celebrate() {
         confetti += 1
         OnboardingSound.play(.success)
-        if act == .finale { app.runtime?.greet(.celebrate) }
+        if act == .finale { app.runtime?.greet(.finale) }
     }
 
     func finish() {

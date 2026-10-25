@@ -55,6 +55,15 @@ ramps and springs can, and no jolt at an event. By file:
   silent but for comedy and still but for a snore, each take moving the
   body its own way; ten minutes at work; contacts a finger or an alert
   interrupts; a card's reveal on its own ramp; asleep's stillness.
+- `test_finish.cpp`: a successful finish's size by its loops and its
+  turn's tier (the cap short of tier2, the tier4 and tier5 floors, a sad
+  one small);
+  each mood's two big finishes taking turns, the Mac's choice and a proud
+  board's spotlight; the face's pure pick, a finish above small played
+  once, its length and its `say`'s start; one cheer and its bounces, never
+  the fanfare; the desk put away by a takeover and no card; every finish
+  moving smoothly and settling by its end; Gold Rush's flood above the
+  lane and Little Win's trophy.
 - `test_bridges.cpp`: every directed edge in each of its three variants
   (the retarget changing no spring and nothing drawn, its primitive,
   windows, amplitude and direction, the controls between their ends, every

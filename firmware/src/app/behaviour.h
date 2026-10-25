@@ -187,9 +187,9 @@ class Behaviour {
   // Which variation (from 0) of animation `a` to play in `mood`: `wanted`
   // (from 1, 0 for none) when it's one of those for the reaction's outcome
   // and context (render::fitting), else one of those at random, never the
-  // one shown last.
+  // one shown last. A finish's `loops` and `turn` may size it (the face's).
   uint8_t pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
-               Rng& rng) const;
+               Rng& rng, int loops = 1, int turn = render::kNoTurn) const;
 
   // Inputs, already recognised as gestures.
   void pressDown(uint32_t t);  // visible feedback at once

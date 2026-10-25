@@ -69,6 +69,12 @@ public struct DeviceReaction: Equatable, Sendable {
     /// With task_complete, the turn's outcome: `success` or `failure`;
     /// the device plays a variation for it. Nil sends none.
     public var outcome: String?
+    /// With task_complete, the tier its turn reached (`turn(lengthMs:)`),
+    /// which the device may size the finish by. Nil sends none.
+    public var turn: Int?
+    /// The variation to play, from 1, when one is wanted; nil sends none,
+    /// and the device picks.
+    public var variant: Int?
     /// With starting, what started: `new_task`, `session`,
     /// `continuation` or `compacted`. Nil sends none.
     public var ctx: String?
@@ -77,15 +83,25 @@ public struct DeviceReaction: Equatable, Sendable {
     public var sign: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
-                who: Who? = nil, outcome: String? = nil, ctx: String? = nil, sign: String? = nil) {
+                who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
+                ctx: String? = nil, sign: String? = nil) {
         self.anim = anim
         self.say = say
         self.mood = mood
         self.loops = loops
         self.who = who
         self.outcome = outcome
+        self.turn = turn
+        self.variant = variant
         self.ctx = ctx
         self.sign = sign
+    }
+
+    /// A finished turn's length as a finish's `turn`: the tier it reached,
+    /// as the tags count them (`Occasions.tiers`), from 1 for `tier1` to 5
+    /// for `tier5`, and 0 short of the first.
+    public static func turn(lengthMs: Int64) -> Int {
+        Occasions.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
     }
 
     /// The animations the Mac asks the device to play, each its design
@@ -107,6 +123,8 @@ public struct DeviceReaction: Equatable, Sendable {
     public var args: JSONObject {
         var args = JSONObject()
         if let outcome { args["outcome"] = .string(outcome) }
+        if let turn { args["turn"] = .int(turn) }
+        if let variant { args["variant"] = .int(variant) }
         if let ctx { args["ctx"] = .string(ctx) }
         if let sign { args["sign"] = .string(sign) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }

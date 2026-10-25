@@ -66,7 +66,9 @@ bool Scenes::wants(Prop prop) const {
     case kAlertProp:
       return route.state == SceneState::kNeedsYou;
     case kResultProp:
-      return route.group == Family::kResult;
+      // A successful finish shows its trophy instead of a card.
+      return route.group == Family::kResult &&
+             !(route.state == SceneState::kTaskComplete && route.outcome == Outcome::kSuccess);
     case kStartProp:
       return route.state == SceneState::kStarting;
     case kHelpersProp:
@@ -186,7 +188,7 @@ void Scenes::pickRecipe(T time, Random& random) {
   // (numbered after the row's own); a gesture's take is the board's, or
   // the first.
   const int row = recipeState(route), count = takes(row), asked = route.moment ? route.moment->value.variant : -1;
-  const bool ask = asked >= 0 && asked < count;
+  const bool ask = asked >= 0 && (asked < count || (row == kSuccessRow && isFinishVariant(asked)));
   const bool deal =
       !ask && route.state != SceneState::kGesture &&
       ((!route.quiet && route.state != SceneState::kIdle) || (route.state == SceneState::kAsleep && iteration));
@@ -263,6 +265,20 @@ void Scenes::setRoute(const Route& next, T time, int nextExpression, Random& ran
       }
     }
   }
+}
+FinishShow Scenes::finishShow() const {
+  if (!generation || route.state != SceneState::kTaskComplete || route.outcome != Outcome::kSuccess) return {};
+  FinishShow show;
+  show.on = true;
+  show.finish = finishOf(variant);
+  show.ageMs = F(ageMs).integer();
+  for (int i = 0; i < recipe.count; ++i)
+    if (recipe.contacts[i].kind == kSuccess) {
+      show.revealMs = F(recipe.contacts[i].at).integer();
+      break;
+    }
+  show.gift = recipe.gift;
+  return show;
 }
 F Scenes::envelope(T time, int kind) const {
   if (!hasLast || last.kind != kind) return 0;
@@ -369,7 +385,9 @@ std::string Scenes::advance(T dt, T time, bool grab, Random& random) {
     swell = square(sin((time - last.timeMs) / slime::kSnoreSwellMs * pi)) * last.strength * slime::kSnoreSwell;
   const F limits[] = {q(.08), q(.06), q(.05)};
   for (int i = 0; i < 3; ++i) integrate(activity[i], dt, active ? target[i] : i == 1 ? swell : F(0), 12, 10, limits[i], q(1.2));
-  prop(desk, dt, isDesk(route.state) || isDesk(route.baseState) ? 1 : 0, 10, 14);
+  const FinishShow finish = finishShow();
+  const bool party = finish.on && takesOver(finish.finish);
+  prop(desk, dt, (isDesk(route.state) || isDesk(route.baseState)) && !party ? 1 : 0, 10, 14);
   prop(quietMix, dt, route.quiet ? 1 : 0, 12, 10);
   updateProps(time);
   return {};

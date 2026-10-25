@@ -129,6 +129,10 @@ extension Runtime {
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
                 return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
+            }, turnMs: { [weak h] now in
+                // The finished turn's length, from its line's facts.
+                guard let h, let now, case .int(let ms)? = h.line(now.seq)?.facts["length_ms"] else { return nil }
+                return ms
             }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.calendar(at: $0.at) })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)

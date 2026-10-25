@@ -210,14 +210,14 @@ static void test_a_card_revealed_late_rises_then_falls() {
   e->step(0);
   Request req;
   req.anim = SceneState::kTaskComplete;
-  req.outcome = Outcome::kSuccess;
+  req.outcome = Outcome::kFailure;
   req.hold = true;
   e->oneShot(req);
   e->step(16);
   slime::Recipe& r = e->scenes.recipe;
   int moved = 0;
   for (int i = 0; i < r.count; ++i)
-    if (r.contacts[i].kind == kSuccess) r.contacts[i].at = r.duration - T(200), ++moved;
+    if (r.contacts[i].kind == kFailure) r.contacts[i].at = r.duration - T(200), ++moved;
   TEST_ASSERT_EQUAL_INT(1, moved);
   const int end = F(r.duration + T(1000)).integer();
   F most = 0;
@@ -228,19 +228,18 @@ static void test_a_card_revealed_late_rises_then_falls() {
   TEST_ASSERT_TRUE(most > q(.99));
   TEST_ASSERT_TRUE(e->scenes.visible(Scenes::kResultProp, e->timeMs()) == F(0));
 }
-// Every result card has a mark over its label, none an empty top half: the
-// trophy for a success, a cross for a failure or a tool error, a soft stop
-// square when stopped, three dots for the other neutral ones (a finish
-// with no outcome, a reply ready).
+// Every result card has a mark over its label, none an empty top half: a
+// cross for a failure or a tool error, a soft stop square when stopped,
+// three dots for the other neutral ones (a finish with no outcome, a reply
+// ready). A success shows its trophy and no card (render/gel/finish.h).
 static void test_every_result_card_has_a_mark() {
   struct Card {
     SceneState anim;
     Outcome outcome;
     uint16_t fill;
   };
-  const uint16_t good = rgb565(23, 63, 59), bad = rgb565(62, 43, 56), neutral = rgb565(36, 56, 71);
-  const Card cards[] = {{SceneState::kTaskComplete, Outcome::kSuccess, good},
-                        {SceneState::kTaskComplete, Outcome::kFailure, bad},
+  const uint16_t bad = rgb565(62, 43, 56), neutral = rgb565(36, 56, 71);
+  const Card cards[] = {{SceneState::kTaskComplete, Outcome::kFailure, bad},
                         {SceneState::kError, Outcome::kNone, bad},
                         {SceneState::kTaskComplete, Outcome::kNone, neutral},
                         {SceneState::kReplyReady, Outcome::kNone, neutral},
@@ -649,13 +648,14 @@ static void test_the_lane_fades_whatever_the_draw_cadence() {
 static void test_gel_clips_use_the_shared_mixer() {
   GelFace face;
   const voice::EffectClips& clips = face.clips();
-  // Thirteen sketches, three takes each: comedy's sneeze and snore breath too.
-  TEST_ASSERT_EQUAL_INT(39, clips.count());
+  // Fourteen sketches, three takes each: comedy's sneeze and snore breath
+  // too, and a big finish's cheer.
+  TEST_ASSERT_EQUAL_INT(42, clips.count());
   TEST_ASSERT_EQUAL_STRING("gel-sketch-v1", clips.version());
   TEST_ASSERT_EQUAL_INT(clips.index("knock-2"), clipFor("knock", 2));
   TEST_ASSERT_EQUAL_INT(-1, clipFor("knock", 3));
   TEST_ASSERT_EQUAL_INT(-1, clipFor("knoc", 0));
-  for (const char* recipe : {"sneeze", "breath", "bounce"})
+  for (const char* recipe : {"sneeze", "breath", "bounce", "cheer"})
     for (int take = 0; take < 3; ++take) TEST_ASSERT_TRUE(clipFor(recipe, take) >= 0);
   for (int i = 0; i < clips.count(); ++i) {
     const voice::EffectClip clip = clips.at(i);
@@ -1373,6 +1373,14 @@ void test_ten_minutes_of_work();
 void test_held_and_interrupted_contacts();
 void test_card_reveal_trajectory();
 void test_asleep_rests_still_but_for_a_snore();
+// test_finish.cpp
+void test_a_finish_is_sized_by_its_hold_and_its_turn();
+void test_each_mood_takes_turns_between_its_big_finishes();
+void test_the_face_picks_a_finish_and_plays_it_once();
+void test_a_big_finish_cheers_once_and_bounces();
+void test_a_takeover_puts_the_desk_away();
+void test_every_finish_moves_smoothly_and_settles();
+void test_gold_rush_floods_and_little_win_shows_its_trophy();
 // test_bridges.cpp
 void test_every_edge_bridges_as_authored();
 void test_a_bridge_follows_its_waveform();
@@ -2395,6 +2403,14 @@ int main() {
   RUN_TEST(test_held_and_interrupted_contacts);
   RUN_TEST(test_card_reveal_trajectory);
   RUN_TEST(test_asleep_rests_still_but_for_a_snore);
+  // test_finish.cpp
+  RUN_TEST(test_a_finish_is_sized_by_its_hold_and_its_turn);
+  RUN_TEST(test_each_mood_takes_turns_between_its_big_finishes);
+  RUN_TEST(test_the_face_picks_a_finish_and_plays_it_once);
+  RUN_TEST(test_a_big_finish_cheers_once_and_bounces);
+  RUN_TEST(test_a_takeover_puts_the_desk_away);
+  RUN_TEST(test_every_finish_moves_smoothly_and_settles);
+  RUN_TEST(test_gold_rush_floods_and_little_win_shows_its_trophy);
   // test_bridges.cpp
   RUN_TEST(test_every_edge_bridges_as_authored);
   RUN_TEST(test_a_bridge_follows_its_waveform);

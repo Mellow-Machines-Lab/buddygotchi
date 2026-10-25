@@ -160,6 +160,9 @@ void Engine::consumeCues() {
   for (const auto* list : {&scenes.contacts, &acting.contacts, &clipContacts_})
     for (const auto& c : *list) {
       const char* recipe = recipes[c.kind];
+      // A finish a size above small cheers at its reveal and bounces as it lands.
+      if (state == SceneState::kTaskComplete && isFinishVariant(scenes.variant) && list == &scenes.contacts)
+        recipe = c.kind == kSuccess ? "cheer" : c.kind == kBody ? "bounce" : recipe;
       if (!recipe || !admits(c, state, quiet, protect)) continue;
       int mood = slime::kProfile[emotion].canonical;
       const auto& p = slime::kProfile[mood];

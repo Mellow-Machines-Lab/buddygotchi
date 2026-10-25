@@ -2,7 +2,7 @@
 // Pure render() is shared by browser audition and offline checks.
 (function(global){
   'use strict';
-  const recipes={squish:.23,bounce:.32,wobble:.38,poke:.13,keyboard:.08,tear:.14,knock:.13,ding:.68,knock_ding:1.1,complete:2,failed:1.05,
+  const recipes={squish:.23,bounce:.32,wobble:.38,poke:.13,keyboard:.08,tear:.14,knock:.13,ding:.68,knock_ding:1.1,complete:2,cheer:2.6,failed:1.05,
     sneeze:.3,breath:.55};
   const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
   const finite=(n,fallback)=>Number.isFinite(n)?n:fallback;
@@ -48,6 +48,21 @@
           if(t>.45){const a=t-.45;value+=.14*(impulse(a,261.63,1.7)+impulse(a,392,1.9)+impulse(a,523.25,2.2));}
           // Airy nonverbal celebration swell; not a crowd/voice sample.
           value+=low*.42*Math.pow(Math.sin(Math.PI*clamp(t/2,0,1)),2);break;
+        }
+        // A big finish: two bright chord stabs, a held major chord, a run up
+        // to a sparkle, over a rattle of soft claps. Nonverbal, no crowd.
+        case 'cheer':{
+          const stab=(a,notes,d)=>{let v=0;for(const f of notes)v+=impulse(a,f,d)+.3*impulse(a,f*2,d*1.4);return v;};
+          if(t<.24)value+=.15*stab(t,[523.25,659.25,783.99],7);
+          if(t>=.2&&t<.44)value+=.15*stab(t-.2,[698.46,880,1046.5],7);
+          if(t>=.4)value+=.12*stab(t-.4,[523.25,659.25,783.99,1046.5],1.5);
+          const run=[1046.5,1318.51,1567.98,2093];
+          for(let k=0;k<run.length;k++)value+=.08*bell(t-.55-k*.07,run[k],4);
+          for(let k=0;k<36;k++){
+            const at=.42+((k*.618034+variant*.137)%1)*1.75,a=t-at;
+            if(a>=0&&a<.05)value+=band*.55*Math.exp(-a*70)*(1-clamp((t-1.9)/.7,0,1));
+          }
+          break;
         }
         case 'failed':value=.43*bell(t,392,5.4)+.32*bell(t-.19,293.66,5.2)+.24*impulse(t-.40,110*pitch,7)+low*.24*Math.exp(-t*10);break;
         // A tiny gel sneeze: a short rising "ah", then an airy "choo".

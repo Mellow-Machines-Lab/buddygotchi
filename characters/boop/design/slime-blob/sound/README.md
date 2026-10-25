@@ -1,6 +1,6 @@
 # Nonverbal slime sound handover
 
-Updated 2026-10-24. Scope: basic material/emotion/attention SFX, **not**
+Updated 2026-10-25. Scope: basic material/emotion/attention SFX, **not**
 ElevenLabs, recorded speech/mumbles or background music. The executable
 [sfx.js](sfx.js) provides procedural timbre sketches; slimegen cuts the
 board's effects from them, and the gel engine's cues sound them at
@@ -141,6 +141,8 @@ the last 64 requests.
 
 `key_contact` maps to keyboard, `body_contact` to squish, `screen_knock` to
 knock, and `alert_reveal` to ding. Only explicit success maps to complete;
+a successful finish a size above small maps its reveal to cheer and its
+landings to bounce instead ([CONTINUITY.md](../CONTINUITY.md), Finishes);
 explicit failure and tool error map to failed. Neutral starting/helper/reply/
 stopped reveals receive a small squish. Neutral completion is silent.
 `sneeze_contact` maps to sneeze, `zoom_contact` to bounce and

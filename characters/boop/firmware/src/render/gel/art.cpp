@@ -107,6 +107,7 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
       const auto& path = slime::kArtPaths[range.first + k];
       const int g = path.group;
       if (!pairs.newest[i][k] || path.count > kMaxPoints || path.clipCount > kMaxPoints) continue;
+      if (!c.eyes && (g == 1 || g == 2)) continue;
       // The layers whose art has this group's shape: drawn once, with the
       // newest of them.
       int members[kLayers], paths[kLayers], n = 0, weight = 0;
@@ -160,7 +161,8 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
       blend(clip, path.clipCount, true);
       if (path.width)
         // The authored width, to a sixteenth, never thinner than 3/4 pixel.
-        raster.stroke16(vertices, path.count, std::max(12, width / weight * unit * 16 / 4096), path.color);
+        raster.stroke16(vertices, path.count,
+                        std::max(12, int(int64_t(width / weight) * unit * 16 / 4096 * c.scale / 4096)), path.color);
       else
         raster.polygon16(vertices, path.count, path.color, clip, path.clipCount);
     }
@@ -170,7 +172,7 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
     const auto& top = placed[f.count - 1];
     const Point p = place(top, {0, int16_t(top.baseM)}, 3);
     const Point at = projection.face(p.x, p.y);
-    raster.disk16(at.x, at.y, 4 * 16 + 8, rgb565(13, 43, 72));
+    raster.disk16(at.x, at.y, (4 * 16 + 8) * c.scale / 4096, rgb565(13, 43, 72));
   }
 }
 }  // namespace render::gel

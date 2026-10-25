@@ -1,6 +1,6 @@
 # VideoG Slime Blob — the gel slime's design
 
-Updated 2026-10-24. Imported from `VideoG-Slime-Blob` on 2026-10-02, this
+Updated 2026-10-25. Imported from `VideoG-Slime-Blob` on 2026-10-02, this
 is the design of Boop's gel slime: its moods, faces, acting, scenes and
 sounds as data. The slime has one engine, the C++ one the AMOLED runs
 (`characters/boop/firmware/src/render/gel/`), which the simulator and the
@@ -218,7 +218,8 @@ firm contacts; frightened+working has hesitant guarded input. Keep them
 the same blob with the same desk. Visual drama need not add dense audio.
 
 `task_complete` has separate success/failure coverage under the same
-state. Failure must never use the trophy/fanfare; `error` is an observed
+state, and a success comes in four sizes ([CONTINUITY.md](CONTINUITY.md),
+Finishes). Failure must never use the trophy, fanfare or cheer; `error` is an observed
 tool failure, not automatically a failed whole task. `reply_ready` is a
 ready reply, not an accomplishment. `starting` has new_task/session/
 continuation/compacted variants with truthful card wording. See [STATES.md](STATES.md).

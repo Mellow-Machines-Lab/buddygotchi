@@ -106,6 +106,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -389,6 +391,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -679,6 +683,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -964,6 +970,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -1140,7 +1148,7 @@ just now: claude's build passed on "landing" after failing.
 Boop has been curious for under a minute.
 
 NOW (14:04, Wednesday)
-claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
 Boop did nothing on its own.
 === pass 7
 --- head
@@ -1250,6 +1258,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -1426,7 +1436,7 @@ HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face, held once, and said "Mwahaha... Piano".
-1 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+1 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
   Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Heh... Complete".
 Boop has been engaged for 1 min.
@@ -1448,7 +1458,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face, held once, and said "Mwahaha... Piano".
-2 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+2 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
   Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Heh... Complete".
 1 min ago: claude started turn 3 on "landing".
@@ -1565,6 +1575,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -1738,7 +1750,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face, held once, and said "Mwahaha... Piano".
-3 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+3 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
   Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Heh... Complete".
 2 min ago: claude started turn 3 on "landing".
@@ -1764,7 +1776,7 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face, held once, and said "Mwahaha... Piano".
-4 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+4 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
   Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Heh... Complete".
 3 min ago: claude started turn 3 on "landing".
@@ -1787,7 +1799,7 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face, held once, and said "Mwahaha... Piano".
-6 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+6 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
   Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Heh... Complete".
 5 min ago: claude started turn 3 on "landing".
@@ -1808,7 +1820,7 @@ HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face, held once, and said "Mwahaha... Piano".
-9 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, the 2nd quick win of a streak.
+9 min ago: claude finished turn 2 on "landing": done, a long turn, 2 tool calls, after a failed check, the 2nd quick win of a streak.
   Boop's mood changed: curious → engaged.
   Boop played a success in a happy face, held once, and said "Heh... Complete".
 8 min ago: claude started turn 3 on "landing".
@@ -1968,6 +1980,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -2277,6 +2291,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -2585,6 +2601,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.

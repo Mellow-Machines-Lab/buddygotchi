@@ -5,7 +5,8 @@ Updated 2026-10-25. The slime's one engine is the C++ in
 it, and so do the simulator and the Mac's mirror of the board, the
 firmware built to WebAssembly (characters/CHARACTER.md §9). Every activity
 scene family is implemented; idle, sleep and a finish have their comedy
-(Comedy, below), the board's gestures have a take each (Gestures), the
+(Comedy, below), a successful finish comes in four sizes (Finishes), the
+board's gestures have a take each (Gestures), the
 looks have occasions (Occasions), and one face flows into the next
 (Directed edge bridges: its arts morph or cross-fade, never closing). Q1
 representative art review was approved on 2026-10-02. Each rule below
@@ -386,17 +387,17 @@ The start/helper/status reveal envelope adds squash 0.018 and forward
 0.018; a tool-error reveal instead adds forward −0.025. All factual cards
 reveal while dragging; body contacts are consumed silently during the
 grab. Return and stop stay neutral, error means a tool warning, and only
-explicit task success permits the trophy. Every result card has a mark
-over its label: the trophy, a cross for a failure or a tool error, a soft
-stop square when stopped, and three calm dots for the other neutral
-results (READY, FINISHED). A state change cancels pending contacts at once
+explicit task success permits the trophy, which a successful finish shows
+in place of a card (Finishes). Every result card has a mark over its
+label: a cross for a failure or a tool error, a soft stop square when
+stopped, and three calm dots for the other neutral results (READY,
+FINISHED). A state change cancels pending contacts at once
 and resolves the latest facts.
 
 ## Comedy
 
 Idle, sleep and a finish have comedy, all of it the same body: a squash,
-a stretch, a tilt, a slide or a rebound, never a new silhouette or another
-asset.
+a stretch, a tilt, a slide or a rebound.
 
 | Comedy | Where | Its takes | Sound |
 | --- | --- | --- | --- |
@@ -404,8 +405,8 @@ asset.
 | A long, slow yawn (4.2 s) | Idle, bored, tired, lazy and comfy (and comfy's rosy face) | Their own take 4 | None |
 | Zoomies, edge to edge (2.6 s) | Idle, excited | Its own take 4 | A landing (`bounce`) at each edge |
 | A snore: two breaths, each a slight swell | Asleep | Asleep's fourth take | Each breath |
-| Hiccups: the first take's card, then three small hiccups | A successful finish | Its fourth take | The card's fanfare, then three squishes |
-| A gift: a small bug beside the card | Proud's successful finish | Its second take, lifted | As that take |
+| Hiccups: Little Win's hop and trophy, then three small hiccups | A small successful finish | Its fourth take | The fanfare, then three squishes |
+| A gift: a small bug beside the trophy | Proud's small successful finish | Its second take, lifted | As that take |
 
 **Idle's comedy is gags, beside the gestures.** Idle's variations are an
 expression's performances, so its comedy is more of them, dealt by
@@ -430,7 +431,9 @@ many each row has. Widening every row to four would have carried 296 KB of
 empty recipes on the AMOLED; the fourths are about 20 KB. A host may ask
 for a take from 0 to 3; one its state hasn't is dealt from the bag. A
 finish timed without its outcome finds a success's fourth (`GelFace::recipe`).
-A fourth take has no gesture of its own, so no recovery gesture.
+A fourth take has no gesture of its own, so no recovery gesture. A
+successful finish's row goes on past its fourth with the finishes a size
+above small (Finishes), which no bag deals.
 
 **Comedy joins a bag's second round.** One rule for every bag, acting's
 and the scenes': its first round deals the first three takes, the ones every
@@ -450,17 +453,72 @@ squash by sin² over 1,200 ms, times its strength, times 0.07, even while
 quiet. They are quiet rest's only contacts. A lost link rests still and
 never snores.
 
-**The hiccups** reveal the first take's card at 680 ms (plus the mood's
+**The hiccups** reveal Little Win's trophy at 680 ms (plus the mood's
 delay), then three body contacts at 1,640, 2,060 and 2,480 ms, strength
 0.45, in a 3.7 s take. **The gift** is a flag on proud's second success
-take: the result card's content carries it, and the board draws an amber
-bug beside the card.
+take: its recipe carries it (`gift`), and the board draws an amber bug
+beside the trophy.
 
 **Comedy's contacts sound in any state**, each with the routine chance (a
 quarter): a sneeze's (`sneeze`), a zoomies landing (`bounce`), a snore's
 breath (`breath`). They are routine sounds, ducked under a line, and
 sparse: over twenty minutes of idle only sneezes sound, over five minutes
 of sleep only breaths, each fewer than half of its contacts.
+
+## Finishes
+
+A successful finish comes in four sizes (`gel/finish.h`): how long the
+brain holds it (`loops`) and the tier its turn reached (the `do`'s
+`turn`, characters/CHARACTER.md §9, the tiers the tags count: `tier2` a
+minute, `tier4` 5 minutes, `tier5` 10) choose it as the board picks the
+variation (`GelFace::pick`), so the Mac never names a design. Held once
+it's small, twice medium, three times big, four times or more biggest. A
+turn short of `tier2` is at most medium however long it's held; one at
+`tier4` is at least big, and at `tier5` biggest. A success in a sad mood (disappointed, sad, crying, whiny,
+wounded) is small whatever else: tearful but valid. A failure never plays
+one: its row keeps its card and its three takes.
+
+| Size | Finish | What it does |
+| --- | --- | --- |
+| Small | Little Win | The row's own takes (and hiccups for a fourth): a hop at its reveal, a little trophy popping up over its head, a ring of sparkles |
+| Medium | Confetti | Little Win's hop and trophy, a second hop, and confetti cannons from both bottom corners, twice |
+| Big | Gold Rush | It steps back to 0.84 of its size, the gold floods out from behind it with turning rays, it leaps, the trophy lands on its head, confetti from both corners, and the gold drains away |
+| Big | Jelly Fireworks | Star eyes, hops and a sway while six rockets burst over the black, the last the biggest |
+| Big | Mini-Boop Parade | It hops and shrinks, splits into five little ones (each under a third of its size, each with its face) that bounce across the screen, then they jump back together and it lands whole, with a ring of sparkles |
+| Big | Proud Spotlight | A spotlight, a podium rising under it at 0.74 of its size, a crown dropping onto its head, its smug sway, gold stars twinkling |
+| Biggest | Mega Boop | It puffs up to 2.2 times its size, its face kept in the middle of the board, wobbles, pops back past its size with a boing, and splashes jelly drops, confetti and TA-DA! |
+
+**The big one is the mood's.** Each mood takes turns between two
+(`bigFinishes`), never opening on the one that played last: excited
+Fireworks then Gold Rush, happy and pleased Gold Rush then the parade,
+amused the parade then Fireworks, proud the spotlight then Gold Rush,
+every other mood Gold Rush then Fireworks. A proud board takes the
+spotlight whatever the reaction's face. The Mac may ask for one of a
+mood's two (`variant` 1 or 2), as onboarding's finale does.
+
+**Variations.** A success's variations are Little Win's four takes, then
+one for each finish above small (`finishVariant`): the confetti 5, Gold
+Rush 6, Jelly Fireworks 7, Mega Boop 8, the parade 9 and the spotlight 10,
+from 1. A finish above small plays once, whatever its loops (`plays`), for
+its recipe's length, 3.6 to 5 s; its recipe (`finishRecipe`) holds its
+reveal, where its `say` starts as a card's does, and its landings.
+
+**Its body.** A finish moves, scales and squashes the whole body, its face
+and its anchors with it (PaintControls' `scale` about where it stands, its
+`offset`, and its squash and lean), as a pure function of how far into it
+it is, so the board, the simulator and the mirror draw the same frame.
+Every finish moves under 16 px and a tenth of its size a frame, but where
+the parade's little ones take its place and give it back, and is back at
+rest by its end. A finish that covers the screen (all but Little Win and
+the confetti) puts the desk away while it plays. Its flood and rays, its
+spotlight and its fireworks are drawn behind the body; the trophy, the
+crown, the podium, confetti, sparkles, jelly drops, the star eyes and the
+words over it, all above the lane.
+
+**Its sound.** Little Win's reveal plays the fanfare (`complete`); a finish
+above small cheers at its reveal instead (`cheer`: two chord stabs, a held
+chord, a run up and a rattle of soft claps) and bounces (`bounce`) as it
+lands, once each, never ducked.
 
 ## Gestures
 

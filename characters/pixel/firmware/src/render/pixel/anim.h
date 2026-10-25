@@ -32,7 +32,8 @@ class PixelFace final : public Face {
   void newLook() override { pending_ = true; }
   // Shows variation v (from 0) of the look until it turns (dbg.look).
   void showLookVariant(uint8_t v) override { lookVariant_ = v, pending_ = false; }
-  uint8_t pick(SceneState a, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng) const override;
+  uint8_t pick(SceneState a, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng, int loops,
+               int turn) const override;
   int variants(Mood m, SceneState s) const override { return render::variants(m, s); }
   uint32_t loopMs(Mood m, SceneState s, int v) const override { return render::loopMs(m, s, v); }
   // Its designs carry their own result.

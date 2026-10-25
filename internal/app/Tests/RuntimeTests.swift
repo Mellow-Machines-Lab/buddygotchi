@@ -514,12 +514,14 @@ final class RuntimeTests: XCTestCase {
         eventually("the hook") { agents.all == ["claude"] }
         runtime.greet(.beckon)
         runtime.greet(.wake)
-        runtime.greet(.celebrate)
+        runtime.greet(.hello)
         eventually("all three greetings") {
             transport.dos("notice").count == 1 && transport.dos("wake_up").count == 1 && transport.dos("task_complete").count == 1
         }
         XCTAssertTrue(transport.dos("notice")[0].contains(#""sign":"Tap me!""#), "the found board holds up the sign the window names")
         XCTAssertTrue(transport.dos("task_complete")[0].contains(#""outcome":"success""#))
+        // The first hook's finish stands out, held twice.
+        XCTAssertTrue(transport.dos("task_complete")[0].contains(#""loops":2"#))
         let greetings = runtime.home.sync {
             runtime.harness.log.events.filter { $0.kind == Event.did && $0["by"]?.string == "rule" && $0.about == nil }.map(\.action)
         }

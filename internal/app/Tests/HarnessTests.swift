@@ -127,6 +127,34 @@ final class HarnessTests: XCTestCase {
     /// a `say` whether or not there's a take, and goes to the queue with
     /// the handle the result is started with; a blocked reaction fails,
     /// with no handle.
+    /// A finish's `turn`, which the device sizes it by: the tier the turn
+    /// reached, as the tags count them, 0 short of the first (30 s), then 1
+    /// to 5 (`tier1` to `tier5`: 30 s, a minute, 2, 5 and 10). The gel's
+    /// finish is at most medium below 2, at least big from 4 and biggest
+    /// at 5.
+    func testAFinishSaysHowLongItsTurnRan() {
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 0), 0)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 29_999), 0)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 30_000), 1)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 59_999), 1)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 60_000), 2)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 2 * 60_000), 3)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 5 * 60_000 - 1), 3)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 5 * 60_000), 4)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 10 * 60_000), 5)
+        XCTAssertEqual(DeviceReaction.turn(lengthMs: 60 * 60_000), 5)
+        XCTAssertEqual(DeviceReaction(anim: "task_complete", outcome: "success", turn: 5, variant: 1).args.json,
+                       #"{"outcome":"success","turn":5,"variant":1}"#)
+    }
+
+    /// Onboarding's finishes: the first hook's stands out, held twice; the
+    /// finale's is big, held three times in a happy face, its first design.
+    func testOnboardingsFinishes() {
+        XCTAssertEqual(Runtime.Greeting.hello.reaction.args.json, #"{"outcome":"success","loops":2}"#)
+        XCTAssertEqual(Runtime.Greeting.finale.reaction.args.json,
+                       #"{"outcome":"success","variant":1,"mood":"happy","loops":3}"#)
+    }
+
     func testReact() throws {
         try requireVoice()
         XCTAssertEqual(ReactOutput.sayFloor, 0.35)
@@ -134,7 +162,7 @@ final class HarnessTests: XCTestCase {
         var sent: [DeviceReaction] { queued.map(\.reaction) }
         var why: String?
         let react = ReactOutput(queue: { queued.append(($0, $1)) }, blocked: { why },
-                                who: { _ in .init(agent: "codex", thread: "fix-nav") })
+                                who: { _ in .init(agent: "codex", thread: "fix-nav") }, turnMs: { _ in 9 * 60_000 })
         /// Runs `answers`, and checks the result is started with `message`
         /// and the handle its reaction was queued with.
         func starts(_ answers: Answers, _ message: String, line: UInt = #line) {
@@ -204,13 +232,14 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(success.anim, "task_complete")
         XCTAssertEqual(success.outcome, "success")
         let line = success.line(id: 7, play: .next)
-        XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
+        XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","turn":4,"who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
         XCTAssertTrue(line.hasSuffix(#","mood":"proud","loops":2}}"#), line)
         queued.removeLast()
         starts(["react.mood": a("whiny"), "react.animation": a("failure")], "\(creature) played a failure in a whiny face, held once.")
         let failure = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual([failure.anim, failure.outcome], ["task_complete", "failure"])
         XCTAssertEqual(failure.who, .init(agent: "codex", thread: "fix-nav"))
+        XCTAssertEqual(failure.turn, 4, "a finish says how long its turn ran: 9 minutes is tier4")
         queued.removeLast()
         starts(["react.mood": a("curious"), "react.animation": a("reply"), "say.about": a("answer")],
                #"\#(creature) played a reply in a curious face, held once, and said "SAID"."#)
@@ -218,6 +247,7 @@ final class HarnessTests: XCTestCase {
         let reply = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual(reply.anim, "reply_ready")
         XCTAssertNil(reply.outcome, "a reply has no outcome")
+        XCTAssertNil(reply.turn, "nor a turn to size it by")
         XCTAssertEqual(reply.who, .init(agent: "codex", thread: "fix-nav"))
         queued.removeLast()
         starts(["react.mood": a("happy"), "react.animation": a("wake up"), "say.about": a("hello")],

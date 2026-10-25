@@ -325,8 +325,8 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
 }
 
 uint8_t Behaviour::pick(render::SceneState a, render::Mood mood, int wanted, render::Outcome o, render::StartCtx c,
-                        Rng& rng) const {
-  return face_->pick(a, mood, wanted, o, c, rng);
+                        Rng& rng, int loops, int turn) const {
+  return face_->pick(a, mood, wanted, o, c, rng, loops, turn);
 }
 
 // The animation playing is cut short, by `by`; the `say` and the

@@ -92,6 +92,10 @@ enum class Outcome : uint8_t { kNone, kSuccess, kFailure };
 enum class StartCtx : uint8_t { kNone, kNewTask, kSession, kContinuation, kCompacted };
 Outcome outcomeFromName(const char* name);  // "success" or "failure"; kNone otherwise
 StartCtx ctxFromName(const char* name);     // "new_task", "session", "continuation" or "compacted"; kNone otherwise
+// The tier the turn a finish is for reached (its `turn`), as the tags count
+// them (render/tags.h): 0 short of the first, then 1 to kTurnTiers for tier1
+// to tier5; kNoTurn when the Mac doesn't say.
+constexpr int kNoTurn = -1, kTurnTiers = 5;
 
 struct SceneShow {
   Mood mood = kStartupMood;

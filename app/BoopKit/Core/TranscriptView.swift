@@ -919,15 +919,16 @@ public enum EventLine {
 
     /// `claude finished turn 7 on "fix-nav" (landing): done, a very long
     /// turn, 12 tool calls.`: the outcome, the length band and how many
-    /// tool calls it made; a failed one, how many checks failed on the way
-    /// (`, after 2 failed checks`), so a failure that follows others reads
-    /// as more than the first: the brain can't count them back in HISTORY.
+    /// tool calls it made; a done or failed one, how many checks failed on
+    /// the way (`, after 2 failed checks`), so a failure that follows others
+    /// reads as more than the first, and a finish that finally worked as
+    /// hard-won: the brain can't count them back in HISTORY.
     /// A turn whose edits removed `bigDeletion` lines or more, net, says
     /// how many are gone (`, 1,200 lines gone`).
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
                                tools: Int, failedChecks: Int = 0, ofStreak: Int = 0, linesGone: Int = 0) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
-        let after = how != "failed" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
+        let after = outcome == "stopped" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
             : ", after \(failedChecks) failed checks"
         let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
         let gone = linesGone < bigDeletion ? "" : ", \(linesGone.formatted(.number.locale(Locale(identifier: "en_US")))) lines gone"

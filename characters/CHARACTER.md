@@ -455,7 +455,7 @@ the brain's, a rule's, or the board's own.
 | State | When it plays | Sent by |
 | --- | --- | --- |
 | `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller) | the Mac |
-| `task_complete` | A turn ends; `outcome` is `success` or `failure` | the Mac (the brain) |
+| `task_complete` | A turn ends; `outcome` is `success` or `failure`, and `turn` the tier it reached, as the tags count them: 0 short of `tier1`, then 1 to 5 (`DeviceReaction.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
@@ -496,7 +496,13 @@ Besides drawing each mood and state, a face:
   The face picks a look's itself: a new look starts on its first, and at
   the end of a loop it may turn to another. It picks a reaction's too,
   among those for its facts (`outcome`, `ctx`), never the last one when
-  there's another. A face says how many it has (`variants`).
+  there's another. A face says how many it has (`variants`). A face may
+  size a finish by how long it's held and the tier its turn reached
+  (`pick`'s `loops` and `turn`), and play a design they sized once (`plays`): the
+  gel's successful finishes come in four sizes, from a hop and a little
+  trophy to the whole screen
+  (characters/boop/design/slime-blob/CONTINUITY.md, Finishes); Pixel's
+  play their loops.
 - **Has occasions.** A design may need tags (`when`: every one on) or a
   wait (`after`: seconds its look has shown). The tags are the engine's
   (`firmware/src/render/tags.h`): the part of the day (`morning`, `day`,

@@ -97,17 +97,22 @@ struct Run {
       success |= e->scenes.resultProp.outcome == Outcome::kSuccess;
       gift |= e->scenes.resultProp.gift;
     }
+    // A successful finish shows its trophy, not a card, from its reveal.
+    const FinishShow finish = e->scenes.finishShow();
+    if (finish.on && finish.ageMs >= finish.revealMs) success = true, gift |= finish.gift;
   }
   void run(int ms) {
     for (int i = 0; i < ms; i += 16) step();
   }
 };
 
-// The prop each state must show, peaking above half: the alert, a card,
-// the helpers, listening's, a touch's; the desk for desk states, whole.
-void showsItsProp(const Run& r, SceneState state) {
+// The prop each state must show, peaking above half: the alert, a card
+// (but for a successful finish, which shows its trophy instead), the
+// helpers, listening's, a touch's; the desk for desk states, whole.
+void showsItsProp(const Run& r, SceneState state, Outcome outcome = Outcome::kNone) {
   if (state == SceneState::kNeedsYou) TEST_ASSERT_TRUE(r.props[Scenes::kAlertProp] > q(.5));
-  if (result(state)) TEST_ASSERT_TRUE(r.props[Scenes::kResultProp] > q(.5));
+  const bool trophy = state == SceneState::kTaskComplete && outcome == Outcome::kSuccess;
+  if (result(state)) TEST_ASSERT_TRUE(trophy ? r.props[Scenes::kResultProp] == F(0) : r.props[Scenes::kResultProp] > q(.5));
   if (state == SceneState::kStarting) TEST_ASSERT_TRUE(r.props[Scenes::kStartProp] > q(.5));
   // Waking and noticing are the start family's body without its card.
   if (state == SceneState::kWakeUp || state == SceneState::kNotice)
@@ -159,7 +164,7 @@ std::vector<F> play(int mood, int row, SceneState state, Outcome outcome, StartC
   TEST_ASSERT_EQUAL_INT(recipeReveals, r.reveals);
   if (revealsOnce(state)) TEST_ASSERT_EQUAL_INT(1, r.reveals);
   TEST_ASSERT_TRUE(r.moved > q(.0001));
-  showsItsProp(r, state);
+  showsItsProp(r, state, outcome);
   // Only a successful finish shows the trophy, and only proud's lifted one
   // a gift beside it.
   if (result(state)) {
@@ -408,9 +413,9 @@ void test_ten_minutes_of_work() {
 
 // What a finger or an alert interrupts plays no more: a held finger keeps
 // the desk's keys from sounding and letting go replays none; needs you
-// cancels the keys still to come at once; it ends a finish before its card,
-// which never comes; and a finish held under a finger reveals its card once,
-// as asked, and replays nothing it skipped.
+// cancels the keys still to come at once; it ends a finish before its
+// trophy, which never comes; and a finish held under a finger reveals its
+// trophy once, as asked, and replays nothing it skipped.
 void test_held_and_interrupted_contacts() {
   Facts working;
   working.base = SceneState::kWorking;
@@ -476,25 +481,25 @@ void test_held_and_interrupted_contacts() {
     r.run(1500);
     r.e->dragEnd();
     r.run(1200);
-    // Its card, once; its hiccups, under the finger, never.
+    // Its trophy, once, and no card; its hiccups, under the finger, never.
     TEST_ASSERT_EQUAL_INT(1, r.reveals);
     TEST_ASSERT_EQUAL_INT(1, r.contacts);
-    TEST_ASSERT_TRUE(r.success && r.props[Scenes::kResultProp] > q(.5));
+    TEST_ASSERT_TRUE(r.success && r.props[Scenes::kResultProp] == F(0));
   }
 }
 
-// A card's reveal: from its reveal contact it rises on a smoothstep over
-// 400 ms, and falls on one over the take's last 480 ms. A card whose
-// reaction ends while it rises or falls carries on as it was going while
-// the card fades out over the props' 200 ms ramp, and is drawn a dozen
-// frames more, then gone.
+// A card's reveal (a failed finish's): from its reveal contact it rises on
+// a smoothstep over 400 ms, and falls on one over the take's last 480 ms. A
+// card whose reaction ends while it rises or falls carries on as it was
+// going while the card fades out over the props' 200 ms ramp, and is drawn
+// a dozen frames more, then gone.
 void test_card_reveal_trajectory() {
   Facts working;
   working.base = SceneState::kWorking;
   auto start = [&](Run& r) {
     r.run(320);
     Request done;
-    done.anim = SceneState::kTaskComplete, done.outcome = Outcome::kSuccess, done.hasId = true, done.id = "card";
+    done.anim = SceneState::kTaskComplete, done.outcome = Outcome::kFailure, done.hasId = true, done.id = "card";
     done.hold = true, done.variant = 0;
     r.e->oneShot(done);
   };
@@ -504,7 +509,7 @@ void test_card_reveal_trajectory() {
     const T began = r.e->scenes.started, duration = r.e->scenes.recipe.duration;
     T reveal = -1;
     for (int i = 0; i < r.e->scenes.recipe.count; ++i)
-      if (r.e->scenes.recipe.contacts[i].kind == kSuccess) reveal = r.e->scenes.recipe.contacts[i].at;
+      if (r.e->scenes.recipe.contacts[i].kind == kFailure) reveal = r.e->scenes.recipe.contacts[i].at;
     TEST_ASSERT_TRUE(reveal == T(680));
     const T down = duration - T(480);
     for (int at = 16; at <= F(duration).integer(); at += 16) {

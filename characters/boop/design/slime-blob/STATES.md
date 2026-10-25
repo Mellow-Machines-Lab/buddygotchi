@@ -1,6 +1,6 @@
 # State coverage and event mapping
 
-Updated 2026-10-24. The board's 25 states (the firmware's `kStateNames`,
+Updated 2026-10-25. The board's 25 states (the firmware's `kStateNames`,
 `firmware/src/render/types.cpp`) fall into nine visual scene families, below.
 Each state's takes (three each; idle's six or seven and asleep's four,
 with their comedy, a successful finish's four and a gesture's ten) are
@@ -32,15 +32,18 @@ are compositions, not isolated exported assets.
 expands each for both success and failure. Do not count these as new
 moods/states or choose an outcome at random. A sad success is a small
 tearful-but-valid achievement; a happy failure is still visibly failure,
-never a misleading trophy.
+never a misleading trophy. A success comes in four sizes, by how long it's
+held and how long its turn ran, from Little Win to the whole screen
+([CONTINUITY.md](CONTINUITY.md), Finishes): its variations go on past its
+takes, one for each finish above small.
 
 Comedy adds takes, never states or moods ([CONTINUITY.md](CONTINUITY.md),
 Comedy). Idle's variations 4 to 6 are its gags (yawn and settle, doze off
 and snap awake, sneeze and shake it off), after an expression's own gag:
 excited's zoomies, the low moods' long yawn. Asleep's fourth is a snore
-(only it sounds). A successful finish's fourth is the
+(only it sounds). A small successful finish's fourth is Little Win's
 trophy, then hiccups; failure keeps its three. Proud's lifted success
-shows a gift, a small bug beside its card. Each joins its bag's second
+shows a gift, a small bug beside its trophy. Each joins its bag's second
 round, so a fresh state opens as it always has.
 
 Occasions add takes too ([CONTINUITY.md](CONTINUITY.md), Occasions): idle,

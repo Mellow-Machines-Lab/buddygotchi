@@ -136,6 +136,12 @@
       "status": "standalone-audition-sketch"
     },
     {
+      "id": "cheer",
+      "cue": "A big finish's reveal: a size above small",
+      "duration": 2.6,
+      "status": "standalone-audition-sketch"
+    },
+    {
       "id": "failed",
       "cue": "Confirmed failure/error warning",
       "duration": 1.05,

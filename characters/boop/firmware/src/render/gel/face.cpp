@@ -29,6 +29,8 @@ constexpr int kTakes = int(sizeof(slime::kRecipes[0][0]) / sizeof(slime::kRecipe
 const voice::EffectClips& GelFace::clips() const { return gel::clips(); }
 
 const slime::Recipe& GelFace::recipe(Mood mood, SceneState state, int variant, Outcome outcome, StartCtx ctx) {
+  if (state == SceneState::kTaskComplete && outcome != Outcome::kFailure && isFinishVariant(variant))
+    return finishRecipe(finishOf(variant));
   int row = recipeState(state, outcome, ctx);
   // A finish timed without its outcome: its fourth take is a success's.
   if (state == SceneState::kTaskComplete && variant >= takes(row)) row = recipeState(state, Outcome::kSuccess, ctx);
@@ -41,6 +43,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   origin_ = lastTick_ = lookAt_ = t;
   engineMs_ = engineFrac_ = 0;
   pace_ = 100;
+  lastBig_ = Finish::kLittle;
   source_ = {};
   finger_ = false;  // the new engine has no drag: a finger still down grabs it afresh
   pendingCount_ = 0;
@@ -434,19 +437,43 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
 // The engine's shuffle bag for the moment, drawn from copies: a call
 // refused after its pick (Device::refuse) leaves the bag and the engine's
 // randomness as they were. started draws the same take for real.
-uint8_t GelFace::pick(SceneState a, Mood mood, int wanted, Outcome outcome, StartCtx ctx, linkkit::Rng&) const {
+uint8_t GelFace::pick(SceneState a, Mood mood, int wanted, Outcome outcome, StartCtx ctx, linkkit::Rng&, int loops,
+                      int turn) const {
   // A gesture's take is the gesture asked for (from 1), never dealt.
   if (a == SceneState::kGesture) return uint8_t(wanted > 0 && wanted <= slime::kGestureCount ? wanted - 1 : 0);
+  // A successful finish by its size: small deals Little Win's takes from
+  // the bag, as every other row does.
+  if (a == SceneState::kTaskComplete && outcome == Outcome::kSuccess) {
+    const int canonical = slime::kProfile[profileFor(mood)].canonical;
+    switch (finishSize(loops, turn, canonical)) {
+      case FinishSize::kSmall: break;
+      case FinishSize::kMedium: return uint8_t(finishVariant(Finish::kConfetti));
+      case FinishSize::kBiggest: return uint8_t(finishVariant(Finish::kMegaBoop));
+      case FinishSize::kBig:
+        return uint8_t(finishVariant(
+            bigFinish(canonical, slime::kProfile[engine_->emotion].canonical, wanted, lastBig_)));
+    }
+  }
   const int row = recipeState(a, outcome, ctx);
   auto bag = engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row];
   Random random = engine_->random;
   return uint8_t(bag.next(random, takes(row)));
 }
 
-void GelFace::started(SceneState a, Mood mood, uint8_t, Outcome outcome, StartCtx ctx) {
+void GelFace::started(SceneState a, Mood mood, uint8_t variant, Outcome outcome, StartCtx ctx) {
   if (a == SceneState::kGesture) return;
+  if (a == SceneState::kTaskComplete && isFinishVariant(variant)) {
+    // The big one it played, which the next big one isn't, where it can be.
+    const Finish f = finishOf(variant);
+    if (f != Finish::kConfetti && f != Finish::kMegaBoop) lastBig_ = f;
+    return;
+  }
   const int row = recipeState(a, outcome, ctx);
   engine_->scenes.bags[slime::kProfile[profileFor(mood)].canonical][row].next(engine_->random, takes(row));
+}
+
+int GelFace::plays(SceneState a, uint8_t variant, int loops) const {
+  return a == SceneState::kTaskComplete && isFinishVariant(variant) ? 1 : loops;
 }
 
 int GelFace::variants(Mood, SceneState s) const { return s == SceneState::kGesture ? slime::kGestureCount : kTakes; }

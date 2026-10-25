@@ -106,6 +106,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -384,6 +386,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -663,6 +667,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -947,6 +953,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.
@@ -1235,6 +1243,8 @@ Examples:
   → happy, success, glad in a word, once
 - NOW: …done, a long turn, 30 tool calls, 1,200 lines gone.
   → excited, success, glad in a phrase, twice
+- NOW: …done, a long turn, 25 tool calls, after 3 failed checks.
+  → proud, success, glad in a phrase, four times
 - NOW: …done, a short turn, 2 tool calls, the 2nd quick win of a streak.
   → pleased, success, glad in a sound, once
 - NOW: …done, a short turn, 3 tool calls, the 3rd quick win of a streak.

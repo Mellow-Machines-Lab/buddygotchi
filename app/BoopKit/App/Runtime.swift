@@ -505,15 +505,18 @@ public final class Runtime: @unchecked Sendable {
     /// needs you), recorded in the transcript as the rules' others are, and
     /// waking no brain: the board found and not yet paired beckoning, a
     /// look up holding a sign, so you know which board to tap; Boop waking
-    /// into its body once it's paired; and a celebration for the first hook
-    /// and the finale.
+    /// into its body once it's paired; a finish that stands out, held
+    /// twice, for the first hook; and a big one for the finale, held three
+    /// times in a happy face, its first design (the gel's Gold Rush,
+    /// Pixel's trophy).
     public enum Greeting: Sendable {
-        case beckon, wake, celebrate
+        case beckon, wake, hello, finale
         var reaction: DeviceReaction {
             switch self {
             case .beckon: DeviceReaction(anim: "notice", loops: 2, sign: Self.tapMe)
             case .wake: DeviceReaction(anim: "wake_up")
-            case .celebrate: DeviceReaction(anim: "task_complete", outcome: "success")
+            case .hello: DeviceReaction(anim: "task_complete", loops: 2, outcome: "success")
+            case .finale: DeviceReaction(anim: "task_complete", mood: "happy", loops: 3, outcome: "success", variant: 1)
             }
         }
         /// The beckon's sign, which onboarding's window points at.

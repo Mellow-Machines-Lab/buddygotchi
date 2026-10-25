@@ -53,6 +53,11 @@ struct Projector {
     int height = surface.height * 95 / 100, focal = height * 4586;
     int perspective = focal * 16 / depth;
     int px = surface.width * 8 + product(p.x, perspective), py = height * 8 - product(vy, perspective) + c.dy * 16;
+    if (c.scale != 4096) {
+      px = c.anchorX + int(int64_t(px - c.anchorX) * c.scale / 4096);
+      py = c.anchorY + int(int64_t(py - c.anchorY) * c.scale / 4096);
+    }
+    px += c.offsetX, py += c.offsetY;
     if (c.squeezeBottom) {  // pressed flat under the drawer, on the screen
       const int top = restBodyTop(surface.height) * 16, bottom = restBodyBottom(surface.height) * 16;
       py = c.squeezeTop * 16 + int(int64_t(py - top) * (c.squeezeBottom - c.squeezeTop) * 16 / (bottom - top));

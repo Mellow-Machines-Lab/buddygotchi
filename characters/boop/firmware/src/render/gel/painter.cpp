@@ -5,6 +5,7 @@
 #include "render/gel/profile.h"
 #include "render/gel/geometry.h"
 #include "render/gel/layers.h"
+#include "render/gel/finish.h"
 #include "render/gel/pastimes.h"
 #include "slime_mesh.h"
 #include <algorithm>
@@ -176,6 +177,10 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
     Measure measure(profile.props);
     paintScenery(s, *scenery);
   }
+  paintBody(s, c, anchors);
+}
+void paintBody(Surface& s, const PaintControls& c, rig::Anchors* anchors) {
+  if (!s.pixels) return;
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
   // away. Positions are in sixteenths of a pixel; the UVs follow from the
@@ -280,24 +285,61 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   applyRig(c, rig);
   if (squeeze) c.squeezeTop = squeeze->top, c.squeezeBottom = squeeze->bottom, c.widen = squeeze->widen;
   const bool bodyAlone = squeeze && squeeze->squint;
+  // A finish moves, scales and squashes the body, its face with it; under
+  // the drawer it waits.
+  const FinishShow finish = squeeze ? FinishShow{} : e.scenes.finishShow();
+  FinishPose move;
+  if (finish.on) {
+    move = finishPose(surface, finish.finish, finish.ageMs, finish.revealMs);
+    const Point anchor = finishAnchor(surface);
+    c.anchorX = anchor.x, c.anchorY = anchor.y;
+    c.offsetX = move.dx16, c.offsetY = move.dy16, c.scale = move.scale;
+    c.squash = std::clamp(c.squash + move.squash, -5407, 5407);
+    c.lean = std::clamp(c.lean + move.lean, -5120, 5120);
+    c.eyes = !move.starEyes;
+  }
+  const bool mouth = mouthOpen || rig[rig::Channel::kMouthOpen] >= kRigMouthOpen;
   rig::Anchors local;
   if (!anchors) anchors = &local;
   {
     Measure measure(profile.body);
     Box cards[Surface::kMaxKeep];
-    paint(surface, c, cards, bodyAlone ? 0 : opaqueCards(surface, e, cards), keepLane, anchors,
-          bodyAlone ? nullptr : pastimes);
+    const int kept = bodyAlone ? 0 : opaqueCards(surface, e, cards);
+    {
+      Measure clear(profile.clear);
+      surface.clear(cards, kept, keepLane);
+    }
+    if (pastimes && !bodyAlone) {
+      Measure measure(profile.props);
+      paintScenery(surface, *pastimes);
+    }
+    if (finish.on) paintFinishBehind(surface, finish.finish, finish.ageMs, finish.revealMs);
+    if (!move.minis) paintBody(surface, c, anchors);
   }
   if (bodyAlone) return;
-  {
+  if (move.minis) {
+    // The parade: its little ones stand in for it, each with its face.
+    FinishPose minis[kParadeMinis];
+    const int n = finishMinis(surface, finish.ageMs, minis);
+    for (int i = 0; i < n; ++i) {
+      PaintControls m = c;
+      m.offsetX = minis[i].dx16, m.offsetY = minis[i].dy16, m.scale = minis[i].scale;
+      m.squash = std::clamp(c.squash + minis[i].squash, -5407, 5407);
+      m.lean = std::clamp(c.lean + minis[i].lean, -5120, 5120);
+      paintBody(surface, m);
+      paintArt(surface, e, m, mouth);
+    }
+  } else {
     Measure measure(profile.art);
-    paintArt(surface, e, c, mouthOpen || rig[rig::Channel::kMouthOpen] >= kRigMouthOpen, anchors);
+    paintArt(surface, e, c, mouth, anchors);
   }
-  {
+  if (!move.minis) {
     Measure measure(profile.layers);
     paintLayers(surface, e, *anchors, layers, t);
     if (pastimes) paintWorn(surface, *pastimes, *anchors);
   }
+  if (finish.on)
+    paintFinishFront(surface, finish.finish, finish.ageMs, finish.revealMs, *anchors, c.scale, finish.gift);
   {
     Measure measure(profile.props);
     paintProps(surface, e);

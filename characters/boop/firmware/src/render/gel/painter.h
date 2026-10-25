@@ -16,6 +16,12 @@ struct PaintControls {
   // [squeezeTop, squeezeBottom), in px, and spread wider by `widen` (Q12);
   // a squeezeBottom of 0 is none.
   int squeezeTop = 0, squeezeBottom = 0, widen = 4096;
+  // A finish's (render/gel/finish.h): the whole body scaled (Q12) about
+  // (anchorX, anchorY) and moved by (offsetX, offsetY), in sixteenths of a
+  // pixel, its face and anchors with it; and its eyes left undrawn, for
+  // the finish's own.
+  int scale = 4096, anchorX = 0, anchorY = 0, offsetX = 0, offsetY = 0;
+  bool eyes = true;
 };
 // The rows the body fills at rest, laid out on the AMOLED's 410.
 inline int restBodyTop(int height) { return height * 92 / 410; }
@@ -34,6 +40,8 @@ struct PastimeShow;
 // given.
 void paint(Surface& surface, const PaintControls& controls, const Box* keep = nullptr, int keepCount = 0,
            uint32_t keepLane = 0, rig::Anchors* anchors = nullptr, const PastimeShow* scenery = nullptr);
+// The body alone, over what the surface holds.
+void paintBody(Surface& surface, const PaintControls& controls, rig::Anchors* anchors = nullptr);
 // The dome on the canvas: canvas pixels a body unit at its middle.
 constexpr int kPxPerUnit = 85;
 // The rig's gazeX and gazeY at their whole (1000) move the eyes this far,

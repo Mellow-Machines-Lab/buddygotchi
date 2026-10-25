@@ -1,0 +1,32 @@
+// Forty seconds: the finish ladder. Four turns, each held longer or running
+// longer than the last. A quick fix gets Little Win, a hop and a little
+// trophy; a bigger one held twice, confetti from the corners; one past five
+// minutes (the fourth tier), however briefly it's held, the gold rush; and
+// one past ten (the fifth) that finally worked after the tests failed
+// twice, held four times, Mega Boop.
+{"demo": 1, "title": "The finish ladder"}
+{"agent": "prompt", "text": "Fix the typo in the README"}
+{"agent": "edit", "file": "README.md", "old": "Instal the app", "new": "Install the app", "takes": 1}
+{"agent": "reply", "text": "Fixed the typo.", "after": 1}
+{"brain": {"react.mood": "pleased", "react.animation": "success", "react.loops": "once", "say.feeling": "glad", "say.kind": "sound"}, "note": "Once: Little Win"}
+{"agent": "prompt", "text": "Add a dark mode toggle to the settings page"}
+{"agent": "edit", "file": "src/settings/Theme.tsx", "old": "theme: 'light'", "new": "theme: prefersDark ? 'dark' : 'light'", "takes": 2}
+{"you": "wait", "minutes": 3, "after": 1}
+{"agent": "reply", "text": "Settings has a dark mode toggle now, and it follows the system by default.", "after": 1}
+{"brain": {"react.mood": "happy", "react.animation": "success", "react.loops": "twice", "say.feeling": "glad", "say.kind": "word"}, "note": "Twice: confetti"}
+{"agent": "prompt", "text": "Move the data layer onto the new query builder"}
+{"agent": "edit", "file": "src/db/users.js", "old": "db.raw(sql)", "new": "db.select('users').where(filter)", "takes": 2}
+{"agent": "run", "cmd": "npm test", "about": "Run the data tests", "takes": 2}
+{"you": "wait", "minutes": 9, "after": 1, "note": "Nine minutes in: the fourth tier"}
+{"agent": "reply", "text": "Every query goes through the builder now, and the data tests pass.", "after": 1}
+{"brain": {"react.mood": "happy", "react.animation": "success", "react.loops": "once", "say.feeling": "glad", "say.kind": "word"}, "note": "The fourth tier, held once: the gold rush"}
+{"agent": "prompt", "text": "Find out why the checkout test is flaky"}
+{"agent": "run", "cmd": "npm test", "about": "Run the checkout tests", "fails": true, "takes": 2}
+{"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.about": "tests", "say.kind": "sound"}, "mood": "annoyed"}
+{"agent": "run", "cmd": "npm test", "about": "Run the checkout tests again", "fails": true, "takes": 2}
+{"brain": {"react.mood": "determined", "say.feeling": "upset", "say.about": "retry", "say.kind": "word"}, "mood": "determined"}
+{"agent": "edit", "file": "test/checkout.test.js", "old": "await sleep(100)", "new": "await paymentMock.ready()", "takes": 2}
+{"agent": "run", "cmd": "npm test", "about": "Run the checkout tests", "takes": 2}
+{"you": "wait", "minutes": 16, "after": 1, "note": "Sixteen minutes in: the fifth tier"}
+{"agent": "reply", "text": "The checkout test waits for the payment mock now, and it passes every time.", "after": 1}
+{"brain": {"react.mood": "proud", "react.animation": "success", "react.loops": "four times", "say.feeling": "glad", "say.kind": "phrase"}, "mood": "proud", "note": "Hard-won, held four times: Mega Boop"}

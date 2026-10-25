@@ -362,7 +362,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   in silence and only big moments get a sound or a word (`122`), on
   Chatty almost every face comes with words and every prompt gets one
   (`123`), and on Normal a routine moment gets a feeling, not a feeling
-  and a topic (`124`).
+  and a topic (`124`). A turn that finally worked after its tests failed
+  twice is a hard-won finish: a success, proud, held three or four times
+  (`125`), which the gel plays big.
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,

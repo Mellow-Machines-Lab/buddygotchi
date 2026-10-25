@@ -197,7 +197,8 @@ void PixelFace::started(SceneState a, Mood, uint8_t variant, Outcome, StartCtx) 
   last_[int(a)] = uint8_t(variant + 1);
   blink_ = false;
 }
-uint8_t PixelFace::pick(SceneState s, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng) const {
+// Pixel's designs don't come in sizes: a finish's loops play it again.
+uint8_t PixelFace::pick(SceneState s, Mood mood, int wanted, Outcome o, StartCtx c, linkkit::Rng& rng, int, int) const {
   uint8_t all[kMaxVariants], fit[kMaxVariants];
   int k0 = fitting(mood, s, o, c, all), n = 0;
   // Only those whose tags are on; an occasion's first, whatever the Mac

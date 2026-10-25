@@ -258,7 +258,8 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
 // is picked here, as the reaction is about to play: the Mac's (from 1) when
 // it's one of its design's, in the mood it's drawn in, for the finish's
 // outcome or the start's context; else the device picks one of those,
-// never the one it showed last.
+// never the one it showed last. A finish's `loops` and `turn` (the tier its
+// turn reached) may size it, the face's call; one they sized plays once.
 ReactionIn Device::parse(const Do& c) {
   ReactionIn mo;
   mo.key = c.key;
@@ -279,7 +280,10 @@ ReactionIn Device::parse(const Do& c) {
     mo.outcome = outcome;
     mo.ctx = ctx;
     mo.variant = b_.pick(mo.anim, mo.expr ? mo.mood : b_.model().mood, heldTo(args["variant"], 0, 255, 0), outcome,
-                         ctx, kit().rng());
+                         ctx, kit().rng(), mo.loops,
+                         heldTo(args["turn"], render::kNoTurn, render::kTurnTiers, render::kNoTurn));
+    // A design its loops sized plays once.
+    mo.loops = b_.face().plays(mo.anim, mo.variant, mo.loops);
   }
   mo.said = !args["say"].isNull();
   JsonObjectConst who = args["who"];  // copied by play, while the args live

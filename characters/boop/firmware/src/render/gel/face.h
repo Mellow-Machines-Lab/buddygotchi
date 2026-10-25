@@ -34,7 +34,11 @@ class GelFace final : public Face {
   void step(uint32_t t, linkkit::Rng&) override;
   // The engine picks the look's variations itself; the Mac's is ignored.
   uint8_t lookVariant() const override { return uint8_t(engine_->scenes.variant); }
-  uint8_t pick(SceneState, Mood, int, Outcome, StartCtx, linkkit::Rng&) const override;
+  // A successful finish is sized by its loops and its turn (render/gel/finish.h).
+  uint8_t pick(SceneState, Mood, int, Outcome, StartCtx, linkkit::Rng&, int loops = 1,
+               int turn = kNoTurn) const override;
+  // A finish a size above small plays once.
+  int plays(SceneState anim, uint8_t variant, int loops) const override;
   // A finger: the dome follows it (the engine's drag), from where it first
   // touched, leaning, squashing and stretching its way, and springs back
   // when it lets go, carried on a little by the finger's own speed.
@@ -130,6 +134,8 @@ class GelFace final : public Face {
   // The surface it last drew on: the AMOLED's until it has (the drawer's
   // rows are laid out on it).
   Size size_{502, 410, 110};
+  // The big finish it played last, which the next one isn't, where it can be.
+  Finish lastBig_ = Finish::kLittle;
   // The word forward the body last answered, by when it came.
   uint32_t landedAt_ = 0;
   bool landed_ = true;

@@ -56,10 +56,12 @@ final class ViewTests: XCTestCase {
         let finish = hook(.turnEnd, message: "All green now.")
         XCTAssertEqual(finish.map(\.name), ["turn end", "last_message"])
         XCTAssertEqual(finish.map(\.wakesBrain), [false, true], "the message's reading wakes the brain, not the turn end")
-        XCTAssertEqual(finish.first?.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls."#,
-                       "4 min is long; failed calls count the same")
+        XCTAssertEqual(finish.first?.line,
+                       #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, after 3 failed checks."#,
+                       "4 min is long; failed calls count the same; it finally worked")
         let end = try XCTUnwrap(finish.last)
-        XCTAssertEqual(end.line, #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, saying it's done."#,
+        XCTAssertEqual(end.line,
+                       #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, after 3 failed checks, saying it's done."#,
                        "the finish's line, saying what its message said")
         XCTAssertEqual(end.notes, [], "a claim is no phrase")
         XCTAssertTrue(end.did.isEmpty, "no rule cheers")
@@ -70,8 +72,9 @@ final class ViewTests: XCTestCase {
     }
 
     /// A failed turn says how many checks failed on the way, so a failure
-    /// after others reads as bigger than the first; a done one doesn't, and
-    /// the next turn starts counting again.
+    /// after others reads as bigger than the first; so does a done one, a
+    /// finish that finally worked; a stopped one doesn't; and the next turn
+    /// starts counting again.
     func testAFailedFinishCountsItsFailedChecks() throws {
         hook(.turnStart)
         tests(failed: true, id: "t1")
@@ -90,7 +93,10 @@ final class ViewTests: XCTestCase {
                        [#"claude finished turn 3 on "fix-nav" (landing): failed, a very short turn, no tool calls."#],
                        "a turn counts only its own failed checks")
         XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "done", lengthMs: 0, tools: 2, failedChecks: 2),
-                       #"claude finished turn 1 on "x": done, a very short turn, 2 tool calls."#, "only a failed finish counts its failed checks")
+                       #"claude finished turn 1 on "x": done, a very short turn, 2 tool calls, after 2 failed checks."#,
+                       "a done finish counts its failed checks: it finally worked")
+        XCTAssertEqual(EventLine.turnEnd(agent: "claude", turn: 1, thread: "\"x\"", outcome: "stopped", lengthMs: 0, tools: 2, failedChecks: 2),
+                       #"claude finished turn 1 on "x": stopped, a very short turn, 2 tool calls."#, "a stopped one doesn't")
     }
 
     /// Pins `EventLine.bigDeletion`: a turn whose edits removed 500 lines
