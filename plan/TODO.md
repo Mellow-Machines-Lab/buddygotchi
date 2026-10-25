@@ -184,6 +184,14 @@ largest frame 32x its median, a finish's 33x, going to work 9x).
       and 13, 39 and 40 take the faces the character makes. The whole
       `--always` set ran once against Jev: 26 of 27, and 40, whose faces
       predated the puzzled ones, passed once it took them.
+- [ ] Apologies don't soften a grumpy Boop's mood against Jev: 56
+      (one apology softens it) passes 0 or 1 of 3 and 57 (undone by
+      poking) 0 of 3, before and after 2026-10-24's grumpy wording. The
+      face is right (annoyed); the mood question gives grumpy 0.61,
+      irritated 0.27, annoyed 0.12: the stay option ("hasn't been grumpy as
+      long as MOOD says it lasts. No change is fine.") outweighs grumpy's
+      "a sorry cools it at once". A full Jev run of every scenario (about
+      820 requests) would show what else sits outside the always set.
 - [ ] One left from the always evals: 38's second thing said gets its
       face narrowly (curious about 0.5 against none about 0.4, three runs
       of three). Pixel's five pass against Jev with the new mood and
