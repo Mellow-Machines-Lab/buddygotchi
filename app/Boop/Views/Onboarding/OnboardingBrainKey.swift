@@ -6,6 +6,9 @@ import SwiftUI
 /// own: delete this file and the one line in `SmallThingsAct` that shows it.
 struct OnboardingBrainKey: View {
     @ObservedObject var app: AppModel
+    /// Whether a board is here, whose button you hold to talk; with none,
+    /// the menu's Talk.
+    var hasBoard = true
     @ViewState private var key = ""
     @ViewState private var saved = false
     @FocusState private var focused: Bool
@@ -25,7 +28,7 @@ struct OnboardingBrainKey: View {
                         }
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                     }
-                    Text(saved ? "Now I can answer you. Hold my button and ask me “how many agents are running?”"
+                    Text(saved ? "Now I can answer you. \(hasBoard ? "Hold my button" : "Click Talk in my menu") and ask me “how many agents are running?”"
                          : "A Jev API key lets TypeSafe's AI pick how I react and what mood I'm in. "
                          + "Without one I still show what your agents do and when you're needed.")
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)

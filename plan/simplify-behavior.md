@@ -110,8 +110,9 @@ one. Keep a change only if the scenarios hold.
    `react.intensity`, and `say` one question too.** One "how big" in place of `react.loops` and `say.kind`. Both
    answer the same question: how much the moment matters. Ask it once:
    small, stands out, big, biggest. Derive the loops (1–4) and the size
-   of what it says (sound, word, phrase; a swear only for biggest and
-   bad) from the answer. The pass keeps `say.feeling` and `say.about`.
+   of what it says (sound, word, phrase, phrase) from the answer. As
+   built, `say.feeling`, `say.about` and `say.kind` became one `say`:
+   nothing, a swear, a feeling or a topic, the swear at any size.
    *Removes:* a question from every pass, and combinations like held
    four times but only a grunt.
 9. **Drop the hourly idle heartbeat.** The idle check-in, at the

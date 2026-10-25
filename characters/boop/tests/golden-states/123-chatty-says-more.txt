@@ -53,7 +53,7 @@ How to read HISTORY and NOW:
   "Its words".
 - "You said to Boop" quotes the person talking to Boop. It answers
   what they meant with a face and a reply: a move of its body and a
-  sign, maybe a sound or a word, never words of its own.
+  sign, maybe a sound, a word or a phrase, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -281,7 +281,7 @@ and a sign whatever PERSONALITY's Examples hold up: your own words
 when some are under it, else a caption that fits.
 Examples:
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
-  → happy, success, says done
+  → happy, success, says glad
 - NOW (Boop reacted 1 min ago): You asked claude on "api" about tests, in a sentence.
   → curious, says tests, holding up "tests! tests!"
 - NOW: You asked claude on "api" for something new, in a sentence.
@@ -361,7 +361,7 @@ How to read HISTORY and NOW:
   "Its words".
 - "You said to Boop" quotes the person talking to Boop. It answers
   what they meant with a face and a reply: a move of its body and a
-  sign, maybe a sound or a word, never words of its own.
+  sign, maybe a sound, a word or a phrase, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -586,7 +586,7 @@ and a sign whatever PERSONALITY's Examples hold up: your own words
 when some are under it, else a caption that fits.
 Examples:
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
-  → happy, success, says done
+  → happy, success, says glad
 - NOW (Boop reacted 1 min ago): You asked claude on "api" about tests, in a sentence.
   → curious, says tests, holding up "tests! tests!"
 - NOW: You asked claude on "api" for something new, in a sentence.

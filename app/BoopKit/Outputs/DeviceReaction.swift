@@ -32,8 +32,8 @@ public struct DeviceReaction: Equatable, Sendable {
         }
     }
 
-    /// What a brain reaction says: up to two recorded takes (the
-    /// feeling's, then the topic's), or nothing. A reaction
+    /// What a brain reaction says: its recorded take, or nothing; the
+    /// `do` carries up to two, one after the other. A reaction
     /// always has one, even with no take: it's the reply that ends
     /// push-to-talk's `listening`.
     public struct Say: Equatable, Sendable {

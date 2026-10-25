@@ -241,8 +241,8 @@ void test_a_reaction_shows_the_drawer_once_its_sign_is_read() {
 }
 
 // A finger on the face, or BOOT, before it opens keeps it shut, and so
-// does a request that comes up meanwhile; a reaction that doesn't ask
-// never opens it.
+// do a request that comes up meanwhile and a later reaction, listening
+// included; a reaction that doesn't ask never opens it.
 void test_a_finger_or_a_request_first_keeps_it_shut() {
   Board b;
   b.line(kShowDo);
@@ -270,6 +270,22 @@ void test_a_finger_or_a_request_first_keeps_it_shut() {
              "\"status\",\"say\":{},\"mood\":\"engaged\",\"loops\":1}}");
   plain.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
   TEST_ASSERT_EQUAL_INT(0, plain.open());
+
+  // The Mac's Talk pressed again before it opens: listening takes its
+  // place, and so does any later reaction.
+  Board talked;
+  talked.line(kShowDo);
+  talked.run(500);
+  talked.line("{\"t\":\"do\",\"name\":\"listening\",\"play\":\"now\"}");
+  talked.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, talked.open());
+
+  Board next;
+  next.line(kShowDo);
+  next.run(500);
+  next.line("{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"say\":{},\"mood\":\"happy\",\"loops\":1}}");
+  next.run(app::Device::kShowDrawerMs + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, next.open());
 }
 
 // BOOT held to talk while it's open shuts it, and so does the Mac's

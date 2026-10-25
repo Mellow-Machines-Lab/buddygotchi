@@ -1,7 +1,7 @@
 {
   "name": "Chatty: almost every face comes with words, and every prompt gets one",
-  "case": "The person has set Boop to Chatty. They ask an agent for something new, plainly, and Boop answers with a face and words, holding up a sign. The short turn finishes well and Boop cheers it with words. Twenty seconds later they ask the agent, plainly again, to run the tests: even though Boop only just reacted, it gets a face and a word. That turn finishes too, and Boop says something about it.",
-  "why": "talk/chatty.md: almost every face comes with words, a word or a phrase sooner than a sound; every prompt gets a face and a word however recently Boop reacted, and a sign when there's one to hold up",
+  "case": "The person has set Boop to Chatty. They ask an agent for something new, plainly, and Boop answers with a face and words, holding up a sign. The short turn finishes well and Boop cheers it with words. Twenty seconds later they ask the agent, plainly again, to run the tests: even though Boop only just reacted, it gets a face and something said. That turn finishes too, and Boop says something about it.",
+  "why": "talk/chatty.md: it says something at every face, wherever PERSONALITY's Examples are silent, its moments keeping their size; every prompt gets a face and something said however recently Boop reacted, and a sign when there's one to hold up",
   "talk": "chatty",
   "checks": {"words_said": "0.75-", "reactions": "4-"},
   "steps": [

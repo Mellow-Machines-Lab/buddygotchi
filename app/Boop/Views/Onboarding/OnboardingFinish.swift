@@ -280,7 +280,7 @@ struct SmallThingsAct: View {
             ActTitle(title: "A few small things")
             login
             if model.askMic { mic }
-            OnboardingBrainKey(app: app)
+            OnboardingBrainKey(app: app, hasBoard: model.hasBoard)
             Spacer(minLength: 0)
             ActNav(model: model)
         }

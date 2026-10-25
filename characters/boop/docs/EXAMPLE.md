@@ -102,8 +102,8 @@ TALK
 Normal: Boop says how it feels or names what NOW is about as
 PERSONALITY's Examples do, and this outranks what MOOD says of words.
 A failed turn keeps its Example's swear. A plain prompt, a check
-failing or passing or a check-in still gets its face, small, saying
-something or nothing as its Example does. A prompt that sounds like
+failing or passing or a check-in still gets its face, saying something
+or nothing as its Example does. A prompt that sounds like
 something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)

@@ -389,7 +389,7 @@ What the brain reads, in plain Markdown:
   a shrug. Each line is `- [reply tags] words`: its first tag the reply,
   any more the calendar's or the moment's (`working` while an agent
   works, `waiting` while something waits on you, `makeup` within 10
-  minutes of an `ouch`), and the app picks one that fits, those with the
+  minutes of an `ouch` until a `love` makes up), and the app picks one that fits, those with the
   most tags first, at random among them and never the one it showed
   last while another fits; at most 18 characters, none of your words,
   and none goes to the brain. A `status` reply holds up instead the one fact

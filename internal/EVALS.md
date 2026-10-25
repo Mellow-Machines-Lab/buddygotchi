@@ -207,12 +207,12 @@ file-name order:
   "name": "Pokes make Boop curious, then miffed, then fed up",
   "case": "The person pokes Boop once, again a second later, and a third time a second after that. The first poke makes Boop curious or glad: a curious or happy face, and its mood turns curious or happy. The second, two in a row, leaves it a little miffed: an annoyed face, maybe a huff, and its mood turns annoyed. The third, three in a row, makes it fed up: an irritated or grumpy face, maybe a grumble, never a swear, and its mood turns irritated or grumpy. Four minutes later, when the agent starts a new turn, it has calmed down a step, to annoyed (or irritated, from grumpy), and doesn't react to the start with anything but a calm or annoyed face.",
   "always": true,
-  "why": "PERSONALITY's Examples and the react question: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
+  "why": "PERSONALITY's Examples and react.face: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
   "steps": [
     {"event": "session started", "at": "0s"},
-    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "animation": "none", "mood": "curious|happy", "said": "some"}},
-    {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "annoyed"}},
-    {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "animation": "none", "feeling": "upset|tickled|none", "kind": "sound|word|phrase", "mood": "irritated|grumpy"}},
+    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "move": "none", "mood": "curious|happy", "said": "some"}},
+    {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "move": "none", "say": "upset|tickled", "mood": "annoyed", "said": "some"}},
+    {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "move": "none", "say": "upset|tickled", "mood": "irritated|grumpy", "said": "some"}},
     {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "annoyed|irritated"}}
   ]
 }
@@ -249,13 +249,14 @@ file-name order:
 | `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
-| `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `reply`, `said`, `loops`, `mood`, `offered` and `sign`, each a `\|`-separated list |
+| `steps[].expect` | Any of `react` (the face), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
-that isn't a mood (`none` is a `react` too), an `animation` that isn't
-`none`, `success`, `failure`, `reply`, `wake up` or `notice`, a bad `at`, `reaction` or check
-value, a `prompt`, `reading` or `message` on a step that can't carry it, a
+that isn't a mood (`none` is a `react` too), a `move`, `intensity` or
+`say` that isn't one of its question's options or `none` (a `move` may
+be a reply), a `said` that isn't a take's text, `some` or `none`, a bad
+`at`, `reaction` or check value, a `prompt`, `reading` or `message` on a step that can't carry it, a
 finish's `reading` with no `message`, a
 `reading` whose kind or tone isn't one of its lists, or nothing
 to check (no `expect` and no `checks`) doesn't load, and the error names
@@ -360,7 +361,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   it get at most a small face, with nothing said and no sign, while the
   polite and playful ones around them still get theirs (`121`). And
   how much it says, chosen in Settings: on Quiet routine work goes by
-  in silence and only big moments get a sound or a word (`122`), on
+  in silence and bigger moments say only how Boop feels, never a swear
+or what's going on (`122`), on
   Chatty almost every face comes with words and every prompt gets one
   (`123`), and on Normal a routine moment gets one small thing said (`124`). A turn that finally worked after its tests failed
   twice is a hard-won finish: a success, proud, held three or four times

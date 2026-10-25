@@ -137,9 +137,14 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(reply("love", at: 0), "<3")
         XCTAssertEqual(reply("ouch", at: 0), ":(")
         XCTAssertEqual(reply("love", at: 9 * min), "...fine", "making up")
-        XCTAssertEqual(reply("love", at: 10 * min), "<3", "only right after the ouch")
+        XCTAssertEqual(reply("love", at: 9 * min + 1), "<3", "made up once")
         _ = reply("ouch", at: 20 * min)
-        XCTAssertEqual(reply("love", at: 30 * min), "<3", "ten minutes on, it's forgotten")
+        _ = reply("hehe", at: 21 * min)
+        XCTAssertEqual(reply("love", at: 22 * min), "...fine", "a laugh between doesn't make up")
+        _ = reply("ouch", at: 40 * min)
+        XCTAssertEqual(reply("love", at: 40 * min + ReactOutput.makeupMs - 1), "...fine", "just inside ten minutes")
+        _ = reply("ouch", at: 60 * min)
+        XCTAssertEqual(reply("love", at: 60 * min + ReactOutput.makeupMs), "<3", "ten minutes on, it's forgotten")
     }
 
     /// Pins `Signs.reply`: only lines whose first tag is the reply, the
@@ -272,6 +277,18 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(StatusReply.answer([fixing], words: "how long have I been at it?", at: now, stretchSince: now - 80 * min).sign, "at it 1 h 20")
         XCTAssertEqual(StatusReply.answer([fixing], words: "how long have we been working", at: now, stretchSince: now - 25 * min).sign, "at it 25 min")
         XCTAssertEqual(StatusReply.answer([fixing], words: "how long have I been at it?", at: now, stretchSince: now - 20_000).sign, "just started")
+        // Under a minute in, it has just started (`justStartedMs`).
+        XCTAssertEqual(StatusReply.justStartedMs, 60_000)
+        XCTAssertEqual(StatusReply.answer([fixing], words: "how long have I been at it?", at: now,
+                                          stretchSince: now - StatusReply.justStartedMs + 1).sign, "just started")
+        XCTAssertEqual(StatusReply.answer([fixing], words: "how long have I been at it?", at: now,
+                                          stretchSince: now - StatusReply.justStartedMs).sign, "at it 1 min")
+        XCTAssertEqual(StatusReply.answer([fixing], words: "how long've we been coding", at: now, stretchSince: now - 25 * min).sign, "at it 25 min")
+        XCTAssertEqual(StatusReply.answer([fixing], words: "how long has claude been going? I'm curious", at: now, stretchSince: now - 80 * min).sign,
+                       "claude: 4 min in", "you're not its subject")
+        XCTAssertEqual(StatusReply.answer([fixing], words: "how long until we're done?", at: now, stretchSince: now - 80 * min).sign,
+                       "claude: 4 min in", "about the work, not you")
+        XCTAssertEqual(StatusReply.answer([fixing], words: "how's claude doing?", at: now).sign, "claude: 4 min in", "how it's going, not what")
         XCTAssertEqual(StatusReply.answer([fixing], words: "how long has claude been going?", at: now, stretchSince: now - 80 * min).sign,
                        "claude: 4 min in", "about the agent, not you")
         XCTAssertEqual(StatusReply.answer([fixing], words: "how long have I been at it?", at: now).sign, "claude: 4 min in", "no stretch on")

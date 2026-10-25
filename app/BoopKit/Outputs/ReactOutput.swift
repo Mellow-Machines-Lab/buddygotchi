@@ -62,9 +62,9 @@ public final class ReactOutput: Output {
     var takes = SplitMix64(seed: 0x7A4E)
     var lastWords: Set<String> = []
     /// The last reply's sign, which the next reply doesn't hold up again
-    /// while another fits, and the last reply and when it was.
+    /// while another fits, and when the last `ouch` not yet made up was.
     var lastReplySign: String?
-    var lastReply: (name: String, at: Int64)?
+    var ouchAt: Int64?
     /// With a `voice`, a buddy's: its picks are its own, so two buddies
     /// don't say the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
@@ -229,8 +229,8 @@ public final class ReactOutput: Output {
         Option("medium", "A moment that stands out. It holds twice, and says a word.", notFor: "Routine work."),
         Option("big", "A big moment, such as a long turn's hard work done or the top of a streak. It holds three times, and says a phrase.",
                notFor: "Routine work, or a small win or failure."),
-        Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish, or a turn that failed again after failed turns before it. It holds four times, and says a phrase.",
-               notFor: "A check or a command failing mid-turn, however many times, or a single turn short of very long."),
+        Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish (a long turn done after failed checks), or a long turn that failed after failed checks or turns before it. It holds four times, and says a phrase.",
+               notFor: "A check or a command failing mid-turn, however many times, or a turn short of very long with no failure before it."),
     ]
 
     /// What an intensity sets: how many loops the face holds and the kind
@@ -465,21 +465,25 @@ public final class ReactOutput: Output {
         let face = "\(Self.article(choice)) \(choice) face (\(size.name))"
         let did = pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(face)" }
             ?? "\(pack.name) made \(face)" + (reply.map { ", replying \($0)" } ?? "")
-        // The takes' ids in order, for the tools to say what it said.
+        // The takes' ids in order, and the reply as it played, for the
+        // tools to say what it did.
         let held: String = (sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
         let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
-        return .started(did + held + spoke, pending, facts: ["takes": .array(said.map { .string($0.id) })])
+        var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
+        if let reply { facts["reply"] = .string(reply) }
+        return .started(did + held + spoke, pending, facts: facts)
     }
 
     /// What a reply holds up about `said`, what you said, and where the
     /// board shows the rest: for `status` the agents' facts, else the
     /// pack's line for the reply that fits the calendar and the moment
     /// (`working`, `waiting`, and `makeup` within `makeupMs` of an
-    /// `ouch`), and not the last reply's sign while another fits.
+    /// `ouch`, whatever came between, until a `love` makes up), and not
+    /// the last reply's sign while another fits.
     func replySign(_ reply: String, _ said: Event) -> (sign: String?, show: String?) {
-        let makeup = lastReply.map { $0.name == "ouch" && said.at - $0.at < Self.makeupMs } == true
-        lastReply = (reply, said.at)
+        let makeup = ouchAt.map { said.at - $0 < Self.makeupMs } == true
+        if reply == "ouch" { ouchAt = said.at } else if reply == "love" { ouchAt = nil }
         let answer = reply == "status" ? status(said) : nil
         let sign = reply == "status" ? answer?.sign
             : Signs.reply(replies, reply, calendar: calendar(said) + moment(said) + (makeup ? ["makeup"] : []),

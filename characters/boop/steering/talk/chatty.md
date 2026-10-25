@@ -13,7 +13,7 @@ and a sign whatever PERSONALITY's Examples hold up: your own words
 when some are under it, else a caption that fits.
 Examples:
 - NOW: claude finished turn 3 on "api": done, a short turn, 2 tool calls.
-  → happy, success, says done
+  → happy, success, says glad
 - NOW (Boop reacted 1 min ago): You asked claude on "api" about tests, in a sentence.
   → curious, says tests, holding up "tests! tests!"
 - NOW: You asked claude on "api" for something new, in a sentence.

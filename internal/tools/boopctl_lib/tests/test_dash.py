@@ -801,6 +801,9 @@ class ReactionKeysTests(unittest.TestCase):
                             "say": a("none")}, "questions": ["react.face", "react.move", "react.intensity", "say"]}
         self.assertEqual(reaction_text({"pass": talk}), "a happy reaction face (small), replying hello",
                          "to what you said, the move is the reply")
+        shrug = {"answers": {**talk["answers"], "react.move": a("huh")}, "questions": talk["questions"]}
+        self.assertEqual(reaction_text({"pass": shrug, "react": {"reply": "dunno"}}),
+                         "a happy reaction face (small), replying dunno", "the reply as it played, a huh at a question")
 
     def test_older_keys(self) -> None:
         """`react.mood`, `react.animation` or `react.reply`, `react.loops`

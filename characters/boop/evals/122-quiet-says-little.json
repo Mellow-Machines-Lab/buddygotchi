@@ -1,7 +1,7 @@
 {
   "name": "Quiet: routine work goes by in silence, and bigger moments get only a feeling",
-  "case": "The person has set Boop to Quiet. They ask an agent for something new, plainly, and the short turn finishes well: Boop shows it on its face, or not at all, and says nothing either time, holding up no sign. Then they tell the agent, fed up, that it's still broken: Boop takes their side with a face, a sign is fine, but at most a sound or a word. A long turn fails after six minutes of work: Boop plays the failure, at most a sound or a word, never a phrase or a swear. A poke gets a face, again at most a sound or a word.",
-  "why": "talk/quiet.md: its face still shows what stands out, but it's silent where PERSONALITY's Examples say something small, its moments are a size smaller, and it never swears or names what NOW is about; a prompt or a short turn gets a small face in silence or nothing, and a sign only for a prompt that sounds like something",
+  "case": "The person has set Boop to Quiet. They ask an agent for something new, plainly, and the short turn finishes well: Boop shows it on its face, or not at all, and says nothing either time, holding up no sign. Then they tell the agent, fed up, that it's still broken: Boop takes their side with a face, a sign is fine, and says how it feels or nothing. A long turn fails after six minutes of work: Boop plays the failure, as big as it is, and says how it feels or nothing, never a swear or what the turn was about. A poke gets a face, and again how it feels or nothing.",
+  "why": "talk/quiet.md: its face still shows what stands out, but it's silent where PERSONALITY's Examples say something small, its moments keep their size, and it never swears or names what NOW is about; a prompt or a short turn gets a small face in silence or nothing, and a sign only for a prompt that sounds like something",
   "talk": "quiet",
   "checks": {"words_said": "-0.6"},
   "steps": [

@@ -94,16 +94,25 @@ public enum StatusReply {
         .deploy: "shipping", .docs: "docs", .question: "a question", .carryOn: "carrying on",
     ]
 
-    /// Whether `said` asks what the work is: "doing", "working on", "up to".
+    /// Whether `said` asks what the work is: "doing", "working on", "up to",
+    /// but not "how's it doing?", which asks how it's going.
     static func asksDoing(_ said: [String]) -> Bool {
-        said.contains("doing") || zip(said, said.dropFirst()).contains { $0 == ("working", "on") || $0 == ("up", "to") }
+        (said.contains("doing") && !said.contains("how"))
+            || zip(said, said.dropFirst()).contains { $0 == ("working", "on") || $0 == ("up", "to") }
     }
 
-    /// Whether `said` asks how long you've been at it: "how long" with
-    /// "I" or "we".
+    /// Whether `said` asks how long you've been at it: "how long" with you
+    /// its subject ("have I", "we've been"), not "how long until we're
+    /// done?" or an "I'm curious" beside a question about an agent.
     static func asksStretch(_ said: [String]) -> Bool {
-        zip(said, said.dropFirst()).contains { $0 == ("how", "long") } && (said.contains("i") || said.contains("we"))
+        let pairs = Array(zip(said, said.dropFirst()))
+        let you: Set<String> = ["i", "we"], by: Set<String> = ["have", "am", "are"], after: Set<String> = ["been", "ve"]
+        return pairs.contains { $0 == ("how", "long") }
+            && pairs.contains { (by.contains($0.0) && you.contains($0.1)) || (you.contains($0.0) && after.contains($0.1)) }
     }
+
+    /// Under this long into the working stretch, it has just started.
+    public static let justStartedMs: Int64 = 60_000
 
     /// `ms` as a sign says it: `25 min`, `1 h 20`, `2 h`.
     static func duration(_ ms: Int64) -> String {
@@ -121,8 +130,8 @@ public enum StatusReply {
         let said = tokens(words)
         let named = agents.filter { said.contains($0) }
         let asked = sessions.filter { s in named.contains(s.agent) || s.places.contains { mentions(said, $0) } }
-        if asksStretch(said), let since = stretchSince, !sessions.contains(where: \.needsYou) {
-            return Answer(sign: now - since < 60_000 ? "just started" : "at it \(duration(now - since))")
+        if named.isEmpty, asked.isEmpty, asksStretch(said), let since = stretchSince, !sessions.contains(where: \.needsYou) {
+            return Answer(sign: now - since < justStartedMs ? "just started" : "at it \(duration(now - since))")
         }
         if named.isEmpty, asked.isEmpty, sessions.count > 1 { return Answer(sign: count(sessions), show: drawer) }
         return Answer(sign: sign(asked.isEmpty ? sessions : asked, said: said, named: named, asked: !asked.isEmpty, at: now))

@@ -62,8 +62,9 @@ didn't ([talk-back.md](talk-back.md), Part two).
 - [x] **`status`**: what an agent is doing, and how long you've been at
       it.
 - [ ] Quiet: with `say` one question, TALK's text doesn't keep a quiet
-      Boop from naming what NOW is about (eval `122`). Taking topics and
-      the swear out of `say` on Quiet, in code, is the owner's call.
+      Boop from naming what NOW is about (eval `122`). The owner chose a
+      hush in code for it: speech held back for a set time, shown in the
+      app with a countdown, built in a thread of its own.
 - [ ] On the real AMOLED: the new clips, and the nap and dance on
       request.
 

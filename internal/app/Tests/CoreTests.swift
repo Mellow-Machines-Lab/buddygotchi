@@ -1700,8 +1700,10 @@ final class CoreYouAndBoopTests: XCTestCase {
         send(.needsYou, tool: "Bash")
         rig.wait(60_000)
         XCTAssertNotNil(rig.state.attn)
+        let active = rig.view.fold.lastActivityAt
         world.running = false
         let fx = rig.wait(SessionTracker.liveCheckMs)
+        XCTAssertEqual(rig.view.fold.lastActivityAt, active, "nobody did anything: the idle check-ins keep their count")
         let records = fx.effects.compactMap { effect -> Event? in if case .record(let e) = effect { e } else { nil } }
         let end = records.first { $0.specificType == Core.sessionGone }
         XCTAssertEqual(end?.type, .session)

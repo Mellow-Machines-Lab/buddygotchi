@@ -212,7 +212,12 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(sorry.tone, .apologetic)
         XCTAssertEqual(sorry.phrases, ["I apologize"])
         XCTAssertEqual(read("Sorry, my last change broke the build. It compiles again.").tone, .apologetic)
+        XCTAssertEqual(read("Sorry, my last change broke the build. It compiles again.").phrases, ["Sorry"], "the cue, with no mark")
         XCTAssertEqual(read("My apologies: the import is fixed now.").tone, .apologetic)
+        for said in ["Sorry I missed that, it's in now.", "Sorry \u{2014} I broke the build; it compiles again.",
+                     "Apologies, the build was mine. Fixed.", "I\u{2019}m sorry, that was my change.", "I apologise for the noise."] {
+            XCTAssertEqual(read(said).tone, .apologetic, said)
+        }
         let mentioned = read("Still open: apologies don't soften a grumpy Boop, and the sorry state of eval 38.")
         XCTAssertNil(mentioned.tone, "a message that only mentions apologies isn't one")
         XCTAssertNil(mentioned.kind, "a list of what's open claims nothing")

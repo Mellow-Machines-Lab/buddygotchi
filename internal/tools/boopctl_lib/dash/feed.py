@@ -567,13 +567,14 @@ def picks_text(p: Line) -> str:
 def reaction_text(row: Line, takes: list[str] | None = None) -> str:
     """A playing reaction as HISTORY says it: `a proud reaction face (big),
     “Done”`, `a success in a proud face (big), …` or `a glad reaction face
-    (small), replying hello`, saying what its takes said."""
+    (small), replying hello`, saying what its takes said, and the reply as
+    it played (a `huh` at a question is a `dunno`) when the app says."""
     p = row["pass"]
     size = choice(p, INTENSITY)
     face, _, anim = (choice(p, FACE) or "?").partition("-")
     picked = move(p)
     anim = (picked if picked in MOVES else None) or anim
-    reply = picked if picked and picked not in MOVES else None
+    reply = (row.get("react") or {}).get("reply") or (picked if picked and picked not in MOVES else None)
     what = (f"a {anim} in " if anim else "") + f"{'an' if face[0] in 'aeiou' else 'a'} {face}"
     what += " face" if anim else " reaction face"
     words = said(takes)

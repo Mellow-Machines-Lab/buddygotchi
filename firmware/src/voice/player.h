@@ -13,7 +13,7 @@ namespace voice {
 constexpr uint32_t kOutRate = 22050;
 constexpr uint32_t kRate = 11025;      // the takes' (voicegen's RATE)
 constexpr uint32_t kMouthMs = 20;      // the mouth's resolution (voicegen's MOUTH_MS)
-constexpr uint32_t kJoinGapMs = 180;   // between a `say`'s two takes (the Mac's Voice.joinGapMs)
+constexpr uint32_t kJoinGapMs = 180;   // between a `say`'s two takes
 constexpr uint32_t kGapSamples = kRate * kJoinGapMs / 1000;
 constexpr int kIdMax = 72;             // voicegen's ID_BYTES and TEXT_BYTES, with the NUL
 constexpr int kTextMax = 36;

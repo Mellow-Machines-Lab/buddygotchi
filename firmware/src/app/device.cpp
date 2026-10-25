@@ -305,7 +305,10 @@ void Device::onDo(const Do& c, uint32_t t) {
   // window. Any other reaction drops one still waiting.
   const bool say = b_.play(mo, t);
   if (!say) live_.saidSeq = b_.reactionSeq();
-  if (mo.showDrawer && b_.face().hasDrawer()) live_.showDrawer = true, live_.showDrawerAt = t + kShowDrawerMs;
+  // The drawer a reaction asks for waits for its sign; any later one,
+  // listening included, takes its place.
+  live_.showDrawer = mo.showDrawer && b_.face().hasDrawer();
+  if (live_.showDrawer) live_.showDrawerAt = t + kShowDrawerMs;
   if (!startSay(t) && b_.reactionSeq() != seq) hush();  // a new reaction replaces the `say`
   dirty_ = true;
   live_.restKey = 0;

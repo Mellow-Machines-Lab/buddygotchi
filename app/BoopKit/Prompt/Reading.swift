@@ -26,8 +26,9 @@ extension ReadingText {
     public static func kind(counting text: CountedText) -> Kind? { nil }
 }
 
-/// A text as counting reads it: lowercased and split into words once,
-/// for every cue it's looked for.
+/// A text as counting reads it: lowercased, its curly apostrophes made
+/// straight as the cues write them, and split into words once, for every
+/// cue it's looked for.
 public struct CountedText: Sendable {
     public let text: String
     let lower: String
@@ -37,7 +38,7 @@ public struct CountedText: Sendable {
 
     init(_ text: String) {
         self.text = text
-        lower = text.lowercased()
+        lower = text.lowercased().replacingOccurrences(of: "\u{2019}", with: "'")
         sequence = CountedText.words(lower)
         words = Set(sequence)
     }
@@ -183,8 +184,8 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
     /// What needs no model: the length, which of `names` `text` says as a
     /// word, in any case, the kind `Of` counts, and the tone its words
     /// show (`toneCues`; capitals are shouting, for a text that has it),
-    /// with the cue itself as a phrase, as it's spelled, if a sign can
-    /// draw it.
+    /// with the cue itself as a phrase, as it's spelled and with no mark at
+    /// either end ("Sorry" for "sorry,"), if a sign can draw it.
     public init(counting text: String, names: [String] = []) {
         let counted = CountedText(text)
         let shouting = Of.shouting.flatMap { shouted in
@@ -192,7 +193,8 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
             return letters.count >= Self.shoutingLetters && letters.filter(\.isUppercase).count * 4 >= letters.count * 3 ? shouted : nil
         }
         let cue = shouting == nil ? counted.first(of: Of.toneCues) : nil
-        let said = cue.flatMap { text.range(of: $0.1, options: .caseInsensitive) }.flatMap { Signs.drawn(String(text[$0])) }
+        let said = cue.flatMap { text.range(of: $0.1, options: .caseInsensitive) }
+            .map { String(text[$0]).trimmingCharacters(in: .whitespaces.union(.punctuationCharacters)) }.flatMap(Signs.drawn)
         self.init(length: Length(text), named: names.filter(counted.says),
                   kind: Of.kind(counting: counted), tone: shouting ?? cue?.0, phrases: said.map { [$0] } ?? [])
     }

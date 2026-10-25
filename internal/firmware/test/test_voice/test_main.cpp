@@ -109,7 +109,7 @@ void test_a_say_of_two_takes() {
   voice::Say l = say("previous.tsk", 10, "phase1.word.test.test__annoyed__contained");
   TEST_ASSERT_TRUE(l.then >= 0);
   TEST_ASSERT_EQUAL_UINT32(2 * (l.a.len + voice::kGapSamples + l.b.len), voice::saySamples(l));
-  TEST_ASSERT_EQUAL_UINT32(1377 + 180 + 868, voice::sayMs(l.take, l.then));  // as the Mac times a pair (Voice.joinGapMs)
+  TEST_ASSERT_EQUAL_UINT32(1377 + 180 + 868, voice::sayMs(l.take, l.then));  // a pair, its gap between
   voice::Player p;
   p.start(l);
   std::vector<uint8_t> out = renderAll(p);

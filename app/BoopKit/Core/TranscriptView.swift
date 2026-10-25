@@ -436,8 +436,9 @@ public final class TranscriptView {
         // A hook that landed after its session ended, or a stale idle
         // notice, doesn't count.
         guard let change = fold.sessions.handle(a) else { return nil }
-        // An agent gone stops its turn, but nobody did anything.
-        let gone = a.hook == Core.agentGone
+        // An agent gone stops its turn, and a session gone ends it, but
+        // nobody did anything.
+        let gone = a.hook == Core.agentGone || a.hook == Core.sessionGone
         if !gone { noteActivity(now) }
         guard let s = fold.sessions.sessions[key] else {
             fold.counts[key] = nil

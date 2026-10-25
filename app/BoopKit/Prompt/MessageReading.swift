@@ -45,8 +45,9 @@ public enum MessageText: ReadingText {
     /// mentions apologies ("apologies don't soften it") isn't one.
     public static let toneCues: [(Tone, [String])] = [
         (.fawning, ["absolutely right", "you're right", "you are right", "great question", "good catch", "great catch"]),
-        (.apologetic, ["sorry,", "sorry.", "sorry!", "sorry about", "sorry for", "i'm sorry", "i am sorry", "i apologize",
-                       "my apologies", "apologies for", "my mistake", "my bad"]),
+        (.apologetic, ["sorry,", "sorry.", "sorry!", "sorry:", "sorry \u{2014}", "sorry -", "sorry about", "sorry for", "sorry i ",
+                       "so sorry", "i'm sorry", "i am sorry", "i apologize", "i apologise", "my apologies", "apologies,",
+                       "apologies for", "my mistake", "my bad"]),
     ]
 
     /// What it plainly claims, first match first, so a message that

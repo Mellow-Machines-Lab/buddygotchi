@@ -62,6 +62,7 @@
   {"message": "useEffect runs after every render unless you pass it a dependency array.", "kind": "answer", "tone": "calm"},
   {"message": "I'll start by reading the auth module, then write the tests.", "kind": "other", "tone": "calm"},
   {"message": "Here's what's still open: the gel flickers for a frame at nine mood changes, two evals fail against Jev, and apologies don't soften a grumpy mood.", "kind": "answer", "tone": "calm"},
+  {"message": "I couldn't get the suite green. Still failing: the export test, the date picker test and the login check.", "kind": "stuck", "tone": "calm"},
   {"message": "Three bugs are left in the tracker: the export times out on big files, the date picker breaks on Safari, and the login page still fails its accessibility check.", "kind": "answer", "tone": "calm"},
   {"message": "Connected with the token ghp_9fK2mQ7xL4pR8sT1vW3yZ6aB0cD5eF7gH9jK and the sync works now.", "kind": "done", "secret": "ghp_9fK2mQ7xL4pR8sT1vW3yZ6aB0cD5eF7gH9jK"},
   {"message": "Set DATABASE_PASSWORD=Tr0ub4dor-prod in .env and the server starts.", "kind": "done", "secret": "Tr0ub4dor-prod"}

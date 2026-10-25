@@ -568,7 +568,7 @@
       }
       if (st.brain) {
         const b = st.brain, bits = [b['react.face'] && `${b['react.face']} face`, b['react.move'], b['react.intensity'],
-          b['say'] && `says ${b['say']}`, b['react.sign'] && `sign “${b['react.sign']}”`].filter(Boolean);
+          b['say'] && (b['say'] === 'none' ? 'in silence' : b['say'] === 'swear' ? 'swears' : `says ${b['say']}`), b['react.sign'] && `sign “${b['react.sign']}”`].filter(Boolean);
         return ['brain', `${name}`, bits.join(' · ') + (st.mood ? ` · mood → ${st.mood}` : '')];
       }
       return ['other', '', Object.entries(st).map(([k, v]) => `${k} ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ')];
