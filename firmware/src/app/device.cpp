@@ -256,6 +256,8 @@ ReactionIn Device::parse(const Do& c) {
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
   // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
   render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
+  // What a face it brings replies to what you said, by name.
+  if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
   return mo;
 }
 

@@ -9,7 +9,7 @@
 {"agent": "run", "cmd": "vercel deploy", "about": "Deploy", "ask": 7, "fails": true, "after": 6, "takes": 5}
 {"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "sound"}}
 {"you": "talk", "text": "how's it going?", "after": 7}
-{"brain": {"react.mood": "determined", "say.about": "work", "say.kind": "phrase"}, "after": 0.7}
+{"brain": {"react.mood": "determined", "react.reply": "status", "say.kind": "phrase"}, "after": 0.7}
 {"agent": "run", "cmd": "vercel deploy", "about": "Deploy again", "after": 8, "takes": 5}
 {"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}}
 {"agent": "reply", "text": "Shortcuts are in, and the deploy went through.", "after": 7}

@@ -133,7 +133,14 @@ extension Runtime {
                 // The finished turn's length, from its line's facts.
                 guard let h, let now, case .int(let ms)? = h.line(now.seq)?.facts["length_ms"] else { return nil }
                 return ms
-            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.calendar(at: $0.at) })
+            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.calendar(at: $0.at) },
+            replies: m.steering.replies, status: { [weak h] said in
+                // What this buddy's agents are up to as you ask, and how
+                // each one's latest check or turn came out.
+                guard let h, let words = said["words"]?.string else { return nil }
+                let now = h.clock.now()
+                return StatusReply.sign(core.status(at: now, results: view.results(h.log.view(now: now))), words: words, at: now)
+            })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             if let write = m.diary, !m.steering.diary.isEmpty {

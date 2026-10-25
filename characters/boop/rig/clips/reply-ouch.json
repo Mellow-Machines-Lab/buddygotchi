@@ -1,0 +1,10 @@
+{
+  "about": "A reply to what you said, ouch: a flinch, shrinking back with its eyes squeezed shut, then slowly recovering.",
+  "ms": 1200,
+  "tracks": {
+    "squash": [[0, 0], [80, 260, "out"], [500, 220], [900, 0], [1200, 0]],
+    "lean": [[0, 0], [80, -220, "out"], [500, -200], [900, 0], [1200, 0]],
+    "lift": [[0, 0], [80, -6], [500, -6], [900, 0], [1200, 0]],
+    "eyeOpen": [[0, 0], [80, -850], [400, -850], [700, -300], [900, 0], [1200, 0]]
+  }
+}

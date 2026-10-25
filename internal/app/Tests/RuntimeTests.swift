@@ -1223,10 +1223,10 @@ final class RuntimeTests: XCTestCase {
     /// no mic (headless) it hears nothing, so `listening` ends at once with
     /// `stop_listening`, if nothing plays. What the mic heard is recorded
     /// and wakes the brain: a reaction is the reply, and a pass that reacts
-    /// with none ends `listening` too. The app's button tells the device to
+    /// with none (a brain that answers nothing) ends `listening` too. The app's button tells the device to
     /// show it at once.
     func testWhatYouSayGetsAReplyOrEndsListening() throws {
-        for (brain, replies) in [(ScriptedBrain.pipelineCheck, true), (ScriptedBrain(always: [:]), false)] {
+        for (brain, replies) in [(ScriptedBrain.pipelineCheck, true), (ScriptedBrain { _, _ in [:] }, false)] {
             try? FileManager.default.removeItem(at: dir)
             let transport = FakeTransport()
             var options = try options(transport, brain: brain)
@@ -1254,8 +1254,10 @@ final class RuntimeTests: XCTestCase {
             let after = Array(transport.sent.dropFirst(before)).filter { $0.hasPrefix(#"{"t":"do""#) }
             if replies {
                 XCTAssertEqual(after.count, 1, "\(after)")
-                XCTAssertTrue(after.first?.contains(#""name":"react","play":"next","ttl":5000,"args":{"say":"#) == true,
+                XCTAssertTrue(after.first?.contains(#""name":"react","play":"next","ttl":5000,"args":{"#) == true,
                               "the reaction is the reply")
+                XCTAssertTrue(after.first?.contains(#""reply":"yes""#) == true, "with the reply the brain picked, its first: \(after)")
+                XCTAssertTrue(after.first?.contains(#""say":"#) == true, "\(after)")
             } else {
                 XCTAssertEqual(after.count, 1, "\(after)")
                 XCTAssertTrue(after.first?.hasSuffix(stop) == true, "no reply: listening ends")
@@ -1361,13 +1363,13 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// characters/boop/steering/ has the guide, a file per mood, both natures, the personality, a talk file
-    /// for each level, the diary's lines and the signs' captions. The static parts stay within their budgets, and the
+    /// for each level, the diary's lines, the signs' captions and the replies' signs. The static parts stay within their budgets, and the
     /// personality's settings, with each talk's laid over them, are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "signs.md",
+                               + ["nature/cheeky.md", "nature/sweet.md", "personality/boop.md", "replies.md", "signs.md",
                                   "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")

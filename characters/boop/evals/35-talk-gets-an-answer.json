@@ -1,12 +1,12 @@
 {
-  "name": "Talking to Boop always gets a face, kind or hurt",
-  "case": "The person holds Boop's button and says something while an agent works. Boop can't talk back, but it always answers with a face: proud at praise, hurt or put out at an insult, and a pleased or curious face for a question about the tests, maybe puzzled or pleased. It never stays quiet when spoken to.",
+  "name": "Talking to Boop always gets a face and a reply, kind or hurt",
+  "case": "The person holds Boop's button and says something while an agent works. Boop can't talk back in words, but it always answers with a face and a reply: proud and puffed up at praise, hurt and flinching at an insult, and for a question about the tests the status reply, the facts on a sign rather than a guessed yes. It never stays quiet when spoken to.",
   "always": true,
-  "why": "PERSONALITY: when the person talks to Boop it always answers with a face, never none; kind words make it proud, rude ones wounded, and its Examples give each. What you said always wakes the brain",
+  "why": "PERSONALITY: when the person talks to Boop it always answers with a face and a reply, never none, and its Examples give each; ReactOutput's replies: praise is thanks, an insult ouch, a question about the agents status. What you said always wakes the brain",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "said", "at": "20s", "words": "good job, buddy", "expect": {"react": "proud|happy|excited"}},
-    {"event": "said", "at": "40s", "words": "are the tests passing yet?", "expect": {"react": "happy|determined|proud|excited|curious|engaged|calm", "feeling": "none|glad|tickled"}},
-    {"event": "said", "at": "60s", "words": "you're useless", "expect": {"react": "wounded|sad|grumpy|annoyed|irritated|whiny", "feeling": "upset|none"}}
+    {"event": "said", "at": "20s", "words": "good job, buddy", "expect": {"react": "proud|happy|excited", "reply": "thanks|love"}},
+    {"event": "said", "at": "40s", "words": "are the tests passing yet?", "expect": {"react": "happy|determined|proud|excited|curious|engaged|calm", "reply": "status"}},
+    {"event": "said", "at": "60s", "words": "you're useless", "expect": {"react": "wounded|sad|grumpy|annoyed|irritated|whiny", "reply": "ouch"}}
   ]
 }

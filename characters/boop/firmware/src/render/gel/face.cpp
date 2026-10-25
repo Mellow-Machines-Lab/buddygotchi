@@ -45,6 +45,7 @@ void GelFace::reset(uint32_t t, linkkit::Rng&) {
   pace_ = 100;
   lastBig_ = Finish::kLittle;
   source_ = {};
+  replyAt_ = 0, replied_ = false;
   finger_ = false;  // the new engine has no drag: a finger still down grabs it afresh
   pendingCount_ = 0;
   revision_ = cueRevision_ = 0;
@@ -430,6 +431,14 @@ void GelFace::sync(const FaceSource& source, const FaceContext& context, uint32_
     restartCues();
   }
   e.holdExpression(borrowed);
+  // A reply to what you said: its clip over the face it came with, once,
+  // as that face starts. A pack with none for it plays the face alone.
+  if (context.reply[0] && !(replied_ && context.replyAt == replyAt_)) {
+    replied_ = true, replyAt_ = context.replyAt;
+    char clip[24];
+    std::snprintf(clip, sizeof(clip), "reply-%s", context.reply);
+    if (const rig::Clip* c = rig::kRig.clip(clip)) play(*c);
+  }
   if (source.state() != source_.state()) {
     lookAt_ = t;
     restartCues();

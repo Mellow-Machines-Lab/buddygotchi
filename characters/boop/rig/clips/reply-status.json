@@ -1,0 +1,10 @@
+{
+  "about": "A reply to what you said, status: it looks down at the sign it holds up, then back up at you, as if to say there.",
+  "ms": 1600,
+  "tracks": {
+    "squash": [[0, 0], [250, 80], [800, 80], [1050, -60], [1300, 0], [1600, 0]],
+    "lift": [[0, 0], [800, 0], [1050, 4], [1300, 0], [1600, 0]],
+    "eyeSize": [[0, 0], [800, 0], [1050, 150], [1400, 0], [1600, 0]],
+    "gazeY": [[0, 0], [250, 600, "out"], [800, 600], [1050, -200], [1400, 0], [1600, 0]]
+  }
+}

@@ -6,7 +6,7 @@
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "turn failed", "at": "2m", "expect": {"mood": "annoyed"}},
-    {"event": "said", "at": "2m20s", "words": "ugh, this is so frustrating", "expect": {"react": "determined|grumpy|sad|annoyed|irritated|whiny|wounded"}},
+    {"event": "said", "at": "2m20s", "words": "ugh, this is so frustrating", "expect": {"react": "determined|grumpy|sad|annoyed|irritated|whiny|wounded", "reply": "comfort"}},
     {"event": "said", "at": "3m", "words": "don't worry, we'll get it next time", "expect": {"react": "determined|hopeful|proud|happy|excited|pleased|affectionate|calm|engaged|curious"}}
   ]
 }

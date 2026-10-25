@@ -124,6 +124,10 @@ class GelFace final : public Face {
   rig::Ramp mug_, headphones_, sweatband_, camp_, plant_;
   uint32_t campSince_ = 0;
   int grown_ = 1;
+  // The reply whose clip it played last (FaceContext::reply), by when it
+  // started, so each plays once.
+  uint32_t replyAt_ = 0;
+  bool replied_ = false;
   // The clip it last played, whose cues sound as it crosses them, and how
   // far into it it is.
   const rig::Clip* cueing_ = nullptr;

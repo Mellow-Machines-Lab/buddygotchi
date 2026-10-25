@@ -83,6 +83,10 @@ public struct DeviceReaction: Equatable, Sendable {
     /// What the buddy holds up on a sign while it plays (`Signs`); nil
     /// for none.
     public var sign: String?
+    /// With a brain reaction to what you said, its reply
+    /// (`ReactOutput.Reply`): the board plays its pack's clip for it
+    /// over the face. Nil sends none.
+    public var reply: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
@@ -129,6 +133,7 @@ public struct DeviceReaction: Equatable, Sendable {
         if let variant { args["variant"] = .int(variant) }
         if let ctx { args["ctx"] = .string(ctx) }
         if let sign { args["sign"] = .string(sign) }
+        if let reply { args["reply"] = .string(reply) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }
         if let mood { args["mood"] = .string(mood) }

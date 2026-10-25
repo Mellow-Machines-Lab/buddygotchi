@@ -78,10 +78,11 @@ a scenario holds wherever more than one answer is right:
 | --- | --- |
 | `react` | Jev's pick for the `react.mood` question: `none` or a mood's face |
 | `animation` | The animation the reaction played, Jev's `react.animation` pick (a finish, `success`, `failure` or `reply`, `wake up`, or `notice`, when your prompt says its name), or `none` when it played none or Boop didn't react |
-| `sign` | The sign the reaction held up, Jev's `react.sign` pick (asked only for a prompt's reading, from the pack's `signs.md`): `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
+| `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, the reply's, from the pack's `replies.md` or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `feeling` | How Boop felt, `say.feeling`'s pick when it reached the floor, or `none` |
 | `about` | What NOW was about, `say.about`'s pick when it reached the floor, or `none` |
 | `kind` | How it asked to say it, `say.kind`'s pick (`sound` when missing), or `none` when it picked saying nothing, the face in silence, or `react` didn't react |
+| `reply` | What it replied to what you said, Jev's `react.reply` pick (`huh` below the floor), or `none` when it didn't react; a pass about anything else has none |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `loops` | How long the face held, Jev's `react.loops` pick (`once` to `four times`), or `none` when `react` didn't react |
 | `mood` | Boop's mood after the pass |
@@ -253,7 +254,7 @@ file-name order:
 | `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
-| `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `said`, `loops`, `mood` and `offered`, each a `\|`-separated list |
+| `steps[].expect` | Any of `react`, `animation`, `feeling`, `about`, `kind`, `reply`, `said`, `loops`, `mood`, `offered` and `sign`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
@@ -272,7 +273,7 @@ lives there: `boopdev eval --list` prints them all. They come in three
 kinds, all with the `boop` personality unless the file says otherwise:
 
 - **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`): Boop's character. It never swears
+  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -284,7 +285,10 @@ kinds, all with the `boop` personality unless the file says otherwise:
   matter-of-fact finishes and a streak of quick wins leave the mood
   alone, whatever faces they get (`28`);
   no face ever contradicts what happened; talked to, it always answers
-  with a face, even while it's still making one (`35`–`40`); each
+  with a face and a reply, even while it's still making one (`35`–`40`),
+  and asked about the agents it holds up what they're really doing, how
+  long, a check's result, done, or all quiet, never a guessed yes or no
+  (`127`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
   (`41`–`43`); and its mood only moves along
@@ -293,7 +297,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   `64`; a shorter break never reaches it).
 - **Tuning** (`01`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`, `51`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
@@ -364,7 +368,11 @@ kinds, all with the `boop` personality unless the file says otherwise:
   (`123`), and on Normal a routine moment gets a feeling, not a feeling
   and a topic (`124`). A turn that finally worked after its tests failed
   twice is a hard-won finish: a success, proud, held three or four times
-  (`125`), which the gel plays big.
+  (`125`), which the gel plays big. And what you say gets the reply that
+  answers what you meant: a hello, yes to a question about Boop itself,
+  thanks at praise, love, ouch at an insult, comfort at bad news or
+  tiredness, hehe at a joke, dunno at what it can't know, huh at
+  nonsense, bye, and status for a question about the agents (`126`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,

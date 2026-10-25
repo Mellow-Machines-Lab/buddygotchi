@@ -156,6 +156,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     nature/sweet.md, cheeky.md
     talk/quiet.md, normal.md, chatty.md
     mood/<mood>.md
+    diary.md, signs.md, replies.md   optional: the diary's lines and the signs
   mac/               what the app reads at run time (§9)
     faces.json       the popover's face designs
     mirror/          optional: the board's firmware in a web page, the
@@ -385,6 +386,23 @@ What the brain reads, in plain Markdown:
   accents precomposed), and one with anything the fonts lack, such as
   Chinese or an emoji, is dropped. The board draws the one picked on a
   sign (the `do`'s `sign`). A pack without the file holds up no signs.
+- `replies.md` (optional): what the creature holds up replying to what
+  you said on push-to-talk (`Signs.reply`). The brain picks a reply (the
+  `react.reply` question, asked only of what you said, in place of the
+  feeling, the topic and the animation): yes, no, dunno, huh, hello, bye,
+  thanks, love, ouch, comfort, hehe or status (`ReactOutput.replies`).
+  Each line is `- [reply tags] words`: its first tag the reply, any more
+  the calendar's, and the app picks one that fits, those with the most
+  tags first, at random among them and never the one it showed last
+  while another fits; at most 18 characters, none of your words, and
+  none goes to the brain. A `status` reply holds up instead the one fact
+  about the agents that answers what you said (`StatusReply`): something
+  waiting on you, the work going on (the latest check of its turn, else
+  its to-do list, else how long), how the last of it came out within 10
+  minutes, else all quiet, counting only the agents or places you named.
+  Whatever the reply, the board plays its clip (§15) and Voice says the
+  feeling or topic it borrows, since no take is recorded for a reply. A
+  pack without the file holds up nothing for a reply but the facts.
 
 Each file has a budget in tokens, the same for every pack
 (`Steering.Budget`, in `app/BoopKit/Harness/Steering.swift`). The app
@@ -650,6 +668,11 @@ Besides drawing each mood and state, a face:
   ticket naming the thread hangs from the top
   (characters/boop/design/slime-blob/CONTINUITY.md, A finished turn);
   Pixel marks it in the strip alone.
+- **Answers what you said.** A reaction with a face may carry its reply
+  to what you said (`reply`, the `do`'s args): a face that can plays a
+  move for it, once, as the face starts. The gel plays the pack's rig
+  clip for the reply (§15, `reply-<name>`), over the face and its sign;
+  Pixel plays the face alone.
 - **Makes its own sounds.** A bank of clips (`clips`) and when each plays
   (`cues`). The engine mixes them under the voice.
 - **May ask harder the longer you wait.** Needs you is drawn on the
@@ -891,8 +914,11 @@ Pixel's rig has expressions for its 13 drawn moods, each wearing its own
 mood's eyes and mouth, the looks idle, working and asleep, a blink, and
 working's stretch from `tier4`. Boop's is the same, since Boop wears
 Pixel's face on the CYD, with its notice besides, which the gel plays
-(§16's reference became it), and the gel's pastimes' clips (below, The
-gel on the rig).
+(§16's reference became it), the clips for its replies to what you said,
+which the gel plays over the face (`reply-yes` … `reply-status`: a nod, a
+shake of the head, a shrug, a head tilt and so on, one for each of
+`ReactOutput.replies`), and the gel's pastimes' clips (below, The gel on
+the rig).
 
 **Channels.** The body's `squash`, `lean` and `lift`; the eyes'
 `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's

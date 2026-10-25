@@ -1276,6 +1276,68 @@ static void test_each_gesture_plays_its_own_gag() {
   TEST_ASSERT_TRUE(most(Gesture::kStartle, 40, [](const Shot& s) { return s.life[0]; }) > q(.1));
   TEST_ASSERT_TRUE(at(Gesture::kPeekaboo, .4).squash < q(-.12) && at(Gesture::kPeekaboo, 1.1).life[0] > q(.08));
 }
+// A reply to what you said (FaceContext::reply, the Mac's `reply`) plays
+// its pack's clip, reply-<name>, over the face it came with, once, as that
+// face starts: each of the twelve replies has one; a shake of the head
+// swings the body side to side; the same reply still showing doesn't play
+// it again, the next one does; and a reply with no clip plays nothing.
+static void test_a_reply_plays_its_clip_once() {
+  const char* replies[] = {"yes",    "no",   "dunno", "huh",  "hello",   "bye",
+                           "thanks", "love", "ouch",  "hehe", "comfort", "status"};
+  char name[24];
+  for (const char* r : replies) {
+    std::snprintf(name, sizeof(name), "reply-%s", r);
+    TEST_ASSERT_NOT_NULL_MESSAGE(rig::kRig.clip(name), name);
+  }
+  linkkit::Rng rng;
+  GelFace face;
+  face.reset(0, rng);
+  FaceSource s;
+  FaceContext c;
+  c.mood = s.mood = Mood::kCalm;
+  face.sync(s, c, 0);
+  // The most the body leans while `ms` go by from `from`.
+  auto lean = [&](uint32_t from, uint32_t ms) {
+    int most = 0;
+    for (uint32_t t = from; t < from + ms; t += 16) {
+      face.sync(s, c, t + 16);
+      face.step(t + 16, rng);
+      most = std::max(most, std::abs(int(face.mixer().channels()[rig::Channel::kLean])));
+    }
+    return most;
+  };
+  const int still = lean(0, 1000);
+  c.borrowed = true, c.reply = "no", c.replyAt = 1000;
+  TEST_ASSERT_TRUE(lean(1000, 1300) > still + 80);
+  TEST_ASSERT_TRUE(lean(2300, 1300) <= still + 10);  // still showing: once
+  c.replyAt = 3600;
+  TEST_ASSERT_TRUE(lean(3600, 1300) > still + 80);
+  c.reply = "dance", c.replyAt = 5000;
+  TEST_ASSERT_TRUE(lean(5000, 1300) <= still + 10);
+
+  // The reaction it rides on, as the device plays a `do`: the reply goes
+  // with its face, and only a face carries one.
+  app::Behaviour b(std::make_unique<GelFace>());
+  b.reset(0, rng);
+  app::Model m;
+  m.base = SceneState::kIdle, m.mood = Mood::kCalm;
+  b.onState(m, 0);
+  auto leaned = [&](uint32_t from, uint32_t ms) {
+    int most = 0;
+    for (uint32_t t = from; t < from + ms; t += 16) {
+      b.advance(t + 16, rng);
+      most = std::max(most, std::abs(int(static_cast<GelFace&>(b.face()).mixer().channels()[rig::Channel::kLean])));
+    }
+    return most;
+  };
+  const int resting = leaned(0, 1000);
+  app::ReactionIn in;
+  in.expr = true, in.mood = Mood::kHappy, in.said = true;
+  std::snprintf(in.reply, sizeof(in.reply), "%s", "no");
+  b.play(in, 1008);
+  TEST_ASSERT_TRUE(leaned(1008, 1300) > resting + 80);
+}
+
 // The notice state's three takes play the pack's rig clip for it
 // (rig/clips/notice.json) on the face's mixer, each under a face it
 // borrows (kNoticeFaces), dealt by its bag; its scene is the start
@@ -2819,6 +2881,7 @@ int main() {
   RUN_TEST(test_comedy_plays_in_idle_and_asleep);
   RUN_TEST(test_each_gesture_plays_its_own_gag);
   RUN_TEST(test_a_notice_plays_its_rig_clip);
+  RUN_TEST(test_a_reply_plays_its_clip_once);
   RUN_TEST(test_occasions_play_only_while_they_fit);
   RUN_TEST(test_a_rig_clip_plays_on_both_faces);
   RUN_TEST(test_every_pastime_has_its_clip_and_its_turn);

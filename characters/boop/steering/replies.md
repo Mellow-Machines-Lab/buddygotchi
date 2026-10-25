@@ -1,0 +1,26 @@
+<!-- Boop's replies' signs: what it holds up replying to what you said on push-to-talk (ReactOutput's replies, the react.reply question). Each line's first tag is the reply it's for (yes, no, dunno, huh, hello, bye, thanks, love, ouch, comfort, hehe; status holds up what the agents are doing instead), and any more are the calendar's (morning, night, friday, party…, characters/CHARACTER.md §9); the app picks one that fits, those with the most tags first, at random among them, and never the one it showed last while another fits. None goes to the brain. At most 18 characters, printable ASCII only. Read-only at runtime; the app bundles a copy. -->
+- [yes] yep!
+- [yes] uh-huh
+- [no] nope
+- [no] nuh-uh
+- [dunno] no idea!
+- [dunno] beats me
+- [huh] huh?
+- [huh] come again?
+- [hello] hi hi!
+- [hello] oh, hi!
+- [hello morning] morning!
+- [bye] bye bye
+- [bye] see ya!
+- [bye night] nite nite
+- [thanks] i know ;)
+- [thanks] hehe thx
+- [love] <3
+- [love] love u too
+- [ouch] :(
+- [ouch] rude.
+- [comfort] *hug*
+- [comfort] there there
+- [comfort night] bed time?
+- [hehe] hehe
+- [hehe] lol

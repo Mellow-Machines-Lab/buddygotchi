@@ -420,6 +420,9 @@ extension DemoScript {
     public static func choices(in pack: CharacterPack = .active) -> [String: [String]] {
         var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
         offered["react.mood"] = ["none"] + pack.faces.map(\.name)
+        // What you said is asked for a reply in place of the feeling and
+        // the topic.
+        offered["react.reply"] = ReactOutput.replies(of: pack.name).map(\.name)
         return offered
     }
 

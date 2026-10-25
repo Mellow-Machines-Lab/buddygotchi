@@ -6,6 +6,6 @@
   "steps": [
     {"event": "session started", "at": "0s"},
     {"event": "pokes", "at": "0s", "expect": {"mood": "grumpy"}},
-    {"event": "said", "at": "20s", "words": "what's the build doing?", "expect": {"react": "grumpy|irritated|annoyed|curious|calm", "mood": "grumpy"}}
+    {"event": "said", "at": "20s", "words": "what's the build doing?", "expect": {"react": "grumpy|irritated|annoyed|curious|calm", "reply": "status", "mood": "grumpy"}}
   ]
 }

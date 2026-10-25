@@ -154,6 +154,9 @@ public final class TranscriptView {
         /// When each session's calls that climb the work stream's failure
         /// ladder failed, within `WorkStream.ladderMs`.
         var ladder: [String: [Int64]] = [:]
+        /// Each session's latest check or finished turn, by how it came
+        /// out, for what Boop says when you ask (`StatusReply`).
+        var results: [String: StatusReply.Result] = [:]
 
         /// Its tracker never asks whether an agent's process runs: the core
         /// records a session whose agent is gone as its turn stopping
@@ -413,6 +416,7 @@ public final class TranscriptView {
             fold.counts = fold.counts.filter { fold.sessions.sessions[$0.key] != nil }
             fold.unread = fold.unread.filter { fold.sessions.sessions[$0.key] != nil }
             fold.ladder = fold.ladder.filter { fold.sessions.sessions[$0.key] != nil }
+            fold.results = fold.results.filter { fold.sessions.sessions[$0.key] != nil }
         }
     }
 
@@ -462,7 +466,10 @@ public final class TranscriptView {
             // A turn a call opens has counts of its own.
             if before?.turn.startedAt == nil, s.turn.startedAt != nil { resetCounts(&c) }
             if let topic { c.topic = topic }
-            if let topic, let failed = a.failed, TranscriptView.checks.contains(topic) { c.check = (topic, failed) }
+            if let topic, let failed = a.failed, TranscriptView.checks.contains(topic) {
+                c.check = (topic, failed)
+                fold.results[key] = StatusReply.Result(topic: topic, outcome: failed ? "failed" : "passed", at: now)
+            }
             return line
         case .turnEnd, .turnFailed, .turnStopped:
             // A finish with no turn open (a second `Stop`, one after the
@@ -485,6 +492,7 @@ public final class TranscriptView {
             case .turnStopped: outcome = "stopped"
             default: outcome = check?.failed == true ? "failed" : "done"
             }
+            fold.results[key] = StatusReply.Result(topic: nil, outcome: outcome, at: now)
             let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
             c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
             var line = turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started))
@@ -902,6 +910,13 @@ public final class TranscriptView {
     public func who(about key: String, _ log: LogView) -> (agent: String, thread: String, opens: ThreadRef)? {
         catchUp(log)
         return fold.sessions.sessions[key].map { ($0.agent.rawValue, $0.name ?? Thread($0).name, $0.thread) }
+    }
+
+    /// Each session's latest check or finished turn, caught up to `log`:
+    /// how it came out, for what Boop says when you ask (`StatusReply`).
+    public func results(_ log: LogView) -> [String: StatusReply.Result] {
+        catchUp(log)
+        return fold.results
     }
 
     /// The sessions as the fold has them, caught up to `log` (tests).

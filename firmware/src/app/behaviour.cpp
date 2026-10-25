@@ -304,6 +304,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       expr_ = true;
       exprMood_ = in.mood;
       exprAt_ = t;
+      copyStr(exprReply_, sizeof(exprReply_), in.reply);
       exprMs_ = anim ? reaction_.ms : holdMs(in.mood, in.loops, t);
       if (say && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprKey_ = in.key;
@@ -498,6 +499,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.act = model_.act;
   c.attention = model_.attn;
   c.borrowed = exprOn(t);
+  if (c.borrowed) c.reply = exprReply_, c.replyAt = exprAt_;
   c.attentionId = model_.attnId;
   c.agent = model_.agent;
   c.project = model_.project;

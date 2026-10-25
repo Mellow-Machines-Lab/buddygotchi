@@ -1,0 +1,61 @@
+// A reply to what you said on the gel: the Mac's `reply` on a face's
+// `react`, which plays the pack's clip for it (rig/clips/reply-*.json)
+// over that face, with the reply's sign: a nod, a head shake, a shrug, a
+// head tilt, puffing up, snuggling, a flinch and presenting the agents'
+// facts, each caught partway through on a frozen clock after a reset.
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"yep!","reply":"yes","say":{},"mood":"happy","loops":1}}
+{"clock":1320}
+{"shot":"yes"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"nope","reply":"no","say":{},"mood":"calm","loops":1}}
+{"clock":1350}
+{"shot":"no"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"no idea!","reply":"dunno","say":{},"mood":"curious","loops":1}}
+{"clock":1500}
+{"shot":"dunno"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"huh?","reply":"huh","say":{},"mood":"baffled","loops":1}}
+{"clock":1700}
+{"shot":"huh"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"i know ;)","reply":"thanks","say":{},"mood":"proud","loops":1}}
+{"clock":1700}
+{"shot":"thanks"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"<3","reply":"love","say":{},"mood":"affectionate","loops":1}}
+{"clock":1700}
+{"shot":"love"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":":(","reply":"ouch","say":{},"mood":"wounded","loops":1}}
+{"clock":1300}
+{"shot":"ouch"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"idle","mood":"calm","vol":0,"when":["day"]}
+{"clock":1000}
+{"t":"do","name":"react","play":"now","args":{"sign":"claude: 4 min in","reply":"status","say":{},"mood":"engaged","loops":1}}
+{"clock":1600}
+{"shot":"status"}

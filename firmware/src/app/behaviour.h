@@ -93,6 +93,8 @@ struct PlayedOut {
 // fonts, cut with ".." past them (render::foldText), in kSignBytes.
 constexpr int kSignGlyphs = 18;
 constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
+// A reply's name (`reply`), with room for the longest, "comfort".
+constexpr size_t kReplyBytes = 12;
 
 // A reaction from the Mac as Device parsed its args, already
 // held in range: the do's name as an animation (none for `react`), a
@@ -131,6 +133,9 @@ struct ReactionIn {
   uint32_t id = 0;
   // The words the buddy holds up on a sign while it plays, "" for none.
   char sign[kSignBytes] = "";
+  // With an expression, the Mac's reply to what you said (`reply`): the
+  // face plays its pack's clip for it as the expression starts. "" for none.
+  char reply[kReplyBytes] = "";
 };
 
 class Behaviour {
@@ -460,6 +465,8 @@ class Behaviour {
   bool expr_ = false;
   render::Mood exprMood_ = render::kStartupMood;
   uint32_t exprAt_ = 0, exprMs_ = 0;
+  // And its reply, "" for none: the face's while the expression shows.
+  char exprReply_[kReplyBytes] = "";
   uint32_t exprKey_ = 0;
   // The reaction that last played while a part of it plays, with what
   // first cut its animation or its `say` short; then, once it's played out,

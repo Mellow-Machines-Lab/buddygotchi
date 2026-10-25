@@ -5,7 +5,7 @@
   "why": "PERSONALITY: talked to, Boop always answers with a face, never none (react.mood's none says words to Boop each get their own). None is for when HISTORY shows Boop still making the face NOW calls for, which mustn't swallow a second thing said.",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "said", "at": "20s", "words": "hey boop", "reaction": "in progress", "expect": {"react": "happy|excited|proud|curious|calm"}},
-    {"event": "said", "at": "23s", "words": "are you listening to me?", "expect": {"react": "happy|excited|proud|determined|curious|calm|engaged"}}
+    {"event": "said", "at": "20s", "words": "hey boop", "reaction": "in progress", "expect": {"react": "happy|excited|proud|curious|calm", "reply": "hello"}},
+    {"event": "said", "at": "23s", "words": "are you listening to me?", "expect": {"react": "happy|excited|proud|determined|curious|calm|engaged", "reply": "yes"}}
   ]
 }

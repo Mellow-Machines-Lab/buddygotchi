@@ -570,6 +570,22 @@ public final class Core {
         return snapshot
     }
 
+    /// The sessions as a `status` reply reads them at `now`, with each
+    /// one's latest result from `results`, by session: whether it waits on
+    /// you, since when it works and its to-do list. A request you
+    /// dismissed still waits on you; one that shows holds every reaction
+    /// back, the screen answering for it.
+    public func status(at now: Int64, results: [String: StatusReply.Result]) -> [StatusReply.Agent] {
+        let (shown, dismissed, working, idle) = groups(at: now)
+        let needs = Set((shown + dismissed).map(\.key)), works = Set(working.map(\.key))
+        return (shown + working + dismissed + idle).map { s in
+            StatusReply.Agent(agent: s.agent.rawValue, places: [s.project, s.workspace, s.name].compactMap { $0 },
+                         needsYou: needs.contains(s.key), workingSince: works.contains(s.key) ? s.turn.startedAt ?? now : nil,
+                         todo: works.contains(s.key) ? s.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) } : nil,
+                         result: results[s.key])
+        }
+    }
+
     /// Whether the board's agents' drawer is open: it said so within
     /// `drawerQuietMs` (it says so again every 10 s), and hasn't said it
     /// shut.

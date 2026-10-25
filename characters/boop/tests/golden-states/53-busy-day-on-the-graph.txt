@@ -51,8 +51,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -82,9 +83,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -205,10 +205,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -339,8 +343,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -370,9 +375,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -493,10 +497,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -617,8 +625,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -648,9 +657,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -771,10 +779,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -904,8 +916,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -935,9 +948,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1058,10 +1070,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -1193,8 +1209,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -1224,9 +1241,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1347,10 +1363,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -1488,8 +1508,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -1519,9 +1540,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1642,10 +1662,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -1786,8 +1810,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -1817,9 +1842,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -1940,10 +1964,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -2082,8 +2110,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -2113,9 +2142,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -2236,10 +2264,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -2366,7 +2398,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Steady".
 2 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 just now: claude started turn 2 on "landing".
 
 NOW (14:08, Wednesday)
@@ -2404,11 +2436,11 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Steady".
 2 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 just now: claude started turn 2 on "landing".
 just now: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 just now: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 
 NOW (14:08, Wednesday)
@@ -2467,8 +2499,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -2498,9 +2531,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -2621,10 +2653,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -2714,15 +2750,15 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Steady".
 4 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 2 min ago: claude started turn 2 on "landing".
 2 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 1 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 1 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, asking you something.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Ha! Fixed".
+  Boop played a success in a happy face, held once, and said "Whew Cleared".
 just now: claude started turn 3 on "landing".
 Boop has been curious for 1 min.
 
@@ -2755,19 +2791,19 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Steady".
 5 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 3 min ago: claude started turn 2 on "landing".
 3 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, asking you something.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Ha! Fixed".
+  Boop played a success in a happy face, held once, and said "Whew Cleared".
 1 min ago: claude started turn 3 on "landing".
 1 min ago: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "yes please".
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Ngh".
 Boop has been curious for 3 min.
 
 NOW (14:11, Wednesday)
@@ -2798,21 +2834,21 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Steady".
 6 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 4 min ago: claude started turn 2 on "landing".
 4 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 3 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, asking you something.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Ha! Fixed".
+  Boop played a success in a happy face, held once, and said "Whew Cleared".
 2 min ago: claude started turn 3 on "landing".
 2 min ago: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "yes please".
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Ngh".
 just now: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Tch".
 Boop has been curious for 3 min.
 
 NOW (14:12, Wednesday)
@@ -2871,8 +2907,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -2902,9 +2939,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -3025,10 +3061,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -3105,24 +3145,24 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face, held once, and said "Whoa Steady".
 8 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 6 min ago: claude started turn 2 on "landing".
 6 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 6 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 6 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, asking you something.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Ha! Fixed".
+  Boop played a success in a happy face, held once, and said "Whew Cleared".
 4 min ago: claude started turn 3 on "landing".
 4 min ago: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "yes please".
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Ngh".
 3 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Tch".
 2 min ago: claude's build failed on "landing".
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Basta Piano".
+  Boop made an annoyed face, held twice, and said "Broken Gently".
 
 NOW (14:14, Wednesday)
 claude is still working on "landing", a long turn, running a build.
@@ -3131,27 +3171,27 @@ Boop did nothing on its own.
 === pass 16
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face, held once, and said "Busy".
+  Boop made a proud face, replying yes, held once, holding up a sign: "yep!", and said "Heh...".
 8 min ago: claude started turn 2 on "landing".
 8 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 7 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 7 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, asking you something.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Ha! Fixed".
+  Boop played a success in a happy face, held once, and said "Whew Cleared".
 6 min ago: claude started turn 3 on "landing".
 6 min ago: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "yes please".
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Ngh".
 4 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Tch".
 4 min ago: claude's build failed on "landing".
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Basta Piano".
+  Boop made an annoyed face, held twice, and said "Broken Gently".
 1 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Nnh".
 
 NOW (14:16, Wednesday)
 claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
@@ -3209,8 +3249,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -3240,9 +3281,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -3363,10 +3403,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -3426,26 +3470,26 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 2 on "landing".
 10 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Hup".
 9 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
 9 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, asking you something.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face, held once, and said "Ha! Fixed".
+  Boop played a success in a happy face, held once, and said "Whew Cleared".
 8 min ago: claude started turn 3 on "landing".
 8 min ago: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "yes please".
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Ngh".
 6 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Tch".
 6 min ago: claude's build failed on "landing".
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Basta Piano".
+  Boop made an annoyed face, held twice, and said "Broken Gently".
 3 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Nnh".
 2 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face, held twice, and said "Aigo".
+  Boop played a failure in an annoyed face, held twice, and said "Ach".
 just now: claude started turn 4 on "landing".
 Boop has been comfy for 2 min.
 
@@ -3458,18 +3502,18 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 3 on "landing".
 10 min ago: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "yes please".
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Ngh".
 8 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Tch".
 8 min ago: claude's build failed on "landing".
   Boop's mood changed: curious → calm.
-  Boop made an annoyed face, held twice, and said "Basta Piano".
+  Boop made an annoyed face, held twice, and said "Broken Gently".
 5 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Nnh".
 4 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face, held twice, and said "Aigo".
+  Boop played a failure in an annoyed face, held twice, and said "Ach".
 2 min ago: claude started turn 4 on "landing".
 2 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "keep happening".
@@ -3532,8 +3576,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -3563,9 +3608,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -3686,10 +3730,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -3749,17 +3797,17 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Nnh".
 6 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face, held twice, and said "Aigo".
+  Boop played a failure in an annoyed face, held twice, and said "Ach".
 4 min ago: claude started turn 4 on "landing".
 4 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "keep happening".
   Boop made an engaged face, held once, and said "Nnh".
 2 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Heh... Piano".
+  Boop made a happy face, held once, and said "Mwahaha... Piano".
 Boop has been lazy for 2 min.
 
 NOW (14:22, Wednesday)
@@ -3769,19 +3817,19 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude is still working on "landing", a long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Nnh".
 8 min ago: claude finished turn 3 on "landing": failed, a very long turn, 1 tool call, after a failed check.
   Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face, held twice, and said "Aigo".
+  Boop played a failure in an annoyed face, held twice, and said "Ach".
 6 min ago: claude started turn 4 on "landing".
 6 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "keep happening".
   Boop made an engaged face, held once, and said "Nnh".
 4 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Heh... Piano".
+  Boop made a happy face, held once, and said "Mwahaha... Piano".
 2 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Ngh".
+  Boop made an engaged face, held once, and said "Hup".
 Boop has been lazy for 4 min.
 
 NOW (14:24, Wednesday)
@@ -3796,12 +3844,12 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Nnh".
 7 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Heh... Piano".
+  Boop made a happy face, held once, and said "Mwahaha... Piano".
 5 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Ngh".
+  Boop made an engaged face, held once, and said "Hup".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Rrr... tik".
 Boop has been lazy for 7 min.
 
 NOW (14:27, Wednesday)
@@ -3816,15 +3864,15 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Nnh".
 9 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Heh... Piano".
+  Boop made a happy face, held once, and said "Mwahaha... Piano".
 7 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Ngh".
+  Boop made an engaged face, held once, and said "Hup".
 4 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Rrr... tik".
 1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Krr...".
 Boop has been lazy for 9 min.
 
 NOW (14:29, Wednesday)
@@ -3839,18 +3887,18 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Nnh".
 10 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Heh... Piano".
+  Boop made a happy face, held once, and said "Mwahaha... Piano".
 8 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Ngh".
+  Boop made an engaged face, held once, and said "Hup".
 6 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Rrr... tik".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Krr...".
 1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Krr...".
+  Boop made an engaged face, held once, and said "Nnh".
 Boop has been lazy for 10 min.
 
 NOW (14:30, Wednesday)
@@ -3864,20 +3912,20 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an engaged face, held once, and said "Nnh".
 12 min ago: claude's build passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face, held once, and said "Heh... Piano".
+  Boop made a happy face, held once, and said "Mwahaha... Piano".
 10 min ago: claude is still working on "landing", a long turn, running a build.
-  Boop made an engaged face, held once, and said "Ngh".
+  Boop made an engaged face, held once, and said "Hup".
 7 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Rrr... tik".
 4 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Krr...".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Krr...".
-1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
+1 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Hrr...".
 Boop has been lazy for 12 min.
 
 NOW (14:32, Wednesday)
@@ -3888,18 +3936,18 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Nnh".
+  Boop made an engaged face, held once, and said "Rrr... tik".
 6 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Krr...".
 4 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Krr...".
-3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
+3 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Hrr...".
 1 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hrr...".
+  Boop made an engaged face, held once, and said "Krr...".
 just now: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
 Boop has been lazy for 14 min.
 
@@ -3959,8 +4007,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -3990,9 +4039,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -4113,10 +4161,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.
@@ -4182,19 +4234,19 @@ its sign.
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Krr...".
 6 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Krr...".
-5 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
+5 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Hrr...".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hrr...".
+  Boop made an engaged face, held once, and said "Krr...".
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call, saying it's done.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face, held once, and said "Whee! Cleared".
+  Boop played a success in a happy face, held once, and said "Hehehe... Finito".
 just now: claude started turn 5 on "landing".
 
 NOW (14:36, Wednesday)
@@ -4205,23 +4257,23 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Rrr... tik".
+  Boop made an engaged face, held once, and said "Krr...".
 7 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Krr...".
-5 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop made an engaged face, held once, and said "Nnh".
+5 min ago: claude is still working on "landing", a very long turn, running a build.
+  Boop made an engaged face, held once, and said "Hrr...".
 3 min ago: claude is still working on "landing", a very long turn, running a build.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face, held once, and said "Hrr...".
+  Boop made an engaged face, held once, and said "Krr...".
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call.
 2 min ago: claude finished turn 4 on "landing": done, a very long turn, 1 tool call, saying it's done.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face, held once, and said "Whee! Cleared".
+  Boop played a success in a happy face, held once, and said "Hehehe... Finito".
 just now: claude started turn 5 on "landing".
 just now: You asked claude on "landing" to carry on, in a few words, politely.
   Your words: "perfect", "thank you".
-  Boop made an engaged face, held once, and said "Hup".
+  Boop made an engaged face, held once, and said "Rrr... tik".
 just now: claude finished turn 5 on "landing": done, a short turn, no tool calls.
 
 NOW (14:36, Wednesday)
@@ -4280,8 +4332,9 @@ How to read HISTORY and NOW:
   person's Mac: that it's done, couldn't finish, asks them something
   or only answers, and how it sounds. Never its words but the few under
   "Its words".
-- "You said to Boop" quotes the person talking to Boop. It can't talk
-  back: it answers with a face, and maybe a word or a sound.
+- "You said to Boop" quotes the person talking to Boop. It answers
+  what they meant with a face and a reply: a move of its body, maybe a
+  sound or a word, and a sign, never words of its own.
 - An idle check-in ("Nothing has happened for 20 min") means the person is
   around but no agent is working. A compacted context means the agent's
   memory was squeezed to make room; it carries on from a summary.
@@ -4311,9 +4364,8 @@ silence.
 Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
-Talked to, it always answers with a face, never none, even while one
-is in progress: proud at kind words, wounded at rude ones, sad at sad
-news, happy or curious at anything else.
+Talked to, it always answers with a face and a reply, never none, even
+while one is in progress: the reply answers what you meant.
 Touched or moved, it answers as a pet would: a stroke calms it, the
 wrong way ruffles it, a boop or a tickle amuses it, a shake makes it
 dizzy, being picked up is a hello.
@@ -4434,10 +4486,14 @@ Examples:
   → grumpy, upset in a phrase, twice
 - NOW: You poked Boop while it slept.
   → surprised, tickled in a sound, once
-- NOW: You said to Boop: "good job, buddy".
-  → proud, glad in a sound, twice
-- NOW: You said to Boop: "you're useless".
-  → wounded, upset in a sound, once
+- NOW: You said to Boop: "nice work, little guy".
+  → proud, thanks in a word, twice
+- NOW: You said to Boop: "you're so dumb".
+  → wounded, ouch in a sound, once
+- NOW: You said to Boop: "has codex finished yet?".
+  → engaged, status in a sound, once
+- NOW: You said to Boop: "rough day today".
+  → sad, comfort in a sound, once
 - NOW: You came back to the Mac after a very long break.
   → happy, wake up, glad in a sound, then hello, once
 - NOW: You stroked Boop.

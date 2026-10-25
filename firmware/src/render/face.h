@@ -85,6 +85,11 @@ struct FaceContext {
   bool mayVary = false;
   SceneState base = SceneState::kIdle, act = SceneState::kWorking;
   bool attention = false, borrowed = false;
+  // While it's borrowed, the Mac's reply to what you said that it came
+  // with ("" for none) and when it started: a face may play a move for it,
+  // once (the gel, its pack's `reply-<name>` clip).
+  const char* reply = "";
+  uint32_t replyAt = 0;
   uint32_t attentionId = 0;
   const char* agent = "";
   const char* project = "";

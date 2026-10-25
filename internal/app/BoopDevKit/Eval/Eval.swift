@@ -79,6 +79,9 @@ public struct Scenario: Sendable {
         /// How it asked to say it (`say.kind`'s pick), or `none` when it
         /// picked saying nothing or Boop didn't react.
         public var kind: Set<String>?
+        /// What it replied to what you said (`react.reply`'s pick, `huh`
+        /// below the floor), or `none` when Boop didn't react.
+        public var reply: Set<String>?
         /// A take Boop said, by its text as the bubble shows it (`Tsk...`):
         /// the step passes when any of the `say`'s takes is one of these;
         /// with `some`, when it said anything; with `none`, when it said
@@ -125,8 +128,8 @@ public struct Scenario: Sendable {
         public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil }
         /// Whether any of it is about a pass.
         public var wantsAPass: Bool {
-            react != nil || animation != nil || feeling != nil || about != nil || kind != nil || said != nil || loops != nil
-                || mood != nil || offered != nil || diary != nil || sign != nil
+            react != nil || animation != nil || feeling != nil || about != nil || kind != nil || reply != nil || said != nil
+                || loops != nil || mood != nil || offered != nil || diary != nil || sign != nil
         }
 
         public init(react: Set<String>? = nil, animation: Set<String>? = nil, feeling: Set<String>? = nil, about: Set<String>? = nil,
@@ -385,7 +388,7 @@ public struct Scenario: Sendable {
                     step.expectOrder[key] = values
                     return Set(values)
                 }
-                let keys = ["react", "animation", "feeling", "about", "kind", "said", "loops", "mood", "offered", "opens", "idle",
+                let keys = ["react", "animation", "feeling", "about", "kind", "reply", "said", "loops", "mood", "offered", "opens", "idle",
                             "helpers", "when", "needs", "todo", "diary", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
@@ -404,13 +407,16 @@ public struct Scenario: Sendable {
                 step.expect?.todo = todo
                 let diary = try set("diary")
                 step.expect?.diary = diary
+                let reply = try set("reply")
+                step.expect?.reply = reply
                 let sign = try set("sign")
                 step.expect?.sign = sign
                 let unknownTags = (when ?? []).subtracting(Occasions.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("feeling", step.expect?.feeling, ReactOutput.feelings.map(\.name)),
                                              ("about", step.expect?.about, ReactOutput.topics.map(\.name)),
-                                             ("kind", step.expect?.kind, ReactOutput.kinds.map(\.name))] {
+                                             ("kind", step.expect?.kind, ReactOutput.kinds.map(\.name)),
+                                             ("reply", step.expect?.reply, ReactOutput.replies.map(\.name))] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -491,6 +497,7 @@ public struct Eval {
         public var feeling: String?
         public var about: String?
         public var kind: String?
+        public var reply: String?
         public var said: String?
         public var saidTakes: [String] = []
         /// The sign the reaction held up.
@@ -526,6 +533,7 @@ public struct Eval {
             if let f = expected.feeling, !f.contains(feeling ?? "none") { return false }
             if let a = expected.about, !a.contains(about ?? "none") { return false }
             if let k = expected.kind, !k.contains(kind ?? "none") { return false }
+            if let r = expected.reply, !r.contains(reply ?? "none") { return false }
             if let s = expected.said, !(saidTakes.isEmpty ? s.contains("none") : s.contains("some") || saidTakes.contains(where: s.contains)) {
                 return false
             }
@@ -543,6 +551,7 @@ public struct Eval {
                         expected.feeling.map { "feeling \($0.sorted().joined(separator: "|"))" },
                         expected.about.map { "about \($0.sorted().joined(separator: "|"))" },
                         expected.kind.map { "kind \($0.sorted().joined(separator: "|"))" },
+                        expected.reply.map { "reply \($0.sorted().joined(separator: "|"))" },
                         expected.said.map { "said \($0.sorted().joined(separator: "|"))" },
                         expected.loops.map { "loops \($0.sorted().joined(separator: "|"))" },
                         expected.mood.map { "mood \($0.sorted().joined(separator: "|"))" },
@@ -559,6 +568,7 @@ public struct Eval {
                 ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo)" }
                 ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), animation \(animation ?? "none"), feeling \(feeling ?? "none"), about \(about ?? "none"), kind \(kind ?? "none"), said \(said ?? "none"), loops \(loops ?? "none"), mood \(mood)"
+                + (expected.reply == nil ? "" : ", reply \(reply ?? "none")")
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
                 + (expected.sign == nil ? "" : ", sign \(sign ?? "none")")
             return "  step \(step): \(line)\n    wanted \(want.joined(separator: ", ")); got \(got)"
@@ -800,6 +810,7 @@ public struct Eval {
                                 feeling: ran ? ReactOutput.feeling(record.answers) : nil,
                                 about: ran ? ReactOutput.about(record.answers) : nil,
                                 kind: !ran ? nil : ReactOutput.silent(record.answers) ? "none" : ReactOutput.kind(record.answers).rawValue,
+                                reply: ran && record.answers["react.reply"] != nil ? ReactOutput.reply(record.answers).name : nil,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 loops: ran ? ReactOutput.holds[ReactOutput.loops(record.answers) - 1].name : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,

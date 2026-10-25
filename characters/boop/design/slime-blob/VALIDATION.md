@@ -106,7 +106,9 @@ ramps and springs can, and no jolt at an event. By file:
   success's trophy, and gone back up), comedy, the ten gestures, the notice
   playing the rig's clip (`test_a_notice_plays_its_rig_clip`: perking up
   tall, off the ground and landing flat, its eyes and mouth, a sound at
-  each cue, no gag), the
+  each cue, no gag), a reply's clip (`test_a_reply_plays_its_clip_once`:
+  every reply has one, a shake of the head leans the body, once for each
+  reply, nothing for a reply with no clip, from a `ReactionIn` too), the
   occasions, a clip of the rig's on both faces (the stretch from `tier4`,
   over the gel's pose and on Pixel's rig face, faded out by a reaction),
   the pastimes (`test_pastimes.cpp`: each one's clip in the rig and its

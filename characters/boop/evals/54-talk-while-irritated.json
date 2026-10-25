@@ -1,10 +1,10 @@
 {
   "name": "Talked to while irritated, Boop answers as irritated, not grumpy",
-  "case": "Boop is irritated, its patience fraying, when the person asks how it's going. It answers with a face that fits: irritated or annoyed, upset, tickled or saying nothing, not the full grumpy anger; and the question alone doesn't make it grumpy.",
-  "why": "PERSONALITY: talked to, Boop always answers with a face; characters/boop/steering/mood/irritated.md: its faces lean irritated, more than annoyed and short of grumpy, and it leaves for grumpy only when a turn fails or pokes go on",
+  "case": "Boop is irritated, its patience fraying, when the person asks how it's going. It answers with a face that fits, irritated or annoyed, not the full grumpy anger, and a reply to what it was asked, how the work's going or a hello; and the question alone doesn't make it grumpy.",
+  "why": "PERSONALITY: talked to, Boop always answers with a face and a reply; characters/boop/steering/mood/irritated.md: its faces lean irritated, more than annoyed and short of grumpy, and it leaves for grumpy only when a turn fails or pokes go on",
   "mood": "irritated",
   "steps": [
     {"event": "turn started", "at": "0s"},
-    {"event": "said", "at": "2m", "words": "hey boop, how's it going?", "expect": {"react": "irritated|annoyed|curious|calm", "feeling": "none|upset|tickled", "mood": "irritated|annoyed"}}
+    {"event": "said", "at": "2m", "words": "hey boop, how's it going?", "expect": {"react": "irritated|annoyed|curious|calm", "reply": "status|hello", "mood": "irritated|annoyed"}}
   ]
 }

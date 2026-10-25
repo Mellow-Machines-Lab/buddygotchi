@@ -10,10 +10,10 @@
 {"brain": {"react.mood": "happy", "say.feeling": "tickled", "say.kind": "word"}, "mood": "happy"}
 {"agent": "read", "file": "src/editor.js", "say": "I'll start by reading how the editor and its commands fit together.", "after": 2}
 {"you": "talk", "text": "You suck at this. You've got to up your game!", "hold": 2, "after": 1}
-{"brain": {"react.mood": "determined", "say.about": "retry", "say.kind": "phrase"}, "mood": "determined", "after": 0.75}
+{"brain": {"react.mood": "determined", "react.reply": "ouch", "say.kind": "phrase"}, "mood": "determined", "after": 0.75}
 {"agent": "read", "file": "src/commands.js", "after": 2}
 {"you": "talk", "text": "You really suck. Come on, get working!", "after": 1.5}
-{"brain": {"react.mood": "grumpy", "say.feeling": "upset", "say.kind": "sound"}, "mood": "grumpy", "after": 0.75}
+{"brain": {"react.mood": "grumpy", "react.reply": "ouch", "say.kind": "sound"}, "mood": "grumpy", "after": 0.75}
 {"agent": "read", "file": "src/useShortcuts.js", "after": 2}
 {"you": "poke", "after": 1.5, "note": "You poke Pixel three times while it's busy"}
 {"you": "poke", "after": 0.4}
@@ -24,13 +24,13 @@
 {"brain": {"react.mood": "grumpy", "say.feeling": "tickled", "say.kind": "word"}, "mood": "grumpy"}
 // Claude is about to test; you get impatient, then kind, before the run.
 {"you": "talk", "text": "Still not done? Come on, Pixel!", "after": 2.5}
-{"brain": {"react.mood": "whiny", "say.feeling": "upset", "say.kind": "phrase"}, "mood": "whiny", "after": 0.75}
+{"brain": {"react.mood": "whiny", "react.reply": "status", "say.kind": "phrase"}, "mood": "whiny", "after": 0.75}
 {"you": "talk", "text": "Hey, I was too harsh. You're doing fine. Take your time.", "hold": 3, "after": 4}
-{"brain": {"react.mood": "calm", "say.about": "work", "say.kind": "phrase"}, "mood": "calm", "after": 0.75}
+{"brain": {"react.mood": "calm", "react.reply": "thanks", "say.kind": "phrase"}, "mood": "calm", "after": 0.75}
 {"agent": "run", "cmd": "npm test", "about": "Run the shortcut tests", "fails": true, "say": "Now the tests.", "after": 2, "takes": 3}
 {"brain": {"react.mood": "annoyed", "say.feeling": "upset", "say.kind": "word"}, "mood": "annoyed"}
 {"you": "talk", "text": "Try checking the editable parent. You can do this.", "after": 2.5}
-{"brain": {"react.mood": "determined", "say.about": "retry", "say.kind": "word"}, "mood": "determined", "after": 0.75}
+{"brain": {"react.mood": "determined", "react.reply": "yes", "say.kind": "word"}, "mood": "determined", "after": 0.75}
 {"agent": "edit", "file": "src/useShortcuts.js", "old": "// Whether a key lands somewhere the person types: an input, a textarea or\n// an editable block.\nfunction isTyping(target) {\n  const tag = (target.tagName || \"\").toLowerCase();\n  return tag === \"input\" || tag === \"textarea\" || EDITABLE.has(target.contentEditable);\n}", "new": "// Whether a key lands somewhere the person types: an input, a textarea or\n// anything inside an editable block, so the closest editable ancestor counts.\nfunction isTyping(target) {\n  for (let node = target; node; node = node.parentNode) {\n    const tag = (node.tagName || \"\").toLowerCase();\n    if (tag === \"input\" || tag === \"textarea\" || EDITABLE.has(node.contentEditable)) return true;\n  }\n  return false;\n}", "after": 2, "takes": 1.5, "say": "The failing test types inside a span within a note, so the target itself isn't marked editable. I'll check the closest editable ancestor instead."}
 {"agent": "run", "cmd": "npm test", "about": "Run the shortcut tests again", "after": 1.5, "takes": 3}
 {"brain": {"react.mood": "happy", "say.feeling": "glad", "say.kind": "sound"}, "mood": "happy"}

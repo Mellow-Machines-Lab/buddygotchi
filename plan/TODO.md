@@ -4,6 +4,27 @@ Updated 2026-10-25. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: talking back (2026-10-25)
+
+The owner wanted the buddy to understand what's said to it, a smart pet
+rather than a conversation ([talk-back.md](talk-back.md)).
+
+- [x] **Replies.** What you said is asked `react.reply`, one of twelve,
+      in place of the feeling, the topic and the animation, and always a
+      face; the `do`'s `reply` plays the gel's `reply-<name>` clip.
+      Checked by `ReplyTests`, test_gel's
+      `test_a_reply_plays_its_clip_once`, `scenarios-gel/replies.jsonl`
+      looked at, and Jev's evals `126` (2 runs) and `35`–`40`.
+- [x] **A sign for every reply**, from the pack's `replies.md`
+      (`SignTests.testThePacksRepliesFit`).
+- [x] **Answers about the agents**: a `status` reply holds up what the
+      agents are really doing, a check's result or how it came out
+      (`StatusReply`; Jev's eval `127`, 3 runs; the `talk-back` demo
+      played on the simulated board).
+- [ ] On the real AMOLED: whether each reply's clip reads as meant, a
+      nod, a shake of the head, a shrug and the rest
+      (`make demo NAME=talk-back FACE=gel` plays them in the simulator).
+
 ## Now: the polish pass (2026-10-25)
 
 The owner asked for smoother animation, crisper pictures, quicker touch

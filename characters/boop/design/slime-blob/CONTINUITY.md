@@ -664,6 +664,22 @@ are: `notice-surprised`, `notice-happy` and `notice-pleased`. The board
 borrows the take's face (`kNoticeFaces`) unless the Mac sends a mood with
 it.
 
+## Replies
+
+The brain's answer to what you said on push-to-talk: a face (a `react`
+with a mood) that names its reply (`reply`). As the face starts, the gel
+plays the pack's rig clip for the reply, `characters/boop/rig/clips/reply-<name>.json`,
+over it, once, on its mixer as it plays the notice's: a nod for yes, a
+shake of the head for no, a shrug for dunno, a head tilt with one eye
+narrowed for huh, a little hop and a sway for hello, a slow sway for bye,
+puffing up tall for thanks, snuggling down with its eyes shut for love,
+a flinch for ouch, leaning in low for comfort, giggling bounces for
+hehe, and looking down at its sign and back up for status. The clips
+move only the body, eyes and mouth: there's no new drawing, and the face
+and its sign are the reaction's. A reply the pack has no clip for plays
+the face alone. `tests/scenarios-gel/replies.jsonl` catches each partway
+through.
+
 ## Occasions
 
 A look may have takes that need tags (`when`, every one on: the board's

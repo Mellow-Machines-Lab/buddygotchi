@@ -52,6 +52,23 @@ public enum Signs {
         return words + captions([2, 3], max: maxOffered - words.count)
     }
 
+    /// What a buddy holds up replying `reply` to what you said: one of the
+    /// pack's lines for it (`replies.md`) that fit the calendar's tags,
+    /// those with the most tags first (a night `bye` beats a plain one), at
+    /// random among them, and not `avoiding` (the last reply's) while
+    /// another fits. Nil when none fits.
+    public static func reply(_ lines: [TaggedLine], _ reply: String, calendar: [String], avoiding: String? = nil,
+                             rng: inout SplitMix64) -> String? {
+        let on = Set([reply] + calendar)
+        let fit = lines.filter { $0.tags.first == reply && $0.fits(on) && !$0.hasWords }
+            .compactMap { line in drawn(line.text).map { (tags: line.tags.count, text: $0) } }
+            .filter { $0.text.count <= maxLength }
+        guard let most = fit.map(\.tags).max() else { return nil }
+        var pool = fit.filter { $0.tags == most }.map(\.text)
+        if pool.count > 1 { pool.removeAll { $0 == avoiding } }
+        return pool[rng.int(in: 0...(pool.count - 1))]
+    }
+
     /// Typed marks the board's fonts don't have, as the plain ones they
     /// stand for.
     static let plain: [Unicode.Scalar: String] = [

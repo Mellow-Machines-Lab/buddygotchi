@@ -134,7 +134,7 @@
        "also": ["turn-start"]},
       {"id": "talk", "when": "You hold the button and talk to it",
        "decides": ["board", "brain"], "plays": ["listening"],
-       "does": "The board listens at once (BOOT held, or the app's mic button); what the Mac heard goes to the brain, the one thing it answers while something needs you. Its reaction is the reply.",
+       "does": "The board listens at once (BOOT held, or the app's mic button); what the Mac heard goes to the brain, the one thing it answers while something needs you. Its reaction is the reply: what you meant, answered with a face, the reply's move on the gel, a sound or a word, and a sign, for a question about the agents what they're really doing.",
        "brain": {"kinds": ["talk"]},
        "numbers": [{"what": "BOOT held", "in": "firmware/src/app/gesture.h", "name": "kHoldMs", "unit": "ms"}]},
       {"id": "back", "when": "You come back to the Mac after a break",

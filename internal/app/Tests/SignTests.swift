@@ -136,6 +136,22 @@ final class SignTests: XCTestCase {
         }
     }
 
+    /// Every line in each pack's replies.md fits a sign as it is, in the
+    /// board's fonts, its first tag a reply (not `status`, which holds up
+    /// the agents' facts), any more the calendar's, and none of your words.
+    func testThePacksRepliesFit() throws {
+        let replies = Set(ReactOutput.replies.map(\.name)).subtracting(["status"])
+        let file = CharacterPackTests.repo.appendingPathComponent("characters/boop/steering/replies.md")
+        let lines = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
+        XCTAssertEqual(Set(lines.compactMap(\.tags.first)), replies, "a line or more for every reply")
+        for line in lines {
+            XCTAssertLessThanOrEqual(line.text.count, Signs.maxLength, line.text)
+            XCTAssertNotNil(Signs.drawn(line.text), line.text)
+            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Occasions.calendarTags), "\(line.tags)")
+            XCTAssertFalse(line.hasWords, line.text)
+        }
+    }
+
     /// A demo's prompt carries its reading, which plays the same on any
     /// Mac, and its brain may hold up any sign that fits a sign.
     func testADemoCarriesAReadingAndASign() throws {

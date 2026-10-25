@@ -59,6 +59,11 @@ extension Steering {
     /// file, which keeps no diary.
     public var diary: [TaggedLine] { files["diary"].map(TaggedLine.parse) ?? [] }
 
+    /// What a reply to what you said may hold up (`replies.md`,
+    /// optional): none for a pack with no file, whose replies hold up
+    /// nothing but the agents' facts.
+    public var replies: [TaggedLine] { files["replies"].map(TaggedLine.parse) ?? [] }
+
     /// The captions a sign may show (`signs.md`, optional): none for a
     /// pack with no file, whose buddy holds up no signs.
     public var signs: [TaggedLine] { files["signs"].map(TaggedLine.parse) ?? [] }

@@ -1,0 +1,9 @@
+{
+  "about": "A reply to what you said, bye: a slow sway from side to side, eyes soft, waving you off.",
+  "ms": 1600,
+  "tracks": {
+    "squash": [[0, 0], [300, 40], [1300, 40], [1500, 0], [1600, 0]],
+    "lean": [[0, 0], [300, 200], [600, -200], [900, 200], [1200, -120], [1450, 0], [1600, 0]],
+    "eyeOpen": [[0, 0], [300, -500], [1300, -500], [1500, 0], [1600, 0]]
+  }
+}
