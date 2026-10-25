@@ -121,15 +121,30 @@ final class AppModel: ObservableObject {
     var start: () -> Void = {}
     /// Asks, then takes Boop off this Mac and quits (`Uninstall`).
     var uninstall: () -> Void = {}
+    /// The Keychain entry this copy keeps Jev's key in
+    /// (`Keychain.account(for:)`).
+    let keyAccount: String
     /// Reads Jev's key. Settings calls it off the main thread, since the
     /// Keychain may stop to ask for access; snapshots read none.
-    var readKey: @Sendable () -> String? = { Keychain.jevKey() }
+    var readKey: @Sendable () -> String?
 
-    init(installer: HookInstaller, ownsHooks: Bool = true, link: LinkSetting) {
+    init(installer: HookInstaller, ownsHooks: Bool = true, link: LinkSetting, keyAccount: String) {
         self.installer = installer
         self.ownsHooks = ownsHooks
         self.link = link
+        self.keyAccount = keyAccount
+        readKey = { Keychain.jevKey(account: keyAccount) }
         refreshHooks()
+    }
+
+    /// Saves Jev's key in this copy's entry, off the main thread, since
+    /// the Keychain may stop to ask, and gives it to the brain from the
+    /// next event. True when the Keychain holds it.
+    func saveKey(_ key: String) async -> Bool {
+        let account = keyAccount
+        guard await Task.detached(operation: { Keychain.setJevKey(key, account: account) }).value else { return false }
+        runtime?.reloadBrain(jevKey: key.isEmpty ? nil : key)
+        return true
     }
 
     var name: String { status?.name ?? "Boop" }
@@ -476,12 +491,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // On another folder the installer still reads the real hooks, as the
         // everyday Boop keeps them, so settings shows how they stand.
         let everyday = AppSettings.isEveryday(stateDir)
-        // A copy on another folder keeps a Jev key of its own.
-        if !everyday { Keychain.account = AppSettings.copyName(stateDir) }
         let hookDir = everyday ? stateDir : AppSettings.defaultStateDir()
         model = AppModel(installer: .boop(home: URL(fileURLWithPath: NSHomeDirectory()),
                                           hookPath: hookDir.appendingPathComponent("bin/\(HookInstaller.client)").path),
-                         ownsHooks: everyday, link: link)
+                         ownsHooks: everyday, link: link, keyAccount: Keychain.account(for: stateDir))
         model.backupStateDir = everyday ? stateDir : nil
         super.init()
     }

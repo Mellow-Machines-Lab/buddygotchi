@@ -8,18 +8,18 @@ import XCTest
 final class KeychainTests: XCTestCase {
     func testReadsTheKeyWithoutTheNewlineSecurityPrints() {
         let security = FakeSecurity(entry: "jev-123")
-        XCTAssertEqual(Keychain.jevKey(security: security.tool), "jev-123")
+        XCTAssertEqual(Keychain.jevKey(account: "jev", security: security.tool), "jev-123")
         XCTAssertEqual(security.calls.map { $0.arguments },
                        [["find-generic-password", "-s", "com.boopcomputer.boop", "-a", "jev", "-w"]])
     }
 
     func testNoEntryIsNoKey() {
-        XCTAssertNil(Keychain.jevKey(security: FakeSecurity(entry: nil).tool))
+        XCTAssertNil(Keychain.jevKey(account: "jev", security: FakeSecurity(entry: nil).tool))
     }
 
     func testTheKeyGoesOnStdinAsHexAndNeverInTheArguments() {
         let security = FakeSecurity(entry: "old")
-        XCTAssertTrue(Keychain.setJevKey("sk-new key", security: security.tool))
+        XCTAssertTrue(Keychain.setJevKey("sk-new key", account: "jev", security: security.tool))
         XCTAssertEqual(security.entry, "sk-new key")
         XCTAssertEqual(security.calls.first?.arguments.first, "delete-generic-password", "the old entry goes first")
         for call in security.calls {
@@ -30,7 +30,7 @@ final class KeychainTests: XCTestCase {
 
     func testSavingNothingRemovesTheEntry() {
         let security = FakeSecurity(entry: "old")
-        XCTAssertTrue(Keychain.setJevKey("", security: security.tool))
+        XCTAssertTrue(Keychain.setJevKey("", account: "jev", security: security.tool))
         XCTAssertNil(security.entry)
         XCTAssertFalse(security.calls.contains { $0.arguments == ["-i"] }, "nothing is added")
     }
@@ -38,7 +38,7 @@ final class KeychainTests: XCTestCase {
     func testASaveThatDidntLandIsReported() {
         let security = FakeSecurity(entry: nil)
         security.refusesToAdd = true
-        XCTAssertFalse(Keychain.setJevKey("sk-new", security: security.tool))
+        XCTAssertFalse(Keychain.setJevKey("sk-new", account: "jev", security: security.tool))
     }
 
     /// A copy on another folder (`make onboarding`) reads and writes an
@@ -46,11 +46,12 @@ final class KeychainTests: XCTestCase {
     func testACopyOnAnotherFolderKeepsAKeyOfItsOwn() {
         XCTAssertEqual(AppSettings.copyName(URL(fileURLWithPath: "/tmp/boop-onboarding")), "dev-boop-onboarding")
         XCTAssertEqual(AppSettings.copyName(URL(fileURLWithPath: "/tmp/my boop: 2-b")), "dev-myboop2-b")
-        let everyday = Keychain.account
-        defer { Keychain.account = everyday }
-        Keychain.account = AppSettings.copyName(URL(fileURLWithPath: "/tmp/boop-onboarding"))
+        let home = "/tmp/someone"
+        XCTAssertEqual(Keychain.account(for: AppSettings.defaultStateDir(home: home), home: home), "jev")
+        let account = Keychain.account(for: URL(fileURLWithPath: "/tmp/boop-onboarding"), home: home)
+        XCTAssertEqual(account, "dev-boop-onboarding")
         let security = FakeSecurity(entry: nil)
-        XCTAssertTrue(Keychain.setJevKey("sk-new", security: security.tool))
+        XCTAssertTrue(Keychain.setJevKey("sk-new", account: account, security: security.tool))
         for call in security.calls {
             let words = call.arguments == ["-i"] ? (call.input ?? "").split(separator: " ").map(String.init) : call.arguments
             XCTAssertEqual(words.firstIndex(of: "-a").map { words[$0 + 1] }, "dev-boop-onboarding", "\(words)")

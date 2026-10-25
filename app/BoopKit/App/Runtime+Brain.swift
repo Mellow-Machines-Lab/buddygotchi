@@ -61,9 +61,9 @@ extension Runtime {
     /// answered. Then the brain is built with it. On `home`.
     func readJevKey() {
         guard jevKey == nil else { return }
-        let read = options.readJevKey
+        let read = options.readJevKey, stateDir = options.stateDir
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            let key = read { Keychain.jevKey() }
+            let key = read { Keychain.jevKey(account: Keychain.account(for: stateDir)) }
             self?.home.async { [weak self] in
                 // Settings may already have installed a brain while the
                 // startup read waited. Keep that brain too: rebuilding it

@@ -230,9 +230,11 @@ enum Snapshots {
 
     static func model(_ installer: HookInstaller, status: Runtime.Status?, link: LinkSetting = .bluetooth,
                       ownsHooks: Bool = true) -> AppModel {
-        let model = AppModel(installer: installer, ownsHooks: ownsHooks, link: link)
+        // Fixtures only: never the real Keychain, and a copy's entry if saved.
+        let model = AppModel(installer: installer, ownsHooks: ownsHooks, link: link,
+                             keyAccount: Keychain.account(for: URL(fileURLWithPath: "/tmp/boop-snapshots")))
         model.status = status
-        model.readKey = { nil }  // fixtures only: never the real Keychain
+        model.readKey = { nil }
         model.boardFirmware = []  // fixtures only: never the bundle's
         // Fixtures only: never the real login item. On, as after setup.
         model.loginItem = LoginItem(state: { .on }, set: { _ in })

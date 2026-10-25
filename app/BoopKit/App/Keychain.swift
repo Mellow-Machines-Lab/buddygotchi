@@ -12,12 +12,16 @@ import Foundation
 /// so they never run on the main thread or on the runtime's `home` queue.
 public enum Keychain {
     static let service = "com.boopcomputer.boop"
-    /// The entry's account: `jev`, the everyday Boop's. A copy on another
-    /// folder (`make onboarding`) sets its own at launch, before anything
-    /// reads it, so it never reads or replaces the everyday key.
-    public nonisolated(unsafe) static var account = "jev"
 
-    public static func jevKey(security: SecurityTool = .system) -> String? {
+    /// The entry's account for the Boop on `stateDir`: `jev`, the everyday
+    /// Boop's, or a copy's own on another folder (`make onboarding`), named
+    /// as its hook socket's listing is (`AppSettings.copyName`), so a copy
+    /// never reads or replaces the everyday key.
+    public static func account(for stateDir: URL, home: String = NSHomeDirectory()) -> String {
+        AppSettings.isEveryday(stateDir, home: home) ? "jev" : AppSettings.copyName(stateDir)
+    }
+
+    public static func jevKey(account: String, security: SecurityTool = .system) -> String? {
         let found = security.run(["find-generic-password", "-s", service, "-a", account, "-w"], nil)
         guard found.status == 0 else { return nil }
         let key = found.output.trimmingCharacters(in: .newlines)
@@ -28,13 +32,13 @@ public enum Keychain {
     /// reaches `security` hex-encoded on its stdin, never in its arguments,
     /// which any process can see. True when the Keychain now holds `key`.
     @discardableResult
-    public static func setJevKey(_ key: String?, security: SecurityTool = .system) -> Bool {
+    public static func setJevKey(_ key: String?, account: String, security: SecurityTool = .system) -> Bool {
         _ = security.run(["delete-generic-password", "-s", service, "-a", account], nil)
         guard let key, !key.isEmpty else { return true }
         let hex = key.utf8.map { String(format: "%02x", $0) }.joined()
         _ = security.run(["-i"], "add-generic-password -s \(service) -a \(account) -X \(hex)\n")
         // Read it back rather than trust the exit status of `security -i`.
-        return jevKey(security: security) == key
+        return jevKey(account: account, security: security) == key
     }
 }
 
