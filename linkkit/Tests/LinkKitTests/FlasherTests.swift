@@ -164,6 +164,8 @@ final class FakeBootloader: SerialLine {
         struct OtherBoard: Error {}
         for chip in Flasher.Chip.allCases {
             let rom = FakeBootloader(chip: chip, usbJTAG: chip == .esp32s3)
+            // Base MAC …54:FC: the ESP32's Bluetooth one is +2, the S3's +1.
+            let end = chip == .esp32 ? "54fe" : "54fd"
             func write(to id: String) throws -> Flasher.Board {
                 try Flasher(line: rom).flash { board in
                     guard board.isDevice(id) else { throw OtherBoard() }
@@ -175,15 +177,19 @@ final class FakeBootloader: SerialLine {
             #expect(rom.restarted)
 
             rom.spoil = true
-            #expect(throws: Flasher.Failure.verify(offset: 0x10000)) { try write(to: "lamp-54fe") }
+            #expect(throws: Flasher.Failure.verify(offset: 0x10000)) { try write(to: "lamp-" + end) }
             rom.spoil = false
-            let board = try write(to: "lamp-54fe")
+            let board = try write(to: "lamp-" + end)
             #expect(board == Flasher.Board(chip: chip, mac: rom.mac), "half written, it's still the same board")
-            #expect(board.advertised("Lamp") == "Lamp-54FE")
+            #expect(board.advertised("Lamp") == "Lamp-" + end.uppercased())
             #expect(Data(rom.flash[0x10000..<(0x10000 + 5000)]) == Self.image(5000, seed: 4))
         }
         let wraps = Flasher.Board(chip: .esp32, mac: [0, 0, 0, 0, 0x54, 0xFF])
         #expect(wraps.isDevice("lamp-5401"), "the last byte wraps, and the one before it stays")
+        // Read off the two boards themselves: the CYD (ESP32) and the AMOLED
+        // (ESP32-S3), each advertising the name its own firmware gives it.
+        #expect(Flasher.Board(chip: .esp32, mac: [0x8C, 0x94, 0xDF, 0x4E, 0x54, 0xFC]).advertised("Boop") == "Boop-54FE")
+        #expect(Flasher.Board(chip: .esp32s3, mac: [0x28, 0x84, 0x85, 0xB5, 0x01, 0xDC]).advertised("Boop") == "Boop-01DD")
     }
 
     /// The rule: once in its bootloader, the board restarts however the

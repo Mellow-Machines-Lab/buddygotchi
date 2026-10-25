@@ -23,6 +23,12 @@ public final class Flasher {
         /// The eFuse word with the low four bytes of its MAC; the next
         /// word's low two bytes are the first two.
         var macRegister: UInt32 { self == .esp32 ? 0x3FF5_A004 : 0x6000_7044 }
+        /// What ESP-IDF adds to the base MAC's last byte for its Bluetooth
+        /// one (`ESP_MAC_BT`): the ESP32 has four universal MACs (Wi-Fi,
+        /// its access point, Bluetooth, Ethernet), the S3 two (Wi-Fi,
+        /// Bluetooth). Read off both boards: base `…4e:54:fc` advertises
+        /// `54FE`, base `…b5:01:dc` advertises `01DD`.
+        var bluetoothOffset: UInt8 { self == .esp32 ? 2 : 1 }
     }
 
     /// The board as its bootloader reports it, before anything is written:
@@ -39,9 +45,9 @@ public final class Flasher {
         }
 
         /// The last two bytes of its Bluetooth MAC, which ESP-IDF makes of
-        /// the base one by adding 2 to its last byte (`ESP_MAC_BT`), in
-        /// lowercase hex: `54fe`.
-        var bluetoothEnd: String { String(format: "%02x%02x", mac[4], mac[5] &+ 2) }
+        /// the base one by adding its chip's `bluetoothOffset` to its last
+        /// byte, in lowercase hex: `54fe`.
+        var bluetoothEnd: String { String(format: "%02x%02x", mac[4], mac[5] &+ chip.bluetoothOffset) }
 
         /// Whether `id`, a device's `hello.id`, is this board's: the device
         /// library names it for the last two bytes of its Bluetooth MAC

@@ -81,7 +81,8 @@ final class BoardFirmwareTests: XCTestCase {
     }
 
     /// A board's base MAC, as its bootloader reports it: its Bluetooth
-    /// MAC, and so its `hello.id`, ends in `54fe`.
+    /// MAC, and so its `hello.id`, ends in `54fe` on an ESP32 (base + 2)
+    /// and `54fd` on an ESP32-S3 (base + 1).
     static let mac: [UInt8] = [0x24, 0x6F, 0x28, 0x01, 0x54, 0xFC]
 
     /// The rule: the update is offered for the board on Bluetooth, by its
@@ -94,10 +95,10 @@ final class BoardFirmwareTests: XCTestCase {
     func testOnlyTheBoardOfferedTheUpdateIsWritten() throws {
         let all = BoardFirmware.all(in: dir)
         let board = Flasher.Board(chip: .esp32s3, mac: Self.mac)
-        XCTAssertEqual(try? BoardFirmware.pick(board, among: all, for: "b00p-54fe").board, "amoled206")
+        XCTAssertEqual(try? BoardFirmware.pick(board, among: all, for: "b00p-54fd").board, "amoled206")
         try XCTAssertThrowsError(try BoardFirmware.pick(board, among: all, for: "b00p-0001")) {
-            XCTAssertEqual($0 as? BoardFirmware.Refusal, .otherBoard(found: "Boop-54FE", wanted: "Boop-0001"))
-            XCTAssertEqual("\($0)", "the board on USB is Boop-54FE, not Boop-0001. Plug in Boop-0001 instead, then try again.")
+            XCTAssertEqual($0 as? BoardFirmware.Refusal, .otherBoard(found: "Boop-54FD", wanted: "Boop-0001"))
+            XCTAssertEqual("\($0)", "the board on USB is Boop-54FD, not Boop-0001. Plug in Boop-0001 instead, then try again.")
         }
     }
 }
