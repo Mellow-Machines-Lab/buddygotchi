@@ -4,6 +4,56 @@ Updated 2026-10-25. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: the polish pass (2026-10-25)
+
+The owner asked for smoother animation, crisper pictures, quicker touch
+and a simpler build. Four audits (the gel's picture, the board's frame
+pacing and touch, the Mac app, the architecture) found what's below.
+
+- [x] **The gel's frame cost.** A busy frame took 34-48 ms (23-28 fps),
+      the body 21.5 ms of it. The body is drawn on both cores, each row
+      whole on one, erased a band at a time just before (render/helper.h);
+      `perf --scenes` now: working 39 fps, attention 35, frightened 32,
+      asleep 46, idle 46 (20.7 ms).
+- [x] A take's lookup reads the card once, not ~12 times on the loop.
+- [x] Snow and hearts move in sixteenths of a pixel.
+- [x] The Mac: the popover's status publishes only when shown and
+      changed and opens before the hooks are read; the mirror draws every
+      frame the board draws, zooms the 46 pt tile onto the slime, and is
+      one page handed between views (onboarding no longer reloads it per
+      act); the popover keeps the slime with no board; the still face has
+      no seams; snapshots are 2x.
+- [x] Simpler: no canvas lane under the gel or 8-bit AMOLED push;
+      FaceLoops and faces.json's designs gone; EventLine, Core+Talk and
+      device_debug.cpp in files of their own.
+- [ ] On a real Mac: the popover opens quickly and never shows a stale
+      pose; the 46 pt slime is crisp at 60 fps; with Bluetooth off it
+      stays the slime; onboarding's acts show no black glass; two quick
+      confetti bursts both play; the menu-bar glyph looks centred.
+- [ ] Touch's tap waits 50 ms after a finger lifts (`kTouchReleaseMs`,
+      for the panel's dropped readings under a light press). The FT3168
+      reports a lift-up event (register 0x03, bits 7:6, masked off in
+      `amoled206/touch.cpp`): log it under a real finger, then end the
+      touch on it, keeping the 50 ms as the fallback.
+- [ ] Eyes and mouth go see-through mid mood change: groups of different
+      shapes cross-fade drawn one over the other, so w(1-w) of the body
+      shows through, 25% at the midpoint (`art.cpp`). Blend once from
+      both shapes' summed coverage.
+- [ ] The body's outline pops by up to ~2.7 px when a triangle's facing
+      flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
+      silhouette, or 64 sectors (+1-1.5 ms).
+- [ ] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
+      replay (`OutfitLayer::kSlack`), Zs switching fonts, the listening
+      ring and the helper minis (`props.cpp`).
+- [ ] The face art's edges take 4 sub-rows a pixel (`raster.cpp`
+      `polygon16`): near-horizontal edges step and a lid under 1/4 px
+      flickers. Exact area coverage, about today's cost.
+- [ ] The body's material is 513 texels around the whole dome, about
+      1.75 px a texel at its middle: bake it at 1025 wide (flash has
+      room) and measure `body_us`.
+- [ ] No tearing sync: the CO5300's TE line, if the board wires it, and
+      the QSPI clock (40 MHz; 80 is untried and needs eyes on the panel).
+
 ## Now: the first launch, from the owner's setup
 
 What the owner's own first-time setup on 2026-10-24 ran into, `make run`
