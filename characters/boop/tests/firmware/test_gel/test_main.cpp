@@ -1719,6 +1719,14 @@ static void test_rgb565_opacity_rounds_to_nearest() {
         TEST_ASSERT_EQUAL_HEX16(channel(11, 31) | channel(5, 63) | channel(0, 31), mix565(old, ink, a));
       }
 }
+// test_bridges.cpp
+void test_every_edge_bridges_as_authored();
+void test_a_bridge_follows_its_waveform();
+void test_a_grab_defers_then_expires_the_bridge();
+void test_a_quiet_or_alerting_body_holds_the_bridge();
+void test_a_rapid_chain_settles_on_the_last();
+void test_each_edge_deals_its_own_bag();
+void test_the_semantic_face_numbers();
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_fixed_math_and_motion);
@@ -1768,5 +1776,12 @@ int main() {
   RUN_TEST(test_it_sleeps_in_a_gown_and_reads_in_glasses);
   RUN_TEST(test_a_recording_replays_as_drawn);
   RUN_TEST(test_the_outfit_is_kept_while_the_body_moves);
+  RUN_TEST(test_every_edge_bridges_as_authored);
+  RUN_TEST(test_a_bridge_follows_its_waveform);
+  RUN_TEST(test_a_grab_defers_then_expires_the_bridge);
+  RUN_TEST(test_a_quiet_or_alerting_body_holds_the_bridge);
+  RUN_TEST(test_a_rapid_chain_settles_on_the_last);
+  RUN_TEST(test_each_edge_deals_its_own_bag);
+  RUN_TEST(test_the_semantic_face_numbers);
   return UNITY_END();
 }
