@@ -259,8 +259,8 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// Why the link can't look for the device
-    /// (Bluetooth off) reaches the popover's status by the next tick, and
-    /// leaves it the same way.
+    /// (Bluetooth off), its cause and its words, reaches the popover's
+    /// status by the next tick, and leaves it the same way.
     func testTheLinksTroubleReachesTheStatus() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
@@ -268,9 +268,10 @@ final class RuntimeTests: XCTestCase {
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        transport.lock.withLock { transport.why = "Bluetooth is off." }
+        let off = TransportTrouble(.off, "Bluetooth is off.")
+        transport.lock.withLock { transport.why = off }
         runtime.home.sync { runtime.tick() }
-        XCTAssertEqual(runtime.home.sync { statuses.last?.linkTrouble }, "Bluetooth is off.")
+        XCTAssertEqual(runtime.home.sync { statuses.last?.linkTrouble }, off)
         transport.lock.withLock { transport.why = nil }
         runtime.home.sync { runtime.tick() }
         XCTAssertNil(runtime.home.sync { statuses.last?.linkTrouble })

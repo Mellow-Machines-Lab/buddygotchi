@@ -32,7 +32,7 @@ extension Runtime {
         /// The newest snapshot sent to its board.
         var latest: StateSnapshot?
         /// The transport's `trouble` as the status last had it.
-        var linkTrouble: String?
+        var linkTrouble: TransportTrouble?
 
         init(_ options: BuddyOptions, tag: String?, log: @escaping (String) -> Void) {
             buddy = options.buddy

@@ -303,7 +303,7 @@ final class AppModel: ObservableObject {
 
     /// How Boop's body stands, in the words the Overview's device line and
     /// notice, and Settings, use.
-    struct DeviceState {
+    struct DeviceState: Equatable {
         var connected: Bool
         /// Something only the person can fix, as the Overview's notice
         /// names it.
@@ -317,7 +317,7 @@ final class AppModel: ObservableObject {
         /// Where the person fixes the trouble.
         var fix: Fix?
 
-        enum Fix {
+        enum Fix: Equatable {
             /// A pane of System Settings.
             case system(label: String, url: URL)
             /// Settings' firmware update.
@@ -325,17 +325,16 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Where Bluetooth's trouble is fixed, by its cause: LinkKit's words
-    /// for it, matched here. None for a Mac without Bluetooth.
-    static func bluetoothFix(_ trouble: String) -> DeviceState.Fix? {
+    /// Where Bluetooth's trouble is fixed, by its cause. None for a Mac
+    /// without Bluetooth.
+    private static func bluetoothFix(_ cause: TransportTrouble.Cause) -> DeviceState.Fix? {
         let settings = "x-apple.systempreferences:"
-        if trouble == BLETransport.trouble(.poweredOff, appName: BoopDevice.blePrefix) {
-            return .system(label: "Open Bluetooth Settings", url: URL(string: settings + "com.apple.BluetoothSettings")!)
+        return switch cause {
+        case .off: .system(label: "Open Bluetooth Settings", url: URL(string: settings + "com.apple.BluetoothSettings")!)
+        case .notAllowed:
+            .system(label: "Open Privacy & Security", url: URL(string: settings + "com.apple.preference.security?Privacy_Bluetooth")!)
+        case .unsupported: nil
         }
-        if trouble == BLETransport.trouble(.unauthorized, appName: BoopDevice.blePrefix) {
-            return .system(label: "Open Privacy & Security", url: URL(string: settings + "com.apple.preference.security?Privacy_Bluetooth")!)
-        }
-        return nil
     }
 
     /// The simulator is for developing Boop: `make run`'s debug build
@@ -382,8 +381,8 @@ final class AppModel: ObservableObject {
         }
         guard status.connected else {
             if let why = status.linkTrouble {
-                return DeviceState(connected: false, trouble: "\(name) can't look for its body", short: "No \(how)", detail: why,
-                                   fix: Self.bluetoothFix(why))
+                return DeviceState(connected: false, trouble: "\(name) can't look for its body", short: "No \(how)", detail: why.words,
+                                   fix: Self.bluetoothFix(why.cause))
             }
             if usingSimulator {
                 return DeviceState(connected: false, short: "Looking…", detail: "Looking for the simulator. Open its page in a browser.")

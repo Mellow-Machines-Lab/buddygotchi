@@ -149,7 +149,11 @@ final class LampHost: @unchecked Sendable {
   it runs: an app remembering the device it met first, or forgetting it.
   It cuts messages to the write size and keeps a newer
   `state` from queueing behind an old one; it never drops a `do`, and
-  gives up a link too stuck to take them. macOS kills a process that
+  gives up a link too stuck to take them. While Bluetooth is off, not
+  allowed or missing, its `trouble` says so: a `cause` (`.off`,
+  `.notAllowed`, `.unsupported`) for your app to act on, such as opening
+  the right settings, and the `words` to show, in your app's name
+  (`appName`, the prefix unless you give one). macOS kills a process that
   touches Bluetooth without the right to, so tests, and anything started
   from an agent's shell, use `SocketTransport`. The link isn't paired or
   encrypted, so anyone in range can reach the device (SPEC.md §8).

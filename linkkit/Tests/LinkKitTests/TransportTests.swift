@@ -164,14 +164,15 @@ final class Box<T>: @unchecked Sendable {
         #expect(ble.isOurs("Lamp-54fe") && ble.isOurs("Lamp-0001"))
     }
 
-    /// Bluetooth off, refused or missing is said in plain words, with what
-    /// to do and the app's name; on, or on its way, is no trouble. Only
-    /// the words: nothing here may start Bluetooth.
+    /// Bluetooth off, refused or missing is said by its cause, for the app
+    /// to act on, and in plain words, with what to do and the app's name;
+    /// on, or on its way, is no trouble. Only the words: nothing here may
+    /// start Bluetooth.
     @Test func testBluetoothThatCantBeUsedSaysWhy() {
-        #expect(BLETransport.trouble(.poweredOff, appName: "Pip") == "Bluetooth is off. Turn it on in Control Center.")
-        #expect(BLETransport.trouble(.unauthorized, appName: "Pip")
-            == "Pip isn't allowed to use Bluetooth. Allow it in System Settings → Privacy & Security → Bluetooth.")
-        #expect(BLETransport.trouble(.unsupported, appName: "Pip") == "This Mac has no Bluetooth that Pip can use.")
+        #expect(BLETransport.trouble(.poweredOff, appName: "Pip") == TransportTrouble(.off, "Bluetooth is off. Turn it on in Control Center."))
+        #expect(BLETransport.trouble(.unauthorized, appName: "Pip") == TransportTrouble(.notAllowed,
+            "Pip isn't allowed to use Bluetooth. Allow it in System Settings → Privacy & Security → Bluetooth."))
+        #expect(BLETransport.trouble(.unsupported, appName: "Pip") == TransportTrouble(.unsupported, "This Mac has no Bluetooth that Pip can use."))
         for state in [CBManagerState.poweredOn, .resetting, .unknown] { #expect(BLETransport.trouble(state, appName: "Pip") == nil) }
     }
 }

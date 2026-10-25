@@ -158,7 +158,7 @@ public final class Runtime: @unchecked Sendable {
     /// the device decides when each plays.
     var reactions: Reactions { rigs[0].reactions }
     /// The first buddy's transport's `trouble` as the status last had it.
-    var linkTrouble: String? { rigs[0].linkTrouble }
+    var linkTrouble: TransportTrouble? { rigs[0].linkTrouble }
     /// Whether the Mac's mic is on, which several buddies' cores may ask
     /// for at once, and the buddy whose board's button turned it on last:
     /// what it hears is said to that one.

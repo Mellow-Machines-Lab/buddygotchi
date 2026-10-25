@@ -6,9 +6,9 @@ import Foundation
 public protocol Transport: AnyObject, Sendable {
     /// For logs and bug reports: `ble`, or `usb:<bridge socket>`.
     var name: String { get }
-    /// Why it can't look for the device at all, in plain words with what
-    /// to do (`Bluetooth is off. …`), or nil. Read from any thread.
-    var trouble: String? { get }
+    /// Why it can't look for the device at all (Bluetooth is off), or nil.
+    /// Read from any thread.
+    var trouble: TransportTrouble? { get }
     /// `onLine` gets each complete line from the device, and `onConnection`
     /// each change of connection, both on the transport's own thread: the
     /// owner hops to its queue before handing them to `DeviceLink`.
@@ -23,5 +23,28 @@ public protocol Transport: AnyObject, Sendable {
 }
 
 extension Transport {
-    public var trouble: String? { nil }
+    public var trouble: TransportTrouble? { nil }
+}
+
+/// Why a transport can't look for the device: its cause, for an app to
+/// act on (open the right settings), and the words to show for it.
+public struct TransportTrouble: Equatable, Sendable {
+    public enum Cause: Equatable, Sendable {
+        /// The radio is off.
+        case off
+        /// The app isn't allowed to use it.
+        case notAllowed
+        /// The computer has none the app can use.
+        case unsupported
+    }
+
+    public var cause: Cause
+    /// In plain words, with what to do: `Bluetooth is off. Turn it on in
+    /// Control Center.`
+    public var words: String
+
+    public init(_ cause: Cause, _ words: String) {
+        self.cause = cause
+        self.words = words
+    }
 }

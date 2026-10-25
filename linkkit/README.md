@@ -29,7 +29,8 @@ flowchart LR
   whatever's playing, and every one gets exactly one answer: done, cut
   or skipped.
 - 🔌 **Bluetooth or USB, same messages.** A USB bridge shares the board
-  with your app and your tools at once.
+  with your app and your tools at once. When Bluetooth is off or not
+  allowed, the transport says why, with a cause your app can act on.
 - ⬆️ **Firmware updates from your app.** `Flasher` writes new firmware
   onto an ESP32 or ESP32-S3 over USB through the chip's own bootloader,
   the images you pick for the chip it reports, checks it, and restarts
