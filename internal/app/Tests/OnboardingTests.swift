@@ -110,6 +110,24 @@ final class OnboardingProgressTests: XCTestCase {
         XCTAssertEqual(later.lessons, [.tap, .button])
     }
 
+    /// The rule: "Hold my button and talk" is done by push-to-talk that
+    /// heard words, in act 5 only and once; hearing nothing leaves it to
+    /// try again, and a tap or press never does it.
+    func testTheTalkLessonIsDoneByWordsHeard() {
+        var progress = Onboarding.Progress(act: .howTo)
+        _ = progress.tapped(boardFound: true, button: true)
+        XCTAssertFalse(progress.lessons.contains(.talk), "a press isn't talking")
+        XCTAssertFalse(progress.talked(heardWords: false), "nothing heard")
+        XCTAssertFalse(progress.lessons.contains(.talk))
+        XCTAssertTrue(progress.talked(heardWords: true))
+        XCTAssertEqual(progress.lessons, [.button, .talk])
+        XCTAssertFalse(progress.talked(heardWords: true), "once")
+
+        var elsewhere = Onboarding.Progress(act: .smallThings)
+        XCTAssertFalse(elsewhere.talked(heardWords: true), "only in act 5")
+        XCTAssertEqual(elsewhere.lessons, [])
+    }
+
     /// The rule: Back into the board's act after it was skipped, by
     /// "I don't have my Boop yet" or by a launch past it, starts it again
     /// from "Plug me in", never a skipped act with nothing to show.

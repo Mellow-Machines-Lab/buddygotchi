@@ -225,7 +225,13 @@ private struct DeskBoard: View {
 /// done on the board; without one, they're shown.
 struct HowToAct: View {
     @ObservedObject var model: OnboardingModel
+    @ObservedObject var app: AppModel
     @Environment(\.stillMotion) private var still
+
+    init(model: OnboardingModel) {
+        self.model = model
+        app = model.app
+    }
 
     private var paired: Bool { model.body == .joined }
 
@@ -238,7 +244,8 @@ struct HowToAct: View {
                 lesson(2, "Press my button", paired ? "The one on my side. A short press pokes me too. Try it now."
                                                     : "The one on my side. A short press pokes me too.",
                        done: model.lessons.contains(.button), waiting: paired && model.lessons.contains(.tap))
-                lesson(3, "Hold my button and talk", "I listen while you hold it, then answer. Or use Talk on the Mac.")
+                lesson(3, "Hold my button and talk", talkDetail, done: model.lessons.contains(.talk),
+                       waiting: paired && model.lessons.contains(.button))
                 lesson(4, "When I glow amber, tap me", "An agent is waiting for you. A tap opens it on your Mac.", amber: true)
             }
             VStack(alignment: .leading, spacing: 6) {
@@ -261,6 +268,26 @@ struct HowToAct: View {
                 model.feed.poke()
             }
         }
+    }
+
+    /// The talk lesson's words: how, what the Mac heard, or why it can't
+    /// hear. Without Jev's key, which act 7 asks for, nothing answers yet.
+    private var talkDetail: String {
+        guard paired else { return "I listen while you hold it, then answer. Or use Talk on the Mac." }
+        if let why = app.status?.micTrouble { return why }
+        let later = app.noKey ? " I'll answer once I have a brain, in a couple of steps." : ""
+        switch model.talk {
+        case .heard(let words): return "I heard “\(Self.quoted(words))”." + later
+        case .nothing: return "I didn't catch that. Keep holding while you talk, then let go."
+        case nil: return "Hold it, say hi, then let go. macOS asks for the microphone the first time."
+        }
+    }
+
+    /// What was heard, cut short at a word.
+    static func quoted(_ words: String, most: Int = 48) -> String {
+        guard words.count > most else { return words }
+        let cut = words.prefix(most)
+        return (cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? String(cut)) + "…"
     }
 
     /// A lesson; the one to do now is toned, and amber's, which is what

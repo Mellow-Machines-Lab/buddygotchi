@@ -610,13 +610,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         window.setContentSize(OnboardingView.size)
         window.center()
         onboardingWindow = window
+        // Until the menu-bar icon, the window is all there is of Boop: a
+        // Dock icon and ⌘Tab bring it back from behind other windows.
+        NSApp.setActivationPolicy(.regular)
         bringOnboardingForward()
     }
 
-    /// The window in front of every other app's. Until the finale Boop has
-    /// no Dock icon, ⌘Tab or menu-bar icon to find it by, so it comes back
+    /// The window in front of every other app's. It comes back by itself
     /// for the agent's hello, after act 6 sent you to your terminal, and
-    /// when Boop is opened again.
+    /// when Boop is opened again or its Dock icon clicked.
     func bringOnboardingForward() {
         guard let window = onboardingWindow else { return }
         NSApp.activate()
@@ -627,7 +629,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     /// Opening Boop again while it runs (from Finder, Spotlight or the
-    /// Dock's folder): onboarding's window, or the popover.
+    /// Dock): onboarding's window, or the popover.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if onboardingWindow != nil { bringOnboardingForward() } else if !popover.isShown { showPopover() }
         return false
@@ -656,6 +658,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 Task { @MainActor in
                     window.orderOut(nil)
                     self?.onboardingWindow = nil
+                    // The menu-bar app from now on: no Dock icon.
+                    NSApp.setActivationPolicy(.accessory)
                     if !still { self?.blinkIcon(times: 2) }
                 }
             })
@@ -748,9 +752,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                     }
                 }
             }
-            // Onboarding listens for a tap on the board and an agent's
-            // first hook, while it's there.
+            // Onboarding listens for a tap on the board, what push-to-talk
+            // heard and an agent's first hook, while it's there.
             runtime.onTap = { [weak self] button in Task { @MainActor in self?.onboarding?.tapped(button: button) } }
+            runtime.onHeard = { [weak self] words in Task { @MainActor in self?.onboarding?.talked(words) } }
             runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
             presenceSignals.start { runtime.presence($0) }
             // A simulator started or stopped on this Mac: looked for while

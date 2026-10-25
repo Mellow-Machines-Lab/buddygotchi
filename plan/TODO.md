@@ -9,17 +9,23 @@ that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 What the owner's own first-time setup on 2026-10-24 ran into, `make run`
 on a Mac with no Boop state and both boards powered.
 
-- [ ] Act 5's third lesson, "Hold my button and talk", does nothing in
-      the window: unlike the tap's and the button's, it waits on nothing
-      and never ticks, so holding BOOT shows `listening` on the board,
-      and the Mac's mic hears (`talk_on`, `talk_off`, "said 2
-      characters"), but the window stays as it was. It also promises an
-      answer that can't come yet: Jev's key is asked in act 7. Tick it
-      when the board's talk ends, show what the Mac heard (or that it
-      heard nothing, and to hold a little longer), and say the answer
-      comes once Boop has a brain, or ask for the key before act 5. The
-      first hold probably ran into macOS's Speech Recognition and
-      Microphone prompts, and every hold was about a second long.
+- [x] Act 5's third lesson, "Hold my button and talk", did nothing in
+      the window, and promised an answer before Jev's key is asked (act
+      7). It waits after the button's lesson now, and push-to-talk that
+      heard words ticks it (`Onboarding.Progress.talked`, the runtime's
+      `onHeard`); the card says what the Mac heard, that it heard nothing
+      and to keep holding, or why the mic can't hear, and without a key
+      that the answer comes in a couple of steps. Checked by
+      OnboardingTests and RuntimeTests, and act 5's snapshots.
+- [x] Act 7 asked for the microphone again after act 5's push-to-talk
+      had it allowed: its card is left out then. Opening at login from
+      `make run`'s bare binary says that only Boop.app can, and that this
+      copy runs from a terminal. Checked in act 7's snapshots.
+- [x] Act 6's "See exactly what gets added" was the installer's preview
+      as one block of text: it's two paragraphs of what the hooks do and
+      promise, then each agent's file, its hooks, the ones that run only
+      for some types, the command each runs, and Codex's switch. Checked
+      in `6-agents-what-gets-added`.
 - [ ] With two boards powered, act 4 takes the first one it hears
       (`ble: found Boop-54FE`, the CYD) and names it only in small print,
       "FOUND BOOP-54FE", while the board itself gives no sign that it's
@@ -30,12 +36,11 @@ on a Mac with no Boop state and both boards powered.
       Another board can't be heard until it's connected, so offering
       each board found, or letting go of one nobody taps, is the way to
       the other.
-- [ ] Onboarding has no Dock icon: the app is `.accessory`
-      (`MenuBarApp.swift`, and `LSUIElement` in `Info.plist`), and there's
+- [x] Onboarding had no Dock icon: the app is `.accessory`, and there's
       no menu-bar icon until onboarding finishes, so the window, once
-      behind others, has no Dock icon or Command-Tab entry to bring it
-      back. Run as `.regular` while onboarding shows, and `.accessory`
-      once it's done.
+      behind others, had no Dock icon or Command-Tab entry to bring it
+      back. It runs as `.regular` while onboarding shows, and `.accessory`
+      once it's done. Only a real launch shows it (owner's to try).
 
 ## Now: the prompt, read on the Mac
 

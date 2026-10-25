@@ -28,6 +28,11 @@ final class SpeechListener: @unchecked Sendable {
         self.log = log
     }
 
+    /// Speech recognition and the microphone are both allowed already.
+    static var allowed: Bool {
+        SFSpeechRecognizer.authorizationStatus() == .authorized && AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+    }
+
     /// Asks for speech recognition, then the microphone, the first time
     /// either is needed. `done` gets nil when both are allowed,
     /// otherwise why not. Any queue.

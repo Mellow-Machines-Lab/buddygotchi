@@ -19,6 +19,7 @@ extension Runtime {
             run(core(rig).heard(replyTo: step.waking.first?.seq, at: now), on: rig)
         }
         options.log("\(who): said \(words.count) characters")
+        onHeard?(words)
     }
 
     /// The app's mic button, which every buddy listens to: `who` is `app`
@@ -61,6 +62,7 @@ extension Runtime {
         home.async { [self] in
             options.log("talk: heard nothing")
             for rig in rigs { run(core(rig).heardNothing(at: options.clock()), on: rig) }
+            onHeard?(nil)
         }
     }
 

@@ -194,7 +194,26 @@ enum Snapshots {
                 $0.progress.lessons = [.tap, .button]
             }),
             ("5-how-to-no-board", at(.howTo, status: status(connected: false))),
+            ("5-how-to-talk", at(.howTo, status: status()) {
+                $0.body = .joined
+                $0.progress.lessons = [.tap, .button]
+            }),
+            ("5-how-to-heard-nothing", at(.howTo, status: status()) {
+                $0.body = .joined
+                $0.progress.lessons = [.tap, .button]
+                $0.talk = .nothing
+            }),
+            // Before act 7's key: what it heard, and that the answer comes then.
+            ("5-how-to-heard", at(.howTo, status: status(brain: "none")) {
+                $0.body = .joined
+                $0.progress.lessons = [.tap, .button, .talk]
+                $0.talk = .heard("Hi Boop, can you hear me from all the way over here on my desk?")
+            }),
             ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
+            ("6-agents-what-gets-added", at(.agents, status: status()) {
+                $0.app.setup.agents = [.claude]
+                $0.showHooks = true
+            }),
             ("6-agents-hello", at(.agents, status: status()) { $0.connected = true }),
             ("6-agents-heard", at(.agents, status: status()) {
                 $0.connected = true
@@ -202,6 +221,13 @@ enum Snapshots {
             }),
             ("7-small-things", at(.smallThings, status: status())),
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
+            // Act 5's push-to-talk had the mic allowed: no card for it.
+            ("7-small-things-mic-allowed-before", at(.smallThings, status: status()) { $0.askMic = false }),
+            // `make run`'s bare binary, which can't open at login.
+            ("7-small-things-from-terminal", at(.smallThings, status: status()) {
+                $0.app.loginItem = .unavailable
+                $0.app.refreshLoginItem()
+            }),
             ("8-finale", at(.finale, status: status())),
             // After "I don't have my Boop yet": the Mac's way of each tip.
             ("8-finale-no-board", at(.finale, status: status(connected: false))),

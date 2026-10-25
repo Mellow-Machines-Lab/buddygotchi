@@ -486,14 +486,16 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// Onboarding listens to the runtime: a tap on the board, saying
-    /// whether it was the screen or BOOT, and the first agent hook that
-    /// becomes an event; and it greets on the board with a rule's reaction.
-    func testOnboardingHearsTapsAndHooksAndGreetsOnTheBoard() throws {
+    /// whether it was the screen or BOOT, what push-to-talk heard, words
+    /// or nothing, and the first agent hook that becomes an event; and it
+    /// greets on the board with a rule's reaction.
+    func testOnboardingHearsTapsTalkAndHooksAndGreetsOnTheBoard() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
-        let taps = Lines(), agents = Lines()
+        let taps = Lines(), agents = Lines(), heard = Lines()
         runtime.onTap = { taps.add($0 ? "button" : "screen") }
         runtime.onAgentHook = { agents.add($0) }
+        runtime.onHeard = { heard.add($0 ?? "nothing") }
         try runtime.start()
         defer { runtime.stop() }
         eventually("first state on start") { transport.types().contains("state") }
@@ -501,6 +503,12 @@ final class RuntimeTests: XCTestCase {
         transport.onLine?(Self.tap)
         transport.onLine?(Self.press)
         eventually("the tap and the press") { taps.all == ["screen", "button"] }
+        // With no Mac mic (onListen unset), BOOT's push-to-talk hears nothing.
+        transport.onLine?(#"{"t":"ev","kind":"talk_on","did":"listening"}"#)
+        transport.onLine?(#"{"t":"ev","kind":"talk_off"}"#)
+        eventually("nothing heard") { heard.all == ["nothing"] }
+        runtime.said("hi Boop")
+        eventually("the words") { heard.all == ["nothing", "hi Boop"] }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         eventually("the hook") { agents.all == ["claude"] }
         runtime.greet(.wake)

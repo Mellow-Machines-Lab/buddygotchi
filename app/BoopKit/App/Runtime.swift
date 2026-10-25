@@ -203,6 +203,9 @@ public final class Runtime: @unchecked Sendable {
     /// An agent's hook that became an event, by the agent's name
     /// (`claude`, `codex`): onboarding's live hello listens. On `home`.
     public var onAgentHook: ((String) -> Void)?
+    /// What push-to-talk heard once the mic is off, or nil for nothing:
+    /// onboarding's talk lesson listens. On `home`.
+    public var onHeard: ((String?) -> Void)?
 
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls

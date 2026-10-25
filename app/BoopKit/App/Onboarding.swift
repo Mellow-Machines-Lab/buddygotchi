@@ -52,7 +52,7 @@ public enum Onboarding {
         }
 
         /// Act 5's lessons done on the board.
-        public enum Lesson: Hashable, Sendable { case tap, button }
+        public enum Lesson: Hashable, Sendable { case tap, button, talk }
 
         /// What a tap on the board did.
         public enum Tap: Equatable, Sendable {
@@ -104,6 +104,15 @@ public enum Onboarding {
             default:
                 return .nothing
             }
+        }
+
+        /// Push-to-talk ended, and the Mac heard words or nothing. In act 5,
+        /// words do "Hold my button and talk", once; nothing heard leaves it
+        /// to try again. True when it's done now.
+        public mutating func talked(heardWords: Bool) -> Bool {
+            guard act == .howTo, heardWords, !lessons.contains(.talk) else { return false }
+            lessons.insert(.talk)
+            return true
         }
 
         /// An agent's hook. Only in act 6, once connected, and only the

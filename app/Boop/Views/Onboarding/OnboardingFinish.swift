@@ -57,20 +57,66 @@ struct AgentsAct: View {
             .buttonStyle(.quiet)
             if model.showHooks {
                 ScrollView {
-                    Text(model.detectedAgents
-                            .map { "\(app.installer.configURL($0).path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))\n"
-                                + app.installer.preview($0) }
-                            .joined(separator: "\n\n"))
-                        .font(.system(size: 10.5, design: .monospaced))
-                        .foregroundStyle(Theme.inkSoft)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .textSelection(.enabled)
+                    VStack(alignment: .leading, spacing: 12) {
+                        ForEach(Self.whatHooksDo, id: \.self) { paragraph in
+                            Text(paragraph).font(.system(size: 12.5)).foregroundStyle(Theme.ink)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        ForEach(model.detectedAgents, id: \.self) { agent in additions(agent) }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
                 }
-                .frame(height: 110)
-                .padding(10)
+                .frame(height: 200)
+                .padding(12)
                 .background(Theme.well, in: RoundedRectangle(cornerRadius: 10))
             }
         }
+    }
+
+    /// What the hooks are and what they promise, in words, before the
+    /// entries themselves.
+    static let whatHooksDo = [
+        "Claude Code and Codex can run a small program at moments in a session. I add a hook for each moment I "
+            + "follow: a session starting or ending, your prompt, each tool the agent uses, a request for your OK, "
+            + "and the agent finishing. Each one runs agent-hook, which tells me here on this Mac what just happened, "
+            + "with your prompt and the agent's last reply. My brain only ever hears a short reading of those, never your code.",
+        "Hooks only report: they never approve, deny or block anything, and when I'm not running, your agent "
+            + "carries on as usual. Your other hooks stay as they are, I keep a copy of each file before I change it, "
+            + "and Uninstall in Settings takes mine out.",
+    ]
+
+    /// One agent's entries: the file, its hooks, the ones that run only
+    /// for some types, the command every one runs, and anything else that
+    /// changes.
+    private func additions(_ agent: Agent) -> some View {
+        let added = Additions(app.installer, agent)
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
+                Text(agent.displayName).font(.boop(13, .bold))
+                Text(added.file).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.inkSoft)
+            }
+            Text("\(added.hooks.count) hooks: " + added.hooks.joined(separator: " · "))
+                .font(.system(size: 11, design: .monospaced))
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(added.only, id: \.hook) { only in
+                Text("\(only.hook) runs only for \(only.types.joined(separator: ", ")).")
+                    .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Each one runs").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                Text(added.command).font(.system(size: 11, design: .monospaced))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            ForEach(added.also, id: \.self) { also in
+                Text(also).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.paper, in: RoundedRectangle(cornerRadius: Theme.wellRadius))
     }
 
     private func agentCard(_ agent: Agent) -> some View {
@@ -141,8 +187,40 @@ struct AgentsAct: View {
     }
 }
 
-/// Act 7: opening at login, the microphone, and the brain's key, each one
-/// card and each skippable.
+/// What installing adds for an agent, as the installer's preview says it:
+/// a line per hook, `Hook (types) → command`, then, after a blank line,
+/// what else changes (Codex's switch). Paths start at `~`.
+struct Additions {
+    var file: String
+    var hooks: [String] = []
+    /// The hooks that run only for some types, and which.
+    var only: [(hook: String, types: [String])] = []
+    var command: String
+    var also: [String] = []
+
+    init(_ installer: HookInstaller, _ agent: Agent) {
+        func home(_ text: String) -> String { text.replacingOccurrences(of: NSHomeDirectory(), with: "~") }
+        file = home(installer.configURL(agent).path)
+        command = home(installer.command(agent))
+        var paragraphs = installer.preview(agent).components(separatedBy: "\n\n")
+        let lines = paragraphs.isEmpty ? [] : paragraphs.removeFirst().components(separatedBy: "\n")
+        let runs = " → " + installer.command(agent)
+        for line in lines {
+            let hook = line.hasSuffix(runs) ? String(line.dropLast(runs.count)) : line
+            if let open = hook.range(of: " ("), hook.hasSuffix(")") {
+                let name = String(hook[..<open.lowerBound])
+                hooks.append(name)
+                only.append((name, hook[open.upperBound...].dropLast().components(separatedBy: "|")))
+            } else {
+                hooks.append(hook)
+            }
+        }
+        also = paragraphs.map(home)
+    }
+}
+
+/// Act 7: opening at login, the microphone, unless act 5's push-to-talk
+/// had it allowed, and the brain's key, each one card and each skippable.
 struct SmallThingsAct: View {
     @ObservedObject var model: OnboardingModel
     @ObservedObject var app: AppModel
@@ -156,7 +234,7 @@ struct SmallThingsAct: View {
         VStack(spacing: 12) {
             ActTitle(title: "A few small things")
             login
-            mic
+            if model.askMic { mic }
             OnboardingBrainKey(app: app)
             Spacer(minLength: 0)
             ActNav(model: model)
@@ -191,7 +269,7 @@ struct SmallThingsAct: View {
         return switch app.loginItemState {
         case .on, .off: "I only watch your agents while I'm open."
         case .needsApproval: "Allow me in System Settings, under General, Login Items."
-        case .unavailable: "Only Boop.app opens at login."
+        case .unavailable: "Only Boop.app can open at login, and this copy runs from a terminal."
         }
     }
 

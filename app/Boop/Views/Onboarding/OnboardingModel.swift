@@ -35,12 +35,18 @@ final class OnboardingModel: ObservableObject {
     // Act 4: when looking started, for the "can't find me" hint.
     @Published var lookingSince: Date?
 
+    // Act 5: what push-to-talk heard last, for the talk lesson.
+    enum Talk: Equatable { case heard(String), nothing }
+    @Published var talk: Talk?
+
     // Act 6: what gets added, shown.
     @Published var showHooks = false
 
-    // Act 7: the microphone and speech, once asked.
+    // Act 7: the microphone and speech, once asked. The card is left out
+    // when act 5's push-to-talk already had them allowed.
     enum Mic: Equatable { case notAsked, asking, allowed, refused(String) }
     @Published var mic = Mic.notAsked
+    @Published var askMic = true
     /// The person changed the login switch here, so it isn't turned on for them.
     var loginTouched = false
 
@@ -107,6 +113,7 @@ final class OnboardingModel: ObservableObject {
         switch act {
         case .smallThings:
             app.refreshLoginItem()
+            askMic = !SpeechListener.allowed
             // On by default: Boop only watches while it's open.
             if !loginTouched, app.ownsHooks, app.loginItemState == .off { app.setOpenAtLogin(true) }
         case .finale:
@@ -186,6 +193,20 @@ final class OnboardingModel: ObservableObject {
             app.runtime?.greet(.wake)
             log("onboarding: the board was tapped; paired")
         }
+    }
+
+    /// Push-to-talk ended, with what the Mac heard, or nil for nothing.
+    /// In act 5 the talk lesson shows it, and words do the lesson.
+    func talked(_ words: String?) {
+        guard act == .howTo else { return }
+        var next = progress
+        let done = next.talked(heardWords: words != nil)
+        if done { OnboardingSound.play(.success) }
+        withAnimation(done ? .spring(response: 0.55, dampingFraction: 0.6) : .boopPop) {
+            talk = words.map(Talk.heard) ?? .nothing
+            progress = next
+        }
+        if done { log("onboarding: push-to-talk heard words; the talk lesson is done") }
     }
 
     func agentHook(_ agent: String) {
