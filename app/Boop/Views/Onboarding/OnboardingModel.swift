@@ -22,18 +22,12 @@ final class OnboardingModel: ObservableObject {
         get { progress.body }
         set { progress.body = newValue }
     }
-    var lessons: Set<Onboarding.Progress.Lesson> {
-        get { progress.lessons }
-        set { progress.lessons = newValue }
-    }
+    var lessons: Set<Onboarding.Progress.Lesson> { progress.lessons }
     var connected: Bool {
         get { progress.connected }
         set { progress.connected = newValue }
     }
-    var heard: String? {
-        get { progress.heard }
-        set { progress.heard = newValue }
-    }
+    var heard: String? { progress.heard }
 
     // Act 3: why naming couldn't save, if it couldn't.
     @Published var nameError: String?
@@ -69,7 +63,7 @@ final class OnboardingModel: ObservableObject {
         self.app = app
         progress = Onboarding.Progress(act: act)
         self.stateDir = stateDir
-        app.setup.agents = Set(Agent.allCases.filter(app.installer.detected))
+        app.setup.agents = Set(detectedAgents)
     }
 
     var name: String { app.setup.trimmedName.isEmpty ? app.name : app.setup.trimmedName }
