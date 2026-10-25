@@ -60,6 +60,11 @@ struct Hal : linkkit::Platform {
     return false;
   }
   virtual void touchRaw(int& x, int& y, int& z, bool& irq) { x = y = z = 0, irq = false; }
+  // True once after the panel itself said the finger lifted, so a touch
+  // ends at once rather than after Device::kTouchReleaseMs; and how many
+  // such lifts it has said (dbg.state's touch.lifts).
+  virtual bool touchLifted() { return false; }
+  virtual uint32_t touchLifts() { return 0; }
   // Touch calibration: the board applies it to touches and keeps it in NVS.
   virtual void setTouchCal(const TouchCal& c) { (void)c; }
   virtual TouchCal touchCal() { return {}; }

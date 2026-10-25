@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "app/device.h"
@@ -47,6 +48,8 @@ struct FakeHal : app::Hal {
     if (touching) x = 160, y = 100;
     return touching;
   }
+  bool lifted = false;  // the panel says the finger lifted, once
+  bool touchLifted() override { return std::exchange(lifted, false); }
   app::TouchCal cal;
   void setTouchCal(const app::TouchCal& c) override { cal = c; }
   app::TouchCal touchCal() override { return cal; }
@@ -516,6 +519,25 @@ static void test_a_flickering_touch_is_one_tap() {
   r.hal.real = 500;
   r.kit.tick();
   TEST_ASSERT_EQUAL_INT(2, count(r.usb.text, tap));
+}
+
+// A panel that says the finger lifted ends the touch at once: its tap
+// goes out on the pass that hears it, not 50 ms after the last contact.
+static void test_a_lift_the_panel_reports_taps_at_once() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"run\":true}");
+  const char* tap = "{\"t\":\"ev\",\"kind\":\"tap\",";
+  for (uint32_t ms = 0; ms <= 80; ms += 20) {
+    r.hal.real = ms;
+    r.hal.touching = true;
+    r.kit.tick();
+  }
+  r.hal.touching = false;
+  r.hal.lifted = true;
+  r.hal.real = 81;
+  r.kit.tick();
+  TEST_ASSERT_EQUAL_INT(1, count(r.usb.text, tap));
 }
 
 // The 50 ms runs on real time, so a panel touch still ends, and
@@ -2402,6 +2424,7 @@ int main() {
   RUN_TEST(test_a_physical_hold_is_push_to_talk);
   RUN_TEST(test_the_macs_listening_and_the_empty_reaction);
   RUN_TEST(test_a_flickering_touch_is_one_tap);
+  RUN_TEST(test_a_lift_the_panel_reports_taps_at_once);
   RUN_TEST(test_a_tap_on_a_named_finish_carries_its_id);
   RUN_TEST(test_a_reaction_carries_its_expression);
   RUN_TEST(test_a_touch_ends_while_the_clock_is_frozen);

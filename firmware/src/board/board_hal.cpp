@@ -85,6 +85,8 @@ bool BoardHal::touch(int& x, int& y) {
 }
 
 void BoardHal::touchRaw(int& x, int& y, int& z, bool& irq) { board::touchRaw(x, y, z, irq); }
+bool BoardHal::touchLifted() { return board::touchLifted(); }
+uint32_t BoardHal::touchLifts() { return board::touchLifts(); }
 
 void BoardHal::setTouchCal(const app::TouchCal& c) {
   cal_ = c;

@@ -65,4 +65,7 @@ void touchRaw(int& x, int& y, int& z, bool& irq) {
   x = xt[ix >> 1], y = yt[iy >> 1], z = zt[iz >> 1] >> 8;
 }
 
+bool touchLifted() { return false; }  // the resistive panel can't tell
+uint32_t touchLifts() { return 0; }
+
 }  // namespace board
