@@ -67,9 +67,6 @@ struct Acting {
   int heldGeneration = 0, heldIteration = 0;
   // The tags on and how long the look has shown (Engine::setOccasion).
   uint32_t when = 0, lookMs = 0;
-  // A gag has played: its channels join the trace (gel-trace), as they do
-  // the reference's inspection.
-  bool gagged = false;
   // This step's gag contacts, the sounds of a sneeze or the zoomies.
   std::vector<ContactEvent> contacts;
   Acting() { contacts.reserve(4); }
@@ -111,7 +108,7 @@ struct Acting {
     performance = playing = -1;
     if (!value) nextPerformance = max(nextPerformance, time + T::literal(.4));
   }
-  void advance(T dt, T time, bool grab, bool reduced, Random& random);
+  void advance(T dt, T time, bool grab, Random& random);
 };
 enum class Primitive { kSoft, kGather, kBlink, kRecoil };
 struct Bridge {
@@ -121,7 +118,7 @@ struct Bridge {
   int from = -1, to = -1, edge = -1, variant = 0, category = -1, direction = 0;
   Primitive primitive = Primitive::kSoft;
   F amplitude;
-  T elapsedMs, durationMs, startedAtMs, deferredMs;
+  T elapsedMs, durationMs, deferredMs;
   void context(bool isQuiet, bool isGrab, bool isAttention) {
     quiet = isQuiet;
     grab = isGrab;
@@ -129,9 +126,7 @@ struct Bridge {
     if (active && (quiet || attention)) suppressed = true;
   }
   T retarget(int source, int target, T time, Random& random, int forced = -1);
-  void advance(T dt, bool reduced);
+  void advance(T dt);
   F progress() const { return active ? elapsedMs / durationMs : F(1); }
-  bool deferred() const { return active && elapsedMs < durationMs && grab && !suppressed && !expired; }
-  const char* phase() const;
 };
 }  // namespace render::gel

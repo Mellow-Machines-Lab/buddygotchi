@@ -145,7 +145,7 @@ struct Scenes {
   int gag() const { return generation ? recipe.gag : -1; }
   void setRoute(const Route&, T time, int expression, Random&);
   void pickRecipe(T time, Random&);
-  std::string advance(T dt, T time, bool grab, bool reduced, Random&);
+  std::string advance(T dt, T time, bool grab, Random&);
   F envelope(T time, int kind) const;
   F recovery() const {
     return !std::strcmp(phase, "recover")   ? smooth((recipe.duration - ageMs) / 480)
@@ -153,9 +153,7 @@ struct Scenes {
                                              : F(1);
   }
   F entry() const { return smooth(ageMs / 240); }
-  F focus(bool reduced) const {
-    return reduced ? q(.5) : q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus);
-  }
+  F focus() const { return q(.5) + q(.5) * sin(clamp(ageMs / recipe.duration, 0, 1) * pi * 2 * recipe.focus); }
   // A prop's drawn opacity: its ramp, times a card's reveal or the helpers' recovery.
   F visible(Prop prop, T time) const {
     const auto& slot = slots[prop];
@@ -169,7 +167,7 @@ struct Scenes {
   const char* phaseAt(T age) const;
   void cardReveal(Ramp& reveal) const;
   bool wants(Prop prop) const;
-  void refresh(Prop prop, bool reduced);
-  void updateProps(T time, bool reduced);
+  void refresh(Prop prop);
+  void updateProps(T time);
 };
 }  // namespace render::gel

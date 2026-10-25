@@ -7,15 +7,14 @@
 namespace render::gel {
 struct Motion {
   Spring modes[4];  // lean, squash, ripple, dent
-  F weights[slime::kProfiles]{};
   int emotion = slime::kCalm;
   T time, nextBlink = T::literal(2.8), blinkAt = -10, nextLook = T::literal(4.5);
-  F contactX, contactY = q(.2), gaze, gazeTarget;
-  Motion() { weights[slime::kCalm] = 1; }
-  void advance(T dt, T now, Random& random, bool reduced);
-  void impulse(bool shake, bool reduced, F x = 0, F y = q(.2));
+  F gaze, gazeTarget;
+  void advance(T dt, T now, Random& random);
+  // A poke (at x across the dome: it leans away from where it's poked) or a shake.
+  void impulse(bool shake, F x = 0);
   F blink() const;
-  std::array<F, 4> pose(bool reduced) const;
+  std::array<F, 4> pose() const;
 };
 // face.mjs: each control is a critically damped spring that keeps its velocity
 // across retargets. The arts drawn are layers, oldest first and the current
@@ -56,7 +55,7 @@ struct SemanticFace {
   void retarget(T ms = kFaceMs);
   void setMood(int id, T ms = kFaceMs);
   void setSleeping(bool value);
-  void advance(T dt, bool reduced);
+  void advance(T dt);
 
  private:
   void weigh(F s);

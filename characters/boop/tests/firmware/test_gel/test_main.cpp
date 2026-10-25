@@ -63,7 +63,7 @@ static void test_frame_replay_is_byte_identical() {
   Surface sa{502, 410, a.data()}, sb{502, 410, b.data()};
   auto e = std::make_unique<Engine>();
   e->setMood(slime::kFrightened);
-  e->motion.impulse(false, false);
+  e->motion.impulse(false);
   for (int t = 0; t <= 640; t += 16) e->step(t);
   paint(sa, *e);
   paint(sb, *e);
@@ -361,16 +361,16 @@ static void test_face_and_props_move_without_jumps() {
   }
   SemanticFace face;
   face.setMood(slime::kFrightened);
-  for (int i = 0; i < 3; ++i) face.advance(T::ratio(16, 1000), false);
+  for (int i = 0; i < 3; ++i) face.advance(T::ratio(16, 1000));
   const F moving = face.velocity[2];
   TEST_ASSERT_TRUE(abs(moving) > q(.01));
   face.setMood(slime::kHappy);
   TEST_ASSERT_TRUE(face.velocity[2] == moving);
   // A fifth art within one window drops the faintest of the four; the
   // others keep their order, and their shares grow to fill what it leaves.
-  face.advance(T::ratio(16, 1000), false);
+  face.advance(T::ratio(16, 1000));
   face.setMood(slime::kSad);
-  face.advance(T::ratio(16, 1000), false);
+  face.advance(T::ratio(16, 1000));
   TEST_ASSERT_EQUAL_INT(SemanticFace::kMaxLayers, face.count);
   const SemanticFace four = face;
   int faintest = 0;
@@ -422,11 +422,11 @@ static void test_the_face_keeps_sleeps_spring_until_it_wakes() {
   for (SemanticFace* f : {&still, &moved}) {
     f->setSleeping(true);
     TEST_ASSERT_TRUE(f->durationMs == T(SemanticFace::kSleepMs));
-    for (int i = 0; i < 5; ++i) f->advance(frame, false);
+    for (int i = 0; i < 5; ++i) f->advance(frame);
   }
   moved.setMood(slime::kHappy);
   for (int i = 0; i < 30; ++i) {
-    for (SemanticFace* f : {&still, &moved}) f->advance(frame, false);
+    for (SemanticFace* f : {&still, &moved}) f->advance(frame);
     TEST_ASSERT_TRUE(moved.controls == still.controls && moved.velocity == still.velocity);
   }
   moved.setSleeping(false);
@@ -441,9 +441,9 @@ static void test_a_faded_art_never_comes_back() {
   const T frame = T::ratio(16, 1000);
   SemanticFace f;
   f.setMood(slime::kHappy);
-  for (int i = 0; i < 6; ++i) f.advance(frame, false);
+  for (int i = 0; i < 6; ++i) f.advance(frame);
   f.setSleeping(true);
-  for (int i = 0; i < 24; ++i) f.advance(frame, false);
+  for (int i = 0; i < 24; ++i) f.advance(frame);
   auto calm = [&] {
     for (int i = 0; i < f.count; ++i)
       if (f.layers[i].art == slime::kCalm && !f.layers[i].sleeping) return &f.layers[i];
@@ -453,7 +453,7 @@ static void test_a_faded_art_never_comes_back() {
   TEST_ASSERT_TRUE(calm()->weight == F(0));
   f.setSleeping(false);
   for (int i = 0; i < 12; ++i) {
-    f.advance(frame, false);
+    f.advance(frame);
     TEST_ASSERT_NULL(calm());
   }
 }
