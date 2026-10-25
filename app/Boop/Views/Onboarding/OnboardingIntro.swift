@@ -149,7 +149,7 @@ struct WhatIDoAct: View {
     }
 
     private func card(_ index: Int, _ title: String, _ detail: String) -> some View {
-        OnboardingCard(tone: step.card == index ? (index == 1 ? Theme.amber : Theme.ink) : nil) {
+        Card(padding: 14, tone: step.card == index ? (index == 1 ? Theme.amber : Theme.ink) : nil) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.boop(14, .bold))
                 Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
@@ -197,11 +197,13 @@ struct MakeMeYoursAct: View {
                 .offset(y: hop ? -10 : 0)
                 // Off the tile's top corner and out of the layout, so a
                 // name of any length leaves the tile where it is: the
-                // bubble's room starts just inside the tile's edge.
+                // bubble's room, 240 at most, starts just inside the
+                // tile's edge, and it grows from there.
                 .overlay(alignment: .topTrailing) {
                     if !draft.trimmedName.isEmpty, draft.nameIssue == nil {
-                        Bubble("\(draft.trimmedName)! I love it.", width: Bubble.room)
-                            .offset(x: Bubble.room - Theme.gapSnug, y: -6)
+                        Bubble("\(draft.trimmedName)! I love it.")
+                            .frame(width: 240, alignment: .leading)
+                            .offset(x: 240 - Theme.gapSnug, y: -6)
                             .transition(.scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity))
                     }
                 }

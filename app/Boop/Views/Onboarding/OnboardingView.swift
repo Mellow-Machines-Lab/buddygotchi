@@ -133,19 +133,11 @@ struct OnboardingBuddy: View {
 }
 
 /// What Boop says: a rounded bubble in ink, its tail at the bottom left.
+/// It wraps at the width it's given.
 struct Bubble: View {
     let text: String
-    /// When given, it wraps at this width, growing from its leading edge;
-    /// else it's one line.
-    var width: CGFloat?
 
-    /// The room a bubble beside a tile takes, at most.
-    static let room: CGFloat = 240
-
-    init(_ text: String, width: CGFloat? = nil) {
-        self.text = text
-        self.width = width
-    }
+    init(_ text: String) { self.text = text }
 
     var body: some View {
         Text(text)
@@ -154,8 +146,7 @@ struct Bubble: View {
             .padding(.horizontal, 14).padding(.vertical, 9)
             .background(Theme.ink, in: UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: 4,
                                                              bottomTrailingRadius: 16, topTrailingRadius: 16))
-            .fixedSize(horizontal: width == nil, vertical: true)
-            .frame(width: width, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 
@@ -216,17 +207,6 @@ struct ActBack: View {
             Label("I'm \(model.name) now, for keeps", systemImage: "lock")
                 .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
         }
-    }
-}
-
-/// A card on the paper: the popover's, a little roomier. Nothing in
-/// onboarding but a choice looks chosen, so a card's emphasis is its tone.
-struct OnboardingCard<Content: View>: View {
-    var tone: Color?
-    @ViewBuilder var content: Content
-
-    var body: some View {
-        Card(padding: 14, tone: tone) { content }
     }
 }
 

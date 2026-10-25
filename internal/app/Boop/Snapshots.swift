@@ -187,18 +187,18 @@ enum Snapshots {
             ("4-body-back-after-skipping", at(.howTo, status: status(connected: false)) { $0.progress.move(to: .body) }),
             ("5-how-to", at(.howTo, status: status()) {
                 $0.body = .joined
-                $0.lessons = [.tap]
+                $0.progress.lessons = [.tap]
             }),
             ("5-how-to-done", at(.howTo, status: status()) {
                 $0.body = .joined
-                $0.lessons = [.tap, .button]
+                $0.progress.lessons = [.tap, .button]
             }),
             ("5-how-to-no-board", at(.howTo, status: status(connected: false))),
             ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
             ("6-agents-hello", at(.agents, status: status()) { $0.connected = true }),
             ("6-agents-heard", at(.agents, status: status()) {
                 $0.connected = true
-                $0.heard = "claude"
+                $0.progress.heard = "claude"
             }),
             ("7-small-things", at(.smallThings, status: status())),
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),

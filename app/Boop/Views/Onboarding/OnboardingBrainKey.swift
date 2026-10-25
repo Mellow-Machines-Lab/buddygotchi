@@ -11,7 +11,7 @@ struct OnboardingBrainKey: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        OnboardingCard {
+        Card(padding: 14) {
             VStack(alignment: .leading, spacing: 10) {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack {

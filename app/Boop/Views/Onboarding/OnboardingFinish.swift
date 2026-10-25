@@ -22,7 +22,7 @@ struct AgentsAct: View {
             if model.connected {
                 hello
             } else if model.detectedAgents.isEmpty {
-                OnboardingCard {
+                Card(padding: 14) {
                     Text("I can't find Claude Code or Codex on this Mac. Install one, then connect me in Settings.")
                         .font(.system(size: 13)).foregroundStyle(Theme.inkSoft)
                 }
@@ -45,8 +45,7 @@ struct AgentsAct: View {
                 Text("This copy of Boop leaves the hooks to your everyday Boop. Connect only listens for the hello.")
                     .font(.system(size: 12)).foregroundStyle(Theme.inkSoft).multilineTextAlignment(.center)
             } else if !app.installer.clientInPlace {
-                Text(AboutThisMac.isApp() ? "My hook helper is missing, so I can't add hooks yet. Install Boop again, then connect them in Settings."
-                                      : "agent-hook isn't built, so I can't add hooks yet. Run make build, then connect them in Settings.")
+                Text(AppModel.clientMissing + " Then connect your agents in Settings.")
                     .font(.system(size: 12)).foregroundStyle(Theme.clayInk).multilineTextAlignment(.center)
             }
             Button {
@@ -58,7 +57,7 @@ struct AgentsAct: View {
             .buttonStyle(.quiet)
             if model.showHooks {
                 ScrollView {
-                    Text(Agent.allCases.filter(app.installer.detected)
+                    Text(model.detectedAgents
                             .map { "\(app.installer.configURL($0).path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))\n"
                                 + app.installer.preview($0) }
                             .joined(separator: "\n\n"))
@@ -77,7 +76,7 @@ struct AgentsAct: View {
     private func agentCard(_ agent: Agent) -> some View {
         let found = app.installer.detected(agent)
         let on = found && app.installer.clientInPlace && app.setup.agents.contains(agent)
-        return OnboardingCard {
+        return Card(padding: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(agent.displayName).font(.boop(16, .bold))
@@ -165,7 +164,7 @@ struct SmallThingsAct: View {
     }
 
     private var login: some View {
-        OnboardingCard {
+        Card(padding: 14) {
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("I'll be here when you log in", systemImage: "power").font(.boop(15, .bold))
@@ -197,7 +196,7 @@ struct SmallThingsAct: View {
     }
 
     private var mic: some View {
-        OnboardingCard {
+        Card(padding: 14) {
             HStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 3) {
                     Label("Want to talk to me?", systemImage: "mic").font(.boop(15, .bold))
@@ -259,7 +258,7 @@ struct FinaleAct: View {
 
     /// A tip; amber's, which is what it means, has its dot.
     private func tip(_ icon: String, _ title: String, _ detail: String, amber: Bool = false) -> some View {
-        OnboardingCard {
+        Card(padding: 14) {
             HStack(spacing: 10) {
                 Image(systemName: icon).font(.system(size: 15)).foregroundStyle(Theme.inkSoft).frame(width: 20)
                 VStack(alignment: .leading, spacing: 1) {

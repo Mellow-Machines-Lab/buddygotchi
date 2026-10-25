@@ -142,7 +142,7 @@ struct BodyAct: View {
             if let firmware = app.firmwareOffer {
                 snack(firmware)
             } else if let device = app.status?.device, !device.hasTheVoice {
-                OnboardingCard {
+                Card(padding: 14) {
                     Label("I've lost my voice: there's no voice file on my card. I'll still show everything; Settings says how to fix it.",
                           systemImage: "speaker.slash")
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
@@ -160,7 +160,7 @@ struct BodyAct: View {
 
     /// Older firmware than the app carries: a snack, over USB.
     private func snack(_ firmware: BoardFirmware) -> some View {
-        OnboardingCard {
+        Card(padding: 14) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("I'm a bit hungry. Feed me an update?").font(.boop(14, .bold))
