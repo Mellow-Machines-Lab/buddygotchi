@@ -9,6 +9,7 @@
 #include <cstdint>
 
 #include "render/maths.h"
+#include "render/tags.h"
 #include "render/types.h"
 
 namespace render::rig {
@@ -114,10 +115,25 @@ struct Clip {
 // its last's after the last.
 int sample(const Track& track, uint32_t local);
 
-// A look: the base clip it loops, nullptr for none.
+// A look's occasion: a clip it plays now and then while every tag it needs
+// is on and the look has shown its wait (render::fits).
+struct Occasion {
+  const Clip* clip;
+  uint32_t when;  // render/tags.h's bits
+  uint16_t afterS;
+};
+// How often a look plays an occasion while some fit: at each chance a face
+// gives it (a pass of the look's loop, while no occasion of its plays), one
+// of those that fit this many percent of the time, any one alike.
+constexpr int kOccasionPct = 67;
+// A look: the base clip it loops, nullptr for none, and its occasions.
 struct Look {
   SceneState state;
   const Clip* clip;
+  List<Occasion> occasions;
+  // How many of its occasions fit now; and the clip of the i-th of those.
+  int fitting(uint32_t when, uint32_t lookMs) const;
+  const Clip* fitting(uint32_t when, uint32_t lookMs, int i) const;
 };
 
 // A pack's rig, as rig_tables.h has it (kRig). Each lookup is nullptr for
@@ -132,7 +148,8 @@ struct Rig {
 };
 
 // How long what comes and goes takes to: a style's cross-fade, the lane's
-// strip, a switch from one design to another.
+// strip and a reaction's sign, a layer's content (render/rig/layers.h), a
+// switch from one design to another.
 constexpr uint32_t kFadeMs = 200;
 
 // An opacity, 0 … 1000, easing to its target over kFadeMs from when it was
@@ -144,6 +161,8 @@ class Ramp {
   void retarget(int to, uint32_t t);
   int value(uint32_t t) const { return at(t).value; }
   int target() const { return to_; }
+  // When it was last retargeted: it's there kFadeMs later.
+  uint32_t since() const { return start_; }
 
  private:
   Hermite at(uint32_t t) const;

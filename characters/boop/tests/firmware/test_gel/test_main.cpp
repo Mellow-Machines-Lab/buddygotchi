@@ -21,6 +21,7 @@
 #include "render/gel/raster.h"
 #include "render/tags.h"
 #include "fonts_gel.h"
+#include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 using namespace render;
 using namespace render::gel;
 // Heap allocations while `allocCounting` is on (test_steady_frames_allocate_nothing),
@@ -1171,9 +1172,10 @@ static void test_a_notice_looks_up_at_you() {
 // stretches in the morning, bounces at a party and at New Year's (the
 // party's own bounce), and nods off once it dozes, by that tag alone however
 // long it has shown; with no tag on, or tags none needs, it plays none.
-// Work types busier while busy and frantically while frantic, and stretches
-// on a long turn's marathon; asleep snores deeper at night and dreams after
-// half an hour.
+// Work types busier while busy and frantically while frantic, and plays
+// nothing of its own on a long turn's marathon (the rig's stretch plays
+// there: test_a_rig_clip_plays_on_both_faces); asleep snores deeper at
+// night and dreams after half an hour.
 static void test_occasions_play_only_while_they_fit() {
   // The occasions idle played, by their gags.
   auto idle = [](uint32_t when, uint32_t lookMs) {
@@ -1238,10 +1240,100 @@ static void test_occasions_play_only_while_they_fit() {
   only(work(SceneState::kWorking, busyTags(2), 0), tagBit("busy"), 0, nullptr);
   only(work(SceneState::kWorking, busyTags(5), 0), tagBit("frantic"), 0, nullptr);
   TEST_ASSERT_TRUE(work(SceneState::kWorking, 0, 7200000).empty());
-  only(work(SceneState::kWorking, tagBit("marathon"), 0), tagBit("marathon"), 0, "occasion:work-stretch");
+  TEST_ASSERT_TRUE(work(SceneState::kWorking, tagBit("marathon"), 0).empty());
   only(work(SceneState::kAsleep, tagBit("night"), 0), tagBit("night"), 0, nullptr);
   only(work(SceneState::kAsleep, 0, 1800000), 0, 1800, "occasion:dream");
   TEST_ASSERT_TRUE(work(SceneState::kAsleep, 0, 1799000).empty());
+}
+// A clip authored once in the pack's rig/clips/ plays on both of its faces:
+// the look's occasion (rig/looks.json, working's stretch on a long turn's
+// marathon) through each face's mixer, the gel's laid over the engine's
+// pose (applyRig) and Pixel's on its rig face, at the end of a pass of the
+// look's loop, render::rig::kOccasionPct of the chances. Without the tag
+// neither face plays it; the gel's mixer stays at rest, so nothing it draws
+// changes; and a reaction fades it out.
+static void test_a_rig_clip_plays_on_both_faces() {
+  const rig::Clip* stretch = rig::kRig.clip("stretch");
+  TEST_ASSERT_NOT_NULL(stretch);
+  const rig::Look* working = rig::kRig.look(SceneState::kWorking);
+  TEST_ASSERT_EQUAL_INT(1, working->fitting(tagBit("marathon"), 0));
+  TEST_ASSERT_EQUAL_PTR(stretch, working->fitting(tagBit("marathon") | tagBit("day"), 0, 0));
+  TEST_ASSERT_EQUAL_INT(0, working->fitting(tagBit("camp"), 0));
+  // The tallest squash and the most shut eyes each face's mixer reaches
+  // over a minute at work, and when the gel's first left rest.
+  struct Seen {
+    int squash = 0, open = 1000;
+    uint32_t moved = 0;
+  };
+  auto play = [](bool gel, uint32_t when, uint32_t pokeAt = 0) {
+    linkkit::Rng rng;
+    std::unique_ptr<Face> face;
+    if (gel)
+      face = std::make_unique<GelFace>();
+    else
+      face = std::make_unique<pixel::PixelFace>();
+    app::Behaviour b(std::move(face));
+    b.reset(0, rng);
+    app::Model m;
+    m.base = SceneState::kWorking, m.act = SceneState::kTerminal, m.mood = Mood::kHappy, m.when = when;
+    b.onState(m, 0);
+    Seen seen;
+    for (uint32_t t = 16; t <= 60000; t += 16) {
+      if (pokeAt && t == pokeAt) {
+        app::ReactionIn in;
+        in.anim = SceneState::kPoked;
+        in.id = 7;
+        in.variant = b.pick(in.anim, m.mood, 255, in.outcome, StartCtx::kNone, rng);
+        b.play(in, t);
+      }
+      b.advance(t, rng);
+      const rig::Mixer& mixer = gel ? static_cast<GelFace&>(b.face()).mixer()
+                                    : static_cast<pixel::PixelFace&>(b.face()).rigFace().mixer();
+      const rig::Channels& c = mixer.channels();
+      seen.squash = std::min<int>(seen.squash, c[rig::Channel::kSquash]);
+      seen.open = std::min<int>(seen.open, std::min(c[rig::Channel::kEyeOpenL], c[rig::Channel::kEyeOpenR]));
+      if (gel && !seen.moved && std::memcmp(&c, &rig::kRest, sizeof c)) seen.moved = t;
+      if (pokeAt && t >= pokeAt + 400) {
+        // The poke's reaction faded the stretch out.
+        TEST_ASSERT_TRUE(c[rig::Channel::kSquash] >= -30);
+        TEST_ASSERT_TRUE(c[rig::Channel::kEyeOpenL] > 900);
+      }
+      if (pokeAt && t >= pokeAt + 400) break;
+    }
+    return seen;
+  };
+  for (bool gel : {true, false}) {
+    const Seen marathon = play(gel, tagBit("marathon")), plain = play(gel, tagBit("day"));
+    TEST_ASSERT_TRUE(marathon.squash <= -115);  // up tall: the stretch's -130 at its height
+    TEST_ASSERT_TRUE(marathon.open <= 320);     // eyes squeezed: its -700 on 1000 (and Pixel blinks)
+    TEST_ASSERT_TRUE(plain.squash >= -30);      // the look's own breathing at most (Pixel's)
+    if (gel) {
+      TEST_ASSERT_EQUAL_UINT32(0, plain.moved);  // the gel's mixer at rest throughout
+      TEST_ASSERT_TRUE(marathon.moved > 0);
+      play(gel, tagBit("marathon"), marathon.moved + 608);
+    }
+  }
+  // On the gel the rig's channels move what the painter draws: taller, its
+  // crown higher, and its lids down; at rest, nothing.
+  auto e = std::make_unique<Engine>();
+  for (uint32_t t = 0; t <= 1600; t += 16) e->step(t);
+  PaintControls rest, moved;
+  rest.squash = 100, rest.lean = -40, rest.lift = 20, rest.blink = 300;
+  moved = rest;
+  applyRig(rest, rig::kRest);
+  TEST_ASSERT_EQUAL_MEMORY(&moved, &rest, sizeof rest);
+  rig::Mixer m;
+  m.reset(0, 0, nullptr);
+  m.play(*stretch);
+  m.advance(1000);
+  applyRig(moved, m.channels());
+  TEST_ASSERT_TRUE(moved.squash > rest.squash + 400 && moved.lift > rest.lift + 250 && moved.blink > 2500);
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  rig::Anchors still, stretched;
+  paint(s, *e, false, 0, 0, &still);
+  paint(s, *e, false, 0, 0, &stretched, m.channels());
+  TEST_ASSERT_TRUE(stretched.crown.y < still.crown.y - 16 * 8);
 }
 void test_fixed_math_and_motion();
 void test_software_clock_matches_binary64();
@@ -1427,6 +1519,94 @@ static void test_layers_follow_the_bodys_anchors() {
   for (int i = 0; i < 20; ++i) paintLayers(s, *e, at);
   allocCounting = false;
   TEST_ASSERT_EQUAL_INT(0, allocCount);
+}
+
+// What the gel wears, the air and the Zs come and go through the rig's
+// layer stack (the face's), on the rig's 200 ms fade: a winter evening's
+// bobble fades out at night and the nightcap in after it; falling asleep,
+// the gown and the Zs fade in while the hat and the snow stay whole,
+// each layer its own; a sign fades out at its opacity, as Behaviour gives
+// it. Each is drawn at its layer's opacity.
+static void test_the_layers_come_and_go_through_the_stack() {
+  using rig::Layer;
+  static_assert(rig::kFadeMs == 200, "a layer fades over the rig's 200 ms");
+  linkkit::Rng rng;
+  app::Behaviour b(std::make_unique<GelFace>());
+  b.reset(0, rng);
+  const auto& face = static_cast<GelFace&>(b.face());
+  const rig::Layers& l = face.layers();
+  auto state = [&](SceneState base, std::initializer_list<const char*> names, uint32_t t) {
+    app::Model m;
+    m.base = base, m.mood = Mood::kCalm;
+    for (const char* n : names) m.when |= tagBit(n);
+    b.advance(t, rng);
+    b.onState(m, t);
+    b.advance(t, rng);
+  };
+  const uint32_t bobble = uint32_t(Outfit::kBobble), nightcap = uint32_t(Outfit::kNightcap);
+  state(SceneState::kIdle, {"evening", "winter"}, 0);
+  b.advance(1000, rng);
+  TEST_ASSERT_EQUAL_UINT32(bobble, l.content(Layer::kHat, 1000));
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1000));
+  TEST_ASSERT_EQUAL_UINT32(kSnow, l.content(Layer::kAir, 1000));
+  state(SceneState::kIdle, {"night", "winter"}, 1008);
+  for (uint32_t t = 1008; t <= 1500; t += 16) {
+    b.advance(t, rng);
+    const uint32_t into = t - 1008;
+    if (into < rig::kFadeMs) {
+      TEST_ASSERT_EQUAL_UINT32(bobble, l.content(Layer::kHat, t));
+      TEST_ASSERT_EQUAL_INT(1000 - ease1000(int(into), 200), l.opacity(Layer::kHat, t));
+    } else {
+      TEST_ASSERT_EQUAL_UINT32(nightcap, l.content(Layer::kHat, t));
+      TEST_ASSERT_EQUAL_INT(ease1000(std::min(int(into) - 200, 200), 200), l.opacity(Layer::kHat, t));
+    }
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kAir, t));  // the snow stays
+  }
+  state(SceneState::kAsleep, {"night", "winter"}, 2000);
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kWorn, 2000));
+  for (uint32_t t = 2016; t <= 2400; t += 16) {
+    b.advance(t, rng);
+    const int in = ease1000(std::min(int(t - 2000), 200), 200);
+    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kWorn, t));    // the gown
+    TEST_ASSERT_EQUAL_INT(in, l.opacity(Layer::kBeside, t));  // the Zs
+    TEST_ASSERT_EQUAL_UINT32(nightcap, l.content(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kAir, t));
+  }
+  TEST_ASSERT_TRUE(l.content(Layer::kWorn, 2400) != 0 && l.content(Layer::kBeside, 2400) == 1);
+  // Drawn at the opacity: a hat half in is about half as bright as whole.
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  e->setOccasion(tagBit("night"), 0);
+  rig::Anchors at;
+  paint(s, *e, false, 0, 0, &at);
+  rig::Layers hat;
+  hat.show(Layer::kHat, nightcap, 0);
+  auto lit = [&](const rig::Layers& layers, uint32_t t) {
+    std::fill(px.begin(), px.end(), 0);
+    paintLayers(s, *e, at, &layers, t);
+    long n = 0;
+    for (uint16_t p : px) n += (p >> 11) + (p >> 5 & 63) / 2 + (p & 31);
+    return n;
+  };
+  const long whole = lit(hat, 400), half = lit(hat, 100);
+  TEST_ASSERT_TRUE(whole > 10000);
+  TEST_ASSERT_INT_WITHIN(whole / 10, whole / 2, half);
+  TEST_ASSERT_EQUAL_INT(0, lit(rig::Layers{}, 400));
+  // The sign, at its opacity.
+  auto sign = [&](int opacity) {
+    std::fill(px.begin(), px.end(), 0);
+    paintSign(s, {"bye bye code", 1000, opacity}, at);
+    long n = 0;
+    for (uint16_t p : px) n += (p >> 11) + (p >> 5 & 63) / 2 + (p & 31);
+    return n;
+  };
+  const long up = sign(1000);
+  TEST_ASSERT_TRUE(up > 10000);
+  TEST_ASSERT_INT_WITHIN(up / 10, up / 2, sign(500));
+  TEST_ASSERT_EQUAL_INT(0, sign(0));
 }
 
 // The gown comes with the nightcap while it sleeps, and with no other
@@ -1939,6 +2119,8 @@ int main() {
   RUN_TEST(test_each_gesture_plays_its_own_gag);
   RUN_TEST(test_a_notice_looks_up_at_you);
   RUN_TEST(test_occasions_play_only_while_they_fit);
+  RUN_TEST(test_a_rig_clip_plays_on_both_faces);
+  RUN_TEST(test_the_layers_come_and_go_through_the_stack);
   RUN_TEST(test_gel_draws_natively);
   RUN_TEST(test_face_projection_and_pose_bounds);
   RUN_TEST(test_tracked_clear_matches_full_clear);

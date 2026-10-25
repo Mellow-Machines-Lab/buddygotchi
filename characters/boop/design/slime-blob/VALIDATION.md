@@ -84,10 +84,14 @@ ramps and springs can, and no jolt at an event. By file:
   sleeping face crossing in once it's 0.9 shut, waking quick, sleep's
   spring kept through a mood change), the night's lids, a finger moving the dome its own
   way, every result card's mark, comedy, the ten gestures, the notice, the
-  occasions, the lane at the panel's size (fading whatever the draw
-  cadence, blended once, cut and marked as the canvas does), the layers on
-  the body's anchors, drawing by coverage, tracked clearing and kept cards
-  matching a fresh frame, and steady frames allocating nothing.
+  occasions, a clip of the rig's on both faces (the marathon's stretch,
+  over the gel's pose and on Pixel's rig face, faded out by a reaction),
+  the lane at the panel's size (fading whatever the draw cadence, blended
+  once, cut and marked as the canvas does), the layers on the body's
+  anchors, coming and going through the rig's layer stack, each at its
+  opacity, the sign fading out at its own, drawing by coverage, tracked
+  clearing and kept cards matching a fresh frame, and steady frames
+  allocating nothing.
 
 ## The board's frames
 
@@ -101,7 +105,8 @@ ramps and springs can, and no jolt at an event. By file:
   gift), the gestures (`gestures.jsonl`: BOOT's hand-off, a stroke, a boop
   on the nose, a shake and peekaboo, each by the board's own input, its
   variation expected), the occasions (`occasions.jsonl`: a party's bounce,
-  a night's drowse, frantic typing, in a nightcap and a party hat), the
+  a night's drowse, frantic typing, in a nightcap and a party hat, and a
+  marathon's stretch, the rig's clip that Pixel's face plays too), the
   layers (`layers.jsonl`: each outfit and air by its tags, Zs asleep at
   night, a sign under the nightcap), a reaction's sign (`sign.jsonl`), and
   a finger in idle (`swipes.jsonl`). `--accept` updates only the gel

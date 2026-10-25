@@ -507,9 +507,10 @@ Besides drawing each mood and state, a face:
   at night, stretches in the morning, bounces on a party day or a New
   Year, sways on a Friday, shivers in winter, wobbles at Halloween,
   swoons on Valentine's and nods off once it dozes; busy and
-  frantic work type faster, a long turn's marathon brings a stretch, and
-  sleep snores deeper at night and dreams after half an hour. Its idle
-  picks one in place of a gesture. Over every state the board also draws
+  frantic work type faster, and sleep snores deeper at night and dreams
+  after half an hour. Its idle picks one in place of a gesture. A pack's
+  rig may have occasions too, clips both faces play (§15): a long turn's
+  marathon brings Boop's and Pixel's stretch. Over every state the board also draws
   layers on the gel by the tags (`render/gel/layers.h`), at anchors the
   pose that drew its body gives (`rig::Anchors`, from
   `render/gel/painter.h`: the dome's top, a ring for a hat's brim, its
@@ -522,7 +523,9 @@ Besides drawing each mood and state, a face:
   and its gown); reading glasses while `reading` is on, else shades on a
   Friday's day, neither while it sleeps (`render::eyewearFor`); snow in
   winter, confetti on a party day and New Year's Day, hearts on
-  Valentine's, Zs while it sleeps at night. Peekaboo's gesture takes the
+  Valentine's, Zs while it sleeps at night. Each comes and goes through
+  the rig's layer stack (§15), fading over 200 ms, a new one after the
+  old has gone. Peekaboo's gesture takes the
   outfit off. Pixel wears neither the gown nor the glasses; the Mac's mirror
   is the board's own firmware, so it wears them as the board does.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
@@ -554,9 +557,12 @@ Besides drawing each mood and state, a face:
   The engine keeps them up from the reaction's start for as long as any
   part of it plays, and at least 2.5 s to be read
   (`Behaviour::kSignMinMs`); a newer reaction's animation or `say`,
-  listening and needs you take them down, a tap's poke doesn't. A face
-  gets them as `SignShow` (the words, and how long they've shown) and
-  draws them as its own: Pixel's a card under its face gripped by two
+  listening and needs you take them down, a tap's poke doesn't. Taken
+  down, they fade out over the rig's fade (200 ms), the words kept, but
+  for needs you, which takes them at once. A face
+  gets them as `SignShow` (the words, how long they've shown and how much
+  of them shows) and draws them as its own, at that opacity (Pixel's
+  dithered): Pixel's a card under its face gripped by two
   mitts (`render/pixel/held.h`), the gel's a card in front of its body
   with a little gel hand at either side (`render/gel/layers.h`). Each
   slides up as it starts and bobs while it's held.
@@ -782,11 +788,16 @@ engine's half is `firmware/src/render/rig/`: the channels, the tables'
 types, the ramp its fades ease on and the anchors a face reports
 (`rig.h`), and the mixer that plays them (`mixer.h`). The pixel face
 draws its face from it wherever a design's face is its mood's resting
-face (below, Pixel's face on the rig); the gel moves onto it next.
+face (below, Pixel's face on the rig), and the gel plays its clips over
+its own engine (below, The gel on the rig). A clip in a pack's `clips/`
+plays on every face the pack has. Beside them, the layer stack
+(`layers.h`, below, The layer stack) fades what comes and goes around
+the body.
 Pixel's rig has expressions for its 13 drawn moods, each wearing its own
-mood's eyes and mouth, the looks idle, working and asleep, and a blink.
-Boop's is the same, since Boop wears Pixel's face on the CYD, with its
-notice besides (§16's reference became it).
+mood's eyes and mouth, the looks idle, working and asleep, a blink, and
+working's stretch on a long turn's marathon. Boop's is the same, since
+Boop wears Pixel's face on the CYD, with its notice besides (§16's
+reference became it).
 
 **Channels.** The body's `squash`, `lean` and `lift`; the eyes'
 `eyeOpenL`, `eyeOpenR`, `eyeSize`, `gazeX` and `gazeY`; and the mouth's
@@ -837,21 +848,32 @@ curves on some channels, timed in ms. Boop's notice:
 | `about` | no | What it is, for people |
 
 **`looks.json`**: for each look (§9's Looks), the clip it loops under
-the reactions (`clip`, one that loops, or null). Boop's:
+the reactions (`clip`, one that loops, or null), and its `occasions`:
+each a clip that doesn't loop, which the look plays now and then while
+every tag it needs is on (`when`, §9's tags, as `render/tags.h` names
+them) and once it has shown `after` seconds, as a design's occasion
+fits (§9). Each needs a tag or a wait. Boop's:
 
 ```json
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work"},
+  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["marathon"]}]},
   "asleep": {"clip": "doze"}
 }
 ```
 
+A face gives the look a chance at the end of each pass of its loop,
+while none of its occasions plays: then, while some fit, one of them
+plays 67% of the time (`rig::kOccasionPct`), any one alike, over what
+the look plays, and fades out when the look gives way (a reaction, needs
+you). A face draws no randomness for it while none fits.
+
 Every file is optional, and one that's missing is empty.
-`charactergen.py --check` fails on an unknown key, channel, mood, state
-or clip, a style that isn't a mood the pixel face the pack has or uses
-draws (its `faces.h`'s), a value out of its range, keys out of order and
-a loop that doesn't close, each with its file and key
+`charactergen.py --check` fails on an unknown key, channel, mood, state,
+clip or tag, a style that isn't a mood the pixel face the pack has or uses
+draws (its `faces.h`'s), a value out of its range, keys out of order, a
+loop that doesn't close and an occasion that loops or would always fit,
+each with its file and key
 (`rig/clips/hop.json: tracks.lift[2]: …`). Staging writes the files as
 `rig_tables.h` in the staged `firmware/include/`: `render::rig::kRig`,
 with a lookup by mood, clip and look. The app doesn't bundle `rig/`.
@@ -926,6 +948,46 @@ the screen with its own strip and words, the face with its lane and what
 it wears; then the placard rises on its own. The hat
 (`render/pixel/outfit.h`) and the sign (`held.h`) ride the rig face's
 brim and hands.
+
+**Pixel's occasions on the rig.** At the end of its look's loop, while
+the rig face draws the look's design, the pixel face gives the rig
+look's occasions their chance (above), on the rig face, over the look's
+own clip; while one plays, the look turns only from a variation whose
+own occasion is over. Its drawn occasions still turn in
+as they did (§9), so on a marathon it shows its drawn stretch now and
+then, and the rig's stretch over its rig-drawn desks.
+
+**The layer stack.** What comes and goes around the body, each in its
+place among a face's own drawing, is a layer of the rig's stack
+(`render/rig/layers.h`), back to front: the scene behind the body (room
+for what the board's state puts there: nothing yet), what's worn over
+the eyes or on the body (glasses, a gown), the hat, the air (snow,
+confetti, hearts) and what's beside the head (Zs). Each shows a content,
+the face's own number for what it draws there, at an opacity that eases
+in and out over the rig's fade (`kFadeMs`, 200 ms); a new content waits
+for the old to fade out, then fades in, so a hat changes at midnight
+without a pop and falling asleep on a winter night brings the gown and
+the Zs while the hat and the snow stay. Each is a function of the time
+since it was shown, however often a face reads it. The gel draws its
+outfit, its air and its Zs from it (`render/gel/layers.h`); Pixel's
+overlays draw as its designs do and dissolve with them. The lane and a
+reaction's sign fade on Behaviour's ramps instead (§9), since what they
+show changes at once.
+
+**The gel on the rig.** The gel keeps its own engine for what no channel
+reaches: each mood's face is its own art crossing over on its own
+windows, and its scenes, gags and springs move its body (the slime's
+CONTINUITY.md). Its face (`render/gel/face.h`) holds a mixer of its own,
+which plays the staged rig's clips, and the painter lays the mixer's
+channels over the pose the engine gives (`applyRig`): `squash` (the
+rig's tall is the dome's up), `lean`, `lift` (canvas px, 85 a body unit,
+never into the floor) and `eyeOpen` (its lids, shut as far as the more
+shut eye). It draws no other channel yet, and its expressions aren't
+the rig's: a mood is the gel's own art. At rest the mixer adds nothing,
+so a frame with no clip playing is the engine's alone. The gel's look
+gives the rig look's occasions their chance at each pass of its scene's
+recipe (a desk's loop, asleep's breath, and the look's start), while the
+engine shows the look itself, with the engine's own randomness.
 
 ## 16. References and review (optional)
 

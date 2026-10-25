@@ -5,6 +5,7 @@
 
 #include "render/maths.h"
 #include "render/palette.h"
+#include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 namespace render::pixel {
 static_assert(EffectTrack::kMaxOut == Face::kMaxCues, "face cue buffer holds the pixel scheduler output");
 namespace {
@@ -51,6 +52,10 @@ void PixelFace::sync(const FaceSource& next, const FaceContext& context, uint32_
   // moves of its own (and asleep's shut eyes would shut a poke's).
   const SceneState base = next.anim == SceneState::kNone ? context.base : SceneState::kNone;
   rig_.setLook(base);
+  if (occasion_ && (base != occasionBase_ || context.attention || !after(occasionEnds_, t))) {
+    rig_.stop(*occasion_);
+    occasion_ = nullptr;
+  }
   if (!within(t, switchAt_, rig::kFadeMs)) from_.kind = Drew::kNone;  // the dissolve is over
   // A new look starts on its first variation, or on an occasion's while
   // one fits; so does the look again when the mood has fewer of them. The
@@ -88,6 +93,13 @@ uint32_t PixelFace::blinkGap(linkkit::Rng& rng) const {
   return uint32_t(rng.range(2000, context_.working ? 5000 : 6000));
 }
 bool PixelFace::turnable() const { return context_.mayVary && variants(context_.mood, context_.look) > 1; }
+const rig::Look* PixelFace::rigLook() const {
+  return src_.anim == SceneState::kNone && !context_.attention ? rig::kRig.look(context_.base) : nullptr;
+}
+int PixelFace::occasionsFit() const {
+  const rig::Look* look = rigLook();
+  return look ? look->fitting(context_.when, context_.lookMs) : 0;
+}
 uint32_t PixelFace::loopEnd(uint32_t t) const {
   uint32_t loop = uint32_t(uint64_t(loopMs(src_.mood, src_.look, src_.lookVariant)) * 100 / pace_);
   if (!loop) loop = 1;
@@ -120,13 +132,16 @@ bool PixelFace::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
   auto consider = [&](uint32_t c) {
     if (after(c, from) && !after(c, to) && (!found || after(at, c))) at = c, found = true;
   };
+  // A loop's end turns the look's variation, or gives the rig look's
+  // occasions their chance.
+  const bool turns = turnable() || occasionsFit();
   consider(nextBlink_);
-  if (turnable()) consider(loopEnd(from));
+  if (turns) consider(loopEnd(from));
   due_ = 0;
   if (!found) return false;
   dueAt_ = at;
   if (at == nextBlink_) due_ |= kBlink;
-  if (turnable() && at == loopEnd(at - 1)) due_ |= kTurn;
+  if (turns && at == loopEnd(at - 1)) due_ |= kTurn;
   return true;
 }
 void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
@@ -142,11 +157,22 @@ void PixelFace::step(uint32_t t, linkkit::Rng& rng) {
     blinkAt_ = t;
     nextBlink_ = t + (blink_ ? kBlinkMs : 0) + blinkGap(rng);
   }
+  // At a loop's end, while the rig face draws the look and none plays,
+  // one of the rig look's occasions that fit, kOccasionPct of the time.
+  if (occasion_ && !after(occasionEnds_, t)) occasion_ = nullptr;
+  const int fit = (due & kTurn) && rigDraws() && !occasion_ ? occasionsFit() : 0;
+  if (fit && rng.range(1, 100) <= rig::kOccasionPct) {
+    occasion_ = rigLook()->fitting(context_.when, context_.lookMs, rng.range(0, fit - 1));
+    occasionEnds_ = t + occasion_->ms;
+    occasionBase_ = context_.base;
+    rig_.play(*occasion_);
+  }
   // A variation whose occasion is over (or whose mood lost it) turns at
-  // once; any other may, now and then, to one that fits.
+  // once; any other may, now and then, to one that fits, but not while an
+  // occasion's clip plays.
   if ((due & kTurn) && turnable() &&
       (!lookFits(src_.mood, src_.look, lookVariant_) ||
-       (int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
+       (!occasion_ && int32_t(t - lookAt_) >= int32_t(kTurnMinMs) && rng.range(1, 100) <= kTurnPct)))
     lookVariant_ = pickLook(src_.mood, src_.look, lookVariant_, rng);
 }
 // A needs-you replacing another starts its screen over, dissolving from
@@ -263,6 +289,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
     // and the sign ride its anchors.
     p.design = sceneFrame(show, rig);
     p.held = sign.text != nullptr, p.heldAt = int16_t(sign.text ? heldOffset(sign.ms, show.dy) : 0);
+    p.heldIn = sign.text ? Dither::fade(sign.opacity, true).hi : 0;
     if (rig) {
       rig::Anchors now;
       p.face = rig_.frame(show.dy, show.mouthOpen, stays ? Dither{} : p.in, move, &now);
@@ -330,6 +357,7 @@ bool PixelFace::draw(Canvas& c, Surface*, const SceneShow& show, uint32_t t, con
   Overlays over;
   over.dressed = p.dress != 0, over.mood = show.mood, over.when = context_.when, over.ms = t;
   over.hatX = p.hatX, over.hatY = p.hatY, over.held = sign.text, over.heldOffset = p.heldAt;
+  over.heldOpacity = sign.opacity;
   // Over both faces of a dissolve, whole; out of the needs-you screen,
   // coming in with the face.
   c.setMask(p.from == Drew::kNeedsYou ? p.in : Dither{});

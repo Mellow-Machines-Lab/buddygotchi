@@ -545,7 +545,7 @@ randomness of its own. `expressions.json` `occasions` holds them:
 | --- | --- | --- | --- |
 | idle | morning-stretch | morning | A big stretch up, eyes squeezed, a lean each way |
 | idle | night-drowse | night | Heavy lids, sunk a little, a slow sway |
-| idle | nod-off | 1,200 s idle | Nods three times deeper, lids closing, then jerks awake |
+| idle | nod-off | doze | Nods three times deeper, lids closing, then jerks awake |
 | idle | party-bounce (and New Year's, Lunar New Year's, Programmers' Day's) | party (newyear, lunar, programmers) | Three hops side to side, eyes squinting; each landing a bounce at comedy's chance |
 | idle | friday-sway | friday | A little dance, leaning and sliding |
 | idle | winter-shiver | winter | Huddled down, shivering |
@@ -553,7 +553,6 @@ randomness of its own. `expressions.json` `occasions` holds them:
 | idle | valentines-swoon | valentines | Eyes shut, lifted, a lean |
 | working, terminal, tool_use | busy-typing | busy | Two quick three-key bursts, leaning in |
 | working, terminal, tool_use | frantic-typing | frantic | Six keys in 0.6 s, leaning in harder |
-| working | work-stretch | 1,200 s at work | A desk recipe with a stretch-up gag |
 | asleep | deep-snore | night | Three deeper breaths |
 | asleep | dream | 1,800 s asleep | Two soft breaths and a twitch-and-wriggle gag |
 
@@ -561,7 +560,11 @@ Idle's are gags acting plays in place of its next gesture (numbered after
 the expression's takes); the other looks' are recipes the scene deals at
 a pick (numbered after the row's takes), the same in every mood, and a
 jittered one takes the desk's jitter. A gesture or a host's moment never
-takes one. An occasion whose tags go off simply isn't picked again. The
+takes one. The pack's rig has occasions of its own, clips both of its
+faces play ([CHARACTER.md](../../../CHARACTER.md) §15, The gel on the
+rig): working's stretch on a long turn's marathon (eyes squeezed, up
+tall, a lean each way) is the rig's `stretch`, over whatever desk take
+plays, at a chance at each pass of the desk's loop. An occasion whose tags go off simply isn't picked again. The
 engine has no colour channel, so no occasion tints the gel. The working
 looks' quicker pace while the agents are busy is the board's
 (`render::workPace`), not an occasion.
@@ -582,8 +585,15 @@ leans, squashes, dips under a finger and slides off the screen with the
 body and is cut off there with it. Peekaboo's gesture hides the hat. At
 night the lids hang a little lower (`kNightLids`) on the awake face,
 easing out as it squashes shut, gone by when it's a line, and back as it
-wakes. The
-layers read the engine and never change it.
+wakes. Each part comes and goes through the rig's layer stack
+([CHARACTER.md](../../../CHARACTER.md) §15, The layer stack), which the
+face keeps: what's worn over the eyes or on the body, the hat, the air
+and the Zs each fade in and out over 200 ms, a new one only once the old
+has gone (a winter evening's bobble fades out at night, then the
+nightcap in), each on its own, so falling asleep on a winter night
+brings the gown and the Zs while the nightcap and the snow stay. The
+sign fades out over 200 ms once it's down, at the opacity Behaviour
+gives it. The layers read the engine and never change it.
 
 ## States share one scene
 

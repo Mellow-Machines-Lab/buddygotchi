@@ -20,13 +20,17 @@ Pixel's designs, into and out of the needs-you screen too, dissolves over
 the rig's 200 ms with no blink, one mid-way through another from the
 picture that shows more; a look's clip
 plays under its own designs only, and a design that blinks on its own
-gets no other blink. The gel stays on its own engine, the C++ one, its
+gets no other blink. The gel keeps its own engine, the C++ one, its
 only one since phase 2 retired the JavaScript reference (The Mac's slime
-on the board's engine, below), falling asleep as a morph, the awake face
-squashing shut to lines, then the sleeping face, alone by about 1.3 s,
-and waking over 180 ms; the Mac shows it as the board's firmware in WebAssembly, and both
-faces share the anchors and the lane's fade. The gel's move onto the
-mixer is next. The
+on the board's engine, below), for its expressions, recipes, gags and
+springs, falling asleep as a morph, the awake face squashing shut to
+lines, then the sleeping face, alone by about 1.3 s, and waking over
+180 ms; it plays the rig's clips through a mixer of its own, laid over
+its pose, and what it wears, the air and its Zs come and go through the
+rig's layer stack (checkpoint 5). A look's occasions are the rig's,
+clips both faces play: working's stretch on a long turn's marathon. The
+Mac shows the gel as the board's firmware in WebAssembly, and both faces
+share the anchors and the fades of the lane and a reaction's sign. The
 checkpoint notes below are history, each as it landed: where a later one
 changed an earlier (checkpoint 1's 180 ms to sleep and checkpoint 5's 480, checkpoint 4's
 150 ms switch behind a blink and Boop's poses), this paragraph and the
@@ -377,10 +381,10 @@ from what this step set out to do, and why:
 
 ### Checkpoint 5, as built (2026-10-24)
 
-A scoped checkpoint: the gel's JavaScript reference and its C++ port stay
-matched frame for frame, so the slime's expressions and reactions on the
-mixer wait for the owner's decision on the Mac's mirror (retiring the
-JavaScript twin, checkpoint 6). What landed instead:
+In two parts: what could land while the gel's JavaScript twin had to
+match its C++ port frame for frame (the lane's fade, the gel's cuts, one
+anchors type, first below), and the gel on the rig, once phase 2 had
+retired the twin (The gel on the rig, after them).
 
 - **The lane's fade is decided once, by the app, for both faces.**
   Behaviour stamps when the strip comes or goes (every change goes
@@ -423,10 +427,104 @@ JavaScript twin, checkpoint 6). What landed instead:
 - **One anchors type.** The gel's painter reports `rig::Anchors` (its own
   copy, with its `Spot`, is gone), so both faces' layers sit on one
   type; no picture or trace changed.
-- **Waits for the owner:** the gel's expressions and reactions on the
-  mixer, and its layers through the shared layer stack, which need the
-  JavaScript twin retired (the Mac's mirror running the WebAssembly
-  engine) first.
+
+**The gel on the rig.** The gel's face on the rig's contract (the rig,
+its clips, the layers, the anchors), through an adapter, rather than its
+insides on the mixer. Where it differs from the sketch above, and why:
+
+- **The gel keeps its own expressions** (the simplicity fallback). A mood
+  on the gel is up to four arts crossing over on each edge's own windows,
+  each feature morphing or cross-fading, with a bridge on the body
+  (checkpoint 1); the mixer's styles are two, crossing over 200 ms.
+  Driving the gel's face from them would undo checkpoint 1 or pass
+  through a style the gel ignores, so a mood is the gel's own art, and
+  the rig's expressions are the pixel face's (CHARACTER.md §15). The
+  body's springs, recipes and gags stay as they are.
+- **The rig's clips play on the gel through an adapter.** The gel's face
+  holds a mixer of its own, on the board's clock; the painter lays its
+  channels over the pose the engine gives (`applyRig`): `squash`, `lean`,
+  `lift` (canvas px, 85 a body unit) and `eyeOpen` (its lids), each inside
+  the engine's own bounds; `eyeSize`, the gaze and `mouthOpen` are
+  Pixel's for now. At rest the mixer adds nothing, so a frame with no
+  clip is the engine's alone: every golden of both faces was the same
+  before the stretch was added.
+- **A look's occasions are the rig's** (`looks.json`'s `occasions`: a
+  clip, its tags, its wait), so one is authored once for both faces. The
+  rule is one: it fits as a design's occasion does (`render::fits`, now
+  in `tags.h`, the gel's own occasions' too), and at each chance a face
+  gives it, one of those that fit plays 67% of the time
+  (`rig::kOccasionPct`, Pixel's `kTaggedPct` too), drawing no randomness
+  while none fits, and fades out when the look gives way (`Mixer::stop`,
+  11ca4f0's `cut` grown back). A face's chances are its look's loop: the
+  gel's each pass of its scene's recipe, while the engine shows the look
+  itself (idle's start only, since idle has no loop of its own yet: the
+  tier work picks its chances); Pixel's the end of a loop, while the rig
+  face draws the look's design.
+- **The proof: working's stretch on a marathon**
+  (`rig/clips/stretch.json`, in both packs). It's the gel's `work-stretch`
+  gag in channels, which leaves the slime's design. Its desk recipe, a
+  pause with one key at 2.6 s, went with it: the stretch now plays over
+  whichever desk take plays, its keys included; the ripple at its end has
+  no channel. `test_gel` plays it on both faces (the gel taller, its lids
+  down; Pixel's rig face lifted, its eyes shut) and fades it out at a
+  poke; two new goldens show it, `occasions/marathon` on each face. On a
+  marathon Pixel still turns in its drawn stretch (its yawn) now and
+  then, an occasion of its own; checkpoint 6 can retire it.
+- **The gel's layers go through the rig's layer stack**
+  (`render/rig/layers.h`: 11ca4f0's `Layers` grown back on the timestamped
+  `Ramp`, CHARACTER.md §15). A slot shows a content at an opacity on the
+  rig's 200 ms fade, a new content once the old has faded out, each a
+  function of the time since its show. The gel's face keeps one and
+  feeds it what the engine's tags and state call for (`layerContents`)
+  at each step and sync, so a fade starts at its own instant; the
+  raster's `fade` scales every blend onto the surface (a recording keeps
+  its shapes whole, and a replay blends them at it). What's worn and the
+  hat are layers of their own, as the gown comes when it falls asleep
+  while the nightcap stays, and the Zs ride beside the head rather than
+  in the air, or falling asleep on a winter night would dip the snow.
+  Peekaboo's gesture now fades the outfit out and back.
+- **The scene layer is room only:** first in the stack, and drawn after
+  the clear and before the body, where the board's state will put the
+  tier gags' scenery and the activity stream; nothing feeds it yet, so
+  nothing draws there.
+- **The lane and the sign are Behaviour's**, on its ramps, for both
+  faces: the lane as before, and now the sign, which once down (its end,
+  a newer reaction, being put face down) fades out over 200 ms with its
+  words kept (`SignShow::opacity`: the gel blends it, Pixel dithers it);
+  needs you takes it at once. A slot's rule would hold a new reaction's
+  sign back from its start.
+- **Pixel keeps its overlays:** its hats and air draw with its designs
+  and dissolve with them at a switch (checkpoint 4b), but a tag change
+  still swaps them at once; the stack is there for it.
+- **Measured** (internal/tools/fluid, largest 40 ms frame's changed
+  pixels; a scratch recording of each layer's change, a shot every 40 ms;
+  `transitions.jsonl`, `idle-swipes.jsonl` and `transitions-pixel.jsonl`
+  are the same as before, frame for frame, and every golden of both
+  faces too):
+
+  | Transition | Gel before | Gel after | Pixel before | Pixel after |
+  | --- | --- | --- | --- | --- |
+  | a nightcap at night | 21153 in one frame | five, the largest 17548 | 5191 | 5191 |
+  | falling asleep at night | 10847 | 4961 | 4953 | 4953 |
+  | shades on a Friday, a mood change with it | 38214 | 22860 | 2762 | 2762 |
+  | snow in winter | 28131 | 25740 | 284 | 284 |
+  | a sign coming down | 9856 in one frame | four, 2271 to 3128 | 3313 in one | four, at most 1033 |
+
+  A dark hat on black still crosses the measure's 24 levels in its
+  fade's middle frame: the contact sheet shows it fading in over five.
+  A native frame on the Mac (a scratch harness, the median of five
+  interleaved runs against the commit before) costs the same within 0
+  to 2.5% in every scene, the layers' own share 2 to 8 µs more; with the
+  stretch, the AMOLED's firmware grew 3.3 KB and the CYD's 0.5 KB (42.0%
+  and 66.5% of their flash). The board's `draw_us` is still to measure.
+- **Found, not changed:** what a face plays follows how often the
+  simulator stops it (a shot every 40 or 200 ms, against one jump to the
+  time), as each face steps at every stop: Pixel's blinks fall
+  differently (working, one shot in fifteen differed at its eyes, with
+  no occasion), and the gel takes another path (the old work-stretch,
+  dealt at 3.7 s, showed in a jump to 4.5 s but not with a shot every
+  40 ms). The goldens are each one scenario, the same every run; a
+  recording compares like for like only shot for shot.
 
 ### The rig cut to what a face uses (2026-10-24)
 

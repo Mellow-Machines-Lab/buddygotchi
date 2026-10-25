@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "render/gel/motion.h"
+#include "render/tags.h"
 namespace render::gel {
 // A profile's gestures, as slimegen sizes them: the first takes of idle and
 // of every scene row.
@@ -44,11 +45,6 @@ struct ContactEvent {
 // A gag's target for a channel at its age, from (0, 0) at
 // its start, a smoothstep to each of the channel's keys, then its last value.
 F keyed(const slime::Gag& gag, int channel, T age);
-// An occasion fits while every tag it needs is on and its look has shown
-// its wait (render/tags.h).
-constexpr bool fits(uint32_t needs, uint16_t afterS, uint32_t when, uint32_t lookMs) {
-  return (needs & ~when) == 0 && uint32_t(afterS) * 1000 <= lookMs;
-}
 struct Acting {
   // The six gesture springs, then a gag's own: the dome's slide, and how far
   // its lids are closed (critically damped).

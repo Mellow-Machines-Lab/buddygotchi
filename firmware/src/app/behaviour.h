@@ -237,9 +237,13 @@ class Behaviour {
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
-  // The sign a reaction holds up, while it shows: no text with no app or
-  // while something needs you.
+  // The sign a reaction holds up, while it shows, and for the rig's fade
+  // after it goes (a reaction's end, a tap's, being put face down), fading
+  // out: no text with no app or while something needs you, which take it
+  // down at once.
   render::SignShow sign(uint32_t t) const;
+  // Whether a sign is up, not fading.
+  bool signUp(uint32_t t) const { return signOn(t) && !noApp(t) && !model_.attn; }
   // When the sign shown last goes.
   uint32_t signEnd() const { return sign_.at + sign_.ms; }
   // A `say` has arrived that waits for its animation's voice window:
@@ -406,6 +410,11 @@ class Behaviour {
   Reaction lingering_;
   Say say_;
   Sign sign_;
+  // The sign that went last, fading out from goneAt_ (sign()).
+  Sign gone_;
+  uint32_t goneAt_ = 0;
+  // The sign goes, at `at`: it fades out from then.
+  void signGoes(uint32_t at);
   // The reaction's expression: its mood from exprAt_ for exprMs_: as long
   // as the animation with it plays, or its loops; and at least as long as
   // the `say` with it.

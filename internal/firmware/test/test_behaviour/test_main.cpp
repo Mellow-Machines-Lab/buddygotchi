@@ -1596,7 +1596,9 @@ static ReactionIn waited(uint32_t id, const char* take = kGo) {
 // reaction's start for as long as any of its parts plays, and at least
 // 2.5 s so it can be read; the reaction isn't played out until it's down.
 // A tap's poke leaves it up; a newer reaction's animation and needs you
-// take it down.
+// take it down. Once down it fades out over the rig's fade, its words
+// kept (render::SignShow::opacity), but under needs you, which takes it at
+// once.
 static void test_a_sign_shows_while_its_reaction_plays() {
   Rig r;
   r.state(base("idle"));
@@ -1607,9 +1609,11 @@ static void test_a_sign_shows_while_its_reaction_plays() {
     m.key = key;
     return m;
   };
-  auto sign = [&] {
-    const char* text = r.b.sign(r.t).text;
-    return std::string(text ? text : "-");
+  auto sign = [&] { return std::string(r.b.signUp(r.t) ? r.b.sign(r.t).text : "-"); };
+  // What the face draws: the words and how much of them.
+  auto drawn = [&] {
+    const render::SignShow s = r.b.sign(r.t);
+    return s.text ? std::string(s.text) + " " + std::to_string(s.opacity) : std::string("-");
   };
   // On its own: 2.5 s.
   TEST_ASSERT_NULL(r.b.admit(holding("bye bye code", 1), r.t));
@@ -1619,9 +1623,17 @@ static void test_a_sign_shows_while_its_reaction_plays() {
   TEST_ASSERT_EQUAL_STRING("bye bye code", sign().c_str());
   TEST_ASSERT_EQUAL_UINT32(Behaviour::kSignMinMs - 1, r.b.sign(r.t).ms);
   TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
+  TEST_ASSERT_EQUAL_STRING("bye bye code 1000", drawn().c_str());
   r.at(1000 + Behaviour::kSignMinMs);
   TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
   TEST_ASSERT_EQUAL_STRING("1 done", ended(r).c_str());
+  static_assert(render::rig::kFadeMs == 200, "a sign fades out over the rig's 200 ms");
+  TEST_ASSERT_EQUAL_STRING("bye bye code 1000", drawn().c_str());
+  r.at(1000 + Behaviour::kSignMinMs + 100);
+  TEST_ASSERT_EQUAL_STRING("bye bye code 500", drawn().c_str());
+  TEST_ASSERT_EQUAL_UINT32(Behaviour::kSignMinMs + 100, r.b.sign(r.t).ms);  // still bobbing as it was
+  r.at(1000 + Behaviour::kSignMinMs + 200);
+  TEST_ASSERT_EQUAL_STRING("-", drawn().c_str());
 
   // With a finish longer than that: as long as the finish plays.
   r.at(10000);
@@ -1664,6 +1676,9 @@ static void test_a_sign_shows_while_its_reaction_plays() {
   TEST_ASSERT_EQUAL_STRING("hello", sign().c_str());
   r.react(SceneState::kStarting);
   TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("hello 1000", drawn().c_str());  // fading out from now
+  r.at(r.t + render::rig::kFadeMs);
+  TEST_ASSERT_EQUAL_STRING("-", drawn().c_str());
 
   // Needs you takes it down, and no sign plays while it waits.
   r.at(40000);
@@ -1671,6 +1686,7 @@ static void test_a_sign_shows_while_its_reaction_plays() {
   onReaction(r.b, holding("hello", 5), r.t);
   r.state(attn());
   TEST_ASSERT_EQUAL_STRING("-", sign().c_str());
+  TEST_ASSERT_EQUAL_STRING("-", drawn().c_str());
   TEST_ASSERT_EQUAL_STRING("needs_you", r.b.admit(holding("again", 6), r.t));
 }
 

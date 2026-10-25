@@ -44,6 +44,17 @@ const Look* Rig::look(SceneState state) const {
   return find(looks, [&](const Look& l) { return l.state == state; });
 }
 
+int Look::fitting(uint32_t when, uint32_t lookMs) const {
+  int n = 0;
+  for (const Occasion& o : occasions) n += fits(o.when, o.afterS, when, lookMs);
+  return n;
+}
+const Clip* Look::fitting(uint32_t when, uint32_t lookMs, int i) const {
+  for (const Occasion& o : occasions)
+    if (fits(o.when, o.afterS, when, lookMs) && !i--) return o.clip;
+  return nullptr;
+}
+
 Hermite Ramp::at(uint32_t t) const {
   if (!within(t, start_, kFadeMs)) return {to_, 0};
   const Hermite h = hermite(from_, tangent_, to_, int(t - start_) * 1024 / int(kFadeMs));

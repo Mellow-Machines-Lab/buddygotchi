@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "render/maths.h"
+#include "render/rig/layers.h"
 #include "render/rig/mixer.h"
 #include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
 
@@ -125,6 +126,46 @@ static void test_a_reactions_weight_eases_in_and_out() {
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kLean]);
   m.advance(16);
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kLean]);
+}
+
+// A reaction's clip stopped fades out over its weight's fade from where its
+// weight is, as a look's old clip does; the look's own plays on, and a clip
+// not playing stops nothing.
+static void test_a_stopped_clip_fades_out() {
+  Mixer m;
+  m.reset(0, 0, &kLeanMore);
+  m.play(kLean);
+  m.advance(400);
+  TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
+  m.stop(kBlink);
+  m.stop(kLeanMore);  // a look's clip stops only by setLook
+  m.advance(0);
+  TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
+  m.stop(kLean);
+  m.advance(75);
+  TEST_ASSERT_EQUAL_INT(450, m.channels()[Channel::kLean]);
+  m.advance(75);
+  TEST_ASSERT_EQUAL_INT(200, m.channels()[Channel::kLean]);
+  m.play(kLean);  // played again: a new play, fading in
+  m.advance(150);
+  TEST_ASSERT_EQUAL_INT(700, m.channels()[Channel::kLean]);
+}
+
+// A look's occasions fit while every tag each needs is on and the look has
+// shown its wait (render::fits); the i-th of those that fit is its clip.
+static void test_a_looks_occasions_fit_by_their_tags_and_wait() {
+  static constexpr Occasion kOccasions[] = {
+      {&kLean, 1u << 3, 0}, {&kBlink, 0, 60}, {&kWider, (1u << 3) | (1u << 5), 0}};
+  static constexpr Look kLook = {SceneState::kWorking, nullptr, {kOccasions, 3}};
+  TEST_ASSERT_EQUAL_INT(0, kLook.fitting(0, 0));
+  TEST_ASSERT_EQUAL_INT(1, kLook.fitting(1u << 3, 59999));
+  TEST_ASSERT_EQUAL_PTR(&kLean, kLook.fitting(1u << 3, 59999, 0));
+  TEST_ASSERT_EQUAL_INT(1, kLook.fitting(0, 60000));
+  TEST_ASSERT_EQUAL_PTR(&kBlink, kLook.fitting(0, 60000, 0));
+  TEST_ASSERT_EQUAL_INT(3, kLook.fitting((1u << 3) | (1u << 5) | 1u, 60000));
+  TEST_ASSERT_EQUAL_PTR(&kWider, kLook.fitting((1u << 3) | (1u << 5), 60000, 2));
+  TEST_ASSERT_NULL(kLook.fitting((1u << 3) | (1u << 5), 60000, 3));
+  static_assert(kOccasionPct == 67, "an occasion plays at two in three of its chances");
 }
 
 // A clip shorter than four fades eases in and out over a quarter of itself,
@@ -307,6 +348,51 @@ static void test_a_ramp_eases_over_200_ms_and_turns_back_smoothly() {
   TEST_ASSERT_EQUAL_INT(1000, back.back());
 }
 
+// ---- The layer stack ----------------------------------------------------------
+
+// A layer fades in over the rig's fade from when it's shown, on the ramp;
+// a new content waits for the old to fade out, then fades in from the
+// instant that ended, however often it's read; asked back mid-way, the
+// old turns back up; and each layer is its own.
+static void test_a_layer_fades_and_a_new_content_waits_its_turn() {
+  Layers l;
+  TEST_ASSERT_EQUAL_UINT32(0, l.content(Layer::kHat, 0));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kHat, 0));
+  l.show(Layer::kHat, 3, 1000);
+  TEST_ASSERT_EQUAL_UINT32(3, l.content(Layer::kHat, 1000));
+  TEST_ASSERT_EQUAL_INT(500, l.opacity(Layer::kHat, 1100));
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1200));
+  TEST_ASSERT_EQUAL_INT(0, l.opacity(Layer::kAir, 1200));  // its own
+  l.show(Layer::kHat, 3, 1300);                            // the same: no change
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 1300));
+  l.show(Layer::kHat, 4, 2000);  // the old fades out first, then the new comes in
+  for (uint32_t t = 2000; t < 2000 + kFadeMs; t += 10) {
+    TEST_ASSERT_EQUAL_UINT32(3, l.content(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(1000 - ease1000(int(t - 2000), int(kFadeMs)), l.opacity(Layer::kHat, t));
+  }
+  for (uint32_t t = 2200; t <= 2400 + 50; t += 10) {
+    TEST_ASSERT_EQUAL_UINT32(4, l.content(Layer::kHat, t));
+    TEST_ASSERT_EQUAL_INT(ease1000(int(t - 2200), int(kFadeMs)), l.opacity(Layer::kHat, t));
+  }
+  l.show(Layer::kHat, 5, 3000);
+  l.show(Layer::kHat, 4, 3100);  // back mid-way: turns back up, no jump
+  TEST_ASSERT_EQUAL_UINT32(4, l.content(Layer::kHat, 3100));
+  TEST_ASSERT_EQUAL_INT(500, l.opacity(Layer::kHat, 3100));
+  TEST_ASSERT_EQUAL_INT(1000, l.opacity(Layer::kHat, 3300));
+  // Read once, after the fade out and in, it's as if read every frame.
+  Layers once;
+  once.show(Layer::kAir, 1, 0);
+  once.show(Layer::kAir, 2, 500);
+  TEST_ASSERT_EQUAL_UINT32(2, once.content(Layer::kAir, 800));
+  TEST_ASSERT_EQUAL_INT(ease1000(100, int(kFadeMs)), once.opacity(Layer::kAir, 800));
+  // Nothing again: it fades out, its content kept until it's gone.
+  once.show(Layer::kAir, 0, 2000);
+  TEST_ASSERT_EQUAL_UINT32(2, once.content(Layer::kAir, 2100));
+  TEST_ASSERT_EQUAL_INT(500, once.opacity(Layer::kAir, 2100));
+  TEST_ASSERT_EQUAL_UINT32(0, once.content(Layer::kAir, 2200));
+  TEST_ASSERT_EQUAL_INT(0, once.opacity(Layer::kAir, 2200));
+}
+
 // ---- The pack's rig_tables.h ------------------------------------------------------
 
 // Every row as charactergen.py checked it: keys in order within their clip,
@@ -327,6 +413,7 @@ static void test_the_staged_rig_is_whole() {
   for (const Look& look : kRig.looks) {
     TEST_ASSERT_TRUE(!look.clip || look.clip->loop);
     TEST_ASSERT_EQUAL_PTR(&look, kRig.look(look.state));
+    for (const Occasion& o : look.occasions) TEST_ASSERT_TRUE(!o.clip->loop && (o.when || o.afterS));
   }
 }
 
@@ -351,6 +438,12 @@ static void test_the_staged_rig_is_the_packs_files() {
   TEST_ASSERT_EQUAL(int(Channel::kEyeOpenL), int(blink->tracks[0].channel));  // eyeOpen sets both eyes
   TEST_ASSERT_EQUAL(int(Channel::kEyeOpenR), int(blink->tracks[1].channel));
   TEST_ASSERT_FALSE(kRig.clip("doze")->additive);
+  // Working's stretch on a long turn's marathon, which both faces play.
+  const Look* working = kRig.look(SceneState::kWorking);
+  TEST_ASSERT_EQUAL_INT(1, working->occasions.count);
+  TEST_ASSERT_EQUAL_STRING("stretch", working->occasions[0].clip->id);
+  TEST_ASSERT_EQUAL_UINT32(tagBit("marathon"), working->occasions[0].when);
+  TEST_ASSERT_EQUAL_INT(0, idle->occasions.count);
   TEST_ASSERT_NULL(kRig.clip("cheer"));
 }
 
@@ -360,6 +453,8 @@ int main() {
   RUN_TEST(test_a_track_eases_between_its_keys_and_holds_its_ends);
   RUN_TEST(test_a_clip_loops_or_holds_its_end);
   RUN_TEST(test_a_reactions_weight_eases_in_and_out);
+  RUN_TEST(test_a_stopped_clip_fades_out);
+  RUN_TEST(test_a_looks_occasions_fit_by_their_tags_and_wait);
   RUN_TEST(test_a_short_clip_fades_over_a_quarter_of_itself);
   RUN_TEST(test_additive_and_absolute_clips_blend_by_weight);
   RUN_TEST(test_a_new_look_fades_over_the_old_and_the_same_plays_on);
@@ -369,6 +464,7 @@ int main() {
   RUN_TEST(test_the_mixer_is_deterministic_and_bounded);
   RUN_TEST(test_a_full_mixer_keeps_its_look);
   RUN_TEST(test_a_ramp_eases_over_200_ms_and_turns_back_smoothly);
+  RUN_TEST(test_a_layer_fades_and_a_new_content_waits_its_turn);
   RUN_TEST(test_the_staged_rig_is_whole);
   RUN_TEST(test_the_staged_rig_is_the_packs_files);
   return UNITY_END();

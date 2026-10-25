@@ -16,12 +16,17 @@
 //   front with a little gel hand at either side, the words on it, sliding
 //   up as the reaction starts and bobbing while it's held.
 //
-// A scene may hide a layer: peekaboo's gesture takes the outfit off while
-// the slime comes up from nothing. At night its lids also hang a little
-// lower (sleepyLids).
+// Each comes and goes through the rig's layer stack (render/rig/layers.h,
+// the face's), so a hat at midnight, the gown and the Zs as it falls
+// asleep, shades on a Friday and the snow each fade over the rig's fade,
+// and a new one waits for the old to go; the sign fades out at the
+// opacity Behaviour gives it. A scene may hide a layer: peekaboo's
+// gesture takes the outfit off while the slime comes up from nothing. At
+// night its lids also hang a little lower (sleepyLids).
 #pragma once
 #include "render/face.h"
 #include "render/gel/painter.h"
+#include "render/rig/layers.h"
 #include "render/surface.h"
 
 namespace render::gel {
@@ -61,8 +66,19 @@ constexpr int kNightLids = 1100;
 class Engine;
 int sleepyLids(const Engine& e);
 
-// The outfit and the air, over the body and its face, under the props.
-void paintLayers(Surface& surface, const Engine& e, const rig::Anchors& at);
+// What the layer stack's layers (render/rig/layers.h) show for the
+// engine's tags and state now: what it wears over its eyes or on its body
+// (worn) and its hat, each a content of its own (0 for none), the air's
+// bits, and the Zs beside its head (1) while it sleeps at night.
+struct Contents {
+  uint32_t worn, hat, air, beside;
+};
+Contents layerContents(const Engine& e);
+// The outfit, the air and the Zs, over the body and its face, under the
+// props: what the stack shows at t, at its layers' opacities; with none,
+// whole in what the engine's tags and state call for.
+void paintLayers(Surface& surface, const Engine& e, const rig::Anchors& at, const rig::Layers* layers = nullptr,
+                 uint32_t t = 0);
 // How far the card sits below its place `ms` after it went up: sliding up,
 // then bobbing.
 int signOffset(uint32_t ms);

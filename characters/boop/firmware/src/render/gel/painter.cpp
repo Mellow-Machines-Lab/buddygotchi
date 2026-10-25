@@ -169,6 +169,8 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
     Measure measure(profile.clear);
     s.clear(keep, keepCount, keepLane);
   }
+  // The layer stack's scene (rig::Layer::kScene) is drawn here, behind the
+  // body, once the board's state puts something there.
   // Every vertex first, then which way each triangle faces, so a triangle
   // knows which of its edges are the outline: those whose neighbour faces
   // away. Positions are in sixteenths of a pixel; the UVs follow from the
@@ -237,7 +239,18 @@ void paint(Surface& s, const PaintControls& c, const Box* keep, int keepCount, u
       triangle(s, u[0], u[1], u[2], secondSoft);
     }
 }
-void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors) {
+void applyRig(PaintControls& c, const rig::Channels& rig) {
+  using rig::Channel;
+  const auto off = [&](Channel ch) { return rig[ch] - rig::kRest[ch]; };
+  // The engine's own bounds on its pose and life (Engine::pose, life).
+  c.lean = std::clamp(c.lean + off(Channel::kLean) * 4096 / 1000, -5120, 5120);
+  c.squash = std::clamp(c.squash - off(Channel::kSquash) * 4096 / 1000, -5407, 5407);
+  c.lift = std::clamp(c.lift + off(Channel::kLift) * 4096 / kPxPerUnit, 0, 983);
+  const int open = std::min(rig[Channel::kEyeOpenL], rig[Channel::kEyeOpenR]);
+  c.blink = std::max(c.blink, (1000 - open) * 4096 / 1000);
+}
+void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t keepLane, rig::Anchors* anchors,
+           const rig::Channels& rig, const rig::Layers* layers, uint32_t t) {
   auto pose = e.pose();
   auto life = e.life();
   PaintControls c;
@@ -255,6 +268,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   c.grabY = scalar(e.pull[1].x);
   c.dy = dy;
   c.blink = std::max(c.blink, sleepyLids(e));
+  applyRig(c, rig);
   rig::Anchors local;
   if (!anchors) anchors = &local;
   {
@@ -268,7 +282,7 @@ void paint(Surface& surface, const Engine& e, bool mouthOpen, int dy, uint32_t k
   }
   {
     Measure measure(profile.layers);
-    paintLayers(surface, e, *anchors);
+    paintLayers(surface, e, *anchors, layers, t);
   }
   {
     Measure measure(profile.props);

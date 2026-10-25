@@ -1,0 +1,10 @@
+{
+  "about": "A stretch at the desk on a long turn: eyes squeezed, up tall, a lean each way, and back to it.",
+  "ms": 2600,
+  "tracks": {
+    "eyeOpen": [[0, 0], [500, -700], [1900, -700], [2300, 0]],
+    "lift": [[0, 0], [600, 7], [1800, 7], [2300, 0]],
+    "squash": [[0, 0], [600, -130], [1800, -120], [2400, 0]],
+    "lean": [[0, 0], [1000, 40], [1500, -40], [2000, 0]]
+  }
+}

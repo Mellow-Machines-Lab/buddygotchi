@@ -122,7 +122,7 @@ struct Overlays {
   uint32_t when = 0, ms = 0;
   int hatX = 0, hatY = 0;
   const char* held = nullptr;
-  int heldOffset = 0;
+  int heldOffset = 0, heldOpacity = 1000;  // how much of it, 0 … 1000: dithered
 };
 // The overlays over a face drawn, then the bubble with the line's text (its
 // take's, in amber) when there's one, else the strip.

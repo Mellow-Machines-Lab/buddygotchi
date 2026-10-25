@@ -1,7 +1,9 @@
 // The gel's occasions (CONTINUITY.md, Occasions), each on a frozen clock
 // after a reset: a party day's idle bounces (lifted mid-hop, eyes
-// squinting), a night's idle drowses (lids heavy, sunk a little), and
-// five agents at work type frantically. A state every 20 s keeps the link
+// squinting), a night's idle drowses (lids heavy, sunk a little), five
+// agents at work type frantically, and a long turn's marathon plays the
+// rig's stretch (characters/boop/rig/clips/stretch.json, which Pixel's face
+// plays too: up tall, eyes squeezed). A state every 20 s keeps the link
 // alive.
 {"t":"dbg.reset"}
 {"clock":0}
@@ -18,3 +20,8 @@
 {"t":"state","base":"working","mood":"happy","busy":5,"vol":0,"when":["day"]}
 {"clock":1504}
 {"shot":"frantic"}
+{"t":"dbg.reset"}
+{"clock":0}
+{"t":"state","base":"working","act":"terminal","mood":"happy","vol":0,"when":["day","marathon"]}
+{"clock":1000}
+{"shot":"marathon"}

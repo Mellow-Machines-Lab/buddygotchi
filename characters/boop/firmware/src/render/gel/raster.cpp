@@ -120,7 +120,7 @@ void Raster::composite(int y, int x0, int x1, const uint16_t* row, uint16_t ink)
   }
   auto* out = s.pixels + y * s.width;
   for (int x = x0; x <= x1; ++x) {
-    const int a = std::min<int>(row[x], 256) * alpha >> 8;
+    const int a = shown(std::min<int>(row[x], 256) * alpha >> 8);
     if (a >= 253)
       out[x] = ink;
     else if (a > 2)
@@ -146,10 +146,11 @@ void Raster::fill(int y, int x0, int x1, uint16_t ink) {
     return recording->add(y, x0, x1, kept, ink);
   }
   auto* out = s.pixels + y * s.width;
-  if (alpha >= 253)
+  const int a = shown(alpha);
+  if (a >= 253)
     std::fill(out + x0, out + x1 + 1, ink);
   else
-    for (int x = x0; x <= x1; ++x) out[x] = mix565(out[x], ink, alpha);
+    for (int x = x0; x <= x1; ++x) out[x] = mix565(out[x], ink, a);
 }
 
 void Raster::polygon16(const Point* v, int n, uint16_t ink, const Point* clip, int clipCount) {
@@ -378,6 +379,7 @@ void Raster::replay(const Recording& r, int dx, int dy) {
     // [x0, x1) at opacity a, as composite blends it.
     auto blend = [&](int x0, int x1, int a) {
       x0 = std::max(x0, from), x1 = std::min(x1, to);
+      a = shown(a);
       if (a >= 253) {
         if (x0 < x1) std::fill(row + x0, row + x1, span.ink);
       } else if (a > 2) {

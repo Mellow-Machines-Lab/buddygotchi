@@ -6,6 +6,7 @@
 #pragma once
 #include "render/face.h"
 #include "render/font.h"
+#include "render/rig/layers.h"
 #include "render/screens.h"
 #include "render/surface.h"
 
@@ -23,11 +24,14 @@ void paintLane(Surface& surface, const char* bubble, const Strip& strip);
 // (never 0): what paintLane records as the surface's laneKey.
 uint32_t laneKey(const char* bubble, const Strip& strip);
 class Engine;
-// A whole frame, as GelFace::draw draws it: the body, the face art, the
-// props, the sign it holds up (render/gel/layers.h), then the lane, unless
-// this surface already shows it.
+// A whole frame, as GelFace::draw draws it: the body, with the rig's
+// channels on it, the face art, what it wears and the air around it as the
+// layer stack shows them at t, the props, the sign it holds up
+// (render/gel/layers.h), then the lane, unless this surface already shows
+// it.
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* bubble, const SignShow& sign,
-                const Strip& strip);
+                const Strip& strip, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
+                uint32_t t = 0);
 // The widest line the bubble holds on a surface this wide, in px: the
 // longest take (22 glyphs) in its own font, a line of 34 in the large one
 // (pinned by test_gel).

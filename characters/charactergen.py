@@ -59,8 +59,9 @@ STAGE = ROOT / ".character-build"
 STUDIO = CHARACTERS / "studio"
 FIRMWARE_STATES = ROOT / "firmware" / "src" / "render" / "types.cpp"
 FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
-# The rig's channels, as the firmware has them.
+# The rig's channels, and the tags an occasion may need, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
+TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
 EVERYDAY = ROOT / "internal" / "tools" / "fluid" / "transitions.jsonl"
 # The universal moods' one list, which the app's pack loader holds too.
 UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
@@ -253,6 +254,14 @@ def rig_channels(source: Path = RIG_H) -> dict[str, tuple[int, int, int]]:
     return {name: (int(lo), int(hi), int(rest)) for name, lo, hi, rest in rows}
 
 
+def tag_names(source: Path = TAGS_H) -> list[str]:
+    """The tags in their bits' order: kTagNames in the firmware's tags.h."""
+    match = re.search(r"kTagNames\[kTagCount\] = \{(.*?)\};", source.read_text(), re.S)
+    if not match:
+        raise SystemExit(f"charactergen: no kTagNames in {source}")
+    return re.findall(r'"(\w+)"', match.group(1))
+
+
 PIXEL_FACES = "firmware/include/faces.h"  # the pixel face's art, which facegen writes
 
 
@@ -348,13 +357,33 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
             tracks += [(c, rows) for c in named(name)]
         rig["clips"].append({"id": path.stem, "ms": ms, "loop": loop, "additive": additive, "tracks": tracks})
 
-    rel, ids = "looks.json", [c["id"] for c in rig["clips"]]
-    look_schema = {"clip": Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)}
+    rel, ids, tags = "looks.json", [c["id"] for c in rig["clips"]], tag_names()
+    a_clip = Rule("isn't a clip in rig/clips/", lambda v: v is None or v in ids)
+    some_tags = Rule(f"isn't a list of tags, each once ({', '.join(tags)})",
+                     lambda v: isinstance(v, list) and len(set(v)) == len(v) and all(t in tags for t in v))
     for state, look in read(rel, {s: dict for s in states}, unknown="isn't a state the board has").items():
-        clip = check(rel, look, look_schema, at=state).get("clip")
+        look = check(rel, look, {"clip": a_clip, "occasions": list}, at=state)
+        clip, occasions = look.get("clip"), []
         if clip is not None and not rig["clips"][ids.index(clip)]["loop"]:
             fail(rel, f"{state}.clip", f"{clip} doesn't loop")
-        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip)})
+        for i, given in enumerate(look.get("occasions", [])):
+            where = f"{state}.occasions[{i}]"
+            if i == MOST:
+                fail(rel, where, f"is one more than {MOST}")
+                break
+            occasion = check(rel, given, {"clip": a_clip, "when": some_tags, "after": (0, 65535)}, at=where,
+                             required=("clip",))
+            if occasion.get("clip") is None:
+                continue
+            if rig["clips"][ids.index(occasion["clip"])]["loop"]:
+                fail(rel, f"{where}.clip", f"{occasion['clip']} loops, and an occasion plays once")
+            elif not (given.get("when") or given.get("after")):
+                fail(rel, where, "needs a tag or a wait, or it would always fit")
+            elif occasion.keys() == given.keys():
+                occasions.append({"clip": ids.index(occasion["clip"]),
+                                  "when": sum(1 << tags.index(t) for t in occasion.get("when", [])),
+                                  "after": occasion.get("after", 0)})
+        rig["looks"].append({"state": state, "clip": None if clip is None else ids.index(clip), "occasions": occasions})
     return rig, problems
 
 
@@ -378,13 +407,19 @@ def rig_h(pack: Path, rig: dict) -> str:
             keys += [f"{{{t}, {v}, Ease::{EASES[e]}}}" for t, v, e in rows]
         clips.append(f"{{{json.dumps(c['id'])}, {c['ms']}, {str(c['loop']).lower()}, {str(c['additive']).lower()}, "
                      f"{run('kTracks', first, len(c['tracks']))}}}")
+    occasions, looks = [], []
+    for l in rig["looks"]:
+        first = len(occasions)
+        occasions += [f"{{kClips + {o['clip']}, {o['when']}u, {o['after']}}}" for o in l["occasions"]]
+        looks.append(f"{{SceneState::{camel(l['state'])}, {'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}, "
+                     f"{run('kOccasions', first, len(l['occasions']))}}}")
     table("Key", "kKeys", keys)
     table("Track", "kTracks", tracks)
     lists = [table("Expression", "kExpressions", ["{" + ", ".join(json.dumps(e[k]) for k in ("mood", "eyes", "mouth")) + "}"
                                                   for e in rig["expressions"]]),
-             table("Clip", "kClips", clips),
-             table("Look", "kLooks", [f"{{SceneState::{camel(l['state'])}, "
-                                      f"{'nullptr' if l['clip'] is None else 'kClips + ' + str(l['clip'])}}}" for l in rig["looks"]])]
+             table("Clip", "kClips", clips)]
+    table("Occasion", "kOccasions", occasions)
+    lists.append(table("Look", "kLooks", looks))
     body = "\n".join(out)
     return f"""// Generated by characters/charactergen.py from characters/{pack.name}/rig/. Do not edit.
 // The pack's rig (characters/CHARACTER.md §15): its rows, and kRig.

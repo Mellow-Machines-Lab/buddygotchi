@@ -251,12 +251,12 @@ void paintLane(Surface& surface, const char* line, const Strip& s) {
 }
 
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* line, const SignShow& sign,
-                const Strip& s) {
+                const Strip& s, const rig::Channels& rig, const rig::Layers* layers, uint32_t t) {
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear).
   const uint32_t key = laneKey(line, s);
   rig::Anchors at;
-  paint(surface, e, mouthOpen, dy, key, &at);
+  paint(surface, e, mouthOpen, dy, key, &at, rig, layers, t);
   if (sign.text) paintSign(surface, sign, at);
   Measure measure(profile.lane);
   if (surface.laneKey != key) paintLane(surface, line, s);

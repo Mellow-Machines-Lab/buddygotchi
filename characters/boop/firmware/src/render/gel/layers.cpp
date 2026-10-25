@@ -294,6 +294,8 @@ struct Look {
   bool gown;
   uint32_t hatKey() const { return uint32_t(hat) | uint32_t(colors) << 4 | uint32_t(swing) << 8; }
 };
+// The nightcap's swing for the engine's clock.
+int swingFor(const Engine& e) { return int(e.elapsedMs % 2000 / OutfitLayer::kSwingMs * OutfitLayer::kSwingMs); }
 // Peekaboo's gesture takes it all off, and it sleeps with its eyes bare.
 Look lookFor(const Engine& e) {
   const uint32_t when = e.scenes.when;
@@ -302,8 +304,7 @@ Look lookFor(const Engine& e) {
   const Outfit hat = outfitFor(when);
   const int colors = hasTag(when, "lunar") ? 1 : hasTag(when, "programmers") && !hasTag(when, "party") ? 2 : 0;
   const bool nightcap = hat == Outfit::kNightcap, asleep = state == SceneState::kAsleep;
-  return {hat, hat == Outfit::kPartyHat ? colors : 0,
-          nightcap ? int(e.elapsedMs % 2000 / OutfitLayer::kSwingMs * OutfitLayer::kSwingMs) : 0,
+  return {hat, hat == Outfit::kPartyHat ? colors : 0, nightcap ? swingFor(e) : 0,
           asleep ? Eyewear::kNone : eyewearFor(when), nightcap && asleep};
 }
 
@@ -406,9 +407,22 @@ void wear(Raster& r, Kept& kept, const Engine& e, const rig::Anchors& at, const 
   r.replay(kept.shapes, kept.dx + ox, kept.dy + oy);
 }
 
-// The gown or what's over its eyes, then the hat.
-void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look) {
+// The worn and hat layers' contents for a look, and the look a pair of
+// them is, its nightcap swinging on the engine's clock.
+constexpr uint32_t kGown = 1u << 8;  // a worn content no eyewear has
+uint32_t hatOf(const Look& l) { return l.hat == Outfit::kNone ? 0 : uint32_t(l.hat) | uint32_t(l.colors) << 4; }
+uint32_t wornOf(const Look& l) { return l.gown ? kGown : uint32_t(l.eyes); }
+Look lookOf(uint32_t hat, uint32_t worn, const Engine& e) {
+  const Outfit kind = Outfit(hat & 15);
+  return {kind, int(hat >> 4 & 15), kind == Outfit::kNightcap ? swingFor(e) : 0,
+          worn == kGown ? Eyewear::kNone : Eyewear(worn), worn == kGown};
+}
+
+// The gown or what's over its eyes, then the hat, each at its layer's
+// fade.
+void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look, int wornFade, int hatFade) {
   constexpr int kEnd = rig::Anchors::kRingPoints - 1;
+  r.fade = wornFade;
   if (look.gown) {
     const Point now[] = {at.hem[kEnd / 2], at.hem[0], at.hem[kEnd], at.lap[0], at.lap[kEnd / 2], at.lap[kEnd]};
     wear(r, keptWorn, e, at, now, 6, 1u << 8, gown);  // a look no eyewear has
@@ -417,10 +431,12 @@ void outfit(Raster& r, const Engine& e, const rig::Anchors& at, const Look& look
     wear(r, keptWorn, e, at, now, 2, uint32_t(look.eyes),
          [&look](Raster& r, const rig::Anchors& at) { eyewear(r, at, look.eyes); });
   }
+  r.fade = hatFade;
   if (look.hat != Outfit::kNone) {
     const Point now[] = {at.brimF, at.crown, at.brimL, at.brimR};
     wear(r, keptHat, e, at, now, 4, look.hatKey(), [&look](Raster& r, const rig::Anchors& at) { hat(r, at, look); });
   }
+  r.fade = 255;
 }
 
 }  // namespace
@@ -433,23 +449,37 @@ int sleepyLids(const Engine& e) {
   return int((open.raw * kNightLids + F::scale / 2) / F::scale);
 }
 
-void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at) {
+Contents layerContents(const Engine& e) {
+  const Look look = lookFor(e);
+  const bool zs = hasTag(e.scenes.when, "night") && e.scenes.route.state == SceneState::kAsleep;
+  return {wornOf(look), hatOf(look), airFor(e.scenes.when), zs ? 1u : 0u};
+}
+
+void paintLayers(Surface& s, const Engine& e, const rig::Anchors& at, const rig::Layers* layers, uint32_t t) {
   if (!s.pixels) return;
   Raster r{s};
-  const uint32_t when = e.scenes.when;
   const int ms = int(e.elapsedMs % 3600000u), bottom = s.height * 4 / 5;
-  const SceneState state = e.scenes.route.state;
-  outfit(r, e, at, lookFor(e));
-  const uint8_t air = airFor(when);
+  // Each layer's content and fade: the stack's, or with none, whole in
+  // what the engine's tags and state call for.
+  using rig::Layer;
+  const Contents now = layerContents(e);
+  auto content = [&](Layer l, uint32_t whole) { return layers ? layers->content(l, t) : whole; };
+  auto fade = [&](Layer l) { return layers ? (layers->opacity(l, t) * 255 + 500) / 1000 : 255; };
+  outfit(r, e, at, lookOf(content(Layer::kHat, now.hat), content(Layer::kWorn, now.worn), e), fade(Layer::kWorn),
+         fade(Layer::kHat));
+  const uint32_t air = content(Layer::kAir, now.air);
+  r.fade = fade(Layer::kAir);
   if (air & kSnow) snow(r, s.width, bottom, ms);
   if (air & kConfetti) confetti(r, s.width, bottom, ms);
   if (air & kHearts) hearts(r, s.width, bottom, ms);
-  if (hasTag(when, "night") && state == SceneState::kAsleep) zs(r, at, ms);
+  r.fade = fade(Layer::kBeside);
+  if (content(Layer::kBeside, now.beside)) zs(r, at, ms);
 }
 
 void paintSign(Surface& s, const SignShow& sign, const rig::Anchors& at) {
   if (!s.pixels || !sign.text) return;
   Raster r{s};
+  r.fade = (sign.opacity * 255 + 500) / 1000;
   const int bottom = s.height * 4 / 5;  // the lane's top: shapes stop there
   const Font& f = kSign;
   const int tw = stringWidth(f, sign.text), w = tw + 2 * SignLayer::kPad, h = f.h + 10;
