@@ -59,17 +59,18 @@ enum DoIndex : uint8_t {
   kListening,
   kStopListening,
   kNotice,
+  kCall,
   kDoCount
 };
 constexpr const char* kDoNames[kDoCount] = {"react",         "task_complete", "reply_ready", "starting",
                                             "stopped",       "error",         "helper_return", "wake_up",
-                                            "listening",     "stop_listening", "notice"};
+                                            "listening",     "stop_listening", "notice",      "call"};
 constexpr render::SceneState kDoAnims[kDoCount] = {render::SceneState::kNone,         render::SceneState::kTaskComplete,
                                                    render::SceneState::kReplyReady,   render::SceneState::kStarting,
                                                    render::SceneState::kStopped,      render::SceneState::kError,
                                                    render::SceneState::kHelperReturn, render::SceneState::kWakeUp,
                                                    render::SceneState::kListening,    render::SceneState::kNone,
-                                                   render::SceneState::kNotice};
+                                                   render::SceneState::kNotice,       render::SceneState::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -209,6 +210,16 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
   m.when |= render::busyTags(m.busy);
+  // The work stream's lanes, `[slot, calls, word, project]`, their words
+  // as the fonts draw them.
+  for (JsonArrayConst lane : doc["calls"].as<JsonArrayConst>()) {
+    if (m.laneCount >= render::Stream::kLanes) break;
+    auto& l = m.lanes[m.laneCount++];
+    l.slot = uint8_t(heldTo(lane[0], 0, render::Stream::kLanes - 1, 0));
+    l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
+    render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
+    render::foldText(lane[3].as<const char*>(), render::Stream::kLabelBytes - 1, l.label, sizeof(l.label));
+  }
   if (!sameModel(m, b_.model()) || live_.pattern || b_.noApp(at))
     dirty_ = true, latency_.mark(Latency::kState, hal_.realMs());
   b_.onState(m, at);
@@ -263,6 +274,8 @@ ReactionIn Device::parse(const Do& c) {
 // so is stop_listening with nothing to stop. A reply ends listening either
 // way.
 const char* Device::refuse(const Do& c, uint32_t t) {
+  // A word of the work stream shows only over the agents' work.
+  if (c.what == kCall) return b_.callShows(t) ? nullptr : "hidden";
   live_.parsed = parse(c);
   const char* why = b_.admit(live_.parsed, t);
   drain();  // a listening reaction the reply ended
@@ -280,6 +293,18 @@ const char* Device::refuse(const Do& c, uint32_t t) {
 // `listening` drops the reactions its own host has waiting in the queue.
 void Device::onDo(const Do& c, uint32_t t) {
   latency_.mark(Latency::kDo, hal_.realMs());  // from when it plays, past its wait in the queue
+  if (c.what == kCall) {
+    // A word that comes forward: the face flies it and the body answers
+    // as it lands. It holds nothing up.
+    JsonObjectConst args = c.args;
+    char word[render::Stream::kWordBytes];
+    render::foldText(args["w"].as<const char*>(), render::Stream::kWordBytes - 1, word, sizeof(word));
+    b_.call(word, uint8_t(heldTo(args["a"], 0, render::Stream::kLanes - 1, 0)),
+            render::callGagFromName(args["as"].as<const char*>()), uint16_t(heldTo(args["n"], 0, 999, 0)), t);
+    dirty_ = true;
+    kit().rest(c.key);
+    return;
+  }
   const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);
   live_.parsed = ReactionIn{};
   uint32_t seq = b_.reactionSeq();
@@ -499,6 +524,11 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["expr"] = nullptr;
   if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
+  // The work stream: how many lanes show, and the word forward's gag.
+  const render::Stream& stream = b_.stream();
+  d["calls"] = stream.on ? stream.laneCount : 0;
+  if (stream.on && stream.call.live) d["call"] = render::callGagName(stream.call.gag);
+  else d["call"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;
   d["vol"] = m.vol;
@@ -858,6 +888,7 @@ void Device::render(uint32_t t) {
       render::blit(canvas_, native->back(), 0);
     }
   } else {
+    b_.face().watch(&b_.stream());
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
                         b_.strip(t), dirty_))
       return;

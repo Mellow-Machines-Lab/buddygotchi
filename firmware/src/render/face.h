@@ -10,6 +10,7 @@
 #include "render/types.h"
 #include "render/surface.h"
 #include "render/screens.h"
+#include "render/stream.h"
 #include "voice/clips.h"
 #include "voice/effects.h"
 
@@ -115,6 +116,9 @@ class Face {
   // Shows the look's variation v (from 0) until it turns: dbg.look's, for
   // scenarios and tools. A face that picks by its own clock may ignore it.
   virtual void showLookVariant(uint8_t v) { (void)v; }
+  // The work stream to draw (render/stream.h), the device's, set before
+  // each frame: a face that has no stream ignores it.
+  virtual void watch(const Stream* stream) { (void)stream; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }

@@ -15,6 +15,7 @@
 #include "render/gel/lane.h"
 #include "render/gel/painter.h"
 #include "render/rig/mixer.h"
+#include "render/stream.h"
 namespace render::gel {
 class GelFace final : public Face {
  public:
@@ -35,6 +36,9 @@ class GelFace final : public Face {
   // when it lets go, carried on a little by the finger's own speed.
   void finger(bool down, int x, int y) override;
   void letGo(int vx, int vy) override;
+  // The work stream it draws, and whose word forward it answers as it
+  // lands.
+  void watch(const Stream* stream) override { stream_ = stream; }
   // A swipe flings the dome on, and plays nothing else.
   bool playsSwipe() const override { return false; }
   void started(SceneState, Mood, uint8_t, Outcome, StartCtx) override;
@@ -93,6 +97,10 @@ class GelFace final : public Face {
   voice::FxEvent pending_[kMaxCues];
   uint32_t pendingAt_[kMaxCues]{};
   int pendingCount_ = 0;
+  const Stream* stream_ = nullptr;
+  // The word forward the body last answered, by when it came.
+  uint32_t landedAt_ = 0;
+  bool landed_ = true;
   void advanceTo(uint32_t);
   // A look's occasion, at a new pass of its scene while none plays, while
   // the engine shows the look itself; the one playing fades out when the
@@ -102,6 +110,8 @@ class GelFace final : public Face {
   void showLayers(uint32_t t);
   // A clip played on the mixer, its cues to sound from now.
   void play(const rig::Clip& clip);
+  // The body answers a word of the work stream as it lands.
+  void land(CallGag gag);
   // A new revision: the sounds already queued belong to what came before.
   void restartCues();
   bool factsChanged(const FaceContext& context) const;

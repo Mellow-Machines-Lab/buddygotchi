@@ -67,6 +67,8 @@ extension Runtime {
         public var uncleanExit = false
         /// The one board Boop takes over Bluetooth, by its `hello.id`.
         public var board: String?
+        /// Whether the board shows the work stream.
+        public var workStream = true
         /// Each buddy, when there are several; empty for one, which the
         /// fields above are.
         public var buddies: [BuddyStatus] = []
@@ -116,6 +118,7 @@ extension Runtime {
         status.nature = memory.longTerm?.nature
         status.uncleanExit = uncleanExit
         status.board = settings.board
+        status.workStream = settings.workStream
         status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }
         if pipeline.several {
             status.buddies = rigs.map { rig in

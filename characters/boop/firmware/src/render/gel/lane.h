@@ -8,6 +8,7 @@
 #include "render/font.h"
 #include "render/rig/layers.h"
 #include "render/screens.h"
+#include "render/stream.h"
 #include "render/surface.h"
 
 namespace render::gel {
@@ -17,6 +18,9 @@ struct Raster;
 // (x, y): at most `room` px of it, cut as render::cutAt cuts it, as the
 // canvas's drawStringFit. Returns the x after it.
 int text(Raster& r, const Font& f, int x, int y, const char* s, uint16_t ink, int room = 1 << 20);
+// The bubble's font, the gel's largest (fonts_gel.h, which only lane.cpp
+// holds).
+const Font& bubbleFont();
 
 // The bubble, or else the strip at its opacity.
 void paintLane(Surface& surface, const char* bubble, const Strip& strip);
@@ -26,12 +30,14 @@ uint32_t laneKey(const char* bubble, const Strip& strip);
 class Engine;
 // A whole frame, as GelFace::draw draws it: the body, with the rig's
 // channels on it, the face art, what it wears and the air around it as the
-// layer stack shows them at t, the props, the sign it holds up
-// (render/gel/layers.h), then the lane, unless this surface already shows
-// it.
+// layer stack shows them at t, the props, the work stream at `now`, the
+// device's time (render/gel/stream.h: its words behind the body, the desk's
+// to-do bar, clock and thought cloud, and the word forward), the sign it
+// holds up (render/gel/layers.h), then the lane, unless this surface
+// already shows it.
 void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const char* bubble, const SignShow& sign,
                 const Strip& strip, const rig::Channels& rig = rig::kRest, const rig::Layers* layers = nullptr,
-                uint32_t t = 0);
+                uint32_t t = 0, const Stream* stream = nullptr, uint32_t now = 0);
 // The widest line the bubble holds on a surface this wide, in px: the
 // longest take (22 glyphs) in its own font, a line of 34 in the large one
 // (pinned by test_gel).

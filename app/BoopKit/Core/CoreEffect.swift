@@ -32,6 +32,9 @@ public enum CoreEffect: Equatable, Sendable {
     /// waits on; or push-to-talk's `listening` after the app's mic button, which
     /// plays at once (`BoopDevice.play`).
     case reaction(DeviceReaction)
+    /// A word of the work stream that comes forward (`WorkStream`): the
+    /// `call` `do`'s `args`, sent to wait briefly in the device's queue.
+    case call(JSONObject)
     /// Open a thread on the Mac, in the app it runs in: a tap while
     /// something needs you.
     case open(ThreadRef)
@@ -45,6 +48,7 @@ public enum CoreEffect: Equatable, Sendable {
         case .newDay(let date): "new-day \(date)"
         case .listen(let on, let by): "listen \(on ? "on" : "off") (\(by.rawValue))"
         case .reaction(let m): "do " + JSONObject([("name", .string(m.name)), ("args", .object(m.args))]).json
+        case .call(let args): "do " + JSONObject([("name", .string(WorkStream.action)), ("args", .object(args))]).json
         case .open(let t): "open \(t.agent) \(t.session)"
         }
     }

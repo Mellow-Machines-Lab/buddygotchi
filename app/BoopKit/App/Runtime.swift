@@ -302,10 +302,11 @@ public final class Runtime: @unchecked Sendable {
         }
         // Each buddy's core, its own seed apart. The launch's read-back
         // prunes the transcript, so today isn't a new day.
-        let volume = settings.volume
+        let volume = settings.volume, workStream = settings.workStream
         let cores = plans.enumerated().map { i, plan in
             var config = Core.Config(volume: volume, time: options.time, pack: plan.buddy.pack, hatched: longTerm.hatched)
             config.firstAsk = SessionTracker.randomFirstRequest()
+            config.workStream = workStream
             let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
             core.setWallClock(wall, at: wallAt)
             return (plan.buddy, core)
@@ -627,6 +628,8 @@ public final class Runtime: @unchecked Sendable {
                 stateChanged = true
             case .reaction(let reaction):
                 playRule(reaction, on: rig)
+            case .call(let args):
+                playCall(args, on: rig)
             case .open(let thread):
                 open(thread, by: "tap")
             }
@@ -683,6 +686,14 @@ public final class Runtime: @unchecked Sendable {
         home.async { [self] in
             for rig in rigs { run(core(rig).setVolume(volume, at: options.clock()), on: rig) }
             saveSettings { $0.volume = core.config.volume }
+        }
+    }
+
+    /// The work stream on or off, on every buddy, kept in `settings.json`.
+    public func setWorkStream(_ on: Bool) {
+        home.async { [self] in
+            for rig in rigs { run(core(rig).setWorkStream(on, at: options.clock()), on: rig) }
+            saveSettings { $0.workStream = on }
         }
     }
 

@@ -256,7 +256,7 @@ static void test_hello_on_the_first_message_and_every_minute() {
   std::string hello = std::string(
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
                           "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
-                          "\"wake_up\",\"listening\",\"stop_listening\",\"notice\"],\"voice\":\"") +
+                          "\"wake_up\",\"listening\",\"stop_listening\",\"notice\",\"call\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
                       "\",\"pack_version\":\"" + render::kPackVersion + "\",\"reset\":\"power\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));
@@ -2331,10 +2331,31 @@ static void test_reset_reads_motion_from_0() {
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"facedown\"}\n"));
 }
 
+// A word of the work stream that comes forward (`call`) plays at once over
+// the agents' work and holds nothing up: it rests, and the next reaction
+// plays. With no lanes working, or while something needs you, it's
+// skipped `hidden`. dbg.state says the lanes showing and the word's gag.
+static void test_a_call_comes_forward_over_the_work() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  doLine(r, 1, "call", "now", "{\"a\":0,\"w\":\"make\",\"as\":\"bonk\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "skipped", "hidden")));
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"calls\":[[0,3,\"grep\",\"app\"]]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"calls\":1"));
+  doLine(r, 2, "call", "now", "{\"a\":0,\"w\":\"make\",\"as\":\"bonk\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"call\":\"bonk\""));
+  doLine(r, 3, "react", "next", "{\"mood\":\"happy\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":3,"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"attn\":{\"agent\":\"claude\",\"project\":\"x\",\"more\":0}}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"calls\":0"));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"call\":null"));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_the_face_plays_its_designs_sounds);
+  RUN_TEST(test_a_call_comes_forward_over_the_work);
   RUN_TEST(test_the_sounds_follow_every_design);
   RUN_TEST(test_a_state_carries_what_the_agents_do);
   RUN_TEST(test_a_state_carries_its_tags_and_counts);

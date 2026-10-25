@@ -129,12 +129,30 @@ class Engine {
   // A contact a rig clip's cue names (slime::kContactKindNames), sounded at
   // the next step as the scene's are; a name it doesn't know, none.
   void contact(const char* kind);
-  // How closed the eyes are drawn: the idle blink or a gag's lids, whichever
-  // is more.
-  F blink() const { return max(motion.blink(), acting.closure()); }
+  // How closed the eyes are drawn: the idle blink, a gag's lids or a hit's
+  // daze, whichever is most.
+  F blink() const { return max(max(motion.blink(), acting.closure()), daze()); }
+  // A word of the work stream landing (render/stream.h): a push on the
+  // pull's springs, as a fling let go, in body units a second, and the
+  // lids shut to `lids` for `dazeMs` of the engine's time, opening over
+  // the last kDazeOpenMs of it. Nothing while a finger holds it.
+  static constexpr uint32_t kDazeOpenMs = 300;
+  void jolt(F lean, F squash, F forward, F lids = 0, uint32_t dazeMs = 0) {
+    if (grab) return;
+    const F push[3] = {lean, squash, forward};
+    for (int i = 0; i < 3; ++i) pull[i].v = clamp(pull[i].v + push[i], -kGrabVelocity, kGrabVelocity);
+    if (dazeMs) dazeLids_ = lids, dazeEnd_ = elapsedMs + dazeMs;
+  }
+  F daze() const {
+    if (!dazeEnd_ || elapsedMs >= dazeEnd_) return 0;
+    const uint32_t left = dazeEnd_ - elapsedMs;
+    return left >= kDazeOpenMs ? dazeLids_ : dazeLids_ * int(left) / int(kDazeOpenMs);
+  }
 
  private:
   bool stamped_ = false;
+  F dazeLids_ = 0;
+  uint32_t dazeEnd_ = 0;
   uint32_t previous_ = 0;
   std::vector<ContactEvent> clipContacts_;
   int cueGeneration_ = -1, cueIteration_ = -1, cueCount_ = 0;

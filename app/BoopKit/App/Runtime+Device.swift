@@ -100,7 +100,18 @@ extension Runtime {
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: DeviceReaction, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
+        // A board that plays the work stream hits Boop with the failed
+        // call's word instead (`call`).
+        if reaction.anim == Core.error, BoopDevice.playsCalls(rig.link.hello) { return }
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction.name), by: .rule, now: options.clock()) { _ in }
+    }
+
+    /// A word of the work stream that comes forward: it waits in the
+    /// device's queue for up to `BoopDevice.callTTL`, and a board that
+    /// doesn't play the stream refuses it.
+    func playCall(_ args: JSONObject, on rig: Rig? = nil) {
+        let rig = rig ?? rigs[0]
+        rig.link.do(WorkStream.action, args: args, play: .next, ttl: BoopDevice.callTTL, by: .rule, now: options.clock()) { _ in }
     }
 
     /// A reaction from the brain, sent at once to wait in the device's

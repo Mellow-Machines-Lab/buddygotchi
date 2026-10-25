@@ -122,8 +122,30 @@ public struct StateSnapshot: Equatable, Sendable {
     /// nothing needs you; nil sends none.
     public var todo: Todo?
 
+    /// A working session's lane in the work stream (`WorkStream`): its
+    /// slot, which picks its column and colour on the board, how many
+    /// calls it has made (the board drops a word for each new one), its
+    /// latest call's word and its project.
+    public struct Call: Equatable, Sendable {
+        public var slot: Int
+        public var count: Int
+        public var word: String
+        public var label: String
+
+        public init(slot: Int, count: Int, word: String, label: String) {
+            self.slot = slot
+            self.count = count
+            self.word = word
+            self.label = label
+        }
+    }
+
+    /// The lanes, while the agents work and nothing needs you; none sends
+    /// none.
+    public var calls: [Call]
+
     public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,
-                vol: Int, when: [String] = [], todo: Todo? = nil) {
+                vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = []) {
         self.base = base
         self.act = act
         self.mood = mood
@@ -134,6 +156,7 @@ public struct StateSnapshot: Equatable, Sendable {
         self.vol = vol
         self.when = when
         self.todo = todo
+        self.calls = calls
     }
 
     /// The look the device shows when nothing needs you: what the agents
@@ -167,6 +190,9 @@ public struct StateSnapshot: Equatable, Sendable {
         fields["vol"] = .int(vol)
         if !when.isEmpty { fields["when"] = .array(when.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
+        if !calls.isEmpty {
+            fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word), .string($0.label)]) })
+        }
         return fields
     }
 

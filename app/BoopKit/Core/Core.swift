@@ -42,6 +42,9 @@ public final class Core {
         /// The growth stage Boop reached last and the day it did: that day
         /// is a party (`Occasions`).
         public var stageReached: (name: String, day: String)?
+        /// Whether the board shows the work stream (`WorkStream`): the
+        /// setting's, on unless you turn it off.
+        public var workStream = true
 
         public init(volume: Int = 6, time: LocalTime = LocalTime(), pack: CharacterPack = .active,
                     hatched: String? = nil) {
@@ -72,6 +75,11 @@ public final class Core {
     /// activity of a later one is a new day.
     var lastActiveDay: String?
     var lastPublished: StateSnapshot?
+    /// When the last `state` went out: a lane's new word waits for
+    /// `WorkStream.sendEveryMs` after it.
+    var lastPublishedAt: Int64?
+    /// The work stream: each call's word, and which come forward.
+    var stream = WorkStream()
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
@@ -220,8 +228,43 @@ public final class Core {
         let reaction = fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
         if let reaction { play(reaction, for: event.seq, now, &fx) }
+        let forward = streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
+        if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
         return fx
+    }
+
+    /// What the work stream makes of an agent's event: a call joins its
+    /// session's lane, and one may come forward.
+    func streamCall(_ e: AgentEvent, program: String?, at now: Int64) -> WorkStream.Forward? {
+        guard config.workStream else { return nil }
+        switch (e.kind, e.phase) {
+        case (.turn, .start):
+            stream.turnStarted(e.key)
+            return nil
+        case (.tool, .start) where e.tool != nil:
+            return stream.started(e, program: program, label: sessions[e.key]?.project ?? "", at: now)
+        case (.tool, .end) where e.tool != nil:
+            return stream.ended(e, program: program, at: now)
+        case (.subagent, .end):
+            return stream.helperBack(e.key, at: now)
+        default:
+            return nil
+        }
+    }
+
+    /// A word that comes forward, for the device, after the `state` of the
+    /// same input: not while something needs you or `listening` holds the
+    /// screen. Recorded as a `did` with no message, so the transcript keeps
+    /// it and the brain's lines count only the moments that hit
+    /// (`TranscriptView`).
+    func call(_ f: WorkStream.Forward, session key: String, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) {
+        guard !needsYouShowing, !showsListening(at: now) else { return }
+        fx.append(.call(f.args))
+        var did = Event.did("", for: seq, action: WorkStream.action, by: "rule",
+                            facts: ["as": .string(f.gag), "word": .string(f.word), "session": .string(key)], at: now)
+        did.data["message"] = nil
+        fx.append(.record(did))
     }
 
     /// `event` without the name, app, app session, mode, process and
@@ -305,9 +348,10 @@ public final class Core {
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
             let failed = event.failed == true
-            if !late, failed, event.error.map(Core.errorClasses.contains) == true {
+            if !late, failed, event.error.map(Core.errorClasses.contains) == true,
+               !(event.topic == Topic.inspect && event.error == ToolError.exitCode) {
                 // A command that failed or timed out, not a request you
-                // denied.
+                // denied, nor a lookup that exited 1: it found nothing.
                 return DeviceReaction(anim: Core.error)
             }
             if !late, !failed, let call, Core.act(call) == .delegating, !call.sawSubagent {
@@ -495,6 +539,15 @@ public final class Core {
     }
 
     @discardableResult
+    /// The work stream on or off, from the next `state`.
+    public func setWorkStream(_ on: Bool, at now: Int64) -> [CoreEffect] {
+        config.workStream = on
+        if !on { stream = WorkStream() }
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
     public func setVolume(_ volume: Int, at now: Int64) -> [CoreEffect] {
         config.volume = max(0, min(10, volume))
         var fx: [CoreEffect] = []
@@ -585,10 +638,13 @@ public final class Core {
         // Idle's tier counts from the latest a session came to rest, once
         // nothing works.
         let rests = resting(idle: idle, dismissed: dismissed)
+        // The work stream's lanes, while the agents work and nothing
+        // needs you.
+        let calls = config.workStream && base == "working" && attn == nil ? stream.calls(Set(working.map(\.key))) : []
         return StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
                              idle: rests.count, helpers: helpers, vol: config.volume,
                              when: when(at: now, workingSince: longest.first?.turn.startedAt,
-                                        idleSince: working.isEmpty ? rests.max() : nil), todo: todo)
+                                        idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
     }
 
     /// When each session that rests came to rest, as the board counts
@@ -923,11 +979,20 @@ public final class Core {
         recordNeeds(now, &fx)
         tidyNotes()
         updateActs(now)
+        stream.keep(Set(groups(at: now).working.map(\.key)))
         let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)
         defer { lastSessions = sessions }
-        if snapshot != lastPublished {
+        // Only a lane's new word changed: it waits for the next `state`
+        // once `sendEveryMs` has passed, or for the next tick.
+        var wordsOnly = false
+        if var before = lastPublished, let at = lastPublishedAt, now - at < WorkStream.sendEveryMs {
+            before.calls = snapshot.calls
+            wordsOnly = before == snapshot
+        }
+        if snapshot != lastPublished, !wordsOnly {
             lastPublished = snapshot
+            lastPublishedAt = now
             // The picture changes before any reaction plays on top of it.
             fx.insert(.state(snapshot), at: 0)
         } else if sessions != lastSessions {

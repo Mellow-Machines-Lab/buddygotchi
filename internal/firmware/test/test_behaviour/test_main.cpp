@@ -3113,9 +3113,59 @@ static void test_boot_hands_over_while_someone_waits() {
   TEST_ASSERT_EQUAL_STRING("peekaboo", render::gestureName(render::Gesture::kPeekaboo));
 }
 
+// The work stream's model (render/stream.h): a lane whose count moves drops
+// a word for each new call, at most kDropsPerState a `state`; a new lane
+// drops its latest; a lane gone, or the stream hidden (needs you), takes
+// its words; a word falls for kFallMs and a word forward lasts kCallMs.
+static void test_the_work_streams_words() {
+  TEST_ASSERT_EQUAL_UINT32(3200, render::Stream::kFallMs);
+  TEST_ASSERT_EQUAL_INT(2, render::Stream::kDropsPerState);
+  TEST_ASSERT_EQUAL_UINT32(2500, render::Stream::kCallMs);
+  render::Stream s;
+  render::Stream::Lane lanes[2];
+  lanes[0].slot = 0, lanes[0].count = 4, std::strcpy(lanes[0].word, "grep");
+  auto live = [&] {
+    int n = 0;
+    for (const auto& w : s.words) n += w.live;
+    return n;
+  };
+  s.setLanes(lanes, 1, true, 0);
+  TEST_ASSERT_EQUAL_INT(1, live());
+  lanes[0].count = 5;
+  s.setLanes(lanes, 1, true, 100);
+  TEST_ASSERT_EQUAL_INT(2, live());
+  lanes[0].count = 15;  // ten calls in one state: two words
+  s.setLanes(lanes, 1, true, 200);
+  TEST_ASSERT_EQUAL_INT(4, live());
+  s.setLanes(lanes, 1, true, 300);  // the same count: none
+  TEST_ASSERT_EQUAL_INT(4, live());
+  lanes[1].slot = 2, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed");
+  s.setLanes(lanes, 2, true, 300);
+  TEST_ASSERT_EQUAL_INT(5, live());
+  TEST_ASSERT_EQUAL_INT(1, s.column(2));
+  s.setLanes(&lanes[1], 1, true, 400);  // the first lane's session rests
+  TEST_ASSERT_EQUAL_INT(1, live());
+  TEST_ASSERT_EQUAL_INT(-1, s.column(0));
+  s.prune(300 + render::Stream::kFallMs - 1);
+  TEST_ASSERT_EQUAL_INT(1, live());
+  s.prune(300 + render::Stream::kFallMs);
+  TEST_ASSERT_EQUAL_INT(0, live());
+  s.startCall("make", 2, render::callGagFromName("bonk"), 0, 5000);
+  TEST_ASSERT_TRUE(s.call.live && s.call.gag == render::CallGag::kBonk);
+  TEST_ASSERT_EQUAL_STRING("bonk", render::callGagName(s.call.gag));
+  TEST_ASSERT_TRUE(render::callGagFromName("nonsense") == render::CallGag::kLand);
+  s.prune(5000 + render::Stream::kCallMs);
+  TEST_ASSERT_FALSE(s.call.live);
+  s.startCall("make", 2, render::CallGag::kBonk, 0, 6000);
+  s.setLanes(&lanes[1], 1, false, 6100);  // something needs you
+  TEST_ASSERT_FALSE(s.call.live);
+  TEST_ASSERT_EQUAL_INT(0, live());
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
+  RUN_TEST(test_the_work_streams_words);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);

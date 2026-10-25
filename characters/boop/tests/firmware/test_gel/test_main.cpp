@@ -19,6 +19,7 @@
 #include "render/gel/lane.h"
 #include "render/gel/layers.h"
 #include "render/gel/raster.h"
+#include "render/gel/stream.h"
 #include "render/tags.h"
 #include "fonts_gel.h"
 #include "rig_tables.h"  // the staged pack's (characters/charactergen.py)
@@ -2111,9 +2112,64 @@ static void test_rgb565_opacity_rounds_to_nearest() {
         TEST_ASSERT_EQUAL_HEX16(channel(11, 31) | channel(5, 63) | channel(0, 31), mix565(old, ink, a));
       }
 }
+// The work stream on the gel: a lane's words drawn behind the body show
+// only where it doesn't cover them; a word forward is drawn over it; the
+// body answers a hit as it lands, knocked and its lids shut, opening again
+// after the daze; and drawing it all takes nothing from the heap.
+static void test_the_work_stream_falls_behind_and_hits_in_front() {
+  std::vector<uint16_t> px(502 * 410);
+  Surface s{502, 410, px.data()};
+  auto e = std::make_unique<Engine>();
+  for (int t = 0; t <= 960; t += 16) e->step(t);
+  Stream stream;
+  Stream::Lane lanes[2];
+  lanes[0].slot = 0, lanes[0].count = 1, std::strcpy(lanes[0].word, "grep"), std::strcpy(lanes[0].label, "app");
+  lanes[1].slot = 1, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed"), std::strcpy(lanes[1].label, "web");
+  stream.setLanes(lanes, 2, true, 0);
+  const SignShow none;
+  const Strip strip;
+  paintFrame(s, *e, false, 0, nullptr, none, strip);
+  const std::vector<uint16_t> bare(px);
+  paintFrame(s, *e, false, 0, nullptr, none, strip, rig::kRest, nullptr, 0, &stream, 600);
+  // The words fall in their lanes' columns, a quarter and three quarters
+  // across, and the body's middle covers whatever falls behind it.
+  int left = 0, right = 0;
+  for (int y = 30; y < 120; ++y)
+    for (int x = 0; x < 502; ++x)
+      if (px[size_t(y) * 502 + x] != bare[size_t(y) * 502 + x]) (x < 251 ? left : right) += 1;
+  TEST_ASSERT_TRUE(left > 40 && right > 40);
+  TEST_ASSERT_EQUAL_HEX16(bare[size_t(205) * 502 + 251], px[size_t(205) * 502 + 251]);
+  // A failure flies at its face from the second lane, and lands.
+  stream.startCall("make", 1, CallGag::kBonk, 0, 1000);
+  TEST_ASSERT_EQUAL_UINT32(380, callFlightMs(CallGag::kBonk));
+  TEST_ASSERT_EQUAL_INT(int(CallMove::kHit), int(callMove(CallGag::kBonk)));
+  const F open = e->blink();
+  e->jolt(q(1.2), q(3.2), q(-3), q(.75), 900);
+  TEST_ASSERT_TRUE(e->blink() >= q(.75));
+  for (int t = 976; t <= 976 + 112; t += 16) e->step(t);
+  TEST_ASSERT_TRUE(abs(e->pull[1].x) > q(.01));  // squashed by the knock
+  for (int t = 1104; t <= 976 + 544; t += 16) e->step(t);
+  TEST_ASSERT_TRUE(e->blink() >= q(.75));  // still dazed, until the last kDazeOpenMs of its 0.9 s
+  for (int t = 1536; t <= 1536 + 800; t += 16) e->step(t);
+  TEST_ASSERT_TRUE(e->blink() <= max(open, q(.2)));  // and open again after it
+  // Every part of it, over and over, off the heap.
+  allocCount = 0;
+  allocCounting = true;
+  for (uint32_t t = 1000; t < 3500; t += 100)
+    paintFrame(s, *e, false, 0, nullptr, none, strip, rig::kRest, nullptr, 0, &stream, t);
+  for (int g = 0; g < int(CallGag::kCount); ++g) {
+    stream.startCall("x", 0, CallGag(g), 5, 4000);
+    for (uint32_t t = 4000; t < 6500; t += 250)
+      paintFrame(s, *e, false, 0, nullptr, none, strip, rig::kRest, nullptr, 0, &stream, t);
+  }
+  allocCounting = false;
+  TEST_ASSERT_EQUAL_INT(0, allocCount);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_fixed_math_and_motion);
+  RUN_TEST(test_the_work_stream_falls_behind_and_hits_in_front);
   RUN_TEST(test_software_clock_matches_binary64);
   RUN_TEST(test_a_divisor_divides_exactly);
   RUN_TEST(test_all_expressions_draw_inside_native_surface);

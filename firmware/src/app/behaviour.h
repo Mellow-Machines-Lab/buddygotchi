@@ -14,6 +14,7 @@
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
+#include "render/stream.h"
 #include "render/rig/rig.h"
 #include "render/screens.h"
 #include "voice/player.h"
@@ -50,6 +51,10 @@ struct Model {
   // occasion, how busy the agents are. The face shows only the designs
   // whose tags are all on, and picks each look's variation itself.
   uint32_t when = 0;
+  // The work stream's lanes (`calls`, render/stream.h), while the agents
+  // work and nothing needs you.
+  render::Stream::Lane lanes[render::Stream::kLanes];
+  int laneCount = 0;
   // The look while nothing needs you: what the agents are doing while
   // they work, else the base.
   render::SceneState look() const { return base == render::SceneState::kWorking ? act : base; }
@@ -281,6 +286,14 @@ class Behaviour {
     return alerted_;
   }
   const Model& model() const { return model_; }
+  // The work stream (render/stream.h): the lanes each `state` says, and
+  // the word a `call` brings forward, which plays at once while the
+  // agents work and nothing needs you.
+  const render::Stream& stream() const { return stream_; }
+  bool callShows(uint32_t t) const { return stream_.on && !model_.attn && !noApp(t); }
+  void call(const char* word, uint8_t slot, render::CallGag gag, uint16_t count, uint32_t t) {
+    stream_.startCall(word, slot, gag, count, t);
+  }
   // The variation the look shows, from 0: the Mac's, until the variations
   // rotate.
   uint8_t lookVariant() const { return face_->lookVariant(); }
@@ -415,6 +428,7 @@ class Behaviour {
   uint32_t goneAt_ = 0;
   // The sign goes, at `at`: it fades out from then.
   void signGoes(uint32_t at);
+  render::Stream stream_;
   // The reaction's expression: its mood from exprAt_ for exprMs_: as long
   // as the animation with it plays, or its loops; and at least as long as
   // the `say` with it.

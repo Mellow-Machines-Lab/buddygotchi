@@ -320,8 +320,12 @@ public final class DemoPlayer: @unchecked Sendable {
         let finish = { [self] in heardStep(step, agent(of: step)); then() }
         // A request that `waits` ends the step as it's asked: the steps
         // after it play while it waits, and you allow it `ask` seconds on.
-        func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil, waits: Bool = false) {
-            let call = { (l: inout HookLine) in l.tool = name; l.toolUseID = id; l.topic = topic }
+        func tool(_ name: String, topic: String? = nil, fails: Bool = false, ask: Double? = nil, waits: Bool = false,
+                  size: (added: Int, removed: Int)? = nil, program: String? = nil) {
+            let call = { (l: inout HookLine) in
+                l.tool = name; l.toolUseID = id; l.topic = topic; l.program = program
+                l.linesAdded = size?.added; l.linesRemoved = size?.removed
+            }
             send("PreToolUse", call)
             let ends = { [self] in
                 later(step.takes) { [self] in
@@ -350,8 +354,15 @@ public final class DemoPlayer: @unchecked Sendable {
             turnOpen.insert(open)
             finish()
         case .read: tool(codex ? "Bash" : "Read")
-        case .edit: tool(codex ? "apply_patch" : "Edit")
-        case .run: tool("Bash", topic: a.cmd.flatMap { Topic.tag(command: $0) }, fails: a.fails, ask: a.ask, waits: a.waits)
+        case .edit:
+            // Its size, as agent-hook counts it from the edit's old and new text.
+            let input: [String: Any] = ["file_path": a.file ?? "", "old_string": a.old ?? "", "new_string": a.new ?? ""]
+            tool(codex ? "apply_patch" : "Edit", size: codex ? nil : EditSize.of(tool: "Edit", input: input))
+        case .run:
+            // Its topic and program as agent-hook tags them: a check's topic, or
+            // `inspect` for one that only looks, and its program's word.
+            tool("Bash", topic: a.cmd.flatMap { Topic.tag(tool: "Bash", input: ["command": $0]) }, fails: a.fails, ask: a.ask,
+                 waits: a.waits, program: a.cmd.flatMap { Program.word(command: $0) })
         case .todo:
             // The whole list, as Claude's TodoWrite and Codex's update_plan
             // give it: the counts, never the items.

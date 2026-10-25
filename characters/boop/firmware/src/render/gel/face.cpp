@@ -166,7 +166,55 @@ void GelFace::letGo(int vx, int vy) {
 }
 
 // At every stop of Behaviour's, on the grid or not.
-void GelFace::step(uint32_t t, linkkit::Rng&) { advanceTo(t); }
+void GelFace::step(uint32_t t, linkkit::Rng&) {
+  advanceTo(t);
+  if (!stream_ || !stream_->on || !stream_->call.live) return;
+  const auto& c = stream_->call;
+  if (c.at != landedAt_) landed_ = false, landedAt_ = c.at;
+  if (!landed_ && int32_t(t - c.at) >= int32_t(callFlightMs(c.gag))) {
+    landed_ = true;
+    land(c.gag);
+  }
+}
+
+// What the body does as a word lands, in the pull's body units a second:
+// knocked back and dazed by a failure, longer up the ladder; a squash as a
+// word sinks in or a bit of hail lands; stretched up by a shrug or a cheer.
+void GelFace::land(CallGag gag) {
+  auto& e = *engine_;
+  // Toward the word's side: its lane's half of the screen.
+  const int column = stream_ ? stream_->column(stream_->call.slot) : 0;
+  const F side = stream_ && 2 * column + 1 >= stream_->laneCount ? F(1) : F(-1);
+  switch (callMove(gag)) {
+    case CallMove::kHit:
+      // A failure's knock; its dizzy eyes are the stream's to draw. Your
+      // no makes it flinch and squeeze its eyes; a timeout lands on it
+      // half asleep.
+      if (gag == CallGag::kNo) e.jolt(q(-1.5), q(2.4), q(-2), q(.6), 450);
+      else if (gag == CallGag::kTimeout) e.jolt(q(.6), q(2.8), q(-2), q(.9), 700);
+      else e.jolt(q(1.2), q(3.2), q(-3));
+      break;
+    case CallMove::kTopple: e.jolt(q(-1.4), q(3.4), q(-2.6)); break;
+    case CallMove::kSink:
+    case CallMove::kArrive: e.jolt(0, q(1.8), 0); break;
+    case CallMove::kBack: e.jolt(0, q(1.6), 0); break;
+    case CallMove::kStamp: e.jolt(side * q(.4), q(1.2), 0); break;
+    case CallMove::kPlane: e.jolt(side * q(.9), q(1.2), 0); break;
+    case CallMove::kLook:
+    case CallMove::kPhone:
+    case CallMove::kPage: e.jolt(side * q(.8), q(-.4), q(.6)); break;
+    case CallMove::kStir: e.jolt(q(.9), 0, q(.6)); break;
+    case CallMove::kHelper: e.jolt(side * q(-.6), q(-.6), 0); break;
+    case CallMove::kShatter: e.jolt(0, q(1.4), 0); break;
+    case CallMove::kHail: e.jolt(q(.4), q(1.2), 0); break;
+    case CallMove::kShrug:
+    case CallMove::kPoof: e.jolt(0, q(-1.6), 0); break;
+    case CallMove::kRocket:
+    case CallMove::kCombo: e.jolt(0, q(-1.8), 0); break;
+    case CallMove::kCheer: e.jolt(0, q(-2.6), 0); break;
+    case CallMove::kDesk: e.jolt(q(-.6), 0, q(1)); break;
+  }
+}
 
 // Compares without building the engine's facts, so an unchanged state
 // (every tick's sync) allocates nothing.
@@ -290,10 +338,11 @@ int GelFace::cues(uint32_t, bool, voice::FxEvent* out, bool& changed) {
 
 // The lane is drawn at the panel's size too (render/gel/lane.h), so the
 // canvas is left to the test pattern.
-bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t, const char* bubble,
+bool GelFace::draw(Canvas&, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
                    const SignShow& sign, const Strip& strip, bool) {
   if (!native || !native->pixels) return false;
-  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels(), &layers_, lastTick_);
+  paintFrame(*native, *engine_, show.mouthOpen, show.dy, bubble, sign, strip, mixer_.channels(), &layers_, lastTick_,
+             stream_, t);
   return true;
 }
 
@@ -303,10 +352,10 @@ int GelFace::profile(char* out, size_t n, uint32_t frames) {
   int written = std::snprintf(
       out, n,
       "gel_parts engine_us=%lu sync_us=%lu body_us=%lu art_us=%lu layers_us=%lu props_us=%lu clear_us=%lu "
-      "lane_us=%lu\n",
+      "lane_us=%lu stream_us=%lu\n",
       (unsigned long)(p.engine / frames), (unsigned long)(p.sync / frames), (unsigned long)(p.body / frames),
       (unsigned long)(p.art / frames), (unsigned long)(p.layers / frames), (unsigned long)(p.props / frames),
-      (unsigned long)(p.clear / frames), (unsigned long)(p.lane / frames));
+      (unsigned long)(p.clear / frames), (unsigned long)(p.lane / frames), (unsigned long)(p.stream / frames));
   p = Profile{};
   return written > 0 && size_t(written) < n ? written : 0;
 }

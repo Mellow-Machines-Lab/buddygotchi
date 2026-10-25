@@ -602,6 +602,60 @@ brings the gown and the Zs while the nightcap and the snow stay. The
 sign fades out over 200 ms once it's down, at the opacity Behaviour
 gives it. The layers read the engine and never change it.
 
+### The work stream (the board's)
+
+While the agents work and nothing needs you, the board draws the Mac's
+work stream (`render/stream.h`, `gel/stream.h`; plan/work-stream.md).
+Behind the body: each working lane's name along the top in its colour
+(teal, amber, lilac, lime by slot), and a dim word falling from it, in
+the large font at most 43% opaque, for each new call a `state` counts
+(at most two a `state`, eight at once), easing in over 200 ms and out
+over its last 600 ms of 3.2 s. They're drawn after the body, onto the
+background's black only, so the body, its props and what it wears cover
+them, and a word hidden behind it costs nothing to draw, clear or push.
+On the desk, while the Mac sends lanes: the to-do list's progress along
+the monitor's foot, the turn's clock in its corner from the first
+minute (amber from the marathon's 8), and, in the working look with no
+call for 20 s, a thought cloud.
+
+In front, after the props and before the sign: the word a `call` brings
+forward flies from its lane's name (a paper plane or a little one from
+the right-hand edge) and does what its move does (`render::CallMove`),
+everything gone by 2.5 s:
+
+| Move | Gags | What plays |
+| --- | --- | --- |
+| Sink, arrive | land, arrive | Onto the crown, sinking in under a spreading ring; a turn's first twinkles; an edit's lines grow as green and red bars on the monitor |
+| Look | look | Beside the head, a magnifier sweeping it; the monitor's page scrolls |
+| Stir | stir | Into a pot at the desk's right end, bubbling and steaming |
+| Stamp | stamp | Onto a card beside it, and a stamp comes down: OK |
+| Rocket | launch | Onto the crown, then up and away on a rocket; the monitor counts 3, 2, 1, LIFTOFF |
+| Poof | poof | Beside it, gone in a puff |
+| Plane | plane | A paper plane swooping in from the edge, caught at its hands; a globe turns on the monitor |
+| Phone | phone | An old phone ringing beside it, the word its call |
+| Page | page | A page beside it, its corner turning |
+| Helper, back | helper, back | A little one carries it off to the right, or brings `done` back, twinkling |
+| Hit | bonk, bonk2, helmet, throw, no, timeout | Between the eyes: it sticks, slides off (thrown back on the top rung) under three stars, five up the ladder, a helmet on the third; dizzy spiral eyes over its own (the body's colour under them), 1 to 1.3 s; the monitor cracks up the ladder |
+| Shrug | shrug | Beside the head, an empty bubble over it |
+| Shatter | shatter | Bursting into its glyphs, swallowed, and a burp |
+| Hail | hail | More FAILs raining and bouncing off; an umbrella opens 0.4 s too late; a cross on the monitor |
+| Cheer, combo | pass, built, combo | Over its head with confetti, a tick on the monitor; built raises a flag on the tower; a combo's count twinkles |
+| Desk | cross, stack | The monitor's spinner; a build's bricks stacking up at the desk's right end |
+| Topple | topple | The tower wobbles a second and falls on its head: dizzy eyes, a cross on the monitor |
+
+As it lands the body answers through the engine (`Engine::jolt`): a push
+on the finger's pull springs, as a fling let go (knocked back and
+squashed by a hit or the tower, squashed by a word sinking in or a
+stamp, leaning to look, read, phone or catch, stretched up by a shrug, a
+rocket or a cheer), your no's flinch with its lids squeezed (0.6 for
+450 ms) and a timeout's nod (0.9 for 700 ms), opening over their last
+300 ms; nothing while a finger holds it. The stream moves on the device's
+clock, not the engine's paced one, so a word falls as fast however busy
+the agents. Measured on the AMOLED board (`amoled206_profile`,
+2026-10-24): 35 fps with the stream off; 31.8 with one busy agent's
+traffic (the stream's drawing 1.5 ms a frame); 28.5 at three lanes'
+worst (3.5 ms).
+
 ## States share one scene
 
 Build a persistent desk and computer once. Working, terminal, searching,

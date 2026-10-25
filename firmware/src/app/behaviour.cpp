@@ -95,6 +95,9 @@ bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
 }
 
 void Behaviour::advance(uint32_t t, Rng& rng) {
+  // The stream's words finish on their own; with no app, nothing works.
+  if (noApp(t)) stream_.clear();
+  stream_.prune(t);
   if (after(modelT_, t)) {  // the clock went back: no history to replay
     modelT_ = t;
     face_->rewind(t, rng);
@@ -225,6 +228,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     // Answered on the Mac (`attn` leaves), or back after no app: the face
     // shows what the state says.
   });
+  stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, t);
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;

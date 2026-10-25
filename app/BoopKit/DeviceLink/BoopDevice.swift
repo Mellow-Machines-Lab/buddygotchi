@@ -30,6 +30,12 @@ public enum BoopDevice {
     /// How long a brain reaction may wait in the device's queue: a
     /// late reaction is worse than none.
     public static let reactionTTL = 5000
+    /// How long a word of the work stream that comes forward may wait: it
+    /// was news only just now.
+    public static let callTTL = 1500
+
+    /// Whether the board behind `hello` plays the work stream's `call`.
+    public static func playsCalls(_ hello: Hello?) -> Bool { hello?.does.contains("call") == true }
 
     /// The link to Boop's device over `transport`, or to none.
     public static func link(_ transport: Transport?, log: @escaping (String) -> Void = { _ in }) -> DeviceLink {

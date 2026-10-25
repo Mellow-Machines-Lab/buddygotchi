@@ -460,11 +460,24 @@ length (`loopMs` of 0) plays nothing.
 the face draws the look in another mood for a while, and the voice may
 speak.
 
+**A word of the work stream** (`call`) is no state of its own either
+(plan/work-stream.md): `w` the word, `a` its lane's slot, `as` its gag
+(`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It
+plays at once over the agents' work and holds nothing up; with no lane
+working, or while something needs you, it's skipped `hidden`. A face
+draws it if it draws the stream (`Face::watch`), and a board that plays
+it gets it in place of `error`.
+
 ### What else a face does
 
 The engine's interface is `render::Face` (`firmware/src/render/face.h`).
 Besides drawing each mood and state, a face:
 
+- **Draws the work stream, if it can.** Before each frame the device
+  hands it the stream (`Face::watch`, `render/stream.h`): each working
+  lane's latest word and call count from `state`'s `calls`, the words
+  falling and the word a `call` brought forward. The gel draws them
+  behind and in front of the body; a face that doesn't ignores them.
 - **Has variations.** A state may have several designs, numbered from 1.
   The face picks a look's itself: a new look starts on its first, and at
   the end of a loop it may turn to another. It picks a reaction's too,

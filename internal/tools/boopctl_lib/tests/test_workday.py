@@ -401,7 +401,7 @@ class FakeDeviceTests(unittest.TestCase):
         read(5)
         self.assertEqual(got[0], {"t": "hello", "kit": 1, "app": "boop", "id": "b00p-fake", "fw": "workday",
                                   "does": ["react", "task_complete", "reply_ready", "starting", "stopped", "error",
-                                           "helper_return", "wake_up", "listening", "stop_listening", "notice"]},
+                                           "helper_return", "wake_up", "listening", "stop_listening", "notice", "call"]},
                          "once for the app's first line, its hello; no voice, so the app's lines are taken as played")
         self.assertEqual(got[1:], [{"t": "ev", "kind": "ended", "data": {"id": 558386701, "how": "done"}},
                                    {"t": "ev", "kind": "ended", "data": {"id": 558386702, "how": "done"}},
