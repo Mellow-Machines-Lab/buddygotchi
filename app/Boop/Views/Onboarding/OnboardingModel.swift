@@ -129,16 +129,15 @@ final class OnboardingModel: ObservableObject {
 
     // MARK: Act 3
 
-    /// Saves the name and nature for keeps, and with them where onboarding
-    /// stands, then moves on to the board. Boop's memory starts here.
+    /// Saves the name for keeps, and with it where onboarding stands, then moves on to the board. Boop's memory starts here.
     func saveName() {
         let draft = app.setup
         guard draft.canContinueName else { return }
         do {
-            try Runtime.setUp(stateDir: stateDir, name: draft.trimmedName, nature: draft.nature)
+            try Runtime.setUp(stateDir: stateDir, name: draft.trimmedName)
             try Onboarding.save(.body, stateDir: stateDir)
             nameError = nil
-            log("onboarding: named \(draft.trimmedName), \(draft.nature.rawValue)")
+            log("onboarding: named \(draft.trimmedName)")
             show(.body)
         } catch {
             log("onboarding: can't save the name: \(error)")

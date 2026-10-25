@@ -219,7 +219,7 @@ Intelligence on the Mac; Jev gets only the reading (a kind, a tone, a
 length, whether you named the buddy, and up to three short phrases of
 yours), and the transcript keeps no prompt text. Boop reacts to it with
 the board's new layers: a sign with words, outfits by the time of day,
-and new actions. One personality (Boop's default nature) for now.
+and new actions. One personality for now.
 
 - [x] **Scrubber.** `app/BoopKit/Prompt/Scrubber.swift`: one table of
       secret patterns (API keys, tokens, JWTs, long hex and base64,

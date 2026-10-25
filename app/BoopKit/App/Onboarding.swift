@@ -1,8 +1,8 @@
 import Foundation
 
-/// The first launch's walkthrough, in acts: hello, what Boop does, a name
-/// and a nature, the board, how to use it, the agents, a few small things,
-/// and the finale. The app shows it once: until it's finished, there's no
+/// The first launch's walkthrough, in acts: hello, what Boop does, a name,
+/// the board, how to use it, the agents, a few small things, and the
+/// finale. The app shows it once: until it's finished, there's no
 /// menu-bar icon.
 public enum Onboarding {
     public enum Act: String, CaseIterable, Codable, Sendable {

@@ -275,7 +275,7 @@ final class PresenceRuntimeTests: XCTestCase {
 
     func makeRuntime(clock: VirtualClock) throws -> Runtime {
         if !FileManager.default.fileExists(atPath: dir.appendingPathComponent("long-term.md").path) {
-            try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
+            try Runtime.setUp(stateDir: dir, name: "Pip")
         }
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("boop.sock").path, link: nil,
                                       steering: RuntimeTests.steering)

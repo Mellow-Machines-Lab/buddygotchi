@@ -74,7 +74,7 @@ final class BuddiesTests: XCTestCase {
     /// (`Buddy.maxRepliesInARow`, 10) stops a chain no outside event
     /// breaks.
     func testTwoBuddiesShareATranscriptAndAnswerEachOther() throws {
-        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
+        try Runtime.setUp(stateDir: dir, name: "Pip")
         let settings = try XCTUnwrap(BuddySetting.parse("left:pixel:claude,right:boop:codex"))
         let (left, right) = (FakeTransport(), FakeTransport())
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
@@ -137,7 +137,7 @@ final class BuddiesTests: XCTestCase {
     /// Each tick sets every buddy's core to the Mac's clock, not only the
     /// first's, so each one's day and time of day move when the clock does.
     func testEveryBuddyFollowsTheMacsClock() throws {
-        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
+        try Runtime.setUp(stateDir: dir, name: "Pip")
         let settings = try XCTUnwrap(BuddySetting.parse("left:pixel,right:boop"))
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
@@ -159,7 +159,7 @@ final class BuddiesTests: XCTestCase {
 
     /// A tap on one board pokes that buddy alone, and its line names it.
     func testATapPokesItsOwnBuddy() throws {
-        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet)
+        try Runtime.setUp(stateDir: dir, name: "Pip")
         let settings = try XCTUnwrap(BuddySetting.parse("left:pixel,right:boop"))
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)

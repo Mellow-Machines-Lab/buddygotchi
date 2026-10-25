@@ -35,7 +35,7 @@ final class SoakTests: XCTestCase {
         let written = try work.write(until: end, to: dir.appendingPathComponent(Transcript.folderName), time: time)
 
         let clock = SoakClock(end)
-        try Runtime.setUp(stateDir: dir, name: "Pip", nature: .sweet, today: time.day(end))
+        try Runtime.setUp(stateDir: dir, name: "Pip", today: time.day(end))
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
         options.clock = { clock.now }

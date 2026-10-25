@@ -975,16 +975,26 @@ def steering(path: Path) -> tuple[dict[str, str], str] | None:
 
 
 def with_examples(text: str) -> dict:
-    """Words that may end with Examples (§7): the words before them, and each
-    example, its lines joined, a line that starts with → kept on its own."""
-    body, _, rest = text.partition("\nExamples:")
+    """Words with Examples (§7): the words, and each example, its lines
+    joined, a line that starts with → kept on its own. A line that isn't
+    indented ends the examples, and its paragraph goes with the words, as
+    the closing one a personality has after its Examples."""
+    words: list[str] = []
     examples: list[str] = []
-    for line in rest.splitlines():
-        if line.startswith("- "):
+    listing = False
+    for line in text.splitlines():
+        if line.strip() == "Examples:":
+            listing = True
+        elif listing and line.startswith("- "):
             examples.append(line[2:].strip())
-        elif line.strip() and examples:
+        elif listing and line.startswith(" ") and examples:
             examples[-1] += ("\n" if line.strip().startswith("→") else " ") + line.strip()
-    return {"text": body.strip(), "examples": examples}
+        elif line.strip() or not listing:
+            listing = False
+            words.append(line)
+        else:
+            words.append(line)
+    return {"text": "\n".join(words).strip(), "examples": examples}
 
 
 def tagged(path: Path) -> list[dict]:
@@ -1079,7 +1089,7 @@ def eval_scenario(path: Path) -> dict | None:
         scenario = json.loads(path.read_text())
     except ValueError:
         return None  # EvalTests says why
-    keys = ("name", "case", "why", "always", "gap", "personality", "nature", "talk", "mood", "checks", "steps")
+    keys = ("name", "case", "why", "always", "gap", "personality", "talk", "mood", "checks", "steps")
     return {"id": path.stem, **{k: scenario[k] for k in keys if k in scenario}}
 
 
@@ -1098,7 +1108,7 @@ def stills(pack: Path, here) -> list[dict]:
 
 def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, dict] | None]:
     """What the studio shows of a pack's character: its personalities,
-    natures and talk files, each mood's steering in parts, its signs and diary, its
+    talk files, each mood's steering in parts, its signs and diary, its
     voice's table (with the pack that has it, which may be another, §6),
     its demos, evals and stills. The voice comes back on its own, with the
     name of the pack whose it is, so the page holds a shared one once."""
@@ -1108,7 +1118,6 @@ def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, 
     for p in character.get("personalities", []):
         settings, text = steering(folder / "personality" / f"{p['id']}.md") or ({}, "")
         personalities.append({**p, "settings": settings, **with_examples(text)})
-    natures = [{"id": f.stem, **with_examples(steering(f)[1])} for f in sorted((folder / "nature").glob("*.md"))]
     order = {"quiet": 0, "normal": 1, "chatty": 2}
     talks = [{"id": f.stem, "settings": steering(f)[0], **with_examples(steering(f)[1])}
              for f in sorted((folder / "talk").glob("*.md"), key=lambda f: (order.get(f.stem, 3), f.stem))]
@@ -1131,7 +1140,6 @@ def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, 
         "faces": character.get("faces", {}),
         "uses": character.get("uses", {}),
         "personalities": personalities,
-        "natures": natures,
         "talks": talks,
         "guide": guide[1] if guide else None,
         "steering": mood_files,

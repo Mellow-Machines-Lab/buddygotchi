@@ -92,8 +92,7 @@ extension StateSnapshot {
         [("hello", .onboarding(mood: "happy")),
          ("napping", .onboarding(base: "asleep", mood: "comfy")),
          ("looking", .onboarding(mood: "curious")),
-         ("jumping", .onboarding(mood: "excited")),
-         ("cheeky", .onboarding(mood: "proud"))]
+         ("jumping", .onboarding(mood: "excited"))]
             + WhatIDoAct.Step.allCases.map { ("demo-\($0)", $0.look(drops: 3)) }
     }
 

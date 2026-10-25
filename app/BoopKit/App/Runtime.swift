@@ -244,12 +244,12 @@ public final class Runtime: @unchecked Sendable {
         return { wall + Int64((ContinuousClock.now - start).ms) }
     }
 
-    /// Sets up a new Boop: name and sweet-or-cheeky, asked once.
+    /// Sets up a new Boop: its name, asked once.
     /// It hatches `today`, by default the Mac's.
-    public static func setUp(stateDir: URL, name: String, nature: LongTerm.Nature,
+    public static func setUp(stateDir: URL, name: String,
                              today: String = LocalTime().day(Int64(Date().timeIntervalSince1970 * 1000))) throws {
         let store = try MemoryStore(directory: stateDir)
-        try store.setUp(name: name, nature: nature, seed: UInt64.random(in: 1...0xFFFF), today: today)
+        try store.setUp(name: name, seed: UInt64.random(in: 1...0xFFFF), today: today)
     }
 
     public init(_ options: Options) throws {
@@ -343,7 +343,7 @@ public final class Runtime: @unchecked Sendable {
             return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        nature: rig === rigs[0] ? longTerm.nature : nil, talk: { talkNow() },
+                        talk: { talkNow() },
                         diary: rig === rigs[0] ? { day, line in
                             // The pass that wrote it changes the popover.
                             do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
@@ -428,11 +428,11 @@ public final class Runtime: @unchecked Sendable {
     /// Voice's takes.
     public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
-                               speaks: @escaping () -> Bool = { true }, nature: LongTerm.Nature? = nil,
+                               speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
                                diary: @escaping (String, String) -> Void = { _, _ in }) -> (harness: Harness, mood: Choice) {
         let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, nature: nature, talk: talk, diary: diary)
+                        queue: queue, speaks: speaks, talk: talk, diary: diary)
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 

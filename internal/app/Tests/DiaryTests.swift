@@ -72,7 +72,7 @@ final class DiaryTests: XCTestCase {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("diary-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: dir) }
         let store = try MemoryStore(directory: dir, today: "2026-10-01")
-        try store.setUp(name: "Pip", nature: .sweet, seed: 1, today: "2026-10-01")
+        try store.setUp(name: "Pip", seed: 1, today: "2026-10-01")
         try store.appendDiary(day: "2026-10-19", line: "Monday. Fine.")
         try store.appendDiary(day: "2026-10-20", line: "Tuesday. Broke.")
         try store.appendDiary(day: "2026-10-20", line: "Tuesday again.")

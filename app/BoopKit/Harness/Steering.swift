@@ -4,7 +4,7 @@ import MellowHarness
 /// Boop's steering: MellowHarness's
 /// folder of Markdown files, a copy of
 /// `characters/boop/steering/`: `guide.md`, which opens the state with no heading,
-/// `personality/*.md`, `nature/*.md` and `talk/*.md` (optional) and
+/// `personality/*.md`, `talk/*.md` (optional) and
 /// `mood/*.md`. A personality's front matter, and a talk file's over it,
 /// go to the core, not to Jev.
 extension Steering {
@@ -33,11 +33,6 @@ extension Steering {
         let path = "personality/\(p.rawValue)"
         return PersonalityFile(rules: Personality.Rules(frontMatter: frontMatter[path] ?? ""), text: self[path])
     }
-
-    /// What the nature chosen at setup adds, right after PERSONALITY:
-    /// `nature/sweet.md` or `nature/cheeky.md`, or nil for a pack with no
-    /// file for it.
-    public func nature(_ nature: LongTerm.Nature) -> String? { files["nature/\(nature.rawValue)"] }
 
     /// What how much it says adds, after MOOD: `talk/quiet.md`,
     /// `talk/normal.md` or `talk/chatty.md`, or nil for a level the pack
@@ -77,8 +72,7 @@ extension Steering {
     /// Budgets in tokens.
     public enum Budget {
         public static let guide = 400
-        public static let personality = 2350
-        public static let nature = 250
+        public static let personality = 2600
         public static let talk = 250
         public static let mood = 225
     }
@@ -91,9 +85,6 @@ extension Steering {
         var parts = [("guide", Steering.tokens(guide), Budget.guide)]
         for p in pack.personalities.map({ Personality($0, in: pack) }) {
             parts.append(("personality/\(p.rawValue)", Steering.tokens(personality(p).text), Budget.personality))
-        }
-        for n in [LongTerm.Nature.sweet, .cheeky] {
-            if let text = nature(n) { parts.append(("nature/\(n.rawValue)", Steering.tokens(text), Budget.nature)) }
         }
         for t in Talk.allCases {
             if let text = talk(t) { parts.append(("talk/\(t.rawValue)", Steering.tokens(text), Budget.talk)) }

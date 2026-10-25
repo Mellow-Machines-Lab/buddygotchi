@@ -7,7 +7,8 @@ sad again.
 Says little, quietly: upset in a sigh at a letdown, glad in a sigh at a win.
 Stays sad through routine turns, more failures, frustration and more
 sad news.
-Leaves for calm when a check passes after failing or the person takes
-back the sad news; happy when the person thanks the agent or cheers
+The person taking the sad news back (only kidding, it's fine) ends it
+at once, whatever else they say: calm, or happy when they laugh.
+Leaves for calm when a check passes after failing; happy when the person thanks the agent or cheers
 Boop up; wounded at rude words to Boop; grumpy at 3+ pokes in a row.
 Fades to calm once Boop has been sad for 10 min.

@@ -2,7 +2,7 @@ import BoopKit
 import LinkKit
 import SwiftUI
 
-// Acts 1 to 3: hello, what Boop does, and a name and a nature.
+// Acts 1 to 3: hello, what Boop does, and a name.
 
 /// Act 1: Boop drops in, squashes as it lands, and says hi.
 struct HelloAct: View {
@@ -207,8 +207,7 @@ struct WhatIDoAct: View {
     }
 }
 
-/// Act 3: a name and a nature, both for keeps: sweet or cheeky, each shown
-/// in how that Boop talks.
+/// Act 3: a name, for keeps.
 struct MakeMeYoursAct: View {
     @ObservedObject var model: OnboardingModel
     @ObservedObject var app: AppModel
@@ -224,8 +223,7 @@ struct MakeMeYoursAct: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            OnboardingBuddy(model: model, snapshot: .onboarding(mood: draft.nature == .cheeky ? "proud" : "happy"), size: 108,
-                            face: draft.nature == .cheeky ? .cheeky : .happy)
+            OnboardingBuddy(model: model, snapshot: .onboarding(mood: "happy"), size: 108, face: .happy)
                 .offset(y: hop ? -10 : 0)
                 // Off the tile's top corner and out of the layout, so a
                 // name of any length leaves the tile where it is: the
@@ -255,40 +253,12 @@ struct MakeMeYoursAct: View {
                     withAnimation(.spring(response: 0.18, dampingFraction: 0.5)) { hop = true }
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.12)) { hop = false }
                 }
-            Text(model.nameError ?? draft.nameIssue ?? "My name and nature are for keeps, so pick ones you love.")
+            Text(model.nameError ?? draft.nameIssue ?? "My name is for keeps, so pick one you love.")
                 .font(.system(size: 12))
                 .foregroundStyle(model.nameError != nil || draft.nameIssue != nil ? Theme.clayInk : Theme.inkSoft)
-            Text("Sweet or cheeky?").font(.boop(15, .bold)).padding(.top, 4)
-            HStack(spacing: 10) {
-                nature(.sweet, "Sweet", "“You did it! Tests are green.”")
-                nature(.cheeky, "Cheeky", "“Green, finally. Took you long enough.”")
-            }
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: 480)
             Spacer(minLength: 0)
             ActNav(model: model, next: "That's me", enabled: draft.canContinueName) { model.saveName() }
         }
     }
 
-    private func nature(_ nature: LongTerm.Nature, _ title: String, _ line: String) -> some View {
-        let on = draft.nature == nature
-        return Button {
-            withAnimation(.boopPop) { app.setup.nature = nature }
-            OnboardingSound.play(.step)
-        } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.boop(15, .bold))
-                Text(line).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .background(on ? Theme.paper : Theme.raised, in: RoundedRectangle(cornerRadius: 12))
-            .overlay { RoundedRectangle(cornerRadius: 12).strokeBorder(on ? Theme.ink : Theme.hairline, lineWidth: 2) }
-            .contentShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(on ? .isSelected : [])
-    }
 }

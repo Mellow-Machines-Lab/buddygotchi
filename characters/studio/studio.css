@@ -315,10 +315,10 @@ button.link.mood-row{color:var(--ink);font-weight:500;font-size:13px}
 .example{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--page);font-size:13.5px}
 .example .when{color:var(--muted)}
 .example .then{margin-top:5px;font-weight:600}
-.natures{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
-.nature{border-top:3px solid var(--accent);padding-top:10px}
-.nature h4{font-size:17px;margin-bottom:6px}
-.nature .examples{grid-template-columns:1fr}
+.talks{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.talk{border-top:3px solid var(--accent);padding-top:10px}
+.talk h4{font-size:17px;margin-bottom:6px}
+.talk .examples{grid-template-columns:1fr}
 .guide summary{cursor:pointer;font-weight:650}
 .guide summary small{color:var(--muted);font-weight:400}
 .guide .prose{margin-top:12px}

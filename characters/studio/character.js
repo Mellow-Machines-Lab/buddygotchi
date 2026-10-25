@@ -90,7 +90,7 @@
       const waiting = pack.review.queue.filter(i => i.status === 'in review').length;
       return [
         ['Who it is', [
-          {go: 'personality', n: pack.personalities.length, label: 'Personalities', sub: pack.natures.length ? `and ${count(pack.natures.length, 'nature')}` : 'no natures'},
+          {go: 'personality', n: pack.personalities.length, label: 'Personalities', sub: (pack.talks || []).length ? `and ${count(pack.talks.length, 'talk level')}` : 'one way of talking'},
           {go: 'moods', n: pack.moods.length, label: 'Moods', sub: `in ${count(api.families().length, 'family', 'families')}`}]],
         ['How it looks', [
           {go: 'scene', n: api.cards().length, label: 'Faces', sub: api.cards().map(c => c.label).join(', ')},
@@ -120,7 +120,6 @@
         const mute = ids.filter(id => !said.has(id));
         if (mute.length) out.push({text: `${count(mute.length, 'mood')} ${mute.length === 1 ? 'has' : 'have'} no voice takes: ${mute.map(api.title).join(', ')}.`, go: 'voice'});
       }
-      if (pack.natures.length === 1) out.push({text: `Only one nature (${pack.natures[0].id}): the person's choice at setup has nothing to choose between.`, go: 'personality'});
       if (!pack.signs.length) out.push({text: 'No signs, so it never holds one up.', go: 'signs'});
       if (!pack.diary.length) out.push({text: 'No diary lines, so it keeps no diary.', go: 'diary'});
       const waiting = pack.review.queue.filter(i => i.status === 'in review');
@@ -160,8 +159,8 @@
 
   // ── Personality ─────────────────────────────────────────────────────────
   // Who it is: each personality with its settings in plain words, its words
-  // and its examples; the natures the person picks between at setup, side
-  // by side; how much it says, picked in Settings; and the guide.
+  // and its examples; how much it says, picked in Settings, side by side;
+  // and the guide.
   function personality(api) {
     const root = sheet(api, 'personality'), s = {id: null, all: {}};
     shared(api, root);
@@ -201,13 +200,9 @@
           h('div', {className: 'prose'}, readable(p.text)),
           examples('personality/' + p.id, p.examples))
           : panel({}, h('p', {className: 'empty-note'}, 'This pack names no personality.')),
-        pack.natures.length > 0 && panel({},
-          heading('Nature', 'The person picks one at setup, and it goes on top of whichever personality is on.'),
-          h('div', {className: 'natures'}, pack.natures.map(n => h('article', {className: 'nature'},
-            h('h4', {}, api.title(n.id)), h('div', {className: 'prose'}, readable(n.text)), examples('nature/' + n.id, n.examples, 3))))),
         (pack.talks || []).length > 0 && panel({},
           heading('Talk', 'How much it says, picked in Settings: normal is the personality as written, and each of these goes on top of it.'),
-          h('div', {className: 'natures'}, pack.talks.map(t => h('article', {className: 'nature'},
+          h('div', {className: 'talks'}, pack.talks.map(t => h('article', {className: 'talk'},
             h('h4', {}, api.title(t.id)),
             Object.keys(t.settings).length > 0 && h('div', {className: 'settings'}, Object.entries(t.settings).map(([k, v]) => {
               const [label, say] = SETTINGS[k] || [api.title(k), x => x];
@@ -519,7 +514,6 @@
               e.always && badge('always', 'approved'),
               e.gap && badge('known gap', 'in review'),
               e.personality && badge(e.personality),
-              e.nature && badge(e.nature),
               e.talk && badge(e.talk),
               e.mood && badge(`starts ${e.mood}`),
               h('small', {}, count((e.steps || []).length, 'step'))),

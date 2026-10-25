@@ -201,7 +201,7 @@ class StudioRuleTests(unittest.TestCase):
         # A pack with nothing of its own beside its moods: none of each part, and no voice.
         about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}
         self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"}, "uses": {},
-                                 "personalities": [], "natures": [], "talks": [], "guide": None, "steering": {}, "signs": [], "diary": [],
+                                 "personalities": [], "talks": [], "guide": None, "steering": {}, "signs": [], "diary": [],
                                  "voice": None, "demos": [], "evals": [], "stills": []})
 
     def test_a_board_for_each_face(self):
@@ -416,6 +416,13 @@ Fades to annoyed once Boop has been grumpy for 2 min.
                                                 "PERSONALITY\nBoop is loyal.\nExamples:\n- NOW: You poked Boop.\n  → curious, once\n- A long\n  turn: proud.\n"))
         self.assertEqual(settings, {"working_heartbeat": "90-180", "tool_uses": "notable"})
         self.assertEqual(gen.with_examples(text), {"text": "Boop is loyal.", "examples": ["NOW: You poked Boop.\n→ curious, once", "A long turn: proud."]})
+
+    def test_a_closing_paragraph_after_the_examples(self):
+        """Who it is at heart, after the Examples, goes with the words, and its own Examples join the rest."""
+        text = ("Boop is loyal.\nExamples:\n- NOW: You poked Boop.\n  → curious, once\n\n"
+                "At heart Boop is cheeky.\nExamples:\n- NOW: It failed.\n  → irritated, twice")
+        self.assertEqual(gen.with_examples(text), {"text": "Boop is loyal.\n\nAt heart Boop is cheeky.",
+                                                   "examples": ["NOW: You poked Boop.\n→ curious, once", "NOW: It failed.\n→ irritated, twice"]})
 
     def test_signs_and_diary_lines(self):
         """`- [tags] words`: each line's tags, none without brackets, and its words."""

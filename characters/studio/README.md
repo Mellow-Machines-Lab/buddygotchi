@@ -65,15 +65,15 @@ nothing for (Stills, for a pack with no golden frames):
   each board wears and what it borrows (§6). Then how much it has of
   each part, in rows by tab, each opening it, and **Worth a look**: what
   it's missing (moods a preview has no art for, moods with no steering
-  file or no voice takes, one nature only, no signs or diary) or waiting
+  file or no voice takes, no signs or diary) or waiting
   on you (review).
 - **Personality**: each personality (`steering/personality/`), its
   settings in plain words (`working_heartbeat` 90-180 is "checks in on a
   turn every 1½–3 min"), its words, a paragraph's first sentence and the
   rest as points, and its Examples as cards, what happened and after the
-  arrow what it does, six at first. Then the natures, side by side, the
-  talk files (`steering/talk/`: quiet, normal and chatty, with any
-  check-in pace they set), and the guide, folded.
+  arrow what it does, six at first. Then the talk files, side by side
+  (`steering/talk/`: quiet, normal and chatty, with any check-in pace
+  they set), and the guide, folded.
 - **Moods**: the moods in their families, and the one picked: its
   meaning and face, its preview idle in it, and its map, the moods it can
   move to (`moves`), ordinary ones on the inner ring and dramatic ones,
@@ -245,7 +245,7 @@ own.
 
 Nothing about a character is written here. `packs.js` comes from the
 packs' `character.json` files, their steering (the personalities,
-natures, talk files, guide, each mood's file, signs and diary), the voice each has or
+talk files, guide, each mood's file, signs and diary), the voice each has or
 uses (its `mac/takes.tsv`, once for every pack that uses it), their
 demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
