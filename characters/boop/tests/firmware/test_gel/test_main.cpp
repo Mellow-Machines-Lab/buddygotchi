@@ -116,6 +116,82 @@ static void test_a_helper_draws_the_same_body() {
   }
   render::helper = {};
 }
+// The body's outline moves as smoothly as the body (painter.cpp's
+// Outline): as it squashes and leans a little at a time, no pixel's
+// coverage changes by more than a half and, along 36 rays from its middle,
+// the outline moves at most half a pixel a step. Each pixel's coverage is
+// read from the body drawn over black and over white; along a ray it sums
+// to where the edge is. Drawn by pixel centre with soft edges only where a
+// triangle met one turned away, it jumped a pixel in the first sweep,
+// whole pixels turning on at once, as slivers at the edge turned.
+static void test_the_outline_moves_smoothly() {
+  constexpr int kW = 502, kH = 410, kRays = 36;
+  std::vector<uint16_t> dark(kW * kH), light(kW * kH);
+  std::vector<float> cover(kW * kH), before(kW * kH);
+  float rays[kRays], last[kRays];
+  auto measure = [&](const PaintControls& c) {
+    for (auto* px : {&dark, &light}) {
+      std::fill(px->begin(), px->end(), px == &dark ? 0x0000 : 0xffff);
+      Surface s{kW, kH, px->data()};
+      s.invalid = false;
+      paintBody(s, c);
+    }
+    float mass = 0, mx = 0, my = 0;
+    for (int i = 0; i < kW * kH; ++i) {
+      cover[i] = 1.f - float(((light[i] >> 5) & 63) - ((dark[i] >> 5) & 63)) / 63.f;
+      mass += cover[i], mx += cover[i] * (i % kW + .5f), my += cover[i] * (i / kW + .5f);
+    }
+    // Rays from the middle, over the top and sides (the floor's no outline).
+    for (int k = 0; k < kRays; ++k) {
+      const float a = float(k) * 200.f / kRays - 10.f, dx = std::cos(a * 3.14159265f / 180),
+                  dy = -std::sin(a * 3.14159265f / 180);
+      float sum = 60;  // the body's whole that far out
+      for (float t = 60; t < 300; t += .125f) {
+        const float x = mx / mass + dx * t - .5f, y = my / mass + dy * t - .5f;
+        const int ix = int(std::floor(x)), iy = int(std::floor(y));
+        if (ix < 0 || iy < 0 || ix + 1 >= kW || iy + 1 >= kH) break;
+        const float fx = x - ix, fy = y - iy, *p = &cover[iy * kW + ix];
+        sum += ((p[0] * (1 - fx) + p[1] * fx) * (1 - fy) + (p[kW] * (1 - fx) + p[kW + 1] * fx) * fy) * .125f;
+      }
+      rays[k] = sum;
+    }
+  };
+  // Squashed (where the crown met the outline) and tall, each a step at a
+  // time, and leaning both ways in steps of 10 (the top moves 0.07 px).
+  struct Sweep {
+    const char* name;
+    int from, to, step;
+    void (*set)(PaintControls&, int);
+  };
+  const Sweep sweeps[] = {
+      {"squash", -1000, -600, 1, [](PaintControls& c, int v) { c.squash = v; }},
+      {"tall", 2300, 2700, 1, [](PaintControls& c, int v) { c.squash = v; }},
+      {"lean", -2400, 2400, 10, [](PaintControls& c, int v) { c.lean = v, c.squash = 600; }},
+  };
+  for (const auto& sweep : sweeps) {
+    float worstRay = 0, worstPixel = 0;
+    int rayAt = 0, pixelAt = 0;
+    for (int v = sweep.from; v <= sweep.to; v += sweep.step) {
+      PaintControls c;
+      sweep.set(c, v);
+      std::swap(cover, before);
+      measure(c);
+      if (v > sweep.from) {
+        for (int i = 0; i < kW * kH; ++i)
+          if (std::fabs(cover[i] - before[i]) > worstPixel) worstPixel = std::fabs(cover[i] - before[i]), pixelAt = v;
+        for (int k = 0; k < kRays; ++k)
+          if (std::fabs(rays[k] - last[k]) > worstRay) worstRay = std::fabs(rays[k] - last[k]), rayAt = v;
+      }
+      std::copy(rays, rays + kRays, last);
+    }
+    char msg[160];
+    snprintf(msg, sizeof msg, "%s: a pixel's coverage moved %.2f at %d, the outline %.2f px at %d", sweep.name,
+             worstPixel, pixelAt, worstRay, rayAt);
+    TEST_ASSERT_TRUE_MESSAGE(worstPixel <= .5f, msg);
+    TEST_ASSERT_TRUE_MESSAGE(worstRay <= .5f, msg);
+    TEST_MESSAGE(msg);
+  }
+}
 static void test_one_face_vocabulary_and_latest_facts() {
   linkkit::Rng rng;
   app::Behaviour b(std::make_unique<GelFace>());
@@ -2386,6 +2462,7 @@ int main() {
   RUN_TEST(test_all_expressions_draw_inside_native_surface);
   RUN_TEST(test_frame_replay_is_byte_identical);
   RUN_TEST(test_a_helper_draws_the_same_body);
+  RUN_TEST(test_the_outline_moves_smoothly);
   RUN_TEST(test_one_face_vocabulary_and_latest_facts);
   RUN_TEST(test_request_identity_and_cache_bounds);
   RUN_TEST(test_grid_voice_lead_and_late_cues);

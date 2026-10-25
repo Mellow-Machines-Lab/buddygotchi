@@ -24,7 +24,13 @@ rasterizes it, erasing the last frame's pixels a band of rows at a time
 just before drawing the body there; on the AMOLED the board's other core
 does the lower rows meanwhile (`render/helper.h`), each row whole on one
 core in the same order, so the frame is pixel for pixel one core's
-(test_gel's `test_a_helper_draws_the_same_body`). `gel/art.cpp` draws the face's art (slimegen's
+(test_gel's `test_a_helper_draws_the_same_body`). The triangles that face
+the camera fill their pixels by centre; the outline's pixels, those the
+edges between them and the ones turned away cross, take the exact share
+of their area the body covers, found from all of the outline at once
+(`Outline`), so the edge moves as smoothly as the mesh: a triangle turning
+away has no area left, and no share of the outline either
+(`test_the_outline_moves_smoothly`). `gel/art.cpp` draws the face's art (slimegen's
 `painter.mjs`, baked as vector paths into `slime_art.h`) on the body, moved
 and sized by the face's controls. There is no inner jellyfish cap or model
 asset. The face rides the body: it never slides on its own during a grab

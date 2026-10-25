@@ -42,9 +42,14 @@ pacing and touch, the Mac app, the architecture) found what's below.
       shapes cross-fade drawn one over the other, so w(1-w) of the body
       shows through, 25% at the midpoint (`art.cpp`). Blend once from
       both shapes' summed coverage.
-- [ ] The body's outline pops by up to ~2.7 px when a triangle's facing
-      flips (24 × 32 mesh; `painter.cpp`'s soft edges). Draw the exact
-      silhouette, or 64 sectors (+1-1.5 ms).
+- [x] The body's outline popped when a triangle at the edge turned: up
+      to 1.2 px in one step, whole pixels turning on, measured sweeping
+      squash and lean in 1/4096 steps (the crown's fan and slivers, which
+      filled by pixel centre past the soft edges). Its pixels now take
+      their exact share of the silhouette's area (`painter.cpp`'s
+      `Outline`): at most 0.2 px a step, pinned by
+      `test_the_outline_moves_smoothly`. Native +10% on the body, 21 KB
+      more internal RAM; `body_us` on the board still to measure.
 - [ ] Still whole-pixel: falling words (`stream.cpp` `wordAt`), the hat's
       replay (`OutfitLayer::kSlack`), Zs switching fonts, the listening
       ring and the helper minis (`props.cpp`).
