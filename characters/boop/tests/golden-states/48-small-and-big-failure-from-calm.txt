@@ -579,7 +579,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 Boop has been comfy for 1 min.
 
 NOW (14:02, Wednesday)
@@ -869,10 +869,10 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 just now: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check.
 Boop has been lazy for under a minute.
 
@@ -1169,14 +1169,14 @@ HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 1 on "landing".
 9 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 8 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 7 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check.
 7 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check, saying it's done.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face (small), and said "Ha!".
+  Boop played a success in a happy face (small), and said "Heh...".
 
 NOW (14:10, Wednesday)
 claude started turn 2 on "landing".
@@ -1192,7 +1192,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 2 on "landing".
 5 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small), and said "Krr...".
 
 NOW (14:20, Wednesday)
 claude is still working on "landing", a very long turn.
@@ -1202,10 +1202,10 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 14 min ago: claude started turn 2 on "landing".
 10 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small), and said "Krr...".
 4 min ago: claude is still working on "landing", a very long turn.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Krr...".
+  Boop made an engaged face (small), and said "Nnh".
 
 NOW (14:24, Wednesday)
 claude is still working on "landing", a very long turn.
@@ -1215,13 +1215,13 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 19 min ago: claude started turn 2 on "landing".
 14 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small), and said "Krr...".
 8 min ago: claude is still working on "landing", a very long turn.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Krr...".
+  Boop made an engaged face (small), and said "Nnh".
 4 min ago: claude is still working on "landing", a very long turn.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Ngh".
+  Boop made an engaged face (small), and said "Hrr...".
 
 NOW (14:29, Wednesday)
 claude is still working on "landing", a very long turn.
@@ -1231,16 +1231,16 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 24 min ago: claude started turn 2 on "landing".
 19 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Tch".
+  Boop made an engaged face (small), and said "Krr...".
 13 min ago: claude is still working on "landing", a very long turn.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Krr...".
+  Boop made an engaged face (small), and said "Nnh".
 9 min ago: claude is still working on "landing", a very long turn.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Ngh".
+  Boop made an engaged face (small), and said "Hrr...".
 4 min ago: claude is still working on "landing", a very long turn.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Nnh".
+  Boop made an engaged face (small), and said "Rrr... tik".
 
 NOW (14:34, Wednesday)
 claude is still working on "landing", a very long turn.
@@ -1249,9 +1249,9 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude is still working on "landing", a very long turn.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Nnh".
+  Boop made an engaged face (small), and said "Rrr... tik".
 just now: claude is still working on "landing", a very long turn.
-  Boop made an engaged face (small), and said "Hrr...".
+  Boop made an engaged face (small), and said "Krr...".
 
 NOW (14:35, Wednesday)
 claude finished turn 2 on "landing": failed, a very long turn, no tool calls.

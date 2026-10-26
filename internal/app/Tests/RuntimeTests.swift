@@ -1689,8 +1689,8 @@ final class RuntimeTests: XCTestCase {
         let longestLoop = try longest("faces.h", "static const Scene kScenes[", #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
         let latestVoice = try longest("sfx.h", "static const Score kScore[] = {", #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},"#)
         XCTAssertEqual(longestLoop, 14_300)
-        // A reaction says one take.
-        let longestLine = Int64(Take.all.map(\.ms).max() ?? 0)
+        // A reaction says one take, or a sound and a word within maxSayMs.
+        let longestLine = Int64(max(Take.all.map(\.ms).max() ?? 0, Voice.maxSayMs))
         // The bubble stays up after the take (firmware `Behaviour::kBubbleReadMs`).
         let behaviour = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../firmware/src/app/behaviour.h").standardizedFileURL, encoding: .utf8)

@@ -579,7 +579,7 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
 2 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 Boop has been comfy for 2 min.
 
 NOW (14:03, Wednesday)
@@ -875,10 +875,10 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 4 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 2 min ago: claude's tests failed again on "landing", 2 times in a row.
   Boop's mood changed: comfy → calm.
-  Boop made an annoyed face (medium), and said "Broken".
+  Boop made an annoyed face (medium), and said "Hmph Ouch".
 
 NOW (14:05, Wednesday)
 claude's tests passed on "landing" after failing.
@@ -1170,10 +1170,10 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 4 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 2 min ago: claude's tests failed again on "landing", 2 times in a row.
   Boop's mood changed: comfy → calm.
-  Boop made an annoyed face (medium), and said "Broken".
+  Boop made an annoyed face (medium), and said "Hmph Ouch".
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: calm → curious.
 Boop has been curious for under a minute.

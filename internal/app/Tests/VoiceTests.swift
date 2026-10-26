@@ -180,6 +180,40 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(Voice.take(.about, meaning: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng)?.kind, .phrase)
     }
 
+    /// A word or a swear gets a sound before it about half the time
+    /// (`Voice.leadChance`): the same meaning, performed in the same mood,
+    /// in the face's, within `maxSayMs` with the board's gap. Never before
+    /// a sound or a phrase.
+    func testAWordMayGetASoundOfTheSame() throws {
+        let player = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../../firmware/src/voice/player.h").standardizedFileURL, encoding: .utf8)
+        XCTAssertEqual(player.firstMatch(of: /kJoinGapMs = (\d+);/).flatMap { Int($0.1) }, Voice.joinGapMs, "the board's gap")
+        XCTAssertEqual(Voice.leadChance, 50)
+        var rng = SplitMix64(seed: 6)
+        var led = 0, tries = 0
+        for face in moods {
+            for word in Take.all where (word.kind == .word || word.kind == .swear) && word.part != .attention && word.moods.contains(face) {
+                guard let lead = Voice.lead(before: word, face: face, finish: word.finish, rng: &rng) else { continue }
+                XCTAssertEqual(lead.kind, .sound)
+                XCTAssertEqual(lead.part, word.part)
+                XCTAssertEqual(lead.meaning, word.meaning, "\(lead.id) before \(word.id): one thing said")
+                XCTAssertEqual(lead.moods.first, word.moods.first, "performed in the same mood")
+                XCTAssertTrue(lead.moods.contains(face))
+                XCTAssertLessThanOrEqual(lead.ms + Voice.joinGapMs + word.ms, Voice.maxSayMs)
+            }
+        }
+        // About half of grumpy's upset words, whose sounds fit.
+        let grumpy = try XCTUnwrap(Take.all.first { $0.meaning == "upset" && $0.kind == .word && $0.moods.first == "grumpy" && $0.finish == nil })
+        for _ in 0..<400 {
+            tries += 1
+            if Voice.lead(before: grumpy, face: "grumpy", finish: nil, rng: &rng) != nil { led += 1 }
+        }
+        XCTAssertTrue((140...260).contains(led), "\(led) of \(tries)")
+        for t in Take.all where t.kind == .sound || t.kind == .phrase {
+            XCTAssertNil(Voice.lead(before: t, face: t.moods[0], finish: t.finish, rng: &rng), t.id)
+        }
+    }
+
     /// Two takes on the wire, as the board still takes them.
     func testTwoTakesOnTheWire() {
         let two = DeviceReaction.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])

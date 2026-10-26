@@ -587,7 +587,7 @@ HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: determined → engaged.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 Boop has been engaged for 1 min.
 
 NOW (14:01, Wednesday)
@@ -880,10 +880,10 @@ HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: determined → engaged.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: engaged → curious.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 Boop has been curious for under a minute.
 
 NOW (14:01, Wednesday)
@@ -1179,13 +1179,13 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: determined → engaged.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: engaged → curious.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 just now: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check.
   Boop's mood changed: curious → engaged.
-  Boop played a success in a happy face (small), and said "Ha!".
+  Boop played a success in a happy face (small), and said "Heh...".
 Boop has been engaged for under a minute.
 
 NOW (14:02, Wednesday)
@@ -1196,13 +1196,13 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 2 min ago: claude's tests failed on "landing".
   Boop's mood changed: determined → engaged.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 1 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: engaged → curious.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 just now: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check.
   Boop's mood changed: curious → engaged.
-  Boop played a success in a happy face (small), and said "Ha!".
+  Boop played a success in a happy face (small), and said "Heh...".
 just now: claude started turn 2 on "landing".
 Boop has been engaged for under a minute.
 
@@ -1496,17 +1496,17 @@ HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 1 on "landing".
 6 min ago: claude's tests failed on "landing".
   Boop's mood changed: determined → engaged.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 5 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: engaged → curious.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 4 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check.
   Boop's mood changed: curious → engaged.
-  Boop played a success in a happy face (small), and said "Ha!".
+  Boop played a success in a happy face (small), and said "Heh...".
 4 min ago: claude started turn 2 on "landing".
 4 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
   Boop's mood changed: engaged → curious.
-  Boop played a success in a happy face (small), and said "Phew...".
+  Boop played a success in a happy face (small), and said "Whew".
 Boop has been curious for 4 min.
 
 NOW (14:06, Wednesday)
@@ -1517,17 +1517,17 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
 7 min ago: claude's tests failed on "landing".
   Boop's mood changed: determined → engaged.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 5 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: engaged → curious.
-  Boop made a happy face (small), and said "Mwahaha...".
+  Boop made a happy face (small), and said "Eep!".
 5 min ago: claude finished turn 1 on "landing": done, a long turn, 2 tool calls, after a failed check.
   Boop's mood changed: curious → engaged.
-  Boop played a success in a happy face (small), and said "Ha!".
+  Boop played a success in a happy face (small), and said "Heh...".
 5 min ago: claude started turn 2 on "landing".
 4 min ago: claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak.
   Boop's mood changed: engaged → curious.
-  Boop played a success in a happy face (small), and said "Phew...".
+  Boop played a success in a happy face (small), and said "Whew".
 just now: claude started turn 3 on "landing".
 Boop has been curious for 4 min.
 

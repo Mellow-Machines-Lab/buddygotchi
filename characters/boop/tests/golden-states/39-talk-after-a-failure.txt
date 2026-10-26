@@ -579,7 +579,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 just now: claude finished turn 1 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face (medium), and said "Uh-oh".
+  Boop played a failure in an annoyed face (medium), and said "Pfft Uh-oh".
 Boop has been comfy for under a minute.
 
 NOW (14:02, Wednesday)
@@ -590,9 +590,9 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
 1 min ago: claude finished turn 1 on "landing": failed, a long turn, no tool calls.
   Boop's mood changed: calm → comfy.
-  Boop played a failure in an annoyed face (medium), and said "Uh-oh".
+  Boop played a failure in an annoyed face (medium), and said "Pfft Uh-oh".
 just now: You said to Boop: "ugh, this is so frustrating"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Slowly".
 Boop has been comfy for 1 min.
 
 NOW (14:03, Wednesday)

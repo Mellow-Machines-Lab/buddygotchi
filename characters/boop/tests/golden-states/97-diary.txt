@@ -902,7 +902,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
 5 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
+  Boop made an engaged face (small), and said "Probe".
 
 NOW (15:23, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
@@ -915,10 +915,10 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
 9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
+  Boop made an engaged face (small), and said "Probe".
 4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
+  Boop made an engaged face (small), and said "Checking".
 
 NOW (15:27, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
@@ -931,13 +931,13 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
 14 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
+  Boop made an engaged face (small), and said "Probe".
 8 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
+  Boop made an engaged face (small), and said "Checking".
 4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
+  Boop made an engaged face (small), and said "Trial".
 
 NOW (15:32, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
@@ -950,16 +950,16 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
 18 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
+  Boop made an engaged face (small), and said "Probe".
 13 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
+  Boop made an engaged face (small), and said "Checking".
 9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
+  Boop made an engaged face (small), and said "Trial".
 4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
+  Boop made an engaged face (small), and said "Test".
 
 NOW (15:36, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
@@ -968,9 +968,9 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
-3 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop made an engaged face (small), and said "Test".
+3 min ago: claude is still working on "api" (landing), a very long turn, running tests.
+  Boop made an engaged face (small), and said "Probe".
 
 NOW (15:40, Tuesday)
 claude finished turn 2 on "api" (landing): failed, a very long turn, 1 tool call, after a failed check.

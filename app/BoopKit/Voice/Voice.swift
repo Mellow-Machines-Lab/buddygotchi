@@ -41,4 +41,29 @@ public enum Voice {
         }
         return nil
     }
+
+    /// The pause between a `say`'s two takes, in milliseconds, as the board
+    /// plays it (firmware `kJoinGapMs`), and the longest `say` of two, the
+    /// gap included.
+    public static let joinGapMs = 180, maxSayMs = 2800
+    /// How often a word gets a sound before it, in percent.
+    public static let leadChance = 50
+
+    /// A sound to say before `word`, now and then: a word or a swear gets
+    /// one of the same meaning, performed in the same mood, that plays in
+    /// the `face`'s mood and fits the `finish`, so "Ugh.... Broken" is one
+    /// feeling said twice over, never two things. Not one whose text is in
+    /// `avoiding` while another fits, nor one that makes the `say` longer
+    /// than `maxSayMs`. Nil for any other take, or none that fits.
+    public static func lead(before word: Take, face: String, finish: String?, avoiding: Set<String> = [],
+                            in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
+        guard word.kind == .word || word.kind == .swear else { return nil }
+        var pool = Take.all(in: pack).filter {
+            $0.kind == .sound && $0.part == word.part && $0.meaning == word.meaning && $0.moods.first == word.moods.first
+                && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish) && $0.ms + joinGapMs + word.ms <= maxSayMs
+        }
+        guard !pool.isEmpty, rng.chance(leadChance) else { return nil }
+        if pool.contains(where: { !avoiding.contains($0.text) }) { pool.removeAll { avoiding.contains($0.text) } }
+        return pool[rng.int(in: 0...(pool.count - 1))]
+    }
 }

@@ -879,7 +879,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop made an annoyed face (medium), and said "Failed".
 2 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Mm-hm".
+  Boop made a happy face (small), and said "Eep!".
 just now: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, after a failed check.
 Boop has been lazy for 2 min.
 

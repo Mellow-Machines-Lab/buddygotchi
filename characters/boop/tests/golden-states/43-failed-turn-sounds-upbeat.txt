@@ -889,7 +889,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude finished turn 1 on "landing": failed, a long turn, 1 tool call, after a failed check, saying it's done, cheerful.
   Its words: "All done", "working great".
   Boop's mood changed: comfy → calm.
-  Boop played a failure in an annoyed face (medium), and said "Doh".
+  Boop played a failure in an annoyed face (medium), and said "Uuuh... Ouch".
 
 NOW (14:05, Wednesday)
 claude started turn 2 on "landing".
@@ -906,7 +906,7 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude finished turn 1 on "landing": failed, a long turn, 1 tool call, after a failed check, saying it's done, cheerful.
   Its words: "All done", "working great".
   Boop's mood changed: comfy → calm.
-  Boop played a failure in an annoyed face (medium), and said "Doh".
+  Boop played a failure in an annoyed face (medium), and said "Uuuh... Ouch".
 2 min ago: claude started turn 2 on "landing".
 
 NOW (14:07, Wednesday)

@@ -11,7 +11,9 @@ import MellowHarness
 /// push-to-talk, its reply's clip), for as many loops as the intensity
 /// holds. Voice finds a recorded take of what it says, as big as the
 /// intensity, in the face's mood, or finds none, and then the face plays
-/// in silence. A reply's sign is one of the pack's lines for it, which
+/// in silence; a word at a medium moment or bigger sometimes gets a
+/// sound of the same meaning before
+/// it (`Voice.lead`). A reply's sign is one of the pack's lines for it, which
 /// may play back your words, and a status reply's the agents' facts,
 /// never guessed. It waits in the
 /// device's queue until whatever plays there has finished. It's started,
@@ -547,10 +549,16 @@ public final class ReactOutput: Output {
         if saying == nil, let reply, let own = Self.leaned(reply, answers), !(self.talk() == .quiet && own.part == .about) {
             saying = (own.part, own.meaning, false)
         }
-        let said = !speaks() || silent ? [] : saying.flatMap {
+        var said = !speaks() || silent ? [] : saying.flatMap {
             Voice.take($0.part, meaning: $0.meaning, kind: $0.swear ? .swear : size.kind, face: choice, finish: pick,
                       avoiding: lastWords, in: pack, rng: &takes)
         }.map { [$0] } ?? []
+        // A word may get a sound of the same before it, but not at a small
+        // moment, nor on Quiet.
+        if let word = said.first, size.name != "small", self.talk() != .quiet,
+           let lead = Voice.lead(before: word, face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes) {
+            said.insert(lead, at: 0)
+        }
         if !said.isEmpty { lastWords = Set(said.map(\.text)) }
         let say = DeviceReaction.Say(takes: said)
         let sign: String?

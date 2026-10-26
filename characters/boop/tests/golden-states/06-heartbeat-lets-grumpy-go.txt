@@ -579,7 +579,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: claude started turn 1 on "landing".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
+  Boop made an annoyed face (medium), and said "Pfft Uh-oh".
 Boop has been comfy for 1 min.
 
 NOW (14:02, Wednesday)
@@ -903,7 +903,7 @@ Boop did nothing on its own.
 === pass 9
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: Nothing has happened for 112 min; claude sits idle on "landing".
-  Boop made an engaged face (small), and said "Nnh".
+  Boop made an engaged face (small), and said "Hup".
 
 NOW (16:02, Wednesday)
 Nothing has happened for 2 hours.
