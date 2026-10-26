@@ -59,6 +59,8 @@ final class OnboardingModel: ObservableObject {
     let stateDir: URL
     /// The on-screen Boop's slime, when the character pack has one.
     let feed = SlimeFeed()
+    /// The slime's still faces, for act 5's legend of moods.
+    let stills = SlimeStills()
     /// Starts the runtime, once; the app's.
     var startRuntime: () -> Void = {}
     /// Onboarding is over: the app takes the menu bar.

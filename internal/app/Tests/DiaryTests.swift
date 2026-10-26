@@ -29,6 +29,15 @@ final class DiaryTests: XCTestCase {
         XCTAssertEqual(day.thread, "api")
         XCTAssertEqual(day.tags, ["failed", "long", "poked", "friday"])
         XCTAssertEqual(day.fill("{weekday}: {failed} of {turns} on \"{thread}\""), "Tuesday: 1 of 3 on \"api\"")
+        // One of a thing is said in the singular: "1 turns" read as broken.
+        var one = day
+        (one.turns, one.failed, one.pokes) = (1, 1, 1)
+        XCTAssertEqual(one.fill("{turns} turns, none broken. Fell {failed} times. Poked {pokes} times."),
+                       "1 turn, none broken. Fell once. Poked once.")
+        XCTAssertEqual(one.fill("{failed} of {turns} turns broke."), "1 of 1 turn broke.")
+        XCTAssertEqual(one.fill("fell {failed} times, once {longest} minutes in."), "fell once, 40 minutes in.")
+        XCTAssertEqual(day.fill("{turns} turns, poked {pokes} times"), "3 turns, poked 5 times")
+        XCTAssertTrue(one.words.hasPrefix("1 turn, 1 failed"))
         let quiet = DiaryOutput.count([e(.poke, nil, at: 1)], day: "2026-10-20", weekday: "Tuesday", tags: [])
         XCTAssertEqual(quiet.tags, ["quiet"])
     }

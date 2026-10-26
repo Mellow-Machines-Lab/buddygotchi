@@ -7,6 +7,35 @@ import XCTest
 
 /// The view: raw events folded into what the brain hears.
 final class ViewTests: XCTestCase {
+    /// A turn that finishes while another agent's request shows wakes
+    /// nothing then, as nothing does but talk; once nothing needs you, the
+    /// request's clearing brings it back: the brain hears the finish, its
+    /// own thread's (so a tap opens it), with a note saying why it's late.
+    /// A newer turn of its own makes it old news.
+    func testAFinishWhileSomethingNeedsYouComesBackOnceItClears() throws {
+        let rig = CoreRig()
+        rig.send(.turnStart, session: "main")
+        rig.send(.activity, session: "main", tool: "Bash", id: "b")
+        rig.send(.needsYou, session: "main", tool: "Bash")
+        rig.send(.turnStart, session: "readme")
+        rig.now += 20_000
+        XCTAssertEqual(woke(rig.send(.turnEnd, session: "readme")), [], "held while main needs you")
+        rig.now += 5000
+        let answered = rig.send(.activity, session: "main", tool: "Bash", failed: false, id: "b")
+        let back = try XCTUnwrap(events(answered).first { $0.wakesBrain })
+        XCTAssertEqual(back.line, #"claude finished turn 1 on "landing": done, a short turn, no tool calls."#)
+        XCTAssertEqual(back.notes.last, EventLine.finishedWhileYouWereBusy)
+        XCTAssertEqual(back.about, "claude/readme", "the finish's own thread")
+
+        // Old news once its session starts again.
+        rig.send(.activity, session: "main", tool: "Bash", id: "c")
+        rig.send(.needsYou, session: "main", tool: "Bash")
+        rig.send(.turnEnd, session: "readme")
+        rig.send(.turnStart, session: "readme")
+        let later = rig.send(.activity, session: "main", tool: "Bash", failed: false, id: "c")
+        XCTAssertFalse(events(later).contains { $0.notes.contains(EventLine.finishedWhileYouWereBusy) })
+    }
+
 
     var rig = CoreRig()
 
@@ -54,15 +83,12 @@ final class ViewTests: XCTestCase {
 
         rig.wait(60_000)
         let finish = hook(.turnEnd, message: "All green now.")
-        XCTAssertEqual(finish.map(\.name), ["turn end", "last_message"])
-        XCTAssertEqual(finish.map(\.wakesBrain), [false, true], "the message's reading wakes the brain, not the turn end")
-        XCTAssertEqual(finish.first?.line,
-                       #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, after 3 failed checks."#,
-                       "4 min is long; failed calls count the same; it finally worked")
+        XCTAssertEqual(finish.map(\.name), ["last_message"], "the turn end waits for it with no line of its own")
+        XCTAssertEqual(finish.map(\.wakesBrain), [true], "the message's reading wakes the brain, not the turn end")
         let end = try XCTUnwrap(finish.last)
         XCTAssertEqual(end.line,
                        #"claude finished turn 1 on "fix-nav" (landing): done, a long turn, 5 tool calls, after 3 failed checks, saying it's done."#,
-                       "the finish's line, saying what its message said")
+                       "the finish's line, saying what its message said: 4 min is long; failed calls count the same; it finally worked")
         XCTAssertEqual(end.notes, [], "a claim is no phrase")
         XCTAssertTrue(end.did.isEmpty, "no rule cheers")
         XCTAssertEqual(end.facts["comeback"], "tests", "the facts keep what the line leaves out")
@@ -453,7 +479,9 @@ final class ViewTests: XCTestCase {
         hook(.turnEnd)
         let beats = idle(events(rig.wait(2 * 60 * 60_000 + 1000)))
         XCTAssertEqual(beats.map(\.line), ["Nothing has happened for 1 hour.", "Nothing has happened for 2 hours."])
-        XCTAssertTrue(beats.allSatisfy(\.wakesBrain))
+        // Calm, and dozed off by then, nothing for them to settle: they
+        // wake no brain (`Pipeline.whyNotWake`).
+        XCTAssertTrue(beats.allSatisfy { !$0.wakesBrain })
         rig.poke()
         XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "a poke starts the hour again")
     }
@@ -648,7 +676,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(second.transcript.lastSeq, 5)
         XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4, 5], "the last day stays in memory, the end included")
         XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown, nor is the turn start's reaction")
-        rig.wait(1000)
+        rig.now += Core.followUpMs  // a new task, not a follow-up: its starting reaction is recorded too
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])
         let third = pipeline()

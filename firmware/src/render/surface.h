@@ -59,6 +59,14 @@ struct Surface {
   // no clear has kept boxes since they were drawn.
   uint32_t cardKey = 0;
   int cardKeyTo = 0;
+  // The kept cards' boxes, once this frame has drawn them: anything drawn
+  // over one after that (a word falling, a pastime, a sign) lowers
+  // cardKeyTo to the first row it touches, so the next frame draws the
+  // card whole from there rather than keep it under the card. The next
+  // clear forgets them.
+  static constexpr int kMaxCards = 3;
+  Box cardBoxes[kMaxCards];
+  int cardBoxCount = 0;
   void invalidate() { invalid = true; }
   void touch(int x0, int y0, int x1, int y1) {
     if (height > kTrackedRows) {
@@ -68,10 +76,15 @@ struct Surface {
     x0 = std::max(0, x0);
     x1 = std::min(width, x1);
     if (x0 >= x1) return;
-    for (int y = std::max(0, y0); y < std::min(height, y1); ++y) {
+    y0 = std::max(0, y0), y1 = std::min(height, y1);
+    for (int y = y0; y < y1; ++y) {
       auto& row = written[y];
       row.first = row.last ? std::min<int>(row.first, x0) : x0;
       row.last = std::max<int>(row.last, x1);
+    }
+    for (int i = 0; i < cardBoxCount; ++i) {
+      const Box& b = cardBoxes[i];
+      if (x0 < b.x1 && x1 > b.x0 && y0 < b.y1 && y1 > b.y0) cardKeyTo = std::min(cardKeyTo, std::max(y0, b.y0));
     }
   }
   // The most boxes a clear keeps (render/gel/props.cpp's cards, three each).
@@ -100,6 +113,7 @@ struct Surface {
     Erasing e;
     if (!pixels) return e;
     if (invalid || height > kTrackedRows || keepCount <= 0) cardKey = 0;
+    cardBoxCount = 0;
     const bool laneKept = !invalid && height <= kTrackedRows && keepLane && keepLane == laneKey && laneKeyFrom >= 0 &&
                           laneKeyFrom <= height;
     e.whole = invalid || height > kTrackedRows;

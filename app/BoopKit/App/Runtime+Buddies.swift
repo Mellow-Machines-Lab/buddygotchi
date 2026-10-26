@@ -126,7 +126,7 @@ extension Runtime {
                 guard !m.reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
                 m.reactions.pokesStopped()
             }
-            let react = ReactOutput(queue: m.queue, blocked: { core.reactionBlock }, who: { [weak h] now in
+            let react = ReactOutput(queue: m.queue, blocked: { core.reactionBlock }, replyBlocked: { core.replyBlock }, who: { [weak h] now in
                 // Weak: the harness holds this output.
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }

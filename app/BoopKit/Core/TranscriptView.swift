@@ -151,6 +151,11 @@ public final class TranscriptView {
         /// The finishes whose last message's reading comes next, by
         /// session: its line, which the reading's adds to.
         var unread: [String: Line] = [:]
+        /// The sessions whose "needs you" shows, and the latest finish of
+        /// another while one did, with its session: nothing reacted to it
+        /// then, so the request's clearing brings it back.
+        var showing: Set<String> = []
+        var missed: (key: String, line: Line)?
         /// When each session's calls that climb the work stream's failure
         /// ladder failed, within `WorkStream.ladderMs`.
         var ladder: [String: [Int64]] = [:]
@@ -383,9 +388,16 @@ public final class TranscriptView {
         if let a = AgentEvent(e) {
             let line = agentEvent(a)
             fold.lastAgentLined = line != nil
-            // A finish whose last message is being read keeps its line, for
-            // its reading's to add to.
-            if let line, a.kind == .turn, a.phase == .end, e[PromptIntake.readingFollows]?.bool == true { fold.unread[a.key] = line }
+            // A finish whose last message is being read keeps its line for
+            // its reading's to add to, and shows none of its own: HISTORY
+            // has the one line for the finish, not the same twice.
+            if let line, a.kind == .turn, a.phase == .end, e[PromptIntake.readingFollows]?.bool == true {
+                fold.unread[a.key] = line
+                return nil
+            }
+            // Its session's next turn: that finish is old news.
+            if a.kind == .turn, a.phase == .start, fold.missed?.key == a.key { fold.missed = nil }
+            if let line, a.kind == .turn, a.phase == .end { noteMissed(line, key: a.key) }
             return line
         }
         advance(to: e.at)
@@ -460,10 +472,11 @@ public final class TranscriptView {
             c.topic = nil
             resetCounts(&c)
             // The last finish's reading, if it's still to come, is too late:
-            // the finish keeps its plain line.
-            fold.unread[key] = nil
+            // the finish, which showed no line waiting for it, is heard
+            // here, its plain line under this one.
+            let missed = fold.unread.removeValue(forKey: key)
             return Line(EventLine.turnStart(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t)),
-                        facts: ["thread": threadFacts(t)])
+                        notes: missed.map { [$0.text] } ?? [], facts: ["thread": threadFacts(t)])
         case .activity:
             var topic = a.topic
             var line: Line?
@@ -669,9 +682,17 @@ public final class TranscriptView {
     func messageRead(_ e: Event) -> Line? {
         guard let key = Self.about(e, facts: nil), let finish = fold.unread.removeValue(forKey: key),
               let reading = MessageReading(facts: e.data) else { return nil }
-        return Line(EventLine.finished(finish.text, saying: reading),
-                    notes: finish.notes + (EventLine.itsWords(reading.phrases).map { [$0] } ?? []),
-                    facts: finish.facts.merging(["message": .object(reading.facts)]) { _, b in b })
+        let line = Line(EventLine.finished(finish.text, saying: reading),
+                        notes: finish.notes + (EventLine.itsWords(reading.phrases).map { [$0] } ?? []),
+                        facts: finish.facts.merging(["message": .object(reading.facts)]) { _, b in b })
+        noteMissed(line, key: key)
+        return line
+    }
+
+    /// A finish `line` of the session `key`, kept if another's "needs
+    /// you" shows: it can't wake the brain now.
+    func noteMissed(_ line: Line, key: String) {
+        if !fold.showing.subtracting([key]).isEmpty { fold.missed = (key, line) }
     }
 
     // MARK: Pokes
@@ -844,8 +865,14 @@ public final class TranscriptView {
             return Event(at: now, source: .clock, type: .heartbeat, specificType: "check_in")
         }
         guard (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else { return nil }
-        return Event(at: now, source: .clock, type: .heartbeat, specificType: "idle")
+        return Event(at: now, source: .clock, type: .heartbeat, specificType: Self.hourly)
     }
+
+    /// The hourly heartbeat's kind, after a quiet stretch.
+    public static let hourly = "idle"
+
+    /// Whether you're away from the Mac, as the presence events say.
+    public var away: Bool { fold.awaySince != nil }
 
     func heartbeat(_ e: Event) -> Line? {
         let now = e.at
@@ -893,12 +920,24 @@ public final class TranscriptView {
         guard let agent = (e["agent"]?.string).flatMap(Agent.init(rawValue:)), let session = e.session else { return nil }
         let s = fold.sessions.sessions[SessionFold.key(agent, session)]
         let t = s.map(Thread.init) ?? Thread(agent: agent, id: session)
+        let key = SessionFold.key(agent, session)
         if e.phase == .end {
+            fold.showing.remove(key)
+            // A finish nothing could react to while this showed: now that
+            // nothing needs you, it's what the brain hears, so it gets its
+            // finish, whose thread a tap opens.
+            if fold.showing.isEmpty, let missed = fold.missed {
+                fold.missed = nil
+                noteActivity(e.at)
+                return Line(missed.line.text, notes: missed.line.notes + [EventLine.finishedWhileYouWereBusy],
+                            facts: missed.line.facts.merging([Self.missedFact: true]) { _, b in b })
+            }
             guard e["outcome"]?.string == "done", s?.turn.startedAt != nil, !fold.lastAgentLined else { return nil }
             noteActivity(e.at)
             return Line(EventLine.answered(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
         }
         guard e.phase == .start else { return nil }
+        fold.showing.insert(key)
         // The request's own event is a tool call's wait; "needs you"
         // showing is when it has a line, after Codex's grace.
         return Line(EventLine.needsYou(agent: agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
@@ -910,20 +949,30 @@ public final class TranscriptView {
     /// or "needs you"'s session, or the thread its line's facts name (a
     /// working heartbeat's); nil for the rest.
     public static func about(_ e: Event, facts: [String: JSONValue]?) -> String? {
+        // A finish brought back by a request's clearing is its own thread's.
+        if facts?[missedFact] == true, let key = thread(facts) { return key }
         if let agent = e.agent ?? (e["agent"]?.string).flatMap(Agent.init(rawValue:)), let session = e.session {
             return SessionFold.key(agent, session)
         }
+        return thread(facts)
+    }
+
+    /// The session the line's `thread` fact names.
+    static func thread(_ facts: [String: JSONValue]?) -> String? {
         guard let t = facts?["thread"]?.object, let agent = t["agent"]?.string.flatMap(Agent.init(rawValue:)),
               let id = t["session"]?.string else { return nil }
         return SessionFold.key(agent, id)
     }
+
+    /// The fact on a finish brought back once nothing needs you.
+    static let missedFact = "while_needed"
 
     /// The thread `key` names: its agent, its name as its agent's app shows
     /// it once an event brought one, else as its lines name it (its
     /// workspace, else its project), and where it opens on the Mac.
     public func who(about key: String, _ log: LogView) -> (agent: String, thread: String, opens: ThreadRef)? {
         catchUp(log)
-        return fold.sessions.sessions[key].map { ($0.agent.rawValue, $0.name ?? Thread($0).name, $0.thread) }
+        return fold.sessions.sessions[key].map { ($0.agent.rawValue, StateSnapshot.boardName($0.name) ?? Thread($0).name, $0.thread) }
     }
 
     /// Each session's latest check or finished turn, caught up to `log`:

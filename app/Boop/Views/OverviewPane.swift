@@ -28,8 +28,8 @@ struct OverviewPane: View {
                     }
                     deviceNotice(model.device)
                     if model.noKey, !model.noKeyDismissed {
-                        notice("key.fill", Theme.inkSoft, "\(model.name) can't react yet",
-                               "Add a Jev API key in Settings, and \(model.name) reacts to what your agents do and answers when you talk.",
+                        notice("key.fill", Theme.inkSoft, "\(model.name) has no brain yet",
+                               "It shows what your agents do and when one needs you. Add a Jev API key in Settings, and \(model.name) reacts to it, and answers when you talk.",
                                action: openSettings) {
                             model.noKeyDismissed = true
                         }
@@ -94,27 +94,21 @@ struct OverviewPane: View {
                                  size: faceSize)
                     }
                     VStack(alignment: .leading, spacing: 3) {
-                        HStack(alignment: .firstTextBaseline, spacing: 0) {
-                            // The name comes first: a long one shrinks a little
-                            // before it's cut, and the mood shows only whole,
-                            // where there's room for it.
-                            Text(model.name).font(.boop(18)).lineLimit(1).minimumScaleFactor(0.8).help(model.name)
-                                .layoutPriority(1)
-                            if let mood = model.status?.snapshot.mood {
-                                ViewThatFits(in: .horizontal) {
-                                    moodLabel(mood).padding(.leading, Theme.gap)
-                                    Color.clear.frame(width: 0, height: 0)
-                                }
-                            }
-                        }
+                        // A long name shrinks a little before it's cut.
+                        Text(model.name).font(.boop(18)).lineLimit(1).minimumScaleFactor(0.8).help(model.name)
                         HStack(spacing: 6) {
                             StateDot(tone: tone, pulsing: live)
                             Text(model.headline).font(.system(size: 12)).foregroundStyle(Theme.inkSoft).lineLimit(1)
                         }
                         .animation(.boopSettle, value: model.headline)
+                        // On a line of its own: beside the name or the
+                        // headline, the buttons on the right leave it no room.
+                        if let mood = model.status?.snapshot.mood { moodLabel(mood) }
                     }
                 }
                 .accessibilityElement(children: .combine)
+                // First to the room the buttons leave, not halves with the spacer.
+                .layoutPriority(1)
                 Spacer(minLength: 0)
                 if model.status != nil {
                     VStack(alignment: .trailing, spacing: 6) {
@@ -152,9 +146,9 @@ struct OverviewPane: View {
     /// Boop's mood in words, labelled, so it doesn't rest on telling the
     /// faces apart. The face already draws in the mood's designs.
     private func moodLabel(_ mood: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            Text("Mood").foregroundStyle(Theme.inkSoft)
-            Text(mood.capitalized).fontWeight(.semibold).foregroundStyle(Theme.inkSoft)
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
+            Text("Feeling").foregroundStyle(Theme.inkFaint)
+            Text(mood).fontWeight(.semibold).foregroundStyle(Theme.inkSoft)
                 .contentTransition(.opacity)
         }
         .font(.system(size: 11))
@@ -260,8 +254,9 @@ struct OverviewPane: View {
     /// faces go on. Hidden while hushed, when the chip ends it.
     @ViewBuilder private var hushButton: some View {
         if model.status?.hushedUntil == nil {
+            // A word, not the mouth alone, which reads as nothing in particular.
             Button { model.runtime?.hush() } label: {
-                Image(systemName: "mouth").frame(width: 14)
+                Text("Hush").lineLimit(1)
             }
             .buttonStyle(RowButtonStyle(filled: false))
             .fixedSize()
@@ -363,6 +358,7 @@ struct OverviewPane: View {
         switch kind {
         case .occasion: "party.popper"
         case .night: "moon.stars"
+        case .morning: "sun.horizon"
         case .reading: "eyeglasses"
         case .friday: "sunglasses"
         }

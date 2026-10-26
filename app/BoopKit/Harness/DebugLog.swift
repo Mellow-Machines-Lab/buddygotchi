@@ -344,7 +344,9 @@ public enum DebugLog {
                 }
                 guard e.kind == Event.did else { return nil }
                 let mark = e["ok"]?.bool != true ? "✗" : e["open"]?.bool == true ? "…" : "✓"
-                return "  \(mark) \(name)\(by): \(e["message"]?.string ?? "")"
+                // A word of the work stream, and the like, says nothing more.
+                let message = e["message"]?.string ?? ""
+                return "  \(mark) \(name)\(by)" + (message.isEmpty ? "" : ": \(message)")
             }
             return nil
         }

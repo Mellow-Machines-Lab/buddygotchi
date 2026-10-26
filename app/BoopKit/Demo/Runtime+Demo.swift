@@ -43,14 +43,17 @@ extension Runtime {
         return player
     }
 
-    /// A demo's person back at the Mac after `ms` away: the away and the
-    /// back the presence detector would have made, both at once and both
-    /// `demo`'s. Being away shows nothing, and the Mac's own keys and mouse
-    /// would end an away the script left open.
+    /// A demo's person back at the Mac after `ms` away: the away the
+    /// presence detector would have made, from now, then the clock jumps on
+    /// by the time away, as a `wait`'s does, with you away all through it
+    /// (no check-in greets an empty chair), then the back; both `demo`'s.
+    /// Being away shows nothing, and the Mac's own keys and mouse would end
+    /// an away the script left open.
     func cameBack(afterMs ms: Int64) {
-        let now = options.clock()
-        recordPresence(PresenceDetector.awayEvent(why: Self.demoBy, since: now - ms, at: now))
-        recordPresence(PresenceDetector.backEvent(why: Self.demoBy, at: now))
+        let left = options.clock()
+        recordPresence(PresenceDetector.awayEvent(why: Self.demoBy, since: left, at: left))
+        advanceClock(ms, who: Self.demoBy)
+        recordPresence(PresenceDetector.backEvent(why: Self.demoBy, at: options.clock()))
     }
 
     /// Readies a demo and plays it at once.
@@ -115,6 +118,7 @@ public final class DemoPlayer: @unchecked Sendable {
         }, uniquingKeysWith: { first, _ in first })
         // In front of the app's own labeler until the demo is over.
         labelerBefore = runtime.labeler
+        runtime.playingDemo = true
         if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: labelerBefore) }
         if !live {
             for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
@@ -145,6 +149,7 @@ public final class DemoPlayer: @unchecked Sendable {
                 runtime.options.log("demo: over")
                 runtime.demoHeard = nil
                 runtime.labeler = labelerBefore
+                runtime.playingDemo = false
                 done()
             }
             return
@@ -187,7 +192,15 @@ public final class DemoPlayer: @unchecked Sendable {
             heardStep(step, agent(of: step))
             runtime.listen(true, who: Runtime.demoBy, buddy: step.buddy)
             later(hold) { [self] in
-                runtime.heard(words, by: .app, who: Runtime.demoBy, to: step.buddy)
+                // Let go, the mic goes off and hears the words, as it does
+                // for a person: a reply to them may play, the mic being off.
+                runtime.wordsOnRelease = (words, step.buddy)
+                runtime.listen(false, who: Runtime.demoBy, buddy: step.buddy)
+                if runtime.wordsOnRelease != nil {
+                    // The mic was already off: the words are heard all the same.
+                    runtime.wordsOnRelease = nil
+                    runtime.heard(words, by: .app, who: Runtime.demoBy, to: step.buddy)
+                }
                 then()
             }
         case .back(let ms):

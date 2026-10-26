@@ -423,11 +423,13 @@ What the brain reads, in plain Markdown:
   board shows the `hushed` tag (the gel zips its mouth). Each line is `- [reply tags] words`: its first tag the reply,
   any more the calendar's or the moment's (`working` while an agent
   works, `waiting` while something waits on you, `makeup` within 10
-  minutes of an `ouch` until a `love` makes up). `{words}` in a line is
+  minutes of an `ouch` until a `love` makes up, `nobrain` for the `huh`
+  Boop shrugs with when it has no brain to answer, `Core.shrug`). `{words}` in a line is
   a phrase of what you said, at most 12 characters (`Signs.maxPhrase`):
   the whole of it or a part between marks, lowercased, the creature's
   name taken out, so "Hello!" can come back as `hello 2 u!`. For each
-  reply only the lines with the most tags that fit are offered, never
+  reply only the lines with the most of the moment's tags that fit are
+  offered, the calendar's among the plain ones, never
   the one shown last while another fits, each at most 18 characters
   once filled. The brain sees every reply's lines at once (`react.sign`,
   each saying which replies it's for) and the creature holds up the one
@@ -507,7 +509,7 @@ and `charactergen.py --check` holds this table to them.
 | State | When it shows | Sent by |
 | --- | --- | --- |
 | `idle` | Agents are open, and none is working | the Mac |
-| `asleep` | No agent sessions at all | the Mac |
+| `asleep` | No agent sessions at all, or every one resting with nothing waiting on you, at night 10 minutes and by day an hour (`Core.dozeOffNightMs`, `dozeOffMs`) | the Mac |
 | `working` | An agent works, with nothing more specific to show | the Mac |
 | `planning` | An agent is planning | the Mac |
 | `terminal` | An agent runs a shell command | the Mac |
@@ -525,7 +527,7 @@ the brain's, a rule's, or the board's own.
 
 | State | When it plays | Sent by |
 | --- | --- | --- |
-| `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller) | the Mac |
+| `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller). One card for a start: a session's first prompt within a minute of its start card shows none, nor does a follow-up within 5 minutes of its last turn (`Core.startCardMs`, `followUpMs`) | the Mac |
 | `task_complete` | A turn ends; `outcome` is `success` or `failure`, and `turn` the tier it reached, as the tags count them: 0 short of `tier1`, then 1 to 5 (`DeviceReaction.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
@@ -548,7 +550,8 @@ speak.
 **A word of the work stream** (`call`) is no state of its own either
 (plan/work-stream.md): `w` the word, `a` its lane's slot, `as` its gag
 (`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It
-plays at once over the agents' work and holds nothing up; with no lane
+plays at once over the agents' work and holds nothing up, its `ended`
+sent as it starts; with no lane
 working, or while something needs you, it's skipped `hidden`. A face
 draws it if it draws the stream (`Face::watch`). A failed call is one
 of its gags, never a reaction of its own.
@@ -636,7 +639,9 @@ Besides drawing each mood and state, a face:
   Programmers' Day, a witch hat at Halloween, a bobble hat in winter
   (`render::outfitFor`'s order, so Halloween's hat wins over the nightcap
   and its pyjamas); reading glasses while `reading` is on, else shades on a
-  Friday's day, neither while it sleeps (`render::eyewearFor`; the
+  Friday from noon to night, neither while it sleeps, and the shades off
+  while it shows a feeling, a reaction, needs you or listening
+  (`render::eyewearFor`; the
   Mac's popover says why each is on, choosing as the board does,
   `Dressing`); snow in
   winter, confetti on a party day and New Year's Day, hearts on
@@ -710,7 +715,10 @@ Besides drawing each mood and state, a face:
   (`Behaviour::kSignMinMs`); a newer reaction's animation or `say`,
   listening and needs you take them down, a tap's poke doesn't. Taken
   down, they fade out over the rig's fade (200 ms), the words kept, but
-  for needs you, which takes them at once. A face
+  for needs you, which takes them at once. The reply to what you said
+  (a `reply` with a face) is the one reaction whose face and sign show
+  over the needs-you screen, as listening does, never its `say`: "tell
+  claude yes" gets "that's ur job", then the screen is back. A face
   gets them as `SignShow` (the words, how long they've shown and how much
   of them shows) and draws them as its own, at that opacity (Pixel's
   dithered): Pixel's a card under its face gripped by two

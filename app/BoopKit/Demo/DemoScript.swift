@@ -231,6 +231,7 @@ public struct DemoScript: Sendable {
                     a.todos = list
                 }
                 a.byReviewer = string("by") == "reviewer"
+                if a.byReviewer, agent == "codex" { throw Problem(description: "\(here): Codex has no reviewer: its hooks report no helpers") }
                 a.session = string("session")
                 if let r = o["reading"] {
                     guard kind == .prompt, let r = r as? [String: Any] else { throw Problem(description: "\(here): only a prompt has a reading, an object") }
@@ -243,7 +244,10 @@ public struct DemoScript: Sendable {
                 case .edit:
                     if a.file == nil || a.old == nil || a.new == nil { throw Problem(description: "\(here): an edit needs a file, old and new") }
                 case .run: if a.cmd == nil { throw Problem(description: "\(here): a run needs a cmd") }
-                case .review: if a.task == nil { throw Problem(description: "\(here): a review needs a task") }
+                case .review:
+                    if a.task == nil { throw Problem(description: "\(here): a review needs a task") }
+                    // Codex's hooks report no helpers: its review would play Claude's.
+                    if agent == "codex" { throw Problem(description: "\(here): a review is Claude's; Codex's hooks report no helpers") }
                 case .todo: if a.todos == nil { throw Problem(description: "\(here): a todo needs todos, like 2/4") }
                 case .compact:
                     if a.summary == nil { throw Problem(description: "\(here): a compact needs the summary its model writes") }

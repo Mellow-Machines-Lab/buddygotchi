@@ -54,16 +54,20 @@ public enum Signs {
 
     /// What a buddy may hold up replying `reply` to what you said: the
     /// pack's lines for it (`replies.md`) that fit the calendar's and the
-    /// moment's tags, only those with the most tags (a night `bye` beats a
-    /// plain one), a line with `{words}` once for each of `phrases`, and
-    /// not `avoiding` (the last reply's) while another fits.
+    /// moment's tags, only those with the most of the moment's
+    /// (`ReactOutput.momentTags`: a `nap` while an agent works beats a
+    /// plain one), the calendar's joining the plain ones (a night `bye`
+    /// among the rest, so it's not the only one all night), a line with
+    /// `{words}` once for each of `phrases`, and not `avoiding` (the last
+    /// reply's) while another fits.
     public static func replies(_ lines: [TaggedLine], _ reply: String, calendar: [String], phrases: [String] = [],
                                avoiding: String? = nil) -> [String] {
         let on = Set([reply] + calendar)
         let fit = lines.filter { $0.tags.first == reply && $0.fits(on) }
-        guard let most = fit.map(\.tags.count).max() else { return [] }
+        func moment(_ line: TaggedLine) -> Int { line.tags.filter(ReactOutput.momentTags.contains).count }
+        guard let most = fit.map(moment).max() else { return [] }
         var pool: [String] = []
-        for line in fit where line.tags.count == most {
+        for line in fit where moment(line) == most {
             let texts = line.hasWords ? phrases.map { line.text.replacingOccurrences(of: "{words}", with: $0) } : [line.text]
             for text in texts.compactMap(drawn) where text.count <= maxLength && !pool.contains(text) { pool.append(text) }
         }

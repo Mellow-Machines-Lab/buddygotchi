@@ -36,14 +36,28 @@ public final class DiaryOutput: Output {
 
         /// The counts in words, for the question.
         public var words: String {
-            turns == 0 ? "no turns, \(pokes) pokes"
-                : "\(turns) turns, \(failed) failed, the longest \(longestMinutes) min, the most on \"\(thread)\", \(pokes) pokes"
+            turns == 0 ? "no turns, \(Self.count(pokes, "pokes"))"
+                : "\(Self.count(turns, "turns")), \(failed) failed, the longest \(longestMinutes) min, the most on \"\(thread)\", "
+                    + Self.count(pokes, "pokes")
         }
 
+        /// A line filled in, a count of one taking its noun in the
+        /// singular: "1 turn", and "once" for "1 times".
         public func fill(_ text: String) -> String {
-            [("{turns}", "\(turns)"), ("{failed}", "\(failed)"), ("{longest}", "\(longestMinutes)"), ("{thread}", thread),
-             ("{pokes}", "\(pokes)"), ("{weekday}", weekday)].reduce(text) { $0.replacingOccurrences(of: $1.0, with: $1.1) }
+            var text = text
+            for (key, n) in [("{turns}", turns), ("{failed}", failed), ("{pokes}", pokes)] where n == 1 {
+                text = text.replacingOccurrences(of: key + " times", with: "once")
+                for noun in ["turns", "pokes", "failures"] {
+                    text = text.replacingOccurrences(of: "\(key) \(noun)", with: "1 \(noun.dropLast())")
+                }
+            }
+            return [("{turns}", "\(turns)"), ("{failed}", "\(failed)"), ("{longest}", "\(longestMinutes)"), ("{thread}", thread),
+                    ("{pokes}", "\(pokes)"), ("{weekday}", weekday)].reduce(text) { $0.replacingOccurrences(of: $1.0, with: $1.1) }
+                .replacingOccurrences(of: "once, once ", with: "once, ")
         }
+
+        /// `n` and `plural`, in the singular for one.
+        static func count(_ n: Int, _ plural: String) -> String { n == 1 ? "1 \(plural.dropLast())" : "\(n) \(plural)" }
     }
 
     public let name = outputName

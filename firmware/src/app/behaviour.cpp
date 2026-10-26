@@ -78,6 +78,13 @@ bool Behaviour::listening(uint32_t t) const {
 // dips the face and a reaction's animation is skipped.
 bool Behaviour::held(uint32_t t) const { return noApp(t) || model_.attn || listening(t); }
 
+// Whether the face and sign of `in` are held at t: as held(t), but the
+// reply to what you said shows over needs you, as listening does.
+bool Behaviour::heldFrom(const ReactionIn& in, uint32_t t) const {
+  const bool reply = in.expr && in.reply[0];
+  return noApp(t) || (model_.attn && !reply) || listening(t);
+}
+
 bool Behaviour::sayOn(uint32_t t) const { return say_.take >= 0 && within(t, say_.at, say_.ms); }
 
 bool Behaviour::sayDue(uint32_t t) const {
@@ -252,6 +259,9 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 // else. Nothing else ends it or plays while it waits: not a rule's
 // reaction, a finish or a face without a `say`. A listening reaction while
 // listening carries on with the same design, its time starting over.
+// The reply to what you said (`reply`, with a face) shows over needs you
+// too, as listening did: its face, its clip and its sign, but no `say`;
+// then the needs-you screen is back.
 const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   const bool listen = in.anim == render::SceneState::kListening;
   const bool wasListening = listening(t);
@@ -260,8 +270,8 @@ const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   if (faceDown_ && !listen) return "facedown";  // do not disturb
   bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool say = in.take >= 0 && !model_.attn && !noApp(t);
-  bool face = in.expr && !held(t);  // listening, if it's still on, holds the face
-  bool sign = in.sign[0] && !held(t);
+  bool face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
+  bool sign = in.sign[0] && !heldFrom(in, t);
   if (anim || say || face || sign) return nullptr;
   if (noApp(t)) return "no_app";
   if (listening(t)) return "listening";
@@ -273,8 +283,8 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   const bool listen = in.anim == render::SceneState::kListening;
   bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
   bool say = in.take >= 0 && !model_.attn && !noApp(t);
-  bool face = in.expr && !held(t);
-  bool sign = in.sign[0] && !held(t);
+  bool face = in.expr && !heldFrom(in, t);
+  bool sign = in.sign[0] && !heldFrom(in, t);
   if (!anim && !say && !face && !sign) return false;  // stop_listening: admit did it all
   change(t, [&] {
     // A reaction from the Mac takes the finished turn named down, unless
@@ -311,6 +321,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
     }
     if (sign) {  // as long as the rest of it plays, from now, and long enough to read
       copyStr(sign_.text, sizeof(sign_.text), in.sign);
+      sign_.reply = in.expr && in.reply[0];
       sign_.at = t;
       sign_.ms = kSignMinMs;
       if (anim && !listen) sign_.ms = std::max(sign_.ms, reaction_.ms);
@@ -639,7 +650,7 @@ void Behaviour::signGoes(uint32_t at) {
 
 render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
-  if (noApp(t) || model_.attn) return s;
+  if (noApp(t) || (model_.attn && !(signOn(t) ? sign_ : gone_).reply)) return s;
   if (signOn(t)) {
     s.text = sign_.text, s.ms = t - sign_.at;
   } else if (gone_.text[0] && within(t, goneAt_, render::rig::kFadeMs)) {

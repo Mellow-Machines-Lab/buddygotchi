@@ -98,7 +98,7 @@ final class AppModel: ObservableObject {
     var devices: DeviceChooser? {
         didSet { devices?.onChoice { [weak self] _ in Task { @MainActor in self?.lookForSimulator() } } }
     }
-    /// The "can't react yet" notice was closed, for this launch.
+    /// The "no brain yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
     /// The firmware Boop.app carries for each board (none for `make dev`'s bare binary).
     var boardFirmware = BoardFirmware.bundled()
@@ -348,7 +348,8 @@ final class AppModel: ObservableObject {
     /// don't say where a key comes from, so a link says only what it is.
     static let jevDocs = URL(string: "https://docs.typesafe.ai/api")!
 
-    /// Jev's key has been read and there's none, so Boop can't react.
+    /// Jev's key has been read and there's none, so Boop has no brain:
+    /// it shows the agents, but neither reacts nor answers.
     /// While a Keychain prompt waits, nobody knows yet.
     var noKey: Bool { status.map { $0.keyRead && $0.brain == "none" } ?? false }
 

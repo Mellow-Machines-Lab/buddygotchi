@@ -2380,9 +2380,11 @@ static void test_reset_reads_motion_from_0() {
 }
 
 // A word of the work stream that comes forward (`call`) plays at once over
-// the agents' work and holds nothing up: it rests, and the next reaction
-// plays. With no lanes working, or while something needs you, it's
-// skipped `hidden`. dbg.state says the lanes showing and the word's gag.
+// the agents' work and holds nothing up: it's over as it starts, its
+// `ended` sent then (resting, it waited for whatever came next, and after
+// a quiet minute the host gave up on it), and the next reaction plays.
+// With no lanes working, or while something needs you, it's skipped
+// `hidden`. dbg.state says the lanes showing and the word's gag.
 static void test_a_call_comes_forward_over_the_work() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
@@ -2391,6 +2393,7 @@ static void test_a_call_comes_forward_over_the_work() {
   r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"calls\":[[0,3,\"grep\",\"app\"]]}");
   TEST_ASSERT_TRUE(has(stateOf(r), "\"calls\":1"));
   doLine(r, 2, "call", "now", "{\"a\":0,\"w\":\"make\",\"as\":\"bonk\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "done")));
   TEST_ASSERT_TRUE(has(stateOf(r), "\"call\":\"bonk\""));
   doLine(r, 3, "react", "next", "{\"mood\":\"happy\"}");
   TEST_ASSERT_TRUE(has(stateOf(r), "\"holder\":{\"id\":3,"));

@@ -148,8 +148,9 @@ final class OccasionsTests: XCTestCase {
     }
 
     /// On a day with an occasion, the first agent's event greets it once,
-    /// waking with its sign after the event's own reaction; an ordinary
-    /// day has none.
+    /// with its sign after the event's own reaction, waking if it was
+    /// asleep and noticing it if not; never over needs you, nor lost to
+    /// it; an ordinary day has none.
     func testASpecialDayIsGreetedOnce() {
         let rig = CoreRig(start: ms(2026, 10, 31, 14))
         let first = rig.send(.turnStart)
@@ -157,13 +158,32 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(deviceReactions(first).last?.anim, "wake_up")
         XCTAssertEqual(deviceReactions(rig.send(.turnStart, session: "s2")).compactMap(\.sign), [], "once")
         XCTAssertEqual(deviceReactions(CoreRig().send(.turnStart)).compactMap(\.sign), [], "an ordinary day")
+
+        // Awake at midnight, at work: it notices the day, not wakes up.
+        let late = CoreRig(start: ms(2026, 10, 30, 23))
+        late.send(.turnStart)
+        late.now = ms(2026, 10, 31, 0) + 60_000
+        let midnight = deviceReactions(late.send(.activity, tool: "Bash"))
+        XCTAssertEqual(midnight.map(\.anim), ["notice"])
+        XCTAssertEqual(midnight.map(\.sign), ["Happy Halloween!"])
+
+        // While something needs you, it waits for the next event.
+        let waiting = CoreRig(start: ms(2026, 10, 31, 0) - 120_000)
+        waiting.send(.turnStart)
+        waiting.send(.needsYou, tool: "Bash")
+        waiting.now = ms(2026, 10, 31, 0) + 60_000
+        XCTAssertEqual(deviceReactions(waiting.send(.activity, session: "s2", tool: "Read")).compactMap(\.sign), [],
+                       "not over needs you")
+        waiting.now += 1000
+        XCTAssertEqual(deviceReactions(waiting.send(.activity, tool: "Read")).compactMap(\.sign), ["Happy Halloween!"],
+                       "once it's answered")
     }
 
     /// The popover's reasons choose as the board does
     /// (firmware/src/render/tags.cpp): one hat, the first that fits; on
     /// the gel, glasses for your prompt over Friday's shades, neither
-    /// asleep, and pyjamas with the nightcap only bare-eyed; confetti at a
-    /// party or New Year.
+    /// asleep, and pyjamas with the nightcap only bare-eyed; the sun in the
+    /// morning, with a coffee while awake; confetti at a party or New Year.
     func testTheReasonsAreTheBoards() {
         func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, reading: Bool = false, asleep: Bool = false,
                      gel: Bool = true) -> [String] {
@@ -181,12 +201,16 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: a bobble hat and snow"])
         XCTAssertEqual(reasons(2027, 3, 14), ["It's Pi Day: -"])
         XCTAssertEqual(reasons(2026, 10, 23), ["It's Friday: shades"])
+        XCTAssertEqual(reasons(2026, 10, 23, 9), ["It's morning: the sun and a coffee"], "shades from noon")
         XCTAssertEqual(reasons(2026, 10, 23, reading: true), ["Your prompt was an essay, or asked for docs: reading glasses"])
         XCTAssertEqual(reasons(2026, 10, 22, 23, reading: true),
                        ["It's night: a nightcap", "Your prompt was an essay, or asked for docs: reading glasses"])
         XCTAssertEqual(reasons(2026, 10, 23, asleep: true), [])
         XCTAssertEqual(reasons(2026, 10, 23, gel: false), [])
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
+        XCTAssertEqual(reasons(2026, 10, 22, 8), ["It's morning: the sun and a coffee"])
+        XCTAssertEqual(reasons(2026, 10, 22, 8, asleep: true), ["It's morning: the sun"])
+        XCTAssertEqual(reasons(2026, 10, 22, 8, gel: false), [], "the sun and the coffee are the gel's")
     }
 
     /// The day Boop hatched is your first with it, so a stage reached that

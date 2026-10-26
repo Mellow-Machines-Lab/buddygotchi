@@ -76,6 +76,26 @@ extension Core {
         }
     }
 
+    /// What you said, with no brain to answer it (no key): Boop shrugs,
+    /// the `huh` reply's clip in its mood, holding up `sign` (the pack's
+    /// line for it), so talking to it never just goes quiet. Not over the
+    /// needs-you screen. Recorded as a rule's `did`.
+    @discardableResult
+    public func shrug(sign: String?, at now: Int64) -> [CoreEffect] {
+        talkStep { fx in
+            guard !needsYouShowing else { return }
+            var shrug = DeviceReaction(mood: mood(), sign: sign)
+            shrug.reply = Core.noBrainReply
+            fx.append(.reaction(shrug))
+            fx.append(.record(Event.did("\(config.pack.name) shrugged: it has no brain to answer with yet.", for: nil,
+                                        action: DeviceReaction.react, by: "rule", at: now)))
+        }
+    }
+
+    /// The reply Boop shrugs with when it has no brain, and the moment's
+    /// tag its sign's lines have (`replies.md`'s `[huh nobrain]`).
+    public static let noBrainReply = "huh", noBrain = "nobrain"
+
     /// The mic went off and heard nothing: no reply is coming.
     @discardableResult
     public func heardNothing(at now: Int64) -> [CoreEffect] {

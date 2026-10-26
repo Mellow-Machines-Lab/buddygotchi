@@ -287,7 +287,7 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// linkkit/SPEC.md §6: firmware too old for the kit (a `hello` with
-    /// no `kit`). The popover says to flash it, boop.log says whose firmware it is and
+    /// no `kit`). The popover says its firmware is older, boop.log says whose firmware it is and
     /// a bug report why it gets no `do`; the device still gets its `state`,
     /// and a reaction fails at once instead of going to it; its taps are
     /// left out. The status names it, for its firmware update to match.
@@ -305,7 +305,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         transport.onConnection?(true)
         eventually("the trouble") { runtime.home.sync { statuses.last?.deviceTrouble != nil } }
-        XCTAssertEqual(runtime.home.sync { statuses.last?.deviceTrouble }, "the device's firmware is too old for this app: flash it")
+        XCTAssertEqual(runtime.home.sync { statuses.last?.deviceTrouble }, "its firmware is older than this app's")
         XCTAssertNil(runtime.home.sync { statuses.last?.device })
         XCTAssertEqual(runtime.home.sync { statuses.last?.misfit }, "b00p-7f3a")
         XCTAssertEqual(runtime.home.sync { statuses.last?.connected }, true)

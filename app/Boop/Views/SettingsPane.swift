@@ -37,10 +37,12 @@ struct SettingsPane: View {
                     PaneSection("Sound") { sound }
                     PaneSection("Agents") { agents }
                     PaneSection("Device") { device }
-                    // Named for what's in it: the Talk picker, and a
-                    // personality picker only when the pack has two.
-                    PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
-                    // Its own, so the no-key notice's "in Settings" finds it.
+                    // Named for what's in it: a personality picker when
+                    // the pack has two, else Talk; the brain's key apart.
+                    // Nothing in it before the runtime says what talk levels the pack has.
+                    if Personality.allCases.count > 1 || model.status?.talks == true || brainNote != nil {
+                        PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
+                    }
                     PaneSection("Brain") { Card(padding: 0) { key } }
                     PaneSection("App") { app }
                 }
@@ -258,7 +260,7 @@ struct SettingsPane: View {
     /// the rules' looks and reactions, but no brain reaction or mood change.
     private var brainNote: String? {
         guard model.noKey else { return nil }
-        return "Without a Jev API key, \(model.name) shows what the agents are doing and when one needs you, but doesn't react or change its mood."
+        return "Without a Jev API key, \(model.name) shows what the agents are doing and when one needs you, but doesn't react or change its mood, and shrugs when you talk to it."
     }
 
     private var personality: some View {
@@ -307,7 +309,7 @@ struct SettingsPane: View {
         }
     }
 
-    /// Jev's key, only where it's used.
+    /// Jev's key, the brain's, in a card of its own.
     private var key: some View {
         VStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 6) {

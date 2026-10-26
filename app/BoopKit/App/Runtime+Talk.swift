@@ -16,7 +16,16 @@ extension Runtime {
         let step = pipeline.said(words, by: by, buddy: to?.tag, at: now)
         run(step)
         for rig in to.map({ [$0] }) ?? rigs {
-            run(core(rig).heard(replyTo: step.waking.first?.seq, at: now), on: rig)
+            let core = core(rig)
+            run(core.heard(replyTo: step.waking.first?.seq, at: now), on: rig)
+            // No brain, no answer: a shrug and a sign that says why. A
+            // demo's brain steps answer for it.
+            if !pipeline.brain, !playingDemo {
+                var rng = SplitMix64(seed: UInt64(truncatingIfNeeded: now))
+                let sign = Signs.reply(rig.steering.replies, Core.noBrainReply, calendar: core.calendar(at: now) + [Core.noBrain],
+                                       rng: &rng)
+                run(core.shrug(sign: sign, at: now), on: rig)
+            }
         }
         options.log("\(who): said \(words.count) characters")
         onHeard?(words)
@@ -40,7 +49,14 @@ extension Runtime {
         micOn = on
         options.log("talk: mic \(on ? "on" : "off") (\(by.rawValue))")
         guard on else {
-            if onListen != nil { onListen?(false) } else { heardNothing() }
+            if let heard = wordsOnRelease {
+                wordsOnRelease = nil
+                home.async { [self] in self.heard(heard.words, by: .app, who: Runtime.demoBy, to: heard.buddy) }
+            } else if onListen != nil {
+                onListen?(false)
+            } else {
+                heardNothing()
+            }
             return
         }
         if by == .device { onBoardListening?() }

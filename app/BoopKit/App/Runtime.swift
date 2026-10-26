@@ -169,6 +169,12 @@ public final class Runtime: @unchecked Sendable {
     /// what it hears is said to that one.
     var micOn = false
     var listener: Rig?
+    /// What a demo's mic hears as its button is let go, for the buddy it's
+    /// said to: the words come once the mic is off, as speech's do.
+    var wordsOnRelease: (words: String, buddy: String?)?
+    /// A demo script plays: its brain steps answer what you say, so a
+    /// runtime with no brain doesn't shrug at it.
+    var playingDemo = false
     /// Boop's XP and stage, counted from each event as it's logged,
     /// and whether the XP changed since the last status.
     let growth: GrowthStore

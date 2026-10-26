@@ -226,20 +226,27 @@ struct WorkStream {
     /// come forward.
     mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program), shown = Self.shown(e, word: word)
-        var lane = lanes[key] ?? Lane(slot: freeSlot(), count: 0, word: shown)
-        lane.count = (lane.count + 1) % 1000
-        lane.word = shown
-        lanes[key] = lane
+        // A lane of its own while one is free: a fifth session gets none,
+        // and no other's slot, until one frees; its words still come forward.
+        let slot: Int
+        if var lane = lanes[key] ?? openSlot().map({ Lane(slot: $0, count: 0, word: shown) }) {
+            lane.count = (lane.count + 1) % 1000
+            lane.word = shown
+            lanes[key] = lane
+            slot = lane.slot
+        } else {
+            slot = freeSlot()
+        }
         if !called.contains(key) {
             called.insert(key)
-            return offer(Forward(slot: lane.slot, word: shown, gag: "arrive", priority: .notable), at: now)
+            return offer(Forward(slot: slot, word: shown, gag: "arrive", priority: .notable), at: now)
         }
         if let topic = e.topic, TranscriptView.checks.contains(topic) {
             let gag = topic == "tests" ? "cross" : topic == "build" ? "stack" : "launch"
-            return offer(Forward(slot: lane.slot, word: word, gag: gag, priority: .notable), at: now)
+            return offer(Forward(slot: slot, word: word, gag: gag, priority: .notable), at: now)
         }
         if e.toolKind == .subagent {
-            return offer(Forward(slot: lane.slot, word: word, gag: "helper", priority: .notable), at: now)
+            return offer(Forward(slot: slot, word: word, gag: "helper", priority: .notable), at: now)
         }
         return nil
     }
@@ -296,10 +303,11 @@ struct WorkStream {
                              priority: .ambient), at: now)
     }
 
-    /// A helper coming back to its turn.
+    /// A helper coming back to its turn: "back", never the "done" a
+    /// finished turn falls as.
     mutating func helperBack(_ key: String, at now: Int64) -> Forward? {
         guard let lane = lanes[key] else { return nil }
-        return offer(Forward(slot: lane.slot, word: "done", gag: "back", priority: .notable), at: now)
+        return offer(Forward(slot: lane.slot, word: "back", gag: "back", priority: .notable), at: now)
     }
 
     /// A turn of session `e.key` ending, if it called a tool: done, it
@@ -375,11 +383,15 @@ struct WorkStream {
         return f
     }
 
-    /// The lowest slot no lane holds, or the last when all are taken.
-    func freeSlot() -> Int {
+    /// The lowest slot no lane holds, or nil when all are taken.
+    func openSlot() -> Int? {
         let taken = Set(lanes.values.map(\.slot))
-        return (0..<Self.maxLanes).first { !taken.contains($0) } ?? Self.maxLanes - 1
+        return (0..<Self.maxLanes).first { !taken.contains($0) }
     }
+
+    /// Where a word with no lane comes forward from: the lowest free
+    /// slot, or the last when all are taken.
+    func freeSlot() -> Int { openSlot() ?? Self.maxLanes - 1 }
 
     /// The lanes of the sessions in `working` for `state`, by slot.
     func calls(_ working: Set<String>) -> [StateSnapshot.Call] {

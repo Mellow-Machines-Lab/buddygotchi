@@ -228,6 +228,10 @@ public enum EventLine {
     }
 
     /// You answered a request ("needs you" cleared): allowed or denied.
+    /// The note on a finish heard late: it came while another agent's
+    /// request showed, which held every reaction back.
+    public static let finishedWhileYouWereBusy = "It finished while another agent needed you; nothing needs you now."
+
     public static func answered(agent: String, thread: String) -> String {
         "You answered \(agent) on \(thread)."
     }

@@ -298,7 +298,10 @@ void Device::onDo(const Do& c, uint32_t t) {
     b_.call(word, uint8_t(heldTo(args["a"], 0, render::Stream::kLanes - 1, 0)),
             render::callGagFromName(args["as"].as<const char*>()), uint16_t(heldTo(args["n"], 0, 999, 0)), t);
     dirty_ = true;
-    kit().rest(c.key);
+    // It holds nothing up, so it's over as it starts: resting, its
+    // `ended` would wait for whatever came next, and after a quiet minute
+    // the host would give up on it.
+    kit().ended(c.key);
     return;
   }
   const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);

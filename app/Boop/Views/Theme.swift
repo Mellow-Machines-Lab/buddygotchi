@@ -34,8 +34,9 @@ enum Palette {
     static let glass = "#000000", glassPressed = "#2A2620", oat = "#E8DCC4", oatPressed = "#CFC2A8"
     static let blush = "#F1787D"
     /// The work stream's lanes, by slot (firmware `stream.h`'s kLaneInk,
-    /// RGB565 widened): teal, amber, lilac, lime. Only bars wear them.
-    static let lanes = ["#3AD2CE", "#FFB242", "#B58EFF", "#9CE763"]
+    /// RGB565 widened): teal, rose, lilac, lime, never needs you's amber.
+    /// Only bars wear them.
+    static let lanes = ["#3AD2CE", "#FF8ADE", "#B58EFF", "#9CE763"]
 }
 
 enum Theme {

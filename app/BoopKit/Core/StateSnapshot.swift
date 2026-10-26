@@ -57,7 +57,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// `text` precomposed, with what the board's fonts would draw as "?"
     /// made plain or left out: curly quotes, dashes, an ellipsis and a
     /// no-break space as the plain marks they stand for (`Signs.plain`),
-    /// and emoji, with their joiners and variation selectors, gone, the
+    /// and emoji, with their joiners and variation selectors, gone, as
+    /// are marks that draw nothing (zero-width spaces, direction marks), the
     /// spaces they leave closed up. "Don’t ship it 🚀" shows as "Don't
     /// ship it", not "Don?t ship it ?".
     public static func drawable(_ text: String) -> String {
@@ -65,7 +66,8 @@ public struct StateSnapshot: Equatable, Sendable {
         for s in text.precomposedStringWithCanonicalMapping.unicodeScalars {
             if let mark = Signs.plain[s] {
                 out.append(contentsOf: mark.unicodeScalars)
-            } else if s.value == 0x200D || (0xFE00...0xFE0F).contains(s.value) || s.properties.isEmojiModifier
+            } else if s.properties.generalCategory == .format || (0xFE00...0xFE0F).contains(s.value)
+                        || s.properties.isEmojiModifier
                         || (s.value >= 0x2000 && s.properties.isEmoji) {
                 continue
             } else {
@@ -75,6 +77,23 @@ public struct StateSnapshot: Equatable, Sendable {
         let plain = String(out)
         guard plain != text else { return plain }
         return plain.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
+    }
+
+    /// Whether the board's fonts draw `c`: Latin, with its accents folded,
+    /// and the common punctuation.
+    static func drawn(_ c: Unicode.Scalar) -> Bool {
+        (0x20...0x24F).contains(c.value) || (0x2010...0x2027).contains(c.value)
+    }
+
+    /// A thread's name for the board, or nil when, made `drawable`, it's
+    /// nothing or mostly what its fonts lack (CJK, another script), each a
+    /// "?": its project shows instead. The Mac's own windows keep the name.
+    public static func boardName(_ name: String?) -> String? {
+        guard let name, !name.isEmpty else { return nil }
+        let shown = drawable(name).filter { !$0.isWhitespace }
+        guard !shown.isEmpty else { return nil }
+        let drawnCount = shown.filter { $0.unicodeScalars.allSatisfy(drawn) }.count
+        return drawnCount * 2 >= shown.count ? name : nil
     }
 
     /// How many of `chars` to keep when they're cut to at most `most`, ".."

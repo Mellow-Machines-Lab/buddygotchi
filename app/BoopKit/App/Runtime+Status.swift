@@ -113,11 +113,21 @@ extension Runtime {
         }
     }
 
+    /// A board's firmware that doesn't fit, in a buyer's words: what's
+    /// wrong, not how to flash it, which the popover's fix says.
+    static func words(_ trouble: DeviceLink.Trouble) -> String {
+        switch trouble {
+        case .tooOld: "its firmware is older than this app's"
+        case .tooNew: "its firmware is newer than this app: update the app"
+        case .otherApp(let device, _): "its firmware is another app's (\(device.isEmpty ? "unnamed" : device))"
+        }
+    }
+
     func changed() {
         let now = options.clock()
         var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: rigs.flatMap { core($0).sessionList(at: now) },
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
-                            deviceTrouble: link.trouble?.description, personality: personality, brain: harness.brain?.id ?? "none",
+                            deviceTrouble: link.trouble.map(Self.words), personality: personality, brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth)
         let wall = options.wallClock()

@@ -61,7 +61,8 @@ int workPace(int working);
 enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
 Outfit outfitFor(uint32_t when);
 // What it wears over its eyes then (the gel's layers): reading glasses
-// while `reading` is on, else shades on a Friday's day; else none.
+// while `reading` is on, else shades on a Friday from noon to night
+// (the day and the evening, not the morning); else none.
 enum class Eyewear : uint8_t { kNone, kGlasses, kShades };
 Eyewear eyewearFor(uint32_t when);
 // What's in the air for the tags on, as bits: snow in winter, confetti on

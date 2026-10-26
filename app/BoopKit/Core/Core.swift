@@ -65,6 +65,8 @@ public final class Core {
     /// reactions are drawn in: the runtime reads it from the transcript,
     /// where the mood output keeps it. The resting mood until it's set.
     var mood: () -> String
+    /// The mood now, as the mood output keeps it.
+    public var moodNow: String { mood() }
     /// The growth stage Boop is at, from 1, which every `state` carries as
     /// its tags (`Occasions.stages`): the runtime reads it from the growth
     /// store. A Hatchling's until it's set.
@@ -110,6 +112,9 @@ public final class Core {
     /// working session's, held.
     var shownAct: Timed?
     var held: [String: Timed] = [:]
+    /// When each session's start showed its `starting` card, so a prompt
+    /// right after it doesn't show another.
+    var startCards: [String: Int64] = [:]
     /// The calendar's tags, worked out once a quarter of an hour: every
     /// time zone's hours start on one, so the part of the day and the date
     /// can't change within it.
@@ -202,6 +207,10 @@ public final class Core {
 
     /// The rules' reactions.
     public static let starting = "starting", stopped = "stopped", helperReturn = "helper_return"
+    /// A prompt this soon after its session's start card shows no card of
+    /// its own, and one this soon after its session's last turn ended is a
+    /// follow-up, which shows none either.
+    public static let startCardMs: Int64 = 60_000, followUpMs: Int64 = 5 * 60_000
 
     // MARK: - Inputs
 
@@ -212,10 +221,12 @@ public final class Core {
         guard let agentEvent = AgentEvent(event) else { return [] }
         let now = event.at
         var fx: [CoreEffect] = []
+        // Asleep before it: no session yet.
+        let wasAsleep = sessions.isEmpty
         let reaction = fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
         if let reaction { play(reaction, for: event.seq, now, &fx) }
-        greetDay(now, &fx)
+        greetDay(now, waking: wasAsleep, &fx)
         let forward = streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
         if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
@@ -334,9 +345,15 @@ public final class Core {
         let now = event.at
         switch change {
         case .sessionStarted(let source):
+            // Only a card that shows counts (`play`'s rule).
+            if !needsYouShowing, !showsListening(at: now) { startCards[key] = now }
             return DeviceReaction(anim: Core.starting, ctx: Core.startCtx(source: source))
         case .turnStarted:
             held[key] = nil
+            // One card for a start: not the session's first prompt just
+            // after its own, nor a follow-up in the same conversation.
+            if let shown = startCards.removeValue(forKey: key), now - shown < Core.startCardMs { return nil }
+            if let ended = sessions[key]?.turn.lastEndedAt, now - ended < Core.followUpMs { return nil }
             return DeviceReaction(anim: Core.starting, ctx: "new_task")
         case .callEnded(let call, let late):
             // The activity the call showed holds from now.
@@ -360,6 +377,7 @@ public final class Core {
             return returned ? DeviceReaction(anim: Core.helperReturn) : nil
         case .sessionEnded:
             held[key] = nil
+            startCards[key] = nil
             return nil
         case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .sessionGone, .other:
             return nil
@@ -394,8 +412,8 @@ public final class Core {
     }
 
     /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
-    /// reacted to the stop on its own.` None for `starting`: every turn
-    /// starts with it, so the brain hears the start itself and nothing
+    /// reacted to the stop on its own.` None for `starting`: most turns
+    /// start with it, so the brain hears the start itself and nothing
     /// more, and the log alone keeps that it played.
     static func played(_ reaction: DeviceReaction, by name: String = CharacterPack.active.name) -> String? {
         let what: String
@@ -488,15 +506,18 @@ public final class Core {
     }
 
     /// On a day with an occasion, the first agent's event Boop sees greets
-    /// it, once a launch: Boop wakes holding up its sign (`Happy
-    /// Halloween!`, `Day 50!`), so what it wears all day has a reason you
-    /// saw. It waits its turn after the event's own reaction.
-    func greetDay(_ now: Int64, _ fx: inout [CoreEffect]) {
+    /// it, once a launch: Boop holds up its sign (`Happy Halloween!`,
+    /// `Day 50!`), so what it wears all day has a reason you saw, waking
+    /// up with it if it was asleep (`waking`), else noticing the day. It
+    /// waits its turn after the event's own reaction. While the screen is
+    /// another's (something needs you, or it's listening) the greeting
+    /// waits for the next event, not lost for the day.
+    func greetDay(_ now: Int64, waking: Bool, _ fx: inout [CoreEffect]) {
         let today = day(now)
-        guard greetedDay != today else { return }
+        guard greetedDay != today, !needsYouShowing, !showsListening(at: now) else { return }
         greetedDay = today
         guard let sign = Occasions.greeting(occasions(at: now)) else { return }
-        play(DeviceReaction(anim: "wake_up", sign: sign), for: nil, now, &fx,
+        play(DeviceReaction(anim: waking ? "wake_up" : "notice", sign: sign), for: nil, now, &fx,
              said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
     }
 
@@ -552,11 +573,15 @@ public final class Core {
 
     public func snapshot(at now: Int64) -> StateSnapshot {
         let (shown, dismissed, working, idle) = groups(at: now)
-        let base = !working.isEmpty ? "working" : sessions.isEmpty ? "asleep" : "idle"
+        // Idle's tier counts from the latest a session came to rest, once
+        // nothing works.
+        let rests = resting(idle: idle, dismissed: dismissed)
+        let base = !working.isEmpty ? "working" : sessions.isEmpty || dozedOff(at: now, rests: rests, waiting: !shown.isEmpty || !dismissed.isEmpty)
+            ? "asleep" : "idle"
         let attn = shown.first.map {
             StateSnapshot.Attention(
                 agent: $0.agent.rawValue, project: StateSnapshot.clip($0.project, marked: true, max: StateSnapshot.maxSignBytes),
-                name: $0.name.map { StateSnapshot.clip($0, marked: true, max: StateSnapshot.maxSignBytes) } ?? "",
+                name: StateSnapshot.boardName($0.name).map { StateSnapshot.clip($0, marked: true, max: StateSnapshot.maxSignBytes) } ?? "",
                 more: shown.count - 1, id: $0.request)
         } ?? practice
         // What the agents are doing shows only in the working look, and
@@ -569,9 +594,6 @@ public final class Core {
         let longest = working.sorted { ($0.turn.startedAt ?? .max, $0.order) < ($1.turn.startedAt ?? .max, $1.order) }
         let todos = attn == nil ? longest.lazy.compactMap(\.todos).first : nil
         let todo = todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) }
-        // Idle's tier counts from the latest a session came to rest, once
-        // nothing works.
-        let rests = resting(idle: idle, dismissed: dismissed)
         // The work stream's lanes, while the agents work and nothing
         // needs you.
         // They wait while the drawer's open, which covers them.
@@ -584,6 +606,19 @@ public final class Core {
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         if drawer { list(into: &snapshot, at: now) }
         return snapshot
+    }
+
+    /// How long every session rests, nothing waiting on you, before Boop
+    /// falls asleep with them still open (a terminal left open overnight):
+    /// at night from the last tier, by day after an hour.
+    public static let dozeOffNightMs = Occasions.tiers.last!.fromMs
+    public static let dozeOffMs: Int64 = 60 * 60_000
+
+    /// Whether Boop has dozed off at `now` though sessions are open: they
+    /// all rest, the latest since `rests.max()`, and nothing waits on you.
+    func dozedOff(at now: Int64, rests: [Int64], waiting: Bool) -> Bool {
+        guard !waiting, let since = rests.max() else { return false }
+        return now - since >= (calendar(at: now).contains("night") ? Self.dozeOffNightMs : Self.dozeOffMs)
     }
 
     /// The sessions as a `status` reply reads them at `now`, with each
@@ -642,11 +677,12 @@ public final class Core {
             snapshot.list = []
             snapshot.unlisted = all.count - skip
             for (s, status) in window {
-                let named = s.name.map { !$0.isEmpty } ?? false
+                let name = StateSnapshot.boardName(s.name)
+                let named = name != nil
                 let row = StateSnapshot.Row(
                     id: rows[s.key] ?? 0, status: status,
                     slot: status == "w" && config.workStream ? stream.lanes[s.key]?.slot ?? -1 : -1, agent: s.agent.rawValue,
-                    title: StateSnapshot.clip(named ? s.name! : s.project, marked: true, max: cut.title),
+                    title: StateSnapshot.clip(name ?? s.project, marked: true, max: cut.title),
                     project: named && cut.project > 0 ? StateSnapshot.clip(s.project, marked: true, max: cut.project) : "")
                 var next = snapshot
                 next.list?.append(row)
@@ -772,7 +808,14 @@ public final class Core {
     /// mic is on, since a reaction would end `listening` before you've
     /// finished.
     public var reactionBlock: String? {
-        needsYouBlock ?? (talk.mic != nil ? "the mic is on" : nil)
+        needsYouBlock ?? replyBlock
+    }
+
+    /// Why a reply to what you said can't play now, or nil: only the mic
+    /// still on. It shows over needs you, as listening does, its face and
+    /// sign but not its voice (the board's rule).
+    public var replyBlock: String? {
+        talk.mic != nil ? "the mic is on" : nil
     }
 
     // MARK: - Rules

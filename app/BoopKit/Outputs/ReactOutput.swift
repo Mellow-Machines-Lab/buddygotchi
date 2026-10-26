@@ -37,6 +37,9 @@ public final class ReactOutput: Output {
     let queue: (DeviceReaction, Pending) -> Void
     /// Why a reaction can't play now (something needs you), or nil.
     let blocked: () -> String?
+    /// Why a reply to what you said can't play now, or nil: it shows over
+    /// needs you, as listening does. `blocked`'s when not given.
+    let replyBlocked: (() -> String?)?
     /// The agent and thread the event the brain answers is about, or nil
     /// (a poke, an idle heartbeat): a finish, or a face for a finished
     /// turn, names it on the device.
@@ -69,10 +72,14 @@ public final class ReactOutput: Output {
     /// How much it says, chosen in Settings: on Quiet, `say` offers no
     /// topic and no swear, and a small moment or a finish says nothing.
     let talk: () -> Talk
-    /// Picks among the takes that fit, and remembers the last `say`'s
-    /// words, which aren't said again while another fits.
+    /// Picks among the takes that fit, and remembers the last
+    /// `recentSays` says' words, which aren't said again while another
+    /// fits: a quiet face has few takes, and "Cozy" three check-ins of
+    /// five read as a loop.
     var takes = SplitMix64(seed: 0x7A4E)
-    var lastWords: Set<String> = []
+    var recentWords: [Set<String>] = []
+    var lastWords: Set<String> { recentWords.reduce(into: []) { $0.formUnion($1) } }
+    public static let recentSays = 5
     /// The last reply's sign, which the next reply doesn't hold up again
     /// while another fits, and when the last `ouch` not yet made up was.
     var lastReplySign: String?
@@ -80,7 +87,7 @@ public final class ReactOutput: Output {
     /// With a `voice`, a buddy's: its picks are its own, so two buddies
     /// don't say the same words.
     public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
-                who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil },
+                replyBlocked: (() -> String?)? = nil, who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil },
                 turnMs: @escaping (Event?) -> Int64? = { _ in nil }, speaks: @escaping () -> Bool = { true },
                 pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
@@ -95,6 +102,7 @@ public final class ReactOutput: Output {
         askedOfTalk = Self.talkQuestions(Self.asked(in: pack), in: pack)
         self.queue = queue
         self.blocked = blocked
+        self.replyBlocked = replyBlocked
         self.who = who
         self.turnMs = turnMs
         self.speaks = speaks
@@ -234,8 +242,9 @@ public final class ReactOutput: Output {
     /// How long after an `ouch` a reply is making up (`makeup`, a tag its
     /// sign may have).
     public static let makeupMs: Int64 = 10 * 60_000
-    /// The moment's tags a reply's sign may have, beside the calendar's.
-    public static let momentTags = ["working", "waiting", "makeup"]
+    /// The moment's tags a reply's sign may have, beside the calendar's:
+    /// `nobrain` is the shrug's with no brain to answer (`Core.shrug`).
+    public static let momentTags = ["working", "waiting", "makeup", Core.noBrain]
 
     /// Whether `e` is something you said on push-to-talk, which a reply
     /// answers.
@@ -480,6 +489,9 @@ public final class ReactOutput: Output {
                notFor: "A greeting, praise, affection, a joke, rudeness or a question to \(name) itself, which get a sound at least.")
     }
 
+    /// The one topic a reply may say: comfort's, rooting for another try.
+    static let comfortTopic = "retry"
+
     /// What a reply says when it has no words of its own in the face and
     /// `say` picked no feeling: a feeling it borrows, which Voice has takes
     /// of. A reply with none (huh, comfort, notme) says nothing then: never
@@ -529,13 +541,14 @@ public final class ReactOutput: Output {
         guard let choice = answers[Self.faceKey]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
             return nil
         }
-        // 2. This output's own rules.
-        if let why = blocked() { return .failed(why) }
+        // 2. This output's own rules: a reply to what you said shows over
+        // needs you, nothing else does.
+        let about = Self.about(now, log)
+        let talk = Self.isTalk(about)
+        if let why = (talk ? replyBlocked ?? blocked : blocked)() { return .failed(why) }
         // 3. The effect: the face, its move, held as long as the moment is
         // big, and the `say`, if Voice has a take of what it says, as big,
         // in this face's mood. To what you said, the move is the reply.
-        let about = Self.about(now, log)
-        let talk = Self.isTalk(about)
         let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : nil
         let size = Self.intensity(answers)
         let pick = talk ? nil : Self.animation(answers)
@@ -544,10 +557,12 @@ public final class ReactOutput: Output {
         // talk; on Quiet, nothing at a small moment or a finish.
         let silent = (hushed(at) && reply != "unhush") || (self.talk() == .quiet && (size.name == "small" || pick != nil))
         // To what you said, with no words of the reply's own in this face, a
-        // feeling `say` picked, else the one the reply borrows; never a topic.
+        // feeling `say` picked, else the one the reply borrows; never a
+        // topic, but a comfort's "again": rooting for the retry when you
+        // say it still doesn't work.
         var saying = Self.said(answers)
         if let reply {
-            if saying?.part == .about { saying = nil }
+            if saying?.part == .about, !(reply == "comfort" && saying?.meaning == Self.comfortTopic) { saying = nil }
             if saying == nil, let own = Self.leaned(reply, answers) { saying = (.feeling, own, false) }
         }
         // To what you said, `say` says whether and the reply says what: its
@@ -571,12 +586,15 @@ public final class ReactOutput: Output {
            let lead = Voice.lead(before: word, face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes) {
             said.insert(lead, at: 0)
         }
-        if !said.isEmpty { lastWords = Set(said.map(\.text)) }
+        if !said.isEmpty { recentWords = Array((recentWords + [Set(said.map(\.text))]).suffix(Self.recentSays)) }
         let say = DeviceReaction.Say(takes: said)
         let sign: String?
         var show: String?
         if let reply, let about {
             (sign, show) = replySign(reply, about, answers)
+            // The board opens no drawer over the needs-you screen: the
+            // sign answers alone then.
+            if blocked() != nil { show = nil }
         } else {
             let picked = answers[Signs.questionKey]?.choice
             sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }

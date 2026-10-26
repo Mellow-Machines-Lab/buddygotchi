@@ -1190,9 +1190,10 @@ final class CoreNeedsYouTests: XCTestCase {
 
         rig.send(.turnStart, session: "s3")
         rig.wait(SessionFold.staleWorkMs)
-        XCTAssertEqual(rig.state.base, "idle", "an hour without events")
+        // Resting an hour, it has dozed off too (`Core.dozeOffMs`).
+        XCTAssertEqual(rig.state.base, "asleep", "an hour without events")
         XCTAssertEqual(states(rig.send(.subagentEnd, session: "s3", subagent: "a1")), [])
-        XCTAssertEqual(rig.state.base, "idle", "still stale")
+        XCTAssertEqual(rig.state.base, "asleep", "still stale")
 
         rig.send(.needsYou, session: "s4", subagent: "a1", tool: "Bash")
         XCTAssertNotNil(rig.state.attn)
@@ -1513,7 +1514,8 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertNotNil(rig.state.todo)
         XCTAssertNotNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
         rig.wait(SessionFold.staleWorkMs - 30 * 60_000, every: 60_000)
-        XCTAssertEqual(rig.state.base, "idle", "an hour silent")
+        // Its last word an hour ago, it has dozed off (`Core.dozeOffMs`).
+        XCTAssertEqual(rig.state.base, "asleep", "an hour silent")
         XCTAssertEqual(rig.state.busy, 0)
         XCTAssertNil(rig.state.todo)
         XCTAssertTrue(rig.state.when.contains("tier5"), "idle's now: its turn's last word was an hour ago")
@@ -2137,7 +2139,8 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(rig.core.greet(DeviceReaction(anim: "task_complete", outcome: "success"), at: rig.now), [])
     }
 
-    /// Asleep only with no sessions, whatever the time.
+    /// Asleep with no sessions, whatever the time; a session's start
+    /// wakes it, even late at night.
     func testAsleepOnlyWithNoSessionsEvenLateAtNight() {
         let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
         XCTAssertEqual(rig.state.base, "asleep")
@@ -2145,6 +2148,62 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(rig.state.base, "idle")
         rig.send(.turnStart)
         XCTAssertEqual(rig.state.base, "working")
+    }
+
+    /// With sessions left open and resting, nothing waiting on you, Boop
+    /// dozes off: at night after the last tier (`Core.dozeOffNightMs`, 10
+    /// minutes), by day after an hour (`Core.dozeOffMs`). Work wakes it.
+    func testItDozesOffWithSessionsLeftOpen() {
+        let night = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
+        night.send(.turnStart)
+        night.send(.turnEnd)
+        night.wait(Core.dozeOffNightMs - 1000, every: 60_000)
+        XCTAssertEqual(night.state.base, "idle")
+        night.wait(1000)
+        XCTAssertEqual(night.state.base, "asleep")
+        XCTAssertTrue(night.state.when.contains("tier5"))
+        night.send(.turnStart)
+        XCTAssertEqual(night.state.base, "working", "work wakes it")
+
+        let day = CoreRig()  // 14:00
+        day.send(.turnStart)
+        day.send(.turnEnd)
+        day.wait(Core.dozeOffMs - 60_000, every: 60_000)
+        XCTAssertEqual(day.state.base, "idle")
+        day.wait(60_000)
+        XCTAssertEqual(day.state.base, "asleep")
+
+        // Not while an agent waits on you, its process running.
+        let waiting = CoreRig(start: CoreRig.start + 9 * 3600 * 1000, isRunning: { _ in true })
+        waiting.send(.turnStart)
+        waiting.send(.turnEnd)
+        var ask = waiting.event(.needsYou, session: "s2", tool: "Bash")
+        ask.data["process"] = .object(["pid": 4242, "started": 1])
+        waiting.send(ask)
+        waiting.wait(Core.dozeOffNightMs * 2, every: 60_000)
+        XCTAssertNotNil(waiting.state.attn)
+        XCTAssertNotEqual(waiting.state.base, "asleep")
+    }
+
+    /// The hourly heartbeat wakes no brain while Boop sleeps (a session
+    /// left open overnight dozes off) or you're away, once its mood is the
+    /// resting one: it would cost a request a night's hour and say a word
+    /// to a sleeping board. A mood with somewhere to settle still gets it.
+    func testTheHourlyHeartbeatLetsASleepingBoopBe() {
+        let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
+        rig.core.mood = { CharacterPack.active.defaultMood }
+        rig.send(.turnStart)
+        rig.send(.turnEnd)
+        let night = rig.wait(6 * 3_600_000, every: 60_000).views.filter { $0.type == .heartbeat }
+        XCTAssertFalse(night.isEmpty, "the heartbeats still come, and are logged")
+        XCTAssertEqual(night.filter(\.wakesBrain).count, 0, "but wake no brain")
+
+        let grumpy = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)
+        grumpy.core.mood = { "grumpy" }
+        grumpy.send(.turnStart)
+        grumpy.send(.turnEnd)
+        let settling = grumpy.wait(3 * 3_600_000, every: 60_000).views.filter { $0.type == .heartbeat && $0.wakesBrain }
+        XCTAssertFalse(settling.isEmpty, "a grumpy Boop can still calm down overnight")
     }
 
     func testNoSessionsIsAsleep() {
@@ -2310,7 +2369,8 @@ final class CoreRulesTests: XCTestCase {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.wait(3_600_000)
-        XCTAssertEqual(rig.state.base, "idle")
+        XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
+        XCTAssertEqual(rig.state.base, "asleep", "dozed off, an hour since its last word")
         rig.wait(24 * 3_600_000, every: 60_000)
         XCTAssertEqual(rig.sessions, [])
     }

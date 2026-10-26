@@ -417,6 +417,7 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(did(rig.send(.sessionStart, session: "s2")), ["starting rule "])
         XCTAssertEqual(did(rig.send(.sessionStart, session: "s3", source: "compact")),
                        ["starting rule "])
+        rig.now += Core.startCardMs  // past the start's own card
         let start = rig.send(.turnStart)
         XCTAssertEqual(did(start), ["starting rule "], "recorded with no message: every turn starts with it")
         XCTAssertNil(events(start).first?.reaction, "not shown under its line")
@@ -447,6 +448,30 @@ final class CoreRuleReactionTests: XCTestCase {
         rig.talk(false)
         XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "d")), [], "listening waits for the reply")
         rig.passed(reacted: true)
-        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "d")), ["starting new_task"])
+        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "d")), ["starting new_task"], "its start's card never showed")
+    }
+
+    /// One card for a start: a session's first prompt within
+    /// `Core.startCardMs` of its start card shows none of its own, and a
+    /// follow-up within `Core.followUpMs` of its last turn's end none
+    /// either. A new task after a while does.
+    func testOneStartCardForAStart() {
+        let rig = CoreRig()
+        XCTAssertEqual(reactionNames(rig.send(.sessionStart)), ["starting session"])
+        rig.now += Core.startCardMs - 1000
+        XCTAssertEqual(reactionNames(rig.send(.turnStart)), [], "the start card said it")
+        rig.now += 60_000
+        rig.send(.turnEnd)
+        rig.now += Core.followUpMs - 1000
+        XCTAssertEqual(reactionNames(rig.send(.turnStart)), [], "a follow-up")
+        rig.now += 60_000
+        rig.send(.turnEnd)
+        rig.now += Core.followUpMs
+        XCTAssertEqual(reactionNames(rig.send(.turnStart)), ["starting new_task"], "a new task, a while later")
+
+        let slow = CoreRig()
+        slow.send(.sessionStart, session: "late")
+        slow.now += Core.startCardMs
+        XCTAssertEqual(reactionNames(slow.send(.turnStart, session: "late")), ["starting new_task"], "typed a minute on")
     }
 }

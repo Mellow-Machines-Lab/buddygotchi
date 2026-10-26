@@ -234,6 +234,25 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(rig.state.calls, [], "the needs-you screen clears the stream")
     }
 
+    /// Four lanes at most (`WorkStream.maxLanes`), each its own slot: a
+    /// fifth session at work gets none, and no other's slot, until one
+    /// frees, when its next call takes it.
+    func testAFifthSessionWaitsForALane() {
+        let rig = CoreRig(workStream: true)
+        for n in 1...5 {
+            rig.send(.turnStart, session: "s\(n)")
+            rig.now += 300
+            rig.send(call(rig, "\(n)", program: "rg", session: "s\(n)"))
+            rig.now += 300
+        }
+        XCTAssertEqual(rig.state.calls.map(\.slot), [0, 1, 2, 3], "four lanes, no slot twice")
+        rig.send(.turnEnd, session: "s2")
+        rig.now += 300
+        rig.send(call(rig, "6", program: "sed", session: "s5"))
+        XCTAssertEqual(rig.state.calls.map(\.slot), [0, 1, 2, 3], "the fifth takes the freed slot")
+        XCTAssertEqual(rig.state.calls.first { $0.slot == 1 }?.word, "sed")
+    }
+
     /// The `state` with four lanes of the longest words, and
     /// many tags, fits the board's 512 bytes with room to spare.
     func testAFullStateFitsTheBoard() {

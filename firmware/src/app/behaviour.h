@@ -229,6 +229,9 @@ class Behaviour {
   // tap or another animation doesn't take the face over, and a touch is a
   // tap, never a gesture.
   bool held(uint32_t t) const;
+  // Whether `in`'s face and sign are held at t: as held, but a reply to
+  // what you said shows over needs you.
+  bool heldFrom(const ReactionIn& in, uint32_t t) const;
   // The id of the brain's reaction naming whose turn it was at t, as it
   // plays or lingers after, which a tap opens on the Mac instead of
   // poking; 0 for none.
@@ -376,6 +379,7 @@ class Behaviour {
     char text[kSignBytes] = "";
     uint32_t at = 0, ms = 0;
     uint32_t key = 0;
+    bool reply = false;  // a reply's to what you said: it shows over needs you
   };
   using Source = render::FaceSource;
 

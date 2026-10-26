@@ -292,15 +292,22 @@ struct HowToAct: View {
     static let talkFor = "Say hi, cheer me on, tease me, ask about your agents, or tell me to hush. "
         + "I answer with a face and a sign, and often a word."
 
-    /// Things to say, one of each kind Boop answers: a greeting, praise,
-    /// and a question about every agent, which opens the board's drawer.
-    static let examples = ["hi Boop!", "good job!", "how many agents are running?"]
+    /// Things to say, one of each kind Boop answers: a greeting by the
+    /// name you just gave it, praise, and a question about every agent,
+    /// which opens the board's drawer.
+    static func examples(name: String) -> [String] { ["hi \(name)!", "good job!", "how many agents are running?"] }
+
+    /// The name it answers to: the one set up in act 3, else the runtime's.
+    private var name: String {
+        let set = app.setup.name.trimmingCharacters(in: .whitespaces)
+        return set.isEmpty ? app.name : set
+    }
 
     /// The examples, as chips under the talk lesson.
     private var trySaying: some View {
         HStack(spacing: Theme.gapSnug) {
             Text("TRY").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint)
-            ForEach(Self.examples, id: \.self) { words in
+            ForEach(Self.examples(name: name), id: \.self) { words in
                 Text("“\(words)”").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
                     .padding(.horizontal, 8).padding(.vertical, 3)
                     .background(Capsule().strokeBorder(Theme.hairlineStrong))

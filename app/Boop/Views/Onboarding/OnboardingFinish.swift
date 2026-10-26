@@ -355,7 +355,7 @@ struct SmallThingsAct: View {
         switch model.mic {
         case .refused(let why): why
         case .allowed: "All set: hold my button, or press Talk, and speak."
-        default: "macOS will ask for the microphone and speech. What you say stays on this Mac; only the words reach my brain."
+        default: "macOS will ask for the microphone and speech. Your voice stays on this Mac; only the words, cut short, reach my brain."
         }
     }
 }

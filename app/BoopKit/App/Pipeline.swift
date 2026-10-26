@@ -352,7 +352,18 @@ public final class Pipeline {
     public func whyNotWake(_ e: Event) -> String? {
         if !brain { return "no brain" }
         let core = core(e.buddy)
-        return view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock })
+        if let why = view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock }) {
+            return why
+        }
+        // The hourly heartbeat costs a request: while Boop sleeps or you're
+        // away (your coming back has a pass of its own), only while its mood
+        // has somewhere to settle, its resting one not reached. The view's
+        // caught up to it now.
+        if e.type == .heartbeat, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
+            if core.snapshot(at: e.at).base == "asleep" { return "\(core.config.pack.name) is asleep" }
+            if view.away { return "you're away" }
+        }
+        return nil
     }
 }
 

@@ -314,6 +314,14 @@ final class DeviceLinkTests: XCTestCase {
     /// character, the counts at their widest and the most tags, fits.
     func testEveryStateLineFitsTheProtocol() {
         XCTAssertEqual(StateSnapshot.clip("a\u{1}b\u{7F}c\td"), "a b c d")
+        // What draws nothing goes, rather than a "?" each on the board.
+        XCTAssertEqual(StateSnapshot.clip("odd\u{200B}-status\u{202E}", marked: true), "odd-status")
+        // A name the board would show as mostly "?" gives way to its project.
+        XCTAssertEqual(StateSnapshot.boardName("Fix the nav"), "Fix the nav")
+        XCTAssertEqual(StateSnapshot.boardName("Fix 🐛 in the nav"), "Fix 🐛 in the nav", "an emoji is left out, the rest drawn")
+        XCTAssertNil(StateSnapshot.boardName("日本語のバグ"))
+        XCTAssertNil(StateSnapshot.boardName("🐛🔥✨"), "nothing left")
+        XCTAssertEqual(StateSnapshot.boardName("Ünïcödé café"), "Ünïcödé café")
         let s = StateSnapshot(base: "working", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)

@@ -9,7 +9,7 @@ import XCTest
 final class DemoTests: XCTestCase {
     func testAScriptIsLinesInOrder() throws {
         let script = try DemoScript("""
-            {"demo": 1, "title": "Keyboard shortcuts", "agent": "codex"}
+            {"demo": 1, "title": "Keyboard shortcuts", "agent": "claude"}
             // A comment, and a blank line.
 
             {"agent": "prompt", "text": "Add shortcuts"}
@@ -21,7 +21,8 @@ final class DemoTests: XCTestCase {
             {"you": "poke"}
             """)
         XCTAssertEqual(script.title, "Keyboard shortcuts")
-        XCTAssertEqual(script.agent, "codex")
+        XCTAssertEqual(script.agent, "claude")
+        try XCTAssertEqual(DemoScript(#"{"demo": 1, "title": "x", "agent": "codex"}"#).agent, "codex")
         XCTAssertEqual(script.steps.map(\.number), [4, 5, 6, 7, 8, 9, 10], "in the file's order")
         XCTAssertEqual(script.steps[1].what, .brain(["react.face": "curious"], mood: "curious"))
         XCTAssertEqual(script.steps[1].after, 0.5)
@@ -157,6 +158,10 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(problem("\(prompt)\n{\(compact), \"say\": \"Full!\"}\n\(reply)").contains("a compact says nothing"))
         XCTAssertTrue(problem("\(prompt)\n{\(compact), \"by\": \"reviewer\"}\n\(reply)").contains("a compact is the main thread's"))
         XCTAssertTrue(problem("\(prompt)\n{\"agent\": \"compact\", \"summary\": 3}\n\(reply)").contains("summary is a string"))
+        // Codex's hooks report no helpers, so its demos send none.
+        let codex = #"{"demo": 1, "title": "x", "agent": "codex"}"#
+        XCTAssertTrue(problem("\(codex)\n\(prompt)\n{\"agent\": \"review\", \"task\": \"Look\"}").contains("a review is Claude's"))
+        XCTAssertTrue(problem("\(codex)\n\(prompt)\n{\"agent\": \"reply\", \"text\": \"ok\", \"by\": \"reviewer\"}").contains("Codex has no reviewer"))
     }
 
     /// A mood alone is the brain's step: `{"mood": "proud"}`.

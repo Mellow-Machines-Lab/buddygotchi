@@ -10,7 +10,7 @@ final class ReplayTests: XCTestCase {
     /// Each snapshot as `+time base attn waiting`, e.g. `+3.0s idle claude/jetpack 1`,
     /// counting 1 + `attn.more` waiting, with `/act` after the base while
     /// there's one (`+2.0s working/terminal - 0`); each rule's reaction as
-    /// `+time name`, with its `ctx` (`+1.0s starting new_task`). The work
+    /// `+time name`, with its `ctx` (`+0.0s starting session`). The work
     /// stream is off: its tests are `WorkStreamTests`.
     func summary(_ fixture: String, agent: String) throws -> [String] {
         let path = HookFixtures.agentHooks.appendingPathComponent(fixture).path
@@ -50,7 +50,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting session",
             "+1.0s working - 0",
-            "+1.0s starting new_task",
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/jetpack 1",
             "+125.0s working - 0 tier3",
@@ -71,7 +70,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting session",
             "+1.0s working - 0",
-            "+1.0s starting new_task",
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/landing 1",
             "+71.0s working/tool_use - 0 tier2",
@@ -92,7 +90,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting session",
             "+1.0s working - 0",
-            "+1.0s starting new_task",
             "+2.0s working/delegating - 0",
             "+5.0s idle claude/landing 1",
             "+31.0s working/delegating - 0 tier1",
@@ -112,7 +109,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting session",
             "+1.0s working - 0",
-            "+1.0s starting new_task",
             "+2.0s working/testing - 0",
             "+4.5s working/waiting - 0",
             "+6.5s working - 0",
@@ -126,7 +122,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting session",
             "+1.0s working - 0",
-            "+1.0s starting new_task",
             "+2.0s working/terminal - 0",
             "+5.0s idle codex/landing 1",
             "+14.0s working - 0",
@@ -145,7 +140,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting session",
             "+1.0s working/planning - 0",
-            "+1.0s starting new_task",
             "+2.0s working/analyzing - 0",
             "+4.0s working/searching - 0",
             "+7.0s working/planning - 0",
@@ -165,7 +159,6 @@ final class ReplayTests: XCTestCase {
             "+51.0s stopped",
             "+52.0s starting continuation",
             "+53.0s working - 0 tier1",
-            "+53.0s starting new_task",
             "+54.0s idle - 0",
         ])
     }
@@ -179,7 +172,6 @@ final class ReplayTests: XCTestCase {
             "+0.0s idle - 0",
             "+0.0s starting continuation",
             "+1.0s working - 0",
-            "+1.0s starting new_task",
             "+2.0s working/analyzing - 0",
             "+4.0s starting compacted",
             "+5.0s working - 0",
@@ -200,8 +192,8 @@ final class ReplayTests: XCTestCase {
         let lines = replay.run(try Replay.steps(fromFile: path))
         let effects = lines.filter { $0.hasPrefix("+") }.map { $0.split(separator: " ", maxSplits: 1)[1] }
         let rules = effects.filter { $0.hasPrefix("do ") && !$0.contains(#""name":"call""#) }
-        XCTAssertEqual(rules.map { $0.contains(#""name":"starting""#) }, [true, true],
-                       "the rules play the starts; the finish is the brain's")
+        XCTAssertEqual(rules.map { $0.contains(#""name":"starting""#) }, [true],
+                       "the rules play the start, its prompt just after showing no card of its own; the finish is the brain's")
         // The work stream: each test run's start and result come forward.
         let calls = effects.filter { $0.contains(#""name":"call""#) }
         XCTAssertGreaterThanOrEqual(calls.filter { $0.contains(#""as":"cross""#) }.count, 1, "\(calls)")

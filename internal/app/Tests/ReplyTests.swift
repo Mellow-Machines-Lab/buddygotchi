@@ -149,11 +149,20 @@ final class ReplyTests: XCTestCase {
     }
 
     /// Pins `Signs.reply`: only lines whose first tag is the reply, the
-    /// most tags that fit first, never the last one shown while another
-    /// fits.
+    /// most of the moment's tags that fit first, the calendar's among the
+    /// plain ones, never the last one shown while another fits.
     func testAReplysSign() {
         var rng = SplitMix64(seed: 3)
-        XCTAssertEqual(Signs.reply(lines, "bye", calendar: ["night"], rng: &rng), "nite nite", "the night's beats the plain one")
+        XCTAssertEqual(Signs.replies(lines, "bye", calendar: ["night"]), ["bye bye", "nite nite"], "the night's joins the plain one")
+        let moments = TaggedLine.parse("""
+            - [comfort] there there
+            - [comfort night] bed time?
+            - [nap] zzz
+            - [nap working] after this
+            """)
+        XCTAssertEqual(Signs.replies(moments, "comfort", calendar: ["night", "working"]), ["there there", "bed time?"],
+                       "not bed time alone all night, at work too")
+        XCTAssertEqual(Signs.replies(moments, "nap", calendar: ["night", "working"]), ["after this"], "the moment's beats the plain one")
         XCTAssertEqual(Signs.reply(lines, "bye", calendar: ["day"], rng: &rng), "bye bye")
         XCTAssertNil(Signs.reply(lines, "ouch", calendar: [], rng: &rng))
         for _ in 0..<10 {
@@ -164,6 +173,74 @@ final class ReplyTests: XCTestCase {
         for _ in 0..<10 {
             XCTAssertNotEqual(Signs.reply(lines, "bye", calendar: ["night"], rng: &rng), "not first", "its reply comes first")
         }
+    }
+
+    /// What Boop says isn't said again within its last
+    /// `ReactOutput.recentSays` says while another take fits: a happy face's
+    /// glad sounds go round before any comes back.
+    func testItDoesntRepeatItselfSoon() throws {
+        guard !Take.all.isEmpty else { return }
+        var queued: [DeviceReaction] = []
+        let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
+        let fits = Set(Take.all.filter { $0.part == .feeling && $0.meaning == "glad" && $0.moods.contains("happy") && $0.finish == nil }
+            .map(\.text))
+        let window = Swift.min(ReactOutput.recentSays, fits.count - 1)
+        XCTAssertGreaterThan(window, 1)
+        var said: [String] = []
+        for _ in 0..<12 {
+            _ = react.run(["react.face": a("happy"), "react.intensity": a("small"), "say": a("glad")], now: poke, log: Self.log)
+            said.append(try XCTUnwrap(queued.last?.say?.takes.last?.text))
+        }
+        for i in window..<said.count {
+            XCTAssertFalse(said[(i - window)..<i].contains(said[i]), "\(said)")
+        }
+    }
+
+    /// A reply to what you said plays while something needs you (the
+    /// board shows its face and sign over the needs-you screen): "tell
+    /// claude yes" gets its "that's ur job". Nothing else does, and the mic
+    /// still on blocks a reply too.
+    func testAReplyShowsOverNeedsYou() {
+        var queued: [DeviceReaction] = []
+        var mic: String?
+        let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { "something needs you" }, replyBlocked: { mic })
+        let answers = ["react.face": a("skeptical"), "react.move": a("notme"), "react.intensity": a("small")]
+        _ = react.run(answers, now: poke, log: Self.log)
+        XCTAssertEqual(queued.count, 0, "not a poke's")
+        _ = react.run(answers, now: said, log: Self.log)
+        XCTAssertEqual(queued.last?.reply, "notme", "the reply plays")
+        mic = "the mic is on"
+        _ = react.run(answers, now: said, log: Self.log)
+        XCTAssertEqual(queued.count, 1, "not while the mic is on")
+        // A status reply holds up its count, but asks for no drawer: the
+        // board opens none over the needs-you screen.
+        let status = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { "something needs you" }, replyBlocked: { nil },
+                                 status: { _ in .init(sign: "2 need you", show: StatusReply.drawer) })
+        _ = status.run(["react.face": a("engaged"), "react.move": a("status"), "react.intensity": a("small")], now: said, log: Self.log)
+        XCTAssertEqual(queued.last?.sign, "2 need you")
+        XCTAssertNil(queued.last?.show)
+    }
+
+    /// With no brain (no key), what you said gets a shrug, the `huh`
+    /// reply in Boop's mood, holding up the pack's no-brain line, never
+    /// over the needs-you screen; the brain's own replies never offer it.
+    func testWithNoBrainItShrugs() throws {
+        let rig = CoreRig()
+        let shrug = try XCTUnwrap(deviceReactions(rig.core.shrug(sign: "no brain yet :(", at: rig.now)).first)
+        XCTAssertEqual(shrug.reply, "huh")
+        XCTAssertEqual(shrug.sign, "no brain yet :(")
+        XCTAssertNotNil(shrug.mood, "a face, so the board plays the reply's clip")
+        XCTAssertEqual(BoopDevice.play(shrug), .next)
+        rig.send(.turnStart)
+        rig.send(.needsYou, tool: "Bash")
+        XCTAssertTrue(rig.core.shrug(sign: "no brain yet :(", at: rig.now).isEmpty, "not over needs you")
+
+        let pack = TaggedLine.parse("""
+            - [huh] huh?
+            - [huh nobrain] no brain yet :(
+            """)
+        XCTAssertEqual(Signs.replies(pack, Core.noBrainReply, calendar: ["night", Core.noBrain]), ["no brain yet :("])
+        XCTAssertEqual(Signs.replies(pack, "huh", calendar: ["night"]), ["huh?"], "the brain's huh never says it has none")
     }
 
     /// Talked to, Boop mostly says something back, but never has to: `say`
@@ -201,6 +278,9 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(meanings("huh", a("start"), face: "grumpy"), [], "never a topic: dunno borrows no feeling")
         XCTAssertEqual(meanings("huh", a("upset", 0.3), face: "grumpy"), [])
         XCTAssertEqual(meanings("comfort", a("glad", 0.3), face: "grumpy"), [], "comfort borrows none")
+        XCTAssertEqual(meanings("comfort", a("retry"), face: "determined"), ["about retry"],
+                       "but roots for the retry when you say it still doesn't work")
+        XCTAssertEqual(meanings("comfort", a("start"), face: "determined"), [], "and no other topic")
         XCTAssertEqual(meanings("no", a("start")), ["feeling upset"], "no has none in a happy face: a topic picked, the feeling it borrows")
         talk = .quiet
         XCTAssertEqual(meanings("thanks", a("glad", 0.3)), ["reply thanks"])

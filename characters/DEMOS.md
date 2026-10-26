@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-25. A demo is a short, scripted stretch of work that a
+Updated 2026-10-26. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -55,15 +55,15 @@ creature's brain.
 | `{"agent": "edit"}` | The agent edits a file: its size in lines, as agent-hook counts it from `old` and `new`, is the work stream's word (`edit +2 -140`) | `file`, `old`, `new` |
 | `{"agent": "run"}` | The agent runs a command, tagged as agent-hook tags it (a check's topic, or `inspect` for one that only looks) | `cmd`, `about` (what it's for), `fails` (true or false), `ask` (it asks you first, and you allow it after this many seconds), `waits` (true: the step ends as it asks, and the steps after it play while it waits, such as a `hold`) |
 | `{"agent": "todo"}` | The agent writes its to-do list (Claude's `TodoWrite`, Codex's `update_plan`): the line under the face counts it | `todos`, done of all (`"2/4"`) |
-| `{"agent": "review"}` | The agent sends a subagent: a helper at work, a mini under the face, until a `reply` `"by": "reviewer"` brings the first one still out back | `task`, `prompt` |
+| `{"agent": "review"}` | The agent sends a subagent: a helper at work (on Pixel, a mini under the face) until a `reply` `"by": "reviewer"` brings the first one still out back. Claude's only: Codex's hooks report no helpers | `task`, `prompt` |
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message, which Boop reads as it reads any agent's last message: only its reading reaches the brain | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
 | `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
-| `{"you": "back"}` | You come back to the Mac after `minutes` away | `minutes` (60) |
-| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (headphones at 2 minutes, a sweatband at 5, the camp at 10) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
+| `{"you": "back"}` | You come back to the Mac after `minutes` away: the clock jumps on by that long, as a `wait`'s does | `minutes` (60) |
+| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (the headphones at 2 minutes, the melt at 5, the mugs stacking up at 10) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
 | `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. After a `talk`, `react.move` is its reply (`hello`, `status`, `nap`…): the board plays the reply's clip, and its sign is `react.sign`, one of the pack's `replies.md` lines for that reply, else one looked up, or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
@@ -90,9 +90,10 @@ Codex compacts for real, and its model writes the `summary`. The desktop
 app can't play a compact, since its real model can't be made to fill its
 context on cue.
 
-A back is the away and the back at once, as the Mac would record them
-after that long: being away shows nothing on the board, and the Mac's own
-keys and mouse would end an away left open. `good-morning.jsonl` comes
+A back records the away, moves the clock on by the time away, then
+records the back, as the Mac would after that long: being away shows
+nothing on the board (no check-in greets the empty chair), and the
+Mac's own keys and mouse would end an away left open. `good-morning.jsonl` comes
 back after a night away, and Pixel wakes up.
 
 **Timing.** Steps happen in order. `after` is how many seconds a step

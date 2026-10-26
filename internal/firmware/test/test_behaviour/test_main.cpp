@@ -974,8 +974,10 @@ static void test_listening_holds_until_the_reply() {
 }
 
 // While something needs you, listening is the one reaction
-// that plays; one showing when needs you starts plays on. The reply can't
-// show, but it ends listening.
+// that plays; one showing when needs you starts plays on. A reply with no
+// face of its own can't show, but it ends listening; the reply to what
+// you said, with its face, shows its face and sign over needs you, never
+// its `say`, and then the needs-you screen is back.
 static void test_listening_plays_while_something_needs_you() {
   Rig a;
   a.state(attn());
@@ -990,6 +992,27 @@ static void test_listening_plays_while_something_needs_you() {
   TEST_ASSERT_EQUAL(SceneState::kNone, a.anim());
   TEST_ASSERT_NULL(a.b.bubble(a.t));
   TEST_ASSERT_TRUE(a.b.show(a.t).state == SceneState::kNeedsYou);
+  // "Tell claude yes": the reply shakes its head and holds up its sign.
+  a.talkOn();
+  a.at(1000);
+  ReactionIn notme;
+  notme.said = true, notme.expr = true, notme.mood = render::Mood::kProud, notme.take = voice::takeIndex(kGo);
+  snprintf(notme.sign, sizeof(notme.sign), "%s", "that's ur job");
+  snprintf(notme.reply, sizeof(notme.reply), "%s", "notme");
+  TEST_ASSERT_NULL(a.b.admit(notme, a.t));
+  TEST_ASSERT_FALSE(a.b.play(notme, a.t));  // its say doesn't play
+  TEST_ASSERT_EQUAL(SceneState::kNone, a.anim());
+  TEST_ASSERT_TRUE(a.b.look(a.t) == SceneState::kNeedsYou);
+  TEST_ASSERT_EQUAL_STRING("that's ur job", a.b.sign(a.t).text);
+  TEST_ASSERT_NULL(a.b.bubble(a.t));  // no voice over needs you
+  a.at(a.b.signEnd() + render::rig::kFadeMs + 1);
+  TEST_ASSERT_NULL(a.b.sign(a.t).text);
+  TEST_ASSERT_TRUE(a.b.show(a.t).state == SceneState::kNeedsYou);
+  // A sign that isn't a reply still waits.
+  ReactionIn plain;
+  plain.expr = true, plain.mood = render::Mood::kHappy;
+  snprintf(plain.sign, sizeof(plain.sign), "%s", "yay");
+  TEST_ASSERT_EQUAL_STRING("needs_you", a.b.admit(plain, a.t));
   // The Mac's own listening plays too, and survives a new needs-you.
   Rig m;
   m.state(base("idle"));

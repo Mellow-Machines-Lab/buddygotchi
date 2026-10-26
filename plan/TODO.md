@@ -4,6 +4,55 @@ Updated 2026-10-26. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: the QA night, as users (2026-10-26)
+
+The owner asked for a night of using Boop as users would. Seven testers
+played profiles on the simulated board through the headless app: a
+first-week buyer with no key, a multi-agent power user, a talker with
+the real brain, the clock and calendar, the Mac app's surfaces, a real
+workday with the brain, and odd inputs with restarts. What they found
+and is fixed is in the night's commits here and SlimeBuddy's; what's
+left is below.
+
+- [x] Fixed: Boop dozes off with sessions left open; the day's greeting
+      wakes only a sleeping Boop and isn't lost; one start card, not
+      START then NEW TASK; the brain hears each finish once; a finish
+      during another's needs you comes back after; talk with no key
+      shrugs with a sign; a reply shows over the needs-you screen; reply
+      signs don't repeat a night line; comfort keeps "again"; words
+      falling over a kept card don't stay in it; Friday's shades from
+      noon and off for feelings; lane 1 rose, not amber; a fifth session
+      waits for a lane; a helper's word is "back"; a call ends as it
+      starts; the hourly heartbeat lets a settled, sleeping Boop be; no
+      word repeats within five says; names the board can't draw give way
+      to the project; the diary's singulars; the popover's mood line and
+      Hush; demos' talk, back and Codex review.
+- [ ] The mood after a win: calm goes to annoyed at your frustration
+      (`mood/calm.md`), where annoyed itself says frustration means
+      determined, and annoyed has no way out at a check passing or a
+      turn done but a 3-minute fade, so Boop frowns through a success.
+      Suggested: calm to determined at frustration; annoyed and irritated
+      to relieved when a check passes after failing. Needs the moods'
+      `moves` (the design's emotion graph) and Jev's mood evals.
+- [ ] Voice: quick, easy wins can say relief ("Phew", "Whew"), tagged
+      plain `glad`; some takes' meanings read wrong where they play
+      ("Yep" as tickled at a poke, "Failed" as upset, "Search" at a
+      compaction, "Restart" as retry, "Mwahaha" for a typo fix). The
+      bank's tags (voice-range).
+- [ ] Steering: `boop.md` says an idle check-in gets "a small face or
+      nothing" but its Example gives medium; an approval's Example
+      cheers ("pleased, says glad"), which on a day of approvals is
+      noise and requests.
+- [ ] A request restored at relaunch whose answer came while the app
+      was down stays amber up to a day (the agent's process lives on);
+      and each relaunch numbers requests afresh, so the board knocks
+      again for one already seen. Both in AgentHooks' session tracking.
+- [ ] With four lanes, a long word in an outer lane is cut by the panel's
+      edge; moving it in puts it over the next lane and behind the body.
+      A smaller font, or a shorter word, at three and four lanes.
+- [ ] A demo's `wait` that jumps the clock while a reaction plays ends
+      it as "didn't happen" in HISTORY.
+
 ## Now: the overnight UI audit (2026-10-26)
 
 The owner asked for every UI and UX bug on the Mac and the board,
