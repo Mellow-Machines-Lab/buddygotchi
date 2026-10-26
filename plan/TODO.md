@@ -262,6 +262,16 @@ pacing and touch, the Mac app, the architecture) found what's below.
       speed (30 rows a ms). Tear-free needs pushes in scan order (bands of
       panel rows) started just behind the scan line, the scan's direction
       checked on the panel; or 80 MHz QSPI (needs eyes on the panel).
+      Tried 2026-10-26 (branch `tearing-scan-order`, not merged): bands of
+      16 panel rows sent in scan order, each band's changed rows as up to
+      four runs, from TE's rising edge (`dbg.scan off|down|up`), with a tear
+      counted when the scan, timed from TE, passes a band as it's sent.
+      `perf --scenes`: 26% of frames counted torn unsynced, 26-29% synced
+      (either direction), the push 3-4 ms longer and attention under its
+      28 fps. A push takes 22-38 ms for 60-130 K pixels, far below the
+      bus's 10 px/µs: it waits on the body's helper (priority 2, above the
+      push's 1) and packing, so it can't stay ahead of the scan. Next try:
+      the push above the helper while a synced frame goes, or 80 MHz.
 - [ ] The engine's step is 2.3-2.6 ms a frame on the AMOLED (2.5 µs on
       the Mac): its 25 KB `Engine` is in PSRAM (malloc puts anything over
       4 KB there) and its code runs from flash past a 16 KB cache. The
@@ -283,7 +293,9 @@ pacing and touch, the Mac app, the architecture) found what's below.
       new stream scene 31.2 and night 24.4. The sharper material and the
       outline cost ~1 ms of body, the hat's sub-pixel replay ~3.5 ms at
       night. Every scene passes; the internal heap's least is 50,968
-      against 50,000, so ~1 KB is left. Owner's call: whether night's
+      against 50,000, so ~1 KB is left (by bebdb5a7 it was 48.2 KB, every
+      scene failing; SlimeBuddy's 09fb042 puts the outfit's recordings in
+      PSRAM: 66.4 KB, every scene passing, fps unchanged). Owner's call: whether night's
       24 fps is enough for a smooth hat (whole-pixel replay gives ~28),
       and whether an even 30 fps reads better than ~37 on the 60 Hz
       panel. `perf --motion`'s 60 KB heap budget fails, as it already did
