@@ -82,7 +82,8 @@ Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
-while one is in progress: the reply answers what you meant. Asked for a
+while one is in progress: the reply answers what you meant, and it
+mostly says something back. Asked for a
 trick, its mood decides; it never does anything for an agent. Hushed,
 it sulks a little: its mood takes one ordinary step down (calm to
 tired, happy to calm, annoyed to whiny), never a jump.
@@ -212,7 +213,7 @@ Examples:
 - NOW: You said to Boop: "you're so dumb".
   → wounded, replies ouch, says upset
 - NOW: You said to Boop: "has codex finished yet?".
-  → engaged, replies status, in silence
+  → engaged, replies status, says work
 - NOW: You said to Boop: "rough day today".
   → sad, replies comfort, in silence
 - NOW: You said to Boop: "we shipped it!".
@@ -321,7 +322,7 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You said to Boop: "go to sleep, buddy"
   Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
 1 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Busy".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Busy".
 
 NOW (14:03, Wednesday)
 You said to Boop: "how long have I been at it?"
@@ -335,9 +336,9 @@ HISTORY (oldest first; indented lines add to the line above)
 2 min ago: You said to Boop: "go to sleep, buddy"
   Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
 2 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Busy".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Busy".
 just now: You said to Boop: "how long have I been at it?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Piano".
 just now: claude needs you on "landing".
 
 NOW (14:03, Wednesday)
@@ -352,9 +353,9 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: You said to Boop: "go to sleep, buddy"
   Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
 2 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Busy".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Busy".
 1 min ago: You said to Boop: "how long have I been at it?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Piano".
 just now: claude needs you on "landing".
 just now: You held a finger on Boop's needs-you screen, to stop it showing; the agent still waits.
   Boop made an engaged face (small), and said "Rrr... tik".
@@ -371,14 +372,14 @@ HISTORY (oldest first; indented lines add to the line above)
 3 min ago: You said to Boop: "go to sleep, buddy"
   Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
 3 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Busy".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Busy".
 1 min ago: You said to Boop: "how long have I been at it?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Piano".
 1 min ago: claude needs you on "landing".
 1 min ago: You held a finger on Boop's needs-you screen, to stop it showing; the agent still waits.
   Boop made an engaged face (small), and said "Rrr... tik".
 just now: You said to Boop: "just tell claude yes"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Steady".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Steady".
 
 NOW (14:04, Wednesday)
 You said to Boop: "you're useless"
@@ -392,16 +393,16 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: You said to Boop: "go to sleep, buddy"
   Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
 3 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Busy".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Busy".
 2 min ago: You said to Boop: "how long have I been at it?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Piano".
 1 min ago: claude needs you on "landing".
 1 min ago: You held a finger on Boop's needs-you screen, to stop it showing; the agent still waits.
   Boop made an engaged face (small), and said "Rrr... tik".
 1 min ago: You said to Boop: "just tell claude yes"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Steady".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Steady".
 just now: You said to Boop: "you're useless"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Easy".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Easy".
 
 NOW (14:05, Wednesday)
 You said to Boop: "sorry boop, I didn't mean it"

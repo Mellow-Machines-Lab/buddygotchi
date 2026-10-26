@@ -6,8 +6,8 @@ import Foundation
 /// going on and how it's going, then how the last of it came out, else
 /// nothing going on. Say an agent's name or a thread's place ("is codex
 /// done?", "how's the api going?") and only those sessions count. Name
-/// none with several sessions open ("how many are running?") and the
-/// sign counts them, and the board shows them all in its agents' drawer.
+/// none with several sessions open, or ask how many, and the sign counts
+/// them, and with several the board shows them all in its agents' drawer.
 /// Ask what it's doing and the work going on says what you asked it for;
 /// ask how long you've been at it and the working stretch answers.
 public enum StatusReply {
@@ -94,10 +94,10 @@ public enum StatusReply {
         .deploy: "shipping", .docs: "docs", .question: "a question", .carryOn: "carrying on",
     ]
 
-    /// Whether `said` asks what the work is: "doing", "working on", "up to",
-    /// but not "how's it doing?", which asks how it's going.
+    /// Whether `said` asks what the work is: "doing", "building", "working
+    /// on", "up to", but not "how's it doing?", which asks how it's going.
     static func asksDoing(_ said: [String]) -> Bool {
-        (said.contains("doing") && !said.contains("how"))
+        (!said.contains("how") && (said.contains("doing") || said.contains("building")))
             || zip(said, said.dropFirst()).contains { $0 == ("working", "on") || $0 == ("up", "to") }
     }
 
@@ -110,6 +110,9 @@ public enum StatusReply {
         return pairs.contains { $0 == ("how", "long") }
             && pairs.contains { (by.contains($0.0) && you.contains($0.1)) || (you.contains($0.0) && after.contains($0.1)) }
     }
+
+    /// Whether `said` asks how many: "how many agents do I have?".
+    static func asksCount(_ said: [String]) -> Bool { zip(said, said.dropFirst()).contains { $0 == ("how", "many") } }
 
     /// Under this long into the working stretch, it has just started.
     public static let justStartedMs: Int64 = 60_000
@@ -133,7 +136,9 @@ public enum StatusReply {
         if named.isEmpty, asked.isEmpty, asksStretch(said), let since = stretchSince, !sessions.contains(where: \.needsYou) {
             return Answer(sign: now - since < justStartedMs ? "just started" : "at it \(duration(now - since))")
         }
-        if named.isEmpty, asked.isEmpty, sessions.count > 1 { return Answer(sign: count(sessions), show: drawer) }
+        if named.isEmpty, asked.isEmpty, sessions.count > 1 || (asksCount(said) && !sessions.isEmpty) {
+            return Answer(sign: count(sessions), show: sessions.count > 1 ? drawer : nil)
+        }
         return Answer(sign: sign(asked.isEmpty ? sessions : asked, said: said, named: named, asked: !asked.isEmpty, at: now))
     }
 

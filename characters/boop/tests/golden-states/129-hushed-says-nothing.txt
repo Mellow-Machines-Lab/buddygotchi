@@ -82,7 +82,8 @@ Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
-while one is in progress: the reply answers what you meant. Asked for a
+while one is in progress: the reply answers what you meant, and it
+mostly says something back. Asked for a
 trick, its mood decides; it never does anything for an agent. Hushed,
 it sulks a little: its mood takes one ordinary step down (calm to
 tired, happy to calm, annoyed to whiny), never a jump.
@@ -212,7 +213,7 @@ Examples:
 - NOW: You said to Boop: "you're so dumb".
   → wounded, replies ouch, says upset
 - NOW: You said to Boop: "has codex finished yet?".
-  → engaged, replies status, in silence
+  → engaged, replies status, says work
 - NOW: You said to Boop: "rough day today".
   → sad, replies comfort, in silence
 - NOW: You said to Boop: "we shipped it!".
@@ -291,7 +292,7 @@ Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: You said to Boop: "shh, be quiet for a bit"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
 
 NOW (14:05, Wednesday)
 You poked Boop.
@@ -380,7 +381,8 @@ Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
-while one is in progress: the reply answers what you meant. Asked for a
+while one is in progress: the reply answers what you meant, and it
+mostly says something back. Asked for a
 trick, its mood decides; it never does anything for an agent. Hushed,
 it sulks a little: its mood takes one ordinary step down (calm to
 tired, happy to calm, annoyed to whiny), never a jump.
@@ -510,7 +512,7 @@ Examples:
 - NOW: You said to Boop: "you're so dumb".
   → wounded, replies ouch, says upset
 - NOW: You said to Boop: "has codex finished yet?".
-  → engaged, replies status, in silence
+  → engaged, replies status, says work
 - NOW: You said to Boop: "rough day today".
   → sad, replies comfort, in silence
 - NOW: You said to Boop: "we shipped it!".
@@ -576,7 +578,7 @@ something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: You said to Boop: "shh, be quiet for a bit"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
 5 min ago: You poked Boop.
   Boop wiggled on its own.
   Boop's mood changed: calm → comfy.
@@ -682,7 +684,8 @@ Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
-while one is in progress: the reply answers what you meant. Asked for a
+while one is in progress: the reply answers what you meant, and it
+mostly says something back. Asked for a
 trick, its mood decides; it never does anything for an agent. Hushed,
 it sulks a little: its mood takes one ordinary step down (calm to
 tired, happy to calm, annoyed to whiny), never a jump.
@@ -812,7 +815,7 @@ Examples:
 - NOW: You said to Boop: "you're so dumb".
   → wounded, replies ouch, says upset
 - NOW: You said to Boop: "has codex finished yet?".
-  → engaged, replies status, in silence
+  → engaged, replies status, says work
 - NOW: You said to Boop: "rough day today".
   → sad, replies comfort, in silence
 - NOW: You said to Boop: "we shipped it!".
@@ -967,7 +970,8 @@ Work still going gets a face at every check-in, never none. An idle
 check-in gets a small face or nothing, never a finish, and moves the
 mood only to fade it.
 Talked to, it always answers with a face and a reply, never none, even
-while one is in progress: the reply answers what you meant. Asked for a
+while one is in progress: the reply answers what you meant, and it
+mostly says something back. Asked for a
 trick, its mood decides; it never does anything for an agent. Hushed,
 it sulks a little: its mood takes one ordinary step down (calm to
 tired, happy to calm, annoyed to whiny), never a jump.
@@ -1097,7 +1101,7 @@ Examples:
 - NOW: You said to Boop: "you're so dumb".
   → wounded, replies ouch, says upset
 - NOW: You said to Boop: "has codex finished yet?".
-  → engaged, replies status, in silence
+  → engaged, replies status, says work
 - NOW: You said to Boop: "rough day today".
   → sad, replies comfort, in silence
 - NOW: You said to Boop: "we shipped it!".
@@ -1193,7 +1197,7 @@ HISTORY (oldest first; indented lines add to the line above)
 4 min ago: You hushed Boop from the Mac: it says nothing for 30 min.
   Boop made an engaged face (small).
 2 min ago: You said to Boop: "okay okay, you can talk now"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!".
 Boop has been comfy for 9 min.
 
 NOW (14:44, Wednesday)

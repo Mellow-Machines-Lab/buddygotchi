@@ -1,0 +1,20 @@
+{
+  "name": "Talked to, Boop mostly says something back, and its sign answers what was said",
+  "case": "The person chats to Boop while claude works, as the owner did on a first evening: a hello, how are you, where are you, how many agents, what are you doing, then thanks, affection, a joke and good night. Each gets its reply and mostly a sound or a word back, not the silent shrug every one got before. Its sign answers the words themselves: a hello played back to them, 'good, u?' when asked how it is, 'right here!' when asked where it is, the one agent counted, what claude was asked to do, and good night played back.",
+  "always": true,
+  "why": "ReactOutput's talk questions: say for what you said mostly says something, nothing only where PERSONALITY's Example is silent; react.sign offers every reply's captions with your words played back and holds up the likeliest of the reply's own; StatusReply counts one session when asked how many",
+  "steps": [
+    {"event": "session started", "at": "0s"},
+    {"event": "said", "at": "10s", "words": "Hello", "expect": {"move": "hello", "said": "some", "sign": "hello 2 u|hi"}},
+    {"event": "said", "at": "40s", "words": "Hey how are you today", "expect": {"move": "hello", "said": "some", "sign": "good, u?"}},
+    {"event": "said", "at": "1m10s", "words": "Where are you", "expect": {"move": "hello|yes", "said": "some", "sign": "right here"}},
+    {"event": "turn started", "at": "1m30s", "prompt": "fix the login bug", "reading": {"kind": "fix"}},
+    {"event": "said", "at": "2m40s", "words": "How many agents do I have", "expect": {"move": "status", "sign": "1 working"}},
+    {"event": "said", "at": "3m10s", "words": "What are you doing", "expect": {"move": "status", "sign": "a fix"}},
+    {"event": "turn finished", "at": "4m"},
+    {"event": "said", "at": "4m30s", "words": "nice work, thanks", "expect": {"move": "thanks", "said": "some"}},
+    {"event": "said", "at": "5m", "words": "love you", "expect": {"move": "love", "said": "some", "sign": "love|<3|aww"}},
+    {"event": "said", "at": "5m30s", "words": "knock knock, haha", "expect": {"move": "hehe", "said": "some"}},
+    {"event": "said", "at": "6m", "words": "good night", "expect": {"move": "bye", "said": "some", "sign": "good night 2 u|nite nite"}}
+  ]
+}

@@ -166,6 +166,85 @@ final class ReplyTests: XCTestCase {
         }
     }
 
+    /// Talked to, Boop mostly says something back, but never has to: `say`
+    /// asks it so, a `none` is kept, and when `say` leans to words without
+    /// one past `sayFloor` the reply says its own (`replyWords`); on Quiet
+    /// never a topic, and a reply with no words of its own says nothing.
+    func testTalkedToItMostlySaysSomething() throws {
+        let react = ReactOutput(queue: { _, _ in }, blocked: { nil })
+        let say = try XCTUnwrap(react.questions(now: said, log: Self.log).first { $0.key == ReactOutput.sayKey })
+        XCTAssertTrue(say.text.contains("mostly says something"), say.text)
+        XCTAssertEqual(say.options.first, ReactOutput.talkSilence(of: creature), "nothing, now and then")
+        let poked = try XCTUnwrap(react.questions(now: poke, log: Self.log).first { $0.key == ReactOutput.sayKey })
+        XCTAssertNotEqual(poked.options.first, ReactOutput.talkSilence(of: creature), "only what you said")
+
+        guard !Take.all.isEmpty else { return }
+        var queued: [DeviceReaction] = []
+        var talk = Talk.normal
+        let speaking = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, talk: { talk })
+        func meanings(_ move: String, _ say: Answer?, size: String = "medium") -> [String] {
+            var answers = ["react.face": a("happy"), "react.move": a(move), "react.intensity": a(size)]
+            answers["say"] = say
+            _ = speaking.run(answers, now: said, log: Self.log)
+            return queued.last?.say?.takes.map(\.meaning) ?? []
+        }
+        XCTAssertEqual(meanings("hello", a("glad")), ["glad"], "say's pick")
+        XCTAssertEqual(meanings("hello", a("none")), [], "nothing, when it picks nothing")
+        XCTAssertEqual(meanings("hello", nil), [])
+        XCTAssertEqual(meanings("hello", a("glad", 0.3)), ["hello"], "leaning to words: the reply's own")
+        XCTAssertEqual(meanings("thanks", a("work", 0.3)), ["glad"])
+        XCTAssertEqual(meanings("comfort", a("glad", 0.3)), [], "comfort has none of its own")
+        talk = .quiet
+        XCTAssertEqual(meanings("hello", a("glad", 0.3)), [], "on Quiet, never a topic")
+        XCTAssertEqual(meanings("thanks", a("glad", 0.3)), ["glad"])
+        XCTAssertEqual(meanings("thanks", a("glad", 0.3), size: "small"), [], "and nothing at a small moment")
+    }
+
+    /// Pins how a reply's sign answers what you said: every reply's
+    /// captions are offered (`react.sign`), with your words played back,
+    /// and of those for the reply it makes, a caption two replies share
+    /// counting for both, the brain's likeliest is held up; with none of them liked, one of its lines at random, never your
+    /// words.
+    func testAReplysSignAnswersWhatYouSaid() throws {
+        XCTAssertEqual(Signs.phrases(of: "Hello!", name: "Boop"), ["hello"])
+        XCTAssertEqual(Signs.phrases(of: "thanks, Boop", name: "Boop"), ["thanks"])
+        XCTAssertEqual(Signs.phrases(of: "good night boop", name: "Boop"), ["good night"])
+        XCTAssertEqual(Signs.phrases(of: "Hey how are you today", name: "Boop"), [], "too long to play back")
+        XCTAssertEqual(Signs.phrases(of: "why? why!", name: "Boop"), ["why why", "why"], "the whole, then its parts, each once")
+
+        let lines = TaggedLine.parse("""
+            - [hello] hi hi!
+            - [hello] good, u?
+            - [hello] {words} 2 u!
+            - [dunno] no idea!
+            - [dunno] {words}? idk
+            - [huh] huh?
+            - [yes] yep!
+            - [bye] {words} 2 u!
+            """)
+        var queued: [DeviceReaction] = []
+        let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, replies: lines)
+        let hello = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "Hello!"])
+        let sign = try XCTUnwrap(react.questions(now: hello, log: Self.log).first { $0.key == Signs.questionKey })
+        XCTAssertEqual(sign.options.map(\.name), ["facts", "yep!", "huh?", "no idea!", "hello? idk", "hi hi!", "good, u?", "hello 2 u!"])
+        XCTAssertEqual(sign.options.last?.what, "With a hello or bye reply.", "one caption, both its replies")
+        XCTAssertEqual(sign.options[3].what, "With a dunno reply (dunno, a huh to a question).")
+        XCTAssertNil(react.questions(now: poke, log: Self.log).first { $0.key == Signs.questionKey }, "a poke holds up no reply")
+
+        func held(_ move: String, _ p: [String: Double], _ e: Event? = nil) -> String? {
+            let pick = p.max { $0.value < $1.value }?.key ?? "facts"
+            _ = react.run(["react.face": a("happy"), "react.move": a(move), Signs.questionKey: Answer(choice: pick, probabilities: p)],
+                          now: e ?? hello, log: Self.log)
+            return queued.last?.sign
+        }
+        XCTAssertEqual(held("hello", ["hello 2 u!": 0.6, "good, u?": 0.3]), "hello 2 u!", "your words, played back")
+        XCTAssertEqual(held("hello", ["good, u?": 0.4, "yep!": 0.5]), "good, u?", "the likeliest of the reply's own")
+        XCTAssertEqual(held("hello", ["yep!": 0.9]), "hi hi!", "none of the reply's: a line at random, not the last one")
+        XCTAssertEqual(held("bye", ["hello 2 u!": 0.7]), "hello 2 u!", "a caption bye shares")
+        let why = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "why?"])
+        XCTAssertEqual(held("huh", ["why? idk": 0.8], why), "why? idk", "a huh to a question shrugs with dunno's")
+    }
+
     // MARK: - The agents' facts
 
     typealias Agent = StatusReply.Agent
@@ -210,8 +289,9 @@ final class ReplyTests: XCTestCase {
 
     /// Name no agent or place with several sessions open and the answer
     /// counts them and shows them all in the board's drawer: who needs you,
-    /// else how many work and how many rest. One session, or a name, gets
-    /// one fact and no drawer.
+    /// else how many work and how many rest. Asked how many, one session is
+    /// counted too, with no drawer; else one session, or a name, gets one
+    /// fact and no drawer.
     func testAQuestionAboutThemAllShowsTheDrawer() {
         let now: Int64 = 100 * min
         let working = Agent(agent: "claude", places: ["landing"], workingSince: now - 4 * min)
@@ -228,7 +308,10 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(answer([working, waiting]).sign, "codex needs you")
         XCTAssertEqual(answer([waiting, waiting, working]).sign, "2 need you")
         XCTAssertEqual(StatusReply.drawer, "drawer")
-        XCTAssertEqual(answer([working]), StatusReply.Answer(sign: "claude: 4 min in"), "one session: its fact is the answer")
+        XCTAssertEqual(answer([working]), StatusReply.Answer(sign: "1 working"), "asked how many: one session, counted")
+        XCTAssertEqual(answer([done], "how many agents do I have"), StatusReply.Answer(sign: "1 resting"))
+        XCTAssertEqual(answer([working], "are the agents working?"), StatusReply.Answer(sign: "claude: 4 min in"),
+                       "one session: its fact is the answer")
         XCTAssertEqual(answer([]), StatusReply.Answer(sign: "all quiet"))
         XCTAssertNil(answer([working, done, idle], "is codex done?").show, "named: its fact alone")
         XCTAssertNil(answer([working, done, idle], "how's the api going?").show)
@@ -271,6 +354,7 @@ final class ReplyTests: XCTestCase {
         let fixing = Agent(agent: "claude", places: ["api"], workingSince: now - 4 * min, asked: .fix)
         XCTAssertEqual(StatusReply.answer([fixing], words: "what's claude doing?", at: now).sign, "claude: a fix")
         XCTAssertEqual(StatusReply.answer([fixing], words: "what is it working on", at: now).sign, "claude: a fix")
+        XCTAssertEqual(StatusReply.answer([fixing], words: "what are you building", at: now).sign, "claude: a fix")
         XCTAssertEqual(StatusReply.answer([fixing], words: "is claude done?", at: now).sign, "claude: 4 min in", "not asked what")
         var other = fixing
         other.asked = .other

@@ -384,7 +384,7 @@ What the brain reads, in plain Markdown:
   Chinese or an emoji, is dropped. The board draws the one picked on a
   sign (the `do`'s `sign`). A pack without the file holds up no signs.
 - `replies.md` (optional): what the creature holds up replying to what
-  you said on push-to-talk (`Signs.reply`). The brain picks a reply (the
+  you said on push-to-talk (`Signs.replies`). The brain picks a reply (the
   `react.move` question's options for what you said): yes, no, huh,
   hello, bye, thanks, love, ouch, comfort, hehe, status, nap, hush, dance
   or notme (`ReactOutput.replies`), and while hushed unhush; a `huh` to a
@@ -395,21 +395,31 @@ What the brain reads, in plain Markdown:
   board shows the `hushed` tag (the gel zips its mouth). Each line is `- [reply tags] words`: its first tag the reply,
   any more the calendar's or the moment's (`working` while an agent
   works, `waiting` while something waits on you, `makeup` within 10
-  minutes of an `ouch` until a `love` makes up), and the app picks one that fits, those with the
-  most tags first, at random among them and never the one it showed
-  last while another fits; at most 18 characters, none of your words,
-  and none goes to the brain. A `status` reply holds up instead the one fact
+  minutes of an `ouch` until a `love` makes up). `{words}` in a line is
+  a phrase of what you said, at most 12 characters (`Signs.maxPhrase`):
+  the whole of it or a part between marks, lowercased, the creature's
+  name taken out, so "Hello!" can come back as `hello 2 u!`. For each
+  reply only the lines with the most tags that fit are offered, never
+  the one shown last while another fits, each at most 18 characters
+  once filled. The brain sees every reply's lines at once (`react.sign`,
+  each saying which replies it's for) and the creature holds up the one
+  it likes best of those for the reply it makes; with none of those
+  liked, one of the reply's lines at random, never your words. A `status` reply holds up instead the one fact
   about the agents that answers what you said (`StatusReply`): something
   waiting on you, how long you've been at it when you ask that, the work
   going on (what you asked it for when you ask what it's doing, else the
   latest check of its turn, else its to-do list, else how long), how the
   last of it came out within 10 minutes, else all quiet, counting only
-  the agents or places you named. Name none with several sessions open
-  ("how many are running?") and it counts them instead, who needs you,
-  else how many work and how many rest (`2 working, 1 idle`), and asks
-  the board to show every one in its agents' drawer (the `do`'s `show`).
+  the agents or places you named. Name none with several sessions open,
+  or ask how many ("how many agents do I have?"), and it counts them instead, who needs you,
+  else how many work and how many rest (`2 working, 1 idle`), and with
+  several asks the board to show every one in its agents' drawer (the
+  `do`'s `show`).
   Whatever the reply, the board plays its clip (§15), and Voice says
-  what `say` picked, as for any reaction. A pack without the file holds
+  what `say` picked, as for any reaction; asked of what you said, `say`
+  mostly says something, and when it leans to words without picking any
+  the reply says its own (`ReactOutput.replyWords`: a hello says hello,
+  thanks a glad sound). A pack without the file holds
   up nothing for a reply but the facts.
 
 Each file has a budget in tokens, the same for every pack

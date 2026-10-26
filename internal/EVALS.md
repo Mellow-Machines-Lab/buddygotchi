@@ -80,7 +80,7 @@ a scenario holds wherever more than one answer is right:
 | `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
 | `intensity` | How big the moment was, Jev's `react.intensity` pick (`small` to `huge`: how long the face held and how big what it said), or `none` when `react` didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
-| `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, the reply's, from the pack's `replies.md` or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
+| `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `mood` | Boop's mood after the pass |
 | `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every move the graph has from it, so a scenario can pin the graph |
@@ -270,7 +270,7 @@ lives there: `boopdev eval --list` prints them all. They come in three
 kinds, all with the `boop` personality unless the file says otherwise:
 
 - **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`129`): Boop's character. It never swears
+  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`130`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -291,7 +291,10 @@ kinds, all with the `boop` personality unless the file says otherwise:
   "...fine" when you say sorry after an insult, and what claude is doing
   or how long you've been at it when you ask (`128`); told to hush, it
   says nothing for the half hour, still making faces, sulks a step, and
-  talks again when the time's up or you say so (`129`); each
+  talks again when the time's up or you say so (`129`); talked to, it
+  mostly says something back, and its sign answers your words: "good,
+  u?" to how are you, "right here!" to where are you, your good night
+  played back (`130`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
   (`41`–`43`); and its mood only moves along

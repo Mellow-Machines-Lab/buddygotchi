@@ -52,21 +52,52 @@ public enum Signs {
         return words + captions([2, 3], max: maxOffered - words.count)
     }
 
-    /// What a buddy holds up replying `reply` to what you said: one of the
-    /// pack's lines for it (`replies.md`) that fit the calendar's tags,
-    /// those with the most tags first (a night `bye` beats a plain one), at
-    /// random among them, and not `avoiding` (the last reply's) while
-    /// another fits. Nil when none fits.
+    /// What a buddy may hold up replying `reply` to what you said: the
+    /// pack's lines for it (`replies.md`) that fit the calendar's and the
+    /// moment's tags, only those with the most tags (a night `bye` beats a
+    /// plain one), a line with `{words}` once for each of `phrases`, and
+    /// not `avoiding` (the last reply's) while another fits.
+    public static func replies(_ lines: [TaggedLine], _ reply: String, calendar: [String], phrases: [String] = [],
+                               avoiding: String? = nil) -> [String] {
+        let on = Set([reply] + calendar)
+        let fit = lines.filter { $0.tags.first == reply && $0.fits(on) }
+        guard let most = fit.map(\.tags.count).max() else { return [] }
+        var pool: [String] = []
+        for line in fit where line.tags.count == most {
+            let texts = line.hasWords ? phrases.map { line.text.replacingOccurrences(of: "{words}", with: $0) } : [line.text]
+            for text in texts.compactMap(drawn) where text.count <= maxLength && !pool.contains(text) { pool.append(text) }
+        }
+        if pool.count > 1 { pool.removeAll { $0 == avoiding } }
+        return pool
+    }
+
+    /// What a buddy holds up replying `reply` to what you said, with no
+    /// brain to pick: one of `replies`' lines at random, never one with
+    /// your words. Nil when none fits.
     public static func reply(_ lines: [TaggedLine], _ reply: String, calendar: [String], avoiding: String? = nil,
                              rng: inout SplitMix64) -> String? {
-        let on = Set([reply] + calendar)
-        let fit = lines.filter { $0.tags.first == reply && $0.fits(on) && !$0.hasWords }
-            .compactMap { line in drawn(line.text).map { (tags: line.tags.count, text: $0) } }
-            .filter { $0.text.count <= maxLength }
-        guard let most = fit.map(\.tags).max() else { return nil }
-        var pool = fit.filter { $0.tags == most }.map(\.text)
-        if pool.count > 1 { pool.removeAll { $0 == avoiding } }
-        return pool[rng.int(in: 0...(pool.count - 1))]
+        let pool = replies(lines, reply, calendar: calendar, avoiding: avoiding)
+        return pool.isEmpty ? nil : pool[rng.int(in: 0...(pool.count - 1))]
+    }
+
+    /// The longest phrase of what you said that a reply's sign plays back.
+    public static let maxPhrase = 12
+
+    /// What you said, as phrases a reply's line may play back (`{words}`):
+    /// the whole of it and each of its parts between marks, lowercased, with
+    /// the buddy's name taken out, each at most `maxPhrase` characters.
+    /// "Hello!" gives `hello`, and "thanks, boop" gives `thanks`.
+    public static func phrases(of said: String, name: String = CharacterPack.active.name) -> [String] {
+        let marks = CharacterSet(charactersIn: ",.?!;:")
+        let parts = [said] + said.components(separatedBy: marks)
+        var out: [String] = []
+        for part in parts {
+            let words = part.lowercased().split { !$0.isLetter && !$0.isNumber && $0 != "'" }
+                .map(String.init).filter { $0 != name.lowercased() }
+            let phrase = words.joined(separator: " ")
+            if !phrase.isEmpty, phrase.count <= maxPhrase, drawn(phrase) == phrase, !out.contains(phrase) { out.append(phrase) }
+        }
+        return out
     }
 
     /// Typed marks the board's fonts don't have, as the plain ones they

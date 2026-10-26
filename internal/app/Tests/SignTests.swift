@@ -136,21 +136,24 @@ final class SignTests: XCTestCase {
         }
     }
 
-    /// Every line in each pack's replies.md fits a sign as it is, in the
-    /// board's fonts, its first tag a reply (not `status`, which holds up
+    /// Pins `Signs.maxPhrase`: every line of Boop's `replies.md` fits a
+    /// sign in the board's fonts once filled with the longest phrase of
+    /// what you said, its first tag a reply (not `status`, which holds up
     /// the agents' facts; `dunno` too, a huh at a question, and `unhush`,
-    /// offered while hushed), any more the
-    /// calendar's or the moment's, and none of your words.
+    /// offered while hushed), any more the calendar's or the moment's.
     func testThePacksRepliesFit() throws {
         let replies = Set(ReactOutput.replies.map(\.name)).subtracting(["status"]).union(["dunno", "unhush"])
         let file = CharacterPackTests.repo.appendingPathComponent("characters/boop/steering/replies.md")
         let lines = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
         XCTAssertEqual(Set(lines.compactMap(\.tags.first)), replies, "a line or more for every reply")
+        XCTAssertEqual(Signs.maxPhrase, 12)
+        let longest = String(repeating: "x", count: Signs.maxPhrase)
         for line in lines {
-            XCTAssertLessThanOrEqual(line.text.count, Signs.maxLength, line.text)
-            XCTAssertNotNil(Signs.drawn(line.text), line.text)
+            let filled = line.text.replacingOccurrences(of: "{words}", with: longest)
+            XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, line.text)
+            XCTAssertNotNil(Signs.drawn(filled), line.text)
+            XCTAssertFalse(filled.contains("{"), "only {words}: \(line.text)")
             XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Occasions.calendarTags + ReactOutput.momentTags), "\(line.tags)")
-            XCTAssertFalse(line.hasWords, line.text)
         }
     }
 

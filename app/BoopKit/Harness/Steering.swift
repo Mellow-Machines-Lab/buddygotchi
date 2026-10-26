@@ -75,6 +75,8 @@ extension Steering {
         public static let personality = 2600
         public static let talk = 250
         public static let mood = 225
+        /// `replies.md`, whose lines are offered as the sign for what you said.
+        public static let replies = 325
     }
 
     /// About four bytes a token, which overestimates for English prose.

@@ -39,7 +39,8 @@ public struct PackCheck {
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
                     : path.hasPrefix("personality/") ? Steering.Budget.personality
-                    : path.hasPrefix("talk/") ? Steering.Budget.talk : Steering.Budget.mood
+                    : path.hasPrefix("talk/") ? Steering.Budget.talk
+                    : path == "replies" ? Steering.Budget.replies : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
             for path in steering.files.keys.sorted() where path.hasPrefix("nature/") {
