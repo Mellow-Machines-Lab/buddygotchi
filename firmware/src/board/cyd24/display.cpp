@@ -124,6 +124,9 @@ void displayFailed() {
 // The CYD has no native face: it pushes only the canvas.
 bool displayPush(render::SurfacePair&) { return false; }
 uint32_t displayPushUs() { return 0; }
+void displayScanMode(int) {}  // no native frames, and no refresh to meet
+int displayScanMode() { return -1; }
+void displayScanStats(uint32_t& hz, uint32_t& pushes, uint32_t& tears) { hz = pushes = tears = 0; }
 bool displayShown(uint32_t&) { return false; }
 
 }  // namespace board

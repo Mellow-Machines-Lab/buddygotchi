@@ -47,7 +47,7 @@ struct ModelPanel {
   int w, h;  // panel pixels: the surface turned a quarter
   bool topOnLeft;
   std::vector<uint16_t> px;
-  std::vector<uint16_t> buf = std::vector<uint16_t>(size_t(PushPlan::kRows) * kW);
+  std::vector<uint16_t> buf = std::vector<uint16_t>(size_t(PushPlan::kColumns) * kH);
   uint32_t sent = 0;
   ModelPanel(int surfaceW, int surfaceH, bool top) : w(surfaceH), h(surfaceW), topOnLeft(top) {
     px.assign(size_t(w) * h, 0x5aa5);  // not black: a missed pixel shows
@@ -102,11 +102,12 @@ void drawRect(Surface& s, int x0, int y0, int x1, int y1, uint16_t ink) {
 
 }  // namespace
 
-// The AMOLED's surface goes in 26 bands of 16 rows, the last
-// 10, each turned a quarter into a window 16 panel columns wide; the first
-// frame goes whole. Checked both ways up (kTopOnPanelLeft).
+// The AMOLED's surface goes in 32 bands of 16 columns, the last
+// 6, each turned a quarter into a window 16 panel rows tall, along the
+// panel's scan lines; the first frame goes whole. Checked both ways up
+// (kTopOnPanelLeft).
 static void test_bands_turn_the_surface_a_quarter() {
-  TEST_ASSERT_EQUAL_INT(16, PushPlan::kRows);
+  TEST_ASSERT_EQUAL_INT(16, PushPlan::kColumns);
   for (bool top : {true, false}) {
     Frames f;
     for (int i = 0; i < kW * kH; ++i) f.a[size_t(i)] = uint16_t(i * 2654435761u >> 16);
@@ -115,8 +116,8 @@ static void test_bands_turn_the_surface_a_quarter() {
     f.pair.drew();
     const PushPlan& plan = f.pair.present();
     TEST_ASSERT_TRUE(plan.full);
-    TEST_ASSERT_EQUAL_INT(26, plan.bands);
-    TEST_ASSERT_EQUAL_INT(10, plan.rows(25));
+    TEST_ASSERT_EQUAL_INT(32, plan.bands);
+    TEST_ASSERT_EQUAL_INT(6, plan.columns(31));
     TEST_ASSERT_EQUAL_UINT32(uint32_t(kW) * kH, plan.pixels());
     ModelPanel panel(kW, kH, top);
     panel.send(f.pair.front(), plan);
@@ -128,7 +129,8 @@ static void test_bands_turn_the_surface_a_quarter() {
 }
 
 // After the first frame, a frame sends only what it or the
-// frame on the panel wrote, rounded out to even columns; a test pattern or
+// frame on the panel wrote, of each band of columns its rows, rounded out
+// to even rows; a test pattern or
 // another whole-surface write, on the panel or about to be, sends the
 // whole surface.
 static void test_a_frame_sends_what_either_frame_wrote() {
@@ -144,20 +146,21 @@ static void test_a_frame_sends_what_either_frame_wrote() {
   PushPlan p = frame(101, 50, 121, 60);           // into the other surface
   TEST_ASSERT_FALSE(p.full);
   for (int b = 0; b < p.bands; ++b) {
-    if (b == 3) {  // rows 48–63: this frame's rectangle, out to even columns
-      TEST_ASSERT_EQUAL_INT(100, p.spans[b].x0);
-      TEST_ASSERT_EQUAL_INT(122, p.spans[b].x1);
-    } else if (b <= 1) {  // rows 0–31: the frame the panel shows wrote these, to be erased
-      TEST_ASSERT_EQUAL_INT(200, p.spans[b].x0);
-      TEST_ASSERT_EQUAL_INT(240, p.spans[b].x1);
+    if (b == 6 || b == 7) {  // columns 96–127: this frame's rectangle, rows 50–59
+      TEST_ASSERT_EQUAL_INT(50, p.spans[b].x0);
+      TEST_ASSERT_EQUAL_INT(60, p.spans[b].x1);
+    } else if (b >= 12 && b <= 14) {  // columns 192–239: the frame the panel shows wrote these, to be erased
+      TEST_ASSERT_EQUAL_INT(0, p.spans[b].x0);
+      TEST_ASSERT_EQUAL_INT(20, p.spans[b].x1);
     } else {
       TEST_ASSERT_TRUE(p.spans[b].empty());
     }
   }
-  p = frame(101, 50, 121, 60);  // the first surface again, its rectangle erased
-  TEST_ASSERT_TRUE(p.spans[0].empty() && p.spans[1].empty());
-  TEST_ASSERT_EQUAL_INT(100, p.spans[3].x0);
-  TEST_ASSERT_EQUAL_UINT32(16 * 22, p.pixels());
+  p = frame(101, 51, 121, 61);  // the first surface again, its rectangle erased
+  TEST_ASSERT_TRUE(p.spans[12].empty() && p.spans[13].empty() && p.spans[14].empty());
+  TEST_ASSERT_EQUAL_INT(50, p.spans[6].x0);  // rows 50–60, out to even rows
+  TEST_ASSERT_EQUAL_INT(62, p.spans[6].x1);
+  TEST_ASSERT_EQUAL_UINT32(2 * 16 * 12, p.pixels());
   // A test pattern: the canvas, whole, past what drawing tracks.
   render::blit(f.canvas, f.pair.back());
   f.pair.drew();
@@ -264,12 +267,12 @@ bool presentAndCheck(Rig& r, ModelPanel& panel, Tally& tally, const std::string&
   TEST_ASSERT_EQUAL_PTR(r.dev.surface(), &shown);
   if (!plan.full) {
     for (int b = 0; b < plan.bands; ++b) {
-      int x0 = kW, x1 = 0;
-      for (int y = b * PushPlan::kRows; y < b * PushPlan::kRows + plan.rows(b); ++y)
-        for (int x = 0; x < kW; ++x)
+      int y0 = kH, y1 = 0;
+      for (int x = b * PushPlan::kColumns; x < b * PushPlan::kColumns + plan.columns(b); ++x)
+        for (int y = 0; y < kH; ++y)
           if (panel.px[size_t(kW - 1 - x) * panel.w + y] != shown.pixels[size_t(y) * kW + x])
-            ++tally.changed, x0 = std::min(x0, x), x1 = std::max(x1, x + 1);
-      if (x1) tally.tiles += uint64_t(plan.rows(b)) * uint64_t(std::min(kW, (x1 + 15) / 16 * 16) - x0 / 16 * 16);
+            ++tally.changed, y0 = std::min(y0, y), y1 = std::max(y1, y + 1);
+      if (y1) tally.tiles += uint64_t(plan.columns(b)) * uint64_t(std::min(kH, (y1 + 15) / 16 * 16) - y0 / 16 * 16);
     }
     ++tally.partial;
     tally.sent += plan.pixels();
@@ -396,21 +399,21 @@ static void test_steady_scenes_reach_the_panel() {
 // A lane the gel draws itself goes out only when it
 // changes. In a steady needs-you scene, whose strip names who's asking,
 // the strip fades in over the props' 200 ms, going out as it does; then
-// the bands wholly in the lane send nothing: the other surface draws the
-// same lane, which the panel already shows. A new name sends them again,
-// once. While sessions work, the counts' spinner turns, and the lane goes
-// out on its steps alone, one frame each kSpinStepMs.
+// no band sends the lane's rows: the other surface draws the same lane,
+// which the panel already shows. A new name sends them again, once. While
+// sessions work, the counts' spinner turns, and the lane goes out on its
+// steps alone, one frame each kSpinStepMs.
 static void test_an_unchanged_lane_isnt_sent_again() {
   auto r = gelRig();
   ModelPanel panel(kW, kH, true);
   Tally tally;
-  const int firstLaneBand = (kH * 4 / 5 + PushPlan::kRows - 1) / PushPlan::kRows;
+  const int laneTop = kH * 4 / 5;
   auto laneSent = [&](const std::string& after) {
     presentAndCheck(*r, panel, tally, after);
     const PushPlan& plan = r->dev.frames()->plan();
-    int px = 0;
-    for (int b = firstLaneBand; b < plan.bands; ++b) px += plan.spans[b].empty() ? 0 : 1;
-    return px;
+    int bands = 0;
+    for (int b = 0; b < plan.bands; ++b) bands += !plan.spans[b].empty() && plan.spans[b].x1 > laneTop ? 1 : 0;
+    return bands;
   };
   const std::string asking[] = {
       "{\"t\":\"state\",\"base\":\"working\",\"idle\":2,\"vol\":0,\"attn\":{\"agent\":\"claude\",\"name\":"

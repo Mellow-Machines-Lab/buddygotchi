@@ -30,6 +30,9 @@ class BoardHal : public app::Hal {
   void touchRaw(int& x, int& y, int& z, bool& irq) override;
   bool touchLifted() override;
   uint32_t touchLifts() override;
+  void setScanMode(int mode) override;
+  int scanMode() override;
+  void scanStats(uint32_t& hz, uint32_t& pushes, uint32_t& tears) override;
   void setTouchCal(const app::TouchCal& c) override;
   app::TouchCal touchCal() override { return cal_; }
   void setLed(uint32_t rgb) override;

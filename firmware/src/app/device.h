@@ -65,6 +65,13 @@ struct Hal : linkkit::Platform {
   // such lifts it has said (dbg.state's touch.lifts).
   virtual bool touchLifted() { return false; }
   virtual uint32_t touchLifts() { return 0; }
+  // How native frames meet the panel's refresh (board/display.h's
+  // kScanOff, kScanDown, kScanUp; dbg.scan sets it), -1 where they can't;
+  // and the refresh's rate, the frames sent in step with it, and of
+  // those, torn (dbg.state's `scan`).
+  virtual void setScanMode(int mode) { (void)mode; }
+  virtual int scanMode() { return -1; }
+  virtual void scanStats(uint32_t& hz, uint32_t& pushes, uint32_t& tears) { hz = pushes = tears = 0; }
   // Touch calibration: the board applies it to touches and keeps it in NVS.
   virtual void setTouchCal(const TouchCal& c) { (void)c; }
   virtual TouchCal touchCal() { return {}; }

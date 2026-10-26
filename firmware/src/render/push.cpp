@@ -20,21 +20,27 @@ Span written(const Surface::Span& s) { return s.last ? Span{s.first, s.last} : S
 
 uint32_t PushPlan::pixels() const {
   uint32_t n = 0;
-  for (int b = 0; b < bands; ++b) n += uint32_t(rows(b)) * uint32_t(spans[b].empty() ? 0 : spans[b].x1 - spans[b].x0);
+  for (int b = 0; b < bands; ++b)
+    n += uint32_t(columns(b)) * uint32_t(spans[b].empty() ? 0 : spans[b].x1 - spans[b].x0);
   return n;
 }
 
 PanelWindow packBand(const Surface& s, int band, Span span, bool topOnLeft, uint16_t* out) {
-  const int y = band * PushPlan::kRows, count = std::min(PushPlan::kRows, s.height - y);
-  const int i0 = span.x0, i1 = span.x1;
-  // Each panel row is a surface column, read down the band's rows (or up).
-  const int step = topOnLeft ? s.width : -s.width;
-  for (int row = 0; row < i1 - i0; ++row) {
-    const int x = topOnLeft ? i1 - 1 - row : i0 + row;
-    const uint16_t* src = s.pixels + (topOnLeft ? y : y + count - 1) * s.width + x;
-    for (int col = 0; col < count; ++col, src += step) *out++ = uint16_t((*src << 8) | (*src >> 8));
+  const int x0 = band * PushPlan::kColumns, count = std::min(PushPlan::kColumns, s.width - x0);
+  const int y0 = span.x0, y1 = span.x1, w = y1 - y0;
+  // Each panel row is one of the band's surface columns, the last first
+  // with the top on the left (else the first), its pixels the surface's
+  // rows down (else up). Read a surface row's few columns at a time, a
+  // cache line, and scatter them into the panel's rows.
+  for (int y = y0; y < y1; ++y) {
+    const uint16_t* src = s.pixels + y * s.width + x0;
+    const int i = topOnLeft ? y - y0 : y1 - 1 - y;
+    for (int c = 0; c < count; ++c) {
+      const int row = topOnLeft ? count - 1 - c : c;
+      out[row * w + i] = uint16_t((src[c] << 8) | (src[c] >> 8));
+    }
   }
-  return {topOnLeft ? y : s.height - y - count, topOnLeft ? s.width - i1 : i0, count, i1 - i0};
+  return {topOnLeft ? y0 : s.height - y1, topOnLeft ? s.width - x0 - count : x0, w, count};
 }
 
 SurfacePair::SurfacePair(int width, int height, uint16_t* a, uint16_t* b, int corner) {
@@ -46,7 +52,7 @@ SurfacePair::SurfacePair(int width, int height, uint16_t* a, uint16_t* b, int co
 }
 
 bool SurfacePair::ready() const {
-  return s_[0].pixels && s_[1].pixels && s_[0].height <= Surface::kTrackedRows && s_[0].width <= 0xffff;
+  return s_[0].pixels && s_[1].pixels && s_[0].height <= Surface::kTrackedRows && s_[0].width <= PushPlan::kMaxWidth;
 }
 
 // What may differ from front's frame. Each surface is black outside its
@@ -62,19 +68,28 @@ const PushPlan& SurfacePair::present() {
   const int width = next.width, height = next.height;
   plan_.width = width;
   plan_.height = height;
-  plan_.bands = ceilDiv(height, PushPlan::kRows);
+  plan_.bands = ceilDiv(width, PushPlan::kColumns);
   plan_.full = shown.invalid || next.invalid;
   const int same = next.laneKey && next.laneKey == shown.laneKey && next.laneKeyFrom == shown.laneKeyFrom &&
                            next.laneKeyFrom >= 0
                        ? next.laneKeyFrom
                        : height;
-  for (int band = 0; band < plan_.bands; ++band) {
-    Span span = plan_.full ? Span{0, width} : Span{};
-    if (!plan_.full)
-      for (int y = band * PushPlan::kRows; y < std::min(same, band * PushPlan::kRows + plan_.rows(band)); ++y)
-        span = unite(span, unite(written(shown.written[y]), written(next.written[y])));
-    if (!span.empty()) span = {span.x0 & ~1, std::min(width, (span.x1 + 1) & ~1)};
-    plan_.spans[band] = span;
+  if (plan_.full) {
+    for (int band = 0; band < plan_.bands; ++band) plan_.spans[band] = {0, height};
+  } else {
+    // Each row either frame wrote widens the span of every band its
+    // columns cross.
+    for (int y = 0; y < same; ++y) {
+      const Span row = unite(written(shown.written[y]), written(next.written[y]));
+      if (row.empty()) continue;
+      const int last = std::min(plan_.bands, ceilDiv(row.x1, PushPlan::kColumns));
+      for (int band = row.x0 / PushPlan::kColumns; band < last; ++band)
+        plan_.spans[band] = unite(plan_.spans[band], Span{y, y + 1});
+    }
+    for (int band = 0; band < plan_.bands; ++band) {
+      Span& span = plan_.spans[band];
+      if (!span.empty()) span = {span.x0 & ~1, std::min(height, (span.x1 + 1) & ~1)};
+    }
   }
   back_ ^= 1;
   drawn_ = false;
