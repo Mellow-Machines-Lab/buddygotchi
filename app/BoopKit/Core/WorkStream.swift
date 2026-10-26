@@ -5,9 +5,9 @@ import LinkKit
 /// The work stream: every tool call as a word that falls past Boop from
 /// its agent's lane, and now and then one that comes forward and hits it.
 /// A plain rule, as "needs you" is: it reads each call's tool, topic,
-/// program, size and result, never what the call said, and decides which
-/// word each call is and which calls come forward, one at a time, as
-/// which gag. The board flies the words and plays the gags; the brain
+/// program, glimpse, size and result, never what the call said, and
+/// decides which word each call is and which calls come forward, one at a
+/// time, as which gag. The board flies the words and plays the gags; the brain
 /// hears none of it but the moments that hit (`TranscriptView`).
 struct WorkStream {
     /// A working session's lane on the board: its slot, which picks its
@@ -108,12 +108,15 @@ struct WorkStream {
 
     // MARK: Words
 
-    /// The word for a call: what the board shows falling.
+    /// The word for a call, which its combos count and its gags read:
+    /// its program, or a check's topic for a program alone (`make`,
+    /// `tests`); with a subcommand the program says more (`make fw-test`).
     static func word(_ e: AgentEvent, program: String?) -> String {
         let word: String
         switch e.toolKind ?? .other {
         case .shell:
-            word = e.topic.flatMap { TranscriptView.checks.contains($0) ? $0 : nil } ?? program ?? "bash"
+            let check = e.topic.flatMap { TranscriptView.checks.contains($0) ? $0 : nil }
+            word = program.flatMap { $0.contains(" ") || check == nil ? $0 : nil } ?? check ?? program ?? "bash"
         case .edit:
             if e.topic == "docs" {
                 word = "docs"
@@ -133,6 +136,39 @@ struct WorkStream {
         case .other: word = spaced(e.tool ?? "tool")
         }
         return clip(word, WorkStream.maxWordBytes)
+    }
+
+    /// What the board shows for a call: its word, or one of the pieces of
+    /// its glimpse (`Core.swift`, `maxWordBytes`), each as likely, picked
+    /// by the call's ID so its start and end show the same. An edit shows
+    /// its file with its lines added when they fit (`Core +12`).
+    static func shown(_ e: AgentEvent, word: String) -> String {
+        var pieces = (e.glimpse ?? "").split(separator: " ").map { fit(String($0)) }.filter { !$0.isEmpty }
+        if e.toolKind == .edit, let added = e.linesAdded, added > 0 {
+            pieces = pieces.map { piece in
+                let bare = (piece as NSString).deletingPathExtension, stem = bare.isEmpty ? piece : bare
+                let both = "\(stem) +\(added)"
+                return both.utf8.count <= maxWordBytes ? both : piece
+            }
+        }
+        guard !pieces.isEmpty else { return word }
+        let options = [word] + pieces
+        return options[Int(pick(e.toolUseID ?? "\(e.key)\(e.at)") % UInt64(options.count))]
+    }
+
+    /// A glimpse's piece cut to fit a word: without its extension when
+    /// it's too long with it (`TranscriptView.swift` is `TranscriptView`),
+    /// then clipped.
+    static func fit(_ piece: String) -> String {
+        guard piece.utf8.count > maxWordBytes else { return piece }
+        let stem = (piece as NSString).deletingPathExtension
+        return clip(stem.isEmpty ? piece : stem, maxWordBytes)
+    }
+
+    /// A number from `text` that's the same on every launch (FNV-1a), to
+    /// pick by.
+    static func pick(_ text: String) -> UInt64 {
+        text.utf8.reduce(14_695_981_039_346_656_037 as UInt64) { ($0 ^ UInt64($1)) &* 1_099_511_628_211 }
     }
 
     /// A tool's name as words: `SendMessage` and `send_message` are `send
@@ -189,14 +225,14 @@ struct WorkStream {
     /// a turn's first call, a check starting or a helper going off may
     /// come forward.
     mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
-        let key = e.key, word = Self.word(e, program: program)
-        var lane = lanes[key] ?? Lane(slot: freeSlot(), count: 0, word: word)
+        let key = e.key, word = Self.word(e, program: program), shown = Self.shown(e, word: word)
+        var lane = lanes[key] ?? Lane(slot: freeSlot(), count: 0, word: shown)
         lane.count = (lane.count + 1) % 1000
-        lane.word = word
+        lane.word = shown
         lanes[key] = lane
         if !called.contains(key) {
             called.insert(key)
-            return offer(Forward(slot: lane.slot, word: word, gag: "arrive", priority: .notable), at: now)
+            return offer(Forward(slot: lane.slot, word: shown, gag: "arrive", priority: .notable), at: now)
         }
         if let topic = e.topic, TranscriptView.checks.contains(topic) {
             let gag = topic == "tests" ? "cross" : topic == "build" ? "stack" : "launch"
@@ -245,7 +281,7 @@ struct WorkStream {
         let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
         if e.toolKind == .edit, added + removed >= Self.bigEdit {
             let gag = removed > added ? "shatter" : "land"
-            let shown = removed > added ? "-\(removed)" : word
+            let shown = removed > added ? "-\(removed)" : Self.shown(e, word: word)
             return offer(Forward(slot: slot, word: shown, gag: gag, priority: .notable), at: now)
         }
         var run = combo[key].flatMap { $0.word == word && now - $0.at <= Self.comboGapMs ? $0 : nil }
@@ -256,7 +292,8 @@ struct WorkStream {
         if Self.combos.contains(run.count) {
             return offer(Forward(slot: slot, word: word, gag: "combo", priority: .notable, count: run.count), at: now)
         }
-        return offer(Forward(slot: slot, word: word, gag: Self.ambientGag(e, word: word), priority: .ambient), at: now)
+        return offer(Forward(slot: slot, word: Self.shown(e, word: word), gag: Self.ambientGag(e, word: word),
+                             priority: .ambient), at: now)
     }
 
     /// A helper coming back to its turn.

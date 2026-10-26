@@ -63,7 +63,7 @@ removes, whether it failed and the error's class (`exit_code`,
 `overloaded`, `context_limit`, `auth`, `billing`, `network`, `api_error`).
 Helpers start and return, compaction, and the to-do list's done and
 total come too. Nothing of the command, the path or the output: only
-the topic leaves `agent-hook`.
+the topic left `agent-hook` (until the program and the glimpse, below).
 
 That isn't enough for the words. In the owner's session on 2026-10-24
 (four Claude sessions, 229 calls in half an hour) 204 calls were
@@ -288,6 +288,23 @@ files), against 105 `Read`s and 53 `Edit`s. Their first programs: `sed`
   `{"words": ["boopctl", "boopdev"]}`); anything else is `run`. A script's
   name never leaves unless you listed it, and nothing after the program
   does.
+- **Since 2026-10-25, with `--keep-text` (Boop installs it so), no
+  list:** any program says its name and its subcommand when the first
+  operand is shaped like one (`make fw-test`, `boopctl sim`), and every
+  call carries a **glimpse**: up to three short pieces of what it
+  touched, picked by their shape (AgentHooks' `Glimpse`): a file's name,
+  a word it searched for, a folder, a web host. Nothing shaped like a key
+  leaves. The owner asked for it, after seeing `bash`, `sed` and `grep`
+  over and over: in a day's 10,500 calls, most were those, and a few
+  hundred were project tools that all said `run`.
+- **A call shows its word or a piece of its glimpse**, each as likely,
+  picked by the call's ID (`WorkStream.shown`): `sed`, then
+  `WorkStream`, then `maxWordBytes`. An edit shows its file and lines
+  (`Core +12`). A piece over 14 bytes loses its extension, then is
+  clipped. Combos, gags and failures still go by the word, so a run of
+  `sed`s is still a combo. A check says its program when that has a
+  subcommand (`make test`), else its topic (`tests`). The brain never
+  hears a glimpse.
 - **The family picks the gag, the word labels it:**
 
   | Family | Programs | Gag |
@@ -314,8 +331,9 @@ files), against 105 `Read`s and 53 `Edit`s. Their first programs: `sed`
 - **Tools Boop doesn't know** (`Skill`, `SendMessage`, a new agent's own)
   say their name, lowercased and split (`send message`): a tool's name
   is the agent's vocabulary. They land plainly.
-- **Your own commands** are `words.json`'s (above); **your own checks**,
-  `topics.json`'s, as today (`{"tests": [["just", "check"]]}`).
+- **Your own commands** say their names with `--keep-text` (above), or
+  else are `words.json`'s; **your own checks**, `topics.json`'s, as
+  today (`{"tests": [["just", "check"]]}`).
 
 ## What the brain hears
 
@@ -360,12 +378,11 @@ stream on and off. `dbg.state`'s `rx` counts what the board read.
 
 ## To decide
 
-1. **Which words leave the agent.** Recommended: the program from a
-   closed list and your own (The words for commands), and an edit's
-   file extension (`.swift`). Real file names and search
-   patterns would read best but are what someone walking past the desk
-   could read; if ever, they're a setting that's off by default, and
-   they go through the Mac's scrubber.
+1. **Which words leave the agent.** Decided by the owner on 2026-10-25:
+   real file names, search words and any program's name, as a glimpse
+   with `--keep-text` (The words for commands), on by default. They
+   reach only the board and the transcript, never the brain, and
+   nothing shaped like a key leaves the hook.
 2. **On by default?** Recommended: on, with a setting to turn it off
    (the stream, not the reactions to finishes and needs-you).
 3. **Sound.** Recommended: the background never sounds; a word that

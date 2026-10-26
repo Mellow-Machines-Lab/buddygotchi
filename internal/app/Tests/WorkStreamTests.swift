@@ -11,10 +11,11 @@ final class WorkStreamTests: XCTestCase {
     /// A call's start or end, with what agent-hooks adds to it: its
     /// program and an edit's lines.
     func call(_ rig: CoreRig, _ id: String, tool: String = "Bash", topic: String? = nil, program: String? = nil,
-              added: Int? = nil, removed: Int? = nil, failed: Bool? = nil, error: String? = nil,
+              glimpse: String? = nil, added: Int? = nil, removed: Int? = nil, failed: Bool? = nil, error: String? = nil,
               session: String = "s1") -> Event {
         var e = rig.event(.activity, session: session, tool: tool, topic: topic, failed: failed, id: id, error: error)
         if let program { e.data["program"] = .string(program) }
+        if let glimpse { e.data["glimpse"] = .string(glimpse) }
         if let added { e.data["lines_added"] = .int(Int64(added)) }
         if let removed { e.data["lines_removed"] = .int(Int64(removed)) }
         return e
@@ -42,12 +43,34 @@ final class WorkStreamTests: XCTestCase {
         return sent
     }
 
+    /// A call shows its word or a piece of its glimpse, each as likely,
+    /// the same at its start and end; an edit shows its file and lines.
+    func testACallShowsItsWordOrAPieceOfItsGlimpse() {
+        let rig = CoreRig(workStream: true)
+        func shown(_ e: Event) -> String {
+            AgentEvent(e).map { WorkStream.shown($0, word: WorkStream.word($0, program: e["program"]?.string)) } ?? "?"
+        }
+        var seen: Set<String> = []
+        for id in 0..<40 {
+            let e = call(rig, "t\(id)", program: "sed", glimpse: "WorkStream.swift maxWordBytes")
+            seen.insert(shown(e))
+            XCTAssertEqual(shown(e), shown(call(rig, "t\(id)", program: "sed", glimpse: "WorkStream.swift maxWordBytes")))
+        }
+        XCTAssertEqual(seen, ["sed", "WorkStream", "maxWordBytes"], "a piece over 14 bytes loses its extension")
+        XCTAssertEqual(shown(call(rig, "1", program: "sed")), "sed", "no glimpse, the word")
+        let edits = Set((0..<20).map { shown(call(rig, "e\($0)", tool: "Edit", glimpse: "Core.swift", added: 12)) })
+        XCTAssertEqual(edits, ["edit +12", "Core +12"])
+        XCTAssertEqual(WorkStream.fit("averyveryverylongname.swift"), "averyveryveryl")
+    }
+
     func testEachCallsWord() {
         let rig = CoreRig(workStream: true)
         func word(_ e: Event) -> String { AgentEvent(e).map { WorkStream.word($0, program: e["program"]?.string) } ?? "?" }
         XCTAssertEqual(word(call(rig, "1", program: "git log")), "git log")
         XCTAssertEqual(word(call(rig, "1")), "bash", "an older agent-hook names no program")
         XCTAssertEqual(word(call(rig, "1", topic: "tests", program: "make")), "tests", "a check says its topic")
+        XCTAssertEqual(word(call(rig, "1", topic: "tests", program: "make fw-test")), "make fw-test",
+                       "unless its program says more")
         XCTAssertEqual(word(call(rig, "1", tool: "Edit", added: 18, removed: 2)), "edit +18 -2")
         XCTAssertEqual(word(call(rig, "1", tool: "Write", added: 40)), "edit +40")
         XCTAssertEqual(word(call(rig, "1", tool: "Edit", added: 0, removed: 140)), "edit -140")
@@ -129,7 +152,7 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart)
         run(rig, "0", program: "ls")
         rig.now += 3000
-        XCTAssertEqual(run(rig, "1", ms: 4000, topic: "tests", program: "make test"), ["tests cross", "PASS pass"])
+        XCTAssertEqual(run(rig, "1", ms: 4000, topic: "tests", program: "make test"), ["make test cross", "PASS pass"])
         rig.now += 3000
         XCTAssertEqual(run(rig, "2", ms: 4000, topic: "build", program: "make"), ["build stack", "built built"])
     }
@@ -247,6 +270,26 @@ final class WorkStreamTests: XCTestCase {
         run(rig, "3", program: "curl", failed: true, error: "timeout")
         let finish = try XCTUnwrap(rig.send(.turnEnd).views.first { $0.type == .turn && $0.phase == .end })
         XCTAssertEqual(finish.notes.last, "A command timed out and landed on Boop's head.", "only what's new since")
+    }
+
+    /// A glimpse is for the board alone: no line or note the brain reads
+    /// says any piece of it, a failure's and a finish's included.
+    func testTheBrainNeverHearsAGlimpse() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        for id in 0..<6 {
+            rig.now += 3000
+            rig.send(call(rig, "\(id)", program: "sed", glimpse: "PlanB.swift acmeSecret"))
+            rig.now += 200
+            rig.send(call(rig, "\(id)", program: "sed", glimpse: "PlanB.swift acmeSecret", failed: id > 2,
+                          error: id > 2 ? "exit_code" : nil))
+        }
+        rig.wait(200_000)
+        rig.send(.turnEnd)
+        let heard = rig.views.flatMap { [$0.line] + $0.notes }.joined(separator: "\n")
+        XCTAssertFalse(heard.contains("PlanB") || heard.contains("acmeSecret"), heard)
+        let shown = rig.pipeline.transcript.events.compactMap { $0["word"]?.string }
+        XCTAssertTrue(shown.contains { $0 == "PlanB.swift" || $0 == "acmeSecret" }, "the board does show it: \(shown)")
     }
 
     /// The third and fourth failures within the ladder's two minutes
