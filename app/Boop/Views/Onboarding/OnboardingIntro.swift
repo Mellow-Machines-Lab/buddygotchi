@@ -65,11 +65,17 @@ struct WhatIDoAct: View {
     @ViewState private var step = Step.asking
     /// How many words have fallen: the board drops one for each new call.
     @ViewState private var drops = 0
+    /// The beat the demo plays from, and a count of clicks on the cards,
+    /// each of which starts it again from there.
+    @ViewState private var from = Step.typing
+    @ViewState private var clicks = 0
+    /// How far the lit card's part has played, 0 to 1, for its bar.
+    @ViewState private var played: CGFloat = 0
     @Environment(\.stillMotion) private var still
 
     /// The pretend session's beats, each with what's on the terminal by then,
     /// Boop's look, and how long it holds.
-    enum Step: Int, CaseIterable {
+    enum Step: Int, CaseIterable, Comparable {
         case typing, reading, testing, failing, asking, finished
 
         var lines: [(String, Color)] {
@@ -122,6 +128,14 @@ struct WhatIDoAct: View {
 
         /// Which of the three cards it lights.
         var card: Int { self == .asking ? 1 : self == .finished ? 2 : 0 }
+
+        /// The beat a click on card `index` plays from: its first.
+        static func first(of index: Int) -> Step { allCases.first { $0.card == index }! }
+
+        /// How long its card stays lit, from its first beat.
+        var cardSeconds: Double { Self.allCases.filter { $0.card == card }.map(\.seconds).reduce(0, +) }
+
+        static func < (a: Step, b: Step) -> Bool { a.rawValue < b.rawValue }
     }
 
     var body: some View {
@@ -150,7 +164,7 @@ struct WhatIDoAct: View {
             Spacer(minLength: 0)
             ActNav(model: model, next: "Neat!")
         }
-        .task { await play() }
+        .task(id: clicks) { await play() }
     }
 
     private var terminal: some View {
@@ -169,25 +183,62 @@ struct WhatIDoAct: View {
         .animation(.boopSettle, value: step)
     }
 
+    /// A card, lit while the demo shows it, with a bar along its foot
+    /// filling as its part plays. A click plays its part now.
     private func card(_ index: Int, _ title: String, _ detail: String) -> some View {
-        Card(padding: 14, tone: step.card == index ? (index == 1 ? Theme.amber : Theme.ink) : nil) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(title).font(.boop(14, .bold))
-                Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                    .fixedSize(horizontal: false, vertical: true)
+        let lit = step.card == index
+        let tone = index == 1 ? Theme.amber : Theme.ink
+        return Button {
+            from = Step.first(of: index)
+            clicks += 1
+        } label: {
+            Card(padding: 14, tone: lit ? tone : nil) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title).font(.boop(14, .bold))
+                    Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
+            .animation(.boopSettle, value: step)
+            .overlay(alignment: .bottomLeading) {
+                if lit, !still {
+                    GeometryReader { box in
+                        Capsule().fill(tone.opacity(0.55))
+                            .frame(width: max(0, box.size.width * played), height: 3)
+                    }
+                    .frame(height: 3)
+                    .padding(.horizontal, 14).padding(.bottom, 7)
+                    .transition(.opacity)
+                }
+            }
+            .contentShape(RoundedRectangle(cornerRadius: Theme.cardRadius))
         }
-        .animation(.boopSettle, value: step)
+        .buttonStyle(.plain)
+        .help("Show me")
+        .accessibilityHint("Plays this part of the demo")
     }
 
-    /// Plays the session's beats over and over, each beat's words falling
-    /// in turn, the failed test's FAIL raining on Boop and the finish with
-    /// Boop's own celebration, until the act goes.
+    /// Plays the session's beats over and over, from the one a card's click
+    /// asked for, each beat's words falling in turn, the failed test's FAIL
+    /// raining on Boop and the finish with Boop's own celebration, until
+    /// the act goes. Each card's bar fills over its beats.
     private func play() async {
-        guard !still else { return }
+        guard !still else {
+            // Held still, a click only lights its card.
+            if clicks > 0 { step = from }
+            return
+        }
+        var start = from
         while !Task.isCancelled {
-            for beat in Step.allCases {
+            for beat in Step.allCases where beat >= start {
                 withAnimation(.boopSettle) { step = beat }
+                if beat == Step.first(of: beat.card) {
+                    // Emptied, drawn so, then filled over the card's beats.
+                    played = 0
+                    try? await Task.sleep(for: .milliseconds(20))
+                    if Task.isCancelled { return }
+                    withAnimation(.linear(duration: beat.cardSeconds)) { played = 1 }
+                }
                 switch beat {
                 case .failing: model.feed.call(BoopDevice.call("FAIL", gag: "hail", slot: 0))
                 case .asking: OnboardingSound.play(.step)
@@ -204,6 +255,7 @@ struct WhatIDoAct: View {
                 try? await Task.sleep(for: .seconds(beat.words.isEmpty ? beat.seconds : gap))
                 if Task.isCancelled { return }
             }
+            start = .typing
         }
     }
 }
