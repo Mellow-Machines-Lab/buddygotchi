@@ -270,8 +270,14 @@ pacing and touch, the Mac app, the architecture) found what's below.
       (either direction), the push 3-4 ms longer and attention under its
       28 fps. A push takes 22-38 ms for 60-130 K pixels, far below the
       bus's 10 px/µs: it waits on the body's helper (priority 2, above the
-      push's 1) and packing, so it can't stay ahead of the scan. Next try:
-      the push above the helper while a synced frame goes, or 80 MHz.
+      push's 1) and packing, so it can't stay ahead of the scan. Raising
+      the push above the helper while a synced frame goes made it worse
+      (34% torn; working 33.7 -> 30.2 fps, night 22.7 -> 20.2), and even
+      unpreempted a push of 65 K pixels took ~20 ms: packing is held up
+      on the memory bus. The same push took ~7.5 ms for 60 K pixels at
+      the polish pass's start (2026-10-25, before the material moved to
+      PSRAM, which the push's surface reads share), so the bus, not the
+      QSPI clock, is what to win back first.
 - [ ] The engine's step is 2.3-2.6 ms a frame on the AMOLED (2.5 µs on
       the Mac): its 25 KB `Engine` is in PSRAM (malloc puts anything over
       4 KB there) and its code runs from flash past a 16 KB cache. The
