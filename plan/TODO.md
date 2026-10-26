@@ -1,6 +1,6 @@
 # TODO
 
-Updated 2026-10-25. What's next, one at a time, top first. Tick an item
+Updated 2026-10-26. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
@@ -189,10 +189,18 @@ pacing and touch, the Mac app, the architecture) found what's below.
       checked on the panel; or 80 MHz QSPI (needs eyes on the panel).
 - [ ] The engine's step is 2.3-2.6 ms a frame on the AMOLED (2.5 µs on
       the Mac): its 25 KB `Engine` is in PSRAM (malloc puts anything over
-      4 KB there) and its code runs from flash past a 16 KB cache. Moving
-      the next frame's step onto the other core while this core draws the
-      art, layers and props would hide it, but they read the engine: it
-      needs a snapshot of what they read.
+      4 KB there) and its code runs from flash past a 16 KB cache. The
+      other core can't hide much of it (looked at 2026-10-26, natively):
+      a frame takes 2.6-3 steps (the 16 ms grid and the pass's own time),
+      and only the first, about 38% of them, depends on nothing that
+      arrives during the pass (messages, the finger, `sync`'s occasion and
+      held expression, a landing word); `Engine::step` is 59% of
+      `engine_us`, the face's work after it the rest. Stepping a copy
+      ahead on the other core would hide at most ~0.55 ms a frame, likely
+      0.2-0.5 with the shared caches and bus, for a second 25 KB engine
+      copied each frame and a guard on everything that changes it. The
+      lever is the step itself: fewer of them a frame, or less code
+      (about 45 KB at -Os, fetched from flash each step).
 - [ ] The board's frame rate, all of the above merged (01ee9a01,
       `perf --scenes`, 12 s a scene, muted; before is the pass's start,
       008e5e7d): asleep 45.3 → 42.4 fps, working 38.4 → 37.0, pokes
@@ -499,13 +507,16 @@ session, Bluetooth and the boards can show.
       and 13, 39 and 40 take the faces the character makes. The whole
       `--always` set ran once against Jev: 26 of 27, and 40, whose faces
       predated the puzzled ones, passed once it took them.
-- [ ] The gel's draw order flickers for one frame at nine mood changes
+- [x] The gel's draw order flickers for one frame at nine mood changes
       (shy→affectionate, sad→wounded, crying→wounded, wounded→sad,
       wounded→crying, frightened→wounded, frightened→sad,
       frightened→crying, exhausted→overwhelmed): an incoming face added at
       weight zero that shares a feature's shape moves that feature to its
       turn in the draw order, 32 to 630 pixels of the mouth and tears for a
-      frame. Found retiring the JavaScript engine (2026-10-24).
+      frame. Found retiring the JavaScript engine (2026-10-24). Fixed in
+      SlimeBuddy (416b40d, 2026-10-26): a shared feature is drawn at the
+      oldest face's turn; test_gel's `test_a_face_coming_in_moves_nothing`
+      checks the nine, and two controls, as a face comes in and goes.
 - [ ] Apologies don't soften a grumpy Boop's mood against Jev: 56
       (one apology softens it) passes 0 or 1 of 3 and 57 (undone by
       poking) 0 of 3, before and after 2026-10-24's grumpy wording. The
