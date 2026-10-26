@@ -290,21 +290,12 @@ claude started turn 1 on "landing".
 Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
-2 min ago: claude started turn 1 on "landing".
-
-NOW (14:02, Wednesday)
-claude is still working on "landing", a long turn, running tests.
-Boop did nothing on its own.
-=== pass 3
-HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
-just now: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
 
 NOW (14:03, Wednesday)
 claude finished turn 1 on "landing": done, a long turn, 1 tool call.
 Boop did nothing on its own.
-=== pass 4
+=== pass 3
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -588,41 +579,21 @@ something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".
-1 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
 1 min ago: claude finished turn 1 on "landing": done, a long turn, 1 tool call.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
+  Boop played a success in a happy face (small), and said "Phew...".
 Boop has been curious for 1 min.
 
 NOW (14:04, Wednesday)
 claude started turn 2 on "landing".
 Boop did nothing on its own.
-=== pass 5
-HISTORY (oldest first; indented lines add to the line above)
-5 min ago: claude started turn 1 on "landing".
-2 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
-2 min ago: claude finished turn 1 on "landing": done, a long turn, 1 tool call.
-  Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
-1 min ago: claude started turn 2 on "landing".
-Boop has been curious for 2 min.
-
-NOW (14:05, Wednesday)
-claude is still working on "landing", a long turn.
-Boop did nothing on its own.
-=== pass 6
+=== pass 4
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 1 on "landing".
-3 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
 3 min ago: claude finished turn 1 on "landing": done, a long turn, 1 tool call.
   Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small), and said "Hehehe...".
+  Boop played a success in a happy face (small), and said "Phew...".
 2 min ago: claude started turn 2 on "landing".
-just now: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Rrr... tik".
 Boop has been curious for 3 min.
 
 NOW (14:06, Wednesday)

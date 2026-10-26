@@ -1,5 +1,5 @@
 ---
-working_heartbeat: 180-300
+working_heartbeat: 480-720
 idle_heartbeat: 1800-3600
 ---
 <!-- Quiet, picked in Settings: it follows MOOD in Jev's state (characters/CHARACTER.md §7), and its front matter paces the check-ins over the personality's. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->

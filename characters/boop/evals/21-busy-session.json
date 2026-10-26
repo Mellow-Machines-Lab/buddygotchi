@@ -1,8 +1,8 @@
 {
   "name": "A busy half hour keeps Boop lively without flailing",
-  "case": "A realistic half hour: a few quick turns, a failing build the agent fixes, a twelve-minute turn of quiet work that finishes well, and a couple more quick turns. Boop is clearly alive the whole time: it reacts often, never leaves a turn on the plain working look for more than about six minutes, and reacts to most finishes, not just the notable ones. Its mood moves a few times (annoyed at the failure, on at the fix, excited or proud at the long finish, back toward calm in between) without bouncing back and forth.",
+  "case": "A realistic half hour: a few quick turns, a failing build the agent fixes, a twelve-minute turn of quiet work that finishes well, and a couple more quick turns. Boop is clearly alive the whole time: it reacts often, never leaves a turn on the plain working look for more than about seven minutes, and reacts to most finishes, not just the notable ones. Its mood moves a few times (annoyed at the failure, on at the fix, excited or proud at the long finish, back toward calm in between) without bouncing back and forth.",
   "why": "The owner's liveliness brief (2026-09-28): an animated buddy, a repetition penalty, no long idles, and progressive moods, together over ordinary work",
-  "checks": {"max_quiet_working": "6m", "reactions": "10-", "mood_changes": "2-7", "no_mood_bounce_within": "1m", "moves_on_graph": true, "words_said": "0.5-", "max_same_in_a_row": 2, "min_variety": 4},
+  "checks": {"max_quiet_working": "7m", "reactions": "10-", "mood_changes": "2-7", "no_mood_bounce_within": "1m", "moves_on_graph": true, "words_said": "0.5-", "max_same_in_a_row": 2, "min_variety": 4},
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "turn finished", "at": "40s"},

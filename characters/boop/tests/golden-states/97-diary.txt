@@ -884,127 +884,36 @@ or nothing as its Example does. A prompt that sounds like
 something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
-4 min ago: claude started turn 2 on "api" (landing).
-2 min ago: claude's tests failed on "api" (landing).
+7 min ago: claude started turn 2 on "api" (landing).
+5 min ago: claude's tests failed on "api" (landing).
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
 
-NOW (15:14, Tuesday)
-claude is still working on "api" (landing), a long turn, running tests.
+NOW (15:17, Tuesday)
+claude is still working on "api" (landing), a very long turn, running tests.
 Boop did nothing on its own.
 === pass 6
-HISTORY (oldest first; indented lines add to the line above)
-6 min ago: claude started turn 2 on "api" (landing).
-4 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-2 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-
-NOW (15:16, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 7
-HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude started turn 2 on "api" (landing).
-6 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-4 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-
-NOW (15:18, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 8
-HISTORY (oldest first; indented lines add to the line above)
-11 min ago: claude started turn 2 on "api" (landing).
-9 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-7 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-5 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-
-NOW (15:21, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 9
 HISTORY (oldest first; indented lines add to the line above)
 13 min ago: claude started turn 2 on "api" (landing).
 11 min ago: claude's tests failed on "api" (landing).
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
-9 min ago: claude is still working on "api" (landing), a long turn, running tests.
+5 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop made an engaged face (small), and said "Testing".
-7 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-1 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
 
 NOW (15:23, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
-Boop did nothing on its own.
-=== pass 10
-HISTORY (oldest first; indented lines add to the line above)
-15 min ago: claude started turn 2 on "api" (landing).
-13 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-11 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-6 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
-
-NOW (15:25, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
 Boop did nothing on its own.
-=== pass 11
+=== pass 7
 HISTORY (oldest first; indented lines add to the line above)
 17 min ago: claude started turn 2 on "api" (landing).
 15 min ago: claude's tests failed on "api" (landing).
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
-13 min ago: claude is still working on "api" (landing), a long turn, running tests.
+9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop made an engaged face (small), and said "Testing".
-11 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-8 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-5 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
 4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
-1 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face (small), and said "Probe".
 
@@ -1012,203 +921,58 @@ NOW (15:27, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
 Boop did nothing on its own.
-=== pass 12
-HISTORY (oldest first; indented lines add to the line above)
-20 min ago: claude started turn 2 on "api" (landing).
-18 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-15 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-13 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-11 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-8 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
-6 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
-4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-
-NOW (15:30, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 13
+=== pass 8
 HISTORY (oldest first; indented lines add to the line above)
 22 min ago: claude started turn 2 on "api" (landing).
 20 min ago: claude's tests failed on "api" (landing).
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
-17 min ago: claude is still working on "api" (landing), a long turn, running tests.
+14 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop made an engaged face (small), and said "Testing".
-15 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-13 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-10 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
 8 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
-6 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face (small), and said "Probe".
 4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
   Boop made an engaged face (small), and said "Checking".
 
 NOW (15:32, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
+  Boop's 4th check-in of a round on this turn.
 Boop did nothing on its own.
-=== pass 14
+=== pass 9
 HISTORY (oldest first; indented lines add to the line above)
-24 min ago: claude started turn 2 on "api" (landing).
-22 min ago: claude's tests failed on "api" (landing).
+26 min ago: claude started turn 2 on "api" (landing).
+24 min ago: claude's tests failed on "api" (landing).
   Boop's mood changed: curious → calm.
   Boop made an annoyed face (medium), and said "Failed".
-20 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
 18 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-15 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-12 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
-11 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
-8 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-6 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop made an engaged face (small), and said "Testing".
-
-NOW (15:34, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 15
-HISTORY (oldest first; indented lines add to the line above)
-27 min ago: claude started turn 2 on "api" (landing).
-25 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-23 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-21 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-18 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-15 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
-14 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
-11 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-7 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-5 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-3 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-
-NOW (15:37, Tuesday)
-claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 16
-HISTORY (oldest first; indented lines add to the line above)
-29 min ago: claude started turn 2 on "api" (landing).
-27 min ago: claude's tests failed on "api" (landing).
-  Boop's mood changed: curious → calm.
-  Boop made an annoyed face (medium), and said "Failed".
-24 min ago: claude is still working on "api" (landing), a long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-22 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-20 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
-17 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Trial".
-15 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Test".
 13 min ago: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
   Boop made an engaged face (small), and said "Probe".
-11 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
 9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
+  Boop's 3rd check-in of a round on this turn.
   Boop made an engaged face (small), and said "Checking".
-7 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
 4 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-1 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
+  Boop's 4th check-in of a round on this turn.
+  Boop made an engaged face (small), and said "Trial".
 
-NOW (15:39, Tuesday)
+NOW (15:36, Tuesday)
 claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
 Boop did nothing on its own.
-=== pass 17
+=== pass 10
 HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
 7 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop made an engaged face (small), and said "Testing".
-5 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-2 min ago: claude is still working on "api" (landing), a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-just now: claude is still working on "api" (landing), a very long turn, running tests.
   Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
+  Boop made an engaged face (small), and said "Trial".
+3 min ago: claude is still working on "api" (landing), a very long turn, running tests.
+  Boop made an engaged face (small), and said "Test".
 
 NOW (15:40, Tuesday)
 claude finished turn 2 on "api" (landing): failed, a very long turn, 1 tool call, after a failed check.
 Boop did nothing on its own.
-=== pass 18
+=== pass 11
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -1487,178 +1251,163 @@ or nothing as its Example does. A prompt that sounds like
 something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
-Boop has been comfy for 29 min.
+Boop has been comfy for 19 min.
 
-NOW (16:09, Tuesday)
-Nothing has happened for 29 min; claude sits idle on "api" (landing).
+NOW (15:59, Tuesday)
+Nothing has happened for 19 min; claude sits idle on "api" (landing).
 Boop did nothing on its own.
-=== pass 19
+=== pass 12
+HISTORY (oldest first; indented lines add to the line above)
+Boop has been comfy for 39 min.
+
+NOW (16:19, Tuesday)
+Nothing has happened for 39 min; claude sits idle on "api" (landing).
+Boop did nothing on its own.
+=== pass 13
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 57 min.
 
 NOW (16:37, Tuesday)
 Nothing has happened for 57 min; claude sits idle on "api" (landing).
 Boop did nothing on its own.
-=== pass 20
+=== pass 14
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 1 h.
 
-NOW (17:02, Tuesday)
-Nothing has happened for 82 min; claude sits idle on "api" (landing).
+NOW (17:06, Tuesday)
+Nothing has happened for 86 min; claude sits idle on "api" (landing).
 Boop did nothing on its own.
-=== pass 21
+=== pass 15
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 1 h.
 
-NOW (17:29, Tuesday)
-Nothing has happened for 109 min; claude sits idle on "api" (landing).
+NOW (17:32, Tuesday)
+Nothing has happened for 112 min; claude sits idle on "api" (landing).
 Boop did nothing on its own.
-=== pass 22
+=== pass 16
 HISTORY (oldest first; indented lines add to the line above)
+7 min ago: Nothing has happened for 112 min; claude sits idle on "api" (landing).
+  Boop made an engaged face (small), and said "Hup".
 Boop has been comfy for 2 h.
 
 NOW (17:40, Tuesday)
 Nothing has happened for 2 hours.
 Boop did nothing on its own.
-=== pass 23
+=== pass 17
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 3 h.
 
 NOW (18:40, Tuesday)
 Nothing has happened for 3 hours.
 Boop did nothing on its own.
-=== pass 24
+=== pass 18
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 4 h.
 
 NOW (19:40, Tuesday)
 Nothing has happened for 4 hours.
 Boop did nothing on its own.
-=== pass 25
+=== pass 19
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 5 h.
 
 NOW (20:40, Tuesday)
 Nothing has happened for 5 hours.
 Boop did nothing on its own.
-=== pass 26
+=== pass 20
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 6 h.
 
 NOW (21:40, Tuesday)
 Nothing has happened for 6 hours.
 Boop did nothing on its own.
-=== pass 27
+=== pass 21
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 7 h.
 
 NOW (22:40, Tuesday)
 Nothing has happened for 7 hours.
 Boop did nothing on its own.
-=== pass 28
+=== pass 22
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 8 h.
 
 NOW (23:40, Tuesday)
 Nothing has happened for 8 hours.
 Boop did nothing on its own.
-=== pass 29
+=== pass 23
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 9 h.
 
 NOW (00:40, Wednesday)
 Nothing has happened for 9 hours.
 Boop did nothing on its own.
-=== pass 30
+=== pass 24
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 10 h.
 
 NOW (01:40, Wednesday)
 Nothing has happened for 10 hours.
 Boop did nothing on its own.
-=== pass 31
+=== pass 25
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 11 h.
 
 NOW (02:40, Wednesday)
 Nothing has happened for 11 hours.
 Boop did nothing on its own.
-=== pass 32
+=== pass 26
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 12 h.
 
 NOW (03:40, Wednesday)
 Nothing has happened for 12 hours.
 Boop did nothing on its own.
-=== pass 33
+=== pass 27
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 13 h.
 
 NOW (04:40, Wednesday)
 Nothing has happened for 13 hours.
 Boop did nothing on its own.
-=== pass 34
+=== pass 28
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 14 h.
 
 NOW (05:40, Wednesday)
 Nothing has happened for 14 hours.
 Boop did nothing on its own.
-=== pass 35
+=== pass 29
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 15 h.
 
 NOW (06:40, Wednesday)
 Nothing has happened for 15 hours.
 Boop did nothing on its own.
-=== pass 36
+=== pass 30
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 16 h.
 
 NOW (07:40, Wednesday)
 Nothing has happened for 16 hours.
 Boop did nothing on its own.
-=== pass 37
+=== pass 31
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 17 h.
 
 NOW (08:40, Wednesday)
 Nothing has happened for 17 hours.
 Boop did nothing on its own.
-=== pass 38
+=== pass 32
 HISTORY (oldest first; indented lines add to the line above)
 Boop has been comfy for 17 h.
 
 NOW (09:00, Wednesday)
 claude started turn 3 on "api" (landing).
 Boop did nothing on its own.
-=== pass 39
-HISTORY (oldest first; indented lines add to the line above)
-1 min ago: claude started turn 3 on "api" (landing).
-Boop has been comfy for 17 h.
-
-NOW (09:01, Wednesday)
-claude is still working on "api" (landing), a long turn.
-Boop did nothing on its own.
-=== pass 40
-HISTORY (oldest first; indented lines add to the line above)
-4 min ago: claude started turn 3 on "api" (landing).
-2 min ago: claude is still working on "api" (landing), a long turn.
-  Boop made an engaged face (small), and said "Rrr... tik".
-Boop has been comfy for 17 h.
-
-NOW (09:04, Wednesday)
-claude is still working on "api" (landing), a long turn.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 41
+=== pass 33
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 3 on "api" (landing).
-3 min ago: claude is still working on "api" (landing), a long turn.
-  Boop made an engaged face (small), and said "Rrr... tik".
-just now: claude is still working on "api" (landing), a long turn.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Hup".
 Boop has been comfy for 17 h.
 
 NOW (09:05, Wednesday)

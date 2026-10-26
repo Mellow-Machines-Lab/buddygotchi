@@ -588,31 +588,17 @@ claude started turn 1 on "landing".
 Boop did nothing on its own.
 === pass 4
 HISTORY (oldest first; indented lines add to the line above)
-7 min ago: You poked Boop.
-  Boop wiggled on its own.
-  Boop's mood changed: calm → comfy.
-  Boop made a curious face (small), and said "Tickles".
-2 min ago: claude started turn 1 on "landing".
-Boop has been comfy for 7 min.
-
-NOW (14:12, Wednesday)
-claude is still working on "landing", a long turn.
-Boop did nothing on its own.
-=== pass 5
-HISTORY (oldest first; indented lines add to the line above)
 9 min ago: You poked Boop.
   Boop wiggled on its own.
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 4 min ago: claude started turn 1 on "landing".
-1 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Tch".
 Boop has been comfy for 9 min.
 
 NOW (14:14, Wednesday)
 claude finished turn 1 on "landing": done, a long turn, no tool calls.
 Boop did nothing on its own.
-=== pass 6
+=== pass 5
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -892,21 +878,12 @@ or nothing as its Example does. A prompt that sounds like
 something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
-Boop has been lazy for 15 min.
-
-NOW (14:29, Wednesday)
-Nothing has happened for 15 min; claude sits idle on "landing".
-Boop did nothing on its own.
-=== pass 7
-HISTORY (oldest first; indented lines add to the line above)
-5 min ago: Nothing has happened for 15 min; claude sits idle on "landing".
-  Boop made an engaged face (small), and said "Krr...".
 Boop has been lazy for 21 min.
 
 NOW (14:35, Wednesday)
 You poked Boop.
 Boop wiggled on its own.
-=== pass 8
+=== pass 6
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -1188,18 +1165,18 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: You poked Boop.
   Boop wiggled on its own.
   Boop's mood changed: lazy → comfy.
-  Boop made a curious face (small), and said "Tickles".
+  Boop made a curious face (small), and said "Boop".
 Boop has been comfy for 5 min.
 
 NOW (14:40, Wednesday)
 You hushed Boop from the Mac: it says nothing for 30 min.
 Boop did nothing on its own.
-=== pass 9
+=== pass 7
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: You poked Boop.
   Boop wiggled on its own.
   Boop's mood changed: lazy → comfy.
-  Boop made a curious face (small), and said "Tickles".
+  Boop made a curious face (small), and said "Boop".
 2 min ago: You hushed Boop from the Mac: it says nothing for 30 min.
   Boop made an engaged face (small).
 Boop has been comfy for 7 min.
@@ -1207,12 +1184,12 @@ Boop has been comfy for 7 min.
 NOW (14:42, Wednesday)
 You said to Boop: "okay okay, you can talk now"
 Boop did nothing on its own.
-=== pass 10
+=== pass 8
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: You poked Boop.
   Boop wiggled on its own.
   Boop's mood changed: lazy → comfy.
-  Boop made a curious face (small), and said "Tickles".
+  Boop made a curious face (small), and said "Boop".
 4 min ago: You hushed Boop from the Mac: it says nothing for 30 min.
   Boop made an engaged face (small).
 2 min ago: You said to Boop: "okay okay, you can talk now"

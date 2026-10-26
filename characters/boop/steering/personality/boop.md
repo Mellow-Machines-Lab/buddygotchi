@@ -1,5 +1,5 @@
 ---
-working_heartbeat: 90-180
+working_heartbeat: 240-360
 idle_heartbeat: 900-1800
 tool_uses: notable
 ---

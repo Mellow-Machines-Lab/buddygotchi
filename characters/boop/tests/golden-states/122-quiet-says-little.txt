@@ -625,25 +625,6 @@ You asked claude on "landing" for a fix, in a sentence, frustrated.
 Boop did nothing on its own.
 === pass 4
 HISTORY (oldest first; indented lines add to the line above)
-5 min ago: claude started turn 1 on "landing".
-5 min ago: You asked claude on "landing" for something new, in a sentence.
-  Your words: "dark mode".
-  Boop made an engaged face (small).
-4 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls.
-4 min ago: claude finished turn 1 on "landing": done, a short turn, no tool calls, saying it's done.
-  Boop's mood changed: calm → curious.
-  Boop played a success in a happy face (small).
-3 min ago: claude started turn 2 on "landing".
-3 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
-  Your words: "still broken", "does nothing".
-  Boop made an engaged face (small).
-Boop has been curious for 4 min.
-
-NOW (14:05, Wednesday)
-claude is still working on "landing", a long turn.
-Boop did nothing on its own.
-=== pass 5
-HISTORY (oldest first; indented lines add to the line above)
 8 min ago: claude started turn 1 on "landing".
 8 min ago: You asked claude on "landing" for something new, in a sentence.
   Your words: "dark mode".
@@ -656,14 +637,12 @@ HISTORY (oldest first; indented lines add to the line above)
 6 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "does nothing".
   Boop made an engaged face (small).
-2 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small).
 Boop has been curious for 7 min.
 
 NOW (14:08, Wednesday)
 claude finished turn 2 on "landing": failed, a very long turn, no tool calls.
 Boop did nothing on its own.
-=== pass 6
+=== pass 5
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -972,8 +951,6 @@ HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 2 on "landing".
 7 min ago: You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "does nothing".
-  Boop made an engaged face (small).
-3 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face (small).
 1 min ago: claude finished turn 2 on "landing": failed, a very long turn, no tool calls.
   Boop's mood changed: curious → calm.

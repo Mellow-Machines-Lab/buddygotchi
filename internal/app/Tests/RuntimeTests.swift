@@ -1372,14 +1372,14 @@ final class RuntimeTests: XCTestCase {
                                   "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")
-        let boop = Personality.Rules(workBeatMs: 90_000...180_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
+        let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
         XCTAssertEqual(Self.steering.personality(.default).rules, boop)
         XCTAssertEqual(Self.steering.rules(.default, talk: .normal), boop, "normal keeps the personality's pace")
         // Quiet looks in less often, chatty more; neither hears every tool use.
         XCTAssertEqual(Self.steering.rules(.default, talk: .quiet),
-                       Personality.Rules(workBeatMs: 180_000...300_000, idleBeatMs: 1_800_000...3_600_000, toolUses: .notable))
+                       Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000, toolUses: .notable))
         XCTAssertEqual(Self.steering.rules(.default, talk: .chatty),
-                       Personality.Rules(workBeatMs: 45_000...90_000, idleBeatMs: 600_000...900_000, toolUses: .notable))
+                       Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000, toolUses: .notable))
         XCTAssertTrue(Self.steering.talk(.quiet)?.hasPrefix("TALK\nQuiet") ?? false)
         XCTAssertTrue(Self.steering.talks)
         XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
@@ -1448,7 +1448,7 @@ final class RuntimeTests: XCTestCase {
         eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal && statuses.last?.talks == true } }
         runtime.setTalk(.chatty)
         eventually("chatty now") { runtime.home.sync { statuses.last?.talk == .chatty } }
-        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workBeatMs }, 45_000...90_000)
+        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workBeatMs }, 120_000...180_000)
         XCTAssertEqual(AppSettings.load(from: dir).talk, .chatty)
     }
 

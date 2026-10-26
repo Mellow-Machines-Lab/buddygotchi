@@ -68,8 +68,8 @@ nothing for (Stills, for a pack with no golden frames):
   file or no voice takes, no signs or diary) or waiting
   on you (review).
 - **Personality**: each personality (`steering/personality/`), its
-  settings in plain words (`working_heartbeat` 90-180 is "checks in on a
-  turn every 1½–3 min"), its words, a paragraph's first sentence and the
+  settings in plain words (`working_heartbeat` 240-360 is "checks in on a
+  turn every 4–6 min"), its words, a paragraph's first sentence and the
   rest as points, and its Examples as cards, what happened and after the
   arrow what it does, six at first. Then the talk files, side by side
   (`steering/talk/`: quiet, normal and chatty, with any check-in pace

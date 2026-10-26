@@ -1,5 +1,5 @@
 ---
-working_heartbeat: 45-90
+working_heartbeat: 120-180
 idle_heartbeat: 600-900
 ---
 <!-- Chatty, picked in Settings: it follows MOOD in Jev's state (characters/CHARACTER.md §7), and its front matter paces the check-ins over the personality's. Read-only at runtime; the app bundles a copy. Comments are left out of Jev's state. -->

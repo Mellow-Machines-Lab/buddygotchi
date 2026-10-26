@@ -300,27 +300,12 @@ You said to Boop: "you're useless"
 Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
-4 min ago: claude started turn 1 on "landing".
-4 min ago: You asked claude on "landing" to carry on, in a sentence, politely.
-  Your words: "thank you", "huge help".
-  Boop made an engaged face (small), and said "Tch".
-2 min ago: You said to Boop: "you're useless"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
-Boop has been whiny for 6 min.
-
-NOW (14:06, Wednesday)
-claude is still working on "landing", a long turn.
-Boop did nothing on its own.
-=== pass 4
-HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 5 min ago: You asked claude on "landing" to carry on, in a sentence, politely.
   Your words: "thank you", "huge help".
   Boop made an engaged face (small), and said "Tch".
 3 min ago: You said to Boop: "you're useless"
   Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Piano".
-just now: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Tch".
 just now: claude started turn 2 on "landing".
 Boop has been whiny for 7 min.
 

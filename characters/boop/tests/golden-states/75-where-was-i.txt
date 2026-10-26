@@ -574,44 +574,29 @@ or nothing as its Example does. A prompt that sounds like
 something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
-3 min ago: claude started turn 1 on "landing".
-2 min ago: claude's tests failed on "landing".
-  Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
-Boop has been comfy for 2 min.
-
-NOW (14:03, Wednesday)
-claude is still working on "landing", a long turn, running tests.
-Boop did nothing on its own.
-=== pass 4
-HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".
 3 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Uh-oh".
-just now: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Verify".
 Boop has been comfy for 3 min.
 
 NOW (14:04, Wednesday)
 claude's context on "landing" was compacted; it picks up where it left off.
 Boop did nothing on its own.
-=== pass 5
+=== pass 4
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 4 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Uh-oh".
-1 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Verify".
 1 min ago: claude's context on "landing" was compacted; it picks up where it left off.
-  Boop made an engaged face (small), and said "Rrr... tik".
+  Boop made an engaged face (small), and said "Ngh".
 Boop has been comfy for 4 min.
 
 NOW (14:05, Wednesday)
 claude's tests passed on "landing" after failing.
 Boop did nothing on its own.
-=== pass 6
+=== pass 5
 --- head
 You are the mind of Boop, a small creature on a person's desk that
 watches their AI coding agents work. Boop never approves or blocks
@@ -895,13 +880,11 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Uh-oh".
-2 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Verify".
 2 min ago: claude's context on "landing" was compacted; it picks up where it left off.
-  Boop made an engaged face (small), and said "Rrr... tik".
+  Boop made an engaged face (small), and said "Ngh".
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Eep!".
+  Boop made a happy face (small), and said "Mm-hm".
 Boop has been lazy for under a minute.
 
 NOW (14:06, Wednesday)

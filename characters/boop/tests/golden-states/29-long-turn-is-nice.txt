@@ -290,16 +290,7 @@ claude started turn 1 on "landing".
 Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
-2 min ago: claude started turn 1 on "landing".
-
-NOW (14:02, Wednesday)
-claude is still working on "landing", a long turn, running tests.
-Boop did nothing on its own.
-=== pass 3
-HISTORY (oldest first; indented lines add to the line above)
 3 min ago: claude started turn 1 on "landing".
-just now: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
 
 NOW (14:03, Wednesday)
 claude finished turn 1 on "landing": done, a long turn, 1 tool call.

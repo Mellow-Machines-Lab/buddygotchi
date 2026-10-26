@@ -1,14 +1,14 @@
 {
   "name": "Check-ins on a long turn climb a ladder, not one face",
-  "case": "The agent works on one turn for fourteen minutes, its tests passing early. Boop checks in every couple of minutes and each check-in is a new rung: engaged at first, hopeful about the tests on the second, bored on the third, determined after that, never the same reaction three times running and never six minutes without one. When the turn finishes well, it's a success.",
+  "case": "The agent works on one turn for twenty minutes, its tests passing early. Boop checks in every five minutes or so and each check-in is a new rung: engaged at first, hopeful about the tests on the second, bored on the third, determined after that, never the same reaction three times running and never seven minutes without one. When the turn finishes well, it's a success.",
   "why": "The working heartbeat's line says what the turn is doing (running tests) and its note which check-in it is (TranscriptView, EventLine.checkIn); PERSONALITY's Examples give each rung its own face",
-  "checks": {"min_variety": 2, "max_same_in_a_row": 2, "max_quiet_working": "6m"},
+  "checks": {"min_variety": 2, "max_same_in_a_row": 2, "max_quiet_working": "7m"},
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "20s", "topic": "tests", "failed": false},
-    {"event": "wait", "at": "4m", "expect": {"react": "engaged|hopeful|determined|curious|happy|calm", "move": "none"}},
-    {"event": "wait", "at": "8m", "expect": {"react": "hopeful|bored|engaged|determined|lazy|calm", "move": "none"}},
-    {"event": "wait", "at": "13m", "expect": {"react": "determined|bored|engaged|lazy|calm|tired|none", "move": "none"}},
-    {"event": "turn finished", "at": "14m", "expect": {"move": "success"}}
+    {"event": "wait", "at": "6m30s", "expect": {"react": "engaged|hopeful|determined|curious|happy|calm", "move": "none"}},
+    {"event": "wait", "at": "13m", "expect": {"react": "hopeful|bored|engaged|determined|lazy|calm", "move": "none"}},
+    {"event": "wait", "at": "19m30s", "expect": {"react": "determined|bored|engaged|lazy|calm|tired|none", "move": "none"}},
+    {"event": "turn finished", "at": "20m", "expect": {"move": "success"}}
   ]
 }

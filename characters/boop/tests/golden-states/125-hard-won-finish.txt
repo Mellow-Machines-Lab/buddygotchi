@@ -1163,43 +1163,6 @@ or nothing as its Example does. A prompt that sounds like
 something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
-7 min ago: claude started turn 1 on "landing".
-6 min ago: claude's tests failed on "landing".
-  Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
-4 min ago: claude's tests failed again on "landing", 2 times in a row.
-  Boop's mood changed: comfy → calm.
-  Boop made an annoyed face (medium), and said "Broken".
-2 min ago: claude's tests passed on "landing" after failing.
-  Boop's mood changed: calm → curious.
-  Boop made a happy face (small), and said "Mm-hm".
-Boop has been curious for 2 min.
-
-NOW (14:07, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-Boop did nothing on its own.
-=== pass 6
-HISTORY (oldest first; indented lines add to the line above)
-9 min ago: claude started turn 1 on "landing".
-8 min ago: claude's tests failed on "landing".
-  Boop's mood changed: calm → comfy.
-  Boop made an annoyed face (medium), and said "Uh-oh".
-6 min ago: claude's tests failed again on "landing", 2 times in a row.
-  Boop's mood changed: comfy → calm.
-  Boop made an annoyed face (medium), and said "Broken".
-4 min ago: claude's tests passed on "landing" after failing.
-  Boop's mood changed: calm → curious.
-  Boop made a happy face (small), and said "Mm-hm".
-2 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop made an engaged face (small), and said "Probe".
-Boop has been curious for 4 min.
-
-NOW (14:09, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 7
-HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 1 on "landing".
 9 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
@@ -1210,11 +1173,6 @@ HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: calm → curious.
   Boop made a happy face (small), and said "Mm-hm".
-2 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop made an engaged face (small), and said "Probe".
-just now: claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Checking".
 Boop has been curious for 5 min.
 
 NOW (14:10, Wednesday)

@@ -292,21 +292,9 @@ You asked claude on "landing" for a refactor, in a sentence.
 Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
-2 min ago: claude started turn 1 on "landing".
-2 min ago: You asked claude on "landing" for a refactor, in a sentence.
-  Boop made an engaged face (small), and said "Tch".
-Boop has been engaged for 2 min.
-
-NOW (14:02, Wednesday)
-claude is still working on "landing", a long turn, running tests.
-Boop did nothing on its own.
-=== pass 3
-HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".
 4 min ago: You asked claude on "landing" for a refactor, in a sentence.
   Boop made an engaged face (small), and said "Tch".
-1 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Verify".
 just now: claude finished turn 1 on "landing": done, a long turn, 1 tool call.
 Boop has been engaged for 4 min.
 

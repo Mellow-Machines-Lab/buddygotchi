@@ -291,35 +291,20 @@ You asked claude on "landing" in a few words.
 Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
-2 min ago: claude started turn 1 on "landing".
-2 min ago: You asked claude on "landing" in a few words.
+4 min ago: claude started turn 1 on "landing".
+4 min ago: You asked claude on "landing" in a few words.
   Boop made an engaged face (small), and said "Tch".
 
-NOW (14:02, Wednesday)
+NOW (14:04, Wednesday)
 claude is still working on "landing", a long turn.
 Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
-5 min ago: claude started turn 1 on "landing".
-5 min ago: You asked claude on "landing" in a few words.
-  Boop made an engaged face (small), and said "Tch".
-2 min ago: claude is still working on "landing", a long turn.
-  Boop made an engaged face (small), and said "Hup".
-
-NOW (14:05, Wednesday)
-claude is still working on "landing", a very long turn.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 4
-HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 1 on "landing".
 6 min ago: You asked claude on "landing" in a few words.
   Boop made an engaged face (small), and said "Tch".
-3 min ago: claude is still working on "landing", a long turn.
+1 min ago: claude is still working on "landing", a long turn.
   Boop made an engaged face (small), and said "Hup".
-just now: claude is still working on "landing", a very long turn.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Rrr... tik".
 
 NOW (14:06, Wednesday)
 claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, 1,200 lines gone.

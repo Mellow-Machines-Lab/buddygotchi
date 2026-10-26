@@ -290,65 +290,18 @@ claude started turn 1 on "landing".
 Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
-2 min ago: claude started turn 1 on "landing".
+4 min ago: claude started turn 1 on "landing".
 
-NOW (14:02, Wednesday)
+NOW (14:04, Wednesday)
 claude is still working on "landing", a long turn, running tests.
 Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
-5 min ago: claude started turn 1 on "landing".
-2 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
-
-NOW (14:05, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 4
-HISTORY (oldest first; indented lines add to the line above)
-7 min ago: claude started turn 1 on "landing".
+9 min ago: claude started turn 1 on "landing".
 4 min ago: claude is still working on "landing", a long turn, running tests.
   Boop made an engaged face (small), and said "Measure".
-1 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
 
-NOW (14:07, Wednesday)
+NOW (14:09, Wednesday)
 claude is still working on "landing", a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 5
-HISTORY (oldest first; indented lines add to the line above)
-8 min ago: claude started turn 1 on "landing".
-6 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
-3 min ago: claude is still working on "landing", a very long turn, running tests.
   Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-1 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-
-NOW (14:08, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-Boop did nothing on its own.
-=== pass 6
-HISTORY (oldest first; indented lines add to the line above)
-10 min ago: claude started turn 1 on "landing".
-8 min ago: claude is still working on "landing", a long turn, running tests.
-  Boop made an engaged face (small), and said "Measure".
-5 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 2nd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Validate".
-3 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 3rd check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Probe".
-1 min ago: claude is still working on "landing", a very long turn, running tests.
-  Boop's 4th check-in of a round on this turn.
-  Boop made an engaged face (small), and said "Verify".
-
-NOW (14:10, Wednesday)
-claude is still working on "landing", a very long turn, running tests.
 Boop did nothing on its own.
