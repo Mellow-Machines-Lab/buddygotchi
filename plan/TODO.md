@@ -273,11 +273,14 @@ pacing and touch, the Mac app, the architecture) found what's below.
       push's 1) and packing, so it can't stay ahead of the scan. Raising
       the push above the helper while a synced frame goes made it worse
       (34% torn; working 33.7 -> 30.2 fps, night 22.7 -> 20.2), and even
-      unpreempted a push of 65 K pixels took ~20 ms: packing is held up
-      on the memory bus. The same push took ~7.5 ms for 60 K pixels at
-      the polish pass's start (2026-10-25, before the material moved to
-      PSRAM, which the push's surface reads share), so the bus, not the
-      QSPI clock, is what to win back first.
+      unpreempted a push of 65 K pixels took ~20 ms. A push's time is its
+      wall time on core 0, under the body's helper since the pass added
+      it (60 K pixels took ~7.5 ms before; the material read from flash
+      instead of PSRAM leaves it at ~25 ms, so that isn't it). The loop
+      waits on it only 0.1-1 ms a frame, but a synced frame can't stay
+      ahead of the scan while the helper shares the core: a tear-free
+      push wants core 0 to itself for ~8 ms, which the body's split
+      can't give without slowing every frame.
 - [ ] The engine's step is 2.3-2.6 ms a frame on the AMOLED (2.5 µs on
       the Mac): its 25 KB `Engine` is in PSRAM (malloc puts anything over
       4 KB there) and its code runs from flash past a 16 KB cache. The
