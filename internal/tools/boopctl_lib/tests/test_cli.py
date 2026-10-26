@@ -517,7 +517,7 @@ class TakesTests(unittest.TestCase):
 
     def test_the_takes_are_the_boards(self):
         takes = cli.takes()
-        self.assertEqual(len(takes), 2722)
+        self.assertEqual(len(takes), 3159)
         self.assertEqual([t.id for t in takes], sorted((t.id for t in takes), key=str.encode), "the pack's order: by id")
         go = cli.take("previous.go")
         self.assertEqual((go.id, go.text, go.ms), ("previous.go", "Go", 638))
@@ -532,7 +532,7 @@ class TakesTests(unittest.TestCase):
         self.assertTrue(all("again" in t.text.lower() for t in cli.chosen_takes("again")))
         self.assertEqual([t.id for t in cli.chosen_takes("mamma mia")], ["new.d14"])
         self.assertEqual({t.text for t in cli.chosen_takes("boom")}, {"Bada bing bada boom", "Boom shakalaka"})
-        self.assertEqual(len(cli.chosen_takes(None)), 2722)
+        self.assertEqual(len(cli.chosen_takes(None)), 3159)
         with self.assertRaises(cli.DeviceError):
             cli.chosen_takes("banana")
 

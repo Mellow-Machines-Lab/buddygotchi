@@ -49,7 +49,7 @@ std::vector<uint8_t> samples(const voice::Clip& c) {
 void test_the_voice_file_finds_takes_by_id() {
   NEEDS_VOICE_PACK();
   TEST_ASSERT_TRUE(voice::fileOpen());
-  TEST_ASSERT_EQUAL(2722, voice::takeCount());
+  TEST_ASSERT_EQUAL(3159, voice::takeCount());
   TEST_ASSERT_EQUAL(12, std::strlen(voice::assetsVersion()));
   int go = voice::takeIndex("previous.go");
   TEST_ASSERT_TRUE(go >= 0);

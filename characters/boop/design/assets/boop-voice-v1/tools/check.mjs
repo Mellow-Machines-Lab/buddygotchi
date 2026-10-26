@@ -6,7 +6,10 @@ import {fileURLToPath} from 'node:url';
 import {loadBank,choices,resolveChoice,assemble} from '../select.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 if(process.argv.includes('--help')){console.log('node tools/check.mjs\nChecks the self-contained voice bank offline; writes exact storage-report.json. No API, playback or device calls.');process.exit(0);}
-const b=loadBank(),records=b.manifest.recordings,entries=new Map(b.dictionary.entries.map(e=>[e.id,e]));
+// Placeholders (characters/boop/tools/voicegen/placeholders.py) stand in for slots not yet
+// recorded, and are checked on their own below; the rest checks the recorded bank.
+function recorded(){const b=loadBank();b.manifest.recordings=b.manifest.recordings.filter(r=>!r.generation?.placeholder);b.dictionary.entries=b.dictionary.entries.filter(e=>e.origin!=='placeholder');return b;}
+const b=recorded(),records=b.manifest.recordings,entries=new Map(b.dictionary.entries.map(e=>[e.id,e]));
 assert.equal(records.length,2722);assert.equal(new Set(records.map(r=>r.id)).size,2722);assert.equal(entries.size,387);
 assert.equal(b.manifest.voiceId,'rErOatUrNIU3vfNcLl6Z');
 assert.equal(b.manifest.distribution.codec,'pcm_u8');assert.equal(b.manifest.distribution.sampleRate,11025);
@@ -52,7 +55,7 @@ assert.equal(new Set(records.map(r=>r.master.sha256)).size,2722);
 // Keep the original small fixture's exact join/shortlist expectations while the
 // full-bank integrity and coverage checks above exercise the expanded manifest.
 {
-const b=loadBank();b.manifest.recordings=b.manifest.recordings.filter(r=>r.sourceBatch!=='robot-dictionary-phase1');
+const b=recorded();b.manifest.recordings=b.manifest.recordings.filter(r=>r.sourceBatch!=='robot-dictionary-phase1');
 const pilotIds=new Set(b.manifest.recordings.map(r=>r.id));
 for(const bucket of Object.values(b.index))for(const key of Object.keys(bucket))bucket[key]=bucket[key].filter(id=>pilotIds.has(id));
 const ctx={state:'starting',mood:'excited',facts:['task_started']};
@@ -76,8 +79,13 @@ assert.equal(choices(fixture,ctx,{audition:true}).length,1);assert(choices(fixtu
 }
 const plain=JSON.stringify({dictionary:b.dictionary,manifest:b.manifest,index:b.index});assert(!plain.includes('/Users/'));assert(!plain.includes('xi-api-key'));
 const walk=dir=>fs.readdirSync(dir,{withFileTypes:true}).flatMap(d=>{assert(!d.isSymbolicLink());const p=path.join(dir,d.name);return d.isDirectory()?walk(p):[p];});
-const allFiles=walk(root);assert.equal(allFiles.filter(p=>p.endsWith('.wav')).length,expectedWavs);assert(!allFiles.some(p=>/\.(mp3|m4a|tmp)$/.test(p)),'No archived masters, unused AAC or partial renders in release');
-const report={version:3,generatedOn:'2026-09-29',codec:'pcm_u8',sampleRate:11025,channels:1,bitsPerSample:8,distinctRecordedTakes:2722,latestBatchNewTakes:2682,phase1Slots:2702,reusedPilotSlots:20,additionalLegacyTakes:20,deferredSlots:4421,plannedDictionaryEntries:387,plannedPerformanceSlots:7123,
+const allFiles=walk(root),placeholder=p=>path.basename(p).startsWith('placeholder.');assert.equal(allFiles.filter(p=>p.endsWith('.wav')&&!placeholder(p)).length,expectedWavs);
+// Every placeholder: its entry, its robot-soft file, and its line in plans/regenerate.json, the list to record.
+const all=loadBank(),held=all.manifest.recordings.filter(r=>r.generation?.placeholder),known=new Set(all.dictionary.entries.map(e=>e.id));
+assert.deepEqual(JSON.parse(fs.readFileSync(path.join(root,'plans/regenerate.json'))).slots.map(s=>s.take).sort(),held.map(r=>r.id).sort(),'plans/regenerate.json lists every placeholder');
+for(const r of held){assert(known.has(r.entryId));assert.equal(r.reviewStatus,'placeholder');assert.equal(r.id,`placeholder.${r.performanceId}`);assert.equal(r.files['robot-soft'].path,`audio-pcm8/robot-soft/${r.id}.wav`);assert.equal(checkedFile(r.files['robot-soft']).toString('ascii',8,12),'WAVE');}
+assert.equal(allFiles.filter(placeholder).length,held.length,'no placeholder file without its take');assert(!allFiles.some(p=>/\.(mp3|m4a|tmp)$/.test(p)),'No archived masters, unused AAC or partial renders in release');
+const report={version:3,generatedOn:'2026-09-29',codec:'pcm_u8',sampleRate:11025,channels:1,bitsPerSample:8,distinctRecordedTakes:2722,placeholderTakes:held.length,latestBatchNewTakes:2682,phase1Slots:2702,reusedPilotSlots:20,additionalLegacyTakes:20,deferredSlots:4421,plannedDictionaryEntries:387,plannedPerformanceSlots:7123,
  wavFiles:expectedWavs,distributedMp3Masters:0,locallyArchivedMasters:2722,totalRecordedSeconds:records.reduce((n,r)=>n+r.seconds,0),audioBytesByProfile:profiles,defaultRuntimeWavBytes:profiles['robot-soft'],
  allAudioBytes:Object.values(profiles).reduce((n,v)=>n+v,0),recordedMoodCounts:Object.fromEntries(Object.entries(b.index.byMood).map(([k,v])=>[k,v.length])),
  peak,maxRms,packagePayloadBytes:0,metadataAndCodeBytes:0,totalFiles:0,previousPackagePayloadBytes:1103619112,measure:'Sum of file lengths, including this report; excludes directory blocks and Git history. Original masters/WAVs are locally archived. One DSP profile suffices at runtime.',checks:'passed'};

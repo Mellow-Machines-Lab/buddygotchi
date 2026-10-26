@@ -14584,6 +14584,3686 @@
         "trailing"
       ],
       "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-yes.mhm",
+      "text": "Mhm",
+      "category": "nonverbal",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mhm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-yes.mm-hm",
+      "text": "Mm-hm!",
+      "category": "nonverbal",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mm-hm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-yes.uh-huh",
+      "text": "Uh-huh",
+      "category": "nonverbal",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "uh-huh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-yes.yes",
+      "text": "Yes",
+      "category": "word",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "yes",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-yes.yup",
+      "text": "Yup",
+      "category": "word",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "yup",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-yes.sure",
+      "text": "Sure",
+      "category": "word",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "sure",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-yes.okay",
+      "text": "Okay",
+      "category": "word",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious",
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "okay",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-yes.you-bet",
+      "text": "You bet",
+      "category": "phrase",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "you-bet",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-yes.of-course",
+      "text": "Of course",
+      "category": "phrase",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "of-course",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-yes.yes-yes",
+      "text": "Yes yes",
+      "category": "phrase",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "yes-yes",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-yes.sure-thing",
+      "text": "Sure thing",
+      "category": "phrase",
+      "intent": "talk.yes",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "proud",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.yes expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "sure-thing",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-no.nuh-uh",
+      "text": "Nuh-uh",
+      "category": "nonverbal",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nuh-uh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-no.hmm-mm",
+      "text": "Hmm-mm",
+      "category": "nonverbal",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hmm-mm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-no.nn-nn",
+      "text": "Nn-nn",
+      "category": "nonverbal",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nn-nn",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-no.nope",
+      "text": "Nope",
+      "category": "word",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nope",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-no.nah",
+      "text": "Nah",
+      "category": "word",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nah",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-no.no",
+      "text": "No",
+      "category": "word",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "no",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-no.never",
+      "text": "Never",
+      "category": "word",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy",
+        "proud",
+        "calm",
+        "irritated"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "never",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-no.no-way",
+      "text": "No way",
+      "category": "phrase",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "no-way",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-no.not-today",
+      "text": "Not today",
+      "category": "phrase",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "not-today",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-no.nope-nope",
+      "text": "Nope nope",
+      "category": "phrase",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "irritated",
+        "annoyed"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nope-nope",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-no.make-me",
+      "text": "Make me",
+      "category": "phrase",
+      "intent": "talk.no",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "grumpy",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.no expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "make-me",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-huh.hm",
+      "text": "Hm?",
+      "category": "nonverbal",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-huh.what",
+      "text": "What?",
+      "category": "word",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "what",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-huh.pardon",
+      "text": "Pardon?",
+      "category": "word",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "pardon",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-huh.um",
+      "text": "Um",
+      "category": "word",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "um",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-huh.say-again",
+      "text": "Say again?",
+      "category": "phrase",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "say-again",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-huh.come-again",
+      "text": "Come again?",
+      "category": "phrase",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "engaged",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "come-again",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-huh.wait-what",
+      "text": "Wait, what?",
+      "category": "phrase",
+      "intent": "talk.huh",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.huh expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "wait-what",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-dunno.mm-mm",
+      "text": "Mm-mm?",
+      "category": "nonverbal",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mm-mm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-dunno.hmm",
+      "text": "Hmm...",
+      "category": "nonverbal",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hmm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-dunno.pff",
+      "text": "Pff",
+      "category": "nonverbal",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "pff",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-dunno.dunno",
+      "text": "Dunno",
+      "category": "word",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "dunno",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-dunno.maybe",
+      "text": "Maybe",
+      "category": "word",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "maybe",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-dunno.hmm",
+      "text": "Hmm",
+      "category": "word",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hmm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-dunno.beats-me",
+      "text": "Beats me",
+      "category": "phrase",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "beats-me",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-dunno.no-idea",
+      "text": "No idea",
+      "category": "phrase",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "no-idea",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-dunno.who-knows",
+      "text": "Who knows?",
+      "category": "phrase",
+      "intent": "talk.dunno",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dunno expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "who-knows",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-hello.oh",
+      "text": "Oh!",
+      "category": "nonverbal",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "calm",
+        "curious",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "oh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-hello.heyy",
+      "text": "Heyy",
+      "category": "nonverbal",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "calm",
+        "curious",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "heyy",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hello.hiya",
+      "text": "Hiya",
+      "category": "word",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "calm",
+        "curious",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hiya",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hello.yo",
+      "text": "Yo",
+      "category": "word",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "calm",
+        "curious",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "yo",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hello.hi-there",
+      "text": "Hi there",
+      "category": "phrase",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hi-there",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hello.oh-hello",
+      "text": "Oh, hello",
+      "category": "phrase",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "oh-hello",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hello.there-you-are",
+      "text": "There you are",
+      "category": "phrase",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "there-you-are",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hello.right-here",
+      "text": "Right here",
+      "category": "phrase",
+      "intent": "talk.hello",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hello expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "right-here",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-bye.bye-ee",
+      "text": "Bye-ee",
+      "category": "nonverbal",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "bye-ee",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-bye.mwah",
+      "text": "Mwah",
+      "category": "nonverbal",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mwah",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-bye.bye",
+      "text": "Bye",
+      "category": "word",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "bye",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-bye.later",
+      "text": "Later",
+      "category": "word",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "later",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-bye.night",
+      "text": "Night",
+      "category": "word",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "night",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-bye.ciao",
+      "text": "Ciao",
+      "category": "word",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm",
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "ciao",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-bye.see-you",
+      "text": "See you",
+      "category": "phrase",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "see-you",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-bye.night-night",
+      "text": "Night night",
+      "category": "phrase",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "night-night",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-bye.bye-bye",
+      "text": "Bye bye",
+      "category": "phrase",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "bye-bye",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-bye.come-back-soon",
+      "text": "Come back soon",
+      "category": "phrase",
+      "intent": "talk.bye",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.bye expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "come-back-soon",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-thanks.hehe",
+      "text": "Hehe",
+      "category": "nonverbal",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hehe",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-thanks.aww",
+      "text": "Aww",
+      "category": "nonverbal",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "aww",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-thanks.thanks",
+      "text": "Thanks",
+      "category": "word",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "thanks",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-thanks.woo",
+      "text": "Woo",
+      "category": "word",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "woo",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-thanks.aw-shucks",
+      "text": "Aw, shucks",
+      "category": "phrase",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "aw-shucks",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-thanks.anytime",
+      "text": "Anytime",
+      "category": "phrase",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "anytime",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-thanks.team-effort",
+      "text": "Team effort",
+      "category": "phrase",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "team-effort",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-thanks.we-rock",
+      "text": "We rock",
+      "category": "phrase",
+      "intent": "talk.thanks",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.thanks expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "we-rock",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-love.aww",
+      "text": "Aww",
+      "category": "nonverbal",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "aww",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-love.mmm",
+      "text": "Mmm",
+      "category": "nonverbal",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mmm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-love.aww",
+      "text": "Aww",
+      "category": "word",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "aww",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-love.love",
+      "text": "Love",
+      "category": "word",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "love",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-love.hug",
+      "text": "Hug",
+      "category": "word",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hug",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-love.love-you-too",
+      "text": "Love you too",
+      "category": "phrase",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "love-you-too",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-love.aww-you",
+      "text": "Aww, you",
+      "category": "phrase",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "aww-you",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-love.big-hug",
+      "text": "Big hug",
+      "category": "phrase",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "big-hug",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-love.forgiven",
+      "text": "Forgiven",
+      "category": "phrase",
+      "intent": "talk.love",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.love expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "forgiven",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-ouch.ow",
+      "text": "Ow!",
+      "category": "nonverbal",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad",
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "ow",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-ouch.oof",
+      "text": "Oof",
+      "category": "nonverbal",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad",
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "oof",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-ouch.rude",
+      "text": "Rude",
+      "category": "word",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad",
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "rude",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-ouch.hey",
+      "text": "Hey!",
+      "category": "word",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad",
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hey",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-ouch.mean",
+      "text": "Mean",
+      "category": "word",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad",
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mean",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-ouch.that-hurt",
+      "text": "That hurt",
+      "category": "phrase",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "that-hurt",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-ouch.not-nice",
+      "text": "Not nice",
+      "category": "phrase",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "not-nice",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-ouch.well-ouch",
+      "text": "Well, ouch",
+      "category": "phrase",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "sad"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "well-ouch",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-ouch.be-nice",
+      "text": "Be nice",
+      "category": "phrase",
+      "intent": "talk.ouch",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "grumpy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.ouch expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "be-nice",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-comfort.aww",
+      "text": "Aww",
+      "category": "nonverbal",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "aww",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-comfort.mm",
+      "text": "Mm...",
+      "category": "nonverbal",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-comfort.there",
+      "text": "There",
+      "category": "word",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "calm",
+        "wounded",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "there",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-comfort.hug",
+      "text": "Hug",
+      "category": "word",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "calm",
+        "wounded",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hug",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-comfort.okay",
+      "text": "Okay",
+      "category": "word",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "calm",
+        "wounded",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "okay",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-comfort.i-m-here",
+      "text": "I'm here",
+      "category": "phrase",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "i-m-here",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-comfort.it-s-okay",
+      "text": "It's okay",
+      "category": "phrase",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "it-s-okay",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-comfort.deep-breath",
+      "text": "Deep breath",
+      "category": "phrase",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "sad",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "deep-breath",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-comfort.there-there",
+      "text": "There there",
+      "category": "phrase",
+      "intent": "talk.comfort",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "wounded",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.comfort expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "there-there",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-hehe.hehe",
+      "text": "Hehe",
+      "category": "nonverbal",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hehe",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hehe.haha",
+      "text": "Haha",
+      "category": "word",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "haha",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hehe.silly",
+      "text": "Silly",
+      "category": "word",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "silly",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hehe.lol",
+      "text": "Lol",
+      "category": "word",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "lol",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hehe.good-one",
+      "text": "Good one",
+      "category": "phrase",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "good-one",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hehe.you-re-funny",
+      "text": "You're funny",
+      "category": "phrase",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "you-re-funny",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hehe.stop-it",
+      "text": "Stop it",
+      "category": "phrase",
+      "intent": "talk.hehe",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hehe expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "stop-it",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-status.hmm",
+      "text": "Hmm",
+      "category": "nonverbal",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "engaged",
+        "calm",
+        "curious",
+        "determined"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hmm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-status.mm-hm",
+      "text": "Mm-hm",
+      "category": "nonverbal",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "engaged",
+        "calm",
+        "curious",
+        "determined"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mm-hm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-status.here",
+      "text": "Here",
+      "category": "word",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "engaged",
+        "calm",
+        "curious",
+        "determined"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "here",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-status.see",
+      "text": "See?",
+      "category": "word",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "engaged",
+        "calm",
+        "curious",
+        "determined"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "see",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-status.let-me-see",
+      "text": "Let me see",
+      "category": "phrase",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "engaged",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "let-me-see",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-status.here-you-go",
+      "text": "Here you go",
+      "category": "phrase",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "determined",
+        "engaged",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "here-you-go",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-status.have-a-look",
+      "text": "Have a look",
+      "category": "phrase",
+      "intent": "talk.status",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "determined",
+        "engaged"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.status expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "have-a-look",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-nap.yawn",
+      "text": "Yawn",
+      "category": "nonverbal",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy",
+        "whiny"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "yawn",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-nap.mmh",
+      "text": "Mmh...",
+      "category": "nonverbal",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy",
+        "whiny"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mmh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-nap.nap",
+      "text": "Nap",
+      "category": "word",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy",
+        "whiny"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nap",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-nap.sleepy",
+      "text": "Sleepy",
+      "category": "word",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy",
+        "whiny"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "sleepy",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-nap.night",
+      "text": "Night",
+      "category": "word",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy",
+        "whiny"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "night",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-nap.nap-time",
+      "text": "Nap time",
+      "category": "phrase",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nap-time",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-nap.five-minutes",
+      "text": "Five minutes",
+      "category": "phrase",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "whiny",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "five-minutes",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-nap.sweet-dreams",
+      "text": "Sweet dreams",
+      "category": "phrase",
+      "intent": "talk.nap",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "whiny"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.nap expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "sweet-dreams",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-hush.shh",
+      "text": "Shh",
+      "category": "nonverbal",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "shh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-hush.mm-mm",
+      "text": "Mm-mm",
+      "category": "nonverbal",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mm-mm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hush.fine",
+      "text": "Fine",
+      "category": "word",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "fine",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hush.okay",
+      "text": "Okay",
+      "category": "word",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "okay",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-hush.shh",
+      "text": "Shh",
+      "category": "word",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "shh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hush.zipping-it",
+      "text": "Zipping it",
+      "category": "phrase",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "zipping-it",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-hush.not-a-peep",
+      "text": "Not a peep",
+      "category": "phrase",
+      "intent": "talk.hush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "calm",
+        "wounded"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.hush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "not-a-peep",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-dance.doo-doo",
+      "text": "Doo-doo",
+      "category": "nonverbal",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "doo-doo",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-dance.dance",
+      "text": "Dance!",
+      "category": "word",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "dance",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-dance.wiggle",
+      "text": "Wiggle",
+      "category": "word",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "wiggle",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-dance.party",
+      "text": "Party",
+      "category": "word",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "party",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-dance.dance-party",
+      "text": "Dance party",
+      "category": "phrase",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "dance-party",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-dance.watch-this",
+      "text": "Watch this",
+      "category": "phrase",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "proud",
+        "excited"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "watch-this",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-dance.shake-it",
+      "text": "Shake it",
+      "category": "phrase",
+      "intent": "talk.dance",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "happy",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.dance expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "shake-it",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-notme.hmm-mm",
+      "text": "Hmm-mm",
+      "category": "nonverbal",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "proud",
+        "annoyed",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hmm-mm",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-notme.nn-nn",
+      "text": "Nn-nn",
+      "category": "nonverbal",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "proud",
+        "annoyed",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nn-nn",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-notme.nope",
+      "text": "Nope",
+      "category": "word",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "proud",
+        "annoyed",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "nope",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-notme.mac",
+      "text": "Mac",
+      "category": "word",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "proud",
+        "annoyed",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "mac",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-notme.them",
+      "text": "Them",
+      "category": "word",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "proud",
+        "annoyed",
+        "curious"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "them",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-notme.not-me",
+      "text": "Not me",
+      "category": "phrase",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "calm",
+        "proud",
+        "annoyed"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "not-me",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-notme.ask-the-mac",
+      "text": "Ask the Mac",
+      "category": "phrase",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "curious",
+        "calm",
+        "proud"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "ask-the-mac",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-notme.not-my-job",
+      "text": "Not my job",
+      "category": "phrase",
+      "intent": "talk.notme",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "annoyed",
+        "curious",
+        "calm"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.notme expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "not-my-job",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-unhush.ahh",
+      "text": "Ahh!",
+      "category": "nonverbal",
+      "intent": "talk.unhush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.unhush expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "ahh",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "nonverbal.talk-unhush.hah",
+      "text": "Hah!",
+      "category": "nonverbal",
+      "intent": "talk.unhush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.unhush expression",
+      "explicit": false,
+      "assembly": "nonverbal",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "hah",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-unhush.finally",
+      "text": "Finally",
+      "category": "word",
+      "intent": "talk.unhush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.unhush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "finally",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "word.talk-unhush.free",
+      "text": "Free",
+      "category": "word",
+      "intent": "talk.unhush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.unhush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "free",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-unhush.i-can-talk",
+      "text": "I can talk!",
+      "category": "phrase",
+      "intent": "talk.unhush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.unhush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "i-can-talk",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
+    },
+    {
+      "id": "phrase.talk-unhush.words-again",
+      "text": "Words again!",
+      "category": "phrase",
+      "intent": "talk.unhush",
+      "states": [],
+      "requires": "",
+      "moods": [
+        "excited",
+        "happy"
+      ],
+      "tier": "daily",
+      "origin": "placeholder",
+      "gloss": "talk.unhush expression",
+      "explicit": false,
+      "assembly": "anchor",
+      "review": "A placeholder: record it for real.",
+      "productionStatus": "placeholder",
+      "repeatFamily": "words-again",
+      "variantCount": 1,
+      "variants": [
+        "contained"
+      ],
+      "semanticNote": "Context labels gate eligibility; the animation conveys detail. Mood never establishes facts."
     }
   ],
   "excluded": [

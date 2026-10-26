@@ -31,12 +31,11 @@ final class VoiceTests: XCTestCase {
     /// a length and text the bubble can show; ids are unique.
     func testEveryTakeIsUsable() {
         let feelings = Set(ReactOutput.feelings.map(\.name)), topics = Set(ReactOutput.topics.map(\.name))
-        // 2,722 recorded, each once as itself, and again as each reply it's
-        // the words of.
-        XCTAssertEqual(Set(Take.all.map(\.id)).count, 2722)
+        // The voice file's takes, each once as itself, and a feeling's or
+        // topic's take again as each reply it's the words of.
+        XCTAssertEqual(Set(Take.all.map(\.id)).count, 3159)
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
         let recorded = Dictionary(Take.all.filter { $0.part != .reply }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        XCTAssertEqual(recorded.count, 2722, "every take is in the table as itself")
         let replies = Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"])
         for t in Take.all {
             XCTAssertFalse(t.moods.isEmpty, t.id)
@@ -47,9 +46,10 @@ final class VoiceTests: XCTestCase {
             case .attention: XCTAssertEqual(t.meaning, "attention")
             case .reply:
                 XCTAssertTrue(replies.contains(t.meaning), "\(t.id) replies \(t.meaning), which no reply is")
-                let own = recorded[t.id]
-                XCTAssertTrue(own?.text == t.text && own?.kind == t.kind && own?.moods == t.moods && own?.ms == t.ms,
-                              "\(t.id) as a reply is the recorded take")
+                if let own = recorded[t.id] {
+                    XCTAssertTrue(own.text == t.text && own.kind == t.kind && own.moods == t.moods && own.ms == t.ms,
+                                  "\(t.id) as a reply is the recorded take")
+                }
                 XCTAssertNil(t.finish, "a reply's words fit any finish")
                 XCTAssertNotEqual(t.kind, .swear, "never a swear at you")
             }
@@ -224,6 +224,20 @@ final class VoiceTests: XCTestCase {
         for t in Take.all where t.kind == .sound || t.kind == .phrase {
             XCTAssertNil(Voice.lead(before: t, face: t.moods[0], finish: t.finish, rng: &rng), t.id)
         }
+    }
+
+    /// Every placeholder take, spoken until it's recorded for real, is on
+    /// the voice bank's list to record (`plans/regenerate.json`, which
+    /// voicegen's placeholders.py keeps), and only those: the list is
+    /// exactly what to regenerate.
+    func testEveryPlaceholderIsListedToRecord() throws {
+        let list = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../../characters/boop/design/assets/boop-voice-v1/plans/regenerate.json").standardizedFileURL
+        let slots = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: list)) as? [String: Any])["slots"] as? [[String: Any]]
+        let listed = Set(try XCTUnwrap(slots).compactMap { $0["take"] as? String })
+        let placeholders = Set(Take.all.map(\.id).filter { $0.hasPrefix("placeholder.") })
+        XCTAssertFalse(placeholders.isEmpty)
+        XCTAssertEqual(placeholders, listed, "rerun placeholders.py, then voicegen")
     }
 
     /// Two takes on the wire, as the board still takes them.

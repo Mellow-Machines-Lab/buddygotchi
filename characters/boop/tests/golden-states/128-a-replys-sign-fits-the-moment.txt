@@ -308,7 +308,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Your words: "login bug".
   Boop made an engaged face (small), and said "Tch".
 just now: You said to Boop: "go to sleep, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Uh-huh".
 
 NOW (14:01, Wednesday)
 You said to Boop: "what's claude doing?"
@@ -320,9 +320,9 @@ HISTORY (oldest first; indented lines add to the line above)
   Your words: "login bug".
   Boop made an engaged face (small), and said "Tch".
 2 min ago: You said to Boop: "go to sleep, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Uh-huh".
 1 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm!".
 
 NOW (14:03, Wednesday)
 You said to Boop: "how long have I been at it?"
@@ -334,9 +334,9 @@ HISTORY (oldest first; indented lines add to the line above)
   Your words: "login bug".
   Boop made an engaged face (small), and said "Tch".
 2 min ago: You said to Boop: "go to sleep, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Uh-huh".
 2 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm!".
 just now: You said to Boop: "how long have I been at it?"
   Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 just now: claude needs you on "landing".
@@ -351,9 +351,9 @@ HISTORY (oldest first; indented lines add to the line above)
   Your words: "login bug".
   Boop made an engaged face (small), and said "Tch".
 3 min ago: You said to Boop: "go to sleep, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Uh-huh".
 2 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm!".
 1 min ago: You said to Boop: "how long have I been at it?"
   Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 just now: claude needs you on "landing".
@@ -370,16 +370,16 @@ HISTORY (oldest first; indented lines add to the line above)
   Your words: "login bug".
   Boop made an engaged face (small), and said "Tch".
 3 min ago: You said to Boop: "go to sleep, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Uh-huh".
 3 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm!".
 1 min ago: You said to Boop: "how long have I been at it?"
   Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 1 min ago: claude needs you on "landing".
 1 min ago: You held a finger on Boop's needs-you screen, to stop it showing; the agent still waits.
   Boop made an engaged face (small), and said "Rrr... tik".
 just now: You said to Boop: "just tell claude yes"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm!".
 
 NOW (14:04, Wednesday)
 You said to Boop: "you're useless"
@@ -391,18 +391,18 @@ HISTORY (oldest first; indented lines add to the line above)
   Your words: "login bug".
   Boop made an engaged face (small), and said "Tch".
 4 min ago: You said to Boop: "go to sleep, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Uh-huh".
 3 min ago: You said to Boop: "what's claude doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm!".
 2 min ago: You said to Boop: "how long have I been at it?"
   Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 1 min ago: claude needs you on "landing".
 1 min ago: You held a finger on Boop's needs-you screen, to stop it showing; the agent still waits.
   Boop made an engaged face (small), and said "Rrr... tik".
 1 min ago: You said to Boop: "just tell claude yes"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm!".
 just now: You said to Boop: "you're useless"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Uh-huh".
 
 NOW (14:05, Wednesday)
 You said to Boop: "sorry boop, I didn't mean it"

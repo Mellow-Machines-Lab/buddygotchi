@@ -185,8 +185,8 @@ final class ReplyTests: XCTestCase {
         let speaking = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, talk: { talk })
         // What it says, as each take's part and meaning: a sound before a
         // word is of the same, so each says one thing.
-        func meanings(_ move: String, _ say: Answer?, size: String = "medium") -> [String] {
-            var answers = ["react.face": a("happy"), "react.move": a(move), "react.intensity": a(size)]
+        func meanings(_ move: String, _ say: Answer?, size: String = "medium", face: String = "happy") -> [String] {
+            var answers = ["react.face": a(face), "react.move": a(move), "react.intensity": a(size)]
             answers["say"] = say
             _ = speaking.run(answers, now: said, log: Self.log)
             return Set(queued.last?.say?.takes.map { "\($0.part) \($0.meaning)" } ?? []).sorted()
@@ -196,11 +196,11 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(meanings("hello", nil), [])
         XCTAssertEqual(meanings("hello", a("glad", 0.3)), ["reply hello"], "leaning to words, the same")
         XCTAssertEqual(meanings("thanks", a("work", 0.3)), ["reply thanks"])
-        // A huh to a question shrugs, dunno, which has no words in a happy face.
-        XCTAssertEqual(meanings("huh", a("glad")), ["feeling glad"], "none of its own in the face: say's pick")
-        XCTAssertEqual(meanings("huh", a("start")), [], "never a topic: dunno borrows no feeling")
-        XCTAssertEqual(meanings("huh", a("glad", 0.3)), [])
-        XCTAssertEqual(meanings("comfort", a("glad", 0.3)), [], "comfort borrows none")
+        // A huh to a question shrugs, dunno, which has no words in a grumpy face.
+        XCTAssertEqual(meanings("huh", a("upset"), face: "grumpy"), ["feeling upset"], "none of its own in the face: say's pick")
+        XCTAssertEqual(meanings("huh", a("start"), face: "grumpy"), [], "never a topic: dunno borrows no feeling")
+        XCTAssertEqual(meanings("huh", a("upset", 0.3), face: "grumpy"), [])
+        XCTAssertEqual(meanings("comfort", a("glad", 0.3), face: "grumpy"), [], "comfort borrows none")
         XCTAssertEqual(meanings("no", a("start")), ["feeling upset"], "no has none in a happy face: a topic picked, the feeling it borrows")
         talk = .quiet
         XCTAssertEqual(meanings("thanks", a("glad", 0.3)), ["reply thanks"])
@@ -235,10 +235,9 @@ final class ReplyTests: XCTestCase {
                 XCTAssertTrue(Set(queued.last?.say?.takes.map(\.text) ?? []).isDisjoint(with: ["Failed", "Broken", "Trouble"]))
             }
         }
-        // Each reply has words in the face it makes most (a love's happy,
-        // a no's annoyed), and only notme has none in any face.
+        // Every reply has words of its own.
         let has = Set(Take.all.filter { $0.part == .reply }.map(\.meaning))
-        XCTAssertEqual(Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"]).subtracting(has), ["notme"])
+        XCTAssertEqual(Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"]).subtracting(has), [])
     }
 
     /// Pins how a reply's sign answers what you said: every reply's

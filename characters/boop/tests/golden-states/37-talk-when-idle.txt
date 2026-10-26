@@ -292,7 +292,7 @@ Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You said to Boop: "hi boop"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Uh-huh".
 
 NOW (14:01, Wednesday)
 You said to Boop: "what are you up to?"

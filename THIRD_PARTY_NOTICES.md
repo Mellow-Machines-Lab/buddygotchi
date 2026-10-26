@@ -13,7 +13,7 @@ names.
 | What | Where | Licence |
 | --- | --- | --- |
 | Geist Mono, © 2023 Vercel, in collaboration with basement.studio | Two weights' `.ttf` files (geist 1.7.2), in `internal/tools/fontgen/geist-mono/`, which `internal/tools/fontgen/` rasterises into `firmware/assets/fonts.h` and Boop's pack's `characters/boop/firmware/include/fonts_gel.h` | SIL Open Font License 1.1 ([firmware/assets/OFL.txt](firmware/assets/OFL.txt), and a copy beside the fonts, [internal/tools/fontgen/geist-mono/OFL.txt](internal/tools/fontgen/geist-mono/OFL.txt)) |
-| The recorded voice, 2,722 takes generated with ElevenLabs' text-to-speech, then trimmed and shaped for the board's speaker | Each pack's `voice/voice.bin`, with its table, `mac/takes.tsv` (`characters/boop/`, `characters/pixel/`), and the recordings they're built from, `characters/boop/design/assets/boop-voice-v1/` | MIT, with the rest of the repo |
+| The recorded voice, 2,722 takes generated with ElevenLabs' text-to-speech, then trimmed and shaped for the board's speaker, and placeholder takes spoken by [espeak-ng](https://github.com/espeak-ng/espeak-ng) (GPL-3.0; its speech isn't covered by it) until they're recorded | Each pack's `voice/voice.bin`, with its table, `mac/takes.tsv` (`characters/boop/`, `characters/pixel/`), and the recordings they're built from, `characters/boop/design/assets/boop-voice-v1/` | MIT, with the rest of the repo |
 
 ## Linked into the firmware
 

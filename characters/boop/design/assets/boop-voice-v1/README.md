@@ -1,6 +1,6 @@
 # Boop voice bank v1 — agent integration handoff
 
-Updated 2026-10-15. **Recorded audition assets, not a production voice engine.**
+Updated 2026-10-25. **Recorded audition assets, not a production voice engine.**
 Robot Minion 1 only: voice ID `rErOatUrNIU3vfNcLl6Z`, generation model `eleven_v4`.
 This package sits beside the V4 animation bank; it does not change the app, firmware,
 mood graph, generic harness, or approval rules. Publication is not listening approval.
@@ -11,6 +11,21 @@ Boop's repo keeps only the `robot-soft` texture (`audio-pcm8/robot-soft/`):
 the manifest's `original` and `robot-grain` paths aren't here, and
 `tools/check.mjs` checks the textures that are. Boop's `voicegen` builds
 its voice from this texture.
+
+**Placeholders.** Lines planned but not recorded yet (`plans/replies.json`,
+the replies' own words) are spoken by espeak-ng meanwhile, as placeholder
+takes: `characters/boop/tools/voicegen/placeholders.py` speaks each slot with
+no recording, files it in the manifest with `"placeholder": true` in its
+`generation` and `reviewStatus: "placeholder"` (its file
+`audio-pcm8/robot-soft/placeholder.<slot>.wav`), and rewrites
+`plans/regenerate.json`, the exact list to record for real: each
+placeholder's slot with its script and direction. Record one, put it in the
+manifest with the slot's id as its `performanceId`, rerun `placeholders.py`
+(the placeholder, its file and its line go) and then `voicegen`. Nothing
+needs a listen but what's left on that list; on the board, with the new
+voice file on its card, `internal/tools/boopctl takes --only placeholder.`
+plays them all. `check.mjs` checks the
+recorded bank as before and the placeholders on their own.
 
 ## Start here: find an actual recording in seconds
 
@@ -62,6 +77,8 @@ or audition checkout. Animation/SFX previews remain in the sibling V4 review ban
 | `storage-report.json` | Exact logical bytes, durations, category counts and recorded mood coverage |
 | `plans/phase1.json` | Completed slot IDs mapped to actual recording IDs; includes reused pilot mappings |
 | `plans/deferred.json` | Disjoint remaining 4,421 slots; not authorized for automatic generation |
+| `plans/replies.json` | The replies' own words as slots, from `plan/voice-range.md` (`characters/boop/tools/voicegen/reply_slots.py`) |
+| `plans/regenerate.json` | Every placeholder take's slot: what to record for real (`placeholders.py` rewrites it) |
 | `review/` | Self-contained continuous audition; serve the package root as above |
 
 All paths in the manifest are relative to **this directory**, not the repository

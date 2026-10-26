@@ -139,7 +139,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   and `--which` names the pack in use
   ([CHARACTER.md](../characters/CHARACTER.md) §2).
 - The generators, each into a pack: `characters/boop/tools/voicegen/voicegen.py`
-  (the voice file and the Mac's take table, from the recorded bank),
+  (the voice file and the Mac's take table, from the recorded bank;
+  beside it `placeholders.py` speaks the planned lines not recorded yet
+  with espeak-ng, `brew install espeak-ng`, and keeps the bank's list to
+  record, and `reply_slots.py` turns the replies' lines in
+  `plan/voice-range.md` into the bank's slots),
   `characters/pixel/tools/facegen/facegen.py` (what `make -C internal faces` runs),
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's

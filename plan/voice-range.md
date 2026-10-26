@@ -1,9 +1,9 @@
 # Voice range
 
 Updated 2026-10-25. A draft for the owner to review. Steps 3 and 4 are
-built on the takes already recorded; nothing new is recorded: new paid
-takes need the owner's go (`boop-voice-v1/plans/deferred.json` says so
-too).
+built, step 4's new lines spoken by placeholders; nothing new is
+recorded: new paid takes need the owner's go
+(`boop-voice-v1/plans/deferred.json` says so too).
 
 The owner asked how to make Boop more expressive without making the
 prompt much bigger, aiming at two to three times the range, not a
@@ -170,13 +170,18 @@ silence beats "Vamos" to "rough day". The prompt doesn't change: Jev
 already picks the reply. Later, `say` asked of what you said could
 shrink to "nothing or something".
 
-**The lines still to record.** In the voice moods each reply's faces
-use, the sounds and words in each, the phrases two to a mood: 437
-takes, in the bank's own slot shape, in
-`plan/evidence/2026-10-25-voice-range/reply-slots.json`. This table is
-their source: edit a line here, then remake the file with
-`reply_slots.py` there; a line a recorded take already says in a mood
-is left out. Like the signs,
+**The new lines, spoken by placeholders.** In the voice moods each
+reply's faces use, the sounds and words in each, the phrases two to a
+mood: 437 takes, as slots in the bank's own shape
+(`plans/replies.json` in `characters/boop/design/assets/boop-voice-v1/`).
+Until they're recorded, espeak-ng speaks each in a robot voice, pitched
+and paced by the mood (`characters/boop/tools/voicegen/placeholders.py`),
+and the bank's `plans/regenerate.json` lists every one to record for
+real, with its script: only those need a listen once they're replaced.
+This table is their source: edit a line here, then rerun
+`reply_slots.py`, `placeholders.py` and `voicegen.py` (all three in
+`characters/boop/tools/voicegen/`); a line a recorded take already says
+in a mood is left out. Like the signs,
 they never state a fact: status points at its sign ("Look"), and a
 request for an agent is never a yes.
 
@@ -207,10 +212,9 @@ request for an agent is never a yes.
 and Boop back (love), Ouch (ouch), Aww.... (comfort), Hehehe (hehe),
 Let me see and Look (status), Comfy (nap), Quiet (hush), Whee! and Oh
 yeah (dance), Ahh.... and Hooray (unhush), and more. voicegen writes a
-second row for each, by the same id, so the voice file and its version
-don't change and the board's card needs nothing new. Ten replies have
-words in every face; thanks, dance and no in the 24 or 25 they fit;
-huh, dunno and comfort in 14 to 18; notme in none yet.
+second row for each, by the same id. With the placeholders, every
+reply has words of its own: ten in every face, and no, huh, dunno,
+comfort, thanks, dance and notme in the 18 to 26 they fit.
 
 **Replies to add later.** Some things people say still fall to huh
 or hello: "wake up!" while it naps, "sing", "high five", "good luck"
@@ -234,9 +238,8 @@ own clip on the board (`reply-<name>`), so they're a step of their own.
 
 1. Step 3, already built: the owner listens on the board or the
    simulator and keeps it or drops the commit.
-2. The replies' own words (step 4): built with the reused takes; the
-   437 slots in `reply-slots.json` next, what you hear when you talk to
-   it.
+2. The replies' own words (step 4): built, with the reused takes and
+   437 placeholders; record `plans/regenerate.json`'s slots for real.
 3. Relieved from the relief takes, with 2d's grudging glad: the first
    new feeling, with the Examples and evals that change.
 4. 2a, the scripted phrases: the most range for the least writing.

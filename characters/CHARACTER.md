@@ -443,8 +443,10 @@ it's small, a word medium, a phrase big or huge):
   same id, as part `reply`: the voice file has it once.
 
 A pack may have them, or use another's (§6). Both are built files and
-checked in. The one voice there is, 2,722 takes, is in Pixel's pack,
-and Boop's uses it. What it's built from stays out of Pixel's: the
+checked in. The one voice there is is in Pixel's pack, and Boop's uses
+it: 2,722 takes recorded, and placeholders that espeak-ng speaks for the
+lines not recorded yet, each on the bank's list to record
+(`plans/regenerate.json` in `characters/boop/design/assets/boop-voice-v1/`). What it's built from stays out of Pixel's: the
 recordings, and voicegen, the tool that turns them into the two files,
 are kept in Boop's pack, and write into Pixel's. So Pixel's pack needs
 nothing of Boop's, and Boop's needs Pixel's for its face and its voice,

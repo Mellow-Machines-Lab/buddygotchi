@@ -261,7 +261,7 @@ static void test_the_bubble_fits_every_take() {
   TEST_ASSERT_TRUE(voicefile::source().read(0, h, sizeof(h)));
   auto u32 = [](const uint8_t* p) { return uint32_t(p[0]) | uint32_t(p[1]) << 8 | uint32_t(p[2]) << 16 | uint32_t(p[3]) << 24; };
   const uint32_t count = u32(h + 24), indexAt = u32(h + 32);
-  TEST_ASSERT_EQUAL_UINT32(2722, count);
+  TEST_ASSERT_EQUAL_UINT32(3159, count);
   const int room = kWidth - 2 * 12 - 2 * (10 + 2);  // the margins, the padding and the outline
   for (uint32_t i = 0; i < count; ++i) {
     char text[37] = {};

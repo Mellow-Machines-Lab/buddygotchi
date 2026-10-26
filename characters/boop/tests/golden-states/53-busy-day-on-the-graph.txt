@@ -2470,7 +2470,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face (small), and said "Tickles".
 2 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mhm".
 just now: claude started turn 2 on "landing".
 
 NOW (14:08, Wednesday)
@@ -2508,7 +2508,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face (small), and said "Tickles".
 2 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mhm".
 just now: claude started turn 2 on "landing".
 just now: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
@@ -2831,7 +2831,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face (small), and said "Tickles".
 4 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mhm".
 2 min ago: claude started turn 2 on "landing".
 2 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
@@ -2872,7 +2872,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: comfy → calm.
   Boop made a curious face (small), and said "Tickles".
 6 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mhm".
 4 min ago: claude started turn 2 on "landing".
 4 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".
@@ -3178,7 +3178,7 @@ something still holds up its sign.
 
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: You said to Boop: "sorry, didn't mean to"
-  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mm-hm".
+  Boop made a proud face (small), replying yes, holding up a sign: "yep!", and said "Mhm".
 8 min ago: claude started turn 2 on "landing".
 8 min ago: You asked claude on "landing" a question, in a sentence.
   Your words: "so slow".

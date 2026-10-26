@@ -30,7 +30,9 @@ words (ABOUT_OF_ENTRY): the greetings are the `hello` topic. Needs you's
 other takes (`attention`) are in the pack, but Boop never says them.
 
 A take may also be what Boop says replying to what you said on
-push-to-talk (REPLY_OF): "Yep" is a yes, "Tsk" a no. takes.tsv lists it
+push-to-talk: an entry of intent `talk.<reply>` is that reply's own
+words, and a feeling's or topic's that fits one counts for it too
+(REPLY_OF): "Yep" is a yes, "Tsk" a no. takes.tsv lists it
 a second time for each reply, as part `reply`, by the same id; the voice
 file has it once, so neither it nor the version changes. Six takes were recorded in
 moods Boop doesn't have; MOOD_OF gives them one, by the owner's word
@@ -42,6 +44,9 @@ the temporary table in characters/pixel/tools/borrowed.json, which also
 says whose faces Pixel's art lends: a take's moods are the one it was
 recorded in, then those that borrow it. Only takes.tsv says so; the
 audio and the version don't change.
+
+Placeholder takes, which placeholders.py speaks for lines not recorded
+yet, are built like any other.
 
 `--wav-dir` also writes every converted take as a WAV, for listening.
 """
@@ -157,7 +162,8 @@ def kind(entry: dict) -> str:
 
 
 def answer(entry: dict) -> tuple[str, str]:
-    """The take's part (feeling, about or attention) and its answer."""
+    """The take's part (feeling, about, reply or attention) and its answer:
+    a `talk.<reply>` entry is that reply's own words."""
     intent = entry["intent"]
     if entry["id"] in ABOUT_OF_ENTRY:
         return "about", ABOUT_OF_ENTRY[entry["id"]]
@@ -165,6 +171,8 @@ def answer(entry: dict) -> tuple[str, str]:
         return "feeling", FEELING[intent]
     if intent in ABOUT:
         return "about", ABOUT[intent]
+    if intent.startswith("talk."):
+        return "reply", intent[len("talk."):]
     if intent == "attention":
         return "attention", "attention"
     raise SystemExit(f"voicegen: {entry['id']} has intent {intent!r}, which answers neither question; map it in FEELING or ABOUT")
