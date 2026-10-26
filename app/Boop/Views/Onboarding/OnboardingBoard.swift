@@ -36,14 +36,22 @@ struct BodyAct: View {
     private var intro: some View {
         VStack(spacing: 18) {
             PlugIn(model: model).frame(height: 170)
-            ActTitle(title: "Let's find my body",
-                     detail: "Plug the board on your desk into power with its USB cable. Its screen lights up when it's on.")
-            if model.hasLink {
-                Label("macOS will ask if I can use Bluetooth. Say OK, so I can find my body.", systemImage: "info.circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(Theme.inkSoft)
+            if model.onSimulator {
+                ActTitle(title: "Let's find my body", detail: Self.onSimulator)
             } else {
-                Text("This copy of Boop runs without a board.").font(.system(size: 13)).foregroundStyle(Theme.inkSoft)
+                ActTitle(title: "Let's find my body",
+                         detail: "Plug the board on your desk into power with its USB cable. Its screen lights up when it's on.")
+                if model.hasLink {
+                    Label("macOS will ask if I can use Bluetooth. Say OK, so I can find my body.", systemImage: "info.circle")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.inkSoft)
+                } else {
+                    Text("This copy of Boop runs without a board.").font(.system(size: 13)).foregroundStyle(Theme.inkSoft)
+                }
+                // No board on the desk: the simulator running on this Mac will do.
+                if model.hasLink, model.simulatorHere {
+                    Button("No board? Use the simulator in your browser", action: model.useSimulator).buttonStyle(.row)
+                }
             }
             Spacer(minLength: 0)
             if model.hasLink {
@@ -54,6 +62,16 @@ struct BodyAct: View {
                 ActNav(model: model, next: "Next") { model.skipBoard() }
             }
         }
+        .task { await model.watchForSimulator() }
+    }
+
+    /// Where the body is when it's the simulator: the browser's page, or
+    /// the internal build's window.
+    static var onSimulator: String {
+        AppModel.simulatorKind == .window
+            ? "My body is the simulator: a board in a window of its own, with its screen, button and sounds. It opens beside this one."
+            : "My body is the simulator: the board in your browser, with its screen, button and sounds. "
+                + "Keep its page beside this window. My sound comes on with your first tap there."
     }
 
     // MARK: Looking, and found
@@ -98,7 +116,7 @@ struct BodyAct: View {
                     Text("FOUND \(name.uppercased())")
                         .font(.system(size: 12, weight: .semibold)).tracking(0.6)
                         .foregroundStyle(Theme.sageInk)
-                    ActTitle(title: "Tap my screen on your desk",
+                    ActTitle(title: model.onSimulator ? "Tap my screen \(app.simulatorWhere)" : "Tap my screen on your desk",
                              detail: "I'm the one holding up “\(Runtime.Greeting.tapMe)”. A tap is also how you poke me, any time.")
                 }
                 .transition(.scale(scale: 0.9).combined(with: .opacity))
@@ -117,6 +135,10 @@ struct BodyAct: View {
     }
 
     private var hint: String {
+        if model.onSimulator {
+            return AppModel.simulatorKind == .window ? "My window is opening beside this one."
+                : "Is the simulator's page open in your browser? It's at 127.0.0.1:8206."
+        }
         guard let since = model.lookingSince, Date().timeIntervalSince(since) > Self.hintAfter else {
             return "Keep me plugged in and close by."
         }
@@ -141,7 +163,7 @@ struct BodyAct: View {
                     .opacity(still || flown ? 1 : 0)
             }
             .frame(height: 210)
-            ActTitle(title: "There you are!", detail: "That's me on your desk. Say hi to my body.")
+            ActTitle(title: "There you are!", detail: "That's me \(model.onSimulator ? app.simulatorWhere : "on your desk"). Say hi to my body.")
             if let firmware = app.firmwareOffer {
                 snack(firmware)
             } else if let device = app.status?.device, !device.hasTheVoice {
@@ -246,8 +268,7 @@ struct HowToAct: View {
                      detail: paired ? nil : "You'll try these on my body when we meet.")
             VStack(spacing: 8) {
                 lesson(1, "Tap my screen", "I poke back. Tap a lot and I get grumpy.", done: model.lessons.contains(.tap))
-                lesson(2, "Press my button", paired ? "The one on my side. It opens your next agent, or pokes me. Try it now."
-                                                    : "The one on my side. It opens your next agent, or pokes me when there's none.",
+                lesson(2, "Press my button", buttonDetail,
                        done: model.lessons.contains(.button), waiting: paired && model.lessons.contains(.tap))
                 lesson(3, "Hold my button and talk", talkDetail, done: model.lessons.contains(.talk),
                        waiting: paired && model.lessons.contains(.button))
@@ -279,11 +300,18 @@ struct HowToAct: View {
         }
     }
 
+    /// The button lesson's words: where the button is, on the board or in
+    /// the browser, and what it does.
+    private var buttonDetail: String {
+        let which = model.onSimulator ? "BOOT, under my screen, or Space." : "The one on my side."
+        return which + (paired ? " It opens your next agent, or pokes me. Try it now." : " It opens your next agent, or pokes me when there's none.")
+    }
+
     /// The amber lesson's words: once the first three are done on the
     /// board, it's glowing amber for practice, as if an agent were waiting.
     private var amberDetail: String {
         guard paired, model.lessons.isSuperset(of: [.tap, .button, .talk]), !model.lessons.contains(.amber) else {
-            return "An agent is waiting for you. A tap opens it on your Mac; hold a finger on me to put it away."
+            return "An agent is waiting for you. A tap opens it on your Mac; hold \(model.onSimulator ? "a click" : "a finger") on me to put it away."
         }
         return "I'm glowing amber now, as if an agent were waiting. Tap me to answer it."
     }

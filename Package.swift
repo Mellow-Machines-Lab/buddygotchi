@@ -63,7 +63,9 @@ var packageTargets: [Target] = [
     // The menu-bar app. `Boop --headless` runs it without UI or Bluetooth
     // and `Boop --snapshots` draws its panes; both ship in the binary, but
     // their sources are in internal/app/Boop.
-    // Push-to-talk's mic lives in the app, in app/Boop/Talk.swift.
+    // Push-to-talk's mic lives in the app, in app/Boop/Talk.swift, and the
+    // internal build's simulator window in app/Boop/BoardWindow.swift
+    // (`make bundle INTERNAL=1` compiles with BOOP_INTERNAL).
     // Info.plist is linked into the binary with -sectcreate, so macOS finds
     // LSUIElement (a menu-bar app, no Dock icon) and the Bluetooth,
     // microphone and speech usage descriptions without an app bundle. It
@@ -80,7 +82,7 @@ var packageTargets: [Target] = [
         exclude: excludingAllBut(["app/Boop", "internal/app/Boop"])
             + ["app/Boop/Info.plist", "app/Boop/AppIcon.icns", "app/Boop/Boop.entitlements"],
         sources: ["app/Boop/main.swift", "app/Boop/MenuBarApp.swift", "app/Boop/PresenceSignals.swift",
-                  "app/Boop/Talk.swift", "app/Boop/Views", "internal/app/Boop"],
+                  "app/Boop/Talk.swift", "app/Boop/BoardWindow.swift", "app/Boop/Views", "internal/app/Boop"],
         resources: [.copy(".character-build/packs")],
         linkerSettings: [.linkedFramework("WebKit"), .unsafeFlags([
             "-Xlinker", "-sectcreate", "-Xlinker", "__TEXT", "-Xlinker", "__info_plist",

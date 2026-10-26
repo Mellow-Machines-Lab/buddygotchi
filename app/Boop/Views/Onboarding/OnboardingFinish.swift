@@ -220,7 +220,7 @@ struct AgentsAct: View {
             step(.cheer, "When I cheer, tap me", due == .cheer && model.finishedThread == nil
                  ? "When your agent finishes, I cheer and hold up its thread's name. A tap takes you there."
                  : "Your agent finished. A tap takes you to its thread.")
-            step(.drawer, "Swipe up from my bottom edge", "Every agent you have open is in there.")
+            step(.drawer, model.onSimulator ? "Drag up from my bottom edge" : "Swipe up from my bottom edge", "Every agent you have open is in there.")
             step(.row, "Tap your thread", "It opens right where it runs. That's how you get back to any of them.")
         }
     }
@@ -374,11 +374,12 @@ struct FinaleAct: View {
             Text("\(model.name) is all set!").font(.boop(30, .heavy))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                 if model.hasBoard {
-                    tip("mic", "Hold my button", "and ask how your agents are doing")
+                    tip("mic", model.onSimulator ? "Hold BOOT, or Space" : "Hold my button", "and ask how your agents are doing")
                     tip("bell", "Amber, or cheering?", "Tap me to open that thread", amber: true)
                     // Everyone finds the poke; nobody finds the drawer.
                     if model.tours {
-                        tip("rectangle.bottomhalf.inset.filled", "Swipe up from the bottom", "for every agent; tap one to open it")
+                        tip("rectangle.bottomhalf.inset.filled", model.onSimulator ? "Drag up from the bottom" : "Swipe up from the bottom",
+                            "for every agent; tap one to open it")
                     } else {
                         tip("hand.tap", "Tap my screen", "to poke me")
                     }

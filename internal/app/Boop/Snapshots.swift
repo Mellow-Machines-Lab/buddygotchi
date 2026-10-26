@@ -186,6 +186,27 @@ enum Snapshots {
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
+            // No board, with a simulator running on this Mac: it's offered.
+            ("4-body-simulator-offered", at(.body) { $0.simulatorHere = true }),
+            // The simulator as the body (make dev SIM=1, or chosen above).
+            ("4-body-in-browser", at(.body) { $0.app.startOnSimulator = .stay }),
+            ("4-body-in-browser-looking", at(.body, status: status(connected: false)) {
+                $0.app.startOnSimulator = .stay
+                $0.body = .looking
+            }),
+            ("4-body-in-browser-found", at(.body, status: status()) {
+                $0.app.startOnSimulator = .stay
+                $0.body = .looking
+            }),
+            ("4-body-in-browser-joined", at(.body, status: status()) {
+                $0.app.startOnSimulator = .stay
+                $0.body = .joined
+            }),
+            ("5-how-to-in-browser", at(.howTo, status: status()) {
+                $0.app.startOnSimulator = .stay
+                $0.body = .joined
+                $0.progress.lessons = [.tap]
+            }),
             // Back from act 5 after "I don't have my Boop yet", or a launch past the board.
             ("4-body-back-after-skipping", at(.howTo, status: status(connected: false)) { $0.progress.move(to: .body) }),
             ("5-how-to", at(.howTo, status: status()) {

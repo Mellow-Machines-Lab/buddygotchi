@@ -523,6 +523,7 @@ struct OverviewPane: View {
             let action: Action? = switch device.fix {
             case .system(let label, let url)?: (label, { NSWorkspace.shared.open(url) })
             case .update?: openSettings
+            case .showSimulator?: ("Show it", { model.showSimulator() })
             case nil: nil
             }
             notice("exclamationmark.triangle.fill", Theme.clayInk, trouble, device.detail, action: action, more: device.more)

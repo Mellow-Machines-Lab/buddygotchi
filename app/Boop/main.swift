@@ -9,8 +9,10 @@ import LinkKit
 // and agents (VERIFICATION.md L4).
 
 let usage = """
-    usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug]
-               The menu-bar app. The owner runs this; it uses Bluetooth by default. With a --state-dir
+    usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug] [--simulator]
+               The menu-bar app. The owner runs this; it uses Bluetooth by default. --simulator, in the
+               debug build only, makes the simulator its body from the start, onboarding included, and
+               waits for it while it's away: no board and no Bluetooth (make dev SIM=1). With a --state-dir
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
                ~/.codex: they keep reporting to the everyday app's socket, and to this one's too, which
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
@@ -109,8 +111,13 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
     // the board it remembered, and narrows to the first one tapped.
     let remembered = buddies.count > 1 ? nil : AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
     let board = transport(link, only: remembered, log: log)
-    var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath,
-                                  link: board.map { DeviceChooser(board: $0, log: { log.write($0) }) }, steering: bundledSteering())
+    // The simulator to choose: the internal build's window, or the browser's page over its socket.
+    let chooser = { (board: Transport) -> DeviceChooser in
+        AppModel.simulatorKind == .window
+            ? DeviceChooser(board: board, simulator: { BoardLink() }, isThere: { true }, log: { log.write($0) })
+            : DeviceChooser(board: board, log: { log.write($0) })
+    }
+    var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
     if let ble = board as? BLETransport, buddies.count <= 1 { options.chooseBoard = { ble.take(only: $0) } }
     // Several buddies: each its own board, over Bluetooth the one its
     // `board` names, else its own link in `links`, in order.
@@ -187,7 +194,7 @@ let (launchOptions, launchFlags): (Set<String>, Set<String>) =
                        "--buddies", "--links"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
-    : (["--state-dir", "--link"], ["--debug"])
+    : (["--state-dir", "--link"], ["--debug", "--simulator"])
 let args = Arguments.parse(raw, options: launchOptions, flags: launchFlags, command: "boop", usage: usage)
 CharacterPack.use(bundledCharacter())
 if launchHeadless { Headless.run(args) }

@@ -400,6 +400,52 @@ final class DeviceLinkTests: XCTestCase {
         chooser.stop()
     }
 
+    /// Chosen to stay before it starts (`make dev SIM=1`, a demo with no
+    /// board): the board is never started, so Bluetooth is never used, and
+    /// when the simulator stops Boop waits for it rather than going back.
+    func testASimulatorChosenToStayIsWaitedFor() throws {
+        let path = "/tmp/boop-test-stay-\(getpid()).sock"
+        let board = FakeTransport()
+        let chooser = DeviceChooser(board: board, simulatorSocket: path)
+        XCTAssertFalse(DeviceChooser.simulatorRuns(at: path))
+        let simulator = try XCTUnwrap(EchoSocket(path))
+        XCTAssertTrue(DeviceChooser.simulatorRuns(at: path))
+        chooser.choose(.simulator, stay: true)
+        let lines = Lines(), ups = Lines()
+        chooser.start(onLine: { lines.add($0) }, onConnection: { ups.add($0 ? "up" : "down") })
+        XCTAssertNil(board.onLine, "the board is never started")
+        eventually("the simulator's link came up") { ups.all == ["up"] }
+        chooser.send("to the simulator")
+        eventually("the simulator's line") { lines.all == ["to the simulator"] }
+        simulator.stop()
+        Thread.sleep(forTimeInterval: 2.5 * DeviceChooser.watchEvery)
+        XCTAssertEqual(chooser.choice, .simulator, "still on the simulator, waiting for it")
+        XCTAssertNil(board.onLine)
+        chooser.stop()
+    }
+
+    /// A simulator of the app's own (the internal build's window): chosen,
+    /// its link is made then and started, and the board's let go; it's
+    /// there to choose whenever the app says so.
+    func testASimulatorOfTheAppsOwnIsMadeWhenChosen() {
+        let board = FakeTransport(), made = Lines()
+        let window = FakeTransport()
+        window.name = "simulator"
+        let chooser = DeviceChooser(board: board, simulator: { made.add("made"); return window }, isThere: { true })
+        XCTAssertTrue(chooser.simulatorIsThere())
+        chooser.start(onLine: { _ in }, onConnection: { _ in })
+        XCTAssertNotNil(board.onLine, "on the board until it's chosen")
+        XCTAssertEqual(made.all, [], "made only when it's chosen")
+        chooser.choose(.simulator, stay: true)
+        XCTAssertEqual(made.all, ["made"])
+        XCTAssertNotNil(window.onLine, "the window's link is started")
+        XCTAssertEqual(chooser.name, "simulator")
+        chooser.send("to the window")
+        XCTAssertTrue(window.lines.contains("to the window"))
+        XCTAssertFalse(board.lines.contains("to the window"))
+        chooser.stop()
+    }
+
     func testASocketThatIsNotThereIsNoSimulator() {
         XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: "/tmp/boop-test-no-such-\(getpid()).sock").simulatorIsThere())
         // A plain file of that name isn't one either.

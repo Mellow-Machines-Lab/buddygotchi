@@ -8,12 +8,15 @@
 # stops the simulator and the dashboard with it.
 #
 # The app starts on its board, over Bluetooth, so the owner runs this from
-# their own terminal, not an agent's. Its folder isn't the everyday Boop's:
+# their own terminal, not an agent's; with SIM=1 it never uses Bluetooth.
+# Its folder isn't the everyday Boop's:
 # it registers a hook socket of its own, so it hears the real agents too,
 # keeps a Jev key of its own in the Keychain, and never changes the hooks
 # or the login item.
 #
 #   FRESH=1   start the folder afresh, its Jev key with it: onboarding again
+#   SIM=1     the simulator is Boop's body from the start, onboarding included,
+#             and stays it: for a demo with no board (Boop --simulator)
 set -eu
 cd "$(dirname "$0")/../.."
 
@@ -21,7 +24,7 @@ STATE="$HOME/Library/Application Support/Boop-dev"
 # The Keychain entry of a Boop on that folder (Keychain.account(for:)).
 KEY_ACCOUNT=dev-Boop-dev
 PORT=8206
-SIM="http://127.0.0.1:$PORT"
+SIM_URL="http://127.0.0.1:$PORT"
 
 if [ -n "${FRESH:-}" ]; then
   echo "dev: starting $STATE afresh"
@@ -41,8 +44,8 @@ make -s -C internal app
 # and left alone when one is already running (make demo's, or another
 # make dev's).
 SIM_PID=
-if curl -s -o /dev/null "$SIM/"; then
-  echo "dev: a simulator is already running at $SIM; using it"
+if curl -s -o /dev/null "$SIM_URL/"; then
+  echo "dev: a simulator is already running at $SIM_URL; using it"
 elif command -v emcc >/dev/null; then
   if [ ! -f simulator/web/dist/boop-sim.wasm ] || [ -n "$(find firmware/src firmware/assets simulator/core \
       linkkit/device/src .character-build simulator/web/boop-simulator.js simulator/web/index.html \
@@ -52,17 +55,18 @@ elif command -v emcc >/dev/null; then
   fi
   python3 simulator/web/serve.py --port "$PORT" &
   SIM_PID=$!
-  for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "$SIM/" && break; sleep 0.5; done
+  for _ in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "$SIM_URL/" && break; sleep 0.5; done
 else
   echo "dev: no simulator: it needs Emscripten (brew install emscripten)"
+  [ -n "${SIM:-}" ] && exit 1
 fi
 
 # The page is the board, so it opens only for a simulator started here: a
 # running one has its page open already, on the face the simulator draws
 # for the staged pack.
 FACE=$(python3 characters/charactergen.py --sim-face "$(cat .character-build/pack)")
-[ -n "$SIM_PID" ] && open "$SIM/?face=$FACE"
-curl -s -o /dev/null "$SIM/" && open "$SIM/characters/studio/#view=matrix&board=/board"
+[ -n "$SIM_PID" ] && open "$SIM_URL/?face=$FACE"
+curl -s -o /dev/null "$SIM_URL/" && open "$SIM_URL/characters/studio/#view=matrix&board=/board"
 
 DASH="internal/tools/boopctl dash --state-dir '$STATE'"
 osascript -e "tell application \"Terminal\" to do script \"cd '$PWD' && $DASH\"" >/dev/null
@@ -74,4 +78,4 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-.build/debug/Boop --debug --state-dir "$STATE"
+.build/debug/Boop --debug --state-dir "$STATE" ${SIM:+--simulator}

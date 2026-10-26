@@ -9,16 +9,27 @@
 # SIGN_IDENTITY is who signs it: "-", ad hoc, by default, which runs on
 # this Mac only; a Developer ID's name, once there is one, for others.
 # BUNDLE_OUT is where it goes, .build/Boop.app by default.
+# INTERNAL=1 makes the internal build, into .build/internal/Boop.app: the
+# same app with what's for us and not for buyers, compiled in with
+# BOOP_INTERNAL. For now that's the simulator, the board's firmware in a
+# window of the app's own (app/Boop/BoardWindow.swift), a body to choose
+# in onboarding and Settings for anyone without a board. It needs
+# Emscripten (`brew install emscripten`) to build the simulator's page.
 # The build number is the commit count, which only goes up, so a clone
 # made with --depth gets a wrong one: CI needs the whole history.
 set -eu
 root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 cd "$root"
 identity=${SIGN_IDENTITY:--}
-app=${BUNDLE_OUT:-.build/Boop.app}
+internal=${INTERNAL:-}
+app=${BUNDLE_OUT:-.build/${internal:+internal/}Boop.app}
+if [ -n "$internal" ] && ! command -v emcc >/dev/null; then
+  echo "bundle: INTERNAL=1 needs Emscripten for the simulator: brew install emscripten" >&2
+  exit 1
+fi
 
 python3 characters/charactergen.py --stage
-build="swift build -c release --arch arm64 --arch x86_64"
+build="swift build -c release --arch arm64 --arch x86_64${internal:+ -Xswiftc -DBOOP_INTERNAL}"
 $build --product Boop
 $build --product agent-hook
 bin=$($build --show-bin-path)
@@ -49,6 +60,19 @@ done
 cp -R "$packs" "$app/Contents/Resources/packs"
 cp app/Boop/AppIcon.icns "$app/Contents/Resources/"
 for board in $boards; do python3 firmware/tools/package.py "$board" "$app/Contents/Resources/firmware"; done
+# The internal build's simulator: the page, its core and the pack's voice,
+# with the face the pack gives the AMOLED board, which the window draws.
+if [ -n "$internal" ]; then
+  simulator/web/build.sh >/dev/null
+  sim="$app/Contents/Resources/simulator"
+  mkdir -p "$sim"
+  cp simulator/web/dist/app.html simulator/web/dist/boop-simulator.js simulator/web/dist/boop-sim.js \
+    simulator/web/dist/boop-sim.wasm "$sim/"
+  pack=$(python3 characters/charactergen.py --which)
+  [ -f "$pack/voice/voice.bin" ] && cp "$pack/voice/voice.bin" "$sim/voice.bin"
+  python3 -c 'import json,sys; faces = json.load(open(sys.argv[1])).get("faces", {}); print(faces.get("amoled206") or "pixel")' \
+    "$pack/character.json" > "$sim/face"
+fi
 plist="$app/Contents/Info.plist"
 cp app/Boop/Info.plist "$plist"
 plutil -insert CFBundleShortVersionString -string "$version" "$plist"
@@ -62,4 +86,4 @@ stamp=--timestamp
 codesign --force --options runtime $stamp --sign "$identity" "$app/Contents/MacOS/agent-hook"
 codesign --force --options runtime $stamp --sign "$identity" --entitlements app/Boop/Boop.entitlements "$app"
 codesign --verify --strict --deep "$app"
-echo "bundle: $app, Boop $version ($number), signed by ${identity}"
+echo "bundle: $app, Boop $version ($number)${internal:+, internal}, signed by ${identity}"

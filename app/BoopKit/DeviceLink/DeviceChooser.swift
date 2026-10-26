@@ -2,21 +2,25 @@ import Darwin
 import Foundation
 import LinkKit
 
-/// Which body Boop talks to: its board, or the simulator, a board in a
-/// browser on this Mac (simulator/README.md).
+/// Which body Boop talks to: its board, or the simulator, the board's
+/// firmware on this Mac (simulator/README.md): in a browser, or in a window
+/// of the internal build's own.
 public enum DeviceChoice: String, Sendable {
     case board
     case simulator
 }
 
 /// The device link when there's a choice of device: the board's transport
-/// until the simulator is chosen, then the simulator's, over its USB
-/// cable. Nothing above it knows which it is: changing over is a drop and
-/// a new connection, as a board swapped for another is.
+/// until the simulator is chosen, then the simulator's: over its USB
+/// cable, a socket, for the browser's, or the one the internal build's
+/// window gives. Nothing above it knows which it is: changing over is a
+/// drop and a new connection, as a board swapped for another is.
 ///
 /// The simulator is a choice only while it's running, and the choice
 /// isn't kept: when the simulator stops, Boop goes back to its board, and
-/// the next launch starts with the board.
+/// the next launch starts with the board. Chosen to stay (`make dev SIM=1`,
+/// for a demo with no board), it waits for the simulator instead, and the
+/// board is never looked for until it's chosen.
 public final class DeviceChooser: Transport, @unchecked Sendable {
     /// Where a running simulator shares its board's USB, as a bridge
     /// shares a board's (simulator/web/serve.py).
@@ -26,11 +30,14 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
     public static let watchEvery: TimeInterval = 2
 
     private let board: Transport
-    private let simulatorPath: String
+    /// The simulator's link, made each time it's chosen, and whether one
+    /// is there to choose.
+    private let makeSimulator: @Sendable () -> Transport
+    private let simulatorRuns: @Sendable () -> Bool
     private let log: @Sendable (String) -> Void
     private let lock = NSLock()
     private let queue = DispatchQueue(label: "boop.device-chooser", qos: .utility)
-    private var simulator: SocketTransport?
+    private var simulator: Transport?
     private var watch: DispatchSourceTimer?
     private var onLine: (@Sendable (String) -> Void)?
     private var onConnection: (@Sendable (Bool) -> Void)?
@@ -40,10 +47,20 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
     private var turn = 0
     private var up = false
 
-    public init(board: Transport, simulatorSocket: String = DeviceChooser.simulatorSocket,
+    /// The browser's simulator, over its USB socket.
+    public convenience init(board: Transport, simulatorSocket: String = DeviceChooser.simulatorSocket,
+                            log: @escaping @Sendable (String) -> Void = { _ in }) {
+        self.init(board: board, simulator: { SocketTransport(path: simulatorSocket, name: "simulator") },
+                  isThere: { DeviceChooser.simulatorRuns(at: simulatorSocket) }, log: log)
+    }
+
+    /// A simulator of the app's own: `simulator` makes its link each time
+    /// it's chosen, and `isThere` says whether there's one to choose.
+    public init(board: Transport, simulator: @escaping @Sendable () -> Transport, isThere: @escaping @Sendable () -> Bool,
                 log: @escaping @Sendable (String) -> Void = { _ in }) {
         self.board = board
-        simulatorPath = simulatorSocket
+        makeSimulator = simulator
+        simulatorRuns = isThere
         self.log = log
     }
 
@@ -84,23 +101,32 @@ public final class DeviceChooser: Transport, @unchecked Sendable {
     /// Whether a simulator is running: one of this user's own, since
     /// another user's is never Boop's.
     public func simulatorIsThere() -> Bool {
+        lock.withLock { simulator != nil && up } || simulatorRuns()
+    }
+
+    /// Whether a simulator of this user's runs at `path`, with no chooser yet.
+    public static func simulatorRuns(at path: String = DeviceChooser.simulatorSocket) -> Bool {
+        isOwnSocket(path) && SocketTransport.answers(path)
+    }
+
+    private static func isOwnSocket(_ path: String) -> Bool {
         var info = stat()
-        guard lstat(simulatorPath, &info) == 0, info.st_mode & S_IFMT == S_IFSOCK, info.st_uid == getuid() else { return false }
-        return lock.withLock { simulator != nil && up } || SocketTransport.answers(simulatorPath)
+        return lstat(path, &info) == 0 && info.st_mode & S_IFMT == S_IFSOCK && info.st_uid == getuid()
     }
 
     /// Changes over to the board or the simulator. What the device was
     /// playing ends as a drop ends it. While the simulator is chosen it's
-    /// watched, and Boop goes back to its board when it has stopped.
-    public func choose(_ choice: DeviceChoice) {
+    /// watched, and Boop goes back to its board when it has stopped,
+    /// unless it's to `stay`: then it waits for the simulator to come back.
+    public func choose(_ choice: DeviceChoice, stay: Bool = false) {
         guard choice != self.choice else { return }
         let (was, now, turn, started, wasUp, dropped, hear) = lock.withLock {
             let was: Transport = simulator ?? board
-            simulator = choice == .simulator ? SocketTransport(path: simulatorPath, name: "simulator") : nil
+            simulator = choice == .simulator ? makeSimulator() : nil
             self.turn += 1
             watch?.cancel()
             watch = nil
-            if choice == .simulator {
+            if choice == .simulator, !stay {
                 let timer = DispatchSource.makeTimerSource(queue: queue)
                 timer.schedule(deadline: .now() + DeviceChooser.watchEvery, repeating: DeviceChooser.watchEvery, leeway: .milliseconds(500))
                 timer.setEventHandler { [weak self] in

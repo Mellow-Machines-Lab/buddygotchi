@@ -1422,6 +1422,20 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
+    /// The internal build's body, the simulator or the board, is kept from
+    /// launch to launch: the board unless the simulator was chosen, and
+    /// written only when it was.
+    func testSettingsKeepTheSimulatorAsTheBody() throws {
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try Data("{}".utf8).write(to: dir.appendingPathComponent(AppSettings.file))
+        XCTAssertFalse(AppSettings.load(from: dir).simulator, "the board by default")
+        try AppSettings.update(in: dir) { $0.simulator = true }
+        XCTAssertTrue(AppSettings.load(from: dir).simulator)
+        try AppSettings.update(in: dir) { $0.simulator = false }
+        let text = try String(contentsOf: dir.appendingPathComponent(AppSettings.file), encoding: .utf8)
+        XCTAssertFalse(text.contains("simulator"), "the board is the default, so it isn't written")
+    }
+
     /// Hand-edited volumes obey the same 0–10
     /// range as Settings, including at launch before the slider is used.
     func testSavedVolumesStayWithinTheSettingsRange() throws {

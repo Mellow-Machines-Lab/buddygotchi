@@ -70,18 +70,38 @@ class Cable:
         self.lock = threading.Lock()
         self.board = None  # the page's WebSocket: a callable that sends one line
         self.backlog = {}  # each client's lines it hasn't read yet
+        self.hanging_up = False  # the clients are to be dropped (hang_up)
         self.asking = []  # (the start of the line awaited, an Event, its line once heard) for ask()
         self.wake_r, self.wake_w = os.pipe()  # wakes the clients' thread for new lines
         os.set_blocking(self.wake_w, False)
 
+    # A board that comes or goes hangs up on the clients, as a board that
+    # restarts drops its Bluetooth link: the app connects again within a
+    # second and greets the board that's there now, where a socket it kept
+    # would leave it waiting for its next heartbeat. The page plugs its
+    # cable in afresh at every power-on and reset.
     def plug(self, send) -> None:
         with self.lock:
             self.board = send
+        self.hang_up()
 
     def unplug(self, send) -> None:
         with self.lock:
-            if self.board is send:
-                self.board = None
+            if self.board is not send:
+                return
+            self.board = None
+        self.hang_up()
+
+    def hang_up(self) -> None:
+        with self.lock:
+            self.hanging_up = True
+        self.wake()
+
+    def wake(self) -> None:
+        try:
+            os.write(self.wake_w, b"x")
+        except BlockingIOError:  # already woken
+            pass
 
     def to_board(self, line: bytes) -> None:
         with self.lock:
@@ -116,10 +136,7 @@ class Cable:
                     waiting[1].set()
             for out in self.backlog.values():
                 out.extend(line + b"\n")
-        try:
-            os.write(self.wake_w, b"x")
-        except BlockingIOError:  # already woken
-            pass
+        self.wake()
 
     def serve(self, path: str) -> tuple:
         """Listens at the path, and returns what identifies the socket made
@@ -160,6 +177,11 @@ class Cable:
                 conn.close()
 
             while True:
+                with self.lock:
+                    hanging_up, self.hanging_up = self.hanging_up, False
+                if hanging_up:
+                    for conn in list(partial):
+                        drop(conn)
                 with self.lock:
                     behind = [c for c, out in self.backlog.items() if len(out) > MAX_BEHIND]
                     waiting = [c for c, out in self.backlog.items() if out and c not in behind]
@@ -413,7 +435,7 @@ def main() -> int:
         for path, socket_path in sockets.items():
             print(f"{path.rsplit('/', 1)[1]}'s USB, as a bridge's socket: {socket_path}")
     else:
-        print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (add ?face=gel for Boop's own face)")
+        print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (?face=gel picks the gel, for a pack with both faces)")
         print(f"its USB, as a bridge's socket: {args.socket}")
         print(f"every mood and state, the board's marked: http://127.0.0.1:{args.port}/characters/studio/#view=matrix&board=/board")
     sys.stdout.flush()

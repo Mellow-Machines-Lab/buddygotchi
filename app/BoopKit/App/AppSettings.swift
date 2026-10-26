@@ -22,6 +22,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Whether the board shows the agents' calls falling past Boop, and
     /// the ones that hit it (`WorkStream`): on unless you turn it off.
     public var workStream = true
+    /// Boop's body is the simulator, in a window of the internal build's
+    /// own, rather than its board: chosen in onboarding or Settings, and
+    /// kept from launch to launch. Off, the board, unless chosen.
+    public var simulator = false
 
     public init() {}
 
@@ -45,9 +49,10 @@ public struct AppSettings: Codable, Equatable, Sendable {
         board = try? c.decodeIfPresent(String.self, forKey: .board)
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
         workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
+        simulator = (try? c.decodeIfPresent(Bool.self, forKey: .simulator)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, volume, buddies, board, onboarding, workStream }
+    enum CodingKeys: String, CodingKey { case personality, talk, volume, buddies, board, onboarding, workStream, simulator }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -58,6 +63,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
         if !workStream { try c.encode(workStream, forKey: .workStream) }
+        if simulator { try c.encode(simulator, forKey: .simulator) }
     }
 
     public static let file = "settings.json"

@@ -17,6 +17,8 @@ PACK := python3 internal/tools/packs.py --chosen
 # open beside it (internal/tools/dev.sh). It starts on the board, over
 # Bluetooth, so the owner runs this; Settings' Simulator row switches to
 # the simulator and back. FRESH=1 starts the folder afresh: onboarding again.
+# SIM=1 makes the simulator its body from the start, onboarding included,
+# with no Bluetooth: a demo with no board (FRESH=1 SIM=1 from the top).
 dev:
 	$(PACK)
 	internal/tools/dev.sh
@@ -25,7 +27,10 @@ dev:
 # build for Apple silicon and Intel, with the firmware for each board the
 # chosen pack has a face for, to update them with, signed ad hoc until
 # there's a Developer ID (SIGN_IDENTITY=…). BUNDLE_OUT puts it elsewhere.
-# Open it to run it; that's Bluetooth, so the owner's.
+# Open it to run it; that's Bluetooth, so the owner's. INTERNAL=1 makes the
+# internal build, in .build/internal/Boop.app: the same app with what's
+# ours, the simulator for now, a board in a window of its own to choose
+# as Boop's body (needs Emscripten).
 bundle:
 	$(PACK)
 	app/tools/bundle.sh

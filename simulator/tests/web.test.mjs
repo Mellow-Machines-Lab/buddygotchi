@@ -157,6 +157,31 @@ test('the motion sensor: a shake is a gesture, and face down and up again', { sk
   assert.deepEqual(did, ['dizzy', 'facedown', 'peekaboo']);
 });
 
+// A native face is the AMOLED board's, so the board is that one: no LED,
+// its motion sensor there from power-on, flat on the desk, and a finger's
+// lift ending its touch at once, as the touch chip reports it. The pixel
+// face's board is the CYD's, with an LED and no sensor.
+test('the gel is on the AMOLED board: no LED, a motion sensor, a lift ends a touch', { skip }, async () => {
+  const b = await board('gel');
+  if ((await b.request({ t: 'hello' })).face !== 'gel') return;  // a checkout without Boop's pack has only the pixel face
+  b.send(QUIET);
+  await b.run(100);
+  assert.ok(!('led' in b.parts) && 'backlight' in b.parts, 'no LED among its parts');
+  assert.deepEqual((await b.request({ t: 'dbg.state' })).imu, [0, 0, 1000], 'flat on the desk, untouched');
+  b.input('touch 60 120');
+  await b.run(200);
+  assert.equal((await b.request({ t: 'dbg.state' })).touch.down, true);
+  b.input('release');
+  await b.run(10);
+  const touch = (await b.request({ t: 'dbg.state' }, 10)).touch;
+  assert.deepEqual([touch.down, touch.lifts], [false, 1], 'let go is lifted, so the touch ends on the next look');
+  const cyd = await board('pixel', {}, existsSync(path.join(dist, 'boop-sim-pixel.js')) ? 'boop-sim-pixel.js' : 'boop-sim.js');
+  cyd.send(QUIET);
+  await cyd.run(100);
+  assert.ok('led' in cyd.parts);
+  assert.equal((await cyd.request({ t: 'dbg.state' })).imu, null, 'no sensor until something tilts it');
+});
+
 test('a line plays for as long as its samples last, from the card in the slot', { skip: needsVoice }, async () => {
   const b = await board();
   await b.run(20);
@@ -187,6 +212,24 @@ test('a line plays for as long as its samples last, from the card in the slot', 
   assert.equal(b.parts.card, 'ok');
 });
 
+// A card in or out is another voice, or none, so the board says its hello
+// again to the host it heard, as after dbg.card: a host that asked before
+// the card went in learns its voice.
+test('a card in or out says the hello again, with its voice', { skip: needsVoice }, async () => {
+  const b = await board();
+  const first = await b.request({ t: 'hello' });
+  assert.equal(first.voice, 'none', 'no card yet');
+  const before = b.lines.length;
+  b.insert(readFileSync(voice));
+  await b.run(200);
+  const again = b.lines.slice(before).filter(m => m.t === 'hello').pop();
+  assert.ok(again && again.voice !== 'none', `the new hello names the voice: ${JSON.stringify(again)}`);
+  const out = b.lines.length;
+  b.input('card out');
+  await b.run(200);
+  assert.equal(b.lines.slice(out).filter(m => m.t === 'hello').pop()?.voice, 'none', 'and out again, none');
+});
+
 test('the cable carries whole lines both ways, long ones too', { skip }, async t => {
   const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
   const socket = path.join(dir, 'usb.sock'), port = 18206 + Math.floor(Math.random() * 1000);
@@ -213,6 +256,48 @@ test('the cable carries whole lines both ways, long ones too', { skip }, async t
   assert.equal(heardByTool[1], long);
   page.close();
   tool.destroy();
+});
+
+// A board that comes or goes hangs up on the cable's clients, as a board
+// that restarts drops its Bluetooth link: the app connects again and greets
+// the board that's there now, rather than wait for its next heartbeat. The
+// page plugs its cable in afresh at every power-on and reset.
+test('a board plugged in or out hangs up on the clients', { skip }, async t => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'bsim-'));
+  const socket = path.join(dir, 'usb.sock'), port = 18206 + Math.floor(Math.random() * 1000);
+  const server = spawn('python3', [path.join(repo, 'simulator/web/serve.py'), '--port', String(port), '--socket', socket, '--dist', dist]);
+  t.after(() => server.kill());
+  for (let i = 0; i < 100 && !existsSync(socket); i++) await sleep(50);
+  const plug = async () => {
+    const page = new WebSocket(`ws://127.0.0.1:${port}/usb`);
+    await new Promise((ok, no) => { page.onopen = ok; page.onerror = no; });
+    return page;
+  };
+  const connect = async () => {
+    const tool = net.connect(socket);
+    await new Promise(ok => tool.on('connect', ok));
+    tool.hungUp = false;
+    tool.on('close', () => { tool.hungUp = true; });
+    tool.on('error', () => {});
+    return tool;
+  };
+  const first = await plug();
+  await sleep(100);
+  const tool = await connect();
+  await sleep(200);
+  assert.equal(tool.hungUp, false, 'a client stays while the board does');
+  const second = await plug();
+  for (let i = 0; i < 40 && !tool.hungUp; i++) await sleep(25);
+  assert.ok(tool.hungUp, 'a new board hangs up on it');
+  first.close();
+  await sleep(200);
+  const again = await connect();
+  await sleep(200);
+  assert.equal(again.hungUp, false, 'an older page leaving is no board leaving');
+  second.close();
+  for (let i = 0; i < 40 && !again.hungUp; i++) await sleep(25);
+  assert.ok(again.hungUp, 'the board unplugged hangs up on it');
+  again.destroy();
 });
 
 // Pins the cable's bridge rules (linkkit/SPEC.md §8, §9): a client 4 MB

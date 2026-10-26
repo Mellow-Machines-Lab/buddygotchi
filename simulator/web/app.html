@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Boop</title>
+<style>
+  html, body { margin: 0; background: #151515; }
+  /* The board at its own size, which the window fits; its status line is the developer's, not the window's. */
+  body { width: max-content; padding: 18px; }
+  boop-simulator::part(status) { display: none; }
+</style>
+<!-- The page the internal build's board window shows (app/Boop/BoardWindow.swift): one board with its controls, its
+     USB the app itself rather than a cable. It tells the app each line the board says, each power-on and power-off,
+     and its size; the app sends the board its lines with usb(line). ?face=gel picks the face, as on the local page. -->
+<script type="module">
+  import './boop-simulator.js';
+  const app = window.webkit?.messageHandlers?.board;
+  const say = message => app?.postMessage(message);
+  addEventListener('error', e => say({ log: `${e.message} (${e.filename}:${e.lineno})` }));
+  addEventListener('unhandledrejection', e => say({ log: String(e.reason) }));
+  const ask = new URLSearchParams(location.search);
+  const element = document.createElement('boop-simulator');
+  element.setAttribute('face', ask.get('face') || 'gel');
+  element.setAttribute('voice', 'voice.bin');
+  element.setAttribute('controls', '');
+  element.setAttribute('motion', '');
+  element.addEventListener('ready', () => {
+    const board = element.board;
+    board.addEventListener('line', e => say({ line: e.detail }));
+    // Each power-on, a reset's too, is the cable plugged in afresh.
+    board.addEventListener('power', e => say({ power: e.detail }));
+    if (board.on) say({ power: true });
+    window.usb = line => board.send(line);
+    // A window may play sound without a click first, as a browser won't.
+    board.unmute();
+    element.focus();
+  });
+  // The window fits the board, whatever its face and buttons.
+  new ResizeObserver(() => {
+    const r = element.getBoundingClientRect();
+    say({ size: [Math.ceil(r.width + 36), Math.ceil(r.height + 36)] });
+  }).observe(element);
+  document.body.append(element);
+</script>

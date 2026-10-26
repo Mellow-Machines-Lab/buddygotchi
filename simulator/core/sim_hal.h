@@ -72,11 +72,22 @@ struct SimHal : app::Hal {
 
   // The panel's finger and the BOOT button, as whoever holds them last
   // said. A press is seen at least once, however soon it's let go: a click
-  // is over sooner than the board looks.
+  // is over sooner than the board looks. A finger let go is reported
+  // lifted, as the AMOLED's touch chip reports it, so a touch ends at once.
   void setTouch(bool on, int tx = 0, int ty = 0) {
+    if (!on && down) lifted = true, ++lifts;
     down = on;
     if (on) x = tx, y = ty, touched = true;
   }
+  // A click's press and lift can come between two looks: the look that
+  // sees the press leaves the lift for the next.
+  bool touchLifted() override {
+    if (seen) return false;
+    const bool was = lifted;
+    lifted = false;
+    return was;
+  }
+  uint32_t touchLifts() override { return lifts; }
   void setBoot(bool on) {
     pressed = on;
     if (on) booted = true;
@@ -87,7 +98,7 @@ struct SimHal : app::Hal {
     return was;
   }
   // The motion sensor, once something has tilted it: until then the board
-  // has none, as the CYD hasn't.
+  // has none, as the CYD hasn't. The AMOLED's lies flat from power-on (amoled()).
   void setMotion(int x, int y, int z) { tilt[0] = x, tilt[1] = y, tilt[2] = z, tilted = true; }
   bool motion(int& ax, int& ay, int& az) override {
     if (!tilted) return false;
@@ -96,7 +107,7 @@ struct SimHal : app::Hal {
   }
   bool touch(int& tx, int& ty) override {
     const bool was = down || touched;
-    touched = false;
+    touched = false, seen = was;
     tx = x, ty = y;
     return was;
   }
@@ -104,7 +115,12 @@ struct SimHal : app::Hal {
   int tilt[3] = {0, 0, 1000};
   bool tilted = false;
 
+  // The board a native face is drawn for, the AMOLED's: its motion sensor
+  // lies flat on the desk from power-on, and it has no LED.
+  void amoled() { tilted = true, hasLed = false; }
+
   // The light, the backlight and the amp, to be shown.
+  bool hasLed = true;
   uint32_t led = 0;
   uint8_t backlight = 255;
   std::atomic<bool> amp{false};
@@ -159,6 +175,9 @@ struct SimHal : app::Hal {
  private:
   bool down = false, pressed = false;
   bool touched = false, booted = false;  // pressed since last looked at
+  bool lifted = false;                   // let go since last looked at
+  bool seen = false;                     // the last look saw a finger
+  uint32_t lifts = 0;
   int x = 0, y = 0;
 };
 

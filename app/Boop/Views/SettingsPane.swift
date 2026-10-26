@@ -178,20 +178,40 @@ struct SettingsPane: View {
                             .help("Let \(model.name) take any board, and remember the next one tapped")
                     }
                 }
-                // A simulator running on this Mac is a body to choose, while it runs.
+                // A simulator on this Mac is a body to choose: the browser's
+                // while it runs, the internal build's window always.
                 if model.simulator != .none {
                     Hairline().padding(.leading, 40).padding(.trailing, 12)
-                    SettingRow(icon: "macwindow", title: "Simulator",
-                               detail: model.usingSimulator ? "\(model.name) is using the simulator in your browser, not its board."
-                                   : "A simulated board is running on this Mac.") {
-                        Button(model.usingSimulator ? "Use the board" : "Use it") {
-                            model.use(model.usingSimulator ? .board : .simulator)
-                        }.buttonStyle(.row).fixedSize()
-                            .help(model.usingSimulator ? "Go back to \(model.name)'s board" : "Use the simulator as \(model.name)'s body until it stops")
+                    SettingRow(icon: "macwindow", title: "Simulator", detail: simulatorDetail) {
+                        HStack(spacing: 6) {
+                            if model.usingSimulator {
+                                Button("Show") { model.showSimulator() }.buttonStyle(.row).fixedSize()
+                                    .help("Bring \(model.name)'s simulated board to the front")
+                            }
+                            Button(model.usingSimulator ? "Use the board" : "Use it") {
+                                model.use(model.usingSimulator ? .board : .simulator)
+                            }.buttonStyle(.row).fixedSize()
+                                .help(model.usingSimulator ? "Go back to \(model.name)'s board" : simulatorHelp)
+                        }
                     }
                 }
             }
         }
+    }
+
+    /// What the simulator's row says: where it is, and whether it's in use.
+    private var simulatorDetail: String {
+        let window = AppModel.simulatorKind == .window
+        if model.usingSimulator {
+            return window ? "\(model.name)'s body is a simulated board in a window of its own, not its board."
+                : "\(model.name) is using the simulator in your browser, not its board."
+        }
+        return window ? "A simulated board in a window, for when the board isn't here." : "A simulated board is running on this Mac."
+    }
+
+    private var simulatorHelp: String {
+        AppModel.simulatorKind == .window ? "Use the simulated board as \(model.name)'s body, from now on"
+            : "Use the simulator as \(model.name)'s body until it stops"
     }
 
     private var firmwareRow: some View {

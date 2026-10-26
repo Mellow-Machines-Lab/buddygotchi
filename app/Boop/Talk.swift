@@ -91,11 +91,12 @@ final class SpeechListener: @unchecked Sendable {
         let engine = AVAudioEngine()
         let input = engine.inputNode
         // With no usable input device (a Mac mini with no mic, a closed
-        // MacBook) the format is 0 Hz or 0 channels, and a tap on it raises
-        // an exception Swift can't catch.
-        let format = input.outputFormat(forBus: 0)
-        guard format.sampleRate > 0, format.channelCount > 0 else {
-            log("talk: no usable input device (\(format.sampleRate) Hz, \(format.channelCount) channels)")
+        // MacBook) the hardware's format is 0 Hz or 0 channels, while the
+        // node's output may still claim 2 channels at 44.1 kHz; a tap then
+        // raises an exception Swift can't catch, so both are checked.
+        let hardware = input.inputFormat(forBus: 0), format = input.outputFormat(forBus: 0)
+        guard Self.usable(hardware), Self.usable(format) else {
+            log("talk: no usable input device (\(hardware.sampleRate) Hz, \(hardware.channelCount) channels)")
             return "No microphone is connected."
         }
         let request = SFSpeechAudioBufferRecognitionRequest()
@@ -105,7 +106,8 @@ final class SpeechListener: @unchecked Sendable {
         self.engine = engine
         best = ""
         // The samples go only to the recognizer.
-        input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+        // The bus's own format (nil), which can't mismatch the hardware's.
+        input.installTap(onBus: 0, bufferSize: 1024, format: nil) { buffer, _ in
             request.append(buffer)
         }
         do {
@@ -130,6 +132,9 @@ final class SpeechListener: @unchecked Sendable {
         }
         return nil
     }
+
+    /// A format a mic can record in: some channels at some rate.
+    static func usable(_ format: AVAudioFormat) -> Bool { format.sampleRate > 0 && format.channelCount > 0 }
 
     /// Stops the mic and hands over what was heard, or nil if nothing was.
     func stop(_ finish: @escaping (String?) -> Void) {

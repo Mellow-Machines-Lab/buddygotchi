@@ -48,6 +48,9 @@ class Board {
   // One pass of the board's loop, then the next batch of lines waiting.
   // True when it drew a frame.
   bool tick();
+  // What the board is has changed (another voice file on its card): its
+  // hello goes again to the host it last heard, as after dbg.card.
+  void helloChanged() { kit_->helloChanged(); }
 
   // A frame as a page's canvas takes it: RGBA, 8 bits each, row by row.
   struct Picture {

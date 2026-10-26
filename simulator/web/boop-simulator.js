@@ -27,7 +27,8 @@ const compiled = {};
 /// lines in and out. A page can have several. It fires `power` (on or
 /// off), `frame` (an ImageData, the same one each time for a size),
 /// `line` (each line the board says on USB) and `parts`
-/// (`{led, backlight, amp, card}`, whenever one changes).
+/// (`{led, backlight, amp, card}`, whenever one changes; no `led` on the
+/// AMOLED board, which has none).
 export class Board extends EventTarget {
   #core; #usb; #env; #input; #timer = 0;
   #audio = null; #soundAt = 0; #muted = false;
@@ -268,20 +269,50 @@ export class DemoPlayer extends EventTarget {
 }
 
 const STYLE = `
-  :host { display: inline-block; max-width: 100%; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #999; }
-  .body { background: #212121; border-radius: 18px; padding: 22px 22px 12px; }
+  :host { display: inline-block; max-width: 100%; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #999;
+          outline: none; }  /* it takes the keyboard for Space, with no ring round the whole board */
+  .body { background: linear-gradient(#2a2a2a, #1c1c1c); border-radius: 22px; padding: 20px 20px 14px;
+          box-shadow: inset 0 1px 0 #3a3a3a, 0 20px 50px rgba(0, 0, 0, .5); }
+  /* A native face's board, the AMOLED's: its panel under black glass with round corners, as on the board. */
+  .body.native { border-radius: 46px; padding: 18px 18px 14px; }
+  /* The board moved as the motion buttons move it: shaken, held up off the desk, a thump on it. */
+  .body { transition: transform .25s ease-out, box-shadow .25s ease-out; }
+  .body.held { transform: translateY(-10px) rotate(-1deg); box-shadow: inset 0 1px 0 #3a3a3a, 0 36px 64px rgba(0, 0, 0, .6); }
+  .body.shake { animation: shake .45s ease-in-out; }
+  .body.thump { animation: thump .18s ease-out; }
+  @keyframes shake { 20% { transform: translateX(-8px) rotate(-1.5deg); } 40% { transform: translateX(8px) rotate(1.5deg); }
+                     60% { transform: translateX(-6px) rotate(-1deg); } 80% { transform: translateX(6px) rotate(1deg); } }
+  @keyframes thump { 40% { transform: translateY(4px) scale(.995); } }
+  @media (prefers-reduced-motion: reduce) { .body { transition: none; animation: none !important; } }
+  .body.native .screen { background: #000; border-radius: 34px; padding: 14px; box-shadow: inset 0 0 0 1px #2a2a2a; }
   /* On a screen narrower than the board, it shrinks to fit rather than scroll sideways. */
-  @media (max-width: 600px) { .body { padding: 12px 12px 8px; } }
+  @media (max-width: 600px) { .body, .body.native { padding: 12px 12px 8px; } .body.native .screen { padding: 8px; } }
   .screen { position: relative; }
   canvas { display: block; background: #000; border-radius: 6px; image-rendering: pixelated; touch-action: none;
            cursor: pointer; width: var(--w); max-width: 100%; height: auto; }
+  .body.native canvas { background: transparent; border-radius: 0; image-rendering: auto; }
   .finger { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px; border-radius: 50%;
             border: 2px solid #fff; opacity: 0; pointer-events: none; }
   .finger.down { animation: finger .6s ease-out; }
   @keyframes finger { from { opacity: .9; transform: scale(.3); } to { opacity: 0; transform: scale(1.4); } }
-  .chin { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-height: 34px; padding: 4px 0; box-sizing: border-box; }
-  button { font: inherit; color: #bbb; background: #383838; border: 0; border-radius: 5px; padding: 3px 10px; cursor: pointer; }
-  button:active, button.down { background: #666; }
+  /* The rows under the screen wrap at its width, never widening the board. */
+  .chin, .hands { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; width: 0; min-width: 100%;
+                  box-sizing: border-box; }
+  .chin { padding: 12px 2px 0; }
+  .hands { margin-top: 12px; padding: 10px 2px 0; border-top: 1px solid #2e2e2e; }
+  .hands:not(:has(button)) { display: none; }
+  .tools { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chin .sound { margin-left: auto; }
+  .chin .sound + .led { margin-left: 0; }
+  button { font: 500 12px system-ui, -apple-system, sans-serif; color: #d0d0d0; background: #323232; border: 1px solid #3e3e3e;
+           border-radius: 8px; padding: 5px 11px; cursor: pointer; transition: background .15s, color .15s; }
+  button:hover { background: #3c3c3c; }
+  button:active, button.down { background: #5a5a5a; }
+  button.boot { font-weight: 650; letter-spacing: .08em; padding: 7px 16px; border-radius: 999px; background: #3a3a3a; }
+  /* What a page needs first: a browser plays nothing until it's clicked. */
+  button.call { background: #f0b956; border-color: #f0b956; color: #1d1d1d; }
+  button.call:hover { background: #f5c873; }
+  .hint { font: 12px system-ui, -apple-system, sans-serif; color: #7a7a7a; }
   .led { margin-left: auto; width: 10px; height: 10px; border-radius: 50%; background: #333; }
   .status { padding: 6px 4px 0; min-height: 1.3em; }
   .demo { margin-top: 10px; width: 0; min-width: 100%; color: #bbb; }
@@ -325,7 +356,9 @@ export class BoopSimulator extends Element {
   demo = null;
   #root; #canvas; #context; #led; #status;
   #parts = {}; #recording = null; #plugged = false;
-  #labels = [];  // each button's words, to say again when something changes
+  #labels = [];  // each button's words, and its look, to show again when something changes
+  #soundChosen = false;
+  #drawn = null;  // the size of the board's last frame  // Sound on or off was clicked: the first touch no longer turns it on
 
   connectedCallback() {
     if (this.#root) return;
@@ -335,10 +368,12 @@ export class BoopSimulator extends Element {
         <div class="screen"><canvas></canvas><span class="finger"></span></div>
         <div class="chin">
           <button class="boot" title="BOOT: a tap, or hold to talk (Space)">BOOT</button>
-          <span class="tools"></span><span class="led"></span>
+          <span class="hint">hold to talk · Space</span>
+          <span class="tools sound"></span><span class="led"></span>
         </div>
+        <div class="hands"><span class="tools power"></span><span class="tools motion"></span></div>
       </div>
-      <div class="status"></div>
+      <div class="status" part="status"></div>
       <div class="demo" hidden>
         <div class="bar"><span class="tools"></span><span class="track"><span class="done"></span></span><span class="clock"></span></div>
         <ol class="story"></ol>
@@ -362,10 +397,15 @@ export class BoopSimulator extends Element {
   }
 
   get face() { return (this.#recording?.face ?? this.getAttribute('face')) === 'gel' ? 'gel' : 'pixel'; }
-  get zoom() { return Number(this.getAttribute('zoom')) || (this.face === 'gel' ? 1 : 2); }
+  /// Whether the board draws a native face: what its frames say once it has
+  /// drawn, since a pack with one face draws it whatever `face` asks; until
+  /// then, what `face` asks.
+  get native() { return this.#drawn ? !(this.#drawn[0] === CANVAS[0] && this.#drawn[1] === CANVAS[1]) : this.face === 'gel'; }
+  get zoom() { return Number(this.getAttribute('zoom')) || (this.native ? 1 : 2); }
 
   /// Power, and the RESET button: off and on again.
   power(on) {
+    this.#root.querySelector('.body').classList.toggle('native', this.native);
     this.board.power(on, { face: this.face, native: this.getAttribute('native') || undefined,
                            id: this.getAttribute('board-id') || undefined });
   }
@@ -377,6 +417,11 @@ export class BoopSimulator extends Element {
       try { this.#recording = await (await fetch(demo)).json(); } catch { this.#status.textContent = `no demo at ${demo}`; }
     }
     this.#size(...PANEL[this.face]);
+    // The voice file comes while the core does, and goes in the slot before
+    // the first power-on, as a board boots with its card in: its first
+    // hello names the voice, so a host that asks at once hears it.
+    const voice = this.getAttribute('voice');
+    const card = voice ? fetch(voice).then(got => got.ok ? got.arrayBuffer() : null).catch(() => null) : null;
     let board;
     try {
       board = this.board = await Board.make({ pack: this.getAttribute('pack') || undefined });
@@ -394,16 +439,11 @@ export class BoopSimulator extends Element {
     this.#inputs();
     this.#cable(this.getAttribute('usb'));
     this.#controls();
+    const bytes = await card;  // none: a board with no card
+    if (bytes) board.insertCard(new Uint8Array(bytes));
     this.power(true);
     if (this.#recording) this.#story();
     this.dispatchEvent(new CustomEvent('ready'));
-    const voice = this.getAttribute('voice');
-    if (voice) {
-      try {
-        const got = await fetch(voice);
-        if (got.ok) board.insertCard(new Uint8Array(await got.arrayBuffer()));
-      } catch { /* a board with no card */ }
-    }
   }
 
   #size(w, h) {
@@ -412,6 +452,10 @@ export class BoopSimulator extends Element {
   }
 
   #draw(frame) {
+    if (this.#drawn?.[0] !== frame.width || this.#drawn?.[1] !== frame.height) {
+      this.#drawn = [frame.width, frame.height];
+      this.#root.querySelector('.body').classList.toggle('native', this.native);
+    }
     this.#size(frame.width, frame.height);
     this.#context.putImageData(frame, 0, 0);
   }
@@ -419,6 +463,8 @@ export class BoopSimulator extends Element {
   // The board's parts, and every button's words, as they are now.
   #show() {
     const p = this.#parts, on = this.board.on;
+    // The AMOLED board has no LED, and its parts say none.
+    this.#led.hidden = on && !('led' in p) && Object.keys(p).length > 0;
     const led = p.led ? `#${p.led.toString(16).padStart(6, '0')}` : '';
     this.#led.style.background = led || '#333';
     this.#led.style.boxShadow = led ? `0 0 10px 2px ${led}` : '';
@@ -426,17 +472,31 @@ export class BoopSimulator extends Element {
     this.#canvas.style.filter = (p.backlight ?? 255) < 255 ? `brightness(${p.backlight / 255})` : '';
     const usb = this.hasAttribute('usb') ? ` · usb ${this.#plugged ? 'plugged in' : 'unplugged'}` : '';
     const who = [this.getAttribute('board-id'), this.getAttribute('pack')].filter(Boolean).map(w => `${w} · `).join('');
-    this.#status.textContent = on ? `${who}${this.face}${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
-    for (const [button, words] of this.#labels) button.textContent = words();
+    this.#status.textContent = on ? `${who}${this.native ? 'gel' : 'pixel'}${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
+    for (const [button, words, call] of this.#labels) {
+      button.textContent = words();
+      button.classList.toggle('call', !!call?.());
+    }
   }
 
-  // A button whose words follow what it would do now.
-  #button(tools, words, run) {
+  // A button whose words follow what it would do now, standing out while
+  // `call` says it's what to click next.
+  #button(tools, words, run, call) {
     const button = document.createElement('button');
     button.textContent = words();
     button.addEventListener('click', async () => { await run(); this.#show(); });
-    this.#labels.push([button, words]);
-    tools.append(button, ' ');
+    this.#labels.push([button, words, call]);
+    tools.append(button);
+    button.classList.toggle('call', !!call?.());
+  }
+
+  // The first touch of the board, its screen or BOOT, turns the sound on,
+  // as a click on Sound on would: a browser lets a page play only after
+  // one. Once Sound on or off has been clicked, that's the choice.
+  #wake() {
+    if (this.#soundChosen || this.board.audible) return;
+    this.#soundChosen = true;
+    this.board.unmute().then(() => this.#show());
   }
 
   #inputs() {
@@ -445,11 +505,15 @@ export class BoopSimulator extends Element {
       const r = canvas.getBoundingClientRect();
       board.touch((e.clientX - r.left) / r.width * CANVAS[0], (e.clientY - r.top) / r.height * CANVAS[1]);
     };
-    canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); at(e); });
+    canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); this.#wake(); at(e); });
     canvas.addEventListener('pointermove', e => { if (e.buttons) at(e); });
     for (const up of ['pointerup', 'pointercancel']) canvas.addEventListener(up, () => board.release());
     const boot = this.#root.querySelector('.boot');
-    const press = down => { boot.classList.toggle('down', down); board.boot(down); };
+    const press = down => {
+      if (down) this.#wake();
+      boot.classList.toggle('down', down);
+      board.boot(down);
+    };
     boot.addEventListener('pointerdown', e => { boot.setPointerCapture(e.pointerId); press(true); });
     for (const up of ['pointerup', 'pointercancel']) boot.addEventListener(up, () => press(false));
     // Space is BOOT too, while the board has the keyboard.
@@ -457,50 +521,74 @@ export class BoopSimulator extends Element {
     this.addEventListener('keyup', e => { if (e.code === 'Space') press(false); });
   }
 
-  // The USB cable: the board's lines out, a host's lines in. It's plugged
+  // The USB cable: the board's lines out, a host's lines in. It's in while
+  // the board is on, plugged in afresh at every power-on and reset, so the
+  // host sees the board go and come back, as a board's Bluetooth link drops
+  // when it restarts (serve.py hangs up on its clients then). It's plugged
   // in again a second after it drops, as the Mac's side does.
   #cable(url) {
     if (!url) return;
-    let socket = null;
+    let socket = null, retry = 0;
     const plug = () => {
-      socket = new WebSocket(url);
-      socket.onmessage = e => { for (const line of String(e.data).split('\n')) if (line) this.board.send(line); };
-      socket.onopen = () => { this.#plugged = true; this.#show(); };
-      socket.onclose = () => { this.#plugged = false; this.#show(); setTimeout(plug, 1000); };
+      clearTimeout(retry);
+      if (socket) { socket.onclose = null; socket.close(); socket = null; this.#plugged = false; }
+      if (!this.board.on) return this.#show();
+      const s = socket = new WebSocket(url);
+      s.onmessage = e => { for (const line of String(e.data).split('\n')) if (line) this.board.send(line); };
+      s.onopen = () => { this.#plugged = true; this.#show(); };
+      s.onclose = () => {
+        if (socket !== s) return;
+        socket = null;
+        this.#plugged = false;
+        this.#show();
+        retry = setTimeout(plug, 1000);
+      };
     };
     this.board.addEventListener('line', e => { if (socket?.readyState === WebSocket.OPEN) socket.send(e.detail); });
+    this.board.addEventListener('power', plug);
     plug();
   }
 
   #controls() {
-    const tools = this.#root.querySelector('.chin .tools'), board = this.board;
+    const tools = this.#root.querySelector('.hands .power'), board = this.board;
     if (this.hasAttribute('controls')) {
       this.#button(tools, () => board.on ? 'Power off' : 'Power on', () => this.power(!board.on));
       this.#button(tools, () => 'Reset', () => this.reset());
       this.#button(tools, () => this.#parts.card === 'no card' ? 'Insert card' : 'Eject card',
                    () => this.#parts.card === 'no card' ? board.insertCard() : board.ejectCard());
     }
-    this.#button(tools, () => board.audible ? 'Sound off' : 'Sound on', () => board.audible ? board.mute() : board.unmute());
-    if (this.hasAttribute('motion')) this.#motion(tools);
+    this.#button(this.#root.querySelector('.chin .sound'), () => board.audible ? 'Sound off' : 'Sound on', () => {
+      this.#soundChosen = true;
+      return board.audible ? board.mute() : board.unmute();
+    }, () => !board.audible);
+    if (this.hasAttribute('motion')) this.#motion(this.#root.querySelector('.hands .motion'));
   }
 
   // The motion sensor's buttons: readings in mg, in the shapes the board
   // knows (firmware/src/app/motion_gesture.h). Flat and still is 0 0 1000.
   #motion(tools) {
-    const board = this.board, flat = [0, 0, 1000];
+    const board = this.board, flat = [0, 0, 1000], body = this.#root.querySelector('.body');
     let held = null, down = false;
+    // The case moves as the board does, once for a shake or a thump.
+    const move = name => {
+      body.classList.remove(name);
+      void body.offsetWidth;
+      body.classList.add(name);
+      body.addEventListener('animationend', () => body.classList.remove(name), { once: true });
+    };
     const play = async readings => {
       for (const [az, ms] of readings) { board.motion(0, 0, az); await new Promise(r => setTimeout(r, ms)); }
     };
     // Held in a hand: never quite still, never a jolt.
     const hold = () => { let up = false; held = setInterval(() => board.motion(0, 0, (up = !up) ? 1100 : 900), 100); };
-    this.#button(tools, () => 'Shake', () => play(SHAKE));
+    this.#button(tools, () => 'Shake', () => { move('shake'); return play(SHAKE); });
     this.#button(tools, () => held ? 'Put down' : 'Pick up', async () => {
-      if (held) { clearInterval(held); held = null; board.motion(...flat); return; }
+      if (held) { clearInterval(held); held = null; body.classList.remove('held'); board.motion(...flat); return; }
+      body.classList.add('held');
       await play([[1250, 300]]);
       hold();
     });
-    this.#button(tools, () => 'Thump', () => play([[1500, 40], [1000, 0]]));
+    this.#button(tools, () => 'Thump', () => { move('thump'); return play([[1500, 40], [1000, 0]]); });
     this.#button(tools, () => down ? 'Face up' : 'Face down', () => {
       down = !down;
       board.motion(0, 0, down ? -1000 : 1000);
@@ -509,6 +597,7 @@ export class BoopSimulator extends Element {
     board.addEventListener('power', () => {
       clearInterval(held);
       held = null, down = false;
+      body.classList.remove('held');
       if (board.on) board.motion(...flat);
     });
   }

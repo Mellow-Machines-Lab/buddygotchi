@@ -54,7 +54,10 @@ tests, evals, dev tools and skills.
   SwiftPM builds no app bundle here, so the app's `Info.plist`
   (`LSUIElement`, and the Bluetooth, microphone and speech usage
   descriptions) is linked into the `Boop` binary with `-sectcreate`;
-  `make bundle` (`app/tools/bundle.sh`) builds the real `Boop.app`.
+  `make bundle` (`app/tools/bundle.sh`) builds the real `Boop.app`,
+  and `make bundle INTERNAL=1` the internal build, compiled with
+  `BOOP_INTERNAL` and with the simulator's page in its Resources, which
+  `app/Boop/BoardWindow.swift` shows in a window of its own.
   Testability (`-enable-testing`) is for debug builds only, which the
   tests use.
 - **Stable contracts.** What the parts build against, and so changes

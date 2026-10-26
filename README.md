@@ -123,11 +123,13 @@ used.
 | --- | --- |
 | Flash the firmware (over USB) | `make flash` |
 | Build `Boop.app`, to open from Finder or put in Applications | `make bundle` (then `open .build/Boop.app`) |
+| Build Boop with the simulator inside, for someone without a board | `make bundle INTERNAL=1` (then send `.build/internal/Boop.app`, [CONTRIBUTING.md](CONTRIBUTING.md)) |
 | Work on Boop: the debug app, with the simulator, the studio and the live dashboard beside it | `make dev` ([CONTRIBUTING.md](CONTRIBUTING.md)) |
 | Watch a demo: pick one and where it plays (the browser, a board, or an agent) | `make demo` ([characters/DEMOS.md](characters/DEMOS.md)) |
 
 Start `make dev` from your own terminal: macOS stops anything that uses
-Bluetooth from an editor's or an agent's shell. Debugging and the brain's
+Bluetooth from an editor's or an agent's shell. No board? `make dev FRESH=1 SIM=1`
+makes the simulator in your browser Boop's body, from onboarding on. Debugging and the brain's
 evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What leaves your Mac
