@@ -211,7 +211,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     stale_ = false;
     blOverride_ = false;
     if (fresh) {  // a new needs-you: its performance plays from the start, and it wins
-      alerted_ = true, alertAt_ = t;
+      alerted_ = true, alertAt_ = t, ++alerts_;
       face_->alert(t, had);
       // Listening is the one reaction that plays on, so
       // push-to-talk still works.
@@ -424,7 +424,7 @@ const char* Behaviour::press(uint32_t t, Rng& rng) {
 }
 
 void Behaviour::gesture(render::Gesture g, uint32_t t) {
-  if (held(t)) return;
+  if (held(t) || (g != render::Gesture::kHandoff && finishShown(t))) return;
   const int n = face_->variants(model_.mood, render::SceneState::kGesture);
   const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
   change(t, [&] { playAnim(render::SceneState::kGesture, t, CutBy::kTap, 1, model_.mood, v); });
@@ -505,7 +505,9 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.project = model_.project;
   c.thread = model_.name;
   c.more = model_.more;
-  c.when = model_.when;
+  // With no app the Mac's tags are stale: a night's or a holiday's would
+  // stay up all the next day.
+  c.when = noApp(t) ? 0 : model_.when;
   c.lookMs = t - lookAt_;
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;

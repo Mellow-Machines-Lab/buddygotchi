@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-25. The contract a character pack meets, so that any
+Updated 2026-10-26. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -687,8 +687,10 @@ Besides drawing each mood and state, a face:
   the board asks the Mac for the rows it comes to (the Mac sends a
   window of them, `skip` before and `unlisted` after). A tap on a row has
   the Mac open that thread and the board hand it over as the drawer
-  shuts; a finger, BOOT or push-to-talk's `listening` shuts it, and it
-  shuts itself 15 s after the last touch. A reaction can ask for it (the `do`'s `"show": "drawer"`, a
+  shuts; a finger, BOOT (which then does nothing else) or push-to-talk's
+  `listening` shuts it, so do a new needs-you and the Mac going, and it
+  shuts itself 15 s after the last touch. A drag across its rows picks
+  none, and with no sessions at all a finger up the strip pulls nothing. A reaction can ask for it (the `do`'s `"show": "drawer"`, a
   status reply about every agent): the board opens it by itself 1.5 s
   in, once the sign has been read, unless a finger or BOOT came first or
   a request shows, and tells the Mac as a pull does. The device keeps the finger, the spring, the scroll and the

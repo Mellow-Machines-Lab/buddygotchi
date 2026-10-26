@@ -147,8 +147,10 @@ class Device : public linkkit::App {
   // so a Mac that started since hears of it. A tap on a row sends "pick"
   // with the row's `id`, the Mac's number for the session, which the Mac
   // opens; the drawer shuts then, as Boop hands it over. A finger pulls it
-  // shut, BOOT shuts it (pressed, or held to talk), so does the Mac's
-  // `listening`, and it shuts itself kDrawerShutMs after the last touch.
+  // shut, BOOT shuts it (pressed, when it does nothing else, or held to
+  // talk), so do the Mac's `listening`, a new needs-you and the Mac going
+  // (no app), and it shuts itself kDrawerShutMs after the last touch. With
+  // no sessions to list, a finger up the strip is the face's.
   // A reaction that asks for it (`show` "drawer", an answer about every
   // agent) opens it kShowDrawerMs after it starts, once its sign has been
   // read, unless a finger or BOOT came first or a request shows; it shuts
@@ -165,10 +167,16 @@ class Device : public linkkit::App {
   static constexpr uint32_t kDrawerGlideMs = 600, kDrawerReaskMs = 1000, kShowDrawerMs = 1500;
   // How long it springs open or shut, past the end and back; and how far a
   // finger goes (canvas px) before it pulls the drawer rather than taps.
+  // The same distance, either way, makes a touch on its rows a drag, which
+  // picks none.
   static constexpr uint32_t kDrawerMs = 380, kDrawerPawMs = 260;
-  static constexpr int kDrawerPullPx = 10;
+  static constexpr int kDrawerPullPx = 22;
   // Where on the canvas a finger starts that can pull it: on the strip.
   static constexpr int kDrawerFromY = 205;
+  // On the needs-you screen a touch shorter than this, and inside a hold's
+  // spot, is the tap that opens the thread; a longer one is a hold let go
+  // early, and sends nothing.
+  static constexpr uint32_t kNeedsYouTapMs = 300;
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
   // the same pause the Mac left between them before the device had the queue.
@@ -177,6 +185,8 @@ class Device : public linkkit::App {
   // `pixels` is the kWidth × kHeight canvas buffer, allocated by the
   // caller. A linkkit::Kit made with this app then drives it.
   Device(Hal& hal, uint8_t* pixels);
+  // The same with the face given, rather than the build's (render::makeFace).
+  Device(Hal& hal, uint8_t* pixels, std::unique_ptr<render::Face> face);
   ~Device() override;
   // The native surfaces the face draws into alternately, whose frames the
   // board presents instead of the canvas; null when the
@@ -276,6 +286,8 @@ class Device : public linkkit::App {
     // Mac sent no number), and its hold has dismissed it.
     bool touchOnNeedsYou = false, touchDismissed = false;
     uint32_t touchAttnId = 0;
+    // It sends nothing as it lets go: the drawer it was on shut under it.
+    bool touchSpent = false;
     uint32_t touchSeenReal = 0;
     // The last touch to let go: its path on the canvas and what it was
     // (`dbg.state`'s touch.last, to check the panel's axes and speeds by).
@@ -295,6 +307,9 @@ class Device : public linkkit::App {
     uint32_t drawerTouchedAt = 0, drawerSaidAt = 0;
     bool drawerInjected = false, drawerToldOpen = false;
     int drawerPicked = -1;
+    // The session under a finger that went down on the open drawer, 0 for
+    // none; and the needs-yous (Behaviour::alerts) the drawer has seen.
+    uint32_t drawerDownId = 0, alertsSeen = 0;
     // A reaction asked for the drawer, to open at showDrawerAt.
     bool showDrawer = false;
     uint32_t showDrawerAt = 0;
@@ -324,6 +339,8 @@ class Device : public linkkit::App {
   // Whether the needs-you screen shows: something needs you, and the
   // app is there to say so.
   bool needsYouShows(uint32_t t) const;
+  // Whether the Mac has any sessions, which the drawer would list.
+  bool hasSessions() const;
   void readInputs(uint32_t t);
   void render(uint32_t t);
   void hush();

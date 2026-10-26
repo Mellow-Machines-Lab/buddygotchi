@@ -14,7 +14,8 @@ MotionGesture::Event MotionGesture::update(int ax, int ay, int az, uint32_t t) {
   const float x = float(ax), y = float(ay), z = float(az);
   const int off = int(std::lroundf(std::sqrt(x * x + y * y + z * z))) - 1000;
   const bool calm = std::abs(off) <= kStillMg;
-  if (!started_) started_ = true, calmSince_ = flatSince_ = t;
+  if (!started_) started_ = true, fx_ = ax, fy_ = ay, fz_ = az, flatSince_ = t, calmFrom(t);
+  fx_ += (ax - fx_) / 4, fy_ += (ay - fy_) / 4, fz_ += (az - fz_) / 4;
 
   // Face down for a while, and back up.
   if (calm && az < -kFlatMg) {
@@ -40,17 +41,22 @@ MotionGesture::Event MotionGesture::update(int ax, int ay, int az, uint32_t t) {
   }
 
   if (calm) {
-    // A jolt over within kThumpMs, the board still and not held: a thump.
-    const bool thump = jolt_ && after(jolt_ + kThumpMs + 1, t) && still_ && !held_ && !after(quietUntil_, t);
+    // A jolt over within kThumpMs, the board still and not held, and no
+    // finger or BOOT on it: a thump.
+    const bool hands = handled_ && int32_t(t - handsAt_) < int32_t(kHandsMs);
+    const bool thump =
+        jolt_ && after(jolt_ + kThumpMs + 1, t) && still_ && !held_ && !hands && !after(quietUntil_, t);
     jolt_ = 0, lifting_ = false;
     if (thump) return quietUntil_ = t + kQuietMs, kThump;
+    if (std::abs(fx_ - calmX_) > kSteadyMg || std::abs(fy_ - calmY_) > kSteadyMg || std::abs(fz_ - calmZ_) > kSteadyMg)
+      calmFrom(t);  // turning in a hand
     if (!still_ && !after(calmSince_ + kSettleMs, t)) {
       still_ = true;
       if (held_) return held_ = false, kPutdown;
     }
     return kNone;
   }
-  calmSince_ = t;
+  calmFrom(t);
   if (!jolt_ && std::abs(off) >= kThumpMg) jolt_ = t;
   // Off 1 g for longer than a jolt: it's moving.
   const bool moving = !jolt_ || !after(jolt_ + kThumpMs + 1, t);

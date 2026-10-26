@@ -1,7 +1,8 @@
 // What a touch on the screen was, from its path: a tap, a swipe (one that
-// travels and lets go quickly), a stroke (a slower one; one the wrong way,
-// upward, ruffles), a tickle (a finger wiggling in one spot), a boop on the
-// nose (a tap on the face's middle), or a hold (a finger kept still). Pure
+// travels and lets go quickly), a stroke (a slower one, or a rub back and
+// forth; one the wrong way, upward, ruffles), a tickle (a finger wiggling
+// in one spot), a boop on the nose (a tap on the face's middle), or a hold
+// (a finger kept still). Pure
 // C++, fed the touch's canvas positions as they come; the canvas is
 // 320 × 240 on both boards (the AMOLED's panel is mapped onto it).
 #pragma once
@@ -20,15 +21,20 @@ class TouchGesture {
   // velocity, which the face carries on) is a swipe; a slower one is the
   // deliberate stroke.
   static constexpr int kSwipePxPerS = 600;
-  // A tickle wiggles this far in all, inside a spot this wide.
+  // A tickle wiggles this far in all, inside a spot this wide; a wiggle
+  // as long that strays wider is a rub, a stroke, even one that ends
+  // where it began. Its way counts only steps of more than kJitterPx, so a
+  // finger held still on a panel that jitters goes nowhere.
   static constexpr int kTicklePathPx = 90, kTickleSpotPx = 36;
+  static constexpr int kJitterPx = 2;
   // The face's nose, where a tap is a boop: a small spot under the eyes,
   // so a poke anywhere else stays a poke.
   static constexpr int kNoseX = 160, kNoseY = 134, kNoseHalf = 14;
   // A hold is a finger kept down kHoldMs inside a spot kHoldSpotPx wide
-  // each way: steadier than a tickle's spot, and short of a stroke.
+  // each way, the width of a stroke's travel: a finger held a second
+  // drifts, and a hold that drifts is still a hold.
   static constexpr uint32_t kHoldMs = 1000;
-  static constexpr int kHoldSpotPx = 24;
+  static constexpr int kHoldSpotPx = 40;
   // The finger's velocity as it lets go is over its last readings this
   // long (at least the last two).
   static constexpr uint32_t kFlingMs = 80;
@@ -54,6 +60,9 @@ class TouchGesture {
   // for a finger that was still.
   void velocity(int& vx, int& vy) const;
   Path path() const;
+  // How far it has strayed from where it went down, the wider of its
+  // box's width and height.
+  int spread() const;
 
  private:
   static constexpr int kSamples = 8;  // the latest readings, for the velocity
@@ -63,6 +72,7 @@ class TouchGesture {
   };
   int x0_ = 0, y0_ = 0, minX_ = 0, maxX_ = 0, minY_ = 0, maxY_ = 0;
   int path_ = 0;
+  int wayX_ = 0, wayY_ = 0;  // where path_ last counted a step from
   uint32_t t0_ = 0;
   Sample samples_[kSamples] = {};
   int count_ = 0;  // readings so far; the newest is at (count_ - 1) % kSamples

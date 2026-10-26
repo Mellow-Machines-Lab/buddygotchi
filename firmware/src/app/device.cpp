@@ -87,7 +87,10 @@ int heldTo(JsonVariantConst v, int lo, int hi, int missing) {
 
 }  // namespace
 
-Device::Device(Hal& hal, uint8_t* pixels) : hal_(hal), canvas_(pixels) {
+Device::Device(Hal& hal, uint8_t* pixels) : Device(hal, pixels, render::makeFace()) {}
+
+Device::Device(Hal& hal, uint8_t* pixels, std::unique_ptr<render::Face> face)
+    : hal_(hal), canvas_(pixels), b_(std::move(face)) {
   const render::Size size = hal_.nativeSize();
   if (b_.face().drawsNative() && !size.empty()) {
     const size_t bytes = size_t(size.width) * size_t(size.height) * sizeof(uint16_t);
@@ -394,8 +397,12 @@ void Device::readInputs(uint32_t t) {
       break;
     case ButtonGesture::kTap:
       b_.pressUp();
-      if (drawerOpen(t) > 0) moveDrawer(0, t, live_.bootInjected);
       latency_.mark(Latency::kTap, live_.bootInjected ? pressGone : real);
+      if (drawerOpen(t) > 0) {  // it only shuts the drawer: the Mac opens nothing
+        input("tap", t);
+        moveDrawer(0, t, live_.bootInjected);
+        break;
+      }
       tapped(t, live_.bootInjected, true);
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
@@ -419,8 +426,9 @@ void Device::readInputs(uint32_t t) {
   }
 
   // A touch anywhere is a tap, sent on release however long it was held,
-  // but for a finger held still on the needs-you screen (TouchGesture::held):
-  // that's the gesture `dismiss`, sent as the hold completes with the
+  // but on the needs-you screen, where only a quick one is (kNeedsYouTapMs)
+  // and a finger held still (TouchGesture::held)
+  // is the gesture `dismiss`, sent as the hold completes with the
   // number of the request the screen showed as the finger went down, so the
   // Mac dismisses that one or none, never one that took the screen during
   // the hold. Its release does nothing, as a touch's on a screen that has
@@ -447,10 +455,13 @@ void Device::readInputs(uint32_t t) {
     live_.showDrawer = false;  // a finger first: the drawer a reaction asked for stays shut
     live_.touchPath.down(x, y, t);
     // A touch on the open drawer is the drawer's, and so is one that
-    // starts on the strip, should it go up; neither moves the face.
+    // starts on the strip, should it go up, while there are sessions to
+    // list; neither moves the face.
     const int open = drawerOpen(t);
-    live_.drawerTouch = faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || y >= kDrawerFromY);
-    live_.drawerPulling = live_.scrolling = false;
+    live_.drawerTouch =
+        faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || (y >= kDrawerFromY && hasSessions()));
+    live_.drawerPulling = live_.scrolling = live_.touchSpent = false;
+    live_.drawerDownId = 0;
     if (live_.drawerTouch) {
       live_.drawerGrabbed = open, live_.drawerTouchedAt = t, live_.drawerInjected = live_.injTouch;
       // A finger down on gliding rows stops them where they are.
@@ -458,6 +469,13 @@ void Device::readInputs(uint32_t t) {
       live_.scrollCaught = at != live_.scrollTo;
       live_.scrollGrabbed = live_.scrolled = at;
       glideDrawer(at, t);
+      // The session under it now, which a tap picks even if a state
+      // reorders the rows before it lets go.
+      if (open >= 900) {
+        makeDrawer(t);
+        const int row = b_.face().drawerRow(drawer_, x, y);
+        if (row >= 0 && drawer_.at(row)) live_.drawerDownId = drawer_.at(row)->id;
+      }
     }
     // Only a touch that began on the screen holds it: a request that comes
     // up under a finger already down isn't dismissed by it.
@@ -536,7 +554,14 @@ void Device::readInputs(uint32_t t) {
       // answered or dismissed on the Mac).
       // A touch the drawer took (a pull, or any on it open) is the
       // drawer's alone: the Mac hears what it did, not a tap.
-      if (live_.drawerTouch && (live_.drawerPulling || live_.drawerGrabbed > 0)) {
+      // A touch whose drawer shut under it (needs you came, or the Mac
+      // went) sends nothing. On the needs-you screen only a quick, still
+      // touch is a tap, opening the thread: one held kNeedsYouTapMs or
+      // more, or that strayed past kHoldSpotPx, was a hold let go early.
+      const bool brief = live_.lastTouch.ms < kNeedsYouTapMs && live_.touchPath.spread() <= TouchGesture::kHoldSpotPx;
+      if (live_.touchSpent) {
+        if (live_.drawerTouch) live_.lastTouchWas = "drawer";
+      } else if (live_.drawerTouch && (live_.drawerPulling || live_.drawerGrabbed > 0)) {
         live_.lastTouchWas = "drawer";
         if (live_.drawerPulling)
           letGoDrawer(t, vy);
@@ -544,9 +569,11 @@ void Device::readInputs(uint32_t t) {
           letGoScroll(t, vy);
         else if (live_.scrollCaught)
           letGoScroll(t, 0);  // it only stopped the rows, on the nearest whole one
-        else
+        else if (live_.touchPath.spread() < kDrawerPullPx)
           tapDrawer(live_.lastTouch.x0, live_.lastTouch.y0, t);
-      } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t)))) {
+        else
+          live_.drawerTouchedAt = t;  // a drag across it: it lets go, picking nothing
+      } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
         const bool noseOnFinish = kind == TouchGesture::kGesture && g == render::Gesture::kNose && b_.finishShown(t);
         if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
@@ -559,6 +586,13 @@ void Device::readInputs(uint32_t t) {
   if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = live_.scrolling = false;
   if (touching != live_.touchDown) dirty_ = true;
   live_.touchDown = touching;
+  // A finger or BOOT jolts the board: the motion sensor's thump isn't one.
+  if (touching || live_.boot.down()) live_.motion.hands(t);
+}
+
+bool Device::hasSessions() const {
+  const Model& m = b_.model();
+  return m.base != render::SceneState::kAsleep || m.attn || m.busy > 0 || m.idle > 0 || m.listCount > 0;
 }
 
 // ---- The agents' drawer ------------------------------------------------------
@@ -658,18 +692,23 @@ void Device::letGoScroll(uint32_t t, int vy) {
 }
 
 // A tap on the open drawer: on a row, the Mac opens that session's thread
-// and Boop hands it over as the drawer shuts; anywhere else, it shuts.
+// and Boop hands it over as the drawer shuts; anywhere else, it shuts. The
+// session is the one under the finger as it went down, and only while the
+// drawer was open then and still is.
 void Device::tapDrawer(int x, int y, uint32_t t) {
   live_.drawerTouchedAt = t;
   makeDrawer(t);
-  const int row = live_.drawerGrabbed >= 900 ? b_.face().drawerRow(drawer_, x, y) : -1;
-  if (row >= 0 && !drawer_.at(row)) return;  // a row still coming: nothing to open yet
+  const bool open = live_.drawerGrabbed >= 900 && drawerOpen(t) >= 900;
+  const int row = open ? b_.face().drawerRow(drawer_, x, y) : -1;
+  if (row >= 0 && !live_.drawerDownId) return;  // a row still coming: nothing to open yet
   if (row >= 0) {
     char data[32];
-    std::snprintf(data, sizeof(data), "{\"id\":%lu}", (unsigned long)drawer_.at(row)->id);
+    std::snprintf(data, sizeof(data), "{\"id\":%lu}", (unsigned long)live_.drawerDownId);
     input("drawer", t, x, y);
     sayDrawer("pick", data, t);
-    live_.drawerPicked = row;
+    live_.drawerPicked = -1;  // its row lights where it is now
+    for (int i = 0; i < drawer_.total(); ++i)
+      if (drawer_.at(i) && drawer_.at(i)->id == live_.drawerDownId) live_.drawerPicked = i;
     b_.gesture(render::Gesture::kHandoff, t);
   }
   moveDrawer(0, t, live_.drawerInjected);
@@ -689,6 +728,15 @@ void Device::tendDrawer(uint32_t t) {
       live_.drawerTouchedAt = t;  // and shuts kDrawerShutMs on, as after a touch
       moveDrawer(1000, t, false);
     }
+  }
+  // A new needs-you shuts it, so its screen shows and a hold can dismiss
+  // it; so does the Mac going, whose rows it can no longer trust. A finger
+  // on it then sends nothing as it lets go.
+  const bool alert = b_.alerts() != live_.alertsSeen && needsYouShows(t);
+  live_.alertsSeen = b_.alerts();
+  if ((alert || b_.noApp(t)) && (live_.drawerTo > 0 || live_.drawerPulling)) {
+    if (live_.touchDown && live_.drawerTouch) live_.touchSpent = true;
+    moveDrawer(0, t, live_.drawerInjected);
   }
   const int open = drawerOpen(t);
   if (live_.drawerTo > 0 && !live_.drawerPulling && !live_.touchDown &&
@@ -733,6 +781,7 @@ void Device::readMotion(uint32_t t) {
     case MotionGesture::kFaceDown:
       b_.setFaceDown(true, t);
       hush();
+      hal_.stopEffects();  // do not disturb: the face's sounds too
       kit().emit("gesture", "facedown", nullptr, live_.injMotion);
       dirty_ = true;
       break;
@@ -806,7 +855,7 @@ void Device::followSound(uint32_t t) {
   bool changed;
   int n = b_.face().cues(t, !live_.pattern, due, changed);
   if (changed) hal_.stopEffects();
-  if (m.vol == 0) return;
+  if (m.vol == 0 || b_.faceDown()) return;  // muted, or face down: do not disturb
   const voice::EffectClips& clips = b_.face().clips();
   for (int i = 0; i < n; ++i) {
     const voice::EffectClip clip = clips.at(due[i].clip);

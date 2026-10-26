@@ -85,12 +85,18 @@ struct Stream {
   static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and room for a combo's count
   static constexpr int kWords = 8;        // falling at once, at most: the frame rate's budget
   // A word falls for this long, and at most this many drop for one `state`
-  // however many calls it counts. A word drops only once the newest of its
+  // however many calls it counts: the state names only a lane's latest
+  // word, so a second would be the same word again. A word drops only once
+  // the newest of its
   // lane has fallen kWordGapPx (a line of the large font and a little), and
   // never falls faster, so a lane's words never overlap; one that would
   // wait over kMostWaitMs for that isn't dropped: the lane is busy enough.
+  // Its middle keeps the whole word, in the large font, kWordEdgePx inside
+  // the screen's sides, however far its lane's column and its jitter put it
+  // out.
   static constexpr uint32_t kFallMs = 3200;
-  static constexpr int kDropsPerState = 2;
+  static constexpr int kDropsPerState = 1;
+  static constexpr int kWordEdgePx = 12;
   static constexpr int kWordGapPx = 36;
   static constexpr uint32_t kMostWaitMs = 800;
   // A word forward: its flight, then what it does once it lands, all
@@ -135,8 +141,10 @@ struct Stream {
   Word words[kWords];
   Call call;
   // When the agents started working (the stream came on), for the
-  // monitor's clock, and when a lane last counted a new call.
+  // monitor's clock, and when a lane last counted a new call. A needs-you
+  // only pauses them (`paused`): the clock runs on from `since` after it.
   uint32_t since = 0, movedAt = 0;
+  bool paused = false;
   // The stream went off at endedAt, the agents done, its words lingering.
   bool ending = false;
   uint32_t endedAt = 0;
@@ -144,7 +152,8 @@ struct Stream {
   // The lanes from a `state`: a lane whose count moved drops words, up to
   // kDropsPerState; a new lane drops its latest. A word keeps falling where
   // it dropped, its lane gone or not. The stream off lets its words linger
-  // kEndMs, unless something needs you (`cleared`): then all goes at once.
+  // kEndMs, unless something needs you (`cleared`): then all goes at once,
+  // and the stream on again after it keeps its `since`.
   void setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t);
   // Whether a word may come forward at t: the stream on, or just ended.
   bool accepts(uint32_t t) const;

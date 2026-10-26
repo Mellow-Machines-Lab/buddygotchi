@@ -44,6 +44,13 @@ class Sound {
 
   explicit Sound(Out& out) : out_(out) {}
 
+  // The queue to the sound's task is full and `next` must go in: which of
+  // the `n` commands waiting (oldest first) to drop, or -1 for `next`
+  // itself. An effect goes first, the oldest waiting, or `next` if it's
+  // one; then a `say`, the oldest waiting; a hush or a stop goes only when
+  // another of its kind waits after it or is `next`, so none is lost.
+  static int toDrop(const Cmd* waiting, int n, const Cmd& next);
+
   // The output started: dbg.state's audio.out.ready.
   void ready();
   // From the sound's task only: a `say` or an effect to start or stop, and

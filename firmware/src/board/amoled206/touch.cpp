@@ -22,6 +22,11 @@ constexpr uint32_t kQuietMs = 60;
 volatile uint32_t lastEdgeMs = 0;
 bool ok = false;
 bool down = false;  // the last read saw a finger
+// A read that fails while a finger is down keeps it there, at the last
+// point, up to kMisses in a row: one failed read doesn't end a still touch,
+// and a chip that has napped since doesn't hold one down for good.
+constexpr int kMisses = 3;
+int misses = 0, lastX = 0, lastY = 0;
 // The chip reported a finger lifted after one was down; how many times.
 bool lifted = false;
 uint32_t lifts = 0;
@@ -50,7 +55,11 @@ void touchRaw(int& x, int& y, int& z, bool& irq) {
   const bool was = down;
   down = false;
   uint8_t d[5];
-  if (!i2cRead(kAddr, kRegPoints, d, 5)) return;
+  if (!i2cRead(kAddr, kRegPoints, d, 5)) {
+    if (was && ++misses <= kMisses) irq = down = true, x = lastX, y = lastY, z = 1;
+    return;
+  }
+  misses = 0;
   // The number of points, and the first's event (XH's top two bits): 0
   // put down, 1 lifted, 2 in contact.
   const int n = d[0] & 0x0F, event = d[1] >> 6;
@@ -60,8 +69,8 @@ void touchRaw(int& x, int& y, int& z, bool& irq) {
   }
   if (n > 2) return;
   irq = down = true;
-  x = (d[1] & 0x0F) << 8 | d[2];
-  y = (d[3] & 0x0F) << 8 | d[4];
+  x = lastX = (d[1] & 0x0F) << 8 | d[2];
+  y = lastY = (d[3] & 0x0F) << 8 | d[4];
   z = 1;
 }
 

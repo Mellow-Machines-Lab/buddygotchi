@@ -47,7 +47,9 @@ struct Model {
   // The to-do list of the longest turn working that has one (`todo`),
   // done of total; 0 of 0 for none.
   int todoDone = 0, todoTotal = 0;
-  int vol = 6;      // 0–10
+  // 0–10; silent until the Mac's first state says otherwise, so a board
+  // that restarts with the Mac asleep makes no sound the owner turned off.
+  int vol = 0;
   // The tags on now (`when`, render/tags.h): the part of the day, an
   // occasion, how busy the agents are. The face shows only the designs
   // whose tags are all on, and picks each look's variation itself.
@@ -215,7 +217,9 @@ class Behaviour {
   // but over the needs-you screen, which stays; else it's a tap.
   const char* press(uint32_t t, Rng& rng);
   // The board's own reaction to a gesture: gesture's variation for it,
-  // unless the face is held.
+  // unless the face is held, or the brain's finish names whose turn it was
+  // (the tap that opens it would find it gone): only BOOT's hand-off, which
+  // hands it over, takes that down.
   void gesture(render::Gesture g, uint32_t t);
   // Laid face down: do not disturb. Every reaction but listening is
   // refused ("facedown") and the screen dims; needs you still shows.
@@ -309,6 +313,8 @@ class Behaviour {
     at = alertAt_;
     return alerted_;
   }
+  // How many new needs-yous have come since the last reset.
+  uint32_t alerts() const { return alerts_; }
   const Model& model() const { return model_; }
   // The work stream (render/stream.h): the lanes each `state` says, and
   // the word a `call` brings forward, which plays at once while the
@@ -481,7 +487,7 @@ class Behaviour {
   bool pressed_ = false;
   uint32_t pressAt_ = 0;
   bool alerted_ = false;
-  uint32_t alertAt_ = 0;
+  uint32_t alertAt_ = 0, alerts_ = 0;
   uint32_t modelT_ = 0;
   uint32_t reactionSeq_ = 0;
   // The lane: its opacity's ramp, and what the strip showed from at the

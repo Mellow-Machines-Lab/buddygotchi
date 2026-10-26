@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-25. How we check that Boop works, including what's on its
+Updated 2026-10-26. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -402,8 +402,12 @@ gets at least one scenario. Their pictures are the golden images in
   its [linkkit/SPEC.md](../linkkit/SPEC.md) section.
 - **Firmware (`make -C internal fw-test`):** BOOT's, the touch's and
   the motion sensor's gestures, a quick swipe told from a slow stroke by
-  the finger's speed as it lets go (`test_gesture`); Boop's vocabulary message in and message out, its
+  the finger's speed as it lets go, a rub from a tap, a still finger's
+  jitter from a tickle, a steady hand from a desk and a press's jolt from
+  a thump (`test_gesture`); Boop's vocabulary message in and message out, its
   rules for the queue, the debug channel and inputs (`test_device`),
+  the agents' drawer's among them, on the build's face with a drawer
+  (`internal/firmware/wrapped_face.h`),
   including unchanged heartbeats causing no redraw while changed state,
   reconnection and leaving the test pattern still draw at once, and each
   latency counted from its event to the frame sent after it
