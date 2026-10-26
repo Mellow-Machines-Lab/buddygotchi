@@ -141,6 +141,70 @@ belongs to, as the bank's design allows (a nonverbal before its
 anchor). It grows with step 1 and 2b: today only glad, upset, looking
 and work have sounds to lead with.
 
+## 4. Talking back in its own words
+
+What you say on push-to-talk gets a reply (`react.move`), its clip and
+a sign that answers you (`replies.md`). The sign answers well; the
+voice doesn't. A reply has no takes of its own: it says `say`'s pick,
+else a feeling or topic it borrows (`ReactOutput.replyWords`). So, from
+the takes there are:
+
+| You say | Reply | Boop says today |
+| --- | --- | --- |
+| "roll over" | no | an upset word: "Failed", "Broken", "Trouble" |
+| "what's the weather?" | dunno | a looking word: "Search", "Compare", "Study" |
+| "how's it going?" | status | a work word: "Piano", "Patience" |
+| "I love you", "thanks", "bye", "yes!" | love, thanks, bye, yes | a glad sound, since glad's words need a success: "Mwahaha", "Phew", "Eep!" |
+| "dance for me" | dance | a tickled word: "Tickles", "Boop", "Yep" |
+
+**The change.** Give each reply takes of its own: a third part beside
+feeling and about, `reply`, its meaning the reply's name. To what you
+said, `say`'s none still means silence, as TALK and the Examples steer
+it; any other answer says the reply's own take, as big as the intensity
+(a sound small, a word medium, a phrase big), in the face's mood. A
+reply with no take in that face says what it says today. The prompt
+doesn't change: Jev already picks the reply. Later, `say` asked of
+what you said could shrink to "nothing or something".
+
+The code goes in with its first takes, the reused ones below, so none
+of it waits unused.
+
+**The lines.** In the voice moods each reply's faces use, two sounds,
+three words and two phrases to a mood: about 440 takes. Like the signs,
+they never state a fact: status points at its sign ("Look"), and a
+request for an agent is never a yes.
+
+| Reply | Moods | Sounds | Words | Phrases |
+| --- | --- | --- | --- | --- |
+| yes | happy, calm, curious, excited, proud, engaged | Mhm, Mm-hm!, Uh-huh | Yep, Yes, Yup, Sure, Okay | You bet · Of course · Yes yes · Sure thing |
+| no | annoyed, grumpy, proud, calm, irritated | Nuh-uh, Hmm-mm, Nn-nn | Nope, Nah, No, Never | No way · Not today · Nope nope · Make me |
+| huh | curious, calm, engaged | Huh?, Eh?, Hm? | What?, Pardon?, Um | Say again? · Come again? · Wait, what? |
+| dunno | curious, calm, happy | Mm-mm?, Hmm..., Pff | Dunno, Maybe, Hmm | Beats me · No idea · Who knows? |
+| hello | happy, excited, calm, curious, sad | Oh!, Heyy | Hi, Hiya, Hey, Yo | Hi there · Oh, hello · There you are · Right here |
+| bye | happy, calm, sad, curious | Bye-ee, Mwah | Bye, Later, Night, Ciao | See you · Night night · Bye bye · Come back soon |
+| thanks | proud, happy, excited | Hehe, Aww | Thanks, Woo, Yay | Aw, shucks · Anytime · Team effort · We rock |
+| love | happy, excited, proud, sad | Aww, Mmm | Aww, Love, Hug | Love you too · Aww, you · Big hug · Forgiven |
+| ouch | wounded, sad, annoyed, grumpy | Ow!, Oof | Ouch, Rude, Hey!, Mean | That hurt · Not nice · Well, ouch · Be nice |
+| comfort | sad, calm, wounded, happy | Aww, Mm... | There, Hug, Okay | I'm here · It's okay · Deep breath · There there |
+| hehe | happy, excited, proud | Hehe, Ha! | Haha, Silly, Lol | Good one · You're funny · Stop it |
+| status | engaged, calm, curious, determined | Hmm, Mm-hm | Look, Here, See? | Let me see · Here you go · Have a look |
+| nap | calm, happy, whiny | Yawn, Mmh... | Nap, Sleepy, Night | Nap time · Five minutes · Sweet dreams |
+| hush | annoyed, calm, wounded | Shh, Mm-mm (lips shut) | Fine, Okay, Shh | Zipping it · Not a peep |
+| dance | excited, happy, proud | Whee!, Doo-doo | Dance!, Wiggle, Party | Dance party · Watch this · Shake it |
+| notme | calm, proud, annoyed, curious | Hmm-mm, Nn-nn | Nope, Mac, Them | Not me · Ask the Mac · Not my job |
+| unhush | excited, happy | Ahh!, Hah! | Finally, Free, Yay | I can talk! · Words again! |
+
+About a dozen recorded takes fit a reply already and can count for it
+too: Yep and Mm-hm (yes), Huh?, Eh? and Hm? (huh), Hi, Hey and Howdy
+(hello), Hehehe and Heh (hehe), Whee! (dance), Aww.... (comfort),
+Comfy and Cozy (nap). voicegen would write a second row for each, so
+it keeps its meaning too.
+
+**Replies to add later.** Some things people say still fall to huh
+or hello: "wake up!" while it naps, "sing", "high five", "good luck"
+before a big change. Each is about 25 tokens, but each also needs its
+own clip on the board (`reply-<name>`), so they're a step of their own.
+
 ## What it adds up to
 
 | | Today | After |
@@ -148,18 +212,21 @@ and work have sounds to lead with.
 | Feelings | 3 | 7 |
 | Meanings with a phrase in every face | 0 | 13 |
 | Meanings with sounds | 4 | 21 |
-| Texts | 387 | about 650 |
-| Takes | 2,722 | about 4,300 (some 1,550 new, 324 of them scripted) |
-| The voice file | 30 MB | about 48 MB |
+| Replies with words of their own | 0 | 17 |
+| Texts | 387 | about 800 |
+| Takes | 2,722 | about 4,700 (some 2,000 new, 324 of them scripted) |
+| The voice file | 30 MB | about 52 MB |
 | The prompt | | about 100 tokens more |
 
 ## Order
 
 1. Step 3, already built: the owner listens on the board or the
    simulator and keeps it or drops the commit.
-2. Relieved from the relief takes, with 2d's grudging glad: the first
+2. The replies' own words (step 4), with the reused takes first:
+   what you hear when you talk to it.
+3. Relieved from the relief takes, with 2d's grudging glad: the first
    new feeling, with the Examples and evals that change.
-3. 2a, the scripted phrases: the most range for the least writing.
-4. The other three feelings, then 2b and 2c, in batches: write the
+4. 2a, the scripted phrases: the most range for the least writing.
+5. The other three feelings, then 2b and 2c, in batches: write the
    lines into `dictionary.json`, generate, listen on the bank's review
    page, rerun voicegen.
