@@ -124,7 +124,9 @@ motion sensor's (`motion`) sit in a row under them, wrapping at the
 screen's width, and the case moves as they move the board: shaken, held
 up off the desk, bumped by a thump (not with reduced motion). The status
 line under it is a part, `boop-simulator::part(status)`, that a page may
-hide, as the internal build's window does.
+hide, and `--fit: none` keeps the board its own size rather than
+shrinking to the page, as the internal build's window does, which fits
+itself to the board.
 
 | Attribute | What |
 | --- | --- |

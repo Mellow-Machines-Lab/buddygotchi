@@ -13,7 +13,7 @@ enum MenuBarApp {
         guard let link = LinkSetting(args["--link"] ?? "ble") else { fail("--link is ble, usb:SOCKET or none") }
         let debug = args.has("--debug")
         if args.has("--simulator"), !AppModel.offersSimulator || link != .bluetooth {
-            fail("--simulator is for make dev's debug build, on its board's link")
+            fail("--simulator is for make dev's debug build and the internal build, on the board's link")
         }
         MainActor.assumeIsolated {
             let app = NSApplication.shared
@@ -722,7 +722,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 log.write("settings: can't keep Boop's body: \(error)")
             }
         }
-        BoardWindow.shared.name = { [weak self] in self?.model.name ?? "Boop" }
+        // The runtime's latest, since the views' status waits for the popover.
+        BoardWindow.shared.name = { [weak self] in self?.model.latest?.name ?? self?.model.name ?? "Boop" }
         BoardWindow.shared.beside = { [weak self] in self?.onboardingWindow }
         BoardWindow.shared.log = { [log] in log.write($0) }
 
@@ -941,6 +942,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 Task { @MainActor in
                     self?.model.take(status)
                     self?.updateIcon()
+                    BoardWindow.shared.retitle()
                 }
             }
             // The popover's mirror of the board: what the board is sent and

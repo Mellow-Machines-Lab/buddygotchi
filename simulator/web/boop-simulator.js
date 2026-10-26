@@ -269,8 +269,10 @@ export class DemoPlayer extends EventTarget {
 }
 
 const STYLE = `
-  :host { display: inline-block; max-width: 100%; font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: #999;
-          outline: none; }  /* it takes the keyboard for Space, with no ring round the whole board */
+  /* It takes the keyboard for Space, with no ring round the whole board. It shrinks to fit a narrower page,
+     unless --fit says none, as a window that fits itself to the board does. */
+  :host { display: inline-block; max-width: var(--fit, 100%); font: 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+          color: #999; outline: none; }
   .body { background: linear-gradient(#2a2a2a, #1c1c1c); border-radius: 22px; padding: 20px 20px 14px;
           box-shadow: inset 0 1px 0 #3a3a3a, 0 20px 50px rgba(0, 0, 0, .5); }
   /* A native face's board, the AMOLED's: its panel under black glass with round corners, as on the board. */
@@ -289,7 +291,7 @@ const STYLE = `
   @media (max-width: 600px) { .body, .body.native { padding: 12px 12px 8px; } .body.native .screen { padding: 8px; } }
   .screen { position: relative; }
   canvas { display: block; background: #000; border-radius: 6px; image-rendering: pixelated; touch-action: none;
-           cursor: pointer; width: var(--w); max-width: 100%; height: auto; }
+           cursor: pointer; width: var(--w); max-width: var(--fit, 100%); height: auto; }
   .body.native canvas { background: transparent; border-radius: 0; image-rendering: auto; }
   .finger { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px; border-radius: 50%;
             border: 2px solid #fff; opacity: 0; pointer-events: none; }

@@ -80,11 +80,19 @@ final class BoardWindow: NSObject, WKScriptMessageHandler, WKURLSchemeHandler, W
 
     // MARK: The window
 
+    /// The window takes Boop's name again, which a launch learns after the
+    /// window has opened, and onboarding gives.
+    func retitle() {
+        guard let window, window.title != name() else { return }
+        window.title = name()
+    }
+
     /// Shows the window, making it and its board if it's gone, in front.
     func show() {
         guard let folder = Self.folder else { return }
         if window == nil { make(folder) }
         guard let window else { return }
+        window.title = name()  // named in onboarding since it was made
         NSApp.activate()
         window.makeKeyAndOrderFront(nil)
         window.makeFirstResponder(webView)
