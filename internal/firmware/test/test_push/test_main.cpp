@@ -22,6 +22,9 @@
 #include "render/canvas.h"
 #include "render/push.h"
 #include "render/screens.h"
+#if __has_include("render/gel/lane.h")
+#include "render/gel/lane.h"
+#endif
 
 void setUp() {}
 void tearDown() {}
@@ -395,7 +398,8 @@ static void test_steady_scenes_reach_the_panel() {
 // the strip fades in over the props' 200 ms, going out as it does; then
 // the bands wholly in the lane send nothing: the other surface draws the
 // same lane, which the panel already shows. A new name sends them again,
-// once.
+// once. While sessions work, the counts' spinner turns, and the lane goes
+// out on its steps alone, one frame each kSpinStepMs.
 static void test_an_unchanged_lane_isnt_sent_again() {
   auto r = gelRig();
   ModelPanel panel(kW, kH, true);
@@ -409,9 +413,9 @@ static void test_an_unchanged_lane_isnt_sent_again() {
     return px;
   };
   const std::string asking[] = {
-      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"vol\":0,\"attn\":{\"agent\":\"claude\",\"name\":"
+      "{\"t\":\"state\",\"base\":\"working\",\"idle\":2,\"vol\":0,\"attn\":{\"agent\":\"claude\",\"name\":"
       "\"Fix a test\",\"id\":1}}",
-      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"vol\":0,\"attn\":{\"agent\":\"claude\",\"name\":"
+      "{\"t\":\"state\",\"base\":\"working\",\"idle\":2,\"vol\":0,\"attn\":{\"agent\":\"claude\",\"name\":"
       "\"Fix another test\",\"id\":1}}"};
   for (const std::string& state : asking) {
     r->line(state);
@@ -426,6 +430,17 @@ static void test_an_unchanged_lane_isnt_sent_again() {
     }
     if (fades) TEST_ASSERT_TRUE_MESSAGE(fading >= 3, "a lane fading in goes out");
   }
+  const std::string working = "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":2,\"vol\":0}";
+  r->line(working);
+  TEST_ASSERT_TRUE_MESSAGE(laneSent(working) > 0, "a new lane goes out");
+  constexpr int kFrames = 30, kStepMs = 33;  // just under a second
+  int sent = 0;
+  for (int i = 0; i < kFrames; ++i) {
+    r->line("{\"t\":\"dbg.clock\",\"step\":33}");
+    sent += laneSent(working) > 0;
+  }
+  const int steps = kFrames * kStepMs / render::gel::kSpinStepMs;
+  TEST_ASSERT_TRUE_MESSAGE(sent >= steps - 1 && sent <= steps + 1, "the spinner's steps go out, and nothing else");
 }
 #endif
 

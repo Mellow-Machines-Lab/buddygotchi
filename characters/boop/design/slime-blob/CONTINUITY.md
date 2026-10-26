@@ -215,9 +215,14 @@ These values are art candidates, not host mood pacing. Props stay above
 y = 0.8 of the screen; the lower 20% belongs to the host's lane. The
 AMOLED's corners are rounded, about 110 px in radius, and show nothing
 there, so the lane keeps clear of them: the strip stands in from the
-sides as far as the corners reach on its marks' rows, and the bubble
+sides as far as the corners reach on its marks' and chips' rows, and the bubble
 stands off the panel's foot and in from the curve, its own corners cut
 away like the panel's, which holds the longest take in the sign's font.
+The strip's working and idle counts each sit in a chip outlined as the
+drawer's rows' chips are, so the drawer says what they mean: the working
+count's bright, by a spinner that turns once a second, and the idle
+count's dim, by a sleeper's z. The lane is drawn again for the spinner
+only while sessions work.
 
 Every other prop (the alert, result and start cards, the listening cue
 and the touch marks) has a **200 ms visibility ramp** for

@@ -190,14 +190,25 @@ void bubble(Lane& l, const char* line) {
 
 // The strip's marks, each in a kIcon box with its middle at (x + 9, cy).
 void dot(Raster& r, int x, int cy, uint16_t ink) { r.disk(x + 9, cy, 8, ink); }
-// The working count's: a ring with its left half filled, which no digit
-// reads as.
-void working(Raster& r, int x, int cy, uint16_t ink) {
-  r.disk(x + 9, cy, 8, ink);
-  r.disk(x + 9, cy, 5, 0);
-  r.bounds = {x, cy - 9, x + 9, cy + 10};
-  r.disk(x + 9, cy, 5, ink);
-  r.bounds = Raster::kEverywhere;
+// The working count's: a spinner of kSpinSteps spokes turning clockwise,
+// the one on `spin` lit and the ones it passed fading behind it, as a
+// computer shows it's busy.
+void spinner(Raster& r, int x, int cy, int spin, uint16_t ink) {
+  // Each spoke's way out from the middle, in sixteenths of a pixel per
+  // pixel, clockwise from twelve o'clock.
+  static constexpr Point kWay[kSpinSteps] = {{0, -16}, {11, -11}, {16, 0},  {11, 11},
+                                             {0, 16},  {-11, 11}, {-16, 0}, {-11, -11}};
+  const int cx16 = (x + 9) * 16 + 8, cy16 = cy * 16 + 8;
+  for (int i = 0; i < kSpinSteps; ++i) {
+    const int behind = (spin - i + kSpinSteps) % kSpinSteps;
+    const Point spoke[] = {{cx16 + kWay[i].x * 4, cy16 + kWay[i].y * 4}, {cx16 + kWay[i].x * 8, cy16 + kWay[i].y * 8}};
+    r.stroke16(spoke, 2, 40, mix565(0, ink, 255 - behind * 27));
+  }
+}
+// The idle count's: a sleeper's z, and a smaller one rising after it.
+void sleeper(Raster& r, int x, int cy, uint16_t ink) {
+  r.zee((x + 1) * 16, (cy + 7) * 16, 12 * 16, ink);
+  r.zee((x + 12) * 16, (cy - 2) * 16, 7 * 16, ink);
 }
 void tick(Raster& r, int x, int cy, uint16_t ink) {
   r.line({x + 2, cy}, {x + 7, cy + 5}, 3, ink);
@@ -217,23 +228,40 @@ void plug(Raster& r, int x, int cy, uint16_t ink) {  // a plug on its cord, poin
   r.round(x + 17, cy + 3, 7, 3, 1, ink);
 }
 
-// The counts after the names: how many sessions work, the helpers at work
-// (a mini each, a little droplet of the gel with two eyes), the agents idle
-// (a parcel each for BOOT to hand over), and last, as Pixel's strip has it,
-// how far down its to-do list the longest turn with one is ("3/7"), from x,
-// each with the gap after it. Drawn when r is given; either way, the x
-// after them, so the names leave them the room they take.
-int counts(Raster* r, const Strip& s, int x, int cy) {
+// The working and idle counts' chip, as the drawer's rows have theirs: a
+// box with round corners outlined in `ring` round a mark and the number
+// in `ink`.
+// Its padding before the mark, and after the number (less, as a digit's
+// cell has room either side of it), the gap between the two, and after
+// it, before the next count: less than a mark's, as its outline parts
+// them.
+constexpr int kChipH = 36, kChipRadius = 9, kChipPad = 8, kChipEnd = 7, kChipGap = 4, kChipAfter = 12;
+
+// The counts after the names: how many sessions work, by a spinner on
+// `spin`, the helpers at work (a mini each, a little droplet of the gel
+// with two eyes), the agents idle, by a sleeper's z, the two in chips, and
+// last, as Pixel's strip has it, how far down its to-do list the longest
+// turn with one is ("3/7"), from x, each with the gap after it. Drawn when
+// r is given; either way, the x after them, so the names leave them the
+// room they take.
+int counts(Raster* r, const Strip& s, int x, int cy, int spin) {
   const Font& f = kSign;
   const int ty = cy - f.h / 2;
-  const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey), eye = inkRgb565(kInkEye);
+  const uint16_t grey = inkRgb565(kInkGrey), eye = inkRgb565(kInkEye);
   char n[24];
   auto number = [&](int at, uint16_t ink) { return r ? text(*r, f, at, ty, n, ink) : at + glyphCount(n) * f.w; };
-  if (s.busy > 0) {
-    if (r) working(*r, x, cy, grey);
-    std::snprintf(n, sizeof(n), "%d", s.busy);
-    x = number(x + kIcon + 8, grey) + kIcon;
-  }
+  // The chip from x round its mark and count; the x after it, with the gap.
+  auto chip = [&](int count, uint16_t ring, uint16_t ink, auto mark) {
+    std::snprintf(n, sizeof(n), "%d", count);
+    const int w = kChipPad + kIcon + kChipGap + glyphCount(n) * f.w + kChipEnd;
+    if (r) {
+      r->ring(x, cy - kChipH / 2, w, kChipH, kChipRadius, 2, ring);
+      mark(x + kChipPad);
+      number(x + kChipPad + kIcon + kChipGap, ink);
+    }
+    return x + w + kChipAfter;
+  };
+  if (s.busy > 0) x = chip(s.busy, kWorkingRing, kWorkingInk, [&](int at) { spinner(*r, at, cy, spin, kWorkingInk); });
   if (s.helpers > 0) {
     const int minis = std::min(s.helpers, kMinis), miniW = 20;
     const uint16_t gel = 0x75BE, ink = 0x0000;
@@ -250,15 +278,7 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
     }
     x += kIcon;
   }
-  if (s.idle > 0) {
-    if (r) {
-      r->round(x, cy - 6, 16, 13, 2, eye);
-      r->round(x + 7, cy - 6, 2, 13, 0, dim);
-      r->round(x, cy - 1, 16, 2, 0, dim);
-    }
-    std::snprintf(n, sizeof(n), "%d", s.idle);
-    x = number(x + kIcon + 10, eye) + kIcon;
-  }
+  if (s.idle > 0) x = chip(s.idle, kIdleRing, kIdleInk, [&](int at) { sleeper(*r, at, cy, kIdleInk); });
   if (s.todoTotal > 0) {
     std::snprintf(n, sizeof(n), "%d/%d", s.todoDone, s.todoTotal);
     x = number(x, eye) + kIcon;
@@ -268,7 +288,7 @@ int counts(Raster* r, const Strip& s, int x, int cy) {
 
 }  // namespace
 
-int paintCounts(Raster& r, const Strip& s, int x, int cy) { return counts(&r, s, x, cy); }
+int paintCounts(Raster& r, const Strip& s, int x, int cy, int spin) { return counts(&r, s, x, cy, spin); }
 
 void paintRule(Raster& r, int x0, int x1, int y, bool down, uint16_t ink) {
   const int cx = (x0 + x1) / 2, tip = down ? y + 6 : y - 5, foot = down ? y - 3 : y + 4;
@@ -282,22 +302,26 @@ namespace {
 
 // The status strip: who needs you, or whose turn the finish was, then how
 // many sessions work, and the plug with no app (render/screens.h's Strip).
-void strip(Lane& l, const Strip& s) {
+void strip(Lane& l, const Strip& s, int spin) {
   if (!s.shows()) return;
   Raster& r = l.r;
   const uint16_t dim = inkRgb565(kInkDim), grey = inkRgb565(kInkGrey);
   const Font& f = kSign;
   const int cy = l.y((kStripTop + kHeight) / 2), ty = cy - f.h / 2;
   // In from the sides, and clear of the panel's rounded corners on the
-  // rows of the marks and the digits.
-  const int margin = std::max(kMargin, l.r.s.inset(cy - 12, cy + 12) + kCornerGap);
+  // rows of the marks and the digits, and of the chips, whose round
+  // corners may stand nearer.
+  const Surface& panel = l.r.s;
+  const int margin = std::max(
+      kMargin,
+      std::max(panel.inset(cy - 12, cy + 12), panel.inset(cy - kChipH / 2, cy + kChipH / 2, kChipRadius)) + kCornerGap);
   // Its rule, with a chevron for the agents' drawer under it while there
   // are any (render/gel/drawer.h).
   if (s.agent || s.busy > 0 || s.idle > 0)
     paintRule(r, margin, l.w - margin, l.y(kStripTop), false, dim);
   else
     r.round(margin, l.y(kStripTop), l.w - 2 * margin, 2, 1, dim);
-  const int countsWidth = counts(nullptr, s, 0, cy);
+  const int countsWidth = counts(nullptr, s, 0, cy, spin);
   int x = margin;
   if (s.agent) {
     const uint16_t amber = inkRgb565(kInkAmber);
@@ -324,14 +348,14 @@ void strip(Lane& l, const Strip& s) {
   }
   // Then how many work, the helpers at work, and the agents idle, waiting
   // for you.
-  counts(&r, s, x, cy);
+  counts(&r, s, x, cy, spin);
   if (s.noApp) plug(r, l.w - margin - 24, cy, grey);
 }
 
 // The strip, drawn at full strength, blended once at its opacity (0–255):
 // its rows hold nothing else, over black, so that is scaling each pixel it
 // wrote, in place, with no buffer of its own; a hole (the working mark's
-// open half, a mini's eyes) stays one, and where its shapes meet it blends
+// inside, a mini's eyes) stays one, and where its shapes meet it blends
 // once.
 void fade(Surface& s, int from, int alpha) {
   if (alpha >= 253) return;
@@ -348,7 +372,7 @@ void fade(Surface& s, int from, int alpha) {
 // are (FNV-1a over the line or the strip's fields; never 0).
 }  // namespace
 
-uint32_t laneKey(const char* line, const Strip& s) {
+uint32_t laneKey(const char* line, const Strip& s, int spin) {
   uint32_t h = 2166136261u;
   auto add = [&](const void* data, size_t n) {
     for (size_t i = 0; i < n; ++i) h = (h ^ static_cast<const uint8_t*>(data)[i]) * 16777619u;
@@ -357,7 +381,8 @@ uint32_t laneKey(const char* line, const Strip& s) {
   str(line);
   if (!line) {
     str(s.agent), str(s.project), str(s.name), str(s.doneAgent), str(s.doneThread);
-    const int numbers[] = {s.more, int(s.doneOutcome), s.busy, s.idle, s.helpers, s.todoDone, s.todoTotal, s.noApp, s.opacity};
+    const int numbers[] = {s.more,     int(s.doneOutcome), s.busy,  s.idle,    s.helpers,
+                           s.todoDone, s.todoTotal,        s.noApp, s.opacity, s.busy > 0 ? spin : 0};
     add(numbers, sizeof(numbers));
   }
   return h ? h : 1;
@@ -365,17 +390,17 @@ uint32_t laneKey(const char* line, const Strip& s) {
 
 int bubbleRoom(const Surface& surface) { return BubbleBox(surface).room(surface.width); }
 
-void paintLane(Surface& surface, const char* line, const Strip& s) {
+void paintLane(Surface& surface, const char* line, const Strip& s, int spin) {
   if (!surface.pixels) return;
   Lane l{Raster{surface}, surface.width, surface.height};
   l.r.limit = surface.height;
   if (line) {
     bubble(l, line);
   } else {
-    strip(l, s);
+    strip(l, s, spin);
     fade(surface, l.y(kLaneTop), (s.opacity * 255 + 500) / 1000);
   }
-  surface.laneKey = laneKey(line, s);
+  surface.laneKey = laneKey(line, s, spin);
   surface.laneKeyFrom = l.y(kLaneTop);
 }
 
@@ -389,13 +414,14 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
     paint(surface, e, mouthOpen, dy, 0, &at, rig, layers, t, nullptr, &pose);
     if (pose.squint) paintSquint(surface, at, pose, DrawerLayout(surface.width, surface.height, surface.corner).top(drawer->open));
     Measure measure(profile.lane);
-    paintDrawer(surface, *drawer, s, at);
+    paintDrawer(surface, *drawer, s, at, spinStep(now));
     return;
   }
   // A lane that shows what this surface's already shows is kept, not
   // erased and drawn again (Surface::clear): the glow over it too.
   const int glow = doneGlow(done);
-  uint32_t key = laneKey(line, s);
+  const int spin = spinStep(now);
+  uint32_t key = laneKey(line, s, spin);
   if (glow) key = ((key ^ uint32_t(glow << 8 | int(done.outcome))) * 16777619u) | 1;
   // The ticket swings over where a card may be, so a card is drawn whole
   // while it hangs, not kept.
@@ -416,7 +442,7 @@ void paintFrame(Surface& surface, const Engine& e, bool mouthOpen, int dy, const
   paintTicket(surface, done);
   Measure measure(profile.lane);
   const bool lane = surface.laneKey != key;
-  if (lane) paintLane(surface, line, s), surface.laneKey = key;
+  if (lane) paintLane(surface, line, s, spin), surface.laneKey = key;
   // A kept lane keeps its glow.
   paintGlow(surface, done, 0, lane ? surface.height : surface.laneKeyFrom);
 }

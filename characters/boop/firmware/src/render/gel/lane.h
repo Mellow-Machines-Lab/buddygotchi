@@ -7,6 +7,7 @@
 #include "render/face.h"
 #include "render/drawer.h"
 #include "render/font.h"
+#include "render/palette.h"
 #include "render/rig/layers.h"
 #include "render/screens.h"
 #include "render/stream.h"
@@ -30,18 +31,31 @@ void text16(Raster& r, const Font& f, int x16, int y16, const char* s, uint16_t 
 // holds).
 const Font& bubbleFont();
 
+// The chips' inks, the strip's working and idle counts' as the drawer's
+// rows' (render/gel/drawer.h): the working one's bright, the idle one's
+// resting.
+constexpr uint16_t kWorkingRing = rgb565(89, 97, 107), kWorkingInk = rgb565(238, 242, 245),
+                   kIdleRing = rgb565(51, 58, 66), kIdleInk = rgb565(154, 163, 173);
+// The working count's spinner: kSpinSteps spokes, the lit one a step on
+// every kSpinStepMs, a turn a second, and the step it's on at the
+// device's time `now`.
+constexpr int kSpinSteps = 8, kSpinStepMs = 125;
+inline int spinStep(uint32_t now) { return int(now / kSpinStepMs % kSpinSteps); }
+
 // The strip's counts (how many work, the helpers, the idle and the to-do
-// list), from x, their middle on row cy: the agents' drawer carries them
-// up as its lid (render/gel/drawer.h). Returns the x after them.
-int paintCounts(Raster& r, const Strip& strip, int x, int cy);
+// list), from x, their middle on row cy, the working spinner on `spin`:
+// the agents' drawer carries them up as its lid (render/gel/drawer.h).
+// Returns the x after them.
+int paintCounts(Raster& r, const Strip& strip, int x, int cy, int spin = 0);
 // The strip's rule from x0 to x1 on row y, broken in its middle by a
 // chevron, pointing up (the drawer under it) or down (it shuts).
 void paintRule(Raster& r, int x0, int x1, int y, bool down, uint16_t ink);
-// The bubble, or else the strip at its opacity.
-void paintLane(Surface& surface, const char* bubble, const Strip& strip);
+// The bubble, or else the strip at its opacity, its spinner on `spin`.
+void paintLane(Surface& surface, const char* bubble, const Strip& strip, int spin = 0);
 // What a lane shows, as a key that's the same exactly when its pixels are
-// (never 0): what paintLane records as the surface's laneKey.
-uint32_t laneKey(const char* bubble, const Strip& strip);
+// (never 0): what paintLane records as the surface's laneKey. The spinner
+// only turns while sessions work, so only then does its step change it.
+uint32_t laneKey(const char* bubble, const Strip& strip, int spin = 0);
 class Engine;
 struct PastimeShow;
 // A whole frame, as GelFace::draw draws it: the body, with the rig's

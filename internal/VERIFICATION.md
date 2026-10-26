@@ -418,7 +418,8 @@ gets at least one scenario. Their pictures are the golden images in
   and of a long random gel sequence through `Device` (moods, states,
   reactions, pokes, needs you, bubbles, patterns, screenshots), whose frames
   must also match one surface drawn as before, and a lane the gel draws
-  itself going out only when it changes; it prints what steady gel
+  itself going out only when it changes, and while sessions work only on
+  its spinner's steps; it prints what steady gel
   scenes send a frame; the animation bank's player
   against facegen's frames, every mood, state and variation, and the
   variations' host facts (`test_scene`, Pixel's pack's, which comes with

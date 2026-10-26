@@ -138,7 +138,9 @@ ramps and springs can, and no jolt at an event. By file:
   reach's side out and the other in, a melt most of the way down and
   wider, its base where it was),
   the lane at the panel's size (fading whatever the draw cadence, blended
-  once, cut and marked as the canvas does), the lane clear of the AMOLED's
+  once, cut and marked as the canvas does), the working spinner a spoke
+  every 125 ms and the lane drawn again for it only while sessions work
+  (`test_the_working_spinner_turns_once_a_second`), the lane clear of the AMOLED's
   rounded corners (`test_the_lane_clears_the_rounded_corners`), the layers on the body's
   anchors, coming and going through the rig's layer stack, each at its
   opacity, the sign fading out at its own, drawing by coverage (a
@@ -170,7 +172,7 @@ ramps and springs can, and no jolt at an event. By file:
 - `internal/tools/boopctl sim --face gel` plays the pack's
   `tests/scenarios-gel/` against its `tests/golden-gel/`: every canonical
   mood and factual state, failure and neutral-finish frames, the host lane
-  at the panel's size (`lane.jsonl`: the working count, a long name that
+  at the panel's size (`lane.jsonl`: the working count in its chip, a long name that
   needs you, the finish's marks and the bubble in each of its fonts), the
   comedy (`comedy.jsonl`: the yawn, the sneeze's wind-up, the doze, the
   long yawn, the zoomies at either edge, a snore, the hiccups and the

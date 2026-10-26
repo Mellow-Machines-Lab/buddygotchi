@@ -2591,8 +2591,10 @@ static void test_the_strip_fades_as_one() {
 }
 // The lane's text is cut by the rule every face's is (render::cutAt): a
 // line too long for its room draws as the words cutAt keeps and "..". The
-// working count's mark is a ring with its left half filled, which no digit
-// reads as; a finished turn's tick is sage and its cross clay.
+// working count is a spinner and its number in a chip outlined as the
+// drawer's working rows' chips are, and the idle count a sleeper's z in
+// the idle rows' dimmer one; a finished turn's tick is sage and its cross
+// clay.
 static void test_the_lane_cuts_and_marks_as_the_canvas_does() {
   constexpr int kW = 502, kH = 410;
   std::vector<uint16_t> a(kW * kH), b(a.size());
@@ -2602,14 +2604,22 @@ static void test_the_lane_cuts_and_marks_as_the_canvas_does() {
   text(rc, kSign, 0, 0, "claude \xC2\xB7 what does the turn do", 0xffff, 24 * kSign.w);
   text(rw, kSign, 0, 0, "claude \xC2\xB7 what does the..", 0xffff);
   TEST_ASSERT_EQUAL_MEMORY(b.data(), a.data(), cut.bytes());
-  // With no names, the counts start at the margin: the mark's middle 9 px in.
+  // With no names, the counts start at the margin: the chip's edge there,
+  // its inside bare glass, and the spinner's top spoke, lit on step 0, in
+  // the chip's ink, 8 px further in and 9 more to its middle.
   Strip s;
   s.busy = 2;
   cut.invalidate(), cut.clear();
   paintLane(cut, nullptr, s);
   const int cy = kH * ((kStripTop + kHeight) / 2) / kHeight;
-  TEST_ASSERT_EQUAL_HEX16(paletteAt(inkAt(kInkGrey, kLevels)), a[size_t(cy) * kW + 18 + 6]);
-  TEST_ASSERT_EQUAL_HEX16(0, a[size_t(cy) * kW + 18 + 12]);
+  TEST_ASSERT_EQUAL_HEX16(kWorkingRing, a[size_t(cy) * kW + 18]);
+  TEST_ASSERT_EQUAL_HEX16(0, a[size_t(cy) * kW + 18 + 4]);
+  TEST_ASSERT_EQUAL_HEX16(kWorkingInk, a[size_t(cy - 6) * kW + 18 + 8 + 9]);
+  Strip idle;
+  idle.idle = 1;
+  cut.invalidate(), cut.clear();
+  paintLane(cut, nullptr, idle);
+  TEST_ASSERT_EQUAL_HEX16(kIdleRing, a[size_t(cy) * kW + 18]);
   for (auto [outcome, ink] :
        {std::pair{Outcome::kSuccess, rgb565(kSageRgb)}, std::pair{Outcome::kFailure, rgb565(kClayRgb)}}) {
     Strip done;
@@ -2621,6 +2631,37 @@ static void test_the_lane_cuts_and_marks_as_the_canvas_does() {
       for (int x = 18; x < 18 + 18; ++x) lit += a[size_t(y) * kW + x] == ink;
     TEST_ASSERT_TRUE(lit > 10);
   }
+}
+// The working count's spinner turns clockwise a spoke every kSpinStepMs,
+// kSpinSteps spokes, a turn a second, the one it's on lit and the one it
+// left a step dimmer. The lane's key follows the step only while sessions
+// work, so a strip with none working is kept, not drawn again.
+static void test_the_working_spinner_turns_once_a_second() {
+  TEST_ASSERT_EQUAL_INT(1000, kSpinSteps * kSpinStepMs);
+  TEST_ASSERT_EQUAL_INT(0, spinStep(0));
+  TEST_ASSERT_EQUAL_INT(0, spinStep(kSpinStepMs - 1));
+  TEST_ASSERT_EQUAL_INT(1, spinStep(kSpinStepMs));
+  TEST_ASSERT_EQUAL_INT(kSpinSteps - 1, spinStep(999));
+  TEST_ASSERT_EQUAL_INT(0, spinStep(1000));
+  constexpr int kW = 502, kH = 410;
+  std::vector<uint16_t> a(kW * kH);
+  Surface lane{kW, kH, a.data()};
+  Strip working, resting;
+  working.busy = 1;
+  resting.idle = 2;
+  const int cy = kH * ((kStripTop + kHeight) / 2) / kHeight, mx = 18 + 8 + 9;
+  auto at = [&](int spin, int x, int y) {
+    lane.invalidate(), lane.clear();
+    paintLane(lane, nullptr, working, spin);
+    return a[size_t(y) * kW + x];
+  };
+  TEST_ASSERT_EQUAL_HEX16(kWorkingInk, at(0, mx, cy - 6));  // twelve o'clock
+  TEST_ASSERT_EQUAL_HEX16(kWorkingInk, at(2, mx + 6, cy));  // three o'clock, two steps on
+  const uint16_t left = at(1, mx, cy - 6);                  // twelve, a step behind
+  TEST_ASSERT_TRUE(left != 0 && left != kWorkingInk);
+  TEST_ASSERT_TRUE((left & 0x1f) < (kWorkingInk & 0x1f));
+  TEST_ASSERT_TRUE(laneKey(nullptr, working, 0) != laneKey(nullptr, working, 1));
+  TEST_ASSERT_EQUAL_UINT32(laneKey(nullptr, resting, 0), laneKey(nullptr, resting, 5));
 }
 // What a frame keeps from its surface's last (a card's
 // opaque inside, an unchanged lane) is exactly what clearing it whole and
@@ -3138,6 +3179,7 @@ int main() {
   RUN_TEST(test_the_lane_clears_the_rounded_corners);
   RUN_TEST(test_the_strip_fades_as_one);
   RUN_TEST(test_the_lane_cuts_and_marks_as_the_canvas_does);
+  RUN_TEST(test_the_working_spinner_turns_once_a_second);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
   RUN_TEST(test_polygon_edges_move_a_sixteenth_at_a_time);

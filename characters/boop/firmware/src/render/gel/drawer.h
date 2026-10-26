@@ -67,8 +67,8 @@ DrawerPose drawerPose(const Surface& s, const Drawer& d);
 // The squeezed face, on the body's front between the pose's top and the
 // sheet's edge.
 void paintSquint(Surface& s, const rig::Anchors& body, const DrawerPose& pose, int sheetTop);
-// The sheet, its lid (the strip's counts) and rows, and the paw over its
-// edge.
-void paintDrawer(Surface& s, const Drawer& d, const Strip& strip, const rig::Anchors& body);
+// The sheet, its lid (the strip's counts, the working spinner on `spin`)
+// and rows, and the paw over its edge.
+void paintDrawer(Surface& s, const Drawer& d, const Strip& strip, const rig::Anchors& body, int spin = 0);
 
 }  // namespace render::gel

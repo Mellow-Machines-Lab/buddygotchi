@@ -15,9 +15,8 @@ namespace render::gel {
 namespace {
 
 constexpr uint16_t kSheet = rgb565(13, 16, 21), kRow = rgb565(20, 25, 32), kRowNeedsYou = rgb565(42, 31, 0),
-                   kRowPicked = rgb565(44, 57, 70), kTitle = rgb565(238, 242, 245),
-                   kResting = rgb565(154, 163, 173), kWorkingBar = rgb565(89, 97, 107), kIdleBar = rgb565(58, 65, 75),
-                   kChipRing = rgb565(89, 97, 107), kIdleRing = rgb565(51, 58, 66), kEyes = rgb565(8, 36, 72),
+                   kRowPicked = rgb565(44, 57, 70), kTitle = rgb565(238, 242, 245), kResting = rgb565(154, 163, 173),
+                   kWorkingBar = rgb565(89, 97, 107), kIdleBar = rgb565(58, 65, 75), kEyes = rgb565(8, 36, 72),
                    kCheeks = rgb565(255, 140, 200), kGel = rgb565(89, 169, 224), kToes = rgb565(66, 140, 210),
                    kShine = rgb565(184, 233, 245);
 constexpr int kRowRadius = 10, kBar = 6, kCornerGap = 4, kMargin = 18;
@@ -42,7 +41,8 @@ void row(Raster& r, const DrawerLayout& l, const Drawer::Row& row, int y, bool p
   r.bounds = {x, std::max(y, list.y0), x + kBar, std::min(y + h, list.y1)};
   r.round(x, y, kRowRadius * 2, h, kRowRadius, barInk(row));
   r.bounds = list;
-  // The chip: filled amber for needs you, else an outline.
+  // The chip: filled amber for needs you, else an outline in the strip's
+  // working or idle count's inks.
   const char* label = needs ? "NEEDS YOU" : idle ? "IDLE" : "WORKING";
   const int chipW = glyphCount(label) * kSmall.w + 14, chipH = kSmall.h + 6;
   const int chipX = x + w - 10 - chipW, chipY = y + (h - chipH) / 2;
@@ -50,8 +50,8 @@ void row(Raster& r, const DrawerLayout& l, const Drawer::Row& row, int y, bool p
   if (needs)
     r.round(chipX, chipY, chipW, chipH, 6, amber);
   else
-    r.ring(chipX, chipY, chipW, chipH, 6, 2, idle ? kIdleRing : kChipRing);
-  text(r, kSmall, chipX + 7, chipY + 3, label, needs ? rgb565(0, 0, 0) : idle ? kResting : kTitle);
+    r.ring(chipX, chipY, chipW, chipH, 6, 2, idle ? kIdleRing : kWorkingRing);
+  text(r, kSmall, chipX + 7, chipY + 3, label, needs ? rgb565(0, 0, 0) : idle ? kIdleInk : kWorkingInk);
   // The thread's name, and under it the agent and its project.
   const int tx = x + kBar + 14, room = chipX - 12 - tx;
   text(r, kLarge, tx, y + 1, row.title[0] ? row.title : "Untitled", needs ? amber : idle ? kResting : kTitle, room);
@@ -124,7 +124,7 @@ void paintSquint(Surface& s, const rig::Anchors& body, const DrawerPose& pose, i
   r.stroke16(mouth, 5, 40, kEyes);
 }
 
-void paintDrawer(Surface& s, const Drawer& d, const Strip& strip, const rig::Anchors& body) {
+void paintDrawer(Surface& s, const Drawer& d, const Strip& strip, const rig::Anchors& body, int spin) {
   const DrawerLayout l(s.width, s.height, s.corner);
   Raster r{s};
   r.limit = s.height;
@@ -140,7 +140,7 @@ void paintDrawer(Surface& s, const Drawer& d, const Strip& strip, const rig::Anc
   const int cy = top + l.u(31);
   const int lid = std::max(kMargin, s.inset(cy - 12, cy + 12) + kCornerGap);
   paintRule(r, lid, s.width - lid, top, open > 500, paletteAt(inkAt(kInkDim, kLevels)));
-  paintCounts(r, strip, lid, cy);
+  paintCounts(r, strip, lid, cy, spin);
   // The rows, scrolled under the lid; a session whose row hasn't come
   // yet is an empty one till it does.
   int first, last;

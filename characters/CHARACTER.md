@@ -640,6 +640,9 @@ Besides drawing each mood and state, a face:
   fade, from the moment it came or went, and hands the face its opacity
   with it (`Strip::opacity`): `drawLane` dithers it on the canvas, and a
   face that draws its own lane, as the gel does, draws it at that opacity.
+  The gel's own strip puts the working and idle counts in chips like its
+  drawer's rows' (`render/gel/lane.h`): a spinner turning once a second by
+  the working count, and a sleeper's z by the idle one.
 - **Has an agents' drawer, if it can** (`Face::hasDrawer`,
   `render/drawer.h`). A finger that starts on the strip and goes up pulls
   it out: the strip's counts ride up as its lid, a chevron in its rule
