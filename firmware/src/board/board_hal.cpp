@@ -87,6 +87,11 @@ bool BoardHal::touch(int& x, int& y) {
 void BoardHal::touchRaw(int& x, int& y, int& z, bool& irq) { board::touchRaw(x, y, z, irq); }
 bool BoardHal::touchLifted() { return board::touchLifted(); }
 uint32_t BoardHal::touchLifts() { return board::touchLifts(); }
+void BoardHal::setScanMode(int mode) { board::displayScanMode(mode); }
+int BoardHal::scanMode() { return board::displayScanMode(); }
+void BoardHal::scanStats(uint32_t& hz, uint32_t& pushes, uint32_t& tears) {
+  board::displayScanStats(hz, pushes, tears);
+}
 
 void BoardHal::setTouchCal(const app::TouchCal& c) {
   cal_ = c;

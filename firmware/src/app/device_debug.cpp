@@ -95,6 +95,12 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     live_.injPress = true;
     live_.injPressUntil = kit().now() + (doc["ms"] | kDefaultPressMs);
     kit().reply(from, "{\"t\":\"dbg.press\"}", 17);
+  } else if (!std::strcmp(type, "dbg.scan")) {
+    // How native frames meet the panel's refresh: "off", "down" or "up".
+    const char* mode = doc["mode"] | "";
+    const int m = !std::strcmp(mode, "off") ? 0 : !std::strcmp(mode, "down") ? 1 : !std::strcmp(mode, "up") ? 2 : -1;
+    if (m >= 0) hal_.setScanMode(m);
+    kit().reply(from, "{\"t\":\"dbg.scan\"}", 16);
   } else if (!std::strcmp(type, "dbg.imu")) {
     // The motion sensor's reading, held until the next ("off" lets go).
     live_.injMotion = !(doc["off"] | false);
@@ -306,6 +312,13 @@ void Device::state(JsonObject d, uint32_t t) {
     last["was"] = live_.lastTouchWas;
   } else {
     touch["last"] = nullptr;
+  }
+  if (const int mode = hal_.scanMode(); mode >= 0) {
+    uint32_t hz, pushes, tears;
+    hal_.scanStats(hz, pushes, tears);
+    JsonObject scan = d["scan"].to<JsonObject>();
+    static const char* const kModes[] = {"off", "down", "up"};
+    scan["mode"] = kModes[mode % 3], scan["hz"] = hz, scan["pushes"] = pushes, scan["tears"] = tears;
   }
   d["amp"] = hal_.ampOn();
   d["bl"] = b_.backlight(t);

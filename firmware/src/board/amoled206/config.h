@@ -16,6 +16,7 @@ constexpr int kLcdSclk = 11;
 constexpr int kLcdCs = 12;
 constexpr int kLcdReset = 8;
 constexpr int kLcdIo0 = 4, kLcdIo1 = 5, kLcdIo2 = 6, kLcdIo3 = 7;
+constexpr int kLcdTe = 13;  // the panel's tearing effect: rises as each refresh's scan begins, 60 Hz
 
 // The shared I2C bus: touch (FT3168), the ES8311 codec, the AXP2101 and the rest.
 constexpr int kI2cSda = 15;
