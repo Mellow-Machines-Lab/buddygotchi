@@ -1,0 +1,14 @@
+{
+  "name": "Boop is cheeky where it has a take",
+  "case": "An afternoon of ordinary moments, each a few minutes apart, where Boop's cheek should show without it reacting any more than usual. A long turn finishes saying it's done: Boop is smug about it, a proud face, as if it knew all along. The person pokes it once: a cheeky grin, not a puzzled look. A playful prompt gets a grin and a sign. An agent finishes grovelling, sorry for its earlier mistake: Boop smirks at it. Asked to roll over, it won't, and grins about it.",
+  "why": "PERSONALITY's closing temperament, Boop is cheeky: a long turn's win gets a proud face as if it knew all along, a poke a cheeky grin before it gets cross, the agents' grovelling a smirk, a prompt that sounds like something a teasing sign, a trick turned down as often as done, with a grin either way; its Examples give each. The temperament says how a moment looks, never that more moments get a reaction",
+  "steps": [
+    {"event": "turn started", "at": "0s", "prompt": "migrate the settings store to the new format", "reading": {"kind": "refactor"}},
+    {"event": "command", "at": "2m", "topic": "tests", "failed": false},
+    {"event": "turn finished", "at": "4m", "message": "Done: the settings store uses the new format and every test passes.", "reading": {"kind": "done"}, "expect": {"react": "proud|mischievous", "move": "success"}},
+    {"event": "poke", "at": "9m", "expect": {"react": "mischievous|amused", "said": "some"}},
+    {"event": "turn started", "at": "14m", "prompt": "this is so cute lol, can it wiggle when it's happy?", "reading": {"kind": "feature", "tone": "playful", "phrases": ["so cute", "lol"]}, "expect": {"react": "mischievous|amused", "sign": "some"}},
+    {"event": "turn finished", "at": "17m", "message": "I apologize for the earlier mistake. The wiggle is in, and it plays when the mood is happy.", "reading": {"kind": "done", "tone": "apologetic", "phrases": ["I apologize"]}, "expect": {"react": "amused|mischievous|skeptical", "move": "success"}},
+    {"event": "said", "at": "22m", "words": "roll over", "expect": {"react": "mischievous|amused", "move": "no"}}
+  ]
+}

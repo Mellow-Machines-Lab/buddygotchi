@@ -11,14 +11,17 @@
 - [named] you rang?
 - [fix frustrated] bug, again
 - [fix] bug hunt
+- [fix] who broke it?
 - [fix night] bugs at night?
 - [feature] new thing!
 - [feature] ooh, shiny
+- [feature] another one?!
 - [cleanup] bye bye code
 - [cleanup] delete it all
 - [refactor] tidy time
 - [tests] tests! tests!
 - [deploy] ship it?
+- [deploy] yolo
 - [deploy friday] on a FRIDAY?
 - [docs] docs...
 - [question] hmm?

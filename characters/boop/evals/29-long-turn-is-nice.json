@@ -1,7 +1,7 @@
 {
   "name": "A long turn done says it went well",
   "case": "The agent works for three minutes and finishes well, with passing tests. That's a solid win but not a big one: Boop makes a pleased face, played as a success, says so ('Finish', 'Done', 'Yay'), and stays calm, or with the work, engaged.",
-  "why": "Success is a turn done and working, celebrate a big win; PERSONALITY's Examples: a long turn done, saying it's done, is happy, success, says done, medium",
+  "why": "Success is a turn done and working, celebrate a big win; PERSONALITY's temperament Example: a long turn done, saying it's done, is proud, success, says done, medium",
   "steps": [
     {"event": "turn started", "at": "0s"},
     {"event": "command", "at": "1m", "topic": "tests", "failed": false},

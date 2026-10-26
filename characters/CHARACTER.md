@@ -337,7 +337,14 @@ What the brain reads, in plain Markdown:
   A personality is the whole of who the creature is, its temperament
   included: Boop's and Pixel's are cheeky, playful and teasing, never
   mean to the person, in a paragraph that closes the file after its
-  Examples (with a few of its own), so it has the last word. Nothing is laid over it but the mood and how much
+  Examples (with a few of its own), so it has the last word. Boop's
+  keeps all of its temperament there: the closing paragraph says where
+  its cheek shows (a win, a failure, the agents' stock lines, a prompt
+  that sounds like something, a poke, a trick, praise) and where it
+  drops the act, and its Examples are those moments. The Examples
+  before it are the moments any temperament plays the same way, so a
+  new temperament rewrites only the closing part. The temperament says
+  how a moment looks, never that more moments get a reaction. Nothing is laid over it but the mood and how much
   it says, and `boopdev check` notes a leftover `nature/` file, which
   nothing reads. The person picks one in Settings when the pack has
   more than one (Boop's has one, `boop`).
