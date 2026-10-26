@@ -3,7 +3,7 @@
 # them as `make -C internal <target>` from the repo root. Every recipe runs
 # from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: build app simulator check test tools faces fw fw-test sim sim-test mirror e2e tools-test eval-pixel
+.PHONY: build app simulator check test tools faces fw fw-test sim sim-test mirror demos e2e tools-test eval-pixel
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -146,6 +146,14 @@ mirror:
 	cd $(ROOT) && internal/tools/boopctl mirror
 	cd $(ROOT) && firmware/tools/mirror.sh --check
 
+# Each pack's demos recorded again where the script has changed since its
+# recording, or has none (simulator/tools/demos.py record), several at
+# once, each as long as it runs: the recordings the simulator's page plays,
+# checked in beside their scripts. tools-test fails until they're recorded.
+# NAMES=… records those again, ALL=1 every one.
+demos:
+	cd $(ROOT) && simulator/tools/demos.py record $(NAMES) $(if $(ALL),--all)
+
 # Hook → app → USB → device pipeline check (L4), on the board over USB.
 e2e:
 	$(MAKE) build
@@ -156,13 +164,15 @@ e2e:
 # the voice pack, and a reference cut into frames with ffmpeg), the
 # fluidity measure, the webcam recorder on synthetic video, charactergen's
 # staging and studio rules (internal/characters/), the studio's own logic
-# and server (with Node), and each character pack's own (its tests/tools/).
+# and server (with Node), that every demo's recording is up to date, and
+# each character pack's own (its tests/tools/).
 tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/fluid/tests
 	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests
+	cd $(ROOT) && python3 simulator/tools/demos.py check
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
 	cd $(ROOT) && for tests in characters/*/tests/tools; do \
 	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \

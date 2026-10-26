@@ -23,12 +23,15 @@ dev:
 bundle:
 	app/tools/bundle.sh
 
-# A pack's demo by name (characters/DEMOS.md): NAME (landing), and IN for
-# where you watch an agent play it, none by default.
+# The demos (characters/DEMOS.md). With no NAME, it asks which demo and
+# where it plays (simulator/tools/demos.py). NAME plays one in the
+# simulator's page from its recording, at once; NAME=all every one, one
+# after another. BOARD=usb:SOCKET plays it on a board, IN=… with an agent,
+# and CHARACTER=<pack> picks one where two packs have a demo of that name.
 DEMO_RUN := internal/tools/session/session.py run $(or $(NAME),landing) --board $(or $(BOARD),sim)
 demo:
 	@case "$(IN)" in \
-	  "") BOARD=$(BOARD) simulator/tools/demo.sh $(or $(NAME),landing) $(or $(FACE),pixel) ;; \
+	  "") simulator/tools/demos.py $(if $(NAME),play $(NAME) $(if $(BOARD),--board $(BOARD))) ;; \
 	  claude) $(DEMO_RUN) --ui desktop ;; \
 	  simulated-claude-terminal) $(DEMO_RUN) --agent claude ;; \
 	  simulated-codex-terminal) $(DEMO_RUN) --agent codex ;; \

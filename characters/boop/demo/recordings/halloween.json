@@ -1,0 +1,98 @@
+{
+  "character": "boop",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":772191864,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 0.001,
+      "effect": "Boop stretches and yawns",
+      "line": "{\"t\":\"do\",\"id\":772191865,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"Happy Halloween!\"}}"
+    },
+    {
+      "at": 0.855,
+      "cause": {
+        "kind": "back",
+        "text": "You come back to the Mac after a very long break"
+      }
+    },
+    {
+      "at": 1.176,
+      "effect": "Boop stretches and yawns and says “Mm-hm”",
+      "line": "{\"t\":\"do\",\"id\":772191866,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.nonverbal.delight.mm-hm__proud__contained\"},\"mood\":\"mischievous\",\"loops\":2}}"
+    },
+    {
+      "at": 1.176,
+      "effect": "Boop's mood is now happy",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 7.578,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 7.578,
+      "line": "{\"t\":\"do\",\"id\":772191867,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 7.579,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Add a spooky theme for today”"
+      }
+    },
+    {
+      "at": 8.645,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 8.645,
+      "line": "{\"t\":\"do\",\"id\":772191868,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +1 -1\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 10.779,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits src/theme.css"
+      }
+    },
+    {
+      "at": 12.486,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 12.486,
+      "line": "{\"t\":\"do\",\"id\":772191869,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 12.486,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 12.806,
+      "effect": "Boop celebrates and says “Whoa”",
+      "line": "{\"t\":\"do\",\"id\":772191870,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"halloween\"},\"say\":{\"take\":\"phase1.word.poke.whoa__proud__contained\"},\"mood\":\"mischievous\",\"loops\":2}}"
+    }
+  ],
+  "face": "gel",
+  "length": 18.89,
+  "name": "Boop",
+  "script": "7faa52ef843c0fcf79402175075a74d8fd41718971dc28284d4a9a654249a54b",
+  "takes": [
+    "phase1.nonverbal.delight.mm-hm__proud__contained",
+    "phase1.word.poke.whoa__proud__contained"
+  ],
+  "version": 1
+}

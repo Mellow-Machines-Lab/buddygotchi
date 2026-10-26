@@ -1,0 +1,222 @@
+{
+  "character": "pixel",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":265672973,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 1.004,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.004,
+      "line": "{\"t\":\"do\",\"id\":265672974,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 1.006,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Tidy the settings page”"
+      }
+    },
+    {
+      "at": 2.073,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.073,
+      "line": "{\"t\":\"do\",\"id\":265672975,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 2.073,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":2,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.073,
+      "line": "{\"t\":\"do\",\"id\":265672976,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 2.074,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Write the changelog for 2.4”"
+      }
+    },
+    {
+      "at": 3.16,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":2,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 3.16,
+      "line": "{\"t\":\"do\",\"id\":265672977,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 3.175,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":3,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 3.175,
+      "line": "{\"t\":\"do\",\"id\":265672978,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 3.176,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Find why the build is slow”"
+      }
+    },
+    {
+      "at": 4.244,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":3,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 4.244,
+      "line": "{\"t\":\"do\",\"id\":265672979,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +1 -1\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 6.378,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits src/settings.js"
+      }
+    },
+    {
+      "at": 8.002,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":3,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 8.083,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":2,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 8.083,
+      "line": "{\"t\":\"do\",\"id\":265672980,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 8.083,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 8.404,
+      "effect": "Pixel celebrates and says “Woohoo”",
+      "line": "{\"t\":\"do\",\"id\":265672981,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"the-hand-off\"},\"say\":{\"take\":\"phase1.word.celebrate.woohoo__happy__contained\"},\"mood\":\"pleased\",\"loops\":2}}"
+    },
+    {
+      "at": 9.471,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":2,\"idle\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"edit +4\"]]}"
+    },
+    {
+      "at": 9.471,
+      "line": "{\"t\":\"do\",\"id\":265672982,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +4\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 11.604,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits CHANGELOG.md"
+      }
+    },
+    {
+      "at": 13.309,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"idle\":2,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 13.309,
+      "line": "{\"t\":\"do\",\"id\":265672983,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 13.309,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 13.629,
+      "effect": "Pixel celebrates and says “Bingo”",
+      "line": "{\"t\":\"do\",\"id\":265672984,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"the-hand-off-notes\"},\"say\":{\"take\":\"phase1.word.celebrate.bingo__happy__contained\"},\"mood\":\"happy\",\"loops\":2}}"
+    },
+    {
+      "at": 15.763,
+      "cause": {
+        "kind": "press",
+        "text": "BOOT: the changelog opens"
+      },
+      "input": "press"
+    },
+    {
+      "at": 17.896,
+      "cause": {
+        "kind": "press",
+        "text": "BOOT again: the settings page opens"
+      },
+      "input": "press"
+    },
+    {
+      "at": 18.965,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"idle\":2,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"npm run\"]]}"
+    },
+    {
+      "at": 18.965,
+      "line": "{\"t\":\"do\",\"id\":265672985,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm run\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 21.999,
+      "line": "{\"t\":\"do\",\"id\":265672986,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"built\",\"as\":\"built\"}}"
+    },
+    {
+      "at": 21.999,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude: time the build"
+      }
+    },
+    {
+      "at": 23.645,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":3,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 23.645,
+      "line": "{\"t\":\"do\",\"id\":265672987,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 23.645,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 23.966,
+      "effect": "Pixel celebrates and says “Naturally, naturally”",
+      "line": "{\"t\":\"do\",\"id\":265672988,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"the-hand-off-build\"},\"say\":{\"take\":\"phase1.phrase.pride.naturally-naturally__proud__contained\"},\"mood\":\"proud\",\"loops\":3}}"
+    },
+    {
+      "at": 23.966,
+      "effect": "Pixel's mood is now proud",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"proud\",\"busy\":0,\"idle\":3,\"vol\":6,\"when\":[\"day\"]}"
+    }
+  ],
+  "face": "pixel",
+  "length": 30,
+  "name": "Pixel",
+  "script": "8a9729449445f64694f71a08a4c39572d3a26eb4db4e77abdfc63b561c0affe8",
+  "takes": [
+    "phase1.word.celebrate.woohoo__happy__contained",
+    "phase1.word.celebrate.bingo__happy__contained",
+    "phase1.phrase.pride.naturally-naturally__proud__contained"
+  ],
+  "version": 1
+}

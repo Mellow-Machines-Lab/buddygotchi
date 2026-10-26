@@ -1264,10 +1264,11 @@ def check(pack: Path, reads: Reads | None = None) -> int:
 
 def bundle(view: Path, dest: Path) -> None:
     """A staged pack as the Mac app bundles it, with what the app reads and
-    no more, in dest (.character-build/packs/<name>/)."""
+    no more, in dest (.character-build/packs/<name>/): its demos' scripts,
+    say, and not their recordings, which only the simulator's page plays."""
     shutil.copytree(view, dest,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
-                                                  "studio", "rig", "references", "review"))
+                                                  "studio", "rig", "references", "review", "recordings"))
 
 
 def checked_pack(pack: Path, reads: Reads | None = None) -> tuple[dict, dict[str, Path]] | None:

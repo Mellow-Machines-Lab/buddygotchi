@@ -17,7 +17,12 @@ Claude in the desktop app. The script is the same in each.
    (below).
 3. Check it: `.build/debug/boopdev check` (after `make -C internal build`). It
    names each step the pack can't play, and the choices it can.
-4. Watch it: `make demo NAME=<name>`.
+4. Record it: `make -C internal demos`. It records every demo whose
+   script has changed since its recording, or has none, into
+   `characters/<pack>/demo/recordings/<name>.json` (below, The same every
+   time). Commit the recording with the script:
+   `make -C internal tools-test` and CI fail until you do.
+5. Watch it: `make demo NAME=<name>`.
 
 This is all of `hello.jsonl`:
 
@@ -117,15 +122,10 @@ default, in a session of its own) and maybe its `name`. Boop's
 {"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}, "buddy": "left"}
 ```
 
-Play it headless on two simulated boards, each on its own cable
-([simulator/README.md](../simulator/README.md)):
-
-```sh
-python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
-# open http://127.0.0.1:8206/?boards=left,right&packs=pixel,boop
-.build/debug/Boop --headless --state-dir /tmp/two --demo pack:not-my-turn \
-    --links usb:/tmp/boop-sim-left.sock,usb:/tmp/boop-sim-right.sock
-```
+`make demo NAME=not-my-turn` plays it live on two simulated boards, side
+by side in the page, each on its own cable
+([simulator/README.md](../simulator/README.md)). A demo of several
+buddies has no recording.
 
 A live agent plays only a script of one buddy.
 
@@ -153,37 +153,63 @@ one script plays with or without a voice.
 ## Play it
 
 ```sh
-make demo 'NAME=?'                                     # list the demos (quoted for zsh)
-make demo NAME=hello                                   # the simulator's page, no agent
-make demo NAME=hello FACE=gel                          # the same, on Boop's gel face
+make demo                                              # asks which demo, then where it plays
+make demo NAME=hello                                   # the simulator's page, from its recording, at once
+make demo NAME=all                                     # every recorded demo in the page, one after another
 make demo NAME=hello BOARD=usb:$TMPDIR/linkkit-bridge.sock   # a real board, no agent
 make demo NAME=hello IN=simulated-claude-terminal      # Claude Code in this terminal, replies replayed
 make demo NAME=hello IN=simulated-codex-terminal       # the same with Codex (no reviewer steps: Codex has no subagents here)
 make demo NAME=hello IN=claude                         # your real Claude, in the Claude desktop app
 ```
 
-- **A real board** needs the bridge first:
-  `.build/debug/linkkit-bridge` in another terminal. Quit the menu-bar
-  app, so that only one app talks to the board. `BOARD` works with every
-  `IN` too.
-- **With no agent,** Boop plays the agent: it sends the hooks that the
-  agent would send, at the script's times.
+`make demo` with nothing else lists every demo, numbered, with its
+title and length, and asks which one; then it lists only the places
+that demo can play, and asks where. Given no terminal to ask in (an
+agent's shell), it prints the list. `simulator/tools/demos.py list`
+prints it too.
+
+Where a demo plays, and what plays the agent:
+
+| Where | The agent | Its model |
+| --- | --- | --- |
+| The simulator's page (the default) | none: Boop sends the hooks the agent would, at the script's times | none |
+| A real board (`BOARD=usb:…`) | the same | none |
+| This terminal (`IN=simulated-claude-terminal`, `simulated-codex-terminal`) | the real Claude Code or Codex | a local server that replays the script's replies: no API key, no network |
+| The Claude desktop app (`IN=claude`) | your Claude Code | your real Claude, following the script as a `/demo` command |
+
+- **A real board** needs a bridge. The menu starts one when there's
+  none; with `BOARD`, start `.build/debug/linkkit-bridge` in another
+  terminal first. Quit the menu-bar app, so that only one app talks to
+  the board. `BOARD` works with every `IN` too.
 - **With an agent,** the agent goes at its own pace. Boop waits for the
   agent's own hook for each agent step, then plays your steps and the
-  brain's after it. How this works:
+  brain's after it. Only a demo with a project plays with an agent
+  (below, A project for a real agent). How this works:
   [internal/sessions/README.md](../internal/sessions/README.md).
-- `make demo` plays the demo as its pack. If two packs have a demo with
-  the same name, choose one with `CHARACTER=<pack>`. With no `NAME`, it
-  plays `landing`.
+- **Two buddies or more** play live on a simulated board each, side by
+  side in the page: they have no recording.
+- `make demo` plays the demo as its pack, on the face its pack gives the
+  AMOLED board (Boop's gel, Pixel's pixel face). If two packs have a demo
+  with the same name, choose one with `CHARACTER=<pack>`; the menu shows
+  both.
 
 ## The same every time
 
-- **The simulator's page plays a recording.** The first time, `make
-  demo` plays the script through the real app and records every message
-  the board gets. The page then plays that recording, so each viewing is the
-  same. It records again when the script changes, or with `FRESH=1`.
-  This is what the landing page shows. The recording's format is in
+- **The simulator's page plays a recording,** checked in beside its
+  script: `characters/<pack>/demo/recordings/<name>.json`, every message
+  the board was sent, with when. So a demo starts at once, the same each
+  time. The firmware in the page draws it, so a change to the firmware
+  shows at once; a change to what the app sends needs the demos recorded
+  again, `make -C internal demos ALL=1`. The recording's format is in
   [simulator/README.md](../simulator/README.md), Demos.
+- **A recording keeps the hash of its script.** When the script changes,
+  the recording is out of date: `make -C internal tools-test` and CI
+  fail, and `make demo` records it before it plays. `make -C internal
+  demos` records every one that's out of date, several at once, each as
+  long as it runs.
+- **A recording's clock** starts at the script's `start`, else at 14:00
+  on Tuesday 20 October 2026: an afternoon with no weekend or holiday to
+  dress it, whenever it's recorded.
 - **A board or an agent plays live.** The steps come in the same order,
   each at its time or at the agent's pace.
 - **In the terminal, the agent's model is replayed** from the script, so

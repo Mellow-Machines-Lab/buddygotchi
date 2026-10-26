@@ -1,0 +1,364 @@
+{
+  "character": "boop",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":359524959,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 1.069,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.069,
+      "line": "{\"t\":\"do\",\"id\":359524960,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 1.071,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Fix the typo in the README”"
+      }
+    },
+    {
+      "at": 2.138,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 2.138,
+      "line": "{\"t\":\"do\",\"id\":359524961,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +1 -1\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 3.205,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits README.md"
+      }
+    },
+    {
+      "at": 4.895,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 4.895,
+      "line": "{\"t\":\"do\",\"id\":359524962,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 4.895,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 5.217,
+      "effect": "Boop celebrates and says “Phew...”",
+      "line": "{\"t\":\"do\",\"id\":359524963,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"the-finish-ladder\"},\"say\":{\"take\":\"new.d13\"},\"mood\":\"pleased\",\"loops\":1}}"
+    },
+    {
+      "at": 6.284,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 6.284,
+      "line": "{\"t\":\"do\",\"id\":359524964,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 6.284,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Add a dark mode toggle to the settings page”"
+      }
+    },
+    {
+      "at": 7.351,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 7.351,
+      "line": "{\"t\":\"do\",\"id\":359524965,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +1 -1\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 9.484,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits src/settings/Theme.tsx"
+      }
+    },
+    {
+      "at": 10.551,
+      "cause": {
+        "kind": "wait",
+        "text": "3 minutes later"
+      }
+    },
+    {
+      "at": 10.551,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 12.258,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 12.258,
+      "line": "{\"t\":\"do\",\"id\":359524966,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 12.259,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 12.579,
+      "effect": "Boop celebrates and says “Bravo”",
+      "line": "{\"t\":\"do\",\"id\":359524967,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":3,\"who\":{\"agent\":\"claude\",\"thread\":\"the-finish-ladder\"},\"say\":{\"take\":\"phase1.word.celebrate.bravo__happy__contained\"},\"mood\":\"happy\",\"loops\":2}}"
+    },
+    {
+      "at": 13.647,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"]}"
+    },
+    {
+      "at": 13.647,
+      "line": "{\"t\":\"do\",\"id\":359524968,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 13.648,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Move the data layer onto the new query builder”"
+      }
+    },
+    {
+      "at": 14.714,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 14.714,
+      "line": "{\"t\":\"do\",\"id\":359524969,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +1 -1\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 16.848,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits src/db/users.js"
+      }
+    },
+    {
+      "at": 17.895,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier3\"],\"calls\":[[0,2,\"npm test\"]]}"
+    },
+    {
+      "at": 17.895,
+      "line": "{\"t\":\"do\",\"id\":359524970,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"cross\"}}"
+    },
+    {
+      "at": 19.9,
+      "line": "{\"t\":\"do\",\"id\":359524971,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"PASS\",\"as\":\"pass\"}}"
+    },
+    {
+      "at": 19.9,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude: run the data tests"
+      }
+    },
+    {
+      "at": 20.966,
+      "cause": {
+        "kind": "wait",
+        "text": "Nine minutes in: the fourth tier"
+      }
+    },
+    {
+      "at": 20.967,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,2,\"npm test\"]]}"
+    },
+    {
+      "at": 22.672,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 22.672,
+      "line": "{\"t\":\"do\",\"id\":359524972,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 22.672,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 22.993,
+      "effect": "Boop celebrates and says “Eureka”",
+      "line": "{\"t\":\"do\",\"id\":359524973,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":4,\"who\":{\"agent\":\"claude\",\"thread\":\"the-finish-ladder\"},\"say\":{\"take\":\"phase1.borrowed.eureka__happy__contained\"},\"mood\":\"happy\",\"loops\":2}}"
+    },
+    {
+      "at": 24.061,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"]}"
+    },
+    {
+      "at": 24.061,
+      "line": "{\"t\":\"do\",\"id\":359524974,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 24.061,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Find out why the checkout test is flaky”"
+      }
+    },
+    {
+      "at": 25.127,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,1,\"npm test\"]]}"
+    },
+    {
+      "at": 25.127,
+      "line": "{\"t\":\"do\",\"id\":359524975,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 27.261,
+      "line": "{\"t\":\"do\",\"id\":359524976,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"FAIL\",\"as\":\"hail\"}}"
+    },
+    {
+      "at": 27.261,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "Claude: run the checkout tests, and it fails"
+      }
+    },
+    {
+      "at": 27.581,
+      "effect": "Boop makes an annoyed face and says “Hff”",
+      "line": "{\"t\":\"do\",\"id\":359524977,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.nonverbal.frustration.hff__annoyed__contained\"},\"mood\":\"annoyed\",\"loops\":1}}"
+    },
+    {
+      "at": 27.582,
+      "effect": "Boop's mood is now annoyed",
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"annoyed\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,1,\"npm test\"]]}"
+    },
+    {
+      "at": 28.648,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"annoyed\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,2,\"npm test\"]]}"
+    },
+    {
+      "at": 28.648,
+      "line": "{\"t\":\"do\",\"id\":359524978,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"cross\"}}"
+    },
+    {
+      "at": 30.781,
+      "line": "{\"t\":\"do\",\"id\":359524979,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"FAIL\",\"as\":\"hail\"}}"
+    },
+    {
+      "at": 30.781,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "Claude: run the checkout tests again, and it fails"
+      }
+    },
+    {
+      "at": 31.102,
+      "effect": "Boop makes a determined face and says “Failed”",
+      "line": "{\"t\":\"do\",\"id\":359524980,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.word.setback.failed__determined__contained\"},\"mood\":\"determined\",\"loops\":2}}"
+    },
+    {
+      "at": 31.103,
+      "effect": "Boop's mood is now determined",
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,2,\"npm test\"]]}"
+    },
+    {
+      "at": 32.168,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,3,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 32.899,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,3,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 34.3,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits test/checkout.test.js"
+      }
+    },
+    {
+      "at": 35.367,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,4,\"npm test\"]]}"
+    },
+    {
+      "at": 35.367,
+      "line": "{\"t\":\"do\",\"id\":359524981,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"cross\"}}"
+    },
+    {
+      "at": 37.501,
+      "line": "{\"t\":\"do\",\"id\":359524982,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"PASS\",\"as\":\"pass\"}}"
+    },
+    {
+      "at": 37.501,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude: run the checkout tests"
+      }
+    },
+    {
+      "at": 38.568,
+      "cause": {
+        "kind": "wait",
+        "text": "Sixteen minutes in: the fifth tier"
+      }
+    },
+    {
+      "at": 38.568,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier5\"],\"calls\":[[0,4,\"npm test\"]]}"
+    },
+    {
+      "at": 40.272,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"determined\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 40.272,
+      "line": "{\"t\":\"do\",\"id\":359524983,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 40.273,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 40.594,
+      "effect": "Boop celebrates and says “Heh, obviously”",
+      "line": "{\"t\":\"do\",\"id\":359524984,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":5,\"who\":{\"agent\":\"claude\",\"thread\":\"the-finish-ladder\"},\"say\":{\"take\":\"phase1.phrase.pride.heh-obviously__proud__contained\"},\"mood\":\"proud\",\"loops\":4}}"
+    },
+    {
+      "at": 40.595,
+      "effect": "Boop's mood is now proud",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"proud\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    }
+  ],
+  "face": "gel",
+  "length": 46.89,
+  "name": "Boop",
+  "script": "ca99b56771b37c0f78f4146e9fe67632d88f5839107a6febe9e8a5f7e845bd36",
+  "takes": [
+    "new.d13",
+    "phase1.word.celebrate.bravo__happy__contained",
+    "phase1.borrowed.eureka__happy__contained",
+    "phase1.nonverbal.frustration.hff__annoyed__contained",
+    "phase1.word.setback.failed__determined__contained",
+    "phase1.phrase.pride.heh-obviously__proud__contained"
+  ],
+  "version": 1
+}

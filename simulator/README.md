@@ -129,32 +129,40 @@ Mac app plays, and the app can't run in a browser, so the page plays a
 **recording** of it: every message the app sent the board, with when,
 so the firmware in the page does what it did, with no app behind it.
 The screen is still the firmware's own drawing, and you can still poke
-it. The page opens at `http://127.0.0.1:8206/?demo=pixel-landing` (the
-face, then the name).
+it. The page opens at `http://127.0.0.1:8206/?demo=pixel/landing` (the
+pack, then the name), and `?demos=all` plays every one, one after
+another, with a list to jump to one.
 
-`tools/record-demo.sh` plays the script through the real headless app
-(`Boop --headless --demo pack:NAME --record FILE`) with the Mac build's
-board as its device, and takes as long as the demo runs. Into
-`web/dist/demo/` go `<face>-NAME.json`, the recording, and
-`<face>-NAME-voice.bin`, a voice file with only the takes it says
-(`tools/voice_subset.py`: about 70 KB for a minute's demo, where the whole
-voice is 29 MB).
+`tools/demos.py` (`make demo`) does it all: it asks which demo and where,
+lists them, plays them and records them. A recording is checked in beside
+its script, `characters/PACK/demo/recordings/NAME.json`. It's made by
+playing the script through the real headless app
+(`Boop --headless --demo SCRIPT --record FILE`) with the Mac build's board
+as its device, on the face the pack gives the AMOLED board, and takes as
+long as the demo runs; `make -C internal demos` records several at once.
+To play, `demos.py` lays the recording out in `web/dist/demo/PACK/`, with
+`NAME-voice.bin`, a voice file with only the takes it says, cut from the
+pack's voice then (`tools/voice_subset.py`: about 70 KB for a minute's
+demo, where the whole voice is 29 MB).
 
-A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of one:
+A recording (`DemoRecording`, `app/BoopKit/Demo/`), the start of Boop's
+`demo/recordings/demo.json`:
 
 ```json
 {
-  "version": 1, "character": "boop", "name": "Boop", "face": "pixel", "length": 79,
-  "takes": ["…"],
+  "version": 1, "character": "boop", "name": "Boop", "face": "gel", "length": 87,
+  "script": "13976110452d4fbd9d19db4370195479f2b24bfbda9b82dd1d26683345774dad",
+  "takes": ["phase1.borrowed.andiamo__curious__contained", "…"],
   "events": [
-    {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6}"},
-    {"at": 0.001, "line": "{\"t\":\"do\",\"id\":1493456480,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"variant\":5,\"ctx\":\"session\"}}"},
-    {"at": 2.003, "cause": {"kind": "prompt", "text": "You ask Claude: “Add keyboard shortcuts”"}}
+    {"at": 0, "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"},
+    {"at": 0.001, "line": "{\"t\":\"do\",\"id\":2078730064,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"},
+    {"at": 2.004, "cause": {"kind": "prompt", "text": "You ask Claude: “Add keyboard shortcuts”"}}
   ]
 }
 ```
 
-`takes` lists the takes it says, for its voice file. An event is one or
+`script` is the SHA-256 of the script it was recorded from, which
+`demos.py` adds, so it knows when the script has changed since. `takes` lists the takes it says, for its voice file. An event is one or
 more of:
 
 - **`line`:** a message, sent to the board as it was.
@@ -210,14 +218,15 @@ so nothing outside it is served.
 cable: `--cable NAME=SOCKET`, once for each, in place of `--socket`. Each
 cable is a WebSocket at `/usb/NAME` and its own socket, and there's no
 `/usb`. The page shows them side by side with `?boards=NAME,NAME`, each
-with the id `b00p-NAME`, and `&packs=PACK,PACK` gives each board its
-pack's build and voice (`/voice/PACK.bin`):
+with the id `b00p-NAME`, `&packs=PACK,PACK` gives each board its
+pack's build and voice (`/voice/PACK.bin`), and `&faces=FACE,FACE` its
+face (`pixel` by default, or `gel`):
 
 ```sh
 python3 characters/charactergen.py --stage
 simulator/web/build.sh boop && simulator/web/build.sh pixel
 python3 simulator/web/serve.py --cable left=/tmp/boop-sim-left.sock --cable right=/tmp/boop-sim-right.sock
-open 'http://127.0.0.1:8206/?boards=left,right&packs=boop,pixel'
+open 'http://127.0.0.1:8206/?boards=left,right&packs=boop,pixel&faces=gel,pixel'
 BOOP_BRIDGE=/tmp/boop-sim-right.sock internal/tools/boopctl ping
 ```
 

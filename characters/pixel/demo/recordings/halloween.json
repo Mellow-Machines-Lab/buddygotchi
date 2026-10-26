@@ -1,0 +1,98 @@
+{
+  "character": "pixel",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 0.002,
+      "line": "{\"t\":\"do\",\"id\":1486163284,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 0.002,
+      "effect": "Pixel stretches and yawns",
+      "line": "{\"t\":\"do\",\"id\":1486163285,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"sign\":\"Happy Halloween!\"}}"
+    },
+    {
+      "at": 0.855,
+      "cause": {
+        "kind": "back",
+        "text": "You come back to the Mac after a very long break"
+      }
+    },
+    {
+      "at": 1.175,
+      "effect": "Pixel stretches and yawns and says “Mm-hm”",
+      "line": "{\"t\":\"do\",\"id\":1486163286,\"name\":\"wake_up\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.nonverbal.delight.mm-hm__proud__contained\"},\"mood\":\"mischievous\",\"loops\":2}}"
+    },
+    {
+      "at": 1.176,
+      "effect": "Pixel's mood is now happy",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 7.575,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 7.575,
+      "line": "{\"t\":\"do\",\"id\":1486163287,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 7.576,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Add a spooky theme for today”"
+      }
+    },
+    {
+      "at": 8.644,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"tool_use\",\"mood\":\"happy\",\"busy\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"],\"calls\":[[0,1,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 8.644,
+      "line": "{\"t\":\"do\",\"id\":1486163288,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"edit +1 -1\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 10.777,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits src/theme.css"
+      }
+    },
+    {
+      "at": 12.484,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"morning\",\"weekend\",\"halloween\"]}"
+    },
+    {
+      "at": 12.484,
+      "line": "{\"t\":\"do\",\"id\":1486163289,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 12.485,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 12.804,
+      "effect": "Pixel celebrates and says “Whoa”",
+      "line": "{\"t\":\"do\",\"id\":1486163290,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"halloween\"},\"say\":{\"take\":\"phase1.word.poke.whoa__proud__contained\"},\"mood\":\"mischievous\",\"loops\":2}}"
+    }
+  ],
+  "face": "pixel",
+  "length": 19,
+  "name": "Pixel",
+  "script": "7faa52ef843c0fcf79402175075a74d8fd41718971dc28284d4a9a654249a54b",
+  "takes": [
+    "phase1.nonverbal.delight.mm-hm__proud__contained",
+    "phase1.word.poke.whoa__proud__contained"
+  ],
+  "version": 1
+}

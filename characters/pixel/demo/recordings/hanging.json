@@ -1,0 +1,118 @@
+{
+  "character": "pixel",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":809055238,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 1.002,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.002,
+      "line": "{\"t\":\"do\",\"id\":809055239,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 1.003,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Deploy the docs site”"
+      }
+    },
+    {
+      "at": 1.322,
+      "effect": "Pixel makes a calm face and says “Go”",
+      "line": "{\"t\":\"do\",\"id\":809055240,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.word.begin.go__calm__contained\"},\"mood\":\"calm\",\"loops\":2}}"
+    },
+    {
+      "at": 2.388,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"read\"]]}"
+    },
+    {
+      "at": 2.388,
+      "line": "{\"t\":\"do\",\"id\":809055241,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"read\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 2.999,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude reads README.md"
+      }
+    },
+    {
+      "at": 4.002,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"npm run\"]]}"
+    },
+    {
+      "at": 4.215,
+      "effect": "Pixel shows that it needs you",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"attn\":{\"agent\":\"claude\",\"project\":\"deploy-the-docs\",\"more\":0,\"id\":2035021008},\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 15.008,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"attn\":{\"agent\":\"claude\",\"project\":\"deploy-the-docs\",\"more\":0,\"id\":2035021008},\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 25.008,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"attn\":{\"agent\":\"claude\",\"project\":\"deploy-the-docs\",\"more\":0,\"id\":2035021008},\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 31.005,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\",\"tier1\"]}"
+    },
+    {
+      "at": 31.005,
+      "line": "{\"t\":\"do\",\"id\":809055242,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm run\",\"as\":\"land\"}}"
+    },
+    {
+      "at": 31.005,
+      "cause": {
+        "kind": "needs_you",
+        "text": "Claude asks to deploy the docs site, and you allow it"
+      }
+    },
+    {
+      "at": 32.176,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 32.176,
+      "line": "{\"t\":\"do\",\"id\":809055243,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 32.176,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 32.496,
+      "effect": "Pixel celebrates and says “Big tiny win”",
+      "line": "{\"t\":\"do\",\"id\":809055244,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":1,\"who\":{\"agent\":\"claude\",\"thread\":\"deploy-the-docs\"},\"say\":{\"take\":\"phase1.phrase.celebrate.big-tiny-win__excited__contained\"},\"mood\":\"excited\",\"loops\":3}}"
+    },
+    {
+      "at": 40.998,
+      "effect": "Pixel's mood is now proud",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"proud\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    }
+  ],
+  "face": "pixel",
+  "length": 47.01,
+  "name": "Pixel",
+  "script": "2abfe23b392ddd3c80ab8910aca81a0b6c5ab743adc224aad5d296cb25db0a76",
+  "takes": [
+    "phase1.word.begin.go__calm__contained",
+    "phase1.phrase.celebrate.big-tiny-win__excited__contained"
+  ],
+  "version": 1
+}

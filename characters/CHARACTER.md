@@ -23,6 +23,7 @@ What a pack holds, and what it must have:
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
+| `demo/recordings/<name>.json` | one for each demo of one buddy | What the board was sent as the demo played, which the simulator's page plays (§13) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
 | `references/`, `review/` | no | What people gave to make it from, and what's up for review (§16) |
 | `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
@@ -898,8 +899,11 @@ have, or a board's entry isn't `board-<face>` for one of its faces.
 
 A pack can carry demos, `demo/<name>.jsonl`: the engine has the player
 (`app/BoopKit/Demo/`), and the pack has the story, in its own moods and
-words. The app bundles the folder. How to write and play one:
-[DEMOS.md](DEMOS.md).
+words. The app bundles the scripts. Each demo of one buddy has its
+recording beside it, `demo/recordings/<name>.json`, made from the script
+(`make -C internal demos`) and checked in, which the simulator's page
+plays at once; the app leaves the recordings out. How to write, record
+and play one: [DEMOS.md](DEMOS.md).
 
 ## 14. Making your own
 

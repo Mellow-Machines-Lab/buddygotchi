@@ -1,0 +1,127 @@
+{
+  "character": "boop",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":557536849,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 1.069,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.069,
+      "line": "{\"t\":\"do\",\"id\":557536850,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 1.07,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Set up the local database”"
+      }
+    },
+    {
+      "at": 1.391,
+      "effect": "Boop makes a curious face and says “Andiamo”",
+      "line": "{\"t\":\"do\",\"id\":557536851,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.borrowed.andiamo__curious__contained\"},\"mood\":\"curious\",\"loops\":2}}"
+    },
+    {
+      "at": 2.457,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"brew install\"]]}"
+    },
+    {
+      "at": 2.457,
+      "line": "{\"t\":\"do\",\"id\":557536852,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"brew install\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 2.671,
+      "effect": "Boop shows that it needs you",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"attn\":{\"agent\":\"claude\",\"project\":\"not-now\",\"more\":0,\"id\":371438764},\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 2.671,
+      "cause": {
+        "kind": "needs_you",
+        "text": "Claude asks to install Postgres, and waits for you"
+      }
+    },
+    {
+      "at": 5.869,
+      "cause": {
+        "kind": "hold",
+        "text": "You hold a finger on the needs-you screen: not now"
+      },
+      "hold": 1.2,
+      "input": "hold"
+    },
+    {
+      "at": 7.148,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 12.898,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 13.55,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"terminal\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"run\"]]}"
+    },
+    {
+      "at": 13.763,
+      "effect": "Boop shows that it needs you",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"attn\":{\"agent\":\"claude\",\"project\":\"not-now\",\"more\":0,\"id\":371438765},\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 19.898,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 19.898,
+      "line": "{\"t\":\"do\",\"id\":557536853,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"run\",\"as\":\"land\"}}"
+    },
+    {
+      "at": 19.898,
+      "cause": {
+        "kind": "needs_you",
+        "text": "Claude asks to create the database, and you allow it"
+      }
+    },
+    {
+      "at": 21.539,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 21.539,
+      "line": "{\"t\":\"do\",\"id\":557536854,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 21.539,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 21.861,
+      "effect": "Boop celebrates and says “Bravo”",
+      "line": "{\"t\":\"do\",\"id\":557536855,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"not-now\"},\"say\":{\"take\":\"phase1.word.celebrate.bravo__happy__contained\"},\"mood\":\"pleased\",\"loops\":2}}"
+    }
+  ],
+  "face": "gel",
+  "length": 27.89,
+  "name": "Boop",
+  "script": "c3a5f4ffb8caf1a577bf9362f60edd526d3afec1656c14b06b23dfc56d366040",
+  "takes": [
+    "phase1.borrowed.andiamo__curious__contained",
+    "phase1.word.celebrate.bravo__happy__contained"
+  ],
+  "version": 1
+}

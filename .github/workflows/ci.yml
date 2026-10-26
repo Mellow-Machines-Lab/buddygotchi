@@ -56,6 +56,8 @@ jobs:
         run: /usr/bin/python3 -m unittest discover -s internal/characters
       - name: The demo session's tests
         run: /usr/bin/python3 -m unittest discover -s internal/tools/session/tests
+      - name: Every demo's recording is up to date
+        run: /usr/bin/python3 simulator/tools/demos.py check
       - name: Each pack's tool tests
         run: |
           for tests in characters/*/tests/tools; do

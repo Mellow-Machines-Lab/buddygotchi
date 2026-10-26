@@ -6,16 +6,34 @@
   body { margin: 0; padding: 16px; box-sizing: border-box; min-height: 100vh; display: flex; flex-wrap: wrap; gap: 24px;
          align-items: center; justify-content: center; background: #121212; }
   .matrix { position: fixed; top: 12px; right: 16px; font: 13px system-ui, sans-serif; color: #9aa1aa; }
+  body:has(.playlist) { flex-wrap: nowrap; align-items: flex-start; }
+  .playlist { flex: 0 0 230px; margin: 0; padding: 0 0 0 28px; max-height: calc(100vh - 32px); overflow-y: auto;
+              font: 13px system-ui, sans-serif; color: #9aa1aa; line-height: 1.9; }
+  @media (max-width: 800px) { body:has(.playlist) { flex-wrap: wrap; } .playlist { max-height: 30vh; } }
+  .playlist li { cursor: pointer; }
+  .playlist li:hover { color: #ddd; }
+  .playlist li.now { color: #fff; font-weight: 600; }
+  .playlist small { color: #666; margin-left: 6px; }
 </style>
 <!-- serve.py serves the Character Studio beside the board; its matrix marks what the board it names shows. -->
 <a class="matrix" href="characters/studio/#view=matrix" target="boop-matrix">Every mood and state ↗</a>
 <!-- The local page (simulator/web/serve.py, which make dev starts): one board with its controls. ?face=gel for Boop's own face;
-     ?demo=pixel-landing plays a recorded demo, the face then its name (simulator/tools/record-demo.sh).
+     ?demo=pixel/landing plays a recorded demo, its pack then its name, and ?demos=all every one, one after
+     another, with a list to jump to one (simulator/tools/demos.py lays them out in demo/).
      ?boards=left,right is a board for each of serve.py's cables (--cable NAME=SOCKET), side by side,
-     each with the id b00p-NAME; &packs=boop,pixel gives each its pack's build (build.sh PACK) and voice. -->
+     each with the id b00p-NAME; &packs=boop,pixel gives each its pack's build (build.sh PACK) and voice,
+     and &faces=gel,pixel each its face. -->
 <script type="module">
   import './boop-simulator.js';
   const ask = new URLSearchParams(location.search);
+  // A recording is its own app: no cable, the small voice it was cut with,
+  // and the build of its pack's board.
+  const recorded = (board, demo) => {
+    board.setAttribute('demo', `demo/${demo}.json`);
+    board.setAttribute('voice', `demo/${demo}-voice.bin`);
+    if (demo.includes('/')) board.setAttribute('pack', demo.split('/')[0]);
+    return board;
+  };
   const make = () => {
     const board = document.createElement('boop-simulator');
     board.setAttribute('face', ask.get('face') || 'pixel');
@@ -25,22 +43,50 @@
     return board;
   };
   if (ask.get('boards')) {
-    const packs = (ask.get('packs') || '').split(',');
+    const packs = (ask.get('packs') || '').split(','), faces = (ask.get('faces') || '').split(',');
     window.simulators = ask.get('boards').split(',').map((name, i) => {
       const board = make();
       board.setAttribute('board-id', `b00p-${name}`);
       board.setAttribute('usb', `ws://${location.host}/usb/${name}`);
       if (packs[i]) board.setAttribute('pack', packs[i]);
+      if (faces[i]) board.setAttribute('face', faces[i]);
       board.setAttribute('voice', packs[i] ? `voice/${packs[i]}.bin` : 'voice.bin');
       document.body.append(board);
       return board;
     });
+  } else if (ask.get('demos')) {
+    // Each demo in turn, a moment after the last ends; a click on one plays it.
+    const list = await (await fetch('demo/playlist.json')).json();
+    const nav = document.createElement('ol');
+    nav.className = 'playlist';
+    let board = null, now = -1;
+    const play = i => {
+      now = i;
+      board?.remove();
+      const next = board = recorded(make(), list[i].id);
+      next.addEventListener('ready', () => next.demo?.addEventListener('end', () => {
+        setTimeout(() => { if (now === i && i + 1 < list.length) play(i + 1); }, 2500);
+      }));
+      nav.querySelectorAll('li').forEach((li, j) => li.classList.toggle('now', j === i));
+      document.body.append(board);
+      window.simulator = board;
+    };
+    for (const [i, demo] of list.entries()) {
+      const li = document.createElement('li');
+      li.append(demo.title);
+      li.title = demo.id;
+      const small = document.createElement('small');
+      small.textContent = `${demo.id.split('/')[0]} ${demo.length}`;
+      li.append(small);
+      li.addEventListener('click', () => play(i));
+      nav.append(li);
+    }
+    document.body.append(nav);
+    play(0);
   } else {
     const board = make();
     if (ask.get('demo')) {
-      // A recording is its own app: no cable, and the small voice it was cut with.
-      board.setAttribute('demo', `demo/${ask.get('demo')}.json`);
-      board.setAttribute('voice', `demo/${ask.get('demo')}-voice.bin`);
+      recorded(board, ask.get('demo'));
     } else {
       board.setAttribute('voice', 'voice.bin');
       board.setAttribute('usb', `ws://${location.host}/usb`);
@@ -50,5 +96,5 @@
   }
   // The matrix marks the board's cell: the first board's, with several; a demo has no cable to ask.
   const named = ask.get('boards')?.split(',')[0];
-  if (!ask.get('demo')) document.querySelector('.matrix').href += `&board=/board${named ? '/' + named : ''}`;
+  if (!ask.get('demo') && !ask.get('demos')) document.querySelector('.matrix').href += `&board=/board${named ? '/' + named : ''}`;
 </script>

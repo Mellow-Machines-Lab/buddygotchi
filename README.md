@@ -106,6 +106,7 @@ run ([characters/CHARACTER.md](characters/CHARACTER.md) §2).
 | Flash the firmware (over USB) | `make flash` |
 | Build `Boop.app`, to open from Finder or put in Applications | `make bundle` (then `open .build/Boop.app`) |
 | Work on Boop: the debug app, with the simulator, the studio and the live dashboard beside it | `make dev` ([CONTRIBUTING.md](CONTRIBUTING.md)) |
+| Watch a demo: pick one and where it plays (the browser, a board, or an agent) | `make demo` ([characters/DEMOS.md](characters/DEMOS.md)) |
 
 Start `make dev` from your own terminal: macOS stops anything that uses
 Bluetooth from an editor's or an agent's shell. Debugging and the brain's
@@ -163,5 +164,6 @@ useful on its own:
   how Boop fits together, following one finished turn through every piece.
 - **[characters/CHARACTER.md](characters/CHARACTER.md)**: what a
   character pack holds, and how to make your own.
-- **[characters/DEMOS.md](characters/DEMOS.md)**: how to write a demo
-  and play it in the browser, on a board or with a real agent.
+- **[characters/DEMOS.md](characters/DEMOS.md)**: how to write and
+  record a demo, and play it in the browser, on a board or with a real
+  agent.

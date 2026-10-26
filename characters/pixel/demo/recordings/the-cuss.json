@@ -1,0 +1,150 @@
+{
+  "character": "pixel",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":1505144529,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 1.009,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.009,
+      "line": "{\"t\":\"do\",\"id\":1505144530,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 1.01,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Fix the flaky checkout test”"
+      }
+    },
+    {
+      "at": 1.332,
+      "effect": "Pixel makes a calm face and says “Go”",
+      "line": "{\"t\":\"do\",\"id\":1505144531,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.word.begin.go__calm__contained\"},\"mood\":\"calm\",\"loops\":2}}"
+    },
+    {
+      "at": 2.398,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"npm test\"]]}"
+    },
+    {
+      "at": 2.398,
+      "line": "{\"t\":\"do\",\"id\":1505144532,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 4.532,
+      "line": "{\"t\":\"do\",\"id\":1505144533,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"FAIL\",\"as\":\"hail\"}}"
+    },
+    {
+      "at": 4.533,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "Claude: run the checkout tests, and it fails"
+      }
+    },
+    {
+      "at": 4.853,
+      "effect": "Pixel makes an annoyed face and says “Aww...”",
+      "line": "{\"t\":\"do\",\"id\":1505144534,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.nonverbal.deflate.aww__annoyed__contained\"},\"mood\":\"annoyed\",\"loops\":1}}"
+    },
+    {
+      "at": 4.853,
+      "effect": "Pixel's mood is now annoyed",
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"annoyed\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"npm test\"]]}"
+    },
+    {
+      "at": 5.919,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"annoyed\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 6.557,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"annoyed\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"edit +1 -1\"]]}"
+    },
+    {
+      "at": 6.557,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude edits test/checkout.test.js"
+      }
+    },
+    {
+      "at": 7.625,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"annoyed\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,3,\"npm test\"]]}"
+    },
+    {
+      "at": 7.625,
+      "line": "{\"t\":\"do\",\"id\":1505144535,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"cross\"}}"
+    },
+    {
+      "at": 9.759,
+      "line": "{\"t\":\"do\",\"id\":1505144536,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"FAIL\",\"as\":\"hail\"}}"
+    },
+    {
+      "at": 9.759,
+      "cause": {
+        "kind": "tool_failed",
+        "text": "Failed again"
+      }
+    },
+    {
+      "at": 10.078,
+      "effect": "Pixel makes a determined face and says “Trouble”",
+      "line": "{\"t\":\"do\",\"id\":1505144537,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.word.setback.trouble__determined__contained\"},\"mood\":\"determined\",\"loops\":2}}"
+    },
+    {
+      "at": 10.079,
+      "effect": "Pixel's mood is now determined",
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,3,\"npm test\"]]}"
+    },
+    {
+      "at": 12.008,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"determined\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,3,\"npm test\"]]}"
+    },
+    {
+      "at": 12.849,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"determined\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 12.849,
+      "line": "{\"t\":\"do\",\"id\":1505144538,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 12.85,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 13.169,
+      "effect": "Pixel slumps and says “Fuck”",
+      "line": "{\"t\":\"do\",\"id\":1505144539,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"failure\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"the-flaky-checkout-test\"},\"say\":{\"take\":\"previous.fuck\"},\"mood\":\"grumpy\",\"loops\":2}}"
+    },
+    {
+      "at": 13.17,
+      "effect": "Pixel's mood is now grumpy",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"grumpy\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    }
+  ],
+  "face": "pixel",
+  "length": 19.57,
+  "name": "Pixel",
+  "script": "e5b7826729fd205a2b56ea63ea9babcd09b7a0bb5c12188dd9edefad1bd300c7",
+  "takes": [
+    "phase1.word.begin.go__calm__contained",
+    "phase1.nonverbal.deflate.aww__annoyed__contained",
+    "phase1.word.setback.trouble__determined__contained",
+    "previous.fuck"
+  ],
+  "version": 1
+}

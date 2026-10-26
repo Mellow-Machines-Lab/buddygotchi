@@ -319,7 +319,7 @@ def main() -> int:
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
     parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
     args = parser.parse_args()
-    if not (Path(args.dist) / "boop-sim.wasm").exists():
+    if not any(Path(args.dist).glob("boop-sim*.wasm")):
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)
         return 1
     try:

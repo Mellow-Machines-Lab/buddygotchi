@@ -1,0 +1,114 @@
+{
+  "character": "pixel",
+  "events": [
+    {
+      "at": 0,
+      "line": "{\"t\":\"state\",\"base\":\"asleep\",\"mood\":\"calm\",\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 0.001,
+      "line": "{\"t\":\"do\",\"id\":588213228,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"session\"}}"
+    },
+    {
+      "at": 1.005,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 1.005,
+      "line": "{\"t\":\"do\",\"id\":588213229,\"name\":\"starting\",\"play\":\"if_free\",\"args\":{\"ctx\":\"new_task\"}}"
+    },
+    {
+      "at": 1.006,
+      "cause": {
+        "kind": "prompt",
+        "text": "You ask Claude: “Run the tests”"
+      }
+    },
+    {
+      "at": 1.325,
+      "effect": "Pixel makes a curious face and says “Andiamo”",
+      "line": "{\"t\":\"do\",\"id\":588213230,\"name\":\"react\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"say\":{\"take\":\"phase1.borrowed.andiamo__curious__contained\"},\"mood\":\"curious\",\"loops\":2}}"
+    },
+    {
+      "at": 2.392,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"analyzing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,1,\"read\"]]}"
+    },
+    {
+      "at": 2.392,
+      "line": "{\"t\":\"do\",\"id\":588213231,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"read\",\"as\":\"arrive\"}}"
+    },
+    {
+      "at": 2.998,
+      "cause": {
+        "kind": "tool",
+        "text": "Claude reads README.md"
+      }
+    },
+    {
+      "at": 4.002,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"act\":\"testing\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"],\"calls\":[[0,2,\"npm test\"]]}"
+    },
+    {
+      "at": 4.002,
+      "line": "{\"t\":\"do\",\"id\":588213232,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"npm test\",\"as\":\"cross\"}}"
+    },
+    {
+      "at": 4.216,
+      "effect": "Pixel shows that it needs you",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"attn\":{\"agent\":\"claude\",\"project\":\"run-the-tests\",\"more\":0,\"id\":263487511},\"busy\":0,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 8.482,
+      "line": "{\"t\":\"state\",\"base\":\"working\",\"mood\":\"calm\",\"busy\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 8.482,
+      "line": "{\"t\":\"do\",\"id\":588213233,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"PASS\",\"as\":\"pass\"}}"
+    },
+    {
+      "at": 8.482,
+      "cause": {
+        "kind": "needs_you",
+        "text": "Claude asks to run the tests, and you allow it"
+      }
+    },
+    {
+      "at": 10.189,
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    },
+    {
+      "at": 10.189,
+      "line": "{\"t\":\"do\",\"id\":588213234,\"name\":\"call\",\"play\":\"next\",\"ttl\":1500,\"args\":{\"a\":0,\"w\":\"done\",\"as\":\"gather\"}}"
+    },
+    {
+      "at": 10.189,
+      "cause": {
+        "kind": "done",
+        "text": "Claude finishes"
+      }
+    },
+    {
+      "at": 10.509,
+      "effect": "Pixel celebrates and says “Complete”",
+      "line": "{\"t\":\"do\",\"id\":588213235,\"name\":\"task_complete\",\"play\":\"next\",\"ttl\":5000,\"args\":{\"outcome\":\"success\",\"turn\":0,\"who\":{\"agent\":\"claude\",\"thread\":\"run-the-tests\"},\"say\":{\"take\":\"phase1.word.success.complete__proud__contained\"},\"mood\":\"proud\",\"loops\":2}}"
+    },
+    {
+      "at": 10.51,
+      "effect": "Pixel's mood is now proud",
+      "line": "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"proud\",\"busy\":0,\"idle\":1,\"vol\":6,\"when\":[\"day\"]}"
+    }
+  ],
+  "face": "pixel",
+  "length": 16.91,
+  "name": "Pixel",
+  "script": "6d5884855a5297161e680d1e3ee1c790d11a072fb7ad380f1791a7f79edd1675",
+  "takes": [
+    "phase1.borrowed.andiamo__curious__contained",
+    "phase1.word.success.complete__proud__contained"
+  ],
+  "version": 1
+}

@@ -64,7 +64,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | --- | --- |
 | `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), and beside it the simulator (built again only when its sources changed, and left alone if one already runs), its page, the studio's matrix (with what the brain reads in each eval, `boopdev prompts`, written first) and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; Settings' Simulator row switches to the simulator and back. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. `dash`'s `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would. Ctrl-C stops the app, the simulator and the dashboard |
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 15.0 at least, so it still opens on macOS 15. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
-| `make demo` | A pack's demo, on the simulator's page, a board or with a real agent ([characters/DEMOS.md](../characters/DEMOS.md)) |
+| `make demo` | Asks which demo and where it plays, then plays it: on the simulator's page from its checked-in recording, at once, on a board, or with a real agent (`simulator/tools/demos.py`, [characters/DEMOS.md](../characters/DEMOS.md)). `NAME=` plays one without asking, `NAME=all` every one in the page |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
@@ -77,12 +77,13 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/` (Boop's `test_gel` holds the gel slime's engine to every rule of its design, [its VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md)), then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario played on it and on the native simulator, each shot the same on both pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and checked to be the one checked in, byte for byte (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
+| `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/`, several at once, each as long as it runs (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once for each pack) and no board |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
 | `make -C internal eval-pixel` | `make -C internal build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
 
@@ -174,6 +175,9 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   ([its README](tools/webcam/README.md)); `boopctl cam` wraps it.
 - `internal/tools/session/session.py`: a demo through a real agent
   ([sessions/README.md](sessions/README.md)).
+- `simulator/tools/demos.py`: the demos, which `make demo` asks you to
+  choose from; `list`, `play`, `all`, `record` and `check`
+  ([characters/DEMOS.md](../characters/DEMOS.md)).
 - `internal/skills/doctor/doctor.sh`: checks from inside an agent that
   its hooks reach Boop; `--headless` against a throwaway app.
 
