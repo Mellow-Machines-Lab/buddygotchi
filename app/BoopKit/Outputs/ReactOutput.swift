@@ -11,9 +11,9 @@ import MellowHarness
 /// push-to-talk, its reply's clip), for as many loops as the intensity
 /// holds. Voice finds a recorded take of what it says, as big as the
 /// intensity, in the face's mood, or finds none, and then the face plays
-/// in silence; a word at a medium moment or bigger sometimes gets a
-/// sound of the same meaning before
-/// it (`Voice.lead`). A reply's sign is one of the pack's lines for it, which
+/// in silence; to what you said, the reply's own words, when it has some
+/// in that face. A word at a medium moment or bigger sometimes gets a
+/// sound of the same meaning before it (`Voice.lead`). A reply's sign is one of the pack's lines for it, which
 /// may play back your words, and a status reply's the agents' facts,
 /// never guessed. It waits in the
 /// device's queue until whatever plays there has finished. It's started,
@@ -480,20 +480,20 @@ public final class ReactOutput: Output {
                notFor: "A greeting, praise, affection, a joke, rudeness or a question to \(name) itself, which get a sound at least.")
     }
 
-    /// What a reply says when `say` didn't pick: its own feeling or
-    /// topic, which Voice has takes of. A reply with none (comfort, notme,
-    /// hush) says nothing then.
-    static let replyWords: [String: (part: Take.Part, meaning: String)] = [
-        "yes": (.feeling, "glad"), "no": (.feeling, "upset"), "huh": (.about, "looking"), "dunno": (.about, "looking"),
-        "hello": (.about, "hello"), "bye": (.feeling, "glad"), "thanks": (.feeling, "glad"), "love": (.feeling, "glad"),
-        "ouch": (.feeling, "upset"), "hehe": (.feeling, "tickled"), "status": (.about, "work"), "nap": (.about, "quiet"),
-        "dance": (.feeling, "tickled"), "unhush": (.feeling, "glad"),
+    /// What a reply says when it has no words of its own in the face and
+    /// `say` picked no feeling: a feeling it borrows, which Voice has takes
+    /// of. A reply with none (huh, comfort, notme) says nothing then: never
+    /// a topic, which is the agents' work, not what you said.
+    static let replyWords: [String: String] = [
+        "yes": "glad", "no": "upset", "bye": "glad", "thanks": "glad", "love": "glad", "ouch": "upset",
+        "hehe": "tickled", "dance": "tickled", "unhush": "glad",
     ]
 
-    /// The reply's own words (`replyWords`) when `say` leaned to words
-    /// without picking any past the floor; nil when it leaned to nothing.
-    static func leaned(_ reply: String, _ answers: Answers) -> (part: Take.Part, meaning: String)? {
-        guard let a = answers[sayKey], a.choice != "none", saying(answers) == nil else { return nil }
+    /// The feeling the reply borrows (`replyWords`) when `say` leaned to
+    /// words without picking a feeling past the floor; nil when it leaned
+    /// to nothing.
+    static func leaned(_ reply: String, _ answers: Answers) -> String? {
+        guard let a = answers[sayKey], a.choice != "none" else { return nil }
         return replyWords[reply]
     }
 
@@ -543,16 +543,28 @@ public final class ReactOutput: Output {
         // What it says: nothing while hushed, unless this is you letting it
         // talk; on Quiet, nothing at a small moment or a finish.
         let silent = (hushed(at) && reply != "unhush") || (self.talk() == .quiet && (size.name == "small" || pick != nil))
-        // To what you said, the reply's own words when `say` leaned to some
-        // without picking, but on Quiet never a topic.
+        // To what you said, with no words of the reply's own in this face, a
+        // feeling `say` picked, else the one the reply borrows; never a topic.
         var saying = Self.said(answers)
-        if saying == nil, let reply, let own = Self.leaned(reply, answers), !(self.talk() == .quiet && own.part == .about) {
-            saying = (own.part, own.meaning, false)
+        if let reply {
+            if saying?.part == .about { saying = nil }
+            if saying == nil, let own = Self.leaned(reply, answers) { saying = (.feeling, own, false) }
         }
-        var said = !speaks() || silent ? [] : saying.flatMap {
-            Voice.take($0.part, meaning: $0.meaning, kind: $0.swear ? .swear : size.kind, face: choice, finish: pick,
-                      avoiding: lastWords, in: pack, rng: &takes)
-        }.map { [$0] } ?? []
+        // To what you said, `say` says whether and the reply says what: its
+        // own words, in this face, when `say` answered anything but none.
+        var said: [Take] = []
+        if speaks(), !silent {
+            if let reply, let a = answers[Self.sayKey], a.choice != "none",
+               let own = Voice.take(.reply, meaning: reply, kind: size.kind, face: choice, finish: nil, avoiding: lastWords,
+                                    in: pack, rng: &takes) {
+                said = [own]
+            } else {
+                said = saying.flatMap {
+                    Voice.take($0.part, meaning: $0.meaning, kind: $0.swear ? .swear : size.kind, face: choice, finish: pick,
+                              avoiding: lastWords, in: pack, rng: &takes)
+                }.map { [$0] } ?? []
+            }
+        }
         // A word may get a sound of the same before it, but not at a small
         // moment, nor on Quiet.
         if let word = said.first, size.name != "small", self.talk() != .quiet,

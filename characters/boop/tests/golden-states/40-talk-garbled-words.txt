@@ -300,7 +300,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
 just now: You said to Boop: "um okay"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 
 NOW (14:00, Wednesday)
 You said to Boop: "the uh so if we"

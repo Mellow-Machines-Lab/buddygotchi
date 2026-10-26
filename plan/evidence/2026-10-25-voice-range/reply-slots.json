@@ -1,0 +1,5505 @@
+{
+ "note": "Draft: the replies' own words from plan/voice-range.md step 4, as recording slots. Not authorized for generation.",
+ "entries": [
+  {
+   "id": "nonverbal.talk-yes.mhm",
+   "text": "Mhm",
+   "category": "nonverbal",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm",
+   "text": "Mm-hm!",
+   "category": "nonverbal",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh",
+   "text": "Uh-huh",
+   "category": "nonverbal",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-yes.yes",
+   "text": "Yes",
+   "category": "word",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-yes.yup",
+   "text": "Yup",
+   "category": "word",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-yes.sure",
+   "text": "Sure",
+   "category": "word",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-yes.okay",
+   "text": "Okay",
+   "category": "word",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious",
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "phrase.talk-yes.you-bet",
+   "text": "You bet",
+   "category": "phrase",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-yes.of-course",
+   "text": "Of course",
+   "category": "phrase",
+   "intent": "talk.yes",
+   "moods": [
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "phrase.talk-yes.yes-yes",
+   "text": "Yes yes",
+   "category": "phrase",
+   "intent": "talk.yes",
+   "moods": [
+    "happy",
+    "calm",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-yes.sure-thing",
+   "text": "Sure thing",
+   "category": "phrase",
+   "intent": "talk.yes",
+   "moods": [
+    "excited",
+    "proud",
+    "engaged"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-no.nuh-uh",
+   "text": "Nuh-uh",
+   "category": "nonverbal",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-no.hmm-mm",
+   "text": "Hmm-mm",
+   "category": "nonverbal",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-no.nn-nn",
+   "text": "Nn-nn",
+   "category": "nonverbal",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "word.talk-no.nope",
+   "text": "Nope",
+   "category": "word",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "word.talk-no.nah",
+   "text": "Nah",
+   "category": "word",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "word.talk-no.no",
+   "text": "No",
+   "category": "word",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "word.talk-no.never",
+   "text": "Never",
+   "category": "word",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy",
+    "proud",
+    "calm",
+    "irritated"
+   ]
+  },
+  {
+   "id": "phrase.talk-no.no-way",
+   "text": "No way",
+   "category": "phrase",
+   "intent": "talk.no",
+   "moods": [
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "phrase.talk-no.not-today",
+   "text": "Not today",
+   "category": "phrase",
+   "intent": "talk.no",
+   "moods": [
+    "proud",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-no.nope-nope",
+   "text": "Nope nope",
+   "category": "phrase",
+   "intent": "talk.no",
+   "moods": [
+    "irritated",
+    "annoyed"
+   ]
+  },
+  {
+   "id": "phrase.talk-no.make-me",
+   "text": "Make me",
+   "category": "phrase",
+   "intent": "talk.no",
+   "moods": [
+    "grumpy",
+    "proud"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-huh.hm",
+   "text": "Hm?",
+   "category": "nonverbal",
+   "intent": "talk.huh",
+   "moods": [
+    "curious",
+    "calm",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-huh.what",
+   "text": "What?",
+   "category": "word",
+   "intent": "talk.huh",
+   "moods": [
+    "curious",
+    "calm",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-huh.pardon",
+   "text": "Pardon?",
+   "category": "word",
+   "intent": "talk.huh",
+   "moods": [
+    "curious",
+    "calm",
+    "engaged"
+   ]
+  },
+  {
+   "id": "word.talk-huh.um",
+   "text": "Um",
+   "category": "word",
+   "intent": "talk.huh",
+   "moods": [
+    "curious",
+    "calm",
+    "engaged"
+   ]
+  },
+  {
+   "id": "phrase.talk-huh.say-again",
+   "text": "Say again?",
+   "category": "phrase",
+   "intent": "talk.huh",
+   "moods": [
+    "curious",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-huh.come-again",
+   "text": "Come again?",
+   "category": "phrase",
+   "intent": "talk.huh",
+   "moods": [
+    "engaged",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-huh.wait-what",
+   "text": "Wait, what?",
+   "category": "phrase",
+   "intent": "talk.huh",
+   "moods": [
+    "calm",
+    "engaged"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-dunno.mm-mm",
+   "text": "Mm-mm?",
+   "category": "nonverbal",
+   "intent": "talk.dunno",
+   "moods": [
+    "curious",
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-dunno.hmm",
+   "text": "Hmm...",
+   "category": "nonverbal",
+   "intent": "talk.dunno",
+   "moods": [
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-dunno.pff",
+   "text": "Pff",
+   "category": "nonverbal",
+   "intent": "talk.dunno",
+   "moods": [
+    "curious",
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-dunno.dunno",
+   "text": "Dunno",
+   "category": "word",
+   "intent": "talk.dunno",
+   "moods": [
+    "curious",
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-dunno.maybe",
+   "text": "Maybe",
+   "category": "word",
+   "intent": "talk.dunno",
+   "moods": [
+    "curious",
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-dunno.hmm",
+   "text": "Hmm",
+   "category": "word",
+   "intent": "talk.dunno",
+   "moods": [
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-dunno.beats-me",
+   "text": "Beats me",
+   "category": "phrase",
+   "intent": "talk.dunno",
+   "moods": [
+    "curious",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-dunno.no-idea",
+   "text": "No idea",
+   "category": "phrase",
+   "intent": "talk.dunno",
+   "moods": [
+    "happy",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-dunno.who-knows",
+   "text": "Who knows?",
+   "category": "phrase",
+   "intent": "talk.dunno",
+   "moods": [
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-hello.oh",
+   "text": "Oh!",
+   "category": "nonverbal",
+   "intent": "talk.hello",
+   "moods": [
+    "happy",
+    "excited",
+    "calm",
+    "curious",
+    "sad"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-hello.heyy",
+   "text": "Heyy",
+   "category": "nonverbal",
+   "intent": "talk.hello",
+   "moods": [
+    "happy",
+    "excited",
+    "calm",
+    "curious",
+    "sad"
+   ]
+  },
+  {
+   "id": "word.talk-hello.hiya",
+   "text": "Hiya",
+   "category": "word",
+   "intent": "talk.hello",
+   "moods": [
+    "happy",
+    "excited",
+    "calm",
+    "curious",
+    "sad"
+   ]
+  },
+  {
+   "id": "word.talk-hello.yo",
+   "text": "Yo",
+   "category": "word",
+   "intent": "talk.hello",
+   "moods": [
+    "happy",
+    "excited",
+    "calm",
+    "curious",
+    "sad"
+   ]
+  },
+  {
+   "id": "phrase.talk-hello.hi-there",
+   "text": "Hi there",
+   "category": "phrase",
+   "intent": "talk.hello",
+   "moods": [
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-hello.oh-hello",
+   "text": "Oh, hello",
+   "category": "phrase",
+   "intent": "talk.hello",
+   "moods": [
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-hello.there-you-are",
+   "text": "There you are",
+   "category": "phrase",
+   "intent": "talk.hello",
+   "moods": [
+    "sad",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-hello.right-here",
+   "text": "Right here",
+   "category": "phrase",
+   "intent": "talk.hello",
+   "moods": [
+    "excited",
+    "calm"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-bye.bye-ee",
+   "text": "Bye-ee",
+   "category": "nonverbal",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm",
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-bye.mwah",
+   "text": "Mwah",
+   "category": "nonverbal",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm",
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-bye.bye",
+   "text": "Bye",
+   "category": "word",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm",
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-bye.later",
+   "text": "Later",
+   "category": "word",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm",
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-bye.night",
+   "text": "Night",
+   "category": "word",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm",
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-bye.ciao",
+   "text": "Ciao",
+   "category": "word",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm",
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-bye.see-you",
+   "text": "See you",
+   "category": "phrase",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-bye.night-night",
+   "text": "Night night",
+   "category": "phrase",
+   "intent": "talk.bye",
+   "moods": [
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-bye.bye-bye",
+   "text": "Bye bye",
+   "category": "phrase",
+   "intent": "talk.bye",
+   "moods": [
+    "happy",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-bye.come-back-soon",
+   "text": "Come back soon",
+   "category": "phrase",
+   "intent": "talk.bye",
+   "moods": [
+    "sad",
+    "curious"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-thanks.hehe",
+   "text": "Hehe",
+   "category": "nonverbal",
+   "intent": "talk.thanks",
+   "moods": [
+    "proud",
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-thanks.aww",
+   "text": "Aww",
+   "category": "nonverbal",
+   "intent": "talk.thanks",
+   "moods": [
+    "proud",
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "word.talk-thanks.thanks",
+   "text": "Thanks",
+   "category": "word",
+   "intent": "talk.thanks",
+   "moods": [
+    "proud",
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "word.talk-thanks.woo",
+   "text": "Woo",
+   "category": "word",
+   "intent": "talk.thanks",
+   "moods": [
+    "proud",
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-thanks.aw-shucks",
+   "text": "Aw, shucks",
+   "category": "phrase",
+   "intent": "talk.thanks",
+   "moods": [
+    "proud",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-thanks.anytime",
+   "text": "Anytime",
+   "category": "phrase",
+   "intent": "talk.thanks",
+   "moods": [
+    "excited",
+    "proud"
+   ]
+  },
+  {
+   "id": "phrase.talk-thanks.team-effort",
+   "text": "Team effort",
+   "category": "phrase",
+   "intent": "talk.thanks",
+   "moods": [
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-thanks.we-rock",
+   "text": "We rock",
+   "category": "phrase",
+   "intent": "talk.thanks",
+   "moods": [
+    "proud",
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-love.aww",
+   "text": "Aww",
+   "category": "nonverbal",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited",
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-love.mmm",
+   "text": "Mmm",
+   "category": "nonverbal",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited",
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "word.talk-love.aww",
+   "text": "Aww",
+   "category": "word",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited",
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "word.talk-love.love",
+   "text": "Love",
+   "category": "word",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited",
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "word.talk-love.hug",
+   "text": "Hug",
+   "category": "word",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited",
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "phrase.talk-love.love-you-too",
+   "text": "Love you too",
+   "category": "phrase",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-love.aww-you",
+   "text": "Aww, you",
+   "category": "phrase",
+   "intent": "talk.love",
+   "moods": [
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "phrase.talk-love.big-hug",
+   "text": "Big hug",
+   "category": "phrase",
+   "intent": "talk.love",
+   "moods": [
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-love.forgiven",
+   "text": "Forgiven",
+   "category": "phrase",
+   "intent": "talk.love",
+   "moods": [
+    "proud",
+    "sad"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-ouch.ow",
+   "text": "Ow!",
+   "category": "nonverbal",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad",
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-ouch.oof",
+   "text": "Oof",
+   "category": "nonverbal",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad",
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "word.talk-ouch.rude",
+   "text": "Rude",
+   "category": "word",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad",
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "word.talk-ouch.hey",
+   "text": "Hey!",
+   "category": "word",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad",
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "word.talk-ouch.mean",
+   "text": "Mean",
+   "category": "word",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad",
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "phrase.talk-ouch.that-hurt",
+   "text": "That hurt",
+   "category": "phrase",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad"
+   ]
+  },
+  {
+   "id": "phrase.talk-ouch.not-nice",
+   "text": "Not nice",
+   "category": "phrase",
+   "intent": "talk.ouch",
+   "moods": [
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "phrase.talk-ouch.well-ouch",
+   "text": "Well, ouch",
+   "category": "phrase",
+   "intent": "talk.ouch",
+   "moods": [
+    "wounded",
+    "sad"
+   ]
+  },
+  {
+   "id": "phrase.talk-ouch.be-nice",
+   "text": "Be nice",
+   "category": "phrase",
+   "intent": "talk.ouch",
+   "moods": [
+    "annoyed",
+    "grumpy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-comfort.aww",
+   "text": "Aww",
+   "category": "nonverbal",
+   "intent": "talk.comfort",
+   "moods": [
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-comfort.mm",
+   "text": "Mm...",
+   "category": "nonverbal",
+   "intent": "talk.comfort",
+   "moods": [
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-comfort.there",
+   "text": "There",
+   "category": "word",
+   "intent": "talk.comfort",
+   "moods": [
+    "sad",
+    "calm",
+    "wounded",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-comfort.hug",
+   "text": "Hug",
+   "category": "word",
+   "intent": "talk.comfort",
+   "moods": [
+    "sad",
+    "calm",
+    "wounded",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-comfort.okay",
+   "text": "Okay",
+   "category": "word",
+   "intent": "talk.comfort",
+   "moods": [
+    "sad",
+    "calm",
+    "wounded",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-comfort.i-m-here",
+   "text": "I'm here",
+   "category": "phrase",
+   "intent": "talk.comfort",
+   "moods": [
+    "sad",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-comfort.it-s-okay",
+   "text": "It's okay",
+   "category": "phrase",
+   "intent": "talk.comfort",
+   "moods": [
+    "wounded",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-comfort.deep-breath",
+   "text": "Deep breath",
+   "category": "phrase",
+   "intent": "talk.comfort",
+   "moods": [
+    "sad",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-comfort.there-there",
+   "text": "There there",
+   "category": "phrase",
+   "intent": "talk.comfort",
+   "moods": [
+    "wounded",
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-hehe.hehe",
+   "text": "Hehe",
+   "category": "nonverbal",
+   "intent": "talk.hehe",
+   "moods": [
+    "happy",
+    "excited",
+    "proud"
+   ]
+  },
+  {
+   "id": "word.talk-hehe.haha",
+   "text": "Haha",
+   "category": "word",
+   "intent": "talk.hehe",
+   "moods": [
+    "happy",
+    "excited",
+    "proud"
+   ]
+  },
+  {
+   "id": "word.talk-hehe.silly",
+   "text": "Silly",
+   "category": "word",
+   "intent": "talk.hehe",
+   "moods": [
+    "happy",
+    "excited",
+    "proud"
+   ]
+  },
+  {
+   "id": "word.talk-hehe.lol",
+   "text": "Lol",
+   "category": "word",
+   "intent": "talk.hehe",
+   "moods": [
+    "happy",
+    "excited",
+    "proud"
+   ]
+  },
+  {
+   "id": "phrase.talk-hehe.good-one",
+   "text": "Good one",
+   "category": "phrase",
+   "intent": "talk.hehe",
+   "moods": [
+    "happy",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-hehe.you-re-funny",
+   "text": "You're funny",
+   "category": "phrase",
+   "intent": "talk.hehe",
+   "moods": [
+    "proud",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-hehe.stop-it",
+   "text": "Stop it",
+   "category": "phrase",
+   "intent": "talk.hehe",
+   "moods": [
+    "excited",
+    "proud"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-status.hmm",
+   "text": "Hmm",
+   "category": "nonverbal",
+   "intent": "talk.status",
+   "moods": [
+    "engaged",
+    "calm",
+    "curious",
+    "determined"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-status.mm-hm",
+   "text": "Mm-hm",
+   "category": "nonverbal",
+   "intent": "talk.status",
+   "moods": [
+    "engaged",
+    "calm",
+    "curious",
+    "determined"
+   ]
+  },
+  {
+   "id": "word.talk-status.here",
+   "text": "Here",
+   "category": "word",
+   "intent": "talk.status",
+   "moods": [
+    "engaged",
+    "calm",
+    "curious",
+    "determined"
+   ]
+  },
+  {
+   "id": "word.talk-status.see",
+   "text": "See?",
+   "category": "word",
+   "intent": "talk.status",
+   "moods": [
+    "engaged",
+    "calm",
+    "curious",
+    "determined"
+   ]
+  },
+  {
+   "id": "phrase.talk-status.let-me-see",
+   "text": "Let me see",
+   "category": "phrase",
+   "intent": "talk.status",
+   "moods": [
+    "engaged",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-status.here-you-go",
+   "text": "Here you go",
+   "category": "phrase",
+   "intent": "talk.status",
+   "moods": [
+    "determined",
+    "engaged",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-status.have-a-look",
+   "text": "Have a look",
+   "category": "phrase",
+   "intent": "talk.status",
+   "moods": [
+    "curious",
+    "determined",
+    "engaged"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-nap.yawn",
+   "text": "Yawn",
+   "category": "nonverbal",
+   "intent": "talk.nap",
+   "moods": [
+    "calm",
+    "happy",
+    "whiny"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-nap.mmh",
+   "text": "Mmh...",
+   "category": "nonverbal",
+   "intent": "talk.nap",
+   "moods": [
+    "calm",
+    "happy",
+    "whiny"
+   ]
+  },
+  {
+   "id": "word.talk-nap.nap",
+   "text": "Nap",
+   "category": "word",
+   "intent": "talk.nap",
+   "moods": [
+    "calm",
+    "happy",
+    "whiny"
+   ]
+  },
+  {
+   "id": "word.talk-nap.sleepy",
+   "text": "Sleepy",
+   "category": "word",
+   "intent": "talk.nap",
+   "moods": [
+    "calm",
+    "happy",
+    "whiny"
+   ]
+  },
+  {
+   "id": "word.talk-nap.night",
+   "text": "Night",
+   "category": "word",
+   "intent": "talk.nap",
+   "moods": [
+    "calm",
+    "happy",
+    "whiny"
+   ]
+  },
+  {
+   "id": "phrase.talk-nap.nap-time",
+   "text": "Nap time",
+   "category": "phrase",
+   "intent": "talk.nap",
+   "moods": [
+    "calm",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-nap.five-minutes",
+   "text": "Five minutes",
+   "category": "phrase",
+   "intent": "talk.nap",
+   "moods": [
+    "whiny",
+    "calm"
+   ]
+  },
+  {
+   "id": "phrase.talk-nap.sweet-dreams",
+   "text": "Sweet dreams",
+   "category": "phrase",
+   "intent": "talk.nap",
+   "moods": [
+    "happy",
+    "whiny"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-hush.shh",
+   "text": "Shh",
+   "category": "nonverbal",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-hush.mm-mm",
+   "text": "Mm-mm",
+   "category": "nonverbal",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "word.talk-hush.fine",
+   "text": "Fine",
+   "category": "word",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "word.talk-hush.okay",
+   "text": "Okay",
+   "category": "word",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "word.talk-hush.shh",
+   "text": "Shh",
+   "category": "word",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "phrase.talk-hush.zipping-it",
+   "text": "Zipping it",
+   "category": "phrase",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "phrase.talk-hush.not-a-peep",
+   "text": "Not a peep",
+   "category": "phrase",
+   "intent": "talk.hush",
+   "moods": [
+    "annoyed",
+    "calm",
+    "wounded"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-dance.doo-doo",
+   "text": "Doo-doo",
+   "category": "nonverbal",
+   "intent": "talk.dance",
+   "moods": [
+    "excited",
+    "happy",
+    "proud"
+   ]
+  },
+  {
+   "id": "word.talk-dance.dance",
+   "text": "Dance!",
+   "category": "word",
+   "intent": "talk.dance",
+   "moods": [
+    "excited",
+    "happy",
+    "proud"
+   ]
+  },
+  {
+   "id": "word.talk-dance.wiggle",
+   "text": "Wiggle",
+   "category": "word",
+   "intent": "talk.dance",
+   "moods": [
+    "excited",
+    "happy",
+    "proud"
+   ]
+  },
+  {
+   "id": "word.talk-dance.party",
+   "text": "Party",
+   "category": "word",
+   "intent": "talk.dance",
+   "moods": [
+    "excited",
+    "happy",
+    "proud"
+   ]
+  },
+  {
+   "id": "phrase.talk-dance.dance-party",
+   "text": "Dance party",
+   "category": "phrase",
+   "intent": "talk.dance",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-dance.watch-this",
+   "text": "Watch this",
+   "category": "phrase",
+   "intent": "talk.dance",
+   "moods": [
+    "proud",
+    "excited"
+   ]
+  },
+  {
+   "id": "phrase.talk-dance.shake-it",
+   "text": "Shake it",
+   "category": "phrase",
+   "intent": "talk.dance",
+   "moods": [
+    "happy",
+    "proud"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-notme.hmm-mm",
+   "text": "Hmm-mm",
+   "category": "nonverbal",
+   "intent": "talk.notme",
+   "moods": [
+    "calm",
+    "proud",
+    "annoyed",
+    "curious"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-notme.nn-nn",
+   "text": "Nn-nn",
+   "category": "nonverbal",
+   "intent": "talk.notme",
+   "moods": [
+    "calm",
+    "proud",
+    "annoyed",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-notme.nope",
+   "text": "Nope",
+   "category": "word",
+   "intent": "talk.notme",
+   "moods": [
+    "calm",
+    "proud",
+    "annoyed",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-notme.mac",
+   "text": "Mac",
+   "category": "word",
+   "intent": "talk.notme",
+   "moods": [
+    "calm",
+    "proud",
+    "annoyed",
+    "curious"
+   ]
+  },
+  {
+   "id": "word.talk-notme.them",
+   "text": "Them",
+   "category": "word",
+   "intent": "talk.notme",
+   "moods": [
+    "calm",
+    "proud",
+    "annoyed",
+    "curious"
+   ]
+  },
+  {
+   "id": "phrase.talk-notme.not-me",
+   "text": "Not me",
+   "category": "phrase",
+   "intent": "talk.notme",
+   "moods": [
+    "calm",
+    "proud",
+    "annoyed"
+   ]
+  },
+  {
+   "id": "phrase.talk-notme.ask-the-mac",
+   "text": "Ask the Mac",
+   "category": "phrase",
+   "intent": "talk.notme",
+   "moods": [
+    "curious",
+    "calm",
+    "proud"
+   ]
+  },
+  {
+   "id": "phrase.talk-notme.not-my-job",
+   "text": "Not my job",
+   "category": "phrase",
+   "intent": "talk.notme",
+   "moods": [
+    "annoyed",
+    "curious",
+    "calm"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-unhush.ahh",
+   "text": "Ahh!",
+   "category": "nonverbal",
+   "intent": "talk.unhush",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  },
+  {
+   "id": "nonverbal.talk-unhush.hah",
+   "text": "Hah!",
+   "category": "nonverbal",
+   "intent": "talk.unhush",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-unhush.finally",
+   "text": "Finally",
+   "category": "word",
+   "intent": "talk.unhush",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  },
+  {
+   "id": "word.talk-unhush.free",
+   "text": "Free",
+   "category": "word",
+   "intent": "talk.unhush",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-unhush.i-can-talk",
+   "text": "I can talk!",
+   "category": "phrase",
+   "intent": "talk.unhush",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  },
+  {
+   "id": "phrase.talk-unhush.words-again",
+   "text": "Words again!",
+   "category": "phrase",
+   "intent": "talk.unhush",
+   "moods": [
+    "excited",
+    "happy"
+   ]
+  }
+ ],
+ "slots": [
+  {
+   "id": "nonverbal.talk-yes.mhm__happy__contained",
+   "entry": "nonverbal.talk-yes.mhm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mhm.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mhm__calm__contained",
+   "entry": "nonverbal.talk-yes.mhm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mhm.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mhm__curious__contained",
+   "entry": "nonverbal.talk-yes.mhm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Mhm.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mhm__excited__contained",
+   "entry": "nonverbal.talk-yes.mhm",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Mhm.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mhm__proud__contained",
+   "entry": "nonverbal.talk-yes.mhm",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Mhm.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mhm__engaged__contained",
+   "entry": "nonverbal.talk-yes.mhm",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Mhm.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm__happy__contained",
+   "entry": "nonverbal.talk-yes.mm-hm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mm-hm!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm__calm__contained",
+   "entry": "nonverbal.talk-yes.mm-hm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mm-hm!",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm__curious__contained",
+   "entry": "nonverbal.talk-yes.mm-hm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Mm-hm!",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm__excited__contained",
+   "entry": "nonverbal.talk-yes.mm-hm",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Mm-hm!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm__proud__contained",
+   "entry": "nonverbal.talk-yes.mm-hm",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Mm-hm!",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.mm-hm__engaged__contained",
+   "entry": "nonverbal.talk-yes.mm-hm",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Mm-hm!",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh__happy__contained",
+   "entry": "nonverbal.talk-yes.uh-huh",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Uh-huh.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh__calm__contained",
+   "entry": "nonverbal.talk-yes.uh-huh",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Uh-huh.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh__curious__contained",
+   "entry": "nonverbal.talk-yes.uh-huh",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Uh-huh.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh__excited__contained",
+   "entry": "nonverbal.talk-yes.uh-huh",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Uh-huh.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh__proud__contained",
+   "entry": "nonverbal.talk-yes.uh-huh",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Uh-huh.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-yes.uh-huh__engaged__contained",
+   "entry": "nonverbal.talk-yes.uh-huh",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Uh-huh.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yes__happy__contained",
+   "entry": "word.talk-yes.yes",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Yes.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yes__calm__contained",
+   "entry": "word.talk-yes.yes",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Yes.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yes__curious__contained",
+   "entry": "word.talk-yes.yes",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Yes.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yes__excited__contained",
+   "entry": "word.talk-yes.yes",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Yes.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yes__proud__contained",
+   "entry": "word.talk-yes.yes",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Yes.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yes__engaged__contained",
+   "entry": "word.talk-yes.yes",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Yes.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yup__happy__contained",
+   "entry": "word.talk-yes.yup",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Yup.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yup__calm__contained",
+   "entry": "word.talk-yes.yup",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Yup.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yup__curious__contained",
+   "entry": "word.talk-yes.yup",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Yup.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yup__excited__contained",
+   "entry": "word.talk-yes.yup",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Yup.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yup__proud__contained",
+   "entry": "word.talk-yes.yup",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Yup.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.yup__engaged__contained",
+   "entry": "word.talk-yes.yup",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Yup.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.sure__happy__contained",
+   "entry": "word.talk-yes.sure",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Sure.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.sure__calm__contained",
+   "entry": "word.talk-yes.sure",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Sure.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.sure__curious__contained",
+   "entry": "word.talk-yes.sure",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Sure.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.sure__excited__contained",
+   "entry": "word.talk-yes.sure",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Sure.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.sure__proud__contained",
+   "entry": "word.talk-yes.sure",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Sure.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.sure__engaged__contained",
+   "entry": "word.talk-yes.sure",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Sure.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.okay__happy__contained",
+   "entry": "word.talk-yes.okay",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Okay.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.okay__calm__contained",
+   "entry": "word.talk-yes.okay",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Okay.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.okay__curious__contained",
+   "entry": "word.talk-yes.okay",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Okay.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.okay__excited__contained",
+   "entry": "word.talk-yes.okay",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Okay.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.okay__proud__contained",
+   "entry": "word.talk-yes.okay",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Okay.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-yes.okay__engaged__contained",
+   "entry": "word.talk-yes.okay",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Okay.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.you-bet__happy__contained",
+   "entry": "phrase.talk-yes.you-bet",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] You bet.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.you-bet__calm__contained",
+   "entry": "phrase.talk-yes.you-bet",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] You bet.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.you-bet__curious__contained",
+   "entry": "phrase.talk-yes.you-bet",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] You bet.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.of-course__excited__contained",
+   "entry": "phrase.talk-yes.of-course",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Of course.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.of-course__proud__contained",
+   "entry": "phrase.talk-yes.of-course",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Of course.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.of-course__engaged__contained",
+   "entry": "phrase.talk-yes.of-course",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Of course.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.yes-yes__happy__contained",
+   "entry": "phrase.talk-yes.yes-yes",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Yes yes.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.yes-yes__calm__contained",
+   "entry": "phrase.talk-yes.yes-yes",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Yes yes.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.yes-yes__curious__contained",
+   "entry": "phrase.talk-yes.yes-yes",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Yes yes.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.sure-thing__excited__contained",
+   "entry": "phrase.talk-yes.sure-thing",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Sure thing.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.sure-thing__proud__contained",
+   "entry": "phrase.talk-yes.sure-thing",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Sure thing.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-yes.sure-thing__engaged__contained",
+   "entry": "phrase.talk-yes.sure-thing",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Sure thing.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nuh-uh__annoyed__contained",
+   "entry": "nonverbal.talk-no.nuh-uh",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nuh-uh.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nuh-uh__grumpy__contained",
+   "entry": "nonverbal.talk-no.nuh-uh",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Nuh-uh.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nuh-uh__proud__contained",
+   "entry": "nonverbal.talk-no.nuh-uh",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Nuh-uh.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nuh-uh__calm__contained",
+   "entry": "nonverbal.talk-no.nuh-uh",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nuh-uh.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nuh-uh__irritated__contained",
+   "entry": "nonverbal.talk-no.nuh-uh",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Nuh-uh.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.hmm-mm__annoyed__contained",
+   "entry": "nonverbal.talk-no.hmm-mm",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Hmm-mm.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.hmm-mm__grumpy__contained",
+   "entry": "nonverbal.talk-no.hmm-mm",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Hmm-mm.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.hmm-mm__proud__contained",
+   "entry": "nonverbal.talk-no.hmm-mm",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Hmm-mm.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.hmm-mm__calm__contained",
+   "entry": "nonverbal.talk-no.hmm-mm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Hmm-mm.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.hmm-mm__irritated__contained",
+   "entry": "nonverbal.talk-no.hmm-mm",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Hmm-mm.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nn-nn__annoyed__contained",
+   "entry": "nonverbal.talk-no.nn-nn",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nn-nn.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nn-nn__grumpy__contained",
+   "entry": "nonverbal.talk-no.nn-nn",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Nn-nn.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nn-nn__proud__contained",
+   "entry": "nonverbal.talk-no.nn-nn",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Nn-nn.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nn-nn__calm__contained",
+   "entry": "nonverbal.talk-no.nn-nn",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nn-nn.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-no.nn-nn__irritated__contained",
+   "entry": "nonverbal.talk-no.nn-nn",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Nn-nn.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nope__annoyed__contained",
+   "entry": "word.talk-no.nope",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nope.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nope__grumpy__contained",
+   "entry": "word.talk-no.nope",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Nope.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nope__proud__contained",
+   "entry": "word.talk-no.nope",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Nope.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nope__calm__contained",
+   "entry": "word.talk-no.nope",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nope.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nope__irritated__contained",
+   "entry": "word.talk-no.nope",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Nope.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nah__annoyed__contained",
+   "entry": "word.talk-no.nah",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nah.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nah__grumpy__contained",
+   "entry": "word.talk-no.nah",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Nah.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nah__proud__contained",
+   "entry": "word.talk-no.nah",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Nah.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nah__calm__contained",
+   "entry": "word.talk-no.nah",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nah.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.nah__irritated__contained",
+   "entry": "word.talk-no.nah",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Nah.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.no__annoyed__contained",
+   "entry": "word.talk-no.no",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] No.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.no__grumpy__contained",
+   "entry": "word.talk-no.no",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] No.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.no__proud__contained",
+   "entry": "word.talk-no.no",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] No.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.no__calm__contained",
+   "entry": "word.talk-no.no",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] No.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.no__irritated__contained",
+   "entry": "word.talk-no.no",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] No.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.never__annoyed__contained",
+   "entry": "word.talk-no.never",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Never.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.never__grumpy__contained",
+   "entry": "word.talk-no.never",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Never.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.never__proud__contained",
+   "entry": "word.talk-no.never",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Never.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.never__calm__contained",
+   "entry": "word.talk-no.never",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Never.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-no.never__irritated__contained",
+   "entry": "word.talk-no.never",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Never.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.no-way__annoyed__contained",
+   "entry": "phrase.talk-no.no-way",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] No way.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.no-way__grumpy__contained",
+   "entry": "phrase.talk-no.no-way",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] No way.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.not-today__proud__contained",
+   "entry": "phrase.talk-no.not-today",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Not today.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.not-today__calm__contained",
+   "entry": "phrase.talk-no.not-today",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Not today.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.nope-nope__irritated__contained",
+   "entry": "phrase.talk-no.nope-nope",
+   "mood": "irritated",
+   "variant": "contained",
+   "script": "[frustrated] Nope nope.",
+   "direction": "Clipped uneven stress, one tiny breath interruption; not louder. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.nope-nope__annoyed__contained",
+   "entry": "phrase.talk-no.nope-nope",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nope nope.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.make-me__grumpy__contained",
+   "entry": "phrase.talk-no.make-me",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Make me.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-no.make-me__proud__contained",
+   "entry": "phrase.talk-no.make-me",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Make me.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-huh.hm__curious__contained",
+   "entry": "nonverbal.talk-huh.hm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Hm?",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-huh.hm__calm__contained",
+   "entry": "nonverbal.talk-huh.hm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Hm?",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-huh.hm__engaged__contained",
+   "entry": "nonverbal.talk-huh.hm",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Hm?",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.what__curious__contained",
+   "entry": "word.talk-huh.what",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] What?",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.what__calm__contained",
+   "entry": "word.talk-huh.what",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] What?",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.what__engaged__contained",
+   "entry": "word.talk-huh.what",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] What?",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.pardon__curious__contained",
+   "entry": "word.talk-huh.pardon",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Pardon?",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.pardon__calm__contained",
+   "entry": "word.talk-huh.pardon",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Pardon?",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.pardon__engaged__contained",
+   "entry": "word.talk-huh.pardon",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Pardon?",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.um__curious__contained",
+   "entry": "word.talk-huh.um",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Um.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.um__calm__contained",
+   "entry": "word.talk-huh.um",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Um.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-huh.um__engaged__contained",
+   "entry": "word.talk-huh.um",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Um.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-huh.say-again__curious__contained",
+   "entry": "phrase.talk-huh.say-again",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Say again?",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-huh.say-again__calm__contained",
+   "entry": "phrase.talk-huh.say-again",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Say again?",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-huh.come-again__engaged__contained",
+   "entry": "phrase.talk-huh.come-again",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Come again?",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-huh.come-again__curious__contained",
+   "entry": "phrase.talk-huh.come-again",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Come again?",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-huh.wait-what__calm__contained",
+   "entry": "phrase.talk-huh.wait-what",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Wait, what?",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-huh.wait-what__engaged__contained",
+   "entry": "phrase.talk-huh.wait-what",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Wait, what?",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.mm-mm__curious__contained",
+   "entry": "nonverbal.talk-dunno.mm-mm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Mm-mm?",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.mm-mm__calm__contained",
+   "entry": "nonverbal.talk-dunno.mm-mm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mm-mm?",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.mm-mm__happy__contained",
+   "entry": "nonverbal.talk-dunno.mm-mm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mm-mm?",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.hmm__happy__contained",
+   "entry": "nonverbal.talk-dunno.hmm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hmm...",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.pff__curious__contained",
+   "entry": "nonverbal.talk-dunno.pff",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Pff.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.pff__calm__contained",
+   "entry": "nonverbal.talk-dunno.pff",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Pff.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dunno.pff__happy__contained",
+   "entry": "nonverbal.talk-dunno.pff",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Pff.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.dunno__curious__contained",
+   "entry": "word.talk-dunno.dunno",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Dunno.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.dunno__calm__contained",
+   "entry": "word.talk-dunno.dunno",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Dunno.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.dunno__happy__contained",
+   "entry": "word.talk-dunno.dunno",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Dunno.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.maybe__curious__contained",
+   "entry": "word.talk-dunno.maybe",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Maybe.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.maybe__calm__contained",
+   "entry": "word.talk-dunno.maybe",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Maybe.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.maybe__happy__contained",
+   "entry": "word.talk-dunno.maybe",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Maybe.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dunno.hmm__happy__contained",
+   "entry": "word.talk-dunno.hmm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hmm.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dunno.beats-me__curious__contained",
+   "entry": "phrase.talk-dunno.beats-me",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Beats me.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dunno.beats-me__calm__contained",
+   "entry": "phrase.talk-dunno.beats-me",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Beats me.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dunno.no-idea__happy__contained",
+   "entry": "phrase.talk-dunno.no-idea",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] No idea.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dunno.no-idea__curious__contained",
+   "entry": "phrase.talk-dunno.no-idea",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] No idea.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dunno.who-knows__calm__contained",
+   "entry": "phrase.talk-dunno.who-knows",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Who knows?",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dunno.who-knows__happy__contained",
+   "entry": "phrase.talk-dunno.who-knows",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Who knows?",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.oh__happy__contained",
+   "entry": "nonverbal.talk-hello.oh",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Oh!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.oh__excited__contained",
+   "entry": "nonverbal.talk-hello.oh",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Oh!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.oh__calm__contained",
+   "entry": "nonverbal.talk-hello.oh",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Oh!",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.oh__curious__contained",
+   "entry": "nonverbal.talk-hello.oh",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Oh!",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.oh__sad__contained",
+   "entry": "nonverbal.talk-hello.oh",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Oh!",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.heyy__happy__contained",
+   "entry": "nonverbal.talk-hello.heyy",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Heyy.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.heyy__excited__contained",
+   "entry": "nonverbal.talk-hello.heyy",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Heyy.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.heyy__calm__contained",
+   "entry": "nonverbal.talk-hello.heyy",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Heyy.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.heyy__curious__contained",
+   "entry": "nonverbal.talk-hello.heyy",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Heyy.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hello.heyy__sad__contained",
+   "entry": "nonverbal.talk-hello.heyy",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Heyy.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.hiya__happy__contained",
+   "entry": "word.talk-hello.hiya",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hiya.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.hiya__excited__contained",
+   "entry": "word.talk-hello.hiya",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Hiya.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.hiya__calm__contained",
+   "entry": "word.talk-hello.hiya",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Hiya.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.hiya__curious__contained",
+   "entry": "word.talk-hello.hiya",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Hiya.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.hiya__sad__contained",
+   "entry": "word.talk-hello.hiya",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Hiya.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.yo__happy__contained",
+   "entry": "word.talk-hello.yo",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Yo.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.yo__excited__contained",
+   "entry": "word.talk-hello.yo",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Yo.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.yo__calm__contained",
+   "entry": "word.talk-hello.yo",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Yo.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.yo__curious__contained",
+   "entry": "word.talk-hello.yo",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Yo.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hello.yo__sad__contained",
+   "entry": "word.talk-hello.yo",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Yo.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.hi-there__happy__contained",
+   "entry": "phrase.talk-hello.hi-there",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hi there.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.hi-there__excited__contained",
+   "entry": "phrase.talk-hello.hi-there",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Hi there.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.oh-hello__calm__contained",
+   "entry": "phrase.talk-hello.oh-hello",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Oh, hello.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.there-you-are__sad__contained",
+   "entry": "phrase.talk-hello.there-you-are",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] There you are.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.there-you-are__happy__contained",
+   "entry": "phrase.talk-hello.there-you-are",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] There you are.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.right-here__excited__contained",
+   "entry": "phrase.talk-hello.right-here",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Right here.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hello.right-here__calm__contained",
+   "entry": "phrase.talk-hello.right-here",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Right here.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.bye-ee__happy__contained",
+   "entry": "nonverbal.talk-bye.bye-ee",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Bye-ee.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.bye-ee__calm__contained",
+   "entry": "nonverbal.talk-bye.bye-ee",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Bye-ee.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.bye-ee__sad__contained",
+   "entry": "nonverbal.talk-bye.bye-ee",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Bye-ee.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.bye-ee__curious__contained",
+   "entry": "nonverbal.talk-bye.bye-ee",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Bye-ee.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.mwah__happy__contained",
+   "entry": "nonverbal.talk-bye.mwah",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mwah.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.mwah__calm__contained",
+   "entry": "nonverbal.talk-bye.mwah",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mwah.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.mwah__sad__contained",
+   "entry": "nonverbal.talk-bye.mwah",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Mwah.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-bye.mwah__curious__contained",
+   "entry": "nonverbal.talk-bye.mwah",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Mwah.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.bye__happy__contained",
+   "entry": "word.talk-bye.bye",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Bye.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.bye__calm__contained",
+   "entry": "word.talk-bye.bye",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Bye.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.bye__sad__contained",
+   "entry": "word.talk-bye.bye",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Bye.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.bye__curious__contained",
+   "entry": "word.talk-bye.bye",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Bye.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.later__happy__contained",
+   "entry": "word.talk-bye.later",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Later.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.later__calm__contained",
+   "entry": "word.talk-bye.later",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Later.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.later__sad__contained",
+   "entry": "word.talk-bye.later",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Later.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.later__curious__contained",
+   "entry": "word.talk-bye.later",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Later.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.night__happy__contained",
+   "entry": "word.talk-bye.night",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Night.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.night__calm__contained",
+   "entry": "word.talk-bye.night",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Night.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.night__sad__contained",
+   "entry": "word.talk-bye.night",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Night.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.night__curious__contained",
+   "entry": "word.talk-bye.night",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Night.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.ciao__happy__contained",
+   "entry": "word.talk-bye.ciao",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Ciao.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.ciao__calm__contained",
+   "entry": "word.talk-bye.ciao",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Ciao.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.ciao__sad__contained",
+   "entry": "word.talk-bye.ciao",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Ciao.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-bye.ciao__curious__contained",
+   "entry": "word.talk-bye.ciao",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Ciao.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.see-you__happy__contained",
+   "entry": "phrase.talk-bye.see-you",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] See you.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.see-you__calm__contained",
+   "entry": "phrase.talk-bye.see-you",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] See you.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.night-night__sad__contained",
+   "entry": "phrase.talk-bye.night-night",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Night night.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.night-night__curious__contained",
+   "entry": "phrase.talk-bye.night-night",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Night night.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.bye-bye__happy__contained",
+   "entry": "phrase.talk-bye.bye-bye",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Bye bye.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.bye-bye__calm__contained",
+   "entry": "phrase.talk-bye.bye-bye",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Bye bye.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.come-back-soon__sad__contained",
+   "entry": "phrase.talk-bye.come-back-soon",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Come back soon.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-bye.come-back-soon__curious__contained",
+   "entry": "phrase.talk-bye.come-back-soon",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Come back soon.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-thanks.hehe__proud__contained",
+   "entry": "nonverbal.talk-thanks.hehe",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Hehe.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-thanks.hehe__happy__contained",
+   "entry": "nonverbal.talk-thanks.hehe",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hehe.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-thanks.hehe__excited__contained",
+   "entry": "nonverbal.talk-thanks.hehe",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Hehe.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-thanks.aww__proud__contained",
+   "entry": "nonverbal.talk-thanks.aww",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Aww.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-thanks.aww__happy__contained",
+   "entry": "nonverbal.talk-thanks.aww",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Aww.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-thanks.aww__excited__contained",
+   "entry": "nonverbal.talk-thanks.aww",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Aww.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-thanks.thanks__proud__contained",
+   "entry": "word.talk-thanks.thanks",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Thanks.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-thanks.thanks__happy__contained",
+   "entry": "word.talk-thanks.thanks",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Thanks.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-thanks.thanks__excited__contained",
+   "entry": "word.talk-thanks.thanks",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Thanks.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-thanks.woo__proud__contained",
+   "entry": "word.talk-thanks.woo",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Woo.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-thanks.woo__happy__contained",
+   "entry": "word.talk-thanks.woo",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Woo.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-thanks.woo__excited__contained",
+   "entry": "word.talk-thanks.woo",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Woo.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.aw-shucks__proud__contained",
+   "entry": "phrase.talk-thanks.aw-shucks",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Aw, shucks.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.aw-shucks__happy__contained",
+   "entry": "phrase.talk-thanks.aw-shucks",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Aw, shucks.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.anytime__excited__contained",
+   "entry": "phrase.talk-thanks.anytime",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Anytime.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.anytime__proud__contained",
+   "entry": "phrase.talk-thanks.anytime",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Anytime.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.team-effort__happy__contained",
+   "entry": "phrase.talk-thanks.team-effort",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Team effort.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.team-effort__excited__contained",
+   "entry": "phrase.talk-thanks.team-effort",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Team effort.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.we-rock__proud__contained",
+   "entry": "phrase.talk-thanks.we-rock",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] We rock.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-thanks.we-rock__happy__contained",
+   "entry": "phrase.talk-thanks.we-rock",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] We rock.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.aww__happy__contained",
+   "entry": "nonverbal.talk-love.aww",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Aww.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.aww__excited__contained",
+   "entry": "nonverbal.talk-love.aww",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Aww.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.aww__proud__contained",
+   "entry": "nonverbal.talk-love.aww",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Aww.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.aww__sad__contained",
+   "entry": "nonverbal.talk-love.aww",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Aww.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.mmm__happy__contained",
+   "entry": "nonverbal.talk-love.mmm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mmm.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.mmm__excited__contained",
+   "entry": "nonverbal.talk-love.mmm",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Mmm.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.mmm__proud__contained",
+   "entry": "nonverbal.talk-love.mmm",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Mmm.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-love.mmm__sad__contained",
+   "entry": "nonverbal.talk-love.mmm",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Mmm.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.aww__happy__contained",
+   "entry": "word.talk-love.aww",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Aww.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.aww__excited__contained",
+   "entry": "word.talk-love.aww",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Aww.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.aww__proud__contained",
+   "entry": "word.talk-love.aww",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Aww.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.aww__sad__contained",
+   "entry": "word.talk-love.aww",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Aww.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.love__happy__contained",
+   "entry": "word.talk-love.love",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Love.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.love__excited__contained",
+   "entry": "word.talk-love.love",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Love.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.love__proud__contained",
+   "entry": "word.talk-love.love",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Love.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.love__sad__contained",
+   "entry": "word.talk-love.love",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Love.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.hug__happy__contained",
+   "entry": "word.talk-love.hug",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hug.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.hug__excited__contained",
+   "entry": "word.talk-love.hug",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Hug.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.hug__proud__contained",
+   "entry": "word.talk-love.hug",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Hug.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-love.hug__sad__contained",
+   "entry": "word.talk-love.hug",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Hug.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.love-you-too__happy__contained",
+   "entry": "phrase.talk-love.love-you-too",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Love you too.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.love-you-too__excited__contained",
+   "entry": "phrase.talk-love.love-you-too",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Love you too.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.aww-you__proud__contained",
+   "entry": "phrase.talk-love.aww-you",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Aww, you.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.aww-you__sad__contained",
+   "entry": "phrase.talk-love.aww-you",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Aww, you.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.big-hug__happy__contained",
+   "entry": "phrase.talk-love.big-hug",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Big hug.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.big-hug__excited__contained",
+   "entry": "phrase.talk-love.big-hug",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Big hug.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.forgiven__proud__contained",
+   "entry": "phrase.talk-love.forgiven",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Forgiven.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-love.forgiven__sad__contained",
+   "entry": "phrase.talk-love.forgiven",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Forgiven.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.ow__wounded__contained",
+   "entry": "nonverbal.talk-ouch.ow",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Ow!",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.ow__sad__contained",
+   "entry": "nonverbal.talk-ouch.ow",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Ow!",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.ow__annoyed__contained",
+   "entry": "nonverbal.talk-ouch.ow",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Ow!",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.ow__grumpy__contained",
+   "entry": "nonverbal.talk-ouch.ow",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Ow!",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.oof__wounded__contained",
+   "entry": "nonverbal.talk-ouch.oof",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Oof.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.oof__sad__contained",
+   "entry": "nonverbal.talk-ouch.oof",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Oof.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.oof__annoyed__contained",
+   "entry": "nonverbal.talk-ouch.oof",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Oof.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-ouch.oof__grumpy__contained",
+   "entry": "nonverbal.talk-ouch.oof",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Oof.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.rude__wounded__contained",
+   "entry": "word.talk-ouch.rude",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Rude.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.rude__sad__contained",
+   "entry": "word.talk-ouch.rude",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Rude.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.rude__annoyed__contained",
+   "entry": "word.talk-ouch.rude",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Rude.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.rude__grumpy__contained",
+   "entry": "word.talk-ouch.rude",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Rude.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.hey__wounded__contained",
+   "entry": "word.talk-ouch.hey",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Hey!",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.hey__sad__contained",
+   "entry": "word.talk-ouch.hey",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Hey!",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.hey__annoyed__contained",
+   "entry": "word.talk-ouch.hey",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Hey!",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.hey__grumpy__contained",
+   "entry": "word.talk-ouch.hey",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Hey!",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.mean__wounded__contained",
+   "entry": "word.talk-ouch.mean",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Mean.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.mean__sad__contained",
+   "entry": "word.talk-ouch.mean",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Mean.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.mean__annoyed__contained",
+   "entry": "word.talk-ouch.mean",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Mean.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-ouch.mean__grumpy__contained",
+   "entry": "word.talk-ouch.mean",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Mean.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.that-hurt__wounded__contained",
+   "entry": "phrase.talk-ouch.that-hurt",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] That hurt.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.that-hurt__sad__contained",
+   "entry": "phrase.talk-ouch.that-hurt",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] That hurt.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.not-nice__annoyed__contained",
+   "entry": "phrase.talk-ouch.not-nice",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Not nice.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.not-nice__grumpy__contained",
+   "entry": "phrase.talk-ouch.not-nice",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Not nice.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.well-ouch__wounded__contained",
+   "entry": "phrase.talk-ouch.well-ouch",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Well, ouch.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.well-ouch__sad__contained",
+   "entry": "phrase.talk-ouch.well-ouch",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Well, ouch.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.be-nice__annoyed__contained",
+   "entry": "phrase.talk-ouch.be-nice",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Be nice.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-ouch.be-nice__grumpy__contained",
+   "entry": "phrase.talk-ouch.be-nice",
+   "mood": "grumpy",
+   "variant": "contained",
+   "script": "[frustrated] Be nice.",
+   "direction": "Compact gravelly complaint at the situation; never a bark at the owner. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-comfort.aww__calm__contained",
+   "entry": "nonverbal.talk-comfort.aww",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Aww.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-comfort.aww__happy__contained",
+   "entry": "nonverbal.talk-comfort.aww",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Aww.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-comfort.mm__calm__contained",
+   "entry": "nonverbal.talk-comfort.mm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mm...",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-comfort.mm__happy__contained",
+   "entry": "nonverbal.talk-comfort.mm",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mm...",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.there__sad__contained",
+   "entry": "word.talk-comfort.there",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] There.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.there__calm__contained",
+   "entry": "word.talk-comfort.there",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] There.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.there__wounded__contained",
+   "entry": "word.talk-comfort.there",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] There.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.there__happy__contained",
+   "entry": "word.talk-comfort.there",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] There.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.hug__sad__contained",
+   "entry": "word.talk-comfort.hug",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Hug.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.hug__calm__contained",
+   "entry": "word.talk-comfort.hug",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Hug.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.hug__wounded__contained",
+   "entry": "word.talk-comfort.hug",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Hug.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.hug__happy__contained",
+   "entry": "word.talk-comfort.hug",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hug.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.okay__sad__contained",
+   "entry": "word.talk-comfort.okay",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Okay.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.okay__calm__contained",
+   "entry": "word.talk-comfort.okay",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Okay.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.okay__wounded__contained",
+   "entry": "word.talk-comfort.okay",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Okay.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-comfort.okay__happy__contained",
+   "entry": "word.talk-comfort.okay",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Okay.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.i-m-here__sad__contained",
+   "entry": "phrase.talk-comfort.i-m-here",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] I'm here.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.i-m-here__calm__contained",
+   "entry": "phrase.talk-comfort.i-m-here",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] I'm here.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.it-s-okay__wounded__contained",
+   "entry": "phrase.talk-comfort.it-s-okay",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] It's okay.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.it-s-okay__happy__contained",
+   "entry": "phrase.talk-comfort.it-s-okay",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] It's okay.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.deep-breath__sad__contained",
+   "entry": "phrase.talk-comfort.deep-breath",
+   "mood": "sad",
+   "variant": "contained",
+   "script": "[sad] Deep breath.",
+   "direction": "Deflated descending contour, soft air, no prolonged crying. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.deep-breath__calm__contained",
+   "entry": "phrase.talk-comfort.deep-breath",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Deep breath.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.there-there__wounded__contained",
+   "entry": "phrase.talk-comfort.there-there",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] There there.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-comfort.there-there__happy__contained",
+   "entry": "phrase.talk-comfort.there-there",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] There there.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hehe.hehe__happy__contained",
+   "entry": "nonverbal.talk-hehe.hehe",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hehe.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hehe.hehe__excited__contained",
+   "entry": "nonverbal.talk-hehe.hehe",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Hehe.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hehe.hehe__proud__contained",
+   "entry": "nonverbal.talk-hehe.hehe",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Hehe.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.haha__happy__contained",
+   "entry": "word.talk-hehe.haha",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Haha.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.haha__excited__contained",
+   "entry": "word.talk-hehe.haha",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Haha.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.haha__proud__contained",
+   "entry": "word.talk-hehe.haha",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Haha.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.silly__happy__contained",
+   "entry": "word.talk-hehe.silly",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Silly.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.silly__excited__contained",
+   "entry": "word.talk-hehe.silly",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Silly.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.silly__proud__contained",
+   "entry": "word.talk-hehe.silly",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Silly.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.lol__happy__contained",
+   "entry": "word.talk-hehe.lol",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Lol.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.lol__excited__contained",
+   "entry": "word.talk-hehe.lol",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Lol.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hehe.lol__proud__contained",
+   "entry": "word.talk-hehe.lol",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Lol.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hehe.good-one__happy__contained",
+   "entry": "phrase.talk-hehe.good-one",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Good one.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hehe.good-one__excited__contained",
+   "entry": "phrase.talk-hehe.good-one",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Good one.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hehe.you-re-funny__proud__contained",
+   "entry": "phrase.talk-hehe.you-re-funny",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] You're funny.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hehe.you-re-funny__happy__contained",
+   "entry": "phrase.talk-hehe.you-re-funny",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] You're funny.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hehe.stop-it__excited__contained",
+   "entry": "phrase.talk-hehe.stop-it",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Stop it.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hehe.stop-it__proud__contained",
+   "entry": "phrase.talk-hehe.stop-it",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Stop it.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.hmm__engaged__contained",
+   "entry": "nonverbal.talk-status.hmm",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Hmm.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.hmm__calm__contained",
+   "entry": "nonverbal.talk-status.hmm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Hmm.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.hmm__curious__contained",
+   "entry": "nonverbal.talk-status.hmm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Hmm.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.hmm__determined__contained",
+   "entry": "nonverbal.talk-status.hmm",
+   "mood": "determined",
+   "variant": "contained",
+   "script": "[determined] Hmm.",
+   "direction": "Firm short onset, steady rhythm; effort without anger. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.mm-hm__engaged__contained",
+   "entry": "nonverbal.talk-status.mm-hm",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Mm-hm.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.mm-hm__calm__contained",
+   "entry": "nonverbal.talk-status.mm-hm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mm-hm.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.mm-hm__curious__contained",
+   "entry": "nonverbal.talk-status.mm-hm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Mm-hm.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-status.mm-hm__determined__contained",
+   "entry": "nonverbal.talk-status.mm-hm",
+   "mood": "determined",
+   "variant": "contained",
+   "script": "[determined] Mm-hm.",
+   "direction": "Firm short onset, steady rhythm; effort without anger. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.here__engaged__contained",
+   "entry": "word.talk-status.here",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Here.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.here__calm__contained",
+   "entry": "word.talk-status.here",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Here.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.here__curious__contained",
+   "entry": "word.talk-status.here",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Here.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.here__determined__contained",
+   "entry": "word.talk-status.here",
+   "mood": "determined",
+   "variant": "contained",
+   "script": "[determined] Here.",
+   "direction": "Firm short onset, steady rhythm; effort without anger. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.see__engaged__contained",
+   "entry": "word.talk-status.see",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] See?",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.see__calm__contained",
+   "entry": "word.talk-status.see",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] See?",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.see__curious__contained",
+   "entry": "word.talk-status.see",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] See?",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-status.see__determined__contained",
+   "entry": "word.talk-status.see",
+   "mood": "determined",
+   "variant": "contained",
+   "script": "[determined] See?",
+   "direction": "Firm short onset, steady rhythm; effort without anger. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.let-me-see__engaged__contained",
+   "entry": "phrase.talk-status.let-me-see",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Let me see.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.let-me-see__calm__contained",
+   "entry": "phrase.talk-status.let-me-see",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Let me see.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.here-you-go__determined__contained",
+   "entry": "phrase.talk-status.here-you-go",
+   "mood": "determined",
+   "variant": "contained",
+   "script": "[determined] Here you go.",
+   "direction": "Firm short onset, steady rhythm; effort without anger. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.here-you-go__engaged__contained",
+   "entry": "phrase.talk-status.here-you-go",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Here you go.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.here-you-go__calm__contained",
+   "entry": "phrase.talk-status.here-you-go",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Here you go.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.have-a-look__curious__contained",
+   "entry": "phrase.talk-status.have-a-look",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Have a look.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.have-a-look__determined__contained",
+   "entry": "phrase.talk-status.have-a-look",
+   "mood": "determined",
+   "variant": "contained",
+   "script": "[determined] Have a look.",
+   "direction": "Firm short onset, steady rhythm; effort without anger. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-status.have-a-look__engaged__contained",
+   "entry": "phrase.talk-status.have-a-look",
+   "mood": "engaged",
+   "variant": "contained",
+   "script": "[focused] Have a look.",
+   "direction": "Absorbed little mid-register mutter; brisk but unstrained. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-nap.yawn__calm__contained",
+   "entry": "nonverbal.talk-nap.yawn",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Yawn.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-nap.yawn__happy__contained",
+   "entry": "nonverbal.talk-nap.yawn",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Yawn.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-nap.yawn__whiny__contained",
+   "entry": "nonverbal.talk-nap.yawn",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Yawn.",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-nap.mmh__calm__contained",
+   "entry": "nonverbal.talk-nap.mmh",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mmh...",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-nap.mmh__happy__contained",
+   "entry": "nonverbal.talk-nap.mmh",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Mmh...",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-nap.mmh__whiny__contained",
+   "entry": "nonverbal.talk-nap.mmh",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Mmh...",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.nap__calm__contained",
+   "entry": "word.talk-nap.nap",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nap.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.nap__happy__contained",
+   "entry": "word.talk-nap.nap",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Nap.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.nap__whiny__contained",
+   "entry": "word.talk-nap.nap",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Nap.",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.sleepy__calm__contained",
+   "entry": "word.talk-nap.sleepy",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Sleepy.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.sleepy__happy__contained",
+   "entry": "word.talk-nap.sleepy",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Sleepy.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.sleepy__whiny__contained",
+   "entry": "word.talk-nap.sleepy",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Sleepy.",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.night__calm__contained",
+   "entry": "word.talk-nap.night",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Night.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.night__happy__contained",
+   "entry": "word.talk-nap.night",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Night.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-nap.night__whiny__contained",
+   "entry": "word.talk-nap.night",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Night.",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-nap.nap-time__calm__contained",
+   "entry": "phrase.talk-nap.nap-time",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nap time.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-nap.nap-time__happy__contained",
+   "entry": "phrase.talk-nap.nap-time",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Nap time.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-nap.five-minutes__whiny__contained",
+   "entry": "phrase.talk-nap.five-minutes",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Five minutes.",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-nap.five-minutes__calm__contained",
+   "entry": "phrase.talk-nap.five-minutes",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Five minutes.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-nap.sweet-dreams__happy__contained",
+   "entry": "phrase.talk-nap.sweet-dreams",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Sweet dreams.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-nap.sweet-dreams__whiny__contained",
+   "entry": "phrase.talk-nap.sweet-dreams",
+   "mood": "whiny",
+   "variant": "contained",
+   "script": "[whining] Sweet dreams.",
+   "direction": "A small imploring rise, stretched middle vowel, still doing the work. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hush.shh__annoyed__contained",
+   "entry": "nonverbal.talk-hush.shh",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Shh.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hush.shh__calm__contained",
+   "entry": "nonverbal.talk-hush.shh",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Shh.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hush.shh__wounded__contained",
+   "entry": "nonverbal.talk-hush.shh",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Shh.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hush.mm-mm__annoyed__contained",
+   "entry": "nonverbal.talk-hush.mm-mm",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Mm-mm.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hush.mm-mm__calm__contained",
+   "entry": "nonverbal.talk-hush.mm-mm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mm-mm.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-hush.mm-mm__wounded__contained",
+   "entry": "nonverbal.talk-hush.mm-mm",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Mm-mm.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.fine__annoyed__contained",
+   "entry": "word.talk-hush.fine",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Fine.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.fine__calm__contained",
+   "entry": "word.talk-hush.fine",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Fine.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.fine__wounded__contained",
+   "entry": "word.talk-hush.fine",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Fine.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.okay__annoyed__contained",
+   "entry": "word.talk-hush.okay",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Okay.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.okay__calm__contained",
+   "entry": "word.talk-hush.okay",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Okay.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.okay__wounded__contained",
+   "entry": "word.talk-hush.okay",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Okay.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.shh__annoyed__contained",
+   "entry": "word.talk-hush.shh",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Shh.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.shh__calm__contained",
+   "entry": "word.talk-hush.shh",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Shh.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-hush.shh__wounded__contained",
+   "entry": "word.talk-hush.shh",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Shh.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hush.zipping-it__annoyed__contained",
+   "entry": "phrase.talk-hush.zipping-it",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Zipping it.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hush.zipping-it__calm__contained",
+   "entry": "phrase.talk-hush.zipping-it",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Zipping it.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hush.zipping-it__wounded__contained",
+   "entry": "phrase.talk-hush.zipping-it",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Zipping it.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hush.not-a-peep__annoyed__contained",
+   "entry": "phrase.talk-hush.not-a-peep",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Not a peep.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hush.not-a-peep__calm__contained",
+   "entry": "phrase.talk-hush.not-a-peep",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Not a peep.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-hush.not-a-peep__wounded__contained",
+   "entry": "phrase.talk-hush.not-a-peep",
+   "mood": "wounded",
+   "variant": "contained",
+   "script": "[hurt] Not a peep.",
+   "direction": "Caught onset, short hesitation, inward trailing note; no guilt. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dance.doo-doo__excited__contained",
+   "entry": "nonverbal.talk-dance.doo-doo",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Doo-doo.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dance.doo-doo__happy__contained",
+   "entry": "nonverbal.talk-dance.doo-doo",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Doo-doo.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-dance.doo-doo__proud__contained",
+   "entry": "nonverbal.talk-dance.doo-doo",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Doo-doo.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.dance__excited__contained",
+   "entry": "word.talk-dance.dance",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Dance!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.dance__happy__contained",
+   "entry": "word.talk-dance.dance",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Dance!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.dance__proud__contained",
+   "entry": "word.talk-dance.dance",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Dance!",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.wiggle__excited__contained",
+   "entry": "word.talk-dance.wiggle",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Wiggle.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.wiggle__happy__contained",
+   "entry": "word.talk-dance.wiggle",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Wiggle.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.wiggle__proud__contained",
+   "entry": "word.talk-dance.wiggle",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Wiggle.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.party__excited__contained",
+   "entry": "word.talk-dance.party",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Party.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.party__happy__contained",
+   "entry": "word.talk-dance.party",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Party.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-dance.party__proud__contained",
+   "entry": "word.talk-dance.party",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Party.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dance.dance-party__excited__contained",
+   "entry": "phrase.talk-dance.dance-party",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Dance party.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dance.dance-party__happy__contained",
+   "entry": "phrase.talk-dance.dance-party",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Dance party.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dance.watch-this__proud__contained",
+   "entry": "phrase.talk-dance.watch-this",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Watch this.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dance.watch-this__excited__contained",
+   "entry": "phrase.talk-dance.watch-this",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Watch this.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dance.shake-it__happy__contained",
+   "entry": "phrase.talk-dance.shake-it",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Shake it.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-dance.shake-it__proud__contained",
+   "entry": "phrase.talk-dance.shake-it",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Shake it.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.hmm-mm__calm__contained",
+   "entry": "nonverbal.talk-notme.hmm-mm",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Hmm-mm.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.hmm-mm__proud__contained",
+   "entry": "nonverbal.talk-notme.hmm-mm",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Hmm-mm.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.hmm-mm__annoyed__contained",
+   "entry": "nonverbal.talk-notme.hmm-mm",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Hmm-mm.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.hmm-mm__curious__contained",
+   "entry": "nonverbal.talk-notme.hmm-mm",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Hmm-mm.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.nn-nn__calm__contained",
+   "entry": "nonverbal.talk-notme.nn-nn",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nn-nn.",
+   "direction": "Settled, rounded, awake; a soft falling note. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.nn-nn__proud__contained",
+   "entry": "nonverbal.talk-notme.nn-nn",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Nn-nn.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.nn-nn__annoyed__contained",
+   "entry": "nonverbal.talk-notme.nn-nn",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nn-nn.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-notme.nn-nn__curious__contained",
+   "entry": "nonverbal.talk-notme.nn-nn",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Nn-nn.",
+   "direction": "Tentative rounded onset and one upward inflection. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.nope__calm__contained",
+   "entry": "word.talk-notme.nope",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Nope.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.nope__proud__contained",
+   "entry": "word.talk-notme.nope",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Nope.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.nope__annoyed__contained",
+   "entry": "word.talk-notme.nope",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Nope.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.nope__curious__contained",
+   "entry": "word.talk-notme.nope",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Nope.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.mac__calm__contained",
+   "entry": "word.talk-notme.mac",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Mac.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.mac__proud__contained",
+   "entry": "word.talk-notme.mac",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Mac.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.mac__annoyed__contained",
+   "entry": "word.talk-notme.mac",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Mac.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.mac__curious__contained",
+   "entry": "word.talk-notme.mac",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Mac.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.them__calm__contained",
+   "entry": "word.talk-notme.them",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Them.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.them__proud__contained",
+   "entry": "word.talk-notme.them",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Them.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.them__annoyed__contained",
+   "entry": "word.talk-notme.them",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Them.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-notme.them__curious__contained",
+   "entry": "word.talk-notme.them",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Them.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.not-me__calm__contained",
+   "entry": "phrase.talk-notme.not-me",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Not me.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.not-me__proud__contained",
+   "entry": "phrase.talk-notme.not-me",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Not me.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.not-me__annoyed__contained",
+   "entry": "phrase.talk-notme.not-me",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Not me.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.ask-the-mac__curious__contained",
+   "entry": "phrase.talk-notme.ask-the-mac",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Ask the Mac.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.ask-the-mac__calm__contained",
+   "entry": "phrase.talk-notme.ask-the-mac",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Ask the Mac.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.ask-the-mac__proud__contained",
+   "entry": "phrase.talk-notme.ask-the-mac",
+   "mood": "proud",
+   "variant": "contained",
+   "script": "[mischievously] Ask the Mac.",
+   "direction": "Tiny ceremonial pause and self-satisfied settling tail; no adult chest voice. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.not-my-job__annoyed__contained",
+   "entry": "phrase.talk-notme.not-my-job",
+   "mood": "annoyed",
+   "variant": "contained",
+   "script": "[annoyed] Not my job.",
+   "direction": "Dry side-eye and a restrained exhale; no growling. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.not-my-job__curious__contained",
+   "entry": "phrase.talk-notme.not-my-job",
+   "mood": "curious",
+   "variant": "contained",
+   "script": "[curious] Not my job.",
+   "direction": "Tentative rounded onset and one upward inflection. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-notme.not-my-job__calm__contained",
+   "entry": "phrase.talk-notme.not-my-job",
+   "mood": "calm",
+   "variant": "contained",
+   "script": "[calm] Not my job.",
+   "direction": "Settled, rounded, awake; a soft falling note. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-unhush.ahh__excited__contained",
+   "entry": "nonverbal.talk-unhush.ahh",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Ahh!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-unhush.ahh__happy__contained",
+   "entry": "nonverbal.talk-unhush.ahh",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Ahh!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-unhush.hah__excited__contained",
+   "entry": "nonverbal.talk-unhush.hah",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Hah!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "nonverbal.talk-unhush.hah__happy__contained",
+   "entry": "nonverbal.talk-unhush.hah",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Hah!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. A lighter exhaled gesture, no hiss or breath blast.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-unhush.finally__excited__contained",
+   "entry": "word.talk-unhush.finally",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Finally.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-unhush.finally__happy__contained",
+   "entry": "word.talk-unhush.finally",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Finally.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-unhush.free__excited__contained",
+   "entry": "word.talk-unhush.free",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Free.",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "word.talk-unhush.free__happy__contained",
+   "entry": "word.talk-unhush.free",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Free.",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-unhush.i-can-talk__excited__contained",
+   "entry": "phrase.talk-unhush.i-can-talk",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] I can talk!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-unhush.i-can-talk__happy__contained",
+   "entry": "phrase.talk-unhush.i-can-talk",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] I can talk!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-unhush.words-again__excited__contained",
+   "entry": "phrase.talk-unhush.words-again",
+   "mood": "excited",
+   "variant": "contained",
+   "script": "[excited] Words again!",
+   "direction": "Two quick buoyant beats; energy in rhythm, not shrillness or volume. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  },
+  {
+   "id": "phrase.talk-unhush.words-again__happy__contained",
+   "entry": "phrase.talk-unhush.words-again",
+   "mood": "happy",
+   "variant": "contained",
+   "script": "[happy] Words again!",
+   "direction": "Warm rounded smile, slight lilt, no squeal. One compact contained gesture. Small, rounded, never projected.",
+   "status": "planned"
+  }
+ ]
+}

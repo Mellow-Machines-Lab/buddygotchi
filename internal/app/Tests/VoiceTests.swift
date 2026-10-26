@@ -31,8 +31,13 @@ final class VoiceTests: XCTestCase {
     /// a length and text the bubble can show; ids are unique.
     func testEveryTakeIsUsable() {
         let feelings = Set(ReactOutput.feelings.map(\.name)), topics = Set(ReactOutput.topics.map(\.name))
-        XCTAssertEqual(Take.all.count, 2722)
-        XCTAssertEqual(Set(Take.all.map(\.id)).count, Take.all.count)
+        // 2,722 recorded, each once as itself, and again as each reply it's
+        // the words of.
+        XCTAssertEqual(Set(Take.all.map(\.id)).count, 2722)
+        XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
+        let recorded = Dictionary(Take.all.filter { $0.part != .reply }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        XCTAssertEqual(recorded.count, 2722, "every take is in the table as itself")
+        let replies = Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"])
         for t in Take.all {
             XCTAssertFalse(t.moods.isEmpty, t.id)
             XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")
@@ -40,6 +45,13 @@ final class VoiceTests: XCTestCase {
             case .feeling: XCTAssertTrue(feelings.contains(t.meaning), "\(t.id) feels \(t.meaning), which say doesn't offer")
             case .about: XCTAssertTrue(topics.contains(t.meaning), "\(t.id) is about \(t.meaning), which say doesn't offer")
             case .attention: XCTAssertEqual(t.meaning, "attention")
+            case .reply:
+                XCTAssertTrue(replies.contains(t.meaning), "\(t.id) replies \(t.meaning), which no reply is")
+                let own = recorded[t.id]
+                XCTAssertTrue(own?.text == t.text && own?.kind == t.kind && own?.moods == t.moods && own?.ms == t.ms,
+                              "\(t.id) as a reply is the recorded take")
+                XCTAssertNil(t.finish, "a reply's words fit any finish")
+                XCTAssertNotEqual(t.kind, .swear, "never a swear at you")
             }
             XCTAssertTrue((300...3000).contains(t.ms), "\(t.id) is \(t.ms) ms")
             XCTAssertTrue(!t.text.isEmpty && t.text.utf8.count <= 35 && t.text.allSatisfy { $0.isASCII }, t.text)
@@ -79,7 +91,7 @@ final class VoiceTests: XCTestCase {
         func u32(_ at: Int) -> Int { pack[at..<at + 4].enumerated().reduce(0) { $0 | Int($1.1) << (8 * $1.0) } }
         let count = u32(24), size = u32(28), index = u32(32)
         let ids = (0..<count).map { i in String(decoding: pack[(index + i * size)...].prefix(72).prefix { $0 != 0 }, as: UTF8.self) }
-        XCTAssertEqual(ids, Take.all.map(\.id).sorted { $0.utf8.lexicographicallyPrecedes($1.utf8) })
+        XCTAssertEqual(ids, Set(Take.all.map(\.id)).sorted { $0.utf8.lexicographicallyPrecedes($1.utf8) }, "a reply's words are a take the board has")
     }
 
     /// A take of the answer, in the face's mood only, fit for
@@ -87,7 +99,7 @@ final class VoiceTests: XCTestCase {
     func testATakeIsOnlyEverTheFacesMood() {
         var rng = SplitMix64(seed: 1)
         for face in moods {
-            for (part, answers) in [(Take.Part.feeling, Voice.answers(.feeling)), (.about, Voice.answers(.about))] {
+            for (part, answers) in [(Take.Part.feeling, Voice.answers(.feeling)), (.about, Voice.answers(.about)), (.reply, Voice.answers(.reply))] {
                 for a in answers {
                     for kind in Take.Kind.allCases {
                         for finish in [nil, "success", "failure"] {

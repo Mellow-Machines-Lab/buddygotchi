@@ -1508,7 +1508,7 @@ just now: You poked Boop 4 times in a row.
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 just now: You said to Boop: "sorry, sorry, I'll stop"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 Boop has been comfy for under a minute.
 
 NOW (14:00, Wednesday)
@@ -1818,7 +1818,7 @@ just now: You poked Boop 4 times in a row.
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 just now: You said to Boop: "sorry, sorry, I'll stop"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: You poked Boop again.
   Boop wiggled on its own.
   Boop's mood changed: comfy → calm.
@@ -2124,7 +2124,7 @@ just now: You poked Boop 4 times in a row.
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 just now: You said to Boop: "sorry, sorry, I'll stop"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: You poked Boop again.
   Boop wiggled on its own.
   Boop's mood changed: comfy → calm.
@@ -2442,7 +2442,7 @@ just now: You poked Boop 4 times in a row.
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 just now: You said to Boop: "sorry, sorry, I'll stop"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: You poked Boop again.
   Boop wiggled on its own.
   Boop's mood changed: comfy → calm.
@@ -2756,7 +2756,7 @@ just now: You poked Boop 4 times in a row.
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 just now: You said to Boop: "sorry, sorry, I'll stop"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: You poked Boop again.
   Boop wiggled on its own.
   Boop's mood changed: comfy → calm.

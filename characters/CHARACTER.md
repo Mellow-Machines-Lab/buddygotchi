@@ -416,11 +416,12 @@ What the brain reads, in plain Markdown:
   else how many work and how many rest (`2 working, 1 idle`), and with
   several asks the board to show every one in its agents' drawer (the
   `do`'s `show`).
-  Whatever the reply, the board plays its clip (§15), and Voice says
-  what `say` picked, as for any reaction; asked of what you said, `say`
-  mostly says something, and when it leans to words without picking any
-  the reply says its own (`ReactOutput.replyWords`: a hello says hello,
-  thanks a glad sound). A pack without the file holds
+  Whatever the reply, the board plays its clip (§15). Asked of what you
+  said, `say` mostly says something, and then Voice says the reply's own
+  words, its takes in the voice (§8): a yes says "Yep", a no "Tsk". With
+  none in the face, it says a feeling `say` picked, else one the reply
+  borrows (`ReactOutput.replyWords`: thanks a glad sound), and never a
+  topic. A pack without the file holds
   up nothing for a reply but the facts.
 
 Each file has a budget in tokens, the same for every pack
@@ -430,14 +431,16 @@ logs a file over its budget and still uses it.
 ## 8. Voice (optional)
 
 A pack with a voice has recorded takes, each tagged with the moods it
-plays in, a feeling or a topic (what the brain's `say` picks) and a
-kind (sound, word, phrase or swear, which the reaction's intensity
-picks: a sound when it's small, a word medium, a phrase big or huge):
+plays in, a feeling or a topic (what the brain's `say` picks), or a
+reply it's the words of (§7, `replies.md`), and a kind (sound, word,
+phrase or swear, which the reaction's intensity picks: a sound when
+it's small, a word medium, a phrase big or huge):
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take. Its
   first line holds the voice file's version, the same one the board
-  reports.
+  reports. A take that's also a reply's words is in it again, by the
+  same id, as part `reply`: the voice file has it once.
 
 A pack may have them, or use another's (§6). Both are built files and
 checked in. The one voice there is, 2,722 takes, is in Pixel's pack,

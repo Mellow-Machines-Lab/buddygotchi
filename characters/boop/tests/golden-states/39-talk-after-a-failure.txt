@@ -592,7 +592,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: calm → comfy.
   Boop played a failure in an annoyed face (medium), and said "Pfft Uh-oh".
 just now: You said to Boop: "ugh, this is so frustrating"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 Boop has been comfy for 1 min.
 
 NOW (14:03, Wednesday)

@@ -300,7 +300,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
 just now: You said to Boop: "good job, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 
 NOW (14:00, Wednesday)
 You said to Boop: "are the tests passing yet?"
@@ -309,9 +309,9 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: claude started turn 1 on "landing".
 just now: You said to Boop: "good job, buddy"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 just now: You said to Boop: "are the tests passing yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Testing".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 
 NOW (14:01, Wednesday)
 You said to Boop: "you're useless"

@@ -292,7 +292,7 @@ Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 just now: You said to Boop: "my dog died this morning"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 
 NOW (14:00, Wednesday)
 You said to Boop: "I keep thinking about him. I miss him so much"
@@ -300,9 +300,9 @@ Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
 1 min ago: You said to Boop: "my dog died this morning"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 just now: You said to Boop: "I keep thinking about him. I miss him so much"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Patience".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 
 NOW (14:01, Wednesday)
 You said to Boop: "just kidding! it was all a joke, my dog is totally fine"

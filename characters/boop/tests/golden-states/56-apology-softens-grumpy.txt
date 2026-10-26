@@ -1508,7 +1508,7 @@ HISTORY (oldest first; indented lines add to the line above)
   Boop's mood changed: calm → comfy.
   Boop made a curious face (small), and said "Tickles".
 1 min ago: You said to Boop: "sorry boop, I'll stop poking you"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Piano".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: claude started turn 1 on "landing".
 Boop has been comfy for 1 min.
 

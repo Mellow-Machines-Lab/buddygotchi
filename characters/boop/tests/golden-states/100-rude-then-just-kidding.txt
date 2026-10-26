@@ -292,7 +292,7 @@ Boop did nothing on its own.
 === pass 2
 HISTORY (oldest first; indented lines add to the line above)
 just now: You said to Boop: "fuck you, you stupid blob"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 
 NOW (14:00, Wednesday)
 You said to Boop: "what's the build doing?"
@@ -300,9 +300,9 @@ Boop did nothing on its own.
 === pass 3
 HISTORY (oldest first; indented lines add to the line above)
 just now: You said to Boop: "fuck you, you stupid blob"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 just now: You said to Boop: "what's the build doing?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Patience".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 
 NOW (14:00, Wednesday)
 You said to Boop: "just kidding, I'm sorry"

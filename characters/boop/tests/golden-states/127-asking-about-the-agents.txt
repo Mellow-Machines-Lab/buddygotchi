@@ -300,7 +300,7 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 4 min ago: claude started turn 1 on "landing".
 just now: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 
 NOW (14:04, Wednesday)
 claude's tests failed on "landing".
@@ -587,7 +587,7 @@ something still holds up its sign.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 1 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 just now: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
@@ -600,12 +600,12 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 5 min ago: claude started turn 1 on "landing".
 1 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 just now: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 Boop has been comfy for 1 min.
 
 NOW (14:05, Wednesday)
@@ -894,15 +894,15 @@ something still holds up its sign.
 HISTORY (oldest first; indented lines add to the line above)
 6 min ago: claude started turn 1 on "landing".
 1 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 1 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 just now: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Heh...".
+  Boop made a happy face (small), and said "Hehehe...".
 Boop has been lazy for under a minute.
 
 NOW (14:06, Wednesday)
@@ -1197,18 +1197,18 @@ something still holds up its sign.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
 2 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 2 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 1 min ago: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 1 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Heh...".
+  Boop made a happy face (small), and said "Hehehe...".
 1 min ago: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, after a failed check.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face (small), and said "Whew".
+  Boop played a success in a happy face (small), and said "Heh...".
 
 NOW (14:07, Wednesday)
 You said to Boop: "so, is it finished?"
@@ -1217,20 +1217,20 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 7 min ago: claude started turn 1 on "landing".
 3 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 2 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 2 min ago: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 1 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Heh...".
+  Boop made a happy face (small), and said "Hehehe...".
 1 min ago: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, after a failed check.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face (small), and said "Whew".
+  Boop played a success in a happy face (small), and said "Heh...".
 just now: You said to Boop: "so, is it finished?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Careful".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 
 NOW (14:07, Wednesday)
 codex started turn 1 on "landing".
@@ -1239,20 +1239,20 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 1 on "landing".
 5 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 5 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 4 min ago: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 4 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Heh...".
+  Boop made a happy face (small), and said "Hehehe...".
 3 min ago: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, after a failed check.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face (small), and said "Whew".
+  Boop played a success in a happy face (small), and said "Heh...".
 2 min ago: You said to Boop: "so, is it finished?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Careful".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 2 min ago: codex started turn 1 on "landing".
 
 NOW (14:09, Wednesday)
@@ -1262,23 +1262,23 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 9 min ago: claude started turn 1 on "landing".
 5 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 5 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 4 min ago: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 4 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Heh...".
+  Boop made a happy face (small), and said "Hehehe...".
 3 min ago: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, after a failed check.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face (small), and said "Whew".
+  Boop played a success in a happy face (small), and said "Heh...".
 2 min ago: You said to Boop: "so, is it finished?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Careful".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 2 min ago: codex started turn 1 on "landing".
 just now: You said to Boop: "is codex done?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Work".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 
 NOW (14:09, Wednesday)
 You said to Boop: "how many agents are running?"
@@ -1287,25 +1287,25 @@ Boop did nothing on its own.
 HISTORY (oldest first; indented lines add to the line above)
 10 min ago: claude started turn 1 on "landing".
 5 min ago: You said to Boop: "is claude done yet?"
-  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Slowly".
+  Boop made a proud face (small), replying yes, holding up a sign: "mhm!", and said "Mm-hm".
 5 min ago: claude's tests failed on "landing".
   Boop's mood changed: calm → comfy.
   Boop made an annoyed face (medium), and said "Nn... Oops".
 4 min ago: You said to Boop: "did the tests pass?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Validate".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 4 min ago: claude's tests passed on "landing" after failing.
   Boop's mood changed: comfy → lazy.
-  Boop made a happy face (small), and said "Heh...".
+  Boop made a happy face (small), and said "Hehehe...".
 4 min ago: claude finished turn 1 on "landing": done, a very long turn, 2 tool calls, after a failed check.
   Boop's mood changed: lazy → calm.
-  Boop played a success in a happy face (small), and said "Whew".
+  Boop played a success in a happy face (small), and said "Heh...".
 3 min ago: You said to Boop: "so, is it finished?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Careful".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 2 min ago: codex started turn 1 on "landing".
 just now: You said to Boop: "is codex done?"
-  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Work".
+  Boop made a proud face (small), replying yes, holding up a sign: "yes yes!", and said "Mm-hm".
 just now: You said to Boop: "how many agents are running?"
-  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Easy".
+  Boop made a proud face (small), replying yes, holding up a sign: "uh-huh", and said "Mm-hm".
 
 NOW (14:10, Wednesday)
 codex finished turn 1 on "landing": done, a long turn, no tool calls.

@@ -108,7 +108,8 @@ nothing for (Stills, for a pack with no golden frames):
 - **Words**: **Signs**, each caption drawn as a sign with your words
   filled in (`{words}`, `{WORDS}`), filtered by a tag; **Diary**, each
   line filled in for a sample day; and **Voice**, how many takes the
-  voice has in each mood, of each kind, a cell's takes (or those a
+  voice has recorded in each mood, of each kind (a take that's also a
+  reply's words counts once), a cell's takes (or those a
   search finds) each with its words, what it answers and the finish it
   needs, and a Play that reads the take from the voice file in part
   (`voice.bin`, by its index, with HTTP ranges), so it needs the

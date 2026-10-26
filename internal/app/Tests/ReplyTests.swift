@@ -89,7 +89,7 @@ final class ReplyTests: XCTestCase {
         XCTAssertTrue(queued.last?.args.json.contains(#""reply":"hello""#) == true)
         if !Take.all.isEmpty {
             let takes = try XCTUnwrap(queued.last?.say?.takes)
-            XCTAssertEqual(takes.map(\.meaning), ["hello"], "what say picked")
+            XCTAssertEqual(Set(takes.map(\.meaning)), ["hello"], "its own words")
             XCTAssertTrue(takes.allSatisfy { $0.moods.contains("happy") })
         }
         _ = run(["react.face": "engaged", "react.move": "status"], said)
@@ -167,9 +167,10 @@ final class ReplyTests: XCTestCase {
     }
 
     /// Talked to, Boop mostly says something back, but never has to: `say`
-    /// asks it so, a `none` is kept, and when `say` leans to words without
-    /// one past `sayFloor` the reply says its own (`replyWords`); on Quiet
-    /// never a topic, and a reply with no words of its own says nothing.
+    /// asks it so, a `none` is kept, and anything else says the reply's
+    /// own words. With none in the face, a feeling `say` picked, else the
+    /// one the reply borrows (`replyWords`); never a topic, and a reply that
+    /// borrows none says nothing.
     func testTalkedToItMostlySaysSomething() throws {
         let react = ReactOutput(queue: { _, _ in }, blocked: { nil })
         let say = try XCTUnwrap(react.questions(now: said, log: Self.log).first { $0.key == ReactOutput.sayKey })
@@ -182,22 +183,62 @@ final class ReplyTests: XCTestCase {
         var queued: [DeviceReaction] = []
         var talk = Talk.normal
         let speaking = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, talk: { talk })
+        // What it says, as each take's part and meaning: a sound before a
+        // word is of the same, so each says one thing.
         func meanings(_ move: String, _ say: Answer?, size: String = "medium") -> [String] {
             var answers = ["react.face": a("happy"), "react.move": a(move), "react.intensity": a(size)]
             answers["say"] = say
             _ = speaking.run(answers, now: said, log: Self.log)
-            return queued.last?.say?.takes.map(\.meaning) ?? []
+            return Set(queued.last?.say?.takes.map { "\($0.part) \($0.meaning)" } ?? []).sorted()
         }
-        XCTAssertEqual(meanings("hello", a("glad")), ["glad"], "say's pick")
+        XCTAssertEqual(meanings("hello", a("glad")), ["reply hello"], "the reply's own words, whatever say picked")
         XCTAssertEqual(meanings("hello", a("none")), [], "nothing, when it picks nothing")
         XCTAssertEqual(meanings("hello", nil), [])
-        XCTAssertEqual(meanings("hello", a("glad", 0.3)), ["hello"], "leaning to words: the reply's own")
-        XCTAssertEqual(meanings("thanks", a("work", 0.3)), ["glad"])
-        XCTAssertEqual(meanings("comfort", a("glad", 0.3)), [], "comfort has none of its own")
+        XCTAssertEqual(meanings("hello", a("glad", 0.3)), ["reply hello"], "leaning to words, the same")
+        XCTAssertEqual(meanings("thanks", a("work", 0.3)), ["reply thanks"])
+        // A huh to a question shrugs, dunno, which has no words in a happy face.
+        XCTAssertEqual(meanings("huh", a("glad")), ["feeling glad"], "none of its own in the face: say's pick")
+        XCTAssertEqual(meanings("huh", a("start")), [], "never a topic: dunno borrows no feeling")
+        XCTAssertEqual(meanings("huh", a("glad", 0.3)), [])
+        XCTAssertEqual(meanings("comfort", a("glad", 0.3)), [], "comfort borrows none")
+        XCTAssertEqual(meanings("no", a("start")), ["feeling upset"], "no has none in a happy face: a topic picked, the feeling it borrows")
         talk = .quiet
-        XCTAssertEqual(meanings("hello", a("glad", 0.3)), [], "on Quiet, never a topic")
-        XCTAssertEqual(meanings("thanks", a("glad", 0.3)), ["glad"])
+        XCTAssertEqual(meanings("thanks", a("glad", 0.3)), ["reply thanks"])
         XCTAssertEqual(meanings("thanks", a("glad", 0.3), size: "small"), [], "and nothing at a small moment")
+    }
+
+    /// A reply says its own words wherever it has some in the face, as big
+    /// as the moment: "roll over" gets a no ("Tsk", "Not quite"), never an
+    /// upset word ("Failed", "Broken"); "I love you" a love, never a laugh.
+    func testAReplySaysItsOwnWords() throws {
+        guard !Take.all.isEmpty else { return }
+        var queued: [DeviceReaction] = []
+        let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
+        let rollOver = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "roll over"])
+        for reply in ReactOutput.replies.map(\.name) + ["unhush"] where reply != "huh" {
+            for face in MoodOutput.moods.map(\.name) where Take.all.contains(where: { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) }) {
+                for size in ReactOutput.sizes.map(\.name) {
+                    _ = react.run(["react.face": a(face), "react.move": a(reply), "react.intensity": a(size), "say": a("glad")],
+                                  now: rollOver, log: Self.log)
+                    let takes = try XCTUnwrap(queued.last?.say?.takes)
+                    XCTAssertFalse(takes.isEmpty, "\(reply) in \(face) says something")
+                    XCTAssertTrue(takes.allSatisfy { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) },
+                                  "\(reply) in \(face): \(takes.map(\.id))")
+                }
+            }
+        }
+        // The owner's examples, at every size.
+        for size in ReactOutput.sizes.map(\.name) {
+            for _ in 0..<20 {
+                _ = react.run(["react.face": a("annoyed"), "react.move": a("no"), "react.intensity": a(size), "say": a("upset")],
+                              now: rollOver, log: Self.log)
+                XCTAssertTrue(Set(queued.last?.say?.takes.map(\.text) ?? []).isDisjoint(with: ["Failed", "Broken", "Trouble"]))
+            }
+        }
+        // Each reply has words in the face it makes most (a love's happy,
+        // a no's annoyed), and only notme has none in any face.
+        let has = Set(Take.all.filter { $0.part == .reply }.map(\.meaning))
+        XCTAssertEqual(Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"]).subtracting(has), ["notme"])
     }
 
     /// Pins how a reply's sign answers what you said: every reply's

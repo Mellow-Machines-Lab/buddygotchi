@@ -17,7 +17,12 @@
   const count = (n, one, many = one + 's') => `${n.toLocaleString()} ${n === 1 ? one : many}`;
   const sheet = (api, name) => api.root.querySelector(`[data-view="${name}"]`);
   const packOf = api => api.packs[api.sel.pack];
-  const voiceOf = api => api.data.voices?.[packOf(api).voice] || null;
+  // The voice's recorded takes: a take that's also a reply's words is in
+  // the table again, as that reply, and counts once.
+  const voiceOf = api => {
+    const v = api.data.voices?.[packOf(api).voice];
+    return v ? {...v, takes: v.takes.filter(t => t[2] !== 'reply')} : null;
+  };
   const panel = (props, ...children) => h('section', {className: 'panel', ...props}, ...children);
   const heading = (text, about) => h('header', {className: 'panel-head'}, h('h3', {}, text), about && h('p', {}, about));
   const badge = (text, level) => h('span', {className: 'badge', ...(level ? {'data-level': level} : {})}, text);

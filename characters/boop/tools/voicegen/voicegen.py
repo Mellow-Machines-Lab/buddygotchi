@@ -27,7 +27,12 @@ Every take is one of the brain's answers to `say`: how Boop feels or
 what NOW is about,
 by the bank's intent (FEELING, ABOUT), or for a few entries by their
 words (ABOUT_OF_ENTRY): the greetings are the `hello` topic. Needs you's
-other takes (`attention`) are in the pack, but Boop never says them. Six takes were recorded in
+other takes (`attention`) are in the pack, but Boop never says them.
+
+A take may also be what Boop says replying to what you said on
+push-to-talk (REPLY_OF): "Yep" is a yes, "Tsk" a no. takes.tsv lists it
+a second time for each reply, as part `reply`, by the same id; the voice
+file has it once, so neither it nor the version changes. Six takes were recorded in
 moods Boop doesn't have; MOOD_OF gives them one, by the owner's word
 (2026-09-29).
 
@@ -106,6 +111,40 @@ ABOUT_OF_ENTRY = {"word.success.passed": "tests",
                   "phrase.attention.hello-hello": "hello", "word.poke.hi": "hello",
                   "word.poke.howdy": "hello", "borrowed.salut": "hello",
                   "phrase.poke.oh-hello": "hello", "phrase.poke.hey-hey": "hello"}
+# Entries that are also a reply's own words, to what you said on
+# push-to-talk (ReactOutput's replies, and dunno, a huh to a question):
+# each of their takes counts for those replies too, in its own mood.
+REPLY_OF = {
+    "word.poke.yep": ["yes"], "nonverbal.delight.mm-hm": ["yes"], "phrase.success.got-it": ["yes"],
+    "phrase.return.at-your-service": ["yes"], "phrase.pride.naturally-naturally": ["yes"],
+    "nonverbal.frustration.tsk": ["no"], "nonverbal.frustration.pfft": ["no"], "borrowed.basta": ["no"],
+    "phrase.setback.not-quite": ["no"], "phrase.poke.personal-space": ["no"], "phrase.poke.easy-there": ["no"],
+    "nonverbal.frustration.hmph": ["no", "hush"],
+    "nonverbal.ponder.huh": ["huh"], "nonverbal.ponder.eh": ["huh"], "nonverbal.ponder.uh": ["huh"],
+    "phrase.analyze.what-what": ["huh"], "phrase.analyze.brain-loading": ["huh"],
+    "nonverbal.ponder.hm": ["dunno"], "nonverbal.ponder.hmm": ["dunno"], "phrase.plan.hmm-perhaps": ["dunno"],
+    "word.poke.hi": ["hello"], "word.poke.howdy": ["hello"], "word.attention.hey": ["hello"],
+    "word.attention.hello": ["hello"], "word.idle.hullo": ["hello"], "phrase.poke.oh-hello": ["hello"],
+    "phrase.poke.hey-hey": ["hello"], "phrase.attention.hello-hello": ["hello"], "phrase.poke.you-rang": ["hello"],
+    "borrowed.salut": ["hello", "bye"], "word.idle.peace": ["bye"],
+    "word.celebrate.yay": ["thanks", "unhush"], "word.celebrate.sweet": ["thanks"], "word.celebrate.nice": ["thanks"],
+    "phrase.pride.no-biggie": ["thanks"], "phrase.pride.heh-obviously": ["thanks"], "phrase.success.we-did-it": ["thanks"],
+    "phrase.success.nice-one": ["thanks"], "phrase.success.good-stuff": ["thanks"],
+    "phrase.poke.boop-back": ["love"], "phrase.celebrate.happy-circuits": ["love"], "nonverbal.delight.eep": ["love"],
+    "word.poke.boop": ["love"],
+    "word.setback.ouch": ["ouch"], "phrase.frustration.why-though": ["ouch"],
+    "nonverbal.deflate.aww": ["comfort"], "nonverbal.deflate.mm": ["comfort"], "phrase.setback.oh-dear": ["comfort"],
+    "nonverbal.delight.heh": ["hehe"], "nonverbal.delight.hehehe": ["hehe"], "nonverbal.delight.ha": ["hehe"],
+    "word.poke.tickles": ["hehe"],
+    "phrase.analyze.let-me-see": ["status"], "phrase.analyze.looky-look": ["status"], "phrase.reply.here-you-go": ["status"],
+    "word.search.look": ["status"], "word.search.peek": ["status"], "phrase.return.tiny-report": ["status"],
+    "phrase.return.mission-update": ["status"],
+    "word.idle.comfy": ["nap"], "word.idle.cozy": ["nap"], "word.idle.mellow": ["nap"],
+    "word.idle.quiet": ["hush"],
+    "nonverbal.delight.whee": ["dance"], "phrase.test.here-we-go": ["dance"], "phrase.celebrate.oh-yeah": ["dance"],
+    "phrase.celebrate.boom-shakalaka": ["dance"], "word.celebrate.woohoo": ["dance"],
+    "nonverbal.relief.ahh": ["unhush"], "nonverbal.relief.phew": ["unhush"], "word.celebrate.hooray": ["unhush"],
+}
 # The facts the bank says a take needs that the Mac can check: a success
 # word only on a success. Swears play only on a failed turn.
 SUCCESS = {"success_confirmed", "fix_confirmed", "tests_passed", "insight_confirmed"}
@@ -280,8 +319,15 @@ def main() -> None:
         clips.append(clip)
         mouths.append(mo)
     ver = version(takes, clips, mouths)
-    table = write_table(ver, takes)
+    # A reply's takes are the recorded ones again: rows of the table only.
+    replies = [{**t, "part": "reply", "meaning": reply, "finish": None}
+               for rec, t in zip(recs, takes) for reply in REPLY_OF.get(rec["entryId"], [])]
+    missing = set(REPLY_OF) - {rec["entryId"] for rec in recs}
+    if missing:
+        raise SystemExit(f"voicegen: REPLY_OF names entries with no recording: {', '.join(sorted(missing))}")
+    table = write_table(ver, takes + replies)
     write_pack(args.pack / PACK, ver, takes, clips, mouths)
+    (args.pack / TABLE).parent.mkdir(parents=True, exist_ok=True)
     (args.pack / TABLE).write_text(table)
     built = args.pack / PACK
     if args.card:
@@ -302,7 +348,7 @@ def main() -> None:
                 w.writeframes(c)
     ms = [t["ms"] for t in takes]
     where = f", copied to {args.card / CARD_PATH}" if args.card else ""
-    print(f"voicegen: {len(takes)} takes, version {ver}, {built.stat().st_size} B pack "
+    print(f"voicegen: {len(takes)} takes ({len(replies)} more rows as replies), version {ver}, {built.stat().st_size} B pack "
           f"({min(ms)}–{max(ms)} ms) → {PACK} and {TABLE} in {args.pack.name}{where}")
     if args.card:
         print("voicegen: put the card back in the board and press its reset button: it mounts the card only at boot")

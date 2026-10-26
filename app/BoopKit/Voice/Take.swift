@@ -12,13 +12,15 @@ public struct Take: Equatable, Sendable {
     }
 
     /// Which of `say`'s answers a take says: how Boop feels, or what NOW
-    /// is about.
+    /// is about; or a reply's own words, to what you said on push-to-talk,
+    /// its meaning the reply's name.
     /// Needs you's takes are in the pack, but Boop never says them.
     public enum Part: String, CaseIterable, Sendable {
-        case feeling, about, attention
+        case feeling, about, reply, attention
     }
 
-    /// The board's id for it, as `say.take` sends it.
+    /// The board's id for it, as `say.take` sends it. A take that's also a
+    /// reply's words is in the table again under its id, as that reply.
     public let id: String
     /// What it says, as the bubble shows it and HISTORY reads it.
     public let text: String

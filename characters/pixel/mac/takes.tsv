@@ -2723,3 +2723,430 @@ phase1.explicit.crap__grumpy__contained	Crap	feeling	upset	swear	grumpy angry	fa
 phase1.explicit.shiba__annoyed__contained	Shiba	feeling	upset	swear	annoyed uncomfortable disgusted	failure	977
 phase1.explicit.shiba__irritated__contained	Shiba	feeling	upset	swear	irritated	failure	1127
 phase1.explicit.shiba__grumpy__contained	Shiba	feeling	upset	swear	grumpy angry	failure	1097
+previous.yay	Yay	reply	thanks	word	happy pleased amused affectionate		958
+previous.yay	Yay	reply	unhush	word	happy pleased amused affectionate		958
+previous.basta	Basta	reply	no	word	annoyed uncomfortable disgusted		967
+previous.eh	Eh?	reply	huh	sound	curious shy surprised stunned speechless confused baffled skeptical		588
+previous.tsk	Tsk...	reply	no	sound	annoyed uncomfortable disgusted		1377
+previous.pfft	Pfft	reply	no	sound	annoyed uncomfortable disgusted		509
+previous.heh	Heh...	reply	hehe	sound	happy pleased amused affectionate		961
+new.d09	Hello	reply	hello	word	curious shy surprised stunned speechless confused baffled skeptical		758
+new.d10	Hello	reply	hello	word	calm comfy lazy bored relieved tired exhausted		668
+new.d11	Hello	reply	hello	word	wounded uneasy scared frightened embarrassed overwhelmed		1007
+new.d13	Phew...	reply	unhush	sound	happy pleased amused affectionate		987
+phase1.word.search.look__calm__contained	Look	reply	status	word	calm comfy lazy bored relieved tired exhausted		748
+phase1.word.search.look__engaged__contained	Look	reply	status	word	engaged		748
+phase1.word.search.look__determined__contained	Look	reply	status	word	determined hopeful		738
+phase1.word.search.look__annoyed__contained	Look	reply	status	word	annoyed uncomfortable disgusted		828
+phase1.word.search.look__irritated__contained	Look	reply	status	word	irritated		948
+phase1.word.search.look__grumpy__contained	Look	reply	status	word	grumpy angry		868
+phase1.word.search.look__whiny__contained	Look	reply	status	word	whiny		1227
+phase1.word.search.look__wounded__contained	Look	reply	status	word	wounded uneasy scared frightened embarrassed overwhelmed		908
+phase1.word.search.look__sad__contained	Look	reply	status	word	sad disappointed crying lonely		848
+phase1.word.search.look__happy__contained	Look	reply	status	word	happy pleased amused affectionate		778
+phase1.word.search.look__excited__contained	Look	reply	status	word	excited		838
+phase1.word.search.look__proud__contained	Look	reply	status	word	proud mischievous		1087
+phase1.word.search.look__curious__contained	Look	reply	status	word	curious shy surprised stunned speechless confused baffled skeptical		798
+phase1.word.search.peek__calm__contained	Peek	reply	status	word	calm comfy lazy bored relieved tired exhausted		718
+phase1.word.search.peek__engaged__contained	Peek	reply	status	word	engaged		718
+phase1.word.search.peek__determined__contained	Peek	reply	status	word	determined hopeful		668
+phase1.word.search.peek__annoyed__contained	Peek	reply	status	word	annoyed uncomfortable disgusted		858
+phase1.word.search.peek__irritated__contained	Peek	reply	status	word	irritated		908
+phase1.word.search.peek__grumpy__contained	Peek	reply	status	word	grumpy angry		848
+phase1.word.search.peek__whiny__contained	Peek	reply	status	word	whiny		1207
+phase1.word.search.peek__wounded__contained	Peek	reply	status	word	wounded uneasy scared frightened embarrassed overwhelmed		878
+phase1.word.search.peek__sad__contained	Peek	reply	status	word	sad disappointed crying lonely		868
+phase1.word.search.peek__happy__contained	Peek	reply	status	word	happy pleased amused affectionate		718
+phase1.word.search.peek__excited__contained	Peek	reply	status	word	excited		778
+phase1.word.search.peek__proud__contained	Peek	reply	status	word	proud mischievous		987
+phase1.word.search.peek__curious__contained	Peek	reply	status	word	curious shy surprised stunned speechless confused baffled skeptical		718
+phase1.word.celebrate.yay__calm__contained	Yay	reply	thanks	word	calm comfy lazy bored relieved tired exhausted		878
+phase1.word.celebrate.yay__calm__contained	Yay	reply	unhush	word	calm comfy lazy bored relieved tired exhausted		878
+phase1.word.celebrate.yay__engaged__contained	Yay	reply	thanks	word	engaged		898
+phase1.word.celebrate.yay__engaged__contained	Yay	reply	unhush	word	engaged		898
+phase1.word.celebrate.yay__determined__contained	Yay	reply	thanks	word	determined hopeful		818
+phase1.word.celebrate.yay__determined__contained	Yay	reply	unhush	word	determined hopeful		818
+phase1.word.celebrate.yay__happy__contained	Yay	reply	thanks	word	happy pleased amused affectionate		908
+phase1.word.celebrate.yay__happy__contained	Yay	reply	unhush	word	happy pleased amused affectionate		908
+phase1.word.celebrate.yay__excited__contained	Yay	reply	thanks	word	excited		1027
+phase1.word.celebrate.yay__excited__contained	Yay	reply	unhush	word	excited		1027
+phase1.word.celebrate.yay__proud__contained	Yay	reply	thanks	word	proud mischievous		1237
+phase1.word.celebrate.yay__proud__contained	Yay	reply	unhush	word	proud mischievous		1237
+phase1.word.celebrate.yay__curious__contained	Yay	reply	thanks	word	curious shy surprised stunned speechless confused baffled skeptical		798
+phase1.word.celebrate.yay__curious__contained	Yay	reply	unhush	word	curious shy surprised stunned speechless confused baffled skeptical		798
+phase1.word.celebrate.woohoo__calm__contained	Woohoo	reply	dance	word	calm comfy lazy bored relieved tired exhausted		1157
+phase1.word.celebrate.woohoo__engaged__contained	Woohoo	reply	dance	word	engaged		1067
+phase1.word.celebrate.woohoo__determined__contained	Woohoo	reply	dance	word	determined hopeful		1057
+phase1.word.celebrate.woohoo__happy__contained	Woohoo	reply	dance	word	happy pleased amused affectionate		1137
+phase1.word.celebrate.woohoo__excited__contained	Woohoo	reply	dance	word	excited		1177
+phase1.word.celebrate.woohoo__proud__contained	Woohoo	reply	dance	word	proud mischievous		1347
+phase1.word.celebrate.woohoo__curious__contained	Woohoo	reply	dance	word	curious shy surprised stunned speechless confused baffled skeptical		997
+phase1.word.celebrate.hooray__calm__contained	Hooray	reply	unhush	word	calm comfy lazy bored relieved tired exhausted		938
+phase1.word.celebrate.hooray__engaged__contained	Hooray	reply	unhush	word	engaged		928
+phase1.word.celebrate.hooray__determined__contained	Hooray	reply	unhush	word	determined hopeful		948
+phase1.word.celebrate.hooray__happy__contained	Hooray	reply	unhush	word	happy pleased amused affectionate		1137
+phase1.word.celebrate.hooray__excited__contained	Hooray	reply	unhush	word	excited		1157
+phase1.word.celebrate.hooray__proud__contained	Hooray	reply	unhush	word	proud mischievous		1277
+phase1.word.celebrate.hooray__curious__contained	Hooray	reply	unhush	word	curious shy surprised stunned speechless confused baffled skeptical		997
+phase1.word.celebrate.nice__calm__contained	Nice	reply	thanks	word	calm comfy lazy bored relieved tired exhausted		918
+phase1.word.celebrate.nice__engaged__contained	Nice	reply	thanks	word	engaged		1057
+phase1.word.celebrate.nice__determined__contained	Nice	reply	thanks	word	determined hopeful		967
+phase1.word.celebrate.nice__happy__contained	Nice	reply	thanks	word	happy pleased amused affectionate		728
+phase1.word.celebrate.nice__excited__contained	Nice	reply	thanks	word	excited		758
+phase1.word.celebrate.nice__proud__contained	Nice	reply	thanks	word	proud mischievous		1416
+phase1.word.celebrate.nice__curious__contained	Nice	reply	thanks	word	curious shy surprised stunned speechless confused baffled skeptical		838
+phase1.word.celebrate.sweet__calm__contained	Sweet	reply	thanks	word	calm comfy lazy bored relieved tired exhausted		938
+phase1.word.celebrate.sweet__engaged__contained	Sweet	reply	thanks	word	engaged		1047
+phase1.word.celebrate.sweet__determined__contained	Sweet	reply	thanks	word	determined hopeful		938
+phase1.word.celebrate.sweet__happy__contained	Sweet	reply	thanks	word	happy pleased amused affectionate		1027
+phase1.word.celebrate.sweet__excited__contained	Sweet	reply	thanks	word	excited		1027
+phase1.word.celebrate.sweet__proud__contained	Sweet	reply	thanks	word	proud mischievous		1307
+phase1.word.celebrate.sweet__curious__contained	Sweet	reply	thanks	word	curious shy surprised stunned speechless confused baffled skeptical		1057
+phase1.word.setback.ouch__calm__contained	Ouch	reply	ouch	word	calm comfy lazy bored relieved tired exhausted		928
+phase1.word.setback.ouch__engaged__contained	Ouch	reply	ouch	word	engaged		838
+phase1.word.setback.ouch__determined__contained	Ouch	reply	ouch	word	determined hopeful		818
+phase1.word.setback.ouch__annoyed__contained	Ouch	reply	ouch	word	annoyed uncomfortable disgusted		898
+phase1.word.setback.ouch__irritated__contained	Ouch	reply	ouch	word	irritated		908
+phase1.word.setback.ouch__grumpy__contained	Ouch	reply	ouch	word	grumpy angry		898
+phase1.word.setback.ouch__whiny__contained	Ouch	reply	ouch	word	whiny		1377
+phase1.word.setback.ouch__wounded__contained	Ouch	reply	ouch	word	wounded uneasy scared frightened embarrassed overwhelmed		967
+phase1.word.setback.ouch__sad__contained	Ouch	reply	ouch	word	sad disappointed crying lonely		1047
+phase1.word.setback.ouch__happy__contained	Ouch	reply	ouch	word	happy pleased amused affectionate		868
+phase1.word.setback.ouch__excited__contained	Ouch	reply	ouch	word	excited		908
+phase1.word.setback.ouch__proud__contained	Ouch	reply	ouch	word	proud mischievous		958
+phase1.word.setback.ouch__curious__contained	Ouch	reply	ouch	word	curious shy surprised stunned speechless confused baffled skeptical		848
+phase1.word.attention.hello__engaged__contained	Hello	reply	hello	word	engaged		698
+phase1.word.attention.hello__determined__contained	Hello	reply	hello	word	determined hopeful		738
+phase1.word.attention.hello__annoyed__contained	Hello	reply	hello	word	annoyed uncomfortable disgusted		928
+phase1.word.attention.hello__irritated__contained	Hello	reply	hello	word	irritated		1037
+phase1.word.attention.hello__grumpy__contained	Hello	reply	hello	word	grumpy angry		1037
+phase1.word.attention.hello__whiny__contained	Hello	reply	hello	word	whiny		1267
+phase1.word.attention.hello__sad__contained	Hello	reply	hello	word	sad disappointed crying lonely		908
+phase1.word.attention.hello__happy__contained	Hello	reply	hello	word	happy pleased amused affectionate		748
+phase1.word.attention.hello__excited__contained	Hello	reply	hello	word	excited		788
+phase1.word.attention.hello__proud__contained	Hello	reply	hello	word	proud mischievous		1067
+phase1.word.attention.hey__calm__contained	Hey	reply	hello	word	calm comfy lazy bored relieved tired exhausted		718
+phase1.word.attention.hey__engaged__contained	Hey	reply	hello	word	engaged		818
+phase1.word.attention.hey__determined__contained	Hey	reply	hello	word	determined hopeful		678
+phase1.word.attention.hey__annoyed__contained	Hey	reply	hello	word	annoyed uncomfortable disgusted		898
+phase1.word.attention.hey__irritated__contained	Hey	reply	hello	word	irritated		928
+phase1.word.attention.hey__grumpy__contained	Hey	reply	hello	word	grumpy angry		918
+phase1.word.attention.hey__whiny__contained	Hey	reply	hello	word	whiny		1137
+phase1.word.attention.hey__wounded__contained	Hey	reply	hello	word	wounded uneasy scared frightened embarrassed overwhelmed		948
+phase1.word.attention.hey__sad__contained	Hey	reply	hello	word	sad disappointed crying lonely		818
+phase1.word.attention.hey__happy__contained	Hey	reply	hello	word	happy pleased amused affectionate		758
+phase1.word.attention.hey__excited__contained	Hey	reply	hello	word	excited		818
+phase1.word.attention.hey__proud__contained	Hey	reply	hello	word	proud mischievous		1077
+phase1.word.attention.hey__curious__contained	Hey	reply	hello	word	curious shy surprised stunned speechless confused baffled skeptical		628
+phase1.word.poke.boop__calm__contained	Boop	reply	love	word	calm comfy lazy bored relieved tired exhausted		568
+phase1.word.poke.boop__engaged__contained	Boop	reply	love	word	engaged		509
+phase1.word.poke.boop__determined__contained	Boop	reply	love	word	determined hopeful		598
+phase1.word.poke.boop__annoyed__contained	Boop	reply	love	word	annoyed uncomfortable disgusted		618
+phase1.word.poke.boop__irritated__contained	Boop	reply	love	word	irritated		818
+phase1.word.poke.boop__grumpy__contained	Boop	reply	love	word	grumpy angry		778
+phase1.word.poke.boop__whiny__contained	Boop	reply	love	word	whiny		1187
+phase1.word.poke.boop__wounded__contained	Boop	reply	love	word	wounded uneasy scared frightened embarrassed overwhelmed		848
+phase1.word.poke.boop__sad__contained	Boop	reply	love	word	sad disappointed crying lonely		808
+phase1.word.poke.boop__happy__contained	Boop	reply	love	word	happy pleased amused affectionate		728
+phase1.word.poke.boop__excited__contained	Boop	reply	love	word	excited		708
+phase1.word.poke.boop__proud__contained	Boop	reply	love	word	proud mischievous		878
+phase1.word.poke.boop__curious__contained	Boop	reply	love	word	curious shy surprised stunned speechless confused baffled skeptical		558
+phase1.word.poke.hi__calm__contained	Hi	reply	hello	word	calm comfy lazy bored relieved tired exhausted		668
+phase1.word.poke.hi__engaged__contained	Hi	reply	hello	word	engaged		728
+phase1.word.poke.hi__determined__contained	Hi	reply	hello	word	determined hopeful		698
+phase1.word.poke.hi__annoyed__contained	Hi	reply	hello	word	annoyed uncomfortable disgusted		818
+phase1.word.poke.hi__irritated__contained	Hi	reply	hello	word	irritated		928
+phase1.word.poke.hi__grumpy__contained	Hi	reply	hello	word	grumpy angry		938
+phase1.word.poke.hi__whiny__contained	Hi	reply	hello	word	whiny		1247
+phase1.word.poke.hi__wounded__contained	Hi	reply	hello	word	wounded uneasy scared frightened embarrassed overwhelmed		878
+phase1.word.poke.hi__sad__contained	Hi	reply	hello	word	sad disappointed crying lonely		698
+phase1.word.poke.hi__happy__contained	Hi	reply	hello	word	happy pleased amused affectionate		658
+phase1.word.poke.hi__excited__contained	Hi	reply	hello	word	excited		768
+phase1.word.poke.hi__proud__contained	Hi	reply	hello	word	proud mischievous		1007
+phase1.word.poke.hi__curious__contained	Hi	reply	hello	word	curious shy surprised stunned speechless confused baffled skeptical		658
+phase1.word.poke.howdy__calm__contained	Howdy	reply	hello	word	calm comfy lazy bored relieved tired exhausted		658
+phase1.word.poke.howdy__engaged__contained	Howdy	reply	hello	word	engaged		828
+phase1.word.poke.howdy__determined__contained	Howdy	reply	hello	word	determined hopeful		658
+phase1.word.poke.howdy__annoyed__contained	Howdy	reply	hello	word	annoyed uncomfortable disgusted		908
+phase1.word.poke.howdy__irritated__contained	Howdy	reply	hello	word	irritated		1087
+phase1.word.poke.howdy__grumpy__contained	Howdy	reply	hello	word	grumpy angry		1117
+phase1.word.poke.howdy__whiny__contained	Howdy	reply	hello	word	whiny		1327
+phase1.word.poke.howdy__wounded__contained	Howdy	reply	hello	word	wounded uneasy scared frightened embarrassed overwhelmed		977
+phase1.word.poke.howdy__sad__contained	Howdy	reply	hello	word	sad disappointed crying lonely		868
+phase1.word.poke.howdy__happy__contained	Howdy	reply	hello	word	happy pleased amused affectionate		718
+phase1.word.poke.howdy__excited__contained	Howdy	reply	hello	word	excited		768
+phase1.word.poke.howdy__proud__contained	Howdy	reply	hello	word	proud mischievous		1037
+phase1.word.poke.howdy__curious__contained	Howdy	reply	hello	word	curious shy surprised stunned speechless confused baffled skeptical		668
+phase1.word.poke.tickles__calm__contained	Tickles	reply	hehe	word	calm comfy lazy bored relieved tired exhausted		918
+phase1.word.poke.tickles__engaged__contained	Tickles	reply	hehe	word	engaged		918
+phase1.word.poke.tickles__determined__contained	Tickles	reply	hehe	word	determined hopeful		948
+phase1.word.poke.tickles__annoyed__contained	Tickles	reply	hehe	word	annoyed uncomfortable disgusted		1047
+phase1.word.poke.tickles__irritated__contained	Tickles	reply	hehe	word	irritated		1057
+phase1.word.poke.tickles__grumpy__contained	Tickles	reply	hehe	word	grumpy angry		1027
+phase1.word.poke.tickles__whiny__contained	Tickles	reply	hehe	word	whiny		1317
+phase1.word.poke.tickles__wounded__contained	Tickles	reply	hehe	word	wounded uneasy scared frightened embarrassed overwhelmed		1037
+phase1.word.poke.tickles__sad__contained	Tickles	reply	hehe	word	sad disappointed crying lonely		1017
+phase1.word.poke.tickles__happy__contained	Tickles	reply	hehe	word	happy pleased amused affectionate		858
+phase1.word.poke.tickles__excited__contained	Tickles	reply	hehe	word	excited		967
+phase1.word.poke.tickles__proud__contained	Tickles	reply	hehe	word	proud mischievous		1167
+phase1.word.poke.tickles__curious__contained	Tickles	reply	hehe	word	curious shy surprised stunned speechless confused baffled skeptical		938
+phase1.word.poke.yep__calm__contained	Yep	reply	yes	word	calm comfy lazy bored relieved tired exhausted		668
+phase1.word.poke.yep__engaged__contained	Yep	reply	yes	word	engaged		678
+phase1.word.poke.yep__determined__contained	Yep	reply	yes	word	determined hopeful		658
+phase1.word.poke.yep__annoyed__contained	Yep	reply	yes	word	annoyed uncomfortable disgusted		778
+phase1.word.poke.yep__irritated__contained	Yep	reply	yes	word	irritated		738
+phase1.word.poke.yep__grumpy__contained	Yep	reply	yes	word	grumpy angry		778
+phase1.word.poke.yep__whiny__contained	Yep	reply	yes	word	whiny		1227
+phase1.word.poke.yep__wounded__contained	Yep	reply	yes	word	wounded uneasy scared frightened embarrassed overwhelmed		828
+phase1.word.poke.yep__sad__contained	Yep	reply	yes	word	sad disappointed crying lonely		798
+phase1.word.poke.yep__happy__contained	Yep	reply	yes	word	happy pleased amused affectionate		678
+phase1.word.poke.yep__excited__contained	Yep	reply	yes	word	excited		698
+phase1.word.poke.yep__proud__contained	Yep	reply	yes	word	proud mischievous		1905
+phase1.word.poke.yep__curious__contained	Yep	reply	yes	word	curious shy surprised stunned speechless confused baffled skeptical		628
+phase1.word.idle.comfy__calm__contained	Comfy	reply	nap	word	calm comfy lazy bored relieved tired exhausted		987
+phase1.word.idle.comfy__engaged__contained	Comfy	reply	nap	word	engaged		977
+phase1.word.idle.comfy__determined__contained	Comfy	reply	nap	word	determined hopeful		828
+phase1.word.idle.comfy__annoyed__contained	Comfy	reply	nap	word	annoyed uncomfortable disgusted		1057
+phase1.word.idle.comfy__irritated__contained	Comfy	reply	nap	word	irritated		1077
+phase1.word.idle.comfy__grumpy__contained	Comfy	reply	nap	word	grumpy angry		1077
+phase1.word.idle.comfy__whiny__contained	Comfy	reply	nap	word	whiny		1466
+phase1.word.idle.comfy__wounded__contained	Comfy	reply	nap	word	wounded uneasy scared frightened embarrassed overwhelmed		1157
+phase1.word.idle.comfy__sad__contained	Comfy	reply	nap	word	sad disappointed crying lonely		967
+phase1.word.idle.comfy__happy__contained	Comfy	reply	nap	word	happy pleased amused affectionate		928
+phase1.word.idle.comfy__excited__contained	Comfy	reply	nap	word	excited		997
+phase1.word.idle.comfy__proud__contained	Comfy	reply	nap	word	proud mischievous		1107
+phase1.word.idle.comfy__curious__contained	Comfy	reply	nap	word	curious shy surprised stunned speechless confused baffled skeptical		878
+phase1.word.idle.cozy__calm__contained	Cozy	reply	nap	word	calm comfy lazy bored relieved tired exhausted		888
+phase1.word.idle.cozy__engaged__contained	Cozy	reply	nap	word	engaged		888
+phase1.word.idle.cozy__determined__contained	Cozy	reply	nap	word	determined hopeful		868
+phase1.word.idle.cozy__annoyed__contained	Cozy	reply	nap	word	annoyed uncomfortable disgusted		1017
+phase1.word.idle.cozy__irritated__contained	Cozy	reply	nap	word	irritated		1077
+phase1.word.idle.cozy__grumpy__contained	Cozy	reply	nap	word	grumpy angry		1037
+phase1.word.idle.cozy__whiny__contained	Cozy	reply	nap	word	whiny		1446
+phase1.word.idle.cozy__wounded__contained	Cozy	reply	nap	word	wounded uneasy scared frightened embarrassed overwhelmed		997
+phase1.word.idle.cozy__sad__contained	Cozy	reply	nap	word	sad disappointed crying lonely		1007
+phase1.word.idle.cozy__happy__contained	Cozy	reply	nap	word	happy pleased amused affectionate		928
+phase1.word.idle.cozy__excited__contained	Cozy	reply	nap	word	excited		977
+phase1.word.idle.cozy__proud__contained	Cozy	reply	nap	word	proud mischievous		1406
+phase1.word.idle.cozy__curious__contained	Cozy	reply	nap	word	curious shy surprised stunned speechless confused baffled skeptical		868
+phase1.word.idle.quiet__calm__contained	Quiet	reply	hush	word	calm comfy lazy bored relieved tired exhausted		958
+phase1.word.idle.quiet__engaged__contained	Quiet	reply	hush	word	engaged		967
+phase1.word.idle.quiet__determined__contained	Quiet	reply	hush	word	determined hopeful		878
+phase1.word.idle.quiet__annoyed__contained	Quiet	reply	hush	word	annoyed uncomfortable disgusted		997
+phase1.word.idle.quiet__irritated__contained	Quiet	reply	hush	word	irritated		958
+phase1.word.idle.quiet__grumpy__contained	Quiet	reply	hush	word	grumpy angry		977
+phase1.word.idle.quiet__whiny__contained	Quiet	reply	hush	word	whiny		1466
+phase1.word.idle.quiet__wounded__contained	Quiet	reply	hush	word	wounded uneasy scared frightened embarrassed overwhelmed		1017
+phase1.word.idle.quiet__sad__contained	Quiet	reply	hush	word	sad disappointed crying lonely		1037
+phase1.word.idle.quiet__happy__contained	Quiet	reply	hush	word	happy pleased amused affectionate		1027
+phase1.word.idle.quiet__excited__contained	Quiet	reply	hush	word	excited		928
+phase1.word.idle.quiet__proud__contained	Quiet	reply	hush	word	proud mischievous		1257
+phase1.word.idle.quiet__curious__contained	Quiet	reply	hush	word	curious shy surprised stunned speechless confused baffled skeptical		977
+phase1.word.idle.mellow__calm__contained	Mellow	reply	nap	word	calm comfy lazy bored relieved tired exhausted		828
+phase1.word.idle.mellow__engaged__contained	Mellow	reply	nap	word	engaged		977
+phase1.word.idle.mellow__determined__contained	Mellow	reply	nap	word	determined hopeful		908
+phase1.word.idle.mellow__annoyed__contained	Mellow	reply	nap	word	annoyed uncomfortable disgusted		1037
+phase1.word.idle.mellow__irritated__contained	Mellow	reply	nap	word	irritated		1157
+phase1.word.idle.mellow__grumpy__contained	Mellow	reply	nap	word	grumpy angry		1077
+phase1.word.idle.mellow__whiny__contained	Mellow	reply	nap	word	whiny		1426
+phase1.word.idle.mellow__wounded__contained	Mellow	reply	nap	word	wounded uneasy scared frightened embarrassed overwhelmed		1107
+phase1.word.idle.mellow__sad__contained	Mellow	reply	nap	word	sad disappointed crying lonely		938
+phase1.word.idle.mellow__happy__contained	Mellow	reply	nap	word	happy pleased amused affectionate		1007
+phase1.word.idle.mellow__excited__contained	Mellow	reply	nap	word	excited		1107
+phase1.word.idle.mellow__proud__contained	Mellow	reply	nap	word	proud mischievous		1387
+phase1.word.idle.mellow__curious__contained	Mellow	reply	nap	word	curious shy surprised stunned speechless confused baffled skeptical		878
+phase1.word.idle.hullo__calm__contained	Hullo	reply	hello	word	calm comfy lazy bored relieved tired exhausted		708
+phase1.word.idle.hullo__engaged__contained	Hullo	reply	hello	word	engaged		758
+phase1.word.idle.hullo__determined__contained	Hullo	reply	hello	word	determined hopeful		728
+phase1.word.idle.hullo__annoyed__contained	Hullo	reply	hello	word	annoyed uncomfortable disgusted		948
+phase1.word.idle.hullo__irritated__contained	Hullo	reply	hello	word	irritated		1147
+phase1.word.idle.hullo__grumpy__contained	Hullo	reply	hello	word	grumpy angry		1157
+phase1.word.idle.hullo__whiny__contained	Hullo	reply	hello	word	whiny		1377
+phase1.word.idle.hullo__wounded__contained	Hullo	reply	hello	word	wounded uneasy scared frightened embarrassed overwhelmed		1007
+phase1.word.idle.hullo__sad__contained	Hullo	reply	hello	word	sad disappointed crying lonely		928
+phase1.word.idle.hullo__happy__contained	Hullo	reply	hello	word	happy pleased amused affectionate		758
+phase1.word.idle.hullo__excited__contained	Hullo	reply	hello	word	excited		828
+phase1.word.idle.hullo__proud__contained	Hullo	reply	hello	word	proud mischievous		1217
+phase1.word.idle.hullo__curious__contained	Hullo	reply	hello	word	curious shy surprised stunned speechless confused baffled skeptical		738
+phase1.word.idle.peace__calm__contained	Peace	reply	bye	word	calm comfy lazy bored relieved tired exhausted		878
+phase1.word.idle.peace__engaged__contained	Peace	reply	bye	word	engaged		948
+phase1.word.idle.peace__determined__contained	Peace	reply	bye	word	determined hopeful		778
+phase1.word.idle.peace__annoyed__contained	Peace	reply	bye	word	annoyed uncomfortable disgusted		958
+phase1.word.idle.peace__irritated__contained	Peace	reply	bye	word	irritated		977
+phase1.word.idle.peace__grumpy__contained	Peace	reply	bye	word	grumpy angry		948
+phase1.word.idle.peace__whiny__contained	Peace	reply	bye	word	whiny		1287
+phase1.word.idle.peace__wounded__contained	Peace	reply	bye	word	wounded uneasy scared frightened embarrassed overwhelmed		958
+phase1.word.idle.peace__sad__contained	Peace	reply	bye	word	sad disappointed crying lonely		918
+phase1.word.idle.peace__happy__contained	Peace	reply	bye	word	happy pleased amused affectionate		898
+phase1.word.idle.peace__excited__contained	Peace	reply	bye	word	excited		768
+phase1.word.idle.peace__proud__contained	Peace	reply	bye	word	proud mischievous		1197
+phase1.word.idle.peace__curious__contained	Peace	reply	bye	word	curious shy surprised stunned speechless confused baffled skeptical		908
+phase1.phrase.plan.hmm-perhaps__curious__contained	Hmm, perhaps	reply	dunno	phrase	curious shy surprised stunned speechless confused baffled skeptical		1536
+phase1.phrase.analyze.what-what__curious__contained	What, what?	reply	huh	phrase	curious shy surprised stunned speechless confused baffled skeptical		1167
+phase1.phrase.analyze.let-me-see__curious__contained	Let me see	reply	status	phrase	curious shy surprised stunned speechless confused baffled skeptical		1536
+phase1.phrase.analyze.looky-look__curious__contained	Looky look	reply	status	phrase	curious shy surprised stunned speechless confused baffled skeptical		1207
+phase1.phrase.analyze.brain-loading__curious__contained	Brain loading	reply	huh	phrase	curious shy surprised stunned speechless confused baffled skeptical		1077
+phase1.phrase.test.here-we-go__determined__contained	Here we go	reply	dance	phrase	determined hopeful		1187
+phase1.phrase.success.we-did-it__happy__contained	We did it	reply	thanks	phrase	happy pleased amused affectionate		1297
+phase1.phrase.success.got-it__happy__contained	Got it	reply	yes	phrase	happy pleased amused affectionate		908
+phase1.phrase.success.nice-one__happy__contained	Nice one	reply	thanks	phrase	happy pleased amused affectionate		1117
+phase1.phrase.success.good-stuff__happy__contained	Good stuff	reply	thanks	phrase	happy pleased amused affectionate		1097
+phase1.phrase.celebrate.boom-shakalaka__excited__contained	Boom shakalaka	reply	dance	phrase	excited		1736
+phase1.phrase.celebrate.oh-yeah__excited__contained	Oh yeah	reply	dance	phrase	excited		1247
+phase1.phrase.celebrate.happy-circuits__excited__contained	Happy circuits	reply	love	phrase	excited		1317
+phase1.phrase.pride.no-biggie__proud__contained	No biggie	reply	thanks	phrase	proud mischievous		1257
+phase1.phrase.pride.naturally-naturally__proud__contained	Naturally, naturally	reply	yes	phrase	proud mischievous		2614
+phase1.phrase.pride.heh-obviously__proud__contained	Heh, obviously	reply	thanks	phrase	proud mischievous		1865
+phase1.phrase.setback.oh-dear__sad__contained	Oh dear	reply	comfort	phrase	sad disappointed crying lonely		1287
+phase1.phrase.setback.not-quite__sad__contained	Not quite	reply	no	phrase	sad disappointed crying lonely		1247
+phase1.phrase.frustration.why-though__whiny__contained	Why though	reply	ouch	phrase	whiny		1586
+phase1.phrase.attention.hello-hello__curious__contained	Hello hello	reply	hello	phrase	curious shy surprised stunned speechless confused baffled skeptical		1177
+phase1.phrase.return.tiny-report__proud__contained	Tiny report	reply	status	phrase	proud mischievous		1656
+phase1.phrase.return.at-your-service__proud__contained	At your service	reply	yes	phrase	proud mischievous		1436
+phase1.phrase.return.mission-update__proud__contained	Mission update	reply	status	phrase	proud mischievous		1696
+phase1.phrase.poke.boop-back__happy__contained	Boop back	reply	love	phrase	happy pleased amused affectionate		1087
+phase1.phrase.poke.oh-hello__curious__contained	Oh, hello	reply	hello	phrase	curious shy surprised stunned speechless confused baffled skeptical		1377
+phase1.phrase.poke.easy-there__calm__contained	Easy there	reply	no	phrase	calm comfy lazy bored relieved tired exhausted		1197
+phase1.phrase.poke.personal-space__annoyed__contained	Personal space	reply	no	phrase	annoyed uncomfortable disgusted		1436
+phase1.phrase.poke.you-rang__happy__contained	You rang?	reply	hello	phrase	happy pleased amused affectionate		997
+phase1.phrase.poke.hey-hey__happy__contained	Hey hey	reply	hello	phrase	happy pleased amused affectionate		948
+phase1.phrase.reply.here-you-go__happy__contained	Here you go	reply	status	phrase	happy pleased amused affectionate		987
+phase1.nonverbal.ponder.hm__curious__contained	Hm?	reply	dunno	sound	curious shy surprised stunned speechless confused baffled skeptical		519
+phase1.nonverbal.ponder.hm__engaged__contained	Hm?	reply	dunno	sound	engaged		608
+phase1.nonverbal.ponder.hm__calm__contained	Hm?	reply	dunno	sound	calm comfy lazy bored relieved tired exhausted		548
+phase1.nonverbal.ponder.hm__determined__contained	Hm?	reply	dunno	sound	determined hopeful		638
+phase1.nonverbal.ponder.hmm__curious__contained	Hmm...	reply	dunno	sound	curious shy surprised stunned speechless confused baffled skeptical		678
+phase1.nonverbal.ponder.hmm__engaged__contained	Hmm...	reply	dunno	sound	engaged		878
+phase1.nonverbal.ponder.hmm__calm__contained	Hmm...	reply	dunno	sound	calm comfy lazy bored relieved tired exhausted		678
+phase1.nonverbal.ponder.hmm__determined__contained	Hmm...	reply	dunno	sound	determined hopeful		858
+phase1.nonverbal.ponder.uh__curious__contained	Uh?	reply	huh	sound	curious shy surprised stunned speechless confused baffled skeptical		509
+phase1.nonverbal.ponder.uh__engaged__contained	Uh?	reply	huh	sound	engaged		618
+phase1.nonverbal.ponder.uh__calm__contained	Uh?	reply	huh	sound	calm comfy lazy bored relieved tired exhausted		538
+phase1.nonverbal.ponder.uh__determined__contained	Uh?	reply	huh	sound	determined hopeful		588
+phase1.nonverbal.ponder.eh__curious__contained	Eh?	reply	huh	sound	curious shy surprised stunned speechless confused baffled skeptical		578
+phase1.nonverbal.ponder.eh__engaged__contained	Eh?	reply	huh	sound	engaged		658
+phase1.nonverbal.ponder.eh__calm__contained	Eh?	reply	huh	sound	calm comfy lazy bored relieved tired exhausted		519
+phase1.nonverbal.ponder.eh__determined__contained	Eh?	reply	huh	sound	determined hopeful		638
+phase1.nonverbal.ponder.huh__curious__contained	Huh?	reply	huh	sound	curious shy surprised stunned speechless confused baffled skeptical		608
+phase1.nonverbal.ponder.huh__engaged__contained	Huh?	reply	huh	sound	engaged		688
+phase1.nonverbal.ponder.huh__calm__contained	Huh?	reply	huh	sound	calm comfy lazy bored relieved tired exhausted		558
+phase1.nonverbal.ponder.huh__determined__contained	Huh?	reply	huh	sound	determined hopeful		618
+phase1.nonverbal.frustration.pfft__annoyed__contained	Pfft	reply	no	sound	annoyed uncomfortable disgusted		658
+phase1.nonverbal.frustration.pfft__irritated__contained	Pfft	reply	no	sound	irritated		519
+phase1.nonverbal.frustration.pfft__grumpy__contained	Pfft	reply	no	sound	grumpy angry		598
+phase1.nonverbal.frustration.pfft__whiny__contained	Pfft	reply	no	sound	whiny		928
+phase1.nonverbal.frustration.pfft__wounded__contained	Pfft	reply	no	sound	wounded uneasy scared frightened embarrassed overwhelmed		1297
+phase1.nonverbal.frustration.pfft__sad__contained	Pfft	reply	no	sound	sad disappointed crying lonely		808
+phase1.nonverbal.frustration.tsk__annoyed__contained	Tsk...	reply	no	sound	annoyed uncomfortable disgusted		548
+phase1.nonverbal.frustration.tsk__irritated__contained	Tsk...	reply	no	sound	irritated		509
+phase1.nonverbal.frustration.tsk__grumpy__contained	Tsk...	reply	no	sound	grumpy angry		558
+phase1.nonverbal.frustration.tsk__whiny__contained	Tsk...	reply	no	sound	whiny		828
+phase1.nonverbal.frustration.tsk__wounded__contained	Tsk...	reply	no	sound	wounded uneasy scared frightened embarrassed overwhelmed		618
+phase1.nonverbal.frustration.tsk__sad__contained	Tsk...	reply	no	sound	sad disappointed crying lonely		628
+phase1.nonverbal.frustration.hmph__annoyed__contained	Hmph	reply	no	sound	annoyed uncomfortable disgusted		1486
+phase1.nonverbal.frustration.hmph__annoyed__contained	Hmph	reply	hush	sound	annoyed uncomfortable disgusted		1486
+phase1.nonverbal.frustration.hmph__irritated__contained	Hmph	reply	no	sound	irritated		568
+phase1.nonverbal.frustration.hmph__irritated__contained	Hmph	reply	hush	sound	irritated		568
+phase1.nonverbal.frustration.hmph__grumpy__contained	Hmph	reply	no	sound	grumpy angry		668
+phase1.nonverbal.frustration.hmph__grumpy__contained	Hmph	reply	hush	sound	grumpy angry		668
+phase1.nonverbal.frustration.hmph__whiny__contained	Hmph	reply	no	sound	whiny		1007
+phase1.nonverbal.frustration.hmph__whiny__contained	Hmph	reply	hush	sound	whiny		1007
+phase1.nonverbal.frustration.hmph__wounded__contained	Hmph	reply	no	sound	wounded uneasy scared frightened embarrassed overwhelmed		728
+phase1.nonverbal.frustration.hmph__wounded__contained	Hmph	reply	hush	sound	wounded uneasy scared frightened embarrassed overwhelmed		728
+phase1.nonverbal.frustration.hmph__sad__contained	Hmph	reply	no	sound	sad disappointed crying lonely		469
+phase1.nonverbal.frustration.hmph__sad__contained	Hmph	reply	hush	sound	sad disappointed crying lonely		469
+phase1.nonverbal.relief.phew__calm__contained	Phew...	reply	unhush	sound	calm comfy lazy bored relieved tired exhausted		1017
+phase1.nonverbal.relief.phew__engaged__contained	Phew...	reply	unhush	sound	engaged		888
+phase1.nonverbal.relief.phew__determined__contained	Phew...	reply	unhush	sound	determined hopeful		928
+phase1.nonverbal.relief.phew__annoyed__contained	Phew...	reply	unhush	sound	annoyed uncomfortable disgusted		958
+phase1.nonverbal.relief.phew__irritated__contained	Phew...	reply	unhush	sound	irritated		948
+phase1.nonverbal.relief.phew__grumpy__contained	Phew...	reply	unhush	sound	grumpy angry		1057
+phase1.nonverbal.relief.phew__whiny__contained	Phew...	reply	unhush	sound	whiny		1237
+phase1.nonverbal.relief.phew__wounded__contained	Phew...	reply	unhush	sound	wounded uneasy scared frightened embarrassed overwhelmed		1057
+phase1.nonverbal.relief.phew__sad__contained	Phew...	reply	unhush	sound	sad disappointed crying lonely		1057
+phase1.nonverbal.relief.phew__excited__contained	Phew...	reply	unhush	sound	excited		928
+phase1.nonverbal.relief.phew__proud__contained	Phew...	reply	unhush	sound	proud mischievous		1117
+phase1.nonverbal.relief.phew__curious__contained	Phew...	reply	unhush	sound	curious shy surprised stunned speechless confused baffled skeptical		1017
+phase1.nonverbal.relief.ahh__calm__contained	Ahh...	reply	unhush	sound	calm comfy lazy bored relieved tired exhausted		868
+phase1.nonverbal.relief.ahh__engaged__contained	Ahh...	reply	unhush	sound	engaged		898
+phase1.nonverbal.relief.ahh__determined__contained	Ahh...	reply	unhush	sound	determined hopeful		848
+phase1.nonverbal.relief.ahh__annoyed__contained	Ahh...	reply	unhush	sound	annoyed uncomfortable disgusted		948
+phase1.nonverbal.relief.ahh__irritated__contained	Ahh...	reply	unhush	sound	irritated		918
+phase1.nonverbal.relief.ahh__grumpy__contained	Ahh...	reply	unhush	sound	grumpy angry		1057
+phase1.nonverbal.relief.ahh__whiny__contained	Ahh...	reply	unhush	sound	whiny		1127
+phase1.nonverbal.relief.ahh__wounded__contained	Ahh...	reply	unhush	sound	wounded uneasy scared frightened embarrassed overwhelmed		997
+phase1.nonverbal.relief.ahh__sad__contained	Ahh...	reply	unhush	sound	sad disappointed crying lonely		868
+phase1.nonverbal.relief.ahh__happy__contained	Ahh...	reply	unhush	sound	happy pleased amused affectionate		918
+phase1.nonverbal.relief.ahh__excited__contained	Ahh...	reply	unhush	sound	excited		1007
+phase1.nonverbal.relief.ahh__proud__contained	Ahh...	reply	unhush	sound	proud mischievous		1257
+phase1.nonverbal.relief.ahh__curious__contained	Ahh...	reply	unhush	sound	curious shy surprised stunned speechless confused baffled skeptical		958
+phase1.nonverbal.delight.heh__calm__contained	Heh...	reply	hehe	sound	calm comfy lazy bored relieved tired exhausted		538
+phase1.nonverbal.delight.heh__engaged__contained	Heh...	reply	hehe	sound	engaged		628
+phase1.nonverbal.delight.heh__determined__contained	Heh...	reply	hehe	sound	determined hopeful		578
+phase1.nonverbal.delight.heh__happy__contained	Heh...	reply	hehe	sound	happy pleased amused affectionate		638
+phase1.nonverbal.delight.heh__excited__contained	Heh...	reply	hehe	sound	excited		608
+phase1.nonverbal.delight.heh__proud__contained	Heh...	reply	hehe	sound	proud mischievous		1416
+phase1.nonverbal.delight.heh__curious__contained	Heh...	reply	hehe	sound	curious shy surprised stunned speechless confused baffled skeptical		718
+phase1.nonverbal.delight.hehehe__calm__contained	Hehehe...	reply	hehe	sound	calm comfy lazy bored relieved tired exhausted		1087
+phase1.nonverbal.delight.hehehe__engaged__contained	Hehehe...	reply	hehe	sound	engaged		1257
+phase1.nonverbal.delight.hehehe__determined__contained	Hehehe...	reply	hehe	sound	determined hopeful		1137
+phase1.nonverbal.delight.hehehe__happy__contained	Hehehe...	reply	hehe	sound	happy pleased amused affectionate		1067
+phase1.nonverbal.delight.hehehe__excited__contained	Hehehe...	reply	hehe	sound	excited		1157
+phase1.nonverbal.delight.hehehe__proud__contained	Hehehe...	reply	hehe	sound	proud mischievous		1456
+phase1.nonverbal.delight.hehehe__curious__contained	Hehehe...	reply	hehe	sound	curious shy surprised stunned speechless confused baffled skeptical		938
+phase1.nonverbal.delight.whee__calm__contained	Whee!	reply	dance	sound	calm comfy lazy bored relieved tired exhausted		1027
+phase1.nonverbal.delight.whee__engaged__contained	Whee!	reply	dance	sound	engaged		1157
+phase1.nonverbal.delight.whee__determined__contained	Whee!	reply	dance	sound	determined hopeful		1057
+phase1.nonverbal.delight.whee__happy__contained	Whee!	reply	dance	sound	happy pleased amused affectionate		1067
+phase1.nonverbal.delight.whee__excited__contained	Whee!	reply	dance	sound	excited		1147
+phase1.nonverbal.delight.whee__proud__contained	Whee!	reply	dance	sound	proud mischievous		1267
+phase1.nonverbal.delight.whee__curious__contained	Whee!	reply	dance	sound	curious shy surprised stunned speechless confused baffled skeptical		987
+phase1.nonverbal.delight.ha__calm__contained	Ha!	reply	hehe	sound	calm comfy lazy bored relieved tired exhausted		618
+phase1.nonverbal.delight.ha__engaged__contained	Ha!	reply	hehe	sound	engaged		558
+phase1.nonverbal.delight.ha__determined__contained	Ha!	reply	hehe	sound	determined hopeful		598
+phase1.nonverbal.delight.ha__happy__contained	Ha!	reply	hehe	sound	happy pleased amused affectionate		698
+phase1.nonverbal.delight.ha__excited__contained	Ha!	reply	hehe	sound	excited		708
+phase1.nonverbal.delight.ha__proud__contained	Ha!	reply	hehe	sound	proud mischievous		658
+phase1.nonverbal.delight.ha__curious__contained	Ha!	reply	hehe	sound	curious shy surprised stunned speechless confused baffled skeptical		882
+phase1.nonverbal.delight.mm-hm__calm__contained	Mm-hm	reply	yes	sound	calm comfy lazy bored relieved tired exhausted		878
+phase1.nonverbal.delight.mm-hm__engaged__contained	Mm-hm	reply	yes	sound	engaged		987
+phase1.nonverbal.delight.mm-hm__determined__contained	Mm-hm	reply	yes	sound	determined hopeful		958
+phase1.nonverbal.delight.mm-hm__happy__contained	Mm-hm	reply	yes	sound	happy pleased amused affectionate		938
+phase1.nonverbal.delight.mm-hm__excited__contained	Mm-hm	reply	yes	sound	excited		1067
+phase1.nonverbal.delight.mm-hm__proud__contained	Mm-hm	reply	yes	sound	proud mischievous		1377
+phase1.nonverbal.delight.mm-hm__curious__contained	Mm-hm	reply	yes	sound	curious shy surprised stunned speechless confused baffled skeptical		1037
+phase1.nonverbal.delight.eep__calm__contained	Eep!	reply	love	sound	calm comfy lazy bored relieved tired exhausted		778
+phase1.nonverbal.delight.eep__engaged__contained	Eep!	reply	love	sound	engaged		708
+phase1.nonverbal.delight.eep__determined__contained	Eep!	reply	love	sound	determined hopeful		658
+phase1.nonverbal.delight.eep__happy__contained	Eep!	reply	love	sound	happy pleased amused affectionate		718
+phase1.nonverbal.delight.eep__excited__contained	Eep!	reply	love	sound	excited		718
+phase1.nonverbal.delight.eep__proud__contained	Eep!	reply	love	sound	proud mischievous		858
+phase1.nonverbal.delight.eep__curious__contained	Eep!	reply	love	sound	curious shy surprised stunned speechless confused baffled skeptical		688
+phase1.nonverbal.deflate.aww__whiny__contained	Aww...	reply	comfort	sound	whiny		1157
+phase1.nonverbal.deflate.aww__wounded__contained	Aww...	reply	comfort	sound	wounded uneasy scared frightened embarrassed overwhelmed		987
+phase1.nonverbal.deflate.aww__sad__contained	Aww...	reply	comfort	sound	sad disappointed crying lonely		908
+phase1.nonverbal.deflate.aww__annoyed__contained	Aww...	reply	comfort	sound	annoyed uncomfortable disgusted		967
+phase1.nonverbal.deflate.mm__whiny__contained	Mm...	reply	comfort	sound	whiny		1177
+phase1.nonverbal.deflate.mm__wounded__contained	Mm...	reply	comfort	sound	wounded uneasy scared frightened embarrassed overwhelmed		848
+phase1.nonverbal.deflate.mm__sad__contained	Mm...	reply	comfort	sound	sad disappointed crying lonely		758
+phase1.nonverbal.deflate.mm__annoyed__contained	Mm...	reply	comfort	sound	annoyed uncomfortable disgusted		768
+phase1.borrowed.basta__annoyed__contained	Basta	reply	no	word	annoyed uncomfortable disgusted		898
+phase1.borrowed.basta__irritated__contained	Basta	reply	no	word	irritated		967
+phase1.borrowed.basta__grumpy__contained	Basta	reply	no	word	grumpy angry		958
+phase1.borrowed.basta__whiny__contained	Basta	reply	no	word	whiny		1357
+phase1.borrowed.basta__wounded__contained	Basta	reply	no	word	wounded uneasy scared frightened embarrassed overwhelmed		987
+phase1.borrowed.basta__sad__contained	Basta	reply	no	word	sad disappointed crying lonely		918
+phase1.borrowed.salut__calm__contained	Salut	reply	hello	word	calm comfy lazy bored relieved tired exhausted		688
+phase1.borrowed.salut__calm__contained	Salut	reply	bye	word	calm comfy lazy bored relieved tired exhausted		688
+phase1.borrowed.salut__engaged__contained	Salut	reply	hello	word	engaged		658
+phase1.borrowed.salut__engaged__contained	Salut	reply	bye	word	engaged		658
+phase1.borrowed.salut__determined__contained	Salut	reply	hello	word	determined hopeful		738
+phase1.borrowed.salut__determined__contained	Salut	reply	bye	word	determined hopeful		738
+phase1.borrowed.salut__happy__contained	Salut	reply	hello	word	happy pleased amused affectionate		728
+phase1.borrowed.salut__happy__contained	Salut	reply	bye	word	happy pleased amused affectionate		728
+phase1.borrowed.salut__excited__contained	Salut	reply	hello	word	excited		918
+phase1.borrowed.salut__excited__contained	Salut	reply	bye	word	excited		918
+phase1.borrowed.salut__proud__contained	Salut	reply	hello	word	proud mischievous		1347
+phase1.borrowed.salut__proud__contained	Salut	reply	bye	word	proud mischievous		1347
+phase1.borrowed.salut__curious__contained	Salut	reply	hello	word	curious shy surprised stunned speechless confused baffled skeptical		738
+phase1.borrowed.salut__curious__contained	Salut	reply	bye	word	curious shy surprised stunned speechless confused baffled skeptical		738

@@ -1,8 +1,9 @@
 # Voice range
 
-Updated 2026-10-25. A draft for the owner to review. Nothing here is
-generated: new paid takes need the owner's go
-(`boop-voice-v1/plans/deferred.json` says so too).
+Updated 2026-10-25. A draft for the owner to review. Steps 3 and 4 are
+built on the takes already recorded; nothing new is recorded: new paid
+takes need the owner's go (`boop-voice-v1/plans/deferred.json` says so
+too).
 
 The owner asked how to make Boop more expressive without making the
 prompt much bigger, aiming at two to three times the range, not a
@@ -157,20 +158,25 @@ the takes there are:
 | "I love you", "thanks", "bye", "yes!" | love, thanks, bye, yes | a glad sound, since glad's words need a success: "Mwahaha", "Phew", "Eep!" |
 | "dance for me" | dance | a tickled word: "Tickles", "Boop", "Yep" |
 
-**The change.** Give each reply takes of its own: a third part beside
-feeling and about, `reply`, its meaning the reply's name. To what you
-said, `say`'s none still means silence, as TALK and the Examples steer
-it; any other answer says the reply's own take, as big as the intensity
-(a sound small, a word medium, a phrase big), in the face's mood. A
-reply with no take in that face says what it says today. The prompt
-doesn't change: Jev already picks the reply. Later, `say` asked of
-what you said could shrink to "nothing or something".
+**Built, with the recorded takes that fit.** Each reply has takes of
+its own: a part beside feeling and about, `reply`, its meaning the
+reply's name. To what you said, `say`'s none still means silence, as
+TALK and the Examples steer it; any other answer says the reply's own
+take, as big as the intensity (a sound small, a word medium, a phrase
+big), in the face's mood. With none in that face, a feeling `say`
+picked, else the one the reply borrows (`ReactOutput.replyWords`), and
+never a topic: a topic is the agents' work, never what you said, and
+silence beats "Vamos" to "rough day". The prompt doesn't change: Jev
+already picks the reply. Later, `say` asked of what you said could
+shrink to "nothing or something".
 
-The code goes in with its first takes, the reused ones below, so none
-of it waits unused.
-
-**The lines.** In the voice moods each reply's faces use, two sounds,
-three words and two phrases to a mood: about 440 takes. Like the signs,
+**The lines still to record.** In the voice moods each reply's faces
+use, the sounds and words in each, the phrases two to a mood: 437
+takes, in the bank's own slot shape, in
+`plan/evidence/2026-10-25-voice-range/reply-slots.json`. This table is
+their source: edit a line here, then remake the file with
+`reply_slots.py` there; a line a recorded take already says in a mood
+is left out. Like the signs,
 they never state a fact: status points at its sign ("Look"), and a
 request for an agent is never a yes.
 
@@ -194,11 +200,17 @@ request for an agent is never a yes.
 | notme | calm, proud, annoyed, curious | Hmm-mm, Nn-nn | Nope, Mac, Them | Not me · Ask the Mac · Not my job |
 | unhush | excited, happy | Ahh!, Hah! | Finally, Free, Yay | I can talk! · Words again! |
 
-About a dozen recorded takes fit a reply already and can count for it
-too: Yep and Mm-hm (yes), Huh?, Eh? and Hm? (huh), Hi, Hey and Howdy
-(hello), Hehehe and Heh (hehe), Whee! (dance), Aww.... (comfort),
-Comfy and Cozy (nap). voicegen would write a second row for each, so
-it keeps its meaning too.
+**Reused now.** The recorded entries that fit a reply count for it too
+(`REPLY_OF` in voicegen): Yep and Got it (yes), Tsk and Not quite
+(no), Huh? and What, what? (huh), Hm? (dunno), Hi, Howdy and You rang?
+(hello), Peace and Salut (bye), Yay and No biggie (thanks), Eep!, Boop
+and Boop back (love), Ouch (ouch), Aww.... (comfort), Hehehe (hehe),
+Let me see and Look (status), Comfy (nap), Quiet (hush), Whee! and Oh
+yeah (dance), Ahh.... and Hooray (unhush), and more. voicegen writes a
+second row for each, by the same id, so the voice file and its version
+don't change and the board's card needs nothing new. Ten replies have
+words in every face; thanks, dance and no in the 24 or 25 they fit;
+huh, dunno and comfort in 14 to 18; notme in none yet.
 
 **Replies to add later.** Some things people say still fall to huh
 or hello: "wake up!" while it naps, "sing", "high five", "good luck"
@@ -212,7 +224,7 @@ own clip on the board (`reply-<name>`), so they're a step of their own.
 | Feelings | 3 | 7 |
 | Meanings with a phrase in every face | 0 | 13 |
 | Meanings with sounds | 4 | 21 |
-| Replies with words of their own | 0 | 17 |
+| Replies with words of their own | 16, recorded takes reused | 17 |
 | Texts | 387 | about 800 |
 | Takes | 2,722 | about 4,700 (some 2,000 new, 324 of them scripted) |
 | The voice file | 30 MB | about 52 MB |
@@ -222,8 +234,9 @@ own clip on the board (`reply-<name>`), so they're a step of their own.
 
 1. Step 3, already built: the owner listens on the board or the
    simulator and keeps it or drops the commit.
-2. The replies' own words (step 4), with the reused takes first:
-   what you hear when you talk to it.
+2. The replies' own words (step 4): built with the reused takes; the
+   437 slots in `reply-slots.json` next, what you hear when you talk to
+   it.
 3. Relieved from the relief takes, with 2d's grudging glad: the first
    new feeling, with the Examples and evals that change.
 4. 2a, the scripted phrases: the most range for the least writing.
