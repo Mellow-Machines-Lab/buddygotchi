@@ -131,7 +131,7 @@ uint32_t scanRow(uint32_t from, uint32_t us) { return uint32_t(uint64_t(us - fro
 // in the scan's order once a scan begins.
 void send(const Job& j) {
   const int mode = scanMode.load();
-  uint32_t from = 0;
+  uint32_t from = refreshAt;  // off: tears still counted, from the scan under way
   if (mode != kScanOff && refresh) {
     xSemaphoreTake(refresh, 0);  // an edge from before this frame
     xSemaphoreTake(refresh, pdMS_TO_TICKS(25));
@@ -144,25 +144,26 @@ void send(const Job& j) {
   lcd.startWrite();
   for (int k = 0; k < j.plan.bands; ++k) {
     const int b = lastFirst ? j.plan.bands - 1 - k : k;
-    if (j.plan.spans[b].empty()) continue;
-    const render::PanelWindow w = render::packBand(*j.surface, b, j.plan.spans[b], kTopOnPanelLeft, buf[cur]);
-    const uint32_t start = micros();
-    lcd.setAddrWindow(w.x, w.y, w.w, w.h);
-    lcd.writePixelsDMA(buf[cur], w.w * w.h, false);  // already in panel order
-    if (mode != kScanOff && from) {
-      // The scan's rows from this band's start to about when it's sent, at
-      // the panel's rate of 40 MHz on four lines; its rows, as the scan
-      // meets them in its own direction.
-      const uint32_t end = start + uint32_t(w.w * w.h) / 10;
-      const int r0 = mode == kScanUp ? kPanelHeight - (w.y + w.h) : w.y;
-      const uint32_t a = scanRow(from, start), z = scanRow(from, end);
-      for (uint32_t base = a / kPanelHeight * kPanelHeight; base <= z && !torn; base += kPanelHeight)
-        torn = a < base + r0 + w.h && z >= base + r0;
+    for (int r = 0; r < j.plan.runCount[b]; ++r) {
+      const render::PanelWindow w = render::packBand(*j.surface, b, j.plan.runs[b][r], kTopOnPanelLeft, buf[cur]);
+      const uint32_t start = micros();
+      lcd.setAddrWindow(w.x, w.y, w.w, w.h);
+      lcd.writePixelsDMA(buf[cur], w.w * w.h, false);  // already in panel order
+      if (from) {
+        // The scan's rows from this band's start to about when it's sent, at
+        // the panel's rate of 40 MHz on four lines; its rows, as the scan
+        // meets them in its own direction.
+        const uint32_t end = start + uint32_t(w.w * w.h) / 10;
+        const int r0 = mode == kScanUp ? kPanelHeight - (w.y + w.h) : w.y;
+        const uint32_t a = scanRow(from, start), z = scanRow(from, end);
+        for (uint32_t base = a / kPanelHeight * kPanelHeight; base <= z && !torn; base += kPanelHeight)
+          torn = a < base + r0 + w.h && z >= base + r0;
+      }
+      cur ^= 1;
     }
-    cur ^= 1;
   }
   lcd.endWrite();  // waits for the last batch
-  if (mode != kScanOff && from) {
+  if (from) {
     scanPushes.fetch_add(1);
     if (torn) scanTears.fetch_add(1);
   }
