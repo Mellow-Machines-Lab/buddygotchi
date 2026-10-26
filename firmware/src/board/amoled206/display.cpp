@@ -70,9 +70,9 @@ class Panel : public lgfx::LGFX_Device {
   lgfx::Panel_CO5300 panel_;
 };
 
-// A DMA buffer holds one band of a native frame: 16 rows of the surface,
-// turned into 16 panel columns 502 long, 16 KB.
-constexpr int kBufPixels = render::PushPlan::kRows * kNativeWidth;
+// A DMA buffer holds one band of a native frame: 16 columns of the
+// surface, turned into 16 panel rows 410 long, 13 KB.
+constexpr int kBufPixels = render::PushPlan::kColumns * kNativeHeight;
 
 Panel lcd;
 uint16_t* buf[2] = {nullptr, nullptr};
@@ -99,18 +99,73 @@ std::atomic<uint32_t> sentFrames{0};
 std::atomic<uint32_t> sentAt[2];
 uint32_t shownFrames = 0;  // the loop's: frames displayShown has reported
 
-// The plan's bands, each turned into a DMA buffer while the other one sends.
+// The panel's refresh: TE (pins::kLcdTe) rises as each scan of its rows
+// begins, 60 times a second. A frame sent in the scan's order, its bands
+// along the scan lines, starting as a scan begins, stays behind that scan
+// (it's faster than the writer) and ahead of the next (the writer takes
+// under two scans for a whole frame), so no refresh shows two frames: no
+// tear. Which way the panel scans its rows is the mode, `down` from its
+// first row (the surface's last column with the top on the left), or `up`;
+// `off` sends whenever a frame is ready, as before. A tear is counted when
+// the scan, as timed from TE, passes through a band while it's sent.
+std::atomic<int> scanMode{kScanDown};
+SemaphoreHandle_t refresh = nullptr;
+volatile uint32_t refreshAt = 0, refreshUs = 16667;  // the last TE, and its period
+std::atomic<uint32_t> scanPushes{0}, scanTears{0};
+
+void IRAM_ATTR refreshEdge() {
+  const uint32_t now = micros();
+  const uint32_t period = now - refreshAt;
+  if (period > 10000 && period < 30000) refreshUs = period;
+  refreshAt = now;
+  BaseType_t woken = pdFALSE;
+  xSemaphoreGiveFromISR(refresh, &woken);
+  if (woken) portYIELD_FROM_ISR();
+}
+
+// Where the scan is at `us`, in panel rows from the start of the scan that
+// began at `from`, counting on past the panel into the next scans.
+uint32_t scanRow(uint32_t from, uint32_t us) { return uint32_t(uint64_t(us - from) * kPanelHeight / refreshUs); }
+
+// The plan's bands, each turned into a DMA buffer while the other one sends,
+// in the scan's order once a scan begins.
 void send(const Job& j) {
+  const int mode = scanMode.load();
+  uint32_t from = 0;
+  if (mode != kScanOff && refresh) {
+    xSemaphoreTake(refresh, 0);  // an edge from before this frame
+    xSemaphoreTake(refresh, pdMS_TO_TICKS(25));
+    from = refreshAt;
+  }
+  // With the top on the panel's left its first row is the last band's.
+  const bool lastFirst = (mode == kScanUp) != kTopOnPanelLeft;
   int cur = 0;
+  bool torn = false;
   lcd.startWrite();
-  for (int b = 0; b < j.plan.bands; ++b) {
+  for (int k = 0; k < j.plan.bands; ++k) {
+    const int b = lastFirst ? j.plan.bands - 1 - k : k;
     if (j.plan.spans[b].empty()) continue;
     const render::PanelWindow w = render::packBand(*j.surface, b, j.plan.spans[b], kTopOnPanelLeft, buf[cur]);
+    const uint32_t start = micros();
     lcd.setAddrWindow(w.x, w.y, w.w, w.h);
     lcd.writePixelsDMA(buf[cur], w.w * w.h, false);  // already in panel order
+    if (mode != kScanOff && from) {
+      // The scan's rows from this band's start to about when it's sent, at
+      // the panel's rate of 40 MHz on four lines; its rows, as the scan
+      // meets them in its own direction.
+      const uint32_t end = start + uint32_t(w.w * w.h) / 10;
+      const int r0 = mode == kScanUp ? kPanelHeight - (w.y + w.h) : w.y;
+      const uint32_t a = scanRow(from, start), z = scanRow(from, end);
+      for (uint32_t base = a / kPanelHeight * kPanelHeight; base <= z && !torn; base += kPanelHeight)
+        torn = a < base + r0 + w.h && z >= base + r0;
+    }
     cur ^= 1;
   }
   lcd.endWrite();  // waits for the last batch
+  if (mode != kScanOff && from) {
+    scanPushes.fetch_add(1);
+    if (torn) scanTears.fetch_add(1);
+  }
 }
 
 void pushTask(void*) {
@@ -169,6 +224,11 @@ bool displayBegin() {
   idle = xSemaphoreCreateBinary();
   if (!idle) return false;
   xSemaphoreGive(idle);
+  refresh = xSemaphoreCreateBinary();  // LovyanGFX's init turns the panel's TE on
+  if (refresh) {
+    pinMode(pins::kLcdTe, INPUT);
+    attachInterrupt(pins::kLcdTe, refreshEdge, RISING);
+  }
   return xTaskCreatePinnedToCore(pushTask, "push", kPushStack, nullptr, kPushPriority, &pusher, 0) == pdPASS;
 }
 
@@ -186,6 +246,18 @@ bool displayPush(render::SurfacePair& frames) {
 }
 
 uint32_t displayPushUs() { return pushUs.load(); }
+
+void displayScanMode(int mode) {
+  scanMode.store(mode);
+  scanPushes.store(0), scanTears.store(0);
+}
+
+int displayScanMode() { return scanMode.load(); }
+
+void displayScanStats(uint32_t& hz, uint32_t& pushes, uint32_t& tears) {
+  hz = refreshAt && micros() - refreshAt < 100000 ? 1000000 / refreshUs : 0;
+  pushes = scanPushes.load(), tears = scanTears.load();
+}
 
 bool displayShown(uint32_t& atMs) {
   if (sentFrames.load() == shownFrames) return false;

@@ -23,6 +23,16 @@ void displayPush(const render::Canvas& canvas);
 bool displayPush(render::SurfacePair& frames);
 // How long the last native frame to finish sending took, in microseconds.
 uint32_t displayPushUs();
+// How native frames meet the panel's refresh (amoled206/display.cpp):
+// kScanOff sends each as it's ready, kScanDown and kScanUp in the panel's
+// scan order from the start of a scan, the scan going down its rows from
+// the first or up from the last. -1 where the panel has no refresh to
+// meet. Its stats: the refresh's rate (0 with none seen lately), and the
+// frames sent in step with it, and of those, torn.
+constexpr int kScanOff = 0, kScanDown = 1, kScanUp = 2;
+void displayScanMode(int mode);
+int displayScanMode();
+void displayScanStats(uint32_t& hz, uint32_t& pushes, uint32_t& tears);
 // A native frame finished sending since the last call: true once for each,
 // with the real ms (millis) it finished at, for the latency's frames
 // (app::Latency). False where there are no native frames.

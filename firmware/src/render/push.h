@@ -12,19 +12,22 @@
 
 namespace render {
 
-// What one frame sends: the surface in bands of kRows rows (kRows of the
-// panel's columns, turned a quarter), and of each band the columns that
-// may differ from the frame the panel shows. Spans start and end on even
-// columns, as the CO5300 takes windows only at even addresses with even
-// sizes; an empty span sends nothing.
+// What one frame sends: the surface in bands of kColumns columns, each
+// kColumns of the panel's rows once turned a quarter, so a band runs along
+// the panel's scan lines and the bands, sent in turn, follow its scan down
+// (or up) the panel; and of each band the rows that may differ from the
+// frame the panel shows. Spans are rows of the surface, [x0, x1) in a
+// Span, and start and end on even rows, as the CO5300 takes windows only
+// at even addresses with even sizes; an empty span sends nothing.
 struct PushPlan {
-  static constexpr int kRows = 16;
-  static constexpr int kMaxBands = (Surface::kTrackedRows + kRows - 1) / kRows;
+  static constexpr int kColumns = 16;
+  static constexpr int kMaxWidth = 512;
+  static constexpr int kMaxBands = (kMaxWidth + kColumns - 1) / kColumns;
   int width = 0, height = 0;  // the surface's
   int bands = 0;
   bool full = false;  // the whole surface: the first frame, or a test pattern on either side
   std::array<Span, kMaxBands> spans{};
-  int rows(int band) const { return height - band * kRows < kRows ? height - band * kRows : kRows; }
+  int columns(int band) const { return width - band * kColumns < kColumns ? width - band * kColumns : kColumns; }
   uint32_t pixels() const;
 };
 
@@ -37,7 +40,8 @@ struct PanelWindow {
 // The window band `band`'s span goes to, its pixels written to `out` in
 // the panel's order and byte order (RGB565, high byte first): w × h of
 // them, row by row. `topOnLeft` puts the surface's top on the panel's left
-// edge (board/config.h's kTopOnPanelLeft).
+// edge (board/config.h's kTopOnPanelLeft): then the panel's first row is
+// the surface's last column, so its scan meets the bands from the last.
 PanelWindow packBand(const Surface& s, int band, Span span, bool topOnLeft, uint16_t* out);
 
 // Two native surfaces a face draws into alternately: the next
