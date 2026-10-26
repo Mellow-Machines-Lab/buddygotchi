@@ -3,14 +3,18 @@
 #include <unity.h>
 
 #include "voice_file.h"  // internal/firmware/
+#include "wrapped_face.h"  // internal/firmware/
 
+#include <algorithm>
 #include <cstdio>
+#include <memory>
 #include <cstring>
 #include <string>
 #include <vector>
 
 #include "app/behaviour.h"
 #include "app/device.h"
+#include "render/font.h"
 #include "render/palette.h"
 #include "render/pixel/anim.h"
 #include "render/pixel/sounds.h"
@@ -2987,14 +2991,30 @@ static void test_gestures_send_the_right_inputs() {
   TEST_ASSERT_EQUAL(r.count("\"t\":\"ev\""), r.count(kTap) + r.count(kTalkOn) + r.count(kTalkOff));
 }
 
-// A long touch during needs you is a tap too: the squash, and no reaction.
-static void test_a_long_touch_during_needs_you_is_a_tap() {
+// Pins the needs-you screen's tap: a touch on it shorter than
+// Device::kNeedsYouTapMs (300 ms), and inside a hold's spot, is the tap that
+// opens the waiting thread; a longer one, short of the hold that dismisses,
+// or one that strays, was a hold let go early and sends nothing. Each
+// shows only the squash, and plays no reaction.
+static void test_a_long_touch_during_needs_you_sends_nothing() {
+  TEST_ASSERT_EQUAL_UINT32(300, app::Device::kNeedsYouTapMs);
   DevRig r;
   r.line("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"codex\",\"project\":\"landing\"}}");
   r.line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":800}");
   r.clock(700);
   TEST_ASSERT_FALSE(r.has(kTap));
   r.clock(800);
+  r.clock(900);
+  TEST_ASSERT_FALSE(r.has(kTap));
+  TEST_ASSERT_FALSE(r.has("\"did\":\"dismiss\""));
+  r.line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"to_x\":260,\"to_y\":100,\"ms\":200}");  // strays
+  r.clock(1000);
+  r.clock(1100);
+  r.clock(1200);
+  TEST_ASSERT_FALSE(r.has(kTap));
+  r.line("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":200}");  // a tap
+  r.clock(1300);
+  r.clock(1400);
   TEST_ASSERT_TRUE(r.has(kTap));
   r.usb.text.clear();
   r.line("{\"t\":\"dbg.state\"}");
@@ -3180,14 +3200,14 @@ static void test_boot_hands_over_while_someone_waits() {
 }
 
 // The work stream's model (render/stream.h): a lane whose count moves drops
-// a word for each new call, at most kDropsPerState a `state`, each
+// a word for each new call, at most kDropsPerState (one) a `state`, each
 // kWordGapPx behind its lane's newest and never faster, so they never
 // overlap, or none if that's over kMostWaitMs away; a new lane drops its
 // latest; a lane gone, or the stream hidden (needs you), takes its words; a
 // word falls for kFallMs and a word forward lasts kCallMs.
 static void test_the_work_streams_words() {
   TEST_ASSERT_EQUAL_UINT32(3200, render::Stream::kFallMs);
-  TEST_ASSERT_EQUAL_INT(2, render::Stream::kDropsPerState);
+  TEST_ASSERT_EQUAL_INT(1, render::Stream::kDropsPerState);
   TEST_ASSERT_EQUAL_INT(36, render::Stream::kWordGapPx);
   TEST_ASSERT_EQUAL_UINT32(800, render::Stream::kMostWaitMs);
   TEST_ASSERT_EQUAL_UINT32(2500, render::Stream::kCallMs);
@@ -3204,30 +3224,30 @@ static void test_the_work_streams_words() {
   lanes[0].count = 5;
   s.setLanes(lanes, 1, true, false, 100);
   TEST_ASSERT_EQUAL_INT(2, live());
-  lanes[0].count = 15;  // ten calls in one state: two words
+  lanes[0].count = 15;  // ten calls in one state: one word, the latest, once
   s.setLanes(lanes, 1, true, false, 200);
-  TEST_ASSERT_EQUAL_INT(4, live());
+  TEST_ASSERT_EQUAL_INT(3, live());
   // Each a word behind the one before: dropping once it's fallen
   // kWordGapPx, never faster.
-  const render::Stream::Word* byAge[4];
-  for (int i = 0; i < 4; ++i) byAge[i] = &s.words[i];
-  std::sort(byAge, byAge + 4, [](auto* a, auto* b) { return int32_t(a->born - b->born) < 0; });
-  for (int i = 1; i < 4; ++i) {
+  const render::Stream::Word* byAge[3];
+  for (int i = 0; i < 3; ++i) byAge[i] = &s.words[i];
+  std::sort(byAge, byAge + 3, [](auto* a, auto* b) { return int32_t(a->born - b->born) < 0; });
+  for (int i = 1; i < 3; ++i) {
     const auto &before = *byAge[i - 1], &after = *byAge[i];
     TEST_ASSERT_TRUE(after.speed <= before.speed);
     TEST_ASSERT_TRUE(int(after.born - before.born) * before.speed >= render::Stream::kWordGapPx * 1000);
   }
-  const uint32_t last = byAge[3]->born;
+  const uint32_t last = byAge[2]->born;
   s.setLanes(lanes, 1, true, false, 300);  // the same count: none
-  TEST_ASSERT_EQUAL_INT(4, live());
+  TEST_ASSERT_EQUAL_INT(3, live());
   lanes[1].slot = 2, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed");
   s.setLanes(lanes, 2, true, false, 300);
-  TEST_ASSERT_EQUAL_INT(5, live());
+  TEST_ASSERT_EQUAL_INT(4, live());
   TEST_ASSERT_EQUAL_INT(1, s.column(2));
   // The first lane's session rests: its words fall on where they dropped.
   const int16_t x = s.words[0].x;
   s.setLanes(&lanes[1], 1, true, false, 400);
-  TEST_ASSERT_EQUAL_INT(5, live());
+  TEST_ASSERT_EQUAL_INT(4, live());
   TEST_ASSERT_EQUAL_INT(-1, s.column(0));
   TEST_ASSERT_EQUAL_INT(x, s.words[0].x);
   s.prune(last + render::Stream::kFallMs - 1);
@@ -3285,10 +3305,124 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_FALSE(s.accepts(24100));
 }
 
+// Pins where a falling word drops and which slot it takes: its middle keeps
+// the whole word, in the large font, kWordEdgePx (12) inside the 502-wide
+// screen's sides, in the first lane and the last, whatever its jitter; with
+// every slot taken it reuses the one dropped longest ago, the clock wrapped
+// or not; and a needs-you over the agents' work only pauses the monitor's
+// clock (`since`), where the agents stopping ends it.
+static void test_falling_words_stay_on_screen_and_the_clock_runs_on() {
+  TEST_ASSERT_EQUAL_INT(12, render::Stream::kWordEdgePx);
+  render::Stream::Lane lanes[4];
+  const char* longWord = "make_test_all";  // 13 glyphs
+  const int half = render::glyphCount(longWord) * render::kLarge.w / 2;
+  for (int i = 0; i < 4; ++i) lanes[i].slot = uint8_t(i), std::strcpy(lanes[i].word, longWord);
+  int least = 502, most = 0;
+  for (uint16_t count = 1; count <= 60; ++count) {
+    for (int n : {1, 4}) {
+      render::Stream s;
+      for (auto& l : lanes) l.count = count;
+      s.setLanes(lanes, n, true, false, 0);
+      for (const auto& w : s.words) {
+        if (!w.live) continue;
+        least = std::min(least, w.x - half), most = std::max(most, w.x + half);
+      }
+    }
+  }
+  TEST_ASSERT_TRUE(least >= render::Stream::kWordEdgePx);
+  TEST_ASSERT_TRUE(most <= 502 - render::Stream::kWordEdgePx);
+
+  // Every slot taken, born either side of the clock's wrap: the oldest,
+  // before it, goes.
+  render::Stream s;
+  for (int i = 0; i < render::Stream::kWords; ++i) {
+    auto& w = s.words[i];
+    w.live = true, w.slot = 3, w.speed = 100, std::strcpy(w.text, "old");
+    w.born = i == 0 ? 0xFFFFFF00u : i == 1 ? 5u : 0xFFFFFF80u + uint32_t(i);
+  }
+  lanes[0].slot = 0, lanes[0].count = 1, std::strcpy(lanes[0].word, "grep");
+  s.setLanes(lanes, 1, true, false, 10);
+  TEST_ASSERT_EQUAL_STRING("grep", s.words[0].text);
+  TEST_ASSERT_EQUAL_STRING("old", s.words[1].text);
+
+  render::Stream c;
+  c.setLanes(lanes, 1, true, false, 1000);
+  TEST_ASSERT_EQUAL_UINT32(1000, c.since);
+  c.setLanes(nullptr, 0, false, true, 5000);  // something needs you
+  c.setLanes(lanes, 1, true, false, 9000);    // answered: the agents work on
+  TEST_ASSERT_EQUAL_UINT32(1000, c.since);
+  c.setLanes(nullptr, 0, false, false, 12000);  // they stop
+  c.setLanes(lanes, 1, true, false, 15000);
+  TEST_ASSERT_EQUAL_UINT32(15000, c.since);
+  c.setLanes(nullptr, 0, false, true, 16000);   // needs you
+  c.setLanes(nullptr, 0, false, false, 17000);  // answered, the agents done
+  c.setLanes(lanes, 1, true, false, 20000);
+  TEST_ASSERT_EQUAL_UINT32(20000, c.since);
+}
+
+// Pins that a gesture leaves the brain's finish alone: a stroke, a tickle
+// or the board picked up while a finish names whose turn it was (playing
+// or lingering) neither cuts it nor stops a tap opening its thread; only
+// BOOT's hand-off, which hands it over, takes it down.
+static void test_a_gesture_leaves_a_named_finish_alone() {
+  Rig r;
+  r.at(1000);
+  r.state(base("idle"));
+  ReactionIn in;
+  in.anim = SceneState::kTaskComplete, in.whoAgent = "claude", in.whoThread = "fix-nav", in.key = 9, in.id = 9;
+  onReaction(r.b, in, r.t);
+  r.at(r.t + 100);
+  for (render::Gesture g : {render::Gesture::kStroke, render::Gesture::kTickle, render::Gesture::kPickup}) {
+    r.b.gesture(g, r.t);
+    TEST_ASSERT_EQUAL(SceneState::kTaskComplete, r.anim());
+    TEST_ASSERT_EQUAL_UINT32(9, r.b.finishShown(r.t));
+  }
+  uint32_t left;
+  r.b.reaction(r.t, left);
+  r.at(r.t + left + 100);  // lingering
+  r.b.gesture(render::Gesture::kPutdown, r.t);
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  TEST_ASSERT_EQUAL_UINT32(9, r.b.finishShown(r.t));
+  TEST_ASSERT_EQUAL_STRING("dip", r.b.tap(r.t, r.rng));
+  r.b.gesture(render::Gesture::kHandoff, r.t);
+  TEST_ASSERT_EQUAL(SceneState::kGesture, r.anim());
+  TEST_ASSERT_EQUAL_UINT32(0, r.b.finishShown(r.t));
+  // With no finish, a gesture plays.
+  r.at(r.t + 10000);
+  r.b.gesture(render::Gesture::kStroke, r.t);
+  TEST_ASSERT_EQUAL(SceneState::kGesture, r.anim());
+}
+
+// Pins what the board starts with and what no app takes away: silent
+// (volume 0) until the Mac's first state, and with no app none of the
+// Mac's tags (a night's, a holiday's) reach the face, which would dress
+// for them all the next day; the next state brings them back.
+static void test_no_app_is_silent_and_wears_no_tags() {
+  TEST_ASSERT_EQUAL_INT(0, Model{}.vol);
+  auto face = std::make_unique<testface::WrappedFace>();
+  testface::WrappedFace& f = *face;
+  Behaviour b(std::move(face));
+  app::Rng rng;
+  b.reset(0, rng);
+  TEST_ASSERT_EQUAL_INT(0, b.model().vol);
+  Model m = base("idle");
+  m.when = render::tagBit("night") | render::tagBit("halloween");
+  b.onState(m, 100);
+  TEST_ASSERT_EQUAL_UINT32(m.when, f.context.when);
+  b.advance(100 + Behaviour::kNoAppMs, rng);
+  TEST_ASSERT_TRUE(b.noApp(100 + Behaviour::kNoAppMs));
+  TEST_ASSERT_EQUAL_UINT32(0, f.context.when);
+  b.onState(m, 100 + Behaviour::kNoAppMs + 1000);
+  TEST_ASSERT_EQUAL_UINT32(m.when, f.context.when);
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_the_work_streams_words);
+  RUN_TEST(test_falling_words_stay_on_screen_and_the_clock_runs_on);
+  RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
+  RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);
@@ -3356,7 +3490,7 @@ int main() {
   RUN_TEST(test_a_finish_linger_ends_when_the_face_is_taken);
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
-  RUN_TEST(test_a_long_touch_during_needs_you_is_a_tap);
+  RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   return UNITY_END();
 }

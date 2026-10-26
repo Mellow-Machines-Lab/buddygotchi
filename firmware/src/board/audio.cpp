@@ -47,13 +47,18 @@ void task(void*) {
   }
 }
 
+// Full, it drops one command by the sound's rule (app::Sound::toDrop), so a
+// hush or a stop is never lost to the effects queued before it.
 void send(const Cmd& c) {
   if (!queue) return;
-  if (xQueueSend(queue, &c, 0) != pdTRUE) {  // full: the newest wins
-    Cmd old;
-    xQueueReceive(queue, &old, 0);
-    xQueueSend(queue, &c, 0);
-  }
+  if (xQueueSend(queue, &c, 0) == pdTRUE) return;
+  Cmd waiting[kQueue];
+  int n = 0;
+  while (n < kQueue && xQueueReceive(queue, &waiting[n], 0) == pdTRUE) ++n;
+  const int drop = n == kQueue ? app::Sound::toDrop(waiting, n, c) : -2;  // the task took some: room
+  for (int i = 0; i < n; ++i)
+    if (i != drop) xQueueSend(queue, &waiting[i], 0);
+  if (drop != -1) xQueueSend(queue, &c, 0);
 }
 
 }  // namespace

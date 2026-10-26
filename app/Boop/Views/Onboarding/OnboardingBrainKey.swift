@@ -11,6 +11,7 @@ struct OnboardingBrainKey: View {
     var hasBoard = true
     @ViewState private var key = ""
     @ViewState private var saved = false
+    @ViewState private var failed = false
     @FocusState private var focused: Bool
 
     var body: some View {
@@ -29,9 +30,10 @@ struct OnboardingBrainKey: View {
                         .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                     }
                     Text(saved ? "Now I can answer you. \(hasBoard ? "Hold my button" : "Click Talk in my menu") and ask me “how many agents are running?”"
+                         : failed ? "I couldn't keep that key in your Keychain. Try again, or check Keychain Access."
                          : "A Jev API key lets TypeSafe's AI pick how I react and what mood I'm in. "
                          + "Without one I still show what your agents do and when you're needed.")
-                        .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                        .font(.system(size: 12)).foregroundStyle(failed && !saved ? Theme.clayInk : Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack(spacing: Theme.gapSnug) {
@@ -40,20 +42,32 @@ struct OnboardingBrainKey: View {
                         .padding(.horizontal, 8)
                         .frame(height: 24)
                         .fieldBox(Theme.paper, radius: 7, focus: $focused)
-                        .onChange(of: key) { saved = false }
+                        .onChange(of: key) {
+                            saved = false
+                            failed = false
+                        }
+                        // Return saves the key, rather than leaving the act
+                        // with it unsaved.
+                        .onSubmit(save)
                     if saved {
                         Label("Saved", systemImage: "checkmark")
                             .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.sageInk)
                     } else {
-                        Button("Save") {
-                            let key = key
-                            Task { saved = await app.saveKey(key) }
-                        }
-                        .buttonStyle(.row)
-                        .disabled(key.isEmpty)
+                        Button("Save", action: save)
+                            .buttonStyle(.row)
+                            .disabled(Keychain.cleaned(key).isEmpty)
                     }
                 }
             }
+        }
+    }
+
+    private func save() {
+        let key = Keychain.cleaned(key)
+        guard !key.isEmpty else { return }
+        Task {
+            saved = await app.saveKey(key)
+            failed = !saved
         }
     }
 }

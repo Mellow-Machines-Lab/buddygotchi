@@ -128,6 +128,9 @@ struct OnboardingBuddy: View {
         .contentShape(Rectangle())
         .onTapGesture { model.pokeOnScreen() }
         .help("Poke me")
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint("Poke me")
+        .accessibilityAction { model.pokeOnScreen() }
     }
 }
 

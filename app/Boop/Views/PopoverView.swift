@@ -18,7 +18,10 @@ struct PopoverView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Group {
+            // Stacked, not in a column: while one pane fades into the
+            // other, the column would hold both, and the popover grow to
+            // their sum for a moment.
+            ZStack(alignment: .top) {
                 switch model.pane {
                 case .overview: OverviewPane(model: model, maxHeight: limit - 44)
                 case .settings: SettingsPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
@@ -34,7 +37,8 @@ struct PopoverView: View {
         .animation(.boopSettle, value: model.pane)
         // Closed, it's out of sight but not gone: nothing loops, for nobody.
         .environment(\.stillMotion, still || !model.shown)
-        .onExitCommand(perform: onClose)
+        // Esc goes back from Settings first, as its chevron does.
+        .onExitCommand { if model.pane == .settings { model.pane = .overview } else { onClose() } }
     }
 
     private var footer: some View {

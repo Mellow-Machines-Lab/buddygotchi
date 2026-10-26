@@ -12,6 +12,20 @@ struct Locked {
 
 }  // namespace
 
+int Sound::toDrop(const Cmd* waiting, int n, const Cmd& next) {
+  for (int i = 0; i < n; ++i)
+    if (waiting[i].kind == Kind::kEffect) return i;
+  if (next.kind == Kind::kEffect) return -1;
+  for (int i = 0; i < n; ++i)
+    if (waiting[i].kind == Kind::kSay) return i;
+  for (int i = 0; i < n; ++i) {
+    bool again = next.kind == waiting[i].kind;
+    for (int j = i + 1; j < n && !again; ++j) again = waiting[j].kind == waiting[i].kind;
+    if (again) return i;
+  }
+  return -1;
+}
+
 void Sound::ready() {
   Locked l(out_);
   stats_.ready = true;

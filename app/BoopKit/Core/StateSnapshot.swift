@@ -36,9 +36,10 @@ public struct StateSnapshot: Equatable, Sendable {
     /// e. Control characters, which the device can't draw and JSON escapes
     /// to six bytes each, become spaces. With `marked`, a cut text ends in
     /// "..", within those bytes, so the device shows it was cut, and it's
-    /// cut where the board cuts its own text (`cutAt`).
+    /// cut where the board cuts its own text (`cutAt`), and it's drawable
+    /// first (`drawable`): it's going to the board.
     public static func clip(_ text: String, marked: Bool = false, max: Int = maxNameBytes) -> String {
-        var text = text.precomposedStringWithCanonicalMapping
+        var text = marked ? drawable(text) : text.precomposedStringWithCanonicalMapping
         if text.unicodeScalars.contains(where: { $0.value < 0x20 || $0.value == 0x7F }) {
             text = String(String.UnicodeScalarView(text.unicodeScalars.map { $0.value < 0x20 || $0.value == 0x7F ? " " : $0 }))
         }
@@ -51,6 +52,29 @@ public struct StateSnapshot: Equatable, Sendable {
             fit += 1
         }
         return marked ? String(chars[..<cutAt(chars, fit)]) + ".." : String(chars[..<fit])
+    }
+
+    /// `text` precomposed, with what the board's fonts would draw as "?"
+    /// made plain or left out: curly quotes, dashes, an ellipsis and a
+    /// no-break space as the plain marks they stand for (`Signs.plain`),
+    /// and emoji, with their joiners and variation selectors, gone, the
+    /// spaces they leave closed up. "Don’t ship it 🚀" shows as "Don't
+    /// ship it", not "Don?t ship it ?".
+    public static func drawable(_ text: String) -> String {
+        var out = String.UnicodeScalarView()
+        for s in text.precomposedStringWithCanonicalMapping.unicodeScalars {
+            if let mark = Signs.plain[s] {
+                out.append(contentsOf: mark.unicodeScalars)
+            } else if s.value == 0x200D || (0xFE00...0xFE0F).contains(s.value) || s.properties.isEmojiModifier
+                        || (s.value >= 0x2000 && s.properties.isEmoji) {
+                continue
+            } else {
+                out.append(s)
+            }
+        }
+        let plain = String(out)
+        guard plain != text else { return plain }
+        return plain.split(separator: " ", omittingEmptySubsequences: true).joined(separator: " ")
     }
 
     /// How many of `chars` to keep when they're cut to at most `most`, ".."

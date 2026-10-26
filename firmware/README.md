@@ -142,7 +142,7 @@ board it's on. Its face is the gel slime, so it needs Boop's pack (above).
 | microSD | SPI3 (SCK 2, MOSI 1, MISO 3, CS 17) | The voice, as on the CYD |
 | USB | The S3's own USB-Serial/JTAG | `/dev/cu.usbmodem*`; flashing needs no BOOT press |
 | Buttons | BOOT (IO0) | The main button. No LED |
-| Motion | QMI8658 on I2C (0x6B, else 0x6A) | Picked up, put down, shaken, a thump on the desk, face down (do not disturb) and up: `app/motion_gesture.h`'s first guesses, read every 20 ms at ±4 g (`amoled206/imu.cpp`). Its z is flipped to point out of the screen (`kFlipZ`: the chip reads about −1 g resting screen up); x and y are still a guess. Check them on the board, where `dbg.state`'s `imu` is the reading now (`internal/tools/boopctl state`) and `dbg.imu` stands in for the sensor. The CYD has no motion sensor |
+| Motion | QMI8658 on I2C (0x6B, else 0x6A) | Picked up, put down, shaken, a thump on the desk, face down (do not disturb: no `say` and none of the face's sounds) and up: `app/motion_gesture.h`'s first guesses, read every 20 ms at ±4 g (`amoled206/imu.cpp`). Its z is flipped to point out of the screen (`kFlipZ`: the chip reads about −1 g resting screen up); x and y are still a guess. Check them on the board, where `dbg.state`'s `imu` is the reading now (`internal/tools/boopctl state`) and `dbg.imu` stands in for the sensor. The CYD has no motion sensor |
 
 Waveshare's example repo (`waveshareteam/ESP32-S3-Touch-AMOLED-2.06`) has
 a recovery image in `FirmWare/` if you ever need the factory firmware back.
@@ -203,16 +203,18 @@ How every check works is in [internal/VERIFICATION.md](../internal/VERIFICATION.
   last touch was and how long it took.
 - **A swipe up doesn't open the agents' drawer (gel):** it must start on
   the strip, the bottom rows of the screen (`app/device.h`'s
-  `kDrawerFromY`, canvas rows from 205 down), and go up `kDrawerPullPx`;
+  `kDrawerFromY`, canvas rows from 205 down), and go up `kDrawerPullPx`
+  (22 canvas px), while the Mac has sessions to list;
   one that starts on the face is the face's swipe. `dbg.state`'s
   `drawer.open` says how far open it is, 0 to 1000, and `drawer.scroll`
   and `drawer.skip` how far its rows are scrolled (canvas px) and where
   the Mac's window of them starts.
 - **A hold doesn't dismiss the needs-you screen:** the finger must stay
-  down a second inside a spot 24 px wide each way
-  (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). On the CYD,
-  press firmly: a touch with no reading for 50 ms has let go, and its
-  release is a tap.
+  down a second inside a spot 40 px wide each way
+  (`app/touch_gesture.h`'s `kHoldMs` and `kHoldSpotPx`). Let go sooner,
+  it sends nothing; only a touch shorter than 300 ms
+  (`app/device.h`'s `kNeedsYouTapMs`) is the tap that opens the thread. On
+  the CYD, press firmly: a touch with no reading for 50 ms has let go.
 - **Boop is silent, faces fine:** the popover says "No voice", and
   `ping`'s `card` says why. `no card`: the card is out, or exFAT (cards
   over 32 GB come that way; format it FAT32). `no pack`, no voice file: copy the character

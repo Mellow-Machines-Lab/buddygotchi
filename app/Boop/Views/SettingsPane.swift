@@ -8,7 +8,12 @@ struct SettingsPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
     @ViewState private var apiKey = ""
-    @ViewState private var keySaved = false
+    /// The key the Keychain holds, as far as this pane knows: nil until
+    /// it's read.
+    @ViewState private var savedKey: String?
+    /// Typed in before the Keychain answered, which mustn't overwrite it.
+    @ViewState private var keyEdited = false
+    @ViewState private var keyFailed = false
     @FocusState private var keyFocused: Bool
 
     var body: some View {
@@ -35,6 +40,8 @@ struct SettingsPane: View {
                     // Named for what's in it: the Talk picker, and a
                     // personality picker only when the pack has two.
                     PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
+                    // Its own, so the no-key notice's "in Settings" finds it.
+                    PaneSection("Brain") { Card(padding: 0) { key } }
                     PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -44,7 +51,9 @@ struct SettingsPane: View {
         .task {
             // Off the main thread: a Keychain prompt would freeze the popover.
             let read = model.readKey
-            apiKey = await Task.detached { read() }.value ?? ""
+            let key = await Task.detached { read() }.value ?? ""
+            if !keyEdited { apiKey = key }
+            savedKey = key
         }
     }
 
@@ -209,9 +218,12 @@ struct SettingsPane: View {
             VStack(spacing: 0) {
                 loginRow
                 Hairline().padding(.leading, 40).padding(.trailing, 12)
+                // Only the everyday Boop uninstalls; a copy on another
+                // folder says so rather than ask and then do nothing.
                 SettingRow(icon: "trash", title: "Uninstall",
-                           detail: "Takes \(model.name) out of your agents and off this Mac. Its memory stays.") {
-                    Button("Uninstall…") { model.uninstall() }.buttonStyle(.row)
+                           detail: model.ownsHooks ? "Takes \(model.name) out of your agents and off this Mac. Its memory stays."
+                                                   : "Only the everyday Boop uninstalls. This copy runs on a folder of its own.") {
+                    Button("Uninstall…") { model.uninstall() }.buttonStyle(.row).disabled(!model.ownsHooks)
                 }
             }
         }
@@ -262,15 +274,35 @@ struct SettingsPane: View {
                         RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
                                   chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
                     }
-                    if let note = brainNote {
-                        Text(note)
-                            .font(.system(size: 11)).foregroundStyle(Theme.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
                 }
                 .padding(12)
                 .disabled(model.status == nil)
-                key
+            }
+        }
+    }
+
+    /// The field holds the key the Keychain has.
+    private var keySaved: Bool {
+        guard let savedKey, !savedKey.isEmpty else { return false }
+        return Keychain.cleaned(apiKey) == savedKey
+    }
+
+    /// Something to save: a new key, or a blank field over a saved one.
+    private var canSaveKey: Bool {
+        guard let savedKey else { return false }
+        let key = Keychain.cleaned(apiKey)
+        return key != savedKey && !(key.isEmpty && savedKey.isEmpty)
+    }
+
+    private func saveKey() {
+        let key = Keychain.cleaned(apiKey)
+        Task {
+            if await model.saveKey(key) {
+                savedKey = key
+                apiKey = key
+                keyFailed = false
+            } else {
+                keyFailed = true
             }
         }
     }
@@ -278,7 +310,6 @@ struct SettingsPane: View {
     /// Jev's key, only where it's used.
     private var key: some View {
         VStack(spacing: 0) {
-            Hairline().padding(.horizontal, 12)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: Theme.gapSnug) {
                     // As tall as the Save button beside it.
@@ -287,7 +318,11 @@ struct SettingsPane: View {
                         .padding(.horizontal, 8)
                         .frame(height: 22)
                         .fieldBox(Theme.paper, radius: 7, focus: $keyFocused)
-                        .onChange(of: apiKey) { keySaved = false }
+                        .onChange(of: apiKey) {
+                            keyEdited = true
+                            keyFailed = false
+                        }
+                        .onSubmit { if canSaveKey { saveKey() } }
                     if keySaved {
                         // Done, not disabled.
                         Label("Saved", systemImage: "checkmark")
@@ -296,16 +331,21 @@ struct SettingsPane: View {
                             .frame(height: 22)
                             .transition(.opacity)
                     } else {
-                        Button("Save") {
-                            let key = apiKey
-                            Task { keySaved = await model.saveKey(key) }
-                        }
-                        .buttonStyle(.row)
+                        // A blank field takes the key out, and says so.
+                        Button(Keychain.cleaned(apiKey).isEmpty && savedKey?.isEmpty == false ? "Remove" : "Save", action: saveKey)
+                            .buttonStyle(.row)
+                            .disabled(!canSaveKey)
                     }
                 }
-                Text("Kept in your Keychain. With Jev, what happens and \(model.name)'s personality and mood go to TypeSafe with each call.")
-                    .font(.system(size: 10)).foregroundStyle(Theme.inkSoft)
+                Text(keyFailed ? "Couldn't save the key in your Keychain. Try again, or check Keychain Access."
+                     : "Kept in your Keychain. With Jev, what happens and \(model.name)'s personality and mood go to TypeSafe with each call.")
+                    .font(.system(size: 10)).foregroundStyle(keyFailed ? Theme.clayInk : Theme.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
+                if let note = brainNote {
+                    Text(note)
+                        .font(.system(size: 11)).foregroundStyle(Theme.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
         }

@@ -351,9 +351,11 @@ final class OnboardingModel: ObservableObject {
     /// A copy on another folder leaves the hooks to the everyday Boop, and
     /// only listens for the hello.
     func connectAgents() {
-        for agent in Agent.allCases where app.ownsHooks && app.setup.agents.contains(agent) && app.installer.detected(agent) {
-            app.install(agent)
-        }
+        let chosen = Agent.allCases.filter { app.ownsHooks && app.setup.agents.contains($0) && app.installer.detected($0) }
+        for agent in chosen { app.install(agent) }
+        // Every one failed: stay on the choice, which says why, so Connect
+        // can be tried again rather than wait for a hello that can't come.
+        if !chosen.isEmpty, chosen.allSatisfy({ app.hookErrors[$0] != nil }) { return }
         withAnimation(.boopPop) { connected = true }
     }
 

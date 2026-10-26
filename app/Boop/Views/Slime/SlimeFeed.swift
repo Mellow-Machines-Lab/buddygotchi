@@ -215,6 +215,17 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
         didLoad?()
     }
 
+    /// WebKit ended the page's process (memory pressure, a sleep): load
+    /// it again, hidden until it draws, or the slime would stay frozen.
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        guard webView === self.webView else { return }
+        ready = false
+        drawn = false
+        webView.alphaValue = 0
+        // Loaded as at first: the policy below lets only that load through.
+        if let folder = Self.folder, let document = Self.document { webView.loadFileURL(document, allowingReadAccessTo: folder) }
+    }
+
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) { didFail?(error.localizedDescription) }
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) { didFail?(error.localizedDescription) }
 

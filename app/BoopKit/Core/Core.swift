@@ -756,7 +756,9 @@ public final class Core {
             }
             return summary
         }
-        return (shown + dismissed).map { summary($0, .waiting) } + working.map { summary($0, .working) }
+        return shown.map { summary($0, .waiting) }
+            + dismissed.map { var row = summary($0, .waiting); row.dismissed = true; return row }
+            + working.map { summary($0, .working) }
             + idle.map { summary($0, .idle) }
     }
 
@@ -1095,6 +1097,8 @@ public struct SessionSummary: Equatable, Sendable {
     public var slot: Int?
     /// Its to-do list, as counts.
     public var todo: StateSnapshot.Todo?
+    /// Waiting, with its request dismissed: it no longer shows on Boop.
+    public var dismissed = false
 
     public init(agent: String, project: String, name: String? = nil, workspace: String? = nil, status: Status,
                 thread: ThreadRef? = nil, since: Date? = nil, word: String? = nil, slot: Int? = nil,

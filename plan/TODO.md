@@ -4,6 +4,32 @@ Updated 2026-10-26. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: the overnight UI audit (2026-10-26)
+
+The owner asked for every UI and UX bug on the Mac and the board,
+fixed overnight. Four reviews (the popover, onboarding, the board's
+drawing, its touch and sound) found them; what's fixed is in the audit's
+commit here and SlimeBuddy's.
+
+- [x] **The Mac app**: blank face tiles with Boop's pack, a "Try again"
+      that couldn't work, Jev's key (trimmed, Return, failures said,
+      its own Brain section), Details that wouldn't open, dismissed
+      requests, onboarding's dead ends and resume, names the board drew
+      as "?". Checked by BoopTests and `Boop --snapshots`.
+- [x] **The board's touch, gestures, drawer, sound and stream**: 24
+      fixes, each pinned in `internal/firmware/test`, and the gel's
+      strip, LISTENING, sky, sign and clocks in SlimeBuddy (test_gel).
+- [ ] On the AMOLED: none of it is played on the board yet. It stopped
+      answering over USB (not even its bootloader), so unplug it and
+      plug it back in, flash, and feel the drawer, the needs-you hold,
+      a rub, and carrying it (the put-down's new steadiness, 40 mg for
+      1.5 s, is a first guess to tune).
+- [ ] The strip comes back at once after a bubble: its fade belongs in
+      `Behaviour::strip` (when the bubble ended), not the face.
+- [ ] Decide: the popover's mic button says "Talk", which the Words
+      table keeps for the talk level; and an agent's first hook after
+      Connect counts as the hello even from a session already open.
+
 ## Now: calm work (2026-10-25)
 
 The owner found the working look's body boring and its kit cluttered,

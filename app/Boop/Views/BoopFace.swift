@@ -53,7 +53,8 @@ struct BoopFace: View {
     private var key: String {
         let startup = CharacterPack.active.startupMood
         return switch mood {
-        case .asleep, .stopped: "\(startup)/asleep"
+        case .asleep: "\(startup)/asleep"
+        case .stopped: "stopped"
         case .idle: "\(design)/idle"
         case .working: "\(design)/working"
         case .needsYou: "\(design)/needs_you"
@@ -83,6 +84,19 @@ struct BoopFace: View {
             // them: a pixel both light stays lit through the fade.
             ZStack {
                 Canvas { context, canvas in
+                    // Boop couldn't start, or the pack has no still faces:
+                    // the menu bar's eyes, so the tile is never blank.
+                    if mood == .stopped || Self.faces.isEmpty {
+                        for (path, stroke) in Self.eyes(mood, shut: blink, in: canvas) {
+                            if stroke {
+                                context.stroke(path, with: .color(Self.eyeInk),
+                                               style: StrokeStyle(lineWidth: canvas.width * 0.05, lineCap: .round))
+                            } else {
+                                context.fill(path, with: .color(mood == .asleep ? Self.eyeInk.opacity(0.7) : Self.eyeInk))
+                            }
+                        }
+                        return
+                    }
                     for (colour, path) in Self.paths(rects, in: canvas, scale: displayScale) {
                         context.fill(path, with: .color(mood == .asleep ? colour.opacity(0.7) : colour))
                     }
@@ -135,6 +149,29 @@ struct BoopFace: View {
         return runs.map { (palette[Int($0.0)], $0.1) }
     }
 
+    private static let eyeInk = Color(white: 0.92)
+
+    /// The menu-bar icon's eyes, in a tile `canvas` wide: crosses when
+    /// Boop isn't running, bars asleep or blinking, else two tall eyes.
+    /// Each path, and whether it's stroked rather than filled.
+    private static func eyes(_ mood: FaceMood, shut: Bool, in canvas: CGSize) -> [(Path, Bool)] {
+        let u = canvas.width / 20, top = canvas.height / 2 - 3 * u
+        return MenuBarIcon.eyes.map { x in
+            let x = x * u
+            if mood == .stopped {
+                var cross = Path()
+                cross.move(to: CGPoint(x: x, y: top + u))
+                cross.addLine(to: CGPoint(x: x + 4 * u, y: top + 5 * u))
+                cross.move(to: CGPoint(x: x + 4 * u, y: top + u))
+                cross.addLine(to: CGPoint(x: x, y: top + 5 * u))
+                return (cross, true)
+            }
+            let eye = mood == .asleep || shut ? CGRect(x: x - u, y: top + 4 * u, width: 6 * u, height: 2 * u)
+                                              : CGRect(x: x, y: top, width: 4 * u, height: 6 * u)
+            return (Path(roundedRect: eye, cornerRadius: min(eye.width, eye.height) / 2), false)
+        }
+    }
+
     /// The generated artwork never changes during a launch. Decode it
     /// once instead of allocating bytes and rectangles on every status
     /// update and every blink's two redraws.
@@ -159,7 +196,7 @@ struct BoopFace: View {
 
     /// Blinks every few seconds.
     private func live() async {
-        guard !reduceMotion, !still, mood != .asleep else {
+        guard !reduceMotion, !still, mood != .asleep, mood != .stopped else {
             blink = false
             return
         }

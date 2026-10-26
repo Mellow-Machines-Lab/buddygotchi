@@ -1576,6 +1576,8 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(rig.state.attn?.project, "web")
         XCTAssertEqual(rig.sessions, [["claude", "web", "waiting"], ["claude", "api", "waiting"], ["claude", "docs", "idle"]])
         XCTAssertEqual(rig.core.line(at: rig.now).map(\.id), ["b", "a", "c"])
+        XCTAssertEqual(rig.core.sessionList(at: rig.now).map(\.dismissed), [false, true, false],
+                       "the popover's row says which request you put away")
         rig.wait(1000)
         dismissCard(rig)
         XCTAssertNil(rig.state.attn)
@@ -2255,6 +2257,12 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(StateSnapshot.clip("ünïcödé-ünïcödé-ünïcödé"), "ünïcödé-ünïcödé")
         XCTAssertEqual(StateSnapshot.clip("ünïcödé-ünïcödé-ünïcödé", marked: true), "ünïcödé-ünïcöd..")
         XCTAssertEqual(StateSnapshot.clip("a-23-byte-project-name!", marked: true), "a-23-byte-project-name!", "one that fits isn't marked")
+        // What goes to the board is what its fonts draw: curly quotes, dashes
+        // and an ellipsis plain, emoji (with their joiners) left out, never "?".
+        XCTAssertEqual(StateSnapshot.clip("Don\u{2019}t break it \u{2014} again\u{2026}", marked: true, max: 47),
+                       "Don't break it - again...")
+        XCTAssertEqual(StateSnapshot.clip("\u{2728} Fix nav \u{1F469}\u{200D}\u{1F4BB} now \u{2714}\u{FE0F}", marked: true), "Fix nav now")
+        XCTAssertEqual(StateSnapshot.clip("v2 #3 * 10", marked: true), "v2 #3 * 10", "digits and marks below U+2000 stay")
         // Finder names folders decomposed (e and U+0301), which the device
         // draws as "e?": the Mac sends names precomposed, before measuring
         // them. Swift's == can't tell the two apart.

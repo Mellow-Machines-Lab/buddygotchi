@@ -28,17 +28,32 @@ public enum Keychain {
         return key.isEmpty ? nil : key
     }
 
-    /// Replaces the entry, or removes it when `key` is nil or empty. The key
+    /// A key as pasted, without the spaces and newlines a copy picks up
+    /// at either end, which Jev would refuse.
+    public static func cleaned(_ key: String?) -> String {
+        (key ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Replaces the entry, or removes it when `key` is nil or blank. The key
     /// reaches `security` hex-encoded on its stdin, never in its arguments,
-    /// which any process can see. True when the Keychain now holds `key`.
+    /// which any process can see. True when the Keychain now holds `key`,
+    /// `cleaned`; when it doesn't, the key it held before is put back.
     @discardableResult
     public static func setJevKey(_ key: String?, account: String, security: SecurityTool = .system) -> Bool {
+        let key = cleaned(key)
+        let old = key.isEmpty ? nil : jevKey(account: account, security: security)
         _ = security.run(["delete-generic-password", "-s", service, "-a", account], nil)
-        guard let key, !key.isEmpty else { return true }
+        guard !key.isEmpty else { return true }
+        add(key, account: account, security: security)
+        // Read it back rather than trust the exit status of `security -i`.
+        if jevKey(account: account, security: security) == key { return true }
+        if let old { add(old, account: account, security: security) }
+        return false
+    }
+
+    private static func add(_ key: String, account: String, security: SecurityTool) {
         let hex = key.utf8.map { String(format: "%02x", $0) }.joined()
         _ = security.run(["-i"], "add-generic-password -s \(service) -a \(account) -X \(hex)\n")
-        // Read it back rather than trust the exit status of `security -i`.
-        return jevKey(account: account, security: security) == key
     }
 }
 

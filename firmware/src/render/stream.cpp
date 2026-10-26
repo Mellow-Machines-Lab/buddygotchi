@@ -4,6 +4,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include "render/font.h"
+
 namespace render {
 
 namespace {
@@ -131,19 +133,26 @@ void Stream::drop(const Lane& lane, int column, int columns, uint32_t t) {
       w = &o;
       break;
     }
-    if (o.born < w->born) w = &o;
+    if (int32_t(o.born - w->born) < 0) w = &o;  // the clock wraps
   }
   std::snprintf(w->text, sizeof(w->text), "%s", lane.word);
   w->slot = lane.slot;
-  w->x = int16_t(laneX(column, columns) + int(h % 81) - 40);
+  const int half = glyphCount(lane.word) * kLarge.w / 2, lo = kWordEdgePx + half, hi = 502 - kWordEdgePx - half;
+  w->x = int16_t(std::clamp(laneX(column, columns) + int(h % 81) - 40, lo, std::max(lo, hi)));
   w->speed = speed;
   w->born = born;
   w->live = true;
 }
 
 void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t) {
-  if (showing && !on) since = movedAt = t;
+  if (showing && !on) {
+    if (!paused) since = t;
+    movedAt = t;
+  }
   if (!showing && on) ending = true, endedAt = t;
+  // A needs-you over the agents' work pauses it; anything else that stops
+  // it ends it.
+  paused = !showing && cleared && (on || paused);
   if (showing) ending = false;
   on = showing;
   if (n > kLanes) n = kLanes;

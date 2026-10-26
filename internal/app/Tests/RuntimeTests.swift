@@ -372,6 +372,22 @@ final class RuntimeTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(Runtime.runningFile).path))
     }
 
+    /// A runtime whose start failed lets go of the folder's lock once it's
+    /// dropped, so the popover's "Try again" can open the folder again.
+    func testAFailedStartFreesTheLockForTryAgain() throws {
+        var options = try options(FakeTransport())
+        options.socketPath = "/tmp/" + String(repeating: "x", count: 120) + ".sock"
+        weak var failed: Runtime?
+        try autoreleasepool {
+            let runtime = try Runtime(options)
+            failed = runtime
+            try XCTAssertThrowsError(try runtime.start())
+        }
+        XCTAssertNil(failed, "a runtime that failed to start is still held")
+        options.socketPath = socketPath
+        _ = try Runtime(options)  // throws `locked` if the failed one still held it
+    }
+
     /// A bug report copies the newest of macOS's crash reports for Boop
     /// from the last `reportCrashDays`, at most `reportCrashes` of them,
     /// and no other app's, and says what ran on which Mac.

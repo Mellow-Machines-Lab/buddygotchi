@@ -54,6 +54,7 @@ enum Snapshots {
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
                     attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), busy: 1, vol: 6)
                 _ = try SlimeSnapshots.image(gelAttention, to: out.appendingPathComponent("slime-needs-you.png"))
+                try checkMoodStills()
             }
             for dark in [false, true] {
                 /// The popover on `pane`, tall enough for all of it.
@@ -289,7 +290,13 @@ enum Snapshots {
         guard published == 2 else { fail("snapshots: a closed popover's status changed") }
         model.onboardingShown = true
         guard published == 3, model.status == model.latest else { fail("snapshots: onboarding showed a stale status") }
-        print("status: published only when shown and changed, without the lanes")
+        // Onboarding's own slime is fed its snapshot, so it keeps the lanes:
+        // the agent's words fall past it after the hello.
+        model.take(lanes(4))
+        guard published == 4, model.status?.snapshot.calls.first?.count == 4 else {
+            fail("snapshots: onboarding's status lost the work stream's lanes")
+        }
+        print("status: published only when shown and changed, without the lanes but for onboarding")
     }
 
     /// One page for each feed, which each view showing the mirror takes
@@ -407,6 +414,23 @@ enum Snapshots {
 
     /// The popover's slime, still, for every Overview: it shows whether
     /// or not a board is connected.
+    /// Onboarding's legend of moods draws each from the mirror at runtime,
+    /// off screen: every one must come back as a picture.
+    static func checkMoodStills() throws {
+        let moods = ["happy", "grumpy", "proud", "tired"].map(MoodTile.snapshot)
+        SlimeStills.shared.want(moods)
+        let deadline = Date().addingTimeInterval(SlimeSnapshots.timeout)
+        while moods.contains(where: { SlimeStills.shared.image($0) == nil }), Date() < deadline {
+            RunLoop.current.run(until: Date().addingTimeInterval(0.01))
+        }
+        let missing = moods.filter { SlimeStills.shared.image($0) == nil }.map(\.mood)
+        guard missing.isEmpty else {
+            throw NSError(domain: "Snapshots", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "the legend's stills didn't draw: \(missing)"])
+        }
+        print("mood stills: \(moods.count), drawn off screen by the mirror")
+    }
+
     static var tileStill: NSImage?
 
     static func model(_ installer: HookInstaller, status: Runtime.Status?, link: LinkSetting = .bluetooth,
@@ -436,7 +460,8 @@ enum Snapshots {
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
                        linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
-                       growth: Growth? = Growth(xp: 1_340), face: DeviceInfo.Face = .pixel) -> Runtime.Status {
+                       growth: Growth? = Growth(xp: 1_340),
+                       face: DeviceInfo.Face = SlimeFeed.folder != nil ? .gel : .pixel) -> Runtime.Status {
         let statuses: [String: SessionSummary.Status] = ["wait": .waiting, "work": .working, "idle": .idle]
         // Each in its agent's own app, so its row opens it.
         // Each waited, worked or rested a few minutes more than the one

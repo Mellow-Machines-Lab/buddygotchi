@@ -76,7 +76,9 @@ struct BodyAct: View {
             HStack {
                 ActBack(model: model)
                 Spacer()
-                Button("I don't have my Boop yet", action: model.skipBoard).buttonStyle(.quiet).font(.system(size: 13))
+                // While nothing can look, the way on isn't "no board".
+                Button(stuck ? "Go on without my body for now" : "I don't have my Boop yet", action: model.skipBoard)
+                    .buttonStyle(.quiet).font(.system(size: 13))
             }
         }
         .animation(.boopPop, value: model.board)
@@ -234,7 +236,9 @@ struct HowToAct: View {
         app = model.app
     }
 
-    private var paired: Bool { model.body == .joined }
+    /// Its body is here: paired in act 4, or connected after a relaunch
+    /// past it (which forgets the pairing, not the board).
+    private var paired: Bool { model.hasBoard }
 
     var body: some View {
         VStack(spacing: 14) {
@@ -333,14 +337,14 @@ struct HowToAct: View {
         StepRow(number: number, title: title, detail: detail, done: done, waiting: waiting, amber: amber)
     }
 
-    /// The legend's tiles: the popover's still faces.
+    /// The legend's tiles: each mood still, the slime's or the pack's face.
     static let faceTile: CGFloat = 44
 
     /// One mood of the legend, its idle face, on the paper: something to
     /// read, not a card to pick.
     private func face(_ design: String, _ title: String, _ detail: String) -> some View {
         HStack(spacing: Theme.gapSnug) {
-            BoopFace(mood: .idle, design: design, size: Self.faceTile)
+            MoodTile(mood: design, size: Self.faceTile)
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(.boop(13, .bold))
                 Text(detail).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)

@@ -152,7 +152,7 @@ final class AppModel: ObservableObject {
     /// the Keychain may stop to ask, and gives it to the brain from the
     /// next event. True when the Keychain holds it.
     func saveKey(_ key: String) async -> Bool {
-        let account = keyAccount
+        let key = Keychain.cleaned(key), account = keyAccount
         guard await Task.detached(operation: { Keychain.setJevKey(key, account: account) }).value else { return false }
         runtime?.reloadBrain(jevKey: key.isEmpty ? nil : key)
         return true
@@ -163,10 +163,12 @@ final class AppModel: ObservableObject {
     /// A status from the runtime. The work stream's lanes are left out:
     /// they change every few hundred milliseconds while an agent works,
     /// and only the board's mirror shows them, which the board's own lines
-    /// feed. The views get it only when it changed and something shows it.
+    /// feed. Onboarding keeps them: its own slime shows the agent's words
+    /// falling after the hello, fed its snapshot, not the board's lines.
+    /// The views get it only when it changed and something shows it.
     func take(_ status: Runtime.Status) {
         var status = status
-        status.snapshot.calls = []
+        if !onboardingShown { status.snapshot.calls = [] }
         status.buddies = status.buddies.map { buddy in
             var buddy = buddy
             buddy.snapshot.calls = []
@@ -362,7 +364,9 @@ final class AppModel: ObservableObject {
         if status?.listening == true { return "Listening…" }
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.base {
-        case "working": return s.busy == 1 ? "Working on 1 session" : "Working on \(s.busy) sessions"
+        // Short, as "2 sessions need you" is: beside the Talk button the
+        // headline has room for about twenty letters.
+        case "working": return s.busy == 1 ? "1 session working" : "\(s.busy) sessions working"
         case "idle": return "Hanging out"
         default: return "Napping"
         }
@@ -471,8 +475,13 @@ final class AppModel: ObservableObject {
         // Its firmware doesn't fit the app, so it gets the looks but no
         // reactions (linkkit/SPEC.md §6).
         if let why = status.deviceTrouble {
+            // With an update to give it, say so in plain words; LinkKit's own
+            // ("flash it") is for a build that carries none.
             return DeviceState(connected: true, trouble: "\(name)'s body has the wrong firmware", short: "Wrong firmware",
-                               detail: "Connected \(over), but \(why).", fix: update)
+                               detail: update == nil ? "Connected \(over), but \(why)."
+                                   : "Connected \(over), but its firmware doesn't fit this app, so \(name) shows how things are "
+                                   + "and doesn't react. Update it in Settings.",
+                               more: update == nil ? nil : why, fix: update)
         }
         // Its firmware has another character pack's faces: it works, but
         // draws its startup mood for a mood it doesn't have.
@@ -480,7 +489,8 @@ final class AppModel: ObservableObject {
             return DeviceState(connected: true, trouble: "\(name)'s body has another character's faces", short: "Other character",
                                detail: "Connected \(over), but the board was built with the \(pack) character pack, "
                                    + "and the app runs \(DeviceInfo.appPack), so some faces won't match. "
-                                   + "Flash the board with the app's character pack.", fix: update)
+                                   + (update == nil ? "Flash the board with the app's character pack." : "Update it in Settings."),
+                               fix: update)
         }
         // Its card's voice isn't the app's, so it gets no takes.
         // `none` is no card, one it can't read, or no pack on it.
@@ -528,7 +538,8 @@ final class AppModel: ObservableObject {
     func saveReport() {
         runtime?.saveReport { dir in
             Task { @MainActor in
-                guard let dir else { return }
+                // Found in Finder when it's saved; a beep when it couldn't be.
+                guard let dir else { return NSSound.beep() }
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(dir.path, forType: .string)
                 NSWorkspace.shared.activateFileViewerSelecting([dir])
@@ -588,7 +599,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         edit.addItem(withTitle: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
         edit.addItem(withTitle: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
         let menu = NSMenu()
-        menu.addItem(NSMenuItem())  // where the app menu would go
+        // The app menu, seen while onboarding gives Boop a Dock icon and a
+        // menu bar of its own: a way to quit that isn't only ⌘Q.
+        let app = NSMenu(title: "Boop")
+        app.addItem(withTitle: "Hide Boop", action: #selector(NSApplication.hide(_:)), keyEquivalent: "h")
+        app.addItem(.separator())
+        app.addItem(withTitle: "Quit Boop", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        let appItem = NSMenuItem()
+        appItem.submenu = app
+        menu.addItem(appItem)
         let item = NSMenuItem()
         item.submenu = edit
         menu.addItem(item)
@@ -646,8 +665,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let memory = try? MemoryStore(directory: stateDir, log: { [log] in log.write($0) })
         if let act = Onboarding.resume(isSetUp: memory?.isSetUp == true, saved: AppSettings.load(from: stateDir).onboarding) {
             log.write("onboarding: from \(act.rawValue)")
+            // Past the name it's kept, and the acts call it by it before
+            // the runtime's first status (act 4 doesn't start it).
+            if let name = memory?.name { model.setup.name = name }
             showOnboarding(at: act)
             if act.afterNaming, act != .body { startRuntime() }
+            // What the act does as it opens, as if it had just been moved to.
+            onboarding?.entered(act)
         } else {
             makeStatusItem()
             startRuntime()
@@ -850,7 +874,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // Push-to-talk: the core says when the mic
             // is on; what it heard goes back to the runtime.
             let listener = SpeechListener(log: { [log] in log.write($0) })
-            runtime.onListen = { (on: Bool) in
+            // Weakly: a runtime that fails to start must go, and take its
+            // lock with it, or "Try again" finds the folder still locked.
+            runtime.onListen = { [weak runtime] (on: Bool) in
+                guard let runtime else { return }
                 if on {
                     listener.start { why in runtime.micFailed(why) }
                 } else {
@@ -868,7 +895,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             runtime.onDrawer = { [weak self] did in Task { @MainActor in self?.onboarding?.drawer(did) } }
             runtime.onHeard = { [weak self] words in Task { @MainActor in self?.onboarding?.talked(words) } }
             runtime.onAgentHook = { [weak self] agent in Task { @MainActor in self?.onboarding?.agentHook(agent) } }
-            presenceSignals.start { runtime.presence($0) }
+            try runtime.start()
+            // Only once it runs, so a failed start leaves nothing holding it.
+            presenceSignals.start { [weak runtime] in runtime?.presence($0) }
             // A simulator started or stopped on this Mac: looked for while
             // Settings is open to show it.
             let look = Timer.scheduledTimer(withTimeInterval: DeviceChooser.watchEvery, repeats: true) { [weak self] _ in
@@ -878,7 +907,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
                 }
             }
             look.tolerance = 0.5
-            try runtime.start()
             model.runtime = runtime
             model.startError = nil
             runtime.refresh()

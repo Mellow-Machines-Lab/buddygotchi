@@ -9,13 +9,15 @@ void TouchGesture::down(int x, int y, uint32_t t) {
   x0_ = minX_ = maxX_ = x;
   y0_ = minY_ = maxY_ = y;
   path_ = 0;
+  wayX_ = x, wayY_ = y;
   t0_ = t;
   count_ = 0;
   sample(x, y, t);
 }
 
 void TouchGesture::move(int x, int y, uint32_t t) {
-  path_ += std::abs(x - last().x) + std::abs(y - last().y);
+  if (std::max(std::abs(x - wayX_), std::abs(y - wayY_)) > kJitterPx)
+    path_ += std::abs(x - wayX_) + std::abs(y - wayY_), wayX_ = x, wayY_ = y;
   minX_ = std::min(minX_, x), maxX_ = std::max(maxX_, x);
   minY_ = std::min(minY_, y), maxY_ = std::max(maxY_, y);
   sample(x, y, t);
@@ -32,6 +34,8 @@ bool TouchGesture::held(uint32_t t) const {
   return t - t0_ >= kHoldMs && maxX_ - minX_ <= kHoldSpotPx && maxY_ - minY_ <= kHoldSpotPx;
 }
 
+int TouchGesture::spread() const { return std::max(maxX_ - minX_, maxY_ - minY_); }
+
 TouchGesture::Path TouchGesture::path() const { return {x0_, y0_, last().x, last().y, last().t - t0_}; }
 
 TouchGesture::Kind TouchGesture::up(render::Gesture& g) const {
@@ -44,6 +48,8 @@ TouchGesture::Kind TouchGesture::up(render::Gesture& g) const {
     int vx, vy;
     velocity(vx, vy);
     if (int64_t(vx) * vx + int64_t(vy) * vy > int64_t(kSwipePxPerS) * kSwipePxPerS) return kSwipe;
+  } else if (spread() >= kStrokePx || (!spot && path_ >= kTicklePathPx)) {
+    g = render::Gesture::kStroke;  // a rub back and forth, ending near where it began
   } else if (std::abs(x0_ - kNoseX) <= kNoseHalf && std::abs(y0_ - kNoseY) <= kNoseHalf) {
     g = render::Gesture::kNose;
   } else {

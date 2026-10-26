@@ -90,7 +90,7 @@ struct OverviewPane: View {
                     if showsSlime {
                         SlimeFace(feed: model.slime, snapshot: model.status?.snapshot ?? Self.waking, live: model.shown, size: faceSize)
                     } else {
-                        BoopFace(mood: FaceMood(model.status), design: model.status?.snapshot.mood ?? MoodOutput.initial,
+                        BoopFace(mood: model.startError == nil ? FaceMood(model.status) : .stopped, design: model.status?.snapshot.mood ?? MoodOutput.initial,
                                  size: faceSize)
                     }
                     VStack(alignment: .leading, spacing: 3) {
@@ -98,7 +98,7 @@ struct OverviewPane: View {
                             // The name comes first: a long one shrinks a little
                             // before it's cut, and the mood shows only whole,
                             // where there's room for it.
-                            Text(model.name).font(.boop(18)).lineLimit(1).minimumScaleFactor(0.8)
+                            Text(model.name).font(.boop(18)).lineLimit(1).minimumScaleFactor(0.8).help(model.name)
                                 .layoutPriority(1)
                             if let mood = model.status?.snapshot.mood {
                                 ViewThatFits(in: .horizontal) {
@@ -392,7 +392,10 @@ struct OverviewPane: View {
     /// fit the device. The session list puts it first.
     /// A click opens it, as a tap on the board's needs-you screen does.
     private func needsYou(_ attn: StateSnapshot.Attention, _ sessions: [SessionSummary]) -> some View {
-        let waiting = sessions.first { $0.status == .waiting }
+        // The request the card names: never one dismissed, and the agent's
+        // that asks (with several buddies, the list is all of theirs).
+        let waiting = sessions.first { $0.status == .waiting && !$0.dismissed && $0.agent == attn.agent }
+            ?? sessions.first { $0.status == .waiting && !$0.dismissed }
         let project = waiting?.project ?? attn.project
         let name = waiting?.name ?? attn.name
         let agent = Agent(rawValue: attn.agent)?.displayName ?? attn.agent
@@ -685,6 +688,7 @@ struct SessionRow: View {
 
     private var tone: Color {
         switch status {
+        case .waiting where session.dismissed: Theme.inkSoft
         case .waiting: Theme.amberInk
         case .working: Theme.ink
         case .idle: Theme.inkSoft
@@ -693,6 +697,7 @@ struct SessionRow: View {
 
     private var bar: Color {
         switch status {
+        case .waiting where session.dismissed: Theme.amber.opacity(0.4)
         case .waiting: Theme.amber
         case .working: session.slot.flatMap(Theme.lane) ?? Theme.inkSoft
         case .idle: Theme.hairlineStrong
@@ -722,6 +727,8 @@ struct SessionRow: View {
 
     private var label: String {
         switch status {
+        // Still waiting, but you put it away: it no longer shows on Boop.
+        case .waiting where session.dismissed: "dismissed"
         case .waiting: "needs you"
         case .working: "working"
         case .idle: "idle"

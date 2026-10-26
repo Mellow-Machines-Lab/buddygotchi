@@ -183,13 +183,18 @@ struct PaneSection<Content: View>: View {
 /// The raw detail under plain words, behind Details, for whoever wants it.
 struct MoreDetails: View {
     let text: String
-    @ViewState private var shown = false
+    @ObservedObject private var open = OpenDetails.shared
 
     init(_ text: String) { self.text = text }
 
+    /// Open or not, by its text, the same in every copy of it: FittedScroll
+    /// lays its content out more than once, and a copy's own state would
+    /// open the one clicked while the copy that sets the height stayed shut.
+    private var shown: Bool { open.texts.contains(text) }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Button { withAnimation(.boopSettle) { shown.toggle() } } label: {
+            Button { withAnimation(.boopSettle) { open.toggle(text) } } label: {
                 Label("Details", systemImage: shown ? "chevron.down" : "chevron.right")
             }
             .buttonStyle(.plain)
@@ -201,6 +206,16 @@ struct MoreDetails: View {
                     .textSelection(.enabled)
             }
         }
+    }
+}
+
+/// Which Details are open, by their text, for the app's lifetime.
+@MainActor
+final class OpenDetails: ObservableObject {
+    static let shared = OpenDetails()
+    @Published private(set) var texts: Set<String> = []
+    func toggle(_ text: String) {
+        if texts.remove(text) == nil { texts.insert(text) }
     }
 }
 

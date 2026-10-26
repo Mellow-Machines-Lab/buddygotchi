@@ -21,7 +21,8 @@ final class KeychainTests: XCTestCase {
         let security = FakeSecurity(entry: "old")
         XCTAssertTrue(Keychain.setJevKey("sk-new key", account: "jev", security: security.tool))
         XCTAssertEqual(security.entry, "sk-new key")
-        XCTAssertEqual(security.calls.first?.arguments.first, "delete-generic-password", "the old entry goes first")
+        XCTAssertEqual(security.calls.first { $0.arguments.first != "find-generic-password" }?.arguments.first,
+                       "delete-generic-password", "the old entry goes first")
         for call in security.calls {
             XCTAssertFalse(call.arguments.joined(separator: " ").contains("sk-new"), "\(call.arguments)")
             XCTAssertFalse(call.input?.contains("sk-new") ?? false, "stdin carries it hex-encoded")
@@ -33,6 +34,21 @@ final class KeychainTests: XCTestCase {
         XCTAssertTrue(Keychain.setJevKey("", account: "jev", security: security.tool))
         XCTAssertNil(security.entry)
         XCTAssertFalse(security.calls.contains { $0.arguments == ["-i"] }, "nothing is added")
+    }
+
+    func testAPastedKeyLosesTheSpacesAndNewlinesAtItsEnds() {
+        let security = FakeSecurity(entry: nil)
+        XCTAssertTrue(Keychain.setJevKey("  sk-new\n", account: "jev", security: security.tool))
+        XCTAssertEqual(security.entry, "sk-new")
+        XCTAssertTrue(Keychain.setJevKey(" \n ", account: "jev", security: security.tool), "blank removes it")
+        XCTAssertNil(security.entry)
+    }
+
+    func testASaveThatDidntLandPutsTheOldKeyBack() {
+        let security = FakeSecurity(entry: "old")
+        security.refuses = "sk-new"
+        XCTAssertFalse(Keychain.setJevKey("sk-new", account: "jev", security: security.tool))
+        XCTAssertEqual(security.entry, "old", "a failed save doesn't lose the key Boop had")
     }
 
     func testASaveThatDidntLandIsReported() {
@@ -63,6 +79,8 @@ final class KeychainTests: XCTestCase {
 final class FakeSecurity: @unchecked Sendable {
     var entry: String?
     var refusesToAdd = false
+    /// A key it won't add, though it adds others.
+    var refuses: String?
     var calls: [(arguments: [String], input: String?)] = []
     private let lock = NSLock()
 
@@ -85,7 +103,8 @@ final class FakeSecurity: @unchecked Sendable {
                       let at = words.firstIndex(of: "-X"), at + 1 < words.count else { return (0, "") }
                 let hex = Array(words[at + 1].trimmingCharacters(in: .newlines))
                 let bytes = stride(from: 0, to: hex.count, by: 2).compactMap { UInt8(String(hex[$0...$0 + 1]), radix: 16) }
-                entry = String(decoding: bytes, as: UTF8.self)
+                let key = String(decoding: bytes, as: UTF8.self)
+                if key != refuses { entry = key }
                 return (0, "")
             default:
                 return (1, "")

@@ -48,6 +48,10 @@ struct AgentsAct: View {
                 Text(AppModel.clientMissing + " Then connect your agents in Settings.")
                     .font(.system(size: 12)).foregroundStyle(Theme.clayInk).multilineTextAlignment(.center)
             }
+            ForEach(Agent.allCases.filter { app.hookErrors[$0] != nil }, id: \.self) { agent in
+                Text("Couldn't connect \(agent.displayName): \(app.hookErrors[agent] ?? "")")
+                    .font(.system(size: 12)).foregroundStyle(Theme.clayInk).multilineTextAlignment(.center)
+            }
             Button {
                 withAnimation(.boopSettle) { model.showHooks.toggle() }
             } label: {
@@ -225,8 +229,11 @@ struct AgentsAct: View {
         if model.connected {
             // Until an agent says hi, moving on is "later"; after, on a board
             // that tours, the tour comes first.
-            ActNav(model: model, next: model.heard == nil ? "I'll try it later" : "Next",
-                   enabled: model.progress.mayLeaveAgents(tours: model.tours))
+            // The tour waits on the board and the agent (a turn to finish,
+            // the drawer), so it can always be skipped.
+            let mayLeave = model.progress.mayLeaveAgents(tours: model.tours)
+            let skip: (label: String, action: () -> Void)? = mayLeave ? nil : (label: "Skip the tour", action: { model.next() })
+            ActNav(model: model, next: model.heard == nil ? "I'll try it later" : "Next", enabled: mayLeave, quiet: skip)
         } else if model.detectedAgents.isEmpty || !app.installer.clientInPlace {
             ActNav(model: model)
         } else {
@@ -309,6 +316,10 @@ struct SmallThingsAct: View {
                     .disabled(app.loginItemState == .unavailable)
                 }
             }
+        }
+        // Back from System Settings, where Open sent you to allow it.
+        .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
+            app.refreshLoginItem()
         }
     }
 

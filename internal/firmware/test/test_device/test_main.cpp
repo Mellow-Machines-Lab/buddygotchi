@@ -4,8 +4,11 @@
 #include <unity.h>
 
 #include "voice_file.h"  // internal/firmware/
+#include "wrapped_face.h"  // internal/firmware/
 
 #include <cstdio>
+#include <cstdlib>
+#include <memory>
 #include <cstring>
 #include <string>
 #include <utility>
@@ -2405,11 +2408,260 @@ static void test_a_call_comes_forward_over_the_work() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "hidden")));
 }
 
+// ---- The agents' drawer, on a face that has one (wrapped_face.h) -----------
+
+namespace {
+
+// A board whose face has a drawer, on USB, its clock frozen, with sessions
+// to list.
+struct DrawerRig {
+  FakeHal hal;
+  Capture usb;
+  std::vector<uint8_t> px = std::vector<uint8_t>(size_t(render::kWidth) * render::kHeight);
+  app::Device dev{hal, px.data(), std::make_unique<testface::WrappedFace>()};
+  linkkit::Kit kit{hal, dev, true};
+  uint32_t t = 0;
+  static constexpr const char* kState = "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"vol\":0}";
+  // Three sessions; rows 30 px tall from y 40, so the second's middle is
+  // at y 85.
+  static constexpr const char* kListed =
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"vol\":0,\"list\":[[11,\"n\",-1,\"codex\",\"Hero "
+      "copy\",\"landing\"],[12,\"w\",0,\"claude\",\"Fix the lane colours\",\"buddygotchi\"],[14,\"i\",-1,"
+      "\"claude\",\"harness\",\"\"]]}";
+  explicit DrawerRig(const char* state = kState) {
+    kit.setOut(linkkit::Link::kUsb, &usb);
+    line("{\"t\":\"dbg.clock\",\"freeze\":0}");
+    line(state);
+  }
+  void line(const char* s) {
+    kit.handleLine(s, std::strlen(s), linkkit::Link::kUsb);
+    kit.tick();
+  }
+  // The clock on by `ms`, a tick every 20.
+  void run(uint32_t ms) {
+    for (uint32_t done = 0; done < ms; done += 20) {
+      char step[64];
+      std::snprintf(step, sizeof(step), "{\"t\":\"dbg.clock\",\"freeze\":%lu}", (unsigned long)(t += 20));
+      line(step);
+    }
+  }
+  void touch(int x, int y, int toX, int toY, int ms) {
+    char s[128];
+    std::snprintf(s, sizeof(s), "{\"t\":\"dbg.touch\",\"x\":%d,\"y\":%d,\"to_x\":%d,\"to_y\":%d,\"ms\":%d}", x, y,
+                  toX, toY, ms);
+    line(s);
+  }
+  // Pulled up from the strip, let go open, and the Mac's rows in.
+  void pullOpen() {
+    touch(160, 232, 160, 40, 320);
+    run(400);
+    line(kListed);
+    run(app::Device::kDrawerMs + 100);
+  }
+  int open() {
+    const size_t from = usb.text.size();
+    line("{\"t\":\"dbg.state\"}");
+    const size_t i = usb.text.find("\"drawer\":{\"open\":", from);
+    const int at = i == std::string::npos ? -9999 : std::atoi(usb.text.c_str() + i + 17);
+    usb.text.resize(from);
+    return at;
+  }
+  int count(const char* needle) const { return ::count(usb.text, needle); }
+};
+
+constexpr const char* kOpened = "{\"t\":\"ev\",\"kind\":\"drawer\",\"did\":\"open\"}";
+constexpr const char* kClosed = "{\"t\":\"ev\",\"kind\":\"drawer\",\"did\":\"closed\"}";
+constexpr const char* kTapped = "\"kind\":\"tap\"";
+
+}  // namespace
+
+// Pins BOOT on the open drawer: it only shuts it. The Mac hears it closed
+// and no tap, so it opens no thread.
+static void test_boot_only_shuts_the_open_drawer() {
+  DrawerRig b;
+  b.pullOpen();
+  TEST_ASSERT_EQUAL_INT(1000, b.open());
+  b.usb.text.clear();
+  b.line("{\"t\":\"dbg.press\",\"ms\":100}");
+  b.run(200 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
+  TEST_ASSERT_EQUAL_INT(0, b.open());
+  b.usb.text.clear();
+  b.line("{\"t\":\"dbg.press\",\"ms\":100}");  // shut, BOOT is BOOT again
+  b.run(200);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kTapped));
+}
+
+// Pins the drawer's pick and pull distances: a finger must go
+// kDrawerPullPx (22) up the strip to pull it, so a tap that rolls a little
+// up is the tap it was; on the open drawer a touch that travels as far
+// either way is a drag, which lets go picking nothing, where a tap picks.
+static void test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px() {
+  TEST_ASSERT_EQUAL_INT(22, app::Device::kDrawerPullPx);
+  DrawerRig b;
+  b.touch(160, 232, 160, 211, 100);  // 21 px up the strip
+  b.run(200);
+  TEST_ASSERT_EQUAL_INT(0, b.count(kOpened));
+  TEST_ASSERT_EQUAL_INT(1, b.count(kTapped));
+  b.touch(160, 232, 160, 200, 100);  // 32 px: a pull
+  b.run(200 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kOpened));
+  TEST_ASSERT_EQUAL_INT(1, b.count(kTapped));
+
+  DrawerRig d;
+  d.pullOpen();
+  d.usb.text.clear();
+  d.touch(60, 85, 260, 85, 300);  // across the second row
+  d.run(400);
+  TEST_ASSERT_EQUAL_INT(0, d.count("\"did\":\"pick\""));
+  TEST_ASSERT_EQUAL_INT(0, d.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(1000, d.open());
+  d.touch(160, 85, 170, 85, 100);  // a tap, a little rolled
+  d.run(200);
+  TEST_ASSERT_EQUAL_INT(1, d.count("{\"t\":\"ev\",\"kind\":\"drawer\",\"did\":\"pick\",\"data\":{\"id\":12}}"));
+  TEST_ASSERT_EQUAL_INT(1, d.count(kClosed));
+}
+
+// Pins what a pick opens: the session under the finger as it went down,
+// though a state reorders the rows before it lets go; and nothing when the
+// drawer shut under the finger (the Mac's listening).
+static void test_a_pick_is_the_row_the_finger_went_down_on() {
+  DrawerRig b;
+  b.pullOpen();
+  b.usb.text.clear();
+  b.touch(160, 85, 160, 85, 200);
+  b.run(100);
+  b.line(
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"vol\":0,\"list\":[[12,\"w\",0,\"claude\",\"Fix "
+      "the lane colours\",\"buddygotchi\"],[11,\"n\",-1,\"codex\",\"Hero copy\",\"landing\"],[14,\"i\",-1,"
+      "\"claude\",\"harness\",\"\"]]}");
+  b.run(200);
+  TEST_ASSERT_EQUAL_INT(1, b.count("\"did\":\"pick\",\"data\":{\"id\":12}}"));
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"id\":11}"));
+
+  DrawerRig l;
+  l.pullOpen();
+  l.usb.text.clear();
+  l.touch(160, 85, 160, 85, 200);
+  l.run(100);
+  l.line("{\"t\":\"do\",\"name\":\"listening\",\"play\":\"now\"}");
+  l.run(200 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, l.count("\"did\":\"pick\""));
+  TEST_ASSERT_EQUAL_INT(1, l.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(0, l.open());
+}
+
+// Pins what shuts the drawer by itself: a new needs-you, so its screen
+// shows and a hold can dismiss it (one already showing as it was pulled
+// open doesn't); the Mac going (no app), whose rows it can't trust, long
+// before its own kDrawerShutMs; and a finger on it then sends nothing.
+// With no sessions at all a finger up the strip opens no empty drawer.
+static void test_needs_you_and_no_app_shut_the_drawer() {
+  const char* attn =
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"vol\":0,\"attn\":{\"agent\":\"codex\","
+      "\"project\":\"landing\",\"id\":7}}";
+  DrawerRig b;
+  b.pullOpen();
+  b.usb.text.clear();
+  b.touch(160, 85, 160, 85, 400);  // a finger on a row as it comes
+  b.run(100);
+  b.line(attn);
+  b.run(400 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kClosed));
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"did\":\"pick\""));
+  TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
+  TEST_ASSERT_EQUAL_INT(0, b.open());
+  b.usb.text.clear();
+  b.touch(160, 232, 160, 40, 320);  // over the request already showing
+  b.run(400);
+  b.line(
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"idle\":1,\"vol\":0,\"attn\":{\"agent\":\"codex\","
+      "\"project\":\"landing\",\"id\":7},\"list\":[[11,\"n\",-1,\"codex\",\"Hero copy\",\"landing\"]]}");
+  b.run(app::Device::kDrawerMs + 100);
+  b.line(attn);
+  b.run(1000);
+  TEST_ASSERT_EQUAL_INT(1000, b.open());
+
+  DrawerRig gone;
+  gone.run(20000);  // the Mac's last state 20 s ago
+  gone.touch(160, 232, 160, 40, 320);
+  gone.run(400 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(1000, gone.open());
+  gone.usb.text.clear();
+  gone.run(app::Behaviour::kNoAppMs - gone.t + 100);  // 10 s on: no app, 5 s before its own shut
+  TEST_ASSERT_EQUAL_INT(1, gone.count(kClosed));
+  gone.run(app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, gone.open());
+
+  DrawerRig none("{\"t\":\"state\",\"base\":\"asleep\",\"vol\":0}");
+  none.touch(160, 232, 160, 40, 320);
+  none.run(400 + app::Device::kDrawerMs);
+  TEST_ASSERT_EQUAL_INT(0, none.count(kOpened));
+  TEST_ASSERT_EQUAL_INT(0, none.open());
+}
+
+// Pins do not disturb for the face's sounds: laid face down, the sounds
+// playing stop and no more are sent, however its design goes on.
+static void test_face_down_silences_the_faces_sounds() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"vol\":4}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  runClock(r, 0, 3000);
+  TEST_ASSERT_TRUE(r.hal.effects.size() > 0);
+  const int stops = r.hal.effectStops;
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+  runClock(r, 3010, 4500);
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"did\":\"facedown\""));
+  TEST_ASSERT_TRUE(r.hal.effectStops > stops);
+  const size_t sent = r.hal.effects.size();
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"mood\":\"happy\",\"vol\":4}");
+  runClock(r, 4510, 12000);
+  TEST_ASSERT_EQUAL(int(sent), int(r.hal.effects.size()));
+}
+
+// Pins the volume before the Mac speaks: 0, so a board that restarts with
+// the Mac asleep makes no sound the owner had turned off.
+static void test_silent_until_the_first_state() {
+  Rig r;
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"vol\":0,"));
+  runClock(r, 0, 5000);
+  TEST_ASSERT_EQUAL(0, int(r.hal.effects.size()));
+}
+
+// Pins a firm tap against the motion sensor: the board's jolt as a finger
+// presses is no thump (no startle), and the same jolt with no finger is.
+static void test_a_firm_tap_doesnt_startle() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  runClock(r, 0, 2500);
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":60,\"ms\":60}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1500}");
+  runClock(r, 2510, 2550);
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  runClock(r, 2560, 5000);
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"did\":\"startle\""));
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1500}");
+  runClock(r, 5010, 5050);
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  runClock(r, 5060, 5300);
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"did\":\"startle\""));
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_the_face_plays_its_designs_sounds);
   RUN_TEST(test_a_call_comes_forward_over_the_work);
+  RUN_TEST(test_boot_only_shuts_the_open_drawer);
+  RUN_TEST(test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px);
+  RUN_TEST(test_a_pick_is_the_row_the_finger_went_down_on);
+  RUN_TEST(test_needs_you_and_no_app_shut_the_drawer);
+  RUN_TEST(test_face_down_silences_the_faces_sounds);
+  RUN_TEST(test_silent_until_the_first_state);
+  RUN_TEST(test_a_firm_tap_doesnt_startle);
   RUN_TEST(test_the_sounds_follow_every_design);
   RUN_TEST(test_a_state_carries_what_the_agents_do);
   RUN_TEST(test_a_state_carries_its_tags_and_counts);

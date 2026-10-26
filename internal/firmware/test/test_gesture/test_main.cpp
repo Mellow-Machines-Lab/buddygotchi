@@ -9,6 +9,7 @@
 #include "app/touch_gesture.h"
 
 #include <algorithm>
+#include <cmath>
 #include <initializer_list>
 #include <utility>
 #include <vector>
@@ -106,6 +107,33 @@ static void test_a_touchs_path() {
   TEST_ASSERT_EQUAL(kTouchTap, path({{160, 100}}));  // the face, but not its nose
 }
 
+// Pins the rub: a stroke is told by how far the finger strayed, not only by
+// where it let go, so a rub back and forth wider than a stroke's 40 px, or
+// a tickle's 90 px of wiggling outside its 36 px spot, is a stroke though it
+// ends where it began; and a finger held still on a panel whose readings
+// jitter by kJitterPx (2) goes nowhere, so a long press is no tickle.
+static void test_a_rub_is_a_stroke_and_jitter_goes_nowhere() {
+  using render::Gesture;
+  TEST_ASSERT_EQUAL_INT(2, TouchGesture::kJitterPx);
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{60, 120}, {120, 120}, {64, 120}}));  // out 60 and back
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), path({{100, 100}, {100, 140}, {100, 102}}));  // down 40 and back
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke),
+                    path({{100, 100}, {138, 100}, {100, 100}, {138, 100}, {100, 100}}));  // 38 wide, 152 of wiggle
+  TEST_ASSERT_EQUAL(kTouchTap, path({{100, 100}, {138, 100}, {102, 100}}));                // 38 wide, 74 of way
+  // Two seconds of a still finger whose readings jitter by up to 2 px.
+  TouchGesture g;
+  g.down(100, 100, 0);
+  for (uint32_t t = 20; t <= 2000; t += 20) g.move(100 + int(t / 20 % 3), 100 + int(t / 20 % 2) * 2, t);
+  render::Gesture what;
+  TEST_ASSERT_EQUAL(TouchGesture::kTap, g.up(what));
+  TEST_ASSERT_TRUE(g.held(2000));
+  // A slow drag, a pixel a reading, still travels.
+  g.down(60, 120, 0);
+  for (int i = 1; i <= 60; ++i) g.move(60 + i, 120, uint32_t(i * 40));
+  TEST_ASSERT_EQUAL(TouchGesture::kGesture, g.up(what));
+  TEST_ASSERT_EQUAL(int(Gesture::kStroke), int(what));
+}
+
 // Pins the swipe: a touch that travels a stroke's 40 px and lets go faster
 // than 600 px a second (its velocity, which the face carries on) is a swipe,
 // whichever way it goes, and names the stroke (or the ruffle) it would be;
@@ -172,23 +200,25 @@ static void test_how_fast_a_finger_lets_go() {
 }
 
 // Pins the hold that dismisses a request: a finger kept down 1 s inside a
-// spot 24 px wide each way. Wandering past it (a stroke on its way, a
-// tickle's wiggle) is no hold, however long the finger stays down.
+// spot 40 px wide each way, a stroke's travel, so a hold that drifts is
+// still a hold. Wandering past it (a stroke on its way) is no hold, however
+// long the finger stays down.
 static void test_a_hold() {
   TEST_ASSERT_EQUAL_UINT32(1000, TouchGesture::kHoldMs);
-  TEST_ASSERT_EQUAL_INT(24, TouchGesture::kHoldSpotPx);
+  TEST_ASSERT_EQUAL_INT(40, TouchGesture::kHoldSpotPx);
   TouchGesture g;
   g.down(100, 100, 5000);
-  g.move(112, 112, 5100);
-  g.move(88, 88, 5200);  // 24 px each way: still the spot
+  g.move(120, 120, 5100);
+  g.move(80, 80, 5200);  // 40 px each way: still the spot
   TEST_ASSERT_FALSE(g.held(5999));
   TEST_ASSERT_TRUE(g.held(6000));
   TEST_ASSERT_TRUE(g.held(9000));
+  TEST_ASSERT_EQUAL_INT(40, g.spread());
   g.down(100, 100, 5000);
-  g.move(125, 100, 5100);  // 25 px across
+  g.move(141, 100, 5100);  // 41 px across
   TEST_ASSERT_FALSE(g.held(9000));
   g.down(100, 100, 5000);
-  g.move(100, 75, 5100);  // 25 px down
+  g.move(100, 59, 5100);  // 41 px up
   TEST_ASSERT_FALSE(g.held(9000));
   // A stroke that has come back to where it began was still a stroke.
   g.down(60, 120, 0);
@@ -214,7 +244,7 @@ static void still(MotionGesture& m, uint32_t& t, uint32_t ms) {
 }
 
 // Pins MotionGesture's first guesses: a pick-up is 150 mg off 1 g for
-// 150 ms from still, and a put-down 1 s still after it; a shake three
+// 150 ms from still, and a put-down 1.5 s still after it; a shake three
 // swings past 500 mg within 600 ms; a thump a jolt past 350 mg over within
 // 80 ms; face down 1 s with z under -800 mg, face up again over 800.
 // Typing on the desk (a few tens of mg) is none of them.
@@ -243,8 +273,8 @@ static void test_what_the_motion_sensor_feels() {
   e = feed(m, t, t + 600, 200, 0, 900);  // carried about
   t += 600;
   TEST_ASSERT_TRUE(e.empty());
-  e = feed(m, t, t + 1200, 0, 0, 1000);
-  t += 1200;
+  e = feed(m, t, t + 1700, 0, 0, 1000);
+  t += 1700;
   TEST_ASSERT_EQUAL(1, int(e.size()));
   TEST_ASSERT_EQUAL(MotionGesture::kPutdown, e[0]);
   // Shaken: swings of ±700 mg every 60 ms.
@@ -266,6 +296,59 @@ static void test_what_the_motion_sensor_feels() {
   TEST_ASSERT_FALSE(m.faceDown());
 }
 
+// Pins the put-down against a steady hand: within 60 mg of 1 g isn't
+// enough, the tilt must hold too, no axis (smoothed) moving over 40 mg,
+// for 1.5 s. A board held in a hand that turns it slowly, never off 1 g, is
+// never put down; laid still, it is, within 1.5 s.
+static void test_a_steady_hand_isnt_a_desk() {
+  TEST_ASSERT_EQUAL_INT(60, MotionGesture::kStillMg);
+  TEST_ASSERT_EQUAL_INT(40, MotionGesture::kSteadyMg);
+  TEST_ASSERT_EQUAL_UINT32(1500, MotionGesture::kSettleMs);
+  MotionGesture m;
+  uint32_t t = 0;
+  still(m, t, 2000);
+  auto e = feed(m, t, t + 300, 0, 0, 1300);
+  t += 300;
+  TEST_ASSERT_EQUAL(MotionGesture::kPickup, e[0]);
+  // Held, turning 60 mg a second on x for 4 s: always within 1 g.
+  for (uint32_t ms = 0; ms < 4000; ms += 20, t += 20) {
+    const int ax = int(ms * 60 / 1000);
+    const int az = int(std::lround(std::sqrt(1000.0 * 1000.0 - double(ax) * ax)));
+    TEST_ASSERT_EQUAL(MotionGesture::kNone, m.update(ax, 0, az, t));
+  }
+  TEST_ASSERT_TRUE(m.held());
+  e = feed(m, t, t + 1500, 240, 0, 971);  // laid down where it stopped
+  t += 1500;
+  TEST_ASSERT_EQUAL(1, int(e.size()));
+  TEST_ASSERT_EQUAL(MotionGesture::kPutdown, e[0]);
+}
+
+// Pins the thump against a finger: a jolt while a finger is on the screen
+// or BOOT is down (hands), or within kHandsMs (150) after, is the press,
+// not a thump; one later is.
+static void test_a_press_isnt_a_thump() {
+  TEST_ASSERT_EQUAL_UINT32(150, MotionGesture::kHandsMs);
+  MotionGesture m;
+  uint32_t t = 0;
+  still(m, t, 2000);
+  auto jolt = [&](bool pressed) {
+    std::vector<MotionGesture::Event> out;
+    for (uint32_t end = t + 120; t < end; t += 20) {
+      if (pressed && t < end - 80) m.hands(t);
+      if (auto x = m.update(0, 0, t < end - 80 ? 1500 : 1000, t)) out.push_back(x);
+    }
+    return out;
+  };
+  TEST_ASSERT_TRUE(jolt(true).empty());  // a firm tap: the finger lifts 40 ms into the calm
+  still(m, t, 2000);
+  m.hands(t);  // a press that let go just before it
+  TEST_ASSERT_TRUE(jolt(false).empty());
+  still(m, t, 2000);
+  auto e = jolt(false);
+  TEST_ASSERT_EQUAL(1, int(e.size()));
+  TEST_ASSERT_EQUAL(MotionGesture::kThump, e[0]);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_short_press_is_a_tap);
@@ -273,9 +356,12 @@ int main() {
   RUN_TEST(test_talk_is_capped_at_30_s);
   RUN_TEST(test_bounces_are_ignored);
   RUN_TEST(test_a_touchs_path);
+  RUN_TEST(test_a_rub_is_a_stroke_and_jitter_goes_nowhere);
   RUN_TEST(test_a_quick_stroke_is_a_swipe);
   RUN_TEST(test_how_fast_a_finger_lets_go);
   RUN_TEST(test_a_hold);
   RUN_TEST(test_what_the_motion_sensor_feels);
+  RUN_TEST(test_a_steady_hand_isnt_a_desk);
+  RUN_TEST(test_a_press_isnt_a_thump);
   return UNITY_END();
 }

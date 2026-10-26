@@ -8,6 +8,7 @@
 #include <utility>
 #include <vector>
 
+#include "app/sound.h"
 #include "render/pixel/anim.h"
 #include "render/pixel/effect_track.h"
 #include "render/pixel/needs_you.h"
@@ -557,8 +558,35 @@ void test_a_stall_drops_late_events() {
   TEST_ASSERT_EQUAL(window, n);
 }
 
+// Pins the sound queue's rule when it's full (app::Sound::toDrop): an
+// effect goes first, the oldest waiting, or the new one if it's an effect;
+// then the oldest `say`; a hush or a stop only when another of its kind
+// waits after it or is the new one, so none is ever lost to effects.
+static void test_a_full_sound_queue_never_drops_a_stop() {
+  using Kind = app::Sound::Kind;
+  auto cmd = [](Kind k) {
+    app::Sound::Cmd c{};
+    c.kind = k;
+    return c;
+  };
+  const app::Sound::Cmd hush = cmd(Kind::kHush), stop = cmd(Kind::kStopEffects), fx = cmd(Kind::kEffect),
+                        say = cmd(Kind::kSay);
+  app::Sound::Cmd q[8] = {hush, fx, fx, say, fx, fx, fx, fx};
+  TEST_ASSERT_EQUAL_INT(1, app::Sound::toDrop(q, 8, stop));  // the oldest effect, not the hush before it
+  TEST_ASSERT_EQUAL_INT(1, app::Sound::toDrop(q, 8, fx));
+  app::Sound::Cmd stops[8] = {hush, stop, say, hush, stop, say, hush, stop};
+  TEST_ASSERT_EQUAL_INT(-1, app::Sound::toDrop(stops, 8, fx));   // the new effect
+  TEST_ASSERT_EQUAL_INT(2, app::Sound::toDrop(stops, 8, hush));  // the oldest say
+  app::Sound::Cmd only[8] = {hush, stop, hush, stop, hush, stop, hush, stop};
+  TEST_ASSERT_EQUAL_INT(0, app::Sound::toDrop(only, 8, say));  // a hush another follows
+  app::Sound::Cmd two[2] = {hush, stop};
+  TEST_ASSERT_EQUAL_INT(1, app::Sound::toDrop(two, 2, stop));  // the stop the new one repeats
+  TEST_ASSERT_EQUAL_INT(-1, app::Sound::toDrop(two, 2, say));  // nothing it may drop
+}
+
 int main() {
   UNITY_BEGIN();
+  RUN_TEST(test_a_full_sound_queue_never_drops_a_stop);
   RUN_TEST(test_every_design_has_a_timeline);
   RUN_TEST(test_each_state_sounds_as_the_bank_says);
   RUN_TEST(test_an_effect_plays_its_clip_once);

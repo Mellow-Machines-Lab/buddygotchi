@@ -31,6 +31,8 @@ public final class MemoryStore {
     }
 
     public var isSetUp: Bool { longTerm != nil }
+    /// The name it was given at setup, once it's set up.
+    public var name: String? { longTerm?.name }
 
     /// Creates `long-term.md` for a new Boop, and its copy in
     /// `history/<today>/`. Refuses if one exists.
