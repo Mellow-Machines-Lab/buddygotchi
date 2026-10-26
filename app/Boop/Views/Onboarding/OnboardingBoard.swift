@@ -259,7 +259,7 @@ struct HowToAct: View {
                     face("proud", "Proud", "a big finish")
                     face("tired", "Tired", "a long day")
                 }
-                Text("My mood shifts with your day, and settles back when it's quiet.")
+                Text("My mood holds steady. Big moments move it, and it settles back with time.")
                     .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
             }
             Spacer(minLength: 0)
@@ -279,13 +279,14 @@ struct HowToAct: View {
     /// board, it's glowing amber for practice, as if an agent were waiting.
     private var amberDetail: String {
         guard paired, model.lessons.isSuperset(of: [.tap, .button, .talk]), !model.lessons.contains(.amber) else {
-            return "An agent is waiting for you. A tap opens it on your Mac."
+            return "An agent is waiting for you. A tap opens it on your Mac; hold a finger on me to put it away."
         }
         return "I'm glowing amber now, as if an agent were waiting. Tap me to answer it."
     }
 
     /// What talking to Boop is for: a chat, not orders for your agents.
-    static let talkFor = "Say hi, cheer me on, tease me, or ask about your agents. I answer with a face, a word and a sign."
+    static let talkFor = "Say hi, cheer me on, tease me, ask about your agents, or tell me to hush. "
+        + "I answer with a face and a sign, and often a word."
 
     /// Things to say, one of each kind Boop answers: a greeting, praise,
     /// and a question about every agent, which opens the board's drawer.

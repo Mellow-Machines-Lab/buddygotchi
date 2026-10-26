@@ -80,7 +80,10 @@ struct AgentsAct: View {
         "Claude Code and Codex can run a small program at moments in a session. I add a hook for each moment I "
             + "follow: a session starting or ending, your prompt, each tool the agent uses, a request for your OK, "
             + "and the agent finishing. Each one runs agent-hook, which tells me here on this Mac what just happened, "
-            + "with your prompt and the agent's last reply. My brain only ever hears a short reading of those, never your code.",
+            + "with your prompt, the agent's last reply, and a glimpse of each tool call: the command's name, a file's "
+            + "name, a word it searched for, never anything shaped like a key. The glimpses fall past on my screen, "
+            + "where anyone at your desk can read them. My brain only ever hears a short reading of your prompt and the "
+            + "reply, never your code or the glimpses.",
         "Hooks only report: they never approve, deny or block anything, and when I'm not running, your agent "
             + "carries on as usual. Your other hooks stay as they are, I keep a copy of each file before I change it, "
             + "and Uninstall in Settings takes mine out.",
@@ -178,7 +181,7 @@ struct AgentsAct: View {
             if touring {
                 tourSteps
             } else if heard != nil {
-                Text("The words falling past me are your agent's commands. Once we're done, click any agent in my menu up top to jump to its thread.")
+                Text("The words falling past me are what your agent works on: its files, searches and commands. Once we're done, click any agent in my menu up top to jump to its thread.")
                     .font(.system(size: 12)).foregroundStyle(Theme.inkSoft).multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -208,10 +211,10 @@ struct AgentsAct: View {
         }
         return VStack(spacing: 6) {
             step(.words, "Watch my screen", model.tour.contains(.words)
-                 ? "Those words are your agent's commands, as it runs them."
-                 : "Each command your agent runs falls past me as a word. Nothing yet? Ask it to list the files here.")
+                 ? "Those words are what your agent works on: the files it reads, its searches and commands."
+                 : "What your agent works on falls past me as words. Nothing yet? Ask it to list the files here.")
             step(.cheer, "When I cheer, tap me", due == .cheer && model.finishedThread == nil
-                 ? "I cheer when your agent finishes its turn. A tap takes you to its thread."
+                 ? "When your agent finishes, I cheer and hold up its thread's name. A tap takes you there."
                  : "Your agent finished. A tap takes you to its thread.")
             step(.drawer, "Swipe up from my bottom edge", "Every agent you have open is in there.")
             step(.row, "Tap your thread", "It opens right where it runs. That's how you get back to any of them.")

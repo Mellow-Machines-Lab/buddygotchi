@@ -57,8 +57,8 @@ struct HelloAct: View {
     }
 }
 
-/// Act 2: a pretend agent session, and Boop following it live: its
-/// commands falling past Boop as words, a failed test hitting it, a
+/// Act 2: a pretend agent session, and Boop following it live: what its
+/// calls touch falling past Boop as words, a failed test hitting it, a
 /// request for you, and a finish.
 struct WhatIDoAct: View {
     @ObservedObject var model: OnboardingModel
@@ -75,7 +75,7 @@ struct WhatIDoAct: View {
         var lines: [(String, Color)] {
             let all: [(String, Color)] = [
                 ("› fix the flaky login test", Color(hex: Palette.oat)),
-                ("Reading auth/session.ts", Color(hex: Palette.inkSoftDark)),
+                ("Reading auth/session.ts, searching “login”", Color(hex: Palette.inkSoftDark)),
                 ("Running npm test", Color(hex: Palette.inkSoftDark)),
                 ("✗ 2 tests fail", Color(hex: Palette.clayInkDark)),
                 ("Allow edit to auth/session.ts? (y/n)", Color(hex: Palette.amberInkDark)),
@@ -85,11 +85,12 @@ struct WhatIDoAct: View {
         }
 
         /// The words its agent's calls drop past Boop, one each as the
-        /// beat goes on; none when it calls nothing.
+        /// beat goes on, as the board shows them: a file it read, a word it
+        /// searched for, a command; none when it calls nothing.
         var words: [String] {
             switch self {
-            case .reading: ["read", "grep", "read"]
-            case .testing, .failing: ["tests"]
+            case .reading: ["session.ts", "login", "read"]
+            case .testing, .failing: ["npm test"]
             case .typing, .asking, .finished: []
             }
         }
@@ -139,9 +140,9 @@ struct WhatIDoAct: View {
                     .animation(.boopSettle, value: step)
             }
             HStack(spacing: 10) {
-                card(0, "Working along", "Every command your agent runs falls past me as a word. Some of them hit me.")
+                card(0, "Working along", "The files, searches and commands of your agent fall past me. Failures hit me.")
                 card(1, "Needs you", "I glow amber and knock, and say who's waiting.")
-                card(2, "A big finish", "I cheer work that earns it. My mood follows how it goes.")
+                card(2, "A big finish", "I cheer work that earns it, and hold up whose it was.")
             }
             Text("I only watch. I never approve, deny or block anything for you.")
                 .font(.system(size: 13))
