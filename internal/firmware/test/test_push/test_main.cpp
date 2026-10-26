@@ -53,23 +53,23 @@ struct ModelPanel {
     px.assign(size_t(w) * h, 0x5aa5);  // not black: a missed pixel shows
   }
   void send(const Surface& s, const PushPlan& plan) {
-    for (int b = 0; b < plan.bands; ++b) {
-      if (plan.spans[b].empty()) continue;
-      const PanelWindow win = render::packBand(s, b, plan.spans[b], topOnLeft, buf.data());
-      // Windows only at even addresses with even sizes.
-      TEST_ASSERT_EQUAL_INT(0, win.x % 2);
-      TEST_ASSERT_EQUAL_INT(0, win.y % 2);
-      TEST_ASSERT_EQUAL_INT(0, win.w % 2);
-      TEST_ASSERT_EQUAL_INT(0, win.h % 2);
-      TEST_ASSERT_TRUE(win.x >= 0 && win.y >= 0 && win.x + win.w <= w && win.y + win.h <= h);
-      TEST_ASSERT_TRUE(win.w * win.h <= int(buf.size()));
-      for (int r = 0; r < win.h; ++r)
-        for (int c = 0; c < win.w; ++c) {
-          const uint16_t v = buf[size_t(r) * win.w + c];  // high byte first, as it goes over SPI
-          px[size_t(win.y + r) * w + win.x + c] = uint16_t((v << 8) | (v >> 8));
-        }
-      sent += uint32_t(win.w * win.h);
-    }
+    for (int b = 0; b < plan.bands; ++b)
+      for (int r = 0; r < plan.runCount[b]; ++r) {
+        const PanelWindow win = render::packBand(s, b, plan.runs[b][r], topOnLeft, buf.data());
+        // Windows only at even addresses with even sizes.
+        TEST_ASSERT_EQUAL_INT(0, win.x % 2);
+        TEST_ASSERT_EQUAL_INT(0, win.y % 2);
+        TEST_ASSERT_EQUAL_INT(0, win.w % 2);
+        TEST_ASSERT_EQUAL_INT(0, win.h % 2);
+        TEST_ASSERT_TRUE(win.x >= 0 && win.y >= 0 && win.x + win.w <= w && win.y + win.h <= h);
+        TEST_ASSERT_TRUE(win.w * win.h <= int(buf.size()));
+        for (int r = 0; r < win.h; ++r)
+          for (int c = 0; c < win.w; ++c) {
+            const uint16_t v = buf[size_t(r) * win.w + c];  // high byte first, as it goes over SPI
+            px[size_t(win.y + r) * w + win.x + c] = uint16_t((v << 8) | (v >> 8));
+          }
+        sent += uint32_t(win.w * win.h);
+      }
   }
   // The first pixel of `s` the panel doesn't show turned a quarter, worked
   // out here rather than by packBand; empty when it shows all of them.
@@ -167,6 +167,21 @@ static void test_a_frame_sends_what_either_frame_wrote() {
   TEST_ASSERT_TRUE(f.pair.present().full);
   TEST_ASSERT_TRUE(frame(101, 50, 121, 60).full);   // the panel shows the pattern
   TEST_ASSERT_FALSE(frame(101, 50, 121, 60).full);  // the pattern's surface, cleared whole
+  // Rows far apart in the same columns go as runs of their own, without
+  // the unchanged rows between; rows a few apart go as one.
+  Surface& s = f.pair.back();
+  s.clear();
+  drawRect(s, 101, 50, 121, 60, 0xf800);
+  drawRect(s, 101, 340, 121, 350, 0xf800);
+  drawRect(s, 101, 356, 121, 360, 0xf800);
+  f.pair.drew();
+  p = f.pair.present();
+  TEST_ASSERT_EQUAL_INT(2, p.runCount[6]);
+  TEST_ASSERT_EQUAL_INT(50, p.runs[6][0].x0);
+  TEST_ASSERT_EQUAL_INT(60, p.runs[6][0].x1);
+  TEST_ASSERT_EQUAL_INT(340, p.runs[6][1].x0);
+  TEST_ASSERT_EQUAL_INT(360, p.runs[6][1].x1);  // 350–355 unchanged, within kRunGap
+  TEST_ASSERT_EQUAL_UINT32(2 * 16 * (10 + 20), p.pixels());
   // Another whole-surface write.
   f.pair.back().invalidate();
   std::fill(f.pair.back().pixels, f.pair.back().pixels + kW * kH, uint16_t(0x07e0));
@@ -350,9 +365,7 @@ static void test_gel_frames_always_reach_the_panel() {
                         pick(256));
         }
         break;
-      default:
-        std::snprintf(msg, sizeof msg, "{\"t\":\"dbg.clock\",\"step\":%d}", 1 + pick(pick(4) ? 40 : 400));
-        break;
+      default: std::snprintf(msg, sizeof msg, "{\"t\":\"dbg.clock\",\"step\":%d}", 1 + pick(pick(4) ? 40 : 400)); break;
     }
     for (Rig* x : {r.get(), single.get()}) x->line(msg);
     single->dev.takeFrame();  // never presented: one surface, drawn over and over
@@ -427,9 +440,12 @@ static void test_an_unchanged_lane_isnt_sent_again() {
     for (int i = 0; i < 16; ++i) {
       if (i) r->line("{\"t\":\"dbg.clock\",\"step\":33}");
       const int bands = laneSent(state);
-      if (i == 0) TEST_ASSERT_TRUE_MESSAGE(bands > 0, "a new lane goes out");
-      else if (fades && i < 10) fading += bands > 0;
-      else TEST_ASSERT_EQUAL_INT_MESSAGE(0, bands, "an unchanged lane stays");
+      if (i == 0)
+        TEST_ASSERT_TRUE_MESSAGE(bands > 0, "a new lane goes out");
+      else if (fades && i < 10)
+        fading += bands > 0;
+      else
+        TEST_ASSERT_EQUAL_INT_MESSAGE(0, bands, "an unchanged lane stays");
     }
     if (fades) TEST_ASSERT_TRUE_MESSAGE(fading >= 3, "a lane fading in goes out");
   }

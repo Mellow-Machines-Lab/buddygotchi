@@ -21,7 +21,7 @@ Span written(const Surface::Span& s) { return s.last ? Span{s.first, s.last} : S
 uint32_t PushPlan::pixels() const {
   uint32_t n = 0;
   for (int b = 0; b < bands; ++b)
-    n += uint32_t(columns(b)) * uint32_t(spans[b].empty() ? 0 : spans[b].x1 - spans[b].x0);
+    for (int r = 0; r < runCount[b]; ++r) n += uint32_t(columns(b)) * uint32_t(runs[b][r].x1 - runs[b][r].x0);
   return n;
 }
 
@@ -70,27 +70,46 @@ const PushPlan& SurfacePair::present() {
   plan_.height = height;
   plan_.bands = ceilDiv(width, PushPlan::kColumns);
   plan_.full = shown.invalid || next.invalid;
-  const int same = next.laneKey && next.laneKey == shown.laneKey && next.laneKeyFrom == shown.laneKeyFrom &&
-                           next.laneKeyFrom >= 0
-                       ? next.laneKeyFrom
-                       : height;
+  const int same =
+      next.laneKey && next.laneKey == shown.laneKey && next.laneKeyFrom == shown.laneKeyFrom && next.laneKeyFrom >= 0
+          ? next.laneKeyFrom
+          : height;
   if (plan_.full) {
-    for (int band = 0; band < plan_.bands; ++band) plan_.spans[band] = {0, height};
+    for (int band = 0; band < plan_.bands; ++band) plan_.runs[band][0] = {0, height}, plan_.runCount[band] = 1;
   } else {
-    // Each row either frame wrote widens the span of every band its
-    // columns cross.
+    // Each row either frame wrote joins every band its columns cross: the
+    // band's last run, if it ended within kRunGap rows, else a new one
+    // (the last, once there are kRuns).
     for (int y = 0; y < same; ++y) {
       const Span row = unite(written(shown.written[y]), written(next.written[y]));
       if (row.empty()) continue;
       const int last = std::min(plan_.bands, ceilDiv(row.x1, PushPlan::kColumns));
-      for (int band = row.x0 / PushPlan::kColumns; band < last; ++band)
-        plan_.spans[band] = unite(plan_.spans[band], Span{y, y + 1});
+      for (int band = row.x0 / PushPlan::kColumns; band < last; ++band) {
+        uint8_t& n = plan_.runCount[band];
+        auto& runs = plan_.runs[band];
+        if (n && (y - runs[n - 1].x1 <= PushPlan::kRunGap || n == PushPlan::kRuns))
+          runs[n - 1].x1 = y + 1;
+        else
+          runs[n++] = {y, y + 1};
+      }
     }
+    // Out to even rows, joining runs that then meet.
     for (int band = 0; band < plan_.bands; ++band) {
-      Span& span = plan_.spans[band];
-      if (!span.empty()) span = {span.x0 & ~1, std::min(height, (span.x1 + 1) & ~1)};
+      auto& runs = plan_.runs[band];
+      int kept = 0;
+      for (int r = 0; r < plan_.runCount[band]; ++r) {
+        const Span even{runs[r].x0 & ~1, std::min(height, (runs[r].x1 + 1) & ~1)};
+        if (kept && even.x0 <= runs[kept - 1].x1)
+          runs[kept - 1].x1 = std::max(runs[kept - 1].x1, even.x1);
+        else
+          runs[kept++] = even;
+      }
+      plan_.runCount[band] = uint8_t(kept);
     }
   }
+  for (int band = 0; band < plan_.bands; ++band)
+    if (plan_.runCount[band])
+      plan_.spans[band] = {plan_.runs[band][0].x0, plan_.runs[band][plan_.runCount[band] - 1].x1};
   back_ ^= 1;
   drawn_ = false;
   return plan_;

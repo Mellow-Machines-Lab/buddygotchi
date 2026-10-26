@@ -16,17 +16,25 @@ namespace render {
 // kColumns of the panel's rows once turned a quarter, so a band runs along
 // the panel's scan lines and the bands, sent in turn, follow its scan down
 // (or up) the panel; and of each band the rows that may differ from the
-// frame the panel shows. Spans are rows of the surface, [x0, x1) in a
+// frame the panel shows: up to kRuns runs of rows, each sent as a window
+// of its own, so the face's rows and the lane's far below go without the
+// unchanged rows between. Spans are rows of the surface, [x0, x1) in a
 // Span, and start and end on even rows, as the CO5300 takes windows only
 // at even addresses with even sizes; an empty span sends nothing.
 struct PushPlan {
   static constexpr int kColumns = 16;
   static constexpr int kMaxWidth = 512;
   static constexpr int kMaxBands = (kMaxWidth + kColumns - 1) / kColumns;
+  static constexpr int kRuns = 4;
+  // Rows unchanged between two changed ones that a run sends anyway, as a
+  // window of its own costs about as much.
+  static constexpr int kRunGap = 8;
   int width = 0, height = 0;  // the surface's
   int bands = 0;
-  bool full = false;  // the whole surface: the first frame, or a test pattern on either side
-  std::array<Span, kMaxBands> spans{};
+  bool full = false;                    // the whole surface: the first frame, or a test pattern on either side
+  std::array<Span, kMaxBands> spans{};  // each band's runs, end to end
+  std::array<std::array<Span, kRuns>, kMaxBands> runs{};
+  std::array<uint8_t, kMaxBands> runCount{};
   int columns(int band) const { return width - band * kColumns < kColumns ? width - band * kColumns : kColumns; }
   uint32_t pixels() const;
 };
