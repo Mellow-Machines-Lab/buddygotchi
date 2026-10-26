@@ -751,6 +751,61 @@ static void test_the_face_never_fades_while_arts_cross_over() {
     TEST_ASSERT_TRUE(least * 100 >= fainter * 90);
   }
 }
+// Nothing on the face flickers as moods cross over: a face that comes in
+// at weight zero draws nothing, and moves nothing it shares with the faces
+// already there to its own turn in the draw order. Pins the nine changes
+// where it once did, for a frame (32 to 630 pixels of the mouth and
+// tears), and two that never did.
+static void test_a_face_coming_in_moves_nothing() {
+  std::vector<uint16_t> a(502 * 410), b(a.size());
+  Surface with{502, 410, a.data()}, without{502, 410, b.data()};
+  const int changes[][2] = {{slime::kShy, slime::kAffectionate},     {slime::kSad, slime::kWounded},
+                            {slime::kCrying, slime::kWounded},       {slime::kWounded, slime::kSad},
+                            {slime::kWounded, slime::kCrying},       {slime::kFrightened, slime::kWounded},
+                            {slime::kFrightened, slime::kSad},       {slime::kFrightened, slime::kCrying},
+                            {slime::kExhausted, slime::kOverwhelmed}, {slime::kCalm, slime::kHappy},
+                            {slime::kHappy, slime::kSad}};
+  std::string report;
+  int worst = 0;
+  for (const auto& change : changes) {
+    auto e = std::make_unique<Engine>();
+    e->setMood(change[0]);
+    uint32_t t = 0;
+    for (; t <= 1200; t += 40) e->step(t);
+    const int before = e->face.count;
+    e->setMood(change[1]);
+    // The face coming in, as it's added: its weight all but nothing.
+    while (e->face.count == before && t < 3000) e->step(t += 1);
+    TEST_ASSERT_TRUE(e->face.count > before);
+    paint(with, *e);
+    auto gone = std::make_unique<Engine>(*e);
+    gone->face.count -= 1;  // as it was, the new face not yet added
+    paint(without, *gone);
+    int differ = 0;
+    for (int i = 0; i < 502 * 410; ++i) differ += a[i] != b[i];
+    // And as the face it crossed from goes, at its weight's last: the frame
+    // is the one without it, to within that last bit of weight.
+    std::unique_ptr<Engine> last;
+    for (int count = e->face.count; e->face.count >= count && t < 6000;) {
+      last = std::make_unique<Engine>(*e);
+      count = e->face.count;
+      e->step(t += 1);
+    }
+    paint(with, *last);
+    auto left = std::make_unique<Engine>(*last);
+    for (int i = 1; i < left->face.count; ++i) left->face.layers[i - 1] = left->face.layers[i];
+    left->face.count -= 1;
+    paint(without, *left);
+    int leaving = 0;
+    for (int i = 0; i < 502 * 410; ++i)
+      leaving += std::abs(int(a[i] >> 11) - int(b[i] >> 11)) > 1 ||
+                 std::abs(int(a[i] >> 5 & 63) - int(b[i] >> 5 & 63)) > 2 || std::abs(int(a[i] & 31) - int(b[i] & 31)) > 1;
+    report += std::to_string(change[0]) + "->" + std::to_string(change[1]) + ":" + std::to_string(differ) + "/" +
+              std::to_string(leaving) + " ";
+    worst = std::max({worst, differ, leaving});
+  }
+  TEST_ASSERT_EQUAL_INT_MESSAGE(0, worst, report.c_str());
+}
 // No prop pops: the lane's strip eases in as it comes and out
 // as it goes, at the opacity Behaviour gives it on the rig's ramp, which is
 // the props' (app/behaviour.h, pinned in test_behaviour), and the same
@@ -3096,6 +3151,7 @@ int main() {
   RUN_TEST(test_face_and_props_move_without_jumps);
   RUN_TEST(test_it_falls_asleep_squashing_shut);
   RUN_TEST(test_the_face_never_fades_while_arts_cross_over);
+  RUN_TEST(test_a_face_coming_in_moves_nothing);
   RUN_TEST(test_the_lane_fades_whatever_the_draw_cadence);
   RUN_TEST(test_gel_clips_use_the_shared_mixer);
   RUN_TEST(test_each_cue_carries_its_own_duck);

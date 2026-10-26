@@ -23,13 +23,15 @@ struct Placed {
 };
 // The layers' paths, paired: for each path of a layer's art, each layer's
 // path of its group in the same place, where that layer's art has the
-// group in the same shape (else -1), and whether this layer is the newest
-// of them, which draws them. It depends only on the arts, so it is worked
-// out again only when they change: at a retarget, or a cross-over's end.
+// group in the same shape (else -1), and whether this layer is the oldest
+// of them, which draws them, at its own turn: a face coming in at weight
+// zero then moves nothing the faces before it share to a new place in the
+// draw order. It depends only on the arts, so it is worked out again only
+// when they change: at a retarget, or a cross-over's end.
 struct Pairing {
   int count = 0, arts[kLayers]{};
   int16_t path[kLayers][kMaxPaths][kLayers];
-  bool newest[kLayers][kMaxPaths];
+  bool oldest[kLayers][kMaxPaths];
 };
 const Pairing& pairing(const SemanticFace& f) {
   static Pairing p;
@@ -43,12 +45,12 @@ const Pairing& pairing(const SemanticFace& f) {
     int nth[6] = {};
     for (int k = 0; k < range.count; ++k) {
       const int g = slime::kArtPaths[range.first + k].group, at = nth[g]++;
-      p.newest[i][k] = true;
+      p.oldest[i][k] = true;
       for (int j = 0; j < f.count; ++j) {
         const auto& other = slime::kArt[p.arts[j]];
         p.path[i][k][j] = -1;
         if (other.shape[g - 1] != range.shape[g - 1]) continue;
-        if (j > i) p.newest[i][k] = false;
+        if (j < i) p.oldest[i][k] = false;
         for (int m = 0, seen = 0; m < other.count; ++m)
           if (slime::kArtPaths[other.first + m].group == g && seen++ == at) {
             p.path[i][k][j] = int16_t(other.first + m);
@@ -113,7 +115,7 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
   }
   Point vertices[kMaxPoints], clip[kMaxPoints];
   // The layers whose art has the group of layer i's path k in its shape,
-  // and their summed weight: drawn once, with the newest of them.
+  // and their summed weight: drawn once, with the oldest of them.
   auto classWeight = [&](int i, int k) {
     int weight = 0;
     for (int j = 0; j < f.count; ++j)
@@ -125,7 +127,7 @@ void paintArt(Surface& surface, const Engine& engine, const PaintControls& c, bo
   auto drawn = [&](int i, int k) {
     const auto& path = slime::kArtPaths[placed[i].range->first + k];
     const int g = path.group;
-    return pairs.newest[i][k] && path.count <= kMaxPoints && path.clipCount <= kMaxPoints &&
+    return pairs.oldest[i][k] && path.count <= kMaxPoints && path.clipCount <= kMaxPoints &&
            (c.eyes || (g != 1 && g != 2)) && !(zipped && g == 3) && classWeight(i, k) > 0;
   };
   // Each group's shapes, drawn as one look for each shape the layers give

@@ -1,6 +1,6 @@
 # Slime validation
 
-Updated 2026-10-25. What checks the gel slime, and which rule each check
+Updated 2026-10-26. What checks the gel slime, and which rule each check
 holds it to. The slime has one engine, the C++ one
 (`characters/boop/firmware/src/render/gel/`), so every rule
 [CONTINUITY.md](CONTINUITY.md) states is checked on it, from the
@@ -94,7 +94,9 @@ ramps and springs can, and no jolt at an event. By file:
   (`test_the_materials_copy_draws_the_same_body`), request identity and bounded caches, alerts
   interrupted by listening or a link timeout at eight points signalling
   exactly once, the face's arts crossing over without jumps and never
-  fading (its visible ink through five cross-fades), falling asleep as a
+  fading (its visible ink through five cross-fades), a face coming in or
+  going moving nothing in the draw order (the nine mood changes that once
+  flickered for a frame, `test_a_face_coming_in_moves_nothing`), falling asleep as a
   morph (the awake face squashing shut on its slow spring, to lines, the
   sleeping face crossing in once it's 0.9 shut, waking quick, sleep's
   spring kept through a mood change), the night's lids, a finger moving the dome its own

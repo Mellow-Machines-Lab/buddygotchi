@@ -1,6 +1,6 @@
 # Continuous actor and animation authoring
 
-Updated 2026-10-25. The slime's one engine is the C++ in
+Updated 2026-10-26. The slime's one engine is the C++ in
 `characters/boop/firmware/src/render/gel/` (below, `gel/`): the board runs
 it, and so do the simulator and the Mac's mirror of the board, the
 firmware built to WebAssembly (characters/CHARACTER.md §9). Every activity
@@ -1036,8 +1036,10 @@ cheeks with the strain mark (`gel/art.cpp`). slimegen gives each art's
 features a shape (`slime_art.h`'s `ArtRange::shape`, from their paths'
 point counts, fill or stroke and colour); where layers draw a feature in
 the same shape, it is drawn once, its points, pen widths and opacities
-averaged by weight, at their summed weight: two bean eyes ease into each
-other, a closed arc eases into a droop. Different shapes cross-fade: each
+averaged by weight, at their summed weight, at the oldest of those
+layers' turn in the draw order, so a face coming in at weight zero moves
+nothing: two bean eyes ease into each other, a closed arc eases into a
+droop. Different shapes cross-fade: each
 look is laid over the body alone and the looks blended by their weights
 (`raster.h`'s `CrossFade`), so the eyes' and the mouth's opacity, summed
 over the arts, stays one, and where two looks both ink a pixel none of the
