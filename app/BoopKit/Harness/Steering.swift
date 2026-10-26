@@ -19,7 +19,9 @@ extension Steering {
     /// is given). A mood's file is optional: a mood without one reads as
     /// the resting mood's (`mood(_:)`).
     public init(directory: URL, pack: CharacterPack = .active) throws {
-        try self.init(folder: directory)
+        // Its files' paths are read from where they are: through a link (a
+        // pack fetched into characters/), the folder's resolved path.
+        try self.init(folder: directory.resolvingSymlinksInPath())
         let needed = ["guide"] + pack.personalities.map { "personality/\($0)" }
         for path in needed where files[path] == nil {
             throw SteeringError("\(path).md is missing from \(directory.path)")

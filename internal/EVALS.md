@@ -384,8 +384,10 @@ kinds, all with the `boop` personality unless the file says otherwise:
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
-back after a break and an idle check-in. `make -C internal eval-pixel`
-runs them once each, about 18 requests.
+back after a break and an idle check-in. PixelBuddy's `make eval` runs
+them (`boopdev eval` reads the pack in use's scenarios and steering), or
+from here `CHARACTER=pixel .build/debug/boopdev eval --runs 1`, once
+each, about 18 requests.
 - **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
   says why the steering can't get there alone.
 

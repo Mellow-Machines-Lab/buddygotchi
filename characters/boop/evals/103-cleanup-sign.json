@@ -1,8 +1,0 @@
-{
-  "name": "A clean-up gets glee and a sign",
-  "case": "The person asks the agent to delete code it no longer needs. Boop loves deleted code: an excited, happy or proud face, holding up a sign about it (\"bye bye code\", \"delete it all\").",
-  "why": "PERSONALITY: it loves deleted code; its Example: a clean-up is excited, says glad, medium, holding up \"bye bye code\"; signs.md's cleanup captions",
-  "steps": [
-    {"event": "turn started", "at": "0s", "prompt": "delete the old exporter, we don't need it anymore", "reading": {"kind": "cleanup"}, "expect": {"react": "excited|happy|proud|pleased", "sign": "bye bye code|delete it all"}}
-  ]
-}

@@ -63,7 +63,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | Target | What it does |
 | --- | --- |
 | `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), and beside it the simulator (built again only when its sources changed, and left alone if one already runs), its page, the studio's matrix (with what the brain reads in each eval, `boopdev prompts`, written first) and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; Settings' Simulator row switches to the simulator and back. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. `dash`'s `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would. Ctrl-C stops the app, the simulator and the dashboard |
-| `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and both boards' firmware (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 15.0 at least, so it still opens on macOS 15. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
+| `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and the firmware for each board the pack has a face for (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 15.0 at least, so it still opens on macOS 15. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless` |
 | `make demo` | Asks which demo and where it plays, then plays it: on the simulator's page from its checked-in recording, at once, on a board, or with a real agent (`simulator/tools/demos.py`, [characters/DEMOS.md](../characters/DEMOS.md)). `NAME=` plays one without asking, `NAME=all` every one in the page |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
 | `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |
@@ -71,18 +71,17 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make -C internal app` | What `make dev` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
 | `make -C internal simulator` | The board in a browser at `http://127.0.0.1:8206/`, alone, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side, each on its own socket, with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`, whose matrix marks what the board shows. No Bluetooth, so agents may run it |
-| `make -C internal check` | Every check that needs no board, camera or Jev key, one after another: `test`, `fw-test`, `tools-test`, `sim` and `mirror` |
-| `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim (`.build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
-| `make -C internal fw` | The firmware for both boards (envs `cyd24` and `amoled206`) |
-| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the engine's suites in `internal/firmware/test/` and the staged pack's `tests/firmware/` (Boop's `test_gel` holds the gel slime's engine to every rule of its design, [its VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md)), then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
-| `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, then the gel face's |
+| `make -C internal packs` | The character packs the engine is tested with (`characters/packs.json`), each fetched from its repository if it's missing: a clone in `characters/.repos/`, and `characters/<id>` a link to its pack (`internal/tools/packs.py`; `--update` pulls them, `ID=PATH` links a pack of yours in its place) |
+| `make -C internal check` | Every check that needs no board, camera or Jev key, one after another: `packs`, `test`, `fw-test`, `tools-test`, `sim` and `mirror`, then the chosen pack staged again, as some stage another |
+| `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim, with Boop's pack, which they're written against, whichever is chosen (`CHARACTER=boop .build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder. It passes when run again, so the target tries that failure alone again, up to eight tries in all |
+| `make -C internal fw` | The firmware for every board the chosen pack has a face for (`charactergen.py --boards`) |
+| `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the chosen pack's `tests/firmware/` (Boop's `test_gel` holds the gel slime's engine to every rule of its design, [its VALIDATION.md](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/slime-blob/VALIDATION.md)), then the engine's suites in `internal/firmware/test/`, which are written against the pixel face, with Pixel's pack (and its own), then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build`, so they never leave a test runner where the native simulator is |
+| `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, with Pixel's pack, then the gel face's, with Boop's |
 | `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario played on it and on the native simulator, each shot the same on both pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and checked to be the one checked in, byte for byte (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
 | `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/`, several at once, each as long as it runs (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once for each pack) and no board |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
-| `make -C internal faces` | Pixel's faces, made again from its animation bank and checked pixel for pixel against Chrome's drawing (about 7 minutes). Then run sfxgen (below) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal eval-pixel` | `make -C internal build`, then Pixel's own eval scenarios against Jev, once each (L5, [EVALS.md](EVALS.md) §4). It needs `BOOP_JEV_KEY` |
 | `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
@@ -136,19 +135,27 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   with `swift build`. In tests, give it a temporary `HOME` and `--home`
   together, as for `boopdev hooks`.
 - `python3 characters/charactergen.py`: `--check` and `--stage` a pack,
-  and `--which` names the pack in use
+  `--which` names the pack in use, `--boards` the boards it has a face
+  for and `--sim-face` the face the simulator draws for it
   ([CHARACTER.md](../characters/CHARACTER.md) §2).
-- The generators, each into a pack: `characters/boop/tools/voicegen/voicegen.py`
+- `internal/tools/packs.py`: the character packs in `characters/`,
+  fetched from their repositories (what `make -C internal packs` runs;
+  `--help`).
+- The generators, each in its pack and writing into it, which its
+  repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table, from the recorded bank;
-  beside it `placeholders.py` speaks the planned lines not recorded yet
-  with espeak-ng, `brew install espeak-ng`, and keeps the bank's list to
-  record, and `reply_slots.py` turns the replies' lines in
-  `plan/voice-range.md` into the bank's slots),
-  `characters/pixel/tools/facegen/facegen.py` (what `make -C internal faces` runs),
+  SlimeBuddy's `make voice`; beside it `placeholders.py` speaks the
+  planned lines not recorded yet with espeak-ng, `brew install
+  espeak-ng`, and keeps the bank's list to record, and `reply_slots.py`
+  turns the replies' lines in `plan/voice-range.md` into the bank's
+  slots),
+  `characters/pixel/tools/facegen/facegen.py` (Pixel's faces from its
+  animation bank, checked pixel for pixel against Chrome's drawing, about
+  7 minutes; PixelBuddy's `make faces`, which runs sfxgen after it),
   `characters/pixel/tools/sfxgen/sfxgen.mjs` (the sound effects, after facegen) and
   `characters/boop/tools/slimegen/slimegen.mjs` (the gel slime's
   tables and the pack's moods, from its design, which it checks first;
-  [its README](../characters/boop/tools/slimegen/README.md)), and
+  [its README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/tools/slimegen/README.md)), and
   the engine's `firmware/tools/mirror.sh` (the Mac's mirror of the
   board, `characters/boop/mac/mirror/board.js`, with Emscripten;
   `--check` builds it again and compares), on `firmware/tools/wasm.sh`,
@@ -186,12 +193,12 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   its hooks reach Boop; `--headless` against a throwaway app.
 
 **A pack's own design checks** live with the pack: Pixel's animation
-bank's in [its design guide](../characters/pixel/design/README.md),
+bank's in [its design guide](https://github.com/Mellow-Machines-Lab/PixelBuddy/blob/main/character/design/README.md),
 Boop's gel slime's in its
-[VALIDATION.md](../characters/boop/design/slime-blob/VALIDATION.md) and
-[slimegen's README](../characters/boop/tools/slimegen/README.md), and
+[VALIDATION.md](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/slime-blob/VALIDATION.md) and
+[slimegen's README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/tools/slimegen/README.md), and
 Boop's recorded voice bank's in
-[its README](../characters/boop/design/assets/boop-voice-v1/README.md).
+[its README](https://github.com/Mellow-Machines-Lab/SlimeBuddy/blob/main/character/design/assets/boop-voice-v1/README.md).
 None of them contacts Jev, a paid API or a device.
 
 **Side by side.** Make targets can run at once, in one checkout or in

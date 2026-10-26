@@ -24,9 +24,9 @@ $build --product agent-hook
 bin=$($build --show-bin-path)
 packs=$(find "$bin/Boop_Boop.bundle" -maxdepth 3 -type d -name packs | head -1)
 [ -n "$packs" ] || { echo "bundle: no packs in $bin/Boop_Boop.bundle" >&2; exit 1; }
-# Each board's firmware, with the same character pack, whose objects each
-# env builds in a folder of its own.
-boards="cyd24 amoled206"
+# Each board's firmware the pack has a face for, with the same character
+# pack, whose objects each env builds in a folder of its own.
+boards=$(python3 characters/charactergen.py --boards)
 for board in $boards; do
   firmware/tools/pio.sh run -e "$board"
 done

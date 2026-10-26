@@ -17,6 +17,15 @@ internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py             
 internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py boop watch   # just these
 ```
 
+The face's pictures are drawn with the pack in use, its name in the
+captions, on its own face; `--out DIR` puts them and the popover's in
+`DIR` in place of `documentation/media/`. Each character's repository
+makes its README's pictures this way (its `make media`):
+
+```sh
+CHARACTER=pixel internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py --out /tmp/pixel-media boop moods popover
+```
+
 It builds the native simulator and the two packages itself. The terminals are drawn
 with Menlo, which macOS has, and every GIF's corners are transparent, so
 they sit on a light or a dark page.

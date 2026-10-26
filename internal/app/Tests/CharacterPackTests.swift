@@ -78,24 +78,27 @@ final class CharacterPackTests: XCTestCase {
         }
     }
 
-    /// CHARACTER.md §6: a pack stands alone or names what it uses. Pixel's
-    /// has every file the engine reads in its own folder: the pixel face's
-    /// mac/faces.json, the voice's table and its pack. Boop's has none of
-    /// them, and uses Pixel's; the staged pack has them all.
-    func testEachPackStandsAloneOrNamesWhatItUses() throws {
+    /// CHARACTER.md §6: each pack stands alone, each in a repository of
+    /// its own: every file the engine reads is in its own folder, its voice
+    /// (the table and its pack) included, and it uses nothing of another's.
+    /// Pixel's has the pixel face's mac/faces.json; Boop's, whose face is
+    /// the gel, has its mirror instead.
+    func testEachPackStandsAlone() throws {
         try requirePack("boop")
         let boopFolder = Self.repo.appendingPathComponent("characters/boop")
+        let pixelFolder = Self.repo.appendingPathComponent("characters/pixel")
         let boop = try CharacterPack(directory: boopFolder)
-        let pixel = try CharacterPack(directory: Self.repo.appendingPathComponent("characters/pixel"))
+        let pixel = try CharacterPack(directory: pixelFolder)
         XCTAssertEqual(pixel.moods.map(\.id), boop.moods.map(\.id))
         XCTAssertEqual(pixel.startupMood, "happy")
-        let used = Dictionary(uniqueKeysWithValues: PackCheck.used(boopFolder))
-        for path in ["mac/faces.json", "mac/takes.tsv", "voice/voice.bin"] {
-            XCTAssertTrue(FileManager.default.fileExists(atPath: pixel.directory.appendingPathComponent(path).path), "pixel \(path)")
-            XCTAssertFalse(FileManager.default.fileExists(atPath: boopFolder.appendingPathComponent(path).path), "boop \(path)")
-            XCTAssertEqual(used[path]?.path, pixel.directory.appendingPathComponent(path).path, path)
-            XCTAssertTrue(FileManager.default.fileExists(atPath: CharacterPack.active.directory.appendingPathComponent(path).path), "staged \(path)")
+        for folder in [boopFolder, pixelFolder] {
+            XCTAssertTrue(PackCheck.used(folder).isEmpty, folder.lastPathComponent)
+            for path in ["mac/takes.tsv", "voice/voice.bin"] {
+                XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path), "\(folder.lastPathComponent) \(path)")
+            }
         }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: pixelFolder.appendingPathComponent("mac/faces.json").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: boopFolder.appendingPathComponent("mac/mirror/board.js").path))
         // Pixel's moves are Boop's, for now.
         for m in pixel.moods { XCTAssertEqual(m.moves, boop.byId[m.id]?.moves, m.id) }
     }

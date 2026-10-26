@@ -479,11 +479,13 @@ class RigRuleTests(unittest.TestCase):
         return gen.read_rig(self.dir, self.MOODS, self.STATES)
 
     def test_a_style_is_a_mood_the_pixel_face_draws(self):
-        """Its own pixel face's, or the one it uses (Boop's is Pixel's); a typo fails with its file and key."""
+        """Its own pixel face's, or the one it uses; a typo fails with its file and key."""
         self.assertEqual(gen.drawn_styles(self.dir), ["happy", "sad"])
-        pixel = gen.drawn_styles(ROOT / "characters" / "pixel")
-        self.assertEqual(len(pixel), 13)
-        self.assertEqual(gen.drawn_styles(ROOT / "characters" / "boop"), pixel)
+        write(self.dir / "character.json", {"shares": {"pixel_face": {"files": [gen.PIXEL_FACES]}}})
+        write(self.dir.parent / f"{self.dir.name}-user" / "character.json", {"uses": {"pixel_face": self.dir.name}})
+        self.addCleanup(shutil.rmtree, self.dir.parent / f"{self.dir.name}-user")
+        self.assertEqual(gen.drawn_styles(self.dir.parent / f"{self.dir.name}-user"), ["happy", "sad"])
+        (self.dir / "character.json").unlink()
         _, problems = self.rig({"expressions.json": {"calm": {"eyes": "sad", "mouth": "hapy"}}})
         self.assertEqual(problems, ["rig/expressions.json: calm.mouth: 'hapy' isn't a mood the pixel face draws (happy, sad)"])
         (self.dir / gen.PIXEL_FACES).unlink()

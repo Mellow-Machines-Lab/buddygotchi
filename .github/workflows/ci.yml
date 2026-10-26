@@ -5,7 +5,9 @@
 # mirror of the board against the simulator (with no Emscripten here, the
 # mirror checked in, not built again),
 # all as Boop, the default pack, and the boards' firmware: the CYD's with
-# Pixel and the AMOLED's with Boop's gel face, so each pack builds.
+# Pixel and the AMOLED's with Boop's gel face, so each pack builds. Each
+# pack is in a repository of its own (characters/packs.json), and every
+# job fetches them first, at their main.
 #
 # Package.swift needs Swift 6.2 or later. Boop is developed with Swift 6.4,
 # and the newest runner has Xcode 26.6's, which is older, so code here has
@@ -29,6 +31,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
         with:
           submodules: true  # agent-hooks/ and mellowharness/
+      - name: Fetch the character packs
+        run: python3 internal/tools/packs.py
       - run: swift --version
       - name: Build, then Boop's tests and each package's
         run: |
@@ -50,6 +54,8 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09  # v5
       - run: /usr/bin/python3 --version
+      - name: Fetch the character packs
+        run: /usr/bin/python3 internal/tools/packs.py
       - name: Every pack checks out (its moods, what it uses, its studio entry)
         run: /usr/bin/python3 characters/charactergen.py --check
       - name: charactergen's tests
@@ -75,16 +81,18 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio==6.2.0
+      - name: Fetch the character packs
+        run: python3 internal/tools/packs.py
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: firmware/.platformio-core
           key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini', 'linkkit/device/platformio.ini') }}
-      - name: Boop's firmware tests, then LinkKit's device tests
+      - name: Boop's pack's firmware tests, the engine's with Pixel's, then LinkKit's device tests
         run: make -C internal fw-test
       - name: The Mac's mirror of the board, its page and every gel scenario's shots against the simulator
         run: |
           node --test characters/boop/tests/mirror/page.test.mjs
-          internal/tools/boopctl mirror
+          CHARACTER=boop internal/tools/boopctl mirror
 
   boards:
     name: Board builds
@@ -96,6 +104,8 @@ jobs:
           python-version: "3.12"
       - name: Install PlatformIO
         run: pip install platformio==6.2.0
+      - name: Fetch the character packs
+        run: python3 internal/tools/packs.py
       - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: firmware/.platformio-core

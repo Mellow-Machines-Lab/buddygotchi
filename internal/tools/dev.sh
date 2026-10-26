@@ -58,10 +58,9 @@ else
 fi
 
 # The page is the board, so it opens only for a simulator started here: a
-# running one has its page open already. The pack's own face: the gel for
-# Boop's, else pixel.
-FACE=pixel
-[ "$(basename "$(cat .character-build/pack)")" = boop ] && FACE=gel
+# running one has its page open already, on the face the simulator draws
+# for the staged pack.
+FACE=$(python3 characters/charactergen.py --sim-face "$(cat .character-build/pack)")
 [ -n "$SIM_PID" ] && open "$SIM/?face=$FACE"
 curl -s -o /dev/null "$SIM/" && open "$SIM/characters/studio/#view=matrix&board=/board"
 

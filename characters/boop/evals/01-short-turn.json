@@ -1,9 +1,0 @@
-{
-  "name": "A quick turn is routine",
-  "case": "The agent starts a turn and finishes it seconds later, with nothing else happening. Boop is calm. It doesn't react to the start, and at most gives the quick finish a small calm, pleased or happy face, played as a success. Its mood stays calm.",
-  "why": "Boop stays quiet at a turn start, and a finish done gets a small face at most, played as a success; the mood stays calm, since a routine turn is no reason to leave it (characters/boop/steering/guide.md, mood/calm.md). A face, if any, is small: the usual. PERSONALITY's Example for a turn done in seconds is pleased",
-  "steps": [
-    {"event": "turn started", "at": "0s", "expect": {"react": "none", "intensity": "none|small", "mood": "calm"}},
-    {"event": "turn finished", "at": "8s", "expect": {"react": "none|calm|happy", "move": "none|success", "intensity": "none|small", "mood": "calm"}}
-  ]
-}

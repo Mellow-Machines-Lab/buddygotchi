@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
-from boopctl_lib.common import REPO
+from boopctl_lib.common import REPO, chosen_pack
 from boopctl_lib.device import Link
 from boopctl_lib.image import save_shot
 
@@ -18,7 +19,16 @@ GEL_SCENARIOS = REPO / "characters" / "boop" / "tests" / "scenarios-gel"
 GEL_GOLDEN = REPO / "characters" / "boop" / "tests" / "golden-gel"
 
 def face() -> str:
-    return "gel" if os.environ.get("BOOP_SIM_FACE") == "gel" else "pixel"
+    """The face the scenarios are for: BOOP_SIM_FACE's (gel, or else pixel),
+    else the one the simulator draws for the pack in use."""
+    if os.environ.get("BOOP_SIM_FACE"):
+        return "gel" if os.environ["BOOP_SIM_FACE"] == "gel" else "pixel"
+    sys.path.insert(0, str(REPO / "characters"))
+    try:
+        import charactergen
+    finally:
+        sys.path.pop(0)
+    return charactergen.sim_face(json.loads((chosen_pack() / "character.json").read_text()))
 
 
 def golden_dir() -> Path:

@@ -56,10 +56,13 @@ public struct PackCheck {
             problems.append("\(error)")
         }
 
-        // Faces: what the firmware compiles in, and what the Mac reads.
-        for path in ["firmware/src/render/make_face.cpp", "mac/faces.json"] where !has(path) {
-            problems.append("\(path) is missing")
-        }
+        // Faces: what the firmware compiles in, and what the Mac reads of
+        // the pixel face, for a pack that has it (a gel pack's popover shows
+        // its mirror of the board).
+        if !has("firmware/src/render/make_face.cpp") { problems.append("firmware/src/render/make_face.cpp is missing") }
+        let boards = (try? Data(contentsOf: directory.appendingPathComponent("character.json")))
+            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }?["faces"] as? [String: String] ?? [:]
+        if boards.values.contains("pixel") && !has("mac/faces.json") { problems.append("mac/faces.json is missing") }
 
         // Voice: both files or neither, the table readable, and of the same version as the card's pack.
         switch (has("mac/takes.tsv"), has("voice/voice.bin")) {

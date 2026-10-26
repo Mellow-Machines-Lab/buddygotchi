@@ -17,10 +17,15 @@ simulator's snapshots) also need a newer Python than the Mac's own
 (`brew install python`; [firmware/README.md](firmware/README.md#build-and-flash)). The simulator's page and the Mac's mirror of
 the board also need Emscripten, to build the firmware for a browser (the
 mirror is checked in, so it's rebuilt only when what the board draws
-changes), and Node, to test them (`brew install emscripten node`). Making the faces again
-(`make -C internal faces`) needs Node and Google Chrome, and takes
-several minutes. The first firmware build downloads the ESP32 toolchain
-into the checkout, which takes about five minutes.
+changes), and Node, to test them (`brew install emscripten node`). The
+first firmware build downloads the ESP32 toolchain into the checkout,
+which takes about five minutes.
+
+The characters are each in a repository of their own, SlimeBuddy and
+PixelBuddy, and the checks here use both: `make -C internal packs`
+fetches them into `characters/` (`--update` pulls them again). A change
+to a character is a pull request in its repository; making its art or
+voice again is a target of that repository's `Makefile`.
 
 `agent-hooks/` and `mellowharness/` are submodules, each a repository
 of its own: clone with `--recurse-submodules`, or run

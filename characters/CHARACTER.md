@@ -19,7 +19,7 @@ What a pack holds, and what it must have:
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
-| `mac/faces.json` | yes, or used (§6) | The pixel face's moods and the popover's still faces (§9) |
+| `mac/faces.json` | with the pixel face, or used (§6) | The pixel face's moods and the popover's still faces (§9) |
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
@@ -29,7 +29,7 @@ What a pack holds, and what it must have:
 | `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
 | `design/`, `tools/`, `tests/`, `evals/` | no | What its art and sounds are made from, and its own tests |
 
-To make one, copy Pixel's (§14). To check one:
+To make one, copy Pixel's (§14). To check one, from the engine's repository:
 
 ```sh
 make -C internal build && .build/debug/boopdev check # every pack in characters/
@@ -41,11 +41,13 @@ steering, the faces' files, the voice, every demo, and its moods, what
 it uses and its studio entry (`charactergen.py --check`). A pack that passes plugs in. Then
 build the firmware with it, to check its faces:
 `CHARACTER=<name> make -C internal fw-test`. The engine's own Swift tests
-(`make -C internal test`) run on whichever pack is chosen, using its
-name, moods and steering. Every pack has the same moods (§5), so they run
-them all. A test of one pack's own content (Boop's evals, goldens and
-graph) skips for any other pack, and a test that plays recorded takes
-skips for a pack with no voice; each says why.
+(`make -C internal test`) run with Boop's pack, whose name, moods,
+steering and goldens they're written against, as its firmware tests run
+with Pixel's face; `CharacterPackTests` and `boopdev check` check every
+pack's own files. Run with another (`CHARACTER=<name>
+.build/debug/BoopTests`), a test of one pack's own content (Boop's evals,
+goldens and graph) skips, and a test that plays recorded takes skips for
+a pack with no voice; each says why.
 
 ## 1. The idea
 
@@ -78,14 +80,29 @@ along.
 - What each mood means, how the moods connect and how fast they move.
 - Its prompts, and whether it has a voice.
 
-Two packs come with the engine's repo, and both are public:
-- **`characters/boop/`**, the default: Boop's own, the gel slime, with
-  its prompts, evals and goldens, and what its art and voice are made
-  from. It uses Pixel's face and voice (§6).
-- **`characters/pixel/`**, with Pixel Boop's faces and sound effects,
-  plain prompts and a recorded voice. It's the example to copy. Its art
-  and the voice cover 13 of the moods; each of the others borrows one of
-  those 13's (§8, §9).
+Boop has two packs, each in a public repository of its own, its pack
+the repository's `character/` folder and the engine beside it as the
+`engine/` submodule:
+- **`boop`**, the default, in
+  [SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy): Boop's
+  own, the gel slime, on the AMOLED, with its prompts, evals and goldens,
+  and what its art and voice are made from.
+- **`pixel`**, in
+  [PixelBuddy](https://github.com/Mellow-Machines-Lab/PixelBuddy): Pixel
+  Boop's faces and sound effects on the CYD, plain prompts and a
+  recorded voice. It's the example to copy. Its art and the voice cover
+  13 of the moods; each of the others borrows one of those 13's (§8, §9).
+
+The engine's checks use both, by their ids: `make -C internal packs`
+fetches each pack that's missing into `characters/`
+(`internal/tools/packs.py`, from the repositories `characters/packs.json`
+names), a clone in `characters/.repos/` and `characters/<id>` a link to
+its pack, so they're `characters/boop/` and `characters/pixel/` as if
+they were here; git ignores them. A character repository's `make` links
+its own pack in the same way (`engine/characters/<id>`, a link to
+`character/`) and chooses it in `engine/.character`, so every engine
+command there runs with it. Only what is the character's own goes in its
+repository; everything every character shares is the engine's.
 
 ## 2. Choosing a pack
 
@@ -96,7 +113,9 @@ The first of these wins:
    line.
 2. The name or path in `.character` at the repo root, a one-line file
    you write and git ignores, so every `make` keeps your choice.
-3. `characters/boop/`.
+3. `characters/boop/`. The root `make`'s targets fetch the chosen pack
+   first if it's one of `characters/packs.json`'s and missing
+   (`packs.py --chosen`).
 
 `python3 characters/charactergen.py --stage` lays the chosen pack out in
 `.character-build/` at the repo root (also ignored): `staged/<name>/`,
@@ -286,8 +305,10 @@ falls back to another pack on its own.
 A pack that lends files lists them in `shares`, by a name for each
 share: the files and folders it takes in, and the studio previews that
 show it (§12). A pack that takes them names each share it uses, and the
-pack beside it in the same folder that has it, in `uses`. Pixel's
-shares its face and its voice, and Boop's uses both:
+pack beside it in the same folder that has it, in `uses`. Boop's two
+packs stand alone, each in a repository of its own, so neither shares;
+a pack that lent its pixel face and voice, and one that used both,
+would say:
 
 ```json
 "shares": {
@@ -309,9 +330,8 @@ shares its face and its voice, and Boop's uses both:
 }
 ```
 
-So the pixel face, which Boop wears on the CYD (on the AMOLED it brings
-its own, the gel slime), and the voice (§8) are in Pixel's pack only,
-and change for both at once. A pack takes only the lender's own files,
+The shared files are then in the lender's pack only, and change for
+both at once. A pack takes only the lender's own files,
 not what the lender uses in turn, and never a file it has itself.
 `charactergen.py` refuses a share that isn't there, or a file it names
 that isn't, and `boopdev check` reads a pack's files as staging lays
@@ -450,14 +470,13 @@ it's small, a word medium, a phrase big or huge):
   same id, as part `reply`: the voice file has it once.
 
 A pack may have them, or use another's (§6). Both are built files and
-checked in. The one voice there is is in Pixel's pack, and Boop's uses
-it: 2,722 takes recorded, and placeholders that espeak-ng speaks for the
-lines not recorded yet, each on the bank's list to record
-(`plans/regenerate.json` in `characters/boop/design/assets/boop-voice-v1/`). What it's built from stays out of Pixel's: the
-recordings, and voicegen, the tool that turns them into the two files,
-are kept in Boop's pack, and write into Pixel's. So Pixel's pack needs
-nothing of Boop's, and Boop's needs Pixel's for its face and its voice,
-one way only.
+checked in. The one voice there is is Boop's: 2,722 takes recorded, and
+placeholders that espeak-ng speaks for the lines not recorded yet, each
+on the bank's list to record (`plans/regenerate.json` in its
+`design/assets/boop-voice-v1/`). The recordings and voicegen, the tool
+that turns them into the two files, are in Boop's pack, and write into
+it. Pixel's pack has a copy of the two built files, so it stands alone;
+it gets a new voice when they're copied over.
 
 A pack without a voice leaves both out. The brain is then never asked
 what to say (`react` drops its `say` question), and reactions play
@@ -465,9 +484,10 @@ faces and sound effects only. A pack with a voice has takes for every
 mood: Voice picks only takes whose moods include the face's. A take
 recorded in one mood may play in others: the table's moods column lists
 them all. The takes were recorded in 13 moods, so voicegen lends each
-to the moods that borrow its mood in Pixel's table,
-`characters/pixel/tools/borrowed.json`. Only the table changes: the
-audio and the version stay the same.
+to the moods that borrow its mood in its table, Boop's
+`tools/voicegen/borrowed.json`, the same as Pixel's art borrows by
+(`tools/borrowed.json`). Only the table changes: the audio and the
+version stay the same.
 
 ## 9. Faces
 
@@ -751,7 +771,7 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
   `src/render/<face>/`, and `render::makeFace()` in
   `src/render/make_face.cpp`, which makes one. `faces` in
   `character.json` names the face each board draws: Boop's
-  `{"cyd24": "pixel", "amoled206": "gel"}`, Pixel's
+  `{"amoled206": "gel"}`, Pixel's
   `{"cyd24": "pixel"}`. A board's build compiles that face's folder and
   no other, and defines `BOOP_FACE_<FACE>` (`BOOP_FACE_GEL`) for
   `makeFace()` (`firmware/tools/pack_face.py`). The simulator builds
@@ -760,7 +780,9 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
   makes, from `rig/`.
 - Every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
-  carries that file, or uses it.
+  carries that file, or uses it. Boop's carries the part the palette
+  reads, a copy of its colours alone, as the gel draws none of Pixel's
+  designs.
 
 **On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
 facegen writes it into the Pixel pack. It holds:
@@ -919,7 +941,9 @@ and play one: [DEMOS.md](DEMOS.md).
 
 ## 14. Making your own
 
-1. Copy `characters/pixel/` to `characters/<yours>/`, and set `id` and
+1. Copy Pixel's pack (`character/` in
+   [PixelBuddy](https://github.com/Mellow-Machines-Lab/PixelBuddy)) to
+   `characters/<yours>/` in the engine's repository, and set `id` and
    `name` in `character.json`. Leave out `design/`, `tools/` and the
    `studio` entry until you need them.
 2. Change the moods' meanings and moves (§5). Every pack has
@@ -955,8 +979,9 @@ stack (`layers.h`, below, The layer stack) fades what comes and goes
 around the body.
 Pixel's rig has expressions for its 13 drawn moods, each wearing its own
 mood's eyes and mouth, the looks idle, working and asleep, a blink, and
-working's stretch from `tier4`. Boop's is the same, since Boop wears
-Pixel's face on the CYD, with its notice besides, which the gel plays
+working's stretch from `tier4`. Boop's has the same looks, blink and
+stretch, but no expressions, as the gel's moods are its own art, with
+its notice besides, which the gel plays
 (§16's reference became it), the clips for its replies to what you said,
 which the gel plays over the face (`reply-yes` … `reply-notme`: a nod, a
 shake of the head, a shrug, a head tilt, a yawn, a wiggle and so on, one
@@ -1086,7 +1111,7 @@ bank tags the resting face's parts where a design places them, each eye
 open or shut, the mouth and the cheeks, with where each is drawn, and
 the decorations on it (a sparkle, a falling tear), which the design keeps
 drawing over the rig face
-([Pixel's design guide](pixel/design/README.md), The resting face's
+([Pixel's design guide](https://github.com/Mellow-Machines-Lab/PixelBuddy/blob/main/character/design/README.md), The resting face's
 tags). Facegen reads the tags (`rig_moves`): a design whose face is
 tagged at every step is the rig face's, and its tags say where the face
 sits at each step, open or shut (a blink, a squeeze), moved whole, its

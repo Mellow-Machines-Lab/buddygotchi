@@ -1,6 +1,6 @@
 # Releasing Boop
 
-Updated 2026-10-24. How a version of Boop goes out, as far as it can
+Updated 2026-10-25. How a version of Boop goes out, as far as it can
 today. Only the owner tags and pushes.
 
 ## 1. The version
@@ -18,7 +18,7 @@ character pack (Settings, Device).
 make -C internal test      # Boop's Swift tests, then each package's
 make -C internal fw-test   # the firmware's and LinkKit's device tests
 make -C internal sim       # the firmware's drawing against the goldens
-make bundle                # Boop.app, both boards' firmware inside, signed and verified
+make bundle                # Boop.app, its pack's boards' firmware inside, signed and verified
 ```
 
 Then on a Mac, by hand: copy `.build/Boop.app` into `/Applications`

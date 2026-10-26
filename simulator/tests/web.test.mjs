@@ -78,7 +78,8 @@ async function board(face = 'pixel', env = {}, build = 'boop-sim.js') {
 }
 
 test('it says hello and draws in real time', { skip }, async () => {
-  const b = await board();
+  // On the pixel face: Pixel's build, beside the staged pack's, when that's a gel pack's.
+  const b = await board('pixel', {}, existsSync(path.join(dist, 'boop-sim-pixel.js')) ? 'boop-sim-pixel.js' : 'boop-sim.js');
   const hello = await b.request({ t: 'hello' });
   assert.deepEqual([hello.app, hello.fw, hello.face], ['boop', 'sim', 'pixel']);
   b.send(WORKING);

@@ -19,7 +19,7 @@ extension DeviceReaction.Say {
     }
 }
 
-/// The recorded voice, which is Pixel's pack's and Boop's uses
+/// The recorded voice, which Boop's pack and Pixel's each have a copy of
 /// (characters/CHARACTER.md §8): these run with either.
 final class VoiceTests: XCTestCase {
     override func setUpWithError() throws { try requireVoice() }

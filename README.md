@@ -47,6 +47,20 @@ with a screen is the body:
   </picture>
 </p>
 
+## Pick a character
+
+Boop is the engine; a character is who lives on the board. Each one has
+a repository of its own, with everything to run it and this repository
+inside it as its engine. Start from the one for your board:
+
+| | Character | Board |
+| --- | --- | --- |
+| <img src="https://raw.githubusercontent.com/Mellow-Machines-Lab/SlimeBuddy/main/media/boop.gif" width="260" alt="The gel slime on the AMOLED board"> | **[SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy)**: a gel slime, Boop's own. Overconfident, theatrical and easily wounded, and always on your side | Waveshare ESP32-S3-Touch-AMOLED-2.06 |
+| <img src="https://raw.githubusercontent.com/Mellow-Machines-Lab/PixelBuddy/main/media/boop.gif" width="260" alt="Pixel's face on the Cheap Yellow Display"> | **[PixelBuddy](https://github.com/Mellow-Machines-Lab/PixelBuddy)**: Pixel, a pixel-art face. Friendly, curious and a little dramatic, and the example to copy for a character of your own | Cheap Yellow Display |
+
+The rest of this page runs Boop from this repository, which is the same
+engine, for working on it.
+
 ## Get started
 
 ### What you need
@@ -65,6 +79,8 @@ with a screen is the body:
 | **Cheap Yellow Display**<br>MicroTech MTR024QV01A-V1 | 2.4" IPS, 320×240 | Resistive | Bluetooth, USB |
 | **Waveshare ESP32-S3-Touch-AMOLED-2.06** | 2.06" AMOLED, 410×502 | Capacitive | Bluetooth, USB |
 
+The CYD runs Pixel, and the AMOLED the gel slime.
+
 Pins, parts and quirks are in [the firmware's README](firmware/README.md).
 
 ### Three steps
@@ -77,7 +93,8 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
 ```
 
 1. **Flash it.** Plug the board in over USB and run `make flash`. It
-   works out which board it is. The first time, it installs PlatformIO
+   works out which board it is, and fetches the character's pack the
+   first time. The first time, it installs PlatformIO
    and the ESP32 toolchain inside the checkout, which takes a few
    minutes; a `pio` already on your `PATH` is used instead.
 2. **Run it.** From your own terminal, run `make bundle`, then
@@ -93,11 +110,12 @@ Then tap the screen to poke it. Press BOOT while an agent waits for you
 and it opens that agent on the Mac; with nobody waiting, BOOT pokes it
 too.
 
-**Which character.** A clone runs Boop, the repository's own character:
-the gel slime on the AMOLED board, and a pixel face on the CYD. Pixel is
-the plain example character, for the CYD only. To run it, put `pixel` in
-a file named `.character` at the repository's root before you flash and
-run ([characters/CHARACTER.md](characters/CHARACTER.md) §2).
+**Which character.** A clone runs Boop's own character, the gel slime,
+on the AMOLED board. For the CYD, run Pixel: put `pixel` in a file named
+`.character` at the repository's root before you flash and run
+([characters/CHARACTER.md](characters/CHARACTER.md) §2). Each pack is
+fetched from its repository into `characters/` the first time it's
+used.
 
 ### Everyday commands
 

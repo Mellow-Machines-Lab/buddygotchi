@@ -21,7 +21,7 @@ cheap ESP32 board with a screen is the body. Start with
 | `agent-hooks/` | The hook layer, a Swift package of its own: a submodule of [Mellow-Machines-Lab/AgentHooks](https://github.com/Mellow-Machines-Lab/AgentHooks) (below, Repositories; [its README](agent-hooks/README.md), [how it works](agent-hooks/ARCHITECTURE.md)): the `agent-hook` hook client, the `agent-hooks` command line, and the `AgentHooks` library that turns hooks into events and keeps the sessions and "needs you". It depends on nothing else in the repo; Boop depends on it |
 | `mellowharness/` | The brain's harness, a Swift package of its own: a submodule of [Mellow-Machines-Lab/MellowHarness](https://github.com/Mellow-Machines-Lab/MellowHarness) (below, Repositories; [its README](mellowharness/README.md), [how it works](mellowharness/ARCHITECTURE.md)): the `MellowHarness` library (events and the log, each kind's line, rules, outputs and `Choice`, the prompt, Jev and the loop that asks it), `mellowharness-emit`, and its worked example Beacon (`beacon`). It depends on nothing else in the repo; Boop's brain runs on it |
 | `linkkit/` | The device link, a package of its own meant to be open-sourced ([its README](linkkit/README.md), [how it works](linkkit/ARCHITECTURE.md), [its spec](linkkit/SPEC.md)): the protocol (four JSON messages, and the queue, by which the device decides what plays when), the Swift host library `LinkKit` with its Bluetooth and socket transports, `linkkit-bridge` (the USB bridge), `linkkit-flash` (firmware onto a board over USB), and the C++ device library in `linkkit/device/` ([its README](linkkit/device/README.md)), with its own PlatformIO project for its tests, that Boop's firmware plugs into. It depends on nothing else in the repo; Boop depends on it |
-| `characters/` | The character packs ([characters/CHARACTER.md](characters/CHARACTER.md), the contract a pack meets), each with what the engine reads (`character.json`, `steering/`, `mac/`, `firmware/`, `rig/`, what its moods wear and its moves on the rig the faces are moving onto, and `demo/`, scripted demos and their recordings, [characters/DEMOS.md](characters/DEMOS.md)) and what makes it (`design/`, `tools/`, `tests/`, and `references/` and `review/`, what people gave to make it from and what's up for review). Each has its files in its own folder or names the pack beside it that lends them (`uses`); the engine reads only the staged pack, where staging lays them out together ([CHARACTER.md](characters/CHARACTER.md) §6). `pixel/`, the open default, with the animation bank ([its design guide](characters/pixel/design/README.md)), the recorded voice as built files (`voice/voice.bin`, `mac/takes.tsv`), and `tools/borrowed.json`, the table that lends its 13 drawn moods' art and takes to the other universal moods; and `boop/`, Boop's own and the default: its prompts, gel slime, evals and goldens, the Mac's mirror of its gel board (`mac/mirror/`) and the voice's recordings, and it uses Pixel's face and built voice. Both are public. Also `studio/`, the Character Studio, one page for everything a pack makes its character: its personality, moods, what sets its behaviour off and who decides, what its brain reads, animations, words, evals and demos ([its README](characters/studio/README.md)), and `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds |
+| `characters/` | What every character pack meets and how the engine reads one: [characters/CHARACTER.md](characters/CHARACTER.md), the contract (what the engine reads: `character.json`, `steering/`, `mac/`, `firmware/`, `rig/` and `demo/`, its demos and their recordings, [characters/DEMOS.md](characters/DEMOS.md); and what makes a pack: `design/`, `tools/`, `tests/`, `references/` and `review/`), `charactergen.py`, which builds a pack's generated files, the studio's data, and stages the chosen pack for the builds, `studio/`, the Character Studio, one page for everything a pack makes its character ([its README](characters/studio/README.md)), and `packs.json`, the packs the engine is tested with. The packs themselves are each in a repository of their own (below, Repositories): `boop`, Boop's own and the default, the gel slime, in SlimeBuddy, and `pixel`, the open example, in PixelBuddy. `make -C internal packs` fetches them into `characters/` as `characters/boop` and `characters/pixel`, links into clones in `characters/.repos/`, which git ignores |
 | `app/` | The Mac side that ships: the menu-bar app (`Boop`, with its placeholder icon, `app/Boop/AppIcon.icns`, and `app/tools/bundle.sh`, which builds it into a signed `Boop.app`, `make bundle`) and the `BoopKit` library, Boop's own code on the three packages, and `CBoopVersion`, which compiles in `VERSION`, the one place the version is written (the firmware's build reads it too) |
 | `firmware/` | PlatformIO firmware for the two boards ([its README](firmware/README.md): the boards, building, flashing, quirks): Boop's app on LinkKit's device library, with its generated assets and build scripts, and the boards with no hardware: `src/board/hosted/`, the loop the simulator and the Mac's mirror run, and `src/board/mirror/`, the Mac's mirror of the board, which `tools/mirror.sh` builds to WebAssembly into a pack's `mac/mirror/` |
 | `simulator/` | The board with no board, for development, tests and demos ([its README](simulator/README.md)): `core/`, the firmware's portable code and LinkKit's device library as a simulated board on the firmware's hosted board, built for the Mac as `firmware/.pio/build/native/program` (PlatformIO's `native` env) and for a browser as WebAssembly; `web/`, the page that is its screen, finger, speaker and card (`<boop-simulator>`, one script to embed), which also plays a pack's recorded demo, with the local server that gives it a USB cable; `tools/`, which record a demo and cut its voice. Neither ships in the app or the firmware |
@@ -52,9 +52,11 @@ The everyday entry points are in [README.md](README.md), which stays a
 short overview. The root `Makefile` has only what the owner runs: `dev`,
 `bundle`, `demo`, `flash`, `eval` and `clean`. Keep it that short: a new
 target for agents, tests or tools goes in `internal/Makefile`, which has
-`build`, `app`, `simulator`, `check`, `test`, `tools-test`, `fw`,
-`fw-test`, `sim`, `sim-test`, `mirror`, `demos`, `e2e`, `faces`, `tools`
-and `eval-pixel`; run them from the repo root as `make -C internal <target>`.
+`build`, `app`, `simulator`, `check`, `test`, `tools-test`, `packs`,
+`fw`, `fw-test`, `sim`, `sim-test`, `mirror`, `demos`, `e2e` and `tools`; run
+them from the repo root as `make -C internal <target>`. A character's own
+targets (Pixel's `faces`, the slime's `slime` and `voice`) are in its
+repository's `Makefile`.
 `boopctl` and the rest of `internal/tools/` are agent tooling the owner
 needn't learn. Every make target and tool is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md) §2, and each CLI prints its
@@ -82,7 +84,8 @@ alters what the app sends the board, record them all again
 - There's no Xcode, so XCTest is missing and `swift test` runs nothing of
   Boop's. `make -C internal test` runs `make -C internal build`, which generates the
   XCTest shim's runner and builds the package in one `swift build`, then
-  runs `.build/debug/BoopTests`. Then it runs the three packages' own
+  runs `.build/debug/BoopTests` with Boop's pack, which they're written
+  against. Then it runs the three packages' own
   tests, which use Swift Testing, as
   `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`,
   `mellowharness/` and `linkkit/` in turn, retrying the "TestingMacros"
@@ -136,15 +139,18 @@ alters what the app sends the board, record them all again
 
 ## Repositories
 
-Boop is spread over three repositories, all public, and the
-organisation has a fourth for its profile. You work in the first three
-from here:
+Boop is spread over five repositories, all public, and the
+organisation has a sixth for its profile. You work in the first three
+from here, and in the characters' through their clones in
+`characters/.repos/`:
 
 | Repository | Visibility | Here at | What goes in it |
 | --- | --- | --- | --- |
-| Mellow-Machines-Lab/buddygotchi | Public | the root | Boop's engine: the Mac app, the firmware, LinkKit, the character packs (Boop's and Pixel's), the studio and the tools, the internal tests and docs |
+| Mellow-Machines-Lab/buddygotchi | Public | the root | Boop's engine: the Mac app, the firmware, LinkKit, the character pack contract, the studio and the tools, the internal tests and docs |
 | Mellow-Machines-Lab/AgentHooks | Public | `agent-hooks/`, a submodule | Reading coding agents' hooks: events, sessions, "needs you", the installer. Nothing of Boop |
 | Mellow-Machines-Lab/MellowHarness | Public | `mellowharness/`, a submodule | The generic multiple-choice brain: the log, lines, rules, outputs, the prompt, brains. Nothing of Boop |
+| Mellow-Machines-Lab/SlimeBuddy | Public | `characters/boop`, fetched (`make -C internal packs`) | The gel slime, Boop's own character: its pack in `character/` (its words, art, gel engine, sounds, voice and its recordings, evals and goldens), its README and media, and this repository as its `engine/` submodule |
+| Mellow-Machines-Lab/PixelBuddy | Public | `characters/pixel`, fetched | Pixel, the open example character, on the CYD: its pack in `character/` (the animation bank, facegen and sfxgen, a copy of the voice), its README and media, and this repository as `engine/` |
 | Mellow-Machines-Lab/.github | Public | not here: clone it beside this one | The organisation's profile README (`profile/README.md`), shown on github.com/Mellow-Machines-Lab, and later the community files every repository shares |
 
 **What goes where.**
@@ -153,14 +159,18 @@ from here:
   MellowHarness. Neither names Boop or the other.
 - Boop's own behaviour, the device protocol (`linkkit/`) and anything
   every character shares stay in buddygotchi.
-- Anything that's the slime's own, its words, art, sounds and evals,
-  goes in Boop's pack, `characters/boop/`, and so do the voice's
-  recordings. Pixel's go in `characters/pixel/`, and so does the built
-  voice, which Boop's pack uses with Pixel's face
-  ([CHARACTER.md](characters/CHARACTER.md) §6).
+- Only what's a character's own goes in its repository: the slime's
+  words, art, gel engine, sounds, evals and the voice's recordings in
+  SlimeBuddy, Pixel's in PixelBuddy. Each pack stands alone
+  ([CHARACTER.md](characters/CHARACTER.md) §6). Core logic, and anything
+  another character could use, stays here.
 - A change that spans repositories lands package first, then
   buddygotchi's side, so buddygotchi never depends on something that
-  isn't pushed.
+  isn't pushed. A character's repository pins this one as `engine/` and
+  bumps it the same way, after this one's change is pushed.
+- The engine's checks run against both characters' `main`
+  (`make -C internal packs`; `--update` pulls them). A change here that
+  needs a pack's change lands with that pack's change pushed first.
 - Every repository squash-merges, so each change is one commit.
 - Only the owner pushes, tags or force-pushes, or says to.
 
@@ -170,12 +180,16 @@ Contributors work in those repositories directly; this one only bumps.
 
 **Setting up.** A fresh clone needs `git clone --recurse-submodules`, and
 **every new worktree**, the app's included, starts with both folders
-empty: run this in it before anything else, or the build can't find
-the packages:
+empty and no packs: run this in it before anything else, or the build
+can't find the packages or a character:
 
 ```sh
-git submodule update --init
+git submodule update --init && make -C internal packs
 ```
+
+To change a character from here, work in its clone
+(`characters/.repos/SlimeBuddy`, which `characters/boop` links into) on
+a branch, as in a submodule, and give it the push URL below.
 
 To push from a submodule (the owner's, when asked), point it at the SSH
 alias that can write to the organisation:
@@ -183,6 +197,8 @@ alias that can write to the organisation:
 ```sh
 git -C agent-hooks remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/AgentHooks.git
 git -C mellowharness remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/MellowHarness.git
+git -C characters/.repos/SlimeBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/SlimeBuddy.git
+git -C characters/.repos/PixelBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/PixelBuddy.git
 ```
 
 **Changing a package.** A submodule is checked out on no branch, and a
@@ -302,7 +318,7 @@ MellowHarness, LinkKit), is
 - **The brain is Jev: multiple choice only.** It answers questions about
   the prompt, in plain text; there's no free text. Keep questions few, with
   options that say what they're not.
-- **The steering files are read-only at runtime.** `characters/boop/steering/` is
+- **The steering files are read-only at runtime.** The pack's `steering/` is
   the single source, and the app bundles it at build time
   (`Package.swift` copies it into the app's resources).
 - **No code, commands, tool output, file contents or agent transcripts go
@@ -320,11 +336,11 @@ MellowHarness, LinkKit), is
   library, so the simulator and a later ESP-IDF + LVGL port can reuse it.
 - **The Mac's face is the board's firmware.** The popover and onboarding
   show the gel through the pack's mirror of the board
-  (`characters/boop/mac/mirror/board.js`), the firmware built to
-  WebAssembly and checked in: a change to what the gel board draws
-  rebuilds it (`firmware/tools/mirror.sh`) in the same commit, and
-  `make -C internal mirror` fails until it does. It's fed what the board
-  gets and never answers.
+  (`characters/boop/mac/mirror/board.js`, in SlimeBuddy), the firmware
+  built to WebAssembly and checked in: a change to what the gel board
+  draws, here or in the pack, rebuilds it (`firmware/tools/mirror.sh`)
+  into the pack, pushed with the change, and `make -C internal mirror`
+  fails until it does. It's fed what the board gets and never answers.
 
 ## Docs stay in sync
 
@@ -352,7 +368,7 @@ unpushed local `main`.
 | `internal/app/BoopDevKit/Eval/`, `internal/app/Evals/`, `internal/tools/boopctl_lib/workday.py` | `internal/EVALS.md` |
 | `Package.swift`, a package's `Package.swift`, what goes in `internal/` | `internal/README.md`, `documentation/architecture.html`, this file |
 | `characters/studio/`, a pack's `studio` entry or `studio/` adapter | `characters/studio/README.md`, `characters/CHARACTER.md` §12 |
-| The gel slime: its design (`characters/boop/design/slime-blob/`), `characters/boop/tools/slimegen/`, its engine (`characters/boop/firmware/src/render/gel/`) or `test_gel` | The slime package's `CONTINUITY.md` and `VALIDATION.md`, slimegen's `README.md` |
+| The gel slime: its design (`character/design/slime-blob/`), `character/tools/slimegen/`, its engine (`character/firmware/src/render/gel/`) or `test_gel`, in SlimeBuddy | The slime package's `CONTINUITY.md` and `VALIDATION.md`, slimegen's `README.md`, there |
 
 **Rules that keep them from drifting:**
 

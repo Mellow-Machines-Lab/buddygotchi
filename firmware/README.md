@@ -32,9 +32,11 @@ A character pack says which of its faces each board draws (its
 `faces`, by the env's `custom_board`; [CHARACTER.md](../characters/CHARACTER.md)
 §9), and `firmware/tools/pack_face.py` builds that face and none of the
 pack's others, into the env's own build folder, so switching boards
-rebuilds nothing that hasn't changed. Boop's draws the pixel face on the CYD and the gel slime
-on the AMOLED; Pixel's names only the CYD, so built with Pixel the
-AMOLED's build stops at the start and says so.
+rebuilds nothing that hasn't changed. Boop's draws the gel slime on the
+AMOLED alone, and Pixel's the pixel face on the CYD alone, so a board
+built with the other's pack stops at the start and says so. `make flash`
+builds with the chosen pack, so choose the one for the board
+([CHARACTER.md](../characters/CHARACTER.md) §2).
 
 Under the faces, `src/render/` is portable C++ with no display library,
 which the boards, the native simulator and the WebAssembly one all
@@ -72,7 +74,9 @@ reboots the board; `boopctl` leaves them alone.
 
 ### Updating from the app
 
-`make bundle` builds both boards' firmware into `Boop.app`, packed by
+`make bundle` builds the firmware for each board the chosen pack has a
+face for into `Boop.app` (a board it has none for isn't offered an
+update), packed by
 `firmware/tools/package.py` with a manifest of the board, its chip and
 flash, the version and SHA, and where each image goes, read from the
 board's own partition table. A board's `hello` names it (`board`, its

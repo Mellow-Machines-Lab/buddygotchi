@@ -1,8 +1,0 @@
-# Expanded scenes and diagnostic images are reproducible from the compact code.
-boop-sound-bank-v4/dist/svg/
-boop-sound-bank-v4/qa/*.png
-boop-sound-bank-v4/qa/checks.json
-boop-sound-bank-v4/qa/browser-checks.json
-# Large derived data is built locally; publish a compact index and the ready player.
-boop-sound-bank-v4/manifest.json
-boop-sound-bank-v4/source-hashes.json

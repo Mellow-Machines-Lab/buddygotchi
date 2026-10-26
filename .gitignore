@@ -31,9 +31,15 @@ Package.resolved.bak
 # The landing page is a repo of its own, cloned here
 /landing/
 
-# A reference's frames, which `boopctl reference read` cuts from its media
-# where it's read; its contact sheets are committed
-characters/*/references/*/frames/
+# The character packs, each a repository of its own, which
+# internal/tools/packs.py fetches into characters/: clones in
+# characters/.repos/, and characters/<id> a link to each one's pack
+/characters/*
+!/characters/CHARACTER.md
+!/characters/DEMOS.md
+!/characters/charactergen.py
+!/characters/packs.json
+!/characters/studio/
 
 # JavaScript
 node_modules/

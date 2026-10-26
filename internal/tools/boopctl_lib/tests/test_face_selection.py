@@ -5,8 +5,13 @@ from unittest.mock import patch
 from boopctl_lib import cli, scenario
 
 class FaceSelectionTests(unittest.TestCase):
-    def test_default_and_unknown_keep_pixel_compatibility(self):
-        for value in ('', 'unknown', 'pixel'):
+    def test_without_a_face_the_pack_in_use_says(self):
+        for pack, face in (('pixel', 'pixel'), ('boop', 'gel')):
+            with patch.dict(os.environ, {'BOOP_SIM_FACE': '', 'CHARACTER': pack}):
+                self.assertEqual(scenario.face(), face)
+
+    def test_unknown_keeps_pixel_compatibility(self):
+        for value in ('unknown', 'pixel'):
             with patch.dict(os.environ, {'BOOP_SIM_FACE': value}):
                 self.assertEqual(scenario.face(), 'pixel')
                 self.assertEqual(scenario.golden_dir(), scenario.GOLDEN)

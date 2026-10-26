@@ -32,14 +32,15 @@ let usages: [(command: String, text: String)] = [
         make demo to play (characters/DEMOS.md). A scenario with a known gap is reported GAP when it
         fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
         /tmp/boop-eval, one JSON object a line. Exits 1 if any fails. The scenarios and steering
-        default to the Boop repo's, found from the working directory or from boopdev's own place.
+        default to the pack in use's (characters/CHARACTER.md §2): its evals/ and steering/.
     """),
     ("prompts", """
     boopdev prompts [--only TEXT] [--scenarios DIR] [--steering DIR] [--out FILE]
         What the brain reads in every eval scenario, for the Character Studio's Brain view
         (characters/studio/README.md): each scenario run once with the expect brain, as eval --scripted runs
         it, with no key, and each pass's step, line, prompt, questions and answers, written to FILE
-        (default characters/studio/prompts.js in the repo) for the page to load. A prompt's head, the guide,
+        (default characters/studio/prompts.js in the repo) for the page to load. The scenarios and
+        steering default to the pack in use's. A prompt's head, the guide,
         PERSONALITY and MOOD, is kept once for every pass that shares it, and so is each question.
     """),
     ("check", """
@@ -87,7 +88,7 @@ func arguments(_ command: String, _ args: [String], options: Set<String> = [], f
     return Arguments.parse(args, options: options, flags: flags, words: words, command: "boopdev \(command)", usage: text)
 }
 
-/// The Boop repo: the nearest folder with `characters/boop/steering/guide.md` above
+/// The Boop repo: the nearest folder with `characters/charactergen.py` above
 /// the working directory, or else above boopdev itself (`.build/debug`).
 func findRepo() -> URL? {
     let starts = [URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
@@ -95,7 +96,7 @@ func findRepo() -> URL? {
     for start in starts {
         var dir = start.standardizedFileURL
         for _ in 0..<8 {
-            if FileManager.default.fileExists(atPath: dir.appendingPathComponent("characters/boop/steering/guide.md").path) { return dir }
+            if FileManager.default.fileExists(atPath: dir.appendingPathComponent("characters/charactergen.py").path) { return dir }
             dir = dir.deletingLastPathComponent()
         }
     }
@@ -110,14 +111,13 @@ let evalBudget = 100
 func eval(_ raw: [String]) async {
     let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--to-demo", "--labeler"],
                          flags: ["--always", "--list", "--timeline", "--no-budget", "--scripted"])
-    let repo = findRepo()
-    func path(_ option: String, _ inRepo: String) -> URL {
+    // The pack in use's scenarios and steering (characters/CHARACTER.md §2), unless given.
+    func path(_ option: String, _ inPack: String) -> URL {
         if let given = args[option] { return URL(fileURLWithPath: given) }
-        guard let repo else { fail("boopdev eval: can't find the Boop repo; run it inside the repo, or pass --scenarios and --steering") }
-        return repo.appendingPathComponent(inRepo)
+        return CharacterPack.active.directory.appendingPathComponent(inPack)
     }
     var list: [Scenario]
-    let scenarios = path("--scenarios", "characters/boop/evals")
+    let scenarios = path("--scenarios", "evals")
     do { list = try Scenario.load(directory: scenarios) } catch { fail("can't read the scenarios: \(error)") }
     if let only = args["--only"] {
         list = list.filter { $0.name.localizedCaseInsensitiveContains(only) || $0.file.contains(only) }
@@ -125,7 +125,7 @@ func eval(_ raw: [String]) async {
     if args.has("--always") { list = list.filter(\.always) }
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
     let steering: Steering
-    do { steering = try Steering(directory: path("--steering", "characters/boop/steering")) } catch { fail("\(error)") }
+    do { steering = try Steering(directory: path("--steering", "steering")) } catch { fail("\(error)") }
     if let dir = args["--to-demo"] {
         let out = URL(fileURLWithPath: dir)
         do {
@@ -226,17 +226,17 @@ func eval(_ raw: [String]) async {
 func prompts(_ raw: [String]) async {
     let args = arguments("prompts", raw, options: ["--only", "--scenarios", "--steering", "--out"])
     let repo = findRepo()
-    func path(_ option: String, _ inRepo: String) -> URL {
+    // The pack in use's scenarios and steering (characters/CHARACTER.md §2), unless given.
+    func path(_ option: String, _ inPack: String) -> URL {
         if let given = args[option] { return URL(fileURLWithPath: given) }
-        guard let repo else { fail("boopdev prompts: can't find the Boop repo; run it inside the repo, or pass --scenarios, --steering and --out") }
-        return repo.appendingPathComponent(inRepo)
+        return CharacterPack.active.directory.appendingPathComponent(inPack)
     }
     var list: [Scenario]
-    do { list = try Scenario.load(directory: path("--scenarios", "characters/boop/evals")) } catch { fail("can't read the scenarios: \(error)") }
+    do { list = try Scenario.load(directory: path("--scenarios", "evals")) } catch { fail("can't read the scenarios: \(error)") }
     if let only = args["--only"] {
         list = list.filter { $0.name.localizedCaseInsensitiveContains(only) || $0.file.contains(only) }
     }
-    let steeringDir = path("--steering", "characters/boop/steering")
+    let steeringDir = path("--steering", "steering")
     let steering: Steering
     do { steering = try Steering(directory: steeringDir) } catch { fail("\(error)") }
     // Heads and questions once each, by their index; a pass names them.
@@ -275,9 +275,12 @@ func prompts(_ raw: [String]) async {
         do { _ = try await runner.run(scenario) } catch { fail("\(error)") }
         scenarios[(scenario.file as NSString).deletingPathExtension] = passes
     }
-    let pack = steeringDir.standardizedFileURL.deletingLastPathComponent().lastPathComponent
+    let folder = steeringDir.standardizedFileURL.deletingLastPathComponent()
+    let pack = (try? CharacterPack(directory: folder))?.id ?? folder.lastPathComponent
     let data = JSONLine.encode(["pack": pack, "heads": heads, "questions": questions, "scenarios": scenarios] as [String: Any])
-    let out = path("--out", "characters/studio/prompts.js")
+    guard let out = args["--out"].map({ URL(fileURLWithPath: $0) }) ?? repo?.appendingPathComponent("characters/studio/prompts.js") else {
+        fail("boopdev prompts: can't find the Boop repo; run it inside the repo, or pass --out")
+    }
     do {
         try ("// Generated by boopdev prompts. Do not edit.\nwindow.StudioPrompts = \(data);\n").write(to: out, atomically: true, encoding: .utf8)
     } catch { fail("can't write \(out.path): \(error)") }

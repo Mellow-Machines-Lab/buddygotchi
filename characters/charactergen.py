@@ -5,6 +5,8 @@
     characters/charactergen.py --stage [PACK]
     characters/charactergen.py --firmware-to=DIR [PACK]
     characters/charactergen.py --which
+    characters/charactergen.py --boards [PACK]
+    characters/charactergen.py --sim-face [PACK]
 
 --check checks a pack's character.json: its moods are exactly the
 universal ones (CHARACTER.md §5), and every move and default mood is
@@ -26,6 +28,11 @@ build beside the staged pack's (simulator/web/build.sh PACK).
 
 --which prints the folder of the pack in use: the one everything that runs
 after a build reads (in_use()).
+
+--boards prints the boards a pack has a face for (its `faces`), the
+envs its firmware builds for; --sim-face, the face the simulator draws
+for it unless BOOP_SIM_FACE says: the pixel face if it has one, else its
+first. Both read the chosen pack without PACK.
 
 Every form but --which and --firmware-to also checks the board's states
 against CHARACTER.md §9, each
@@ -88,6 +95,12 @@ def chosen() -> Path:
         name = saved.read_text().strip()
         return own_folder(ROOT / name) if "/" in name else CHARACTERS / name
     return CHARACTERS / "boop"
+
+
+def sim_face(character: dict) -> str:
+    """The face the simulator draws for a pack unless BOOP_SIM_FACE says."""
+    faces = list(dict.fromkeys(character.get("faces", {}).values()))
+    return "pixel" if "pixel" in faces or not faces else faces[0]
 
 
 def staged() -> Path | None:
@@ -566,9 +579,15 @@ def review(pack: Path) -> tuple[list, list, list[str]]:
         if not isinstance(queue, list) or not all(isinstance(item, dict) for item in queue):
             return [], [], ["queue.json isn't a list of items"]
         def still(path):
-            """A still in the characters folder, by its path from the repository's root."""
-            file = pack.parent.parent / path
-            return file.is_file() and MEDIA.get(file.suffix.lower()) == "still" and pack.parent.resolve() in file.resolve().parents
+            """A still in a pack, by its path from the repository's root,
+            characters/<pack>/…: this pack's own wherever its folder is
+            (a character repository's character/), or one beside it."""
+            parts = Path(path).parts
+            if len(parts) < 3 or parts[0] != "characters" or ".." in parts:
+                return False
+            mine = parts[1] in (pack.name, load(pack).get("id"))
+            file = (own_folder(pack) if mine else pack.parent / parts[1]).joinpath(*parts[2:])
+            return file.is_file() and MEDIA.get(file.suffix.lower()) == "still"
 
         image = Rule("isn't an image in the characters folder", lambda v: isinstance(v, str) and still(v))
         item_schema = {"id": A_NAME, "title": TEXT, "what": TEXT, "before": image, "after": image, "status": REVIEW_STATUSES}
@@ -1215,6 +1234,13 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
     return data
 
 
+def known_packs() -> dict[str, str]:
+    """The packs the engine is tested with, each in a repository of its own
+    (characters/packs.json), which internal/tools/packs.sh fetches."""
+    listed = CHARACTERS / "packs.json"
+    return json.loads(listed.read_text()) if listed.is_file() else {}
+
+
 def local_packs(also: Path | None = None) -> list[Path]:
     packs = [p.parent for p in sorted(CHARACTERS.glob("*/character.json"))]
     if also and also not in packs and (also / "character.json").exists():
@@ -1302,28 +1328,31 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
         return 1
     character, paths = checked
     STAGE.mkdir(exist_ok=True)
-    view = STAGE / "staged" / pack.name
+    # Named by its id, as the app finds a buddy's pack, whatever its folder's called.
+    name = character["id"]
+    view = STAGE / "staged" / name
     with tempfile.TemporaryDirectory(dir=STAGE, prefix=".staging-") as temp:
         new = Path(temp)
-        overlay(new / "staged" / pack.name, pack, paths)
-        firmware_from(new / "staged" / pack.name, pack, character, new / "firmware")
-        bundle(new / "staged" / pack.name, new / "packs" / pack.name)
+        overlay(new / "staged" / name, pack, paths)
+        firmware_from(new / "staged" / name, pack, character, new / "firmware")
+        bundle(new / "staged" / name, new / "packs" / name)
         # Every other pack beside it goes in the app too, for buddies that
         # run another pack (CHARACTER.md §2). The chosen one is named in
         # packs/chosen.
-        for other in sorted(p.parent for p in own_folder(pack).parent.glob("*/character.json")):
+        for other in sorted(p.parent for p in pack.parent.glob("*/character.json")):
             if other.resolve() == own_folder(pack) or pack_problems(other, load(other), reads):
                 continue
             with tempfile.TemporaryDirectory() as each:
-                overlay(Path(each) / other.name, other, used(other)[0])
-                bundle(Path(each) / other.name, new / "packs" / other.name)
-        (new / "packs" / "chosen").write_text(f"{pack.name}\n")
+                theirs = load(other)["id"]
+                overlay(Path(each) / theirs, other, used(other)[0])
+                bundle(Path(each) / theirs, new / "packs" / theirs)
+        (new / "packs" / "chosen").write_text(f"{name}\n")
         # The firmware's test suites: the engine's, then the staged pack's
         # (tests/firmware/test_*), linked so an edit lands in the real file.
         tests = new / "firmware-test"
         tests.mkdir()
         engine = ROOT / "internal" / "firmware" / "test"
-        for folder, there in [(engine, engine), (new / "staged" / pack.name / "tests" / "firmware", view / "tests" / "firmware")]:
+        for folder, there in [(engine, engine), (new / "staged" / name / "tests" / "firmware", view / "tests" / "firmware")]:
             for suite in sorted(folder.glob("test_*")) if folder.is_dir() else []:
                 if (tests / suite.name).is_symlink():
                     (tests / suite.name).unlink()
@@ -1399,12 +1428,21 @@ def main(argv: list[str]) -> int:
         print(__doc__.strip())
         return 0
     rest = [a for a in argv if not a.startswith("--")]
-    pack = Path(rest[0]).resolve() if rest else in_use() if "--which" in argv else chosen()
+    pack = Path(rest[0]).absolute() if rest else in_use() if "--which" in argv else chosen()
     if not (pack / "character.json").exists():
         print(f"charactergen: {pack} isn't a character pack (no character.json)", file=sys.stderr)
+        if pack.parent == CHARACTERS and pack.name in known_packs():
+            print(f"charactergen: {pack.name}'s pack is in a repository of its own: fetch it with "
+                  f"`make -C internal packs`", file=sys.stderr)
         return 1
     if "--which" in argv:
         print(pack)
+        return 0
+    if "--boards" in argv:
+        print(" ".join(load(pack).get("faces", {})))
+        return 0
+    if "--sim-face" in argv:
+        print(sim_face(load(pack)))
         return 0
     reads = Reads()  # each pack's rig/ and review/, read once this run
     if "--stage" in argv:

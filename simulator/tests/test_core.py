@@ -23,6 +23,12 @@ sys.path.insert(0, str(REPO / "simulator" / "tools"))
 from voice_subset import chosen_voice  # noqa: E402
 sys.path.pop(0)
 VOICE = chosen_voice()
+# The face the core draws with no BOOP_SIM_FACE it can: the pixel face, or
+# the staged pack's own when it hasn't one (the gel).
+sys.path.insert(0, str(REPO / "characters"))
+import charactergen  # noqa: E402
+sys.path.pop(0)
+FACE = charactergen.sim_face(json.loads((charactergen.in_use() / "character.json").read_text()))
 
 WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 
@@ -100,7 +106,7 @@ class CoreTests(unittest.TestCase):
     def test_it_says_hello_and_draws_in_real_time(self) -> None:
         board = self.board()
         hello = board.request({"t": "hello"})
-        self.assertEqual((hello["app"], hello["fw"], hello["face"]), ("boop", "sim", "pixel"))
+        self.assertEqual((hello["app"], hello["fw"], hello["face"]), ("boop", "sim", FACE))
         board.send(WORKING)
         board.pump(1.5)
         self.assertGreater(board.request({"t": "dbg.ping"})["fps"], 0, "the working face moves on its own, with no line asking")

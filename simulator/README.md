@@ -9,7 +9,8 @@ brew install emscripten      # once: it builds the firmware for a browser
 make -C internal simulator   # builds it, then serves http://127.0.0.1:8206/
 ```
 
-Add `?face=gel` for Boop's own face and
+It draws the staged pack's face: Boop's gel, or Pixel's pixel face with
+`pixel` in `.character` (a pack with both picks with `?face=gel`). Add
 `?zoom=3` for a bigger one. It uses no Bluetooth, so an agent's shell may
 run it.
 
@@ -93,7 +94,7 @@ local page, in `web/dist/`:
 
 | Attribute | What |
 | --- | --- |
-| `face` | `pixel` (the default) or `gel` |
+| `face` | `pixel` (the default) or `gel`, of the faces the build's pack has: a pack with one draws it whatever this says |
 | `zoom` | How many times as big the screen is drawn (2 for the pixel face, 1 for a native one), shrunk to fit a narrower page |
 | `native` | A native face's panel, `WxH` |
 | `voice` | A voice file to fetch for the card |
@@ -293,7 +294,8 @@ make -C internal sim-test
   cable whose socket is live stops the server and takes back the sockets
   it made; and a cable needs a name and a socket of its own.
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
-  the page drives it: hello and drawing, a native face's panel, a touch
+  the page drives it: hello and drawing (on Pixel's build when the
+  staged pack is a gel one), a native face's panel, a touch
   that's a tap however soon it lifts, BOOT held as talking, a new boot, a
   shake and face down and up through the motion sensor, a
   `say`'s sound asked for a chunk at a time, and the card staying in its

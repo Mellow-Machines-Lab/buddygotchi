@@ -3,12 +3,17 @@ in the native simulator, the popover from `Boop --snapshots`, agent-hooks' watch
 example on hooks sent through its client, and Beacon on events sent with
 mellowharness-emit (README.md here).
 
-    internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py [boop moods popover watch beacon]
+    internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py [--out DIR] [boop moods popover watch beacon]
+
+The face's pictures are the pack in use's (CHARACTER=pixel picks one), its
+name in the captions; --out puts them and the popover's somewhere else
+than documentation/media/, a character repository's media/ (its make media).
 """
 
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -24,11 +29,12 @@ REPO = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO / "internal" / "tools"))
 
 from boopctl_lib.cli import SIM_PROGRAM, build_sim  # noqa: E402
-from boopctl_lib.common import checkout_tmp  # noqa: E402
+from boopctl_lib.common import checkout_tmp, chosen_pack  # noqa: E402
 from boopctl_lib.device import Sim  # noqa: E402
 from boopctl_lib.image import to_image  # noqa: E402
 
 KEY = (255, 0, 255)  # the corners' colour, transparent in every GIF
+OUT = REPO / "documentation" / "media"  # the face's and the popover's pictures; --out moves them
 BEZEL = (28, 28, 32)
 MENLO = "/System/Library/Fonts/Menlo.ttc"
 
@@ -54,7 +60,7 @@ def save_gif(frames: list[Image.Image], durations: list[int], path: Path, extra:
     path.parent.mkdir(parents=True, exist_ok=True)
     pal[0].save(path, save_all=True, append_images=pal[1:], duration=durations, loop=0, optimize=True,
                 disposal=1, transparency=key)
-    print(f"{path.relative_to(REPO)}: {len(frames)} frames, {path.stat().st_size // 1024} KB")
+    print(f"{path}: {len(frames)} frames, {path.stat().st_size // 1024} KB")
 
 
 # --- The face, in the native simulator ------------------------------------
@@ -79,8 +85,10 @@ def record(steps: list[tuple[int, dict | None]]) -> list[Image.Image]:
     return frames
 
 
-def device(screen: Image.Image, caption: str, scale: int = 2, pad: int = 22) -> Image.Image:
-    """The screen on a rounded bezel, with a caption under it."""
+def device(screen: Image.Image, caption: str, pad: int = 22) -> Image.Image:
+    """The screen on a rounded bezel, with a caption under it: the CYD's
+    small screen twice its size, the AMOLED's as it is."""
+    scale = 2 if screen.width <= 320 else 1
     sw, sh = screen.width * scale, screen.height * scale
     W, H = sw + pad * 2, sh + pad * 2 + 46
     img = Image.new("RGB", (W, H), KEY)
@@ -92,10 +100,10 @@ def device(screen: Image.Image, caption: str, scale: int = 2, pad: int = 22) -> 
     return img
 
 
-STORY = [  # (at ms, message, caption from then on)
+STORY = [  # (at ms, message, caption from then on; {name} is the pack's)
     (0, {"t": "state", "base": "asleep", "busy": 0}, "no agents: napping"),
     (2600, {"t": "state", "base": "working", "act": "terminal", "mood": "calm", "busy": 1, "variant": 1},
-     "agents working: so is Boop"),
+     "agents working: so is {name}"),
     (6400, {"t": "state", "base": "working", "attn": {"agent": "claude", "project": "landing", "more": 0},
             "busy": 1}, "one needs you"),
     (9600, {"t": "state", "base": "working", "act": "testing", "mood": "engaged", "busy": 1, "variant": 1},
@@ -109,12 +117,13 @@ STORY = [  # (at ms, message, caption from then on)
 
 
 def boop_gif() -> None:
+    name = json.loads((chosen_pack() / "character.json").read_text())["name"]
     frames = record([(at, m) for at, m, _ in STORY])
     out = []
     for i, f in enumerate(frames):
         caption = [c for at, _, c in STORY if c and at <= i * STEP_MS][-1]
-        out.append(device(f, caption))
-    save_gif(out, [STEP_MS] * len(out), REPO / "documentation" / "media" / "boop.gif")
+        out.append(device(f, caption.format(name=name)))
+    save_gif(out, [STEP_MS] * len(out), OUT / "boop.gif")
 
 
 MOODS = ["excited", "proud", "curious", "calm", "grumpy", "sad", "tired", "wounded"]
@@ -125,7 +134,8 @@ def moods_gif() -> None:
                         (400, {"t": "do", "id": 5, "name": "react", "play": "now",
                                "args": {"mood": m, "loops": 3}}),
                         (4400, None)]) for m in MOODS}
-    cols, tw, th, gap, pad, lab = 4, 320, 240, 14, 22, 40
+    tw, th = clips[MOODS[0]][0].size
+    cols, gap, pad, lab = 4, 14, 22, 40
     rows = (len(MOODS) + cols - 1) // cols
     W = pad * 2 + cols * tw + (cols - 1) * gap
     H = pad * 2 + rows * (th + lab) + (rows - 1) * gap
@@ -140,7 +150,7 @@ def moods_gif() -> None:
             f = font(20, True)
             d.text((x + (tw - d.textlength(m, font=f)) / 2, y + th + 8), m, font=f, fill=(235, 235, 235))
         out.append(img)
-    save_gif(out, [STEP_MS] * len(out), REPO / "documentation" / "media" / "moods.gif")
+    save_gif(out, [STEP_MS] * len(out), OUT / "moods.gif")
 
 
 # --- Terminals ---------------------------------------------------------------
@@ -356,9 +366,10 @@ def popover_png() -> None:
             for pane in panes:
                 img.paste(pane, (x, 0))
                 x += pane.width + gap
-            path = REPO / "documentation" / "media" / f"popover-{look}.png"
+            path = OUT / f"popover-{look}.png"
+            path.parent.mkdir(parents=True, exist_ok=True)
             img.save(path, optimize=True)
-            print(f"{path.relative_to(REPO)}: {img.width}x{img.height}, {path.stat().st_size // 1024} KB")
+            print(f"{path}: {img.width}x{img.height}, {path.stat().st_size // 1024} KB")
 
 
 GIFS = {"boop": boop_gif, "moods": moods_gif, "popover": popover_png, "watch": watch_gif, "beacon": beacon_gif}
@@ -367,7 +378,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Makes the READMEs' pictures again, each from a real run.")
     parser.add_argument("names", nargs="*", metavar="NAME",
                         help=f"which to make: {', '.join(GIFS)} (all of them by default)")
-    names = parser.parse_args().names or list(GIFS)
+    parser.add_argument("--out", type=Path, help="where the face's and the popover's go (documentation/media/)")
+    args = parser.parse_args()
+    names = args.names or list(GIFS)
+    if args.out:
+        OUT = args.out.resolve()
     for name in names:
         if name not in GIFS:
             parser.error(f"no picture named {name}: choose from {', '.join(GIFS)}")
