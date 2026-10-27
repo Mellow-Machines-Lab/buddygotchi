@@ -128,7 +128,7 @@ packageTargets += [
 
 let package = Package(
     name: "Boop",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v14)],
     products: [
         .executable(name: "Boop", targets: ["Boop"]),
         .executable(name: "boopdev", targets: ["BoopDev"]),

@@ -34,7 +34,7 @@ public enum AboutThisMac {
         #endif
     }
 
-    /// `Boop 1.0.0 (21) on macOS 15.4.1, Mac16,10, arm64`.
+    /// `Boop 1.0.0 (21) on macOS 14.6.1, Mac16,10, arm64`.
     public static var line: String { "Boop \(BoopVersion.current) (\(build)) on macOS \(macOS), \(model), \(arch)" }
 
     static func sysctl(_ name: String) -> String? {

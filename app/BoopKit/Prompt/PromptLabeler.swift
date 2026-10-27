@@ -10,7 +10,7 @@ public protocol PromptLabeler: Sendable {
 
 /// Apple Intelligence's on-device model, so the prompt never leaves the
 /// Mac, and nor does the agent's last message. The model is macOS 26's;
-/// Boop runs from macOS 15, where there's no labeler (`onThisMac` is nil).
+/// Boop runs from macOS 14, where there's no labeler (`onThisMac` is nil).
 /// It asks whether Apple Intelligence is on whenever it has no session
 /// ready, so turning it on later works, and labels nothing while it's
 /// off, or on an Intel Mac. It answers in three plain lines, which its
