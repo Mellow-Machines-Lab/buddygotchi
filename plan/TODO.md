@@ -4,6 +4,19 @@ Updated 2026-10-26. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Now: Pixel Bro, the third character (2026-10-26)
+
+Pixel Bro is in [PixelBro](https://github.com/Mellow-Machines-Lab/PixelBro):
+Pixel's face on the AMOLED with a new soul. Making him showed what makes a
+new character slow; [new-character-playbook.md](new-character-playbook.md)
+has the playbook and the fixes to pick from.
+
+- [ ] Pick which of the playbook's fixes to build first (a scaffold,
+      a shared voicegen and the pack-generic voice checks would have
+      saved the most).
+- [ ] CHARACTER.md §14 still says to copy a pack into the engine's
+      `characters/`; rewrite it for packs in repositories of their own.
+
 ## Now: the QA night, as users (2026-10-26)
 
 The owner asked for a night of using Boop as users would. Seven testers
