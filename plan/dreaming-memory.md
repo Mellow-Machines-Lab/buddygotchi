@@ -405,7 +405,7 @@ go to the brain, except the dream line's few.
   counts stay: they are Boop's, made by your care, not a record of you.
 - **Starting over** (a new hatch, everything gone) doesn't exist today:
   setup refuses once a Boop exists, and Uninstall keeps the memory. It
-  is new work, below.
+  stays out for now (decided 2026-10-31).
 - **What leaves the Mac.** Everything is kept in the state directory.
   The brain is a remote API, and it gets your facts as words in the
   heading on every pass ("you're a night owl"): inferences about you,
@@ -483,23 +483,21 @@ instance lock, so they refuse a state directory the app has open.
 4. **Answers in the counted memory reader,** with dreaming.md §4's
    asks.
 5. **The popover's memory and forgetting.**
-6. **Starting over,** if the owner wants it.
 
 Stage 2, the written memory, follows (below), with its own order.
 
-## Open calls for the owner
+## Decided with the owner (2026-10-31)
 
-1. **Boop's day at 5:00,** not midnight. Recommended: it keeps a late
-   evening whole and makes the dream the night you slept.
-2. **Forgetting keeps the bond.** Recommended: the bond is Boop's, and
-   your care made it.
-3. **Your facts go to the brain as words.** Recommended, with the
-   sentence in Settings: they are what lets Boop act on knowing you.
-   The other way is tags in the pack's lines only, never in the heading.
-4. **A `Day` keeps the busiest thread's name.** Recommended: the diary
-   already writes it.
-5. **Backfill for existing Boops.** Recommended: no Boop starts its
-   memory from nothing.
+1. **Boop's day runs from 5:00 to 5:00,** not midnight: a late evening
+   stays whole, and the dream is the night you slept.
+2. **Forgetting keeps the bond:** it is Boop's, and your care made it.
+3. **Your facts go to the brain as words,** with the sentence in
+   Settings saying so.
+4. **A `Day` keeps the busiest thread's name,** as the diary already
+   writes it.
+5. **Existing Boops backfill 14 days,** so no Boop starts its memory
+   from nothing.
+6. **No "start over" for now.** It stays out of the build order.
 
 # Stage 2: the written memory
 
