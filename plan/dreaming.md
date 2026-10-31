@@ -252,8 +252,9 @@ The name stays `diary` for the line Boop writes (the
 Words table); dreaming is the pass and what it keeps.
 
 **How it is kept** is designed in
-[dreaming-memory.md](dreaming-memory.md): a `Day` of counts folded as
-events arrive and sealed at the end of Boop's day (5:00 to 5:00), a
+[dreaming-memory.md](dreaming-memory.md): one checkpointed reader of
+the transcript that runs both memories, counted and written; a `Day`
+of counts read as events arrive and sealed at the end of Boop's day (5:00 to 5:00), a
 night pass on the Mac that needs no brain, the bond and your facts
 derived from the sealed `Day`s by one rule shape, the bond latched once
 told, a `dream` event in the transcript, and the person's view and

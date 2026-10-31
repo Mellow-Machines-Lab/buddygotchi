@@ -45,8 +45,8 @@ whatever the 24-hour window holds. That is the pattern to build on.
 | Layer | What it holds | Where it lives | How long | Who writes it |
 | --- | --- | --- | --- | --- |
 | Working memory | The last minutes and hours: HISTORY | The transcript, in memory | 24 h in memory, 14 days in files | Every event |
-| Episodes | Each day as a `Day`: counts, nothing said | Key-value store, `day.<date>` | Care and work for good; the rest 60 days | The memory fold; sealed at night |
-| Knowing | The bond, your facts, your answers | The bond latched and your answers in the key-value store; facts derived each night | The bond for good; facts while they hold | The night pass |
+| Episodes | Each day as a `Day`: counts, nothing said | Key-value store, `day.<date>` | Care and work for good; the rest 60 days | The counted memory reader; sealed at night |
+| Knowing | The bond, your facts, your answers | The bond latched and your answers in the key-value store; facts derived each night | The bond for good; facts while they hold | The counted memory reader's seal |
 | Identity | Name, hatch day, seed | `long-term.md` | For good | Setup |
 
 `diary.md` stays what it is: the written record, a line a day, for the
@@ -63,6 +63,9 @@ the rest.**
 - **Derive.** Your facts are pure functions of the sealed `Day`s. A
   rule changes, they are worked out again. Only what is a promise is
   latched: a bond trait, once on, never goes off.
+
+Both kinds of memory, counted (stage 1) and written (stage 2), run on
+one mechanism: a checkpointed reader of the transcript (below).
 
 ## What counts as you
 
@@ -114,8 +117,8 @@ one Boop dreams through.
 
 ## The `Day`
 
-**The open day** is one row, `day.open`: the counts so far, the date it
-started, and the fold's working state, which the seal strips:
+**The open day** is the counted memory reader's state, kept in its
+checkpoint: the counts so far, and the working state the seal strips:
 
 ```json
 {"day": "2026-10-26",
@@ -142,7 +145,7 @@ a message: your prompts arrive only as their readings, so their counts
 are by tone and kind.
 
 **Unknown is not zero.** The open day is created with every key the
-running app counts, at 0, and the fold counts only keys present in it.
+running app counts, at 0, and the reader counts only keys present in it.
 So a key that a newer app adds mid-day stays absent, unknown, for that
 day, and an older row never reads a new count as 0. A count that
 changes its meaning gets a new key; there are no row versions.
@@ -180,67 +183,114 @@ own id from its `hello`.
 
 The diary's `{pokes}` reads `care.poke`.
 
-## The fold
+## Checkpointed readers
 
-`Memory`, in `app/BoopKit/Memory/`, the memory store's, as growth is:
+Both memories, counted and written, are the same kind of thing: a
+reader that goes through the transcript in order, keeps a little state,
+and does its work when Boop's day ends. One abstraction runs both, so a
+memory is a reader and nothing else: it has no cursor, no catch-up and
+no crash handling of its own.
 
-- **One driver, one cursor.** `memory.seq`, the `seq` of the last event
-  counted. Reducers, the open day and your answers, each take an event
-  and return the keys it changed. An event at or before the cursor is
-  left alone, so a replay counts nothing twice.
-- **One transaction per event that changes something**: the changed
-  keys and the cursor, in one `KeyValueStore.set`, which is atomic
-  across keys. An event that changes nothing saves nothing.
-- **Attached once,** `Memory.attach(pipeline:store:)`, called where the
-  pipeline is made, so the app, `--headless` and the evals all have it.
-  Today growth's fold is wired in `Runtime.init` alone, which the evals
-  never call.
-- **Growth stays as it is.** It could move onto the driver, but that is
-  risk with nothing the person sees; maybe last, maybe never.
-- **A clean quit saves the cursor** at the transcript's last `seq`.
-  At launch, a cursor behind the files means a crash: the driver reads
-  the files after it (one new reader, `Transcript.events(after: seq)`,
-  over the files rather than the log in memory), up to their 14 days.
-  A cursor ahead of the files (a power loss that lost the file's tail
-  after SQLite committed, or files deleted) moves back, as
-  `GrowthStore.follow` does.
+```swift
+/// Reads the transcript in order, and does its work when Boop's day ends.
+public protocol TranscriptReader {
+    associatedtype State: Codable
+    /// Its checkpoint's key: `reader.<name>`.
+    var name: String { get }
+    /// Where a new reader starts: `.files`, the first event in the
+    /// transcript's files, or `.now`, the next event logged.
+    var startsAt: ReaderStart { get }
+    /// The state Boop's day `day` starts with. `carry` is the day
+    /// before's, for what runs across 5:00.
+    func open(day: String, carry: State?) -> State
+    /// Reads one event; true when it changed the state. `line` is what
+    /// Jev read for it, nil when the event is read back from the files.
+    func read(_ e: Event, line: String?, into state: inout State) -> Bool
+    /// Boop's day `day` is over. Called twice for one day, it does the
+    /// same. `live` is false while the reader catches up from the files.
+    func close(day: String, state: State, live: Bool)
+}
+```
+
+`Checkpointed<R>`, the runner, owns the rest:
+
+- **The checkpoint** is one row in the key-value store,
+  `reader.<name>`: `{"seq": 5131, "day": "2026-10-26", "state": {…}}`,
+  the last event read, the Boop day open, and the reader's state. It is
+  saved in one `set` after each read that changed the state; a read
+  that changed nothing saves nothing.
+- **In order, once.** An event at or before `seq` is skipped, so a
+  replay reads nothing twice.
+- **Days.** An event belongs to the Boop day of its time. Before it
+  reads an event of a later day, and on the tick when the wall clock
+  passes 5:00, the runner calls `close`, then saves the checkpoint on
+  the next day with `open(carry:)`'s state.
+- **Crashes.** A crash between the close and the save closes the same
+  day again at the next launch. That is why `close` must do the same
+  when called twice: it writes its own keys, the same values each time.
+  Nothing else is needed: no outbox and no queue. Boop runs as one
+  process on one Mac (the instance lock sees to that), so the worst a
+  crash can do is lose a dream's `dream` event or a night's written
+  memory, and both are best effort.
+- **Live and catch-up are one path.** Live, the runner is fed from
+  `harness.on("*")` with the event's line. At launch it reads the files
+  after `seq` (`Transcript.events(after:)`, one new reader over the
+  files, up to their 14 days) through the same `read`, with no line. A
+  checkpoint ahead of the files (a power loss that lost the file's
+  tail) moves back, as `GrowthStore.follow` does.
+- **Order.** Readers are registered in order, and closed in that order:
+  the counted memory, then the written one, which reads the `Day` the
+  first has just sealed.
+- **Where it runs.** `Memory.attach(pipeline:store:)` registers the
+  readers where the pipeline is made, so the app, `--headless` and the
+  evals all have them. The tick is the first thing `Pipeline.input`
+  does, before its body logs anything, so a Mac that slept closes the
+  day before the event that woke it is read, and that event's line can
+  carry the dream.
 - **The key-value store needs** a prefix scan (`key >= 'day.' AND key <
-  'day/'` on the primary key), a delete, and a `busy_timeout`.
-- **When the store falls back to memory** (a file from a newer app, or
-  one that won't open), the memory fold is off for that launch: no
-  backfill, no seal, no dream. The next good launch repairs from the
-  files.
+  'day/'` on the primary key), a delete, and a `busy_timeout`. When it
+  falls back to memory (a file from a newer app, or one that won't
+  open), no reader runs that launch; the next good launch catches up
+  from the files.
 
-## The seal and the night pass
+Growth's fold is a reader that never closes, and could move onto the
+runner. It stays as it is: moving it changes nothing the person sees.
 
-The seal is a rule on the Mac. It needs no brain, no key and no board.
+## The counted memory reader
 
-**When.** At the start of `Pipeline.input`, before its body logs
-anything, and at launch after repair: every input and every tick goes
-through `input`, so a Mac awake all night seals on the first tick
-after 5:00, and one asleep seals on waking. Sealing there, not inside
-an event's rules, means the event that follows already sees the dream
-in the log (`view(before:)`), and no rule ever logs an event.
+`CountedMemory`, stage 1, in `app/BoopKit/Memory/`:
 
-**One transaction** writes the whole night:
-1. The sealed `day.<date>`, and a new, empty `day.open`, its keys at 0
-   and its `_state` carried over (an away or a turn open across 5:00).
+| Part | What it does |
+| --- | --- |
+| `startsAt` | `.files`, so a new Boop's first launch backfills (below) |
+| State | The open `Day`, with its `_state`, and the answers given today |
+| `open(day, carry)` | Every key the app counts at 0, and `_state` carried over: an away or a turn open across 5:00 |
+| `read` | `DayFold.counts`; an ask's end adds its answer to today's |
+| `close(day, live)` | Seals the day (below) |
+
+**The seal** writes, in one `set`, the same values however often it
+runs:
+1. The sealed `day.<date>`: the state without `_state`.
 2. Each bond trait newly on: `bond.<trait>` = `{"day", "told": false}`.
-3. Your facts as now derived: `fact.<tag>` = `{"since"}`, and those gone,
+   A trait already latched keeps its first day.
+3. Your facts as now derived: `fact.<tag>` = `{"since"}`; those gone,
    deleted.
-4. The diary's line for the day, the rules' pick (below), unless the
-   brain writes it first.
-5. `dream.pending.<date>`, the dream to log.
+4. Today's answers: `answer.<id>`.
+5. The diary's rules' pick for every sealed day before this one that
+   still has no line (below).
 6. Your `you.*` counts in rows older than 60 days, blanked.
 
-**Then** it logs each pending dream as a `dream` event, Boop's own, with
-no wake, so a seal at 5:00 costs no request: `{"day": "2026-10-26",
-"tags": ["fond", "failed"], "earned": ["cuddly"], "facts_on":
-["nightowl"], "facts_off": [], "tell": true}`, and deletes its
-`dream.pending`. A crash between the two leaves the pending row, and
-the next launch or tick logs it, unless the log already has a `dream`
-for that day. The event is the record for `boopdev`, the view and the
-evals; the key-value store is the truth.
+Then, when `live`, it logs a `dream` event, Boop's own, with no wake,
+so a seal at 5:00 costs no request: `{"day": "2026-10-26", "tags":
+["fond", "failed"], "earned": ["cuddly"], "facts_on": ["nightowl"],
+"facts_off": []}`. The event is a record for `boopdev`, the evals and
+the owner, nothing reads it back: the telling reads the key-value
+store. While catching up, no event is logged.
+
+Your answers are tags as soon as they are given: `MemoryStore.tags()`
+reads today's from the checkpoint and the rest from `answer.` rows.
+
+## The telling and the diary
 
 **The telling** is the brain's, and later. Whether a dream is told
 lives in the key-value store, never in the 24-hour view: `told.day` is
@@ -248,7 +298,8 @@ the newest day told. The telling happens on the first pass after a
 seal on an event that is yours, with the view not away: your coming
 back, or your first poke, prompt or word of the day. Never an agent's
 event, never a heartbeat, so it never plays to an empty room. That
-line gets the dream under it, as a reading is:
+line gets the dream under it, rendered from the sealed `Day`, as a
+reading is:
 
 ```
 NOW (09:02, Tuesday; Boop got cuddly)
@@ -323,7 +374,7 @@ pinned in a test: the engine's promises about care, the same for every
 character. A pack never defines a trait; it uses the tags in its lines
 and designs.
 
-**Your answers** are not derived. The answers reducer writes each ask's
+**Your answers** are not derived. The counted memory reader writes each ask's
 end as `answer.<id>`: the pick, the day, and whether the question
 `keeps`. A kept answer is a tag for good; another, for 30 days.
 
@@ -366,13 +417,15 @@ go to the brain, except the dream line's few.
 
 ## Backfill
 
-The first launch with memory folds the 14 days of transcript files,
-once, gated on `memory.backfilled`:
+Backfill is the counted memory reader catching up from `.files`: a new
+reader has no checkpoint, so it starts at the first event of the 14
+days of files. Nothing else is special:
 - It skips the oldest file's day: the files are calendar days, so its
   Boop day is partial.
-- It seals every complete day and leaves today open.
-- It logs no `dream` events and tells nothing, but a trait it latches
-  is told at the first telling.
+- It seals every complete day and leaves today open. It logs no `dream`
+  events (`live` is false), and `told.day` starts at the newest day it
+  sealed, so nothing is told, but a trait it latches is told at the
+  first telling.
 - It counts `kind` and `rude` only where the react `did` is in the
   files, which it is for two weeks.
 
@@ -387,15 +440,19 @@ once, gated on `memory.backfilled`:
 - `BoopDayTests`: the cut at 4:59 and 5:00, over both summer-time
   changes, and at 00:30 after a 23-hour day; a clock set back; a clock
   set forward.
-- `SealTests`: on the first tick after 5:00 and on waking; one
-  transaction; a crash between it and the `dream` (the pending dream
-  logged at launch, once); no seal, no backfill and no dream when the
-  store fell back to memory.
+- `CheckpointedReaderTests`, with a test reader: in order and once; a
+  close before an event of a later day, and on the tick past 5:00; the
+  checkpoint saved only on a change; a crash before the save closes the
+  day again, with the same result; catch-up from the files reading
+  through the same `read`, with no line; closing in registration
+  order; no reader when the store fell back to memory.
+- `SealTests`: on the first tick after 5:00 and on waking; the seal
+  twice gives the same rows; no `dream` event while catching up.
 - `KnowingTests`: each rule's `on` and `off`; nil days count for
   nothing; a night owl is no early bird; a latch surviving a rule raised
   past it; forgetting.
-- `RepairTests`: a cursor behind the files after a crash; ahead after a
-  lost tail; none at a clean quit; backfill skipping the partial day.
+- `RepairTests`: a checkpoint behind the files after a crash; ahead
+  after a lost tail; backfill skipping the partial day.
 - `DiaryTests`: an 08:00 start, its first pass the next day at 09:00,
   with whole counts (the bug, pinned); the rules' picks for days not
   told, in order; no brain, still a diary.
@@ -417,12 +474,14 @@ instance lock, so they refuse a state directory the app has open.
 
 ## Build order
 
-1. **The fold, the seal and the diary from sealed `Day`s.** This alone
-   fixes the five bugs above, and nobody sees it but a whole diary.
+1. **The checkpointed reader, the counted memory reader, and the diary
+   from sealed `Day`s.** This alone fixes the five bugs above, and
+   nobody sees it but a whole diary.
 2. **The `dream` event, the telling and the one first wake,** with
    `dreams.md`.
 3. **Knowing:** the rules, the latch, the tags, the heading.
-4. **The answers reducer,** with dreaming.md §4's asks.
+4. **Answers in the counted memory reader,** with dreaming.md §4's
+   asks.
 5. **The popover's memory and forgetting.**
 6. **Starting over,** if the owner wants it.
 
@@ -474,29 +533,49 @@ else works as in stage 1.
 ## The pieces
 
 ```
-seal Day ─► derive bond and facts ─► the night's journal ─► MemoryWriter (Apple Intelligence)
-                                                               │ plain-line edits
-                                                               ▼
-                                     validate ─► apply ─► cap and age ─► memory.md ─► `memory` event
-                                                                           │
-                                                   every pass: MEMORY section in Jev's prompt
+transcript ─► checkpointed readers ─┬─► CountedMemory  ─► close: seal the Day, derive, latch
+                                     └─► WrittenMemory ─► close: the journal ─► MemoryWriter (Apple Intelligence)
+                                                                                 │ plain-line edits
+                                                                                 ▼
+                                               validate ─► apply ─► cap and age ─► memory.md ─► `memory` event
+                                                                                     │
+                                                             every pass: MEMORY section in Jev's prompt
 ```
+
+The written memory is the second reader on the same runner as the
+counted one: its state is the day's journal, and its close is the
+night's write.
 
 | Piece | What it is | Where |
 | --- | --- | --- |
-| The journal | Yesterday's notable lines, with their times, kept only until the night's write | Key-value store, `journal.open`, then `journal.<date>` |
+| `WrittenMemory` | The reader: its state is the journal, the day's notable lines with their times; its close starts the night's write | `app/BoopKit/Memory/`, its checkpoint `reader.written` |
 | `MemoryWriter` | One call a night: the prompt below, the reply as text | `app/BoopKit/Prompt/` |
 | `MemoryEdits` | Parses the reply, checks each edit, applies the valid ones | `app/BoopKit/Memory/` |
 | `memory.md` | The entries, human-readable and editable | State directory, through `MemoryStore` |
 | The MEMORY section | The entries, rendered for Jev | A prompt section, beside PERSONALITY |
 | The `memory` event | What the night changed, and what was refused | The transcript |
 
-## The journal
+## The written memory reader
+
+`WrittenMemory`, on the same runner as the counted memory:
+
+| Part | What it does |
+| --- | --- |
+| `startsAt` | `.now`: there are no lines to read back, so it never backfills |
+| State | The journal: the day's notable lines, each with its time |
+| `open(day, carry)` | An empty journal; nothing carries across 5:00 |
+| `read` | Adds the event's line when its kind is kept (below); with no line (catching up), nothing |
+| `close(day, live)` | When `live` and a writer is on this Mac: starts the night's write in the background with the journal, and returns. While catching up: nothing |
 
 The writer can't read yesterday from the log: the log holds 24 hours
-in memory, and the seal often runs later. So the memory fold keeps the
-day's notable lines as they happen, the same text Jev read, in
-`journal.open`, and the seal moves it to `journal.<date>`.
+in memory, and the lines Jev read are kept nowhere else. So the reader
+keeps the day's notable lines as they happen, the same text Jev read,
+in its checkpoint. A crash loses the lines of the events read back
+after it, and only those: the counts never depend on lines.
+
+The night's write runs once and isn't retried. A crash during it, or a
+close called twice, at worst runs it again on the same journal, which
+the checks and the cap make harmless.
 
 **Which lines.** One table, `Journal.keeps`, by the line's kind:
 
@@ -516,9 +595,9 @@ no words that Jev didn't already read.
 **Its size.** At most 80 lines. Past that, the oldest prompt with no
 words of yours goes first, then the oldest finished turn.
 
-**Its life.** A journal lives until its night's write, then is
-deleted, written or not. With no writer on this Mac, the fold keeps no
-journal at all. "Forget" deletes it.
+**Its life.** A journal lives until its day closes, then goes, written
+or not: the next day opens empty. With no writer on this Mac, the
+reader isn't registered, so no journal is kept. "Forget" empties it.
 
 ## The prompt
 
@@ -611,7 +690,7 @@ YESTERDAY
 - **CERTAIN** is rendered from the sealed `Day`, the bond, your facts
   and your answers, by the same code as the reason's sentences, so it
   says only what stage 1 knows.
-- **YESTERDAY** is `journal.<date>`.
+- **YESTERDAY** is the journal the reader closed with.
 
 **The budget**, in the on-device model's 4,096 tokens, which hold the
 instructions, the request and the reply together:
@@ -632,7 +711,8 @@ drops a quarter of YESTERDAY and tries once more, in a new session.
 **The call.** Greedy, so the same night reads the same way; the
 permissive guardrails the labeler uses, so a word like "kill" in a
 prompt doesn't refuse the whole night; a timeout of 60 seconds; and
-run after the seal, off the main path, so nothing waits on it. The
+run from the reader's close, in the background, so nothing waits on
+it. The
 telling may happen before it ends; the new memory is for the passes
 after.
 
@@ -690,7 +770,8 @@ make Boop forget it, or add "pinned" to keep it for good.
   file that won't read comes back from the newest copy.
 - **The popover** shows the entries under "What Boop remembers", each
   with a delete and a pin, and "Forget what Boop learned about you"
-  empties the file and the journal, as well as stage 1's facts.
+  empties the file and the written reader's journal, as well as
+  stage 1's facts.
 
 ## MEMORY in Jev's prompt
 
@@ -738,11 +819,11 @@ Every failure leaves the memory as it was, and nothing else waits:
 
 | Case | What happens |
 | --- | --- |
-| macOS 14 or 15, an Intel Mac, Apple Intelligence off | No journal is kept, and no write runs |
-| Apple Intelligence turned off after a journal was kept | The journal is deleted at the next seal |
+| macOS 14 or 15, an Intel Mac, Apple Intelligence off | The written reader isn't registered: no journal, no write |
+| Apple Intelligence turned off during a day | The close finds no writer; the journal goes with the day |
 | The reply times out or doesn't parse | No change; the `memory` event says why |
 | Some edits refused | The valid ones apply |
-| Several nights sealed at once | Only the newest journal is written; the older ones are deleted |
+| Several days closed at once (the Mac off for days) | Only the day the reader was live for has a journal; the others close empty |
 | The key-value store fell back to memory | Stage 1 is off, and so is this |
 
 ## Checking it
@@ -753,8 +834,9 @@ Every failure leaves the memory as it was, and nothing else waits:
   days; a pinned entry never dropped by code or the model; ids kept on
   update.
 - `JournalTests`: the kept kinds and the left-out ones; the 80-line
-  cap's order; the journal moved at the seal and deleted after the
-  write; no journal with no writer.
+  cap's order; nothing read with no line; the write started at a live
+  close and not while catching up; the next day opens empty; no reader
+  with no writer.
 - `MemoryWriterTests`: the request rendered exactly as above from a
   fixture; YESTERDAY trimmed to the budget, oldest first; the retry
   after a context overflow, once.
@@ -789,7 +871,8 @@ The owner reads the fixtures' output after each change to the prompt.
 
 ## Build order, stage 2
 
-1. **The journal, the writer, the checks and `memory.md`,** with the
+1. **The written memory reader, the writer, the checks and
+   `memory.md`,** with the
    `memory` event, but no MEMORY section yet. Run it for a week on the
    owner's Mac, read the file each morning, and tune the prompt on the
    fixtures.
@@ -810,9 +893,10 @@ The owner reads the fixtures' output after each change to the prompt.
 ## Words
 
 `Day` (a day of Boop's as kept), Boop's day, yours (an event you did),
-fold, seal, the bond, your facts, knowing (the bond, facts and answers
+reader (a checkpointed reader of the transcript), checkpoint, seal, the bond, your facts, knowing (the bond, facts and answers
 together), dream (the `dream` event and its telling); and stage 2's:
-the written memory (`memory.md`), an entry, the journal, the writer.
+the written memory (`memory.md`), an entry, the journal (the written
+reader's state), the writer.
 The Words table in `CLAUDE.md` gets them when this is built.
 
 ## Review of stage 1 (2026-10-27)
@@ -850,3 +934,24 @@ diary's lost morning, and changed:
   `you.*` is kept 60 days, and forgetting blanks the evidence.
 - **Facts have hysteresis,** so a 3-of-7 fact doesn't flicker on the
   board.
+
+## Simplified (2026-10-31)
+
+With the owner: both memories, counted and written, are readers on one
+checkpointed reader, `TranscriptReader` run by `Checkpointed<R>`, and
+the design keeps to what one local process needs.
+
+- **One abstraction.** A checkpoint row per reader (the last event, the
+  open day, the state); in order and once; close at Boop's day's end;
+  live and catch-up through the same `read`; readers closed in order.
+  The counted memory, its answers included, and the written memory are
+  its two readers, and backfill is the first one catching up.
+- **No outbox.** The pending dream row is gone. A close is written to
+  give the same result twice, so a crash before the checkpoint moves
+  just closes the day again. The `dream` event is a record nothing reads
+  back; the telling reads the key-value store.
+- **The journal** is the written reader's state, in its checkpoint, not
+  rows of its own.
+- **Gone:** `day.open`, `memory.seq`, `journal.open`, `journal.<date>`,
+  `dream.pending.<date>`, `memory.backfilled`, and the separate answers
+  reducer.
