@@ -40,32 +40,35 @@ Found in the code on 2026-10-27, before any of this is built:
 Growth alone counts as events arrive, with a cursor, so it is right
 whatever the 24-hour window holds. That is the pattern to build on.
 
-## The model: four layers, as people remember
+## Two memories, kept by readers of the transcript
 
-| Layer | What it holds | Where it lives | How long | Who writes it |
-| --- | --- | --- | --- | --- |
-| Working memory | The last minutes and hours: HISTORY | The transcript, in memory | 24 h in memory, 14 days in files | Every event |
-| Episodes | Each day as a `Day`: counts, nothing said | Key-value store, `day.<date>` | Care and work for good; the rest 60 days | The counted memory reader; sealed at night |
-| Knowing | The bond, your facts, your answers | The bond latched and your answers in the key-value store; facts derived each night | The bond for good; facts while they hold | The counted memory reader's seal |
-| Identity | Name, hatch day, seed | `long-term.md` | For good | Setup |
+Boop keeps two memories. Each is kept by a checkpointed reader of the
+transcript (below), and each has one place:
 
-`diary.md` stays what it is: the written record, a line a day, for the
-person to read.
+| Memory | What it holds | Where | Kept by |
+| --- | --- | --- | --- |
+| Counted (stage 1) | Each `Day`: its counts and its dream; and the traits, what Boop knows of you and of itself | `boop.sqlite`, the key-value store: `day.<date>`, `trait.<tag>` | `CountedMemory`, a rule on the Mac; no brain |
+| Written (stage 2) | At most 12 one-line entries: what happened that counts can't say | `memory.md` in the state directory | `WrittenMemory`, with Apple Intelligence on the Mac |
 
-The design in one line: **fold as it happens, seal at night, derive
+The counted memory is rows, not a text file, because it changes on most
+events; `boopdev memory` prints it and the popover shows it. The
+written memory changes once a night and is meant to be read and edited,
+so it is a file. Around them, unchanged: the transcript (the last 24
+hours in memory, 14 days in files: what Jev reads as HISTORY) and
+`long-term.md` (Boop's name, hatch day and seed).
+
+The design in one line: **read as it happens, close each day, derive
 the rest.**
 
-- **Fold.** The open day grows with each event as it is logged, with a
-  cursor. Nothing depends on the 24-hour window, on the app running at
+- **Read.** Each event is read as it is logged, with a checkpoint.
+  Nothing depends on the 24-hour window, on the app running at
   midnight, or on the brain.
-- **Seal.** At the end of Boop's day, the open day is sealed. A sealed
-  `Day` never changes.
-- **Derive.** Your facts are pure functions of the sealed `Day`s. A
-  rule changes, they are worked out again. Only what is a promise is
-  latched: a bond trait, once on, never goes off.
-
-Both kinds of memory, counted (stage 1) and written (stage 2), run on
-one mechanism: a checkpointed reader of the transcript (below).
+- **Close.** When Boop's day ends, the day closes: its counts are
+  final, and the readers do their nightly work, the counted one
+  deriving traits and the written one editing `memory.md`.
+- **Derive.** Traits are worked out from the closed days. A rule
+  changes, they are worked out again. Only Boop's traits are latched:
+  once on, never off.
 
 ## What counts as you
 
@@ -109,16 +112,16 @@ one Boop dreams through.
   launch. This plan keeps that, pinned in a test. Following the zone
   live (`TimeZone.autoupdatingCurrent`) is a change to the transcript
   too, and a plan of its own.
-- **The clock.** The seal cuts by the wall clock, as growth names its
+- **The clock.** A day closes by the wall clock, as growth names its
   day (`options.wallClock`); event times serve only for durations. A
-  clock set back never reopens a sealed day: an event dated inside one
-  counts toward the open day. A clock set forward never seals more than
+  clock set back never reopens a closed day: an event dated inside one
+  counts toward the open day. A clock set forward never closes more than
   a day past the wall clock.
 
 ## The `Day`
 
 **The open day** is the counted memory reader's state, kept in its
-checkpoint: the counts so far, and the working state the seal strips:
+checkpoint: the counts so far, and the working state closing strips:
 
 ```json
 {"day": "2026-10-26",
@@ -133,14 +136,14 @@ checkpoint: the counts so far, and the working state the seal strips:
             "threads": {"api": 6, "web": 1}}}
 ```
 
-**A sealed day** is `day.2026-10-26`, the same without `_state`. A row
+**A closed day** is `day.2026-10-26`, the same without `_state`. A row
 exists only for a day the app logged something: **a missing row is a
 day Boop didn't see**, and the derivations walk the dates, so a gap
 needs no marker.
 
 **What it keeps.** Counts, minutes since the day's start (never clock
-strings, which don't sort across 5:00), and one thread name, the one
-the diary already writes. Never a word you wrote, a command, a file or
+strings, which don't sort across 5:00), and one thread name, the busiest,
+which the dream names. Never a word you wrote, a command, a file or
 a message: your prompts arrive only as their readings, so their counts
 are by tone and kind.
 
@@ -181,7 +184,8 @@ own id from its `hello`.
 | `work.turns`, `failed`, `longest_min`, `thread` | `turn` start and end, as `DiaryOutput.count` counts them today; a turn open across 5:00 counts on the day it ends, from its start in `_state` |
 | `work.helpers` | `subagent` end (new) |
 
-The diary's `{pokes}` reads `care.poke`.
+The dream's `{pokes}` reads `care.poke`, and `{strokes}` reads
+`care.stroke`.
 
 ## Checkpointed readers
 
@@ -240,7 +244,7 @@ public protocol TranscriptReader {
   tail) moves back, as `GrowthStore.follow` does.
 - **Order.** Readers are registered in order, and closed in that order:
   the counted memory, then the written one, which reads the `Day` the
-  first has just sealed.
+  first has just closed.
 - **Where it runs.** `Memory.attach(pipeline:store:)` registers the
   readers where the pipeline is made, so the app, `--headless` and the
   evals all have them. The tick is the first thing `Pipeline.input`
@@ -266,40 +270,78 @@ runner. It stays as it is: moving it changes nothing the person sees.
 | State | The open `Day`, with its `_state`, and the answers given today |
 | `open(day, carry)` | Every key the app counts at 0, and `_state` carried over: an away or a turn open across 5:00 |
 | `read` | `DayFold.counts`; an ask's end adds its answer to today's |
-| `close(day, live)` | Seals the day (below) |
+| `close(day, live)` | Closes the day (below) |
 
-**The seal** writes, in one `set`, the same values however often it
-runs:
-1. The sealed `day.<date>`: the state without `_state`.
-2. Each bond trait newly on: `bond.<trait>` = `{"day", "told": false}`.
-   A trait already latched keeps its first day.
-3. Your facts as now derived: `fact.<tag>` = `{"since"}`; those gone,
+**Closing a day** means the day is over, so its counts are final. The
+reader writes, in one `set`, the same values however often it runs:
+1. `day.<date>`: the state without `_state`. From then on the row
+   changes only to take its dream (below) and, after 60 days, to blank
+   your `you.*` counts.
+2. The traits (below), as the closed days now give them: Boop's traits
+   newly on, latched with `told: false`; your traits from the rules, on
+   or off; today's answers as traits; your answers older than 30 days,
    deleted.
-4. Today's answers: `answer.<id>`.
-5. The diary's rules' pick for every sealed day before this one that
-   still has no line (below).
-6. Your `you.*` counts in rows older than 60 days, blanked.
+3. A dream, the rules' pick, for every earlier day that has none yet.
+4. Your `you.*` counts in rows older than 60 days, blanked.
 
 Then, when `live`, it logs a `dream` event, Boop's own, with no wake,
-so a seal at 5:00 costs no request: `{"day": "2026-10-26", "tags":
-["fond", "failed"], "earned": ["cuddly"], "facts_on": ["nightowl"],
-"facts_off": []}`. The event is a record for `boopdev`, the evals and
-the owner, nothing reads it back: the telling reads the key-value
-store. While catching up, no event is logged.
+so a close at 5:00 costs no request: `{"day": "2026-10-26", "tags":
+["fond", "failed"], "traits_on": ["cuddly", "nightowl"], "traits_off":
+[]}`. The event is a record for `boopdev`, the evals and the owner;
+nothing reads it back. While catching up, no event is logged.
 
-Your answers are tags as soon as they are given: `MemoryStore.tags()`
-reads today's from the checkpoint and the rest from `answer.` rows.
+Today's answers are traits as soon as they are given:
+`MemoryStore.tags()` reads them from the checkpoint until the day
+closes.
 
-## The telling and the diary
+## The dream
 
-**The telling** is the brain's, and later. Whether a dream is told
-lives in the key-value store, never in the 24-hour view: `told.day` is
-the newest day told. The telling happens on the first pass after a
-seal on an event that is yours, with the view not away: your coming
-back, or your first poke, prompt or word of the day. Never an agent's
-event, never a heartbeat, so it never plays to an empty room. That
-line gets the dream under it, rendered from the sealed `Day`, as a
-reading is:
+The dream replaces the diary (decided 2026-10-31): one concept for
+Boop's take on a day, told in the morning and kept for the person.
+
+**Its lines.** The pack's `steering/dreams.md` replaces `diary.md`.
+Each line has the tags the day must have (the day's tags and the
+traits) and two parts: the sign the board holds up, and the line Boop
+keeps. Its blanks are the `Day`'s counts: `{weekday}`, `{turns}`,
+`{failed}`, `{longest}`, `{thread}`, `{pokes}`, `{strokes}`, `{talks}`,
+`{here_hours}`.
+
+```
+- [fond cuddly] warm dreams | {weekday}. You stroked me {strokes} times. Warm day.
+- [fond] dreamt of u | {weekday}. You came by and said hi. Nice.
+- [distant] where were u? | {weekday}. Quiet desk. I kept watch.
+- [failed] bad dream | {weekday}. {failed} of {turns} turns broke. I grumbled, then forgave.
+- [clean long] what a day | {weekday}. A {longest}-minute epic on "{thread}". Knew it.
+- [quiet] dreamt of nothing | {weekday}. No work. Napped, professionally.
+- {weekday} again | {weekday}. Busy on "{thread}". I cheered.
+```
+
+Lines about you come first in the file, so they are offered first. A
+sign is at most 18 glyphs and a line at most 120 characters, and
+`boopdev check` checks both, as it checks replies.
+
+**Where it is kept.** In the `Day` it is about, as
+`day.<date>`'s `dream`: `{"sign", "line", "by": "jev" | "rules"}`.
+There is no separate file. The first launch moves the old `diary.md`'s
+lines into their days (a day with no row gets a row with only its
+dream) and leaves the file as it was. The popover's "Diary" becomes
+"Dreams": the week's lines, on Boop's day.
+
+**Who picks it.** Every day gets one, always from whole counts:
+- **The newest closed day** waits for the telling, where Jev picks its
+  line. The board shows its sign, and the line goes into the `Day`.
+- **Every earlier day without one** gets the rules' pick, the first
+  line that fits, by the seed, when the next day closes. So with no
+  brain, or no telling (a Mac off for days), every day still has a
+  dream.
+
+**The telling** is the brain's. Whether a dream is told lives in the
+key-value store, never in the 24-hour view: `told.day` is the newest
+day told. The telling happens on the first pass after a day closes on
+an event that is yours, with the view not away: your coming back, or
+your first poke, prompt or word of the day. Never an agent's event,
+never a heartbeat, so it never plays to an empty room. That line gets
+the dream under it, rendered from the closed `Day`, as a reading is:
 
 ```
 NOW (09:02, Tuesday; Boop got cuddly)
@@ -307,12 +349,13 @@ You came back to the Mac after a very long break.
   Boop dreamed about Monday: you stroked it 4 times; 7 turns on "api", 3 failed.
 ```
 
-The pass offers `dreams.md`'s signs for the day's tags, the reason
-renders the sentence, and the diary asks its question for that day.
-Its `did` sets `told.day` and every untold trait's `told`. A trait
-earned on a day that is never told itself (back after a long weekend,
-or backfill) is still told at the next telling, so nothing is latched
-without the person hearing of it.
+The pass offers `dreams.md`'s lines for the day's tags (dreaming.md
+§3, the sign table), and the reason renders the sentence under the
+sign. Its `did` writes the dream into the `Day`, sets `told.day`, and
+sets `told` on every Boop's trait not yet told. A trait earned on a day
+never told itself (back after a long weekend, or backfill) is told at
+the next telling, so nothing of Boop's is latched without the person
+hearing of it.
 
 **The first wake of Boop's day has one owner.** Today `Core.greetDay`
 greets an occasion on the first agent's event of the calendar day,
@@ -324,96 +367,101 @@ the telling, with the occasion's sign first in the sign table, so
 Halloween's morning holds up "Happy Halloween!" and narrates the dream;
 with none, `greetDay` as now, on Boop's day.
 
-**The diary, without the recount.** Every line is written from a sealed
-`Day`, never the log, so the counts are whole.
-- The seal writes the rules' pick (the first line that fits, by the
-  seed) for every day it seals but the newest, oldest first, so the
-  diary stays in order.
-- The newest day waits for the telling, where the brain picks its line.
-  If no telling comes before the next seal, or there's no brain, the
-  next seal writes the rules' pick for it.
-- `diary.md` is the record of which days have a line (`appendDiary`
-  already refuses a second line for a day), not the 24-hour `did` scan.
-- The popover's week runs on Boop's day.
+## Traits
 
-## Deriving what Boop knows
+Everything Boop knows, about you or about itself, is a **trait**: a
+tag with the day it came on. One concept for what earlier drafts
+called the bond, your facts and your answers (merged 2026-10-31). A
+trait has two properties:
 
-**One rule shape** for the bond and your facts:
+- **Whose it is.** Boop's traits are part of Boop and last for good:
+  the care traits (the bond, as dreaming.md and the popover call them)
+  and the answers to `keeps` questions. Your traits are about you and
+  fade: a rule's while the rule holds, an answer's for 30 days.
+- **Where it comes from.** A rule over the closed days, or your answer
+  to an ask.
+
+Each is one row, `trait.<tag>` = `{"since", "whose", "from", "told"}`,
+`from` being `rule` or `ask:<id>`.
+
+**One rule shape:**
 
 ```
-Rule(tag, window, day: (Day) -> Bool?, on: Int, off: Int)
+Rule(tag, whose, window, day: (Day) -> Bool?, on: Int, off: Int)
 ```
 
 The tag comes on when at least `on` days in `window` make `day` true,
 and goes off when fewer than `off` do: a gap between the two keeps a
-fact from flickering on the board night after night. `day` returns nil
-when it can't tell (a key absent, a denominator at 0), and that day
-counts for nothing. Two windows: `all` (every sealed day) and
-`last(n)` (the newest `n` sealed days, missing days skipped). The bond's
-`off` is never reached: a trait, once on, is latched.
+trait from flickering on the board night after night. `day` returns
+nil when it can't tell (a key absent, a denominator at 0), and that day
+counts for nothing. Two windows: `all` (every closed day) and `last(n)`
+(the newest `n` closed days, missing days skipped). Boop's traits never
+reach `off`: once on, they are latched.
 
-| Tag | Kind | Window | A day counts when | On | Off |
+| Trait | Whose | Window | A day counts when | On | Off |
 | --- | --- | --- | --- | --- | --- |
-| `cuddly` | bond | all | strokes ≥ 3 | 10 | latched |
-| `cheeky` | bond | all | pokes + tickles + dizzy ≥ 5 | 10 | latched |
-| `chatty` | bond | all | talks ≥ 3 | 10 | latched |
-| `loyal` | bond | all | back ≥ 1 and any care | 30 | latched |
-| `nightowl` | fact | last 7 | a prompt at night | 3 | 2 |
-| `earlybird` | fact | last 7 | `first_after_rest` before 7:00 | 3 | 2 |
-| `fridayshipper` | fact | last 14 | a Friday with a deploy prompt (nil with none labeled) | 2 | 1 |
-| `polite` | fact | last 7 | polite ≥ 3 in 10 prompts (nil with no prompts) | 3 | 2 |
-| `poker` | fact | last 7 | pokes ≥ 5 | 3 | 2 |
-| `distant` | fact | last 7 | yours events and no care at all | 5 | 3 |
+| `cuddly` | Boop's | all | strokes ≥ 3 | 10 | latched |
+| `cheeky` | Boop's | all | pokes + tickles + dizzy ≥ 5 | 10 | latched |
+| `chatty` | Boop's | all | talks ≥ 3 | 10 | latched |
+| `loyal` | Boop's | all | back ≥ 1 and any care | 30 | latched |
+| `nightowl` | yours | last 7 | a prompt at night | 3 | 2 |
+| `earlybird` | yours | last 7 | `first_after_rest` before 7:00 | 3 | 2 |
+| `fridayshipper` | yours | last 14 | a Friday with a deploy prompt (nil with none labeled) | 2 | 1 |
+| `polite` | yours | last 7 | polite ≥ 3 in 10 prompts (nil with no prompts) | 3 | 2 |
+| `poker` | yours | last 7 | pokes ≥ 5 | 3 | 2 |
+| `distant` | yours | last 7 | yours events and no care at all | 5 | 3 |
 
 `earlybird` reads the first yours event after a rest of 4 hours, so a
 night owl working to 5:30 is not an early bird. `distant` needs a day
 you were there: a holiday is a missing day, not a distant one.
 
-**Where the rules live.** In code, one table, `Knowing.rules`, each row
-pinned in a test: the engine's promises about care, the same for every
-character. A pack never defines a trait; it uses the tags in its lines
-and designs.
+**Answers are traits too.** An ask's answer becomes the trait its pick
+names, from `ask:<id>`: the answer to a `keeps` question is Boop's, for
+good (`cookie`, from "fav snack?"); any other is yours, for 30 days
+(`spaces`, from "tabs or spaces?"). A question with a trait from it is
+answered, which is how asks know what not to ask again.
 
-**Your answers** are not derived. The counted memory reader writes each ask's
-end as `answer.<id>`: the pick, the day, and whether the question
-`keeps`. A kept answer is a tag for good; another, for 30 days.
+**Where the rules live.** In code, one table, `Traits.rules`, each row
+pinned in a test: the engine's promises, the same for every character.
+A pack never defines a rule's trait; it uses traits as tags in its
+lines and designs, and names the answers its asks can give.
 
 ## How memory reaches Boop
 
 Through two doors, and only two:
 
-1. **Tags.** `MemoryStore.tags()` gives the bond's traits, your facts,
-   your answers that are tags, and the last sealed day's dream tags
-   while Boop sleeps. They join the one tag provider (dreaming.md §3):
-   the heading, every tagged pack file and the board's `state.you`.
-2. **The dream line**, once, at the telling.
+1. **Tags.** `MemoryStore.tags()` gives the traits, and the last closed
+   day's dream tags while Boop sleeps. They join the one tag provider
+   (dreaming.md §3): the heading, every tagged pack file and the
+   board's `state.you`.
+2. **The dream**, once, at the telling.
 
-The heading names at most three, the bond first: `NOW (09:02, Tuesday;
-Boop is cuddly; you're a night owl)`. The `Day`s and their counts never
-go to the brain, except the dream line's few.
+The heading names at most three traits, Boop's first: `NOW (09:02,
+Tuesday; Boop is cuddly; you're a night owl)`. The `Day`s and their
+counts never go to the brain, except the dream's few.
 
 ## What the person sees and controls
 
-- **The popover's memory.** Under Growth, "What Boop remembers": each
-  trait with its day and its reason ("Cuddly since 30 Oct: you stroked
-  it on 12 days"), your facts ("Night owl: you worked late 4 of the
-  last 7 days"), the answers it keeps, and the diary's week. Every line
-  is a `Reason` row.
+- **The popover's memory.** Under Growth, "What Boop remembers": Boop's
+  traits, each with its day and reason ("Cuddly since 30 Oct: you
+  stroked it on 12 days"), your traits ("Night owl: you worked late 4
+  of the last 7 days"), and the week's dreams. Every line is a `Reason`
+  row.
 - **Forget what Boop learned about you.** One button. It deletes your
-  answers and facts, and blanks `you.*` in every `Day`, so the facts
-  cannot come straight back from the evidence. The bond and the care
-  counts stay: they are Boop's, made by your care, not a record of you.
+  traits and blanks `you.*` in every `Day`, so they cannot come
+  straight back from the evidence. Boop's traits and the care counts
+  stay: they are Boop's, made by your care, not a record of you.
 - **Starting over** (a new hatch, everything gone) doesn't exist today:
   setup refuses once a Boop exists, and Uninstall keeps the memory. It
   stays out for now (decided 2026-10-31).
 - **What leaves the Mac.** Everything is kept in the state directory.
-  The brain is a remote API, and it gets your facts as words in the
+  The brain is a remote API, and it gets your traits as words in the
   heading on every pass ("you're a night owl"): inferences about you,
-  where every other line is about the moment. The dream line sends a
-  few counts and the thread's name, as finished turns' lines already
-  do. Settings says this beside the forget button.
-- **What is kept for good** is only care and work: `you.*` is blanked
-  after 60 days, so Boop doesn't keep a log of your hours.
+  where every other line is about the moment. The dream sends a few
+  counts and the thread's name, as finished turns' lines already do.
+  Settings says this beside the forget button.
+- **What is kept for good** is only care, work and the dreams: `you.*`
+  is blanked after 60 days, so Boop doesn't keep a log of your hours.
 
 ## Backfill
 
@@ -422,9 +470,9 @@ reader has no checkpoint, so it starts at the first event of the 14
 days of files. Nothing else is special:
 - It skips the oldest file's day: the files are calendar days, so its
   Boop day is partial.
-- It seals every complete day and leaves today open. It logs no `dream`
+- It closes every complete day and leaves today open. It logs no `dream`
   events (`live` is false), and `told.day` starts at the newest day it
-  sealed, so nothing is told, but a trait it latches is told at the
+  closed, so nothing is told, but a trait it latches is told at the
   first telling.
 - It counts `kind` and `rude` only where the react `did` is in the
   files, which it is for two weeks.
@@ -446,16 +494,20 @@ days of files. Nothing else is special:
   day again, with the same result; catch-up from the files reading
   through the same `read`, with no line; closing in registration
   order; no reader when the store fell back to memory.
-- `SealTests`: on the first tick after 5:00 and on waking; the seal
+- `CloseTests`: on the first tick after 5:00 and on waking; closing
   twice gives the same rows; no `dream` event while catching up.
-- `KnowingTests`: each rule's `on` and `off`; nil days count for
-  nothing; a night owl is no early bird; a latch surviving a rule raised
-  past it; forgetting.
+- `TraitsTests`: each rule's `on` and `off`; nil days count for
+  nothing; a night owl is no early bird; Boop's traits latched, and
+  surviving a rule raised past them; an answer to a `keeps` question
+  Boop's for good, any other yours for 30 days; forgetting deleting
+  only yours.
 - `RepairTests`: a checkpoint behind the files after a crash; ahead
   after a lost tail; backfill skipping the partial day.
-- `DiaryTests`: an 08:00 start, its first pass the next day at 09:00,
-  with whole counts (the bug, pinned); the rules' picks for days not
-  told, in order; no brain, still a diary.
+- `DreamTests`: an 08:00 start, its first pass the next day at 09:00,
+  with whole counts (the diary's bug, pinned); the rules' picks for
+  days not told, in order; no brain, still a dream every day; the old
+  `diary.md` moved into its days; both parts of a line within their
+  lengths.
 - `TellingTests`: the dream under the next yours event's line; never
   while away, never on an agent's event; an untold trait carried to the
   next telling; one first wake on Halloween.
@@ -464,24 +516,23 @@ days of files. Nothing else is special:
 gets `"memory": {"days": [...], "answers": {...}, "bond": {...}}`,
 written before the first step; `Eval.run` makes an in-memory key-value
 store and attaches `Memory`; and `expect` gets `dream` and `told`.
-`97-diary`'s case changes: a check-in at 1:00 no longer starts a new
-day.
+`97-diary` becomes a dream eval: the day gets a dream, and a check-in
+at 1:00 no longer starts a new day.
 
 **Tools.** `boopdev memory --state-dir DIR` prints the `Day`s, the bond,
-the facts and the answers, each with its reason. `boopdev dream
---state-dir DIR` seals now and prints the `dream` event. Both take the
+and the traits, each with its reason, and the dreams. `boopdev dream
+--state-dir DIR` closes the day now and prints the `dream` event. Both take the
 instance lock, so they refuse a state directory the app has open.
 
 ## Build order
 
-1. **The checkpointed reader, the counted memory reader, and the diary
-   from sealed `Day`s.** This alone fixes the five bugs above, and
-   nobody sees it but a whole diary.
+1. **The checkpointed reader, the counted memory reader, and the dream
+   in place of the diary,** from closed `Day`s, with the rules' picks.
+   This alone fixes the five bugs above.
 2. **The `dream` event, the telling and the one first wake,** with
    `dreams.md`.
-3. **Knowing:** the rules, the latch, the tags, the heading.
-4. **Answers in the counted memory reader,** with dreaming.md §4's
-   asks.
+3. **Traits:** the rules, the latch, the tags, the heading.
+4. **Answers as traits,** with dreaming.md §4's asks.
 5. **The popover's memory and forgetting.**
 
 Stage 2, the written memory, follows (below), with its own order.
@@ -491,10 +542,9 @@ Stage 2, the written memory, follows (below), with its own order.
 1. **Boop's day runs from 5:00 to 5:00,** not midnight: a late evening
    stays whole, and the dream is the night you slept.
 2. **Forgetting keeps the bond:** it is Boop's, and your care made it.
-3. **Your facts go to the brain as words,** with the sentence in
+3. **Your traits go to the brain as words,** with the sentence in
    Settings saying so.
-4. **A `Day` keeps the busiest thread's name,** as the diary already
-   writes it.
+4. **A `Day` keeps the busiest thread's name,** as the diary did.
 5. **Existing Boops backfill 14 days,** so no Boop starts its memory
    from nothing.
 6. **No "start over" for now.** It stays out of the build order.
@@ -504,7 +554,7 @@ Stage 2, the written memory, follows (below), with its own order.
 Stage 1 is counted memory: it knows how often. Stage 2 adds a short
 written memory: it knows what happened. The api migration that took
 three days, the Thursday you said "rough day", that you stroke Boop
-when you sit down. Each night, after the seal, Apple Intelligence on
+when you sit down. Each night, after the day closes, Apple Intelligence on
 the Mac edits a list of at most 12 one-line entries, from what it
 already holds and yesterday's notable lines. Jev reads the list on
 every pass, as MEMORY. Decided with the owner on 2026-10-27, to follow
@@ -531,7 +581,7 @@ else works as in stage 1.
 ## The pieces
 
 ```
-transcript ─► checkpointed readers ─┬─► CountedMemory  ─► close: seal the Day, derive, latch
+transcript ─► checkpointed readers ─┬─► CountedMemory  ─► close: the Day, traits, dreams   
                                      └─► WrittenMemory ─► close: the journal ─► MemoryWriter (Apple Intelligence)
                                                                                  │ plain-line edits
                                                                                  ▼
@@ -685,9 +735,9 @@ YESTERDAY
   maps each number to the entry's id, so the model never sees or writes
   an id. Pinned entries are listed too, as `[us, pinned]`, and a `drop`
   or `update` of one is refused.
-- **CERTAIN** is rendered from the sealed `Day`, the bond, your facts
-  and your answers, by the same code as the reason's sentences, so it
-  says only what stage 1 knows.
+- **CERTAIN** is rendered from the closed `Day` and the traits, by the
+  same code as the reason's sentences, so it says only what stage 1
+  knows.
 - **YESTERDAY** is the journal the reader closed with.
 
 **The budget**, in the on-device model's 4,096 tokens, which hold the
@@ -726,7 +776,7 @@ goes in the `memory` event with its reason, for tuning.
 | Coverage | An entry gets no line: it is kept. An entry gets two: the first counts |
 | Limits | A fourth update or a fourth add: refused, the first three count |
 | Pinned | A `drop` or `update` of a pinned entry |
-| Days | A cited day has no sealed `Day`, or is in the future |
+| Days | A cited day has no closed `Day`, or is in the future |
 | Length | The text is over 140 characters, or empty |
 | Quotes | A quoted span is over 4 words, or isn't word for word in YESTERDAY's `Your words` lines, or in the entry it updates |
 | Scrub | `Scrubber`, the prompt's own, finds code, a path, a link, a command or a secret in it |
@@ -747,7 +797,7 @@ every entry.
 
 ## `memory.md`
 
-In the state directory, beside `long-term.md` and `diary.md`, read and
+In the state directory, beside `long-term.md`, read and
 written only by `MemoryStore`:
 
 ```
@@ -769,7 +819,7 @@ make Boop forget it, or add "pinned" to keep it for good.
 - **The popover** shows the entries under "What Boop remembers", each
   with a delete and a pin, and "Forget what Boop learned about you"
   empties the file and the written reader's journal, as well as
-  stage 1's facts.
+  your traits.
 
 ## MEMORY in Jev's prompt
 
@@ -890,11 +940,13 @@ The owner reads the fixtures' output after each change to the prompt.
 
 ## Words
 
-`Day` (a day of Boop's as kept), Boop's day, yours (an event you did),
-reader (a checkpointed reader of the transcript), checkpoint, seal, the bond, your facts, knowing (the bond, facts and answers
-together), dream (the `dream` event and its telling); and stage 2's:
-the written memory (`memory.md`), an entry, the journal (the written
-reader's state), the writer.
+The counted memory, `Day` (a day of Boop's, its counts and its
+dream), Boop's day, yours (an event you did), a reader (a checkpointed
+reader of the transcript), its checkpoint, closing a day, a trait
+(Boop's or yours; Boop's care traits are the bond), the dream (Boop's
+take on a day: a sign and a line, told in the morning; it replaces the
+diary); and stage 2's: the written memory (`memory.md`), an entry, the
+journal (the written reader's state), the writer.
 The Words table in `CLAUDE.md` gets them when this is built.
 
 ## Review of stage 1 (2026-10-27)
@@ -953,3 +1005,22 @@ the design keeps to what one local process needs.
 - **Gone:** `day.open`, `memory.seq`, `journal.open`, `journal.<date>`,
   `dream.pending.<date>`, `memory.backfilled`, and the separate answers
   reducer.
+
+## Merged (2026-10-31)
+
+With the owner, to keep memory to as few concepts as possible:
+
+- **The dream replaces the diary.** One pack file, `dreams.md`, whose
+  lines have a sign and a line; one pick at the telling; the dream kept
+  in its `Day`, with the rules' pick for every day not told. Gone:
+  `DiaryOutput` and its question, `steering/diary.md` in both packs,
+  `diary.md` in the state directory (moved into the days once), and the
+  word "diary".
+- **Traits replace the bond, facts and answers.** One row shape,
+  `trait.<tag>`, one rule table, `Traits.rules`, and two kinds: Boop's,
+  for good, and yours, fading. Answers are traits from an ask. "The
+  bond" stays only as the name for Boop's care traits.
+- **Closing replaces sealing.** A day closes; "seal" was a second word
+  for the reader's `close`.
+- **Two memories:** the counted one in `boop.sqlite` and the written
+  one in `memory.md`, each kept by a reader.
