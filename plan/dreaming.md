@@ -273,6 +273,11 @@ forgetting. In short:
 - **The day's tags** for the lines and the dream (`here`, `fond`,
   `distant`, `late`, `answered`, and the agents' `failed`, `clean`,
   `long`, `quiet`, `poked`) come from the sealed `Day`.
+- **The written memory** is stage 2: after the seal, Apple Intelligence
+  on the Mac edits a list of at most 12 one-line entries ("you and
+  claude finally fixed the 'api' tests"), which Jev reads as MEMORY.
+  It changes Jev's judgment, never Boop's words, and is designed with
+  its exact prompt in [dreaming-memory.md](dreaming-memory.md).
 
 **Where the facts go.** The bond's traits, your facts and your answers
 are tags from one place, `MemoryStore.tags()`, the way the calendar's are from `Occasions`:
@@ -463,6 +468,8 @@ targets.
    reads, and the second tag set the board needs.
 4. **Asks.** The largest: the board, the mirror, a new event and a new
    demo step.
+5. **The written memory** (dreaming-memory.md, stage 2). It reads
+   stage 1's counts, and needs a week of tuning on the owner's Mac.
 
 Each lands as one squash-merged commit: the pack's side first
 (SlimeBuddy: `lonely.md` and its edges, `dreams.md`, `asks.md`, the
