@@ -43,16 +43,19 @@ final class ContextTests: XCTestCase {
         XCTAssertEqual(ContextSection.untouchedMs(c, at: faded + hour), 4 * hour, "no code rule against lonely again")
     }
 
-    /// The Talk row only when it isn't normal; the Boop row: its stage,
-    /// age and a hush's minutes left.
+    /// The Talk row only when it isn't normal, or silent for a hush's
+    /// minutes left, then back to the setting; the Boop row: its stage and
+    /// age, and no hush.
     func testTheTalkAndBoopRows() {
         XCTAssertNil(ContextSection.talk(.normal, name: "Boop"))
         XCTAssertEqual(ContextSection.talk(.chatty, name: "Boop"),
                        "Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY's silent Examples.")
         XCTAssertEqual(ContextSection.talk(.quiet, name: "Boop"),
                        "Talk: quiet. You asked Boop to say less: nothing at small moments, and never a swear.")
-        XCTAssertEqual(ContextSection.buddy(.init(stage: "Pal", daysOld: 40, hushedMs: 8 * minute - 1000), name: "Boop"),
-                       "Boop: a Pal, 40 days old; hushed for 8 more min.")
+        XCTAssertEqual(ContextSection.talk(.quiet, silentMs: 8 * minute - 1000, name: "Boop"),
+                       "Talk: silent for 8 more min, then quiet again: Boop says nothing till then, but its faces and replies go on, each answering what you said.")
+        XCTAssertEqual(ContextSection.talk(.normal, silentMs: 0, name: "Boop"), nil)
+        XCTAssertEqual(ContextSection.buddy(.init(stage: "Pal", daysOld: 40), name: "Boop"), "Boop: a Pal, 40 days old.")
         XCTAssertEqual(ContextSection.buddy(.init(stage: "Hatchling", daysOld: 0), name: "Boop"), "Boop: a Hatchling, hatched today.")
     }
 
@@ -98,7 +101,7 @@ final class ContextTests: XCTestCase {
         c.talks = 12
         let long = String(repeating: "w", count: 80)
         let agents = (0..<5).map { StatusReply.Agent(agent: "codex", places: [long + "\($0)"], workingSince: t0) }
-        let section = ContextSection.section(talk: .chatty, buddy: .init(stage: "Hatchling", daysOld: 400, hushedMs: 119 * minute),
+        let section = ContextSection.section(talk: .chatty, silentMs: 119 * minute, buddy: .init(stage: "Hatchling", daysOld: 400),
                                              company: c, agents: agents, at: t0 + 11 * hour, name: "Boop")!
         XCTAssertEqual(section.components(separatedBy: "\n").count, 6)
         XCTAssertLessThanOrEqual(Steering.tokens(section), ContextSection.maxTokens, section)

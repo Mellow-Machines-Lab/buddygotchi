@@ -332,8 +332,8 @@ What the brain reads, in plain Markdown:
   stand quotes the CONTEXT row it depends on, as the engine renders it,
   on a line above NOW (`- CONTEXT: You: at the Mac for 3 h; you haven't
   touched or talked to Boop in 2 h.`). CONTEXT is built each pass
-  (`ContextSection`): Talk (the setting, when it isn't normal), the
-  buddy (its stage and age, a hush's minutes left), You (at the Mac and
+  (`ContextSection`): Talk (the setting, when it isn't normal, or
+  silent for a hush's minutes left), the buddy (its stage and age), You (at the Mac and
   untouched, each from an hour, never while away, and how long ago it
   was last lonely, for three hours after), Agents (each open session,
   at most three) and Today (turns and failed; touches and talks), each
@@ -357,9 +357,9 @@ What the brain reads, in plain Markdown:
   new temperament rewrites only the closing part. The temperament says
   how a moment looks, never that more moments get a reaction. Nothing is laid over it but the mood and how much
   it says.
-- How much it says is the Talk setting, picked in Settings, held in code
-  and told to the brain in CONTEXT's Talk row (`Talk`): a pack has no
-  file for it.
+- How much it says is the Talk setting, picked in Settings, or silent
+  for a while (a hush, below), held in code and told to the brain in
+  CONTEXT's Talk row (`Talk`): a pack has no file for it.
 - `mood/<mood>.md` (one per lasting mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.

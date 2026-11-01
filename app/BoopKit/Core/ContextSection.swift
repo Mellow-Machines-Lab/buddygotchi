@@ -18,17 +18,14 @@ public enum ContextSection {
     /// The section's ceiling, in tokens (`Steering.tokens`).
     public static let maxTokens = 160
 
-    /// The buddy as CONTEXT's Boop row tells it: its stage, how old it is,
-    /// and how much longer a hush lasts.
+    /// The buddy as CONTEXT's Boop row tells it: its stage and how old it is.
     public struct Buddy: Equatable, Sendable {
         public var stage: String
         public var daysOld: Int?
-        public var hushedMs: Int64?
 
-        public init(stage: String, daysOld: Int? = nil, hushedMs: Int64? = nil) {
+        public init(stage: String, daysOld: Int? = nil) {
             self.stage = stage
             self.daysOld = daysOld
-            self.hushedMs = hushedMs
         }
     }
 
@@ -41,21 +38,23 @@ public enum ContextSection {
     }
 
     /// The Talk row, when the setting isn't normal: what it asks, and why
-    /// it outranks the personality.
-    static func talk(_ t: Talk, name: String) -> String? {
-        switch t {
+    /// it outranks the personality; or, for `silentMs` more, silent (the
+    /// hush), then back to the setting.
+    static func talk(_ t: Talk, silentMs: Int64? = nil, name: String) -> String? {
+        if let ms = silentMs, ms > 0 {
+            return "Talk: silent for \(max(1, (ms + 59_999) / 60_000)) more min, then \(t.rawValue) again: \(name) says nothing till then, but its faces and replies go on, each answering what you said."
+        }
+        return switch t {
         case .normal: nil
         case .chatty: "Talk: chatty. You asked \(name) to say something at every face; this outranks PERSONALITY's silent Examples."
         case .quiet: "Talk: quiet. You asked \(name) to say less: nothing at small moments, and never a swear."
         }
     }
 
-    /// The buddy's row: "Boop: a Pal, 40 days old; hushed for 8 more min."
+    /// The buddy's row: "Boop: a Pal, 40 days old."
     static func buddy(_ b: Buddy?, name: String) -> String? {
         guard let b else { return nil }
-        var parts = ["a \(b.stage)" + (b.daysOld.map { $0 == 0 ? ", hatched today" : ", \($0) day\($0 == 1 ? "" : "s") old" } ?? "")]
-        if let ms = b.hushedMs, ms > 0 { parts.append("hushed for \(max(1, (ms + 59_999) / 60_000)) more min") }
-        return "\(name): " + parts.joined(separator: "; ") + "."
+        return "\(name): a \(b.stage)" + (b.daysOld.map { $0 == 0 ? ", hatched today" : ", \($0) day\($0 == 1 ? "" : "s") old" } ?? "") + "."
     }
 
     /// The You row: "You: at the Mac for 3 h; you haven't touched or talked
@@ -101,9 +100,10 @@ public enum ContextSection {
     }
 
     /// The section, or nil when no row has anything to say.
-    public static func section(talk t: Talk = .normal, buddy b: Buddy? = nil, company: MemoryReader.Tallies?,
-                               agents list: [StatusReply.Agent], at now: Int64, name: String) -> String? {
-        let rows = [talk(t, name: name), buddy(b, name: name), you(company, at: now, name: name), agents(list, at: now),
+    public static func section(talk t: Talk = .normal, silentMs: Int64? = nil, buddy b: Buddy? = nil,
+                               company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], at now: Int64,
+                               name: String) -> String? {
+        let rows = [talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, at: now, name: name), agents(list, at: now),
                     today(company, name: name)].compactMap { $0 }
         return rows.isEmpty ? nil : ([heading] + rows).joined(separator: "\n")
     }

@@ -192,9 +192,9 @@ extension Runtime {
                 let now = h.clock.now()
                 let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let buddy = ContextSection.Buddy(stage: stage,
-                                                 daysOld: core.config.hatched.map { core.config.time.days(from: $0, to: core.wall(now)) },
-                                                 hushedMs: core.hushed(at: now).map { $0.until - now })
-                return ContextSection.section(talk: m.talk(), buddy: buddy, company: m.company(),
+                                                 daysOld: core.config.hatched.map { core.config.time.days(from: $0, to: core.wall(now)) })
+                return ContextSection.section(talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
+                                              buddy: buddy, company: m.company(),
                                               agents: core.status(at: now, results: [:]), at: now, name: pack.name)
             }
             return mood

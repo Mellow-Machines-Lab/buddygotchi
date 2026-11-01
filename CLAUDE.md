@@ -291,7 +291,7 @@ keep their names.
 | pastime | What the gel does to pass the time in a look: a rig clip and its drawing in time with it, dealt by tier or wait (`render/gel/pastimes.h`); the kit is what the tiers put out round it | gag (the engine's), bit |
 | personality | The pack's personality file: the whole of who the buddy is, its temperament included (characters/CHARACTER.md §7) | nature (the sweet-or-cheeky choice it replaced) |
 | talk | How much the buddy says, quiet, normal or chatty, picked in Settings (`Talk`, CONTEXT's Talk row): held in code, Quiet's `say` with no topic or swear, Chatty's with no "none", and each level's check-in pace (`Talk.pace`) | chattiness, verbosity |
-| hush | The buddy told to be quiet for a while, by what you say or the app's button: it says nothing, its faces going on (`Core.Hush`, the `hush` event, the `hushed` tag) | mute (that's the volume), quiet (that's a talk level) |
+| hush | Talk's fourth level, silent for a while, set by what you say or the app's button, then back to the setting: the buddy says nothing, its faces going on (`Core.Hush`, the `hush` event, the `hushed` tag; CONTEXT's Talk row says it) | mute (that's the volume), quiet (that's another talk level) |
 
 ## Architecture rules
 

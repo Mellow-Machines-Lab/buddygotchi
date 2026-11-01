@@ -1,7 +1,11 @@
 import Foundation
 
 /// How much the character says, chosen in Settings: quiet, normal or
-/// chatty, told in CONTEXT's Talk row (`ContextSection.talk`), which
+/// chatty; and a fourth level, silent for a while, which "shh", the
+/// popover's Hush button and the hush reply set, and which drops back to
+/// the setting when its time runs out (the hush: `Core.Hush` holds it in
+/// code, saying nothing while its faces go on). CONTEXT's Talk row
+/// (`ContextSection.talk`) tells the brain the level, which
 /// outranks what PERSONALITY and MOOD say of words, with each level's
 /// check-in pace (`pace`). It steers the brain, and on Quiet `ReactOutput` holds
 /// to it in code: `say` offers no topic and no swear, and a small moment or
