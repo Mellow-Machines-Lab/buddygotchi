@@ -44,6 +44,9 @@ final class RuntimeTests: XCTestCase {
         return options
     }
 
+    /// Wednesday 21 October 2026, noon UTC: no holiday, no milestone.
+    nonisolated static let ordinaryDay: TimeInterval = 1_792_584_000
+
     func makeRuntime(_ transport: FakeTransport, brain: ScriptedBrain = .pipelineCheck,
                      readJevKey: @escaping @Sendable (() -> String?) -> String? = { _ in "k" }) throws -> Runtime {
         try Runtime(options(transport, brain: brain, readJevKey: readJevKey))
@@ -507,7 +510,12 @@ final class RuntimeTests: XCTestCase {
     /// beckon holding up "Tap me!", waking, and a celebration.
     func testOnboardingHearsTapsTalkAndHooksAndGreetsOnTheBoard() throws {
         let transport = FakeTransport()
-        let runtime = try makeRuntime(transport)
+        // An ordinary day: on a holiday the hook, the day's first agent
+        // event, would add the day's own greeting.
+        var options = try options(transport)
+        let started = Date(), day = Self.ordinaryDay
+        options.wallClock = { Int64((day + Date().timeIntervalSince(started)) * 1000) }
+        let runtime = try Runtime(options)
         let taps = Lines(), agents = Lines(), heard = Lines()
         runtime.onTap = { button, _ in taps.add(button ? "button" : "screen") }
         runtime.onAgentHook = { agents.add($0) }
