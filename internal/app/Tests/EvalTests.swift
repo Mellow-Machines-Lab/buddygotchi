@@ -292,6 +292,18 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(out[2].detail, "happy → determined at 9m00s, back at 9m40s")
     }
 
+    /// `moods_seen`: a mood that came and went between two steps counts;
+    /// one never reached fails, saying what was.
+    func testMoodsSeenCountsAMoodThatCameAndWent() {
+        let pass = { (s: Int64, mood: String) in Eval.Pass(atMs: s * 1000, line: "l", reaction: nil, intensity: nil, mood: mood, dropped: nil) }
+        var checks = Scenario.Checks()
+        checks.moodsSeen = ["lonely", "sad"]
+        let out = Eval.judge(checks, timeline: [pass(60, "calm"), pass(120, "lonely"), pass(180, "calm")], working: [])
+        XCTAssertEqual(out.map(\.passed), [true, false])
+        XCTAssertEqual(out[0].detail, "lonely from 2m00s")
+        XCTAssertEqual(out[1].detail, "never sad: calm, lonely")
+    }
+
     /// EVALS.md §3: a scenario may start in any mood (`mood`, as the
     /// dashboard would set it just before), and a step may check exactly
     /// what its pass's mood question offered (`offered`): staying, and the

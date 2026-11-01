@@ -36,6 +36,8 @@ public enum StatusReply {
         public var needsYou = false
         /// While it works, when its turn started.
         public var workingSince: Int64?
+        /// While it rests, since when: its last turn's end, or its last event.
+        public var restingSince: Int64?
         public var todo: StateSnapshot.Todo?
         /// The latest thing of its that came out one way or another.
         public var result: Result?
@@ -43,8 +45,10 @@ public enum StatusReply {
         public var asked: PromptReading.Kind?
 
         public init(agent: String, places: [String], needsYou: Bool = false, workingSince: Int64? = nil,
-                    todo: StateSnapshot.Todo? = nil, result: Result? = nil, asked: PromptReading.Kind? = nil) {
+                    restingSince: Int64? = nil, todo: StateSnapshot.Todo? = nil, result: Result? = nil,
+                    asked: PromptReading.Kind? = nil) {
             self.agent = agent
+            self.restingSince = restingSince
             self.places = places
             self.needsYou = needsYou
             self.workingSince = workingSince

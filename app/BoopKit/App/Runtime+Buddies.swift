@@ -85,14 +85,19 @@ extension Runtime {
         /// every sign's lines.
         public var askable: (Event, LogView, [Asks.Question], Choice) -> [Asks.Question]
         public var answerTags: (Int64) -> [String]
+        /// Your company and the day so far, the memory reader's open day,
+        /// for CONTEXT; nil with no memory.
+        public var company: () -> MemoryReader.Tallies?
 
         public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
                     talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
                     memory: @escaping () -> String? = { nil },
                     askable: @escaping (Event, LogView, [Asks.Question], Choice) -> [Asks.Question] = { _, _, _, _ in [] },
-                    answerTags: @escaping (Int64) -> [String] = { _ in [] }) {
+                    answerTags: @escaping (Int64) -> [String] = { _ in [] },
+                    company: @escaping () -> MemoryReader.Tallies? = { nil }) {
             self.memory = memory
+            self.company = company
             self.askable = askable
             self.answerTags = answerTags
             self.effects = effects
@@ -109,8 +114,8 @@ extension Runtime {
     /// Boop's brain on the pipeline's harness, the app's and the evals', so
     /// the two can't drift apart: for each buddy its outputs, mood then
     /// react, and the sections of Jev's state: the guide with how to read
-    /// the rest, PERSONALITY, MOOD, and what how much it says adds (its
-    /// `talk/` file, if any); then HISTORY, closed
+    /// the rest, PERSONALITY, MEMORY, MOOD, CONTEXT (how things stand), and
+    /// what how much it says adds (its `talk/` file, if any); then HISTORY, closed
     /// by how long the buddy has been in its mood and reaching back to the
     /// oldest working turn. With several buddies each is a voice: its own
     /// outputs and sections, and a prompt that opens with whom it answers
@@ -124,7 +129,12 @@ extension Runtime {
         }
         let moods = minds.map { m -> Choice in
             let voice = pipeline.tag(m.buddy.id), pack = m.buddy.pack, core = pipeline.core(m.buddy.id)
-            let mood = MoodOutput.choice(voice: voice, pack: pack)
+            let mood = MoodOutput.choice(voice: voice, pack: pack, cues: { [weak h] now in
+                // Weak: the harness holds the mood.
+                guard let h, let now else { return [] }
+                return MoodOutput.cues(now, facts: h.line(now.seq)?.facts ?? [:],
+                                       untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()))
+            })
             // A reaction your tap cut short is in progress while the pokes
             // go on, and done once anything else happens. A reaction's end,
             // MellowHarness's own event, never stops the pokes. The rule
@@ -160,7 +170,7 @@ extension Runtime {
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
                 guard let h, let about else { return nil }
-                return Reason.of(about, line: h.line(about.seq))
+                return Reason.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()))
             }, dreams: m.steering.dreams, told: { [weak h] about in
                 // The dream the line tells, by its tags.
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
@@ -181,6 +191,12 @@ extension Runtime {
             // What it remembers, after who it is and before how it feels.
             h.section { _, v in mine(v) ? m.memory() : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
+            // How things stand: you, the agents, the day so far.
+            h.section { [weak h] _, v in
+                guard mine(v), let h else { return nil }
+                let now = h.clock.now()
+                return ContextSection.section(company: m.company(), agents: core.status(at: now, results: [:]), at: now, name: pack.name)
+            }
             // Last, so it outranks what PERSONALITY and MOOD say of words.
             h.section { _, v in mine(v) ? m.steering.talk(m.talk()) : nil }
             return mood

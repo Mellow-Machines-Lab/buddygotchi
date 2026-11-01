@@ -37,6 +37,29 @@ final class MemoryReaderTests: XCTestCase {
         Event(seq: seq, at: ms, source: .device, type: .poke, specificType: "input")
     }
 
+    /// Your company: only your touches and words count as touching Boop
+    /// (a prompt is yours, but it's to an agent); coming back is kept; a
+    /// mood leaving lonely is kept; all of it carried across 5:00.
+    func testTheCompanyCountsOnlyYoursAndCarries() throws {
+        let reader = MemoryReader(store: try KeyValueStore(directory: nil), time: utc)
+        var t = reader.open(day: "2026-10-27", carry: nil)
+        let morning = at(2026, 10, 27, 9)
+        _ = reader.read(Event(seq: 1, at: morning, source: .mac, type: .presence, phase: .end, specificType: "unlocked"), line: nil, into: &t)
+        _ = reader.read(Event(seq: 2, at: morning + hour, source: .claude, type: .prompt, specificType: "UserPromptSubmit"), line: nil, into: &t)
+        _ = reader.read(Event(seq: 3, at: morning + hour, source: .clock, type: .heartbeat, specificType: "check_in"), line: nil, into: &t)
+        XCTAssertNil(t.touchedAt, "a prompt or a heartbeat isn't touching Boop")
+        XCTAssertEqual(t.backAt, morning)
+        _ = reader.read(Event(seq: 4, at: morning + 2 * hour, source: .device, type: .gesture, specificType: "stroke"), line: nil, into: &t)
+        _ = reader.read(Event(seq: 5, at: morning + 2 * hour, source: .device, type: .gesture, specificType: "facedown"), line: nil, into: &t)
+        XCTAssertEqual(t.touchedAt, morning + 2 * hour)
+        _ = reader.read(Event.did("Boop's mood changed: lonely → affectionate.", for: 4, action: MoodOutput.outputName, by: "brain",
+                                  facts: ["from": "lonely", "to": "affectionate"], at: morning + 2 * hour), line: nil, into: &t)
+        XCTAssertEqual(t.lonelyEndedAt, morning + 2 * hour)
+        let next = reader.open(day: "2026-10-28", carry: t)
+        XCTAssertEqual([next.touchedAt, next.backAt, next.lonelyEndedAt], [t.touchedAt, t.backAt, t.lonelyEndedAt])
+        XCTAssertEqual(next.turns, 0, "the tallies start again")
+    }
+
     /// Checkpointed: in order and once; the day closes before an event of a
     /// later day is read, and on the tick once the wall clock is past it;
     /// the checkpoint, kept in the store, carries on in a new launch, and

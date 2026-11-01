@@ -21,6 +21,9 @@ public struct CharacterPack: Sendable {
         public let faceNotFor: String?
         public let moves: MoodGraph.Moves
         public let family: String?
+        /// The cues one of which NOW must have for the mood to be offered
+        /// as a move (`only_when`, `MoodOutput.cues`); empty for any time.
+        public var onlyWhen: [String] = []
     }
 
     /// The pack's folder: its steering, and what the app reads at run time.
@@ -139,7 +142,7 @@ extension CharacterPack {
         return Mood(id: id, meaning: meaning, notFor: m["not_for"] as? String,
                     face: m["face"] as? String, faceNotFor: m["face_not_for"] as? String,
                     moves: MoodGraph.Moves(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
-                    family: m["family"] as? String)
+                    family: m["family"] as? String, onlyWhen: m["only_when"] as? [String] ?? [])
     }
 }
 

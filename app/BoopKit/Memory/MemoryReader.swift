@@ -3,7 +3,9 @@ import Foundation
 import MellowHarness
 
 /// Boop's day as it goes, then as a dream: the one reader of the
-/// transcript in v1 (`TranscriptReader`). Through the day it keeps the
+/// transcript in v1 (`TranscriptReader`). Through the day it keeps your
+/// company (when you last touched or talked to Boop, came back, and when
+/// a lonely spell last ended, which CONTEXT says), the
 /// tallies (strokes, talks, hours at the Mac, turns) and the journal (the
 /// notable lines Jev read, for the night's write); when the day closes it
 /// writes the dream, yesterday in tags and a sentence, your care first,
@@ -30,6 +32,12 @@ public final class MemoryReader: TranscriptReader {
         public var awaySince: Int64?
         /// The turns still working, by session, since when: carried.
         public var working: [String: Int64] = [:]
+        /// Your company, carried across 5:00: when you last touched or
+        /// talked to Boop (`Yours.touched`), when you last came back, and
+        /// when Boop's mood last left lonely.
+        public var touchedAt: Int64?
+        public var backAt: Int64?
+        public var lonelyEndedAt: Int64?
         /// The notable lines Jev read, each with its time (`HH:mm`), for
         /// the night's write; at most `journalMax`.
         public var journal: [Note] = []
@@ -74,6 +82,9 @@ public final class MemoryReader: TranscriptReader {
         var t = Tallies()
         t.awaySince = carry?.awaySince
         t.working = carry?.working ?? [:]
+        t.touchedAt = carry?.touchedAt
+        t.backAt = carry?.backAt
+        t.lonelyEndedAt = carry?.lonelyEndedAt
         return t
     }
 
@@ -84,6 +95,7 @@ public final class MemoryReader: TranscriptReader {
             t.lastYours = e.at
             if t.hereSince == nil, t.awaySince == nil { t.hereSince = e.at }
         }
+        if Yours.touched(e) { t.touchedAt = e.at }
         switch e.type {
         case .poke?:
             t.pokes += 1
@@ -110,6 +122,7 @@ public final class MemoryReader: TranscriptReader {
                 t.back += 1
                 t.awaySince = nil
                 t.hereSince = e.at
+                t.backAt = e.at
             }
         case .turn?:
             guard let session = e.session else { break }
@@ -126,6 +139,8 @@ public final class MemoryReader: TranscriptReader {
         default:
             if e.kind == Event.did, e.action == ReactOutput.outputName, let reply = e["reply"]?.string,
                reply == "love" || reply == "thanks" { t.kind += 1 }
+            if e.kind == Event.did, e.action == MoodOutput.outputName, e["ok"]?.bool != false, e["from"]?.string == "lonely",
+               e["to"]?.string != "lonely" { t.lonelyEndedAt = e.at }
         }
         if let line, let note = Self.note(e, line) { keep(note, at: e.at, in: &t) }
         return t != before
@@ -210,7 +225,7 @@ public final class MemoryReader: TranscriptReader {
         if t.strokes > 0 { return "stroked x\(t.strokes)" }
         if t.talks > 0 { return "talked x\(t.talks)" }
         if t.failed > 0 { return "\(t.failed) failed" }
-        if t.turns > 0 { return "\(t.turns) turns" }
+        if t.turns > 0 { return t.turns == 1 ? "1 turn" : "\(t.turns) turns" }
         return "quiet day"
     }
 }

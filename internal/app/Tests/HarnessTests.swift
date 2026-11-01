@@ -107,6 +107,8 @@ final class HarnessTests: XCTestCase {
         XCTAssertNil(printer.readable(DebugLog.head("You are.\nMOOD\ngrumpy\n\n", at: 8)))
         XCTAssertEqual(printer.readable(pass), "  pass scripted 1 ms: \n    │ HISTORY (oldest first)\n    │ h\n    │ \n    │ NOW (14:23, Tuesday)\n    │ n")
         XCTAssertEqual(DebugLog.split("You are.\n\nHISTORY (oldest first)\nh").head, "You are.\n\n")
+        XCTAssertEqual(DebugLog.split("You are.\n\n\(ContextSection.heading)\nAgents: x.\n\nHISTORY (oldest first)\nh").head, "You are.\n\n",
+                       "CONTEXT goes with the pass")
     }
 
     // MARK: The outputs

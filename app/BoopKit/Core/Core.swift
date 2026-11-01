@@ -634,6 +634,7 @@ public final class Core {
         return (shown + working + dismissed + idle).map { s in
             StatusReply.Agent(agent: s.agent.rawValue, places: [s.project, s.workspace, s.name].compactMap { $0 },
                          needsYou: needs.contains(s.key), workingSince: works.contains(s.key) ? s.turn.startedAt ?? now : nil,
+                         restingSince: works.contains(s.key) || needs.contains(s.key) ? nil : s.turn.lastEndedAt ?? s.lastEventAt,
                          todo: works.contains(s.key) ? s.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) } : nil,
                          result: results[s.key], asked: asked[s.key])
         }

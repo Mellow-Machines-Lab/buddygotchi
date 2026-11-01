@@ -35,6 +35,16 @@ final class ReasonTests: XCTestCase {
         XCTAssertEqual(said, Reason(cause: "You said \"hi\"."))
     }
 
+    /// An idle check-in after two hours with no touch or word says so,
+    /// from CONTEXT's company; under two hours it says its line.
+    func testALonelyCheckInSaysHowLongBoopWentUntouched() {
+        let check = event(.heartbeat, "check_in")
+        let line = Line("Nothing has happened for 20 min; claude sits idle on \"api\".")
+        XCTAssertEqual(Reason.of(check, line: line, untouchedMs: 2 * 3_600_000 + 60_000),
+                       Reason(cause: "You've been here 2 hours and haven't touched it.", fact: "untouched 2 h"))
+        XCTAssertEqual(Reason.of(check, line: line, untouchedMs: 3_600_000), Reason(cause: line.text))
+    }
+
     /// A kind of line with no row of its own says its line, and gives the
     /// board nothing; with no line, there's no reason.
     func testAnyOtherLineSaysItself() {

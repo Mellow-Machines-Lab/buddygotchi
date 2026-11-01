@@ -802,7 +802,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
                       "the fake device never connected: \(printed)")
         let p = try XCTUnwrap(debugLines().compactMap { $0["pass"] as? [String: Any] }.first)
-        XCTAssertTrue((p["state"] as? String)?.hasPrefix("HISTORY (") == true)
+        XCTAssertTrue(["HISTORY (", "CONTEXT ("].contains { (p["state"] as? String)?.hasPrefix($0) == true }, "the pass's own part")
         XCTAssertTrue((debugLines().first { $0["head"] != nil }?["head"] as? String)?.hasPrefix("You are the mind of \(creature)") == true)
         XCTAssertEqual(p["questions"] as? [String], askedKeys)
 

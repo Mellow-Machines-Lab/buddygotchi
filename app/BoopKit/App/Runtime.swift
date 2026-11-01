@@ -122,6 +122,9 @@ public final class Runtime: @unchecked Sendable {
     /// journal, and the dream they make. Nil when the key-value store fell
     /// back to memory for this launch: then no reader runs.
     public private(set) var remembers: Memory?
+    /// The key-value store growth and memory keep their rows in; it keeps
+    /// an away's start too (`PresenceDetector.awayKey`).
+    var keyValues: KeyValueStore?
     public private(set) var settings: AppSettings
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
@@ -359,7 +362,8 @@ public final class Runtime: @unchecked Sendable {
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: rigCore, mood: mood, talk: talkNow(),
                                          memory: remembersNow(), wall: wallNow())
-                        }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] })
+                        }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
+                        company: { remembersNow()?.today })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -387,7 +391,10 @@ public final class Runtime: @unchecked Sendable {
         holding = false
         held.forEach(emit)
         if read > 0 { log("transcript: read back \(read) events") }
-        presence = PresenceDetector(away: view.away(logNow))
+        // An away the log no longer holds (a relaunch during a long
+        // absence) is still an away: its start is kept.
+        keyValues = values
+        presence = PresenceDetector(away: view.away(logNow) || values.string(PresenceDetector.awayKey) != nil)
         growth.follow(transcriptAt: transcript.lastSeq)
         // Memory picks up where it stopped: the files' events it missed,
         // read as the day they came, then a dream not yet told logged again
@@ -467,7 +474,8 @@ public final class Runtime: @unchecked Sendable {
                         queue: queue, speaks: speaks, talk: talk, memory: memory,
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
-                        }, answerTags: { remembers?.answerTags(at: $0) ?? [] })
+                        }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
+                        company: { remembers?.today })
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -674,6 +682,19 @@ public final class Runtime: @unchecked Sendable {
     /// and a back wakes the brain.
     func recordPresence(_ e: Event) {
         options.log("presence: \(e.phase == .start ? "away" : "back") (\(e.specificType))")
+        var e = e
+        // The away's start is kept, so its back pairs with it whatever the
+        // log still holds.
+        do {
+            if e.phase == .start, let since = e["since"]?.int {
+                try keyValues?.set([PresenceDetector.awayKey: String(since)])
+            } else if e.phase == .end {
+                if e["since"] == nil, let since = keyValues?.string(PresenceDetector.awayKey).flatMap({ Int64($0) }) {
+                    e.data["since"] = .int(since)
+                }
+                try keyValues?.remove([PresenceDetector.awayKey])
+            }
+        } catch { options.log("presence: can't keep the away: \(error)") }
         run(pipeline.presence(e))
     }
 

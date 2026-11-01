@@ -37,6 +37,10 @@ public struct PresenceDetector {
     /// The last unlock or wake since the away, which names the back.
     var cleared: Signal?
 
+    /// Where the runtime keeps an away's start, `since`, in the key-value
+    /// store, till its back: a relaunch during a long absence still knows.
+    public static let awayKey = "presence.away_since"
+
     /// `away` is where the last launch left it: whether the transcript's
     /// last `presence` is a start (`TranscriptView.away`).
     public init(config: Config = Config(), away: Bool = false) {

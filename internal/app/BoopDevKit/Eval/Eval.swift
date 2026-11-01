@@ -167,6 +167,10 @@ public struct Scenario: Sendable {
         /// options it offered, and every mood change was a move on the
         /// mood graph.
         public var onGraph = false
+        /// `moods_seen`: moods the run must reach at some pass, like
+        /// `lonely`; a mood that comes and fades between two steps still
+        /// counts.
+        public var moodsSeen: [String] = []
 
         public init() {}
 
@@ -180,7 +184,7 @@ public struct Scenario: Sendable {
         }
 
         static let keys = ["max_quiet_working", "max_same_in_a_row", "mood_changes", "no_mood_bounce_within",
-                           "reactions", "min_variety", "words_said", "moves_on_graph"]
+                           "reactions", "min_variety", "words_said", "moves_on_graph", "moods_seen"]
     }
 
     public var name: String
@@ -302,6 +306,12 @@ public struct Scenario: Sendable {
             if let v = c["moves_on_graph"] {
                 guard let on = v as? Bool, on else { throw bad("checks.moves_on_graph is true") }
                 checks.onGraph = true
+            }
+            if let v = c["moods_seen"] {
+                guard let text = v as? String else { throw bad("checks.moods_seen is like \"lonely|sad\"") }
+                checks.moodsSeen = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                let unknown = checks.moodsSeen.filter { MoodGraph.mood($0) == nil }
+                guard unknown.isEmpty else { throw bad("checks.moods_seen has \(unknown.joined(separator: ", ")), not a mood") }
             }
             self.checks = checks
         }
@@ -868,6 +878,11 @@ public struct Eval {
             let share = played.isEmpty ? 0 : Double(said) / Double(played.count)
             out.append(RunCheck(name: "words_said \(range.lowerBound)-\(range.upperBound)", passed: range.contains(share),
                                 detail: "\(said) of \(played.count) reactions said something"))
+        }
+        for mood in c.moodsSeen {
+            let at = timeline.first { $0.mood == mood }
+            out.append(RunCheck(name: "moods_seen \(mood)", passed: at != nil,
+                                detail: at.map { "\(mood) from \(clock($0.atMs))" } ?? "never \(mood): \(Set(timeline.map(\.mood)).sorted().joined(separator: ", "))"))
         }
         if c.onGraph {
             // Each pass's answer against what it offered, and each change

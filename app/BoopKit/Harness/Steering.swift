@@ -80,13 +80,16 @@ extension Steering {
     /// Budgets in tokens.
     public enum Budget {
         public static let guide = 400
-        public static let personality = 2650
+        public static let personality = 2850
         public static let talk = 250
-        public static let mood = 225
+        public static let mood = 250
         /// MEMORY, the written memory as Jev reads it on every pass.
         public static let memory = 300
         /// `replies.md`, whose lines are offered as the sign for what you said.
         public static let replies = 325
+        /// `dreams.md` and `asks.md`, offered as signs a few at a time.
+        public static let dreams = 150
+        public static let asks = 325
     }
 
     /// About four bytes a token, which overestimates for English prose.
@@ -103,6 +106,9 @@ extension Steering {
         }
         for name in pack.moods.map(\.id).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name, in: pack)), Budget.mood))
+        }
+        for (name, budget) in [("dreams", Budget.dreams), ("asks", Budget.asks)] {
+            if let text = files[name] { parts.append((name, Steering.tokens(text), budget)) }
         }
         return parts.filter { $0.1 > $0.2 }.map { "\($0.0): \($0.1) > \($0.2)" }
     }

@@ -286,6 +286,7 @@ Each mood in `moods`:
 | `face` | no | What this mood's face means for a single reaction: the option text when the brain picks a reaction's face. Without it, `meaning` |
 | `not_for` | no | When the mood isn't meant, added to the `mood` question's option |
 | `face_not_for` | no | When the face isn't meant, added to the face's option |
+| `only_when` | no | The cues, one of which NOW must have, for the `mood` question to offer the mood as a move (`MoodOutput.cueNames`): `untouched`, an idle check-in with CONTEXT saying you haven't touched or talked to the creature in 2 h; `a day away`, you back after a day away. Staying in it needs none. Boop's and Pixel's lonely have both, so a quiet spell can't drift into it; `boopdev check` refuses a cue it doesn't know |
 | `family` | no | A group of related moods (`joy`, `frustration`…), for designers; the engine doesn't read it |
 | `moves` | yes | `ordinary` and `dramatic` neighbours: the moods it can move to in one step. Staying is always allowed. A dramatic move needs a fresh, big event |
 
@@ -353,7 +354,17 @@ What the brain reads, in plain Markdown:
   message are only their readings: `You asked claude on "api" for a
   fix, in a sentence, frustrated.`, and a finish `…, 8 tool calls,
   saying it's done, apologetic.`, each with a few of the words under
-  it (`Your words:`, `Its words:`).
+  it (`Your words:`, `Its words:`). An Example that needs how things
+  stand quotes the CONTEXT row it depends on, as the engine renders it,
+  on a line above NOW (`- CONTEXT: You: at the Mac for 3 h; you haven't
+  touched or talked to Boop in 2 h.`). CONTEXT is built each pass
+  (`ContextSection`): You (at the Mac from an hour; untouched from two
+  hours, never while away, and not for two hours after a lonely spell
+  faded with no touch), Agents (each open session, at most three) and
+  Today (turns and failed; touches and talks), each row only past its
+  threshold. Events stay in their lines; CONTEXT is what's true now.
+  The prompt's order is the guide, PERSONALITY, MEMORY, MOOD, CONTEXT,
+  TALK, HISTORY (closed by how long the mood has lasted) and NOW.
 
   A personality is the whole of who the creature is, its temperament
   included: Boop's and Pixel's are cheeky, playful and teasing, never

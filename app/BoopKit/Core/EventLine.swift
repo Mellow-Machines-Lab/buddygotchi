@@ -183,13 +183,17 @@ public enum EventLine {
     /// `You came back to the Mac after a long break.`, or `after a day
     /// away.`: the break's band.
     public static func back(ms: Int64) -> String {
-        let band = Band.away(ms: ms)
-        switch band {
-        case "a day": return "You came back to the Mac after a day away."
-        case "days": return "You came back to the Mac after days away."
-        default: return "You came back to the Mac after a \(band) break."
-        }
+        backLines[Band.away(ms: ms)] ?? "You came back to the Mac."
     }
+
+    /// The line for each band of `Band.away`.
+    public static let backLines = [
+        "short": "You came back to the Mac after a short break.",
+        "long": "You came back to the Mac after a long break.",
+        "very long": "You came back to the Mac after a very long break.",
+        "a day": "You came back to the Mac after a day away.",
+        "days": "You came back to the Mac after days away.",
+    ]
 
     /// You answered an ask: `You answered Boop's "fav snack?": cookie.`
     public static func answered(_ question: String, answer: String, name: String = CharacterPack.active.name) -> String {
@@ -205,13 +209,6 @@ public enum EventLine {
     /// you stroked it 4 times; 7 turns on "api", 3 failed.`
     public static func dreamed(weekday: String, sentence: String, name: String = CharacterPack.active.name) -> String {
         "\(name) dreamed about \(weekday): \(sentence)."
-    }
-
-    /// Under a check-in or a quiet hour, when you're at the Mac but haven't
-    /// touched or talked to the buddy for a while: `You haven't touched or
-    /// talked to Boop in 3 h.`
-    public static func untouched(hours: Int64, name: String = CharacterPack.active.name) -> String {
-        "You haven't touched or talked to \(name) in \(hours) h."
     }
 
     /// What you did to the board, which reacted at once; nil for a gesture
@@ -321,9 +318,7 @@ public enum EventLine {
         - "You" stepping away from the Mac and coming back is the person. Breaks
           are short (under 15 minutes), long (under 2 hours) or very long (2
           hours or more, a night's sleep included); away a day is 20 hours or
-          more, and days 40 or more. "You haven't touched or talked to
-          \(name)" counts from the person's last poke, stroke or word to it,
-          or their coming back.
+          more, and days 40 or more.
         - "You answered \(name)'s" question is the person tapping one of the two
           answers \(name) held up; it answers as to anything said to it, with a
           glad face and a sign back for the answer.

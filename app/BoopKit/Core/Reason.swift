@@ -51,7 +51,7 @@ public struct Reason: Equatable, Sendable {
     /// line isn't known: the reason is then the event's kind alone). One
     /// row per kind of line: a kind with no row says its line, and gives
     /// the board nothing.
-    public static func of(_ e: Event, line: Line?) -> Reason? {
+    public static func of(_ e: Event, line: Line?, untouchedMs: Int64? = nil) -> Reason? {
         let facts = line?.facts ?? [:]
         // The line that tells the dream: the dream is the reason.
         if let told = facts["dream_told"]?.string { return Reason(cause: told, fact: facts["dream_fact"]?.string) }
@@ -72,6 +72,12 @@ public struct Reason: Equatable, Sendable {
             guard let answer = facts["answer"]?.string else { return line.map { Reason(cause: $0.text) } }
             return facts["keeps"]?.bool == true ? Reason(cause: "It will remember: \(answer).", fact: "remembered!")
                 : Reason(cause: "You answered: \(answer).", fact: "\(answer)!")
+        case .heartbeat? where e.specificType == "check_in":
+            // A check-in after hours with no touch or word: how long, from
+            // CONTEXT's company.
+            guard let ms = untouchedMs, ms >= ContextSection.untouchedMs else { return line.map { Reason(cause: $0.text) } }
+            let hours = ms / 3_600_000
+            return Reason(cause: "You've been here \(hours) hour\(hours == 1 ? "" : "s") and haven't touched it.", fact: "untouched \(hours) h")
         case .talk?:
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return line.map { Reason(cause: $0.text) } }

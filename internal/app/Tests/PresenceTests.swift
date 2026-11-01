@@ -230,31 +230,25 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(EventLine.back(ms: 3 * 24 * 60 * minute), "You came back to the Mac after days away.")
     }
 
-    /// At the Mac for two hours with no poke, stroke or word to Boop, a
-    /// quiet line says so (`TranscriptView.untouchedMs`, lonely's cue); a
-    /// touch ends it, and your prompts to agents don't count.
-    func testAQuietLineSaysWhenBoopWentUntouched() {
-        XCTAssertEqual(TranscriptView.untouchedMs, 2 * 60 * 60_000)
-        let rig = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
-        rig.poke()
-        let quiet = { (fx: Fx) in events(fx).filter { $0.type == .heartbeat } }
-        let untouched = { (fx: Fx) in quiet(fx).flatMap(\.notes).filter { $0.hasPrefix("You haven't touched or talked to") } }
-        // The agents work on, so the check-ins go on; nobody touches Boop.
-        var early: [String] = []
-        for _ in 0..<2 {
-            rig.turn(60_000)
-            early += untouched(rig.wait(40 * minute))
+    /// Every band of `Band.away` has its line (`EventLine.backLines`).
+    func testEveryBandHasItsLine() {
+        for ms in [5 * minute, 30 * minute, 3 * 60 * minute, 26 * 60 * minute, 50 * 60 * minute] {
+            XCTAssertNotNil(EventLine.backLines[Band.away(ms: ms)], "\(ms)")
         }
-        XCTAssertEqual(early, [], "under two hours untouched")
-        rig.turn(60_000)
-        rig.wait(40 * minute)
-        rig.turn(60_000)
-        let late = rig.wait(40 * minute)
-        XCTAssertFalse(untouched(late).isEmpty, "\(quiet(late).map(\.line))")
-        XCTAssertNotNil(quiet(late).last?.facts["untouched_ms"]?.int)
-        rig.poke()
-        rig.turn(60_000)
-        XCTAssertEqual(untouched(rig.wait(40 * minute)), [], "touched again")
+        XCTAssertEqual(EventLine.back(ms: 30 * minute), "You came back to the Mac after a long break.")
+    }
+
+    /// A back whose away the log no longer holds (a relaunch during a long
+    /// absence) pairs with the start the runtime kept, its `since`.
+    func testABackAfterARelaunchPairsWithTheKeptAway() {
+        let rig = CoreRig()
+        let left = rig.now
+        rig.now = left + 26 * 60 * minute
+        var back = PresenceDetector.backEvent(why: "unlocked", at: rig.now)
+        back.data["since"] = .int(left)
+        let lines = events(rig.note(Fx(rig.pipeline.presence(back))))
+        XCTAssertEqual(lines.first?.line, "You came back to the Mac after a day away.")
+        XCTAssertEqual(lines.first?.facts["away_ms"]?.int, 26 * 60 * minute)
     }
 
     /// `hello` is a topic Jev is
