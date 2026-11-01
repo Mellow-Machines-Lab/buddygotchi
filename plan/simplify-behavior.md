@@ -168,37 +168,38 @@ beyond the usual checks.
 **Decided 2026-11-01:** A is agreed, all of it. B1 (several buddies)
 stays: it will be a production feature. B2 (the CYD) stays for now. B3
 (real-agent demo venues) stays: the scenarios will grow. B4 (`workday`)
-goes. B5 to B10 and all of C wait for the owner's confirmation after an
-explanation.
+goes. B5 to B10, C and D were decided after an explanation: see
+Decisions, below. Nothing here is built by this file's thread: each
+yes is handed to a building thread.
 
 Each is invisible to buyers or nearly so, but takes away a lot to
 understand. Each needs a yes.
 
-1. **Several buddies.** Several boards, each with its pack, place, core
+1. **Several buddies.** *(Decided: keep; it will be a production feature.)* Several boards, each with its pack, place, core
    and brain voice, on one transcript, hearing and answering each other.
    It costs about 600 lines in about 28 files, six concepts, and
    MellowHarness's voices; it buys one demo (`not-my-turn`) and has no
    Settings UI. **Recommended: remove,** after the dreaming branch lands
    (it adds per-buddy closures in the same file). One buddy, hard-wired;
    old transcripts' `buddy` key ignored.
-2. **Retire the CYD board from the engine.** Its env, folder, touch
+2. **Retire the CYD board from the engine.** *(Decided: not yet.)* Its env, folder, touch
    calibration (`touch_cal.h`, NVS, `dbg.touchcal`, `boopctl
    calibrate`), the LED, the CI build and the flash script's port
    detection: about 600 lines and two concepts. **The pixel face stays:**
    Pixel Bro draws it on the AMOLED. PixelBuddy then either moves to the
    AMOLED, as Bro did, or leaves `packs.json`.
-3. **Real-agent demo venues** (`make demo IN=…`, `internal/tools/session`,
+3. **Real-agent demo venues** *(decided: keep; the scenarios will grow)* (`make demo IN=…`, `internal/tools/session`,
    `internal/sessions/`): about 2,100 lines, and all five projects are
    Pixel demos, so no gel demo can use them. Retire, unless real-agent
    footage is still wanted for marketing (then it needs a gel project).
-4. **`boopctl workday`,** a second brain harness beside the evals
+4. **`boopctl workday`** *(decided: remove),* a second brain harness beside the evals
    (about 1,400 lines), which no target or CI step runs. It is the only
    long-run "is Boop too chatty" check: fold its limits into one long
    eval scenario, or retire it.
 5. **Three ways to make the simulator Boop's body** in the app (a
    polled browser sim, `make dev SIM=1`, the internal build's window).
    Keep the window: about 200 lines and three small state enums go.
-6. **Onboarding from 8 acts to 6.** Merge the two static intro acts,
+6. **Onboarding from 8 acts to 6.** *(Decided: no.)* Merge the two static intro acts,
    and fold "small things" (login, mic, key) into the finale.
 7. **The mirror's upkeep.** It stays (the real gel on the Mac), but its
    byte-exact check in every drawing commit pins Emscripten's version
@@ -226,9 +227,13 @@ evals before and after (and the gel's goldens where the board changes).
    into the board's `kEdges`, which picks each transition), and each mood
    file's prose. The board's copy lacks 46 edges the brain uses, among
    them calm to happy and happy to calm, so they play the plain "no
-   edge" transition. Write the graph once (an engine table, since all
-   packs agree), generate the board's edges from it, and delete the
-   design graph's edges and drafts. The 46 transitions get their proper
+   edge" transition. Write the graph once, **in the pack's
+   `character.json`** (decided: the graph is each character's own, even
+   where today's packs agree), generate the board's edges from it at
+   staging, and delete the design graph's edges and drafts. The board's
+   transition table holds at most 8 edges a mood (calm and bored are
+   full), so the one graph respects that cap or the board's table grows;
+   the build decides with the goldens. The 46 transitions get their proper
    animation.
 2. **`meaning` owned by the pack, in plain words.** A mood's meaning is
    Jev's option text, but slimegen overwrites it from the design file
@@ -249,13 +254,20 @@ evals before and after (and the gel's goldens where the board changes).
    output move it on the core's tick; drop the fade prose. The hourly
    heartbeat exists mainly so Jev notices a fade in a long quiet, so it
    goes with it. Fades come on time.
-5. **One finish marker, and two rule cards gone.** A finished turn
-   shows five ways on the gel (the brain's finish, the engine's
-   "FINISHED" card or the ticket and glow, the strip's tick, the
-   stream's gathered word, the rules' cards). A stopped turn and a
-   returning helper each show three ways. Drop the `stopped` and
-   `helper_return` rules (the stream shows both), and keep the ticket
-   and glow as the one finish marker (drop the card and `cardless`).
+5. **The rule cards for a stopped turn and a returning helper.**
+   (Corrected 2026-11-01: an ordinary finish is not shown five ways.)
+   A finish that names its thread, as every brain finish of a turn does,
+   shows the brain's finish (sized by the turn: a hop up to Mega Boop),
+   the ticket and rim glow, the strip's tick, and the work stream's word
+   if it's on; a success shows its trophy. The engine's card
+   ("FINISHED", "FAILED") shows only for a finish that names no thread
+   and isn't a success: in practice the `stopped` rule's reaction. What
+   repeats: a stopped turn gets the `stopped` rule's card, the stream's
+   dropped word and the brain's reaction; a returning helper gets the
+   `helper_return` rule's reaction, the stream's "back" word and the
+   brain's topic. Proposal: drop those two rule reactions (the stream and
+   the brain cover both moments), and with them the card, which then has
+   nothing left to show.
 6. **The move in code, outside push-to-talk.** Jev picks success,
    failure, reply, wake up or notice each pass, but the options spell out
    a fixed mapping from the line's facts (the outcome, the message's
@@ -296,6 +308,67 @@ their names.
 | gag | a stream word's gag; the gel's idle comedy | "bit" for the gel's |
 | moment | the Words table bans it for a reaction; code uses it for an event's size | "size" in code |
 | wiggle | a poke, recorded by its older name, in HISTORY's wording | "poke" (changes what Jev reads) |
+
+## Decisions (2026-11-01)
+
+The owner's answer to each item. "Yes" means it goes to a building
+thread, not that it's built.
+
+| Item | Decision |
+| --- | --- |
+| A, all | Yes, in the commits under "A, in commits" below |
+| B1 Several buddies | Keep |
+| B2 Retire the CYD | Not yet |
+| B3 Real-agent demo venues | Keep |
+| B4 `workday` | Yes, remove |
+| B5 The simulator as the app's body | Yes, one path (below) |
+| B6 Onboarding | No change |
+| B7 The mirror's upkeep | Keep as it is |
+| B8 The drawer's scrolling | Keep as it is |
+| B9 The bubble beside the sign | Keep both |
+| B10 One Studio server | Yes |
+| C1 One mood graph | Yes, owned by the pack |
+| C2 `meaning` owned by the pack | Yes |
+| C3 Boilerplate moods face-only | Pending: which moods |
+| C4 Fades in code, no hourly heartbeat | No: keep the heartbeat and the prose fades |
+| C5 The two rule cards | Pending (corrected above) |
+| C6 The move in code | No: keep it in Jev |
+| C7 The poke hold | No |
+| C8 One pastime dealer | Pending |
+| C9 The gel Router as a plain struct | Yes |
+| C10 Ordinary versus dramatic | Not now |
+| D, all renames | Yes |
+
+**B5, decided.** The simulator is Boop's body in one way: run the app's
+debug build and turn the simulator on inside the app (its board window,
+today the internal build's only). The other supported place is `make
+demo`, which plays on a real board or on the simulator page. Removed:
+the app's polling for a browser simulator and its "Use it" toggle,
+`make dev SIM=1` opening a browser tab, the `--simulator` flag, and the
+three small simulator states in the app (one on/off remains). The
+browser page and its USB-cable server stay for the tools (`boopctl
+sim`, the Studio, `Boop --headless --link usb:…`), which aren't the
+app's body. Onboarding's "my body" act and Settings' Device rows say
+"the simulator window" where they say "your browser".
+
+**A, in commits.** Each is small, invisible, and checked by `make -C
+internal check`:
+1. **Pack contract leftovers:** personality as a choice (A1),
+   `tool_uses` (A2), `uses`/`shares` (A7), the two checkers' overlap
+   (A8), `family` in Swift, the `nature/` note and the `[words]` tag
+   (A5). Pack side first, after the dreaming branch merges, since it
+   edits the same files.
+2. **Dead code in the app and tools:** `eval --to-demo` (A3), headless
+   `--labeler` (A4), `idleBeatMs`'s nil path and `wakesWhileNeeded`
+   (A5), `fluid` (A15), and `workday` (B4).
+3. **The board:** the `error` do and the gel's dead paths (A9),
+   `default_envs = amoled206` (A10), one loop cap (A11), the canvas
+   only for a pixel face (A14), the gel's `dbg.look` reply.
+4. **The wire:** tags no board reads stay Mac-side (A12); `hello.face`
+   no longer a capability, `pack` and `pack_version` one field (A13).
+   Record every demo again.
+5. **Pack data and evals:** the `attention` takes (A6), the eval
+   duplicates and code-rule evals (A16).
 
 ## For the dreaming build
 
