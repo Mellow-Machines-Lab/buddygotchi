@@ -759,8 +759,7 @@ lets Jev read the memory.
 ## Open calls for the owner
 
 1. **Raise the personality budget to 2,850 and the mood budget to 250,**
-   gated by one full Jev eval run. Recommended over trimming `boop.md`,
-   whose Examples the evals are tuned on.
+   gated by one full Jev eval run. Decided yes, 2026-11-01.
 2. **The agents' work keeps earning XP** beside care (§5). Recommended:
    care is worth more per event, and capped a day.
 
