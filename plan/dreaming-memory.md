@@ -45,7 +45,7 @@ transcript ─► the memory reader (checkpointed) ─ during the day: the journ
 | --- | --- | --- |
 | The memory reader | Reads the transcript in order, with a checkpoint; keeps the day's journal and tallies; closes the day at 5:00 | `app/BoopKit/Memory/` |
 | `memory.md` | The described memory: four short sections | The state directory |
-| The dream | Yesterday in tags and one sentence, told on the first morning pass | The key-value store, `dream.last` |
+| The dream | Yesterday in tags and one sentence, told at your first coming back, or else first touch, after the close | The key-value store, `dream.last` |
 | The ask record | One row per question Boop asked, with your answer | The key-value store, `ask.<id>` |
 | MEMORY | `memory.md`, rendered for Jev on every pass | A prompt section |
 
@@ -56,7 +56,7 @@ all day on a Mac left awake, and agents log events overnight; counting
 those as you would make every desk Mac "here" all night.
 
 `Yours`, one set in code, used by the memory reader and by
-dreaming.md §2's company fold alike:
+CONTEXT's You row (dreaming.md §2) alike:
 
 | Yours | Not yours |
 | --- | --- |
@@ -138,17 +138,20 @@ public protocol TranscriptReader {
 
 ## The memory reader
 
-`MemoryReader`, the one reader in v1:
+`MemoryReader`, the one reader in v1. Step 2 builds it with its company
+state and tallies, for CONTEXT; step 3a adds the journal and the dream
+(dreaming.md, Build):
 
 | Part | What it does |
 | --- | --- |
-| State | The journal and the day's tallies |
+| State | The company state (when you last touched Boop, last talked to it, last came back, and when a lonely spell last ended, all carried across 5:00), the day's tallies, and the journal |
 | `open(day, carry)` | An empty journal and tallies; an away or a turn open across 5:00 carried |
 | `read` | Counts the tallies; adds the event's line to the journal when its kind is kept, and nothing with no line |
 | `close(day, live)` | Writes the dream (below); when `live`, starts the night's write in the background |
 
 **The tallies** are what the day's counts need to say, nothing kept
-past the close:
+past the close. `Memory.today()` gives the open day's to CONTEXT's
+Today row (dreaming.md §2):
 
 | Tally | From |
 | --- | --- |
@@ -184,11 +187,12 @@ When a day closes, the reader writes `dream.last`:
 - **Its sentence** puts your care first and the agents' day second.
 - **A day with no yours event writes no dream:** nobody was there.
 
-**The telling** is the brain's. The first pass after a close on an
-event that is yours, with the view not away, tells the newest untold
-dream: your coming back, or your first poke, prompt or word of the day.
-Never an agent's event or a heartbeat. That line gets the dream under
-it:
+**The telling** is the brain's. It tells the newest untold dream on
+the first pass after a close whose NOW is your coming back, or, with
+no coming back since the close, your first touch; never a prompt, a
+word, an agent's event or a heartbeat, and never while you're away
+(dreaming.md §3 has the moves and the signs). That line gets the dream
+under it:
 
 ```
 NOW (09:02, Tuesday)
@@ -314,8 +318,8 @@ changed, added, dropped and refused, never the text.
 
 ## MEMORY in Jev's prompt
 
-A section after PERSONALITY and before MOOD and TALK, rendered from
-`memory.md` on every pass:
+A section after PERSONALITY and before MOOD (the prompt's order is in
+dreaming.md §2), rendered from `memory.md` on every pass:
 
 ```
 MEMORY (what Boop remembers. Old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)
@@ -367,7 +371,8 @@ to You and Boop.
   never dropped; aging; Recently's 7 days.
 - `MemoryWriterTests`: the request rendered from a fixture; YESTERDAY
   trimmed to the budget.
-- `TellingTests`: the dream under the first yours event's line, never
+- `TellingTests`: the dream under your first coming back's line, or
+  your first touch's with no coming back; never on a prompt or a word,
   while away or on an agent's event; told once; one first wake.
 - `AskRecordTests`: off for 30 days, for good, or a day; kept answers
   as tags.
@@ -399,13 +404,8 @@ failed turn into a success.
 
 ## Build order
 
-1. **The reader and the dream,** with `dreams.md` and the telling; the
-   diary goes. This alone ends the diary's five bugs.
-2. **The written memory:** the writer, the checks, `memory.md`, the
-   `memory` event.
-3. **MEMORY in Jev's prompt,** with Jev's evals.
-4. **The popover's memory and forgetting.**
-5. **The ask record,** with dreaming.md §4.
+In dreaming.md, Build, step by step: steps 3a to 3d are this memory,
+and the ask record lands with step 4.
 
 Steps 1 to 4 were built on 2026-10-31. MEMORY is in Jev's prompt from
 the first night's write, not after the week of watching the plan first
@@ -418,6 +418,9 @@ can read `memory.md`, or forget a note, from the popover.
   busiest thread is named; Macs with Apple Intelligence only; one
   described memory for v1; the dream replaces the diary; no "start
   over"; You and Boop never dropped; the ask record kept.
+- **2026-10-31, later:** how things stand goes to Jev in a CONTEXT
+  section (dreaming.md §2), whose Today row reads the memory reader's
+  open day.
 
 ## Later: counted memory
 
