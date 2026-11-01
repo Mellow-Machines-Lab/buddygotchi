@@ -22,14 +22,14 @@ from what the toy does. Their job is to make that care needed, visible
 and lasting. So every shape here does one of three things: it lets
 Boop need you without suffering (lonely, "pet me?"), it shows you what
 your care did (the reason, the tell), or it makes your care leave a
-mark that stays (the bond, the answers Boop keeps). Facts Boop learns
+mark that stays (the You and Boop notes, the answers Boop keeps). Facts Boop learns
 about you are secondary: they make it know you, not become yours.
 
 | Capability | What it is | What it gives first |
 | --- | --- | --- |
 | The reason | Every mood and reaction carries its cause in plain words, the app's voice under Boop's, and credits your care when it was the cause | "Boop is happy. You stroked it." in the popover; "stroked" on the board |
 | Your company in NOW | The lines the brain reads say how long you've been away, and how long since you touched or talked to Boop | Lonely with a real reason to enter and leave |
-| Dreaming | The night pass: it counts the day, grows the bond from your care, keeps what it learned about you, and the first wake tells the dream | The morning standup, about you first; a Boop that becomes cuddly or cheeky because of you |
+| Dreaming | The night pass: the day closes, Apple Intelligence on the Mac updates a short written memory of you, your work and your time with Boop, and the first wake tells the dream | The morning standup, about you first; a Boop that remembers you |
 | Asks | A reaction with two answers you tap, and the answer comes back as an event, a fact, and for some questions a part of Boop | "fav snack?" that Boop keeps for good; "pet me?" when lonely; "did it work?" after a finish |
 
 The rule that keeps it approachable: **Boop speaks in pet words; the
@@ -55,7 +55,7 @@ The reason names the cause and never the inner life: "Boop is lonely"
 is enough, and the person fills in the rest. A blob with two eyes
 leaves more room for that than a paragraph would.
 
-Left out on purpose: temperament from the bond and growth from care
+Left out on purpose: temperament from your care and growth from care
 (the strongest levers, and a plan of their own: Next, below), a
 nickname for you (an ask whose answer a `{you}`
 word fills in, once asks and facts exist; a plan of its own), a needs
@@ -140,10 +140,9 @@ and shows nothing on the board:
 | poke run, 4 | You poked it 4 times. | poked x4 |
 | gesture, stroke | You stroked it. | stroked |
 | talk, kind words | You were kind to it. | kind words |
-| bond trait earned | Boop got cuddly. You've stroked it most days for 2 weeks. | cuddly now |
 | finish, failed, `length_ms` | "api"'s 40-minute turn failed. | none: the strip's cross says it |
 | occasion, Day 50 | Boop is 50 days old today. | day 50 |
-| the dream, yesterday's `Day` | Boop dreamed about yesterday: you stroked it 4 times. 7 turns on "api", 3 failed. Your care first, the agents' day second | stroked x4, else 3 failed |
+| the dream | Boop dreamed about yesterday: you stroked it 4 times. 7 turns on "api", 3 failed. Your care first, the agents' day second | stroked x4, else 3 failed |
 | ask | Boop wants to know. Tap a side. | none: the answers are the lane's |
 
 A reaction's sentence is `"<Name> is <face>. <cause>"`; a mood's,
@@ -247,118 +246,67 @@ the ask of §4 once built), a stroke, the glad face. Needs a
 Each night Boop's day closes and becomes memory, and in the morning
 Boop tells you the dream. The night is where a day's care becomes
 lasting, as sleep turns a day into memory. The dream replaces the
-diary: one concept for Boop's take on a day, a sign it holds up in the
-morning and a line it keeps.
+diary. How it is kept, with the night's prompt, is designed in
+[dreaming-memory.md](dreaming-memory.md) (simplified with the owner on
+2026-10-31). In short:
 
-**How it is kept** is designed in
-[dreaming-memory.md](dreaming-memory.md): one checkpointed reader of
-the transcript that runs both memories, counted and written; a `Day`
-of counts read as events arrive and closed at the end of Boop's day
-(5:00 to 5:00) by a rule on the Mac that needs no brain; traits derived
-from the closed `Day`s by one rule shape, Boop's latched once told;
-the dream, kept in its `Day`; and the person's view and forgetting.
-In short:
-
-- **Traits** are everything Boop knows, as tags: Boop's own, which
-  last for good, and yours, which fade.
-- **The bond** is Boop's care traits, what your care did to Boop (`cuddly`,
-  `cheeky`, `chatty`, `loyal`) that come on after enough days of a kind
-  of care, need not be in a row, and never go off once Boop has told
-  you. Only care counts; the agents' work never does. A trait earned is
-  told once in words, at the next wake-up ("Boop got cuddly. You've
-  stroked it most days for 2 weeks."), and after that shows only in
-  what Boop does: lines and designs that need it. A Boop after six
-  months is one only you could have made.
-- **Your traits** (`nightowl`, `earlybird`, `fridayshipper`, `polite`,
-  `poker`, `distant`, and your answers to asks) fade when the habit or
-  the month does. Your traits make Boop know you; the bond makes it
-  yours.
-- **The day's tags** for the lines and the dream (`here`, `fond`,
-  `distant`, `late`, `answered`, and the agents' `failed`, `clean`,
-  `long`, `quiet`, `poked`) come from the closed `Day`.
-- **The dream** is one line of `dreams.md`, a sign and a line, picked
-  for each day: by Jev at the morning's telling for the newest day, by
-  the rules for any day not told. It is kept in its `Day`, and the
-  popover shows the week's.
-- **The written memory** is stage 2: after the day closes, Apple Intelligence
-  on the Mac edits a list of at most 12 one-line entries ("you and
-  claude finally fixed the 'api' tests"), which Jev reads as MEMORY.
-  It changes Jev's judgment, never Boop's words, and is designed with
-  its exact prompt in [dreaming-memory.md](dreaming-memory.md).
-
-**Where the traits go.** Traits are tags from one place, `MemoryStore.tags()`, the way the calendar's are from `Occasions`:
-into the prompt's heading as words (`NOW (23:40, Tuesday, you're a
-night owl)`), beside the occasions'; into every tagged file as tags a
-line may need (`[nightowl] up again?` in `signs.md`, `[cuddly love]
-more pets pls` and `[polite] you're welcome` in `replies.md`, and
-`dreams.md`, `asks.md`); the personality's Examples may
-quote them; and to the board as `state.you`, a second 32-bit set,
-since `when` has one bit left. Its names are the engine's (the ten
-rules' traits and the five dream tags: 15) followed by the
-answers the pack's board designs need (§4's `keeps` questions, up to
-17), which `charactergen.py` writes into the firmware and the Mac
-mirrors (`Occasions.you`), so an answer a design needs is a pack line,
-never an engine change. A cuddly Boop's look can lean into your hand;
-a Boop that keeps `cookie` holds one at snack time. `state.you` also
-carries yesterday's shape while Boop sleeps (`dreamfailed`,
-`dreamclean`, `dreamlong`, `dreamquiet`, `dreampoked`), so the pack's
-`asleep` look can dress a dream bubble as its own designs that need
-those tags, with no new field and no drawing code of the engine's. A
-design's `when` may name a tag of either set.
+- **One reader of the transcript,** checkpointed, keeps the day's
+  journal (the notable lines Jev read) and its tallies (strokes, talks,
+  hours at the Mac, turns), and closes the day at 5:00, Boop's day
+  ending then rather than at midnight.
+- **The dream** is yesterday in tags (`fond`, `distant`, `here`,
+  `late`, `answered`, and the agents' `failed`, `clean`, `long`,
+  `quiet`, `poked`) and one sentence, your care first.
+- **The written memory,** `memory.md`, is four short sections (You,
+  Your work, You and Boop, Recently) that Apple Intelligence on the Mac
+  edits each night from the journal. Jev reads it as MEMORY on every
+  pass: it changes Jev's judgment, never Boop's words.
+- **You and Boop is the lasting mark.** Its notes never age out and the
+  model may never drop one: "You stroke Boop every morning" stays once
+  written, and grows.
 
 **The tell.** Boop tells the dream the first time you show up after a
 day closes: your coming back, or your first poke, prompt or word,
-never an agent's event or while you're away (when and how:
-[dreaming-memory.md](dreaming-memory.md), the telling). Its reason is
-rendered from the closed `Day`, and its sign and line are one of
-`dreams.md`'s, a tagged list like `replies.md` whose tags are the
-`Day`'s, which `react.sign` picks as it picks a reply's. **It leads
-with you.** The reason puts your care first and the agents' day second
-("Boop dreamed about yesterday: you stroked it 4 times. 7 turns on
-'api'."), and `dreams.md`'s lines about you come first in the file, so
-they are offered first: `[fond] dreamt of u`, `[fond cuddly] warm
-dreams`, `[answered] i remember!`, `[distant] where were u?`; then the
-agents': `[failed] bad dream`, `[clean] sweet dreams`, `[long] what a
-day`, `[quiet] dreamt of nothing`. A day with no care at all is told by
-the agents' day alone, plainly, never as a reproach. A trait earned
-overnight wins the reason (above). The
-dream's line goes into its `Day` and the popover. The first wake of
-Boop's day has one owner: on an occasion day the occasion's sign comes
-first and the dream is only narrated, one wake-up a day. A second back
-the same day tells nothing.
+never an agent's event or while you're away. **It leads with you.**
+Its reason puts your care first and the agents' day second ("Boop
+dreamed about Monday: you stroked it 4 times; 7 turns on 'api'."), and
+its sign is one of `dreams.md`'s, a tagged list like `replies.md` whose
+tags are the dream's, which `react.sign` picks as it picks a reply's.
+The lines about you come first in the file, so they are offered first:
+`[fond] dreamt of u`, `[fond] warm dreams`, `[answered] i remember!`,
+`[distant] where were u?`; then the agents': `[failed] bad dream`,
+`[clean] sweet dreams`, `[long] what a day`, `[quiet] dreamt of
+nothing`. A day with no care at all is told by the agents' day alone,
+plainly, never as a reproach, and a day you weren't there at all has no
+dream. The first wake of Boop's day has one owner: on an occasion day
+the occasion's sign comes first and the dream is only narrated, one
+wake-up a day. A second back the same day tells nothing.
 
 **Signs from one table.** With the tell, `react.sign` has a third
 source. It becomes one table in `ReactOutput`, line kind to the tagged
 file and the tags on, and the branches go: a prompt's reading to
 `signs.md` with the reading's tags; what you said to `replies.md` with
-the reply's and the moment's; the telling to
-`dreams.md` with the day's; an ask (§4) to `asks.md` with the
-moment's. The moment's tags grow once, for every file: the mood
-(`[lonely]`, `[grumpy]`), `idle`, and the traits.
+the reply's and the moment's; the telling to `dreams.md` with the
+dream's; an ask (§4) to `asks.md` with the moment's. The moment's tags
+grow once, for every file: the mood (`[lonely]`, `[grumpy]`), `idle`,
+and your answers to asks (§4).
 
-**General because:** a new count is one line in `count` and one `{…}`
-word; a new trait is one row in `Traits.rules`; a new sign
-source is one row
-in the table; a new place for facts is one more tag reader, which every
-tagged file and every board design already is.
+**General because:** a new tally is one line in the reader; a new dream
+tag is one rule over the tallies; a new sign source is one row in the
+table; a new section of memory is one row in the section table.
 
-**Pins.** The memory's own (the readers, closing, the rules, repair) are
-listed in [dreaming-memory.md](dreaming-memory.md). Here:
-`OccasionsTests`: `Occasions.you` matches the firmware's generated
-names in order, as `all` matches `kTagNames`, and a pack with more than
-17 kept answers fails `boopdev check`. `ReactOutputTests`: the sign
-table offers `dreams.md`'s lines only at a telling with
-a `Day`, and with the day's tags; a night owl's facts and a cuddly
-Boop's trait reach the heading. `DreamEvals`: a fond day's telling
-picks a sign about you over a `[failed]` one; a failed day with no care
-picks a `[failed]` sign; the second back tells nothing; Halloween's
-telling holds up the greeting.
+**Pins.** The memory's own are listed in
+[dreaming-memory.md](dreaming-memory.md). Here: `ReactOutputTests`: the
+sign table offers `dreams.md`'s lines only at a telling, with the
+dream's tags. `DreamEvals`: a fond day's telling picks a sign about you
+over a `[failed]` one; a failed day with no care picks a `[failed]`
+sign; the second back tells nothing; Halloween's telling holds up the
+greeting.
 
-**Demo.** `dream.jsonl`: a day with two finishes and a failure, you
-away for the night (the dream bubble over the sleeping face), back in
-the morning (the wake-up with the tell: the sign, the fact under it).
-It plays yesterday on the demo's clock, so `wait` crosses 5:00, when
-Boop's day ends.
+**Demo.** `dream.jsonl`: a day with two finishes and a failure and a
+few strokes, you away for the night, back in the morning (the wake-up
+with the tell: the sign, the reason under it). It plays yesterday on
+the demo's clock, so `wait` crosses 5:00, when Boop's day ends.
 
 ## 4. Asks
 
@@ -390,14 +338,16 @@ the question's id and the answer.
 A question is at most 18 glyphs, each answer 7, and `boopdev check`
 checks them as it checks a reply. The moment's tags are the ones every
 sign source has (§3: the mood, `idle`, `working`, `waiting`, the
-calendar's, and the traits) plus `finished` (a turn ended in
+calendar's, and your answers) plus `finished` (a turn ended in
 the last 10 minutes and you haven't prompted since) and `touch` (a
 touch answers it, below).
 
 **Asks that shape Boop come first.** A question tagged `keeps` is
-asked once, ever: its answer becomes part of Boop, a tag its lines and
-the board's designs may need (§3's `state.you`), so the snack you
-picked is the one it holds from then on. These come first in the file,
+asked once, ever: its answer becomes part of Boop, a tag its lines
+may need from then on, so the snack you picked is the one it talks
+about. A board look that shows it (the cookie at snack time) needs a
+second tag set on the board, `state.you`, and waits for the counted
+memory (dreaming-memory.md, Later). These come first in the file,
 so the brain is offered them first. Quizzes like tabs or spaces are
 flavour: Boop learns a fact and teases you with it. One answered stays
 off for 30 days; any ask ignored stays off for a day.
@@ -434,9 +384,9 @@ question's id and answers in its facts when the `do` is sent, `end` with
 none). The view folds it: `You answered Boop's "tabs or spaces?":
 spaces.`, or `You didn't answer Boop's "tabs or spaces?".` The brain
 reacts as to anything said to Boop: a face and a sign, the follow-ups
-for that id and answer. The answer becomes a trait (dreaming-memory.md,
-traits): Boop's for good for a `keeps` question (`cookie`), yours for
-30 days for any other (`spaces`), and a tag wherever traits are. A kept answer's reason says so once: "Boop will
+for that id and answer. The ask record keeps it
+(dreaming-memory.md, the ask record): a tag for good for a `keeps`
+question (`cookie`), for 30 days for any other (`spaces`). A kept answer's reason says so once: "Boop will
 remember: cookie."
 
 **General because:** a new question is one line; a new follow-up is
@@ -455,7 +405,7 @@ tap, a gesture with and without `touch`, a replacing reaction, and the
 45 s, each with its `ev` before its `ended`. `AskEvals`: an idle
 question is asked once and answered; the next day's sign uses the
 answer; a kept answer is never asked again and its tag reaches
-`state.you`; lonely asks "pet me?" and a stroke answers it; nothing asks
+the ask record; lonely asks "pet me?" and a stroke answers it; nothing asks
 while an agent needs you.
 
 **Demo.** `asks.jsonl`: a finish, "did it work?", a tap (`{"you":
@@ -470,17 +420,16 @@ targets.
    changes every recording, so it goes first.
 2. **Your company in NOW, and lonely.** Small, and the first thing a
    person feels.
-3. **Dreaming, with the tell and `state.you`.** The memory the rest
-   reads, and the second tag set the board needs.
-4. **Asks.** The largest: the board, the mirror, a new event and a new
-   demo step.
-5. **The written memory** (dreaming-memory.md, stage 2). It reads
-   stage 1's counts, and needs a week of tuning on the owner's Mac.
+3. **Dreaming:** the reader, the dream and its telling, then the
+   written memory and MEMORY (dreaming-memory.md's build order). The
+   written memory needs a week of tuning on the owner's Mac.
+4. **Asks,** with the ask record. The largest: the board, the mirror, a
+   new event and a new demo step.
 
 Each lands as one squash-merged commit: the pack's side first
 (SlimeBuddy: `lonely.md` and its edges, `dreams.md`, `asks.md`, the
-Examples, the evals, the demo, its recording, the asleep look's dream
-designs, the mirror), then this repository's. Pixel takes none of the
+Examples, the evals, the demo, its recording, the mirror), then this
+repository's. Pixel takes none of the
 files and keeps working: a pack without `asks.md` is never offered an
 ask, without `dreams.md` tells nothing, and the reason and the company
 in NOW need no pack file.
@@ -490,16 +439,15 @@ in NOW need no pack file.
 | Priority (2026-10-27) | Built from |
 | --- | --- |
 | 4. Absence that matters, lonely real, "pet me?" | §2's spans and `lonely.md`; §1's reason under it; §4's `[lonely touch]` ask |
-| 5. Idle questions, remembered answers | §4's `[idle]` asks, the `keeps` ones part of Boop for good; answers as traits, and so as tags |
-| Care as the cause (the principle) | §3's bond; §1's reason crediting you; §3's tell leading with you; §4's kept answers |
+| 5. Idle questions, remembered answers | §4's `[idle]` asks, the `keeps` ones part of Boop for good; the ask record, and the answer in the written memory |
+| Care as the cause (the principle) | §3's You and Boop notes; §1's reason crediting you; §3's tell leading with you; §4's kept answers |
 | 6. Morning standup | §3's tell, on the wake-up that exists, with §1's reason as the narration |
 
 And the next things, with no new code: a nickname for you (an ask
 whose answer a `{you}` word fills in), a Friday shipper teased on a
-Friday (`[fridayshipper friday] again?!` in `signs.md`), a night-owl
-look on the board (`state.you` has `nightowl`), a cuddly Boop that
-leans into your hand (a design that needs `cuddly`), a trick with
-permission (`[trick idle fond] wanna see a trick? | yes | later`).
+Friday, a night-owl look on the board and a cuddly Boop that leans
+into your hand (each with the counted memory's tags, later), a trick
+with permission (`[trick idle fond] wanna see a trick? | yes | later`).
 
 Dreaming alone, the owner's first thought, covers the memory half:
 what Boop keeps from a day and tells later. It can't cover the live
@@ -510,7 +458,8 @@ So four shapes, not one.
 ## Next: care makes Boop
 
 Two levers carry the most weight and are left for a plan of their own,
-built on this one's bond:
+built on the counted memory (dreaming-memory.md, Later), whose care
+traits are the bond:
 
 - **Temperament from the bond.** Today one cheeky paragraph closes
   `boop.md` for every owner. Next, a few closing paragraphs, each with
@@ -528,17 +477,15 @@ built on this one's bond:
 ## Docs this touches
 
 `characters/CHARACTER.md` §5 (lonely's edges), §7 (`dreams.md`,
-`asks.md`, parts, `dreams.md` replacing `diary.md`, the new counts and tags, traits as tags),
-§9 (the lane's `reason`, the ask's targets, `state.you` and the dream
-designs); `characters/DEMOS.md` and `internal/EVALS.md` (the `gesture`
+`asks.md`, parts, `dreams.md` replacing `diary.md`, the dream's tags),
+§9 (the lane's `reason`, the ask's targets); `characters/DEMOS.md` and `internal/EVALS.md` (the `gesture`
 and `answer` steps, the new scenarios); `simulator/README.md` (the
 targets and the `answer` step in `simulator/tools/demos.py`);
 `documentation/architecture.html` (memory of you, the reason, the ask
-event); `CLAUDE.md`'s Words (reason, ask, dream replacing diary, trait, bond; and that
+event, the memory reader, `memory.md`); `CLAUDE.md`'s Words (reason, ask, dream replacing diary, the written memory; and that
 a demo's `run` step's `ask` key is the agent's permission request, a
 wire name that keeps its name); `internal/VERIFICATION.md` if a tool
-changes; the slime package's `CONTINUITY.md` for the dream designs and
-the targets. LinkKit's spec doesn't change: `reason`, `ask` and `ev
+changes; the slime package's `CONTINUITY.md` for the targets. LinkKit's spec doesn't change: `reason`, `ask` and `ev
 ask` are Boop's vocabulary in `BoopDevice` and its firmware, as `sign`
 and `reply` are.
 
@@ -615,3 +562,9 @@ row or count is Swift, as every English the app writes is. Your company
 in NOW is the least general: a span is a fold key and a phrase, both
 code, by the same design that keeps every line for the brain in the
 view. That is the right place for it, and it is small.
+
+**Simplified** (2026-10-31, with the owner): memory is one described
+memory, kept by a checkpointed reader and written each night by Apple
+Intelligence (Macs with it only); the dream replaces the diary; the
+counted memory (traits, the bond as tags, `state.you`) waits until a
+feature needs exact, tag-driven memory. dreaming-memory.md has it.
