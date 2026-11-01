@@ -45,7 +45,7 @@ transcript ─► the memory reader (checkpointed) ─ during the day: the journ
 | --- | --- | --- |
 | The memory reader | Reads the transcript in order, with a checkpoint; keeps the day's journal and tallies; closes the day at 5:00 | `app/BoopKit/Memory/` |
 | `memory.md` | The described memory: four short sections | The state directory |
-| The dream | Yesterday in tags and one sentence, told on the first morning pass | The key-value store, `dream.last` |
+| The dream | Yesterday in tags and one sentence, told at your first coming back, or else first touch, after the close | The key-value store, `dream.last` |
 | The ask record | One row per question Boop asked, with your answer | The key-value store, `ask.<id>` |
 | MEMORY | `memory.md`, rendered for Jev on every pass | A prompt section |
 
@@ -138,11 +138,13 @@ public protocol TranscriptReader {
 
 ## The memory reader
 
-`MemoryReader`, the one reader in v1:
+`MemoryReader`, the one reader in v1. Step 2 builds it with its company
+state and tallies, for CONTEXT; step 3a adds the journal and the dream
+(dreaming.md, Build):
 
 | Part | What it does |
 | --- | --- |
-| State | The journal and the day's tallies |
+| State | The company state (when you last touched Boop, last talked to it, last came back, and when a lonely spell last ended, all carried across 5:00), the day's tallies, and the journal |
 | `open(day, carry)` | An empty journal and tallies; an away or a turn open across 5:00 carried |
 | `read` | Counts the tallies; adds the event's line to the journal when its kind is kept, and nothing with no line |
 | `close(day, live)` | Writes the dream (below); when `live`, starts the night's write in the background |
@@ -393,7 +395,8 @@ to You and Boop.
   never dropped; aging; Recently's 7 days.
 - `MemoryWriterTests`: the request rendered from a fixture; YESTERDAY
   trimmed to the budget.
-- `TellingTests`: the dream under the first yours event's line, never
+- `TellingTests`: the dream under your first coming back's line, or
+  your first touch's with no coming back; never on a prompt or a word,
   while away or on an agent's event; told once; one first wake.
 - `AskRecordTests`: off for 30 days, for good, or a day; kept answers
   as tags.
