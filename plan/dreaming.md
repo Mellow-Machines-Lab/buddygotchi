@@ -787,10 +787,12 @@ something:
   with the plain transition.
 - **Care's lean doesn't show yet.** With a cuddly You and Boop note, a
   poke from calm stays curious 3 of 3 (eval 149, a known gap), even
-  with a clause in `calm.md`. The XP from care waits on the owner's
-  call (below).
-- **The budgets are raised without the full Jev run** the plan asks
-  for; the targeted evals above ran instead.
+  with a clause in `calm.md`.
+- **XP from care is built** as decided: the agents' work at its rates
+  and care (a care gesture 3, a talk 3, an answered ask 5, a coming
+  back 2) each capped at 60 XP a Boop day, kept apart
+  (`growth.work_today`, `growth.care_today`); existing XP kept.
+- **The budgets' raise** has its one full Jev eval run (2026-11-01).
 
 ## Open calls for the owner
 

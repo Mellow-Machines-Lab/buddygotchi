@@ -449,7 +449,8 @@ public final class Runtime: @unchecked Sendable {
         harness.on("*") { [weak self] e in
             guard let self else { return }
             let before = growth.growth.stage, now = options.clock()
-            guard growth.count(e, day: options.time.day(options.wallClock())) else { return }
+            let wall = options.wallClock()
+            guard growth.count(e, day: options.time.day(wall), boopDay: options.time.boopDay(wall)) else { return }
             grew = true
             // A stage reached makes the rest of the day a party, and Boop
             // celebrates it now, unless Boop hatched today.
