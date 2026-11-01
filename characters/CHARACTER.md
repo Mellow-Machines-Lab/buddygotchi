@@ -408,9 +408,11 @@ What the brain reads, in plain Markdown:
 - `asks.md` (optional): what the creature may ask you, with two
   answers you tap (`Asks`). A line with parts, `- [id tags] question |
   a | b`, is a question: its first tag its id, then the tags it needs:
-  its moment (`idle`, an idle check-in; `lonely`, a check-in after 10
-  minutes lonely; `finished`, a turn's finish), the calendar's and your
-  kept answers; and `keeps` (asked once, ever: its
+  its moment (`idle`, an idle check-in; `lonely`, an idle check-in where
+  lonely may begin, the creature lonely or CONTEXT saying you haven't
+  touched it for an hour or more; `finished`, a turn's finish), the
+  calendar's and your kept answers; `daily` (it may come back the next
+  day, whatever the answer); and `keeps` (asked once, ever: its
   answer becomes a tag for good, as `cookie`) and `touch` (a stroke or a
   boop answers it too, as its first answer). A line with no parts,
   `- [id answer] words`, is a follow-up the creature may hold up after
@@ -424,6 +426,9 @@ What the brain reads, in plain Markdown:
   unanswered (`ev ask`). One answered stays off for 30 days, one
   ignored for a day. A question is at most 18 characters, an answer 7,
   a follow-up 18 (`boopdev check`). A pack without the file never asks.
+  Ask only what does something with the answer: it becomes part of the
+  creature (`keeps`), it gets a touch (`touch`), or it goes into memory;
+  idle chatter is a musing instead (`signs.md`'s `[idle]` lines).
 - `signs.md` (optional): the captions the creature may hold up on a
   sign when it reacts to your prompt (`Signs`, the `react.sign`
   question, asked only when NOW is a prompt's reading, not a message's). Each is
@@ -439,6 +444,12 @@ What the brain reads, in plain Markdown:
   accents precomposed), and one with anything the fonts lack, such as
   Chinese or an emoji, is dropped. The board draws the one picked on a
   sign (the `do`'s `sign`). A pack without the file holds up no signs.
+  Lines tagged `[idle]` are its idle musings instead: held up now and
+  then at an idle check-in, beside any question it may ask, at most once
+  an hour (`Signs.musingEveryMs`) and never on Quiet, asking nothing;
+  `{turns}` is today's turns and `{thread}` the busiest thread (a line
+  that needs one is left out without it), and a line may need a kept
+  answer's tag (`[idle cookie] snack time?`).
 - `replies.md` (optional): what the creature holds up replying to what
   you said on push-to-talk (`Signs.replies`). The brain picks a reply (the
   `react.move` question's options for what you said): yes, no, huh,

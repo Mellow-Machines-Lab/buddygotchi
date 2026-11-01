@@ -116,10 +116,36 @@ final class AsksTests: XCTestCase {
             return Asks.askable(about, rig.pipeline.harness.log.view(now: rig.now), questions: questions, core: rig.core,
                                 mood: MoodOutput.choice(), talk: .normal, memory: memory, wall: rig.now).map(\.id)
         }
-        XCTAssertEqual(askable(memory), ["snack", "tabs"])
+        XCTAssertEqual(askable(memory), ["snack", "tabs"], "an idle check-in, nobody untouched an hour yet")
         XCTAssertEqual(askable(nil), [])
         rig.send(.needsYou, tool: "Bash")
         XCTAssertEqual(askable(memory), [], "none while something needs you")
+    }
+
+    /// A `daily` question may come back the next day, answered or not.
+    func testADailyQuestionComesBackTheNextDay() {
+        let pet = Asks.questions(TaggedLine.parse("- [pet lonely touch daily] pet me? | ok | later"))[0]
+        XCTAssertTrue(pet.daily)
+        XCTAssertEqual(pet.tags, ["lonely"])
+        let answered = Asks.Record(asked: "2026-10-30", answer: "ok", keeps: false)
+        XCTAssertTrue(Asks.off(answered, today: "2026-10-30", daily: true))
+        XCTAssertFalse(Asks.off(answered, today: "2026-10-31", daily: true))
+    }
+
+    /// The idle musings: [idle] lines, blanks from the day, a line needing
+    /// turns left out at none, kept answers' lines only with the answer.
+    func testTheIdleMusings() {
+        let lines = TaggedLine.parse("""
+            - [idle] quiet day...
+            - [idle] {turns} turns today!
+            - [idle] {thread} again?
+            - [idle cookie] snack time?
+            - a prompt's caption
+            """)
+        XCTAssertEqual(Signs.musings(lines, tags: [], turns: 0, thread: ""), ["quiet day..."])
+        XCTAssertEqual(Signs.musings(lines, tags: ["cookie"], turns: 7, thread: "api"),
+                       ["quiet day...", "7 turns today!", "api again?", "snack time?"])
+        XCTAssertEqual(Signs.musingEveryMs, 3_600_000, "at most once an hour")
     }
 
     /// The pack check finds a line neither a question nor a follow-up, one

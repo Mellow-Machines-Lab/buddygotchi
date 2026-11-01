@@ -170,7 +170,8 @@ extension Runtime {
                 // The dream the line tells, by its tags.
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
                 return tags.compactMap(\.string)
-            }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) })
+            }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
+            today: m.company)
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }

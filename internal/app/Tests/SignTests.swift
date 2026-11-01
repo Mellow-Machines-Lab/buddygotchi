@@ -127,12 +127,13 @@ final class SignTests: XCTestCase {
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words"] + Occasions.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words", "idle"] + Occasions.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)
             for line in signs {
                 let filled = line.text.replacingOccurrences(of: "{words}", with: "ok").replacingOccurrences(of: "{WORDS}", with: "OK")
+                    .replacingOccurrences(of: "{turns}", with: "12").replacingOccurrences(of: "{thread}", with: "api")
                 XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, "\(pack): \(line.text)")
                 XCTAssertTrue(filled.unicodeScalars.allSatisfy { (32...126).contains($0.value) }, "\(pack): \(line.text)")
                 XCTAssertTrue(Set(line.tags).isSubset(of: known), "\(pack): \(line.tags)")

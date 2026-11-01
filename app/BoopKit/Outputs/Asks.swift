@@ -19,6 +19,8 @@ public enum Asks {
         public var tags: [String]
         public var keeps: Bool
         public var touch: Bool
+        /// It may come back the next day, whatever the answer (`daily`).
+        public var daily = false
     }
 
     /// How an ask ended with nobody answering.
@@ -32,8 +34,6 @@ public enum Asks {
     /// At most one ask an hour, and this many a day (chatty, `chattyPerDay`).
     public static let hourMs: Int64 = 60 * 60_000
     public static let perDay = 3, chattyPerDay = 6
-    /// A `[lonely]` ask waits until the buddy has been lonely this long.
-    public static let lonelyMs: Int64 = 10 * 60_000
 
     /// The pack's questions, in the file's order.
     public static func questions(_ lines: [TaggedLine]) -> [Question] {
@@ -41,8 +41,8 @@ public enum Asks {
             let p = line.parts
             guard p.count == 3, let id = line.tags.first else { return nil }
             let rest = Array(line.tags.dropFirst())
-            return Question(id: id, question: p[0], a: p[1], b: p[2], tags: rest.filter { $0 != "keeps" && $0 != "touch" },
-                            keeps: rest.contains("keeps"), touch: rest.contains("touch"))
+            return Question(id: id, question: p[0], a: p[1], b: p[2], tags: rest.filter { !["keeps", "touch", "daily"].contains($0) },
+                            keeps: rest.contains("keeps"), touch: rest.contains("touch"), daily: rest.contains("daily"))
         }
     }
 
@@ -69,10 +69,12 @@ public enum Asks {
     }
 
     /// Whether the question may be asked on `today`, by its record: one
-    /// that keeps, answered, never again; another answered, after 30 days;
-    /// one ignored or still unanswered, after a day.
-    public static func off(_ record: Record?, today: String) -> Bool {
+    /// that keeps, answered, never again; a `daily` one, answered or not,
+    /// the next day; another answered, after 30 days; one ignored or still
+    /// unanswered, after a day.
+    public static func off(_ record: Record?, today: String, daily: Bool = false) -> Bool {
         guard let record, let asked = LocalTime.dayNumber(record.asked), let now = LocalTime.dayNumber(today) else { return false }
+        if daily { return now == asked }
         if record.answer != nil { return record.keeps || now - asked < answeredOffDays }
         return now - asked < ignoredOffDays
     }
@@ -81,7 +83,7 @@ public enum Asks {
     /// (`tags`), not off by their records, the file's order kept, so the
     /// ones that shape Boop, written first, are offered first.
     public static func offered(_ questions: [Question], tags: Set<String>, record: (String) -> Record?, today: String) -> [Question] {
-        questions.filter { Set($0.tags).isSubset(of: tags) && !off(record($0.id), today: today) }
+        questions.filter { Set($0.tags).isSubset(of: tags) && !off(record($0.id), today: today, daily: $0.daily) }
     }
 
     /// Whether it may ask anything now, by how many asks it made: none on
@@ -92,17 +94,19 @@ public enum Asks {
         return askedAt.filter(sameDay).count < (talk == .chatty ? chattyPerDay : perDay)
     }
 
-    /// The moment `about` is for an ask, as its tag, or nil when asks
-    /// don't belong there: `idle`, an idle check-in; `lonely`, one while
-    /// the buddy has been lonely `lonelyMs` or more; `finished`, a turn's
-    /// finish (its end, or its last message's reading).
-    public static func moment(_ about: Event, _ log: LogView, mood: Choice) -> String? {
+    /// The moment `about` is for an ask, as its tags, or none when asks
+    /// don't belong there: `idle`, an idle check-in, and `lonely` too when
+    /// lonely may begin there (the buddy is lonely, or CONTEXT says you
+    /// haven't touched or talked to it for an hour or more: whether it is
+    /// is the steering's); `finished`, a turn's finish (its end, or its last
+    /// message's reading).
+    public static func moment(_ about: Event, _ log: LogView, mood: Choice, untouchedMs: Int64?) -> [String] {
         if about.type == .heartbeat, about.specificType == "check_in" {
-            let lonely = MoodOutput.value(mood, log) == "lonely" && mood.since(log).map({ about.at - $0 >= lonelyMs }) == true
-            return lonely ? "lonely" : "idle"
+            let lonely = MoodOutput.value(mood, log) == "lonely" || (untouchedMs ?? 0) >= ContextSection.untouchedShownMs
+            return lonely ? ["idle", "lonely"] : ["idle"]
         }
-        if about.type == .lastMessage || (about.type == .turn && about.phase == .end) { return "finished" }
-        return nil
+        if about.type == .lastMessage || (about.type == .turn && about.phase == .end) { return ["finished"] }
+        return []
     }
 
     /// The questions it may ask at `about`, of `questions`: none but at an
@@ -112,13 +116,15 @@ public enum Asks {
     /// (`offered`).
     public static func askable(_ about: Event, _ log: LogView, questions: [Question], core: Core, mood: Choice,
                                talk: Talk, memory: Memory?, wall: Int64) -> [Question] {
-        guard let memory, !questions.isEmpty, let moment = moment(about, log, mood: mood) else { return [] }
+        guard let memory, !questions.isEmpty else { return [] }
+        let moment = moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(memory.today, at: about.at))
+        guard !moment.isEmpty else { return [] }
         let now = about.at, time = core.config.time
         if core.needsYouBlock != nil || core.listening != nil || core.hushed(at: now) != nil { return [] }
         let askedAt = log.events.filter { $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil }.map(\.at)
         let today = time.boopDay(wall)
         guard allowed(talk: talk, askedAt: askedAt, now: now, sameDay: { time.boopDay($0) == time.boopDay(now) }) else { return [] }
-        let tags = Set([moment] + core.calendar(at: now) + memory.answerTags(at: wall))
+        let tags = Set(moment + core.calendar(at: now) + memory.answerTags(at: wall))
         return offered(questions, tags: tags, record: memory.askRecord, today: today)
     }
 

@@ -69,6 +69,16 @@ public final class ReactOutput: Output {
     /// at an event, by the moment and the caps (`Asks.askable`).
     let asks: [TaggedLine]
     let askable: (Event, LogView, [Asks.Question]) -> [Asks.Question]
+    /// The day so far, for the idle musings' blanks.
+    let today: () -> MemoryReader.Tallies?
+
+    /// Whether `e` is an idle check-in.
+    static func isCheckIn(_ e: Event) -> Bool { e.type == .heartbeat && e.specificType == "check_in" }
+
+    /// Whether it held up a musing in the last `Signs.musingEveryMs`.
+    static func mused(_ log: LogView, at now: Int64) -> Bool {
+        log.events.contains { $0.kind == Event.did && $0.action == outputName && $0["musing"]?.bool == true && now - $0.at < Signs.musingEveryMs }
+    }
 
     /// The questions it may ask at `about`, offered as signs: at the
     /// moments asks belong to (`Asks.moment`), never at the dream's
@@ -117,7 +127,9 @@ public final class ReactOutput: Output {
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
                 talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Reason? = { _ in nil },
                 dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }, asks: [TaggedLine] = [],
-                askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] }) {
+                askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] },
+                today: @escaping () -> MemoryReader.Tallies? = { nil }) {
+        self.today = today
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -420,14 +432,17 @@ public final class ReactOutput: Output {
                                                                  + ($0.replies.contains("dunno") ? " (dunno, a huh to a question)." : ".")) })]
         }
         let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
-        // A question it may ask: the sign is the ask.
+        // A question it may ask, the sign being the ask; at an idle
+        // check-in, a musing beside it.
         let questions = askOptions(about, log)
-        if !questions.isEmpty {
+        let musings = about.map(Self.isCheckIn) == true ? offered(now, log) : []
+        if !questions.isEmpty || !musings.isEmpty {
             return speech + [Question(key: Signs.questionKey,
-                                       text: "Does \(pack.name) hold up a question for you to answer with a tap? Picking one is asking it; PERSONALITY says when.",
-                                       about: "NOW and HISTORY", judgeBy: "PERSONALITY and what fits the moment, the ones that shape \(pack.name) first",
-                                       // Chatty asks whenever the caps let it (Asks.chattyPerDay).
-                                       options: (talk() == .chatty ? [] : [Option("none", "No question: \(pack.name) doesn't ask now.")])
+                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), or a musing? PERSONALITY says when; now and then, not every time.",
+                                       about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment, the questions that shape \(pack.name) first",
+                                       // Chatty holds one up whenever the caps let it (Asks.chattyPerDay).
+                                       options: (talk() == .chatty ? [] : [Option("none", "Nothing: \(pack.name) doesn't ask or muse now.")])
+                                           + musings.map { Option($0, "A musing to hold up, asking nothing.") }
                                            + questions.map { q in
                                                Option(q.question, "Ask: \"\(q.question)\", \(q.a) or \(q.b)."
                                                    + (q.tags.isEmpty ? "" : " For a moment that's \(q.tags.joined(separator: ", ")).")
@@ -477,6 +492,12 @@ public final class ReactOutput: Output {
         // An ask answered: what it holds up after that answer.
         if about.type == .ask, let q = about["q"]?.string, let answer = about["answer"]?.string {
             return Asks.followUps(asks, id: q, answer: answer)
+        }
+        // An idle check-in: a musing, at most once an hour, never on Quiet.
+        if Self.isCheckIn(about) {
+            guard talk() != .quiet, !Self.mused(log, at: about.at) else { return [] }
+            let t = today()
+            return Signs.musings(signs, tags: calendar(about), turns: t?.turns ?? 0, thread: t?.thread ?? "")
         }
         guard about.type == .prompt, let reading = PromptReading(facts: about.data) else { return [] }
         return Signs.offered(signs, reading: reading, name: pack.name, calendar: calendar(about))
@@ -725,6 +746,7 @@ public final class ReactOutput: Output {
         var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
         if let reply { facts["reply"] = .string(reply) }
         if let why { facts["reason"] = .string(why.reaction(face: choice, name: pack.name)) }
+        if asking == nil, sign != nil, about.map(Self.isCheckIn) == true { facts["musing"] = true }
         if let asking {
             facts["ask"] = .string(asking.id)
             facts["keeps"] = .bool(asking.keeps)
