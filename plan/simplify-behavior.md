@@ -343,7 +343,8 @@ thread, not that it's built.
 | E2a Away and back, paired twice | Yes, as one shared piece of code: the view and the memory reader each keep their own result, since the view must stay rebuildable from the log's last 24 hours and the reader must last across days; no event, line or CONTEXT row changes |
 | E2b Growth's daily totals | Yes: growth reads them from the memory reader's tallies |
 | E3a Hush folds into Talk | Yes (below) |
-| E3b The calendar moves into CONTEXT | Yes (below); one full eval run, asked of the owner first |
+| E3b The calendar moves into CONTEXT | Yes (below); its one full eval run approved by the owner |
+| `calm.md`: happy after a long turn's hard work | Left as it is: it depends, and happy or calm are both fine (evals 14 and 29 accept either) |
 | F The dashboard (`boopctl dash`) | Yes (below) |
 | C8's idle cleanup | Yes (below) |
 | The six evals failing on `main` | Yes, a separate cleanup (below) |
