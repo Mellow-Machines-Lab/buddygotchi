@@ -13,12 +13,11 @@ SWIFT_CHECK := --explicit-target-dependency-import-check error
 PACK := python3 internal/tools/packs.py --chosen
 
 # The debug app on a folder of its own (~/Library/Application Support/Boop-dev),
-# with the simulator, its page, the studio's matrix and the live dashboard
-# open beside it (internal/tools/dev.sh). It starts on the board, over
-# Bluetooth, so the owner runs this; Settings' Simulator row switches to
-# the simulator and back. FRESH=1 starts the folder afresh: onboarding again.
-# SIM=1 makes the simulator its body from the start, onboarding included,
-# with no Bluetooth: a demo with no board (FRESH=1 SIM=1 from the top).
+# with the simulator window inside, and the studio's matrix and the live
+# dashboard open beside it (internal/tools/dev.sh). It starts on the board,
+# over Bluetooth, so the owner runs this; onboarding and Settings'
+# Simulator row switch to the simulator window and back, and the choice
+# is kept. FRESH=1 starts the folder afresh: onboarding again.
 dev:
 	$(PACK)
 	internal/tools/dev.sh

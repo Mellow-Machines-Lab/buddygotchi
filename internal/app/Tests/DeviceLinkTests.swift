@@ -375,98 +375,53 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertLessThanOrEqual(Act.allCases.map(\.rawValue.utf8.count).max()!, "delegating".utf8.count)
     }
 
-    /// The simulator is a body to choose only while it runs
-    /// (`DeviceChooser`): chosen, the board is let go and its lines are no
-    /// longer heard; when the simulator stops, Boop is back on its board
-    /// by itself, within a couple of looks (`watchEvery`).
-    func testASimulatorIsADeviceToChooseWhileItRuns() throws {
-        let path = "/tmp/boop-test-sim-\(getpid()).sock"
-        let board = FakeTransport()
-        let chooser = DeviceChooser(board: board, simulatorSocket: path)
-        let lines = Lines(), ups = Lines(), choices = Lines()
+    /// The simulator, the app's own window (`DeviceChooser`): chosen, its
+    /// link is made then and started, the board's let go and its lines no
+    /// longer heard; chosen back, the board is Boop's body again. Whoever
+    /// shows the choice hears both changes.
+    func testTheSimulatorIsMadeWhenChosenAndTheBoardComesBack() {
+        let board = FakeTransport(), made = Lines(), choices = Lines(), lines = Lines(), ups = Lines()
+        let window = FakeTransport()
+        window.name = "simulator"
+        let chooser = DeviceChooser(board: board, simulator: { made.add("made"); return window })
         chooser.onChoice { choices.add($0.rawValue) }
         chooser.start(onLine: { lines.add($0) }, onConnection: { ups.add($0 ? "up" : "down") })
         XCTAssertEqual(chooser.choice, .board)
-        XCTAssertFalse(chooser.simulatorIsThere(), "nothing is running")
+        XCTAssertNotNil(board.onLine, "on the board until it's chosen")
+        XCTAssertEqual(made.all, [], "made only when it's chosen")
         board.onConnection?(true)
         board.onLine?("from the board")
-        XCTAssertEqual(lines.all, ["from the board"])
-
-        let simulator = try XCTUnwrap(EchoSocket(path))
-        defer { simulator.stop() }
-        XCTAssertTrue(chooser.simulatorIsThere())
-        XCTAssertEqual(chooser.choice, .board, "being there doesn't choose it")
         chooser.choose(.simulator)
+        XCTAssertEqual(made.all, ["made"])
         XCTAssertEqual(chooser.choice, .simulator)
         XCTAssertEqual(chooser.name, "simulator")
-        eventually("the board's link dropped, then the simulator's came up") { ups.all == ["up", "down", "up"] }
+        XCTAssertNotNil(window.onLine, "the window's link is started")
+        window.onConnection?(true)
         board.onLine?("from the board, late")
-        chooser.send("to the simulator")
-        eventually("the simulator's line, and not the board's") { lines.all == ["from the board", "to the simulator"] }
-        XCTAssertFalse(board.lines.contains("to the simulator"))
-
-        simulator.stop()
-        eventually("back on its board when the simulator stops", timeout: 3 * DeviceChooser.watchEvery) { chooser.choice == .board }
-        XCTAssertFalse(chooser.simulatorIsThere())
-        XCTAssertEqual(choices.all, ["simulator", "board"], "whoever shows the choice hears both changes")
+        window.onLine?("from the window")
+        XCTAssertEqual(lines.all, ["from the board", "from the window"], "the window's line, and not the board's")
+        XCTAssertEqual(ups.all, ["up", "down", "up"], "the board's link dropped, then the window's came up")
+        chooser.send("to the window")
+        XCTAssertTrue(window.lines.contains("to the window"))
+        XCTAssertFalse(board.lines.contains("to the window"))
+        chooser.choose(.board)
+        XCTAssertEqual(chooser.choice, .board)
+        XCTAssertEqual(choices.all, ["simulator", "board"])
         chooser.send("to the board")
         XCTAssertTrue(board.lines.contains("to the board"))
         chooser.stop()
     }
 
-    /// Chosen to stay before it starts (`make dev SIM=1`, a demo with no
-    /// board): the board is never started, so Bluetooth is never used, and
-    /// when the simulator stops Boop waits for it rather than going back.
-    func testASimulatorChosenToStayIsWaitedFor() throws {
-        let path = "/tmp/boop-test-stay-\(getpid()).sock"
-        let board = FakeTransport()
-        let chooser = DeviceChooser(board: board, simulatorSocket: path)
-        XCTAssertFalse(DeviceChooser.simulatorRuns(at: path))
-        let simulator = try XCTUnwrap(EchoSocket(path))
-        XCTAssertTrue(DeviceChooser.simulatorRuns(at: path))
-        chooser.choose(.simulator, stay: true)
-        let lines = Lines(), ups = Lines()
-        chooser.start(onLine: { lines.add($0) }, onConnection: { ups.add($0 ? "up" : "down") })
-        XCTAssertNil(board.onLine, "the board is never started")
-        eventually("the simulator's link came up") { ups.all == ["up"] }
-        chooser.send("to the simulator")
-        eventually("the simulator's line") { lines.all == ["to the simulator"] }
-        simulator.stop()
-        Thread.sleep(forTimeInterval: 2.5 * DeviceChooser.watchEvery)
-        XCTAssertEqual(chooser.choice, .simulator, "still on the simulator, waiting for it")
-        XCTAssertNil(board.onLine)
-        chooser.stop()
-    }
-
-    /// A simulator of the app's own (the internal build's window): chosen,
-    /// its link is made then and started, and the board's let go; it's
-    /// there to choose whenever the app says so.
-    func testASimulatorOfTheAppsOwnIsMadeWhenChosen() {
-        let board = FakeTransport(), made = Lines()
-        let window = FakeTransport()
-        window.name = "simulator"
-        let chooser = DeviceChooser(board: board, simulator: { made.add("made"); return window }, isThere: { true })
-        XCTAssertTrue(chooser.simulatorIsThere())
+    /// Chosen before it starts (the app kept the simulator as Boop's
+    /// body): the board is never started, so Bluetooth is never used.
+    func testTheSimulatorChosenBeforeTheStartLeavesTheBoardAlone() {
+        let board = FakeTransport(), window = FakeTransport()
+        let chooser = DeviceChooser(board: board, simulator: { window })
+        chooser.choose(.simulator)
         chooser.start(onLine: { _ in }, onConnection: { _ in })
-        XCTAssertNotNil(board.onLine, "on the board until it's chosen")
-        XCTAssertEqual(made.all, [], "made only when it's chosen")
-        chooser.choose(.simulator, stay: true)
-        XCTAssertEqual(made.all, ["made"])
-        XCTAssertNotNil(window.onLine, "the window's link is started")
-        XCTAssertEqual(chooser.name, "simulator")
-        chooser.send("to the window")
-        XCTAssertTrue(window.lines.contains("to the window"))
-        XCTAssertFalse(board.lines.contains("to the window"))
+        XCTAssertNil(board.onLine, "the board is never started")
+        XCTAssertNotNil(window.onLine)
         chooser.stop()
-    }
-
-    func testASocketThatIsNotThereIsNoSimulator() {
-        XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: "/tmp/boop-test-no-such-\(getpid()).sock").simulatorIsThere())
-        // A plain file of that name isn't one either.
-        let file = "/tmp/boop-test-file-\(getpid()).sock"
-        FileManager.default.createFile(atPath: file, contents: Data())
-        defer { unlink(file) }
-        XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: file).simulatorIsThere())
     }
 
     func testLinkSettings() {
@@ -475,52 +430,6 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(LinkSetting("none"), LinkSetting.none)
         XCTAssertNil(LinkSetting("usb:"))
         XCTAssertNil(LinkSetting("wifi"))
-    }
-}
-
-/// A simulator's cable for a test: a Unix socket that takes one
-/// client and sends back whatever it's sent.
-final class EchoSocket: @unchecked Sendable {
-    let path: String
-    let fd: Int32
-    let lock = NSLock()
-    var clients: [Int32] = []
-
-    init?(_ path: String) {
-        self.path = path
-        unlink(path)
-        fd = socket(AF_UNIX, SOCK_STREAM, 0)
-        var address = sockaddr_un()
-        address.sun_family = sa_family_t(AF_UNIX)
-        withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: Array(path.utf8)) }
-        let bound = withUnsafePointer(to: &address) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
-        }
-        guard bound == 0, listen(fd, 4) == 0 else { return nil }
-        let listener = fd
-        Thread.detachNewThread {
-            while true {
-                let client = accept(listener, nil, nil)
-                guard client >= 0 else { return }
-                self.lock.withLock { self.clients.append(client) }
-                Thread.detachNewThread {
-                    var buffer = [UInt8](repeating: 0, count: 4096)
-                    while true {
-                        let n = read(client, &buffer, buffer.count)
-                        guard n > 0 else { break }
-                        _ = write(client, buffer, n)
-                    }
-                    close(client)
-                }
-            }
-        }
-    }
-
-    /// The simulator stops: its cable goes, and whoever was on it is dropped.
-    func stop() {
-        close(fd)
-        unlink(path)
-        lock.withLock { clients }.forEach { shutdown($0, SHUT_RDWR) }
     }
 }
 

@@ -29,27 +29,21 @@ pack's `review/notes.jsonl` (`/review`), and with `--capture-dir DIR` the
 review clips a pack names, only from its own page; `--characters DIR`
 serves another folder of packs.
 
-**With the Mac app.** `make dev` starts the simulator beside the debug
-app and opens its page. While the simulator runs, Boop's Settings shows it
-under Device: **Use it** makes it Boop's body, with your real hooks and
-brain, and **Use the board** goes back. The choice lasts while the
-simulator runs: when it stops, Boop is back on its board by itself, and
-the next launch starts with the board (`DeviceChooser`, in
-`app/BoopKit/DeviceLink/`). The app finds a simulator by its USB socket,
-`/tmp/boop-sim-usb.sock`, and only one that this user started.
+**With the Mac app.** The app's body is the simulator in one way: a
+window of its own, in `make dev`'s debug build and the internal build.
+Onboarding offers it when there's no board ("No board? Use the simulator
+window"), and Settings' Simulator row switches to it and back, with your
+real hooks and brain (`DeviceChooser`, in `app/BoopKit/DeviceLink/`).
+The choice is kept from launch to launch, and on the simulator the app
+never uses Bluetooth. Onboarding's lessons are done in the window: a
+click is a tap, BOOT (or Space) is the button, held while you talk to the
+Mac's mic, and a drag up from the strip opens the agents' drawer. The
+browser's page and its USB socket are for the tools (`boopctl sim`, the
+studio, `Boop --headless --link usb:…`), not the app.
 
-**With no board.** `make dev FRESH=1 SIM=1` shows Boop to someone who
-has no board: the simulator is its body from the first launch's
-onboarding on, and stays it, waiting for its page while it's closed, so
-the app never uses Bluetooth (`Boop --simulator`). Onboarding asks for
-the body in the browser, and its lessons are done there: a click is a
-tap, BOOT (or Space) is the button, held while you talk to the Mac's
-mic, and a drag up from the strip opens the agents' drawer. The first
-touch of the board turns its sound on. Without `SIM=1`, onboarding
-offers a running simulator when there's no board.
-
-**In the internal build.** `make bundle INTERNAL=1` builds Boop.app
-with the simulator inside: its page (`web/app.html`, which `build.sh`
+**The window.** `make dev` puts its page beside the debug binary
+(`.build/debug/simulator/`), and `make bundle INTERNAL=1` builds Boop.app
+with it inside, both with `app/tools/simulator.sh`: its page (`web/app.html`, which `build.sh`
 puts in `dist/` beside the others), core and the pack's voice in the
 app's Resources, shown in a window of the app's own
 (`app/Boop/BoardWindow.swift`), with no browser, server or socket. The
@@ -58,8 +52,8 @@ cable plugged in afresh, and the app sends the board its lines by
 script. Boop's body is the board until the simulator is chosen, in
 onboarding or Settings, and the choice is kept; closed, the window is
 the board unplugged, and Settings, the popover's notice or opening Boop
-again shows it. It's for someone without a board: a zip of the app is
-all they need.
+again shows it. The internal build is for someone without a board: a
+zip of the app is all they need.
 
 ## One core, two builds
 

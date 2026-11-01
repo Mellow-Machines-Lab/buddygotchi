@@ -9,10 +9,10 @@ import LinkKit
 // and agents (VERIFICATION.md L4).
 
 let usage = """
-    usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug] [--simulator]
-               The menu-bar app. The owner runs this; it uses Bluetooth by default. --simulator, in the
-               debug build only, makes the simulator its body from the start, onboarding included, and
-               waits for it while it's away: no board and no Bluetooth (make dev SIM=1). With a --state-dir
+    usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug]
+               The menu-bar app. The owner runs this; it uses Bluetooth by default, until the simulator,
+               in the debug and internal builds, is made its body in onboarding or Settings: a window of
+               its own, which it keeps from launch to launch. With a --state-dir
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
                ~/.codex: they keep reporting to the everyday app's socket, and to this one's too, which
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
@@ -105,16 +105,14 @@ func transport(_ link: LinkSetting, only: String? = nil, log: LogFile) -> Transp
 /// `devLines` the dashboard's `{"dev":…}` lines taken. The menu-bar app and `--headless` both start from these.
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
                     log: LogFile, buddies: [BuddySetting] = [], links: [LinkSetting] = []) -> Runtime.Options {
-    // The board over Bluetooth, or a simulator running on this Mac, when
-    // Settings is told to use it. Over Bluetooth, the one Boop takes only
+    // The board over Bluetooth, or the simulator's window, when onboarding
+    // or Settings makes it Boop's body. Over Bluetooth, the one Boop takes only
     // the board it remembered, and narrows to the first one tapped.
     let remembered = buddies.count > 1 ? nil : AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
     let board = transport(link, only: remembered, log: log)
-    // The simulator to choose: the internal build's window, or the browser's page over its socket.
-    let chooser = { (board: Transport) -> DeviceChooser in
-        AppModel.simulatorKind == .window
-            ? DeviceChooser(board: board, simulator: { BoardLink() }, isThere: { true }, log: { log.write($0) })
-            : DeviceChooser(board: board, log: { log.write($0) })
+    // The simulator to choose, in a window of the app's own, where the build offers it.
+    let chooser = { (board: Transport) -> Transport in
+        AppModel.offersSimulator ? DeviceChooser(board: board, simulator: { BoardLink() }, log: { log.write($0) }) : board
     }
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
     if let ble = board as? BLETransport, buddies.count <= 1 { options.chooseBoard = { ble.take(only: $0) } }
@@ -193,7 +191,7 @@ let (launchOptions, launchFlags): (Set<String>, Set<String>) =
                        "--buddies", "--links"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
-    : (["--state-dir", "--link"], ["--debug", "--simulator"])
+    : (["--state-dir", "--link"], ["--debug"])
 let args = Arguments.parse(raw, options: launchOptions, flags: launchFlags, command: "boop", usage: usage)
 CharacterPack.use(bundledCharacter())
 if launchHeadless { Headless.run(args) }

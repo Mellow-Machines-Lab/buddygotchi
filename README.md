@@ -128,8 +128,8 @@ used.
 | Watch a demo: pick one and where it plays (the browser, a board, or an agent) | `make demo` ([characters/DEMOS.md](characters/DEMOS.md)) |
 
 Start `make dev` from your own terminal: macOS stops anything that uses
-Bluetooth from an editor's or an agent's shell. No board? `make dev FRESH=1 SIM=1`
-makes the simulator in your browser Boop's body, from onboarding on. Debugging and the brain's
+Bluetooth from an editor's or an agent's shell. No board? `make dev FRESH=1`
+and onboarding's "No board? Use the simulator window" makes it Boop's body. Debugging and the brain's
 evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What leaves your Mac

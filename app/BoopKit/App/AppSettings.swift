@@ -20,8 +20,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Whether the board shows the agents' calls falling past Boop, and
     /// the ones that hit it (`WorkStream`): on unless you turn it off.
     public var workStream = true
-    /// Boop's body is the simulator, in a window of the internal build's
-    /// own, rather than its board: chosen in onboarding or Settings, and
+    /// Boop's body is the simulator, in a window of the app's own (the
+    /// debug and internal builds), rather than its board: chosen in onboarding or Settings, and
     /// kept from launch to launch. Off, the board, unless chosen.
     public var simulator = false
 

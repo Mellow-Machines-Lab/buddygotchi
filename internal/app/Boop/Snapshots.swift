@@ -117,13 +117,11 @@ enum Snapshots {
                 shot("settings-firmware-failed", behind, pane: .settings)
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: bluetooth(.poweredOff))),
                      pane: .settings)
-                // A simulator running on this Mac: a body to choose, and chosen.
-                let offered = model(installer, status: status())
-                offered.simulator = .there
-                shot("settings-simulator-there", offered, pane: .settings)
+                // The simulator window, in a build that has it: off, and on.
+                shot("settings-simulator-off", model(installer, status: status()), pane: .settings)
                 let simulated = model(installer, status: status())
-                simulated.simulator = .inUse
-                shot("settings-simulator-used", simulated, pane: .settings)
+                simulated.usingSimulator = true
+                shot("settings-simulator-on", simulated, pane: .settings)
                 // A card with another pack than the app's, and no card or pack: no voice.
                 shot("settings-old-voice", model(installer, status: status(voice: "0123456789abcdef")), pane: .settings)
                 shot("settings-no-voice", model(installer, status: status(voice: "none")), pane: .settings)
@@ -186,24 +184,24 @@ enum Snapshots {
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
-            // No board, with a simulator running on this Mac: it's offered.
+            // No board, in a build with the simulator window: it's offered.
             ("4-body-simulator-offered", at(.body) { $0.simulatorHere = true }),
-            // The simulator as the body (make dev SIM=1, or chosen above).
-            ("4-body-in-browser", at(.body) { $0.app.startOnSimulator = .stay }),
-            ("4-body-in-browser-looking", at(.body, status: status(connected: false)) {
-                $0.app.startOnSimulator = .stay
+            // The simulator window as the body, chosen above.
+            ("4-body-in-window", at(.body) { $0.app.startOnSimulator = true }),
+            ("4-body-in-window-looking", at(.body, status: status(connected: false)) {
+                $0.app.startOnSimulator = true
                 $0.body = .looking
             }),
-            ("4-body-in-browser-found", at(.body, status: status()) {
-                $0.app.startOnSimulator = .stay
+            ("4-body-in-window-found", at(.body, status: status()) {
+                $0.app.startOnSimulator = true
                 $0.body = .looking
             }),
-            ("4-body-in-browser-joined", at(.body, status: status()) {
-                $0.app.startOnSimulator = .stay
+            ("4-body-in-window-joined", at(.body, status: status()) {
+                $0.app.startOnSimulator = true
                 $0.body = .joined
             }),
-            ("5-how-to-in-browser", at(.howTo, status: status()) {
-                $0.app.startOnSimulator = .stay
+            ("5-how-to-in-window", at(.howTo, status: status()) {
+                $0.app.startOnSimulator = true
                 $0.body = .joined
                 $0.progress.lessons = [.tap]
             }),
