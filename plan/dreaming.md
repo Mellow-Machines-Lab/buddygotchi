@@ -1028,3 +1028,8 @@ surprised, determined, excited and lonely, and keeps all 42 faces. So
 lonely is reached from calm, comfy and lazy only (bored and tired stop
 being lasting moods), and its entry clause lives in those three mood
 files. The cut itself lands as its own step, after the dreaming build.
+
+**After the build** (2026-11-01, with the owner): the care lean stays
+subtle for now (eval 149, a known gap); eval 09's one failure in three
+is accepted; the six evals that also fail on `main` (01, 11, 14, 29,
+98, 110) are a separate cleanup; nothing merges yet.
