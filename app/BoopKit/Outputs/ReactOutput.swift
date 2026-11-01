@@ -330,7 +330,7 @@ public final class ReactOutput: Output {
     /// what NOW is about.
     public static var says: [Option] { says(of: CharacterPack.active.name) }
     static func says(of name: String) -> [Option] {
-        [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish) where PERSONALITY's Examples say \"in silence\", a prompt soon after another reaction, and wherever TALK asks for silence.",
+        [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish) where PERSONALITY's Examples say \"in silence\", a prompt soon after another reaction, and wherever CONTEXT's Talk row asks for silence.",
                 notFor: "Anything PERSONALITY gives words to: what stands out, a failure, a poke."),
          Option("swear", "A swear, upset: a failed turn that really stings, in an irritated or grumpy face, as PERSONALITY's Examples swear.",
                 notFor: "A win, a poke, words to \(name), or anything about the person.")]
@@ -475,7 +475,7 @@ public final class ReactOutput: Output {
         }
         return asked + [Question(key: Signs.questionKey,
                                  text: "If \(pack.name) reacts, does it hold up a sign about your prompt, as PERSONALITY says? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
-                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and CONTEXT's Talk if there is one",
+                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and CONTEXT's Talk row when it's there",
                                  // Chatty holds up a sign at every prompt.
                                  options: (talk() == .chatty ? [] : [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")])
                                      + captions.map { Option($0, "A sign that says this.") })]
@@ -582,7 +582,7 @@ public final class ReactOutput: Output {
 
     /// `say`'s nothing for what you said: now and then, never the rule.
     static func talkSilence(of name: String) -> Option {
-        Option("none", "Nothing: the reply and its sign answer alone, where PERSONALITY's Example for words like these is in silence, or TALK asks for silence.",
+        Option("none", "Nothing: the reply and its sign answer alone, where PERSONALITY's Example for words like these is in silence, or CONTEXT's Talk row asks for silence.",
                notFor: "A greeting, praise, affection, a joke, rudeness or a question to \(name) itself, which get a sound at least.")
     }
 
@@ -611,8 +611,8 @@ public final class ReactOutput: Output {
     static func questions(in pack: CharacterPack = .active) -> [Question] {
         let name = pack.name
         let byBoth = "the PERSONALITY and MOOD sections, PERSONALITY's Examples first"
-        // What it says is TALK's to steer first, when the pack has one.
-        let byTalk = "TALK first, if there is one, over everything else on how much \(name) says; then PERSONALITY's Examples, then MOOD"
+        // What it says is CONTEXT's Talk row's to steer first, when the setting isn't normal.
+        let byTalk = "CONTEXT's Talk row first, when it's there, over everything else on how much \(name) says; then PERSONALITY's Examples, then MOOD"
         return [
             Question(key: faceKey, text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,

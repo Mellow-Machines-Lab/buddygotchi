@@ -356,11 +356,10 @@ public enum DebugLog {
 extension DebugLog {
     /// The state's head (the guide, PERSONALITY, MEMORY and MOOD), which
     /// changes only with the personality, the memory or the mood, and the
-    /// rest (CONTEXT, TALK, HISTORY and NOW), which `debug.jsonl` logs
+    /// rest (CONTEXT, HISTORY and NOW), which `debug.jsonl` logs
     /// apart.
     public static func split(_ state: String) -> (head: String, last: String) {
-        // CONTEXT changes nearly every pass, so it goes with the pass, and
-        // TALK after it.
+        // CONTEXT changes nearly every pass, so it goes with the pass.
         let r = [ContextSection.heading, "HISTORY ("].compactMap { state.range(of: $0) }.min { $0.lowerBound < $1.lowerBound }
         guard let r else { return ("", state) }
         return (String(state[..<r.lowerBound]), String(state[r.lowerBound...]))

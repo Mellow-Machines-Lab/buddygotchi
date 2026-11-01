@@ -1,10 +1,9 @@
 import Foundation
 
 /// How much the character says, chosen in Settings: quiet, normal or
-/// chatty, each the pack's `steering/talk/<level>.md`, a TALK section
-/// after MOOD that outranks what PERSONALITY and MOOD say of words
-/// (characters/CHARACTER.md §7), whose front matter may also set the
-/// check-ins' pace. It steers the brain, and on Quiet `ReactOutput` holds
+/// chatty, told in CONTEXT's Talk row (`ContextSection.talk`), which
+/// outranks what PERSONALITY and MOOD say of words, with each level's
+/// check-in pace (`pace`). It steers the brain, and on Quiet `ReactOutput` holds
 /// to it in code: `say` offers no topic and no swear, and a small moment or
 /// a finish says nothing. Nothing in code holds a reaction back.
 public enum Talk: String, CaseIterable, Codable, Sendable {
