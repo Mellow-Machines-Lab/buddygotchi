@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-10-31. The contract a character pack meets, so that any
+Updated 2026-11-01. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who*
 the creature is: the pack says its moods, how it looks and sounds, and
 who it is. Choose a pack (§2), and the Mac app, the board's firmware and
@@ -15,7 +15,6 @@ What a pack holds, and what it must have:
 | `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
 | `steering/guide.md` | yes | How it reads what happens, for the brain (§7) |
 | `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
-| `steering/talk/quiet.md`, `normal.md`, `chatty.md` | no | How much it says, chosen in Settings (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
@@ -172,7 +171,6 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
   steering/          what the brain reads (§7)
     guide.md
     personality/<name>.md
-    talk/quiet.md, normal.md, chatty.md
     mood/<mood>.md
     dreams.md, signs.md, replies.md   optional: the dream's signs and the signs
     asks.md          optional: what it may ask you
@@ -286,7 +284,6 @@ Each mood in `moods`:
 | `face` | no | What this mood's face means for a single reaction: the option text when the brain picks a reaction's face. Without it, `meaning` |
 | `not_for` | no | When the mood isn't meant, added to the `mood` question's option |
 | `face_not_for` | no | When the face isn't meant, added to the face's option |
-| `only_when` | no | The cues, one of which NOW must have, for the `mood` question to offer the mood as a move (`MoodOutput.cueNames`): `untouched`, an idle check-in with CONTEXT saying you haven't touched or talked to the creature in 2 h; `a day away`, you back after a day away. Staying in it needs none. Boop's and Pixel's lonely have both, so a quiet spell can't drift into it; `boopdev check` refuses a cue it doesn't know |
 | `family` | no | A group of related moods (`joy`, `frustration`…), for designers; the engine doesn't read it |
 | `moves` | yes | `ordinary` and `dramatic` neighbours: the moods it can move to in one step. Staying is always allowed. A dramatic move needs a fresh, big event |
 
@@ -358,13 +355,18 @@ What the brain reads, in plain Markdown:
   stand quotes the CONTEXT row it depends on, as the engine renders it,
   on a line above NOW (`- CONTEXT: You: at the Mac for 3 h; you haven't
   touched or talked to Boop in 2 h.`). CONTEXT is built each pass
-  (`ContextSection`): You (at the Mac from an hour; untouched from two
-  hours, never while away, and not for two hours after a lonely spell
-  faded with no touch), Agents (each open session, at most three) and
-  Today (turns and failed; touches and talks), each row only past its
-  threshold. Events stay in their lines; CONTEXT is what's true now.
-  The prompt's order is the guide, PERSONALITY, MEMORY, MOOD, CONTEXT,
-  TALK, HISTORY (closed by how long the mood has lasted) and NOW.
+  (`ContextSection`): Talk (the setting, when it isn't normal), the
+  buddy (its stage and age, a hush's minutes left), You (at the Mac and
+  untouched, each from an hour, never while away, and how long ago it
+  was last lonely, for three hours after), Agents (each open session,
+  at most three) and Today (turns and failed; touches and talks), each
+  row only when it has something to say. Facts only: when they make
+  the creature lonely, or anything else, is the steering's (its mood
+  files, `lonely.md`, the Examples). Events stay in their lines; the
+  back line says how long you were away in minutes, hours or days.
+  The prompt's order is the buddy's header (several buddies only), the
+  guide, PERSONALITY, MEMORY, MOOD, CONTEXT, HISTORY (closed by how
+  long the mood has lasted) and NOW.
 
   A personality is the whole of who the creature is, its temperament
   included: Boop's and Pixel's are cheeky, playful and teasing, never
@@ -380,22 +382,14 @@ What the brain reads, in plain Markdown:
   it says, and `boopdev check` notes a leftover `nature/` file, which
   nothing reads. The person picks one in Settings when the pack has
   more than one (Boop's has one, `boop`).
-- `talk/quiet.md`, `talk/normal.md` and `talk/chatty.md` (optional): how
-  much it says, which the person picks in Settings (`Talk`, normal at
-  first). The chosen one's TALK section goes last, after MOOD, and
-  outranks what PERSONALITY and MOOD say of words: Boop's quiet says
-  nothing at a small moment or a finish and never names what NOW is
-  about, chatty says something at every face, and normal keeps to the
-  Examples. It steers only what Boop says (the brain's `say`, which
-  judges by TALK first), never how big a moment is, and on Quiet the
-  engine holds to it in code (`ReactOutput`): `say` offers no topic and
-  no swear, and a small moment or a finish says nothing. Apart from the
-  hush (§9), nothing in code holds a reaction back. Its front
-  matter may set `working_heartbeat` and `idle_heartbeat` over the
-  personality's (Boop's quiet looks in less often, chatty more). A level
-  without a file leaves the personality as written, a pack with none
-  offers no choice in Settings, and `boopdev check` notes a pack with
-  some but not all three.
+- No talk files: how much it says (`Talk`, picked in Settings, normal at
+  first) is held in code and told to the brain in CONTEXT's Talk row.
+  On Quiet `say` offers no topic and no swear, and a small moment or a
+  finish says nothing; on Chatty `say` has no "none"; normal keeps to
+  the Examples. Each level's check-in pace is code's too (`Talk.pace`:
+  Quiet looks in less often, Chatty more), over the personality's. Apart
+  from the hush (§9), nothing in code holds a reaction back.
+  `boopdev check` notes a leftover `talk/` file, which nothing reads.
 - `mood/<mood>.md` (one per mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
@@ -997,7 +991,7 @@ and play one: [DEMOS.md](DEMOS.md).
 2. Change the moods' meanings and moves (§5). Every pack has
    the same moods, so keep every one; its faces must draw them all.
 3. Rewrite `steering/guide.md`, `steering/personality/` and
-   `steering/talk/` in its voice, and a `steering/mood/` file for each mood that needs one.
+   in its voice, and a `steering/mood/` file for each mood that needs one.
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
    its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
    that doesn't speak.

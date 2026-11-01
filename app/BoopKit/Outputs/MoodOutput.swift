@@ -62,39 +62,16 @@ public enum MoodOutput {
                       notFor: "\(pack.name) \(mood) for as long as MOOD says it lasts, or longer, as HISTORY's last line says: then it fades, as MOOD says.")
     }
 
-    /// The cues a mood may need NOW to have (a pack's `only_when`):
-    /// `untouched`, an idle check-in when CONTEXT says you haven't touched
-    /// or talked to the buddy in `ContextSection.untouchedMs`; and `a day
-    /// away`, you back after a day away (`Band.away`).
-    public static let cueNames: Set<String> = ["untouched", "a day away"]
-
-    /// The cues NOW has: its event, its line's facts and how long the
-    /// buddy has gone untouched.
-    public static func cues(_ now: Event?, facts: [String: JSONValue], untouchedMs: Int64?) -> Set<String> {
-        guard let now else { return [] }
-        var cues: Set<String> = []
-        if now.type == .heartbeat, now.specificType == "check_in", let ms = untouchedMs, ms >= ContextSection.untouchedMs {
-            cues.insert("untouched")
-        }
-        if now.type == .presence, now.phase == .end, facts["away"]?.string == "a day" { cues.insert("a day away") }
-        return cues
-    }
-
     /// The `mood` question's options for `mood`: stay, then each of its
     /// neighbours with its meaning, the dramatic ones also saying they're a
-    /// jump. Nothing else: Jev never sees a move the graph doesn't have,
-    /// nor one into a mood whose cues (`only_when`) NOW lacks, given `cues`.
-    public static func options(from mood: String, in pack: CharacterPack = .active, cues: Set<String>? = nil) -> [Option] {
+    /// jump. Nothing else: Jev never sees a move the graph doesn't have.
+    public static func options(from mood: String, in pack: CharacterPack = .active) -> [Option] {
         let moods = pack.options
         let meaning = { (name: String) in moods.first { $0.name == name }! }
-        let cued = { (name: String) in
-            guard let cues, let need = MoodGraph.mood(name, in: pack)?.onlyWhen, !need.isEmpty else { return true }
-            return !cues.isDisjoint(with: need)
-        }
         let moves = MoodGraph.mood(mood, in: pack)?.moves ?? MoodGraph.mood(pack.defaultMood, in: pack)!.moves
         return [stay(mood, in: pack)]
-            + moves.ordinary.filter(cued).map(meaning)
-            + moves.dramatic.filter(cued).map(meaning).map { o in
+            + moves.ordinary.map(meaning)
+            + moves.dramatic.map(meaning).map { o in
                 Option(o.name, o.what, notFor: [o.notFor, jump].compactMap { $0 }.joined(separator: " "))
             }
     }
@@ -102,16 +79,11 @@ public enum MoodOutput {
     /// Boop's mood as MellowHarness's `Choice`: its question, offered stay and
     /// every move from the mood it has (`options(from:)`), and the line a
     /// change shows. With a `voice`, it's that buddy's, in its `pack`.
-    public static func choice(voice: String? = nil, pack: CharacterPack = .active,
-                              cues: ((Event?) -> Set<String>)? = nil) -> Choice {
+    public static func choice(voice: String? = nil, pack: CharacterPack = .active) -> Choice {
         Choice(name: outputName, start: pack.defaultMood, voice: voice, question: "After NOW, what is \(pack.name)'s mood?",
                       about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
                       said: { from, to in "\(pack.name)'s mood changed: \(from) → \(to)." },
-                      options: { current, now, _ in
-                          // With no NOW (the launch's listing), every move.
-                          options(from: MoodGraph.mood(current) != nil ? current : pack.defaultMood, in: pack,
-                                  cues: now == nil ? nil : cues?(now))
-                      })
+                      options: { current, _, _ in options(from: MoodGraph.mood(current) != nil ? current : pack.defaultMood, in: pack) })
     }
 
     /// The mood as the log has it: the choice's value, read as its resting

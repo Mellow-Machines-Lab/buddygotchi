@@ -18,31 +18,42 @@ final class ContextTests: XCTestCase {
         return c
     }
 
-    /// Pins ContextSection.hereShownMs (1 h), untouchedMs (2 h) and
-    /// afterLonelyMs (2 h).
-    func testTheThresholds() {
-        XCTAssertEqual([ContextSection.hereShownMs, ContextSection.untouchedMs, ContextSection.afterLonelyMs], [hour, 2 * hour, 2 * hour])
+    /// Pins ContextSection.hereShownMs and untouchedShownMs (1 h each):
+    /// facts only, no lonely threshold; away, nothing shows.
+    func testTheYouRowsFacts() {
+        XCTAssertEqual([ContextSection.hereShownMs, ContextSection.untouchedShownMs], [hour, hour])
         let name = "Boop"
         XCTAssertNil(ContextSection.you(company(here: t0), at: t0 + hour - 1, name: name))
-        XCTAssertEqual(ContextSection.you(company(here: t0), at: t0 + hour, name: name), "You: at the Mac for 1 h.")
-        XCTAssertEqual(ContextSection.you(company(here: t0), at: t0 + 2 * hour, name: name),
-                       "You: at the Mac for 2 h; you haven't touched or talked to Boop in 2 h.")
-        // A touch restarts the span; away, nothing shows.
-        XCTAssertEqual(ContextSection.you(company(here: t0, touched: t0 + hour), at: t0 + 2 * hour, name: name), "You: at the Mac for 2 h.")
+        XCTAssertEqual(ContextSection.you(company(here: t0), at: t0 + hour, name: name),
+                       "You: at the Mac for 1 h; you haven't touched or talked to Boop in 1 h.")
+        XCTAssertEqual(ContextSection.you(company(here: t0, touched: t0 + hour), at: t0 + 2 * hour - 1, name: name), "You: at the Mac for 1 h.")
         XCTAssertNil(ContextSection.you(company(here: nil, touched: t0, away: t0 + minute), at: t0 + 5 * hour, name: name))
         XCTAssertNil(ContextSection.untouchedMs(company(), at: t0), "nothing to count from")
     }
 
-    /// After a lonely spell ends with no touch, untouched stays hidden for
-    /// two hours, so lonely can't come straight back; a touch since counts
-    /// from the touch.
-    func testNoLonelyAgainRightAfterOneFades() {
+    /// Pins ContextSection.lastLonelyShownMs (3 h): how long ago Boop was
+    /// last lonely, a fact the steering reads; untouched still counts.
+    func testLastLonelyIsAFact() {
         let faded = t0 + 3 * hour
         let c = company(here: t0, lonelyEnded: faded)
-        XCTAssertNil(ContextSection.untouchedMs(c, at: faded + 2 * hour - 1))
-        XCTAssertEqual(ContextSection.untouchedMs(c, at: faded + 2 * hour), 5 * hour)
-        let touched = company(here: t0, touched: faded + minute, lonelyEnded: faded)
-        XCTAssertEqual(ContextSection.untouchedMs(touched, at: faded + hour), hour - minute)
+        XCTAssertEqual(ContextSection.lastLonelyShownMs, 3 * hour)
+        XCTAssertEqual(ContextSection.you(c, at: faded + 40 * minute, name: "Boop"),
+                       "You: at the Mac for 3 h; you haven't touched or talked to Boop in 3 h; Boop was last lonely 40 min ago.")
+        XCTAssertFalse(ContextSection.you(c, at: faded + 3 * hour, name: "Boop")!.contains("lonely"))
+        XCTAssertEqual(ContextSection.untouchedMs(c, at: faded + hour), 4 * hour, "no code rule against lonely again")
+    }
+
+    /// The Talk row only when it isn't normal; the Boop row: its stage,
+    /// age and a hush's minutes left.
+    func testTheTalkAndBoopRows() {
+        XCTAssertNil(ContextSection.talk(.normal, name: "Boop"))
+        XCTAssertEqual(ContextSection.talk(.chatty, name: "Boop"),
+                       "Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY's silent Examples.")
+        XCTAssertEqual(ContextSection.talk(.quiet, name: "Boop"),
+                       "Talk: quiet. You asked Boop to say less: nothing at small moments, and never a swear.")
+        XCTAssertEqual(ContextSection.buddy(.init(stage: "Pal", daysOld: 40, hushedMs: 8 * minute - 1000), name: "Boop"),
+                       "Boop: a Pal, 40 days old; hushed for 8 more min.")
+        XCTAssertEqual(ContextSection.buddy(.init(stage: "Hatchling", daysOld: 0), name: "Boop"), "Boop: a Hatchling, hatched today.")
     }
 
     /// The agents: what needs you, working and resting, in the core's
@@ -78,23 +89,24 @@ final class ContextTests: XCTestCase {
     }
 
     /// Pins ContextSection.maxTokens: every row, three agents with long
-    /// names and "and 2 more" stay within 120 tokens.
+    /// names and "and 2 more" stay within 160 tokens.
     func testTheSectionHasACeiling() {
-        var c = company(here: t0, lonelyEnded: nil)
+        var c = company(here: t0, lonelyEnded: t0 + 10 * hour)
         c.turns = 23
         c.failed = 11
         c.touches = 14
         c.talks = 12
         let long = String(repeating: "w", count: 80)
         let agents = (0..<5).map { StatusReply.Agent(agent: "codex", places: [long + "\($0)"], workingSince: t0) }
-        let section = ContextSection.section(company: c, agents: agents, at: t0 + 11 * hour, name: "Boop")!
-        XCTAssertEqual(section.components(separatedBy: "\n").count, 4)
+        let section = ContextSection.section(talk: .chatty, buddy: .init(stage: "Hatchling", daysOld: 400, hushedMs: 119 * minute),
+                                             company: c, agents: agents, at: t0 + 11 * hour, name: "Boop")!
+        XCTAssertEqual(section.components(separatedBy: "\n").count, 6)
         XCTAssertLessThanOrEqual(Steering.tokens(section), ContextSection.maxTokens, section)
-        XCTAssertEqual(ContextSection.maxTokens, 120)
+        XCTAssertEqual(ContextSection.maxTokens, 160)
     }
 
-    /// The prompt's order: PERSONALITY, MEMORY, MOOD, CONTEXT, TALK, then
-    /// HISTORY and NOW.
+    /// The prompt's order: PERSONALITY, MEMORY, MOOD, CONTEXT, then HISTORY
+    /// and NOW; no TALK.
     func testTheSectionsPlaceInThePrompt() throws {
         let rig = CoreRig()
         let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
@@ -107,28 +119,10 @@ final class ContextTests: XCTestCase {
         rig.now += 2 * hour
         rig.send(.turnStart, prompt: "go")
         let prompt = h.prompt(for: h.log.events.last { $0.type == .turn }!)
-        let marks = ["\nPERSONALITY", "\nMEMORY (", "\nMOOD", "\nCONTEXT (", "\nTALK", "\nHISTORY", "\nNOW"]
+        let marks = ["\nPERSONALITY", "\nMEMORY (", "\nMOOD", "\nCONTEXT (", "\nHISTORY", "\nNOW"]
         let at = try marks.map { try XCTUnwrap(prompt.range(of: $0)?.lowerBound, $0) }
         XCTAssertEqual(at, at.sorted(), prompt)
         XCTAssertTrue(prompt.contains("Agents: claude working on"), prompt)
-    }
-
-    /// A mood with `only_when` is offered as a move only when NOW has one
-    /// of its cues: lonely at an idle check-in two hours untouched, or a
-    /// day away; staying in it needs none.
-    func testLonelyIsOfferedOnlyWithItsCue() throws {
-        try requirePack("boop")
-        XCTAssertEqual(MoodGraph.mood("lonely")?.onlyWhen, ["untouched", "a day away"])
-        func offered(_ cues: Set<String>) -> [String] { MoodOutput.options(from: "calm", cues: cues).map(\.name) }
-        XCTAssertFalse(offered([]).contains("lonely"))
-        XCTAssertTrue(offered(["untouched"]).contains("lonely"))
-        XCTAssertTrue(MoodOutput.options(from: "calm").map(\.name).contains("lonely"), "with no cues given, every move")
-        XCTAssertEqual(MoodOutput.options(from: "lonely", cues: []).first?.name, "lonely", "staying needs no cue")
-        let check = Event(at: t0, source: .clock, type: .heartbeat, specificType: "check_in")
-        XCTAssertEqual(MoodOutput.cues(check, facts: [:], untouchedMs: 2 * hour), ["untouched"])
-        XCTAssertEqual(MoodOutput.cues(check, facts: [:], untouchedMs: 2 * hour - 1), [])
-        let back = Event(at: t0, source: .mac, type: .presence, phase: .end, specificType: "unlocked")
-        XCTAssertEqual(MoodOutput.cues(back, facts: ["away": "a day"], untouchedMs: nil), ["a day away"])
-        XCTAssertEqual(MoodOutput.cues(back, facts: ["away": "days"], untouchedMs: nil), [])
+        XCTAssertFalse(prompt.contains("\nTALK"), "the setting is CONTEXT's row")
     }
 }

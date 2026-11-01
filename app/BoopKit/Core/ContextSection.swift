@@ -1,41 +1,73 @@
 import Foundation
 
 /// How things stand, for Jev on every pass: the CONTEXT section. Events
-/// stay in their lines (NOW and HISTORY); this says what is true now,
-/// in a row or two: you, the agents, and the day so far. A row shows
-/// only when it has something worth saying.
+/// stay in their lines (NOW and HISTORY); this says what is true now, in
+/// a row or a few: the talk setting, the buddy, you, the agents and the
+/// day so far. A row shows only when it has something to say. It gives
+/// facts only: when they make the buddy lonely, or anything else, is the
+/// steering's.
 public enum ContextSection {
     public static let heading = "CONTEXT (how things stand. Background, not news: react to NOW.)"
-    /// You at the Mac this long shows; untouched this long shows.
+    /// You at the Mac, and untouched, show from this long.
     public static let hereShownMs: Int64 = 60 * 60_000
-    public static let untouchedMs: Int64 = 2 * 60 * 60_000
-    /// After a lonely spell ends with no touch, untouched stays hidden this
-    /// long, so lonely can't come straight back at the next check-in.
-    public static let afterLonelyMs: Int64 = 2 * 60 * 60_000
+    public static let untouchedShownMs: Int64 = 60 * 60_000
+    /// How long after a lonely spell ends its "last lonely" shows.
+    public static let lastLonelyShownMs: Int64 = 3 * 60 * 60_000
     /// The most agents named; the rest are "and N more".
     public static let maxAgents = 3
     /// The section's ceiling, in tokens (`Steering.tokens`).
-    public static let maxTokens = 120
+    public static let maxTokens = 160
+
+    /// The buddy as CONTEXT's Boop row tells it: its stage, how old it is,
+    /// and how much longer a hush lasts.
+    public struct Buddy: Equatable, Sendable {
+        public var stage: String
+        public var daysOld: Int?
+        public var hushedMs: Int64?
+
+        public init(stage: String, daysOld: Int? = nil, hushedMs: Int64? = nil) {
+            self.stage = stage
+            self.daysOld = daysOld
+            self.hushedMs = hushedMs
+        }
+    }
 
     /// How long it has gone since you touched or talked to the buddy, or
     /// came back, or first did something today, at `now`; nil while you're
-    /// away, before any of that, and for `afterLonelyMs` after a lonely
-    /// spell ended with no touch since.
+    /// away, or before any of that.
     public static func untouchedMs(_ c: MemoryReader.Tallies?, at now: Int64) -> Int64? {
         guard let c, c.awaySince == nil, let base = [c.touchedAt, c.hereSince].compactMap({ $0 }).max() else { return nil }
-        if let ended = c.lonelyEndedAt, now - ended < afterLonelyMs, (c.touchedAt ?? .min) < ended { return nil }
         return max(0, now - base)
     }
 
+    /// The Talk row, when the setting isn't normal: what it asks, and why
+    /// it outranks the personality.
+    static func talk(_ t: Talk, name: String) -> String? {
+        switch t {
+        case .normal: nil
+        case .chatty: "Talk: chatty. You asked \(name) to say something at every face; this outranks PERSONALITY's silent Examples."
+        case .quiet: "Talk: quiet. You asked \(name) to say less: nothing at small moments, and never a swear."
+        }
+    }
+
+    /// The buddy's row: "Boop: a Pal, 40 days old; hushed for 8 more min."
+    static func buddy(_ b: Buddy?, name: String) -> String? {
+        guard let b else { return nil }
+        var parts = ["a \(b.stage)" + (b.daysOld.map { $0 == 0 ? ", hatched today" : ", \($0) day\($0 == 1 ? "" : "s") old" } ?? "")]
+        if let ms = b.hushedMs, ms > 0 { parts.append("hushed for \(max(1, (ms + 59_999) / 60_000)) more min") }
+        return "\(name): " + parts.joined(separator: "; ") + "."
+    }
+
     /// The You row: "You: at the Mac for 3 h; you haven't touched or talked
-    /// to Boop in 2 h."
+    /// to Boop in 2 h; Boop was last lonely 40 min ago."
     static func you(_ c: MemoryReader.Tallies?, at now: Int64, name: String) -> String? {
         guard let c, c.awaySince == nil else { return nil }
         var parts: [String] = []
         if let here = c.hereSince, now - here >= hereShownMs { parts.append("at the Mac for \(span(now - here))") }
-        if let ms = untouchedMs(c, at: now), ms >= untouchedMs {
+        if let ms = untouchedMs(c, at: now), ms >= untouchedShownMs {
             parts.append("you haven't touched or talked to \(name) in \(span(ms))")
         }
+        if let ended = c.lonelyEndedAt, now - ended < lastLonelyShownMs { parts.append("\(name) was last lonely \(span(now - ended)) ago") }
         return parts.isEmpty ? nil : "You: " + parts.joined(separator: "; ") + "."
     }
 
@@ -59,7 +91,6 @@ public enum ContextSection {
     /// times and talked to it twice."
     static func today(_ c: MemoryReader.Tallies?, name: String) -> String? {
         guard let c, c.turns > 0 || c.touches > 0 || c.talks > 0 else { return nil }
-        func times(_ n: Int) -> String { n == 1 ? "once" : n == 2 ? "twice" : "\(n) times" }
         var parts: [String] = []
         if c.turns > 0 { parts.append("\(c.turns) turn\(c.turns == 1 ? "" : "s")" + (c.failed > 0 ? ", \(c.failed) failed" : "")) }
         var care: [String] = []
@@ -70,11 +101,14 @@ public enum ContextSection {
     }
 
     /// The section, or nil when no row has anything to say.
-    public static func section(company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], at now: Int64,
-                               name: String) -> String? {
-        let rows = [you(company, at: now, name: name), agents(list, at: now), today(company, name: name)].compactMap { $0 }
+    public static func section(talk t: Talk = .normal, buddy b: Buddy? = nil, company: MemoryReader.Tallies?,
+                               agents list: [StatusReply.Agent], at now: Int64, name: String) -> String? {
+        let rows = [talk(t, name: name), buddy(b, name: name), you(company, at: now, name: name), agents(list, at: now),
+                    today(company, name: name)].compactMap { $0 }
         return rows.isEmpty ? nil : ([heading] + rows).joined(separator: "\n")
     }
+
+    static func times(_ n: Int) -> String { n == 1 ? "once" : n == 2 ? "twice" : "\(n) times" }
 
     /// A span in words with a number: "12 min", "3 h".
     static func span(_ ms: Int64) -> String {

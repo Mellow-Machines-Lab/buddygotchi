@@ -36,20 +36,12 @@ extension Steering {
         return PersonalityFile(rules: Personality.Rules(frontMatter: frontMatter[path] ?? ""), text: self[path])
     }
 
-    /// What how much it says adds, after MOOD: `talk/quiet.md`,
-    /// `talk/normal.md` or `talk/chatty.md`, or nil for a level the pack
-    /// has no file for, which leaves the personality as written.
-    public func talk(_ talk: Talk) -> String? { files["talk/\(talk.rawValue)"] }
-
-    /// Whether the pack has a talk file at all: without one, Settings
-    /// offers no choice.
-    public var talks: Bool { Talk.allCases.contains { talk($0) != nil } }
-
     /// The view's rules for a personality and how much it says: the
-    /// personality's front matter, with the talk file's laid over it.
+    /// personality's front matter, with the talk setting's pace laid over
+    /// it (`Talk.pace`).
     public func rules(_ p: Personality, talk: Talk) -> Personality.Rules {
         let own = frontMatter["personality/\(p.rawValue)"] ?? ""
-        return Personality.Rules(frontMatter: own + "\n" + (frontMatter["talk/\(talk.rawValue)"] ?? ""))
+        return Personality.Rules(frontMatter: own + "\n" + talk.pace)
     }
 
     /// The signs a dream may hold up (`dreams.md`, optional), each with the
@@ -81,7 +73,6 @@ extension Steering {
     public enum Budget {
         public static let guide = 400
         public static let personality = 2850
-        public static let talk = 250
         public static let mood = 250
         /// MEMORY, the written memory as Jev reads it on every pass.
         public static let memory = 300
@@ -100,9 +91,6 @@ extension Steering {
         var parts = [("guide", Steering.tokens(guide), Budget.guide)]
         for p in pack.personalities.map({ Personality($0, in: pack) }) {
             parts.append(("personality/\(p.rawValue)", Steering.tokens(personality(p).text), Budget.personality))
-        }
-        for t in Talk.allCases {
-            if let text = talk(t) { parts.append(("talk/\(t.rawValue)", Steering.tokens(text), Budget.talk)) }
         }
         for name in pack.moods.map(\.id).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name, in: pack)), Budget.mood))

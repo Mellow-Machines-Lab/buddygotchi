@@ -340,7 +340,7 @@ public final class ReactOutput: Output {
                notFor: "A check that failed while the turn goes on, or a turn that finished done, saying it's done."),
         Option("reply", "NOW's line says a turn finished, done, asking you something or only answering, often with no tool calls: no task finished.",
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
-        Option("wake up", "NOW's line says you came back to the Mac after a long break or longer: a very long one, a day, days. \(name) stretches, yawns and wakes up for you.",
+        Option("wake up", "NOW's line says you came back to the Mac after an hour or more away. \(name) stretches, yawns and wakes up for you.",
                notFor: "A short break, a turn or a poke."),
         Option("notice", "NOW's line says you said \(name)'s name in your prompt: it looks up at you, as if it heard.",
                notFor: "A prompt that doesn't say its name, or anything but a prompt."),
@@ -434,7 +434,15 @@ public final class ReactOutput: Output {
                                                    + (q.keeps ? " Its answer becomes part of \(pack.name)." : ""))
                                            })]
         }
-        let asked = speech
+        // How much it says, held in code at your prompt: Chatty always
+        // makes a face; Quiet holds up a sign only for one that sounds like
+        // something or says its name.
+        let prompt = about.flatMap { $0.type == .prompt ? PromptReading(facts: $0.data) : nil }
+        let asked = talk() == .chatty && prompt != nil ? speech.map { q in
+            q.key == Self.faceKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
+                                             options: q.options.filter { $0.name != "none" }) : q
+        } : speech
+        if talk() == .quiet, let prompt, prompt.named.isEmpty, prompt.tone == nil || prompt.tone == .calm { return asked }
         let captions = offered(now, log)
         guard !captions.isEmpty else { return asked }
         if let about, about.type == .ask {
@@ -453,8 +461,9 @@ public final class ReactOutput: Output {
         }
         return asked + [Question(key: Signs.questionKey,
                                  text: "If \(pack.name) reacts, does it hold up a sign about your prompt, as PERSONALITY says? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
-                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and TALK if there is one",
-                                 options: [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")]
+                                 about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and CONTEXT's Talk if there is one",
+                                 // Chatty holds up a sign at every prompt.
+                                 options: (talk() == .chatty ? [] : [Option("none", "No sign: PERSONALITY gives this prompt none, or nothing in it is worth holding up.")])
                                      + captions.map { Option($0, "A sign that says this.") })]
     }
 
@@ -513,6 +522,10 @@ public final class ReactOutput: Output {
         return questions.compactMap { q in
             if q.key == sayKey {
                 if hushed, !talking { return nil }
+                // Chatty says something at every face.
+                if talk == .chatty {
+                    return Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy, options: q.options.filter { $0.name != "none" })
+                }
                 guard talk == .quiet else { return q }
                 let quiet = Set(topics(of: pack.name).map(\.name) + ["swear"])
                 return Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy, options: q.options.filter { !quiet.contains($0.name) })
@@ -589,9 +602,9 @@ public final class ReactOutput: Output {
                                           + "a turn that finished done or failed, which always gets a face and its finish; "
                                           + "or anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
                          + pack.faces),
-            Question(key: moveKey, text: "If \(name) reacts, does its body make a move: a turn that finished, and how it ended, you back after a long break, or your prompt saying \(name)'s name?",
+            Question(key: moveKey, text: "If \(name) reacts, does its body make a move: a turn that finished, and how it ended, you back after an hour or more away, or your prompt saying \(name)'s name?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
-                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after a long break, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, a short break and a stopped turn all get none.")]
+                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after an hour or more away, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, a short break and a stopped turn all get none.")]
                          + ReactOutput.animations(of: name)),
             Question(key: intensityKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds the face and the more it says.",
                      about: "the NOW section", judgeBy: byBoth, options: ReactOutput.intensities),

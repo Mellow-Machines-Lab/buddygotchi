@@ -12,6 +12,17 @@ public enum Talk: String, CaseIterable, Codable, Sendable {
 
     public static let `default` = Talk.normal
 
+    /// How often it checks in, over the personality's pace, in its front
+    /// matter's keys: quiet looks in less often, chatty more, normal as the
+    /// personality says.
+    public var pace: String {
+        switch self {
+        case .quiet: "working_heartbeat: 480-720\nidle_heartbeat: 1800-3600"
+        case .normal: ""
+        case .chatty: "working_heartbeat: 120-180\nidle_heartbeat: 600-900"
+        }
+    }
+
     /// Its name in Settings.
     public var title: String { rawValue.capitalized }
 

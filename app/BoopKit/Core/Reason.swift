@@ -75,7 +75,7 @@ public struct Reason: Equatable, Sendable {
         case .heartbeat? where e.specificType == "check_in":
             // A check-in after hours with no touch or word: how long, from
             // CONTEXT's company.
-            guard let ms = untouchedMs, ms >= ContextSection.untouchedMs else { return line.map { Reason(cause: $0.text) } }
+            guard let ms = untouchedMs, ms >= ContextSection.untouchedShownMs else { return line.map { Reason(cause: $0.text) } }
             let hours = ms / 3_600_000
             return Reason(cause: "You've been here \(hours) hour\(hours == 1 ? "" : "s") and haven't touched it.", fact: "untouched \(hours) h")
         case .talk?:

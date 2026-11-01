@@ -196,8 +196,8 @@ final class EvalTests: XCTestCase {
     /// EVALS.md §1: a run's prompt has the TALK the scenario says, after
     /// MOOD, as the app's does: normal unless it says.
     func testAScenarioRunsWithItsTalk() async throws {
-        try requirePack("boop")  // its talk files
-        for (talk, words) in [(nil, "TALK\nNormal:"), ("quiet", "TALK\nQuiet:"), ("chatty", "TALK\nChatty:")] {
+        try requirePack("boop")  // its steering
+        for (talk, words) in [(nil, ""), ("quiet", "\nTalk: quiet."), ("chatty", "\nTalk: chatty.")] {
             let states = Lines()
             let brain = ScriptedBrain { state, _ in
                 states.add(state)
@@ -212,8 +212,13 @@ final class EvalTests: XCTestCase {
             _ = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
             let state = try XCTUnwrap(states.all.first)
             let mood = try XCTUnwrap(state.range(of: "\nMOOD\n"), state)
-            let section = try XCTUnwrap(state.range(of: words), state)
-            XCTAssertLessThan(mood.lowerBound, section.lowerBound, "TALK follows MOOD")
+            XCTAssertFalse(state.contains("\nTALK"), "no TALK section")
+            guard !words.isEmpty else {
+                XCTAssertFalse(state.contains("Talk:"), "normal shows no Talk row")
+                continue
+            }
+            let row = try XCTUnwrap(state.range(of: words), state)
+            XCTAssertLessThan(mood.lowerBound, row.lowerBound, "CONTEXT's Talk row follows MOOD")
         }
     }
 

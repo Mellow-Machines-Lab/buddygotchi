@@ -521,7 +521,6 @@ enum Snapshots {
                               listening: listening, micTrouble: micTrouble, growth: growth)
         // Its age and its memory's recent days, read the day after.
         status.talk = talk
-        status.talks = true
         status.daysOld = 47
         status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked Boop 4 times.",
                                  today: "2026-10-22"),

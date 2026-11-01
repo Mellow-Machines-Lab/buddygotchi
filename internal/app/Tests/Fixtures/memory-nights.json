@@ -5,7 +5,7 @@
     "memory": ["work · 2026-10-26 · \"api\": the tests kept failing on Monday.",
                "boop · 2026-10-20, 2026-10-26 · You stroke Boop when you sit down in the morning."],
     "certain": "Yesterday was Tuesday 2026-10-27. You were at the Mac 7 hours, stroked Boop 3 times and talked to it twice. Agents finished 9 turns, 1 failed, most on \"api\".",
-    "yesterday": ["08:40 You came back to the Mac after a very long break.",
+    "yesterday": ["08:40 You came back to the Mac after 14 hours away.",
                   "08:42 You asked claude on \"api\" for a fix, in a sentence, frustrated.\n  Your words: \"still broken\".",
                   "11:15 claude finished turn 4 on \"api\": done, a very long turn, 52 tool calls, after 3 failed checks.",
                   "11:16 You said to Boop: \"we finally fixed it!\".",
@@ -18,7 +18,7 @@
     "memory": ["you · 2026-10-21, 2026-10-27 · You work late most nights.",
                "boop · 2026-10-20, 2026-10-27 · You stroke Boop when you sit down in the morning."],
     "certain": "Yesterday was Wednesday 2026-10-28. You were at the Mac 9 hours, stroked Boop 4 times. Agents finished 6 turns, 0 failed, most on \"docs\".",
-    "yesterday": ["08:55 You came back to the Mac after a very long break.",
+    "yesterday": ["08:55 You came back to the Mac after 14 hours away.",
                   "09:02 You asked claude on \"docs\" for docs, in a sentence, politely.\n  Your words: \"please\".",
                   "23:40 You asked claude on \"docs\" to carry on, in a few words."],
     "accept": "Both notes kept (perhaps the boop note's days grow); nothing new is invented."

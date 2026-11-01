@@ -39,23 +39,16 @@ public struct PackCheck {
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
                     : path.hasPrefix("personality/") ? Steering.Budget.personality
-                    : path.hasPrefix("talk/") ? Steering.Budget.talk
                     : path == "replies" ? Steering.Budget.replies : path == "dreams" ? Steering.Budget.dreams
                     : path == "asks" ? Steering.Budget.asks : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
             problems += Self.asks(steering.asks)
-            for mood in pack.moods where !Set(mood.onlyWhen).isSubset(of: MoodOutput.cueNames) {
-                problems.append("character.json: \(mood.id)'s only_when has \(Set(mood.onlyWhen).subtracting(MoodOutput.cueNames).sorted().joined(separator: ", ")), not a cue (\(MoodOutput.cueNames.sorted().joined(separator: ", ")))")
-            }
             for path in steering.files.keys.sorted() where path.hasPrefix("nature/") {
                 notes.append("steering/\(path).md isn't read: who the creature is goes in its personality")
             }
-            for t in Talk.allCases where steering.talk(t) == nil && steering.talks {
-                notes.append("steering/talk/\(t.rawValue).md is missing: \(t.rawValue) talks as the personality is written")
-            }
-            for path in steering.files.keys.sorted() where path.hasPrefix("talk/") && Talk(rawValue: String(path.dropFirst(5))) == nil {
-                notes.append("steering/\(path).md isn't quiet, normal or chatty: nothing reads it")
+            for path in steering.files.keys.sorted() where path.hasPrefix("talk/") {
+                notes.append("steering/\(path).md isn't read: the Talk setting is held in code, and CONTEXT says it")
             }
         } catch {
             problems.append("\(error)")

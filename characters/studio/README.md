@@ -1,6 +1,6 @@
 # Character Studio
 
-Updated 2026-10-25. One page for everything a character pack makes its
+Updated 2026-11-01. One page for everything a character pack makes its
 character: who it is, how it feels, what it does and why, how it looks,
 what it says, and the tests that hold it to all that. Pick a pack, and its
 tabs show what's its own: its personality, its moods and what moves them,
@@ -71,9 +71,8 @@ nothing for (Stills, for a pack with no golden frames):
   settings in plain words (`working_heartbeat` 240-360 is "checks in on a
   turn every 4–6 min"), its words, a paragraph's first sentence and the
   rest as points, and its Examples as cards, what happened and after the
-  arrow what it does, six at first. Then the talk files, side by side
-  (`steering/talk/`: quiet, normal and chatty, with any check-in pace
-  they set), and the guide, folded.
+  arrow what it does, six at first. Then the guide, folded. (A pack has no
+  talk files: how much it says is held in code.)
 - **Moods**: the moods in their families, and the one picked: its
   meaning and face, its preview idle in it, and its map, the moods it can
   move to (`moves`), ordinary ones on the inner ring and dramatic ones,
@@ -247,7 +246,7 @@ own.
 
 Nothing about a character is written here. `packs.js` comes from the
 packs' `character.json` files, their steering (the personalities,
-talk files, guide, each mood's file, signs and dream signs), the voice each has or
+guide, each mood's file, signs and dream signs), the voice each has or
 uses (its `mac/takes.tsv`, once for every pack that uses it), their
 demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's

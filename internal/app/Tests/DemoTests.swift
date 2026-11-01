@@ -199,8 +199,8 @@ final class DemoTests: XCTestCase {
         }
         try XCTAssertEqual(cause(#"{"you": "poke"}"#), .init(kind: "tap", text: "You poke Pip"))
         try XCTAssertEqual(cause(#"{"you": "talk", "text": "hello"}"#), .init(kind: "talk", text: "You say “hello”"))
-        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 600}"#), .init(kind: "back", text: "You come back to the Mac after a very long break"))
-        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 20}"#), .init(kind: "back", text: "You come back to the Mac after a long break"))
+        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 600}"#), .init(kind: "back", text: "You come back to the Mac after 10 hours away"))
+        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 20}"#), .init(kind: "back", text: "You come back to the Mac after 20 min away"))
         try XCTAssertEqual(cause(#"{"agent": "prompt", "text": "Fix it"}"#), .init(kind: "prompt", text: "You ask Claude: “Fix it”"))
         try XCTAssertEqual(cause(#"{"agent": "read", "file": "a.js"}"#, agent: "codex"), .init(kind: "tool", text: "Codex reads a.js"))
         try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}"#),

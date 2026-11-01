@@ -1394,15 +1394,15 @@ final class RuntimeTests: XCTestCase {
         try XCTAssertThrowsError(try Runtime(options)) { XCTAssertEqual("\($0)", "\(Runtime.OpenError.notSetUp)") }
     }
 
-    /// characters/boop/steering/ has the guide, a file per mood, the personality, a talk file
-    /// for each level, the dream's signs, the signs' captions, the replies' signs and the asks. The static parts stay within their budgets, and the
-    /// personality's settings, with each talk's laid over them, are the ones below.
+    /// characters/boop/steering/ has the guide, a file per mood, the personality, the dream's
+    /// signs, the signs' captions, the replies' signs and the asks; no talk files, the Talk setting
+    /// being code's. The static parts stay within their budgets, and the personality's settings,
+    /// with each talk's pace laid over them (`Talk.pace`), are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["asks.md", "dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["personality/boop.md", "replies.md", "signs.md",
-                                  "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
+                               + ["personality/boop.md", "replies.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.dreams.count, 10, "a sign for every kind of day")
         let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
@@ -1413,8 +1413,6 @@ final class RuntimeTests: XCTestCase {
                        Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000, toolUses: .notable))
         XCTAssertEqual(Self.steering.rules(.default, talk: .chatty),
                        Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000, toolUses: .notable))
-        XCTAssertTrue(Self.steering.talk(.quiet)?.hasPrefix("TALK\nQuiet") ?? false)
-        XCTAssertTrue(Self.steering.talks)
         XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
@@ -1486,13 +1484,13 @@ final class RuntimeTests: XCTestCase {
     /// How much it says takes effect from the next event, its check-ins'
     /// pace included, and is saved.
     func testANewTalkTakesEffectAtOnce() throws {
-        try requirePack("boop")  // its talk files
+        try requirePack("boop")  // its personality's pace
         let runtime = try makeRuntime(FakeTransport())
         var statuses: [Runtime.Status] = []  // on `home`
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal && statuses.last?.talks == true } }
+        eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal } }
         runtime.setTalk(.chatty)
         eventually("chatty now") { runtime.home.sync { statuses.last?.talk == .chatty } }
         XCTAssertEqual(runtime.home.sync { runtime.view.rules.workBeatMs }, 120_000...180_000)

@@ -180,20 +180,20 @@ public enum EventLine {
     /// You stepping away from the Mac.
     public static let away = "You stepped away from the Mac."
 
-    /// `You came back to the Mac after a long break.`, or `after a day
-    /// away.`: the break's band.
+    /// `You came back to the Mac after 12 hours away.`
+    /// How long, in numbers past a short break: what it means (a night, a
+    /// day, a weekend) is the steering's to say. The band stays in the
+    /// line's facts (`Band.away`), for code that reads it.
     public static func back(ms: Int64) -> String {
-        backLines[Band.away(ms: ms)] ?? "You came back to the Mac."
+        let minutes = ms / 60_000, hours = ms / 3_600_000, days = ms / 86_400_000
+        if ms < shortBreakMs { return "You came back to the Mac after a short break." }
+        if hours < 2 { return "You came back to the Mac after \(minutes) min away." }
+        if hours < 48 { return "You came back to the Mac after \(hours) hours away." }
+        return "You came back to the Mac after \(days) days away."
     }
 
-    /// The line for each band of `Band.away`.
-    public static let backLines = [
-        "short": "You came back to the Mac after a short break.",
-        "long": "You came back to the Mac after a long break.",
-        "very long": "You came back to the Mac after a very long break.",
-        "a day": "You came back to the Mac after a day away.",
-        "days": "You came back to the Mac after days away.",
-    ]
+    /// Away less than this is a short break, said with no number.
+    public static let shortBreakMs: Int64 = 15 * 60_000
 
     /// You answered an ask: `You answered Boop's "fav snack?": cookie.`
     public static func answered(_ question: String, answer: String, name: String = CharacterPack.active.name) -> String {
@@ -315,10 +315,9 @@ public enum EventLine {
         - An idle check-in ("Nothing has happened for 20 min") means the person is
           around but no agent is working. A compacted context means the agent's
           memory was squeezed to make room; it carries on from a summary.
-        - "You" stepping away from the Mac and coming back is the person. Breaks
-          are short (under 15 minutes), long (under 2 hours) or very long (2
-          hours or more, a night's sleep included); away a day is 20 hours or
-          more, and days 40 or more.
+        - "You" stepping away from the Mac and coming back is the person. A
+          short break is under 15 minutes; past that the line says how long,
+          in minutes, hours or days.
         - "You answered \(name)'s" question is the person tapping one of the two
           answers \(name) held up; it answers as to anything said to it, with a
           glad face and a sign back for the answer.

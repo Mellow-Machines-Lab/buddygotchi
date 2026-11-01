@@ -46,7 +46,6 @@ extension Runtime {
         /// How much it says, chosen in Settings, and whether the pack
         /// offers a choice: none when its steering has no talk file.
         public var talk = Talk.default
-        public var talks = false
         /// While Boop is hushed, when it may talk again, for the popover's
         /// countdown.
         public var hushedUntil: Date?
@@ -148,7 +147,6 @@ extension Runtime {
                                                                       stage: config.stageReached, time: options.time),
                                        asleep: status.snapshot.base == "asleep", gel: status.device?.face != .pixel)
         status.talk = talk
-        status.talks = options.steering.talks
         status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: Double(wall + $0.until - now) / 1000) }
         status.uncleanExit = uncleanExit
         status.board = settings.board

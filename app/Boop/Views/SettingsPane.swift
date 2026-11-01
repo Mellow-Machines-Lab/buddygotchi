@@ -39,10 +39,7 @@ struct SettingsPane: View {
                     PaneSection("Device") { device }
                     // Named for what's in it: a personality picker when
                     // the pack has two, else Talk; the brain's key apart.
-                    // Nothing in it before the runtime says what talk levels the pack has.
-                    if Personality.allCases.count > 1 || model.status?.talks == true || brainNote != nil {
-                        PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
-                    }
+                    PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
                     PaneSection("Brain") { Card(padding: 0) { key } }
                     PaneSection("Memory") { Card(padding: 0) { memorySetting } }
                     PaneSection("App") { app }
@@ -303,10 +300,8 @@ struct SettingsPane: View {
                         RowPicker(label: "Personality", rows: Personality.allCases.map { .init(value: $0, title: $0.rawValue.capitalized, about: $0.about) },
                                   chosen: Binding(get: { model.personality }, set: { model.setPersonality($0) }))
                     }
-                    if model.status?.talks == true {
-                        RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
-                                  chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
-                    }
+                    RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
+                              chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
                 }
                 .padding(12)
                 .disabled(model.status == nil)

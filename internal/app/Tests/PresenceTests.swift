@@ -198,7 +198,7 @@ final class PresenceTests: XCTestCase {
 
         rig.now = left + 3 * 60 * minute
         let b = try XCTUnwrap(back().first)
-        XCTAssertEqual(b.line, "You came back to the Mac after a very long break.")
+        XCTAssertEqual(b.line, "You came back to the Mac after 3 hours away.")
         XCTAssertEqual(b.name, "presence end")
         XCTAssertTrue(b.wakesBrain)
         XCTAssertNil(b.about)
@@ -226,16 +226,20 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(Band.away(ms: 20 * 60 * minute - 1), "very long")
         XCTAssertEqual(Band.away(ms: 20 * 60 * minute), "a day")
         XCTAssertEqual(Band.away(ms: 40 * 60 * minute), "days")
-        XCTAssertEqual(EventLine.back(ms: 26 * 60 * minute), "You came back to the Mac after a day away.")
-        XCTAssertEqual(EventLine.back(ms: 3 * 24 * 60 * minute), "You came back to the Mac after days away.")
+        XCTAssertEqual(EventLine.back(ms: 26 * 60 * minute), "You came back to the Mac after 26 hours away.")
+        XCTAssertEqual(EventLine.back(ms: 3 * 24 * 60 * minute), "You came back to the Mac after 3 days away.")
     }
 
-    /// Every band of `Band.away` has its line (`EventLine.backLines`).
-    func testEveryBandHasItsLine() {
-        for ms in [5 * minute, 30 * minute, 3 * 60 * minute, 26 * 60 * minute, 50 * 60 * minute] {
-            XCTAssertNotNil(EventLine.backLines[Band.away(ms: ms)], "\(ms)")
-        }
-        XCTAssertEqual(EventLine.back(ms: 30 * minute), "You came back to the Mac after a long break.")
+    /// The back line says how long in numbers past a short break
+    /// (EventLine.shortBreakMs, 15 min): minutes under 2 hours, hours under
+    /// 2 days, then days. What that means is the steering's.
+    func testTheBackLineSaysHowLong() {
+        XCTAssertEqual(EventLine.shortBreakMs, 15 * minute)
+        XCTAssertEqual(EventLine.back(ms: 15 * minute - 1), "You came back to the Mac after a short break.")
+        XCTAssertEqual(EventLine.back(ms: 119 * minute), "You came back to the Mac after 119 min away.")
+        XCTAssertEqual(EventLine.back(ms: 11 * 60 * minute), "You came back to the Mac after 11 hours away.")
+        XCTAssertEqual(EventLine.back(ms: 48 * 60 * minute), "You came back to the Mac after 2 days away.")
+        XCTAssertEqual(EventLine.back(ms: 30 * minute), "You came back to the Mac after 30 min away.")
     }
 
     /// A back whose away the log no longer holds (a relaunch during a long
@@ -247,7 +251,7 @@ final class PresenceTests: XCTestCase {
         var back = PresenceDetector.backEvent(why: "unlocked", at: rig.now)
         back.data["since"] = .int(left)
         let lines = events(rig.note(Fx(rig.pipeline.presence(back))))
-        XCTAssertEqual(lines.first?.line, "You came back to the Mac after a day away.")
+        XCTAssertEqual(lines.first?.line, "You came back to the Mac after 26 hours away.")
         XCTAssertEqual(lines.first?.facts["away_ms"]?.int, 26 * 60 * minute)
     }
 
@@ -359,7 +363,7 @@ final class PresenceRuntimeTests: XCTestCase {
         dev(runtime, #"{"dev":"advance","ms":1000}"#)
         XCTAssertEqual(presence(runtime), ["start locked", "end unlocked"])
         let back = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
-        XCTAssertEqual(back.line, "You came back to the Mac after a long break.")
+        XCTAssertEqual(back.line, "You came back to the Mac after 70 min away.")
         XCTAssertTrue(back.wakesBrain == false, "gated: headless here has no brain")
 
         dev(runtime, #"{"dev":"presence","idle_ms":1800000}"#)
@@ -382,7 +386,7 @@ final class PresenceRuntimeTests: XCTestCase {
         for _ in 0..<20 where presence(runtime).count < 2 { Thread.sleep(forTimeInterval: 0.05) }
         XCTAssertEqual(presence(runtime), ["start demo", "end demo"])
         let back = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
-        XCTAssertEqual(back.line, "You came back to the Mac after a very long break.")
+        XCTAssertEqual(back.line, "You came back to the Mac after 10 hours away.")
         XCTAssertFalse(runtime.home.sync { runtime.pipeline.away }, "back, not away")
         XCTAssertNil(back.about, "a back is about no thread, so a wake-up for it names nobody's turn")
         runtime.stop()
