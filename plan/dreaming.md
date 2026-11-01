@@ -1018,3 +1018,12 @@ writes it forceful, rather than adding Examples:
 `say`, a prompt's face and a prompt's sign, but not from the sign
 question at an ask's or a musing's moment: the hourly cap is a ceiling,
 not a schedule.
+
+**4. Sixteen lasting moods** (decided 2026-11-01, in
+[simplify-behavior.md](simplify-behavior.md), C3 on branch
+`plan-simplify`): Boop settles only into calm, comfy, lazy, happy,
+proud, annoyed, irritated, grumpy, sad, wounded, engaged, curious,
+surprised, determined, excited and lonely, and keeps all 42 faces. So
+lonely is reached from calm, comfy and lazy only (bored and tired stop
+being lasting moods), and its entry clause lives in those three mood
+files. The cut itself lands as its own step, after the dreaming build.
