@@ -1,8 +1,10 @@
 """`boopctl dash`: Boop's live dashboard. Boop now, with
-the face, and three columns side by side: the mood, the automatic reactions
-(reflexes) and the decided ones (Jev's), all from debug.jsonl, with the raw
-timeline a key away; and keys that force a mood or a reaction (its face,
-move, intensity and what it says), or preview any look on the dashboard's own sim. A bug report the
+the face, its Talk, growth and the CONTEXT Jev last read, and three columns
+side by side: the mood and memory, the automatic reactions (reflexes) and
+the decided ones (Jev's, with their signs, asks and reasons), all from
+debug.jsonl, with the raw timeline a key away; and keys that force a mood or
+a reaction (its face, move, intensity and what it says), close Boop's day
+now, or preview any look on the dashboard's own sim. A bug report the
 app saves (its ladybug, or `b` here) gets the device's screen, screen.png,
 when the app reaches its device through a socket: the simulator's, or a
 board's bridge."""
@@ -25,7 +27,7 @@ from textual.message import Message
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Label, OptionList, RichLog, Static
 
-from boopctl_lib.common import MOODS, send_line
+from boopctl_lib.common import MOODS, lasting_moods, send_line
 from boopctl_lib.dash import controls
 from boopctl_lib.device import Device, DeviceError
 from boopctl_lib.image import save_shot
@@ -91,7 +93,7 @@ class Picker(ModalScreen[str | None]):
 
 
 class StateView(ModalScreen[None]):
-    """The whole state the brain read last."""
+    """The whole prompt the brain read last."""
 
     BINDINGS = [Binding("escape,s,q", "dismiss(None)", "close")]
     DEFAULT_CSS = "StateView { background: $background 90%; } StateView > VerticalScroll { border: round $accent; }"
@@ -130,7 +132,8 @@ class Dash(App[None]):
         Binding("r", "react", "react"),
         Binding("p", "preview", "preview"),
         Binding("t", "timeline", "toggle timeline"),
-        Binding("s", "state", "Jev's state"),
+        Binding("d", "close_day", "close the day"),
+        Binding("s", "state", "the prompt Jev read"),
         Binding("b", "report", "bug report"),
         Binding("q", "quit", "quit"),
     ]
@@ -167,7 +170,7 @@ class Dash(App[None]):
         with Horizontal(id="top"):
             yield self.face_view
             yield self.facts
-        titles = {"mood": "Mood · the lasting backdrop",
+        titles = {"mood": "Mood · the lasting backdrop, and memory",
                   "reflexes": "Automatic · reflexes, by rule, at once",
                   "decided": "Decided · by Jev, a moment later"}
         with Horizontal(id="columns"):
@@ -217,8 +220,7 @@ class Dash(App[None]):
             self.face.restart(self.board.state)
         self.first = False
         for late in self.pending.late():
-            self.notify(f"{late}: nothing in debug.jsonl within {controls.CONFIRM_S:g} s. Is Boop running with --debug?",
-                        severity="warning")
+            self.notify(controls.late_text(late), severity="warning")
         self.watch_reports()
         self.show_now()
         if lines or restarted or not self.board.questions:
@@ -350,10 +352,12 @@ class Dash(App[None]):
 
     @work
     async def action_mood(self) -> None:
-        # Any mood, as the app's dev line takes any: Jev is offered only
-        # the graph's moves from the mood now.
+        # Any of the pack's lasting moods, as the app's dev line takes any:
+        # Jev is offered only the graph's moves from the mood now. Preview
+        # shows any face, the face-only moods too.
         asked = self.questions("mood")
-        mood = asked and await self.pick("Preview a mood" if self.look else "Set the mood", list(MOODS))
+        moods = list(MOODS) if self.look else lasting_moods()
+        mood = asked and await self.pick("Preview a mood" if self.look else "Set the mood", moods)
         if mood and not self.look:
             self.command({"dev": "mood", "mood": mood})
         elif mood and self.face:
@@ -412,11 +416,16 @@ class Dash(App[None]):
         if self.look and self.face:
             self.face.send(controls.preview_state(self.board.state, self.look, self.look_mood))
 
+    def action_close_day(self) -> None:
+        """Boop's day closes now, as at 5:00: the dream, in the mood column
+        at once, then the night's write when the writer answers."""
+        self.command({"dev": "close_day"})
+
     def action_state(self) -> None:
         if self.board.jev_state:
             self.push_screen(StateView(self.board.jev_state))
         else:
-            self.notify("no brain pass yet, so no state to show")
+            self.notify("no brain pass yet, so no prompt to show")
 
     def action_timeline(self) -> None:
         self.timeline.set_class(not self.timeline.has_class("shown"), "shown")

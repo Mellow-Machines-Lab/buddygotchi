@@ -91,8 +91,10 @@ a Developer ID, so the first time macOS refuses to open it: they choose
 Open Anyway in System Settings → Privacy & Security. It's the real app,
 so it installs its hooks into their Claude Code and Codex.
 
-The dashboard shows the face, Boop's mood, its automatic reactions and the
-ones Jev decided, and can force any mood or reaction. `b` saves a bug
+The dashboard shows the face, Boop's mood and memory, its automatic
+reactions and the ones Jev decided, with the CONTEXT Jev last read. It can
+force a mood or a reaction, and `d` closes Boop's day at once, so the dream
+and the night's write show in seconds. `b` saves a bug
 report, as the popover's ladybug does, and with Boop on the simulator a
 report gets the board's screen too.
 

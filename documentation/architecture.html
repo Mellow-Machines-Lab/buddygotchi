@@ -136,6 +136,7 @@ td.where{font-size:13px;white-space:nowrap}
     <li><b>The outputs.</b> The mood output keeps or moves the mood. The react output applies its code rules (Talk, hush, needs you), picks a recorded take, adds the reason, and sends a <code>do</code> to the board.</li>
     <li><b>The board.</b> LinkKit's queue plays it when the reaction before it ends. The board picks the design's variation, sizes a finish by the turn's length, plays the take, and reports <code>ended</code>. Between reactions it deals its pastimes by the tiers.</li>
   </ol>
+  <p><b>Watching it:</b> in debug mode every step above lands in <code>debug.jsonl</code>, the transcript's events, the view's lines, each pass with its prompt and answers, and every message sent to the board. <code>boopctl dash</code> reads only that file: Boop now with the CONTEXT Jev last read, then the mood and memory, the rules' reactions and Jev's, side by side.</p>
   <p><b>Where decisions are made:</b> agent-hooks (which hooks count, needs you); the prompt reader (readings); the core (the look, needs you, the tags and tiers, hush, the start's reaction, BOOT's line, the drawer); the work stream (which word plays); the view (lines, runs, what wakes the brain, the heartbeats); Jev (the mood and every other reaction); the react output's code (silences, the signs offered, takes); the board (the queue, variations, pastimes, what a touch is); and the pack (the mood graph's prose, every look and sound).</p>
 </section>
 

@@ -40,6 +40,8 @@ extension Runtime {
             }
         case "report":
             saveReport { _ in }
+        case "close_day":
+            closeDay()
         default:
             break  // a dev line it doesn't know
         }
@@ -112,6 +114,15 @@ extension Runtime {
             return
         }
         run(step)
+        changed()
+    }
+
+    /// Closes Boop's day now, as 5:00 would: the dream, then the night's
+    /// write (`Memory.closeNow`).
+    func closeDay(who: String = "dev") {
+        guard let remembers else { return options.log("\(who): no memory, so no day to close") }
+        options.log("\(who): closing Boop's day now")
+        remembers.closeNow(wall: options.wallClock())
         changed()
     }
 

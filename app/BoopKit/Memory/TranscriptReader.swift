@@ -86,6 +86,16 @@ public final class Checkpointed<R: TranscriptReader> {
         save()
     }
 
+    /// Closes the open day now, as 5:00 would, and opens the same day
+    /// afresh, its carry kept: debug mode's `close_day`. The day closes
+    /// again at 5:00, where a reader that writes once a day (the dream)
+    /// keeps what it wrote now.
+    public func closeNow() {
+        guard let c = checkpoint else { return }
+        checkpoint = closed(c, to: c.day, live: true)
+        save()
+    }
+
     /// Changes the open day's state, and saves it.
     public func update(_ change: (inout R.State) -> Void) {
         guard var c = checkpoint else { return }

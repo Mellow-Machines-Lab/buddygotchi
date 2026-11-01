@@ -176,6 +176,19 @@ public final class Memory: @unchecked Sendable {
         note("memory: dreamed about \(dream.weekday) (\(dream.day)): \(dream.sentence)")
     }
 
+    /// Closes Boop's day now, as 5:00 would (`Checkpointed.closeNow`): the
+    /// dream, logged at once, then the night's write, which lands when
+    /// the writer answers. Debug mode's `close_day`, so memory can be
+    /// watched in seconds. A day nobody was in has no dream, and a day
+    /// dreamed of already keeps its dream.
+    public func closeNow(wall: Int64) {
+        guard let t = today, let day = runner.day else { return note("memory: no day open to close") }
+        if t.yours == 0 { note("memory: nobody was there on \(day), so no dream") }
+        if dream?.day == day { note("memory: \(day) is dreamed of already, so no new dream") }
+        runner.closeNow()
+        tick(wall: wall)
+    }
+
     /// The events the files hold after the checkpoint, read as the day
     /// they came: a launch after a crash or a quit catches up through the
     /// same reader, with no lines. A day closed on the way writes its dream

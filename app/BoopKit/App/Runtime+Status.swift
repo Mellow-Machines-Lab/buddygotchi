@@ -157,7 +157,7 @@ extension Runtime {
             }
         }
         grew = false
-        if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
+        if let line = DebugLog.status(status, today: remembers?.today, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)
     }
 }

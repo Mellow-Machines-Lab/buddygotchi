@@ -1129,10 +1129,12 @@ final class RuntimeTests: XCTestCase {
         }
         XCTAssertTrue(sentBy.contains { $0.by == "brain" }, "the brain's reaction")
 
-        // Status: only the facts the device lines don't carry, and only changes.
+        // Status: only the facts the device lines and CONTEXT don't carry,
+        // and only changes; the mood's reason once something moved it.
         let statuses = lines.compactMap { $0["status"] as? [String: Any] }
         XCTAssertFalse(statuses.isEmpty)
-        XCTAssertEqual(Set(statuses[0].keys), ["brain", "sessions", "connected", "stage"], "a state carries the mood")
+        XCTAssertEqual(Set(statuses[0].keys), ["brain", "sessions", "connected", "stage", "xp", "today_xp"], "a state carries the mood")
+        XCTAssertEqual(statuses[0]["today_xp"] as? [String: Int], ["work": 0, "work_cap": 60, "care": 0, "care_cap": 60])
         XCTAssertEqual(statuses.last?["brain"] as? String, "scripted")
         XCTAssertEqual(statuses.last?["connected"] as? Bool, true)
         let sessions = try XCTUnwrap(statuses.last?["sessions"] as? [[String: String]])
@@ -1249,6 +1251,73 @@ final class RuntimeTests: XCTestCase {
         XCTAssertNil(passes[0]["options"], "the launch's options, calm's")
         let moved = try XCTUnwrap(passes.last?["options"] as? [String: [String]])
         XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours["happy"]!.all])
+    }
+
+    /// `{"dev":"close_day"}`, the dashboard's `d`: Boop's day closes now,
+    /// as at 5:00, with its dream logged at once for the next coming back
+    /// or touch to tell, and the day opened afresh; a day dreamed of
+    /// already keeps its dream. The status line carries what CONTEXT
+    /// lacks: the XP, today's from each pool against its cap
+    /// (`Growth.workPerDay`, `carePerDay`).
+    func testClosingTheDayNowDreams() throws {
+        let transport = FakeTransport()
+        var options = try options(transport, readJevKey: { _ in nil })
+        options.debug = true
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        dev(#"{"dev":"tap"}"#)
+        eventually("the tap read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
+        let today = try XCTUnwrap(runtime.home.sync { runtime.remembers?.runner.day })
+        let dreams = { self.debugLines().compactMap { $0["event"] as? [String: Any] }.filter { $0["kind"] as? String == "dream" } }
+
+        dev(#"{"dev":"close_day"}"#)
+        eventually("the dream, logged at once") { dreams().count == 1 }
+        XCTAssertEqual((dreams().first?["data"] as? [String: Any])?["day"] as? String, today)
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.dream?.day }, today)
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.runner.day }, today, "the same day, opened afresh")
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.today?.yours }, 0)
+        dev(#"{"dev":"tap"}"#)
+        eventually("the next touch tells it") {
+            self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == today }
+        }
+        XCTAssertTrue(runtime.home.sync { runtime.remembers?.dream?.told } == true)
+        dev(#"{"dev":"close_day"}"#)
+        dev(#"{"dev":"tap"}"#)
+        eventually("the dev lines after it read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
+        XCTAssertEqual(dreams().count, 1, "a day dreamed of keeps its dream")
+
+        let status = try XCTUnwrap(debugLines().compactMap { $0["status"] as? [String: Any] }.last)
+        XCTAssertNotNil(status["xp"] as? Int)
+        XCTAssertEqual((status["today_xp"] as? [String: Int])?["work_cap"], Growth.workPerDay)
+        XCTAssertEqual((status["today_xp"] as? [String: Int])?["care_cap"], Growth.carePerDay)
+        XCTAssertEqual(Growth.workPerDay, 60, "the dashboard shows each pool against 60")
+        XCTAssertEqual(Growth.carePerDay, 60)
+    }
+
+    /// DebugLog.status: the stage, the XP, today's XP from each pool
+    /// against its cap and the mood's reason, which the dashboard shows
+    /// beside CONTEXT; a line only when something changed.
+    func testTheStatusLineCarriesWhatContextLacks() throws {
+        var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(base: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
+                                    sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234))
+        status.moodReason = Reason(cause: "You came back after 26 hours away.")
+        var today = MemoryReader.Tallies()
+        today.workXP = 12
+        today.careXP = 6
+        var last: String?
+        let line = try XCTUnwrap(DebugLog.status(status, today: today, at: 5, last: &last))
+        let o = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any])
+        let fields = try XCTUnwrap(o["status"] as? [String: Any])
+        XCTAssertEqual(fields["mood_reason"] as? String, "Pip is lonely. You came back after 26 hours away.")
+        XCTAssertEqual(fields["xp"] as? Int, 1234)
+        XCTAssertEqual(fields["stage"] as? Int, 3)
+        XCTAssertEqual(fields["today_xp"] as? [String: Int], ["work": 12, "work_cap": 60, "care": 6, "care_cap": 60])
+        XCTAssertNil(DebugLog.status(status, today: today, at: 6, last: &last), "unchanged")
+        today.workXP = 13
+        XCTAssertNotNil(DebugLog.status(status, today: today, at: 7, last: &last), "XP earned")
     }
 
     /// BOOT held and let go turns the mic on and off; with
