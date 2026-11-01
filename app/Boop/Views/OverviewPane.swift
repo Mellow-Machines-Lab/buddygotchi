@@ -174,7 +174,6 @@ struct OverviewPane: View {
         if let status = model.status {
             let s = status.snapshot
             let all: [(String, String)?] = [
-                status.personality != .default ? ("theatermasks.fill", status.personality.rawValue.capitalized) : nil,
                 status.talk != .default ? ("bubble.left.and.bubble.right.fill", status.talk.title) : nil,
                 s.vol == 0 ? ("speaker.slash.fill", "Muted") : nil,
             ]

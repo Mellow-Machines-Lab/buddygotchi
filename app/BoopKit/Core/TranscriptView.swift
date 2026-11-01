@@ -322,14 +322,13 @@ public final class TranscriptView {
     /// Whether the kinds `keeps` names have lines: turns'
     /// starts and ends, "needs you", pokes, what you said, you stepping
     /// away and coming back, and heartbeats, and tool calls' ends when
-    /// notable, or every one with `allToolEnds` (the personality's
-    /// `tool_uses: all`).
-    public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
+    /// notable.
+    public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool) -> Bool {
         switch (type, phase) {
         case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil), (.prompt?, nil),
              (.lastMessage?, nil), (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
-        case (.tool?, .end?): notable || allToolEnds
+        case (.tool?, .end?): notable
         default: false
         }
     }
@@ -596,7 +595,7 @@ public final class TranscriptView {
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
-    /// notable, or for every one with `tool_uses: all`.
+    /// notable.
     func toolDone(_ c: inout Counts, _ t: Thread, _ a: AgentEvent, topic: String?, started: Int64?) -> Line? {
         let failed = a.failed
         let tookMs = started.map { max(0, a.at - $0) }
@@ -632,15 +631,13 @@ public final class TranscriptView {
                 setTopic(&c, topic, "edited")
             }
         }
-        guard TranscriptView.keeps(.tool, .end, notable: notable, allToolEnds: rules.toolUses == .all) else { return nil }
+        guard TranscriptView.keeps(.tool, .end, notable: notable) else { return nil }
         let category = EventLine.category(ToolKind.of(a.tool))
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
-        let text = notable && rung > 0
+        let text = rung > 0
             ? EventLine.failing(agent: t.agent.rawValue, thread: threadLine(t), count: rung, name: onlyName)
-            : notable
-            ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
+            : EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
                               inARow: failedBefore + 1)
-            : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
         var facts: [String: JSONValue] = [
             "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(a.tool),
             "tool_use_id": .of(a.toolUseID), "topic": .of(topic), "result": .string(result),

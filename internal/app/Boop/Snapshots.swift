@@ -476,7 +476,7 @@ enum Snapshots {
     /// `sessions` are agent, project, `wait`, `work` or `idle`, and
     /// optionally the thread's name and its workspace.
     static func status(base: String = "working", sessions rows: [[String]] = [], vol: Int = 6,
-                       connected: Bool = true, personality: Personality = .default, talk: Talk = .default,
+                       connected: Bool = true, talk: Talk = .default,
                        name: String = "Mochi", brain: String = "jev:jev-latest", keyRead: Bool = true,
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
@@ -517,7 +517,7 @@ enum Snapshots {
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
                               device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice, face: face) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
-                              personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
+                              brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
         // Its age and its memory's recent days, read the day after.
         status.talk = talk

@@ -24,7 +24,7 @@ final class HarnessTests: XCTestCase {
     /// outputs, as MellowHarness needs.
     func testQuestionKeysMustBeUniqueAcrossActions() {
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
-        let (harness, _) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering, personality: { .default },
+        let (harness, _) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering,
                                            queue: { _, _ in })
         let keys = harness.outputs.flatMap { $0.questions(now: nil, log: Self.log).map(\.key) }
         XCTAssertEqual(keys, askedKeys)
@@ -38,12 +38,12 @@ final class HarnessTests: XCTestCase {
         let steering = RuntimeTests.steering
         func prompt(_ steering: Steering) throws -> String {
             let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
-            let (harness, _) = Runtime.harness(pipeline: pipeline, steering: steering, personality: { .default },
+            let (harness, _) = Runtime.harness(pipeline: pipeline, steering: steering,
                                                queue: { _, _ in })
             return harness.prompt(for: try XCTUnwrap(pipeline.poke(at: 1000).recorded.first))
         }
         let whole = try prompt(steering)
-        XCTAssertTrue(whole.contains(steering.personality(.default).text + "\n\n" + steering.mood(MoodOutput.initial)), whole)
+        XCTAssertTrue(whole.contains(steering.personality.text + "\n\n" + steering.mood(MoodOutput.initial)), whole)
         var files = steering.files
         files["nature/sweet"] = "At heart it is sweet."
         let stray = try prompt(Steering(files: files, frontMatter: steering.frontMatter))
@@ -374,7 +374,7 @@ final class HarnessTests: XCTestCase {
     /// mood.
     func testAForcedMoodChangesItAsJevsDoes() throws {
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
-        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering, personality: { .default },
+        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering,
                                               queue: { _, _ in })
         var told: [String] = []
         harness.on(Event.did) { e in if e.action == MoodOutput.outputName, e["ok"]?.bool == true { told.append(e["to"]!.string!) } }

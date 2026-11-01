@@ -222,7 +222,7 @@ final class RuntimeTests: XCTestCase {
                     && $0.contains(#""mood":"excited""#)
             }
         }
-        XCTAssertEqual(AppSettings.load(from: dir).personality, .default)
+        XCTAssertEqual(AppSettings.load(from: dir).talk, .default)
     }
 
     /// The agents' work earns XP as it happens, which
@@ -1080,7 +1080,7 @@ final class RuntimeTests: XCTestCase {
     /// brain keeps the mood, whose options would change with it), every
     /// line sent to the device verbatim with who sent it (`brain` for the
     /// brain's reactions, `rule` for the rest), and a status line whenever
-    /// the mood, personality, brain, sessions or connection change.
+    /// the mood, brain, sessions or connection change.
     func testDebugModeWritesTheDashboardsLines() throws {
         let transport = FakeTransport()
         var options = try options(transport)
@@ -1132,7 +1132,7 @@ final class RuntimeTests: XCTestCase {
         // Status: only the facts the device lines don't carry, and only changes.
         let statuses = lines.compactMap { $0["status"] as? [String: Any] }
         XCTAssertFalse(statuses.isEmpty)
-        XCTAssertEqual(Set(statuses[0].keys), ["personality", "brain", "sessions", "connected", "stage"], "a state carries the mood")
+        XCTAssertEqual(Set(statuses[0].keys), ["brain", "sessions", "connected", "stage"], "a state carries the mood")
         XCTAssertEqual(statuses.last?["brain"] as? String, "scripted")
         XCTAssertEqual(statuses.last?["connected"] as? Bool, true)
         let sessions = try XCTUnwrap(statuses.last?["sessions"] as? [[String: String]])
@@ -1402,22 +1402,22 @@ final class RuntimeTests: XCTestCase {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
         XCTAssertEqual(files, (["asks.md", "dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["personality/boop.md", "replies.md", "signs.md"]).sorted())
+                               + ["personality.md", "replies.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.dreams.count, 10, "a sign for every kind of day")
-        let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
-        XCTAssertEqual(Self.steering.personality(.default).rules, boop)
-        XCTAssertEqual(Self.steering.rules(.default, talk: .normal), boop, "normal keeps the personality's pace")
+        let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000)
+        XCTAssertEqual(Self.steering.personality.rules, boop)
+        XCTAssertEqual(Self.steering.rules(talk: .normal), boop, "normal keeps the personality's pace")
         // Quiet looks in less often, chatty more; neither hears every tool use.
-        XCTAssertEqual(Self.steering.rules(.default, talk: .quiet),
-                       Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000, toolUses: .notable))
-        XCTAssertEqual(Self.steering.rules(.default, talk: .chatty),
-                       Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000, toolUses: .notable))
+        XCTAssertEqual(Self.steering.rules(talk: .quiet),
+                       Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000))
+        XCTAssertEqual(Self.steering.rules(talk: .chatty),
+                       Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000))
         XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
-        XCTAssertTrue(Self.steering.personality(.default).text.hasPrefix("PERSONALITY\n"))
+        XCTAssertTrue(Self.steering.personality.text.hasPrefix("PERSONALITY\n"))
         XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
     }
 
@@ -1428,7 +1428,6 @@ final class RuntimeTests: XCTestCase {
         let old = #"{"mode":"calm","brain":"jev","classifier":"rules","writer":"none","volume":3,"focus":true,"away":true,"awaySince":"2026-09-20","finished":148,"projects":["jetpack"]}"#
         try Data(old.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
         let settings = AppSettings.load(from: dir)
-        XCTAssertEqual(settings.personality, .default)
         XCTAssertEqual(settings.volume, 3)
         try settings.save(to: dir)
         let text = try String(contentsOf: dir.appendingPathComponent(AppSettings.file), encoding: .utf8)
@@ -1461,18 +1460,16 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// The personality and how much it says are saved; a missing or
-    /// unknown one is the default. Chatter, the debugging personality
-    /// before Talk, comes back as boop, chatty.
-    func testSettingsKeepThePersonalityAndTalk() throws {
-        try requirePack("boop")  // its personality and its steering
+    /// How much it says is saved; a missing or unknown one is the default.
+    /// Chatter, the debugging personality before Talk, comes back chatty;
+    /// a saved personality is ignored, each pack having one.
+    func testSettingsKeepTheTalk() throws {
+        try requirePack("boop")  // its steering
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let cases: [(String, Personality, Talk)] = [(#"{"personality":"chatter"}"#, .default, .chatty),
-                                                    (#"{"personality":"loud","talk":"loud"}"#, .default, .normal),
-                                                    (#"{"talk":"quiet"}"#, .default, .quiet), (#"{}"#, .default, .normal)]
-        for (json, p, t) in cases {
+        let cases: [(String, Talk)] = [(#"{"personality":"chatter"}"#, .chatty), (#"{"personality":"loud","talk":"loud"}"#, .normal),
+                                       (#"{"talk":"quiet"}"#, .quiet), (#"{}"#, .normal)]
+        for (json, t) in cases {
             try Data(json.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
-            XCTAssertEqual(AppSettings.load(from: dir).personality, p, json)
             XCTAssertEqual(AppSettings.load(from: dir).talk, t, json)
         }
         var saved = AppSettings()
@@ -2055,7 +2052,7 @@ final class RuntimeTests: XCTestCase {
     func testHistoryClosesWithTheMoodsTime() throws {
         let clock = VirtualClock(1_790_000_000_000)
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView(), clock: Harness.Clock(now: { clock.now }))
-        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, personality: { .default }, queue: { _, _ in })
+        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, queue: { _, _ in })
         func log() -> LogView { harness.log.view(now: clock.now) }
         func closing() -> String? { MoodOutput.sinceLine(mood, log(), at: clock.now) }
         func change(_ to: String) { harness.force(mood, by: Runtime.forcedBy) { MoodOutput.change(mood, to: to, log: log()) } }
@@ -2067,7 +2064,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(closing(), "\(creature) has been grumpy for 2 min.", "whole minutes, as HISTORY's")
         let relaunched = Pipeline(core: Core(config: .init()), view: TranscriptView(), transcript: harness.log,
                                   clock: Harness.Clock(now: { clock.now }))
-        let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, personality: { .default }, queue: { _, _ in })
+        let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, queue: { _, _ in })
         XCTAssertEqual(MoodOutput.sinceLine(again, log(), at: clock.now), "\(creature) has been grumpy for 2 min.",
                        "the mood and its time are the log's, so a relaunch keeps both")
         change("happy")

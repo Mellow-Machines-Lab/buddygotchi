@@ -110,7 +110,7 @@ final class ContextTests: XCTestCase {
     func testTheSectionsPlaceInThePrompt() throws {
         let rig = CoreRig()
         let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
-        let (h, _) = Runtime.harness(pipeline: rig.pipeline, steering: RuntimeTests.steering, personality: { .default },
+        let (h, _) = Runtime.harness(pipeline: rig.pipeline, steering: RuntimeTests.steering,
                                      queue: { _, _ in }, memory: { "MEMORY (what Boop remembers.)\nYou\n- a note" },
                                      remembers: memory)
         memory.attach(to: rig.pipeline)

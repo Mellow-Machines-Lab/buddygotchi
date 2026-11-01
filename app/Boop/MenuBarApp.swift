@@ -289,8 +289,6 @@ final class AppModel: ObservableObject {
         }
         refreshLoginItem()
     }
-    /// Who Boop is, chosen in settings.
-    var personality: Personality { status?.personality ?? .default }
     /// How much it says, chosen in settings.
     var talk: Talk { status?.talk ?? .default }
 
@@ -578,13 +576,6 @@ final class AppModel: ObservableObject {
         guard status?.workStream != on else { return }
         status?.workStream = on
         runtime?.setWorkStream(on)
-    }
-
-    /// Takes effect from the next event.
-    func setPersonality(_ personality: Personality) {
-        guard personality != self.personality else { return }
-        status?.personality = personality
-        runtime?.setPersonality(personality)
     }
 
     /// Takes effect from the next event.

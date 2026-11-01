@@ -14,13 +14,13 @@ What a pack holds, and what it must have:
 | --- | --- | --- |
 | `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
 | `steering/guide.md` | yes | How it reads what happens, for the brain (§7) |
-| `steering/personality/<id>.md` | yes, one for each personality | Who it is (§7) |
+| `steering/personality.md` | yes | Who it is (§7) |
 | `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
-| `mac/faces.json` | with the pixel face, or used (§6) | The pixel face's moods and the popover's still faces (§9) |
+| `mac/faces.json` | with the pixel face | The pixel face's moods and the popover's still faces (§9) |
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
-| `mac/takes.tsv` and `voice/voice.bin` | no, both or neither, or used (§6) | Its recorded voice (§8) |
+| `mac/takes.tsv` and `voice/voice.bin` | no, both or neither | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
 | `demo/recordings/<name>.json` | one for each demo of one buddy | What the board was sent as the demo played, which the simulator's page plays (§13) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
@@ -36,8 +36,8 @@ make -C internal build && .build/debug/boopdev check # every pack in characters/
 ```
 
 `boopdev check` reads a pack as the engine does: `character.json`, the
-steering, the faces' files, the voice, every demo, and its moods, what
-it uses and its studio entry (`charactergen.py --check`). A pack that passes plugs in. Then
+steering, the faces' files, the voice, every demo, and its moods and
+its studio entry (`charactergen.py --check`). A pack that passes plugs in. Then
 build the firmware with it, to check its faces:
 `CHARACTER=<name> make -C internal fw-test`. The engine's own Swift tests
 (`make -C internal test`) run with Boop's pack, whose name, moods,
@@ -118,7 +118,7 @@ The first of these wins:
 
 `python3 characters/charactergen.py --stage` lays the chosen pack out in
 `.character-build/` at the repo root (also ignored): `staged/<name>/`,
-the staged pack, its own files and those it uses from another pack (§6),
+the staged pack, its own files,
 each a link to the file in its pack, but for what makes it, which no
 build reads (`design/`, `references/` and `review/`); `pack`, the one
 pointer to it; and
@@ -131,7 +131,7 @@ one is replaced whole, dated then, so a build reading `.character-build/`
 while another stages finds every file there. The app bundles only what it
 reads of a pack (not its firmware, rig, voice file, tools or tests): the
 chosen pack's, which `packs/chosen` names, and beside it every other
-pack in the chosen one's folder, each with what it uses, for buddies
+pack in the chosen one's folder, for buddies
 that run another pack. Several buddies run side by side, each a board
 with its own pack, and the app loads each buddy's pack by its `id`
 (`Buddy`, internal/VERIFICATION.md §2's `--buddies`).
@@ -170,7 +170,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
   LICENSE            optional: the pack's own licence (§11)
   steering/          what the brain reads (§7)
     guide.md
-    personality/<name>.md
+    personality.md
     mood/<mood>.md
     dreams.md, signs.md, replies.md   optional: the dream's signs and the signs
     asks.md          optional: what it may ask you
@@ -214,12 +214,6 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
   "version": "0.1.0",
   "default_mood": "calm",
   "startup_mood": "happy",
-  "personalities": [
-    {
-      "id": "pixel",
-      "about": "Reacts to what stands out, and stays quiet otherwise."
-    }
-  ],
   "moods": [
     {
       "id": "calm",
@@ -256,12 +250,9 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
 | `version` | yes | The pack's version. A Mac and a board with different versions of the same pack fall back safely (§10) |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood`. Boop's is `happy`, as the board always started |
-| `personalities` | yes | The personalities, each a name or `{"id": name, "about": one line}`, with a file each in `steering/personality/`. The first is the default. `about` is what Settings says it does |
 | `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
 | `faces` | yes | The face each board draws, by the board's name: `cyd24`, `amoled206` (§9). A board it names none for won't build with it |
-| `uses` | no | What it takes from another pack: each share's name, and the pack that has it (§6) |
-| `shares` | no | What it lends: each share's name, with its `files` and its `studio` previews (§6) |
 
 Unknown keys are ignored, so a newer pack still loads in an older engine.
 
@@ -294,47 +285,14 @@ minutes the mood's file gives are up; pacing, how long a mood holds and
 when it fades, is the steering's (§7). Pixel's moves are the same as
 Boop's.
 
-## 6. A pack stands alone or names what it uses
+## 6. A pack stands alone
 
-A pack has every file the engine reads in its own folder, or names the
-pack it takes some of them from. The engine never knows: it reads the
-staged pack (§2), where staging has laid them out together, and never
-falls back to another pack on its own.
-
-A pack that lends files lists them in `shares`, by a name for each
-share: the files and folders it takes in, and the studio previews that
-show it (§12). A pack that takes them names each share it uses, and the
-pack beside it in the same folder that has it, in `uses`. Boop's two
-packs stand alone, each in a repository of its own, so neither shares;
-a pack that lent its pixel face and voice, and one that used both,
-would say:
-
-```json
-"shares": {
-  "pixel_face": {
-    "files": ["firmware/include/faces.h", "firmware/include/sfx.h", "firmware/src/render/pixel", "mac/faces.json",
-              "tests/firmware/test_scene", "tests/firmware/test_rig_face"],
-    "studio": ["pixel"]
-  },
-  "voice": {
-    "files": ["voice/voice.bin", "mac/takes.tsv"]
-  }
-}
-```
-
-```json
-"uses": {
-  "pixel_face": "pixel",
-  "voice": "pixel"
-}
-```
-
-The shared files are then in the lender's pack only, and change for
-both at once. A pack takes only the lender's own files,
-not what the lender uses in turn, and never a file it has itself.
-`charactergen.py` refuses a share that isn't there, or a file it names
-that isn't, and `boopdev check` reads a pack's files as staging lays
-them out.
+A pack has every file the engine reads in its own folder. The engine
+never knows another pack: it reads the staged pack (§2) and never falls
+back to another on its own. Two packs that want the same voice or face
+copy it, each in its own repository, as Boop's two do.
+`charactergen.py` refuses a pack that names `uses` or `shares`, the
+keys an older engine had for borrowing another pack's files.
 
 ## 7. Steering
 
@@ -342,11 +300,11 @@ What the brain reads, in plain Markdown:
 
 - `guide.md` (required): how the creature reads what happens, read on
   every pass.
-- `personality/<name>.md` (one per name in `personalities`): who it is,
-  with front matter for the view's rules: `working_heartbeat` (seconds
-  between check-ins on a turn), `idle_heartbeat` (seconds between idle
+- `personality.md` (required): who it is, one per pack, with front
+  matter for the view's rules: `working_heartbeat` (seconds between
+  check-ins on a turn) and `idle_heartbeat` (seconds between idle
   check-ins while you're around and no agent works; without it, only
-  the hourly heartbeat) and `tool_uses`. Its Examples quote NOW's lines
+  the hourly heartbeat). Its Examples quote NOW's lines
   as the view writes them, where your prompt and the agent's last
   message are only their readings: `You asked claude on "api" for a
   fix, in a sentence, frustrated.`, and a finish `…, 8 tool calls,
@@ -379,9 +337,7 @@ What the brain reads, in plain Markdown:
   before it are the moments any temperament plays the same way, so a
   new temperament rewrites only the closing part. The temperament says
   how a moment looks, never that more moments get a reaction. Nothing is laid over it but the mood and how much
-  it says, and `boopdev check` notes a leftover `nature/` file, which
-  nothing reads. The person picks one in Settings when the pack has
-  more than one (Boop's has one, `boop`).
+  it says.
 - No talk files: how much it says (`Talk`, picked in Settings, normal at
   first) is held in code and told to the brain in CONTEXT's Talk row.
   On Quiet `say` offers no topic and no swear, and a small moment or a
@@ -434,7 +390,7 @@ What the brain reads, in plain Markdown:
   question, asked only when NOW is a prompt's reading, not a message's). Each is
   `- [tags] words`: the tags (optional) the reading must all have (its
   kind, tone and length, `named` when you said this buddy's own name,
-  `words`, and the calendar's), and
+  and the calendar's), and
   `{words}` (or `{WORDS}`, in capitals) is filled in once for each of
   your phrases, so your own words come back in the creature's way. Your
   words come first, at most three of them so a tagged caption still has
@@ -510,7 +466,7 @@ it's small, a word medium, a phrase big or huge):
   reports. A take that's also a reply's words is in it again, by the
   same id, as part `reply`: the voice file has it once.
 
-A pack may have them, or use another's (§6). Both are built files and
+A pack may have them, or not. Both are built files and
 checked in. The one voice there is is Boop's: 2,722 takes recorded, and
 placeholders that espeak-ng speaks for the lines not recorded yet, each
 on the bank's list to record (`plans/regenerate.json` in its
@@ -833,7 +789,7 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
   makes, from `rig/`.
 - Every pack's faces draw with the palette of the pixel face's
   `faces.h` (`render/palette.h` includes it). So a pack's firmware
-  carries that file, or uses it. Boop's carries the part the palette
+  carries that file. Boop's carries the part the palette
   reads, a copy of its colours alone, as the gel draws none of Pixel's
   designs.
 
@@ -965,17 +921,16 @@ Pixel's:
   the board's (`StudioBoard.adapter`) and adds to it; with none, the card
   is the board's own.
 
-A pack also shows the previews of each share it uses (§6). And every
-pack gets, with no entry, the board's own preview of each face its boards
+Every pack gets, with no entry, the board's own preview of each face its boards
 have (`faces`, §9), its id `board-<face>`: the firmware itself, built to
 WebAssembly, which the studio's Transitions and References run on too
 (§16). So Boop's shows three: its gel board (`board-gel`, the entry above
 adds its families, its icon, and the slime's review sets and sound
 sketches in its drawer), Pixel's `pixel`, which comes with the pixel face,
 and its pixel board. Beside the previews, the studio shows each pack's own character with no
-entry at all: its personalities, talk and guide (§7), each mood's
+entry at all: its personality and guide (§7), each mood's
 steering in parts and the moods it moves to (§5), its signs and dream signs,
-its voice's takes (§8, its own or the one it uses), its demos (§13), its
+its voice's takes (§8), its demos (§13), its
 evals and its golden frames (`tests/golden-*/`).
 `charactergen.py` writes the page's data
 (`characters/studio/packs.js`) from the packs, and `--check` fails when
@@ -1001,8 +956,8 @@ and play one: [DEMOS.md](DEMOS.md).
    `studio` entry until you need them.
 2. Change the moods' meanings and moves (§5). Every pack has
    the same moods, so keep every one; its faces must draw them all.
-3. Rewrite `steering/guide.md`, `steering/personality/` and
-   in its voice, and a `steering/mood/` file for each mood that needs one.
+3. Rewrite `steering/guide.md` and `steering/personality.md` in its
+   voice, and a `steering/mood/` file for each mood that needs one.
 4. Change the faces, or keep Pixel's, which the copy already has. Keep
    its voice too, or delete `voice/` and `mac/takes.tsv` for a creature
    that doesn't speak.
@@ -1129,7 +1084,7 @@ them with its pastimes (below, The gel on the rig).
 
 Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state,
-clip or tag, a style that isn't a mood the pixel face the pack has or uses
+clip or tag, a style that isn't a mood the pixel face the pack has
 draws (its `faces.h`'s), a value out of its range, keys out of order, a
 loop that doesn't close, an occasion that loops or would always fit, a
 tier's clip that doesn't loop or a key of `tiers` that isn't a tier and a

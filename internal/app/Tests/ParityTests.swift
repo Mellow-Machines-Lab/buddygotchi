@@ -22,7 +22,7 @@ final class ParityTests: XCTestCase {
     func testATapCutReactionOutlastsReactsOpenForWhileThePokesGoOn() {
         XCTAssertEqual(ReactOutput.openForMs, 90_000)
         let rig = CoreRig()
-        let (h, _) = Runtime.harness(pipeline: rig.pipeline, steering: Self.steering, personality: { .default }, queue: { _, _ in })
+        let (h, _) = Runtime.harness(pipeline: rig.pipeline, steering: Self.steering, queue: { _, _ in })
         func poke() -> Event {
             rig.poke()
             return h.log.events.last { $0.type == .poke }!

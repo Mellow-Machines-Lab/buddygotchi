@@ -69,7 +69,6 @@ extension Runtime {
     public struct Mind {
         public var buddy: Buddy
         public var steering: Steering
-        public var personality: () -> Personality
         public var reactions: Reactions
         public var queue: (DeviceReaction, Pending) -> Void
         public var speaks: () -> Bool
@@ -89,7 +88,7 @@ extension Runtime {
         /// for CONTEXT; nil with no memory.
         public var company: () -> MemoryReader.Tallies?
 
-        public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
+        public init(buddy: Buddy, steering: Steering, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
                     talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
                     memory: @escaping () -> String? = { nil },
@@ -103,7 +102,6 @@ extension Runtime {
             self.effects = effects
             self.buddy = buddy
             self.steering = steering
-            self.personality = personality
             self.reactions = reactions
             self.queue = queue
             self.speaks = speaks
@@ -183,7 +181,7 @@ extension Runtime {
             h.section { _, v in
                 mine(v) ? m.steering.guide + renamed + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil
             }
-            h.section { _, v in mine(v) ? m.steering.personality(m.personality()).text : nil }
+            h.section { _, v in mine(v) ? m.steering.personality.text : nil }
             // What it remembers, after who it is and before how it feels.
             h.section { _, v in mine(v) ? m.memory() : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }

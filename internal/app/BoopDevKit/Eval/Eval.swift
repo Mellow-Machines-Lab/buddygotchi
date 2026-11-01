@@ -208,9 +208,8 @@ public struct Scenario: Sendable {
     /// Its failures are reported but don't fail the eval, and the report
     /// says when it passes after all.
     public var gap: String?
-    public var personality: Personality
-    /// How much it says, chosen in Settings, whose TALK section follows
-    /// MOOD as in the app: normal unless the file says.
+    /// How much it says, chosen in Settings, told in CONTEXT's Talk row
+    /// and held in code, as in the app: normal unless the file says.
     public var talk: Talk
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
@@ -250,7 +249,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -323,10 +322,6 @@ public struct Scenario: Sendable {
             }
             self.checks = checks
         }
-        personality = try (o["personality"] as? String).map {
-            guard let p = Personality(rawValue: $0) else { throw bad("unknown personality \($0)") }
-            return p
-        } ?? .default
         talk = try (o["talk"] as? String).map {
             guard let t = Talk(rawValue: $0) else { throw bad("talk is quiet, normal or chatty") }
             return t
@@ -661,7 +656,7 @@ public struct Eval {
         let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
-        let rules = steering.rules(scenario.personality, talk: scenario.talk)
+        let rules = steering.rules(talk: scenario.talk)
         // Its agents are made up, and run all through it, their threads
         // never archived.
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
@@ -684,7 +679,7 @@ public struct Eval {
         let remembers = Memory(store: try KeyValueStore(directory: nil), time: time)
         home.sync { remembers.attach(to: pipeline) }
         let (harness, mood) = Runtime.harness(
-            pipeline: pipeline, steering: steering, personality: { scenario.personality }, reactions: reactions,
+            pipeline: pipeline, steering: steering, reactions: reactions,
             queue: { reaction, pending in
                 ending.said = reaction.say?.text
                 ending.takes = reaction.say?.takes.map(\.text) ?? []

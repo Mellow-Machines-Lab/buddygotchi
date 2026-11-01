@@ -20,7 +20,6 @@ public struct CharacterPack: Sendable {
         public let face: String?
         public let faceNotFor: String?
         public let moves: MoodGraph.Moves
-        public let family: String?
     }
 
     /// The pack's folder: its steering, and what the app reads at run time.
@@ -36,10 +35,6 @@ public struct CharacterPack: Sendable {
     /// What the board shows before the Mac sends a mood (CHARACTER.md §4):
     /// the pack's `startup_mood`, else its default mood.
     public let startupMood: String
-    /// The personalities' names, in order: the first is the default.
-    public let personalities: [String]
-    /// What each personality does, in one line, for Settings.
-    public let personalityAbout: [String: String]
     /// Every universal mood (`universalMoods`), in the pack's order.
     public let moods: [Mood]
 
@@ -77,8 +72,7 @@ extension CharacterPack {
     /// Reads `character.json` from a pack's folder, and throws if it isn't
     /// a pack: a key missing, moods that aren't the universal ones, or a
     /// move or default mood that isn't one. Everything the pack has is in
-    /// the one folder: the staged pack's has what it uses from other packs
-    /// too.
+    /// the one folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
         let data: Data
@@ -100,15 +94,7 @@ extension CharacterPack {
         version = try string("version")
         defaultMood = try string("default_mood")
         startupMood = json["startup_mood"] as? String ?? defaultMood
-        // A personality is a name, or {"id": name, "about": one line}.
-        let listed = json["personalities"] as? [Any] ?? []
-        personalities = listed.compactMap { ($0 as? String) ?? ($0 as? [String: Any])?["id"] as? String }
-        personalityAbout = Dictionary(listed.compactMap { item -> (String, String)? in
-            guard let p = item as? [String: Any], let id = p["id"] as? String, let about = p["about"] as? String else { return nil }
-            return (id, about)
-        }, uniquingKeysWith: { a, _ in a })
         moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
-        guard !personalities.isEmpty else { throw CharacterPackError("\(source): personalities is empty") }
         // The board reports the id, and the firmware names each mood in code.
         guard id.wholeMatch(of: /[a-z0-9-]+/) != nil else { throw CharacterPackError("\(source): id \(id) isn't lower case, digits and -") }
         let names = Set(moods.map(\.id))
@@ -138,8 +124,7 @@ extension CharacterPack {
         let moves = m["moves"] as? [String: [String]] ?? [:]
         return Mood(id: id, meaning: meaning, notFor: m["not_for"] as? String,
                     face: m["face"] as? String, faceNotFor: m["face_not_for"] as? String,
-                    moves: MoodGraph.Moves(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
-                    family: m["family"] as? String)
+                    moves: MoodGraph.Moves(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []))
     }
 }
 
@@ -179,8 +164,7 @@ extension CharacterPack {
     /// `CHARACTER`'s in `characters/`, else the one the repo this file was
     /// built from last staged (`.character-build/pack`). Every build stages
     /// first, so there's always one; without it, loading fails and says
-    /// where it looked. A chosen pack that's the one staged is read staged,
-    /// with what it uses from other packs.
+    /// where it looked. A chosen pack that's the one staged is read staged.
     static var defaultDirectory: URL {
         let env = ProcessInfo.processInfo.environment
         if let path = env["BOOP_CHARACTER"], !path.isEmpty {
@@ -199,8 +183,8 @@ extension CharacterPack {
         .appendingPathComponent("../../..").standardizedFileURL
 
     /// The staged pack (`.character-build/pack` names it) when it's
-    /// `folder`'s, its files links into the pack's own, with what the pack
-    /// uses from other packs; else `folder` as it is.
+    /// `folder`'s, its files links into the pack's own; else `folder` as it
+    /// is.
     public static func staged(_ folder: URL) -> URL {
         let pointer = repo.appendingPathComponent(".character-build/pack")
         guard let text = try? String(contentsOf: pointer, encoding: .utf8) else { return folder }

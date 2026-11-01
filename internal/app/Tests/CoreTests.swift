@@ -255,7 +255,7 @@ func woke(_ fx: Fx) -> [String] {
 
 /// A chatty Boop's rules, for tests that need the working heartbeat often.
 extension Personality.Rules {
-    static let chatty = Personality.Rules(workBeatMs: 45_000...90_000, toolUses: .notable)
+    static let chatty = Personality.Rules(workBeatMs: 45_000...90_000)
 }
 
 /// The working heartbeats' lines: no rule mumbles,
@@ -2109,7 +2109,7 @@ final class CorePersonalityTests: XCTestCase {
     /// defaults for anything missing or unreadable.
     func testFrontMatter() {
         let chatter = Personality.Rules(frontMatter: "working_heartbeat: 30-60\ntool_uses: all")
-        XCTAssertEqual(chatter, Personality.Rules(workBeatMs: 30_000...60_000, toolUses: .all))
+        XCTAssertEqual(chatter, Personality.Rules(workBeatMs: 30_000...60_000), "tool_uses is no longer read")
         XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: none").workBeatMs, nil)
         XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: 60-30\ntool_uses: loud"), Personality.Rules())
         XCTAssertEqual(Personality.Rules(frontMatter: "chatter: 30-60"), Personality.Rules(),

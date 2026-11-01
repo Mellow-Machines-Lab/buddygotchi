@@ -67,7 +67,7 @@ nothing for (Stills, for a pack with no golden frames):
   it's missing (moods a preview has no art for, moods with no steering
   file or no voice takes, no signs or dream signs) or waiting
   on you (review).
-- **Personality**: each personality (`steering/personality/`), its
+- **Personality**: the pack's personality (`steering/personality.md`), its
   settings in plain words (`working_heartbeat` 240-360 is "checks in on a
   turn every 4–6 min"), its words, a paragraph's first sentence and the
   rest as points, and its Examples as cards, what happened and after the
@@ -83,7 +83,7 @@ nothing for (Stills, for a pack with no golden frames):
   leaves for and when, and when it fades. Its links open every state in
   it (Animations), its voice takes and the evals that expect it.
 - **Behavior**: the engine's, not the pack's, so every pack shows the
-  same, with its own personalities' settings and scenarios. **Map**: the
+  same, with its own personality's settings and scenarios. **Map**: the
   screen's layers, top first (no Mac, listening, needs you, a reaction,
   the look), then everything that puts something on the screen, by what
   sets it off (your agents, you at the Mac, your hand on the board, time
@@ -99,7 +99,7 @@ nothing for (Stills, for a pack with no golden frames):
   links to its passes.
 - **Animations**: **Scene**, **Matrix**, **Transitions** and
   **Stills**, below, with the pack's previews' cards over them: each
-  preview the pack declares or uses (Boop's pack shows its gel board,
+  preview the pack declares (Boop's pack shows its gel board,
   with the slime's tools, and Pixel's pixel face), and then a board for
   each face its boards have that it hasn't declared (On the board,
   below). Switching keeps the mood and state, so the same moment can be
@@ -114,7 +114,7 @@ nothing for (Stills, for a pack with no golden frames):
   needs, and a Play that reads the take from the voice file in part
   (`voice.bin`, by its index, with HTTP ranges), so it needs the
   studio's own server (the simulator's, `simulator/web/serve.py`,
-  reads no ranges). A pack that uses another's voice (§6) shows that one.
+  reads no ranges).
 - **Tests**: **Evals**, each scenario (`evals/`) with its case, why,
   and each step's event and what it expects, filtered by always or a
   search, or from Moods by the mood its steps expect; and **Demos**, each
@@ -245,9 +245,9 @@ own.
 ## Kept in sync
 
 Nothing about a character is written here. `packs.js` comes from the
-packs' `character.json` files, their steering (the personalities,
+packs' `character.json` files, their steering (the personality,
 guide, each mood's file, signs and dream signs), the voice each has or
-uses (its `mac/takes.tsv`, once for every pack that uses it), their
+has (its `mac/takes.tsv`), their
 demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
 `actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a

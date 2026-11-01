@@ -23,7 +23,6 @@ extension Runtime {
         /// That device's `hello.id`, when it gave one: the board its
         /// firmware update is for.
         public var misfit: String?
-        public var personality: Personality
         /// The brain as it runs: `jev:jev-latest`, or `none` without a key.
         public var brain: String
         /// Jev's key has been read, whether there was one or not. Until
@@ -98,7 +97,7 @@ extension Runtime {
         }
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
-                    device: DeviceInfo?, linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil, personality: Personality,
+                    device: DeviceInfo?, linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
                     brain: String, keyRead: Bool = true, brainTrouble: BrainTrouble? = nil, listening: Bool = false,
                     micTrouble: String? = nil, growth: Growth? = nil) {
             self.name = name
@@ -108,7 +107,6 @@ extension Runtime {
             self.device = device
             self.linkTrouble = linkTrouble
             self.deviceTrouble = deviceTrouble
-            self.personality = personality
             self.brain = brain
             self.keyRead = keyRead
             self.brainTrouble = brainTrouble
@@ -132,7 +130,7 @@ extension Runtime {
         let now = options.clock()
         var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: rigs.flatMap { core($0).sessionList(at: now) },
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
-                            deviceTrouble: link.trouble.map(Self.words), personality: personality, brain: harness.brain?.id ?? "none",
+                            deviceTrouble: link.trouble.map(Self.words), brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
                             micTrouble: core.talk.trouble, growth: growth.growth)
         let wall = options.wallClock()

@@ -119,7 +119,7 @@ public enum DebugLog {
     /// stays out). Nil when it's the same as `last`; the runtime writes only
     /// changes.
     public static func status(_ status: Runtime.Status, at ms: Int64, last: inout String?) -> String? {
-        let value = Event.json(["personality": status.personality.rawValue, "brain": status.brain,
+        let value = Event.json(["brain": status.brain,
                                 "connected": status.connected,
                                 "stage": status.growth?.stage ?? 1,
                                 "sessions": status.sessions.map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] }]

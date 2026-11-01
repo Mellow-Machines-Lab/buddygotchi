@@ -137,20 +137,6 @@ public enum EventLine {
         return "\(agent)'s commands keep failing on \(thread): \(count) in \(minutes) minutes, each one hitting \(name) in the face. The turn goes on."
     }
 
-    /// Any other tool use, with the personality's `tool_uses: all`.
-    public static func routine(agent: String, category: String, thread: String, failed: Bool?) -> String {
-        let what = switch category {
-        case "shell": "ran a command"
-        case "edit": "edited a file"
-        case "read": "read a file"
-        case "search": "searched"
-        case "web": "looked something up on the web"
-        case "subagent": "started a subagent"
-        default: "used a tool"
-        }
-        return "\(agent) \(what) on \(thread)." + (failed == true ? " It failed." : "")
-    }
-
     /// `You said to Boop: "…"`: what you said on push-to-talk, quoted and
     /// cut to `messageMax`, like your prompt. Nil for no words.
     public static func said(_ words: String, to name: String = CharacterPack.active.name) -> String? {

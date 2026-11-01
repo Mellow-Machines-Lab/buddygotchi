@@ -15,7 +15,6 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(pack.id, "boop")
         XCTAssertEqual(pack.name, "Boop")
         XCTAssertEqual(pack.defaultMood, "calm")
-        XCTAssertEqual(pack.personalities, Personality.allCases.map(\.rawValue))
         XCTAssertEqual(CharacterPack.active.moods, pack.moods)
     }
 
@@ -92,7 +91,6 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(pixel.moods.map(\.id), boop.moods.map(\.id))
         XCTAssertEqual(pixel.startupMood, "happy")
         for folder in [boopFolder, pixelFolder] {
-            XCTAssertTrue(PackCheck.used(folder).isEmpty, folder.lastPathComponent)
             for path in ["mac/takes.tsv", "voice/voice.bin"] {
                 XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path), "\(folder.lastPathComponent) \(path)")
             }
@@ -112,12 +110,10 @@ final class CharacterPackTests: XCTestCase {
         let folder = Self.repo.appendingPathComponent("characters/pixel")
         let pixel = try CharacterPack(directory: folder)
         let steering = try Steering(directory: folder.appendingPathComponent("steering"), pack: pixel)
-        XCTAssertEqual(pixel.personalities, ["pixel"])
-        XCTAssertNotNil(pixel.personalityAbout["pixel"])
         XCTAssertTrue(steering.guide.contains("Pixel"))
         for (path, text) in steering.files {
             XCTAssertFalse(text.contains("Boop"), path)
-            let budget = path == "guide" ? Steering.Budget.guide : path.hasPrefix("personality/") ? Steering.Budget.personality : Steering.Budget.mood
+            let budget = path == "guide" ? Steering.Budget.guide : path == "personality" ? Steering.Budget.personality : Steering.Budget.mood
             XCTAssertLessThanOrEqual(Steering.tokens(text), budget, path)
         }
         let table = try String(contentsOf: folder.appendingPathComponent("mac/takes.tsv"), encoding: .utf8)
@@ -164,7 +160,7 @@ final class CharacterPackTests: XCTestCase {
     /// universal ones, or that leads to a word that isn't a mood, is refused.
     func testABrokenPackSaysWhy() {
         let every = CharacterPack.universalMoods.map { ["id": $0, "meaning": "\($0)."] as [String: Any] }
-        let json: [String: Any] = ["id": "test", "name": "Test", "version": "1", "default_mood": "calm", "personalities": ["test"],
+        let json: [String: Any] = ["id": "test", "name": "Test", "version": "1", "default_mood": "calm",
                                    "moods": every]
         XCTAssertNil(refusal(json))
         var short = json
@@ -179,9 +175,6 @@ final class CharacterPackTests: XCTestCase {
         var noDefault = json
         noDefault["default_mood"] = "sulky"
         XCTAssertEqual(refusal(noDefault), "test: default_mood sulky isn't a mood")
-        var nobody = json
-        nobody["personalities"] = [String]()
-        XCTAssertEqual(refusal(nobody), "test: personalities is empty")
     }
 
     private func refusal(_ json: [String: Any]) -> String? {

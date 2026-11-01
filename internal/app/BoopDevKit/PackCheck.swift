@@ -16,17 +16,8 @@ public struct PackCheck {
             problems.append("\(error)")
             return
         }
-        let used = Self.used(directory)
-        // A file the pack has, or takes from another with what it uses
-        // (CHARACTER.md §6), as the staged pack has it.
-        func file(_ path: String) -> URL {
-            let own = directory.appendingPathComponent(path)
-            if FileManager.default.fileExists(atPath: own.path) { return own }
-            for (shared, from) in used where path == shared || path.hasPrefix(shared + "/") {
-                return path == shared ? from : from.appendingPathComponent(String(path.dropFirst(shared.count + 1)))
-            }
-            return own
-        }
+        // A file of the pack's: each pack stands alone (CHARACTER.md §6).
+        func file(_ path: String) -> URL { directory.appendingPathComponent(path) }
         func has(_ path: String) -> Bool { FileManager.default.fileExists(atPath: file(path).path) }
 
         // Steering: the guide and each personality, within the budgets, and
@@ -38,15 +29,12 @@ public struct PackCheck {
             }
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
-                    : path.hasPrefix("personality/") ? Steering.Budget.personality
+                    : path == "personality" ? Steering.Budget.personality
                     : path == "replies" ? Steering.Budget.replies : path == "dreams" ? Steering.Budget.dreams
                     : path == "asks" ? Steering.Budget.asks : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
             problems += Self.asks(steering.asks)
-            for path in steering.files.keys.sorted() where path.hasPrefix("nature/") {
-                notes.append("steering/\(path).md isn't read: who the creature is goes in its personality")
-            }
             for path in steering.files.keys.sorted() where path.hasPrefix("talk/") {
                 notes.append("steering/\(path).md isn't read: the Talk setting is held in code, and CONTEXT says it")
             }
@@ -90,25 +78,6 @@ public struct PackCheck {
 
     }
 
-    /// What a pack takes from the packs beside it (CHARACTER.md §6): each
-    /// path its `uses` names, with that file or folder in the pack that
-    /// shares it. charactergen.py checks that they're there.
-    public static func used(_ directory: URL) -> [(String, URL)] {
-        func json(_ folder: URL) -> [String: Any] {
-            (try? Data(contentsOf: folder.appendingPathComponent("character.json")))
-                .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
-        }
-        let uses = json(directory)["uses"] as? [String: String] ?? [:]
-        return uses.sorted(by: { $0.key < $1.key }).flatMap { share, name -> [(String, URL)] in
-            let provider = directory.deletingLastPathComponent().appendingPathComponent(name)
-            let shares = json(provider)["shares"] as? [String: [String: Any]] ?? [:]
-            let files = shares[share]?["files"] as? [String] ?? []
-            return files.map { ($0, provider.appendingPathComponent($0)) }
-        }
-    }
-
-    /// The version in a voice file's header (`voice/voice.bin`): its 16
-    /// bytes after the magic, NUL-padded.
     /// What's wrong with a pack's asks: a line neither a question with two
     /// answers nor a follow-up, a question or answer too long for the
     /// board, or a follow-up to a question or answer the file hasn't.
@@ -139,6 +108,8 @@ public struct PackCheck {
         return found
     }
 
+    /// The version in a voice file's header (`voice/voice.bin`): its 16
+    /// bytes after the magic, NUL-padded.
     public static func voiceFileVersion(_ pack: Data) -> String {
         pack.count < 24 ? "" : String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
     }

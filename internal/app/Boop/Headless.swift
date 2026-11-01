@@ -24,7 +24,6 @@ enum Headless {
         }
         // Every value is checked before anything is written, so a typo
         // doesn't leave a set-up Boop behind for the next run to keep.
-        let personality = args.choice("--personality", of: Personality.allCases.map(\.rawValue)).flatMap(Personality.init(rawValue:))
         let talk = args.choice("--talk", of: Talk.allCases.map(\.rawValue)).flatMap(Talk.init(rawValue:))
         // A demo needs no brain: its script says how Boop reacts.
         let demo = args["--demo"]
@@ -95,7 +94,6 @@ enum Headless {
         // A tap while something needs you opens the thread on this Mac;
         // agents' runs only log where.
         if args.has("--no-open") { options.open = { _ in log.write("open: skipped (--no-open)"); return true } }
-        if let personality { options.personality = personality }
         if let talk { options.talk = talk }
         let runtime: Runtime
         do {

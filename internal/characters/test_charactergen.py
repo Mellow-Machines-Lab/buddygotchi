@@ -200,7 +200,7 @@ class StudioRuleTests(unittest.TestCase):
                                  "studio": [board], "references": [], "review": {"queue": [], "notes": []}})
         # A pack with nothing of its own beside its moods: none of each part, and no voice.
         about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}
-        self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"}, "uses": {},
+        self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"},
                                  "personalities": [], "talks": [], "guide": None, "steering": {}, "signs": [], "dreams": [],
                                  "voice": None, "demos": [], "evals": [], "stills": []})
 
@@ -251,35 +251,17 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual((gen.STAGE / "pack").read_text().strip(), str(gen.STAGE / "staged" / "solo"))
         self.assertEqual(gen.own_folder(gen.STAGE / "staged" / "solo"), pack.resolve())
 
-    def test_staging_takes_what_a_pack_uses(self):
-        """CHARACTER.md §6: a pack that uses another's share is staged with the share's files, linked from that pack."""
-        self.pack("lender", [{"id": "calm", "meaning": "Settled."}], files=[("voice/voice.bin", "v"), ("mac/takes.tsv", "t"), ("firmware/include/art.h", "a")],
-                  shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}, "art": {"files": ["firmware/include/art.h"]}})
-        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], files=[("mac/mirror/index.html", "")],
-                         uses={"voice": "lender", "art": "lender"})
-        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
-        self.addCleanup(setattr, gen, "STAGE", stage)
-        self.assertEqual(gen.stage(pack), 0)
-        view = gen.STAGE / "staged" / "user"
-        self.assertEqual((view / "voice" / "voice.bin").resolve(), (self.dir / "lender" / "voice" / "voice.bin").resolve())
-        self.assertEqual((view / "mac" / "takes.tsv").read_text(), "t")
-        self.assertTrue((view / "mac" / "mirror" / "index.html").exists())
-        self.assertEqual(sorted(p.name for p in (gen.STAGE / "firmware" / "include").iterdir()), ["art.h", "moods.h", "rig_tables.h"])
-        self.assertEqual((gen.STAGE / "packs" / "user" / "mac" / "takes.tsv").read_text(), "t")
-        self.assertFalse((gen.STAGE / "packs" / "user" / "voice").exists())
-
     def test_staging_bundles_every_pack_beside_it_for_buddies(self):
-        """CHARACTER.md §2: the app holds every pack beside the chosen one, each with what it uses, for buddies that run another; packs/chosen names the chosen one."""
-        self.pack("lender", [{"id": "calm", "meaning": "Settled."}], files=[("mac/takes.tsv", "t"), ("steering/guide.md", "")],
-                  shares={"voice": {"files": ["mac/takes.tsv"]}})
-        self.pack("other", [{"id": "calm", "meaning": "Settled."}], files=[("steering/guide.md", "")], uses={"voice": "lender"})
+        """CHARACTER.md §2: the app holds every pack beside the chosen one, for buddies that run another; packs/chosen names the chosen one."""
+        self.pack("lender", [{"id": "calm", "meaning": "Settled."}], files=[("steering/guide.md", "")])
+        self.pack("other", [{"id": "calm", "meaning": "Settled."}], files=[("mac/takes.tsv", "t"), ("steering/guide.md", "")])
         pack = self.pack("chosen-one", [{"id": "calm", "meaning": "Settled."}], files=[("steering/guide.md", "")])
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         self.assertEqual(gen.stage(pack), 0)
         self.assertEqual((gen.STAGE / "packs" / "chosen").read_text().strip(), "chosen-one")
         self.assertEqual(sorted(p.name for p in (gen.STAGE / "packs").iterdir() if p.is_dir()), ["chosen-one", "lender", "other"])
-        self.assertEqual((gen.STAGE / "packs" / "other" / "mac" / "takes.tsv").read_text(), "t", "with what it uses")
+        self.assertEqual((gen.STAGE / "packs" / "other" / "mac" / "takes.tsv").read_text(), "t")
 
     def test_staging_again_changes_only_what_differs(self):
         """A build may be reading the staged files while another stages them: an unchanged file stays the same file
@@ -306,9 +288,8 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in gen.STAGE.iterdir()), ["firmware", "firmware-test", "pack", "packs", "staged"])
 
     def test_firmware_to_lays_out_one_packs_firmware_and_stages_nothing(self):
-        """--firmware-to=DIR, for a second build beside the staged pack's (simulator/web/build.sh PACK): the firmware's files as staging lays them out, what the pack uses included, and nothing staged changes."""
-        self.pack("lender", [{"id": "calm"}], files=[("firmware/include/art.h", "a")], shares={"art": {"files": ["firmware/include/art.h"]}})
-        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], uses={"art": "lender"})
+        """--firmware-to=DIR, for a second build beside the staged pack's (simulator/web/build.sh PACK): the firmware's files as staging lays them out, and nothing staged changes."""
+        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], files=[("firmware/include/art.h", "a")])
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         out = self.dir / "out"
@@ -320,33 +301,20 @@ class StudioRuleTests(unittest.TestCase):
         self.assertFalse(gen.STAGE.exists())
 
     def test_each_board_has_a_face(self):
-        """CHARACTER.md §9: `faces` names a face for some board, each a folder the pack has or uses."""
+        """CHARACTER.md §9: `faces` names a face for some board, each a folder the pack has."""
         self.assertEqual(gen.pack_problems(self.pack("plain", [{"id": "calm", "meaning": "Settled."}]), gen.load(self.dir / "plain")), [])
-        self.pack("lender", [{"id": "calm"}], shares={"face": {"files": ["firmware/src/render/face"]}})
-        user = self.pack("user", [{"id": "calm", "meaning": "Settled."}], faces={"cyd24": "face", "amoled206": "gel"}, uses={"face": "lender"})
+        user = self.pack("user", [{"id": "calm", "meaning": "Settled."}], faces={"cyd24": "face", "amoled206": "gel"},
+                         files=[("firmware/src/render/face/face.cpp", "")])
         self.assertEqual(gen.pack_problems(user, gen.load(user)), ["faces gives amoled206 the gel face, and there's no firmware/src/render/gel/"])
         none = self.pack("none", [{"id": "calm", "meaning": "Settled."}], faces={})
         self.assertEqual(gen.pack_problems(none, gen.load(none)), ["faces names no board's face"])
 
-    def test_what_a_pack_uses_must_be_there(self):
-        """A share from no pack, one the pack doesn't share, a file it lacks, or one the user has itself fails."""
-        self.pack("lender", [{"id": "calm"}], files=[("mac/takes.tsv", "t")],
-                  shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}})
-        pack = self.pack("user", [{"id": "calm"}], files=[("mac/takes.tsv", "")],
-                         uses={"voice": "lender", "face": "lender", "art": "nobody"})
-        self.assertEqual(gen.used(pack)[1], ["lender's voice names voice/voice.bin, which it doesn't have",
-                                             "has mac/takes.tsv of its own, and uses lender's (voice)",
-                                             "uses face from lender, which doesn't share it",
-                                             "uses art from nobody, which isn't a pack beside it"])
-
-    def test_the_studio_shows_the_previews_a_pack_uses(self):
-        """A share's studio entries show on the pack that uses it, with paths into the pack that shares them."""
-        self.pack("lender", [{"id": "calm"}], [{"id": "face", "scripts": ["studio/a.js"]}], files=[("studio/a.js", "")],
-                  shares={"face": {"files": [], "studio": ["face"]}})
-        user = self.pack("user", [{"id": "calm"}], uses={"face": "lender"})
-        self.assertEqual(self.problems(user), [])
-        data = gen.studio_data([user], user, self.studio)
-        self.assertEqual(data["packs"]["user"]["studio"][0], {"id": "face", "scripts": ["../lender/studio/a.js"], "styles": [], "wears": {}})
+    def test_a_pack_names_no_file_of_anothers(self):
+        """CHARACTER.md §6: each pack stands alone; `uses` or `shares` stops it."""
+        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], uses={"voice": "lender"}, shares={"face": {"files": []}})
+        self.assertEqual(gen.pack_problems(pack, gen.load(pack)),
+                         ["uses isn't read: a pack stands alone, and copies what it takes from another",
+                          "shares isn't read: a pack stands alone, and copies what it takes from another"])
 
     def test_the_pack_in_use(self):
         """CHARACTER.md §2: the environment's pack, else the one last staged, else the chosen one."""
@@ -429,19 +397,6 @@ Fades to annoyed once Boop has been grumpy for 2 min.
         self.assertEqual(gen.tagged(self.file("<!-- Signs. -->\n- [fix night] bugs at night?\n- {words}\nnot a line\n")),
                          [{"tags": ["fix", "night"], "text": "bugs at night?"}, {"tags": [], "text": "{words}"}])
 
-    def test_a_used_voice_is_shown_once_with_the_pack_whose_it_is(self):
-        """A pack that uses another's voice names it; the voice's table is in the page's data once, under the pack
-        that has it, each take [id, text, part, meaning, kind, moods, finish, ms]."""
-        table = "# The voice's takes.\nv1\nhi.go\tGo\tabout\tstart\tword\tcalm happy\t\t638\nhi.yay\tYay\tfeeling\tglad\tword\thappy\tsuccess\t900\n"
-        self.pack("lender", [{"id": "calm"}], files=[("mac/takes.tsv", table), ("voice/voice.bin", "")],
-                  shares={"voice": {"files": ["voice/voice.bin", "mac/takes.tsv"]}})
-        user = self.pack("user", [{"id": "calm"}], uses={"voice": "lender"})
-        data = gen.studio_data([user], user, self.studio)
-        self.assertEqual(data["packs"]["user"]["voice"], "lender")
-        self.assertEqual(data["voices"], {"lender": {"version": "v1", "file": "../lender/voice/voice.bin", "takes": [
-            ["hi.go", "Go", "about", "start", "word", ["calm", "happy"], None, 638],
-            ["hi.yay", "Yay", "feeling", "glad", "word", ["happy"], "success", 900]]}})
-
     def test_demos_evals_and_stills(self):
         """A demo's title, first comment and steps; evals by their number, 2 before 10; the golden frames by group."""
         pack = self.pack("boop", [{"id": "calm"}], files=[
@@ -479,13 +434,8 @@ class RigRuleTests(unittest.TestCase):
         return gen.read_rig(self.dir, self.MOODS, self.STATES)
 
     def test_a_style_is_a_mood_the_pixel_face_draws(self):
-        """Its own pixel face's, or the one it uses; a typo fails with its file and key."""
+        """Its own pixel face's; a typo fails with its file and key."""
         self.assertEqual(gen.drawn_styles(self.dir), ["happy", "sad"])
-        write(self.dir / "character.json", {"shares": {"pixel_face": {"files": [gen.PIXEL_FACES]}}})
-        write(self.dir.parent / f"{self.dir.name}-user" / "character.json", {"uses": {"pixel_face": self.dir.name}})
-        self.addCleanup(shutil.rmtree, self.dir.parent / f"{self.dir.name}-user")
-        self.assertEqual(gen.drawn_styles(self.dir.parent / f"{self.dir.name}-user"), ["happy", "sad"])
-        (self.dir / "character.json").unlink()
         _, problems = self.rig({"expressions.json": {"calm": {"eyes": "sad", "mouth": "hapy"}}})
         self.assertEqual(problems, ["rig/expressions.json: calm.mouth: 'hapy' isn't a mood the pixel face draws (happy, sad)"])
         (self.dir / gen.PIXEL_FACES).unlink()

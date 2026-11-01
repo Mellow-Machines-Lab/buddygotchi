@@ -172,7 +172,6 @@
     const SETTINGS = {
       working_heartbeat: ['Checks in on a turn', v => `every ${span(v)}`],
       idle_heartbeat: ['Checks in while idle', v => `every ${span(v)}`],
-      tool_uses: ['Tool uses it hears', v => `${v} ones`],
     };
     // An example: what happened (NOW) and, after →, what the character does.
     function example(text) {
@@ -197,7 +196,7 @@
         list.length > 1 && h('div', {className: 'segmented', role: 'group', 'aria-label': 'Personality'}, list.map(x =>
           h('button', {type: 'button', 'data-personality': x.id, 'aria-pressed': String(x.id === s.id)}, api.title(x.id)))),
         p ? panel({},
-          h('header', {className: 'panel-head'}, h('p', {className: 'eyebrow'}, 'Personality, picked in Settings'), h('h2', {}, api.title(p.id)), h('p', {className: 'lead'}, p.about)),
+          h('header', {className: 'panel-head'}, h('p', {className: 'eyebrow'}, 'Personality'), h('h2', {}, api.title(p.id)), h('p', {className: 'lead'}, p.about)),
           Object.keys(p.settings).length > 0 && h('div', {className: 'settings'}, Object.entries(p.settings).map(([k, v]) => {
             const [label, say] = SETTINGS[k] || [api.title(k), x => x];
             return h('div', {className: 'setting'}, h('small', {}, label), h('strong', {}, say(v)));

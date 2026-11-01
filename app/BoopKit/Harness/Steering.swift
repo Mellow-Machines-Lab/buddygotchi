@@ -4,7 +4,7 @@ import MellowHarness
 /// Boop's steering: MellowHarness's
 /// folder of Markdown files, a copy of
 /// `characters/boop/steering/`: `guide.md`, which opens the state with no heading,
-/// `personality/*.md`, `talk/*.md` (optional) and
+/// `personality.md` and
 /// `mood/*.md`. A personality's front matter, and a talk file's over it,
 /// go to the core, not to Jev.
 extension Steering {
@@ -22,7 +22,7 @@ extension Steering {
         // Its files' paths are read from where they are: through a link (a
         // pack fetched into characters/), the folder's resolved path.
         try self.init(folder: directory.resolvingSymlinksInPath())
-        let needed = ["guide"] + pack.personalities.map { "personality/\($0)" }
+        let needed = ["guide", "personality"]
         for path in needed where files[path] == nil {
             throw SteeringError("\(path).md is missing from \(directory.path)")
         }
@@ -31,16 +31,16 @@ extension Steering {
     /// The guide, which opens the state with no heading.
     public var guide: String { self["guide"] }
 
-    public func personality(_ p: Personality) -> PersonalityFile {
-        let path = "personality/\(p.rawValue)"
-        return PersonalityFile(rules: Personality.Rules(frontMatter: frontMatter[path] ?? ""), text: self[path])
+    /// The pack's one personality.
+    public var personality: PersonalityFile {
+        PersonalityFile(rules: Personality.Rules(frontMatter: frontMatter["personality"] ?? ""), text: self["personality"])
     }
 
     /// The view's rules for a personality and how much it says: the
     /// personality's front matter, with the talk setting's pace laid over
     /// it (`Talk.pace`).
-    public func rules(_ p: Personality, talk: Talk) -> Personality.Rules {
-        let own = frontMatter["personality/\(p.rawValue)"] ?? ""
+    public func rules(talk: Talk) -> Personality.Rules {
+        let own = frontMatter["personality"] ?? ""
         return Personality.Rules(frontMatter: own + "\n" + talk.pace)
     }
 
@@ -89,9 +89,7 @@ extension Steering {
     /// Parts over their budget, as `part: N > budget`; empty when all fit.
     public func overBudget(in pack: CharacterPack = .active) -> [String] {
         var parts = [("guide", Steering.tokens(guide), Budget.guide)]
-        for p in pack.personalities.map({ Personality($0, in: pack) }) {
-            parts.append(("personality/\(p.rawValue)", Steering.tokens(personality(p).text), Budget.personality))
-        }
+        parts.append(("personality", Steering.tokens(personality.text), Budget.personality))
         for name in pack.moods.map(\.id).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name, in: pack)), Budget.mood))
         }

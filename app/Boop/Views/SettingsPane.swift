@@ -37,9 +37,8 @@ struct SettingsPane: View {
                     PaneSection("Sound") { sound }
                     PaneSection("Agents") { agents }
                     PaneSection("Device") { device }
-                    // Named for what's in it: a personality picker when
-                    // the pack has two, else Talk; the brain's key apart.
-                    PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
+                    // How much it says; the brain's key apart.
+                    PaneSection("Talk") { talkSetting }
                     PaneSection("Brain") { Card(padding: 0) { key } }
                     PaneSection("Memory") { Card(padding: 0) { memorySetting } }
                     PaneSection("App") { app }
@@ -291,15 +290,10 @@ struct SettingsPane: View {
         return "Without a Jev API key, \(model.name) shows what the agents are doing and when one needs you, but doesn't react or change its mood, and shrugs when you talk to it."
     }
 
-    private var personality: some View {
+    private var talkSetting: some View {
         Card(padding: 0) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
-                    // A pack with one personality has nothing to choose.
-                    if Personality.allCases.count > 1 {
-                        RowPicker(label: "Personality", rows: Personality.allCases.map { .init(value: $0, title: $0.rawValue.capitalized, about: $0.about) },
-                                  chosen: Binding(get: { model.personality }, set: { model.setPersonality($0) }))
-                    }
                     RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
                               chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
                 }

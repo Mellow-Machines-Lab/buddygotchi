@@ -15,7 +15,7 @@ final class SignTests: XCTestCase {
         - [fix] bug hunt
         - [deploy friday] on a FRIDAY?
         - [cleanup] bye bye code
-        - [words] {words}
+        - {words}
         - plain caption
         """)
 
@@ -44,7 +44,7 @@ final class SignTests: XCTestCase {
             - [named] you rang?
             - [fix frustrated] bug, again
             - [fix] bug hunt
-            - [words] {words}
+            - {words}
             """)
         XCTAssertEqual(Signs.maxYourWords, 3)
         let two = PromptReading(length: .sentence, named: ["Boop"], kind: .fix, tone: .frustrated, phrases: ["still broken", "why"])
@@ -127,7 +127,7 @@ final class SignTests: XCTestCase {
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words", "idle"] + Occasions.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle"] + Occasions.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)
