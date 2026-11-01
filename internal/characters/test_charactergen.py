@@ -31,7 +31,7 @@ class RepoTests(unittest.TestCase):
         self.assertLess(set(gen.firmware_acts()), set(gen.firmware_states()))
 
     def test_the_everyday_transitions_are_cells_of_the_studios(self):
-        """The studio's Rank records transitions.jsonl's transitions, each from and to a cell its address has: a
+        """The studio's Rank records everyday.jsonl's transitions, each from and to a cell its address has: a
         universal mood, a state of the board's and, for a state with one, a fact it has."""
         table, moods = gen.states(), set(gen.universal_moods())
         transitions = gen.everyday()

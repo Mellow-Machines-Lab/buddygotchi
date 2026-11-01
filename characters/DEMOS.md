@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-31. A demo is a short, scripted stretch of work that a
+Updated 2026-11-01. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -74,12 +74,6 @@ On any agent step, `say` is what the agent says before it acts,
 makes it another session's of the same agent: a thread of its own,
 working beside the first, started before its first step. A demo plays
 several agents at once this way.
-
-**Any eval is a demo too.** `boopdev eval --to-demo DIR` writes each of
-the pack's eval scenarios as a script (a `needs you` becomes a run that
-`waits`, a held finger a `hold`, a to-do list a `todo`), its brain
-steps the answers the scenario expects ([internal/EVALS.md](../internal/EVALS.md) §2), so
-`make demo` can play what an eval checks.
 
 **A compact** comes in the middle of a turn, after the prompt and before
 the reply, with more of the agent's steps after it. It needs its

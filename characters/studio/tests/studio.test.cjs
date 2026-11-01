@@ -1,6 +1,6 @@
 // The studio's logic with no browser (README.md, "Checking it"): board.js's
-// change measure and its summary, held to the rule measure.py's test is
-// (internal/tools/fluid/tests/changed.json), and how it asks the board for
+// change measure and its summary, held to the rule changed.json pins,
+// and how it asks the board for
 // each state; and serve.cjs's review verdicts, which charactergen's review
 // check takes, its files in part and the review clips it saves, in a copy
 // of it beside a pack of its own; and markdown.js's rendering of a reading.
@@ -10,12 +10,12 @@ const assert=require('node:assert/strict'),{test}=require('node:test'),fs=requir
 const {spawn,execFileSync}=require('node:child_process');
 const studio=path.resolve(__dirname,'..'),repo=path.resolve(studio,'../..');
 const {wiring,changed,summary}=require(path.join(studio,'board.js'));
-const pinned=JSON.parse(fs.readFileSync(path.join(repo,'internal/tools/fluid/tests/changed.json'),'utf8'));
+const pinned=JSON.parse(fs.readFileSync(path.join(__dirname,'changed.json'),'utf8'));
 // charactergen's, as it writes them for the page (packs.js): the acts the board draws while working.
 const python=code=>JSON.parse(execFileSync('python3',['-c',`import json,sys;sys.path.insert(0,${JSON.stringify(path.join(repo,'characters'))});import charactergen as gen;${code}`],{encoding:'utf8'}));
 const acts=python('print(json.dumps(gen.firmware_acts()))');
 
-test('a pixel changed when its difference\'s luma is over 24 levels, and a summary, as measure.py has them', () => {
+test('a pixel changed when its difference\'s luma is over 24 levels, and a summary, as changed.json pins them', () => {
   const {pairs,summaries}=pinned;
   const rgba=side=>Uint8ClampedArray.from(pairs.flatMap(p=>[...p[side],255]));
   for(const [a,b,counts] of pairs)assert.equal(changed(Uint8ClampedArray.from([...a,255]),Uint8ClampedArray.from([...b,255])),Number(counts),`${a} → ${b}`);
@@ -23,10 +23,10 @@ test('a pixel changed when its difference\'s luma is over 24 levels, and a summa
   for(const {changes,...expected} of summaries)assert.deepEqual(summary(changes),expected,`${changes}: the median, the first largest and their ratio`);
 });
 
-test('Rank\'s everyday transitions are transitions.jsonl\'s, by its shots\' names, and the board is asked for each', async () => {
+test('Rank\'s everyday transitions are everyday.jsonl\'s, by its shots\' names, and the board is asked for each', async () => {
   const {TAP}=await import(path.join(repo,'simulator/web/boop-simulator.js'));
   const wire=wiring({acts,tap:TAP}),everyday=python('print(json.dumps(gen.everyday()))');
-  const shots=fs.readFileSync(path.join(repo,'internal/tools/fluid/transitions.jsonl'),'utf8').match(/"shot": "\d+-[a-z-]+"/g)
+  const shots=fs.readFileSync(path.join(studio,'everyday.jsonl'),'utf8').match(/"shot": "\d+-[a-z-]+"/g)
     .map(s=>s.slice(s.indexOf('-')+1,-1).replace(/-/g,' '));
   assert.deepEqual(everyday.map(t=>t.name),[...new Set(shots)].slice(1),'each run of shots after the first');
   const facts=JSON.parse(fs.readFileSync(path.join(studio,'states.json'),'utf8')).facts;
@@ -56,7 +56,7 @@ test('the board is asked for each state as the Mac asks for it', async () => {
   assert.deepEqual(asked({mood:'calm',state:'notice'},over),[[0,'do','notice',{mood:'calm'}]],
     'a transition\'s reaction plays over its start\'s look, its state left as it was, in its own mood');
   assert.deepEqual(asked({mood:'excited',state:'task_complete'},{base:'working',busy:1}),[[0,'do','task_complete',{outcome:'success',mood:'excited'}]],
-    'a finish over working in its own mood, as internal/tools/fluid/transitions.jsonl asks for one');
+    'a finish over working in its own mood, as everyday.jsonl asks for one');
   assert.equal(wire({mood:'calm',state:'poked'},over).steps[0][1].base,'asleep','an input over its start\'s look');
   assert.deepEqual(wire({mood:'calm',state:'tap_spam'}).steps.slice(1).map(([ms,m])=>[ms,m.t]),[[0,'dbg.touch'],[200,'dbg.touch'],[400,'dbg.touch']],'the third tap within 3 s is tap spam');
   assert.deepEqual([wire({mood:'calm',state:'poked'}).steps[1][1].x,wire({mood:'calm',state:'poked'}).steps[1][1].y],TAP,'a tap where the simulator taps');

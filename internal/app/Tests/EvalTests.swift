@@ -410,40 +410,6 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
     }
 
-    /// EVALS.md §2: every scenario is also a demo (`--to-demo`) that the
-    /// pack can play: a demo is an eval with its brain's answers written in.
-    func testEveryScenarioPlaysAsADemo() throws {
-        for scenario in try Scenario.load(directory: try Self.scenarios()) {
-            let text = DemoFromScenario.script(scenario)
-            let script = try DemoScript(text, named: scenario.file)
-            XCTAssertEqual(script.problems(), [], scenario.file)
-            XCTAssertEqual(script.title, scenario.name)
-            let brains = script.steps.filter { if case .brain = $0.what { true } else { false } }.count
-            XCTAssertEqual(brains, scenario.steps.filter { $0.expect != nil }.count, "\(scenario.file): a brain step after each expecting step")
-            let longest = script.steps.map(\.after).max() ?? 0
-            XCTAssertLessThanOrEqual(longest, DemoFromScenario.maxGap, "\(scenario.file): the gaps are cut short")
-            // A held finger is the demo's hold, a to-do list its todo.
-            let holds = script.steps.filter { $0.what == .hold }.count
-            XCTAssertEqual(holds, scenario.steps.filter { $0.event == "gesture" && $0.kind == Core.dismissGesture }.count, scenario.file)
-            let lists = script.steps.compactMap { if case .agent(let a) = $0.what, a.does == .todo { a.todos } else { nil } }
-            XCTAssertEqual(lists, scenario.steps.compactMap(\.todos), scenario.file)
-        }
-    }
-
-    /// A demo's sign is one the eval offers: the captions that fit the
-    /// calendar at the step's time, a deploy on a Friday's included.
-    func testADemosSignKeepsToTheCalendar() throws {
-        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("sign-\(UUID().uuidString)")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        let file = dir.appendingPathComponent("s.json")
-        try #"{"name":"n","case":"c","why":"w","start":"2026-10-30T09:00","steps":[{"event":"turn started","at":"0s","prompt":"ship it","reading":{"kind":"deploy"},"expect":{"sign":"friday"}}]}"#
-            .write(to: file, atomically: true, encoding: .utf8)
-        let signs = TaggedLine.parse("- [deploy friday] on a FRIDAY?\n- [deploy] ship it?")
-        let script = DemoFromScenario.script(try Scenario(file: file), signs: signs)
-        XCTAssertTrue(script.contains(#""react.sign":"on a FRIDAY?""#), script)
-    }
-
     /// EVALS.md §3: a scenario's `start` sets the virtual clock, in UTC,
     /// which the prompt's heading shows; a step's `brain` answers for the
     /// expect brain ahead of its `expect`.

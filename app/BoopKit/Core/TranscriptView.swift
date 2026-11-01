@@ -208,11 +208,6 @@ public final class TranscriptView {
         rng = SplitMix64(seed: seed)
     }
 
-    /// What you say to Boop wakes the brain even while something needs
-    /// you; nothing else does, a poke included: then a tap opens the
-    /// waiting thread.
-    public static let wakesWhileNeeded: Set<Event.Kind> = [.talk]
-
     /// The topics whose failing command fails a turn.
     static let checks: Set<String> = ["tests", "build", "deploy"]
 
@@ -299,7 +294,10 @@ public final class TranscriptView {
     /// you said while the buddy (`e`'s, else `buddy`, else any) lies face
     /// down, which is do not disturb: the board would refuse a reaction.
     public func hold(_ e: Event, _ log: LogView, buddy: String? = nil, needsYou: () -> String?) -> String? {
-        if let type = e.type, !Self.wakesWhileNeeded.contains(type), let why = needsYou() { return why }
+        // What you say to Boop wakes the brain even while something needs
+        // you; nothing else does, a poke included: then a tap opens the
+        // waiting thread.
+        if let type = e.type, type != .talk, let why = needsYou() { return why }
         if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }

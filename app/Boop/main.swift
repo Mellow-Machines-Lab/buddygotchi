@@ -18,7 +18,7 @@ let usage = """
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
                onboarding (make dev FRESH=1).
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH]
-                [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--labeler apple|none] [--name NAME]
+                [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--name NAME]
                 [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
                 [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
@@ -26,8 +26,8 @@ let usage = """
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
                reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
                every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
-               asks no brain at all, even with a key: only the rules, and dev lines' answers. --labeler apple
-               reads your prompts with Apple Intelligence, as the app does; none (the default) only counts them.
+               asks no brain at all, even with a key: only the rules, and dev lines' answers. Your prompts are
+               counted only, never read by Apple Intelligence.
                --buddies runs several buddies side by side, each with its place (left, right), its character pack,
                the agent it watches first and its own name; --links gives each its own link, in order (usb:SOCKET
                or none). A demo whose header names buddies runs them without --buddies. With several, a {"dev":…}
@@ -189,7 +189,7 @@ final class LogFile: @unchecked Sendable {
 let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contains("--snapshots"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
-    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--labeler", "--name", "--demo", "--record",
+    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record",
                        "--buddies", "--links"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])

@@ -124,7 +124,6 @@ BOOP_JEV_KEY=… .build/debug/boopdev eval --only tests --timeline
 BOOP_JEV_KEY=… make eval                     # the final pass: every scenario, 3 runs for always and 1 for the rest
 .build/debug/boopdev eval --list             # every scenario's case, runs and requests; no key needed
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
-.build/debug/boopdev eval --to-demo DIR --only pokes   # a scenario as a demo, to watch (characters/DEMOS.md)
 .build/debug/boopdev prompts                 # what Jev reads and is asked at every pass, for the Character Studio's Brain view
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
 .build/debug/boopdev read-check              # Apple Intelligence's readings of sample prompts and last messages, scored; fails under its floors or on a leaked secret
@@ -142,11 +141,7 @@ It prices every run (`--list`), and `--scripted` runs every scenario
 once with it, with no key: what it checks is everything but Jev, that
 each step wakes the brain as it says, that the moods it expects lie on
 the graph's paths, and the whole-run checks a run can fail without Jev
-(`max_quiet_working`, `moves_on_graph`). `--to-demo DIR` writes each
-scenario as `DIR/<file>.jsonl`, each expecting step followed by a brain
-step with the expect brain's answers and the gaps cut to 2.5 s at most
-with a note of how long really passed, for `make demo` to play: auditing
-the evals is watching them.
+(`max_quiet_working`, `moves_on_graph`).
 
 **The API budget.** Every pass is one request to Jev, and a full
 `make eval` is about 660 of them (`--list` counts them), so it's the
@@ -173,7 +168,6 @@ the rest run once. A scenario can say its own `runs` (§3), as `53` says
 | `--timeline` | Prints every pass of every run: when, the line, what Boop did and the mood after |
 | `--list` | Prints each scenario's file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then the total, and runs nothing |
 | `--scripted` | Runs each scenario once with the expect brain: no key, no budget |
-| `--to-demo DIR` | Writes each scenario as a demo script in DIR, and runs nothing |
 | `--scenarios DIR`, `--steering DIR` | Other scenarios or steering files; by default the repo's, found from the working directory or from `boopdev`'s own place |
 
 The report gives each scenario's verdict (`pass`, `FAIL`, or `GAP` for a

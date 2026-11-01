@@ -69,7 +69,7 @@ FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
 # The rig's channels, and the tags an occasion may need, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
 TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
-EVERYDAY = ROOT / "internal" / "tools" / "fluid" / "transitions.jsonl"
+EVERYDAY = ROOT / "characters" / "studio" / "everyday.jsonl"
 # What wakes the brain (the transcript view's wakes and quiet kinds), and
 # the personality settings the app reads, for the studio's behaviour map.
 WAKES = ROOT / "app" / "BoopKit" / "Core" / "TranscriptView.swift"
@@ -699,8 +699,7 @@ def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
 
 def everyday(source: Path = EVERYDAY) -> list[dict]:
     """The everyday transitions, which the studio's Rank records on the
-    board so that its measure and internal/tools/fluid/measure.py's
-    compare: those transitions.jsonl records. Each run of its shots with
+    board: those everyday.jsonl records. Each run of its shots with
     one name (`<ms>-<name>`) after the first is one, named so, from what
     showed before the messages that start it to what they ask for, each a
     cell as the studio's address has it (mood/state, and /fact for a state

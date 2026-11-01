@@ -13,7 +13,6 @@ let usages: [(command: String, text: String)] = [
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--labeler apple] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
     boopdev eval --scripted [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
-    boopdev eval --to-demo DIR [--only TEXT] [--always] [--scenarios DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
@@ -27,10 +26,8 @@ let usages: [(command: String, text: String)] = [
         prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
         nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
         scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
-        wakes the brain as it should, the screen, the whole-run checks it can meet). --to-demo writes each
-        scenario as a demo script, DIR/<scenario>.jsonl, the expect brain's answers as its brain steps, for
-        make demo to play (characters/DEMOS.md). A scenario with a known gap is reported GAP when it
-        fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
+        wakes the brain as it should, the screen, the whole-run checks it can meet). A scenario with a known
+        gap is reported GAP when it fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
         /tmp/boop-eval, one JSON object a line. Exits 1 if any fails. The scenarios and steering
         default to the pack in use's (characters/CHARACTER.md §2): its evals/ and steering/.
     """),
@@ -117,7 +114,7 @@ func findRepo() -> URL? {
 let evalBudget = 100
 
 func eval(_ raw: [String]) async {
-    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--to-demo", "--labeler"],
+    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--labeler"],
                          flags: ["--always", "--list", "--timeline", "--no-budget", "--scripted"])
     // The pack in use's scenarios and steering (characters/CHARACTER.md §2), unless given.
     func path(_ option: String, _ inPack: String) -> URL {
@@ -134,18 +131,6 @@ func eval(_ raw: [String]) async {
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
     let steering: Steering
     do { steering = try Steering(directory: path("--steering", "steering")) } catch { fail("\(error)") }
-    if let dir = args["--to-demo"] {
-        let out = URL(fileURLWithPath: dir)
-        do {
-            try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-            for s in list {
-                let file = out.appendingPathComponent((s.file as NSString).deletingPathExtension + ".jsonl")
-                try DemoFromScenario.script(s, signs: steering.signs).write(to: file, atomically: true, encoding: .utf8)
-                print(file.path)
-            }
-        } catch { fail("can't write the demos: \(error)") }
-        exit(0)
-    }
     let given = args["--runs"].map { Int($0) }
     if let given, (given ?? 0) < 1 { fail("--runs is a count, 1 or more") }
     let budget = args["--budget"].map { Int($0) }

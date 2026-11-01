@@ -159,16 +159,14 @@ The scene's own parts:
   clock, asks for the end as the Mac would, and records a frame every
   40 ms, 5 before the change and 100 after: the frame under a scrubber,
   a bar for each frame's change from the one before (pixels whose
-  difference's luma is over 24 levels, as `internal/tools/fluid/measure.py`
-  counts them, the change's bar marked), and the frames in a strip. A
+  difference's luma is over 24 levels, the change's bar marked), and the frames in a strip. A
   frame several times the median is a jump. Beside it, **Rank** records
-  the everyday transitions, `internal/tools/fluid/transitions.jsonl`'s
-  so that the two measures compare (to working, a mood change, a finish
+  the everyday transitions, `everyday.jsonl`'s (to working, a mood change, a finish
   in its own mood, back to idle from it, a poke, a stroke, to asleep:
   its shots' names, which charactergen reads for the page,
   `everyday()`), on the same board, their changes only, and
   lists them as each comes, the **jumpiest** first: by the ratio of the
-  largest frame to the median, the same rule as `measure.py`'s; clicking
+  largest frame to the median; clicking
   one records it here.
 - **Stills**: the frames the pack's tests hold its faces to
   (`tests/golden-*/<group>/`), a group at a time: what each face draws,
@@ -252,7 +250,7 @@ demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
 `actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a
 reference's too) and the everyday transitions Rank records (those
-`internal/tools/fluid/transitions.jsonl` records, `everyday()`), the
+`everyday.jsonl` records, `everyday()`), the
 behaviour map (`behavior.json`, the engine's, with each number's value
 from its code, each brain's wake from the transcript view's `wakes` and
 `quiet`, and the personality settings Personality reads), and
@@ -373,7 +371,7 @@ node characters/studio/check.cjs
 ```
 
 The logic needs no browser: the change measure and its summary, held to
-the rule `measure.py`'s test is (`internal/tools/fluid/tests/changed.json`),
+the rule `tests/changed.json` pins,
 how each state is asked of the board, the server, in a copy of it
 beside a pack of its own (its verdicts, which charactergen's review
 check then takes, its files in part, and the review clips it saves: only

@@ -13,8 +13,8 @@ public protocol ScenarioBrain: AnyObject {
 /// belongs to, so a run with no key plays as the scenario says Boop should
 /// (internal/EVALS.md §2). A question gets the step's own `brain` answer,
 /// else the first of its `expect` set that the question offers, else what
-/// the pipeline check would answer. It prices scenarios, and turns them
-/// into demos (`DemoFromScenario`).
+/// the pipeline check would answer. It prices scenarios and runs
+/// `--scripted`.
 public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     public let id = "expect"
     /// The step being run; nil between steps.

@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-31. How we check that Boop works, including what's on its
+Updated 2026-11-01. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -82,7 +82,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
 
@@ -169,15 +169,6 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
   draws the app's placeholder icon at every size and packs it with
   `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
-- `internal/tools/fluid/measure.py`: how fluid the everyday transitions
-  are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
-  idle's mood changes, the rig face's hand-overs and a working day, and
-  the gel's swipes and strokes in idle, `idle-swipes.jsonl`, recorded with
-  `boopctl sim`), each frame's
-  change against the median, and with `--sheets DIR` a contact sheet of
-  each. The Character Studio's Transitions measures and ranks the
-  everyday transitions on the board in the page by the same rule
-  ([characters/studio/README.md](../characters/studio/README.md)).
 - `node characters/studio/check.cjs`: the Character Studio in a headless
   browser, the character's own views, its behaviour map and brain, its
   matrix and its board's views (its README, Checking it). It needs
