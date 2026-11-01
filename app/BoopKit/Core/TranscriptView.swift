@@ -134,9 +134,9 @@ public final class TranscriptView {
         /// when each came, and whether the run came again, within `againMs`
         /// of the run before.
         var pokes: [String: (at: [Int64], again: Bool)] = [:]
-        /// The away you haven't come back from: its
-        /// event's `seq` and when you left.
-        var awaySince: (seq: Int, at: Int64)?
+        /// The away you haven't come back from, paired as the memory
+        /// reader pairs it.
+        var away = AwayAndBack()
         /// The newest dream not yet told (a `dream` event): the first line
         /// that's yours while you're at the Mac tells it.
         var untold: Event?
@@ -392,7 +392,7 @@ public final class TranscriptView {
     /// signs.
     func told(_ line: Line?, _ e: Event) -> Line? {
         let showsUp = (e.type == .presence && e.phase == .end) || Yours.touch(e)
-        guard var line, let dream = fold.untold, showsUp, fold.awaySince == nil,
+        guard var line, let dream = fold.untold, showsUp, fold.away.since == nil,
               let weekday = dream["weekday"]?.string, let sentence = dream["sentence"]?.string else { return line }
         fold.untold = nil
         let told = EventLine.dreamed(weekday: weekday, sentence: sentence, name: name(e))
@@ -830,25 +830,22 @@ public final class TranscriptView {
     /// back yet. The presence detector starts from this at launch.
     public func away(_ log: LogView) -> Bool {
         catchUp(log)
-        return fold.awaySince != nil
+        return fold.away.since != nil
     }
 
     /// You stepping away or coming back, as the presence detector decided:
     /// the view only pairs them. A back with no away
     /// before it makes no line.
     func presence(_ e: Event) -> Line? {
-        if e.phase == .start {
-            let since = e["since"]?.int ?? e.at
-            fold.awaySince = (e.seq, since)
+        switch fold.away.fold(e) {
+        case .away(let since)?:
             return Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)])
+        case .back(let ms?)?:
+            noteActivity(e.at)
+            return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
+        default:
+            return nil
         }
-        // The away it ends: the one the log holds, or, after a relaunch
-        // during a long absence, its start as the presence detector saved it.
-        guard let since = fold.awaySince?.at ?? e["since"]?.int else { return nil }
-        fold.awaySince = nil
-        noteActivity(e.at)
-        let ms = max(0, e.at - since)
-        return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
     }
 
     // MARK: Heartbeats
@@ -900,7 +897,7 @@ public final class TranscriptView {
         // activity. Once you're away, or it's been quiet longer than that,
         // as over a night or a weekend, only the hourly heartbeat comes;
         // nothing reads the time of day.
-        if let gap = rules.idleBeatMs, fold.awaySince == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
+        if let gap = rules.idleBeatMs, fold.away.since == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
             if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
             guard let beat = idleBeat, now >= beat.due else { return nil }
             idleBeat = (last, now + Int64(rng.int(in: gap)))
@@ -914,7 +911,7 @@ public final class TranscriptView {
     public static let hourly = "idle"
 
     /// Whether you're away from the Mac, as the presence events say.
-    public var away: Bool { fold.awaySince != nil }
+    public var away: Bool { fold.away.since != nil }
 
     func heartbeat(_ e: Event) -> Line? {
         let now = e.at

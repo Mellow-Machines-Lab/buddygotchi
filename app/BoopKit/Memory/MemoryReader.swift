@@ -112,18 +112,19 @@ public final class MemoryReader: TranscriptReader {
             let hour = time.components(e.at).hour
             if hour >= 22 || hour < LocalTime.boopDayStartHour { t.late += 1 }
         case .presence?:
-            if e.phase == .start {
-                // Away from when it began, not when it was noticed.
-                let since = e["since"]?.int ?? e.at
+            var away = AwayAndBack(since: t.awaySince)
+            switch away.fold(e) {
+            case .away(let since)?:
                 if let here = t.hereSince { t.hereMinutes += Int(max(0, since - here) / 60_000) }
                 t.hereSince = nil
-                t.awaySince = since
-            } else if e.phase == .end {
+            case .back?:
                 t.back += 1
-                t.awaySince = nil
                 t.hereSince = e.at
                 t.backAt = e.at
+            case nil:
+                break
             }
+            t.awaySince = away.since
         case .turn?:
             guard let session = e.session else { break }
             if e.phase == .start { t.working[session] = e.at }
