@@ -440,8 +440,8 @@ public final class ReactOutput: Output {
             return speech + [Question(key: Signs.questionKey,
                                        text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), or a musing? PERSONALITY says when; now and then, not every time.",
                                        about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment, the questions that shape \(pack.name) first",
-                                       // Chatty holds one up whenever the caps let it (Asks.chattyPerDay).
-                                       options: (talk() == .chatty ? [] : [Option("none", "Nothing: \(pack.name) doesn't ask or muse now.")])
+                                       // The caps are a ceiling, not a schedule: "none" on every level.
+                                       options: [Option("none", "Nothing: \(pack.name) doesn't ask or muse now.")]
                                            + musings.map { Option($0, "A musing to hold up, asking nothing.") }
                                            + questions.map { q in
                                                Option(q.question, "Ask: \"\(q.question)\", \(q.a) or \(q.b)."

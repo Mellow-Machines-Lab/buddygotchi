@@ -44,12 +44,12 @@ public enum Signs {
     /// The idle musings: `signs.md`'s `[idle]` lines whose other tags the
     /// calendar and the kept answers (`tags`) all have, their blanks filled
     /// from the day so far, `{turns}` with its turns (a line that needs
-    /// some is left out at none) and `{thread}` with its busiest thread;
+    /// them is left out under 2) and `{thread}` with its busiest thread;
     /// at most `maxOffered`, each at most `maxLength`.
     public static func musings(_ lines: [TaggedLine], tags: [String], turns: Int, thread: String) -> [String] {
         let on = Set(tags + ["idle"])
         return lines.filter { $0.tags.contains("idle") && $0.fits(on) }.compactMap { line -> String? in
-            if line.text.contains("{turns}"), turns == 0 { return nil }
+            if line.text.contains("{turns}"), turns < 2 { return nil }
             if line.text.contains("{thread}"), thread.isEmpty { return nil }
             let text = line.text.replacingOccurrences(of: "{turns}", with: String(turns)).replacingOccurrences(of: "{thread}", with: thread)
             return drawn(text).flatMap { $0.count <= maxLength ? $0 : nil }

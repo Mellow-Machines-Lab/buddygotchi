@@ -395,7 +395,8 @@ final class HarnessTests: XCTestCase {
     func testEachMoodLeavesOnlyForItsNeighbours() throws {
         for mood in MoodGraph.moods {
             let text = RuntimeTests.steering.mood(mood)
-            XCTAssertTrue(text.hasPrefix("MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())."), mood)
+            let opening = "MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())"
+            XCTAssertTrue(text.hasPrefix(opening + ".") || text.hasPrefix(opening + " is "), "\(mood) opens with its name")
             let leaves = try! XCTUnwrap(text.range(of: "Leaves for"), mood)
             let named = Set(text[leaves.lowerBound...].split { !$0.isLetter }.map(String.init)).intersection(MoodGraph.moods)
             XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.moves[mood]?.all ?? [])),

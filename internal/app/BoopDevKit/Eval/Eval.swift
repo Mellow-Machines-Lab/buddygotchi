@@ -171,6 +171,10 @@ public struct Scenario: Sendable {
         /// `lonely`; a mood that comes and fades between two steps still
         /// counts.
         public var moodsSeen: [String] = []
+        /// `signs_seen`: signs the run must hold up at some pass, any one
+        /// of them (`"fav snack?|hat or bow?"`): for what Jev does now and
+        /// then, not at a given step.
+        public var signsSeen: [String] = []
 
         public init() {}
 
@@ -184,7 +188,7 @@ public struct Scenario: Sendable {
         }
 
         static let keys = ["max_quiet_working", "max_same_in_a_row", "mood_changes", "no_mood_bounce_within",
-                           "reactions", "min_variety", "words_said", "moves_on_graph", "moods_seen"]
+                           "reactions", "min_variety", "words_said", "moves_on_graph", "moods_seen", "signs_seen"]
     }
 
     public var name: String
@@ -312,6 +316,10 @@ public struct Scenario: Sendable {
                 checks.moodsSeen = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
                 let unknown = checks.moodsSeen.filter { MoodGraph.mood($0) == nil }
                 guard unknown.isEmpty else { throw bad("checks.moods_seen has \(unknown.joined(separator: ", ")), not a mood") }
+            }
+            if let v = c["signs_seen"] {
+                guard let text = v as? String, !text.isEmpty else { throw bad("checks.signs_seen is like \"fav snack?|hat or bow?\"") }
+                checks.signsSeen = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
             }
             self.checks = checks
         }
@@ -593,6 +601,8 @@ public struct Eval {
         /// What the mood question offered, and Jev's answer to it.
         public var offered: [String] = []
         public var answer: String?
+        /// The sign its reaction held up, if any.
+        public var sign: String?
     }
 
     /// A whole-run check's outcome.
@@ -739,7 +749,7 @@ public struct Eval {
                         intensity: ran ? ReactOutput.intensity(answers).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
-                        answer: answers[MoodOutput.outputName]?.choice))
+                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil))
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
@@ -878,6 +888,12 @@ public struct Eval {
             let share = played.isEmpty ? 0 : Double(said) / Double(played.count)
             out.append(RunCheck(name: "words_said \(range.lowerBound)-\(range.upperBound)", passed: range.contains(share),
                                 detail: "\(said) of \(played.count) reactions said something"))
+        }
+        if !c.signsSeen.isEmpty {
+            let at = timeline.first { $0.sign.map(c.signsSeen.contains) == true }
+            out.append(RunCheck(name: "signs_seen \(c.signsSeen.joined(separator: "|"))", passed: at != nil,
+                                detail: at.map { "\($0.sign ?? "") at \(clock($0.atMs))" }
+                                    ?? "never: \(timeline.compactMap(\.sign).joined(separator: ", "))"))
         }
         for mood in c.moodsSeen {
             let at = timeline.first { $0.mood == mood }

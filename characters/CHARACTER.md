@@ -420,7 +420,7 @@ What the brain reads, in plain Markdown:
   allow (one an hour, three a day, six on Chatty, none on Quiet, never
   while something needs you), the sign question (`react.sign`) offers the
   questions that fit, as "Ask: …", the file's first ones first, and
-  picking one asks it; on Chatty it has no "none". The board holds
+  picking one asks it; on every level it may pass. The board holds
   the question up as its sign and the two answers in its lane; a tap on
   either half answers, and after 45 seconds, or a newer reaction, it ends
   unanswered (`ev ask`). One answered stays off for 30 days, one
@@ -446,7 +446,7 @@ What the brain reads, in plain Markdown:
   sign (the `do`'s `sign`). A pack without the file holds up no signs.
   Lines tagged `[idle]` are its idle musings instead: held up now and
   then at an idle check-in, beside any question it may ask, at most once
-  an hour (`Signs.musingEveryMs`) and never on Quiet, asking nothing;
+  an hour (`Signs.musingEveryMs`), never on Quiet, and Jev may pass, asking nothing;
   `{turns}` is today's turns and `{thread}` the busiest thread (a line
   that needs one is left out without it), and a line may need a kept
   answer's tag (`[idle cookie] snack time?`).

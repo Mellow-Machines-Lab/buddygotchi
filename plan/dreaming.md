@@ -792,7 +792,20 @@ something:
   and care (a care gesture 3, a talk 3, an answered ask 5, a coming
   back 2) each capped at 60 XP a Boop day, kept apart
   (`growth.work_today`, `growth.care_today`); existing XP kept.
-- **The budgets' raise** has its one full Jev eval run (2026-11-01).
+- **The budgets' raise** has its one full Jev eval run (2026-11-01):
+  115 of 130 scenarios passed every run, 149 failed as its known gap,
+  and 14 failed. Four were lonely leaking (06, 55, 139, 140), which the
+  tuning below fixed. Of the other ten, a rerun passed 05, 16 and 26;
+  01, 11, 14, 29, 98 and 110 fail on main too, run the same way; 09
+  fails 1 run in 3 here and passes 3 of 3 on main.
+- **The tuning** (below) passed its lonely gate: 06, 139, 55, 140, 141
+  never lonely and 135, 137 lonely, 3 of 3 each. The care gate didn't:
+  149 stays curious 3 of 3, still a known gap. With "none" back on
+  Chatty, Jev asks at an idle check-in about half the time and at a
+  finish rarely (5 to 16%), so 144 checks that it asks in an idle
+  stretch (`signs_seen`) and 148 that a finish's sign is only ever
+  "did it work?". The writer's care note puts its word first, as the
+  note's shape says, where the rule's text said "ending with".
 
 ## Open calls for the owner
 

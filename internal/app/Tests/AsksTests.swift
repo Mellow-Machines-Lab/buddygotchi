@@ -143,6 +143,7 @@ final class AsksTests: XCTestCase {
             - a prompt's caption
             """)
         XCTAssertEqual(Signs.musings(lines, tags: [], turns: 0, thread: ""), ["quiet day..."])
+        XCTAssertFalse(Signs.musings(lines, tags: [], turns: 1, thread: "").contains("1 turns today!"), "turns from 2")
         XCTAssertEqual(Signs.musings(lines, tags: ["cookie"], turns: 7, thread: "api"),
                        ["quiet day...", "7 turns today!", "api again?", "snack time?"])
         XCTAssertEqual(Signs.musingEveryMs, 3_600_000, "at most once an hour")

@@ -97,7 +97,7 @@
     "name": "A care pattern that holds",
     "day": "2026-11-03",
     "memory": [
-      "boop \u00b7 2026-10-28, 2026-11-02 \u00b7 You stroke Boop when you sit down in the morning; it has grown cuddly."
+      "boop \u00b7 2026-10-28, 2026-11-02 \u00b7 Boop has grown cuddly: you stroke it most mornings."
     ],
     "certain": "Yesterday was Tuesday 2026-11-03. You were at the Mac 8 hours, stroked Boop 5 times and talked to it 3 times. Agents finished 6 turns, 0 failed, most on \"api\".",
     "yesterday": [
@@ -105,6 +105,6 @@
       "08:52 You said to Boop: \"morning buddy\".",
       "15:20 You said to Boop: \"thanks for the company\"."
     ],
-    "accept": "The care note is kept or updated (its days grow, cuddly stays); never a second boop note about how you treat Boop."
+    "accept": "The care note is kept or updated, its word first and still cuddly (its days grow); never softened, dropped, or joined by a second care note."
   }
 ]

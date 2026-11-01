@@ -106,6 +106,7 @@ and to be tightened once Boop meets it (`Eval.judge`):
 | `min_variety` | The run plays fewer different reactions (face, animation and take) than this |
 | `words_said` | The share of the reactions played that said something falls outside this range |
 | `moves_on_graph` | A pass's `mood` answer wasn't one of the options it offered (or Jev gave none it could use), or the mood changed along something that isn't a move on the graph |
+| `signs_seen` | None of the signs it names (`"fav snack?|hat or bow?"`) was held up at any pass: for what Jev does now and then, such as asking, not at a given step |
 | `moods_seen` | A mood it names (`"lonely"`, or several, each required, `"lonely|sad"`) was never the mood at any pass: one that came and faded between two steps still counts |
 
 **Always and gaps.** An `always` scenario is Boop's character, not a
@@ -233,7 +234,7 @@ file-name order:
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Occasions`): none by default |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
-| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moves_on_graph` (`true`) and `moods_seen` (moods, like `lonely`) |
+| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moves_on_graph` (`true`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |
 | `personality` | One of the pack's personalities: Boop's has only `boop`, the default |
 | `talk` | `normal` (the default), `quiet` or `chatty`: how much it says, chosen in Settings |
 | `steps[].event` | One of the steps in §1 |
