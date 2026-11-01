@@ -92,6 +92,10 @@ public struct DeviceReaction: Equatable, Sendable {
     /// drawer, for a question about all of them (`StatusReply`). Nil sends
     /// none.
     public var show: String?
+    /// Why it plays, short enough for the board's lane (`Reason.fact`):
+    /// the board shows it there while the reaction plays and nothing is
+    /// said. Nil sends none.
+    public var reason: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
@@ -138,6 +142,7 @@ public struct DeviceReaction: Equatable, Sendable {
         if let variant { args["variant"] = .int(variant) }
         if let ctx { args["ctx"] = .string(ctx) }
         if let sign { args["sign"] = .string(sign) }
+        if let reason { args["reason"] = .string(reason) }
         if let reply { args["reply"] = .string(reply) }
         if let show { args["show"] = .string(show) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }

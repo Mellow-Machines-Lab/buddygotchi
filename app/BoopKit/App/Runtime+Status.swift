@@ -48,6 +48,10 @@ extension Runtime {
         /// While Boop is hushed, when it may talk again, for the popover's
         /// countdown.
         public var hushedUntil: Date?
+        /// Why Boop feels as it does: what moved its mood last, in words
+        /// ("You came back after 26 hours away."). Nil when nothing in the
+        /// log says.
+        public var moodReason: Reason?
         /// Why the board looks as it does: what Boop celebrates today, and
         /// what it wears or shows for each.
         public var dressing: [Dressing] = []
@@ -133,6 +137,7 @@ extension Runtime {
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         status.diary = diary(today: options.time.day(wall))
+        status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
         let config = core.config
         status.dressing = Dressing.now(when: status.snapshot.when,
                                        occasions: Occasions.occasions(at: wall, hatched: config.hatched, name: name,

@@ -135,6 +135,9 @@ struct ReactionIn {
   uint32_t id = 0;
   // The words the buddy holds up on a sign while it plays, "" for none.
   char sign[kSignBytes] = "";
+  // Why it plays, in a few words (`reason`: "away 12 h", "stroked"): the
+  // lane shows it while it plays and no `say` fills the lane. "" for none.
+  char reason[kSignBytes] = "";
   // With an expression, the Mac's reply to what you said (`reply`): the
   // face plays its pack's clip for it as the expression starts. "" for none.
   char reply[kReplyBytes] = "";
@@ -269,6 +272,11 @@ class Behaviour {
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
+  // What the lane's bubble shows at t, or null for the strip: the `say`'s
+  // text, else the reaction's reason for as long as its sign would show,
+  // under the same rules (none with no app, nor while something needs you
+  // unless it's a reply to what you said).
+  const char* laneText(uint32_t t) const;
   // The sign a reaction holds up, while it shows, and for the rig's fade
   // after it goes (a reaction's end, a tap's, being put face down), fading
   // out: no text with no app or while something needs you, which take it
@@ -466,6 +474,8 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
+  // The reaction's reason (laneText()), timed as its sign would be.
+  Sign reason_;
   // The sign that went last, fading out from goneAt_ (sign()).
   Sign gone_;
   uint32_t goneAt_ = 0;

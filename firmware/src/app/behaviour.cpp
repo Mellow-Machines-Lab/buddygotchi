@@ -227,7 +227,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       done_ = Done{};  // its own screen takes the face at once
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
       say_ = Say{};  // no `say` or sign while something needs you
-      sign_ = gone_ = Sign{};
+      sign_ = gone_ = reason_ = Sign{};
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
@@ -329,6 +329,19 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
       sign_.key = in.key;
     }
+    // Why it plays, in the lane, as long as its sign would show; a newer
+    // reaction with none takes the old one down.
+    reason_ = Sign{};
+    if (in.reason[0] && (anim || face || say || sign)) {
+      copyStr(reason_.text, sizeof(reason_.text), in.reason);
+      reason_.reply = in.expr && in.reply[0];
+      reason_.at = t;
+      reason_.ms = kSignMinMs;
+      if (anim && !listen) reason_.ms = std::max(reason_.ms, reaction_.ms);
+      if (say) reason_.ms = std::max(reason_.ms, voice + say_.ms);
+      if (in.expr) reason_.ms = std::max(reason_.ms, exprMs_);
+      reason_.key = in.key;
+    }
     if (names) {
       done_ = Done{};
       copyStr(done_.agent, sizeof(done_.agent), in.whoAgent);
@@ -376,7 +389,7 @@ void Behaviour::endSay(uint32_t t, CutBy by) {
   say_ = Say{};
   expr_ = false;
   if (signOn(t)) signGoes(t);
-  sign_ = Sign{};
+  sign_ = reason_ = Sign{};
   ++reactionSeq_;
 }
 
@@ -560,7 +573,7 @@ void Behaviour::setFaceDown(bool down, uint32_t t) {
     faceDown_ = down;
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
     if (down && signOn(t)) signGoes(t);
-    if (down) sign_ = Sign{};
+    if (down) sign_ = reason_ = Sign{};
   });
 }
 
@@ -642,6 +655,13 @@ render::Strip Behaviour::strip(uint32_t t) const {
 
 // With no app, no `say` shows: it outranks the reactions.
 const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ? say_.text : nullptr; }
+
+const char* Behaviour::laneText(uint32_t t) const {
+  if (const char* said = bubble(t)) return said;
+  if (!reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
+  if (model_.attn && !reason_.reply) return nullptr;
+  return reason_.text;
+}
 
 void Behaviour::signGoes(uint32_t at) {
   gone_ = sign_;

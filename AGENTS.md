@@ -261,6 +261,7 @@ keep their names.
 | reaction | What plays on the device: the brain's, a rule's, or the board's own (a tap) | one-shot, moment, request |
 | reply | What Boop answers to what you said on push-to-talk (`ReactOutput.replies`, `react.move`'s answer to it, the `do`'s `reply`): yes, hello, status…, with its clip and sign; the reaction that ends `listening` | answer (that's a topic), response |
 | sign | A short caption the buddy holds up while a reaction plays, often your own words (`Signs`, a pack's `signs.md`, the `do`'s `sign`) | banner, label |
+| reason | Why the buddy does what it does, in plain words rendered on the Mac from the line the brain answered, never by the brain: a sentence for the Mac, a few words for the board's lane (`Reason`, the `do`'s `reason`) | explanation, caption (that's a sign) |
 | reading | What Boop takes from your prompt, or an agent's last message, in its place: its kind, tone, length, which buddies' names you said, and a few of its words (`PromptReading`, `MessageReading`) | summary, label (for the whole) |
 | the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
 | message | One JSON line on the wire (`hello`, `state`, `do`, `ev`) | line |

@@ -1626,6 +1626,38 @@ static ReactionIn waited(uint32_t id, const char* take = kGo) {
 // take it down. Once down it fades out over the rig's fade, its words
 // kept (render::SignShow::opacity), but under needs you, which takes it at
 // once.
+// A reaction's reason (`reason`) shows in the lane's bubble while the
+// reaction plays and no `say` fills it, as long as its sign would show; a
+// newer reaction with none takes it down, and while something needs you
+// it doesn't show.
+static void test_a_reason_shows_in_the_lane() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  ReactionIn stroked = expressive(render::Mood::kComfy, nullptr);
+  std::snprintf(stroked.reason, sizeof stroked.reason, "%s", "stroked");
+  stroked.key = 1;
+  auto lane = [&] { const char* s = r.b.laneText(r.t); return std::string(s ? s : "-"); };
+  onReaction(r.b, stroked, r.t);
+  TEST_ASSERT_EQUAL_STRING("stroked", lane().c_str());
+  TEST_ASSERT_NULL(r.b.bubble(r.t));  // the `say`'s bubble is the take's only
+  r.at(1000 + Behaviour::kSignMinMs - 1);
+  TEST_ASSERT_EQUAL_STRING("stroked", lane().c_str());
+  // A newer reaction with no reason takes it down.
+  ReactionIn plain = expressive(render::Mood::kHappy, nullptr);
+  plain.key = 2;
+  onReaction(r.b, plain, r.t);
+  TEST_ASSERT_EQUAL_STRING("-", lane().c_str());
+  // While something needs you, a reason doesn't show.
+  r.at(20000);
+  r.state(attn());
+  ReactionIn back = expressive(render::Mood::kHappy, nullptr);
+  std::snprintf(back.reason, sizeof back.reason, "%s", "away 12 h");
+  back.key = 3;
+  onReaction(r.b, back, r.t);
+  TEST_ASSERT_EQUAL_STRING("-", lane().c_str());
+}
+
 static void test_a_sign_shows_while_its_reaction_plays() {
   Rig r;
   r.state(base("idle"));
@@ -3514,6 +3546,7 @@ int main() {
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
+  RUN_TEST(test_a_reason_shows_in_the_lane);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   return UNITY_END();
 }

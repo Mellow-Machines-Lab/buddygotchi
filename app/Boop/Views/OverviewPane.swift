@@ -104,6 +104,13 @@ struct OverviewPane: View {
                         // On a line of its own: beside the name or the
                         // headline, the buttons on the right leave it no room.
                         if let mood = model.status?.snapshot.mood { moodLabel(mood) }
+                        // Why it feels so, in plain words, so a face never
+                        // needs decoding.
+                        if let why = model.status?.moodReason?.cause {
+                            Text(why).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .animation(.boopSettle, value: why)
+                        }
                     }
                 }
                 .accessibilityElement(children: .combine)

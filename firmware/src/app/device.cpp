@@ -259,6 +259,8 @@ ReactionIn Device::parse(const Do& c) {
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
   // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
   render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
+  // Why it plays, for the lane, cut the same.
+  render::foldText(args["reason"].as<const char*>(), kSignGlyphs, mo.reason, sizeof(mo.reason));
   // What a face it brings replies to what you said, by name.
   if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
   mo.showDrawer = !std::strcmp(args["show"] | "", "drawer");
@@ -897,7 +899,7 @@ void Device::render(uint32_t t) {
     // scroll, and the paw dropping over its edge once it has sprung open.
     makeDrawer(t);
     b_.face().drawer(&drawer_);
-    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
+    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneText(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;
   }

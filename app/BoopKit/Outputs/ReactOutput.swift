@@ -56,6 +56,10 @@ public final class ReactOutput: Output {
     /// event: a prompt's reading may get a sign (`Signs`).
     let signs: [TaggedLine]
     let calendar: (Event) -> [String]
+    /// Why it reacts to the event the brain answered, in plain words
+    /// (`Reason`), or nil: its fact goes to the board's lane, and its
+    /// sentence to the transcript.
+    let reason: (Event?) -> Reason?
     /// What a reply holds up (`replies.md`), and for a `status` one about
     /// what you said, the agents' facts that answer it and where the board
     /// shows the rest (`StatusReply`), or nil for none.
@@ -93,7 +97,7 @@ public final class ReactOutput: Output {
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
-                talk: @escaping () -> Talk = { .default }) {
+                talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Reason? = { _ in nil }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -114,6 +118,7 @@ public final class ReactOutput: Output {
         self.hushed = hushed
         self.hush = hush
         self.talk = talk
+        self.reason = reason
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
@@ -616,6 +621,10 @@ public final class ReactOutput: Output {
             // the turn it's about while it plays.
             reaction.who = who(about)
         }
+        // Why, for the person: the board shows the fact in its lane, unless
+        // the strip already names the finished turn it's about.
+        let why = reason(about)
+        if reaction.who == nil { reaction.reason = why?.fact }
         let pending = Pending()
         queue(reaction, pending)
         // Hushed for as long as the moment is big, or let talk again.
@@ -633,6 +642,7 @@ public final class ReactOutput: Output {
         let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
         var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
         if let reply { facts["reply"] = .string(reply) }
+        if let why { facts["reason"] = .string(why.reaction(face: choice, name: pack.name)) }
         return .started(did + held + spoke, pending, facts: facts)
     }
 

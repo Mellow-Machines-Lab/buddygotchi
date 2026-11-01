@@ -24,6 +24,17 @@ public enum MoodOutput {
         return "\(name) has been \(current) for \(span)."
     }
 
+    /// Why the mood is what it is, for the person: its latest change's
+    /// cause, from the event that change answered (`for`) and that event's
+    /// line, `line`. `Reason.mood` makes the sentence ("Boop is lonely. You
+    /// came back after 26 hours away."). Nil before any change, for a
+    /// change nothing caused (the dashboard's), or once that event has left
+    /// the log.
+    public static func reason(_ mood: Choice, _ log: LogView, line: (Int) -> Line?) -> Reason? {
+        guard let latest = mood.latest(log), let seq = latest.about, let cause = log.event(seq) else { return nil }
+        return Reason.of(cause, line: line(seq))
+    }
+
     /// Each mood and its meaning, the `mood` question's criterion, in the
     /// pack's order (`MoodGraph.moods`), from the character pack's `moods`
     /// (characters/CHARACTER.md §5). Each also has a file in the steering's

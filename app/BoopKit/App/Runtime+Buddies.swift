@@ -147,7 +147,12 @@ extension Runtime {
                 // What you said hushed it, or let it talk again.
                 let fx = ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at)
                 if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
-            }, talk: m.talk)
+            }, talk: m.talk, reason: { [weak h] about in
+                // Why, from the line the brain read for it. Weak: the
+                // harness holds this output.
+                guard let h, let about else { return nil }
+                return Reason.of(about, line: h.line(about.seq))
+            })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             if let write = m.diary, !m.steering.diary.isEmpty {
