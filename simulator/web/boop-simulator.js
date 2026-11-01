@@ -21,6 +21,9 @@ export const TAP = [CANVAS[0] / 4, CANVAS[1] / 2];
 /// enough and slow enough to be one (firmware/src/app/touch_gesture.h).
 export const STROKE = [[90, 160], ...Array.from({ length: 10 }, (_, i) => [104 + 14 * i, 160])];
 /// A tickle: a finger wiggling in one spot.
+/// The lane's middle, in the canvas's pixels: where an ask's answers show
+/// (firmware/src/render/screens.h, kLaneTop and below).
+export const LANE_Y = 222;
 export const TICKLE = Array.from({ length: 14 }, (_, i) => [160 + (i % 2 ? 8 : -8), 100 + (i % 3) * 4]);
 /// How often a page keeping a board company says its `state` again, as the
 /// app does every 10 s, so the board never takes its Mac for gone.
@@ -284,6 +287,12 @@ export class DemoPlayer extends EventTarget {
       this.#board.release();
     }
     if (event.input === 'tickle') this.#path(TICKLE);
+    // An answer to the buddy's question: a tap in the lane, the left half
+    // for its first answer, the right for its second.
+    if (event.input === 'answer-a' || event.input === 'answer-b') {
+      this.#board.touch(event.input === 'answer-a' ? CANVAS[0] / 4 : (CANVAS[0] * 3) / 4, LANE_Y);
+      this.#board.release();
+    }
     if (event.input === 'dizzy') {
       (async () => {
         for (const [az, ms] of SHAKE) { this.#board.motion(0, 0, az); await new Promise(r => setTimeout(r, ms)); }

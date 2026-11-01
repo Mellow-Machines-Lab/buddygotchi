@@ -410,7 +410,9 @@ gets at least one scenario. Their pictures are the golden images in
   jitter from a tickle, a steady hand from a desk and a press's jolt from
   a thump (`test_gesture`); Boop's vocabulary message in and message out, its
   rules for the queue, the debug channel and inputs (`test_device`),
-  the agents' drawer's among them, on the build's face with a drawer
+  the agents' drawer's and an ask's (a tap on either half of the lane,
+  a touch, a newer reaction, 45 s, each `ev ask` before its `ended`)
+  among them, on the build's face with a drawer
   (`internal/firmware/wrapped_face.h`),
   including unchanged heartbeats causing no redraw while changed state,
   reconnection and leaving the test pattern still draw at once, and each

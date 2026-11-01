@@ -414,6 +414,29 @@ idle stretch, "fav snack?", a tap, and a day later the cookie in
 Boop's snack-time look. The board, the mirror and the simulator draw the two
 targets.
 
+**Built (2026-10-31).** As above, with these differences:
+- The demo asks "fav snack?" after half an hour of quiet, not "did it
+  work?" after a finish: a demo's `wait` reaches an idle check-in, and
+  the brain never asks at a finish or its last message. The cookie in
+  Boop's look waits for `state.you`, with the counted memory.
+- `ev ask` comes before the reaction's `ended` because the board holds
+  the reaction while the ask is up, and ends the ask as a newer reaction
+  is admitted. The question's words and answers ride on the react
+  output's `did`, so a demo (`Runtime.answered`) and an eval
+  (`ask answered`, `Pipeline.answerLast`) answer the last question
+  without the pack's file.
+- The brain keeps the question it picked even when the mood moved
+  between the question and the reaction (a `lonely` one included).
+- "Nothing asks while something needs you" is a unit test
+  (`AsksTests`), not an eval: the brain may not run then at all.
+- Steering: chatty has an Example that asks at an idle check-in, normal
+  may ask, the personality lets an idle check-in ask, and `lonely.md`
+  asks at a check-in. Jev asks at a lonely check-in a little over half
+  the time (evals 140 and 141 pass 3 of 3).
+- Scenario 06 now allows lonely at its last step: two hours at the Mac
+  with no touch (§2) is lonely by design.
+- The studio has no page for asks yet.
+
 ## Order
 
 1. **The reason.** Everything after it is explained by it, and it

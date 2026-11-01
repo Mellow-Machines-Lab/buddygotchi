@@ -64,6 +64,11 @@ extension Event {
         /// it kept, changed, added, dropped and aged, and what it refused,
         /// never their text. Boop's own; it wakes no pass.
         case memory
+        /// An ask's end, which the board decides: you picked an answer
+        /// (`specific_type` `a` or `b`), a touch answered it (`touch`), or
+        /// nobody did (`ignored`), with the question's `q`, its words
+        /// (`question`), the `answer` and whether Boop `keeps` it.
+        case ask
     }
 
     /// Where in its life a thing with a start and an end is: a tool call

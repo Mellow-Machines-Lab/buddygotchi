@@ -101,6 +101,20 @@ extension Runtime {
         changed()
     }
 
+    /// The question the buddy asked last answered, as its board would say
+    /// it (`ev ask`): `pick` "a", "b", "touch" (its first answer) or
+    /// "ignored". Nothing when it has asked nothing.
+    func answered(_ pick: String, who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): answer \(pick)\(Runtime.whose(rig))")
+        guard let step = pipeline.answerLast(pick, at: options.clock(), buddy: rig.tag) else {
+            options.log("\(who): nothing was asked")
+            return
+        }
+        run(step)
+        changed()
+    }
+
     /// Who forces passes and outputs, for no event: the dashboard's.
     public static let forcedBy = "dashboard"
 }

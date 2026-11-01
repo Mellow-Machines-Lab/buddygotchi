@@ -340,11 +340,14 @@ public final class Runtime: @unchecked Sendable {
         var personalityNow: () -> Personality = { .default }
         var talkNow: () -> Talk = { .default }
         var memoryNow: () -> String? = { nil }
+        var remembersNow: () -> Memory? = { nil }
+        let wallNow = options.wallClock
         var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
         var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
         let rigs = self.rigs
+        let made = pipeline
         let moods = Runtime.brain(pipeline, rigs.map { rig in
-            let link = rig.link, pack = rig.buddy.pack
+            let link = rig.link, pack = rig.buddy.pack, rigCore = made.core(rig.buddy.id)
             // Each buddy speaks its own pack's personality of the saved
             // name, or its first. Only the first is the one long-term.md
             // set up.
@@ -352,7 +355,11 @@ public final class Runtime: @unchecked Sendable {
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
                         talk: { talkNow() }, effects: { effected(rig, $0) },
-                        memory: rig === rigs[0] ? { memoryNow() } : { nil })
+                        memory: rig === rigs[0] ? { memoryNow() } : { nil },
+                        askable: { about, log, questions, mood in
+                            Asks.askable(about, log, questions: questions, core: rigCore, mood: mood, talk: talkNow(),
+                                         memory: remembersNow(), wall: wallNow())
+                        }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -402,6 +409,7 @@ public final class Runtime: @unchecked Sendable {
         personalityNow = { [weak self] in self?.personality ?? .default }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }
+        remembersNow = { [weak self] in self?.remembers }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
         effected = { [weak self] rig, fx in self?.run(fx, on: rig) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
@@ -452,9 +460,14 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
-                               memory: @escaping () -> String? = { nil }) -> (harness: Harness, mood: Choice) {
+                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
+                               wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
+        let core = pipeline.core
         let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, talk: talk, memory: memory)
+                        queue: queue, speaks: speaks, talk: talk, memory: memory,
+                        askable: { about, log, questions, mood in
+                            Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
+                        }, answerTags: { remembers?.answerTags(at: $0) ?? [] })
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 

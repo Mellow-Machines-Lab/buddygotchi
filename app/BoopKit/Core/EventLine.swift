@@ -191,6 +191,16 @@ public enum EventLine {
         }
     }
 
+    /// You answered an ask: `You answered Boop's "fav snack?": cookie.`
+    public static func answered(_ question: String, answer: String, name: String = CharacterPack.active.name) -> String {
+        "You answered \(name)'s \"\(question)\": \(answer)."
+    }
+
+    /// Nobody answered an ask: `You didn't answer Boop's "fav snack?".`
+    public static func unanswered(_ question: String, name: String = CharacterPack.active.name) -> String {
+        "You didn't answer \(name)'s \"\(question)\"."
+    }
+
     /// Under the line that tells the dream: `Boop dreamed about Monday:
     /// you stroked it 4 times; 7 turns on "api", 3 failed.`
     public static func dreamed(weekday: String, sentence: String, name: String = CharacterPack.active.name) -> String {
@@ -314,6 +324,9 @@ public enum EventLine {
           more, and days 40 or more. "You haven't touched or talked to
           \(name)" counts from the person's last poke, stroke or word to it,
           or their coming back.
+        - "You answered \(name)'s" question is the person tapping one of the two
+          answers \(name) held up; it answers as to anything said to it, with a
+          glad face and a sign back for the answer.
         - "\(name) dreamed about Monday" is the day before, as \(name) kept it
           overnight, told the first time the person shows up after it.
         """

@@ -46,6 +46,8 @@ public struct Scenario: Sendable {
         /// `dizzy`… (render::Gesture's names, `facedown`, and `dismiss`, a
         /// finger held on the needs-you screen).
         public var kind: String?
+        /// How an ask answered ends: a, b, touch or ignored.
+        public var pick: String?
         /// A `to-do list` step's list, as `3/7`: done, of all.
         public var todos: StateSnapshot.Todo?
         /// How a reaction this step's passes start ends: `done` (the
@@ -221,7 +223,7 @@ public struct Scenario: Sendable {
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
-                                "to-do list", "wait"]
+                                "to-do list", "wait", "ask answered"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -354,6 +356,10 @@ public struct Scenario: Sendable {
             step.helper = s["helper"] as? String
             step.kind = s["kind"] as? String
             if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
+            if event == "ask answered" {
+                step.pick = s["pick"] as? String ?? "a"
+                guard ["a", "b", "touch", Asks.ignored].contains(step.pick!) else { throw badStep("an ask's pick is a, b, touch or ignored") }
+            }
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
             if event == "to-do list" {
                 guard let text = s["todos"] as? String, let list = StateSnapshot.Todo(text: text) else { throw badStep("to-do list needs todos, like 3/7") }
@@ -406,7 +412,7 @@ public struct Scenario: Sendable {
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, ReactOutput.says.map(\.name)),
                                              ("intensity", step.expect?.intensity, ReactOutput.intensities.map(\.name)),
-                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush"])] {
+                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush", "ask"])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -669,7 +675,8 @@ public struct Eval {
                 } else {
                     pending.finish(end)
                 }
-            }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) })
+            }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
+            remembers: remembers, wall: { clock.now })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
@@ -985,6 +992,9 @@ public struct Eval {
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",
                                                  data: ["since": .int(now)])) }]
         case "back": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .end, specificType: "unlocked")) }]
+        // The board ends the last ask: the left answer tapped, the right,
+        // a touch, or nobody.
+        case "ask answered": return [{ $0.answerLast(step.pick ?? "a", at: now) ?? $0.tick(at: now) }]
         default: return []  // wait
         }
     }

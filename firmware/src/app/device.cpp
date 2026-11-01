@@ -145,6 +145,18 @@ void Device::reset() {
 }
 
 void Device::drain() {
+  // An ask's end goes first: the Mac hears the answer before the reaction's
+  // `ended`.
+  AskEnd a;
+  if (b_.takeAskEnd(a)) {
+    JsonDocument d;
+    d["q"] = a.q;
+    d["question"] = a.question;
+    if (a.answer[0]) d["answer"] = a.answer;
+    char data[160];
+    serializeJson(d, data, sizeof(data));
+    kit().emit("ask", a.pick, data, a.injected);
+  }
   PlayedOut p;
   if (b_.takePlayedOut(p)) kit().ended(p.key, p.by == CutBy::kNone ? How::kDone : How::kCut, cutByName(p.by));
 }
@@ -264,6 +276,15 @@ ReactionIn Device::parse(const Do& c) {
   // What a face it brings replies to what you said, by name.
   if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
   mo.showDrawer = !std::strcmp(args["show"] | "", "drawer");
+  // What it asks: the question's id and its two answers, each cut to half
+  // the lane. One with no id or an answer missing asks nothing.
+  JsonObjectConst ask = args["ask"];
+  if (ask) {
+    render::foldText(ask["a"].as<const char*>(), kAnswerGlyphs, mo.askA, sizeof(mo.askA));
+    render::foldText(ask["b"].as<const char*>(), kAnswerGlyphs, mo.askB, sizeof(mo.askB));
+    if (mo.askA[0] && mo.askB[0]) copyStr(mo.askQ, sizeof(mo.askQ), ask["q"].as<const char*>());
+    mo.askTouch = ask["touch"] | false;
+  }
   return mo;
 }
 
@@ -276,7 +297,8 @@ const char* Device::refuse(const Do& c, uint32_t t) {
   if (c.what == kCall) return b_.callShows(t) ? nullptr : "hidden";
   live_.parsed = parse(c);
   const char* why = b_.admit(live_.parsed, t);
-  drain();  // a listening reaction the reply ended
+  if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
+  drain();                  // a listening reaction the reply ended, or the ask's
   if (why) live_.parsed = ReactionIn{};
   return why;
 }
@@ -324,7 +346,10 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kReact:
       live_.restKey = c.key;
       live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
-      if (mo.sign[0] && b_.signUp(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      // An ask rests once its question has been read: anything newer may
+      // replace it, and ends it unanswered.
+      if (mo.sign[0] && b_.signUp(t) && !b_.asking(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      if (b_.asking(t) && after(t + Behaviour::kSignMinMs, live_.restAt)) live_.restAt = t + Behaviour::kSignMinMs;
       break;
     case kTaskComplete:
     case kReplyReady:
@@ -581,7 +606,14 @@ void Device::readInputs(uint32_t t) {
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
         const bool noseOnFinish = kind == TouchGesture::kGesture && g == render::Gesture::kNose && b_.finishShown(t);
-        if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
+        // While an ask is up, a tap in the lane is only its answer: the
+        // left half picks `a`, the right `b`.
+        const bool onAnswer = kind == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
+        if (onAnswer) {
+          input("tap", t);
+          b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
+          drain();
+        } else if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
           tapped(t, live_.touchInjected, false);
         else
           gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
@@ -764,10 +796,18 @@ void Device::tendDrawer(uint32_t t) {
 
 bool Device::needsYouShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
 
+// The touches that answer an ask that takes one: the kind ones.
+static bool caring(render::Gesture g) {
+  using G = render::Gesture;
+  return g == G::kStroke || g == G::kNose || g == G::kTickle || g == G::kRuffle || g == G::kPickup || g == G::kDizzy;
+}
+
 void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) {
+  const bool answers = !swipe && caring(g) && b_.askTakesTouch(t);
   if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
   input("gesture", t);
   kit().emit("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, injected);
+  if (answers) b_.answer("touch", t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
 

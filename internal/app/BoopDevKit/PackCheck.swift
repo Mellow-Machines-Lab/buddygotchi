@@ -36,13 +36,15 @@ public struct PackCheck {
             for mood in pack.moods.map(\.id) where steering.files["mood/\(mood)"] == nil {
                 notes.append("steering/mood/\(mood).md is missing: \(mood) reads as \(pack.defaultMood)'s")
             }
-            for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
+            // `asks.md` is never read whole: its lines are offered one by one.
+            for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) where path != "asks" {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
                     : path.hasPrefix("personality/") ? Steering.Budget.personality
                     : path.hasPrefix("talk/") ? Steering.Budget.talk
                     : path == "replies" ? Steering.Budget.replies : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
+            problems += Self.asks(steering.asks)
             for path in steering.files.keys.sorted() where path.hasPrefix("nature/") {
                 notes.append("steering/\(path).md isn't read: who the creature is goes in its personality")
             }
@@ -111,6 +113,36 @@ public struct PackCheck {
 
     /// The version in a voice file's header (`voice/voice.bin`): its 16
     /// bytes after the magic, NUL-padded.
+    /// What's wrong with a pack's asks: a line neither a question with two
+    /// answers nor a follow-up, a question or answer too long for the
+    /// board, or a follow-up to a question or answer the file hasn't.
+    static func asks(_ lines: [TaggedLine]) -> [String] {
+        var found: [String] = []
+        let questions = Asks.questions(lines)
+        for line in lines where line.parts.count != 1 && line.parts.count != 3 {
+            found.append("steering/asks.md: \"\(line.text)\" isn't a question with two answers, nor a follow-up")
+        }
+        for q in questions {
+            if q.question.count > Asks.maxQuestion {
+                found.append("steering/asks.md: \"\(q.question)\" is over \(Asks.maxQuestion) characters")
+            }
+            for answer in [q.a, q.b] where answer.count > Asks.maxAnswer {
+                found.append("steering/asks.md: \"\(answer)\" is over \(Asks.maxAnswer) characters")
+            }
+        }
+        for line in lines where line.parts.count == 1 {
+            guard line.tags.count >= 2, let q = questions.first(where: { $0.id == line.tags[0] }),
+                  [q.a, q.b].map({ $0.lowercased() }).contains(line.tags[1]) else {
+                found.append("steering/asks.md: \"\(line.text)\" follows no question's answer: tag it [id answer]")
+                continue
+            }
+            if line.text.count > Signs.maxLength {
+                found.append("steering/asks.md: \"\(line.text)\" is over \(Signs.maxLength) characters")
+            }
+        }
+        return found
+    }
+
     public static func voiceFileVersion(_ pack: Data) -> String {
         pack.count < 24 ? "" : String(decoding: pack[8..<24].prefix { $0 != 0 }, as: UTF8.self)
     }

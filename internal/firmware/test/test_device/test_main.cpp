@@ -2180,6 +2180,102 @@ static void test_a_tap_says_where_it_came_from() {
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
 }
 
+// ---- Asks ------------------------------------------------------------------
+
+static const char* kSnack = "{\"sign\":\"fav snack?\",\"ask\":{\"q\":\"snack\",\"a\":\"cookie\",\"b\":\"pizza\"}}";
+static const char* kPet = "{\"sign\":\"pet me?\",\"ask\":{\"q\":\"pet\",\"a\":\"ok\",\"b\":\"later\",\"touch\":true}}";
+
+// `ev ask` for the question `q`, `pick` how it ended, `answer` its words.
+static std::string askLine(const char* q, const char* question, const char* pick, const char* answer = nullptr) {
+  std::string s = std::string("{\"t\":\"ev\",\"kind\":\"ask\",\"did\":\"") + pick + "\",\"data\":{\"q\":\"" + q +
+                  "\",\"question\":\"" + question + "\"";
+  if (answer) s += std::string(",\"answer\":\"") + answer + "\"";
+  return s + "}}\n";
+}
+// Whether `first` is in the text, and before `then`.
+static bool before(const std::string& text, const std::string& first, const std::string& then) {
+  const size_t a = text.find(first), b = text.find(then);
+  return a != std::string::npos && b != std::string::npos && a < b;
+}
+
+// An ask holds its question up and fills the lane with its two answers,
+// the gap between them in the middle; a tap in the lane's left half
+// answers `a`, its right half `b`, and is no poke. The board says so
+// (`ev ask`) before the reaction's `ended`.
+static void test_a_tap_in_the_lane_answers_an_ask() {
+  for (int side = 0; side < 2; ++side) {
+    Rig r;
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    clockAt(r, 1000);
+    doLine(r, 1, "react", "next", kSnack);
+    std::string st = stateOf(r);
+    TEST_ASSERT_TRUE(has(st, "\"sign\":\"fav snack?\""));
+    TEST_ASSERT_TRUE(has(st, "\"ask\":\"cookie    pizza \""));
+    TEST_ASSERT_TRUE(has(st, "\"reason\":null"));
+    r.usb.text.clear();
+    r.usbLine(side ? "{\"t\":\"dbg.touch\",\"x\":260,\"y\":222,\"ms\":100}"
+                   : "{\"t\":\"dbg.touch\",\"x\":60,\"y\":222,\"ms\":100}");
+    clockAt(r, 1200);
+    const std::string said = r.usb.text;
+    const std::string ask =
+        side ? askLine("snack", "fav snack?", "b", "pizza") : askLine("snack", "fav snack?", "a", "cookie");
+    TEST_ASSERT_TRUE_MESSAGE(before(said, ask, endedLine(1, "done")), said.c_str());
+    TEST_ASSERT_FALSE(has(said, "\"kind\":\"tap\""));
+    st = stateOf(r);
+    TEST_ASSERT_TRUE(has(st, "\"ask\":null"));
+    TEST_ASSERT_TRUE(has(st, "\"sign\":null"));
+  }
+}
+
+// A touch answers an ask that takes one (`touch`), as `touch`, with its
+// first answer's words; on one that doesn't, the stroke is only a stroke.
+static void test_a_touch_answers_only_an_ask_that_takes_one() {
+  for (int takes = 0; takes < 2; ++takes) {
+    Rig r;
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    clockAt(r, 1000);
+    doLine(r, 1, "react", "next", takes ? kPet : kSnack);
+    r.usb.text.clear();
+    r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+    for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
+    TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
+    if (takes) {
+      TEST_ASSERT_TRUE(has(r.usb.text, askLine("pet", "pet me?", "touch", "ok")));
+      TEST_ASSERT_TRUE(has(stateOf(r), "\"ask\":null"));
+    } else {
+      TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ask\""));
+      TEST_ASSERT_TRUE(has(stateOf(r), "\"ask\":\"cookie    pizza \""));
+    }
+  }
+}
+
+// Nobody answers: a newer reaction replaces the ask, or kAskMs pass, and
+// it ends `ignored`, its `ev` before its `ended`. It rests once its
+// question has been read, so the newer one needn't wait out the 45 s.
+static void test_an_unanswered_ask_ends_ignored() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  clockAt(r, 1000);
+  doLine(r, 1, "react", "next", kSnack);
+  doLine(r, 2, "react", "next", kGo);
+  clockAt(r, 1000 + app::Behaviour::kSignMinMs + 600);
+  TEST_ASSERT_TRUE_MESSAGE(before(r.usb.text, askLine("snack", "fav snack?", "ignored"), endedLine(1, "done")),
+                           r.usb.text.c_str());
+  Rig q;
+  q.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  clockAt(q, 1000);
+  doLine(q, 1, "react", "next", kSnack);
+  for (uint32_t t = 2000; t < 1000 + app::Behaviour::kAskMs; t += 1000) {
+    clockAt(q, t);
+    q.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // the Mac stays
+  }
+  TEST_ASSERT_TRUE(has(stateOf(q), "\"ask\":\"cookie    pizza \""));
+  q.usb.text.clear();
+  clockAt(q, 1000 + app::Behaviour::kAskMs);
+  TEST_ASSERT_TRUE_MESSAGE(before(q.usb.text, askLine("snack", "fav snack?", "ignored"), endedLine(1, "done")),
+                           q.usb.text.c_str());
+}
+
 // A touch that travels is a stroke: the board plays gesture's stroke and
 // tells the Mac (`ev gesture`, did its name).
 static void test_a_stroke_is_a_gesture() {
@@ -2674,6 +2770,9 @@ int main() {
   RUN_TEST(test_a_hold_off_the_needs_you_screen_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
+  RUN_TEST(test_a_tap_in_the_lane_answers_an_ask);
+  RUN_TEST(test_a_touch_answers_only_an_ask_that_takes_one);
+  RUN_TEST(test_an_unanswered_ask_ends_ignored);
   RUN_TEST(test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac);
   RUN_TEST(test_face_down_is_do_not_disturb);
   RUN_TEST(test_reset_reads_motion_from_0);

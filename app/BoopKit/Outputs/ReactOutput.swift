@@ -65,6 +65,25 @@ public final class ReactOutput: Output {
     /// one of the signs those tags fit.
     let dreams: [TaggedLine]
     let told: (Event) -> [String]?
+    /// The pack's asks (`asks.md`), and those of its questions it may ask
+    /// at an event, by the moment and the caps (`Asks.askable`).
+    let asks: [TaggedLine]
+    let askable: (Event, LogView, [Asks.Question]) -> [Asks.Question]
+
+    /// The questions it may ask at `about`: never at your prompt, what you
+    /// said, a turn's finish or its last message, the dream's telling or
+    /// another ask's end.
+    func askOptions(_ about: Event?, _ log: LogView) -> [Asks.Question] {
+        guard let about, !asks.isEmpty, !Self.isTalk(about), about.type != .prompt, about.type != .ask, about.type != .lastMessage,
+              !(about.type == .turn && about.phase == .end), told(about) == nil else { return [] }
+        return askable(about, log, Asks.questions(asks))
+    }
+
+    /// `react.move`'s ask, when it may ask.
+    static func askMove(of name: String) -> Option {
+        Option("ask", "\(name) asks you one of the questions offered as signs, holding it up with its two answers for you to tap. Offered only when it may ask: a quiet moment where nothing has happened for a while, a turn that finished a little while ago, or \(name) lonely; it fills the quiet better than silence.",
+               notFor: "Your prompt, a turn's finish, anything said to \(name), or a busy moment.")
+    }
     /// What a reply holds up (`replies.md`), and for a `status` one about
     /// what you said, the agents' facts that answer it and where the board
     /// shows the rest (`StatusReply`), or nil for none.
@@ -103,7 +122,8 @@ public final class ReactOutput: Output {
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
                 talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Reason? = { _ in nil },
-                dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }) {
+                dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }, asks: [TaggedLine] = [],
+                askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -127,6 +147,8 @@ public final class ReactOutput: Output {
         self.reason = reason
         self.dreams = dreams
         self.told = told
+        self.asks = asks
+        self.askable = askable
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
@@ -341,6 +363,7 @@ public final class ReactOutput: Output {
     /// nil for none.
     public static func move(_ answers: Answers) -> String? {
         if let a = animation(answers) { return a }
+        if answers[moveKey]?.choice == "ask" { return "ask" }
         guard let choice = answers[moveKey]?.choice, (replies + [unhush(of: CharacterPack.active.name)]).contains(where: { $0.name == choice })
         else { return nil }
         return reply(answers)
@@ -403,9 +426,34 @@ public final class ReactOutput: Output {
                                          + captions.map { Option($0.text, "With \(Self.article($0.replies[0])) \($0.replies.joined(separator: " or ")) reply"
                                                                  + ($0.replies.contains("dunno") ? " (dunno, a huh to a question)." : ".")) })]
         }
-        let asked = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
+        let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
+        // A question it may ask: the move, and the question as the sign.
+        let questions = askOptions(about, log)
+        if !questions.isEmpty {
+            let withAsk = speech.map { q in
+                q.key == Self.moveKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
+                                                 options: q.options + [Self.askMove(of: pack.name)]) : q
+            }
+            return withAsk + [Question(key: Signs.questionKey,
+                                       text: "If \(pack.name) asks you something, which question does it hold up? Only with the ask move.",
+                                       about: "NOW and HISTORY", judgeBy: "what fits the moment, the ones that shape \(pack.name) first",
+                                       options: [Option("none", "No question: \(pack.name) doesn't ask.")]
+                                           + questions.map { q in
+                                               Option(q.question, "Asks \"\(q.question)\": \(q.a) or \(q.b)."
+                                                   + (q.tags.isEmpty ? "" : " For a moment that's \(q.tags.joined(separator: ", ")).")
+                                                   + (q.keeps ? " Its answer becomes part of \(pack.name)." : ""))
+                                           })]
+        }
+        let asked = speech
         let captions = offered(now, log)
         guard !captions.isEmpty else { return asked }
+        if let about, about.type == .ask {
+            return asked + [Question(key: Signs.questionKey,
+                                     text: "You answered \(pack.name)'s question, as NOW says. Which sign does it hold up back? The one for your answer, in \(pack.name)'s way.",
+                                     about: "the answer NOW quotes", judgeBy: "the answer, then PERSONALITY and MOOD",
+                                     options: [Option("none", "No sign: none of these fits.")]
+                                         + captions.map { Option($0, "A sign for your answer.") })]
+        }
         if let about, told(about) != nil {
             return asked + [Question(key: Signs.questionKey,
                                      text: "\(pack.name) tells its dream about yesterday, under NOW's line. Which sign does it hold up? The one that fits the day it dreamed of best, the person's part of it first.",
@@ -427,6 +475,10 @@ public final class ReactOutput: Output {
         guard let about = Self.about(now, log) else { return [] }
         // The line that tells the dream: a sign the dream's tags fit.
         if let tags = told(about) { return Signs.dreams(dreams, tags: tags + calendar(about)) }
+        // An ask answered: what it holds up after that answer.
+        if about.type == .ask, let q = about["q"]?.string, let answer = about["answer"]?.string {
+            return Asks.followUps(asks, id: q, answer: answer)
+        }
         guard about.type == .prompt, let reading = PromptReading(facts: about.data) else { return [] }
         return Signs.offered(signs, reading: reading, name: pack.name, calendar: calendar(about))
     }
@@ -622,6 +674,17 @@ public final class ReactOutput: Output {
             sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
         var reaction = DeviceReaction(say: say, mood: choice, loops: size.loops, sign: sign)
+        // An ask: the question as the sign, the answers as the lane's
+        // targets, the one the brain picked of those it was offered (the
+        // mood may have moved since, so not asked again) or else the
+        // first offered now.
+        var asking: Asks.Question?
+        if answers[Self.moveKey]?.choice == "ask", reply == nil {
+            let questions = askOptions(about, log)
+            asking = Asks.questions(asks).first { $0.question == answers[Signs.questionKey]?.choice } ?? questions.first
+            reaction.sign = asking?.question
+            reaction.ask = asking
+        }
         reaction.reply = reply
         reaction.show = show
         if let pick, let scene = Self.scenes[pick] {
@@ -641,7 +704,7 @@ public final class ReactOutput: Output {
         // Why, for the person: the board shows the fact in its lane, unless
         // the strip already names the finished turn it's about.
         let why = reason(about)
-        if reaction.who == nil { reaction.reason = why?.fact }
+        if reaction.who == nil, asking == nil { reaction.reason = why?.fact }
         let pending = Pending()
         queue(reaction, pending)
         // Hushed for as long as the moment is big, or let talk again.
@@ -654,12 +717,19 @@ public final class ReactOutput: Output {
             ?? "\(pack.name) made \(face)" + (reply.map { ", replying \($0)" } ?? "")
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
-        let held: String = (sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
+        let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }
+            ?? sign.map { ", holding up a sign: \"\($0)\"" } ?? "")
             + (show == StatusReply.drawer ? " and showing every agent" : "")
         let spoke: String = say.text.map { ", and said \"\($0)\"." } ?? "."
         var facts: [String: JSONValue] = ["takes": .array(said.map { .string($0.id) })]
         if let reply { facts["reply"] = .string(reply) }
         if let why { facts["reason"] = .string(why.reaction(face: choice, name: pack.name)) }
+        if let asking {
+            facts["ask"] = .string(asking.id)
+            facts["keeps"] = .bool(asking.keeps)
+            facts["question"] = .string(asking.question)
+            facts["answers"] = .array([.string(asking.a), .string(asking.b)])
+        }
         return .started(did + held + spoke, pending, facts: facts)
     }
 

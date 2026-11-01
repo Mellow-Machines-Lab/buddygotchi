@@ -68,6 +68,10 @@ public struct Reason: Equatable, Sendable {
         case .gesture?:
             guard let g = gestures[e.specificType] else { return line.map { Reason(cause: $0.text) } }
             return Reason(cause: g.cause, fact: g.fact)
+        case .ask? where e.specificType != Asks.ignored:
+            guard let answer = facts["answer"]?.string else { return line.map { Reason(cause: $0.text) } }
+            return facts["keeps"]?.bool == true ? Reason(cause: "It will remember: \(answer).", fact: "remembered!")
+                : Reason(cause: "You answered: \(answer).", fact: "\(answer)!")
         case .talk?:
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return line.map { Reason(cause: $0.text) } }

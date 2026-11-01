@@ -80,12 +80,21 @@ extension Runtime {
         public var effects: (([CoreEffect]) -> Void)?
         /// MEMORY, the written memory as Jev reads it, or nil for none.
         public var memory: () -> String?
+        /// The questions it may ask at an event, of the pack's, in its mood
+        /// (`Asks.askable`); and the answers kept as tags at a time, for
+        /// every sign's lines.
+        public var askable: (Event, LogView, [Asks.Question], Choice) -> [Asks.Question]
+        public var answerTags: (Int64) -> [String]
 
         public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
                     talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
-                    memory: @escaping () -> String? = { nil }) {
+                    memory: @escaping () -> String? = { nil },
+                    askable: @escaping (Event, LogView, [Asks.Question], Choice) -> [Asks.Question] = { _, _, _, _ in [] },
+                    answerTags: @escaping (Int64) -> [String] = { _ in [] }) {
             self.memory = memory
+            self.askable = askable
+            self.answerTags = answerTags
             self.effects = effects
             self.buddy = buddy
             self.steering = steering
@@ -134,7 +143,8 @@ extension Runtime {
                 // The finished turn's length, from its line's facts.
                 guard let h, let now, case .int(let ms)? = h.line(now.seq)?.facts["length_ms"] else { return nil }
                 return ms
-            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.calendar(at: $0.at) },
+            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs,
+            calendar: { core.calendar(at: $0.at) + m.answerTags($0.at) },
             replies: m.steering.replies, status: { [weak h] said in
                 // What this buddy's agents are up to as you ask, and how
                 // each one's latest check or turn came out.
@@ -155,7 +165,7 @@ extension Runtime {
                 // The dream the line tells, by its tags.
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
                 return tags.compactMap(\.string)
-            })
+            }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }

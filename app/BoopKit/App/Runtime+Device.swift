@@ -86,6 +86,16 @@ extension Runtime {
             case "pick": if let row = BoopDevice.row(picked: ev) { run(pipeline.pick(row: row, at: now, buddy: rig.tag)) }
             default: break
             }
+        case "ask":
+            // An ask's end, which the board decides: the question, its
+            // words and the answer come back with it; whether Boop keeps
+            // it is the record's.
+            guard let q = ev.data["q"]?.string else { break }
+            let pick = ev.did ?? Asks.ignored
+            let keeps = remembers?.askRecord(q)?.keeps ?? false
+            options.log("device\(Runtime.whose(rig)): ask \(q) \(pick)")
+            run(pipeline.ask(q, question: ev.data["question"]?.string ?? "", pick: pick,
+                             answer: pick == Asks.ignored ? nil : ev.data["answer"]?.string, keeps: keeps, at: now, buddy: rig.tag))
         case "talk_on", "talk_off":
             options.log("device\(Runtime.whose(rig)): \(ev.kind)")
             listener = rig

@@ -93,6 +93,8 @@ public final class MemoryReader: TranscriptReader {
             if e.specificType == "stroke" { t.strokes += 1 }
         case .talk?:
             t.talks += 1
+        case .ask? where e.specificType != Asks.ignored:
+            t.answered += 1
         case .prompt?:
             t.prompts += 1
             let hour = time.components(e.at).hour
@@ -138,7 +140,7 @@ public final class MemoryReader: TranscriptReader {
         let text = ([line.text] + line.notes).joined(separator: "\n  ")
         switch e.type {
         case .prompt?: return (text, !line.notes.contains { $0.hasPrefix("Your words") })
-        case .talk?: return (text, false)
+        case .talk?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
         case .turn? where e.phase == .end:
             let long = (line.facts["length_ms"]?.int ?? 0) >= 5 * 60_000
             return long || e["outcome"]?.string != "done" ? (text, true) : nil

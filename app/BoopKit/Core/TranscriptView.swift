@@ -272,7 +272,7 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -309,6 +309,7 @@ public final class TranscriptView {
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
         if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
+        if e.type == .ask, e.specificType == Asks.ignored { return "nobody answered \(name(e))'s question" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
@@ -454,6 +455,15 @@ public final class TranscriptView {
             if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
             return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .talk?: return talk(e)
+        case .ask?:
+            let question = e["question"]?.string ?? ""
+            guard e.specificType != Asks.ignored, let answer = e["answer"]?.string else {
+                return Line(EventLine.unanswered(question, name: name(e)), facts: ["q": e["q"] ?? .null, "pick": .string(Asks.ignored)])
+            }
+            noteActivity(e.at)
+            return Line(EventLine.answered(question, answer: answer, name: name(e)),
+                        facts: ["q": e["q"] ?? .null, "answer": .string(answer), "pick": .string(e.specificType),
+                                "keeps": e["keeps"] ?? .bool(false)])
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
         case .needsYou?: return needs(e)

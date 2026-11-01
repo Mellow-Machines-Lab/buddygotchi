@@ -57,6 +57,11 @@ extension Steering {
     /// are told with no sign.
     public var dreams: [TaggedLine] { files["dreams"].map(TaggedLine.parse) ?? [] }
 
+    /// The questions it may ask you, and what it holds up after your
+    /// answer (`asks.md`, optional): none for a pack with no file, which
+    /// never asks.
+    public var asks: [TaggedLine] { files["asks"].map(TaggedLine.parse) ?? [] }
+
     /// What a reply to what you said may hold up (`replies.md`,
     /// optional): none for a pack with no file, whose replies hold up
     /// nothing but the agents' facts.

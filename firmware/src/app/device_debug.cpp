@@ -241,10 +241,17 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["expr"] = nullptr;
   if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
-  // The lane's text when it isn't the `say`'s: the reaction's reason.
+  // The lane's text when it isn't the `say`'s: the reaction's reason, or
+  // an ask's answers.
   const char* lane = b_.laneText(t);
-  if (lane && lane != b_.bubble(t)) d["reason"] = lane;
+  if (lane && lane != b_.bubble(t) && !b_.asking(t))
+    d["reason"] = lane;
   else d["reason"] = nullptr;
+  // An ask up: its answers as the lane shows them.
+  if (b_.asking(t))
+    d["ask"] = lane;
+  else
+    d["ask"] = nullptr;
   // The work stream: how many lanes show, and the word forward's gag.
   const render::Stream& stream = b_.stream();
   d["calls"] = stream.on ? stream.laneCount : 0;

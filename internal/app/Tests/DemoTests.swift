@@ -59,7 +59,18 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(DemoScript(#"{"you": "back", "minutes": 600}"#).steps[0].what, .back(ms: 36_000_000))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": 0}"#))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": "lots"}"#))
-        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, gesture, press, hold, talk, back or wait")) }
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, gesture, answer, press, hold, talk, back or wait")) }
+    }
+
+    /// An answer taps one side of the lane: `a`, the left, or `b`, the
+    /// right, which a recording replays on the board (`input`).
+    func testAnAnswerIsALeftOrRightTap() throws {
+        let left = try DemoScript(#"{"you": "answer", "pick": "a"}"#).steps[0]
+        XCTAssertEqual(left.what, .answer("a"))
+        XCTAssertEqual(left.input, "answer-a")
+        try XCTAssertEqual(DemoScript(#"{"you": "answer", "pick": "b"}"#).steps[0].input, "answer-b")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "answer", "pick": "c"}"#))
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "answer"}"#))
     }
 
     /// A gesture is one the board knows by itself, which a recording

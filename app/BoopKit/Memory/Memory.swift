@@ -127,7 +127,43 @@ public final class Memory: @unchecked Sendable {
 
     func heard(_ e: Event, line: Line?) {
         if let day = line?.facts["dream_day"]?.string { told(day) }
+        recordAsk(e)
         runner.feed(e, line: line)
+    }
+
+    // MARK: The ask record
+
+    /// What's kept of the question `id` asked (`ask.<id>`), or nil.
+    public func askRecord(_ id: String) -> Asks.Record? {
+        store.string("ask.\(id)").flatMap { try? JSONDecoder().decode(Asks.Record.self, from: Data($0.utf8)) }
+    }
+
+    /// Every question's record, by its id.
+    public func askRecords() -> [String: Asks.Record] {
+        store.prefixed("ask.").reduce(into: [:]) { out, row in
+            if let r = try? JSONDecoder().decode(Asks.Record.self, from: Data(row.value.utf8)) { out[String(row.key.dropFirst(4))] = r }
+        }
+    }
+
+    /// The answers kept as tags today, for every sign's lines.
+    public func answerTags(at ms: Int64) -> [String] { Asks.answerTags(askRecords(), today: time.boopDay(ms)) }
+
+    /// Keeps a question asked (the react output's `did` names it) and its
+    /// end (the `ask` event), one row a question.
+    func recordAsk(_ e: Event) {
+        var record: Asks.Record?
+        if e.kind == Event.did, e.action == ReactOutput.outputName, let id = e["ask"]?.string {
+            record = Asks.Record(asked: time.boopDay(e.at), keeps: e["keeps"]?.bool ?? false)
+            save(record!, id)
+        } else if e.type == .ask, let id = e["q"]?.string, var r = askRecord(id) {
+            if e.specificType == Asks.ignored { r.ignored = true } else { r.answer = e["answer"]?.string }
+            save(r, id)
+        }
+    }
+
+    func save(_ record: Asks.Record, _ id: String) {
+        guard let data = try? JSONEncoder().encode(record) else { return }
+        do { try store.set(["ask.\(id)": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the ask: \(error)") }
     }
 
     /// Closes the day once it's over, and logs a dream not yet logged.

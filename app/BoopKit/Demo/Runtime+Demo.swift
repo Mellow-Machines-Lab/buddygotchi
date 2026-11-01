@@ -182,6 +182,11 @@ public final class DemoPlayer: @unchecked Sendable {
             heardStep(step, agent(of: step))
             runtime.gestured(kind, who: Runtime.demoBy, buddy: step.buddy)
             then()
+        case .answer(let pick):
+            // The board ends its ask by itself; the app hears the answer.
+            heardStep(step, agent(of: step))
+            runtime.answered(pick, who: Runtime.demoBy, buddy: step.buddy)
+            then()
         case .hold:
             // The board tells the Mac once the finger has been down its
             // hold; the demo's finger stays a little longer.

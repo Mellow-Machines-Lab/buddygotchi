@@ -73,6 +73,9 @@ public struct DemoScript: Sendable {
             /// A gesture of yours to the board, one it knows by itself: a
             /// stroke, a boop on its nose, a tickle or a shake (`dizzy`).
             case gesture(String)
+            /// A tap on one of the answers the buddy's question shows in
+            /// its lane: `a`, the left, or `b`, the right.
+            case answer(String)
             /// Back at the Mac after this many ms away.
             case back(ms: Int64)
             /// This many ms pass at once.
@@ -268,6 +271,11 @@ public struct DemoScript: Sendable {
                         throw Problem(description: "\(here): a gesture's kind is \(DemoScript.gestures.sorted().joined(separator: ", "))")
                     }
                     what = .gesture(kind)
+                case "answer":
+                    guard let pick = string("pick"), pick == "a" || pick == "b" else {
+                        throw Problem(description: "\(here): an answer's pick is a or b")
+                    }
+                    what = .answer(pick)
                 case "press": what = .press
                 case "hold": what = .hold
                 case "talk":
@@ -280,7 +288,7 @@ public struct DemoScript: Sendable {
                 case "wait":
                     guard let minutes = number("minutes"), minutes > 0 else { throw Problem(description: "\(here): a wait's minutes are more than 0") }
                     what = .wait(ms: Int64(minutes * 60_000))
-                default: throw Problem(description: "\(here): you is poke, gesture, press, hold, talk, back or wait")
+                default: throw Problem(description: "\(here): you is poke, gesture, answer, press, hold, talk, back or wait")
                 }
             } else if o["brain"] != nil || o["mood"] != nil {
                 what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
@@ -291,7 +299,7 @@ public struct DemoScript: Sendable {
             case .agent(let a) where a.does == .prompt: (1, 0)
             case .agent(let a) where a.does == .run || a.does == .compact: (1, 2)
             case .agent: (1, 0.6)
-            case .poke, .press, .hold, .talk, .back, .wait, .gesture: (0.8, 0)
+            case .poke, .press, .hold, .talk, .back, .wait, .gesture, .answer: (0.8, 0)
             case .brain: (0.3, 0)
             }
             let buddy = string("buddy")
@@ -338,7 +346,7 @@ public struct DemoScript: Sendable {
         "demo": ["demo", "title", "agent", "buddies", "start"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "waits", "task", "prompt", "summary", "by",
                   "takes", "session", "reading", "todos"],
-        "you": ["you", "text", "hold", "minutes", "kind"],
+        "you": ["you", "text", "hold", "minutes", "kind", "pick"],
         "brain": ["brain", "mood"],
     ]
     static let anyStep = ["after", "note", "buddy"]
@@ -376,6 +384,7 @@ extension DemoScript.Step {
         switch what {
         case .poke: "tap"
         case .gesture(let kind): kind
+        case .answer(let pick): "answer-\(pick)"
         case .press: "press"
         case .hold: "hold"
         default: nil
@@ -394,6 +403,7 @@ extension DemoScript.Step {
             let did = ["stroke": "You stroke \(name)", "nose": "You boop \(name)'s nose", "tickle": "You tickle \(name)",
                        "dizzy": "You shake \(name)"]
             found = .init(kind: "gesture", text: did[kind] ?? "You touch \(name)")
+        case .answer(let pick): found = .init(kind: "tap", text: "You tap \(pick == "a" ? "the left" : "the right") answer")
         case .press: found = .init(kind: "press", text: "You press \(name)'s button")
         case .hold: found = .init(kind: "hold", text: "You hold a finger on \(name)'s needs-you screen")
         case .wait(let ms): found = .init(kind: "wait", text: "\(Self.minutes(ms)) later")
@@ -442,6 +452,8 @@ extension DemoScript {
         offered[ReactOutput.faceKey] = ["none"] + pack.faces.map(\.name)
         // What you said is answered with a reply for its move.
         offered[ReactOutput.moveKey]? += ReactOutput.replies(of: pack.name).map(\.name) + ["unhush"]
+        // A moment it may ask in is answered with the ask.
+        offered[ReactOutput.moveKey]? += ["ask"]
         return offered
     }
 

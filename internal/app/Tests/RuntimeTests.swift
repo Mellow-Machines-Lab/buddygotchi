@@ -1395,12 +1395,12 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// characters/boop/steering/ has the guide, a file per mood, the personality, a talk file
-    /// for each level, the dream's signs, the signs' captions and the replies' signs. The static parts stay within their budgets, and the
+    /// for each level, the dream's signs, the signs' captions, the replies' signs and the asks. The static parts stay within their budgets, and the
     /// personality's settings, with each talk's laid over them, are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
-        XCTAssertEqual(files, (["dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
+        XCTAssertEqual(files, (["asks.md", "dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
                                + ["personality/boop.md", "replies.md", "signs.md",
                                   "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])

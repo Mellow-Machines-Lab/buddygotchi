@@ -175,6 +175,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     talk/quiet.md, normal.md, chatty.md
     mood/<mood>.md
     dreams.md, signs.md, replies.md   optional: the dream's signs and the signs
+    asks.md          optional: what it may ask you
   mac/               what the app reads at run time (§9)
     faces.json       the popover's face designs
     mirror/          optional: the board's firmware in a web page, the
@@ -398,6 +399,25 @@ What the brain reads, in plain Markdown:
   file's order, so the lines about the person are offered first; the
   brain picks one (`react.sign`), at most six offered, each at most 18
   characters. A pack without the file tells its dreams with no sign.
+- `asks.md` (optional): what the creature may ask you, with two
+  answers you tap (`Asks`). A line with parts, `- [id tags] question |
+  a | b`, is a question: its first tag its id, then the tags the moment
+  must all have (`idle` or `working`, `waiting`, `finished`, a turn ended
+  in the last 10 minutes and you haven't prompted since, a mood, the
+  calendar's, and your kept answers), and `keeps` (asked once, ever: its
+  answer becomes a tag for good, as `cookie`) and `touch` (a stroke or a
+  boop answers it too, as its first answer). A line with no parts,
+  `- [id answer] words`, is a follow-up the creature may hold up after
+  that answer. The brain asks (`react.move`'s `ask`, offered only when a
+  question fits and the caps allow: one an hour, three a day, six on
+  Chatty, none on Quiet, never while something needs you, and a
+  `lonely` one only after 10 minutes of it) and picks the question
+  (`react.sign`), the file's first ones offered first. The board holds
+  the question up as its sign and the two answers in its lane; a tap on
+  either half answers, and after 45 seconds, or a newer reaction, it ends
+  unanswered (`ev ask`). One answered stays off for 30 days, one
+  ignored for a day. A question is at most 18 characters, an answer 7,
+  a follow-up 18 (`boopdev check`). A pack without the file never asks.
 - `signs.md` (optional): the captions the creature may hold up on a
   sign when it reacts to your prompt (`Signs`, the `react.sign`
   question, asked only when NOW is a prompt's reading, not a message's). Each is

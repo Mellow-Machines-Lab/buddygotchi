@@ -153,7 +153,8 @@ whenever one changes, with no `led` on the AMOLED board) and `power`. The script
 board's messages mean: they pass through it. The script exports the
 rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
 for `board.motion`; `TAP`, where a tap lands, beside the nose (on it is
-a gesture), for `board.touch`; and `HEARTBEAT_MS`, how often a page that
+a gesture), for `board.touch`; `LANE_Y`, the lane's middle, where an
+ask's answers are tapped; and `HEARTBEAT_MS`, how often a page that
 keeps a board company says its `state` again, as the demo player does.
 `Board.make` compiles a build's WebAssembly once for every board a page
 makes from it.
@@ -217,7 +218,9 @@ more of:
   1.2 for a recording that doesn't say); `press`, BOOT; or a gesture the
   board knows by itself (a demo's `gesture` step): `stroke`, a finger
   dragged slowly across the face; `nose`, a tap on its nose; `tickle`, a
-  finger wiggling in one spot; or `dizzy`, a shake on the motion sensor.
+  finger wiggling in one spot; or `dizzy`, a shake on the motion sensor;
+  or `answer-a` or `answer-b`, a tap on the left or right half of the
+  lane, where a question's two answers show (a demo's `answer` step).
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,
 and under it each effect. Nothing of it is on the board's screen. Play, Pause and Restart are there; paused or over, the page

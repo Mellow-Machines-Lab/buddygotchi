@@ -236,6 +236,36 @@ public final class Pipeline {
         }
     }
 
+    /// An ask's end, as the board decided it: `pick` `a` or `b` (a target
+    /// tapped), `touch` (a stroke answered it), or `ignored`, for the
+    /// question `q` (its words, `question`), `answer` the words picked,
+    /// and whether Boop `keeps` it. Logged; an answer may wake the brain,
+    /// as what you said does.
+    @discardableResult
+    public func ask(_ q: String, question: String, pick: String, answer: String?, keeps: Bool, at now: Int64,
+                    buddy: String? = nil) -> Step {
+        input(at: now) {
+            harness.emit(Event(at: now, source: .device, type: .ask, specificType: pick, buddy: buddy,
+                               data: ["q": .string(q), "question": .string(question), "answer": .of(answer), "keeps": .bool(keeps)]))
+        }
+    }
+
+    /// The question the buddy asked last answered as its board would say
+    /// it: `pick` "a", "b", "touch" (its first answer) or "ignored". For a
+    /// demo or an eval, which have no board to tap; nothing when nothing
+    /// was asked.
+    @discardableResult
+    public func answerLast(_ pick: String, at now: Int64, buddy: String? = nil) -> Step? {
+        let asked = harness.log.view(now: now).events.last {
+            $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil && $0.buddy == buddy
+        }
+        guard let asked, let id = asked["ask"]?.string else { return nil }
+        let answers = asked["answers"]?.array?.compactMap(\.string) ?? []
+        let answer = pick == Asks.ignored ? nil : pick == "b" ? answers.last : answers.first
+        return ask(id, question: asked["question"]?.string ?? "", pick: pick, answer: answer,
+                   keeps: asked["keeps"]?.bool ?? false, at: now, buddy: buddy)
+    }
+
     /// What you did to the board (`kind`: a stroke, a shake, face down…),
     /// which it reacted to at once: logged, and it may wake the brain, as
     /// a poke does. The core hears only `dismiss`, a finger held on the

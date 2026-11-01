@@ -13,12 +13,13 @@ public enum Yours {
 
     /// Whether `e` is the person's own doing: a poke, a care gesture, what
     /// they said to the buddy, a prompt to an agent, or coming back to the
-    /// Mac.
+    /// Mac, or answering an ask.
     public static func did(_ e: Event) -> Bool {
         switch e.type {
         case .poke?, .talk?, .prompt?: return true
         case .gesture?: return careGestures.contains(e.specificType)
         case .presence?: return e.phase == .end
+        case .ask?: return e.specificType != Asks.ignored
         default: return false
         }
     }
@@ -30,6 +31,7 @@ public enum Yours {
         switch e.type {
         case .poke?, .talk?: return true
         case .gesture?: return careGestures.contains(e.specificType)
+        case .ask?: return e.specificType != Asks.ignored
         default: return false
         }
     }

@@ -51,6 +51,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
 | `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
+| `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b`, `touch` (a stroke, its first answer) or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
 | `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
@@ -77,7 +78,7 @@ a scenario holds wherever more than one answer is right:
 | Checked | Against |
 | --- | --- |
 | `react` | Jev's pick for the `react.face` question: `none` or a mood's face |
-| `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
+| `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; `ask`, a question asked; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
 | `intensity` | How big the moment was, Jev's `react.intensity` pick (`small` to `huge`: how long the face held and how big what it said), or `none` when `react` didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
