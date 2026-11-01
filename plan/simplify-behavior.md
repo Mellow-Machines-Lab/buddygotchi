@@ -331,10 +331,10 @@ thread, not that it's built.
 | C2 `meaning` owned by the pack | Yes |
 | C3 Lasting moods | Yes: 16 lasting moods, all 42 faces (below) |
 | C4 Fades in code, no hourly heartbeat | No: keep the heartbeat and the prose fades |
-| C5 The two rule cards | Pending (corrected above) |
+| C5 The two rule cards | Yes: drop `stopped` and `helper_return` and the card |
 | C6 The move in code | No: keep it in Jev |
 | C7 The poke hold | No |
-| C8 One pastime dealer | Pending |
+| C8 One pastime dealer | Yes, built together with C9 (the gel Router), since both are the same part of the engine |
 | C9 The gel Router as a plain struct | Yes |
 | C10 Ordinary versus dramatic | Not now |
 | D, all renames | Yes |
