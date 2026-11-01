@@ -626,16 +626,16 @@ Besides drawing each mood and state, a face:
   where a hat would go, and stay as they are. The working looks
   also play 125% quicker while the agents are busy and 160% while
   frantic (`render::workPace`, which each face gets as
-  `FaceContext::pace`). The gel's are takes its engine deals
-  by the same tags and waits (`occasions` in its design's
-  `expressions.json`, which slimegen bakes into `slime.h`): idle drowses
-  at night, stretches in the morning, bounces on a party day or a New
-  Year, sways on a Friday, shivers in winter, wobbles at Halloween,
-  swoons on Valentine's and nods off at idle's `tier5`; busy and
-  frantic work type faster, and sleep snores deeper at night and dreams
-  after half an hour. Its idle picks one in place of a gesture. A pack's
-  rig may have occasions too, clips both faces play (§15): `tier4` at
-  work brings Boop's and Pixel's stretch. And the gel has pastimes, a
+  `FaceContext::pace`). The gel's are rows of its pastimes, which its
+  face deals from one table by the same tags and waits (§15, The gel on
+  the rig; their bodies are `pastimes` in its design's `expressions.json`,
+  which slimegen bakes into `slime.h`): idle drowses at night, stretches
+  in the morning, bounces on a party day or a New Year, sways on a
+  Friday, shivers in winter, wobbles at Halloween and swoons on
+  Valentine's; busy and frantic work type faster, and sleep snores deeper
+  at night and dreams after half an hour. A pack's rig may have occasions
+  too, clips a face plays (§15): `tier4` at work brings Pixel's stretch,
+  and the gel's is a row of its pastimes. And the gel has pastimes, a
   scene each over its body, by the tiers at work and idle, and by the
   wait while something needs you or it sleeps (§15, The gel on the
   rig). Over every state the board also draws
@@ -1079,12 +1079,13 @@ and once it has shown `after` seconds, as a design's occasion fits (§9),
 each needing a tag or a wait; and its `tiers`: for a tier (`tier1` to
 `tier5`), a clip that loops in place of its own while that's the last
 tier reached, which the gel plays (below, The gel on the rig) and
-Pixel's face doesn't. Boop's:
+Pixel's face doesn't. Boop's, which has no occasions (the gel deals its
+own from its pastimes):
 
 ```json
 {
   "idle": {"clip": "breathe"},
-  "working": {"clip": "work", "occasions": [{"clip": "stretch", "when": ["tier4"]}],
+  "working": {"clip": "work",
               "tiers": {"tier1": "work-easy", "tier2": "work-leaning", "tier3": "work-focused",
                         "tier4": "work-content", "tier5": "work-zone"}},
   "asleep": {"clip": "doze"}
@@ -1095,8 +1096,9 @@ Pixel's face gives the look a chance at the end of each pass of its
 loop, while none of its occasions plays: then, while some fit, one of
 them plays 67% of the time (`rig::kOccasionPct`), any one alike, over
 what the look plays, and fades out when the look gives way (a reaction,
-needs you). It draws no randomness for it while none fits. The gel deals
-them with its pastimes (below, The gel on the rig).
+needs you). It draws no randomness for it while none fits. The gel's face plays
+none: its occasions are rows of its pastimes (below, The gel on the
+rig).
 
 Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state,
@@ -1229,18 +1231,22 @@ pastimes (`render/gel/pastimes.h`) are clips of the pack's rig with
 drawing of the gel's own in time with them: at work a sip from its mug,
 a hum, Enter on something done, an idea, reading the screen closely, a
 sticky note, putting its headphones on, a coffee refill, a cookie;
-idle, a bubble, a fly, a book, a game, a tower of blocks, a dance, a
-paper plane, counting sheep; a wave and a tap on the glass while
+idle, a bubble, a book, a game, a tower of blocks, a dance, a paper
+plane, a yawn, a sneeze, counting sheep; a wave and a tap on the glass while
 something needs you; rolling over and a snore bubble asleep. Three of
 work's are moves, the whole body going somewhere: reaching for its
 coffee (`tier3`), melting into a puddle (`tier4`) and a stretch break
 off the screen (`tier5`), never within 90 s of the last
 (`kMoveGapMs`). Each is for one look, at work and idle from a tier,
-while something needs you or asleep from a wait. The gel deals them and
-the rig look's occasions together, one at a time while the engine shows
-the look itself, after a rest of 4 to 10 s (`kRestMinMs`,
-`kRestMaxMs`), the newest tier's 60% of the time (`kNewestPct`) and an
-older one's the rest, never the same twice running, with dice of their
+while something needs you or asleep from a wait, and an occasion (§9)
+whenever its tag is on. They're one table, a row each, whose body is a
+clip of the rig, a gag of the engine's (the yawn, the sneeze, idle's
+occasions) or a take of its (busier typing, a deeper snore, the dream);
+the work's stretch from `tier4` is a row too. The gel deals them all,
+one at a time while the engine shows the look itself, after a rest of 4
+to 10 s (`kRestMinMs`, `kRestMaxMs`), the newest 60% of the time
+(`kNewestPct`: the highest tier, then the longest wait, and an occasion
+above any) and an older one's the rest, never the same twice running, with dice of their
 own, so the engine's randomness goes as it always has; none starts
 while a finger holds it or a word of the work stream flies, and the one
 playing fades out when the look gives way. The desk's paws type on the
@@ -1251,7 +1257,7 @@ its hand), headphones from `tier3`, which it puts on first where you can
 see it, the hat winning the head, and from `tier5` a mug more on the
 stack every 10 minutes and a few motes drifting up beside it; idle, a
 plant from `tier3` that grows to `tier5`. `dbg.pastime` plays one by its
-clip's name, for scenarios and tools. A reaction whose state names a
+name (its clip's, gag's or take's), for scenarios and tools. A reaction whose state names a
 clip of the rig (Boop's `notice`) plays it once, as its moment starts, and the clip's cues sound
 the contacts they name (the slime's contact kinds). The gel's recipe for
 that state times it, the clip's length and a little more for the body to

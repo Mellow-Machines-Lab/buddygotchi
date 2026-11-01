@@ -142,11 +142,11 @@ class Face {
   // scenarios and tools. False for a face that picks by its own clock (the
   // gel's), which ignores it.
   virtual bool showLookVariant(uint8_t v) { return (void)v, false; }
-  // Plays the pastime whose clip is `clip` from t, whoever's turn it would
-  // be: dbg.pastime's, for scenarios and tools. False for one the face
-  // hasn't (a face with none has none).
-  virtual bool playPastime(const char* clip, uint32_t t) {
-    (void)clip, (void)t;
+  // Plays the pastime named `name` from t, whoever's turn it would be:
+  // dbg.pastime's, for scenarios and tools. False for one the face hasn't
+  // (a face with none has none).
+  virtual bool playPastime(const char* name, uint32_t t) {
+    (void)name, (void)t;
     return false;
   }
   // The work stream to draw (render/stream.h), the device's, set before
