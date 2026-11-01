@@ -143,8 +143,9 @@ class Face {
   virtual uint8_t lookVariant() const = 0;
   virtual void newLook() {}
   // Shows the look's variation v (from 0) until it turns: dbg.look's, for
-  // scenarios and tools. A face that picks by its own clock may ignore it.
-  virtual void showLookVariant(uint8_t v) { (void)v; }
+  // scenarios and tools. False for a face that picks by its own clock (the
+  // gel's), which ignores it.
+  virtual bool showLookVariant(uint8_t v) { return (void)v, false; }
   // Plays the pastime whose clip is `clip` from t, whoever's turn it would
   // be: dbg.pastime's, for scenarios and tools. False for one the face
   // hasn't (a face with none has none).

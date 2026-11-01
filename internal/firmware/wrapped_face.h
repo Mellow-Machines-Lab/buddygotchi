@@ -34,7 +34,7 @@ struct WrappedFace : render::Face {
   void alert(uint32_t t, bool replacing) override { f->alert(t, replacing); }
   uint8_t lookVariant() const override { return f->lookVariant(); }
   void newLook() override { f->newLook(); }
-  void showLookVariant(uint8_t v) override { f->showLookVariant(v); }
+  bool showLookVariant(uint8_t v) override { return f->showLookVariant(v); }
   bool playPastime(const char* clip, uint32_t t) override { return f->playPastime(clip, t); }
   void watch(const render::Stream* stream) override { f->watch(stream); }
   void finger(bool down, int x, int y) override { f->finger(down, x, y); }

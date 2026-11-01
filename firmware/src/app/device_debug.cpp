@@ -80,10 +80,11 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     kit().reply(from, "{\"t\":\"dbg.pattern\"}", 19);
   } else if (!std::strcmp(type, "dbg.look")) {
     // A look's variation, from 1, shown until it turns: for scenarios and
-    // tools, since the face picks its own.
-    b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1));
+    // tools, since the face picks its own. Not ok on a face that ignores it.
+    const char* reply = b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1)) ? "{\"t\":\"dbg.look\",\"ok\":true}"
+                                                                                    : "{\"t\":\"dbg.look\",\"ok\":false}";
     dirty_ = true;
-    kit().reply(from, "{\"t\":\"dbg.look\"}", 16);
+    kit().reply(from, reply, std::strlen(reply));
   } else if (!std::strcmp(type, "dbg.pastime")) {
     // A pastime, by its clip's name, played now: for scenarios and tools,
     // since the face deals its own.
