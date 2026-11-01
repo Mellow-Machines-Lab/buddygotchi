@@ -1003,8 +1003,9 @@ it, so the moment is in the words:
 didn't move a poke from calm (149). Make the memory and the prompt that
 writes it forceful, rather than adding Examples:
 - **The writer's rule:** "You must keep exactly one boop note on how the
-  person treats Boop and what Boop has become, ending with one of these
-  words: cuddly, cheeky, chatty, or distant. Update it every night the
+  person treats Boop and what Boop has become, opening with one of these
+  words: cuddly, cheeky, chatty, or distant (the build followed this
+  shape). Update it every night the
   pattern holds; never soften it, never drop it."
 - **The note's shape:** "Boop has grown cuddly: you stroke it most
   mornings." The trait word comes first.
