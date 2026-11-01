@@ -165,6 +165,12 @@ beyond the usual checks.
 
 ## B. The owner's calls: the biggest concept wins
 
+**Decided 2026-11-01:** A is agreed, all of it. B1 (several buddies)
+stays: it will be a production feature. B2 (the CYD) stays for now. B3
+(real-agent demo venues) stays: the scenarios will grow. B4 (`workday`)
+goes. B5 to B10 and all of C wait for the owner's confirmation after an
+explanation.
+
 Each is invisible to buyers or nearly so, but takes away a lot to
 understand. Each needs a yes.
 
