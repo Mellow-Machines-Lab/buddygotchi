@@ -264,7 +264,7 @@ keep their names.
 | the written memory | `memory.md`: short notes about you, your work and you and the buddy, and a line a day, which Apple Intelligence edits each night and Jev reads as MEMORY (`WrittenMemory`, `MemoryEdits`, `MemoryRequest`) | diary, memory file |
 | reason | Why the buddy does what it does, in plain words rendered on the Mac from the line the brain answered, never by the brain: a sentence for the Mac, a few words for the board's lane (`Reason`, the `do`'s `reason`) | explanation, caption (that's a sign) |
 | CONTEXT | The prompt's section for how things stand, built each pass: you (at the Mac, untouched), the agents, the day so far (`ContextSection`); events stay in their lines | NOW (that's the event), status (that's the reply's) |
-| ask | A question the buddy holds up with two answers you tap in the lane, from the pack's `asks.md`; it never needs an answer (`Asks`, `react.move`'s `ask`, the `do`'s `ask`, `ev ask`) | quiz, prompt (that's yours to an agent) |
+| ask | A question the buddy holds up with two answers you tap in the lane, from the pack's `asks.md`; it never needs an answer (`Asks`, a `react.sign` that is a question, the `do`'s `ask`, `ev ask`) | quiz, prompt (that's yours to an agent) |
 | reading | What Boop takes from your prompt, or an agent's last message, in its place: its kind, tone, length, which buddies' names you said, and a few of its words (`PromptReading`, `MessageReading`) | summary, label (for the whole) |
 | the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
 | message | One JSON line on the wire (`hello`, `state`, `do`, `ev`) | line |

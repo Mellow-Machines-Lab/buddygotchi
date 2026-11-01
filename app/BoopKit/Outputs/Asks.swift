@@ -92,29 +92,33 @@ public enum Asks {
         return askedAt.filter(sameDay).count < (talk == .chatty ? chattyPerDay : perDay)
     }
 
-    /// The questions it may ask at `about`, of `questions`: none while
-    /// something needs you, while it listens or is hushed, or past the
-    /// caps (`allowed`); else those the moment's tags fit (`offered`). The
-    /// moment: the calendar's, `working` or `idle`, `waiting`, the mood
-    /// (`lonely` only once it has lasted `lonelyMs`), `finished` (a turn
-    /// ended in the last 10 minutes and you haven't prompted since), and
-    /// the answers kept.
+    /// The moment `about` is for an ask, as its tag, or nil when asks
+    /// don't belong there: `idle`, an idle check-in; `lonely`, one while
+    /// the buddy has been lonely `lonelyMs` or more; `finished`, a turn's
+    /// finish (its end, or its last message's reading).
+    public static func moment(_ about: Event, _ log: LogView, mood: Choice) -> String? {
+        if about.type == .heartbeat, about.specificType == "check_in" {
+            let lonely = MoodOutput.value(mood, log) == "lonely" && mood.since(log).map({ about.at - $0 >= lonelyMs }) == true
+            return lonely ? "lonely" : "idle"
+        }
+        if about.type == .lastMessage || (about.type == .turn && about.phase == .end) { return "finished" }
+        return nil
+    }
+
+    /// The questions it may ask at `about`, of `questions`: none but at an
+    /// ask's moment (`moment`), none while something needs you, while it
+    /// listens or is hushed, or past the caps (`allowed`); else those whose
+    /// tags the moment's, the calendar's and the answers kept all cover
+    /// (`offered`).
     public static func askable(_ about: Event, _ log: LogView, questions: [Question], core: Core, mood: Choice,
                                talk: Talk, memory: Memory?, wall: Int64) -> [Question] {
-        guard let memory, !questions.isEmpty else { return [] }
+        guard let memory, !questions.isEmpty, let moment = moment(about, log, mood: mood) else { return [] }
         let now = about.at, time = core.config.time
         if core.needsYouBlock != nil || core.listening != nil || core.hushed(at: now) != nil { return [] }
         let askedAt = log.events.filter { $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil }.map(\.at)
         let today = time.boopDay(wall)
         guard allowed(talk: talk, askedAt: askedAt, now: now, sameDay: { time.boopDay($0) == time.boopDay(now) }) else { return [] }
-        var tags = Set(core.calendar(at: now) + core.moment(at: now) + memory.answerTags(at: wall))
-        if !tags.contains("working") { tags.insert("idle") }
-        let feeling = MoodOutput.value(mood, log)
-        if feeling != "lonely" || mood.since(log).map({ now - $0 >= lonelyMs }) == true { tags.insert(feeling) }
-        if let ended = log.events.last(where: { $0.type == .turn && $0.phase == .end }), now - ended.at < 10 * 60_000,
-           !log.events.contains(where: { $0.type == .prompt && $0.at > ended.at }) {
-            tags.insert("finished")
-        }
+        let tags = Set([moment] + core.calendar(at: now) + memory.answerTags(at: wall))
         return offered(questions, tags: tags, record: memory.askRecord, today: today)
     }
 

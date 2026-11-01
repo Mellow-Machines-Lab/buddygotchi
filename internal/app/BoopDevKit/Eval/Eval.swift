@@ -422,7 +422,7 @@ public struct Scenario: Sendable {
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, ReactOutput.says.map(\.name)),
                                              ("intensity", step.expect?.intensity, ReactOutput.intensities.map(\.name)),
-                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush", "ask"])] {
+                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush"])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }

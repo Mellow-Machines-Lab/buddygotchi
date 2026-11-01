@@ -70,20 +70,14 @@ public final class ReactOutput: Output {
     let asks: [TaggedLine]
     let askable: (Event, LogView, [Asks.Question]) -> [Asks.Question]
 
-    /// The questions it may ask at `about`: never at your prompt, what you
-    /// said, a turn's finish or its last message, the dream's telling or
-    /// another ask's end.
+    /// The questions it may ask at `about`, offered as signs: at the
+    /// moments asks belong to (`Asks.moment`), never at the dream's
+    /// telling.
     func askOptions(_ about: Event?, _ log: LogView) -> [Asks.Question] {
-        guard let about, !asks.isEmpty, !Self.isTalk(about), about.type != .prompt, about.type != .ask, about.type != .lastMessage,
-              !(about.type == .turn && about.phase == .end), told(about) == nil else { return [] }
+        guard let about, !asks.isEmpty, told(about) == nil else { return [] }
         return askable(about, log, Asks.questions(asks))
     }
 
-    /// `react.move`'s ask, when it may ask.
-    static func askMove(of name: String) -> Option {
-        Option("ask", "\(name) asks you one of the questions offered as signs, holding it up with its two answers for you to tap. Offered only when it may ask: a quiet moment where nothing has happened for a while, a turn that finished a little while ago, or \(name) lonely; it fills the quiet better than silence.",
-               notFor: "Your prompt, a turn's finish, anything said to \(name), or a busy moment.")
-    }
     /// What a reply holds up (`replies.md`), and for a `status` one about
     /// what you said, the agents' facts that answer it and where the board
     /// shows the rest (`StatusReply`), or nil for none.
@@ -363,7 +357,6 @@ public final class ReactOutput: Output {
     /// nil for none.
     public static func move(_ answers: Answers) -> String? {
         if let a = animation(answers) { return a }
-        if answers[moveKey]?.choice == "ask" { return "ask" }
         guard let choice = answers[moveKey]?.choice, (replies + [unhush(of: CharacterPack.active.name)]).contains(where: { $0.name == choice })
         else { return nil }
         return reply(answers)
@@ -427,19 +420,16 @@ public final class ReactOutput: Output {
                                                                  + ($0.replies.contains("dunno") ? " (dunno, a huh to a question)." : ".")) })]
         }
         let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
-        // A question it may ask: the move, and the question as the sign.
+        // A question it may ask: the sign is the ask.
         let questions = askOptions(about, log)
         if !questions.isEmpty {
-            let withAsk = speech.map { q in
-                q.key == Self.moveKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
-                                                 options: q.options + [Self.askMove(of: pack.name)]) : q
-            }
-            return withAsk + [Question(key: Signs.questionKey,
-                                       text: "If \(pack.name) asks you something, which question does it hold up? Only with the ask move.",
-                                       about: "NOW and HISTORY", judgeBy: "what fits the moment, the ones that shape \(pack.name) first",
-                                       options: [Option("none", "No question: \(pack.name) doesn't ask.")]
+            return speech + [Question(key: Signs.questionKey,
+                                       text: "Does \(pack.name) hold up a question for you to answer with a tap? Picking one is asking it; PERSONALITY says when.",
+                                       about: "NOW and HISTORY", judgeBy: "PERSONALITY and what fits the moment, the ones that shape \(pack.name) first",
+                                       // Chatty asks whenever the caps let it (Asks.chattyPerDay).
+                                       options: (talk() == .chatty ? [] : [Option("none", "No question: \(pack.name) doesn't ask now.")])
                                            + questions.map { q in
-                                               Option(q.question, "Asks \"\(q.question)\": \(q.a) or \(q.b)."
+                                               Option(q.question, "Ask: \"\(q.question)\", \(q.a) or \(q.b)."
                                                    + (q.tags.isEmpty ? "" : " For a moment that's \(q.tags.joined(separator: ", ")).")
                                                    + (q.keeps ? " Its answer becomes part of \(pack.name)." : ""))
                                            })]
@@ -674,14 +664,12 @@ public final class ReactOutput: Output {
             sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
         var reaction = DeviceReaction(say: say, mood: choice, loops: size.loops, sign: sign)
-        // An ask: the question as the sign, the answers as the lane's
-        // targets, the one the brain picked of those it was offered (the
-        // mood may have moved since, so not asked again) or else the
-        // first offered now.
+        // An ask: the question the brain held up, as the sign, its answers
+        // as the lane's targets. It was offered when asked; the mood may
+        // have moved since, so it isn't asked again.
         var asking: Asks.Question?
-        if answers[Self.moveKey]?.choice == "ask", reply == nil {
-            let questions = askOptions(about, log)
-            asking = Asks.questions(asks).first { $0.question == answers[Signs.questionKey]?.choice } ?? questions.first
+        if reply == nil, sign == nil, let picked = answers[Signs.questionKey]?.choice {
+            asking = Asks.questions(asks).first { $0.question == picked }
             reaction.sign = asking?.question
             reaction.ask = asking
         }

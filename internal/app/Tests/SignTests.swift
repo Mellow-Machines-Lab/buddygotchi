@@ -119,11 +119,15 @@ final class SignTests: XCTestCase {
     /// Every caption in each pack's signs.md fits a sign once filled in
     /// with a short phrase, in the board's fonts (printable ASCII), and
     /// its tags are ones a reading or the calendar can have: the calendar
-    /// signs hear is `Core.calendar`, never the board's or the tiers' tags.
+    /// signs hear is `Core.calendar`, never the board's or the tiers' tags,
+    /// and your answers kept from the pack's asks.
     func testThePacksSignsFit() throws {
-        let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-            + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words"] + Occasions.calendarTags)
         for pack in ["boop", "pixel"] {
+            let asks = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/asks.md")
+            let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
+                .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
+            let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "words"] + Occasions.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)

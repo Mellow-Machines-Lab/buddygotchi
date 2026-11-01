@@ -452,8 +452,6 @@ extension DemoScript {
         offered[ReactOutput.faceKey] = ["none"] + pack.faces.map(\.name)
         // What you said is answered with a reply for its move.
         offered[ReactOutput.moveKey]? += ReactOutput.replies(of: pack.name).map(\.name) + ["unhush"]
-        // A moment it may ask in is answered with the ask.
-        offered[ReactOutput.moveKey]? += ["ask"]
         return offered
     }
 

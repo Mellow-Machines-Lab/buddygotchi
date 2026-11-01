@@ -413,18 +413,18 @@ What the brain reads, in plain Markdown:
   characters. A pack without the file tells its dreams with no sign.
 - `asks.md` (optional): what the creature may ask you, with two
   answers you tap (`Asks`). A line with parts, `- [id tags] question |
-  a | b`, is a question: its first tag its id, then the tags the moment
-  must all have (`idle` or `working`, `waiting`, `finished`, a turn ended
-  in the last 10 minutes and you haven't prompted since, a mood, the
-  calendar's, and your kept answers), and `keeps` (asked once, ever: its
+  a | b`, is a question: its first tag its id, then the tags it needs:
+  its moment (`idle`, an idle check-in; `lonely`, a check-in after 10
+  minutes lonely; `finished`, a turn's finish), the calendar's and your
+  kept answers; and `keeps` (asked once, ever: its
   answer becomes a tag for good, as `cookie`) and `touch` (a stroke or a
   boop answers it too, as its first answer). A line with no parts,
   `- [id answer] words`, is a follow-up the creature may hold up after
-  that answer. The brain asks (`react.move`'s `ask`, offered only when a
-  question fits and the caps allow: one an hour, three a day, six on
-  Chatty, none on Quiet, never while something needs you, and a
-  `lonely` one only after 10 minutes of it) and picks the question
-  (`react.sign`), the file's first ones offered first. The board holds
+  that answer. The sign is the ask: at an ask's moment, while the caps
+  allow (one an hour, three a day, six on Chatty, none on Quiet, never
+  while something needs you), the sign question (`react.sign`) offers the
+  questions that fit, as "Ask: …", the file's first ones first, and
+  picking one asks it; on Chatty it has no "none". The board holds
   the question up as its sign and the two answers in its lane; a tap on
   either half answers, and after 45 seconds, or a newer reaction, it ends
   unanswered (`ev ask`). One answered stays off for 30 days, one

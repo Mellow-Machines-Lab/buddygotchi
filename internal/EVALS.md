@@ -78,7 +78,7 @@ a scenario holds wherever more than one answer is right:
 | Checked | Against |
 | --- | --- |
 | `react` | Jev's pick for the `react.face` question: `none` or a mood's face |
-| `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; `ask`, a question asked; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
+| `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
 | `intensity` | How big the moment was, Jev's `react.intensity` pick (`small` to `huge`: how long the face held and how big what it said), or `none` when `react` didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
