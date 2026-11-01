@@ -338,6 +338,8 @@ thread, not that it's built.
 | C9 The gel Router as a plain struct | Yes |
 | A8 The two pack checkers | Yes, the agent's call (the owner left it to it): `boopdev check` owns whether a pack plays, the moods and the graph included, read as the app loads them; `charactergen.py --check` keeps only whether it builds, and stops reading the mood list out of Swift source |
 | Counted memory (rows per day, traits) | Skipped for now: too complicated |
+| E1 The docs and plans | Yes (below) |
+| E4 The pixel face's spec and a second eval prune | Yes (below) |
 | C8's idle cleanup | Yes (below) |
 | The six evals failing on `main` | Yes, a separate cleanup (below) |
 | C10 Ordinary versus dramatic | Not now |
@@ -403,6 +405,34 @@ gel's idle behaviour loses its near-duplicates, with no new art:
 **The six evals failing on `main`** (01, 11, 14, 29, 98, 110, found
 by the dreaming build) are their own cleanup: each fixed in the
 steering or the eval, so a failure always means a regression.
+
+**E1, the docs and plans, decided.** For an owner who no longer holds
+all of Boop in their head, the docs say how it works, short, and the
+plans hold only what's next:
+- **Finished plans go** (git keeps them): updated-behavior, glance-and-wait,
+  calm-work, talk-back, work-stream, character-engine, dreaming,
+  dreaming-memory and this file, once each is built; `plan/evidence/`.
+  Anything in them not built moves to TODO.md or product-ideas.md first.
+- **What stays in `plan/`:** TODO.md (pruned of done items),
+  product-ideas.md (brought up to date with the decisions), voice-range.md
+  (an unfinished draft). new-character-playbook.md moves to
+  `characters/`, since it's a how-to, not a plan.
+- **architecture.html opens with "How Boop works, on one page"** (this
+  file's, updated for what's built), then the prompt's sections, memory,
+  the reason and asks, and keeps "Where the pieces join".
+- **CLAUDE.md:** the Words table gains the new words and loses the gone
+  ones; the plan row lists only what stays; long passages that repeat
+  another doc point to it instead.
+- **CHARACTER.md** loses what no pack does any more (the TALK files, the
+  diary, the personality list, borrowing), and anything that repeats the
+  code.
+
+**E4, decided.** The pixel face's spec (styles, `wears`, `kWears`,
+`mac/faces.json`, its palette; about 90 lines of CHARACTER.md) moves to
+the pixel face's own README, and the palette becomes the face's own,
+not a contract rule. A second eval prune: an eval whose accepted faces
+or moods are so many it checks little (40, 121 and others) is tightened
+to what the scenario means, or removed.
 
 **A, in commits.** Each is small, invisible, and checked by `make -C
 internal check`:
