@@ -8,12 +8,12 @@
     characters/charactergen.py --boards [PACK]
     characters/charactergen.py --sim-face [PACK]
 
---check checks a pack's character.json: its moods are exactly the
-universal ones (CHARACTER.md §5), and every move and default mood is
-one of them; it names no file of another pack's (§6); its
-id and version fit the board's hello (§10); and its rig/ (§15): no
-unknown key, channel or name, and every value in its range. Without
-PACK, every pack in characters/.
+--check checks that a pack builds: its character.json has the moods and
+the startup mood moods.h needs, names no file of another pack's (§6),
+and has an id and version that fit the board's hello (§10); and its rig/
+(§15) has no unknown key, channel or name, and every value in its range.
+Without PACK, every pack in characters/. Whether a pack plays, its moods
+and their graph included, is `boopdev check`'s, as the app loads it.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
 root for the builds to read (§2), and two headers it makes for the firmware: moods.h from character.json,
@@ -74,8 +74,6 @@ EVERYDAY = ROOT / "characters" / "studio" / "everyday.jsonl"
 # the personality settings the app reads, for the studio's behaviour map.
 WAKES = ROOT / "app" / "BoopKit" / "Core" / "TranscriptView.swift"
 SETTINGS = ROOT / "app" / "BoopKit" / "Core" / "Personality.swift"
-# The universal moods' one list, which the app's pack loader holds too.
-UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
 
 def own_folder(folder: Path) -> Path:
@@ -128,51 +126,11 @@ def camel(mood: str) -> str:
     return "k" + "".join(part.capitalize() for part in mood.split("_"))
 
 
-def universal_moods(source: Path = UNIVERSAL) -> list[str]:
-    """Every pack's moods: CharacterPack.universalMoods, one literal of
-    quoted names in the app's source."""
-    match = re.search(r"universalMoods = \[([^\]]*)\]", source.read_text())
-    if not match:
-        raise SystemExit(f"charactergen: no universalMoods in {source}")
-    return re.findall(r'"([a-z_]+)"', match.group(1))
-
-
-def mood_problems(character: dict, universal: list[str]) -> list[str]:
-    """What's wrong with a pack's moods, as the app's loader refuses them:
-    not exactly the universal moods, a mood with no face, a move, default
-    or startup mood that isn't a lasting one (one with a meaning), or a
-    face-only mood that settles into none or has moves."""
-    ids = [m.get("id") for m in character.get("moods", [])]
-    problems = []
-    if len(ids) != len(set(ids)):
-        problems.append("moods names a mood twice")
-    if set(ids) != set(universal):
-        missing, extra = sorted(set(universal) - set(ids)), sorted(set(ids) - set(universal))
-        problems.append(f"moods aren't the universal ones (missing {missing}, extra {extra})")
-    lasting = {m.get("id") for m in character.get("moods", []) if m.get("meaning")}
-    for m in character.get("moods", []):
-        if not m.get("face"):
-            problems.append(f"{m.get('id')} has no face")
-        moves = m.get("moves", {})
-        to = moves.get("ordinary", []) + moves.get("dramatic", [])
-        if not m.get("meaning"):
-            if m.get("settles") not in lasting:
-                problems.append(f"{m.get('id')} has no meaning, and settles into no lasting mood")
-            if to:
-                problems.append(f"{m.get('id')} has moves but no meaning")
-        for t in to:
-            if t not in lasting:
-                problems.append(f"{m.get('id')} leads to {t}, which isn't a lasting mood")
-    for key in ("default_mood", "startup_mood"):
-        if key in character and character[key] not in lasting:
-            problems.append(f"{key} {character[key]} isn't a lasting mood")
-    return problems
-
-
 def moods_h(pack: Path, character: dict) -> str:
     """The firmware's moods.h, which staging writes: the mood list in the
     pack's order with the board's startup mood, and the pack's id and
-    version for the board's hello. pack_problems() has checked them."""
+    version for the board's hello. The app's loader checks the moods
+    themselves (boopdev check); pack_problems() that there are some."""
     moods = [m["id"] for m in character["moods"]]
     startup = character.get("startup_mood", character["default_mood"])
     source = f"characters/{pack.name}/character.json"
@@ -302,7 +260,8 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     """A pack's rig/ (CHARACTER.md §15) as rig_tables.h has it, and what's
     wrong with it, each problem with its file and key. Every file is
     optional, and one that's missing is empty."""
-    moods = universal_moods() if moods is None else moods
+    if moods is None:  # the pack's own, as its character.json names them
+        moods = [m.get("id") for m in load(pack).get("moods", [])] if (pack / "character.json").exists() else []
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
     drawn = drawn_styles(pack)
@@ -1227,10 +1186,16 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
 
 
 def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> list[str]:
-    """What stops a pack from staging: its moods (§5), files it names of
-    another pack's (§6), an id or version too long for the board's hello
-    (§10), and its rig (§15)."""
-    problems = mood_problems(character, universal_moods()) + borrowed(character)
+    """What stops a pack from building: moods.h's moods and default mood,
+    files it names of another pack's (§6), an id or version too long for
+    the board's hello (§10), and its rig (§15). Whether it plays, its moods
+    and their graph included, is boopdev check's (PackCheck), as the app
+    loads it."""
+    problems = borrowed(character)
+    if not character.get("moods") or not all(m.get("id") for m in character["moods"]):
+        problems.append("moods names no mood, or one without an id")
+    if character.get("startup_mood", character.get("default_mood")) not in [m.get("id") for m in character.get("moods", [])]:
+        problems.append("its startup_mood, else its default_mood, isn't one of its moods")
     if len(character.get("id", "")) > 24 or len(character.get("version", "")) > 16:
         problems.append("id is at most 24 characters, and version 16")
     # Each board's face (§9): a folder of the pack's.

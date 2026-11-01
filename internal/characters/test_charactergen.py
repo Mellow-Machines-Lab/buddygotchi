@@ -33,7 +33,7 @@ class RepoTests(unittest.TestCase):
     def test_the_everyday_transitions_are_cells_of_the_studios(self):
         """The studio's Rank records everyday.jsonl's transitions, each from and to a cell its address has: a
         universal mood, a state of the board's and, for a state with one, a fact it has."""
-        table, moods = gen.states(), set(gen.universal_moods())
+        table, moods = gen.states(), {m["id"] for m in gen.load(gen.local_packs()[0])["moods"]}
         transitions = gen.everyday()
         self.assertGreaterEqual(len(transitions), 5)
         for t in transitions:
@@ -71,49 +71,17 @@ class RepoTests(unittest.TestCase):
         self.assertEqual(gen.studio_problems(gen.local_packs()), [])
         self.assertEqual(gen.state_problems(), [])
         for pack in gen.local_packs():
-            self.assertEqual(gen.mood_problems(gen.load(pack), gen.universal_moods()), [], pack.name)
+            self.assertEqual(gen.pack_problems(pack, gen.load(pack)), [], pack.name)
             self.assertEqual(gen.read_rig(pack)[1], [], pack.name)
 
-    def test_the_universal_moods_are_the_apps(self):
-        """The one list, CharacterPack.universalMoods in the app's source: 42 moods, each once."""
-        moods = gen.universal_moods()
-        self.assertEqual(len(moods), 42)
-        self.assertEqual(len(set(moods)), 42)
-        self.assertIn("calm", moods)
-
-
-class MoodRuleTests(unittest.TestCase):
-    """A pack's moods against a small universal list, as the app's loader checks them."""
-
-    UNIVERSAL = ["calm", "sad", "glad"]
-
-    def character(self, moods, **extra):
-        return {"default_mood": "calm", "moods": [{"id": m, "meaning": m.title() + ".", "face": f"A {m} face."} for m in moods], **extra}
-
-    def test_exactly_the_universal_moods(self):
-        self.assertEqual(gen.mood_problems(self.character(["calm", "glad", "sad"]), self.UNIVERSAL), [])
-        self.assertEqual(gen.mood_problems(self.character(["calm", "sad", "giddy"]), self.UNIVERSAL),
-                         ["moods aren't the universal ones (missing ['glad'], extra ['giddy'])"])
-        self.assertEqual(gen.mood_problems(self.character(["calm", "sad", "glad", "sad"]), self.UNIVERSAL),
-                         ["moods names a mood twice"])
-
-    def test_moves_and_defaults_name_moods(self):
-        c = self.character(["calm", "sad", "glad"], startup_mood="giddy")
-        c["moods"][0]["moves"] = {"ordinary": ["sad"], "dramatic": ["sulky"]}
-        self.assertEqual(gen.mood_problems(c, self.UNIVERSAL),
-                         ["calm leads to sulky, which isn't a lasting mood", "startup_mood giddy isn't a lasting mood"])
-
-    def test_a_face_only_mood_settles_into_a_lasting_one(self):
-        """CHARACTER.md §5: a mood with no meaning is a face, which settles
-        into a lasting mood, has no moves, and no move leads to."""
-        c = self.character(["calm", "sad", "glad"])
-        c["moods"][2] = {"id": "glad", "face": "A glad face.", "settles": "calm"}
-        self.assertEqual(gen.mood_problems(c, self.UNIVERSAL), [])
-        c["moods"][0]["moves"] = {"ordinary": ["glad"], "dramatic": []}
-        c["moods"][2] = {"id": "glad", "face": "A glad face.", "moves": {"ordinary": ["sad"]}}
-        self.assertEqual(gen.mood_problems(c, self.UNIVERSAL),
-                         ["calm leads to glad, which isn't a lasting mood", "glad has no meaning, and settles into no lasting mood",
-                          "glad has moves but no meaning"])
+    def test_a_pack_builds_only_with_moods_and_a_startup_mood(self):
+        """moods.h needs the pack's moods and its startup mood; whether they play is boopdev check's."""
+        c = {"id": "x", "version": "1", "default_mood": "calm", "faces": {}, "moods": [{"id": "calm"}]}
+        self.assertNotIn("isn't one of its moods", " ".join(gen.pack_problems(Path("/nowhere"), c)))
+        c["startup_mood"] = "giddy"
+        self.assertIn("its startup_mood, else its default_mood, isn't one of its moods", gen.pack_problems(Path("/nowhere"), c))
+        c["moods"] = []
+        self.assertIn("moods names no mood, or one without an id", gen.pack_problems(Path("/nowhere"), c))
 
 
 class StateRuleTests(unittest.TestCase):
@@ -147,11 +115,6 @@ class StudioRuleTests(unittest.TestCase):
         write(self.studio / "states.json", {"groups": [{"label": "All", "states": [{"id": "idle", "about": ""}, {"id": "working", "about": ""}]}], "facts": {}})
         self.firmware = self.dir / "types.cpp"
         write(self.firmware, 'constexpr const char* kStateNames[2] = {"idle", "working"};')
-        # These packs' moods are the universal ones.
-        from unittest import mock
-        patch = mock.patch.object(gen, "universal_moods", lambda: ["calm"])
-        patch.start()
-        self.addCleanup(patch.stop)
 
     def pack(self, name, moods, studio=None, files=(), **extra):
         moods = [{**m, "face": m.get("face", "A face.")} for m in moods]

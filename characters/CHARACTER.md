@@ -35,9 +35,12 @@ make -C internal build && .build/debug/boopdev check # every pack in characters/
 .build/debug/boopdev check path/to/pack             # one pack, anywhere
 ```
 
-`boopdev check` reads a pack as the engine does: `character.json`, the
-steering, the faces' files, the voice, every demo, and its moods and
-its studio entry (`charactergen.py --check`). A pack that passes plugs in. Then
+`boopdev check` says whether a pack plays: it reads the pack as the app
+does, `character.json` with its moods and their graph, the steering and
+its budgets, the faces' files, the voice and every demo.
+`charactergen.py --check` says whether it builds: the moods and startup
+mood `moods.h` needs, the rig, the studio entry and the references. A
+pack that passes both plugs in. Then
 build the firmware with it, to check its faces:
 `CHARACTER=<name> make -C internal fw-test`. The engine's own Swift tests
 (`make -C internal test`) run with Boop's pack, whose name, moods,
@@ -265,9 +268,9 @@ Unknown keys are ignored, so a newer pack still loads in an older engine.
 
 Every pack has the same moods: the universal list,
 `CharacterPack.universalMoods` in `app/BoopKit/Character/Moods.swift`,
-the one place the names are written (`charactergen.py` reads them from
-there). A pack has each of them once, and no other: the app's loader,
-`boopdev check` and `charactergen.py` refuse a pack that doesn't. What
+the one place the names are written. A pack has each of them once, and
+no other: the app's loader and `boopdev check` refuse a pack that
+doesn't. What
 each means, how they connect and how each looks and sounds is the pack's.
 
 Every mood is a face a reaction can make. Only some are lasting moods,
