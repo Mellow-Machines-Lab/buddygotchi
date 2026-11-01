@@ -360,6 +360,24 @@ on temperament (which must stay last):
   → excited, wake up, says hello, big
 ```
 
+**On the board.** The gel already draws lonely, and has never shown
+it, since nothing reached the mood: longing eyes, a small pout, and
+three idle motions (a slow look, a peek, a sag), in
+`design/slime-blob/expressions.json`; every look, the wake-up and a
+touch's reaction included, draws in the mood's designs. Its voice
+borrows sad's takes (`tools/voicegen/borrowed.json`). So step 2 needs
+no new animation suite, but it needs:
+- **A look on the AMOLED board and in the simulator,** since the face
+  was designed but never tuned on the screen: the lonely idle, the
+  lonely wake-up, and a stroke ending it.
+- **The reunion beat, if the look falls flat:** a touch that ends
+  lonely is the payoff, so it may earn a short clip of its own (Boop
+  perking up toward you) before the affectionate face. Decide after
+  seeing it.
+- **Its voice, later:** sad's takes may sound too heavy for missing
+  you. A few takes of lonely's own belong with the voice-range plan's
+  new feelings.
+
 **The morning is a reunion, not a guilt trip** (decided 2026-10-27).
 Back after a night is the happy wake-up it is now, with the dream told
 on it (§3): Boop is glad because you came back, and the reason says so
