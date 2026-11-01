@@ -344,6 +344,7 @@ thread, not that it's built.
 | E2b Growth's daily totals | Yes: growth reads them from the memory reader's tallies |
 | E3a Hush folds into Talk | Yes (below) |
 | E3b The calendar moves into CONTEXT | Yes (below); one full eval run, asked of the owner first |
+| F The dashboard (`boopctl dash`) | Yes (below) |
 | C8's idle cleanup | Yes (below) |
 | The six evals failing on `main` | Yes, a separate cleanup (below) |
 | C10 Ordinary versus dramatic | Not now |
@@ -454,6 +455,27 @@ stays HISTORY's closing line, as decided. The personality's Examples
 that quote the heading's calendar ("NOW (09:02, Saturday, Halloween)")
 quote CONTEXT's row instead, and their evals change with them. Gate: one
 full eval run, asked of the owner first.
+
+**F, the dashboard, decided.** `boopctl dash` predates the dreaming and
+simplify work; it still runs, since `debug.jsonl` carries every event
+and pass, but shows little of what's new:
+1. **The mood picker** (`m`) offers the active pack's 16 lasting moods,
+   not all 42 from Pixel's pack. Previewing a face keeps all 42.
+2. **The decided column** shows each reaction's sign, its reason, and
+   an ask's question, two answers and the pick.
+3. **"Boop now"** shows the Talk level (silent for N min included), the
+   mood's reason, and growth (the stage, the XP, today's work and care
+   XP against their caps); the simplest source is the last pass's
+   CONTEXT section, shown as Jev read it.
+4. **The mood column** gains memory's rows: a day closing, its dream,
+   whether it's been told, and the night's write (changed, refused).
+5. **`d` closes the day now** (the dream, then the night's write),
+   through one new debug command in the app, so memory can be watched in
+   seconds rather than at 5:00.
+6. **`s`** reads "the prompt Jev read", not "Jev's state".
+7. **internal/VERIFICATION.md** describes it as it is.
+No new column and no Talk control: the app has Talk, and three columns
+plus "Boop now" is enough to read.
 
 **A, in commits.** Each is small, invisible, and checked by `make -C
 internal check`:
