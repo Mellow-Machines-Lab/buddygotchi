@@ -144,7 +144,7 @@ state and tallies, for CONTEXT; step 3a adds the journal and the dream
 
 | Part | What it does |
 | --- | --- |
-| State | The company state (when you last touched Boop, last talked to it, last came back, and when a lonely spell last ended, all carried across 5:00), the day's tallies, and the journal |
+| State | The company state (when you last touched Boop, last talked to it, last came back, and when Boop was last lonely, all carried across 5:00), the day's tallies, and the journal |
 | `open(day, carry)` | An empty journal and tallies; an away or a turn open across 5:00 carried |
 | `read` | Counts the tallies; adds the event's line to the journal when its kind is kept, and nothing with no line |
 | `close(day, live)` | Writes the dream (below); when `live`, starts the night's write in the background |
@@ -364,8 +364,7 @@ One row per question Boop has asked (dreaming.md §4), written when the
 ask ends: `ask.<id>` = `{"asked", "pick", "keeps"}`. A question with a
 pick stays off for 30 days, one that `keeps` for good, and one tagged
 `daily` until the next day; an ignored one, for a day. A kept answer
-(`cookie`) is a tag from then on, for the pack's lines and, through
-`state.you`, its board looks (dreaming.md §4); any other answer, for 30
+(`cookie`) is a tag from then on, for the pack's lines; any other answer, for 30
 days, for the pack's lines (`[no] hmph`).
 The answer also reaches the journal, so the night's write can add it
 to You and Boop.

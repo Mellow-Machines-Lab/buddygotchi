@@ -221,7 +221,7 @@ something worth saying, so an ordinary pass's CONTEXT is a line or two:
 | --- | --- | --- | --- |
 | Talk | "Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY's silent Examples." or "Talk: quiet. You asked Boop to say less: nothing at small moments, and never a swear." | The setting isn't normal | Settings' Talk |
 | Boop | Its stage and age ("a Pal, 40 days old"); "hushed for N more min" | Always the stage; the hush while it lasts | Growth; `Core.Hush` |
-| You | "at the Mac for N h"; "you haven't touched or talked to Boop in N h" | At the Mac 1 h or more since you came back or first did something today; untouched from 1 h (the steering decides that 2 h is lonely), never while you're away, and not again for 2 h after a lonely spell ended without a touch | The memory reader's company state (below) |
+| You | "at the Mac for N h"; "you haven't touched or talked to Boop in N h" | At the Mac 1 h or more since you came back or first did something today; untouched from 1 h, never while you're away; and "Boop was last lonely N min ago" for a few hours after a lonely spell. These are facts only: when they make Boop lonely is the steering's | The memory reader's company state (below) |
 | Agents | Each open session: "working on "api" for 12 min", "waiting on you", "idle for 40 min"; at most 3, then "and 2 more" | Any session open | `Core.status`, which gains each session's rest time beside `workingSince` |
 | Today | Turns and failed; touches and talks | Once a turn finished, or you touched or talked to Boop, since 5:00 | The memory reader's tallies, `Memory.today()` |
 
@@ -370,13 +370,22 @@ stroke, a poke or a word, affectionate; praise or love, happy; with
 that face.
 Leaves for calm when an agent starts work for you; sad when a very long
 turn fails or the agent gives up.
-Fades to calm once Boop has been lonely for 20 min.
+Fades to calm once Boop has been lonely for 20 min. Once lonely has
+faded without a touch, Boop doesn't fall lonely again for a couple of
+hours.
 ```
 
-**After a lonely spell fades** without a touch, CONTEXT stops saying
-you haven't touched Boop for 2 hours more, so lonely can't come
-straight back at the next check-in. That rule is code, pinned in
-`ContextTests`.
+**Lonely is prompt-only** (decided with the owner on 2026-10-31), so
+the mood can shape it too. Code gives facts and holds no threshold for
+it: the hours away, the time since your last touch or word, and how
+long ago Boop was last lonely. Every "when" is steering:
+- **How long untouched, or away, makes Boop lonely:** the entry clause
+  in the mood files, `lonely.md` and the Examples. Each mood file can
+  set its own: an affectionate Boop may miss you after an hour, a
+  grumpy one not at all.
+- **Not straight back after a spell fades:** `lonely.md` says "Once
+  lonely has faded without a touch, Boop doesn't fall lonely again for
+  a couple of hours", read against CONTEXT's "last lonely" fact.
 
 **The personality's Examples** gain three and change one (the night's
 reunion, which today quotes "a very long break"), before the closing paragraph
@@ -421,8 +430,8 @@ you cause builds it.
 ### Checking it
 
 **Pure tests.** `ContextTests`: each row's threshold (at the Mac from
-1 h, untouched from 2 h, never while away, hidden for 2 h after a
-lonely spell faded); the agents' order and "and N more"; the clipped
+1 h, untouched from 1 h, never while away, "last lonely" for a few
+hours after a spell); the agents' order and "and N more"; the clipped
 names and the 120-token ceiling; the section's place in the prompt.
 `MemoryReaderTests`: the company state counts only yours events; the
 untouched span runs from the last poke, care gesture or talk, or from
@@ -593,20 +602,10 @@ idle musings instead (below).
 
 **Asks that shape Boop.** A question tagged `keeps` is asked once,
 ever: its answer becomes part of Boop, a tag its lines may need from
-then on, and a tag its board looks may need (`state.you`, below), so
-the snack you picked is the one it talks about and holds. A line tagged
+then on, so the snack you picked is the one it talks about. The board
+shows no look for it (decided with the owner on 2026-10-31). A line tagged
 `daily` may come back the next day, whatever the answer; any other
 answered stays off for 30 days; any ask ignored stays off for a day.
-
-**Kept answers on the board: `state.you`.** The board picks a look's
-variation by tags, and `state.when`'s 32 bits have one left. So the
-board gets a second set, `state.you`, for kept answers only: its names
-are the pack's `keeps` answers, which `charactergen.py` reads from
-`asks.md` and writes into the firmware, the Mac mirroring them
-(`Occasions.you`). The Mac sends the answers Boop has kept, and a
-pack's design may need one (a snack look that needs `cookie`), as it
-needs `when`'s tags today. A pack with more than 32 kept answers fails
-`boopdev check`. The pack draws each answer's art.
 
 **Idle musings, not quizzes.** At an idle check-in, Boop may hold up a
 musing, a line of `signs.md` tagged `[idle]`, with blanks filled from
@@ -690,13 +689,11 @@ the moment's tags; a question answered is off for 30 days, ignored for
 a day, a `keeps` one never again, a `daily` one the next day; the hour
 and day caps, and quiet's none; a `[lonely]` ask only at lonely's
 first check-in and once a day; idle musings at most once an hour;
-`touch` only from the tag. `OccasionsTests`: `Occasions.you` matches
-the firmware's generated names. `CoreTests`: the `ask` event's
+`touch` only from the tag. `CoreTests`: the `ask` event's
 start and end, `ignored` from an `ended` with no `ev`, and a `do` given
 up on by the host ends it `ignored` too. Firmware `test_ask`: a target's
 tap, a gesture with and without `touch`, a replacing reaction, and the
-45 s, each with its `ev` before its `ended`; a design that needs a
-kept answer shows once `state.you` has it. `AskEvals`: an idle
+45 s, each with its `ev` before its `ended`. `AskEvals`: an idle
 question is asked once and answered; the next day's sign uses the
 answer; a kept answer is never asked again and its tag reaches
 the ask record; lonely asks "pet me?" and a stroke answers it; nothing asks
@@ -705,9 +702,8 @@ while an agent needs you.
 **Demo.** `asks.jsonl`: a finish, "did it work?", a tap (`{"you":
 "answer", "pick": "a"}`, a new step), the follow-up face and sign; an
 idle stretch, "fav snack?", a tap, and a day later a sign that
-remembers the answer (a `[cookie]` line) and a look with the cookie.
-The board, the mirror and the simulator draw the two targets and the
-kept answer.
+remembers the answer (a `[cookie]` line). The board, the mirror and
+the simulator draw the two targets.
 
 ## Making room in the steering
 
@@ -751,7 +747,7 @@ again every demo it changes.
 | **3b. The written memory** | Nothing | `MemoryWriter`, `MemoryEdits`, `memory.md` and `MemoryStore`'s part; the `memory` event; `boopdev memory write` and its fixtures | `MemoryEditsTests`, `MemoryWriterTests`; a week of nights on the owner's Mac, the file read each morning, before step 3c |
 | **3c. MEMORY** | The memory evals | The MEMORY section and its budget; the evals' `memory` seed | `MemorySectionTests`; the memory evals |
 | **3d. What Boop remembers** | Nothing | The popover's pane (Recently, notes with delete and pin), Forget, the sentence in Settings | `Boop --snapshots` |
-| **4. Asks** | `asks.md`; the `[idle]` musings in `signs.md`; the kept answers' art; the ask's sentence and Examples; the ask evals; `asks.jsonl` and its recording; `lonely.jsonl` recorded again; the targets in the gel's lane | `TaggedLine.parts`; questions offered as signs at the ask's moments; the `do`'s `ask`, `ev ask` and the `ask` event; the ask record; the reason's ask row; the targets on the board, the mirror and the simulator; `state.you` for kept answers (charactergen, firmware, mirror, `Occasions.you`); idle musings at idle check-ins; the demo's `answer` step | `TaggedLineTests`, `AsksTests`, `CoreTests`, firmware `test_ask`; the ask evals |
+| **4. Asks** | `asks.md`; the `[idle]` musings in `signs.md`; the ask's sentence and Examples; the ask evals; `asks.jsonl` and its recording; `lonely.jsonl` recorded again; the targets in the gel's lane | `TaggedLine.parts`; questions offered as signs at the ask's moments; the `do`'s `ask`, `ev ask` and the `ask` event; the ask record; the reason's ask row; the targets on the board, the mirror and the simulator; idle musings at idle check-ins; the demo's `answer` step | `TaggedLineTests`, `AsksTests`, `CoreTests`, firmware `test_ask`; the ask evals |
 
 | **5. Care makes Boop** | The care-lean evals; stage-tagged trick lines | `Growth.xp(for:)` with care and its cap; MEMORY's heading split; the writer's care-note rule and fixture | `GrowthTests`, `MemoryWriterTests`; the care-lean evals |
 
@@ -966,5 +962,11 @@ reports untouched time from an hour, and the steering decides 2 hours.
 Asks are only those whose answer does something (kept, a touch, into
 memory); quizzes go, and idle musings take their place. "Pet me?" is
 offered where lonely begins, at most once a day, and Jev may pass. Kept
-answers reach the board through `state.you`, a second tag set of the
-pack's kept answers.
+answers stay in lines and memory: no board look (and no `state.you`),
+decided later the same day.
+
+**Lonely, prompt-only** (2026-10-31, with the owner): no threshold for
+lonely is code; CONTEXT gives the facts (untouched time, hours away,
+"last lonely"), and the mood files, `lonely.md` and the Examples decide,
+so a mood can make Boop lonelier or less so. Kept answers show no look
+on the board, so `state.you` is out.
