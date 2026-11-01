@@ -440,7 +440,11 @@ public final class Runtime: @unchecked Sendable {
             guard let self else { return }
             let before = growth.growth.stage, now = options.clock()
             let wall = options.wallClock()
-            guard growth.count(e, day: options.time.day(wall), boopDay: options.time.boopDay(wall)) else { return }
+            // What it earned within the day's caps is the memory reader's,
+            // which read it first; with no memory (its store won't open),
+            // what it earns, uncapped.
+            let earned = remembers?.reader.earned(for: e) ?? Growth.xp(for: e)
+            guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
             grew = true
             // A stage reached makes the rest of the day a party, and Boop
             // celebrates it now, unless Boop hatched today.
