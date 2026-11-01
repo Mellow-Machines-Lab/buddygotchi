@@ -161,7 +161,8 @@ final class EvalTests: XCTestCase {
         XCTAssertFalse(result.passed)
         let report = Eval.report([result])
         XCTAssertEqual(report.first, "FAIL  05-pokes-glad-miffed-grumpy.json  Pokes make Boop curious, then miffed, then fed up")
-        XCTAssertTrue(report[1].contains("wanted react amused|curious|excited|happy|mischievous, move none, said some, mood curious|happy; got react none, move none, intensity none, say none, said none, mood calm"), report[1])
+        XCTAssertTrue(report[1].contains("wanted react amused|curious|excited|happy|mischievous, move none, said some, mood curious|happy, offered "), report[1])
+        XCTAssertTrue(report[1].contains("; got react none, move none, intensity none, say none, said none, mood calm, offered "), report[1])
         XCTAssertEqual(Eval.summary([[result]]), "0/1 passed")
     }
 

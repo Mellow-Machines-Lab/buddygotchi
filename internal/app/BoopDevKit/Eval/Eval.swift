@@ -200,6 +200,10 @@ public struct Scenario: Sendable {
     /// Boop's character, not a tuning target: runs 3 times by default, and
     /// `boopdev eval --always` runs only these.
     public var always: Bool
+    /// It checks the code's rules, not Jev's choices: it runs only with
+    /// the expect brain (`--scripted`, and the unit tests), and a Jev run
+    /// leaves it out.
+    public var scripted: Bool
     /// How many runs it gets when `--runs` doesn't say, if not the default
     /// for its kind (`Eval.runs`).
     public var runs: Int?
@@ -249,12 +253,14 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
         self.why = why
         always = o["always"] as? Bool ?? false
+        scripted = o["scripted"] as? Bool ?? false
+        if always, scripted { throw bad("a scripted scenario asks Jev nothing, so it isn't always") }
         if let t = o["start"] {
             guard let text = t as? String, let ms = Scenario.date(text) else { throw bad("start is a UTC date and time, like 2026-10-31T09:00") }
             start = ms

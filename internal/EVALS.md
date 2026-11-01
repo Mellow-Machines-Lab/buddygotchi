@@ -222,6 +222,7 @@ file-name order:
 | `case` | The situation and what Boop should do in it, in plain words and no harness terms, so the steps can be rewritten to fit it when the harness changes. Required |
 | `why` | The spec or steering file that says so |
 | `always` | `true` for Boop's character (§1): 3 runs by default, and `--always` runs these |
+| `scripted` | `true` for a scenario that checks the code's rules rather than Jev's choices (the mood kept on the graph, the screen's counts, which agent BOOT opens): it runs only with the expect brain, in `--scripted` and the unit tests, and a Jev run leaves it out. Never `always` |
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
@@ -263,11 +264,11 @@ the file and step.
 ## 4. The scenarios
 
 Each scenario's file says what it checks, in its `case`, so the list
-lives there: `boopdev eval --list` prints them all. They come in three
+lives there: `boopdev eval --list` prints them all. They come in four
 kinds, all with the `boop` personality unless the file says otherwise:
 
-- **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`130`, `135`, `136`): Boop's character. It never swears
+- **Always** (`03`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `27`–`29`,
+  `36`, `39`, `40`, `43`, `47`, `61`, `63`, `64`, `127`–`130`, `132`–`136`, `138`, `140`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -279,7 +280,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   matter-of-fact finishes and a streak of quick wins leave the mood
   alone, whatever faces they get (`28`);
   no face ever contradicts what happened; talked to, it always answers
-  with a face and a reply, even while it's still making one (`35`–`40`),
+  with a face and a reply (`36`, `39`, `40`),
   and asked about the agents it holds up what they're really doing, how
   long, a check's result, done, how many work and rest when asked about
   them all, or all quiet, never a guessed yes or no (`127`), and a
@@ -294,16 +295,15 @@ kinds, all with the `boop` personality unless the file says otherwise:
   played back (`130`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
-  (`41`–`43`); and its mood only moves along
-  the graph, a step at a time (`47`, `49`, `53`); and coming back to the
+  (`27`, `29`, `43`); and its mood only moves along
+  the graph, a step at a time (`05`, `47`); and coming back to the
   Mac, after ten minutes or hours, a night's sleep included, it cheers,
   glad to see you (`63`, `64`, `136`; a shorter break never reaches it),
   and after a day away it missed you: lonely, until a stroke or a word
   ends it at once (`135`).
-- **Tuning** (`01`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
-  `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`, `51`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`, `137`–`139`): single decisions (a long turn done says it went well,
-  `29`; a failure that really stings swears, `60`; and Boop picks a face
+- **Tuning** (`10`–`12`, `14`, `15`, `18`, `19`, `21`, `22`, `24`–`26`,
+  `44`–`46`, `48`, `50`, `51`, `54`–`60`, `62`, `65`, `70`, `74`–`77`, `79`, `85`, `90`, `91`,
+  `94`–`114`, `118`–`126`, `131`, `137`, `139`, `141`–`148`, `150`): single decisions (a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   at the Mac for hours with no touch or word to it, Boop grows lonely,
   and a word ends it, `137`; with the memory of a long fight, its end is
@@ -333,7 +333,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   it's taken back, when it switches (`58`), and a plain question
   softens nothing (`59`). And work that finished while you were away
   from the Mac is celebrated as it ends, never replayed when you're
-  back, when Boop cheers to see you (`65`). And the rarer
+  back, when Boop cheers to see you (`65`). And, scripted, the rarer
   moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
   new work moves a comfy one only to a mood on offer (`69`). And
   the ladder of failure: a failure after a fix is a bigger cuss than
@@ -341,9 +341,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   gets a small pleased face (`74`), a compacted context leaves Boop a
   little lost (`75`), idle check-ins get a small face or nothing
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
-  again gets a louder grumble (`78`); quiet fades an excited Boop a
+  again gets a louder grumble (`16`); quiet fades an excited Boop a
   step at a time (`55`). And a Codex turn gets the same small
-  cheer as Claude's (`83`). On an occasion the
+  cheer as Claude's (`14`). On an occasion the
   prompt's heading names, Boop plays along when you come back: on
   Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello,
   and the screen has the day's tags; on April Fools' Day it may play a
@@ -353,7 +353,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   5:00, it tells its dream about it the first time you show up, never to
   an agent's event while you're away, and only once (`97`). Touched like a
   pet: a stroke calms a fed-up Boop, a shake makes it dizzy, and a
-  swipe, a quick stroke, is a stroke too (`99`). And the screen with no pass: BOOT
+  swipe, a quick stroke, is a stroke too (`99`). And, scripted, the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
   the helpers and idle agents are counted under the face (`93`); a
   request still shows after a two-hour lunch, since its agent still
@@ -383,7 +383,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   it can't know or at nonsense, a nap or a dance when asked (or no, to a
   trick it won't do), notme when asked to answer an agent for you, bye,
   and status for a question about the agents, how many are running
-  included (`126`).
+  included, each with a face, a second thing said while it still makes
+  its face for the first included (`126`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
@@ -391,8 +392,13 @@ back after a break and an idle check-in. PixelBuddy's `make eval` runs
 them (`boopdev eval` reads the pack in use's scenarios and steering), or
 from here `CHARACTER=pixel .build/debug/boopdev eval --runs 1`, once
 each, about 18 requests.
-- **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
-  says why the steering can't get there alone.
+- **Scripted** (`53`, `68`, `69`, `92`, `93`, `115`–`117`): the code's
+  rules, which need no Jev: the mood kept on the graph through a busy
+  day (`53`) and from the rarer moods (`68`, `69`), and the screen. They
+  run only with the expect brain (§3, `scripted`).
+- **Known gaps** (`20`, `149`): flipping tests don't flip the mood, and a
+  cuddly Boop's lean to affectionate doesn't show. Each `gap` says why
+  the steering can't get there alone.
 
 A new decision or a change to the steering files gets a scenario that
 shows it. Run the scenarios it touches with `--only` while you work, and

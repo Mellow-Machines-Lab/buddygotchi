@@ -26,7 +26,8 @@ let usages: [(command: String, text: String)] = [
         prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
         nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
         scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
-        wakes the brain as it should, the screen, the whole-run checks it can meet). A scenario with a known
+        wakes the brain as it should, the screen, the whole-run checks it can meet). A scripted scenario,
+        one that checks only the code's rules, runs only so. A scenario with a known
         gap is reported GAP when it fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
         /tmp/boop-eval, one JSON object a line. Exits 1 if any fails. The scenarios and steering
         default to the pack in use's (characters/CHARACTER.md §2): its evals/ and steering/.
@@ -129,6 +130,14 @@ func eval(_ raw: [String]) async {
     }
     if args.has("--always") { list = list.filter(\.always) }
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
+    // A scripted scenario checks the code's rules: only the expect brain runs it.
+    let scripted = args.has("--scripted")
+    if !scripted {
+        let forJev = list.filter { !$0.scripted }
+        guard !forJev.isEmpty else { fail("\(list.map(\.file).joined(separator: ", ")): scripted, so run with --scripted") }
+        if forJev.count < list.count, !args.has("--list") { print("\(list.count - forJev.count) scripted scenario\(list.count - forJev.count == 1 ? "" : "s") left out: --scripted runs them") }
+        if !args.has("--list") { list = forJev }
+    }
     let steering: Steering
     do { steering = try Steering(directory: path("--steering", "steering")) } catch { fail("\(error)") }
     let given = args["--runs"].map { Int($0) }
@@ -148,15 +157,14 @@ func eval(_ raw: [String]) async {
     if args.has("--list") {
         for p in plan {
             let s = p.scenario
-            print("\(s.file)\(s.always ? "  [always]" : s.gap != nil ? "  [gap]" : "")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
+            print("\(s.file)\(s.always ? "  [always]" : s.scripted ? "  [scripted]" : s.gap != nil ? "  [gap]" : "")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
             print("    \(p.runs) run\(p.runs == 1 ? "" : "s") × about \(p.requests) requests")
             print("    \(s.story)")
             if let gap = s.gap { print("    gap: \(gap)") }
         }
-        print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests")
+        print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests, the scripted ones' included")
         exit(0)
     }
-    let scripted = args.has("--scripted")
     if scripted { plan = plan.map { ($0.scenario, 1, $0.requests) } }
     let limit = scripted || args.has("--no-budget") ? Int.max : budget.flatMap { $0 } ?? evalBudget
     if total > limit {
