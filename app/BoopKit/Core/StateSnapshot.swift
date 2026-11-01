@@ -270,7 +270,8 @@ public struct StateSnapshot: Equatable, Sendable {
         if idle > 0 { fields["idle"] = .int(idle) }
         if helpers > 0 { fields["helpers"] = .int(helpers) }
         fields["vol"] = .int(vol)
-        if !when.isEmpty { fields["when"] = .array(when.map { .string($0) }) }
+        let tags = when.filter(Occasions.board.contains)  // the tags the board reads
+        if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })

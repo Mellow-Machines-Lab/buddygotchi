@@ -8,13 +8,20 @@ import Foundation
 /// all on (characters/CHARACTER.md §9). The board adds `busy` and
 /// `frantic` itself, from the `state` message's count of sessions working.
 /// The prompt's heading says the calendar's in words, so the brain can
-/// play along. The firmware's list is the same, in the same order
-/// (firmware/src/render/tags.h).
+/// play along. The board gets only the tags it reads (`board`), the
+/// firmware's list in the same order (firmware/src/render/tags.h).
 public enum Occasions {
-    /// Every tag, in the firmware's order: the calendar's, the board's own
-    /// two for how busy the agents are, the tiers, the stages, then the
-    /// latest turn's `reading`.
+    /// Every tag: the calendar's, the board's own two for how busy the
+    /// agents are, the tiers, the stages, then the latest turn's `reading`
+    /// and `hushed`.
     public static let all = calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [reading, hushed]
+
+    /// The tags no board reads: the signs and the brain have them, and the
+    /// `state` message leaves them out.
+    public static let macOnly: Set<String> = ["weekend", "friday13", "piday", "aprilfools", "may4", "buddy", "pal", "chonk", "legend"]
+
+    /// The tags the board reads, in its order: every tag but `macOnly`.
+    public static let board = all.filter { !macOnly.contains($0) }
 
     /// On while the latest turn you prompted lasts, when its prompt's
     /// reading `reads`: the board's reading glasses.

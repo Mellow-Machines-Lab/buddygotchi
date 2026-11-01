@@ -141,13 +141,13 @@ struct OverviewPane: View {
 
     private let faceSize: CGFloat = 46
 
-    /// The pack's slime whenever it has a mirror, connected or not, so the
-    /// face never changes creature: unless the board connected draws the
-    /// pixel face, or Boop couldn't start, which the still face's crossed
-    /// eyes say.
+    /// The pack's mirror of the board whenever it has one, connected or
+    /// not, so the face never changes creature: unless the board connected
+    /// runs another character, or Boop couldn't start, which the still
+    /// face's crossed eyes say.
     private var showsSlime: Bool {
         guard SlimeFeed.folder != nil, model.startError == nil else { return false }
-        return !(model.status?.connected == true && model.status?.device?.face == .pixel)
+        return !(model.status?.connected == true && model.status?.device?.hasTheCharacter == false)
     }
 
     /// The slime while the runtime starts, before its first status.

@@ -473,10 +473,10 @@ class RigRuleTests(unittest.TestCase):
                     '{50, "pop"},', '{300, "squish"},',
                     '{"hop", 400, false, true, {kTracks + 0, 1}, {kCues + 0, 2}},',
                     '{"sway", 200, true, false, {kTracks + 1, 3}},',
-                    # An occasion's tags as tags.h's bits (night 3, tier4 22), its wait in seconds.
-                    f"{{kClips + 0, {(1 << 3) | (1 << 22)}u, 0}},", "{kClips + 0, 0u, 90},",
-                    # A tier's base clip, its tag as tags.h's bit (tier2 20).
-                    f"{{kClips + 1, {1 << 20}u}},",
+                    # An occasion's tags as tags.h's bits (night 3, tier4 17), its wait in seconds.
+                    f"{{kClips + 0, {(1 << 3) | (1 << 17)}u, 0}},", "{kClips + 0, 0u, 90},",
+                    # A tier's base clip, its tag as tags.h's bit (tier2 15).
+                    f"{{kClips + 1, {1 << 15}u}},",
                     "{SceneState::kIdle, kClips + 1, {}},",
                     "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}, {kTiers + 0, 1}},",
                     "inline constexpr Rig kRig = {{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:

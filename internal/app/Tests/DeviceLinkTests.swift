@@ -284,7 +284,7 @@ final class DeviceLinkTests: XCTestCase {
         link.onHello = { DeviceInfo($0).logLines.forEach(lines.add) }
         link.connection(true, now: 0)
         func hello(_ pack: String?, _ version: String = CharacterPack.active.version) -> String {
-            String(FakeTransport.hello.dropLast()) + (pack.map { #","pack":"\#($0)","pack_version":"\#(version)"}"# } ?? "}")
+            String(FakeTransport.hello.dropLast()) + (pack.map { #","pack":"\#($0) \#(version)"}"# } ?? "}")
         }
         link.receive(hello(CharacterPack.active.id), now: 100)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true)
@@ -293,10 +293,24 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, false)
         XCTAssertTrue(lines.all.contains("device: its firmware is built with the other \(CharacterPack.active.version) character pack, "
                                          + "the app runs \(DeviceInfo.appPack): some of its faces won't match the app's moods"), "\(lines.all)")
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheCharacter, false)
         link.receive(hello(CharacterPack.active.id, "9.9.9"), now: 300)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, false, "another version")
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheCharacter, true, "the same character, another version")
         link.receive(hello(nil), now: 400)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true, "firmware that doesn't say")
+        // Firmware from before said the version on its own.
+        let before = String(FakeTransport.hello.dropLast()) + #","pack":"\#(CharacterPack.active.id)","pack_version":"\#(CharacterPack.active.version)"}"#
+        link.receive(before, now: 500)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.pack, DeviceInfo.appPack)
+    }
+
+    /// The AMOLED draws the work stream and the agents' drawer, whatever
+    /// face it runs (Pixel Bro's pixel face among them); the CYD doesn't.
+    func testTheDrawerIsTheAmoleds() {
+        XCTAssertTrue(DeviceInfo(id: "b", fw: "1", voice: nil, face: .pixel, pack: nil, reset: nil, board: "amoled206").drawsTheDrawer)
+        XCTAssertFalse(DeviceInfo(id: "b", fw: "1", voice: nil, face: .pixel, pack: nil, reset: nil, board: "cyd24").drawsTheDrawer)
+        XCTAssertTrue(DeviceInfo(id: "b", fw: "1", voice: nil, face: .gel, pack: nil, reset: nil, board: nil).drawsTheDrawer, "older firmware: by its face")
     }
 
     /// The widest name the Mac sends: 47 bytes that JSON escapes to two
@@ -306,7 +320,7 @@ final class DeviceLinkTests: XCTestCase {
 
     /// The most calendar tags that can be on at once: a part of the day,
     /// a Friday the 13th that's also a holiday, Programmers' Day, Lunar
-    /// New Year and a party.
+    /// New Year and a party. The board gets those it reads.
     private let mostTags = ["morning", "friday", "friday13", "aprilfools", "programmers", "lunar", "party"]
 
     /// A line is at most 512 bytes. The biggest `state`,
@@ -327,7 +341,7 @@ final class DeviceLinkTests: XCTestCase {
                               busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","friday13","aprilfools","programmers","lunar","party"]}"#)
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","programmers","lunar","party"]}"#)
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 

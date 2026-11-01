@@ -264,7 +264,7 @@ static void test_hello_on_the_first_message_and_every_minute() {
                           "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
                           "\"wake_up\",\"listening\",\"stop_listening\",\"notice\",\"call\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
-                      "\",\"pack_version\":\"" + render::kPackVersion + "\",\"reset\":\"power\"}\n";
+                      " " + render::kPackVersion + "\",\"reset\":\"power\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));
   TEST_ASSERT_EQUAL_STRING(hello.c_str(), r.ble.text.c_str());
   TEST_ASSERT_TRUE(hello.size() - 1 <= linkkit::kMaxLine);

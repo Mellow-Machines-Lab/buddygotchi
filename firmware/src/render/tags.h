@@ -1,24 +1,22 @@
 // The tags on now: what the Mac sends in `state.when` (the part of the
-// day, the weekday, a holiday, a milestone day, every tier the agents'
-// working stretch or their rest has reached, the growth stages reached,
+// day, Friday, a holiday, a milestone day, every tier the agents'
+// working stretch or their rest has reached, the first growth stage,
 // `reading` while the latest turn's prompt was an essay or for docs, and
 // `hushed` while you've told Boop to be quiet),
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a gag that carries tags fits only while every
-// one of them is on (characters/CHARACTER.md §9). The Mac's list is the
-// same, in the same order (app/BoopKit/Core/Occasions.swift), and facegen
-// numbers a design's tags by it.
+// one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
+// in this order (Occasions.board, app/BoopKit/Core/Occasions.swift), and
+// facegen numbers a design's tags by it.
 #pragma once
 #include <cstdint>
 
 namespace render {
 
-constexpr int kTagCount = 31;
+constexpr int kTagCount = 22;
 constexpr const char* kTagNames[kTagCount] = {
-    "morning",    "day",   "evening",    "night", "friday",    "weekend", "friday13",    "newyear",
-    "valentines", "piday", "aprilfools", "may4",  "halloween", "winter",  "programmers", "lunar",
-    "party",      "busy",  "frantic",    "tier1", "tier2",     "tier3",   "tier4",       "tier5",
-    "sprout",     "buddy", "pal",        "chonk", "legend",    "reading", "hushed"};
+    "morning", "day",   "evening", "night", "friday", "newyear", "valentines", "halloween", "winter", "programmers", "lunar",
+    "party",   "busy",  "frantic", "tier1", "tier2",  "tier3",   "tier4",      "tier5",     "sprout", "reading",     "hushed"};
 static_assert(kTagCount <= 32, "a set of tags is 32 bits");
 
 // The tag's bit in a set of tags, or 0 for a name that isn't one.

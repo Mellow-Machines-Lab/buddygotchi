@@ -117,8 +117,10 @@ int Device::does(const char* const*& names) const {
 void Device::hello(JsonObject extra) {
   extra["voice"] = voice::assetsVersion();
   extra["face"] = b_.face().name();
-  extra["pack"] = render::kPackId;  // the character pack it was built with
-  extra["pack_version"] = render::kPackVersion;
+  // The character pack it was built with, as `id version`.
+  static char pack[48];
+  if (!*pack) std::snprintf(pack, sizeof pack, "%s %s", render::kPackId, render::kPackVersion);
+  extra["pack"] = static_cast<const char*>(pack);
   extra["reset"] = hal_.resetReason();  // why it last restarted: the Mac logs a crash or a watchdog
   if (*hal_.boardName()) extra["board"] = hal_.boardName();  // which firmware the Mac updates it with
 }

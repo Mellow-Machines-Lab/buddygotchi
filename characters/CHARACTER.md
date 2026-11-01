@@ -575,8 +575,8 @@ Besides drawing each mood and state, a face:
 - **Has occasions.** A design may need tags (`when`: every one on) or a
   wait (`after`: seconds its look has shown). The tags are the engine's
   (`firmware/src/render/tags.h`): the part of the day (`morning`, `day`,
-  `evening`, `night`), `friday`, `weekend`, `friday13`, the holidays
-  (`newyear`, `valentines`, `piday`, `aprilfools`, `may4`, `halloween`,
+  `evening`, `night`), `friday`, the holidays
+  (`newyear`, `valentines`, `halloween`,
   `winter`, `programmers`, `lunar`), `party` (a milestone day since
   hatching, New Year's Day, the day a growth stage was reached, but never
   the day it hatched, your first with it; the Mac greets a day with an
@@ -589,14 +589,15 @@ Besides drawing each mood and state, a face:
   the latest session came to rest, its turn ended or its request
   dismissed; the Mac sends the last reached and the board takes every one
   below it as on, `render::reached`, so a design for `tier2` shows from
-  then on, at work or idle as its look says), every growth stage
-  reached (`sprout`, `buddy`, `pal`, `chonk`, `legend`, so a design for
-  `pal` shows from Pal on), and `reading` while the turn the latest
+  then on, at work or idle as its look says), `sprout` from the first
+  growth stage reached on, and `reading` while the turn the latest
   prompt's reading came for lasts, when you wrote it an essay or asked for
   docs (`Occasions.reads`), and `hushed` while the creature is hushed
   (`Core.Hush`), from the Mac's `state.when`, and `busy` (2–3
   sessions working) and `frantic` (4 or more), which the board adds from
-  `state.busy`. A design that fits
+  `state.busy`. The Mac has more tags (`weekend`, `friday13`, `piday`,
+  `aprilfools`, `may4` and the later growth stages), for its signs and the
+  brain, and sends the board none of them (`Occasions.macOnly`). A design that fits
   only while its tags are on shows only then; a look starts on one while
   it fits, turns to one two times in three, and a reaction always takes
   one. Pixel's are `occasion-art.mjs` in its bank: coffee in the
@@ -844,7 +845,7 @@ only the CYD, as the gel face, Boop's own, is the AMOLED's only one.
 ## 10. Who's on the board
 
 The board's `hello` names the pack its firmware was built with, beside
-its `face` and its card's `voice`: `"pack":"boop","pack_version":"0.1.0"`
+its `face` and its card's `voice`: `"pack":"boop 0.1.0"`
 (`kPackId` and `kPackVersion` in the staged `moods.h`). So keep the id
 to 24 characters and the version to 16: `hello` must fit in one line.
 

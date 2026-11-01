@@ -3119,7 +3119,7 @@ static void test_an_occasion_shows_only_while_its_tags_are_on() {
   TEST_ASSERT_NOT_EQUAL(coffee, r.b.show(r.t).variant);
   // A tag the board doesn't know is no tag.
   TEST_ASSERT_EQUAL_UINT32(0, render::tagBit("someday"));
-  TEST_ASSERT_EQUAL_UINT32(1u << 18, render::tagBit("frantic"));
+  TEST_ASSERT_EQUAL_UINT32(1u << 13, render::tagBit("frantic"));
 }
 
 // A variation with a wait (`after`) shows only once its look has shown
