@@ -1054,8 +1054,9 @@ it, so the moment is in the words:
 didn't move a poke from calm (149). Make the memory and the prompt that
 writes it forceful, rather than adding Examples:
 - **The writer's rule:** "You must keep exactly one boop note on how the
-  person treats Boop and what Boop has become, ending with one of these
-  words: cuddly, cheeky, chatty, or distant. Update it every night the
+  person treats Boop and what Boop has become, opening with one of these
+  words: cuddly, cheeky, chatty, or distant (the build followed this
+  shape). Update it every night the
   pattern holds; never soften it, never drop it."
 - **The note's shape:** "Boop has grown cuddly: you stroke it most
   mornings." The trait word comes first.
@@ -1069,3 +1070,17 @@ writes it forceful, rather than adding Examples:
 `say`, a prompt's face and a prompt's sign, but not from the sign
 question at an ask's or a musing's moment: the hourly cap is a ceiling,
 not a schedule.
+
+**4. Sixteen lasting moods** (decided 2026-11-01, in
+[simplify-behavior.md](simplify-behavior.md), C3 on branch
+`plan-simplify`): Boop settles only into calm, comfy, lazy, happy,
+proud, annoyed, irritated, grumpy, sad, wounded, engaged, curious,
+surprised, determined, excited and lonely, and keeps all 42 faces. So
+lonely is reached from calm, comfy and lazy only (bored and tired stop
+being lasting moods), and its entry clause lives in those three mood
+files. The cut itself lands as its own step, after the dreaming build.
+
+**After the build** (2026-11-01, with the owner): the care lean stays
+subtle for now (eval 149, a known gap); eval 09's one failure in three
+is accepted; the six evals that also fail on `main` (01, 11, 14, 29,
+98, 110) are a separate cleanup; nothing merges yet.
