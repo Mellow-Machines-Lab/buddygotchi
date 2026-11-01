@@ -27,6 +27,9 @@ at after `make flash` and a new voice on the card (the report of
       simulator: words reach `state.calls`, at most 4 states a second,
       none of the first rank dropped but by ttl, and the brain's passes
       the same with the stream on and off.
+- [ ] **Pixel's copy of the voice** still has the 164 `attention` takes
+      the gel's lost (SlimeBuddy's voicegen leaves them out now): copy the
+      new `voice.bin` and `takes.tsv` over, then drop `Take.Part.attention`.
 - [ ] **Eval 09** fails 1 run in 3 (accepted for now); 14 and 98 are
       known gaps (internal/EVALS.md).
 
