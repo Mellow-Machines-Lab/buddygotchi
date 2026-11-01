@@ -386,13 +386,16 @@ public final class TranscriptView {
         return told(foldLine(e), e)
     }
 
-    /// Tells the dream not yet told under the first line that's yours while
-    /// you're at the Mac: your coming back, a poke, a stroke, a word or a
-    /// prompt. Never an agent's event or a heartbeat, so it never plays to
-    /// an empty room. Its facts say which dream, for the memory to mark it
-    /// told, the reason and the dream's signs.
+    /// Tells the dream not yet told the first time you show up after the
+    /// day closed: your coming back or, with none, your first touch (a
+    /// poke or a care gesture). Never a prompt (it has its own sign), a
+    /// word to the buddy (its reply's sign), an agent's event or a
+    /// heartbeat, so it never plays to an empty room. Its facts say which
+    /// dream, for the memory to mark it told, the reason and the dream's
+    /// signs.
     func told(_ line: Line?, _ e: Event) -> Line? {
-        guard var line, let dream = fold.untold, Yours.did(e), fold.awaySince == nil,
+        let showsUp = (e.type == .presence && e.phase == .end) || Yours.touch(e)
+        guard var line, let dream = fold.untold, showsUp, fold.awaySince == nil,
               let weekday = dream["weekday"]?.string, let sentence = dream["sentence"]?.string else { return line }
         fold.untold = nil
         let told = EventLine.dreamed(weekday: weekday, sentence: sentence, name: name(e))

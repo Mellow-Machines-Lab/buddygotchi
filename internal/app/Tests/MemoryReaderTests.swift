@@ -167,9 +167,9 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertTrue(sign.text.contains("dream"))
     }
 
-    /// TranscriptView.told: the dream is told under the first line that's
-    /// yours while you're at the Mac after the day closes: never an agent's
-    /// event or while you're away, and once.
+    /// TranscriptView.told: the dream is told on your first coming back
+    /// after the day closes: never an agent's event or while you're away,
+    /// and once.
     func testTheDreamIsToldTheFirstTimeYouShowUp() throws {
         let rig = CoreRig()
         let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
@@ -192,6 +192,23 @@ final class MemoryReaderTests: XCTestCase {
                        dream.fact, "the dream is the reason")
         XCTAssertTrue(memory.dream?.told == true)
         XCTAssertEqual(told(rig.poke()), [], "told once")
+    }
+
+    /// With no coming back since the close (the Mac stayed awake), your
+    /// first touch tells it; a prompt or a word to Boop never does.
+    func testWithNoBackTheFirstTouchTellsTheDream() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
+        rig.turn(60_000)
+        rig.wait(16 * hour, every: 60_000)
+        let dream = try XCTUnwrap(memory.dream, "the day closed at 5:00")
+        let told = { (fx: Fx) in events(fx).compactMap { $0.facts["dream_day"]?.string } }
+        rig.send(.turnStart, prompt: "good morning, fix the tests")
+        XCTAssertEqual(told(rig.note(Fx(rig.pipeline.said("morning boop", by: .device, at: rig.now)))), [], "a word to Boop")
+        XCTAssertFalse(memory.dream?.told == true, "nor a prompt")
+        XCTAssertEqual(told(rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))), [dream.day], "the first touch")
     }
 }
 

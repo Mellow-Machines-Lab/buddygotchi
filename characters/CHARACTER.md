@@ -401,9 +401,10 @@ What the brain reads, in plain Markdown:
   `default_mood`'s.
 - `dreams.md` (optional): the signs the creature may hold up as it
   tells its dream about yesterday. Its day closes at 5:00 into a dream,
-  the day in tags and a sentence (`MemoryReader`), and the first line
-  that's the person's after it (coming back, a poke, a word, a prompt)
-  tells it. Each line is `- [tags] words`: the tags (optional) the day
+  the day in tags and a sentence (`MemoryReader`), and the person's
+  first coming back after it, or with none their first touch (a poke or
+  a stroke), tells it; never a prompt or a word, which have signs of
+  their own. Each line is `- [tags] words`: the tags (optional) the day
   must all have, the person's (`fond`, `distant`, `here`, `late`,
   `answered`) and the agents' (`failed`, `clean`, `long`, `quiet`,
   `poked`), and the calendar's. The lines with tags come first, in the

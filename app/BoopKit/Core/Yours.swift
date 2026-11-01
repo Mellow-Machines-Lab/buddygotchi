@@ -24,6 +24,11 @@ public enum Yours {
         }
     }
 
+    /// Whether `e` is a touch on the buddy itself: a poke or a care gesture.
+    public static func touch(_ e: Event) -> Bool {
+        e.type == .poke || (e.type == .gesture && careGestures.contains(e.specificType))
+    }
+
     /// Whether `e` touched or talked to the buddy itself: a poke, a care
     /// gesture or what was said to it. A prompt is yours, but it's to an
     /// agent.
