@@ -280,7 +280,7 @@ end
 SECTION is one of:
 you: something the person said or went through, or a habit of theirs
 work: the story of a project, such as a long fight with a bug and how it ended
-boop: a habit or a moment between the person and Boop
+boop: a habit or a moment between the person and Boop, and one note on how the person treats Boop and how Boop has grown from it
 
 Rules:
 - Write only what YESTERDAY or CERTAIN shows. Never guess a feeling the person didn't say.
@@ -290,6 +290,7 @@ Rules:
 - Never write code, file names, commands, links, other people's names, or anything about health, money, family, relationships, politics or religion, even if yesterday mentions it.
 - Prefer keep. Update at most 3 notes and add at most 3. When nothing is worth adding, add nothing.
 - At most 4 notes in each section.
+- Keep one boop note about how the person treats Boop (strokes, pokes, talks, coming back) and what Boop has become from it, such as cuddly or cheeky. Update it as the pattern holds or changes; never add a second one.
 
 Example:
 MEMORY
@@ -346,10 +347,10 @@ A section after PERSONALITY and before MOOD (the prompt's order is in
 dreaming.md §2), rendered from `memory.md` on every pass:
 
 ```
-MEMORY (what Boop remembers. Old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)
+MEMORY (what Boop remembers. You and Boop is who Boop has become with you: let it lean which moods Boop picks. The rest is old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)
 You: You work late most nights, and you say please to claude.
 Your work: "api": the test failures that ran all week were fixed on Friday. "blog": moving to a new host, half done.
-You and Boop: You stroke Boop when you sit down in the morning. You told Boop its favourite snack is cookies.
+You and Boop: You stroke Boop when you sit down in the morning; it has grown cuddly. You told Boop its favourite snack is cookies.
 Recently: Yesterday, a long day on "api"; the tests finally passed. 2 days ago, three turns broke on "api".
 ```
 
@@ -405,7 +406,8 @@ to You and Boop.
 --fixture FILE` runs the real writer over a fixture night and prints
 the reply, the edits applied and the refusals. Fixtures in
 `internal/app/Evals/memory/`: a saga that ends, a plan that changes, a
-quiet day, a sensitive day, an injection, a full section.
+quiet day, a sensitive day, an injection, a full section, and a care
+pattern that holds (the care note updated, never a second one).
 
 **Jev's evals** seed `memory.md` and `dream.last` from the scenario's
 `"memory"`: a telling picks a sign for the dream's tags; a saga's end
@@ -431,7 +433,7 @@ and the ask record lands with step 4.
 
 When a feature needs memory that is exact, durable or able to trigger
 content by tag (the board's cuddly look after ten days of strokes,
-`[nightowl]` signs, temperament from the bond, growth from care), a
+`[nightowl]` signs), a
 second reader keeps a counted memory: a row of counts per Boop day, and
 traits derived from the rows by one rule shape, Boop's latched for good
 and yours fading. Designed on 2026-10-27 and set aside for v1; the

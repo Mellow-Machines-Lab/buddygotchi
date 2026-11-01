@@ -196,16 +196,18 @@ A section built by code on every pass:
 
 ```
 CONTEXT (how things stand. Background, not news: react to NOW.)
+Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY's silent Examples.
+Boop: a Pal, 40 days old; hushed for 8 more min.
 You: at the Mac for 3 h; you haven't touched or talked to Boop in 2 h.
 Agents: claude working on "api" for 12 min; codex idle on "blog" for 40 min.
 Today: 7 turns, 3 failed; you touched Boop 6 times and talked to it twice.
 ```
 
-**The prompt's order,** written here once: the guide, PERSONALITY,
-MEMORY, MOOD, CONTEXT, TALK, then HISTORY, whose last line is the
-mood's duration, and NOW. With several buddies, each buddy's header
-comes first, as now. TALK stays the last section, so it still outranks
-the rest on words. Each section is one more `h.section` in
+**The prompt's order,** written here once (decided with the owner on
+2026-10-31): the buddy's header (with several buddies only), the
+guide, PERSONALITY, MEMORY, MOOD, CONTEXT, then HISTORY, whose last
+line is the mood's duration, and NOW, then the questions. There is no
+TALK section: the setting is CONTEXT's Talk row (below). Each section is one more `h.section` in
 `Runtime+Buddies`, a closure that may read the core and the memory
 reader, as the react output's `status` closure already reads the core;
 MellowHarness doesn't change. A section sees the log as of the pass,
@@ -217,14 +219,33 @@ something worth saying, so an ordinary pass's CONTEXT is a line or two:
 
 | Row | Says | Shown when | From |
 | --- | --- | --- | --- |
+| Talk | "Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY's silent Examples." or "Talk: quiet. You asked Boop to say less: nothing at small moments, and never a swear." | The setting isn't normal | Settings' Talk |
+| Boop | Its stage and age ("a Pal, 40 days old"); "hushed for N more min" | Always the stage; the hush while it lasts | Growth; `Core.Hush` |
 | You | "at the Mac for N h"; "you haven't touched or talked to Boop in N h" | At the Mac 1 h or more since you came back or first did something today; untouched from 2 h, never while you're away, and not again for 2 h after a lonely spell ended without a touch | The memory reader's company state (below) |
 | Agents | Each open session: "working on "api" for 12 min", "waiting on you", "idle for 40 min"; at most 3, then "and 2 more" | Any session open | `Core.status`, which gains each session's rest time beside `workingSince` |
 | Today | Turns and failed; touches and talks | Once a turn finished, or you touched or talked to Boop, since 5:00 | The memory reader's tallies, `Memory.today()` |
 
+**Talk leaves the prompt's sections.** The TALK section and the three
+`steering/talk/` files go, from both packs. Code holds each level, and
+the Talk row tells Jev why:
+- **Quiet** is held in code already: `say` offers no topic and no
+  swear, and a small moment or a finish says nothing.
+- **Chatty** gains the matching rule: `say` drops its "none". If eval
+  123 shows Jev skipping a prompt's sign, a prompt's `react.sign` drops
+  "none" on chatty too.
+- **Normal** is the personality as written, and shows no row.
+- **The check-in pace** each level sets moves from the talk files'
+  front matter into code beside the setting: quiet looks in less often,
+  chatty more.
+
+**The guide** drops its TALK line ("TALK, when there is one, says how
+much it says…") and names MEMORY and CONTEXT as background to NOW, in
+the tokens that line frees.
+
 Spans are words with numbers ("for 12 min", "in 2 h"), never bands.
 Thread names are clipped as the board clips them (`StateSnapshot.clip`),
-so the section has a ceiling: 120 tokens, pinned by a test that renders
-all three rows, three agents and "and 2 more".
+so the section has a ceiling: 160 tokens, pinned by a test that renders
+every row, three agents and "and 2 more".
 
 **The company state is the memory reader's.** One fold over `Yours`,
 not two: step 2 builds the checkpointed reader (dreaming-memory.md)
@@ -659,7 +680,7 @@ The steering is full. Measured on 2026-10-31 by Steering's own rule
 | Part | Now | Budget | This plan adds |
 | --- | --- | --- | --- |
 | `personality/boop.md` | 2,599 | 2,600 | About 210: three Examples for §2 (about 85), the telling's (50), the ask's sentence and two Examples (75) |
-| `guide.md` | 398 | 400 | Nothing: CONTEXT's and MEMORY's rules live in their own headings |
+| `guide.md` | 398 | 400 | About even: its TALK line goes, and a line naming MEMORY and CONTEXT as background to NOW takes its place; their rules live in their own headings |
 | `mood/calm.md` | 207 | 225 | About 36: the clause into lonely (§2) |
 | `mood/comfy.md`, `bored.md`, `tired.md`, `lazy.md` | 99 to 118 | 225 | The clause and the "unless" on staying: about 50; they fit |
 | `dreams.md`, `asks.md` | new | none of their own | Today `boopdev check` would measure them against the mood's 225 by accident |
@@ -688,12 +709,14 @@ again every demo it changes.
 | Step | SlimeBuddy (the pack) | buddygotchi (the engine) | Checked by |
 | --- | --- | --- | --- |
 | **1. The reason** | Nothing | `Reason` and its table, with the rows whose facts exist today, `Dressing` folded in; `MoodOutput.reason` from the `did`'s `for`; the `do`'s `reason`; the board's lane draws it (firmware, the mirror rebuilt into the pack); the popover's Feeling row and headline | `ReasonTests`; the firmware's lane test; `make -C internal mirror`; every demo recorded again (`demos ALL=1`), since what the app sends changes |
-| **2. CONTEXT and lonely** | `lonely.md`; lonely's meaning, face, not-for and edges in `character.json`; the clause in calm, comfy, bored, tired and lazy; the three Examples; evals 135 to 141; `lonely.jsonl` and its recording | The checkpointed reader and the memory reader with its company state and tallies (dreaming-memory.md); `Context.rows`, all three; the section order; `Core.status`'s rest time; the away bands, their lines and `presence.away_since`; the `wake up` option's text; the raised budgets; the demo's `gesture` step; the reason's untouched and away rows; the Examples' CONTEXT convention in CHARACTER.md §7 | `CheckpointedReaderTests`, `BoopDayTests`, `MemoryReaderTests`, `ContextTests`, `TranscriptViewTests`; the seven evals with `--only`; then the full eval run the budgets need |
+| **2. CONTEXT and lonely** | `steering/talk/` removed; the guide's TALK line replaced; `lonely.md`; lonely's meaning, face, not-for and edges in `character.json`; the clause in calm, comfy, bored, tired and lazy; the three Examples; evals 135 to 141; `lonely.jsonl` and its recording | The checkpointed reader and the memory reader with its company state and tallies (dreaming-memory.md); `Context.rows`, all five; the section order; `Core.status`'s rest time; the away bands, their lines and `presence.away_since`; the `wake up` option's text; the raised budgets; the demo's `gesture` step; the reason's untouched and away rows; the Examples' CONTEXT convention in CHARACTER.md §7; the Talk and Boop rows, the TALK section removed, chatty's `say` rule and the check-in pace in code, PackCheck's note on talk files, PixelBuddy's `steering/talk/` removed | `CheckpointedReaderTests`, `BoopDayTests`, `MemoryReaderTests`, `ContextTests`, `TranscriptViewTests`; the seven evals and 122 to 124 (quiet, chatty, normal) with `--only`; then the full eval run the budgets need |
 | **3a. The dream** | `dreams.md`; the telling's Example; `diary.md` removed; the dream evals; `dream.jsonl` and its recording; `lonely.jsonl` recorded again | The journal and the close's dream in the memory reader; `dream.last` and `wake.day`; the telling in the view; the sign table; the reason's dream row; `DiaryOutput` removed, the popover's Diary gone | `TellingTests`, the reader's dream tests; the dream evals |
 | **3b. The written memory** | Nothing | `MemoryWriter`, `MemoryEdits`, `memory.md` and `MemoryStore`'s part; the `memory` event; `boopdev memory write` and its fixtures | `MemoryEditsTests`, `MemoryWriterTests`; a week of nights on the owner's Mac, the file read each morning, before step 3c |
 | **3c. MEMORY** | The memory evals | The MEMORY section and its budget; the evals' `memory` seed | `MemorySectionTests`; the memory evals |
 | **3d. What Boop remembers** | Nothing | The popover's pane (Recently, notes with delete and pin), Forget, the sentence in Settings | `Boop --snapshots` |
 | **4. Asks** | `asks.md`; the ask's sentence and Examples; the ask evals; `asks.jsonl` and its recording; `lonely.jsonl` recorded again; the targets in the gel's lane | `TaggedLine.parts`; questions offered as signs at the ask's moments; the `do`'s `ask`, `ev ask` and the `ask` event; the ask record; the reason's ask row; the targets on the board, the mirror and the simulator; the demo's `answer` step | `TaggedLineTests`, `AsksTests`, `CoreTests`, firmware `test_ask`; the ask evals |
+
+| **5. Care makes Boop** | The care-lean evals; stage-tagged trick lines | `Growth.xp(for:)` with care and its cap; MEMORY's heading split; the writer's care-note rule and fixture | `GrowthTests`, `MemoryWriterTests`; the care-lean evals |
 
 Step 1 changes every recording and explains everything after it, so it
 goes first. Step 2 is the first thing a person feels, and it builds the
@@ -705,6 +728,8 @@ lets Jev read the memory.
 1. **Raise the personality budget to 2,850 and the mood budget to 250,**
    gated by one full Jev eval run. Recommended over trimming `boop.md`,
    whose Examples the evals are tuned on.
+2. **The agents' work keeps earning XP** beside care (§5). Recommended:
+   care is worth more per event, and capped a day.
 
 ## What it adds up to
 
@@ -712,7 +737,7 @@ lets Jev read the memory.
 | --- | --- |
 | 4. Absence that matters, lonely real, "pet me?" | §2's CONTEXT and `lonely.md`; §1's reason under it; §4's `[lonely touch]` ask |
 | 5. Idle questions, remembered answers | §4's `[idle]` asks, the `keeps` ones part of Boop for good; the ask record, and the answer in the written memory |
-| Care as the cause (the principle) | §3's You and Boop notes; §1's reason crediting you; §3's tell leading with you; §4's kept answers |
+| Care as the cause (the principle) | §5: You and Boop leaning the moods, and care earning growth; §1's reason crediting you; §3's tell leading with you; §4's kept answers |
 | 6. Morning standup | §3's tell, on the wake-up that exists, with §1's reason as the narration |
 
 And the next things, with no new code: a nickname for you (an ask
@@ -727,28 +752,49 @@ half ("you've been away 12 hours" is a fact at the moment you return)
 or the asking, and nothing of it is understandable without the reason.
 So four shapes, not one.
 
-## Next: care makes Boop
+## 5. Care makes Boop: through memory and mood
 
-Two levers carry the most weight and are left for a plan of their own,
-built on the counted memory (dreaming-memory.md, Later), whose care
-traits are the bond:
+Decided with the owner on 2026-10-31: no traits, no bond counters, no
+home mood, no temperament files. Your care changes Boop through two
+things that already exist.
 
-- **Temperament from the bond.** Today one cheeky paragraph closes
-  `boop.md` for every owner. Next, a few closing paragraphs, each with
-  its Examples, one per leading trait: cuddly leans affectionate,
-  cheeky leans cheekier, chatty says more, and a Boop with no trait yet
-  has the hatchling's plain one. The bond picks the paragraph, so a
-  six-month Boop has a temperament you gave it. It touches the
-  steering's budget, needs evals for each paragraph, and Pixel's pack.
-- **Growth from care.** Today XP comes only from the agents' work.
-  Next, your touches, talks, answers and comebacks earn it too, and
-  each stage brings a trick that a trait unlocks, so a trick is
-  something you taught it. It needs the owner's call on whether the
-  agents' work still counts, and a move for existing Boops' XP.
+**Who Boop becomes, through memory and mood.** The written memory's
+You and Boop notes never age out and are never dropped (§3). The
+nightly writer keeps one of them about how you treat Boop and how Boop
+has grown from it ("You stroke Boop when you sit down in the morning;
+it has grown cuddly"), updating it as the pattern holds
+(dreaming-memory.md, the writer's rules). MEMORY's heading tells Jev to
+let You and Boop lean which moods Boop picks, on every pass, while the
+rest of MEMORY stays old news unless NOW is about it. So a Boop you
+stroke every day drifts toward comfy and affectionate at its moments
+of choice, and the mood file shapes the rest. Lonely is the same idea,
+a plain mood (§2).
+
+- **What it can't do:** change where moods settle. Every mood still
+  fades to calm, so the lean shows at choices, not in Boop's quiet time.
+  If that's too faint on the board, the one lever left is a sentence in
+  `calm.md` letting its fade follow the You and Boop note, not a new
+  axis.
+- **Checked by** evals that seed a You and Boop note and expect the
+  lean: a cuddly note makes a calm Boop's poke land affectionate more
+  than without it.
+
+**How far Boop has grown, through growth.** `Growth.xp(for:)` gains
+care: a stroke or other care gesture 3 XP, a talk 3, an answered ask 5,
+a coming back 2, capped at 60 care XP a day, so poking Boop 200 times
+farms nothing. The existing stage tags (`sprout`, `buddy`, `pal`…)
+already gate pack lines and board designs, so a trick taught by care is
+a pack line (`[dance pal]` in `replies.md`) or a rig clip, not code.
+Existing Boops keep their XP. CONTEXT's Boop row tells Jev the stage.
+
+**Pins.** `GrowthTests`: each care event's XP and the daily cap.
+`MemoryWriterTests`: the request asks for the care note. The writer's
+fixtures gain "a care pattern that holds" (the note updated, not a
+second one added).
 
 ## Docs this touches
 
-`characters/CHARACTER.md` §5 (lonely's edges), §7 (`dreams.md`,
+`characters/CHARACTER.md` §5 (lonely's edges), §7 (no more `talk/` files, the Talk setting held in code; `dreams.md`,
 `asks.md`, parts, `dreams.md` replacing `diary.md`, the dream's tags),
 §9 (the lane's `reason`, the ask's targets); `characters/DEMOS.md` and `internal/EVALS.md` (the `gesture`
 and `answer` steps, the new scenarios); `simulator/README.md` (the
@@ -867,3 +913,11 @@ steps' facts, two folds of your company where one reader does, the ask
 split between a move and a sign (now the sign is the ask), and a
 `[finished]` ask with no moment to happen in (now at the finish
 itself). Each is fixed above.
+
+**The prompt, simplified** (2026-10-31, with the owner): the prompt is
+the buddy's header, the guide, PERSONALITY, MEMORY, MOOD, CONTEXT,
+HISTORY and NOW. TALK becomes CONTEXT's Talk row, with code holding
+each level. Care makes Boop through what exists: the You and Boop note
+leans the moods (MEMORY's heading says so, and the writer keeps that
+note), and care earns growth. No traits, bond counters, home mood or
+temperament files. CONTEXT gains a Boop row (stage, hush).
