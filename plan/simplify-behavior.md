@@ -327,9 +327,9 @@ thread, not that it's built.
 | B8 The drawer's scrolling | Keep as it is |
 | B9 The bubble beside the sign | Keep both |
 | B10 One Studio server | Yes |
-| C1 One mood graph | Yes, owned by the pack |
+| C1 One mood graph | Yes, owned by the pack, over the 16 lasting moods |
 | C2 `meaning` owned by the pack | Yes |
-| C3 Boilerplate moods face-only | Pending: which moods |
+| C3 Lasting moods | Yes: 16 lasting moods, all 42 faces (below) |
 | C4 Fades in code, no hourly heartbeat | No: keep the heartbeat and the prose fades |
 | C5 The two rule cards | Pending (corrected above) |
 | C6 The move in code | No: keep it in Jev |
@@ -350,6 +350,37 @@ browser page and its USB-cable server stay for the tools (`boopctl
 sim`, the Studio, `Boop --headless --link usb:…`), which aren't the
 app's body. Onboarding's "my body" act and Settings' Device rows say
 "the simulator window" where they say "your browser".
+
+**C3, decided: 16 lasting moods, 42 faces.** Boop keeps all 42 faces:
+the face question offers every one, with its art, voice and `face` text,
+so a reaction can still be mischievous, affectionate or skeptical. But
+Boop settles only into 16 lasting moods: the 15 it settled into in real
+use, which every eval that requires a lasting mood also names, plus
+lonely, the absence feature.
+
+| Settled | Low or cross | Busy or alert | Missing you |
+| --- | --- | --- | --- |
+| calm, comfy, lazy, happy, proud | annoyed, irritated, grumpy, sad, wounded | engaged, curious, surprised, determined, excited | lonely |
+
+- **The graph** (C1, in the pack's `character.json`) has these 16 nodes.
+  Every move into one of the other 26 points instead at the nearest of
+  the 16: crying, disappointed and whiny to sad; frightened, scared,
+  uneasy and uncomfortable to annoyed or surprised as the trigger fits;
+  speechless and stunned to surprised; relieved, pleased and hopeful to
+  happy; shy, embarrassed and affectionate to comfy; exhausted and tired
+  to lazy; bored to lazy; angry to grumpy; overwhelmed to engaged;
+  skeptical, disgusted and baffled to annoyed; amused and mischievous to
+  happy; confused to curious. Lonely is reached from calm, comfy and
+  lazy.
+- **26 mood files go,** the 14 boilerplate ones included, and the 16
+  that stay have their "Leaves for…" prose rewritten to name only the
+  16. `character.json` keeps an entry for all 42 (each face's text and
+  art), and only the 16 have moves and a `meaning`.
+- **The mood question** offers only the 16, and so is shorter on every
+  pass.
+- **Evals** that start in or require one of the 26 as a lasting mood
+  (68 starts in frightened) are rewritten; permissive face lists stay.
+- **Gate:** one full Jev eval run, before and after.
 
 **A, in commits.** Each is small, invisible, and checked by `make -C
 internal check`:
