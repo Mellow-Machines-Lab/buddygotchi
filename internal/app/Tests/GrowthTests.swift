@@ -66,7 +66,7 @@ final class GrowthTests: XCTestCase {
     /// Pins Growth.workPerDay and carePerDay (60 each): each pool earns at
     /// most 60 XP a Boop day, apart, and a new Boop day starts both again.
     /// The memory reader keeps the day's totals (its tallies' workXP and
-    /// careXP) and says what each event earned; growth adds that.
+    /// careXP) and hands growth what each event earned as it reads it.
     func testEachPoolIsCappedADay() throws {
         XCTAssertEqual([Growth.workPerDay, Growth.carePerDay], [60, 60])
         let store = try KeyValueStore(directory: nil)
@@ -75,12 +75,15 @@ final class GrowthTests: XCTestCase {
         let growth = GrowthStore(store)
         let first: Int64 = 1_793_000_000_000, next = first + 24 * 3_600_000
         var seq = 0
+        var counted = false
+        reader.earned = { e, xp in counted = growth.count(e, earned: xp) }
         func feed(_ e: Event) -> Bool {
             var e = e
             seq += 1
             e.seq = seq
+            counted = false
             runner.feed(e, line: nil)
-            return growth.count(e, earned: reader.earned(for: e))
+            return counted
         }
         func stroke(_ at: Int64) -> Bool { feed(Event(at: at, source: .device, type: .gesture, specificType: "stroke")) }
         func turn(_ at: Int64) -> Bool {

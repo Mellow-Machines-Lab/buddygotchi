@@ -125,8 +125,8 @@ public enum DebugLog {
                                      "connected": status.connected,
                                      "stage": status.growth?.stage ?? 1,
                                      "xp": status.growth?.xp ?? 0,
-                                     "today_xp": ["work": today?.workXP ?? 0, "work_cap": Growth.workPerDay,
-                                                  "care": today?.careXP ?? 0, "care_cap": Growth.carePerDay],
+                                     "today_xp": ["work": today?.workXP ?? 0, "work_cap": Growth.cap(.work),
+                                                  "care": today?.careXP ?? 0, "care_cap": Growth.cap(.care)],
                                      "sessions": status.sessions.map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] }]
         if let reason = status.moodReason { fields["mood_reason"] = reason.mood(status.snapshot.mood, name: status.name) }
         let value = Event.json(fields)

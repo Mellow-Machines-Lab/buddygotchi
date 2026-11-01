@@ -70,9 +70,9 @@ public final class MemoryReader: TranscriptReader {
     let store: KeyValueStore
     let time: LocalTime
     let place: (String) -> Place
-    /// The event read last that earned XP, and how much within its pool's
-    /// cap: growth adds it (`earned(for:)`).
-    private var lastEarned: (seq: Int, xp: Int)?
+    /// Each event read that earned XP, with how much within its pool's cap
+    /// for the day: growth adds it, as the reader reads it.
+    public var earned: (Event, Int) -> Void = { _, _ in }
     /// A dream written: `Memory` logs it and keeps whether it was told.
     var wrote: (Dream) -> Void = { _ in }
     /// A day closed that you were in, with its tallies and journal, and
@@ -84,11 +84,6 @@ public final class MemoryReader: TranscriptReader {
         self.time = time
         self.place = place
     }
-
-    /// The XP `e` earned within its pool's cap for the day, as the reader
-    /// tallied it when it read `e`; 0 for an event it hasn't read or that
-    /// earned nothing.
-    public func earned(for e: Event) -> Int { lastEarned?.seq == e.seq ? lastEarned?.xp ?? 0 : 0 }
 
     public func open(day: String, carry: Tallies?) -> Tallies {
         var t = Tallies()
@@ -103,11 +98,10 @@ public final class MemoryReader: TranscriptReader {
     public func read(_ e: Event, line: Line?, into t: inout Tallies) -> Bool {
         let before = t
         if let earning = Growth.earning(for: e) {
-            let cap = earning.pool == .work ? Growth.workPerDay : Growth.carePerDay
             let had = (earning.pool == .work ? t.workXP : t.careXP) ?? 0
-            let xp = min(earning.xp, max(0, cap - had))
+            let xp = min(earning.xp, max(0, Growth.cap(earning.pool) - had))
             if earning.pool == .work { t.workXP = had + xp } else { t.careXP = had + xp }
-            lastEarned = (e.seq, xp)
+            if xp > 0 { earned(e, xp) }
         }
         if Yours.did(e) {
             t.yours += 1

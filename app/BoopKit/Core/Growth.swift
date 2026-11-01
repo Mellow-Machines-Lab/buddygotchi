@@ -32,6 +32,7 @@ public struct Growth: Equatable, Sendable {
     public static let careXP = 3, talkXP = 3, answerXP = 5, backXP = 2
     /// The most each pool earns in one Boop day (from 5:00).
     public static let workPerDay = 60, carePerDay = 60
+    public static func cap(_ pool: Pool) -> Int { pool == .work ? workPerDay : carePerDay }
 
     /// Where XP comes from: the agents' work, or your care.
     public enum Pool: String, Sendable { case work, care }

@@ -491,7 +491,7 @@ class Board:
                 out.append(("fail", f"{clock(r['at'])} ✗ forced mood refused: {r['refused']}"))
             elif "dream" in r:
                 d = r["dream"]
-                out.append(("mood", f"{clock(r['at'])} ☾ the day closed: {d.get('weekday', '?')} {d.get('day', '?')}"))
+                out.append(("mood", f"{clock(r['at'])} ☾ the day closed: {dream_day(d)}"))
                 out.append(("dim", f"  dream: {d.get('sentence', '?')}" + (f" [{', '.join(d['tags'])}]" if d.get("tags") else "")))
                 told = r["told"]
                 out.append(("ok", f"  told at {clock(told['at'])}: ▸ {told['line']}") if told
@@ -713,8 +713,13 @@ def growth_text(st: Line) -> str:
             f" care {today.get('care', 0)}/{today.get('care_cap', '?')}")
 
 
+def dream_day(d: Line) -> str:
+    """The day a dream is of: `Saturday 2026-10-31`."""
+    return f"{d.get('weekday', '?')} {d.get('day', '?')}"
+
+
 def dream_text(d: Line) -> str:
-    return f"{d.get('weekday', '?')} {d.get('day', '?')}, dreamed: {d.get('sentence', '?')}"
+    return f"{dream_day(d)}, dreamed: {d.get('sentence', '?')}"
 
 
 def night_text(n: Line) -> str:

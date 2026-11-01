@@ -191,9 +191,8 @@ extension Runtime {
                 guard mine(v), let h else { return nil }
                 let now = h.clock.now()
                 let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
-                let buddy = ContextSection.Buddy(stage: stage,
-                                                 daysOld: core.config.hatched.map { core.config.time.days(from: $0, to: core.wall(now)) })
                 let wall = core.wall(now), time = core.config.time
+                let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
                 let when = ContextSection.when(at: wall, occasions: Occasions.words(at: wall, hatched: core.config.hatched, name: pack.name,
                                                                                     stage: core.config.stageReached, time: time),
                                                time: time)

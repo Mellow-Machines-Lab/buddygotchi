@@ -3,6 +3,7 @@ animations and moods, the messages to and from the board, the board's voice
 takes, a line to the app's hook socket, and noticing a board reset."""
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -35,6 +36,7 @@ MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_t
 
 
 
+@functools.lru_cache(maxsize=None)
 def lasting_moods(pack: Path | None = None) -> list[str]:
     """The lasting moods of `pack` (the one in use by default), in its
     order: those its character.json gives a `meaning`, which the mood

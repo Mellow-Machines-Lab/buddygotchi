@@ -435,15 +435,14 @@ public final class Runtime: @unchecked Sendable {
             run(core(rig).moodChanged(at: options.clock()), on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
-        // Every event as it's logged, never the read-back's: those were counted.
-        harness.on("*") { [weak self] e in
+        // Every event as it's logged, never the read-back's: those were
+        // counted. What it earned within the day's caps is the memory
+        // reader's, as it reads it; with no memory (its store won't open),
+        // what it earns, uncapped.
+        let grow: (Event, Int) -> Void = { [weak self] e, earned in
             guard let self else { return }
             let before = growth.growth.stage, now = options.clock()
             let wall = options.wallClock()
-            // What it earned within the day's caps is the memory reader's,
-            // which read it first; with no memory (its store won't open),
-            // what it earns, uncapped.
-            let earned = remembers?.reader.earned(for: e) ?? Growth.xp(for: e)
             guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
             grew = true
             // A stage reached makes the rest of the day a party, and Boop
@@ -452,6 +451,7 @@ public final class Runtime: @unchecked Sendable {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
             }
         }
+        if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
     }
 
     /// Boop's brain for one buddy, the process's character (`brain`): the

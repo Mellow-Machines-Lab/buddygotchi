@@ -6,8 +6,8 @@ import MellowHarness
 /// `growth.` keys in the key-value
 /// store. It counts each event as it's logged, once: an event at or before
 /// the last one counted is left alone. What an event earns within the
-/// day's caps is the memory reader's to say (`MemoryReader.earned(for:)`),
-/// which keeps the day's totals. Touched only on `home`.
+/// day's caps is the memory reader's to say (`MemoryReader.earned`), which
+/// keeps the day's totals. Touched only on `home`.
 public final class GrowthStore {
     public static let xpKey = "growth.xp"
     public static let stageKey = "growth.stage"
