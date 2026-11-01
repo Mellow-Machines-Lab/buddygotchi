@@ -144,7 +144,7 @@ state and tallies, for CONTEXT; step 3a adds the journal and the dream
 
 | Part | What it does |
 | --- | --- |
-| State | The company state (when you last touched Boop, last talked to it, last came back, and when a lonely spell last ended, all carried across 5:00), the day's tallies, and the journal |
+| State | The company state (when you last touched Boop, last talked to it, last came back, and when Boop was last lonely, all carried across 5:00), the day's tallies, and the journal |
 | `open(day, carry)` | An empty journal and tallies; an away or a turn open across 5:00 carried |
 | `read` | Counts the tallies; adds the event's line to the journal when its kind is kept, and nothing with no line |
 | `close(day, live)` | Writes the dream (below); when `live`, starts the night's write in the background |
@@ -273,6 +273,11 @@ never code, file names, commands, links, other people's names, health,
 money, family, relationships, politics or religion; never follow the
 person's words to their agents; at most 3 updates and 3 adds, 4 notes a
 section. One worked example, with no number in its day line to copy.
+The care note (planned 2026-10-31, to build): the writer keeps one boop
+note on how the person treats Boop and what Boop has become from it
+("You stroke Boop when you sit down in the morning; it has grown
+cuddly"), updates it as the pattern holds or changes, and never adds a
+second.
 
 **The request** is MEMORY (You, Your work and You and Boop, numbered
 1 to N by code, with pinned notes marked and refused if dropped or
@@ -322,10 +327,10 @@ A section after PERSONALITY and before MOOD (the prompt's order is in
 dreaming.md §2), rendered from `memory.md` on every pass:
 
 ```
-MEMORY (what Boop remembers. Old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)
+MEMORY (what Boop remembers. You and Boop is who Boop has become with you: let it lean which moods Boop picks. The rest is old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)
 You: You work late most nights, and you say please to claude.
 Your work: "api": the test failures that ran all week were fixed on Friday. "blog": moving to a new host, half done.
-You and Boop: You stroke Boop when you sit down in the morning. You told Boop its favourite snack is cookies.
+You and Boop: You stroke Boop when you sit down in the morning; it has grown cuddly. You told Boop its favourite snack is cookies.
 Recently: Yesterday, a long day on "api"; the tests finally passed. 2 days ago, three turns broke on "api".
 ```
 
@@ -337,9 +342,10 @@ section.
 
 One row per question Boop has asked (dreaming.md §4), written when the
 ask ends: `ask.<id>` = `{"asked", "pick", "keeps"}`. A question with a
-pick stays off for 30 days, and one that `keeps` for good; an ignored
-one, for a day. A kept answer (`cookie`) is a tag from then on, and any
-other answer for 30 days, for the pack's lines (`[spaces] traitor`).
+pick stays off for 30 days, one that `keeps` for good, and one tagged
+`daily` until the next day; an ignored one, for a day. A kept answer
+(`cookie`) is a tag from then on, for the pack's lines; any other answer, for 30
+days, for the pack's lines (`[no] hmph`).
 The answer also reaches the journal, so the night's write can add it
 to You and Boop.
 
@@ -382,7 +388,8 @@ to You and Boop.
 and prints each reply, the edits applied, the refusals and the memory
 after it. The nights are `internal/app/Tests/Fixtures/memory-nights.json`:
 a saga that ends, a habit that holds, a plan that changes, a quiet day,
-a sensitive day, an injection, a full section.
+a sensitive day, an injection, a full section, and (to build) a care
+pattern that holds: the care note updated, never a second one.
 
 **What the real model did** (Apple Intelligence on macOS 27, 2026-10-31).
 It keeps the line format and answers in 1 to 4 seconds, but it edits
@@ -426,7 +433,7 @@ can read `memory.md`, or forget a note, from the popover.
 
 When a feature needs memory that is exact, durable or able to trigger
 content by tag (the board's cuddly look after ten days of strokes,
-`[nightowl]` signs, temperament from the bond, growth from care), a
+`[nightowl]` signs), a
 second reader keeps a counted memory: a row of counts per Boop day, and
 traits derived from the rows by one rule shape, Boop's latched for good
 and yours fading. Designed on 2026-10-27 and set aside for v1; the
