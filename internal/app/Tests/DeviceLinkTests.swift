@@ -169,7 +169,7 @@ final class DeviceLinkTests: XCTestCase {
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
         XCTAssertEqual(DeviceReaction(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
                        #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "stopped").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"stopped","play":"if_free"}"#)
+        XCTAssertEqual(DeviceReaction(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
         let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),

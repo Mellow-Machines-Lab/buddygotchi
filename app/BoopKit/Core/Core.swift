@@ -10,8 +10,7 @@ import MellowHarness
 /// events: "needs you" showing and ending, and a poke (the `wiggle`
 /// action, by its older name: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
-/// reaction it plays (`starting`, `stopped`, `helper_return`),
-/// as a `did` named after it. A session that's gone with no `SessionEnd`
+/// reaction it plays (`starting`), as a `did` named after it. A session that's gone with no `SessionEnd`
 /// it records as its end (`sessionGone`), and a Claude app thread whose
 /// agent's process ended while it waited or worked as its turn stopping
 /// (`agentGone`). It also
@@ -205,8 +204,9 @@ public final class Core {
                                  archive: { readingBack.on ? .open : archive($0) })
     }
 
-    /// The rules' reactions.
-    public static let starting = "starting", stopped = "stopped", helperReturn = "helper_return"
+    /// The rules' reaction: a start's card. A stop and a helper coming back
+    /// play none: the work stream and the brain have them.
+    public static let starting = "starting"
     /// A prompt this soon after its session's start card shows no card of
     /// its own, and one this soon after its session's last turn ended is a
     /// follow-up, which shows none either.
@@ -355,31 +355,18 @@ public final class Core {
             if let shown = startCards.removeValue(forKey: key), now - shown < Core.startCardMs { return nil }
             if let ended = sessions[key]?.turn.lastEndedAt, now - ended < Core.followUpMs { return nil }
             return DeviceReaction(anim: Core.starting, ctx: "new_task")
-        case .callEnded(let call, let late):
+        case .callEnded(let call, _):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
-            // A call that failed plays nothing here: its word hits Boop in
-            // the work stream (`streamCall`).
-            if !late, event.failed != true, let call, Core.act(call) == .delegating, !call.sawSubagent {
-                // A helper's call returned, from hooks that don't say when
-                // helpers start: its `SubagentStop` can't.
-                return DeviceReaction(anim: Core.helperReturn)
-            }
             return nil
-        case .turnEnded(let outcome, let endedTurn):
-            // Only a stop that ends a turn plays its reaction: Claude's idle
-            // notice after a turn that finished doesn't, nor an agent gone,
-            // which nobody stopped.
+        case .turnEnded:
             held[key] = nil
-            return outcome == .stopped && endedTurn && event.hook != Core.agentGone ? DeviceReaction(anim: Core.stopped) : nil
-        case .subagentEnded(let returned):
-            // A helper Boop saw start returns, while its turn goes on.
-            return returned ? DeviceReaction(anim: Core.helperReturn) : nil
+            return nil
         case .sessionEnded:
             held[key] = nil
             startCards[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .sessionGone, .other:
+        case .callStarted, .asked, .subagentStarted, .subagentEnded, .requestExpired, .agentGone, .sessionGone, .other:
             return nil
         }
     }
@@ -395,10 +382,9 @@ public final class Core {
     func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
         guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.reaction(rule))
-        let played = said ?? Core.played(rule, by: config.pack.name)
-        var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
+        var did = Event.did(said ?? "", for: seq, action: anim, by: "rule",
                             facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
-        if played == nil { did.data["message"] = nil }
+        if said == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
 
@@ -409,20 +395,6 @@ public final class Core {
         var fx: [CoreEffect] = []
         play(reaction, for: nil, now, &fx)
         return fx
-    }
-
-    /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
-    /// reacted to the stop on its own.` None for `starting`: most turns
-    /// start with it, so the brain hears the start itself and nothing
-    /// more, and the log alone keeps that it played.
-    static func played(_ reaction: DeviceReaction, by name: String = CharacterPack.active.name) -> String? {
-        let what: String
-        switch reaction.anim {
-        case Core.stopped?: what = "the stop"
-        case Core.helperReturn?: what = "the helper coming back"
-        default: return nil
-        }
-        return "\(name) reacted to \(what) on its own."
     }
 
     /// A tap on the device, recorded as the poke `seq`, on the brain's

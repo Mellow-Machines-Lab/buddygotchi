@@ -348,14 +348,14 @@ final class CoreAgentWorkTests: XCTestCase {
 
     /// A turn you interrupt ends without `Stop`, so the
     /// interrupt (or Claude sitting at its prompt) ends it: idle at once,
-    /// with the rules' `stopped` reaction, no working
-    /// heartbeat after, and the brain hears of a stopped turn.
+    /// with no rule reaction, no working heartbeat after, and the brain
+    /// hears of a stopped turn.
     func testAnInterruptedTurnGoesIdleQuietly() {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.send(.activity, tool: "Bash", topic: "tests")
         let fx = rig.send(.turnStopped, tool: "Bash")
-        XCTAssertEqual(reactionNames(fx), ["stopped"])
+        XCTAssertEqual(reactionNames(fx), [])
         XCTAssertEqual(rig.state.base, "idle")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
         XCTAssertEqual(events(fx).map { $0.facts["outcome"] }, ["stopped"])
@@ -2552,7 +2552,7 @@ final class CoreFuzzTests: XCTestCase {
                 shots += 1
                 XCTAssertFalse(showing, "\(reaction.name) \(reaction.args) while something needs you\n\(why)")
                 XCTAssertNil(reaction.mood, why)
-                XCTAssertTrue(["starting", "stopped", "helper_return"].contains(reaction.anim ?? ""), why)
+                XCTAssertEqual(reaction.anim, "starting", why)
                 XCTAssertEqual(reaction.ctx != nil, reaction.anim == "starting", why)
             }
             for sent in states(fx) {
