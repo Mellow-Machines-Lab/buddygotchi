@@ -468,7 +468,7 @@ static void test_no_change_ever_cuts_hard() {
               case 7: r.stop(); break;
               case 8: r.react(SceneState::kListening); break;
               case 9: onReaction(r.b, animated(SceneState::kTaskComplete, 2, nullptr, true, Mood::kCurious, 3), r.t); break;
-              case 10: r.react(SceneState::kError); break;
+              case 10: r.react(SceneState::kWakeUp); break;
               case 11: onReaction(r.b, animated(SceneState::kReplyReady, 1, kGo, true, Mood::kAnnoyed), r.t); break;
               case 12: onReaction(r.b, reaction(Mood::kWounded), r.t); break;
               default: {
@@ -802,7 +802,7 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
           break;
         case kWiggle: r.b.tap(r.t, r.rng); break;
         case kSay: r.say(); break;
-        case kRuleReaction: r.react(SceneState::kHelperReturn); break;
+        case kRuleReaction: r.react(SceneState::kStarting); break;
         case kFinishLine: onReaction(r.b, animated(SceneState::kTaskComplete, 4, "new.d20", true, Mood::kGrumpy), r.t); break;
         case kNewMoodReaction: onReaction(r.b, reaction(Mood::kIrritated, 2), r.t); break;
         default: break;
@@ -1946,9 +1946,9 @@ static void test_the_clock_going_back_starts_the_look_over() {
   r.state(base("idle"));
   r.at(9001);
   ReactionIn in;
-  in.anim = SceneState::kHelperReturn, in.loops = 2;
+  in.anim = SceneState::kStarting, in.loops = 2;
   onReaction(r.b, in, r.t);
-  TEST_ASSERT_EQUAL(SceneState::kHelperReturn, r.anim());
+  TEST_ASSERT_EQUAL(SceneState::kStarting, r.anim());
   r.at(4201);
   TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   TEST_ASSERT_EQUAL_UINT32(0, r.b.designMs(r.t));
@@ -2651,12 +2651,11 @@ static void test_an_acts_variations_rotate() {
   }
 }
 
-// The rules' reactions (starting,
-// stopped, error, helper_return) play their design once in Boop's mood,
+// The rules' reaction (starting) plays its design once in Boop's mood,
 // from its start, then the look comes back.
 // They carry no id, so no `ended` goes back.
 static void test_a_rules_reaction_plays_once() {
-  for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn}) {
+  for (SceneState a : {SceneState::kStarting}) {
     for (render::Mood mood : {render::Mood::kHappy, render::Mood::kCalm}) {
       Rig r;
       Model m = base("working");
@@ -2745,7 +2744,7 @@ static void test_a_reaction_plays_a_fitting_variation() {
 // would have.
 static void test_a_face_plays_over_a_rules_reaction() {
   NEEDS_VOICE_PACK();
-  for (SceneState a : {SceneState::kError, SceneState::kPoked}) {
+  for (SceneState a : {SceneState::kStarting, SceneState::kPoked}) {
     Rig r;
     r.state(base("working"));
     r.at(1000);
@@ -2770,7 +2769,7 @@ static void test_a_face_plays_over_a_rules_reaction() {
 // None of the rules' reactions plays while something needs
 // you or listening waits for the reply.
 static void test_no_rules_reaction_while_the_face_is_held() {
-  for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn, SceneState::kReplyReady}) {
+  for (SceneState a : {SceneState::kStarting, SceneState::kReplyReady}) {
     Rig r;
     r.state(attn());
     ReactionIn in;
@@ -2796,7 +2795,7 @@ static void test_only_the_reply_ends_listening() {
   r.state(base("idle"));
   r.talkOn();
   const uint32_t seq = r.b.reactionSeq();
-  for (SceneState a : {SceneState::kStarting, SceneState::kStopped, SceneState::kError, SceneState::kHelperReturn, SceneState::kTaskComplete,
+  for (SceneState a : {SceneState::kStarting, SceneState::kTaskComplete,
                  SceneState::kReplyReady, SceneState::kPoked, SceneState::kTapSpam}) {
     ReactionIn in;
     in.anim = a;
@@ -2832,13 +2831,13 @@ static void test_what_shows_first() {
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kStarting);  // 4. a reaction
   r.b.tap(r.t, r.rng);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kPoked);  // 4. a poke replaces it
-  r.react(SceneState::kError);
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kError);  // and a reaction the poke
+  r.react(SceneState::kWakeUp);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kWakeUp);  // and a reaction the poke
   r.state(attn());
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);  // 3. needs you cuts them
   TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
   r.b.tap(r.t, r.rng);
-  r.react(SceneState::kStopped);
+  r.react(SceneState::kWakeUp);
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNeedsYou);
   r.talkOn();
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kListening);  // 2. listening over needs you

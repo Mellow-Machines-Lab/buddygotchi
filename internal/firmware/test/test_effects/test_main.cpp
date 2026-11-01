@@ -101,7 +101,7 @@ bool same(const std::vector<voice::FxEvent>& a, const std::vector<voice::FxEvent
 }
 
 bool guarded(int s) {
-  return s == int(SceneState::kNeedsYou) || s == int(SceneState::kTaskComplete) || s == int(SceneState::kError);
+  return s == int(SceneState::kNeedsYou) || s == int(SceneState::kTaskComplete);
 }
 
 // The comedy designs (the bank's comedy-art.mjs) that break a quiet look's
@@ -207,7 +207,6 @@ void test_each_state_sounds_as_the_bank_says() {
             break;
           }
           case SceneState::kTaskComplete:
-          case SceneState::kError:
             TEST_ASSERT_TRUE(sc.policy == render::pixel::Policy::kEntry);
             TEST_ASSERT_TRUE(render::pixel::events(sc, 0).n > 0);
             // Trophy, then hiccups: the cheer's fanfare, then three clicks.
@@ -315,11 +314,11 @@ void test_a_working_design_sounds_every_loop() {
   TEST_ASSERT_FALSE(same(loopEvents(sc, 1), loopEvents(sc, 0)) && same(loopEvents(sc, 2), loopEvents(sc, 0)));
 }
 
-// The finish, needs you, an error and the rules' other reactions play their sounds
+// The finish, needs you and the reactions play their sounds
 // on their first loop only.
 void test_entry_designs_sound_once() {
   for (Mood m : {Mood::kProud, Mood::kWounded}) {
-    for (SceneState s : {SceneState::kTaskComplete, SceneState::kNeedsYou, SceneState::kError, SceneState::kPoked}) {
+    for (SceneState s : {SceneState::kTaskComplete, SceneState::kNeedsYou, SceneState::kPoked}) {
       render::pixel::EffectTrack track;
       render::pixel::Score sc = render::pixel::score(render::pixelIndex(m), int(s), 1);
       TEST_ASSERT_TRUE(sc.policy == render::pixel::Policy::kEntry);

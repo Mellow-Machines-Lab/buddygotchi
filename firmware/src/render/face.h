@@ -31,10 +31,6 @@ struct FaceSource {
   // on its last frame after that, while the reaction holds on for its `say`.
   uint32_t playMs = 0;
   uint32_t id = 0;
-  // The animation is a finish that names whose turn it was (DoneShow): a
-  // face that marks that on screen may leave out a result card of its own.
-  // Not part of the design: changing it starts nothing over.
-  bool named = false;
   bool operator==(const FaceSource& o) const {
     return anim == o.anim && at == o.at && look == o.look && lookVariant == o.lookVariant &&
            animVariant == o.animVariant && mood == o.mood && playMs == o.playMs;

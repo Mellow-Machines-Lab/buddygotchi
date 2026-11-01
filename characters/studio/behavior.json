@@ -26,7 +26,7 @@
                  {"what": "then waits for the reply", "in": "firmware/src/app/behaviour.h", "name": "kReplyWaitMs", "unit": "ms"}]},
     {"id": "needs_you", "label": "Needs you", "states": ["needs_you"], "decides": "rule",
      "about": "While an agent waits on you. Cuts the reaction playing, stops the voice and the work stream, and holds the face: taps only dip it and nothing else plays."},
-    {"id": "reaction", "label": "A reaction", "states": ["starting", "helper_return", "reply_ready", "task_complete", "error", "stopped", "poked", "tap_spam", "gesture", "wake_up", "notice"], "decides": "board",
+    {"id": "reaction", "label": "A reaction", "states": ["starting", "reply_ready", "task_complete", "poked", "tap_spam", "gesture", "wake_up", "notice"], "decides": "board",
      "about": "One at a time, over the look: the queue on the board decides when each plays. A brain's reaction waits its turn; a rule's plays only if nothing busy is playing; a tap or a gesture cuts what plays.",
      "numbers": [{"what": "waiting at most", "in": "linkkit/device/src/linkkit/limits.h", "name": "kMaxWaiting", "unit": "count"},
                  {"what": "a brain's reaction gives up after waiting", "in": "app/BoopKit/DeviceLink/BoopDevice.swift", "name": "reactionTTL", "unit": "ms"},

@@ -323,8 +323,8 @@ static void test_gel_frames_always_reach_the_panel() {
                       takes[pick(3)], moods[pick(9)]);
         break;
       case 4: {
-        const char* names[] = {"task_complete", "starting",  "poked",          "error",
-                               "helper_return", "listening", "stop_listening", "wake_up"};
+        const char* names[] = {"task_complete", "starting",  "poked",          "notice",
+                               "reply_ready",   "listening", "stop_listening", "wake_up"};
         std::snprintf(msg, sizeof msg, "{\"t\":\"do\",\"name\":\"%s\",\"play\":\"now\",\"args\":{\"outcome\":\"%s\"}}",
                       names[pick(8)], pick(2) ? "success" : "failure");
         break;

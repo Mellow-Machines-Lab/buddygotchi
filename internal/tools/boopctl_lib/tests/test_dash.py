@@ -297,15 +297,15 @@ class ColumnsTests(unittest.TestCase):
         sent = lambda at, id, name: {"sent": {"t": "do", "id": id, "name": name, "play": "if_free"},  # noqa: E731
                                      "by": "rule", "received_at_ms": at}
         board, rows = board_after([
-            sent(t, 51, "stopped"),
+            sent(t, 51, "starting"),
             {"ended": {"id": 51, "how": "skipped", "why": "busy"}, "received_at_ms": t + 5},
-            sent(t + 10, 52, "error"),
+            sent(t + 10, 52, "starting"),
             {"ended": {"id": 52, "how": "done"}, "received_at_ms": t + 900},
         ])
         self.assertIn(("fail", "  ⇠ do 51 skipped (busy)"), rows)
         self.assertIn(("dim", "  ⇠ do 52 done"), rows)
         reflex = board.reflex_column()
-        self.assertEqual(reflex, [("ok", f"{clock(t + 10)} error"), ("dim", f"{clock(t)} stopped (skipped: busy)")])
+        self.assertEqual(reflex, [("ok", f"{clock(t + 10)} starting"), ("dim", f"{clock(t)} starting (skipped: busy)")])
 
     def test_a_held_pass_says_nothing_of_the_brains_latency(self):
         """A pass held back when its turn came never asked the brain:

@@ -9,7 +9,7 @@
   const SETTLE_MS = 2000;  // how long a recording's start plays before its end is asked for
   const NO_APP_MS = 30000;  // with no state this long, the board takes the Mac for gone (linkkit's kHostGoneMs)
   const LEVELS = 24;  // a pixel changed when its difference's luma is over this (tests/changed.json)
-  const DOES = ['listening', 'starting', 'helper_return', 'reply_ready', 'task_complete', 'error', 'stopped', 'wake_up', 'notice'];
+  const DOES = ['listening', 'starting', 'reply_ready', 'task_complete', 'wake_up', 'notice'];
   const STROKE = {t: 'dbg.touch', x: 60, y: 120, to_x: 220, to_y: 120, ms: 500};
 
   // How the board is asked for each of the studio's states (states.json),

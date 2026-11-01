@@ -512,7 +512,7 @@ A face is what the board draws and the sounds it makes. The engine says
 ### Every state a face is asked for
 
 The engine asks a face for any of the pack's moods (§5) with any of
-these 25 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
+these 22 states. A face must answer for all of them, in every mood. It may draw the same design for several: the pixel face has art
 for all 25, and the gel face maps some to others in its own code
 (`router.cpp`). The names are the firmware's (`firmware/src/render/types.cpp`),
 and `charactergen.py --check` holds this table to them.
@@ -546,9 +546,6 @@ the brain's, a rule's, or the board's own.
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
 | `gesture` | The board's own reaction to what you do to it, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke` (a slow one; a quick one, a swipe, plays the stroke or the ruffle it would be, unless the face only feels it go by, as the gel's dome flings on, and goes to the Mac as `swipe`), `ruffle` (stroked the wrong way), `nose` (a tap on the face's middle; on the brain's finish that names whose turn it was it's a tap on that, which opens the thread), `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. A finger that starts on the gel's strip and goes up pulls out the agents' drawer instead (What else a face does). A finger held still a second on the needs-you screen is no gesture of the face's: the board tells the Mac (`dismiss`, with the number of the request it showed as the finger went down, `data.attn`), which stops showing that request if it still shows, and plays nothing | the board |
-| `stopped` | Nothing sends it now: a stop drops its words in the work stream, and the brain hears it. The faces still draw it | nobody |
-| `error` | Nothing sends it now: a failed call hits Boop in the work stream (`call`), and a card is only ever a turn's. The faces still draw it | nobody |
-| `helper_return` | Nothing sends it now: a helper's "back" lands in the work stream, and the brain hears it. The faces still draw it | nobody |
 | `poked` | A tap on the screen | the board |
 | `tap_spam` | The third tap in a row, and each after | the board |
 | `listening` | You hold the button to talk; it plays until the reply (at most 30 s, then 8 s) | the board |

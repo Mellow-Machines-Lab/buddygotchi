@@ -38,11 +38,8 @@ enum class SceneState : uint8_t {
   kAnalyzing,
   kTesting,
   kDelegating,
-  kHelperReturn,
   kWaiting,
   kReplyReady,
-  kError,
-  kStopped,
   kPoked,
   kTapSpam,
   kWakeUp,
@@ -59,7 +56,7 @@ SceneState stateFromName(const char* name);  // kIdle if missing or unknown
 // or failed; reply_ready, an answer or a question back) and its wake_up
 // (you back at the Mac after a long break) and its notice (you named it in
 // your prompt: it looks up at you), the rules'
-// reactions (starting, stopped, error, helper_return), a tap's (poked, and
+// reaction (starting, a start's card), a tap's (poked, and
 // tap_spam from the third in a row), the board's own to a gesture
 // (gesture) and push-to-talk's listening, until the reply.
 bool isReaction(SceneState s);

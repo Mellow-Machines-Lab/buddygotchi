@@ -534,7 +534,6 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     s.outcome = reaction_.requestedOutcome;
     s.ctx = reaction_.ctx;
     s.playMs = reaction_.playMs;
-    s.named = done_.agent[0] && done_.named && done_.key == reaction_.key;
   }
   return s;
 }

@@ -63,7 +63,7 @@ check-ins, ears) is a separate track, not repeated here.
 - **One mini for each subagent running now**, across all agents (each
   session already keeps its `helpers`).
   - A mini pops out when a helper starts and goes back when it returns,
-    when `helper_return` already plays.
+    when the work stream shows it back.
   - Up to about 4 minis around Boop, then "+N".
 - **A helper count** in the line under the face, next to the working count.
 - **The look in each pack.** On the gel, minis are droplets that split

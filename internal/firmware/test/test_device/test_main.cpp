@@ -261,7 +261,7 @@ static void test_hello_on_the_first_message_and_every_minute() {
   r.bleLine("{\"t\":\"state\",\"base\":\"idle\"}");
   std::string hello = std::string(
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
-                          "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
+                          "\"react\",\"task_complete\",\"reply_ready\",\"starting\","
                           "\"wake_up\",\"listening\",\"stop_listening\",\"notice\",\"call\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
                       " " + render::kPackVersion + "\",\"reset\":\"power\"}\n";
@@ -702,7 +702,7 @@ static void test_the_clock_can_go_back_mid_animation() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":9001}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\",\"args\":{\"loops\":2}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\",\"args\":{\"loops\":2}}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":4201}");
   for (uint32_t t = 4251; t <= 9000; t += 50) {
     char step[64];
@@ -986,10 +986,10 @@ static void test_reaction_plays_then_ends_and_a_new_one_replaces_it() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}");  // a rule's reaction
+  r.usbLine("{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\"}");  // a rule's reaction
   r.usbLine("{\"t\":\"dbg.state\"}");
-  const uint32_t stopped = render::loopMs(render::Mood::kHappy, render::SceneState::kStopped);
-  TEST_ASSERT_TRUE(has(r.usb.text, ("\"moment\":{\"anim\":\"stopped\",\"left_ms\":" + std::to_string(stopped) + ",").c_str()));
+  const uint32_t starting = render::loopMs(render::Mood::kHappy, render::SceneState::kStarting);
+  TEST_ASSERT_TRUE(has(r.usb.text, ("\"moment\":{\"anim\":\"starting\",\"left_ms\":" + std::to_string(starting) + ",").c_str()));
   r.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"size\":3,\"ttl\":5}}");  // args it doesn't know are ignored
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -1524,9 +1524,6 @@ static void test_reactions_read_their_facts() {
       {"{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"variant\":5}}", "\"variant\":5}"},
       {"{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":3}}", "\"anim\":\"task_complete\",\"left_ms\":6400,\"variant\":3}"},
       {"{\"t\":\"do\",\"name\":\"reply_ready\",\"play\":\"now\"}", "\"anim\":\"reply_ready\",\"left_ms\":4200,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}", "\"anim\":\"stopped\",\"left_ms\":4200,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\",\"args\":{\"variant\":1}}", "\"anim\":\"error\",\"left_ms\":3800,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\",\"args\":{\"variant\":2}}", "\"anim\":\"helper_return\",\"left_ms\":4800,\"variant\":2}"},
   };
   for (const auto& c : cases) {
     r.usbLine(c.reaction);
@@ -1552,8 +1549,7 @@ static void test_only_the_reply_ends_the_macs_listening() {
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"do\",\"name\":\"listening\",\"play\":\"now\"}");
   for (const char* other : {"{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\",\"args\":{\"ctx\":\"new_task\"}}",
-                            "{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}", "{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\"}",
-                            "{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\"}",
+                            "{\"t\":\"do\",\"name\":\"wake_up\",\"play\":\"now\"}",
                             "{\"t\":\"do\",\"id\":4,\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\"}}",
                             "{\"t\":\"do\",\"name\":\"reply_ready\",\"play\":\"now\"}", "{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"mood\":\"proud\"}}",
                             "{\"t\":\"do\",\"name\":\"oops\",\"play\":\"now\"}"}) {
@@ -1682,10 +1678,10 @@ static void test_the_sounds_follow_every_design() {
   TEST_ASSERT_EQUAL(render::pixel::events(done, 0).n, int(r.hal.effects.size()));
   TEST_ASSERT_TRUE(only(r.hal.effects, done, 1));
   // A rule's reaction, and a tap's poke: their own, once each.
-  for (const char* line : {"{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\",\"args\":{\"variant\":1}}", "poke"}) {
+  for (const char* line : {"{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\",\"args\":{\"variant\":1}}", "poke"}) {
     Rig q;
     q.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\"}");
-    SceneState s = SceneState::kError;
+    SceneState s = SceneState::kStarting;
     if (!std::strcmp(line, "poke")) {
       q.usbLine("{\"t\":\"dbg.press\",\"ms\":50}");
       q.usbLine("{\"t\":\"dbg.clock\",\"freeze\":60}");
@@ -1879,7 +1875,7 @@ static void test_a_rules_reaction_never_cuts_a_say() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "skipped", "busy")));
   TEST_ASSERT_TRUE(has(stateOf(r), "\"moment\":null"));
   clockAt(r, 2000);  // the bubble went at 1838; the reaction rests at 2338
-  doLine(r, 5, "stopped", "if_free");
+  doLine(r, 5, "wake_up", "if_free");
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "busy")));
   clockAt(r, 2338);
   doLine(r, 3, "starting", "if_free", "{\"ctx\":\"new_task\"}");
@@ -1922,7 +1918,7 @@ static void test_refused_reactions_say_why() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"attn\":{\"agent\":\"claude\",\"project\":\"x\"}}");
   doLine(r, 2, "react", "next", kGo);
-  doLine(r, 3, "error", "if_free");
+  doLine(r, 3, "wake_up", "if_free");
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "skipped", "needs_you")));
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(3, "skipped", "needs_you")));
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
@@ -2154,7 +2150,7 @@ static void test_dbg_latency_times_inputs_and_messages() {
   r.kit.tick();
   showFrame(r, 2120);
   r.hal.real = 3000;
-  r.usbLine("{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"wake_up\",\"play\":\"now\"}");
   showFrame(r, 3004);
   d = latencyOf(r, true);
   TEST_ASSERT_EQUAL_UINT32(12, d["press"]["max"].as<uint32_t>());

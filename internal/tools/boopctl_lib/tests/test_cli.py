@@ -574,8 +574,7 @@ class SoakTests(unittest.TestCase):
         self.assertFalse(any("id" in m or "mood" in m.get("args", {}) for m in dos), "the rest aren't waited on")
         # Each asks to play as the Mac or a tool would.
         plays = {m["name"]: (m["play"], m.get("ttl")) for m in dos}
-        self.assertEqual(plays, {"starting": ("if_free", None), "stopped": ("if_free", None), "error": ("if_free", None),
-                                 "helper_return": ("if_free", None),
+        self.assertEqual(plays, {"starting": ("if_free", None),
                                  "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "wake_up": ("next", 5000),
                                  "notice": ("next", 5000), "react": ("next", 5000)})
 
