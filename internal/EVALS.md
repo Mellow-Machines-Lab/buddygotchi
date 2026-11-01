@@ -301,9 +301,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   glad to see you (`63`, `64`, `136`; a shorter break never reaches it),
   and after a day away it missed you: lonely, until a stroke or a word
   ends it at once (`135`).
-- **Tuning** (`10`–`12`, `14`, `15`, `18`, `19`, `21`, `22`, `24`–`26`,
+- **Tuning** (`10`–`12`, `15`, `18`, `19`, `21`, `22`, `24`–`26`,
   `44`–`46`, `48`, `50`, `51`, `54`–`60`, `62`, `65`, `70`, `74`–`77`, `79`, `85`, `90`, `91`,
-  `94`–`114`, `118`–`126`, `131`, `137`, `139`, `141`–`148`, `150`): single decisions (a failure that really stings swears, `60`; and Boop picks a face
+  `94`–`97`, `99`–`114`, `118`–`126`, `131`, `137`, `139`, `141`–`148`, `150`): single decisions (a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   at the Mac for hours with no touch or word to it, Boop grows lonely,
   and a word ends it, `137`; with the memory of a long fight, its end is
@@ -396,9 +396,10 @@ each, about 18 requests.
   rules, which need no Jev: the mood kept on the graph through a busy
   day (`53`) and from the rarer moods (`68`, `69`), and the screen. They
   run only with the expect brain (§3, `scripted`).
-- **Known gaps** (`20`, `149`): flipping tests don't flip the mood, and a
-  cuddly Boop's lean to affectionate doesn't show. Each `gap` says why
-  the steering can't get there alone.
+- **Known gaps** (`14`, `20`, `98`, `149`): a few minutes' turn done is
+  sometimes played big, flipping tests don't flip the mood, April Fools'
+  Day gets no joke, and a cuddly Boop's lean to affectionate doesn't
+  show. Each `gap` says why the steering can't get there alone.
 
 A new decision or a change to the steering files gets a scenario that
 shows it. Run the scenarios it touches with `--only` while you work, and
