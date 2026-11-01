@@ -171,7 +171,8 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - `node characters/studio/check.cjs`: the Character Studio in a headless
   browser, the character's own views, its behaviour map and brain, its
   matrix and its board's views (its README, Checking it). It needs
-  `boopdev prompts` run first.
+  `boopdev prompts` run first, and the studio's server
+  (`python3 simulator/web/serve.py`).
 - `internal/tools/fontgen/fontgen.py` (the device's fonts) and
   `internal/tools/mediagen/mediagen.py` (the READMEs' GIFs, from real
   runs, [its README](tools/mediagen/README.md)), with

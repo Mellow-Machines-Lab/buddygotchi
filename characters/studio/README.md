@@ -40,17 +40,17 @@ file can't load, and saving a verdict. For those, and to record and save
 review clips, use the server instead:
 
 ```sh
-node characters/studio/serve.cjs --port 4190
+python3 simulator/web/serve.py
 ```
 
-Then open `http://127.0.0.1:4190/`. It serves `characters/`, and the
-simulator's build at `/simulator/` (`simulator/web/dist/`, which
-`simulator/web/build.sh` makes for the staged pack and
-`simulator/web/build.sh PACK` for another; `make -C internal sim-test`
-makes both of this checkout's). `--capture-dir DIR` lets a pack's tools
-save the clips its studio entry names (`captures`) into `DIR`. `make
-simulator`'s server serves the studio too, the board included, but
-saves no verdicts.
+Then open `http://127.0.0.1:8206/characters/studio/`. The simulator's
+server serves `characters/` at `/characters/`, and the simulator's build
+at `/simulator/` (`simulator/web/dist/`, which `simulator/web/build.sh`
+makes for the staged pack and `simulator/web/build.sh PACK` for another;
+`make -C internal sim-test` makes both of this checkout's), and saves a
+verdict (`/review`). `--capture-dir DIR` lets a pack's tools save the
+clips its studio entry names (`captures`) into `DIR`. `make dev` and
+`make simulator` start the same server.
 
 ## What's on the page
 
@@ -366,7 +366,7 @@ copy, `BOOP_QA_BROWSER` at a browser), the simulator built (above),
 `boopdev prompts` run (above) and the server; `BOOP_QA_SHOTS=DIR` saves a screenshot of each view:
 
 ```sh
-node characters/studio/serve.cjs --port 4190
+python3 simulator/web/serve.py
 node characters/studio/check.cjs
 ```
 

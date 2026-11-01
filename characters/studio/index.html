@@ -164,7 +164,7 @@
 
 <section class="board-view" data-view="review" aria-label="Review" hidden>
   <p class="view-head">What agents put up for review (<code>characters/&lt;pack&gt;/review/queue.json</code>), before and after. Approve it, or say what to change: each verdict goes to <code>review/notes.jsonl</code>, where the agents read it.</p>
-  <p class="missing" data-file hidden>Opened from a file, the page can't save a verdict. To comment, open it from the studio's server: <code>node characters/studio/serve.cjs --port 4190</code>, then <code>http://127.0.0.1:4190/</code>.</p>
+  <p class="missing" data-file hidden>Opened from a file, the page can't save a verdict. To comment, open it from the studio's server: <code>python3 simulator/web/serve.py</code>, then <code>http://127.0.0.1:8206/characters/studio/</code>.</p>
   <p class="missing" data-none hidden>Nothing is up for review.</p>
   <div class="review-items" data-items></div>
 </section>

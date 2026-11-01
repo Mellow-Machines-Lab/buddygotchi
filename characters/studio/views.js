@@ -366,7 +366,7 @@
         s.drafts[item] = '';
         s.said[item] = `Saved to characters/${api.sel.pack}/review/notes.jsonl.`;
       } catch (error) {
-        s.said[item] = `Not saved (${error.message}): the studio's own server saves verdicts, node characters/studio/serve.cjs.`;
+        s.said[item] = `Not saved (${error.message}): the studio's server saves verdicts, python3 simulator/web/serve.py.`;
       }
       s.saving = false;
       render();

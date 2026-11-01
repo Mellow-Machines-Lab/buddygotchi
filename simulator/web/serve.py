@@ -15,11 +15,18 @@ with its own cable: a WebSocket at /usb/NAME and its socket, and no /usb.
 The page shows them side by side with ?boards=NAME,NAME.
 
 It also serves characters/ at /characters/, so the Character Studio is at
-/characters/studio/, and the page's own files again at /simulator/, where
-the studio's board previews look for them under either server; and
-/board (or /board/NAME) is what the board says it
-shows: its reply to a `dbg.state` the server sends it, as a tool on the
+/characters/studio/, each file in part for a Range (a video seeking), and
+the page's own files again at /simulator/, where the studio's board
+previews look for them; and /board (or /board/NAME) is what the board says
+it shows: its reply to a `dbg.state` the server sends it, as a tool on the
 cable would, or null with no board; the studio's matrix marks it.
+
+It writes two things for the studio, only from its own page: a verdict on
+an item of a pack's review queue, appended to the pack's
+review/notes.jsonl (POST /review; GET /review?pack=P reads them back), and
+with --capture-dir the review clips the packs' studio entries name
+(`captures`, a JSON file of {cases:[{id}]}, each saved as <id>.webm),
+never over one.
 
 Only this Mac can reach it: the page is served on 127.0.0.1 and the socket
 is its user's alone. The standard library only, so it runs on the Mac's
@@ -29,19 +36,23 @@ import argparse
 import base64
 import errno
 import hashlib
+import json
 import os
 import posixpath
 import re
+import secrets
 import select
+import shutil
 import signal
 import socket
 import stat
 import struct
 import sys
 import threading
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlsplit
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
@@ -316,6 +327,66 @@ def websocket(handler: SimpleHTTPRequestHandler, cable: Cable) -> None:
 NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,15}")
 
 
+# The studio's writes: a verdict's body at most this, a review clip at most
+# this (bounded local evidence), and an upload gone quiet this long closed.
+MAX_NOTE_BYTES = 16 * 1024
+MAX_CAPTURE_BYTES = 8 * 1024 * 1024
+UPLOAD_QUIET_S = 15
+CLIP = re.compile(r"[a-z][a-z0-9_.-]{1,80}")
+
+
+def capture_names(characters: Path) -> set:
+    """The review clips the packs' studio entries name, as files: each
+    entry's `captures` list's cases, <id>.webm."""
+    names = set()
+    for card in sorted(characters.glob("*/character.json")):
+        for entry in json.loads(card.read_text()).get("studio") or []:
+            if not entry.get("captures"):
+                continue
+            cases = json.loads((card.parent / entry["captures"]).read_text()).get("cases")
+            if not isinstance(cases, list) or any(not CLIP.fullmatch(str(c.get("id", ""))) for c in cases):
+                raise ValueError(f"{card.parent.name}/{entry['captures']}: an invalid list of review clips")
+            names |= {c["id"] + ".webm" for c in cases}
+    return names
+
+
+def verdict(characters: Path, body: dict) -> tuple:
+    """A verdict on one of a pack's review items (characters/CHARACTER.md
+    §16): the notes.jsonl it goes in and the line it gets, or ValueError
+    why not. charactergen.py's review() checks the notes it writes."""
+    pack = body.get("pack")
+    folder = characters / pack if isinstance(pack, str) and NAME.fullmatch(pack) else None
+    queue = folder / "review" / "queue.json" if folder else None
+    ids = [item.get("id") for item in json.loads(queue.read_text())] if queue and queue.is_file() else []
+    if body.get("id") not in ids:
+        raise ValueError("No such review item")
+    if body.get("verdict") not in ("approve", "change"):
+        raise ValueError("A verdict is approve or change")
+    text = body.get("text")
+    if not isinstance(text, str) or len(text) > 4000 or (body["verdict"] == "change" and not text.strip()):
+        raise ValueError("A change needs a comment, at most 4000 characters")
+    at = datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    return folder / "review" / "notes.jsonl", {"at": at, "id": body["id"], "verdict": body["verdict"], "text": text.strip()}
+
+
+def span(asked, size: int):
+    """The bytes a Range asks for, as a video seeks: (start, end, whole),
+    end included, the whole file for none or one this doesn't read
+    (several ranges), or None for one past its end."""
+    m = re.fullmatch(r"bytes=(\d*)-(\d*)", asked or "")
+    if not m or not (m[1] or m[2]):
+        return 0, size - 1, True
+    if m[1]:
+        start, end = int(m[1]), min(int(m[2]), size - 1) if m[2] else size - 1
+    else:
+        start, end = max(0, size - int(m[2])), size - 1
+    return (start, end, False) if start <= end and start < size else None
+
+
+class TooBig(Exception):
+    pass
+
+
 def cables(given: list, default_socket: str) -> dict:
     """Each cable's WebSocket path and its socket: /usb and the default
     socket with no --cable, else /usb/NAME for each NAME=SOCKET."""
@@ -340,7 +411,19 @@ def main() -> int:
                         help="a board of its own, its USB at /usb/NAME and SOCKET; once for each board, in place of --socket")
     parser.add_argument("--dist", default=str(HERE / "dist"), help="the built page (simulator/web/dist)")
     parser.add_argument("--voice", default=str(chosen_voice()), help="the voice file on the board's card (the chosen character pack's, if it has one)")
+    parser.add_argument("--characters", default=str(REPO / "characters"), help="the character packs and the studio, at /characters/ (characters/)")
+    parser.add_argument("--capture-dir", help="lets the packs' studio tools save their named review clips here; never overwrites")
     args = parser.parse_args()
+    characters = Path(args.characters).resolve()
+    try:
+        clips = capture_names(characters)
+    except (OSError, ValueError, AttributeError) as e:
+        print(f"simulator: {e}", file=sys.stderr)
+        return 2
+    capture_dir = Path(args.capture_dir).resolve() if args.capture_dir else None
+    if capture_dir:
+        capture_dir.mkdir(parents=True, exist_ok=True)
+    token, origin = secrets.token_hex(32), f"http://127.0.0.1:{args.port}"
     if not any(Path(args.dist).glob("boop-sim*.wasm")):
         print(f"simulator: nothing built in {args.dist}: run simulator/web/build.sh", file=sys.stderr)
         return 1
@@ -352,10 +435,175 @@ def main() -> int:
     wired = {path: Cable() for path in sockets}
 
     class Page(SimpleHTTPRequestHandler):
+        extensions_map = {**SimpleHTTPRequestHandler.extensions_map, ".webm": "video/webm", ".wasm": "application/wasm",
+                          ".md": "text/plain; charset=utf-8", ".m4v": "video/mp4", ".mov": "video/quicktime"}
+
         def __init__(self, *a, **k):
             super().__init__(*a, directory=args.dist, **k)
 
+        def route(self) -> str:
+            return unquote(urlsplit(self.path).path)
+
+        def answer(self, code: int, body: bytes = b"", kind: str = "") -> None:
+            self.send_response(code)
+            if kind:
+                self.send_header("Content-Type", kind)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def ours(self) -> bool:
+            """Asked of this server by its own address."""
+            return self.headers.get("Host") == f"127.0.0.1:{args.port}"
+
+        def body(self, limit: int) -> bytes:
+            """The request's body, whole or chunked; TooBig past `limit`,
+            read to its end all the same so the answer reaches the sender;
+            TimeoutError once it goes quiet for UPLOAD_QUIET_S."""
+            self.connection.settimeout(UPLOAD_QUIET_S)
+            data, over = bytearray(), False
+
+            def take(n: int) -> None:
+                nonlocal over
+                while n > 0:
+                    got = self.rfile.read(min(n, 65536))
+                    if not got:
+                        raise ConnectionError("the upload ended early")
+                    n -= len(got)
+                    if not over:
+                        data.extend(got)
+                        over = len(data) > limit
+            try:
+                if self.headers.get("Content-Length") is not None:
+                    take(int(self.headers["Content-Length"]))
+                elif self.headers.get("Transfer-Encoding", "").lower() == "chunked":
+                    while True:
+                        size = int(self.rfile.readline(1024).split(b";")[0].strip() or b"0", 16)
+                        if size == 0:
+                            while self.rfile.readline(1024).strip():
+                                pass
+                            break
+                        take(size)
+                        self.rfile.readline(1024)
+            finally:
+                self.connection.settimeout(None)
+            if over:
+                raise TooBig()
+            return bytes(data)
+
+        def do_POST(self):
+            name = self.route()
+            if name == "/review":
+                if not self.ours() or self.headers.get("Origin") != origin or \
+                        not re.match(r"application/json(;|$)", self.headers.get("Content-Type", "")):
+                    return self.answer(403)
+                try:
+                    file, note = verdict(characters, json.loads(self.body(MAX_NOTE_BYTES)))
+                except TooBig:
+                    return self.answer(413)
+                except (ValueError, AttributeError, TypeError) as e:
+                    return self.answer(400, str(e).encode())
+                except OSError:  # gone quiet, or ended early
+                    self.close_connection = True
+                    return self.answer(400)
+                try:
+                    with open(file, "a") as f:
+                        f.write(json.dumps(note, ensure_ascii=False, separators=(",", ":")) + "\n")
+                except OSError:
+                    return self.answer(500, b"Not saved")
+                return self.answer(201, json.dumps(note, ensure_ascii=False, separators=(",", ":")).encode(), "application/json")
+            if name.startswith("/review-captures/"):
+                if not self.ours():
+                    return self.answer(403)
+                if not capture_dir:
+                    return self.answer(405)
+                if self.headers.get("Origin") != origin or self.headers.get("X-Boop-Review-Token") != token:
+                    return self.answer(403)
+                filename = name[len("/review-captures/"):]
+                if filename not in clips or not re.match(r"video/webm(;|$)", self.headers.get("Content-Type", "")):
+                    return self.answer(400)
+                try:
+                    data = self.body(MAX_CAPTURE_BYTES)
+                except TooBig:
+                    return self.answer(413)
+                except (TimeoutError, socket.timeout):
+                    self.close_connection = True
+                    return self.answer(408)
+                except (ConnectionError, ValueError):
+                    self.close_connection = True
+                    return self.answer(400)
+                if data[:4] != b"\x1a\x45\xdf\xa3":
+                    return self.answer(400, b"Expected WebM")
+                try:
+                    with open(capture_dir / filename, "xb") as f:
+                        f.write(data)
+                except FileExistsError:
+                    return self.answer(409, b"Clip not saved")
+                except OSError:
+                    return self.answer(500, b"Clip not saved")
+                return self.answer(201, b"Saved")
+            self.answer(405)
+
+        def send_file(self, file: str) -> bool:
+            """A file of characters/, streamed, in part when a Range asks:
+            a video seeks by its bytes. False for no such file."""
+            if not os.path.isfile(file):
+                return False
+            size = os.path.getsize(file)
+            part = span(self.headers.get("Range"), size)
+            if part is None:
+                self.send_response(416)
+                self.send_header("Content-Range", f"bytes */{size}")
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return True
+            start, end, whole = part
+            self.send_response(200 if whole else 206)
+            self.send_header("Content-Type", self.guess_type(file))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Content-Length", str(max(0, end - start + 1)))
+            if not whole:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+            self.end_headers()
+            if self.command != "HEAD" and size:
+                with open(file, "rb") as f:
+                    f.seek(start)
+                    left = end - start + 1
+                    while left > 0:
+                        chunk = f.read(min(left, 65536))
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                        left -= len(chunk)
+            return True
+
+        def do_HEAD(self):
+            if self.route().startswith("/characters/") and self.send_file(self.translate_path(self.path)):
+                return
+            super().do_HEAD()
+
         def do_GET(self):
+            name = self.route()
+            if name == "/review":  # ?pack=P: its verdicts so far, which packs.js has only as charactergen last saw them
+                pack = (parse_qs(urlsplit(self.path).query).get("pack") or [""])[0]
+                file = characters / pack / "review" / "notes.jsonl" if NAME.fullmatch(pack) else None
+                notes = []
+                for line in (file.read_text().splitlines() if file and file.is_file() else []):
+                    try:
+                        notes.append(json.loads(line))
+                    except ValueError:
+                        pass
+                return self.answer(200, json.dumps(notes, ensure_ascii=False).encode(), "application/json")
+            if name.startswith("/review-captures/"):  # POST only
+                return self.answer(403 if not self.ours() else 405)
+            if name == "/review-capture-config":
+                if not self.ours():
+                    return self.answer(403)
+                said = {"enabled": True, "token": token, "directory": capture_dir.name} if capture_dir else {"enabled": False}
+                return self.answer(200, json.dumps(said).encode(), "application/json")
+            if name.startswith("/characters/") and self.send_file(self.translate_path(self.path)):
+                return
             cable = wired.get(self.path)
             if cable and self.headers.get("Upgrade", "").lower() == "websocket":
                 websocket(self, cable)
@@ -377,14 +625,14 @@ def main() -> int:
             # the repository; tidied first, so a .. can't climb out of it.
             tidy = posixpath.normpath(unquote(path.split("?", 1)[0].split("#", 1)[0]))
             if tidy.startswith("/characters/"):
-                here, self.directory = self.directory, str(REPO)
+                here, self.directory = self.directory, str(characters)
                 try:
-                    return super().translate_path(tidy)
+                    return super().translate_path(tidy[len("/characters"):])
                 finally:
                     self.directory = here
             path = path.split("?")[0]
             # /simulator/: the page's files again, where the studio finds the
-            # board under either server (characters/studio/serve.cjs too).
+            # board.
             if path.startswith("/simulator/"):
                 path = path[len("/simulator"):]
             if path == "/voice.bin":
@@ -438,6 +686,7 @@ def main() -> int:
         print(f"Boop Simulator: http://127.0.0.1:{args.port}/   (?face=gel picks the gel, for a pack with both faces)")
         print(f"its USB, as a bridge's socket: {args.socket}")
         print(f"every mood and state, the board's marked: http://127.0.0.1:{args.port}/characters/studio/#view=matrix&board=/board")
+    print(f"Character Studio: http://127.0.0.1:{args.port}/characters/studio/" + (f"   (review clips to {capture_dir})" if capture_dir else ""))
     sys.stdout.flush()
     try:
         server.serve_forever()

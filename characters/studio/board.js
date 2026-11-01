@@ -74,7 +74,7 @@
   }
 
   const FRAME_MS = window.StudioData?.frame_ms;  // charactergen's, a reference's frames' too: the References view pairs them
-  const FROM_FILE = 'The board runs from a server: node characters/studio/serve.cjs --port 4190, then http://127.0.0.1:4190/.';
+  const FROM_FILE = 'The board runs from a server: python3 simulator/web/serve.py, then http://127.0.0.1:8206/characters/studio/.';
   let simulator = null;
   // The simulator's script, and wire() with its tap.
   const load = () => simulator ??= (location.protocol === 'file:' ? Promise.reject(Error(FROM_FILE)) : import('/simulator/boop-simulator.js'))
