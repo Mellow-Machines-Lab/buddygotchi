@@ -336,6 +336,8 @@ thread, not that it's built.
 | C7 The poke hold | No |
 | C8 One pastime dealer | Yes, built together with C9 (the gel Router), since both are the same part of the engine |
 | C9 The gel Router as a plain struct | Yes |
+| A8 The two pack checkers | Yes, the agent's call (the owner left it to it): `boopdev check` owns whether a pack plays, the moods and the graph included, read as the app loads them; `charactergen.py --check` keeps only whether it builds, and stops reading the mood list out of Swift source |
+| Counted memory (rows per day, traits) | Skipped for now: too complicated |
 | C8's idle cleanup | Yes (below) |
 | The six evals failing on `main` | Yes, a separate cleanup (below) |
 | C10 Ordinary versus dramatic | Not now |
