@@ -756,6 +756,42 @@ goes first. Step 2 is the first thing a person feels, and it builds the
 reader the memory grows on. Step 3b needs its week of tuning before 3c
 lets Jev read the memory.
 
+## Built (2026-11-01)
+
+Steps 1 to 4 are built on the `dreaming` branch, reconciled to this
+plan, and step 5 without its XP. Where the build differs, or found
+something:
+- **Lonely, prompt-only, leaks.** With no code rule, Jev picks lonely
+  on a long quiet stretch with no work (eval 06) or at a long turn's
+  finish two hours untouched (139) about one run in three, whatever
+  the words say. A code gate the build had for a while (`only_when`,
+  cues offered only at an idle check-in two hours untouched or a back
+  of 20 to 40 hours) held both 3 of 3; it was removed as decided. The
+  steering's numbers that work best: 20 to 40 hours away, and
+  "never for a quiet spell alone".
+- **The away window is 20 to 40 hours in the steering,** not "about 20
+  hours to two days": "2 days away" sat on the bound and read lonely.
+  A short-break Example was added: eval 64 leaned on the old night
+  Example.
+- **Talk in code holds more than `say`:** at your prompt Chatty also
+  has no "none" for the face and the sign, and Quiet holds up a sign
+  only for a prompt that sounds like something or names the buddy, as
+  the old talk files said (evals 122 to 124 pass).
+- **Chatty always asks or muses** at an ask's moment when the caps
+  allow (no "none"), which makes the ask evals pass every run; normal
+  asks about half the time.
+- **"Pet me?" is offered** at an idle check-in when Boop is lonely or
+  CONTEXT says untouched an hour or more; the steering decides.
+- **The board's graph** gains lonely's edge from comfy, tired and lazy;
+  calm and bored are at the design's eight-edge cap and enter lonely
+  with the plain transition.
+- **Care's lean doesn't show yet.** With a cuddly You and Boop note, a
+  poke from calm stays curious 3 of 3 (eval 149, a known gap), even
+  with a clause in `calm.md`. The XP from care waits on the owner's
+  call (below).
+- **The budgets are raised without the full Jev run** the plan asks
+  for; the targeted evals above ran instead.
+
 ## Open calls for the owner
 
 1. **Raise the personality budget to 2,850 and the mood budget to 250,**

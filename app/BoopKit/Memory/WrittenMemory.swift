@@ -162,7 +162,7 @@ public struct WrittenMemory: Equatable, Sendable {
         var recent = recently
         var kept = notes
         func render() -> String {
-            var lines = ["MEMORY (what Boop remembers. Old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)"]
+            var lines = ["MEMORY (what Boop remembers. You and Boop is who Boop has become with you: let it lean which moods Boop picks. The rest is old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)"]
             for s in Section.allCases {
                 let these = kept.filter { $0.section == s }
                 if !these.isEmpty { lines.append("\(s.heading): " + these.map(\.text).joined(separator: " ")) }
