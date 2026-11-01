@@ -68,7 +68,7 @@ public enum MoodOutput {
     public static func options(from mood: String, in pack: CharacterPack = .active) -> [Option] {
         let moods = pack.options
         let meaning = { (name: String) in moods.first { $0.name == name }! }
-        let moves = MoodGraph.mood(mood, in: pack)?.moves ?? MoodGraph.mood(pack.defaultMood, in: pack)!.moves
+        let moves = MoodGraph.mood(mood, in: pack)?.neighbours ?? MoodGraph.mood(pack.defaultMood, in: pack)!.neighbours
         return [stay(mood, in: pack)]
             + moves.ordinary.map(meaning)
             + moves.dramatic.map(meaning).map { o in

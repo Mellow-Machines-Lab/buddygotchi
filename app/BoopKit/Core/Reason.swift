@@ -78,7 +78,7 @@ public struct Reason: Equatable, Sendable {
             guard let ms = untouchedMs, ms >= ContextSection.untouchedShownMs else { return line.map { Reason(cause: $0.text) } }
             let hours = ms / 3_600_000
             return Reason(cause: "You've been here \(hours) hour\(hours == 1 ? "" : "s") and haven't touched it.", fact: "untouched \(hours) h")
-        case .talk?:
+        case .said?:
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return line.map { Reason(cause: $0.text) } }
             return Reason(cause: "You said \"\(words)\".")

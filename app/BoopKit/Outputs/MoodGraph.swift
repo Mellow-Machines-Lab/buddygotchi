@@ -13,7 +13,7 @@ public enum MoodGraph {
     public static var moods: [String] { CharacterPack.active.lasting.map(\.id) }
 
     /// Where a mood can move, in the pack's order.
-    public struct Moves: Equatable, Sendable {
+    public struct Neighbours: Equatable, Sendable {
         public let ordinary: [String]
         public let dramatic: [String]
         /// Every neighbour: the ordinary moves, then the dramatic ones.
@@ -26,7 +26,7 @@ public enum MoodGraph {
     }
 
     /// Each lasting mood's moves.
-    public static var moves: [String: Moves] {
-        Dictionary(uniqueKeysWithValues: CharacterPack.active.lasting.map { ($0.id, $0.moves) })
+    public static var neighbours: [String: Neighbours] {
+        Dictionary(uniqueKeysWithValues: CharacterPack.active.lasting.map { ($0.id, $0.neighbours) })
     }
 }

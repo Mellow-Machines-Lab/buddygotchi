@@ -297,7 +297,7 @@ public final class TranscriptView {
         // What you say to Boop wakes the brain even while something needs
         // you; nothing else does, a poke included: then a tap opens the
         // waiting thread.
-        if let type = e.type, type != .talk, let why = needsYou() { return why }
+        if let type = e.type, type != .said, let why = needsYou() { return why }
         if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
@@ -310,7 +310,7 @@ public final class TranscriptView {
         for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
         let key = e.buddy ?? buddy
         let down = key.map { fold.faceDown.contains($0) || fold.faceDown.contains("") } ?? !fold.faceDown.isEmpty
-        if down, e.type != .talk, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name(e)) is face down" }
+        if down, e.type != .said, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name(e)) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name(e)) is answering these pokes" }
@@ -323,7 +323,7 @@ public final class TranscriptView {
     /// notable.
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool) -> Bool {
         switch (type, phase) {
-        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil), (.prompt?, nil),
+        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.said?, nil), (.prompt?, nil),
              (.lastMessage?, nil), (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable
@@ -449,7 +449,7 @@ public final class TranscriptView {
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
             if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
             return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
-        case .talk?: return talk(e)
+        case .said?: return talk(e)
         case .ask?:
             let question = e["question"]?.string ?? ""
             guard e.specificType != Asks.ignored, let answer = e["answer"]?.string else {

@@ -222,7 +222,7 @@ public final class Runtime: @unchecked Sendable {
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls
     /// `heardNothing`; with none set (headless), turning it off hears
-    /// nothing. The core keeps push-to-talk's state (`Core.Talk`). On `home`.
+    /// nothing. The core keeps push-to-talk's state (`Core.Listening`). On `home`.
     public var onListen: ((Bool) -> Void)?
 
     // Here and away. All on `home`.

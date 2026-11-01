@@ -316,7 +316,7 @@ public final class Pipeline {
     public func said(_ words: String, by: Core.Talker, buddy: String? = nil, at now: Int64) -> Step {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
-            harness.emit(Event(at: now, source: .mic, type: .talk, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
+            harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
         }
     }
 

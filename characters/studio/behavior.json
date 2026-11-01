@@ -75,7 +75,7 @@
       {"id": "stream", "when": "Each tool call (the work stream)",
        "decides": ["rule", "board"], "plays": [],
        "does": "The call's word falls past the face. The Mac picks one at a time to come forward as a gag: a turn's first call, a check starting, a helper, a big edit, a combo, a failure's bonk, a check's PASS or FAIL, the turn's end (gathered, buried, frozen, dropped). The board draws the rest. The brain hears only the bonks and timeouts, on its next line.",
-       "numbers": [{"what": "a gag holds", "in": "app/BoopKit/Core/WorkStream.swift", "name": "holdMs", "unit": "ms"},
+       "numbers": [{"what": "a word shows", "in": "app/BoopKit/Core/WorkStream.swift", "name": "showMs", "unit": "ms"},
                    {"what": "ordinary calls at most every", "in": "app/BoopKit/Core/WorkStream.swift", "name": "ambientGapMs", "unit": "ms"},
                    {"what": "the same word again after", "in": "app/BoopKit/Core/WorkStream.swift", "name": "sameWordGapMs", "unit": "ms"},
                    {"what": "lanes", "in": "app/BoopKit/Core/WorkStream.swift", "name": "maxLanes", "unit": "count"}]},

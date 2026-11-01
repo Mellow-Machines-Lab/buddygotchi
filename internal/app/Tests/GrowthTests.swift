@@ -48,7 +48,7 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual([Growth.careXP, Growth.talkXP, Growth.answerXP, Growth.backXP], [3, 3, 5, 2])
         XCTAssertEqual(Growth.earning(for: you(.gesture, "stroke"))?.xp, 3)
         XCTAssertEqual(Growth.earning(for: you(.gesture, "stroke"))?.pool, .care)
-        XCTAssertEqual(Growth.xp(for: you(.talk, "mic")), 3)
+        XCTAssertEqual(Growth.xp(for: you(.said, "mic")), 3)
         XCTAssertEqual(Growth.xp(for: you(.ask, "a")), 5)
         XCTAssertEqual(Growth.xp(for: you(.ask, Asks.ignored)), 0)
         XCTAssertEqual(Growth.xp(for: Event(at: 1, source: .mac, type: .presence, phase: .end, specificType: "unlocked")), 2)

@@ -376,7 +376,7 @@ final class AppModel: ObservableObject {
         switch s.base {
         // Short, as "2 sessions need you" is: beside the Talk button the
         // headline has room for about twenty letters.
-        case "working": return s.busy == 1 ? "1 session working" : "\(s.busy) sessions working"
+        case "working": return s.working == 1 ? "1 session working" : "\(s.working) sessions working"
         case "idle": return "Hanging out"
         default: return "Napping"
         }

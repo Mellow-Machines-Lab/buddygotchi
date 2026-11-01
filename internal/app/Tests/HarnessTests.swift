@@ -70,8 +70,8 @@ final class HarnessTests: XCTestCase {
              "  ✓ react: Boop made an excited face, held once, and said \"Go\"."),
             (#"{"event":{"seq":8,"at":9,"source":"self","kind":"did","data":{"action":"mood","by":"brain","for":3,"message":"changed 3 min ago","ok":false}},"received_at_ms":9}"#,
              "  ✗ mood: changed 3 min ago"),
-            (#"{"event":{"seq":9,"at":9,"source":"self","kind":"did","data":{"action":"wiggle","by":"rule","for":4,"message":"Boop wiggled on its own.","ok":true}},"received_at_ms":9}"#,
-             "  ✓ wiggle (rule): Boop wiggled on its own."),
+            (#"{"event":{"seq":9,"at":9,"source":"self","kind":"did","data":{"action":"wiggle","by":"rule","for":4,"message":"Boop answered the poke on its own.","ok":true}},"received_at_ms":9}"#,
+             "  ✓ wiggle (rule): Boop answered the poke on its own."),
             ("not json", "not json"),
             (#"{"sent":{"t":"do","id":1,"name":"starting","play":"if_free"},"by":"rule","received_at_ms":9}"#, nil),
             (DebugLog.ended(Ended(id: 1, how: .skipped, why: "busy"), at: 9), nil),
@@ -329,7 +329,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm", "a new Boop starts calm")
         func offered() -> [String] { mood.questions(now: nil, log: view())[0].options.map(\.name) }
         XCTAssertEqual(mood.questions(now: nil, log: view()).map(\.key), ["mood"])
-        XCTAssertEqual(offered(), ["calm"] + MoodGraph.moves["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
+        XCTAssertEqual(offered(), ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
         let stay = try XCTUnwrap(mood.questions(now: nil, log: view())[0].options.first)
         XCTAssertEqual(stay, Option("calm", "Stay calm: NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine."),
                        "the resting mood never fades")
@@ -339,11 +339,11 @@ final class HarnessTests: XCTestCase {
                        "any other mood stays only until its minutes are up")
         for m in MoodGraph.moods {
             let options = MoodOutput.options(from: m)
-            XCTAssertEqual(options.map(\.name), [m] + MoodGraph.moves[m]!.ordinary + MoodGraph.moves[m]!.dramatic, m)
+            XCTAssertEqual(options.map(\.name), [m] + MoodGraph.neighbours[m]!.ordinary + MoodGraph.neighbours[m]!.dramatic, m)
             for o in options.dropFirst() {
                 let meaning = MoodOutput.moods.first { $0.name == o.name }!
                 XCTAssertEqual(o.what, meaning.what, "\(m) → \(o.name) carries its meaning")
-                let jump = MoodGraph.moves[m]!.dramatic.contains(o.name)
+                let jump = MoodGraph.neighbours[m]!.dramatic.contains(o.name)
                 XCTAssertEqual(o.notFor?.hasSuffix(MoodOutput.jump) ?? false, jump, "\(m) → \(o.name): only a jump says so")
                 if jump { XCTAssertEqual(o.notFor, [meaning.notFor, MoodOutput.jump].compactMap { $0 }.joined(separator: " ")) }
                 else { XCTAssertEqual(o.notFor, meaning.notFor) }
@@ -357,7 +357,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm")
         XCTAssertEqual(run(["mood": a("annoyed")]),
                        .done("\(creature)'s mood changed: calm → annoyed.", facts: ["from": "calm", "to": "annoyed"]))
-        XCTAssertEqual(offered(), ["annoyed"] + MoodGraph.moves["annoyed"]!.all, "the next pass is offered annoyed's moves")
+        XCTAssertEqual(offered(), ["annoyed"] + MoodGraph.neighbours["annoyed"]!.all, "the next pass is offered annoyed's moves")
         XCTAssertEqual(run(["mood": a("grumpy")])?.message, "\(creature)'s mood changed: annoyed → grumpy.", "straight after, a jump too")
         XCTAssertNil(run(["mood": a("happy")]), "grumpy never moves straight to happy")
         XCTAssertNil(run(["mood": a("excited")]), "nor to excited")
@@ -403,8 +403,8 @@ final class HarnessTests: XCTestCase {
             XCTAssertTrue(text.hasPrefix(opening + ".") || text.hasPrefix(opening + " is "), "\(mood) opens with its name")
             let leaves = try! XCTUnwrap(text.range(of: "Leaves for"), mood)
             let named = Set(text[leaves.lowerBound...].split { !$0.isLetter }.map(String.init)).intersection(MoodGraph.moods)
-            XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.moves[mood]?.all ?? [])),
-                          "\(mood) leaves only for its neighbours, not \(named.subtracting((MoodGraph.moves[mood]?.all ?? []) + [mood]).sorted())")
+            XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.neighbours[mood]?.all ?? [])),
+                          "\(mood) leaves only for its neighbours, not \(named.subtracting((MoodGraph.neighbours[mood]?.all ?? []) + [mood]).sorted())")
         }
     }
 

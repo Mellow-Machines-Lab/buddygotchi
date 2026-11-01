@@ -913,7 +913,7 @@ public struct Eval {
                     wrong = "at \(clock(p.atMs)): no usable mood answer"
                 } else if p.dropped == nil, let answer = p.answer, !p.offered.contains(answer) {
                     wrong = "at \(clock(p.atMs)): answered \(answer), offered \(p.offered.joined(separator: "|"))"
-                } else if p.mood != before, !(MoodGraph.moves[before]?.all.contains(p.mood) ?? false) {
+                } else if p.mood != before, !(MoodGraph.neighbours[before]?.all.contains(p.mood) ?? false) {
                     wrong = "at \(clock(p.atMs)): \(before) → \(p.mood) isn't a move"
                 }
                 before = p.mood

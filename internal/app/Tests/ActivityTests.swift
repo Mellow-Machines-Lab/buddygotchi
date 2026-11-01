@@ -297,7 +297,7 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.activity, session: "a", tool: "Bash", id: "t", done: true)
         rig.wait(2000)
         XCTAssertNil(rig.act)
-        XCTAssertEqual(rig.state.busy, 2)
+        XCTAssertEqual(rig.state.working, 2)
     }
 }
 

@@ -321,7 +321,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(one.map(\.line), ["You poked \(creature)."])
         XCTAssertEqual(one.map(\.name), ["poke"])
         XCTAssertTrue(one[0].wakesBrain)
-        XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.message), ["\(creature) wiggled on its own."])
+        XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.message), ["\(creature) answered the poke on its own."])
         XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.by), ["rule"])
         var last: [ViewEvent] = []
         for _ in 0..<3 { rig.wait(1000); last = events(rig.poke()) }
@@ -354,7 +354,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(said[0].facts["by"], "device")
         let raw = try XCTUnwrap(rig.pipeline.transcript.events.last)
         XCTAssertEqual(raw.from, .mic)
-        XCTAssertEqual(raw.type, .talk)
+        XCTAssertEqual(raw.type, .said)
         XCTAssertEqual(raw.specificType, "device")
 
         let long = try XCTUnwrap(events(rig.said(String(repeating: "a", count: 2500), by: .app)).first)
@@ -739,11 +739,11 @@ final class ViewTests: XCTestCase {
         XCTAssertNil(second.threads["codex/c1"]?.needsSince, "the view's sessions agree")
         let shown = second.core.snapshot(at: rig.now)
         XCTAssertEqual(shown.attn?.agent, "claude", "its request still waits")
-        XCTAssertEqual(shown.busy, 1, "s2 still works")
+        XCTAssertEqual(shown.working, 1, "s2 still works")
         let answered = second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         XCTAssertEqual(needs(answered).map(\.phase), [.end])
         XCTAssertNil(second.threads["claude/s1"]?.needsSince, "the view folds the answer too")
-        XCTAssertEqual(second.core.snapshot(at: rig.now).busy, 2, "s1 works again")
+        XCTAssertEqual(second.core.snapshot(at: rig.now).working, 2, "s1 works again")
         XCTAssertNotNil(second.view.workingSince(at: rig.now, second.transcript.view(now: rig.now)))
     }
 

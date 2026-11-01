@@ -71,14 +71,14 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(pack.moods.count, 42)
         for m in pack.moods where !m.lasting {
             XCTAssertNil(MoodGraph.mood(m.id), m.id)
-            XCTAssertTrue(m.moves.all.isEmpty, m.id)
+            XCTAssertTrue(m.neighbours.all.isEmpty, m.id)
             XCTAssertEqual(pack.settled(m.id), m.settles, m.id)
         }
         XCTAssertEqual(pack.settled("tired"), "lazy")
         XCTAssertEqual(pack.settled("calm"), "calm")
         XCTAssertNil(pack.settled("sleepy"))
         // Lonely is reached only from the settled, quiet moods.
-        XCTAssertEqual(Set(pack.lasting.filter { $0.moves.all.contains("lonely") }.map(\.id)), ["calm", "comfy", "lazy"])
+        XCTAssertEqual(Set(pack.lasting.filter { $0.neighbours.all.contains("lonely") }.map(\.id)), ["calm", "comfy", "lazy"])
     }
 
     /// CHARACTER.md §6: each pack stands alone, each in a repository of
@@ -102,7 +102,7 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: pixelFolder.appendingPathComponent("mac/faces.json").path))
         XCTAssertTrue(FileManager.default.fileExists(atPath: boopFolder.appendingPathComponent("mac/mirror/board.js").path))
         // Pixel's moves are Boop's, for now.
-        for m in pixel.moods { XCTAssertEqual(m.moves, boop.byId[m.id]?.moves, m.id) }
+        for m in pixel.moods { XCTAssertEqual(m.neighbours, boop.byId[m.id]?.neighbours, m.id) }
     }
 
     /// CHARACTER.md §7, §8: Pixel stands on its own. Its steering has the

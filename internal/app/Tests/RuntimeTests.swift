@@ -93,7 +93,7 @@ final class RuntimeTests: XCTestCase {
     func testEveryHelloGetsTheMoodItself() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
-        let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, busy: 0, vol: 6)
+        let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
         let gelHello = FakeTransport.hello.dropLast() + #","face":"gel"}"#
         runtime.home.sync {
             runtime.show(logical)
@@ -1101,7 +1101,7 @@ final class RuntimeTests: XCTestCase {
         let questions = try XCTUnwrap(lines.first?["questions"] as? [[String: Any]], "the questions come first")
         XCTAssertEqual(lines.filter { $0["questions"] != nil }.count, 1, "once: nothing changed them")
         XCTAssertEqual((questions[0]["options"] as? [[String: Any]])?.compactMap { $0["name"] as? String },
-                       ["calm"] + MoodGraph.moves["calm"]!.all, "staying calm, then calm's moves")
+                       ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying calm, then calm's moves")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
         XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.")
@@ -1248,7 +1248,7 @@ final class RuntimeTests: XCTestCase {
         let passes = lines.compactMap { $0["pass"] as? [String: Any] }
         XCTAssertNil(passes[0]["options"], "the launch's options, calm's")
         let moved = try XCTUnwrap(passes.last?["options"] as? [String: [String]])
-        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.moves["happy"]!.all])
+        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours["happy"]!.all])
     }
 
     /// BOOT held and let go turns the mic on and off; with
@@ -1272,7 +1272,7 @@ final class RuntimeTests: XCTestCase {
             eventually("listening") { runtime.home.sync { runtime.core.listening?.by == .device } }
             transport.onLine?(#"{"t":"ev","kind":"talk_off"}"#)
             eventually("heard nothing") { transport.dos.contains { $0.hasSuffix(stop) } }
-            XCTAssertEqual(runtime.home.sync { self.recorded().filter { $0.type == .talk }.count }, 0)
+            XCTAssertEqual(runtime.home.sync { self.recorded().filter { $0.type == .said }.count }, 0)
             func listens() -> [String] {
                 runtime.home.sync { self.recorded().filter { $0.type == .listen }.map { $0.kind + " " + ($0["why"]?.string ?? "") } }
             }
@@ -1294,7 +1294,7 @@ final class RuntimeTests: XCTestCase {
                 XCTAssertEqual(after.count, 1, "\(after)")
                 XCTAssertTrue(after.first?.hasSuffix(stop) == true, "no reply: listening ends")
             }
-            let talk = try XCTUnwrap(runtime.home.sync { self.recorded().last { $0.type == .talk } })
+            let talk = try XCTUnwrap(runtime.home.sync { self.recorded().last { $0.type == .said } })
             XCTAssertEqual(talk["words"], "are the tests passing?")
             XCTAssertEqual(listens().count, 3, "listening had ended: nothing more to record")
 
@@ -1545,7 +1545,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(poke.type, .poke)
         XCTAssertFalse(poke.wakesBrain, "it doesn't wake the brain")
         transport.onLine?(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":1}}"#)  // a finish the app didn't send: a poke
-        eventually("a poke") { recorded().contains { $0.actionName == Core.wiggle } }
+        eventually("a poke") { recorded().contains { $0.actionName == Core.pokeAnswer } }
         XCTAssertEqual(opened.all.count, 1)
     }
 
@@ -1887,13 +1887,13 @@ final class RuntimeTests: XCTestCase {
         device(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
         eventually("the finished thread opened") { opened.all == ["claude://code/continue?session=local_7db5"] }
         device(FakeTransport.ended(id, "done"))
-        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } })
+        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.pokeAnswer } })
         device(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
         eventually("lingering, it opens again") { opened.all.count == 2 }
-        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } })
+        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.pokeAnswer } })
         device(#"{"t":"ev","kind":"tap","did":"poked"}"#)
         XCTAssertEqual(opened.all.count, 2, "over")
-        XCTAssertTrue(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } }, "a poke")
+        XCTAssertTrue(runtime.home.sync { self.recorded().contains { $0.actionName == Core.pokeAnswer } }, "a poke")
     }
 
     /// How an action's `end` event says it went.
@@ -2209,7 +2209,7 @@ final class RuntimeTests: XCTestCase {
         }
         let sessions = runtime.home.sync { Set(runtime.harness.log.events.compactMap(\.session)) }
         XCTAssertEqual(sessions, ["demo", "demo-docs"])
-        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).busy }, 1, "the first still works")
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).working }, 1, "the first still works")
     }
 
     /// characters/DEMOS.md, with no agent: a todo sends the list's counts;

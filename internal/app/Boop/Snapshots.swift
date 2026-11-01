@@ -34,7 +34,7 @@ enum Snapshots {
             checkPulse()
 
             // The pack's mirror of the board, when it has one (Boop's).
-            let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, busy: 1, vol: 6)
+            let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
             var gelImage: NSImage?, onboardingGel: NSImage?
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
@@ -52,7 +52,7 @@ enum Snapshots {
                                                     size: NSSize(width: 92, height: 92), zoomed: true)
                 tileStill = gelImage
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
-                    attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), busy: 1, vol: 6)
+                    attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), working: 1, vol: 6)
                 _ = try SlimeSnapshots.image(gelAttention, to: out.appendingPathComponent("slime-needs-you.png"))
                 try checkMoodStills()
             }
@@ -511,7 +511,7 @@ enum Snapshots {
                 StateSnapshot.Attention(agent: $0.agent, project: StateSnapshot.clip($0.project, marked: true),
                                         name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1)
             },
-            busy: sessions.filter { $0.status == .working }.count, vol: vol)
+            working: sessions.filter { $0.status == .working }.count, vol: vol)
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
                               device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice, face: face) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,

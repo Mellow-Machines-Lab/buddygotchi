@@ -7,8 +7,8 @@ import MellowHarness
 /// decides which visual the device shows, what the
 /// agents are doing included (`act`), and which reactions the rules play.
 /// What it does by rule it records as `action`
-/// events: "needs you" showing and ending, and a poke (the `wiggle`
-/// action, by its older name: the device plays its poke), or while
+/// events: "needs you" showing and ending, and a poke's answer
+/// (`pokeAnswer`: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
 /// reaction it plays (`starting`), as a `did` named after it. A session that's gone with no `SessionEnd`
 /// it records as its end (`sessionGone`), and a Claude app thread whose
@@ -179,7 +179,7 @@ public final class Core {
     public static let dismissGesture = "dismiss"
 
     /// Push-to-talk, as the core keeps it (`Talk`).
-    public internal(set) var talk = Talk()
+    public internal(set) var pushToTalk = Listening()
 
     /// While Boop is hushed: who hushed it and until when (`Hush`).
     public internal(set) var hush: Hush?
@@ -376,7 +376,7 @@ public final class Core {
     /// something needs you or `listening` holds the screen. The device also skips
     /// it while a brain reaction plays (`if_free`), unless it holds up a
     /// sign (`BoopDevice.play`). Recorded as a `did` named after it, for
-    /// the event `seq` that played it, as the poke's `wiggle` is, so the
+    /// the event `seq` that played it, as the poke's answer is, so the
     /// brain hears that Boop already reacted: in the words `said`, or
     /// `played`'s.
     func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
@@ -530,10 +530,10 @@ public final class Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         expireHush(now, &fx)
-        if let mic = talk.mic, now - mic.since >= Self.listenLimitMs {
+        if let mic = pushToTalk.mic, now - mic.since >= Self.listenLimitMs {
             // The device's own button hits the same limit.
             stopListening(ListenWhy.limit, now, &fx)
-        } else if talk.mic == nil, let until = talk.replyUntil, now >= until {
+        } else if pushToTalk.mic == nil, let until = pushToTalk.replyUntil, now >= until {
             // The device stopped holding `listening` for the reply on its own.
             endListening(ListenWhy.timedOut, now, &fx, stop: false)
         }
@@ -572,7 +572,7 @@ public final class Core {
         let drawer = drawerOpen(at: now)
         let calls = config.workStream && base == "working" && attn == nil && !drawer
             ? stream.calls(Set(working.map(\.key))) : []
-        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
+        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, working: working.count,
                                      idle: rests.count, helpers: helpers, vol: config.volume,
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
@@ -788,7 +788,7 @@ public final class Core {
     /// still on. It shows over needs you, as listening does, its face and
     /// sign but not its voice (the board's rule).
     public var replyBlock: String? {
-        talk.mic != nil ? "the mic is on" : nil
+        pushToTalk.mic != nil ? "the mic is on" : nil
     }
 
     // MARK: - Rules
@@ -894,7 +894,7 @@ public final class Core {
     /// A poke: the device plays its poke (`poked`, `tap_spam` from the third
     /// in a row), and the brain hears of it through the view, which counts
     /// the pokes in a row. The rules add no animation of
-    /// their own, but record it, as the `wiggle` action whose older name and
+    /// their own, but record it, as the poke's answer (`pokeAnswer`), whose
     /// words Jev reads. While `listening` shows
     /// nothing replaces it: the device plays no poke, so nothing is
     /// recorded. While something needs you the device plays no poke either:
@@ -911,7 +911,7 @@ public final class Core {
         let name = config.pack.name
         if let waiting = groups(at: now).shown.first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
-        fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.wiggle, by: "rule", at: now)))
+        fx.append(.record(Event.did(Core.answeredPoke(by: name), for: seq, action: Core.pokeAnswer, by: "rule", at: now)))
     }
 
     /// Presses within this long of the last walk down the line: each opens
@@ -950,10 +950,11 @@ public final class Core {
         fx.append(.open(s.thread))
     }
 
-    /// The rule actions' names and messages.
-    public static let wiggle = "wiggle"
+    /// The rule actions' names and messages. The device's answer to a poke
+    /// keeps its older name on disk.
+    public static let pokeAnswer = "wiggle"
     public static let openThread = "open_thread"
-    public static func wiggled(by name: String = CharacterPack.active.name) -> String { "\(name) wiggled on its own." }
+    public static func answeredPoke(by name: String = CharacterPack.active.name) -> String { "\(name) answered the poke on its own." }
     public static func openedThread(by name: String = CharacterPack.active.name) -> String {
         "\(name) opened the thread that needs you on the Mac."
     }

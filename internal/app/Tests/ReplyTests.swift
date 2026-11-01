@@ -10,7 +10,7 @@ import XCTest
 final class ReplyTests: XCTestCase {
     static let log = Transcript.log().view(now: 0)
     func a(_ choice: String, _ p: Double = 0.9) -> Answer { Answer(choice: choice, probabilities: [choice: p]) }
-    let said = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "is claude done yet?"])
+    let said = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "is claude done yet?"])
     let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
     let lines = TaggedLine.parse("""
         - [hello] hi hi!
@@ -123,7 +123,7 @@ final class ReplyTests: XCTestCase {
             """)
         let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, replies: lines, moment: { _ in moment })
         func reply(_ move: String, at: Int64 = 0) -> String? {
-            let e = Event(at: at, source: .mic, type: .talk, specificType: "device", data: ["words": "hey"])
+            let e = Event(at: at, source: .mic, type: .said, specificType: "device", data: ["words": "hey"])
             _ = react.run(["react.face": a("happy"), "react.move": a(move)], now: e, log: Self.log)
             return queued.last?.sign
         }
@@ -294,7 +294,7 @@ final class ReplyTests: XCTestCase {
         guard !Take.all.isEmpty else { return }
         var queued: [DeviceReaction] = []
         let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
-        let rollOver = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "roll over"])
+        let rollOver = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "roll over"])
         for reply in ReactOutput.replies.map(\.name) + ["unhush"] where reply != "huh" {
             for face in CharacterPack.active.moods.map(\.id) where Take.all.contains(where: { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) }) {
                 for size in ReactOutput.sizes.map(\.name) {
@@ -344,7 +344,7 @@ final class ReplyTests: XCTestCase {
             """)
         var queued: [DeviceReaction] = []
         let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, replies: lines)
-        let hello = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "Hello!"])
+        let hello = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "Hello!"])
         let sign = try XCTUnwrap(react.questions(now: hello, log: Self.log).first { $0.key == Signs.questionKey })
         XCTAssertEqual(sign.options.map(\.name), ["facts", "yep!", "huh?", "no idea!", "hello? idk", "hi hi!", "good, u?", "hello 2 u!"])
         XCTAssertEqual(sign.options.last?.what, "With a hello or bye reply.", "one caption, both its replies")
@@ -361,7 +361,7 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(held("hello", ["good, u?": 0.4, "yep!": 0.5]), "good, u?", "the likeliest of the reply's own")
         XCTAssertEqual(held("hello", ["yep!": 0.9]), "hi hi!", "none of the reply's: a line at random, not the last one")
         XCTAssertEqual(held("bye", ["hello 2 u!": 0.7]), "hello 2 u!", "a caption bye shares")
-        let why = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "why?"])
+        let why = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "why?"])
         XCTAssertEqual(held("huh", ["why? idk": 0.8], why), "why? idk", "a huh to a question shrugs with dunno's")
     }
 

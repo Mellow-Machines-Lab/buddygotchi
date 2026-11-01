@@ -26,7 +26,9 @@ extension Event {
 
     /// What it is, whatever agent it came from.
     public enum Kind: String, Sendable, CaseIterable {
-        case session, turn, tool, subagent, poke, talk, presence, heartbeat
+        case session, turn, tool, subagent, poke, presence, heartbeat
+        /// What you said on push-to-talk; on disk by its older name.
+        case said = "talk"
         /// "Needs you" showing for a session, and clearing: the core's.
         case needsYou = "needs_you"
         /// Push-to-talk's listening: the Mac's mic going on (`start`), off

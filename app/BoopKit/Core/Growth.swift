@@ -49,7 +49,7 @@ public struct Growth: Equatable, Sendable {
         }
         switch e.type {
         case .gesture? where Yours.careGestures.contains(e.specificType): return (careXP, .care)
-        case .talk?: return (talkXP, .care)
+        case .said?: return (talkXP, .care)
         case .ask? where e.specificType != Asks.ignored: return (answerXP, .care)
         case .presence? where e.phase == .end: return (backXP, .care)
         default: return nil

@@ -16,7 +16,7 @@ public enum Yours {
     /// Mac, or answering an ask.
     public static func did(_ e: Event) -> Bool {
         switch e.type {
-        case .poke?, .talk?, .prompt?: return true
+        case .poke?, .said?, .prompt?: return true
         case .gesture?: return careGestures.contains(e.specificType)
         case .presence?: return e.phase == .end
         case .ask?: return e.specificType != Asks.ignored
@@ -34,7 +34,7 @@ public enum Yours {
     /// agent.
     public static func touched(_ e: Event) -> Bool {
         switch e.type {
-        case .poke?, .talk?: return true
+        case .poke?, .said?: return true
         case .gesture?: return careGestures.contains(e.specificType)
         case .ask?: return e.specificType != Asks.ignored
         default: return false

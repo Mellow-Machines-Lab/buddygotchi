@@ -19,7 +19,7 @@ final class MoodGraphTests: XCTestCase {
         for dir in packs {
             let pack = try CharacterPack(directory: dir)
             XCTAssertEqual(Set(pack.moods.map(\.id)), Set(CharacterPack.universalMoods), pack.id)
-            let moves = Dictionary(uniqueKeysWithValues: pack.lasting.map { ($0.id, $0.moves) })
+            let moves = Dictionary(uniqueKeysWithValues: pack.lasting.map { ($0.id, $0.neighbours) })
             for (mood, m) in moves {
                 XCTAssertFalse(m.all.contains(mood), "\(pack.id): staying isn't a move: \(mood)")
                 XCTAssertEqual(Set(m.all).count, m.all.count, "\(pack.id): each move once: \(mood)")
@@ -38,11 +38,11 @@ final class MoodGraphTests: XCTestCase {
     /// isn't a mood has none.
     func testMoodGraphReadsTheActivePack() {
         XCTAssertEqual(MoodGraph.moods, CharacterPack.active.lasting.map(\.id))
-        XCTAssertEqual(Set(MoodGraph.moves.keys), Set(MoodGraph.moods))
-        for m in CharacterPack.active.lasting { XCTAssertEqual(MoodGraph.moves[m.id], m.moves) }
+        XCTAssertEqual(Set(MoodGraph.neighbours.keys), Set(MoodGraph.moods))
+        for m in CharacterPack.active.lasting { XCTAssertEqual(MoodGraph.neighbours[m.id], m.neighbours) }
         XCTAssertNil(MoodGraph.mood("tired"), "a face, not a lasting mood")
         XCTAssertNil(MoodGraph.mood("sulky"), "not a mood")
-        XCTAssertNil(MoodGraph.moves["sulky"], "not a mood")
+        XCTAssertNil(MoodGraph.neighbours["sulky"], "not a mood")
     }
 
     /// The universal list is one literal of quoted names, which

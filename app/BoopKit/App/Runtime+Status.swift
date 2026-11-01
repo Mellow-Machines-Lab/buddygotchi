@@ -132,7 +132,7 @@ extension Runtime {
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble.map(Self.words), brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
-                            micTrouble: core.talk.trouble, growth: growth.growth)
+                            micTrouble: core.pushToTalk.trouble, growth: growth.growth)
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         let written = memory.written(), today = options.time.boopDay(wall)

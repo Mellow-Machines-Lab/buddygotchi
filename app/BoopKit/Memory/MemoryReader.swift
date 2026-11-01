@@ -103,7 +103,7 @@ public final class MemoryReader: TranscriptReader {
         case .gesture? where Yours.careGestures.contains(e.specificType):
             t.touches += 1
             if e.specificType == "stroke" { t.strokes += 1 }
-        case .talk?:
+        case .said?:
             t.talks += 1
         case .ask? where e.specificType != Asks.ignored:
             t.answered += 1
@@ -155,7 +155,7 @@ public final class MemoryReader: TranscriptReader {
         let text = ([line.text] + line.notes).joined(separator: "\n  ")
         switch e.type {
         case .prompt?: return (text, !line.notes.contains { $0.hasPrefix("Your words") })
-        case .talk?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
+        case .said?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
         case .turn? where e.phase == .end:
             let long = (line.facts["length_ms"]?.int ?? 0) >= 5 * 60_000
             return long || e["outcome"]?.string != "done" ? (text, true) : nil

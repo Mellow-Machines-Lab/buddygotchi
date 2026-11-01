@@ -11,7 +11,7 @@ extension Runtime {
     /// the app's to them all.
     func heard(_ words: String, by: Core.Talker?, who: String = "dev", to buddy: String? = nil) {
         let now = options.clock()
-        let by = by ?? core(listener ?? rigs[0]).talk.by
+        let by = by ?? core(listener ?? rigs[0]).pushToTalk.by
         let to = buddy.map(rig) ?? (by == .device ? listener : nil)
         let step = pipeline.said(words, by: by, buddy: to?.tag, at: now)
         run(step)

@@ -76,7 +76,7 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     /// The offered move on a shortest path from `mood` to any of `targets`
     /// on the mood graph, or nil when none leads there.
     static func toward(_ targets: [String], from mood: String, offered: [String]) -> String? {
-        let moves = MoodGraph.moves
+        let moves = MoodGraph.neighbours
         var first: [String: String] = [:]  // each mood reached, by the move it started with
         var frontier: [String] = []
         for m in offered.dropFirst() where first[m] == nil {

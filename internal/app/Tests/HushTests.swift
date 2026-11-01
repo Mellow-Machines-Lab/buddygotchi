@@ -76,7 +76,7 @@ final class HushTests: XCTestCase {
         let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, hushed: { _ in hushedNow },
                                 hush: { ms, _ in hushes.append(ms) })
         let log = Transcript.log().view(now: 0)
-        let said = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "shh"])
+        let said = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "shh"])
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
         XCTAssertTrue(react.questions(now: poke, log: log).contains { $0.key == ReactOutput.sayKey })
         XCTAssertFalse(react.questions(now: said, log: log).first { $0.key == ReactOutput.moveKey }!.options.contains { $0.name == "unhush" },

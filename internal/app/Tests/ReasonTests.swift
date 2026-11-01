@@ -31,7 +31,7 @@ final class ReasonTests: XCTestCase {
                        Reason(cause: "You poked it 4 times in a row.", fact: "poked x4"))
         XCTAssertEqual(Reason.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]))?.fact,
                        "woken up")
-        let said = Reason.of(event(.talk, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))
+        let said = Reason.of(event(.said, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))
         XCTAssertEqual(said, Reason(cause: "You said \"hi\"."))
     }
 

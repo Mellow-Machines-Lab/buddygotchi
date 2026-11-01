@@ -151,7 +151,7 @@ struct OverviewPane: View {
     }
 
     /// The slime while the runtime starts, before its first status.
-    private static let waking = StateSnapshot(base: "asleep", mood: CharacterPack.active.startupMood, attn: nil, busy: 0, vol: 0)
+    private static let waking = StateSnapshot(base: "asleep", mood: CharacterPack.active.startupMood, attn: nil, working: 0, vol: 0)
 
     /// Boop's mood in words, labelled, so it doesn't rest on telling the
     /// faces apart. The face already draws in the mood's designs.

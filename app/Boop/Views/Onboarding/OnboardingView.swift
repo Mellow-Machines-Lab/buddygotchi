@@ -101,7 +101,7 @@ extension StateSnapshot {
                            waiting: String? = nil) -> StateSnapshot {
         StateSnapshot(base: base, act: act, mood: mood,
                       attn: waiting.map { .init(agent: $0, project: "landing", more: 0, id: 1) },
-                      busy: base == "working" ? 1 : 0, vol: 0)
+                      working: base == "working" ? 1 : 0, vol: 0)
     }
 }
 

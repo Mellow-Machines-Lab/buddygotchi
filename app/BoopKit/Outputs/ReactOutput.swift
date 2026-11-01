@@ -288,7 +288,7 @@ public final class ReactOutput: Output {
 
     /// Whether `e` is something you said on push-to-talk, which a reply
     /// answers.
-    static func isTalk(_ e: Event?) -> Bool { e?.type == .talk }
+    static func isTalk(_ e: Event?) -> Bool { e?.type == .said }
 
     /// What a pass is about: its event, or for one forced from outside
     /// (a demo's), the latest that happened, but for push-to-talk's own

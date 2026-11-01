@@ -21,7 +21,7 @@ public struct CharacterPack: Sendable {
         /// What its face means for one reaction: the reaction's face option.
         public let face: String
         public let faceNotFor: String?
-        public let moves: MoodGraph.Moves
+        public let neighbours: MoodGraph.Neighbours
         /// The lasting mood a face-only one settles into; nil for a lasting one.
         public let settles: String?
 
@@ -118,13 +118,13 @@ extension CharacterPack {
         lasting = moods.filter(\.lasting)
         let lastingNames = Set(lasting.map(\.id))
         for m in moods {
-            for to in m.moves.all where !lastingNames.contains(to) {
+            for to in m.neighbours.all where !lastingNames.contains(to) {
                 throw CharacterPackError("\(source): \(m.id) leads to \(to), which isn't a lasting mood")
             }
             if !m.lasting, !(m.settles.map(lastingNames.contains) ?? false) {
                 throw CharacterPackError("\(source): \(m.id) has no meaning, and settles into no lasting mood")
             }
-            if !m.lasting, !m.moves.all.isEmpty { throw CharacterPackError("\(source): \(m.id) has moves but no meaning") }
+            if !m.lasting, !m.neighbours.all.isEmpty { throw CharacterPackError("\(source): \(m.id) has moves but no meaning") }
         }
         guard lastingNames.contains(defaultMood) else { throw CharacterPackError("\(source): default_mood \(defaultMood) isn't a lasting mood") }
         guard lastingNames.contains(startupMood) else { throw CharacterPackError("\(source): startup_mood \(startupMood) isn't a lasting mood") }
@@ -148,7 +148,7 @@ extension CharacterPack {
         let moves = m["moves"] as? [String: [String]] ?? [:]
         return Mood(id: id, meaning: m["meaning"] as? String, notFor: m["not_for"] as? String,
                     face: face, faceNotFor: m["face_not_for"] as? String,
-                    moves: MoodGraph.Moves(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
+                    neighbours: MoodGraph.Neighbours(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
                     settles: m["settles"] as? String)
     }
 }
