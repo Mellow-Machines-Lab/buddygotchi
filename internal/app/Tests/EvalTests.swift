@@ -371,12 +371,12 @@ final class EvalTests: XCTestCase {
                       wrong.runChecks.first?.detail ?? "")
         let steps = ScriptedBrain { _, questions in
             let options = questions.first { $0.key == "mood" }!.options.map(\.name)
-            let pick = options.contains("curious") && options[0] == "calm" ? "curious" : options.contains("skeptical") ? "skeptical" : options[0]
+            let pick = options.contains("curious") && options[0] == "calm" ? "curious" : options.contains("happy") ? "happy" : options[0]
             return ["mood": Answer(choice: pick, probabilities: [pick: 1])]
         }
         let right = try await Eval(brain: steps, steering: RuntimeTests.steering).run(scenario)
         XCTAssertTrue(right.passed, right.runChecks.map(\.summary).joined(separator: "\n"))
-        XCTAssertEqual(right.runChecks.first?.detail, "2 passes: calm → curious → skeptical")
+        XCTAssertEqual(right.runChecks.first?.detail, "2 passes: calm → curious → happy")
     }
 
     /// EVALS.md §2: every scenario passes with the expect brain, which

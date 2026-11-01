@@ -279,7 +279,7 @@
               family && badge(family.label),
               mood.id === pack.default_mood && badge('resting mood'),
               mood.id === pack.startup_mood && badge('wakes up in it')),
-            h('p', {className: 'lead'}, mood.meaning || ''),
+            h('p', {className: 'lead'}, mood.meaning || (mood.settles ? `A face only: it settles into ${mood.settles}.` : '')),
             h('div', {className: 'mood-visual'},
               h('figure', {className: 'mood-face'}, thumb,
                 h('figcaption', {}, wears !== mood.id ? `No art of its own here: it wears ${api.title(wears)}.` : mood.face || 'Idle, in this mood.'),

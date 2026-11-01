@@ -15,7 +15,7 @@ What a pack holds, and what it must have:
 | `character.json` | yes | Its id, name, moods and how they connect (§4–5) |
 | `steering/guide.md` | yes | How it reads what happens, for the brain (§7) |
 | `steering/personality.md` | yes | Who it is (§7) |
-| `steering/mood/<mood>.md` | no | How it acts in a mood; a missing one reads as the resting mood's (§7) |
+| `steering/mood/<mood>.md` | no | How it acts in a lasting mood; a missing one reads as the resting mood's (§7) |
 | `firmware/` | yes | Its faces' code and art for the board (§9) |
 | `rig/` | no | Its expressions, clips and looks on the rig the faces are moving to (§15) |
 | `mac/faces.json` | with the pixel face | The pixel face's moods and the popover's still faces (§9) |
@@ -205,7 +205,7 @@ files (§8).
 
 ## 4. `character.json`
 
-Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
+Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods, a lasting one, and a face-only one:
 
 ```json
 {
@@ -218,18 +218,16 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
     {
       "id": "calm",
       "meaning": "Settled, the resting mood: nothing much is happening.",
-      "face": "A calm face: all quiet.",
       "family": "settled",
       "moves": {
         "ordinary": [
           "comfy",
           "curious",
           "engaged",
-          "pleased",
-          "tired",
-          "uneasy",
           "happy",
-          "annoyed"
+          "lazy",
+          "annoyed",
+          "lonely"
         ],
         "dramatic": [
           "surprised",
@@ -237,7 +235,14 @@ Pixel's, `characters/pixel/character.json`, cut to the first of its 42 moods:
           "excited",
           "sad"
         ]
-      }
+      },
+      "face": "A calm face: all quiet."
+    },
+    {
+      "id": "tired",
+      "family": "energy",
+      "settles": "lazy",
+      "face": "A tired face: a long stretch."
     }
   ]
 }
@@ -264,20 +269,33 @@ the one place the names are written (`charactergen.py` reads them from
 there). A pack has each of them once, and no other: the app's loader,
 `boopdev check` and `charactergen.py` refuse a pack that doesn't. What
 each means, how they connect and how each looks and sounds is the pack's.
-The engine never stands one mood in for another.
+
+Every mood is a face a reaction can make. Only some are lasting moods,
+the ones the creature settles into: they have a `meaning` and `moves`,
+a file in `steering/mood/`, and the `mood` question offers only them.
+Each other mood is a face only, and names the lasting mood it
+`settles` into: a log from before reads it as that one, and the
+dashboard setting it sets that one. Boop and Pixel each have 16 lasting
+moods (calm, comfy, lazy, happy, proud, annoyed, irritated, grumpy, sad,
+wounded, engaged, curious, surprised, determined, excited and lonely)
+and 26 faces only.
 
 Each mood in `moods`:
 
 | Key | Required | Meaning |
 | --- | --- | --- |
 | `id` | yes | Its name, as the brain and the protocol see it: lower case and `_` |
-| `meaning` | yes | When the character is in it: the option text when the brain picks a mood |
-| `face` | no | What this mood's face means for a single reaction: the option text when the brain picks a reaction's face. Without it, `meaning` |
+| `face` | yes | What this mood's face means for a single reaction: the option text when the brain picks a reaction's face |
+| `meaning` | for a lasting mood | When the character is in it: the option text when the brain picks a mood, in plain words |
+| `moves` | for a lasting mood | `ordinary` and `dramatic` neighbours: the lasting moods it can move to in one step. Staying is always allowed. A dramatic move needs a fresh, big event |
+| `settles` | for a face only | The lasting mood it settles into |
 | `not_for` | no | When the mood isn't meant, added to the `mood` question's option |
 | `face_not_for` | no | When the face isn't meant, added to the face's option |
 | `family` | no | A group of related moods (`joy`, `frustration`…), for designers; the engine doesn't read it |
-| `moves` | yes | `ordinary` and `dramatic` neighbours: the moods it can move to in one step. Staying is always allowed. A dramatic move needs a fresh, big event |
 
+The moves are the pack's one mood graph: the brain is offered them, and
+the gel board draws a transition's bridge by them (slimegen bakes them
+into `slime.h`, a face-only mood moving as the one it settles into).
 The `mood` question offers staying and every move from the current
 mood, the dramatic ones saying they need a fresh, big event, and
 staying, in any mood but the resting one, saying it ends when the
@@ -346,7 +364,7 @@ What the brain reads, in plain Markdown:
   Quiet looks in less often, Chatty more), over the personality's. Apart
   from the hush (§9), nothing in code holds a reaction back.
   `boopdev check` notes a leftover `talk/` file, which nothing reads.
-- `mood/<mood>.md` (one per mood): how it acts while in that mood,
+- `mood/<mood>.md` (one per lasting mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
 - `dreams.md` (optional): the signs the creature may hold up as it

@@ -24,7 +24,7 @@ extension DeviceReaction.Say {
 final class VoiceTests: XCTestCase {
     override func setUpWithError() throws { try requireVoice() }
 
-    let moods = MoodOutput.moods.map(\.name)
+    let moods = CharacterPack.active.moods.map(\.id)
 
     /// Every take plays in moods the pack has, answers a
     /// question the react output asks (or only the rules say it), and has

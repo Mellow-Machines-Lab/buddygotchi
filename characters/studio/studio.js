@@ -139,7 +139,7 @@
     $('[data-title]').style.setProperty('--hue',colourOf(sel.mood)||'#888');
     $('[data-title]').textContent=`${title(sel.mood)} · ${stateInfo[sel.state].label}${detail}`;
     $('[data-caption]').textContent=info?.caption||'';$('[data-caption]').hidden=!info?.caption;
-    $('[data-mood-term]').textContent=title(sel.mood);$('[data-mood-describe]').textContent=mood.meaning||'';
+    $('[data-mood-term]').textContent=title(sel.mood);$('[data-mood-describe]').textContent=mood.meaning||(mood.settles?`A face only: it settles into ${mood.settles}.`:'');
     $('[data-state-term]').textContent=stateInfo[sel.state].label;$('[data-state-describe]').textContent=stateInfo[sel.state].about;
     const note=$('[data-note]');note.hidden=plays===sel.mood;
     if(!note.hidden)note.textContent=`${label(sel.card)} has no ${title(sel.mood).toLowerCase()} art. It shows ${title(plays).toLowerCase()} instead, which is what plays here.`;

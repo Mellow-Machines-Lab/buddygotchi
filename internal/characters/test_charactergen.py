@@ -88,7 +88,7 @@ class MoodRuleTests(unittest.TestCase):
     UNIVERSAL = ["calm", "sad", "glad"]
 
     def character(self, moods, **extra):
-        return {"default_mood": "calm", "moods": [{"id": m, "meaning": m.title() + "."} for m in moods], **extra}
+        return {"default_mood": "calm", "moods": [{"id": m, "meaning": m.title() + ".", "face": f"A {m} face."} for m in moods], **extra}
 
     def test_exactly_the_universal_moods(self):
         self.assertEqual(gen.mood_problems(self.character(["calm", "glad", "sad"]), self.UNIVERSAL), [])
@@ -101,7 +101,19 @@ class MoodRuleTests(unittest.TestCase):
         c = self.character(["calm", "sad", "glad"], startup_mood="giddy")
         c["moods"][0]["moves"] = {"ordinary": ["sad"], "dramatic": ["sulky"]}
         self.assertEqual(gen.mood_problems(c, self.UNIVERSAL),
-                         ["calm leads to sulky, which isn't a mood", "startup_mood giddy isn't a mood"])
+                         ["calm leads to sulky, which isn't a lasting mood", "startup_mood giddy isn't a lasting mood"])
+
+    def test_a_face_only_mood_settles_into_a_lasting_one(self):
+        """CHARACTER.md §5: a mood with no meaning is a face, which settles
+        into a lasting mood, has no moves, and no move leads to."""
+        c = self.character(["calm", "sad", "glad"])
+        c["moods"][2] = {"id": "glad", "face": "A glad face.", "settles": "calm"}
+        self.assertEqual(gen.mood_problems(c, self.UNIVERSAL), [])
+        c["moods"][0]["moves"] = {"ordinary": ["glad"], "dramatic": []}
+        c["moods"][2] = {"id": "glad", "face": "A glad face.", "moves": {"ordinary": ["sad"]}}
+        self.assertEqual(gen.mood_problems(c, self.UNIVERSAL),
+                         ["calm leads to glad, which isn't a lasting mood", "glad has no meaning, and settles into no lasting mood",
+                          "glad has moves but no meaning"])
 
 
 class StateRuleTests(unittest.TestCase):
@@ -142,6 +154,7 @@ class StudioRuleTests(unittest.TestCase):
         self.addCleanup(patch.stop)
 
     def pack(self, name, moods, studio=None, files=(), **extra):
+        moods = [{**m, "face": m.get("face", "A face.")} for m in moods]
         character = {"id": name, "name": name.title(), "version": "0.1.0", "default_mood": moods[0]["id"], "moods": moods,
                      "faces": {"cyd24": "face"}, **extra}
         if studio is not None:
@@ -196,7 +209,7 @@ class StudioRuleTests(unittest.TestCase):
         board = {"id": "board-face", "label": "Face on the board", "about": "its firmware, in WebAssembly", "icon": "board.svg",
                  "board": "face", "scripts": [], "styles": [], "wears": {}}
         shown = {k: v for k, v in data["packs"]["plain"].items() if k in ("name", "default_mood", "moods", "studio", "references", "review")}
-        self.assertEqual(shown, {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled"}],
+        self.assertEqual(shown, {"name": "Plain", "default_mood": "calm", "moods": [{"id": "calm", "family": "settled", "face": "A face."}],
                                  "studio": [board], "references": [], "review": {"queue": [], "notes": []}})
         # A pack with nothing of its own beside its moods: none of each part, and no voice.
         about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}

@@ -31,7 +31,7 @@ final class ReplyTests: XCTestCase {
         let react = ReactOutput(queue: { _, _ in }, blocked: { nil })
         XCTAssertEqual(react.questions(now: said, log: Self.log).map(\.key), askedKeys.filter { $0 != MoodOutput.outputName })
         XCTAssertEqual(react.questions(now: said, log: Self.log)[1].options.map(\.name), ReactOutput.replies.map(\.name), "no none: talk gets a reply")
-        XCTAssertEqual(react.questions(now: said, log: Self.log)[0].options.map(\.name), MoodOutput.moods.map(\.name), "and a face, never none")
+        XCTAssertEqual(react.questions(now: said, log: Self.log)[0].options.map(\.name), CharacterPack.active.moods.map(\.id), "and a face, never none")
         XCTAssertEqual(react.questions(now: poke, log: Self.log).map(\.key), askedKeys.filter { $0 != MoodOutput.outputName })
         for reply in ReactOutput.replies where ["yes", "no"].contains(reply.name) {
             XCTAssertTrue(reply.notFor?.contains("status") == true, "yes and no are never about the agents")
@@ -296,7 +296,7 @@ final class ReplyTests: XCTestCase {
         let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
         let rollOver = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "roll over"])
         for reply in ReactOutput.replies.map(\.name) + ["unhush"] where reply != "huh" {
-            for face in MoodOutput.moods.map(\.name) where Take.all.contains(where: { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) }) {
+            for face in CharacterPack.active.moods.map(\.id) where Take.all.contains(where: { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) }) {
                 for size in ReactOutput.sizes.map(\.name) {
                     _ = react.run(["react.face": a(face), "react.move": a(reply), "react.intensity": a(size), "say": a("glad")],
                                   now: rollOver, log: Self.log)

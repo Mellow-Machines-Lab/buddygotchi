@@ -159,10 +159,9 @@ public final class ReactOutput: Output {
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
 
-    /// Each expression: a mood's name, in `MoodOutput.moods`' order, and
-    /// what the face means for this reaction, from the
-    /// pack's moods' `face`, else their meaning (characters/CHARACTER.md
-    /// §5). It's the
+    /// Each expression: a mood's name, every mood's in the pack's order,
+    /// lasting or face-only, and what the face means for this reaction,
+    /// from the pack's moods' `face` (characters/CHARACTER.md §5). It's the
     /// reaction's face only, never the lasting mood. What it says is a take
     /// performed in that mood (`Voice`).
     public static var expressions: [Option] { CharacterPack.active.faces }

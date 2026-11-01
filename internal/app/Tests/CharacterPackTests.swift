@@ -18,12 +18,12 @@ final class CharacterPackTests: XCTestCase {
         XCTAssertEqual(CharacterPack.active.moods, pack.moods)
     }
 
-    /// CHARACTER.md §5, §9: every mood has a face's wording (its meaning
-    /// when it has none), an option for the mood question, and designs on
+    /// CHARACTER.md §5, §9: every mood has a face's wording and designs on
     /// the pixel face, which draws all of them (the Pixel pack's
-    /// mac/faces.json names the moods its faces.h does).
+    /// mac/faces.json names the moods its faces.h does), and every lasting
+    /// one an option for the mood question.
     func testEveryMoodHasAFaceAndDesigns() throws {
-        XCTAssertEqual(ReactOutput.expressions.map(\.name), MoodGraph.moods)
+        XCTAssertEqual(ReactOutput.expressions.map(\.name), CharacterPack.active.moods.map(\.id))
         XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
         let data = try Data(contentsOf: Self.repo.appendingPathComponent("characters/pixel/mac/faces.json"))
         let faces = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -60,21 +60,25 @@ final class CharacterPackTests: XCTestCase {
         }
     }
 
-    /// CHARACTER.md §5: Boop's moods are the slime design's host graph, in
-    /// its order, with its meanings (slimegen writes them), and every edge
-    /// the design draws is one of the pack's moves.
-    func testBoopsMoodsAreTheSlimeDesigns() throws {
+    /// CHARACTER.md §5: Boop settles into 16 lasting moods, each with its
+    /// meaning and moves; the other 26 are faces, each settling into one of
+    /// them, which a word for it (a log from before) reads as.
+    func testBoopSettlesIntoSixteenLastingMoods() throws {
         try requirePack("boop")
-        let file = Self.repo.appendingPathComponent("characters/boop/design/slime-blob/emotion-graph.json")
-        let graph = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any])
-        let nodes = try XCTUnwrap(graph["nodes"] as? [String: [String: Any]])
-        XCTAssertEqual(MoodGraph.moods.count, 42)
-        for (id, n) in nodes {
-            let mood = try XCTUnwrap(MoodGraph.mood(id))
-            XCTAssertEqual(mood.meaning, n["meaning"] as? String, id)
-            let drawn = Set((n["ordinary"] as? [String] ?? []) + (n["dramatic"] as? [String] ?? []))
-            XCTAssertTrue(drawn.isSubset(of: mood.moves.all), "\(id): \(drawn.subtracting(mood.moves.all).sorted())")
+        let pack = CharacterPack.active
+        XCTAssertEqual(Set(MoodGraph.moods), ["calm", "comfy", "lazy", "happy", "proud", "annoyed", "irritated", "grumpy", "sad", "wounded",
+                                              "engaged", "curious", "surprised", "determined", "excited", "lonely"])
+        XCTAssertEqual(pack.moods.count, 42)
+        for m in pack.moods where !m.lasting {
+            XCTAssertNil(MoodGraph.mood(m.id), m.id)
+            XCTAssertTrue(m.moves.all.isEmpty, m.id)
+            XCTAssertEqual(pack.settled(m.id), m.settles, m.id)
         }
+        XCTAssertEqual(pack.settled("tired"), "lazy")
+        XCTAssertEqual(pack.settled("calm"), "calm")
+        XCTAssertNil(pack.settled("sleepy"))
+        // Lonely is reached only from the settled, quiet moods.
+        XCTAssertEqual(Set(pack.lasting.filter { $0.moves.all.contains("lonely") }.map(\.id)), ["calm", "comfy", "lazy"])
     }
 
     /// CHARACTER.md §6: each pack stands alone, each in a repository of
@@ -157,24 +161,43 @@ final class CharacterPackTests: XCTestCase {
     }
 
     /// CHARACTER.md §4, §5: a pack whose moods aren't exactly the
-    /// universal ones, or that leads to a word that isn't a mood, is refused.
+    /// universal ones, that leads to a word that isn't a lasting mood, or
+    /// whose face-only mood settles into none, is refused.
     func testABrokenPackSaysWhy() {
-        let every = CharacterPack.universalMoods.map { ["id": $0, "meaning": "\($0)."] as [String: Any] }
+        let every = CharacterPack.universalMoods.map { ["id": $0, "meaning": "\($0).", "face": "A \($0) face."] as [String: Any] }
         let json: [String: Any] = ["id": "test", "name": "Test", "version": "1", "default_mood": "calm",
                                    "moods": every]
         XCTAssertNil(refusal(json))
         var short = json
-        short["moods"] = Array(every.dropLast()) + [["id": "sulky", "meaning": "Sulky."]]
+        short["moods"] = Array(every.dropLast()) + [["id": "sulky", "meaning": "Sulky.", "face": "A sulky face."]]
         XCTAssertEqual(refusal(short), "test: moods aren't the universal ones (missing [\"disgusted\"], extra [\"sulky\"])")
         var twice = json
         twice["moods"] = every + [every[0]]
         XCTAssertEqual(refusal(twice), "test: moods names a mood twice")
         var badMove = json
-        badMove["moods"] = [["id": "calm", "meaning": "Calm.", "moves": ["ordinary": ["sulky"], "dramatic": []]]] + every.dropFirst()
-        XCTAssertEqual(refusal(badMove), "test: calm leads to sulky, which isn't a mood")
+        badMove["moods"] = [["id": "calm", "meaning": "Calm.", "face": "A calm face.", "moves": ["ordinary": ["sulky"], "dramatic": []]]] + every.dropFirst()
+        XCTAssertEqual(refusal(badMove), "test: calm leads to sulky, which isn't a lasting mood")
         var noDefault = json
         noDefault["default_mood"] = "sulky"
-        XCTAssertEqual(refusal(noDefault), "test: default_mood sulky isn't a mood")
+        XCTAssertEqual(refusal(noDefault), "test: default_mood sulky isn't a lasting mood")
+        // A face-only mood: no meaning, and the lasting mood it settles into.
+        var faceOnly = json
+        faceOnly["moods"] = every.map { $0["id"] as? String == "tired" ? ["id": "tired", "face": "A tired face.", "settles": "lazy"] : $0 }
+        XCTAssertNil(refusal(faceOnly))
+        faceOnly["moods"] = every.map { $0["id"] as? String == "tired" ? ["id": "tired", "face": "A tired face."] : $0 }
+        XCTAssertEqual(refusal(faceOnly), "test: tired has no meaning, and settles into no lasting mood")
+        var toFaceOnly = json
+        toFaceOnly["moods"] = every.map { m -> [String: Any] in
+            switch m["id"] as? String {
+            case "tired": ["id": "tired", "face": "A tired face.", "settles": "lazy"]
+            case "calm": ["id": "calm", "meaning": "Calm.", "face": "A calm face.", "moves": ["ordinary": ["tired"], "dramatic": []]]
+            default: m
+            }
+        }
+        XCTAssertEqual(refusal(toFaceOnly), "test: calm leads to tired, which isn't a lasting mood")
+        var noFace = json
+        noFace["moods"] = [["id": "calm", "meaning": "Calm."]] + every.dropFirst()
+        XCTAssertEqual(refusal(noFace), "test: a mood without an id or a face")
     }
 
     private func refusal(_ json: [String: Any]) -> String? {

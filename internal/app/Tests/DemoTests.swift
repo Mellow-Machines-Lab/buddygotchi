@@ -282,7 +282,7 @@ final class DemoTests: XCTestCase {
         XCTAssertEqual(problems.count, 4, "\(problems)")
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
         XCTAssertTrue(problems[1].hasPrefix("line 2: react.face has no choice jolly; it has none, \(pack.moods[0].id)"))
-        XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
+        XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no lasting mood ecstatic"))
         XCTAssertTrue(problems[3].hasPrefix("line 4: react.intensity has no choice medim"))
     }
 

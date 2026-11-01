@@ -90,7 +90,7 @@ extension Steering {
     public func overBudget(in pack: CharacterPack = .active) -> [String] {
         var parts = [("guide", Steering.tokens(guide), Budget.guide)]
         parts.append(("personality", Steering.tokens(personality.text), Budget.personality))
-        for name in pack.moods.map(\.id).sorted() {
+        for name in pack.lasting.map(\.id).sorted() {
             parts.append(("mood/\(name)", Steering.tokens(mood(name, in: pack)), Budget.mood))
         }
         for (name, budget) in [("dreams", Budget.dreams), ("asks", Budget.asks)] {

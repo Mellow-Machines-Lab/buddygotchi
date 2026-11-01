@@ -480,8 +480,8 @@ extension DemoScript {
                     found.append("line \(step.number): \(key) has no choice \(choice); it has \(choices.joined(separator: ", "))")
                 }
             }
-            if let mood, !pack.moods.map(\.id).contains(mood) {
-                found.append("line \(step.number): \(pack.id) has no mood \(mood); it has \(pack.moods.map(\.id).joined(separator: ", "))")
+            if let mood, !pack.lasting.map(\.id).contains(mood) {
+                found.append("line \(step.number): \(pack.id) has no lasting mood \(mood); it has \(pack.lasting.map(\.id).joined(separator: ", "))")
             }
         }
         return found

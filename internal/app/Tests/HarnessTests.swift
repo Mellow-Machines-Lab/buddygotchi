@@ -283,7 +283,7 @@ final class HarnessTests: XCTestCase {
         queued.removeAll()
         // The four questions, the same at every event.
         XCTAssertEqual(react.questions(now: nil, log: Self.log).map(\.key), ["react.face", "react.move", "react.intensity", "say"])
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + MoodOutput.moods.map(\.name),
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + CharacterPack.active.moods.map(\.id),
                        "the faces are every mood's")
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big", "huge"])
@@ -315,7 +315,7 @@ final class HarnessTests: XCTestCase {
     /// last changed (how long a mood lasts is the steering's call). It's
     /// MellowHarness's `Choice`.
     func testMood() throws {
-        XCTAssertEqual(MoodOutput.moods.map(\.name), CharacterPack.active.moods.map(\.id))
+        XCTAssertEqual(MoodOutput.moods.map(\.name), CharacterPack.active.lasting.map(\.id), "the lasting moods only")
         XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
         XCTAssertEqual(MoodOutput.initial, "calm")
         let log = Transcript.log()
@@ -366,6 +366,9 @@ final class HarnessTests: XCTestCase {
         log.append(Event.did("\(creature)'s mood changed: grumpy → delighted.", for: nil, action: mood.name, by: "brain",
                              facts: ["from": "grumpy", "to": "delighted"]), now: 1)
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm", "one that isn't a mood reads as calm")
+        log.append(Event.did("\(creature)'s mood changed: grumpy → tired.", for: nil, action: mood.name, by: "brain",
+                             facts: ["from": "grumpy", "to": "tired"]), now: 1)
+        XCTAssertEqual(MoodOutput.value(mood, view()), "lazy", "a face-only mood, from a log of before, reads as the one it settles into")
     }
 
     /// The mood the dashboard sets changes as Jev's does,
@@ -388,6 +391,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(harness.force(["mood": "proud"], by: Runtime.forcedBy).map(\.result.message),
                        ["\(creature)'s mood changed: grumpy → proud."], "Jev's, right after")
         XCTAssertEqual(told, ["grumpy", "proud"], "the device hears each change")
+        XCTAssertEqual(change("tired")?.message, "\(creature)'s mood changed: proud → lazy.", "a face-only mood sets the one it settles into")
     }
 
     /// Each mood's file says where it leaves for, and

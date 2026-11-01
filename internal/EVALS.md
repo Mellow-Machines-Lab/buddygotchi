@@ -324,7 +324,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   answer is a reply (`44`, `45`), and a finish is judged by its words
   whatever the mood (`46`). And the graph's moves: a small failure from
   calm is a small step and a big one may jump (`48`), thanks bring a
-  whiny or wounded Boop back (`50`), an
+  sad or wounded Boop back (`50`), an
   irritated Boop answers as irritated, not grumpy (`54`), and hours of
   nothing fade excited through happy to calm (`55`). And talk moves
   the mood at once: one apology
@@ -334,7 +334,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   softens nothing (`59`). And work that finished while you were away
   from the Mac is celebrated as it ends, never replayed when you're
   back, when Boop cheers to see you (`65`). And, scripted, the rarer
-  moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
+  moods: quiet takes a surprised Boop at most an ordinary step (`68`), and
   new work moves a comfy one only to a mood on offer (`69`). And
   the ladder of failure: a failure after a fix is a bigger cuss than
   the first, held longer and said aloud (`70`). And the moments the view now says: you answering a request

@@ -266,7 +266,7 @@ final class PresenceTests: XCTestCase {
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
-        for mood in MoodOutput.moods.map(\.name) {
+        for mood in CharacterPack.active.moods.map(\.id) {
             XCTAssertGreaterThanOrEqual(hello.filter { $0.moods.contains(mood) }.count, 4, mood)
         }
         var rng = SplitMix64(seed: 1)

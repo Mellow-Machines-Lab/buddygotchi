@@ -438,9 +438,11 @@ public struct Scenario: Sendable {
                 let texts = Set(Take.all.map(\.text))
                 let unsaid = (step.expect?.said ?? []).subtracting(texts.union(["none", "some"]))
                 guard unsaid.isEmpty else { throw badStep("expect.said has \(unsaid.sorted().joined(separator: ", ")), not a take's text") }
+                // A face may be any mood's; a mood, or what's offered, only a lasting one's.
+                let faces = CharacterPack.active.moods.map(\.id) + ["none"]
                 for (key, values) in [("react", step.expect?.react), ("mood", step.expect?.mood), ("offered", step.expect?.offered)] {
-                    let unknown = (values ?? []).subtracting(graphMoods + (key == "react" ? ["none"] : []))
-                    guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not a mood") }
+                    let unknown = (values ?? []).subtracting(key == "react" ? faces : graphMoods)
+                    guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not \(key == "react" ? "a face" : "a lasting mood")") }
                 }
             }
             return step

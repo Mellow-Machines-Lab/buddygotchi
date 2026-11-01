@@ -139,8 +139,9 @@ def universal_moods(source: Path = UNIVERSAL) -> list[str]:
 
 def mood_problems(character: dict, universal: list[str]) -> list[str]:
     """What's wrong with a pack's moods, as the app's loader refuses them:
-    not exactly the universal moods, or a move, default or startup mood
-    that isn't one."""
+    not exactly the universal moods, a mood with no face, a move, default
+    or startup mood that isn't a lasting one (one with a meaning), or a
+    face-only mood that settles into none or has moves."""
     ids = [m.get("id") for m in character.get("moods", [])]
     problems = []
     if len(ids) != len(set(ids)):
@@ -148,17 +149,23 @@ def mood_problems(character: dict, universal: list[str]) -> list[str]:
     if set(ids) != set(universal):
         missing, extra = sorted(set(universal) - set(ids)), sorted(set(ids) - set(universal))
         problems.append(f"moods aren't the universal ones (missing {missing}, extra {extra})")
-    names = set(ids)
+    lasting = {m.get("id") for m in character.get("moods", []) if m.get("meaning")}
     for m in character.get("moods", []):
-        if not m.get("meaning"):
-            problems.append(f"{m.get('id')} has no meaning")
+        if not m.get("face"):
+            problems.append(f"{m.get('id')} has no face")
         moves = m.get("moves", {})
-        for to in moves.get("ordinary", []) + moves.get("dramatic", []):
-            if to not in names:
-                problems.append(f"{m.get('id')} leads to {to}, which isn't a mood")
+        to = moves.get("ordinary", []) + moves.get("dramatic", [])
+        if not m.get("meaning"):
+            if m.get("settles") not in lasting:
+                problems.append(f"{m.get('id')} has no meaning, and settles into no lasting mood")
+            if to:
+                problems.append(f"{m.get('id')} has moves but no meaning")
+        for t in to:
+            if t not in lasting:
+                problems.append(f"{m.get('id')} leads to {t}, which isn't a lasting mood")
     for key in ("default_mood", "startup_mood"):
-        if key in character and character[key] not in names:
-            problems.append(f"{key} {character[key]} isn't a mood")
+        if key in character and character[key] not in lasting:
+            problems.append(f"{key} {character[key]} isn't a lasting mood")
     return problems
 
 
@@ -1184,7 +1191,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
             **about,
             "name": character["name"],
             "default_mood": character["default_mood"],
-            "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves") if k in m} for m in character["moods"]],
+            "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves", "settles") if k in m} for m in character["moods"]],
             "studio": [entry for _, entry in entries] + boards(character),
             "references": references_data(pack, page),
             "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
