@@ -911,7 +911,7 @@ public final class Core {
         let name = config.pack.name
         if let waiting = groups(at: now).shown.first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
-        fx.append(.record(Event.did(Core.answeredPoke(by: name), for: seq, action: Core.pokeAnswer, by: "rule", at: now)))
+        fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.pokeAnswer, by: "rule", at: now)))
     }
 
     /// Presses within this long of the last walk down the line: each opens
@@ -951,10 +951,12 @@ public final class Core {
     }
 
     /// The rule actions' names and messages. The device's answer to a poke
-    /// keeps its older name on disk.
+    /// keeps its older name on disk, and HISTORY's words for it: said as
+    /// an answer to the poke, Jev took the poke as answered and reacted to
+    /// none (2026-11-01).
     public static let pokeAnswer = "wiggle"
     public static let openThread = "open_thread"
-    public static func answeredPoke(by name: String = CharacterPack.active.name) -> String { "\(name) answered the poke on its own." }
+    public static func wiggled(by name: String = CharacterPack.active.name) -> String { "\(name) wiggled on its own." }
     public static func openedThread(by name: String = CharacterPack.active.name) -> String {
         "\(name) opened the thread that needs you on the Mac."
     }

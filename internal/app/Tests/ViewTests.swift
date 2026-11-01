@@ -321,7 +321,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(one.map(\.line), ["You poked \(creature)."])
         XCTAssertEqual(one.map(\.name), ["poke"])
         XCTAssertTrue(one[0].wakesBrain)
-        XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.message), ["\(creature) answered the poke on its own."])
+        XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.message), ["\(creature) wiggled on its own."])
         XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.by), ["rule"])
         var last: [ViewEvent] = []
         for _ in 0..<3 { rig.wait(1000); last = events(rig.poke()) }
