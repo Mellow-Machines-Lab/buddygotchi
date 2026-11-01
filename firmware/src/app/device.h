@@ -183,7 +183,9 @@ class Device : public linkkit::App {
   static constexpr uint32_t kReactGapMs = 500;
 
   // `pixels` is the kWidth × kHeight canvas buffer, allocated by the
-  // caller. A linkkit::Kit made with this app then drives it.
+  // caller, or null for a face that draws natively: it gets one only if
+  // dbg.pattern asks (Hal::allocateSurface). A linkkit::Kit made with this
+  // app then drives it.
   Device(Hal& hal, uint8_t* pixels);
   // The same with the face given, rather than the build's (render::makeFace).
   Device(Hal& hal, uint8_t* pixels, std::unique_ptr<render::Face> face);
@@ -371,6 +373,8 @@ class Device : public linkkit::App {
 
   Hal& hal_;
   render::Canvas canvas_;
+  // dbg.pattern's canvas, had from the Hal for a face that draws natively.
+  bool ownsCanvas_ = false;
   // Made by the constructor only when the face draws natively, so a board
   // without a native face (the CYD) spends no RAM on them.
   std::unique_ptr<render::SurfacePair> native_;

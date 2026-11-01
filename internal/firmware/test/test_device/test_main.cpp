@@ -1471,6 +1471,44 @@ static void test_a_test_pattern_is_silent() {
   TEST_ASSERT_EQUAL(int(sent), int(r.hal.effects.size()));
 }
 
+// A face that draws natively has no canvas, 76.8 KB the gel never draws
+// into, until dbg.pattern asks for one: then the board takes it from its
+// surface memory (Hal::allocateSurface), the pattern draws on it and it
+// stays. With no memory for it, the pattern answers ok:false and shows
+// nothing. The board's main gives the canvas only to a face that draws it.
+static void test_a_native_face_has_a_canvas_only_for_the_pattern() {
+  struct Spare : FakeHal {
+    bool none = false;
+    void* allocateSurface(size_t bytes) override {
+      return none && bytes == size_t(render::kWidth) * render::kHeight ? nullptr : FakeHal::allocateSurface(bytes);
+    }
+  };
+  for (bool none : {false, true}) {
+    Spare hal;
+    hal.none = none;
+    Capture usb;
+    auto face = std::make_unique<testface::WrappedFace>();
+    face->native = true;
+    app::Device dev{hal, nullptr, std::move(face)};
+    linkkit::Kit kit{hal, dev, true};
+    kit.setOut(linkkit::Link::kUsb, &usb);
+    kit.tick();
+    TEST_ASSERT_TRUE(dev.ready());
+    TEST_ASSERT_NULL(dev.canvas().pixels());
+    const char* fill = "{\"t\":\"dbg.pattern\",\"fill\":3}";
+    kit.handleLine(fill, std::strlen(fill), linkkit::Link::kUsb);
+    kit.tick();
+    if (none) {
+      TEST_ASSERT_NULL(dev.canvas().pixels());
+      TEST_ASSERT_TRUE(has(usb.text, "{\"t\":\"dbg.pattern\",\"ok\":false}"));
+      continue;
+    }
+    TEST_ASSERT_NOT_NULL(dev.canvas().pixels());
+    TEST_ASSERT_EQUAL_UINT8(3, dev.canvas().pixels()[size_t(render::kWidth) * render::kHeight - 1]);
+    TEST_ASSERT_TRUE(has(usb.text, "{\"t\":\"dbg.pattern\"}"));
+  }
+}
+
 // `state`'s `when` is the Mac's tags, and the board adds busy or frantic
 // from `busy` (render::busyTags); a tag it doesn't know is left out.
 // dbg.state reports them, with the idle and helper counts.
@@ -2779,6 +2817,7 @@ int main() {
   RUN_TEST(test_the_sounds_follow_the_looks_rotation);
   RUN_TEST(test_needs_you_plays_its_ding_and_asleep_is_quiet);
   RUN_TEST(test_a_test_pattern_is_silent);
+  RUN_TEST(test_a_native_face_has_a_canvas_only_for_the_pattern);
   RUN_TEST(test_ping_reports_version_and_link);
   RUN_TEST(test_debug_is_ignored_over_ble);
   RUN_TEST(test_touch_calibration_maps_raw_to_screen);

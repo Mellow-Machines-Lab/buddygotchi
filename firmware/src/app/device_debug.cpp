@@ -69,6 +69,18 @@ __attribute__((noinline)) size_t cardCopy(Hal& hal, JsonObjectConst doc, char* b
 bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
   char buf[160];
   if (!std::strcmp(type, "dbg.pattern")) {
+    // A face that draws natively has no canvas until the pattern asks for
+    // one, from the board's surface memory (PSRAM on the AMOLED).
+    if (!canvas_.pixels()) {
+      auto* px = static_cast<uint8_t*>(hal_.allocateSurface(size_t(render::kWidth) * render::kHeight));
+      if (!px) {
+        static const char kNone[] = "{\"t\":\"dbg.pattern\",\"ok\":false}";
+        kit().reply(from, kNone, sizeof kNone - 1);
+        return true;
+      }
+      canvas_ = render::Canvas(px);
+      ownsCanvas_ = true;
+    }
     // With "fill", a solid screen of that palette index (webcam framing).
     // With "target": [x, y], a cross to tap on black (boopctl calibrate).
     live_.patternFill = doc["fill"] | -1;

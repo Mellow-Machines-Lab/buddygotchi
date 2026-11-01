@@ -97,6 +97,7 @@ Device::Device(Hal& hal, uint8_t* pixels, std::unique_ptr<render::Face> face)
   }
 }
 Device::~Device() {
+  if (ownsCanvas_) hal_.releaseSurface(canvas_.pixels());
   if (!native_) return;
   if (native_->back().pixels) hal_.releaseSurface(native_->back().pixels);
   if (native_->front().pixels) hal_.releaseSurface(native_->front().pixels);
