@@ -85,16 +85,10 @@ public final class Pipeline {
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
         options.reading = .none
-        // The time and weekday, then the calendar's occasions in words
-        // (`Halloween`, `Boop is 50 days old`), so the brain can play along.
-        // The first core's, read as the prompt is built, on the pipeline's queue.
-        let first = FirstCore(buddies.first?.core), name = buddies[0].buddy.name
-        options.heading = { wall in
-            ([time.clock(wall), time.weekday(wall)]
-                + Occasions.words(at: wall, hatched: first.core?.config.hatched, name: name, stage: first.core?.config.stageReached,
-                                  time: time))
-                .joined(separator: ", ")
-        }
+        // Only this moment's time: the weekday, the part of the day and the
+        // calendar's occasions are CONTEXT's When row.
+        options.heading = { wall in time.clock(wall) }
+        let name = buddies[0].buddy.name
         options.loop = loop
         let input = inputTime
         harness = Harness(name: name, brain: nil, log: transcript,
@@ -402,11 +396,4 @@ public final class Pipeline {
         }
         return nil
     }
-}
-
-/// The first buddy's core for the prompt's heading, which reads its
-/// hatch day and stage on the pipeline's own queue.
-private final class FirstCore: @unchecked Sendable {
-    weak var core: Core?
-    init(_ core: Core?) { self.core = core }
 }

@@ -263,7 +263,7 @@ keep their names.
 | sign | A short caption the buddy holds up while a reaction plays, often your own words (`Signs`, a pack's `signs.md`, the `do`'s `sign`) | banner, label |
 | the written memory | `memory.md`: short notes about you, your work and you and the buddy, and a line a day, which Apple Intelligence edits each night and Jev reads as MEMORY (`WrittenMemory`, `MemoryEdits`, `MemoryRequest`) | diary, memory file |
 | reason | Why the buddy does what it does, in plain words rendered on the Mac from the line the brain answered, never by the brain: a sentence for the Mac, a few words for the board's lane (`Reason`, the `do`'s `reason`) | explanation, caption (that's a sign) |
-| CONTEXT | The prompt's section for how things stand, built each pass: you (at the Mac, untouched), the agents, the day so far (`ContextSection`); events stay in their lines | NOW (that's the event), status (that's the reply's) |
+| CONTEXT | The prompt's section for how things stand, built each pass: when it is (the calendar's occasions included), Talk, the buddy, you (at the Mac, untouched), the agents, the day so far (`ContextSection`); events stay in their lines | NOW (that's the event), status (that's the reply's) |
 | musing | A sign the buddy holds up at an idle check-in, a line of the pack's `signs.md` tagged `[idle]`, its blanks filled from the day so far (`Signs`); at most one every `Signs.musingEveryMs` | thought, quip |
 | lasting mood | One of the pack's moods with a meaning, which the buddy settles into and moves between by the mood graph (`CharacterPack.Mood.lasting`) | |
 | face | Any of the 42 moods' looks: a lasting mood's, or a face-only one's, which plays for a reaction and settles into a lasting mood (`settles`) | expression (for the whole) |

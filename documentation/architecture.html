@@ -150,20 +150,21 @@ td.where{font-size:13px;white-space:nowrap}
       <tr><td>PERSONALITY</td><td>The whole of who the buddy is, with its Examples</td><td><code>steering/personality.md</code></td></tr>
       <tr><td>MEMORY</td><td>The written memory: You, Your work, You and Boop, and a line a day</td><td><code>WrittenMemory</code></td></tr>
       <tr><td>MOOD</td><td>The lasting mood now: what it means and where it leaves for</td><td><code>steering/mood/</code></td></tr>
-      <tr><td>CONTEXT</td><td>How things stand: Boop, Talk when it isn't normal, the agents, the day so far</td><td><code>ContextSection</code></td></tr>
+      <tr><td>CONTEXT</td><td>How things stand: When (the time, the weekday, the part of the day and any occasion), Talk when it isn't normal or while silent, Boop, You, the agents, the day so far</td><td><code>ContextSection</code></td></tr>
       <tr><td>HISTORY</td><td>The recent lines, oldest first, and how long the mood has lasted</td><td>MellowHarness, <code>TranscriptView</code></td></tr>
-      <tr><td>NOW</td><td>The time, and the line for this event with what's under it</td><td>MellowHarness, <code>TranscriptView</code></td></tr>
+      <tr><td>NOW</td><td>The moment's time, and the line for this event with what's under it</td><td>MellowHarness, <code>TranscriptView</code></td></tr>
     </tbody>
   </table></div>
   <p>A real CONTEXT, HISTORY and NOW, from an eval:</p>
 <pre>CONTEXT (how things stand. Background, not news: react to NOW.)
+When: 14:00, Wednesday, day.
 Boop: a Hatchling.
 Agents: claude working on "landing" for 1 min.
 
 HISTORY (oldest first; indented lines add to the line above)
 just now: claude started turn 1 on "landing".
 
-NOW (14:00, Wednesday)
+NOW (14:00)
 You asked claude on "landing" for a fix, in a sentence, frustrated.
   Your words: "still broken", "keep happening".
 Boop did nothing on its own.</pre>

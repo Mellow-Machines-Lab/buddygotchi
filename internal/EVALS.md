@@ -194,7 +194,7 @@ at all when it didn't happen, a scenario starts in its `mood` and a
 step's `offered` is what its pass offered, and each whole-run check
 catches what it should, `moves_on_graph` an answer that wasn't offered.
 Every scenario passes with the expect brain and plays as a demo the pack
-can play, a scenario's `start` shows in the prompt's heading, and its
+can play, a scenario's `start` shows in CONTEXT's When row, and its
 `talk` shows that level's Talk row in CONTEXT (none for normal).
 
 ## 3. The scenario file
@@ -347,8 +347,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
   again gets a louder grumble (`16`); quiet fades an excited Boop a
   step at a time (`55`). And a Codex turn gets the same small
-  cheer as Claude's (`14`). On an occasion the
-  prompt's heading names, Boop plays along when you come back: on
+  cheer as Claude's (`14`). On an occasion CONTEXT's
+  When row names, Boop plays along when you come back: on
   Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello,
   and the screen has the day's tags; on April Fools' Day it may play a
   good finish as a failure, for the joke (`98`). Its opinions: a please

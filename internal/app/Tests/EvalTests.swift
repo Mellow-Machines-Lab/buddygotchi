@@ -439,7 +439,7 @@ final class EvalTests: XCTestCase {
     }
 
     /// EVALS.md §3: a scenario's `start` sets the virtual clock, in UTC,
-    /// which the prompt's heading shows; a step's `brain` answers for the
+    /// which CONTEXT's When row shows; a step's `brain` answers for the
     /// expect brain ahead of its `expect`.
     func testAScenarioStartsAtItsStartAndAStepMayAnswer() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("start-\(UUID().uuidString)")
@@ -466,7 +466,10 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(result.passed)
         XCTAssertEqual(result.checks.first?.react, "amused", "the step's own answer comes first")
         _ = try await Eval(brain: Seeing(states), steering: RuntimeTests.steering).run(scenario)
-        XCTAssertTrue(states.all.first?.contains("NOW (09:00, Saturday, Halloween)") == true, "the heading says the occasion: " + (states.all.first ?? ""))
+        XCTAssertTrue(states.all.first?.contains("\nWhen: 09:00, Saturday, morning; Halloween.\n") == true,
+                      "CONTEXT's When row says the occasion: " + (states.all.first ?? ""))
+        XCTAssertTrue(states.all.first?.contains("\nNOW (09:00)\n") == true,
+                      "and NOW's heading only the moment's time: " + (states.all.first ?? ""))
         try #"{"name":"n","case":"c","why":"w","start":"Halloween","steps":[{"event":"poke","at":"0s","expect":{"react":"none"}}]}"#
             .write(to: file, atomically: true, encoding: .utf8)
         try XCTAssertThrowsError(try Scenario(file: file)) { XCTAssertTrue("\($0)".contains("start is a UTC date and time")) }

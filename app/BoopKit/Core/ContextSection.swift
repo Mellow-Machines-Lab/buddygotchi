@@ -37,6 +37,14 @@ public enum ContextSection {
         return max(0, now - base)
     }
 
+    /// The When row, first: the time, the weekday, the part of the day, and
+    /// the calendar's occasions in words: "When: 09:02, Saturday, morning;
+    /// Halloween."
+    public static func when(at wall: Int64, occasions: [String], time: LocalTime) -> String {
+        "When: " + [time.clock(wall), time.weekday(wall), Occasions.dayPart(at: wall, time: time)].joined(separator: ", ")
+            + (occasions.isEmpty ? "" : "; " + occasions.joined(separator: ", ")) + "."
+    }
+
     /// The Talk row, when the setting isn't normal: what it asks, and why
     /// it outranks the personality; or, for `silentMs` more, silent (the
     /// hush), then back to the setting.
@@ -100,10 +108,10 @@ public enum ContextSection {
     }
 
     /// The section, or nil when no row has anything to say.
-    public static func section(talk t: Talk = .normal, silentMs: Int64? = nil, buddy b: Buddy? = nil,
+    public static func section(when: String? = nil, talk t: Talk = .normal, silentMs: Int64? = nil, buddy b: Buddy? = nil,
                                company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], at now: Int64,
                                name: String) -> String? {
-        let rows = [talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, at: now, name: name), agents(list, at: now),
+        let rows = [when, talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, at: now, name: name), agents(list, at: now),
                     today(company, name: name)].compactMap { $0 }
         return rows.isEmpty ? nil : ([heading] + rows).joined(separator: "\n")
     }

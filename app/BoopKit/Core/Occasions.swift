@@ -7,7 +7,7 @@ import Foundation
 /// message (`when`), and the board shows only the designs whose tags are
 /// all on (characters/CHARACTER.md §9). The board adds `busy` and
 /// `frantic` itself, from the `state` message's count of sessions working.
-/// The prompt's heading says the calendar's in words, so the brain can
+/// CONTEXT's When row says the calendar's in words, so the brain can
 /// play along. The board gets only the tags it reads (`board`), the
 /// firmware's list in the same order (firmware/src/render/tags.h).
 public enum Occasions {
@@ -71,6 +71,12 @@ public enum Occasions {
     /// from 11, evening from 17, night from 22 until 5.
     public static let dayParts: [(tag: String, from: Int)] = [("morning", 5), ("day", 11), ("evening", 17), ("night", 22)]
 
+    /// The part of the day at `ms`: `morning`, `day`, `evening` or `night`.
+    public static func dayPart(at ms: Int64, time: LocalTime) -> String {
+        let hour = time.components(ms).hour
+        return dayParts.last { hour >= $0.from }?.tag ?? "night"
+    }
+
     /// The fixed holidays, by month and day, each with its words and its
     /// sign.
     static let holidays: [(tag: String, month: Int, days: ClosedRange<Int>, words: String, sign: String)] = [
@@ -81,7 +87,7 @@ public enum Occasions {
     ]
 
     /// One occasion today: its calendar tag (nil for one of Boop's own
-    /// days, each a party), its words for the prompt's heading, and the
+    /// days, each a party), its words for CONTEXT's When row, and the
     /// sign Boop holds up for it, at most `Signs.maxLength` characters.
     public struct Occasion: Equatable, Sendable {
         public var tag: String? = nil
@@ -119,7 +125,7 @@ public enum Occasions {
     /// day with it, and only New Year's Day makes it a party.
     public static func tags(at ms: Int64, hatched: String?, party: Bool = false, time: LocalTime) -> [String] {
         let c = time.components(ms), today = time.day(ms)
-        var on = [dayParts.last { c.hour >= $0.from }?.tag ?? "night"]
+        var on = [dayPart(at: ms, time: time)]
         if c.weekday == 6 { on.append("friday") }
         if c.weekday == 7 || c.weekday == 1 { on.append("weekend") }
         on += calendar(c, at: ms, time: time).compactMap(\.tag)
@@ -153,7 +159,7 @@ public enum Occasions {
         return out
     }
 
-    /// The calendar's tags in words, for the prompt's heading: `Halloween`,
+    /// The calendar's tags in words, for CONTEXT's When row: `Halloween`,
     /// `Boop is 50 days old`, `Boop became a Sprout` on the day `stage`
     /// was reached. Empty on an ordinary day.
     public static func words(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,

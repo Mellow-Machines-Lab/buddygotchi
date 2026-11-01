@@ -332,7 +332,10 @@ What the brain reads, in plain Markdown:
   stand quotes the CONTEXT row it depends on, as the engine renders it,
   on a line above NOW (`- CONTEXT: You: at the Mac for 3 h; you haven't
   touched or talked to Boop in 2 h.`). CONTEXT is built each pass
-  (`ContextSection`): Talk (the setting, when it isn't normal, or
+  (`ContextSection`): When (the time, the weekday, the part of the day
+  and the calendar's occasions in words, which NOW's heading no longer
+  holds: it says only the moment's time), Talk (the
+  setting, when it isn't normal, or
   silent for a hush's minutes left), the buddy (its stage and age), You (at the Mac and
   untouched, each from an hour, never while away, and how long ago it
   was last lonely, for three hours after), Agents (each open session,

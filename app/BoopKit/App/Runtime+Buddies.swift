@@ -185,15 +185,19 @@ extension Runtime {
             // What it remembers, after who it is and before how it feels.
             h.section { _, v in mine(v) ? m.memory() : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
-            // How things stand: the talk setting, the buddy, you, the
-            // agents, the day so far. Last before HISTORY.
+            // How things stand: when it is, the talk setting, the buddy,
+            // you, the agents, the day so far. Last before HISTORY.
             h.section { [weak h] _, v in
                 guard mine(v), let h else { return nil }
                 let now = h.clock.now()
                 let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let buddy = ContextSection.Buddy(stage: stage,
                                                  daysOld: core.config.hatched.map { core.config.time.days(from: $0, to: core.wall(now)) })
-                return ContextSection.section(talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
+                let wall = core.wall(now), time = core.config.time
+                let when = ContextSection.when(at: wall, occasions: Occasions.words(at: wall, hatched: core.config.hatched, name: pack.name,
+                                                                                    stage: core.config.stageReached, time: time),
+                                               time: time)
+                return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),
                                               agents: core.status(at: now, results: [:]), at: now, name: pack.name)
             }
