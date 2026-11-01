@@ -336,6 +336,8 @@ thread, not that it's built.
 | C7 The poke hold | No |
 | C8 One pastime dealer | Yes, built together with C9 (the gel Router), since both are the same part of the engine |
 | C9 The gel Router as a plain struct | Yes |
+| C8's idle cleanup | Yes (below) |
+| The six evals failing on `main` | Yes, a separate cleanup (below) |
 | C10 Ordinary versus dramatic | Not now |
 | D, all renames | Yes |
 
@@ -381,6 +383,24 @@ lonely, the absence feature.
 - **Evals** that start in or require one of the 26 as a lasting mood
   (68 starts in frightened) are rewritten; permissive face lists stay.
 - **Gate:** one full Jev eval run, before and after.
+
+**C8's idle cleanup, decided.** While the pastimes become one table, the
+gel's idle behaviour loses its near-duplicates, with no new art:
+- **Naps:** keep snooze (idle, the last tier); drop nod-off (the same
+  moment) and doze-and-snap (a general gag that repeats it). Keep
+  night-drowse as the asleep look's night variant.
+- **Stretches:** keep stretch-break (long work) and morning-stretch
+  (tied to the morning); drop the rig's tier-4 stretch clip.
+- **Yawns:** keep yawn-and-settle, and long-yawn as tired's own.
+- **Dreams:** keep the asleep dream after 30 minutes; rename the idle
+  pastime "dream" to "daydream", so "dream" means the night's dream,
+  which the morning telling refers to.
+- **Fly:** remove it, as an earlier session decided (the docs already
+  say it's gone; the code still deals it).
+
+**The six evals failing on `main`** (01, 11, 14, 29, 98, 110, found
+by the dreaming build) are their own cleanup: each fixed in the
+steering or the eval, so a failure always means a regression.
 
 **A, in commits.** Each is small, invisible, and checked by `make -C
 internal check`:
