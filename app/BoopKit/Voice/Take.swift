@@ -14,7 +14,8 @@ public struct Take: Equatable, Sendable {
     /// Which of `say`'s answers a take says: how Boop feels, or what NOW
     /// is about; or a reply's own words, to what you said on push-to-talk,
     /// its meaning the reply's name.
-    /// Needs you's takes are in the pack, but Boop never says them.
+    /// Needs you's takes (`attention`) Boop never says: Boop's voice has
+    /// none now, and Pixel's older copy of it still lists them.
     public enum Part: String, CaseIterable, Sendable {
         case feeling, about, reply, attention
     }
