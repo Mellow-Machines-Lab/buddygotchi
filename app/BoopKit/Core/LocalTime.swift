@@ -102,6 +102,25 @@ public struct LocalTime: Sendable {
         return c.month == 1 && c.day == 1 && c.isLeapMonth != true
     }
 
+    /// The hour Boop's day starts: a day runs from 5:00 to 5:00, so work
+    /// until 1:00 is the same day, and the night after it is the one Boop
+    /// dreams through. Its own number, never the time of day's parts, so a
+    /// change to when "morning" starts never moves a day.
+    public static let boopDayStartHour = 5
+
+    /// Boop's day at `ms`, named for the date it starts on: `2026-10-26`
+    /// from 5:00 that day to 5:00 the next. By the calendar, so a day of
+    /// 23 or 25 hours is one day.
+    public func boopDay(_ ms: Int64) -> String {
+        let d = date(ms)
+        guard calendar.component(.hour, from: d) < Self.boopDayStartHour,
+              let before = calendar.date(byAdding: .day, value: -1, to: d) else { return day(ms) }
+        return day(Int64(before.timeIntervalSince1970 * 1000))
+    }
+
+    /// The weekday Boop's day `day` (`yyyy-MM-dd`) falls on: `Monday`.
+    public func weekday(of day: String) -> String { Self.weekday(of: day) ?? "" }
+
     /// `14:05`.
     public func clock(_ ms: Int64) -> String {
         let c = calendar.dateComponents([.hour, .minute], from: date(ms))

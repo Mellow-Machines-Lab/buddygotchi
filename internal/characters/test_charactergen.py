@@ -201,7 +201,7 @@ class StudioRuleTests(unittest.TestCase):
         # A pack with nothing of its own beside its moods: none of each part, and no voice.
         about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}
         self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"}, "uses": {},
-                                 "personalities": [], "talks": [], "guide": None, "steering": {}, "signs": [], "diary": [],
+                                 "personalities": [], "talks": [], "guide": None, "steering": {}, "signs": [], "dreams": [],
                                  "voice": None, "demos": [], "evals": [], "stills": []})
 
     def test_a_board_for_each_face(self):
@@ -378,7 +378,7 @@ class StudioRuleTests(unittest.TestCase):
 
 
 class CharacterViewTests(unittest.TestCase):
-    """What the studio shows of the character itself (§12): its steering in parts, its signs and diary, and its
+    """What the studio shows of the character itself (§12): its steering in parts, its signs and dream signs, and its
     voice, demos, evals and stills. Small packs as StudioRuleTests makes them."""
 
     setUp, pack = StudioRuleTests.setUp, StudioRuleTests.pack
@@ -424,7 +424,7 @@ Fades to annoyed once Boop has been grumpy for 2 min.
         self.assertEqual(gen.with_examples(text), {"text": "Boop is loyal.\n\nAt heart Boop is cheeky.",
                                                    "examples": ["NOW: You poked Boop.\n→ curious, once", "NOW: It failed.\n→ irritated, twice"]})
 
-    def test_signs_and_diary_lines(self):
+    def test_signs_and_dream_lines(self):
         """`- [tags] words`: each line's tags, none without brackets, and its words."""
         self.assertEqual(gen.tagged(self.file("<!-- Signs. -->\n- [fix night] bugs at night?\n- {words}\nnot a line\n")),
                          [{"tags": ["fix", "night"], "text": "bugs at night?"}, {"tags": [], "text": "{words}"}])

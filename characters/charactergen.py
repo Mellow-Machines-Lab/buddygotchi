@@ -1032,7 +1032,7 @@ def with_examples(text: str) -> dict:
 
 
 def tagged(path: Path) -> list[dict]:
-    """A list of `- [tags] words` lines (signs.md, diary.md): each line's tags and words."""
+    """A list of `- [tags] words` lines (signs.md, dreams.md): each line's tags and words."""
     found = steering(path)
     out = []
     for line in (found[1].splitlines() if found else []):
@@ -1142,7 +1142,7 @@ def stills(pack: Path, here) -> list[dict]:
 
 def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, dict] | None]:
     """What the studio shows of a pack's character: its personalities,
-    talk files, each mood's steering in parts, its signs and diary, its
+    talk files, each mood's steering in parts, its signs and dream signs, its
     voice's table (with the pack that has it, which may be another, §6),
     its demos, evals and stills. The voice comes back on its own, with the
     name of the pack whose it is, so the page holds a shared one once."""
@@ -1178,7 +1178,7 @@ def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, 
         "guide": guide[1] if guide else None,
         "steering": mood_files,
         "signs": tagged(folder / "signs.md"),
-        "diary": tagged(folder / "diary.md"),
+        "dreams": tagged(folder / "dreams.md"),
         "voice": voice[0] if voice else None,
         "demos": [demo_script(p) for p in sorted(pack.glob("demo/*.jsonl"))],
         "evals": [e for e in (eval_scenario(p) for p in sorted(pack.glob("evals/*.json"), key=eval_order)) if e],

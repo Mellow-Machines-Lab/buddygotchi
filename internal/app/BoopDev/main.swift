@@ -61,6 +61,14 @@ let usages: [(command: String, text: String)] = [
         to the repo's internal/app/Tests/Fixtures/readings.json. It prints each miss, or with
         --verbose every reading. Needs Apple Intelligence; exits 1 without it.
     """),
+    ("memory", """
+    boopdev memory write [--fixture FILE] [--only TEXT]
+        Runs the written memory's night with Apple Intelligence on this Mac, as the app does, over fixture nights
+        (each a memory, CERTAIN, yesterday's lines and what a person would accept), and prints each night's reply,
+        the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
+        defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
+        without it.
+    """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
         Boop's installer, against any HOME (tests use a temporary one). --hook defaults to the agent-hook
@@ -418,8 +426,50 @@ func readCheck(_ raw: [String]) async {
     guard short.isEmpty else { fail("boopdev read-check: " + short.joined(separator: "; ")) }
 }
 
+/// `boopdev memory write`: the night's write over fixture nights.
+func memory(_ raw: [String]) async {
+    guard raw.first == "write" else { fail("boopdev memory: the command is write\n\(usage)") }
+    let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])
+    guard let file = args["--fixture"].map({ URL(fileURLWithPath: $0) })
+            ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-nights.json"),
+          let data = try? Data(contentsOf: file),
+          let nights = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
+        fail("boopdev memory write: can't read the fixture; pass --fixture FILE")
+    }
+    guard let writer = AppleIntelligenceWriter.onThisMac, AppleIntelligenceLabeler.isAvailable else {
+        fail("boopdev memory write: Apple Intelligence isn't available on this Mac")
+    }
+    for night in nights {
+        let name = night["name"] as? String ?? "?"
+        if let only = args["--only"], !name.localizedCaseInsensitiveContains(only) { continue }
+        guard let day = night["day"] as? String, let certain = night["certain"] as? String,
+              let memory = WrittenMemory.from(notes: night["memory"] as? [String] ?? []) else {
+            fail("boopdev memory write: \(name) doesn't read")
+        }
+        let journal = (night["yesterday"] as? [String] ?? []).map { line in
+            (at: String(line.prefix(5)), line: String(line.dropFirst(6)))
+        }
+        let request = MemoryRequest.make(memory: memory, certain: certain, journal: journal)
+        let started = Date()
+        let reply = await writer.write(request)
+        let ms = Int(Date().timeIntervalSince(started) * 1000)
+        print("== \(name)  (\(ms) ms)")
+        print("   accept: \(night["accept"] as? String ?? "")")
+        guard case .reply(let text) = reply else { print("   no reply: \(reply)"); continue }
+        print("   reply:\n" + text.split(separator: "\n").map { "     " + $0 }.joined(separator: "\n"))
+        let (after, report) = MemoryEdits.apply(text, to: memory, numbered: request.numbered, day: day,
+                                                words: MemoryRequest.words(in: journal),
+                                                source: MemoryRequest.source(certain: certain, journal: journal))
+        print("   updated \(report.updated), added \(report.added), dropped \(report.dropped), kept \(report.kept), aged \(report.aged)")
+        for r in report.refused { print("   REFUSED \(r.why): \(r.line)") }
+        print("   after:\n" + after.markdown.split(separator: "\n").filter { $0.hasPrefix("- ") }.map { "     " + $0 }.joined(separator: "\n"))
+    }
+}
+
 let args = Array(CommandLine.arguments.dropFirst())
 switch args.first {
+case "memory":
+    await memory(Array(args.dropFirst()))
 case "eval":
     await eval(Array(args.dropFirst()))
 case "prompts":

@@ -37,10 +37,12 @@ extension Runtime {
         public var micTrouble: String?
         /// Boop's XP and stage.
         public var growth: Growth?
-        /// How many days since Boop hatched, and its diary's last week,
-        /// newest first.
+        /// How many days since Boop hatched, and its memory's recent days,
+        /// a line each, newest first (`memory.md`'s Recently).
         public var daysOld: Int?
-        public var diary: [DiaryLine] = []
+        public var recently: [DayLine] = []
+        /// The written memory's notes, for "What Boop remembers".
+        public var notes: [WrittenMemory.Note] = []
         /// How much it says, chosen in Settings, and whether the pack
         /// offers a choice: none when its steering has no talk file.
         public var talk = Talk.default
@@ -57,12 +59,12 @@ extension Runtime {
         public var dressing: [Dressing] = []
 
         /// A day's line, as the popover shows it.
-        public struct DiaryLine: Sendable, Equatable, Identifiable {
+        public struct DayLine: Sendable, Equatable, Identifiable {
             /// `2026-10-21`.
             public var day: String
             /// The day as a person says it: Yesterday, Tuesday, Oct 14.
             public var when: String
-            /// What Boop wrote, without the weekday its lines start with,
+            /// What happened, without the weekday a line may start with,
             /// which `when` says.
             public var line: String
             public var id: String { day }
@@ -136,7 +138,9 @@ extension Runtime {
                             micTrouble: core.talk.trouble, growth: growth.growth)
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
-        status.diary = diary(today: options.time.day(wall))
+        let written = memory.written(), today = options.time.boopDay(wall)
+        status.notes = written.notes
+        status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
         status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
         let config = core.config
         status.dressing = Dressing.now(when: status.snapshot.when,
@@ -159,17 +163,5 @@ extension Runtime {
         grew = false
         if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)
-    }
-
-    /// The diary's last week, newest first, as it reads on `today`: built
-    /// again only once the diary or the day changes.
-    func diary(today: String) -> [Status.DiaryLine] {
-        let week = memory.diary(last: 7)
-        if let shown = shownDiary, shown.today == today, shown.week.elementsEqual(week, by: { $0.day == $1.day && $0.line == $1.line }) {
-            return shown.lines
-        }
-        let lines = week.map { Status.DiaryLine(day: $0.day, line: $0.line, today: today) }
-        shownDiary = (week, today, lines)
-        return lines
     }
 }

@@ -1,6 +1,6 @@
 import Foundation
 
-/// One line of a pack's list of lines, such as `diary.md` or `signs.md`:
+/// One line of a pack's list of lines, such as `dreams.md` or `signs.md`:
 /// `- [failed long] Its words.`, the tags in brackets optional. It fits a
 /// moment that has every one of its tags.
 public struct TaggedLine: Equatable, Sendable {

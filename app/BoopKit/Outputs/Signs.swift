@@ -13,6 +13,18 @@ public enum Signs {
     /// (firmware `kSignGlyphs`).
     public static let maxOffered = 6, maxYourWords = 3, maxLength = 18
 
+    /// The signs a dream may hold up (`dreams.md`): the lines whose tags
+    /// the day's `tags` (and the calendar's) all have, those with tags
+    /// first, in the file's order, so the lines about the person come
+    /// first, each once, at most `maxOffered`.
+    public static func dreams(_ lines: [TaggedLine], tags: [String]) -> [String] {
+        let on = Set(tags)
+        let fit = lines.filter { $0.fits(on) && $0.text.count <= maxLength }
+        var seen: Set<String> = []
+        return (fit.filter { !$0.tags.isEmpty } + fit.filter { $0.tags.isEmpty }).map(\.text)
+            .filter { seen.insert($0).inserted }.prefix(maxOffered).map { $0 }
+    }
+
     /// The tags a reading has for the buddy called `name`: its kind, tone
     /// and length, `named` when you said its name, `words` when it kept a
     /// phrase of yours, and the calendar's (`Occasions`, `night`,

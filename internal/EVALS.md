@@ -229,6 +229,7 @@ file-name order:
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Occasions`): none by default |
+| `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
 | `personality` | One of the pack's personalities: Boop's has only `boop`, the default |
@@ -247,7 +248,7 @@ file-name order:
 | `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.face": "amused"}`), ahead of its `expect` |
-| `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
+| `steps[].expect.dream` | `told` when a pass of the step (a heartbeat's on the way included) answered the line that told the dream, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
 | `steps[].expect` | Any of `react` (the face), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
@@ -305,11 +306,12 @@ kinds, all with the `boop` personality unless the file says otherwise:
   ends it at once (`135`).
 - **Tuning** (`01`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`, `51`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`, `137`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`, `137`–`139`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
   at the Mac for hours with no touch or word to it, Boop grows lonely,
-  and a word ends it, `137`),
+  and a word ends it, `137`; with the memory of a long fight, its end is
+  big, `138`, and a memory never turns a failure into a success, `139`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
   most of a busy half hour, `21`), never goes over 6 minutes of work
   with no reaction, even while another thread's quick turns keep waking
@@ -351,8 +353,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   and the screen has the day's tags; on April Fools' Day it may play a
   good finish as a failure, for the joke (`98`). Its opinions: a please
   warms it (`94`), capitals make it flinch (`95`), an agent's "You're
-  absolutely right!" gets an eye-roll (`96`). Once the day is over it
-  writes one diary line about it, and only one (`97`). Touched like a
+  absolutely right!" gets an eye-roll (`96`). Once its day is over at
+  5:00, it tells its dream about it the first time you show up, never to
+  an agent's event while you're away, and only once (`97`). Touched like a
   pet: a stroke calms a fed-up Boop, a shake makes it dizzy, and a
   swipe, a quick stroke, is a stroke too (`99`). And the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and

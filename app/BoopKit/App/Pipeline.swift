@@ -33,6 +33,10 @@ public final class Pipeline {
     /// Every event as it's logged, and every view event as its input
     /// ends, for debug mode.
     public var onRecord: ((Event) -> Void)?
+    /// What runs at the start of every input, before it logs anything,
+    /// with its time: the memory closing a day that's over, so the event
+    /// after it is read on the new one (`Memory`).
+    public var beforeInput: [(Int64) -> Void] = []
     public var onView: ((ViewEvent) -> Void)?
 
     /// What one input did.
@@ -122,7 +126,10 @@ public final class Pipeline {
         inputTime.now = max(inputTime.now, now)
         let outer = step
         step = Step()
-        harness.batch { body() }
+        harness.batch {
+            for hook in beforeInput { hook(now) }
+            body()
+        }
         var made = step ?? Step()
         step = outer
         let log = transcript.view(now: now)

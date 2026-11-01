@@ -200,9 +200,9 @@
       {"id": "mood", "when": "Any pass of the brain",
        "decides": ["brain"], "plays": [],
        "does": "The brain may move the mood to a neighbour on the pack's map (Moods). Every look is drawn in it at once. A mood fades only as its steering says; no timer does it."},
-      {"id": "diary", "when": "The first pass of a new day",
-       "decides": ["brain"], "plays": [],
-       "does": "The brain picks yesterday's diary line. Nothing shows on the board; the popover keeps a week."}
+      {"id": "dream", "when": "Boop's day closes at 5:00, and you next show up",
+       "decides": ["rule", "brain"], "plays": [],
+       "does": "The day's tallies close into a dream, with no brain. The first line that's yours after it (you coming back, a poke, a word, a prompt) tells it: the brain picks a sign for the day's tags, and the lane shows a few words of it."}
     ]}
   ]
 }

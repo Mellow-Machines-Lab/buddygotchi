@@ -75,18 +75,17 @@ extension Runtime {
         public var speaks: () -> Bool
         /// How much it says, chosen in Settings.
         public var talk: () -> Talk
-        /// Writes a day's diary line, for the buddy that keeps one (the
-        /// first, the one long-term.md set up); nil for none.
-        public var diary: ((_ day: String, _ line: String) -> Void)?
         /// Carries out the core's effects an output's choice caused (a hush):
         /// the app's show on the board; nil logs their records only.
         public var effects: (([CoreEffect]) -> Void)?
+        /// MEMORY, the written memory as Jev reads it, or nil for none.
+        public var memory: () -> String?
 
         public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
-                    talk: @escaping () -> Talk = { .default }, diary: ((_ day: String, _ line: String) -> Void)? = nil,
-                    effects: (([CoreEffect]) -> Void)? = nil) {
-            self.diary = diary
+                    talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
+                    memory: @escaping () -> String? = { nil }) {
+            self.memory = memory
             self.effects = effects
             self.buddy = buddy
             self.steering = steering
@@ -152,12 +151,13 @@ extension Runtime {
                 // harness holds this output.
                 guard let h, let about else { return nil }
                 return Reason.of(about, line: h.line(about.seq))
+            }, dreams: m.steering.dreams, told: { [weak h] about in
+                // The dream the line tells, by its tags.
+                guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
+                return tags.compactMap(\.string)
             })
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
-            if let write = m.diary, !m.steering.diary.isEmpty {
-                h.output(DiaryOutput(templates: m.steering.diary, time: core.config.time, creature: m.buddy.name, voice: voice, write: write))
-            }
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
             if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
             // The only buddy goes by the name you gave it, which the pack's
@@ -168,6 +168,8 @@ extension Runtime {
                 mine(v) ? m.steering.guide + renamed + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil
             }
             h.section { _, v in mine(v) ? m.steering.personality(m.personality()).text : nil }
+            // What it remembers, after who it is and before how it feels.
+            h.section { _, v in mine(v) ? m.memory() : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
             // Last, so it outranks what PERSONALITY and MOOD say of words.
             h.section { _, v in mine(v) ? m.steering.talk(m.talk()) : nil }

@@ -6,7 +6,7 @@ what it says, and the tests that hold it to all that. Pick a pack, and its
 tabs show what's its own: its personality, its moods and what moves them,
 what sets each thing it does off and who decides it, what its brain reads
 and answers, every mood and state
-as the device plays them, its signs, diary and voice, its evals and
+as the device plays them, its signs, dream signs and voice, its evals and
 demos. The page belongs to the engine and names no character: the
 engine's lists (the states, the tags) only order what the pack fills in,
 so another pack fills the same page. Each pack that wants a preview
@@ -65,7 +65,7 @@ nothing for (Stills, for a pack with no golden frames):
   each board wears and what it borrows (§6). Then how much it has of
   each part, in rows by tab, each opening it, and **Worth a look**: what
   it's missing (moods a preview has no art for, moods with no steering
-  file or no voice takes, no signs or diary) or waiting
+  file or no voice takes, no signs or dream signs) or waiting
   on you (review).
 - **Personality**: each personality (`steering/personality/`), its
   settings in plain words (`working_heartbeat` 240-360 is "checks in on a
@@ -106,8 +106,9 @@ nothing for (Stills, for a pack with no golden frames):
   below). Switching keeps the mood and state, so the same moment can be
   compared on all of them.
 - **Words**: **Signs**, each caption drawn as a sign with your words
-  filled in (`{words}`, `{WORDS}`), filtered by a tag; **Diary**, each
-  line filled in for a sample day; and **Voice**, how many takes the
+  filled in (`{words}`, `{WORDS}`), filtered by a tag; **Dreams**, each
+  sign it may hold up as it tells its dream, with the tags the day must
+  have; and **Voice**, how many takes the
   voice has recorded in each mood, of each kind (a take that's also a
   reply's words counts once), a cell's takes (or those a
   search finds) each with its words, what it answers and the finish it
@@ -246,7 +247,7 @@ own.
 
 Nothing about a character is written here. `packs.js` comes from the
 packs' `character.json` files, their steering (the personalities,
-talk files, guide, each mood's file, signs and diary), the voice each has or
+talk files, guide, each mood's file, signs and dream signs), the voice each has or
 uses (its `mac/takes.tsv`, once for every pack that uses it), their
 demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's

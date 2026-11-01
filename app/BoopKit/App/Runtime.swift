@@ -116,9 +116,12 @@ public final class Runtime: @unchecked Sendable {
     public var latest: StateSnapshot? { rigs[0].latest }
     /// Boop's name, from `long-term.md`.
     public let name: String
-    /// Boop's memory: long-term.md, read at launch, and the diary, which
-    /// the brain's diary output writes a line to each day.
+    /// Boop's long-term memory: long-term.md, read at launch.
     public let memory: MemoryStore
+    /// The readers of the transcript (`Memory`): the day's tallies and
+    /// journal, and the dream they make. Nil when the key-value store fell
+    /// back to memory for this launch: then no reader runs.
+    public private(set) var remembers: Memory?
     public private(set) var settings: AppSettings
     /// The personality running now, touched only on `home`. Starts as the
     /// saved one, unless this run overrides it.
@@ -181,9 +184,6 @@ public final class Runtime: @unchecked Sendable {
     var grew = false
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
-    /// The diary's last week as the popover shows it, kept while neither
-    /// the diary nor the day changes.
-    var shownDiary: (week: [(day: String, line: String)], today: String, lines: [Status.DiaryLine])?
     /// This launch's debug lines outside debug mode, for `saveReport`: in
     /// debug mode the file has them.
     let recent: DebugLog.Recent
@@ -339,6 +339,7 @@ public final class Runtime: @unchecked Sendable {
         // `self` once it's whole.
         var personalityNow: () -> Personality = { .default }
         var talkNow: () -> Talk = { .default }
+        var memoryNow: () -> String? = { nil }
         var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
         var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
         let rigs = self.rigs
@@ -350,11 +351,8 @@ public final class Runtime: @unchecked Sendable {
             return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        talk: { talkNow() },
-                        diary: rig === rigs[0] ? { day, line in
-                            // The pass that wrote it changes the popover.
-                            do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
-                        } : nil, effects: { effected(rig, $0) })
+                        talk: { talkNow() }, effects: { effected(rig, $0) },
+                        memory: rig === rigs[0] ? { memoryNow() } : { nil })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -365,9 +363,11 @@ public final class Runtime: @unchecked Sendable {
         debugWriter = Runtime.debugLines(pipeline: pipeline, emit: { line in if holding { held.append(line) } else { emit(line) } })
         // Growth's store, or one in memory for this launch if the file won't open.
         let values: KeyValueStore
+        var fellBack = false
         do { values = try KeyValueStore(directory: options.stateDir) } catch {
-            log("growth: \(error); keeping XP in memory until the app quits")
+            log("growth: \(error); keeping XP in memory until the app quits, and remembering no day")
             values = try KeyValueStore(directory: nil)
+            fellBack = true
         }
         growth = GrowthStore(values, log: log)
         // The view and the cores pick up where the last launch left them.
@@ -382,12 +382,26 @@ public final class Runtime: @unchecked Sendable {
         if read > 0 { log("transcript: read back \(read) events") }
         presence = PresenceDetector(away: view.away(logNow))
         growth.follow(transcriptAt: transcript.lastSeq)
+        // Memory picks up where it stopped: the files' events it missed,
+        // read as the day they came, then a dream not yet told logged again
+        // if its event has left the log. Its days close from the next input.
+        if !fellBack {
+            let remembers = Memory(store: values, time: options.time, writer: AppleIntelligenceWriter.onThisMac, files: memory,
+                                   queue: home, note: log)
+            remembers.runner.follow(transcriptAt: transcript.lastSeq)
+            let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
+            remembers.catchUp(Transcript.events(in: folder, after: remembers.runner.seq, from: remembers.runner.day ?? ""))
+            remembers.relog(unlessIn: logNow)
+            home.sync { remembers.attach(to: pipeline) }
+            self.remembers = remembers
+        }
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         personalityNow = { [weak self] in self?.personality ?? .default }
         talkNow = { [weak self] in self?.talk ?? .default }
+        memoryNow = { [weak self] in self?.memorySection() }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
         effected = { [weak self] rig, fx in self?.run(fx, on: rig) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
@@ -438,9 +452,9 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
-                               diary: @escaping (String, String) -> Void = { _, _ in }) -> (harness: Harness, mood: Choice) {
+                               memory: @escaping () -> String? = { nil }) -> (harness: Harness, mood: Choice) {
         let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, talk: talk, diary: diary)
+                        queue: queue, speaks: speaks, talk: talk, memory: memory)
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -564,6 +578,12 @@ public final class Runtime: @unchecked Sendable {
                                  now: now) { _ in }
             if let id, let thread = who.opens { rig.reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
         }
+    }
+
+    /// MEMORY for Jev: the written memory, its Recently named from today's
+    /// Boop day; nil with none.
+    func memorySection() -> String? {
+        memory.written().section(today: options.time.boopDay(options.wallClock()))
     }
 
     /// Lets go of the remembered board: Boop takes any over Bluetooth

@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-26. How we check that Boop works, including what's on its
+Updated 2026-10-31. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -104,7 +104,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   `internal/app/Tests/Fixtures/readings.json`, on a Mac that has
   it: their kind, tone and phrases scored against floors, prompts and messages apart, planted
   secrets that must never come back, and how long a typical reading
-  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`), `prompts` (every eval scenario
+  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`), `memory write` (the written
+  memory's night with Apple Intelligence over the fixture nights in
+  `internal/app/Tests/Fixtures/memory-nights.json`, each reply, the edits applied, the refusals
+  and the memory after it, for a person to judge the prompt by; its checks pinned by
+  `WrittenMemoryTests`), `prompts` (every eval scenario
   run with the expect brain, no key, and each pass's prompt, questions and answers written to
   `characters/studio/prompts.js` for the Character Studio's Brain view; `make dev` writes it) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
@@ -636,6 +640,8 @@ retried once and counted as a link glitch.
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.
+   After a change to the written memory's prompt or checks (`MemoryRequest`, `MemoryEdits`),
+   `boopdev memory write`, read night by night against each fixture's `accept`.
    After a change to how prompts or last messages are read (the scrubber, the cues or the
    labeler's instructions), `boopdev read-check`, which fails under its
    floors, and the scenarios with prompts or messages again with `--labeler apple`,

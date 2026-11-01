@@ -52,9 +52,10 @@ extension Steering {
         return Personality.Rules(frontMatter: own + "\n" + (frontMatter["talk/\(talk.rawValue)"] ?? ""))
     }
 
-    /// The diary's lines (`diary.md`, optional): none for a pack with no
-    /// file, which keeps no diary.
-    public var diary: [TaggedLine] { files["diary"].map(TaggedLine.parse) ?? [] }
+    /// The signs a dream may hold up (`dreams.md`, optional), each with the
+    /// tags the day must have: none for a pack with no file, whose dreams
+    /// are told with no sign.
+    public var dreams: [TaggedLine] { files["dreams"].map(TaggedLine.parse) ?? [] }
 
     /// What a reply to what you said may hold up (`replies.md`,
     /// optional): none for a pack with no file, whose replies hold up
@@ -77,6 +78,8 @@ extension Steering {
         public static let personality = 2650
         public static let talk = 250
         public static let mood = 225
+        /// MEMORY, the written memory as Jev reads it on every pass.
+        public static let memory = 300
         /// `replies.md`, whose lines are offered as the sign for what you said.
         public static let replies = 325
     }

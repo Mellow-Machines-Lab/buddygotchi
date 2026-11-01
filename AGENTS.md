@@ -261,6 +261,7 @@ keep their names.
 | reaction | What plays on the device: the brain's, a rule's, or the board's own (a tap) | one-shot, moment, request |
 | reply | What Boop answers to what you said on push-to-talk (`ReactOutput.replies`, `react.move`'s answer to it, the `do`'s `reply`): yes, hello, status…, with its clip and sign; the reaction that ends `listening` | answer (that's a topic), response |
 | sign | A short caption the buddy holds up while a reaction plays, often your own words (`Signs`, a pack's `signs.md`, the `do`'s `sign`) | banner, label |
+| the written memory | `memory.md`: short notes about you, your work and you and the buddy, and a line a day, which Apple Intelligence edits each night and Jev reads as MEMORY (`WrittenMemory`, `MemoryEdits`, `MemoryRequest`) | diary, memory file |
 | reason | Why the buddy does what it does, in plain words rendered on the Mac from the line the brain answered, never by the brain: a sentence for the Mac, a few words for the board's lane (`Reason`, the `do`'s `reason`) | explanation, caption (that's a sign) |
 | reading | What Boop takes from your prompt, or an agent's last message, in its place: its kind, tone, length, which buddies' names you said, and a few of its words (`PromptReading`, `MessageReading`) | summary, label (for the whole) |
 | the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
@@ -278,7 +279,7 @@ keep their names.
 | the agents' drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to tap open on the Mac (`render::Drawer`, `state`'s `list`, `ev drawer`) | roll call, list view |
 | the needs-you screen | What the board shows while an agent needs you: who's asking, in amber, until you answer or hold a finger on it | sign (that's a reaction's caption) |
 | buddy | One board running one character pack, with its own name, place, mood, face and agents (`Buddy`); several share one transcript and brain, each a voice of MellowHarness's | body, creature (for one of several) |
-| diary | Boop's line a day about the day before (`DiaryOutput`, the memory store's `diary.md`) | journal, log |
+| dream | Boop's day as it closes at 5:00, in tags and a sentence, told the first time you show up after it (`MemoryReader`, `Dream`, a pack's `dreams.md`); it replaced the diary | diary, journal (the journal is the day's notable lines) |
 | gesture | What you do to the board that it reacts to itself (BOOT's hand-off, a stroke, a shake, face down…), the `gesture` state's variations and the `gesture` event | touch, motion (for one) |
 | tag | One thing true now that a design may need (`state.when`: the part of the day, a holiday, a milestone day; and the board's own `busy`, `frantic`); a design that needs tags is an occasion | flag, label |
 | tier | How long the agents have worked (their working stretch) or rested: `tier1` from 30 s to `tier5` from 10 minutes, a tag (`Occasions.tiers`) | stage (that's growth's) |

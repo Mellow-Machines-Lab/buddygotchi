@@ -60,6 +60,11 @@ public final class ReactOutput: Output {
     /// (`Reason`), or nil: its fact goes to the board's lane, and its
     /// sentence to the transcript.
     let reason: (Event?) -> Reason?
+    /// The pack's dream signs (`dreams.md`), and the tags of the dream an
+    /// event's line tells, or nil when it tells none: the telling holds up
+    /// one of the signs those tags fit.
+    let dreams: [TaggedLine]
+    let told: (Event) -> [String]?
     /// What a reply holds up (`replies.md`), and for a `status` one about
     /// what you said, the agents' facts that answer it and where the board
     /// shows the rest (`StatusReply`), or nil for none.
@@ -97,7 +102,8 @@ public final class ReactOutput: Output {
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
-                talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Reason? = { _ in nil }) {
+                talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Reason? = { _ in nil },
+                dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }) {
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: 0x7A4E ^ seed)
         self.pack = pack
@@ -119,6 +125,8 @@ public final class ReactOutput: Output {
         self.hush = hush
         self.talk = talk
         self.reason = reason
+        self.dreams = dreams
+        self.told = told
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
@@ -398,6 +406,13 @@ public final class ReactOutput: Output {
         let asked = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
         let captions = offered(now, log)
         guard !captions.isEmpty else { return asked }
+        if let about, told(about) != nil {
+            return asked + [Question(key: Signs.questionKey,
+                                     text: "\(pack.name) tells its dream about yesterday, under NOW's line. Which sign does it hold up? The one that fits the day it dreamed of best, the person's part of it first.",
+                                     about: "the dream NOW tells", judgeBy: "the dream, then PERSONALITY and MOOD",
+                                     options: [Option("none", "No sign: none of these fits the day it dreamed of.")]
+                                         + captions.map { Option($0, "A sign for the dream.") })]
+        }
         return asked + [Question(key: Signs.questionKey,
                                  text: "If \(pack.name) reacts, does it hold up a sign about your prompt, as PERSONALITY says? Your own words played back in \(pack.name)'s way are the best of these, when they fit the face.",
                                  about: "the NOW section and the words under it", judgeBy: "PERSONALITY and MOOD, how the person sounds, and TALK if there is one",
@@ -409,8 +424,10 @@ public final class ReactOutput: Output {
     /// with no event (a pass forced from outside, such as a demo's), for
     /// a prompt's reading only when it's the latest thing that happened.
     func offered(_ now: Event?, _ log: LogView) -> [String] {
-        guard let about = Self.about(now, log), about.type == .prompt,
-              let reading = PromptReading(facts: about.data) else { return [] }
+        guard let about = Self.about(now, log) else { return [] }
+        // The line that tells the dream: a sign the dream's tags fit.
+        if let tags = told(about) { return Signs.dreams(dreams, tags: tags + calendar(about)) }
+        guard about.type == .prompt, let reading = PromptReading(facts: about.data) else { return [] }
         return Signs.offered(signs, reading: reading, name: pack.name, calendar: calendar(about))
     }
 

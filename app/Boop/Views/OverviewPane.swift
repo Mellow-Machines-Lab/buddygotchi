@@ -67,8 +67,11 @@ struct OverviewPane: View {
                         if let growth = status.growth {
                             PaneSection("Growth") { growthCard(growth, daysOld: status.daysOld) }
                         }
-                        if !status.diary.isEmpty {
-                            PaneSection("Diary") { diaryCard(status.diary) }
+                        if !status.notes.isEmpty {
+                            PaneSection("What \(model.name) remembers") { notesCard(status.notes) }
+                        }
+                        if !status.recently.isEmpty {
+                            PaneSection("Recently") { recentlyCard(status.recently) }
                         }
                     }
                 }
@@ -371,10 +374,45 @@ struct OverviewPane: View {
         }
     }
 
-    // MARK: Diary
+    // MARK: Memory
 
-    /// The diary's last week: a line a day, newest first.
-    private func diaryCard(_ lines: [Runtime.Status.DiaryLine]) -> some View {
+    /// The written memory's notes, a section each, each with a pin, which
+    /// keeps it from aging and from the night's edits, and a cross, which
+    /// forgets it for good.
+    private func notesCard(_ notes: [WrittenMemory.Note]) -> some View {
+        Card {
+            VStack(alignment: .leading, spacing: Theme.gapSnug) {
+                ForEach(WrittenMemory.Section.allCases, id: \.self) { section in
+                    let these = notes.filter { $0.section == section }
+                    if !these.isEmpty {
+                        Text(section.heading.replacingOccurrences(of: "Boop", with: model.name))
+                            .font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
+                        ForEach(these, id: \.id) { note in
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(note.text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                                Button { model.runtime?.pinNote(note.id, !note.pinned) } label: {
+                                    Image(systemName: note.pinned ? "pin.fill" : "pin").font(.system(size: 10))
+                                }
+                                .buttonStyle(.quiet)
+                                .help(note.pinned ? "Let it age as the others do" : "Keep it for good, as it is")
+                                Button { model.runtime?.forgetNote(note.id) } label: {
+                                    Image(systemName: "xmark").font(.system(size: 10))
+                                }
+                                .buttonStyle(.quiet)
+                                .help("Forget it")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Recently
+
+    /// The memory's recent days: a line a day, newest first.
+    private func recentlyCard(_ lines: [Runtime.Status.DayLine]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(lines) { entry in

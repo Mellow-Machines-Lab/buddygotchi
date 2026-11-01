@@ -44,6 +44,7 @@ struct SettingsPane: View {
                         PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
                     }
                     PaneSection("Brain") { Card(padding: 0) { key } }
+                    PaneSection("Memory") { Card(padding: 0) { memorySetting } }
                     PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -60,6 +61,16 @@ struct SettingsPane: View {
     }
 
     // MARK: Sound
+
+    /// What Boop remembers about you, where it's kept, what leaves the Mac,
+    /// and forgetting it.
+    private var memorySetting: some View {
+        SettingRow(icon: "brain", title: "What \(model.name) remembers",
+                   detail: "Written each night on this Mac. Its notes go to the brain with each request.") {
+            Button("Forget about me") { model.runtime?.forgetAboutYou() }.buttonStyle(.row).fixedSize()
+                .help("Forget the notes about you and your work, and your recent days")
+        }
+    }
 
     private var sound: some View {
         let s = model.status?.snapshot

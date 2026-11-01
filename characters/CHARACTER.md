@@ -174,7 +174,7 @@ reader, or over USB with `internal/tools/boopctl card`, which is slow.
     personality/<name>.md
     talk/quiet.md, normal.md, chatty.md
     mood/<mood>.md
-    diary.md, signs.md, replies.md   optional: the diary's lines and the signs
+    dreams.md, signs.md, replies.md   optional: the dream's signs and the signs
   mac/               what the app reads at run time (§9)
     faces.json       the popover's face designs
     mirror/          optional: the board's firmware in a web page, the
@@ -387,15 +387,17 @@ What the brain reads, in plain Markdown:
 - `mood/<mood>.md` (one per mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
-- `diary.md` (optional): the lines the creature may write in its diary,
-  one a day about yesterday, on the first pass of a new day
-  (`DiaryOutput`). Each is `- [tags] words`: the tags (optional) a day
-  must all have (`failed`, `clean`, `long`, `quiet`, `poked` and the
-  calendar's), and the words may fill in `{weekday}`, `{turns}`,
-  `{failed}`, `{longest}` (minutes), `{thread}` and `{pokes}`. The brain
-  picks one of those that fit, at most eight; the memory store keeps it
-  in `diary.md` in the state directory, and the popover shows the last
-  week. A pack without the file keeps no diary.
+- `dreams.md` (optional): the signs the creature may hold up as it
+  tells its dream about yesterday. Its day closes at 5:00 into a dream,
+  the day in tags and a sentence (`MemoryReader`), and the first line
+  that's the person's after it (coming back, a poke, a word, a prompt)
+  tells it. Each line is `- [tags] words`: the tags (optional) the day
+  must all have, the person's (`fond`, `distant`, `here`, `late`,
+  `answered`) and the agents' (`failed`, `clean`, `long`, `quiet`,
+  `poked`), and the calendar's. The lines with tags come first, in the
+  file's order, so the lines about the person are offered first; the
+  brain picks one (`react.sign`), at most six offered, each at most 18
+  characters. A pack without the file tells its dreams with no sign.
 - `signs.md` (optional): the captions the creature may hold up on a
   sign when it reacts to your prompt (`Signs`, the `react.sign`
   question, asked only when NOW is a prompt's reading, not a message's). Each is
@@ -935,7 +937,7 @@ adds its families, its icon, and the slime's review sets and sound
 sketches in its drawer), Pixel's `pixel`, which comes with the pixel face,
 and its pixel board. Beside the previews, the studio shows each pack's own character with no
 entry at all: its personalities, talk and guide (§7), each mood's
-steering in parts and the moods it moves to (§5), its signs and diary,
+steering in parts and the moods it moves to (§5), its signs and dream signs,
 its voice's takes (§8, its own or the one it uses), its demos (§13), its
 evals and its golden frames (`tests/golden-*/`).
 `charactergen.py` writes the page's data

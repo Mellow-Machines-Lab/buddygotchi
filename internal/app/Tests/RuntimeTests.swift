@@ -253,21 +253,30 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6))
     }
 
-    /// The popover's status carries the diary's days, named on the wall
-    /// clock's day.
-    func testTheStatusCarriesTheDiarysDays() throws {
-        var options = try options(FakeTransport())
-        options.time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
-        options.wallClock = { 1_792_670_400_000 }  // 2026-10-22, noon UTC
-        try MemoryStore(directory: dir).appendDiary(day: "2026-10-21", line: "Wednesday. Fine.")
-        let runtime = try Runtime(options)
+    /// From the popover: a note forgotten is gone for good, a pinned one
+    /// stays pinned, and forgetting what Boop learned about you empties
+    /// You, Your work and Recently, while You and Boop stays. The status
+    /// carries the notes and Recently for the popover.
+    func testThePersonControlsTheWrittenMemory() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        let files = try MemoryStore(directory: dir)
+        try files.keep(WrittenMemory.parse(WrittenMemoryTests.file), day: "2026-10-31")
         var statuses: [Runtime.Status] = []  // on `home`
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        eventually("a status") { runtime.home.sync { !statuses.isEmpty } }
-        let status = runtime.home.sync { statuses.last }
-        XCTAssertEqual(status?.diary.map { "\($0.when): \($0.line)" }, ["Yesterday: Fine."])
+        runtime.forgetNote(12)
+        runtime.pinNote(3, true)
+        eventually("the note forgotten, the other pinned") {
+            let m = files.written()
+            return !m.notes.contains { $0.id == 12 } && m.notes.first { $0.id == 3 }?.pinned == true
+        }
+        runtime.forgetAboutYou()
+        eventually("only You and Boop left") {
+            let m = files.written()
+            return m.notes.allSatisfy { $0.section == .boop } && m.notes.count == 2 && m.recently.isEmpty
+        }
+        eventually("the status carries the notes") { runtime.home.sync { statuses.last?.notes.count == 2 } }
     }
 
     /// Why the link can't look for the device
@@ -1386,16 +1395,16 @@ final class RuntimeTests: XCTestCase {
     }
 
     /// characters/boop/steering/ has the guide, a file per mood, the personality, a talk file
-    /// for each level, the diary's lines, the signs' captions and the replies' signs. The static parts stay within their budgets, and the
+    /// for each level, the dream's signs, the signs' captions and the replies' signs. The static parts stay within their budgets, and the
     /// personality's settings, with each talk's laid over them, are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
-        XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
+        XCTAssertEqual(files, (["dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
                                + ["personality/boop.md", "replies.md", "signs.md",
                                   "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
-        XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")
+        XCTAssertGreaterThanOrEqual(Self.steering.dreams.count, 10, "a sign for every kind of day")
         let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
         XCTAssertEqual(Self.steering.personality(.default).rules, boop)
         XCTAssertEqual(Self.steering.rules(.default, talk: .normal), boop, "normal keeps the personality's pace")

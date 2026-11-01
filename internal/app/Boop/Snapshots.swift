@@ -519,13 +519,17 @@ enum Snapshots {
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
                               personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
-        // Its age and the diary's last days, read the day after.
+        // Its age and its memory's recent days, read the day after.
         status.talk = talk
         status.talks = true
         status.daysOld = 47
-        status.diary = [.init(day: "2026-10-21", line: "Wednesday. \"api\" fell over 2 times, once after 41 minutes. I stayed brave.",
-                              today: "2026-10-22"),
-                        .init(day: "2026-10-20", line: "Tuesday. 9 turns, not one broken. Smug all day, and fairly.", today: "2026-10-22")]
+        status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked Boop 4 times.",
+                                 today: "2026-10-22"),
+                           .init(day: "2026-10-20", line: "Three turns broke on \"api\". You said \"still broken\".", today: "2026-10-22")]
+        status.notes = [.init(id: 3, section: .you, days: ["2026-10-20"], text: "You work late most nights, and you say please to claude."),
+                        .init(id: 12, section: .work, days: ["2026-10-21"], text: "\"api\": you and claude fixed the failing tests on Tuesday."),
+                        .init(id: 9, section: .boop, days: ["2026-10-14", "2026-10-21"], pinned: true,
+                              text: "You stroke Boop when you sit down in the morning.")]
         return status
     }
 

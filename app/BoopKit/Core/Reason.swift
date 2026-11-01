@@ -53,6 +53,8 @@ public struct Reason: Equatable, Sendable {
     /// the board nothing.
     public static func of(_ e: Event, line: Line?) -> Reason? {
         let facts = line?.facts ?? [:]
+        // The line that tells the dream: the dream is the reason.
+        if let told = facts["dream_told"]?.string { return Reason(cause: told, fact: facts["dream_fact"]?.string) }
         switch e.type {
         case .presence? where e.phase == .end:
             guard case .int(let ms)? = facts["away_ms"] else { return line.map { Reason(cause: $0.text) } }

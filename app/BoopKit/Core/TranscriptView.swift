@@ -141,6 +141,9 @@ public final class TranscriptView {
         /// the Mac (`Yours.touched`): how long it's gone untouched counts
         /// from here.
         var touchedAt: Int64?
+        /// The newest dream not yet told (a `dream` event): the first line
+        /// that's yours while you're at the Mac tells it.
+        var untold: Event?
         /// The buddies lying face down (`""` for the only one), from their
         /// `facedown` until their `peekaboo`.
         var faceDown: Set<String> = []
@@ -375,10 +378,39 @@ public final class TranscriptView {
         return line
     }
 
+    /// Folds one event and returns its line, if it has one, with the
+    /// dream under it when it's the one that tells it (`told`).
+    func take(_ e: Event) -> Line? {
+        if e.type == .dream {
+            fold.at = max(fold.at, e.seq)
+            fold.untold = e
+            return nil
+        }
+        return told(foldLine(e), e)
+    }
+
+    /// Tells the dream not yet told under the first line that's yours while
+    /// you're at the Mac: your coming back, a poke, a stroke, a word or a
+    /// prompt. Never an agent's event or a heartbeat, so it never plays to
+    /// an empty room. Its facts say which dream, for the memory to mark it
+    /// told, the reason and the dream's signs.
+    func told(_ line: Line?, _ e: Event) -> Line? {
+        guard var line, let dream = fold.untold, Yours.did(e), fold.awaySince == nil,
+              let weekday = dream["weekday"]?.string, let sentence = dream["sentence"]?.string else { return line }
+        fold.untold = nil
+        let told = EventLine.dreamed(weekday: weekday, sentence: sentence, name: name(e))
+        line.notes.append(told)
+        line.facts["dream_day"] = dream["day"] ?? .null
+        line.facts["dream_tags"] = dream["tags"] ?? .array([])
+        line.facts["dream_told"] = .string(told)
+        line.facts["dream_fact"] = dream["fact"] ?? .null
+        return line
+    }
+
     /// Folds one event and returns its line, if it has one. The sessions'
     /// timers run to every event's time first, as the core's replay runs
     /// them.
-    func take(_ e: Event) -> Line? {
+    func foldLine(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
         if e.kind == Event.did, e.action == WorkStream.action {
             // A word of the work stream that came forward: no line, and
@@ -429,7 +461,7 @@ public final class TranscriptView {
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name(e), why: e.specificType))
-        case .listen?, nil: return nil
+        case .listen?, .dream?, .memory?, nil: return nil
         }
     }
 

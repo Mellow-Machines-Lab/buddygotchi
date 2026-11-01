@@ -191,6 +191,12 @@ public enum EventLine {
         }
     }
 
+    /// Under the line that tells the dream: `Boop dreamed about Monday:
+    /// you stroked it 4 times; 7 turns on "api", 3 failed.`
+    public static func dreamed(weekday: String, sentence: String, name: String = CharacterPack.active.name) -> String {
+        "\(name) dreamed about \(weekday): \(sentence)."
+    }
+
     /// Under a check-in or a quiet hour, when you're at the Mac but haven't
     /// touched or talked to the buddy for a while: `You haven't touched or
     /// talked to Boop in 3 h.`
@@ -308,6 +314,8 @@ public enum EventLine {
           more, and days 40 or more. "You haven't touched or talked to
           \(name)" counts from the person's last poke, stroke or word to it,
           or their coming back.
+        - "\(name) dreamed about Monday" is the day before, as \(name) kept it
+          overnight, told the first time the person shows up after it.
         """
     }
 
