@@ -795,10 +795,9 @@ something:
 ## Open calls for the owner
 
 1. **Raise the personality budget to 2,850 and the mood budget to 250,**
-   gated by one full Jev eval run. Recommended over trimming `boop.md`,
-   whose Examples the evals are tuned on.
-2. **The agents' work keeps earning XP** beside care (§5). Recommended:
-   care is worth more per event, and capped a day.
+   gated by one full Jev eval run. Decided yes, 2026-11-01.
+2. **The agents' work and care each earn up to 60 XP a day** (§5).
+   Decided 2026-11-01.
 
 ## What it adds up to
 
@@ -855,6 +854,14 @@ farms nothing. The existing stage tags (`sprout`, `buddy`, `pal`…)
 already gate pack lines and board designs, so a trick taught by care is
 a pack line (`[dance pal]` in `replies.md`) or a rig clip, not code.
 Existing Boops keep their XP. CONTEXT's Boop row tells Jev the stage.
+
+**The agents' work is capped too** (decided with the owner on
+2026-11-01): it keeps earning XP as today (a tool call 1, a helper 2, a
+turn done 5) but at most 60 a day, the same as care. So care is half of
+all growth, and daily care doubles Boop's pace; a busy day ignoring Boop
+still grows it a little, and no marathon day jumps two stages. Existing
+Boops keep their XP and grow more slowly from now on. `GrowthTests` pin
+both caps, counted per Boop day.
 
 **Pins.** `GrowthTests`: each care event's XP and the daily cap.
 `MemoryWriterTests`: the request asks for the care note. The writer's
