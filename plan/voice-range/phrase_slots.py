@@ -2,7 +2,7 @@
 the voice moods that have none, up to two a mood, and prints the coverage
 before and after. Writes phrase-slots.json. Run from the repo root:
 
-    python3 plan/evidence/2026-10-25-voice-range/phrase_slots.py plan/evidence/2026-10-25-voice-range/phrase-slots.json
+    python3 plan/voice-range/phrase_slots.py plan/voice-range/phrase-slots.json
 """
 import json, collections, sys
 sys.path.insert(0, 'characters/boop/tools/voicegen')

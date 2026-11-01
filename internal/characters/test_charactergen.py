@@ -285,13 +285,6 @@ class StudioRuleTests(unittest.TestCase):
         none = self.pack("none", [{"id": "calm", "meaning": "Settled."}], faces={})
         self.assertEqual(gen.pack_problems(none, gen.load(none)), ["faces names no board's face"])
 
-    def test_a_pack_names_no_file_of_anothers(self):
-        """CHARACTER.md §6: each pack stands alone; `uses` or `shares` stops it."""
-        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], uses={"voice": "lender"}, shares={"face": {"files": []}})
-        self.assertEqual(gen.pack_problems(pack, gen.load(pack)),
-                         ["uses isn't read: a pack stands alone, and copies what it takes from another",
-                          "shares isn't read: a pack stands alone, and copies what it takes from another"])
-
     def test_the_pack_in_use(self):
         """CHARACTER.md §2: the environment's pack, else the one last staged, else the chosen one."""
         import os

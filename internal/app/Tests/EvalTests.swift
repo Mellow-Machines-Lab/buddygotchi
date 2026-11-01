@@ -353,6 +353,33 @@ final class EvalTests: XCTestCase {
         }
     }
 
+    /// EVALS.md §1: a leading `!` takes values away from everything a
+    /// key may be: `!none` is every face, `!lonely` every lasting mood but
+    /// lonely, `!swear` every say but a swear; on another key, or taking
+    /// away a value the key hasn't, the scenario doesn't load.
+    func testAnExpectationCanBeAnythingBut() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("but-\(UUID().uuidString).json")
+        try Data(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"react":"!none","mood":"!lonely","say":"!swear"}}]}"#.utf8)
+            .write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let expect = try XCTUnwrap(try Scenario(file: file).steps.first?.expect)
+        XCTAssertEqual(expect.react, Set(CharacterPack.active.moods.map(\.id)))
+        XCTAssertEqual(expect.mood, Set(MoodGraph.moods).subtracting(["lonely"]))
+        XCTAssertEqual(expect.say, Set(ReactOutput.says.map(\.name) + ["none"]).subtracting(["swear"]))
+        for (json, why) in [(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"move":"!none"}}]}"#, "expect.move can't take !"),
+                            (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"mood":"!sulky"}}]}"#, "expect.mood takes away sulky")] {
+            let bad = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")
+            try Data(json.utf8).write(to: bad)
+            defer { try? FileManager.default.removeItem(at: bad) }
+            do {
+                _ = try Scenario(file: bad)
+                XCTFail("loaded: \(json)")
+            } catch {
+                XCTAssertTrue("\(error)".contains(why), "\(error)")
+            }
+        }
+    }
+
     /// EVALS.md §3: `moves_on_graph` fails a run whose mood answer wasn't
     /// one it was offered, and passes one that only stays or moves along
     /// the graph; the mood output takes nothing else, so the mood itself

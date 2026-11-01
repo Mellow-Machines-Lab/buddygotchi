@@ -9,8 +9,7 @@
     characters/charactergen.py --sim-face [PACK]
 
 --check checks that a pack builds: its character.json has the moods and
-the startup mood moods.h needs, names no file of another pack's (§6),
-and has an id and version that fit the board's hello (§10); and its rig/
+the startup mood moods.h needs, and an id and version that fit the board's hello (§10); and its rig/
 (§15) has no unknown key, channel or name, and every value in its range.
 Without PACK, every pack in characters/. Whether a pack plays, its moods
 and their graph included, is `boopdev check`'s, as the app loads it.
@@ -599,13 +598,6 @@ def load(pack: Path) -> dict:
     return json.loads((pack / "character.json").read_text())
 
 
-def borrowed(character: dict) -> list[str]:
-    """A pack that names files of another's (`uses`, `shares`): each pack
-    stands alone and copies what it shares (§6)."""
-    return [f"{key} isn't read: a pack stands alone, and copies what it takes from another" for key in ("uses", "shares")
-            if key in character]
-
-
 def files_in(folder: Path) -> dict[str, Path]:
     """Every file in a folder or a file itself, by its path in it."""
     if folder.is_file():
@@ -1187,11 +1179,11 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
 
 def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> list[str]:
     """What stops a pack from building: moods.h's moods and default mood,
-    files it names of another pack's (§6), an id or version too long for
-    the board's hello (§10), and its rig (§15). Whether it plays, its moods
+    an id or version too long for the board's hello (§10), and its rig
+    (§15). Whether it plays, its moods
     and their graph included, is boopdev check's (PackCheck), as the app
     loads it."""
-    problems = borrowed(character)
+    problems = []
     if not character.get("moods") or not all(m.get("id") for m in character["moods"]):
         problems.append("moods names no mood, or one without an id")
     if character.get("startup_mood", character.get("default_mood")) not in [m.get("id") for m in character.get("moods", [])]:

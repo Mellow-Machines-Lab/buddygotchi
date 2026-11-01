@@ -399,12 +399,24 @@ public struct Scenario: Sendable {
                 step.brain = answers
             }
             if let e = s["expect"] as? [String: Any] {
+                // What `!` takes away from: every value a key may be.
+                // `none` first, as the expect brain answers with the first.
+                let every: [String: [String]] = ["react": ["none"] + CharacterPack.active.moods.map(\.id), "mood": graphMoods,
+                                                 "say": ["none"] + ReactOutput.says.map(\.name)]
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
                     guard let text = v as? String else { throw badStep("expect.\(key) is like \"proud|excited\"") }
-                    let values = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
-                    step.expectOrder[key] = values
-                    return Set(values)
+                    // `!none`: anything but these, of what the key may be.
+                    let but = text.hasPrefix("!")
+                    let values = text.dropFirst(but ? 1 : 0).split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                    guard but else {
+                        step.expectOrder[key] = values
+                        return Set(values)
+                    }
+                    guard let all = every[key] else { throw badStep("expect.\(key) can't take !: only \(every.keys.sorted().joined(separator: ", ")) can") }
+                    guard Set(values).isSubset(of: all) else { throw badStep("expect.\(key) takes away \(values.joined(separator: "|")), not all of them its values") }
+                    step.expectOrder[key] = all.filter { !values.contains($0) }
+                    return Set(step.expectOrder[key] ?? [])
                 }
                 let keys = ["react", "move", "intensity", "say", "said", "mood", "offered", "opens", "idle",
                             "helpers", "when", "needs", "todo", "dream", "sign"]

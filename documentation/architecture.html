@@ -116,9 +116,73 @@ td.where{font-size:13px;white-space:nowrap}
 </header>
 
 <nav class="toc" aria-label="Sections">
+  <a href="#works">How Boop works</a>
+  <a href="#prompt">What Jev reads</a>
+  <a href="#memory">Memory</a>
+  <a href="#reason">The reason and asks</a>
   <a href="#shape">The shape</a>
   <a href="#joins">Where the pieces join</a>
 </nav>
+
+<section id="works">
+  <h2>How Boop works, on one page</h2>
+  <p>One ordinary moment: Claude finishes a turn on "api".</p>
+  <ol>
+    <li><b>The hook.</b> Claude Code's <code>Stop</code> hook runs <code>agent-hook</code>, which writes one JSON line to Boop's socket and never waits.</li>
+    <li><b>Intake.</b> The Mac reads the agent's last message into a reading (its kind, tone, length and up to three short phrases) and lets the words go. The finish and the reading go into today's transcript file.</li>
+    <li><b>The rules, at once.</b> The core updates the sessions and sends the board a new <code>state</code>: the look, the mood, the counts, the to-do list and the tags. The work stream sends its own word for the finish ("done").</li>
+    <li><b>The view.</b> <code>TranscriptView</code> writes the event as a line for the brain, counts runs (quick wins, failing checks) and decides whether it wakes the brain.</li>
+    <li><b>The brain, later.</b> Jev reads the prompt (below) and answers every question in one request: the mood, the face, the move, the size, what Boop says, and sometimes a sign. All multiple choice.</li>
+    <li><b>The outputs.</b> The mood output keeps or moves the mood. The react output applies its code rules (Talk, hush, needs you), picks a recorded take, adds the reason, and sends a <code>do</code> to the board.</li>
+    <li><b>The board.</b> LinkKit's queue plays it when the reaction before it ends. The board picks the design's variation, sizes a finish by the turn's length, plays the take, and reports <code>ended</code>. Between reactions it deals its pastimes by the tiers.</li>
+  </ol>
+  <p><b>Where decisions are made:</b> agent-hooks (which hooks count, needs you); the prompt reader (readings); the core (the look, needs you, the tags and tiers, hush, the start's reaction, BOOT's line, the drawer); the work stream (which word plays); the view (lines, runs, what wakes the brain, the heartbeats); Jev (the mood and every other reaction); the react output's code (silences, the signs offered, takes); the board (the queue, variations, pastimes, what a touch is); and the pack (the mood graph's prose, every look and sound).</p>
+</section>
+
+<section id="prompt">
+  <h2>What Jev reads</h2>
+  <p>Each pass, Jev reads one prompt, in this order, then the questions. Only readings reach it: never code, commands, tool output or transcripts.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Section</th><th>What it holds</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Header</td><td>With several buddies, whom this pass answers for</td><td><code>Buddy.header</code></td></tr>
+      <tr><td>The guide</td><td>Who Boop is to Jev and how to choose</td><td>The pack's <code>steering/guide.md</code></td></tr>
+      <tr><td>PERSONALITY</td><td>The whole of who the buddy is, with its Examples</td><td><code>steering/personality.md</code></td></tr>
+      <tr><td>MEMORY</td><td>The written memory: You, Your work, You and Boop, and a line a day</td><td><code>WrittenMemory</code></td></tr>
+      <tr><td>MOOD</td><td>The lasting mood now: what it means and where it leaves for</td><td><code>steering/mood/</code></td></tr>
+      <tr><td>CONTEXT</td><td>How things stand: Boop, Talk when it isn't normal, the agents, the day so far</td><td><code>ContextSection</code></td></tr>
+      <tr><td>HISTORY</td><td>The recent lines, oldest first, and how long the mood has lasted</td><td>MellowHarness, <code>TranscriptView</code></td></tr>
+      <tr><td>NOW</td><td>The time, and the line for this event with what's under it</td><td>MellowHarness, <code>TranscriptView</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>A real CONTEXT, HISTORY and NOW, from an eval:</p>
+<pre>CONTEXT (how things stand. Background, not news: react to NOW.)
+Boop: a Hatchling.
+Agents: claude working on "landing" for 1 min.
+
+HISTORY (oldest first; indented lines add to the line above)
+just now: claude started turn 1 on "landing".
+
+NOW (14:00, Wednesday)
+You asked claude on "landing" for a fix, in a sentence, frustrated.
+  Your words: "still broken", "keep happening".
+Boop did nothing on its own.</pre>
+</section>
+
+<section id="memory">
+  <h2>Memory</h2>
+  <ul>
+    <li><b>The transcript</b> is every event, a file a day (<code>Transcript</code>). The view rebuilds what the brain hears from its last 24 hours.</li>
+    <li><b>The memory reader</b> (<code>MemoryReader</code>), the one reader of the transcript, keeps the day as it goes: your company (when you last touched or talked to Boop, came back), the tallies, and the journal of notable lines. At 5:00 it closes the day into the <b>dream</b>, yesterday in tags and a sentence, which Boop tells the next time you show up.</li>
+    <li><b>The written memory</b>, <code>memory.md</code>, is short notes in three sections and a line a day. Apple Intelligence edits it each night from the journal (<code>MemoryEdits</code>). You can read and edit it. Jev reads it as MEMORY. Only <code>MemoryStore</code> reads and writes the files.</li>
+  </ul>
+</section>
+
+<section id="reason">
+  <h2>The reason and asks</h2>
+  <p><b>The reason</b> is why the buddy does what it does, in plain words (<code>Reason</code>). The Mac renders it from the event the brain answered, never the brain: a sentence for the popover and the debug log, and a few words for the board's lane (the <code>do</code>'s <code>reason</code>).</p>
+  <p><b>An ask</b> is a question the buddy holds up with two answers you tap in the lane, from the pack's <code>asks.md</code> (<code>Asks</code>). It never needs an answer, and the agents never wait on one. The board says how it ended (<code>ev ask</code>), and the line goes into HISTORY; a question marked <code>keeps</code> is asked only once, ever.</p>
+</section>
 
 <section id="shape">
   <h2>The shape</h2>

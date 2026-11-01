@@ -19,7 +19,7 @@ using linkkit::Link;
 constexpr uint32_t kDefaultPressMs = 100;
 // dbg.shot sends the palette as it's laid out in memory: 256 RGB565
 // entries, low byte first.
-static_assert(sizeof(render::kPalette.c) == 512, "the palette is 256 entries");
+static_assert(sizeof(render::PaletteTable::c) == 512, "the palette is 256 entries");
 static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "the palette goes out as it's stored");
 
 // Copying a voice file onto the card over USB:
@@ -351,8 +351,8 @@ bool Device::shot(linkkit::Shot& s, uint32_t t) {
   }
   s.w = render::kWidth;
   s.h = render::kHeight;
-  s.data[0] = reinterpret_cast<const uint8_t*>(render::kPalette.c);
-  s.size[0] = sizeof(render::kPalette.c);
+  s.data[0] = reinterpret_cast<const uint8_t*>(render::palette().c);
+  s.size[0] = sizeof(render::palette().c);
   s.data[1] = canvas_.pixels();
   s.size[1] = size_t(render::kWidth) * render::kHeight;
   return true;

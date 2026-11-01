@@ -312,8 +312,6 @@ A pack has every file the engine reads in its own folder. The engine
 never knows another pack: it reads the staged pack (§2) and never falls
 back to another on its own. Two packs that want the same voice or face
 copy it, each in its own repository, as Boop's two do.
-`charactergen.py` refuses a pack that names `uses` or `shares`, the
-keys an older engine had for borrowing another pack's files.
 
 ## 7. Steering
 
@@ -359,14 +357,9 @@ What the brain reads, in plain Markdown:
   new temperament rewrites only the closing part. The temperament says
   how a moment looks, never that more moments get a reaction. Nothing is laid over it but the mood and how much
   it says.
-- No talk files: how much it says (`Talk`, picked in Settings, normal at
-  first) is held in code and told to the brain in CONTEXT's Talk row.
-  On Quiet `say` offers no topic and no swear, and a small moment or a
-  finish says nothing; on Chatty `say` has no "none"; normal keeps to
-  the Examples. Each level's check-in pace is code's too (`Talk.pace`:
-  Quiet looks in less often, Chatty more), over the personality's. Apart
-  from the hush (§9), nothing in code holds a reaction back.
-  `boopdev check` notes a leftover `talk/` file, which nothing reads.
+- How much it says is the Talk setting, picked in Settings, held in code
+  and told to the brain in CONTEXT's Talk row (`Talk`): a pack has no
+  file for it.
 - `mood/<mood>.md` (one per lasting mood): how it acts while in that mood,
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
@@ -561,7 +554,7 @@ the face draws the look in another mood for a while, and the voice may
 speak.
 
 **A word of the work stream** (`call`) is no state of its own either
-(plan/work-stream.md): `w` the word, `a` its lane's slot, `as` its gag
+(`render/stream.h`): `w` the word, `a` its lane's slot, `as` its gag
 (`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It
 plays at once over the agents' work and holds nothing up, its `ended`
 sent as it starts; with no lane
@@ -790,11 +783,6 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
   `firmware/include/`. Engine code assumes nothing else about moods: no mood
   name is in the engine. A face looks a mood up by its name, never its
   number (the pixel face with `render::pixelIndex`).
-- Pixel's `faces.h` (facegen's) draws 13 moods (`kMoodNames`), and names
-  every mood (`kNames`) with the drawn one whose designs it wears
-  (`kWears`): itself, or the one Pixel's table,
-  `characters/pixel/tools/borrowed.json`, lends it. The borrowers point
-  at the same designs, so they cost no frames.
 - One or more faces behind `render::Face`, each in its own folder,
   `src/render/<face>/`, and `render::makeFace()` in
   `src/render/make_face.cpp`, which makes one. `faces` in
@@ -806,21 +794,13 @@ own build folder, and `firmware/platformio.ini` puts `include/` and
   every face, and `makeFace()` picks by `BOOP_SIM_FACE`.
 - `include/rig_tables.h`: the pack's rig (§15), which staging also
   makes, from `rig/`.
-- Every pack's faces draw with the palette of the pixel face's
-  `faces.h` (`render/palette.h` includes it). So a pack's firmware
-  carries that file. Boop's carries the part the palette
-  reads, a copy of its colours alone, as the gel draws none of Pixel's
-  designs.
+- The canvas palette (`render/palette.h`) is the engine's colours, and
+  a face that draws the canvas writes its own in as it's made
+  (`render::useFaceColors`); no pack carries another's.
 
-**On the Mac.** `mac/faces.json` is what the Mac knows of the pixel face.
-facegen writes it into the Pixel pack. It holds:
-
-- `moods`: every mood, in the pack's order. The Mac never times a
-  reaction or picks its variation: the board does, by `faces.h` and
-  `sfx.h`.
-- `box`, `colors` and `faces`: the popover's still faces, each as
-  `<mood>/<look>` for `idle`, `working` and `needs_you`, and
-  `<startup_mood>/asleep`. A face it lacks shows the mood's idle one.
+**On the Mac.** A pack with the pixel face has `mac/faces.json`, what
+the Mac knows of it: its moods and the popover's still faces (the pixel
+face's README, in Pixel's pack).
 
 `mac/mirror/`, if present, is the board's own firmware in a web page,
 which the popover shows as the face in place of the still one, whether
@@ -990,8 +970,7 @@ and play one: [DEMOS.md](DEMOS.md).
 
 ## 15. The rig (optional)
 
-The rig is the one set of numbers every pack and face shares
-([plan/character-engine.md](../plan/character-engine.md)): at any instant
+The rig is the one set of numbers every pack and face shares: at any instant
 a character is a value on each of its channels. A pack's `rig/` says
 what they do: what each mood wears, its moves and its looks. The
 engine's half is `firmware/src/render/rig/`: the channels, the tables'
@@ -1360,8 +1339,6 @@ pack staging. The app doesn't bundle either folder.
   parts are one drawing of each eye. The gel plays the rig's clips (a
   look's occasions, a reaction's) over its own engine; its expressions,
   recipes, gags and springs are still its own.
-- The palette lives in the pixel face's `faces.h`; it moves out of the
-  art, so a face needs no file of Pixel's.
 - A face is C++ code. A picture-based face, with frames per state and
   mood drawn by an engine renderer, would let a character be drawn with
   no code.

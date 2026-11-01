@@ -73,7 +73,11 @@ step's `session`, with the step's `workspace` if it has one.
 woken on the way to it and by it, so a `wait` checks the heartbeat its
 ticks brought: an idle one, or while a thread works, the working
 heartbeat. Each expectation is a set of acceptable values (`proud|happy`), so
-a scenario holds wherever more than one answer is right:
+a scenario holds wherever more than one answer is right. For `react`,
+`mood` and `say`, a leading `!` takes values away from everything the
+key may be: `!none` is any face, `!lonely` any lasting mood but lonely,
+`!swear` anything but a swear. Write the set the scenario means, not a
+long list that checks little:
 
 | Checked | Against |
 | --- | --- |

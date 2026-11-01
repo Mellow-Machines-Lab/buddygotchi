@@ -20,8 +20,8 @@ public struct PackCheck {
         func file(_ path: String) -> URL { directory.appendingPathComponent(path) }
         func has(_ path: String) -> Bool { FileManager.default.fileExists(atPath: file(path).path) }
 
-        // Steering: the guide and each personality, within the budgets, and
-        // the talk files all or none.
+        // Steering: the guide and each mood's file, within the budgets, and
+        // the asks.
         do {
             let steering = try Steering(directory: directory.appendingPathComponent("steering"), pack: pack)
             for mood in pack.lasting.map(\.id) where steering.files["mood/\(mood)"] == nil {
@@ -35,9 +35,6 @@ public struct PackCheck {
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
             problems += Self.asks(steering.asks)
-            for path in steering.files.keys.sorted() where path.hasPrefix("talk/") {
-                notes.append("steering/\(path).md isn't read: the Talk setting is held in code, and CONTEXT says it")
-            }
         } catch {
             problems.append("\(error)")
         }
