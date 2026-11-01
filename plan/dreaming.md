@@ -1015,3 +1015,44 @@ lonely is code; CONTEXT gives the facts (untouched time, hours away,
 "last lonely"), and the mood files, `lonely.md` and the Examples decide,
 so a mood can make Boop lonelier or less so. Kept answers show no look
 on the board, so `state.you` is out.
+
+## Tuning after the build (2026-11-01, with the owner)
+
+The build thread found three gaps with Jev (`--only` runs). The owner's
+answers, all in the prompt, none in code, and no new Examples (more
+Examples cloud the context):
+
+**1. Lonely fires a little less, by wording.** It leaked about one run
+in three at a long quiet stretch with no work (eval 06) and at a long
+turn's finish two hours untouched (139). Tighten the text that offers
+it, so the moment is in the words:
+- **Lonely's `meaning`** opens with "Rare." and names its only two
+  moments: "Rare. Missing you, only at an idle check-in after you've
+  worked 2 hours or more without a touch or a word, or when you come
+  back after 20 to 40 hours away."
+- **Its `not_for`:** "A finish, a check, a prompt, a heartbeat, a quiet
+  spell with no work (that's rest: Boop dozes), a night away, days
+  away."
+- **The five mood files' clause** reads "lonely only at an idle
+  check-in…", and `lonely.md` opens "Lonely is rare."
+- **Gate:** 06 and 139 never lonely in 3 runs; 135 and 137 still lonely.
+
+**2. The care lean, through stronger memory wording.** A cuddly note
+didn't move a poke from calm (149). Make the memory and the prompt that
+writes it forceful, rather than adding Examples:
+- **The writer's rule:** "You must keep exactly one boop note on how the
+  person treats Boop and what Boop has become, ending with one of these
+  words: cuddly, cheeky, chatty, or distant. Update it every night the
+  pattern holds; never soften it, never drop it."
+- **The note's shape:** "Boop has grown cuddly: you stroke it most
+  mornings." The trait word comes first.
+- **MEMORY's heading:** "You and Boop is who Boop has become with you.
+  Whenever more than one face or mood fits NOW, pick the one it points
+  to. The rest is old news unless NOW is about it."
+- **Gate:** 149's poke from calm lands affectionate or comfy in 2 of 3
+  runs or better; no other eval moves.
+
+**3. Asks and musings keep "none" on chatty.** Chatty drops "none" from
+`say`, a prompt's face and a prompt's sign, but not from the sign
+question at an ask's or a musing's moment: the hourly cap is a ceiling,
+not a schedule.
