@@ -340,6 +340,10 @@ thread, not that it's built.
 | Counted memory (rows per day, traits) | Skipped for now: too complicated |
 | E1 The docs and plans | Yes (below) |
 | E4 The pixel face's spec and a second eval prune | Yes (below) |
+| E2a Away and back, paired twice | Yes, as one shared piece of code: the view and the memory reader each keep their own result, since the view must stay rebuildable from the log's last 24 hours and the reader must last across days; no event, line or CONTEXT row changes |
+| E2b Growth's daily totals | Yes: growth reads them from the memory reader's tallies |
+| E3a Hush folds into Talk | Yes (below) |
+| E3b The calendar moves into CONTEXT | Yes (below); one full eval run, asked of the owner first |
 | C8's idle cleanup | Yes (below) |
 | The six evals failing on `main` | Yes, a separate cleanup (below) |
 | C10 Ordinary versus dramatic | Not now |
@@ -433,6 +437,23 @@ the pixel face's own README, and the palette becomes the face's own,
 not a contract rule. A second eval prune: an eval whose accepted faces
 or moods are so many it checks little (40, 121 and others) is tightened
 to what the scenario means, or removed.
+
+**E3a, decided: hush is a Talk level.** Talk has four levels: quiet,
+normal, chatty, and silent for N minutes, which drops back to the level
+it was when the time runs out. Saying "shh" to Boop, the popover's Hush
+button and the hush reply all set it; CONTEXT's Talk row says it
+("Talk: silent for 8 more min"), and the Boop row stops carrying the
+hush. Code holds silent as it holds hush today: Boop says nothing, its
+faces go on. One concept goes: the hush as its own setting.
+
+**E3b, decided: the calendar is in CONTEXT.** NOW's heading keeps only
+what's about this event ("Boop reacted 1 min ago"); the time, the
+weekday, the part of the day and any special day become CONTEXT's first
+row ("When: 09:02, Saturday, morning; Halloween"). The mood's duration
+stays HISTORY's closing line, as decided. The personality's Examples
+that quote the heading's calendar ("NOW (09:02, Saturday, Halloween)")
+quote CONTEXT's row instead, and their evals change with them. Gate: one
+full eval run, asked of the owner first.
 
 **A, in commits.** Each is small, invisible, and checked by `make -C
 internal check`:
