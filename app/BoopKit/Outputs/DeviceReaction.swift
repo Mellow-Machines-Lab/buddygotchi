@@ -92,6 +92,14 @@ public struct DeviceReaction: Equatable, Sendable {
     /// drawer, for a question about all of them (`StatusReply`). Nil sends
     /// none.
     public var show: String?
+    /// Why it plays, short enough for the board's lane (`Reason.fact`):
+    /// the board shows it there while the reaction plays and nothing is
+    /// said. Nil sends none.
+    public var reason: String?
+    /// An ask: the question's id and its two answers, which the board
+    /// shows as two targets in the lane while the question is the sign;
+    /// `touch` when a stroke answers it too. Nil sends none.
+    public var ask: Asks.Question?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
@@ -119,7 +127,7 @@ public struct DeviceReaction: Equatable, Sendable {
     /// state's name, besides `listening`, which only push-to-talk plays
     /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
     /// plays itself.
-    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", "starting", "helper_return", "stopped"]
+    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", "starting"]
     /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 
@@ -138,6 +146,10 @@ public struct DeviceReaction: Equatable, Sendable {
         if let variant { args["variant"] = .int(variant) }
         if let ctx { args["ctx"] = .string(ctx) }
         if let sign { args["sign"] = .string(sign) }
+        if let reason { args["reason"] = .string(reason) }
+        if let ask {
+            args["ask"] = ["q": .string(ask.id), "a": .string(ask.a), "b": .string(ask.b), "touch": .bool(ask.touch)]
+        }
         if let reply { args["reply"] = .string(reply) }
         if let show { args["show"] = .string(show) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }

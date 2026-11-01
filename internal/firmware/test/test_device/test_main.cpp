@@ -261,10 +261,10 @@ static void test_hello_on_the_first_message_and_every_minute() {
   r.bleLine("{\"t\":\"state\",\"base\":\"idle\"}");
   std::string hello = std::string(
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
-                          "\"react\",\"task_complete\",\"reply_ready\",\"starting\",\"stopped\",\"error\",\"helper_return\","
+                          "\"react\",\"task_complete\",\"reply_ready\",\"starting\","
                           "\"wake_up\",\"listening\",\"stop_listening\",\"notice\",\"call\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
-                      "\",\"pack_version\":\"" + render::kPackVersion + "\",\"reset\":\"power\"}\n";
+                      " " + render::kPackVersion + "\",\"reset\":\"power\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));
   TEST_ASSERT_EQUAL_STRING(hello.c_str(), r.ble.text.c_str());
   TEST_ASSERT_TRUE(hello.size() - 1 <= linkkit::kMaxLine);
@@ -702,7 +702,7 @@ static void test_the_clock_can_go_back_mid_animation() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":9001}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\",\"args\":{\"loops\":2}}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\",\"args\":{\"loops\":2}}");
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":4201}");
   for (uint32_t t = 4251; t <= 9000; t += 50) {
     char step[64];
@@ -986,10 +986,10 @@ static void test_reaction_plays_then_ends_and_a_new_one_replaces_it() {
   NEEDS_VOICE_PACK();
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
-  r.usbLine("{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}");  // a rule's reaction
+  r.usbLine("{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\"}");  // a rule's reaction
   r.usbLine("{\"t\":\"dbg.state\"}");
-  const uint32_t stopped = render::loopMs(render::Mood::kHappy, render::SceneState::kStopped);
-  TEST_ASSERT_TRUE(has(r.usb.text, ("\"moment\":{\"anim\":\"stopped\",\"left_ms\":" + std::to_string(stopped) + ",").c_str()));
+  const uint32_t starting = render::loopMs(render::Mood::kHappy, render::SceneState::kStarting);
+  TEST_ASSERT_TRUE(has(r.usb.text, ("\"moment\":{\"anim\":\"starting\",\"left_ms\":" + std::to_string(starting) + ",").c_str()));
   r.usbLine("{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":1,\"size\":3,\"ttl\":5}}");  // args it doesn't know are ignored
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
@@ -1471,6 +1471,44 @@ static void test_a_test_pattern_is_silent() {
   TEST_ASSERT_EQUAL(int(sent), int(r.hal.effects.size()));
 }
 
+// A face that draws natively has no canvas, 76.8 KB the gel never draws
+// into, until dbg.pattern asks for one: then the board takes it from its
+// surface memory (Hal::allocateSurface), the pattern draws on it and it
+// stays. With no memory for it, the pattern answers ok:false and shows
+// nothing. The board's main gives the canvas only to a face that draws it.
+static void test_a_native_face_has_a_canvas_only_for_the_pattern() {
+  struct Spare : FakeHal {
+    bool none = false;
+    void* allocateSurface(size_t bytes) override {
+      return none && bytes == size_t(render::kWidth) * render::kHeight ? nullptr : FakeHal::allocateSurface(bytes);
+    }
+  };
+  for (bool none : {false, true}) {
+    Spare hal;
+    hal.none = none;
+    Capture usb;
+    auto face = std::make_unique<testface::WrappedFace>();
+    face->native = true;
+    app::Device dev{hal, nullptr, std::move(face)};
+    linkkit::Kit kit{hal, dev, true};
+    kit.setOut(linkkit::Link::kUsb, &usb);
+    kit.tick();
+    TEST_ASSERT_TRUE(dev.ready());
+    TEST_ASSERT_NULL(dev.canvas().pixels());
+    const char* fill = "{\"t\":\"dbg.pattern\",\"fill\":3}";
+    kit.handleLine(fill, std::strlen(fill), linkkit::Link::kUsb);
+    kit.tick();
+    if (none) {
+      TEST_ASSERT_NULL(dev.canvas().pixels());
+      TEST_ASSERT_TRUE(has(usb.text, "{\"t\":\"dbg.pattern\",\"ok\":false}"));
+      continue;
+    }
+    TEST_ASSERT_NOT_NULL(dev.canvas().pixels());
+    TEST_ASSERT_EQUAL_UINT8(3, dev.canvas().pixels()[size_t(render::kWidth) * render::kHeight - 1]);
+    TEST_ASSERT_TRUE(has(usb.text, "{\"t\":\"dbg.pattern\"}"));
+  }
+}
+
 // `state`'s `when` is the Mac's tags, and the board adds busy or frantic
 // from `busy` (render::busyTags); a tag it doesn't know is left out.
 // dbg.state reports them, with the idle and helper counts.
@@ -1524,9 +1562,6 @@ static void test_reactions_read_their_facts() {
       {"{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"variant\":5}}", "\"variant\":5}"},
       {"{\"t\":\"do\",\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\",\"variant\":3}}", "\"anim\":\"task_complete\",\"left_ms\":6400,\"variant\":3}"},
       {"{\"t\":\"do\",\"name\":\"reply_ready\",\"play\":\"now\"}", "\"anim\":\"reply_ready\",\"left_ms\":4200,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}", "\"anim\":\"stopped\",\"left_ms\":4200,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\",\"args\":{\"variant\":1}}", "\"anim\":\"error\",\"left_ms\":3800,\"variant\":1}"},
-      {"{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\",\"args\":{\"variant\":2}}", "\"anim\":\"helper_return\",\"left_ms\":4800,\"variant\":2}"},
   };
   for (const auto& c : cases) {
     r.usbLine(c.reaction);
@@ -1552,8 +1587,7 @@ static void test_only_the_reply_ends_the_macs_listening() {
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   r.usbLine("{\"t\":\"do\",\"name\":\"listening\",\"play\":\"now\"}");
   for (const char* other : {"{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\",\"args\":{\"ctx\":\"new_task\"}}",
-                            "{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}", "{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\"}",
-                            "{\"t\":\"do\",\"name\":\"helper_return\",\"play\":\"now\"}",
+                            "{\"t\":\"do\",\"name\":\"wake_up\",\"play\":\"now\"}",
                             "{\"t\":\"do\",\"id\":4,\"name\":\"task_complete\",\"play\":\"now\",\"args\":{\"outcome\":\"success\"}}",
                             "{\"t\":\"do\",\"name\":\"reply_ready\",\"play\":\"now\"}", "{\"t\":\"do\",\"name\":\"react\",\"play\":\"now\",\"args\":{\"mood\":\"proud\"}}",
                             "{\"t\":\"do\",\"name\":\"oops\",\"play\":\"now\"}"}) {
@@ -1682,10 +1716,10 @@ static void test_the_sounds_follow_every_design() {
   TEST_ASSERT_EQUAL(render::pixel::events(done, 0).n, int(r.hal.effects.size()));
   TEST_ASSERT_TRUE(only(r.hal.effects, done, 1));
   // A rule's reaction, and a tap's poke: their own, once each.
-  for (const char* line : {"{\"t\":\"do\",\"name\":\"error\",\"play\":\"now\",\"args\":{\"variant\":1}}", "poke"}) {
+  for (const char* line : {"{\"t\":\"do\",\"name\":\"starting\",\"play\":\"now\",\"args\":{\"variant\":1}}", "poke"}) {
     Rig q;
     q.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"calm\"}");
-    SceneState s = SceneState::kError;
+    SceneState s = SceneState::kStarting;
     if (!std::strcmp(line, "poke")) {
       q.usbLine("{\"t\":\"dbg.press\",\"ms\":50}");
       q.usbLine("{\"t\":\"dbg.clock\",\"freeze\":60}");
@@ -1879,7 +1913,7 @@ static void test_a_rules_reaction_never_cuts_a_say() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "skipped", "busy")));
   TEST_ASSERT_TRUE(has(stateOf(r), "\"moment\":null"));
   clockAt(r, 2000);  // the bubble went at 1838; the reaction rests at 2338
-  doLine(r, 5, "stopped", "if_free");
+  doLine(r, 5, "wake_up", "if_free");
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "busy")));
   clockAt(r, 2338);
   doLine(r, 3, "starting", "if_free", "{\"ctx\":\"new_task\"}");
@@ -1922,7 +1956,7 @@ static void test_refused_reactions_say_why() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"attn\":{\"agent\":\"claude\",\"project\":\"x\"}}");
   doLine(r, 2, "react", "next", kGo);
-  doLine(r, 3, "error", "if_free");
+  doLine(r, 3, "wake_up", "if_free");
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(2, "skipped", "needs_you")));
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(3, "skipped", "needs_you")));
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
@@ -2154,7 +2188,7 @@ static void test_dbg_latency_times_inputs_and_messages() {
   r.kit.tick();
   showFrame(r, 2120);
   r.hal.real = 3000;
-  r.usbLine("{\"t\":\"do\",\"name\":\"stopped\",\"play\":\"now\"}");
+  r.usbLine("{\"t\":\"do\",\"name\":\"wake_up\",\"play\":\"now\"}");
   showFrame(r, 3004);
   d = latencyOf(r, true);
   TEST_ASSERT_EQUAL_UINT32(12, d["press"]["max"].as<uint32_t>());
@@ -2178,6 +2212,102 @@ static void test_a_tap_says_where_it_came_from() {
   r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":100,\"ms\":100}");
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"poked\",\"data\":{\"src\":\"screen\"}}\n"));
+}
+
+// ---- Asks ------------------------------------------------------------------
+
+static const char* kSnack = "{\"sign\":\"fav snack?\",\"ask\":{\"q\":\"snack\",\"a\":\"cookie\",\"b\":\"pizza\"}}";
+static const char* kPet = "{\"sign\":\"pet me?\",\"ask\":{\"q\":\"pet\",\"a\":\"ok\",\"b\":\"later\",\"touch\":true}}";
+
+// `ev ask` for the question `q`, `pick` how it ended, `answer` its words.
+static std::string askLine(const char* q, const char* question, const char* pick, const char* answer = nullptr) {
+  std::string s = std::string("{\"t\":\"ev\",\"kind\":\"ask\",\"did\":\"") + pick + "\",\"data\":{\"q\":\"" + q +
+                  "\",\"question\":\"" + question + "\"";
+  if (answer) s += std::string(",\"answer\":\"") + answer + "\"";
+  return s + "}}\n";
+}
+// Whether `first` is in the text, and before `then`.
+static bool before(const std::string& text, const std::string& first, const std::string& then) {
+  const size_t a = text.find(first), b = text.find(then);
+  return a != std::string::npos && b != std::string::npos && a < b;
+}
+
+// An ask holds its question up and fills the lane with its two answers,
+// the gap between them in the middle; a tap in the lane's left half
+// answers `a`, its right half `b`, and is no poke. The board says so
+// (`ev ask`) before the reaction's `ended`.
+static void test_a_tap_in_the_lane_answers_an_ask() {
+  for (int side = 0; side < 2; ++side) {
+    Rig r;
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    clockAt(r, 1000);
+    doLine(r, 1, "react", "next", kSnack);
+    std::string st = stateOf(r);
+    TEST_ASSERT_TRUE(has(st, "\"sign\":\"fav snack?\""));
+    TEST_ASSERT_TRUE(has(st, "\"ask\":\"cookie    pizza \""));
+    TEST_ASSERT_TRUE(has(st, "\"reason\":null"));
+    r.usb.text.clear();
+    r.usbLine(side ? "{\"t\":\"dbg.touch\",\"x\":260,\"y\":222,\"ms\":100}"
+                   : "{\"t\":\"dbg.touch\",\"x\":60,\"y\":222,\"ms\":100}");
+    clockAt(r, 1200);
+    const std::string said = r.usb.text;
+    const std::string ask =
+        side ? askLine("snack", "fav snack?", "b", "pizza") : askLine("snack", "fav snack?", "a", "cookie");
+    TEST_ASSERT_TRUE_MESSAGE(before(said, ask, endedLine(1, "done")), said.c_str());
+    TEST_ASSERT_FALSE(has(said, "\"kind\":\"tap\""));
+    st = stateOf(r);
+    TEST_ASSERT_TRUE(has(st, "\"ask\":null"));
+    TEST_ASSERT_TRUE(has(st, "\"sign\":null"));
+  }
+}
+
+// A touch answers an ask that takes one (`touch`), as `touch`, with its
+// first answer's words; on one that doesn't, the stroke is only a stroke.
+static void test_a_touch_answers_only_an_ask_that_takes_one() {
+  for (int takes = 0; takes < 2; ++takes) {
+    Rig r;
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    clockAt(r, 1000);
+    doLine(r, 1, "react", "next", takes ? kPet : kSnack);
+    r.usb.text.clear();
+    r.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+    for (int i = 0; i < 8; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
+    TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
+    if (takes) {
+      TEST_ASSERT_TRUE(has(r.usb.text, askLine("pet", "pet me?", "touch", "ok")));
+      TEST_ASSERT_TRUE(has(stateOf(r), "\"ask\":null"));
+    } else {
+      TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ask\""));
+      TEST_ASSERT_TRUE(has(stateOf(r), "\"ask\":\"cookie    pizza \""));
+    }
+  }
+}
+
+// Nobody answers: a newer reaction replaces the ask, or kAskMs pass, and
+// it ends `ignored`, its `ev` before its `ended`. It rests once its
+// question has been read, so the newer one needn't wait out the 45 s.
+static void test_an_unanswered_ask_ends_ignored() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  clockAt(r, 1000);
+  doLine(r, 1, "react", "next", kSnack);
+  doLine(r, 2, "react", "next", kGo);
+  clockAt(r, 1000 + app::Behaviour::kSignMinMs + 600);
+  TEST_ASSERT_TRUE_MESSAGE(before(r.usb.text, askLine("snack", "fav snack?", "ignored"), endedLine(1, "done")),
+                           r.usb.text.c_str());
+  Rig q;
+  q.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  clockAt(q, 1000);
+  doLine(q, 1, "react", "next", kSnack);
+  for (uint32_t t = 2000; t < 1000 + app::Behaviour::kAskMs; t += 1000) {
+    clockAt(q, t);
+    q.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");  // the Mac stays
+  }
+  TEST_ASSERT_TRUE(has(stateOf(q), "\"ask\":\"cookie    pizza \""));
+  q.usb.text.clear();
+  clockAt(q, 1000 + app::Behaviour::kAskMs);
+  TEST_ASSERT_TRUE_MESSAGE(before(q.usb.text, askLine("snack", "fav snack?", "ignored"), endedLine(1, "done")),
+                           q.usb.text.c_str());
 }
 
 // A touch that travels is a stroke: the board plays gesture's stroke and
@@ -2674,6 +2804,9 @@ int main() {
   RUN_TEST(test_a_hold_off_the_needs_you_screen_is_a_tap);
   RUN_TEST(test_a_tap_says_where_it_came_from);
   RUN_TEST(test_a_stroke_is_a_gesture);
+  RUN_TEST(test_a_tap_in_the_lane_answers_an_ask);
+  RUN_TEST(test_a_touch_answers_only_an_ask_that_takes_one);
+  RUN_TEST(test_an_unanswered_ask_ends_ignored);
   RUN_TEST(test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac);
   RUN_TEST(test_face_down_is_do_not_disturb);
   RUN_TEST(test_reset_reads_motion_from_0);
@@ -2684,6 +2817,7 @@ int main() {
   RUN_TEST(test_the_sounds_follow_the_looks_rotation);
   RUN_TEST(test_needs_you_plays_its_ding_and_asleep_is_quiet);
   RUN_TEST(test_a_test_pattern_is_silent);
+  RUN_TEST(test_a_native_face_has_a_canvas_only_for_the_pattern);
   RUN_TEST(test_ping_reports_version_and_link);
   RUN_TEST(test_debug_is_ignored_over_ble);
   RUN_TEST(test_touch_calibration_maps_raw_to_screen);

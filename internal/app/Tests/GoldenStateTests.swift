@@ -49,6 +49,9 @@ final class GoldenStateTests: XCTestCase {
                                   : poked ? "curious" : said ? "proud" : "engaged")
             case ReactOutput.moveKey:
                 out[q.key] = pick(q, !now.contains(" finished turn ") ? "none" : failed ? "failure" : "success")
+            case Signs.questionKey:
+                // It asks whenever it may, so asks show in the states.
+                out[q.key] = pick(q, q.options.first { $0.what.hasPrefix("Ask:") }?.name ?? q.options[0].name)
             case ReactOutput.intensityKey:
                 out[q.key] = pick(q, failed ? "medium" : "small")
             case ReactOutput.sayKey:

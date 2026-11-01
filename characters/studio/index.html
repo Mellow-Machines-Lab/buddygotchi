@@ -37,7 +37,7 @@
 <section class="sheet" data-view="behavior" aria-label="Behavior map" hidden></section>
 <section class="sheet" data-view="brain" aria-label="Brain" hidden></section>
 <section class="sheet" data-view="signs" aria-label="Signs" hidden></section>
-<section class="sheet" data-view="diary" aria-label="Diary" hidden></section>
+<section class="sheet" data-view="dreams" aria-label="Dreams" hidden></section>
 <section class="sheet" data-view="voice" aria-label="Voice" hidden></section>
 <section class="sheet" data-view="evals" aria-label="Evals" hidden></section>
 <section class="sheet" data-view="demos" aria-label="Demos" hidden></section>
@@ -110,7 +110,7 @@
 </section>
 
 <section class="board-view" data-view="transitions" aria-label="Transitions" hidden>
-  <p class="view-head">From one mood and state to another on the board's own firmware (WebAssembly), on its frozen clock: a frame every 40 ms across the change, and how many pixels each changed from the one before by more than 24 levels, as <code>internal/tools/fluid/measure.py</code> counts them. A frame several times the median is a jump.</p>
+  <p class="view-head">From one mood and state to another on the board's own firmware (WebAssembly), on its frozen clock: a frame every 40 ms across the change, and how many pixels each changed from the one before by more than 24 levels. A frame several times the median is a jump.</p>
   <div class="pair">
     <fieldset data-from><legend>Start</legend><select aria-label="Start mood"></select><select aria-label="Start state"></select></fieldset>
     <span class="arrow" aria-hidden="true">→</span>
@@ -164,7 +164,7 @@
 
 <section class="board-view" data-view="review" aria-label="Review" hidden>
   <p class="view-head">What agents put up for review (<code>characters/&lt;pack&gt;/review/queue.json</code>), before and after. Approve it, or say what to change: each verdict goes to <code>review/notes.jsonl</code>, where the agents read it.</p>
-  <p class="missing" data-file hidden>Opened from a file, the page can't save a verdict. To comment, open it from the studio's server: <code>node characters/studio/serve.cjs --port 4190</code>, then <code>http://127.0.0.1:4190/</code>.</p>
+  <p class="missing" data-file hidden>Opened from a file, the page can't save a verdict. To comment, open it from the studio's server: <code>python3 simulator/web/serve.py</code>, then <code>http://127.0.0.1:8206/characters/studio/</code>.</p>
   <p class="missing" data-none hidden>Nothing is up for review.</p>
   <div class="review-items" data-items></div>
 </section>

@@ -24,7 +24,7 @@ extension DeviceReaction.Say {
 final class VoiceTests: XCTestCase {
     override func setUpWithError() throws { try requireVoice() }
 
-    let moods = MoodOutput.moods.map(\.name)
+    let moods = CharacterPack.active.moods.map(\.id)
 
     /// Every take plays in moods the pack has, answers a
     /// question the react output asks (or only the rules say it), and has
@@ -33,7 +33,7 @@ final class VoiceTests: XCTestCase {
         let feelings = Set(ReactOutput.feelings.map(\.name)), topics = Set(ReactOutput.topics.map(\.name))
         // The voice file's takes, each once as itself, and a feeling's or
         // topic's take again as each reply it's the words of.
-        XCTAssertEqual(Set(Take.all.map(\.id)).count, 3159)
+        XCTAssertEqual(Set(Take.all.map(\.id)).count, 2995)
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
         let recorded = Dictionary(Take.all.filter { $0.part != .reply }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let replies = Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"])
@@ -247,8 +247,8 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(two.text, "Tsk... Test")
     }
 
-    /// Needs you's takes are in the pack, but no reaction
-    /// says them.
+    /// Needs you's takes, which an older voice (Pixel's copy) still has:
+    /// no reaction says them.
     func testNoReactionSaysNeedsYousTakes() {
         XCTAssertFalse(Voice.answers(.feeling).union(Voice.answers(.about)).contains("attention"))
     }

@@ -15,7 +15,7 @@
 // a board saying in its pane that it needs the server, and Boop's three
 // characters' cards two to a row. And Boop's gel board's drawer: its
 // review sets, one clip recorded from the board, and its sound sketches.
-// Run `node characters/studio/serve.cjs --port 4190`, then
+// Run `python3 simulator/web/serve.py`, then
 // `node characters/studio/check.cjs`. BOOP_PLAYWRIGHT_MODULE, BOOP_QA_BROWSER
 // and BOOP_QA_URL override Playwright, the browser and the page;
 // BOOP_QA_SHOTS=DIR saves a screenshot of each view there.
@@ -23,7 +23,7 @@ if(process.argv.includes('--help')){console.log('node characters/studio/check.cj
 const {chromium}=require(process.env.BOOP_PLAYWRIGHT_MODULE||'playwright');
 const assert=require('node:assert/strict'),path=require('node:path'),{pathToFileURL}=require('node:url');
 const {summary}=require('./board.js');
-const url=process.env.BOOP_QA_URL||'http://127.0.0.1:4190/',shots=process.env.BOOP_QA_SHOTS;
+const url=process.env.BOOP_QA_URL||'http://127.0.0.1:8206/characters/studio/',shots=process.env.BOOP_QA_SHOTS;
 const browserOptions=process.env.BOOP_QA_BROWSER?{executablePath:process.env.BOOP_QA_BROWSER}:{};
 const LIMIT={clip:60,live:12};
 const studio=page=>page.evaluate(()=>{const s=document.getElementById('studio').studio;return {view:s.view,sel:{...s.sel},...s.matrix};});

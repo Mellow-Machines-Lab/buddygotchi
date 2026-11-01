@@ -4,8 +4,6 @@ import Foundation
 /// The app's own settings, in `settings.json` next to the memory files. Name
 /// lives in `long-term.md`; the API key lives in the Keychain.
 public struct AppSettings: Codable, Equatable, Sendable {
-    /// Who Boop is: the personality file it reads.
-    public var personality = Personality.default
     /// How much it says (`Talk`).
     public var talk = Talk.default
     public var volume = 6
@@ -22,8 +20,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Whether the board shows the agents' calls falling past Boop, and
     /// the ones that hit it (`WorkStream`): on unless you turn it off.
     public var workStream = true
-    /// Boop's body is the simulator, in a window of the internal build's
-    /// own, rather than its board: chosen in onboarding or Settings, and
+    /// Boop's body is the simulator, in a window of the app's own (the
+    /// debug and internal builds), rather than its board: chosen in onboarding or Settings, and
     /// kept from launch to launch. Off, the board, unless chosen.
     public var simulator = false
 
@@ -33,14 +31,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // Missing keys keep their defaults, so older files still load; keys
         // this version doesn't know are ignored: `moodGraph` from before the
         // one mood graph (2026-10-15), `mode` from before the
-        // personalities (2026-09-27), `classifier`, `writer` and `brain` from
+        // personalities (2026-09-27), `personality` from before each pack
+        // had one (2026-11-01), `classifier`, `writer` and `brain` from
         // before the modes, and `focus`, `away`, `awaySince`, `finished` and
-        // `projects` from before 2026-09-26. A personality the pack doesn't have is its default.
+        // `projects` from before 2026-09-26.
         let c = try decoder.container(keyedBy: CodingKeys.self)
         let saved = try? c.decodeIfPresent(String.self, forKey: .personality)
-        if let raw = saved, let p = Personality(rawValue: raw) {
-            personality = p
-        }
         // Chatter, the debugging personality before Talk (2026-10-25), was
         // the chatty one.
         talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? (saved == "chatter" ? .chatty : .default)
@@ -56,7 +52,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
-        try c.encode(personality.rawValue, forKey: .personality)
         try c.encode(talk, forKey: .talk)
         try c.encode(volume, forKey: .volume)
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }

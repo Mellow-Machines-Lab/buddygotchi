@@ -82,8 +82,7 @@ final class ReplayTests: XCTestCase {
     /// a1's own `SubagentStop` answers it while the main agent works on,
     /// and a subagent that ends after the turn leaves the session idle.
     /// With no `SubagentStart` in its hooks, the main agent's `Agent`
-    /// calls show delegating, and the one that returns after the request
-    /// clears plays helper_return; a1's denied command shows nothing more.
+    /// calls show delegating; a1's denied command shows nothing more.
     func testADeniedSubagentsEndAnswersItsRequest() throws {
         let got = try summary("claude-code/synthetic/subagent-denied.jsonl", agent: "claude")
         XCTAssertEqual(got, [
@@ -93,7 +92,6 @@ final class ReplayTests: XCTestCase {
             "+2.0s working/delegating - 0",
             "+5.0s idle claude/landing 1",
             "+31.0s working/delegating - 0 tier1",
-            "+32.0s helper_return",
             "+34.0s working/tool_use - 0 tier1",
             "+35.0s idle - 0",
             "+65.0s idle - 0 tier1",
@@ -151,12 +149,10 @@ final class ReplayTests: XCTestCase {
             "+20.0s working/delegating - 0",
             "+20.0s working/delegating - 0 +1 helper",
             "+23.0s working/delegating - 0",
-            "+23.0s helper_return",
             "+26.0s working/terminal - 0",
             "+31.0s working/terminal - 0 tier1",
             "+46.0s working/waiting - 0 tier1",
             "+51.0s idle - 0",
-            "+51.0s stopped",
             "+52.0s starting continuation",
             "+53.0s working - 0 tier1",
             "+54.0s idle - 0",
@@ -181,7 +177,6 @@ final class ReplayTests: XCTestCase {
             "+31.0s working/terminal - 0 tier1",
             "+32.0s working/waiting - 0 tier1",
             "+37.0s idle - 0",
-            "+37.0s stopped",
         ])
     }
 

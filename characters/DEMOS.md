@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-26. A demo is a short, scripted stretch of work that a
+Updated 2026-11-01. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -59,12 +59,14 @@ creature's brain.
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message, which Boop reads as it reads any agent's last message: only its reading reaches the brain | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
+| `{"you": "gesture"}` | You touch the creature in a way it knows by itself: a `stroke` across its face, a boop on its `nose`, a `tickle` or a shake (`dizzy`). The board reacts by itself, as to a tap, and the app hears what it was | `kind` |
+| `{"you": "answer"}` | You tap one of the two answers the creature's question shows in its lane: `a`, the left, or `b`, the right. The board ends its ask by itself, and the app hears the answer to the last question asked | `pick` |
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
 | `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away: the clock jumps on by that long, as a `wait`'s does | `minutes` (60) |
 | `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (the headphones at 2 minutes, the melt at 5, the mugs stacking up at 10) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
-| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. After a `talk`, `react.move` is its reply (`hello`, `status`, `nap`…): the board plays the reply's clip, and its sign is `react.sign`, one of the pack's `replies.md` lines for that reply, else one looked up, or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
+| `{"brain": {…}}` | How the creature reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. A `react.sign` that is one of the pack's `asks.md` questions asks it, at a finish or an idle check-in (after a `wait` past it), and a later step's `react.sign` may be a sign that needs a kept answer (`[cookie]`). After a `talk`, `react.move` is its reply (`hello`, `status`, `nap`…): the board plays the reply's clip, and its sign is `react.sign`, one of the pack's `replies.md` lines for that reply, else one looked up, or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
 | `{"mood": "proud"}` | The creature's mood changes | |
 
 On any agent step, `say` is what the agent says before it acts,
@@ -72,12 +74,6 @@ On any agent step, `say` is what the agent says before it acts,
 makes it another session's of the same agent: a thread of its own,
 working beside the first, started before its first step. A demo plays
 several agents at once this way.
-
-**Any eval is a demo too.** `boopdev eval --to-demo DIR` writes each of
-the pack's eval scenarios as a script (a `needs you` becomes a run that
-`waits`, a held finger a `hold`, a to-do list a `todo`), its brain
-steps the answers the scenario expects ([internal/EVALS.md](../internal/EVALS.md) §2), so
-`make demo` can play what an eval checks.
 
 **A compact** comes in the middle of a turn, after the prompt and before
 the reply, with more of the agent's steps after it. It needs its

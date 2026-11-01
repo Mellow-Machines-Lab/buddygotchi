@@ -60,18 +60,10 @@ done
 cp -R "$packs" "$app/Contents/Resources/packs"
 cp app/Boop/AppIcon.icns "$app/Contents/Resources/"
 for board in $boards; do python3 firmware/tools/package.py "$board" "$app/Contents/Resources/firmware"; done
-# The internal build's simulator: the page, its core and the pack's voice,
-# with the face the pack gives the AMOLED board, which the window draws.
+# The internal build's simulator window: its page, in Resources.
 if [ -n "$internal" ]; then
   simulator/web/build.sh >/dev/null
-  sim="$app/Contents/Resources/simulator"
-  mkdir -p "$sim"
-  cp simulator/web/dist/app.html simulator/web/dist/boop-simulator.js simulator/web/dist/boop-sim.js \
-    simulator/web/dist/boop-sim.wasm "$sim/"
-  pack=$(python3 characters/charactergen.py --which)
-  [ -f "$pack/voice/voice.bin" ] && cp "$pack/voice/voice.bin" "$sim/voice.bin"
-  python3 -c 'import json,sys; faces = json.load(open(sys.argv[1])).get("faces", {}); print(faces.get("amoled206") or "pixel")' \
-    "$pack/character.json" > "$sim/face"
+  app/tools/simulator.sh "$app/Contents/Resources/simulator"
 fi
 plist="$app/Contents/Info.plist"
 cp app/Boop/Info.plist "$plist"

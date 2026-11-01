@@ -16,7 +16,7 @@ extension Core {
     /// Push-to-talk as the core keeps it, its one owner: the runtime turns
     /// the mic on and off and plays what the core says, and the popover
     /// shows a copy.
-    public struct Talk: Equatable, Sendable {
+    public struct Listening: Equatable, Sendable {
         /// While the Mac's mic is on: who turned it on, and when.
         public struct Mic: Equatable, Sendable {
             public var by: Talker
@@ -38,7 +38,7 @@ extension Core {
     }
 
     /// While the Mac's mic is on: who turned it on, and when.
-    public var listening: Talk.Mic? { talk.mic }
+    public var listening: Listening.Mic? { pushToTalk.mic }
 
     /// Why listening started, waited or ended, as its records say.
     public enum ListenWhy {
@@ -62,7 +62,7 @@ extension Core {
     @discardableResult
     public func linkDown(at now: Int64) -> [CoreEffect] {
         talkStep { fx in
-            if talk.mic?.by == .device { stopListening(ListenWhy.linkDown, now, &fx) }
+            if pushToTalk.mic?.by == .device { stopListening(ListenWhy.linkDown, now, &fx) }
         }
     }
 
@@ -72,7 +72,7 @@ extension Core {
     @discardableResult
     public func heard(replyTo seq: Int?, at now: Int64) -> [CoreEffect] {
         talkStep { fx in
-            if let seq { talk.replyFor = seq } else { endListening(ListenWhy.noReply, now, &fx) }
+            if let seq { pushToTalk.replyFor = seq } else { endListening(ListenWhy.noReply, now, &fx) }
         }
     }
 
@@ -107,13 +107,13 @@ extension Core {
     @discardableResult
     public func micFailed(_ why: String, at now: Int64) -> [CoreEffect] {
         talkStep { fx in
-            talk.trouble = why
+            pushToTalk.trouble = why
             endListening(ListenWhy.micFailed, now, &fx, facts: ["trouble": .string(why)])
         }
     }
 
     /// The popover's "can't hear you" notice was dismissed.
-    public func dismissMicTrouble() { talk.trouble = nil }
+    public func dismissMicTrouble() { pushToTalk.trouble = nil }
 
     /// A pass is over, about the event `seq` (nil for a forced one), and
     /// whether it started a reaction. A reaction ends `listening`: it's
@@ -123,8 +123,8 @@ extension Core {
     @discardableResult
     public func passed(about seq: Int?, reacted: Bool, at now: Int64) -> [CoreEffect] {
         talkStep { fx in
-            let answered = talk.replyFor.map { r in seq.map { $0 >= r } ?? false } ?? false
-            if answered { talk.replyFor = nil }
+            let answered = pushToTalk.replyFor.map { r in seq.map { $0 >= r } ?? false } ?? false
+            if answered { pushToTalk.replyFor = nil }
             if reacted {
                 endListening(ListenWhy.replied, now, &fx, stop: false)
             } else if answered {
@@ -136,7 +136,7 @@ extension Core {
     /// Whether the device shows `listening` at `now`: the mic is on, or it
     /// went off and the reply hasn't come yet.
     public func showsListening(at now: Int64) -> Bool {
-        talk.mic != nil || talk.replyUntil.map { now < $0 } == true
+        pushToTalk.mic != nil || pushToTalk.replyUntil.map { now < $0 } == true
     }
 
     /// One push-to-talk input: the timers first, then `body`'s rules,
@@ -163,8 +163,8 @@ extension Core {
     /// button already does), which drops the reactions waiting there,
     /// since one would end it.
     func startListening(by talker: Talker, _ now: Int64, _ fx: inout [CoreEffect]) {
-        guard talk.mic == nil else { return }
-        talk = Talk(mic: Talk.Mic(by: talker, since: now), by: talker)
+        guard pushToTalk.mic == nil else { return }
+        pushToTalk = Listening(mic: Listening.Mic(by: talker, since: now), by: talker)
         recordListen(.start, now, &fx)
         if talker == .app { fx.append(.reaction(DeviceReaction(anim: BoopDevice.listening))) }
         fx.append(.listen(true, by: talker))
@@ -174,9 +174,9 @@ extension Core {
     /// holds `listening` for the reply until the core ends it
     /// (`endListening`), or `replyWaitMs` at most.
     func stopListening(_ why: String, _ now: Int64, _ fx: inout [CoreEffect]) {
-        guard let mic = talk.mic else { return }
-        talk.mic = nil
-        talk.replyUntil = now + Self.replyWaitMs
+        guard let mic = pushToTalk.mic else { return }
+        pushToTalk.mic = nil
+        pushToTalk.replyUntil = now + Self.replyWaitMs
         recordListen(.wait, now, &fx, data: ["why": .string(why)])
         fx.append(.listen(false, by: mic.by))
     }
@@ -187,14 +187,14 @@ extension Core {
     /// hadn't ended yet: as timed out once the reply's wait is over.
     func endListening(_ why: String, _ now: Int64, _ fx: inout [CoreEffect], stop: Bool = true,
                       facts: [String: JSONValue] = [:]) {
-        if talk.mic != nil || talk.replyUntil != nil {
-            let late = talk.mic == nil && talk.replyUntil.map { now >= $0 } == true
+        if pushToTalk.mic != nil || pushToTalk.replyUntil != nil {
+            let late = pushToTalk.mic == nil && pushToTalk.replyUntil.map { now >= $0 } == true
             var data = facts
             data["why"] = .string(late ? ListenWhy.timedOut : why)
             recordListen(.end, now, &fx, data: data)
         }
-        talk.mic = nil
-        talk.replyUntil = nil
+        pushToTalk.mic = nil
+        pushToTalk.replyUntil = nil
         if stop { fx.append(.reaction(DeviceReaction(anim: BoopDevice.stopListening))) }
     }
 
@@ -203,7 +203,7 @@ extension Core {
     func recordListen(_ phase: Event.Phase, _ now: Int64, _ fx: inout [CoreEffect], data: [String: JSONValue] = [:]) {
         var data = data
         data["by"] = "rule"
-        fx.append(.record(Event(at: now, source: .boop, type: .listen, phase: phase, specificType: talk.by.rawValue,
+        fx.append(.record(Event(at: now, source: .boop, type: .listen, phase: phase, specificType: pushToTalk.by.rawValue,
                                 data: data)))
     }
 }

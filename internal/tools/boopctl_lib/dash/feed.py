@@ -1,8 +1,9 @@
 """The dashboard's one source, the state dir's debug.jsonl: following it as
 the app writes it, noticing when the app starts again,
-and keeping what the panes show: Boop now, and its three columns, the mood,
-the automatic reactions and the decided ones. It never reads boop.log or the
-transcript, and never parses an action's message for a fact."""
+and keeping what the panes show: Boop now (with CONTEXT as Jev last read
+it), and its three columns, the mood and memory, the automatic reactions and
+the decided ones. It never reads boop.log or the transcript, and never parses
+an action's message for a fact."""
 from __future__ import annotations
 
 import json
@@ -25,6 +26,10 @@ TRIGGER_MS = 1000
 # A rule's reaction, a tap's poke or a `say` counts as what's showing for
 # this long.
 SHOWING_MS = 4000
+# How the prompt's CONTEXT section starts (ContextSection.heading).
+CONTEXT = "CONTEXT (how things stand"
+# The longest refused line the mood column shows whole.
+REFUSED_CHARS = 90
 
 
 class Follower:
@@ -110,8 +115,9 @@ def action(event: Line) -> Line | None:
     """An action's start, or its only line, as the dashboard reads it: its
     name, whether it worked, its message, whether it's still going, who
     it's by (`dashboard`, `rule` or none for the brain), what it's for, and
-    for a reaction the takes it sent. None for any
-    other event, and for an action's end."""
+    for a reaction the takes it sent, its reason, its reply, and an ask's
+    id (`ask`), question and two answers (`choices`). None for any other
+    event, and for an action's end."""
     got = _as_action(event)
     if got is None or got[1] == "end":
         return None
@@ -119,7 +125,9 @@ def action(event: Line) -> Line | None:
     by = data.get("by")
     return {"name": name, "ok": bool(data.get("ok")), "message": data.get("message", ""),
             "pending": phase == "start", "by": None if by == "brain" else by, "for": data.get("for"),
-            "session": data.get("session"), "takes": data.get("takes")}
+            "session": data.get("session"), "takes": data.get("takes"), "reason": data.get("reason"),
+            "reply": data.get("reply"), "ask": data.get("ask"), "question": data.get("question"),
+            "choices": data.get("answers")}
 
 
 def action_end(event: Line) -> Line | None:
@@ -169,6 +177,7 @@ class Board:
         self.dropped = 0
         self.jev_state: str | None = None  # the latest state a brain read, for `s`
         self.head = ""  # the state's head, from the latest `head` line
+        self.context: list[str] | None = None  # CONTEXT's rows in the latest state a brain read
         self.newest_ms: int | None = None  # the newest line's received_at_ms
         # The three columns, oldest first; each row a dict.
         self.moods: list[Line] = []
@@ -177,6 +186,10 @@ class Board:
         self._pass_for: dict[int | None, Line] = {}  # the latest decided row by its event (None: forced)
         self._decided_by_action: dict[int, Line] = {}  # a decided row by its react output's seq
         self._reflex: tuple[int, str] | None = None  # the latest rule reaction, poke or chatter: (time, what)
+        # The brain's latest reaction sent to the device, until its react
+        # output's `did` comes: the app sends it while the outputs run,
+        # before the pass's line.
+        self._brain_do: Line | None = None
 
     def apply(self, line: Line) -> tuple[str, str] | None:
         """Takes one line, and returns its timeline row as (style, text), or
@@ -191,7 +204,9 @@ class Board:
             return "status", "questions: " + ", ".join(q["key"] for q in body)
         if k == "status":
             before, self.status = self.status, body
-            return "status", "status: " + status_text(body, before)
+            text = status_text(body, before)
+            # Only XP moved, which Boop now shows.
+            return ("status", "status: " + text) if text else None
         if k == "sent":
             return self._sent(body, sent_by(line), at)
         if k == "ended":
@@ -199,6 +214,7 @@ class Board:
         if k == "view":
             self.events[(body.get("from") or [0])[-1]] = body
             self._event(body, at)
+            self._told(body, at)
             text = f"▸ {body.get('id')} {view_name(body)}{'' if body.get('wakes_brain') else ' (no pass)'}: {body['line']}"
             return "event", text + "".join(f"  [{note}]" for note in body.get("notes") or [])
         if k == "event":
@@ -208,8 +224,9 @@ class Board:
             return None
         if k == "pass":
             if body.get("brain") and body.get("state"):
-                # A pass carries HISTORY and NOW; older logs' carry the whole state.
+                # A pass carries CONTEXT, HISTORY and NOW; older logs' carry the whole state.
                 self.jev_state = self.head + body["state"]
+                self.context = context_rows(self.jev_state)
             self._pass(body, seq, at)
             if body.get("brain") and not body.get("held"):
                 # A held pass never asked the brain: its 0 ms says nothing of it.
@@ -226,8 +243,11 @@ class Board:
         return None
 
     def _raw(self, event: Line, at: int) -> tuple[str, str] | None:
-        """A raw event: only actions have a row; the view says the rest."""
+        """A raw event: actions, and memory's (a dream, the night's write)
+        and an ask's end, which the columns show; the view says the rest."""
         seq = event.get("seq")
+        if row := self._memory(event, at):
+            return row
         if a := action(event):
             if a["name"] == "needs_you":
                 return None  # the state's strip shows it, and the view its line
@@ -250,6 +270,32 @@ class Board:
             return "fail", f"  ✗ {name} didn't happen: {end.get('why')}"
         return None
 
+    def _memory(self, event: Line, at: int) -> tuple[str, str] | None:
+        """A day closing with its dream, the night's write and an ask's end,
+        each to its column; their timeline rows."""
+        data, k = event.get("data") or {}, event.get("kind")
+        if k == "dream":
+            self.moods.append({"at": at, "dream": data, "told": None})
+            return "mood", f"☾ the day closed: {dream_text(data)}"
+        if k == "memory":
+            self.moods.append({"at": at, "night": data})
+            return "mood", f"☾ the night's write: {night_text(data)}"
+        if k == "ask":
+            pick = data.get("specific_type")
+            row = next((r for r in reversed(self.decided)
+                        if (r["react"] or {}).get("ask") == data.get("q") and not r.get("answered")), None)
+            if row:
+                row["answered"] = {"pick": pick, "answer": data.get("answer"), "at": at}
+            return None  # its view event says it
+        return None
+
+    def _told(self, view: Line, at: int) -> None:
+        """The line that tells a dream, under the dream it tells."""
+        day = (view.get("facts") or {}).get("dream_day")
+        row = day and next((r for r in reversed(self.moods) if "dream" in r and r["dream"].get("day") == day), None)
+        if row and not row["told"]:
+            row["told"] = {"at": at, "line": view.get("line", "")}
+
     # Sorting lines into the columns.
 
     def _sent(self, msg: Line, by: str, at: int) -> tuple[str, str] | None:
@@ -259,6 +305,8 @@ class Board:
             self._state_changed(before, msg, at)
             return None if unchanged else ("sent", "→ state " + state_text(msg))
         if c := call(msg):
+            if by == "brain":
+                self._brain_do = c
             if by == "rule":
                 what = None
                 if c["anim"] in RULE_REACTIONS:
@@ -361,6 +409,8 @@ class Board:
             if row and (row["pass"].get("by") or None) == (body.get("by") or None) and row["react"] is None:
                 row["react"] = body
                 self._decided_by_action[seq] = row
+                if body["ok"]:
+                    row["do"], self._brain_do = self._brain_do, None
         elif body["name"] == "mood":
             if not body["ok"]:
                 self.moods.append({"at": at, "refused": body["message"], "by": body.get("by")})
@@ -398,6 +448,9 @@ class Board:
         return [
             ("look", look),
             ("mood", s.get("mood", "?")),
+            ("why", st.get("mood_reason") or "nothing in the log says"),
+            ("talk", talk_level(self.context)),
+            ("growth", growth_text(st)),
             ("showing", self.showing(now_ms)),
             ("needs you", f"{attn['agent']} · {attn['project']}" + (f" (+{attn['more']})" if attn.get("more") else "")
              if attn else "no"),
@@ -406,6 +459,8 @@ class Board:
              if live else "unknown: no live log"),
             ("brain", f"{st.get('brain', '?')} · "
              + (f"{self.latency_ms} ms" if self.latency_ms is not None else "no pass yet") + f" · dropped {self.dropped}"),
+            ("CONTEXT", "\n".join(self.context) if self.context else
+             "no pass yet" if self.context is None else "nothing to say"),
         ]
 
     def showing(self, now_ms: int) -> str:
@@ -421,7 +476,9 @@ class Board:
         return f"its {look} look" + (" with the needs-you strip" if s.get("attn") else "")
 
     def mood_column(self) -> list[tuple[str, str]]:
-        """The mood now, then its changes, newest first."""
+        """The mood now, then its changes and memory's rows (a day closing
+        with its dream and whether it's told, the night's write), newest
+        first."""
         changes = [r for r in self.moods if "mood" in r]
         if not changes:
             return [("dim", "no state yet")]
@@ -432,6 +489,22 @@ class Board:
                 out.append(("dim", f"{clock(r['at'])} · mood sat out: {r['sat_out']}"))
             elif "refused" in r:
                 out.append(("fail", f"{clock(r['at'])} ✗ forced mood refused: {r['refused']}"))
+            elif "dream" in r:
+                d = r["dream"]
+                out.append(("mood", f"{clock(r['at'])} ☾ the day closed: {dream_day(d)}"))
+                out.append(("dim", f"  dream: {d.get('sentence', '?')}" + (f" [{', '.join(d['tags'])}]" if d.get("tags") else "")))
+                told = r["told"]
+                out.append(("ok", f"  told at {clock(told['at'])}: ▸ {told['line']}") if told
+                           else ("dim", "  not told yet: at your next coming back or touch"))
+            elif "night" in r:
+                n = r["night"]
+                out.append(("mood", f"{clock(r['at'])} ☾ the night's write for {n.get('day', '?')}: {night_text(n)}"))
+                if not n.get("day_line"):
+                    out.append(("dim", "  Recently's line: the dream's sentence, as the writer's didn't pass"))
+                for refused in n.get("refused") or []:
+                    line = refused.get("line", "")
+                    line = line if len(line) <= REFUSED_CHARS else line[:REFUSED_CHARS - 1] + "…"
+                    out.append(("dim", f"  ✗ refused ({refused.get('why', '?')}): {line}"))
             else:
                 change = f"{r['from']} → {r['mood']}" if r["from"] else f"{r['mood']}"
                 out.append(("mood", f"{clock(r['at'])} {change}"))
@@ -469,10 +542,32 @@ class Board:
                 out.append(("event", f"{clock(r['at'])} the pass for {p.get('for')}"))
             if not p.get("dropped") and choice(p, FACE) not in (None, "none"):
                 out.append(("pass", "  " + picks_text(p)))
+            out += held_up(r)
             out.append(fate(r))
+            if (r["react"] or {}).get("reason"):
+                out.append(("dim", f"  why: {r['react']['reason']}"))
             if r["sat_out"]:
                 out.append(("dim", "  the mood sat this pass out"))
         return out
+
+
+def held_up(row: Line) -> list[tuple[str, str]]:
+    """What a reaction held up: its sign, as the device got it, or its ask,
+    with the two answers and the one picked, as the board said."""
+    react, do = row["react"] or {}, row.get("do") or {}
+    if react.get("ask"):
+        choices = react.get("choices") or ["?", "?"]
+        out = [("pass", f"  asks “{react.get('question')}”: {' or '.join(choices)}")]
+        answered = row.get("answered")
+        if not answered:
+            return out + [("dim", "  … no answer yet")]
+        if answered["pick"] == "ignored":
+            return out + [("dim", "  nobody answered")]
+        how = "a touch answered" if answered["pick"] == "touch" else "you picked"
+        return out + [("ok", f"  {how} {answered['answer']} ({answered['pick']})")]
+    if do.get("sign"):
+        return [("pass", f"  sign: “{do['sign']}”")]
+    return []
 
 
 def fate(row: Line) -> tuple[str, str]:
@@ -582,6 +677,59 @@ def reaction_text(row: Line, takes: list[str] | None = None) -> str:
             + (f", “{words}”" if words else ""))
 
 
+def context_rows(state: str) -> list[str] | None:
+    """CONTEXT's rows in a prompt, as Jev read them: [] when it has none
+    to say; None for a prompt from before CONTEXT."""
+    at = state.find(CONTEXT)
+    if at < 0:
+        return [] if "HISTORY (" in state else None
+    rows = []
+    for row in state[at:].split("\n")[1:]:
+        if not row.strip() or row.startswith("HISTORY ("):
+            break
+        rows.append(row)
+    return rows
+
+
+def talk_level(context: list[str] | None) -> str:
+    """The Talk setting, as CONTEXT's Talk row says it: chatty, quiet or
+    silent for N more min (the hush), and normal when there's no row."""
+    if context is None:
+        return "no pass yet"
+    row = next((r for r in context if r.startswith("Talk: ")), None)
+    if row is None:
+        return "normal"
+    words = row[len("Talk: "):]
+    return words.split(":")[0] if words.startswith("silent") else words.split(".")[0]
+
+
+def growth_text(st: Line) -> str:
+    """The stage, the XP, and today's XP from each pool against its cap,
+    from the status line."""
+    if "xp" not in st:
+        return f"stage {st['stage']}" if "stage" in st else "?"
+    today = st.get("today_xp") or {}
+    return (f"stage {st.get('stage', '?')} · {st['xp']} XP · today: work {today.get('work', 0)}/{today.get('work_cap', '?')},"
+            f" care {today.get('care', 0)}/{today.get('care_cap', '?')}")
+
+
+def dream_day(d: Line) -> str:
+    """The day a dream is of: `Saturday 2026-10-31`."""
+    return f"{d.get('weekday', '?')} {d.get('day', '?')}"
+
+
+def dream_text(d: Line) -> str:
+    return f"{dream_day(d)}, dreamed: {d.get('sentence', '?')}"
+
+
+def night_text(n: Line) -> str:
+    """What the night's write changed and refused, in counts."""
+    parts = [f"{len(n.get(k) or [])} {k}" for k in ("added", "updated", "dropped", "aged") if n.get(k)]
+    changed = sum(len(n.get(k) or []) for k in ("added", "updated", "dropped", "aged"))
+    return (f"{changed} changed" + (f" ({', '.join(parts)})" if parts else "")
+            + f", {len(n.get('refused') or [])} refused")
+
+
 def brain_name(brain: str | None) -> str:
     name = (brain or "the brain").split(":")[0]
     return "Jev" if name == "jev" else name
@@ -626,6 +774,7 @@ def status_text(st: Line, before: Line | None = None) -> str:
         "sessions": lambda v: "sessions " + sessions_text(v),
         "connected": lambda v: "device " + ("connected" if v else "not connected"),
         "stage": lambda v: f"stage {v}",
+        "mood_reason": lambda v: f"the mood's reason: {v}",
     }
     # A key the line doesn't have (`stage`, before 2026-10-01) isn't shown.
     return " · ".join(show(st[key]) for key, show in shown.items()

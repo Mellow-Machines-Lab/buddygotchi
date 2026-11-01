@@ -34,7 +34,7 @@ enum Snapshots {
             checkPulse()
 
             // The pack's mirror of the board, when it has one (Boop's).
-            let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, busy: 1, vol: 6)
+            let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
             var gelImage: NSImage?, onboardingGel: NSImage?
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
@@ -52,7 +52,7 @@ enum Snapshots {
                                                     size: NSSize(width: 92, height: 92), zoomed: true)
                 tileStill = gelImage
                 let gelAttention = StateSnapshot(base: "working", mood: "frightened",
-                    attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), busy: 1, vol: 6)
+                    attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), working: 1, vol: 6)
                 _ = try SlimeSnapshots.image(gelAttention, to: out.appendingPathComponent("slime-needs-you.png"))
                 try checkMoodStills()
             }
@@ -117,13 +117,11 @@ enum Snapshots {
                 shot("settings-firmware-failed", behind, pane: .settings)
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: bluetooth(.poweredOff))),
                      pane: .settings)
-                // A simulator running on this Mac: a body to choose, and chosen.
-                let offered = model(installer, status: status())
-                offered.simulator = .there
-                shot("settings-simulator-there", offered, pane: .settings)
+                // The simulator window, in a build that has it: off, and on.
+                shot("settings-simulator-off", model(installer, status: status()), pane: .settings)
                 let simulated = model(installer, status: status())
-                simulated.simulator = .inUse
-                shot("settings-simulator-used", simulated, pane: .settings)
+                simulated.usingSimulator = true
+                shot("settings-simulator-on", simulated, pane: .settings)
                 // A card with another pack than the app's, and no card or pack: no voice.
                 shot("settings-old-voice", model(installer, status: status(voice: "0123456789abcdef")), pane: .settings)
                 shot("settings-no-voice", model(installer, status: status(voice: "none")), pane: .settings)
@@ -186,24 +184,24 @@ enum Snapshots {
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
-            // No board, with a simulator running on this Mac: it's offered.
+            // No board, in a build with the simulator window: it's offered.
             ("4-body-simulator-offered", at(.body) { $0.simulatorHere = true }),
-            // The simulator as the body (make dev SIM=1, or chosen above).
-            ("4-body-in-browser", at(.body) { $0.app.startOnSimulator = .stay }),
-            ("4-body-in-browser-looking", at(.body, status: status(connected: false)) {
-                $0.app.startOnSimulator = .stay
+            // The simulator window as the body, chosen above.
+            ("4-body-in-window", at(.body) { $0.app.startOnSimulator = true }),
+            ("4-body-in-window-looking", at(.body, status: status(connected: false)) {
+                $0.app.startOnSimulator = true
                 $0.body = .looking
             }),
-            ("4-body-in-browser-found", at(.body, status: status()) {
-                $0.app.startOnSimulator = .stay
+            ("4-body-in-window-found", at(.body, status: status()) {
+                $0.app.startOnSimulator = true
                 $0.body = .looking
             }),
-            ("4-body-in-browser-joined", at(.body, status: status()) {
-                $0.app.startOnSimulator = .stay
+            ("4-body-in-window-joined", at(.body, status: status()) {
+                $0.app.startOnSimulator = true
                 $0.body = .joined
             }),
-            ("5-how-to-in-browser", at(.howTo, status: status()) {
-                $0.app.startOnSimulator = .stay
+            ("5-how-to-in-window", at(.howTo, status: status()) {
+                $0.app.startOnSimulator = true
                 $0.body = .joined
                 $0.progress.lessons = [.tap]
             }),
@@ -476,7 +474,7 @@ enum Snapshots {
     /// `sessions` are agent, project, `wait`, `work` or `idle`, and
     /// optionally the thread's name and its workspace.
     static func status(base: String = "working", sessions rows: [[String]] = [], vol: Int = 6,
-                       connected: Bool = true, personality: Personality = .default, talk: Talk = .default,
+                       connected: Bool = true, talk: Talk = .default,
                        name: String = "Mochi", brain: String = "jev:jev-latest", keyRead: Bool = true,
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
@@ -513,19 +511,22 @@ enum Snapshots {
                 StateSnapshot.Attention(agent: $0.agent, project: StateSnapshot.clip($0.project, marked: true),
                                         name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1)
             },
-            busy: sessions.filter { $0.status == .working }.count, vol: vol)
+            working: sessions.filter { $0.status == .working }.count, vol: vol)
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
                               device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice, face: face) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
-                              personality: personality, brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
+                              brain: brain, keyRead: keyRead, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
-        // Its age and the diary's last days, read the day after.
+        // Its age and its memory's recent days, read the day after.
         status.talk = talk
-        status.talks = true
         status.daysOld = 47
-        status.diary = [.init(day: "2026-10-21", line: "Wednesday. \"api\" fell over 2 times, once after 41 minutes. I stayed brave.",
-                              today: "2026-10-22"),
-                        .init(day: "2026-10-20", line: "Tuesday. 9 turns, not one broken. Smug all day, and fairly.", today: "2026-10-22")]
+        status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked Boop 4 times.",
+                                 today: "2026-10-22"),
+                           .init(day: "2026-10-20", line: "Three turns broke on \"api\". You said \"still broken\".", today: "2026-10-22")]
+        status.notes = [.init(id: 3, section: .you, days: ["2026-10-20"], text: "You work late most nights, and you say please to claude."),
+                        .init(id: 12, section: .work, days: ["2026-10-21"], text: "\"api\": you and claude fixed the failing tests on Tuesday."),
+                        .init(id: 9, section: .boop, days: ["2026-10-14", "2026-10-21"], pinned: true,
+                              text: "You stroke Boop when you sit down in the morning.")]
         return status
     }
 

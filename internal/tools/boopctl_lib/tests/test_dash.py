@@ -1,6 +1,7 @@
 """The dashboard: its feed against debug.jsonl files
-recorded from real headless runs, its three columns (the mood, the
-automatic reactions and the decided ones) and the stale-log banner, restart
+recorded from real headless runs, Boop now (Talk, growth and CONTEXT), its
+three columns (the mood and memory, the automatic reactions and the decided
+ones, with their signs, asks and reasons) and the stale-log banner, restart
 detection, the face's downsampling and
 crop against every golden frame, the dev lines its keys build, and the app
 itself through Textual's pilot. Needs no board, app or sim."""
@@ -35,6 +36,7 @@ from pack import needs_voice  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "headless-debug.jsonl"
 COLUMNS = Path(__file__).parent / "fixtures" / "dash-columns.jsonl"
+MEMORY = Path(__file__).parent / "fixtures" / "dash-memory.jsonl"
 LANE_TOP = 192  # firmware/src/render/screens.h kLaneTop: the design is above it
 
 
@@ -297,15 +299,15 @@ class ColumnsTests(unittest.TestCase):
         sent = lambda at, id, name: {"sent": {"t": "do", "id": id, "name": name, "play": "if_free"},  # noqa: E731
                                      "by": "rule", "received_at_ms": at}
         board, rows = board_after([
-            sent(t, 51, "stopped"),
+            sent(t, 51, "starting"),
             {"ended": {"id": 51, "how": "skipped", "why": "busy"}, "received_at_ms": t + 5},
-            sent(t + 10, 52, "error"),
+            sent(t + 10, 52, "starting"),
             {"ended": {"id": 52, "how": "done"}, "received_at_ms": t + 900},
         ])
         self.assertIn(("fail", "  ⇠ do 51 skipped (busy)"), rows)
         self.assertIn(("dim", "  ⇠ do 52 done"), rows)
         reflex = board.reflex_column()
-        self.assertEqual(reflex, [("ok", f"{clock(t + 10)} error"), ("dim", f"{clock(t)} stopped (skipped: busy)")])
+        self.assertEqual(reflex, [("ok", f"{clock(t + 10)} starting"), ("dim", f"{clock(t)} starting (skipped: busy)")])
 
     def test_a_held_pass_says_nothing_of_the_brains_latency(self):
         """A pass held back when its turn came never asked the brain:
@@ -584,6 +586,149 @@ class ControlsTests(unittest.TestCase):
         self.assertIn("can't reach Boop's socket", send_line(server.path, {"dev": "mood", "mood": "grumpy"}))
 
 
+class MemoryTests(unittest.TestCase):
+    """What's new since dreaming and simplify, from
+    `tests/fixtures/dash-memory.jsonl`, recorded unedited from a real run:
+    `Boop --headless --debug --brain scripted` whose USB link is the native
+    simulator (`program --live` behind linkkit-bridge), a Claude session
+    through agent-hook (a prompt, a test run, a finish), a forced pass
+    holding up the sign "please <3" at the prompt, a second turn, a forced
+    pass asking "did it work?" and a touch on the sim's lane answering no,
+    `{"dev":"close_day"}`, a tap that told the dream, and the night's write
+    by Apple Intelligence on the Mac it ran on, which refused all four of
+    its edits."""
+
+    def setUp(self):
+        self.board, self.rows = board_after(fixture_lines(MEMORY))
+
+    def texts(self, rows):
+        return [text for _, text in rows]
+
+    def test_boop_now(self):
+        """Talk from CONTEXT (normal: no Talk row), growth from the status
+        line (the stage, the XP, today's from each pool against its cap),
+        and CONTEXT as the last pass's prompt had it."""
+        facts = dict(self.board.facts(self.board.newest_ms))
+        self.assertEqual(facts["talk"], "normal")
+        self.assertEqual(facts["growth"], "stage 1 · 16 XP · today: work 0/60, care 0/60",
+                         "the day closed, so today's pools start again")
+        self.assertEqual(facts["why"], "nothing in the log says", "the mood never moved")
+        self.assertEqual(facts["CONTEXT"].splitlines()[1:], ["Pip: a Hatchling, hatched today.",
+                                                             'Agents: claude idle on "jetpack" for 1 min.',
+                                                             "Today: you touched Pip once."])
+        self.assertRegex(facts["CONTEXT"], r"^When: \d\d:\d\d, Sunday, day\.")
+        today = [line["status"]["today_xp"] for line in fixture_lines(MEMORY) if "status" in line]
+        self.assertEqual(max(t["work"] for t in today), 11, "a tool call 1 and each turn done 5, before the close")
+        self.assertEqual(max(t["care"] for t in today), 5, "the answered ask")
+        self.assertNotIn("status: ", [text for _, text in self.rows], "a status where only XP moved has no row")
+
+    def test_talk_and_growth_from_their_rows(self):
+        """CONTEXT's Talk row, and a status line's XP; before any pass, and
+        an older log's status with no XP."""
+        talk = feed.talk_level
+        self.assertEqual(talk(None), "no pass yet")
+        self.assertEqual(talk(["When: 09:02, Saturday, morning."]), "normal")
+        self.assertEqual(talk(["Talk: chatty. You asked Pip to say something at every face."]), "chatty")
+        self.assertEqual(talk(["Talk: quiet. You asked Pip to say less."]), "quiet")
+        self.assertEqual(talk(["Talk: silent for 4 more min, then quiet again: Pip says nothing till then."]),
+                         "silent for 4 more min, then quiet again")
+        self.assertEqual(feed.context_rows("You are.\n\nCONTEXT (how things stand. x)\nWhen: 9.\nTalk: quiet.\n\n"
+                                           "HISTORY (oldest first)\nh"), ["When: 9.", "Talk: quiet."])
+        self.assertIsNone(feed.context_rows("You are.\nMOOD\ncalm"), "an older log's prompt")
+        self.assertEqual(feed.growth_text({"stage": 2}), "stage 2")
+        self.assertEqual(feed.growth_text({"stage": 3, "xp": 1234, "today_xp": {"work": 60, "work_cap": 60,
+                                                                                "care": 9, "care_cap": 60}}),
+                         "stage 3 · 1234 XP · today: work 60/60, care 9/60")
+        board = Board()
+        board.apply({"status": {"brain": "jev", "mood_reason": "Pip is lonely. You came back after a day away."},
+                     "received_at_ms": 1})
+        self.assertEqual(dict(board.facts(1))["why"], "Pip is lonely. You came back after a day away.")
+
+    def test_the_decided_signs_asks_and_reasons(self):
+        """A sign as the device got it, an ask with its two answers and the
+        one picked, and each reaction's reason."""
+        decided = self.texts(self.board.decided_column())
+        sign = decided.index("  sign: “please <3”")
+        self.assertEqual(decided[sign - 2:sign], [decided[sign - 2], "  happy 1.00 · small 1.00 · says nothing"])
+        self.assertTrue(decided[sign - 2].endswith("forced by dashboard"))
+        self.assertEqual(decided[sign + 1:sign + 3],
+                         ["  ✓ played", '  why: Pip is happy. You asked claude on "jetpack" in a sentence, politely.'])
+        ask = decided.index("  asks “did it work?”: yes or no")
+        self.assertEqual(decided[ask + 1], "  you picked no (b)")
+        reasons = [r["react"]["reason"] for r in self.board.decided if r["react"]]
+        self.assertEqual([text[len("  why: "):] for text in decided if text.startswith("  why: ")], reasons[::-1],
+                         "every reaction's, newest first")
+
+    def test_an_ask_nobody_or_a_touch_answered(self):
+        board = Board()
+        lines = [{"pass": {"answers": {"react.face": {"choice": "curious", "p": {"curious": 1}}}, "by": "dashboard",
+                           "for": None, "questions": ["react.face", "react.sign"]}, "received_at_ms": 1},
+                 {"sent": {"t": "do", "id": 9, "name": "react", "play": "next",
+                           "args": {"sign": "pet me?", "ask": {"q": "pet", "a": "ok", "b": "later", "touch": True}}},
+                  "by": "brain", "received_at_ms": 1},
+                 {"event": {"seq": 2, "at": 2, "source": "self", "kind": "did",
+                            "data": {"action": "react", "by": "dashboard", "for": None, "ok": True, "open": True,
+                                     "ask": "pet", "question": "pet me?", "answers": ["ok", "later"]}},
+                  "received_at_ms": 2}]
+        for line in lines:
+            board.apply(line)
+        self.assertEqual(self.texts(board.decided_column())[3], "  … no answer yet")
+        nobody = {"event": {"seq": 3, "at": 3, "source": "device", "kind": "ask",
+                            "data": {"q": "pet", "specific_type": "ignored", "question": "pet me?"}}, "received_at_ms": 3}
+        self.assertIsNone(board.apply(nobody), "its view event says it in the timeline")
+        self.assertEqual(self.texts(board.decided_column())[3], "  nobody answered")
+        board.decided[-1]["answered"] = None
+        board.apply({"event": {**nobody["event"], "data": {"q": "pet", "specific_type": "touch", "answer": "ok"}},
+                     "received_at_ms": 4})
+        self.assertEqual(self.texts(board.decided_column())[3], "  a touch answered ok (touch)")
+        self.assertNotIn("  sign: “pet me?”", self.texts(board.decided_column()), "an ask's sign is its question")
+
+    def test_memory_in_the_mood_column(self):
+        """A day closing, its dream and the line that told it, and the
+        night's write, changed and refused, newest first."""
+        mood = self.texts(self.board.mood_column())
+        night = next(i for i, text in enumerate(mood) if "☾ the night's write for 2026-11-01" in text)
+        self.assertTrue(mood[night].endswith(": 0 changed, 4 refused"))
+        self.assertEqual(mood[night + 1], "  Recently's line: the dream's sentence, as the writer's didn't pass")
+        self.assertEqual([t.split(")")[0] for t in mood[night + 2:night + 6]],
+                         ["  ✗ refused (ungrounded", "  ✗ refused (form", "  ✗ refused (form", "  ✗ refused (ungrounded"])
+        self.assertTrue(all(len(t) <= feed.REFUSED_CHARS + 20 for t in mood[night + 2:night + 6]), "a long line is cut")
+        dream = night + 6
+        self.assertTrue(mood[dream].endswith("☾ the day closed: Sunday 2026-11-01"))
+        self.assertEqual(mood[dream + 1], '  dream: you poked it once; 2 turns on "jetpack" [answered, clean]')
+        self.assertRegex(mood[dream + 2], r"^  told at \d\d:\d\d:\d\d: ▸ You poked Pip again\.$")
+        self.assertIn(("mood", '☾ the day closed: Sunday 2026-11-01, dreamed: you poked it once; 2 turns on "jetpack"'),
+                      self.rows)
+        self.assertIn(("mood", "☾ the night's write: 0 changed, 4 refused"), self.rows)
+        untold = Board()
+        for line in fixture_lines(MEMORY):
+            if line.get("view", {}).get("facts", {}).get("dream_day"):
+                break
+            untold.apply(line)
+        self.assertIn("  not told yet: at your next coming back or touch", self.texts(untold.mood_column()))
+
+    def test_the_night_in_counts(self):
+        self.assertEqual(feed.night_text({"added": ["m1"], "updated": ["m2", "m3"], "aged": ["m4"], "refused": []}),
+                         "4 changed (1 added, 2 updated, 1 aged), 0 refused")
+
+    def test_the_pack_s_lasting_moods(self):
+        """`m` offers the lasting moods: those with a `meaning`, 16 in
+        Boop's pack of 42 faces."""
+        from boopctl_lib.common import MOODS, REPO, lasting_moods
+        boop = lasting_moods(REPO / "characters" / "boop")
+        self.assertEqual(len(boop), 16)
+        self.assertIn("lonely", boop)
+        self.assertNotIn("crying", boop, "a face only, which settles into sad")
+        self.assertEqual(len(MOODS), 42, "Preview keeps every face")
+
+    def test_closing_the_day_lands_with_its_dream(self):
+        pending = controls.Pending()
+        pending.add({"dev": "close_day"}, now=0)
+        self.assertEqual([x for x in map(pending.seen, fixture_lines(MEMORY)) if x], ["close_day"])
+        self.assertIn("nobody was there today", controls.late_text("close_day"))
+        self.assertIn("Is Boop running with --debug?", controls.late_text("mood"))
+
+
 class Socket:
     """A Unix socket that collects the JSON lines written to it, as the
     app's hook socket would."""
@@ -705,8 +850,12 @@ class AppTests(unittest.TestCase):
                         await pilot.press(*["down"] * down, "enter")
                     await pilot.pause()
 
-                from boopctl_lib.common import MOODS
-                await pick("m", MOODS.index("grumpy"))
+                from boopctl_lib.common import MOODS, lasting_moods
+                await pilot.press("m")
+                await pilot.pause()
+                self.assertEqual(app.screen.choices, lasting_moods(), "the pack's lasting moods")
+                await pilot.press("escape")
+                await pick("m", lasting_moods().index("grumpy"))
                 await pick("r", 6, 0, 1, 8)  # grumpy, no move, medium, retry
                 got = server.wait(2)
                 self.assertEqual(got, [{"dev": "mood", "mood": "grumpy"},
@@ -728,6 +877,10 @@ class AppTests(unittest.TestCase):
                 await pick("p", 1)
                 self.assertEqual(face.sent[-1]["base"], "working")
                 self.assertIn("PREVIEW: working", app.query_one("#face").border_title)
+                await pilot.press("m")
+                await pilot.pause()
+                self.assertEqual(app.screen.choices, list(MOODS), "Preview offers every face")
+                await pilot.press("escape")
                 await pick("m", MOODS.index("sad"))  # the mood's faces, on the sim only
                 self.assertEqual((face.sent[-1]["base"], face.sent[-1]["mood"]), ("working", "sad"))
                 self.assertEqual(len(server.wait(3, timeout=0.3)), 2, "nothing went to the app")
@@ -752,6 +905,18 @@ class AppTests(unittest.TestCase):
                 self.assertEqual(face.restarts[-1], latest, "leaving Preview replays the latest state")
                 self.assertIn("live", app.query_one("#face").border_title)
 
+                # `d` closes Boop's day: landed with the dream, in the mood column.
+                await pick("d")
+                self.assertEqual(server.wait(3)[-1], {"dev": "close_day"})
+                with log.open("a") as f:
+                    f.write('{"event":{"seq":29,"at":1790498700003,"source":"boop","kind":"dream","data":{"day":"2026-09-27",'
+                            '"weekday":"Sunday","sentence":"a quiet day","tags":["quiet"],"fact":"quiet day",'
+                            '"specific_type":"dream"}},"received_at_ms":1790498700003}\n')
+                app.poll()
+                self.assertNotIn("close_day", [name for _, name, _ in app.pending.waiting])
+                self.assertIn("☾ the day closed: Sunday 2026-09-27", plain(app.query_one("#mood")))
+
+                self.assertEqual({b.key: b.description for b in Dash.BINDINGS}["s"], "the prompt Jev read")
                 await pilot.press("s")
                 await pilot.pause()
                 self.assertIsInstance(app.screen, StateView)

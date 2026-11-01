@@ -33,6 +33,10 @@ public final class Pipeline {
     /// Every event as it's logged, and every view event as its input
     /// ends, for debug mode.
     public var onRecord: ((Event) -> Void)?
+    /// What runs at the start of every input, before it logs anything,
+    /// with its time: the memory closing a day that's over, so the event
+    /// after it is read on the new one (`Memory`).
+    public var beforeInput: [(Int64) -> Void] = []
     public var onView: ((ViewEvent) -> Void)?
 
     /// What one input did.
@@ -81,16 +85,10 @@ public final class Pipeline {
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
         options.reading = .none
-        // The time and weekday, then the calendar's occasions in words
-        // (`Halloween`, `Boop is 50 days old`), so the brain can play along.
-        // The first core's, read as the prompt is built, on the pipeline's queue.
-        let first = FirstCore(buddies.first?.core), name = buddies[0].buddy.name
-        options.heading = { wall in
-            ([time.clock(wall), time.weekday(wall)]
-                + Occasions.words(at: wall, hatched: first.core?.config.hatched, name: name, stage: first.core?.config.stageReached,
-                                  time: time))
-                .joined(separator: ", ")
-        }
+        // Only this moment's time: the weekday, the part of the day and the
+        // calendar's occasions are CONTEXT's When row.
+        options.heading = { wall in time.clock(wall) }
+        let name = buddies[0].buddy.name
         options.loop = loop
         let input = inputTime
         harness = Harness(name: name, brain: nil, log: transcript,
@@ -122,7 +120,10 @@ public final class Pipeline {
         inputTime.now = max(inputTime.now, now)
         let outer = step
         step = Step()
-        harness.batch { body() }
+        harness.batch {
+            for hook in beforeInput { hook(now) }
+            body()
+        }
         var made = step ?? Step()
         step = outer
         let log = transcript.view(now: now)
@@ -229,6 +230,36 @@ public final class Pipeline {
         }
     }
 
+    /// An ask's end, as the board decided it: `pick` `a` or `b` (a target
+    /// tapped), `touch` (a stroke answered it), or `ignored`, for the
+    /// question `q` (its words, `question`), `answer` the words picked,
+    /// and whether Boop `keeps` it. Logged; an answer may wake the brain,
+    /// as what you said does.
+    @discardableResult
+    public func ask(_ q: String, question: String, pick: String, answer: String?, keeps: Bool, at now: Int64,
+                    buddy: String? = nil) -> Step {
+        input(at: now) {
+            harness.emit(Event(at: now, source: .device, type: .ask, specificType: pick, buddy: buddy,
+                               data: ["q": .string(q), "question": .string(question), "answer": .of(answer), "keeps": .bool(keeps)]))
+        }
+    }
+
+    /// The question the buddy asked last answered as its board would say
+    /// it: `pick` "a", "b", "touch" (its first answer) or "ignored". For a
+    /// demo or an eval, which have no board to tap; nothing when nothing
+    /// was asked.
+    @discardableResult
+    public func answerLast(_ pick: String, at now: Int64, buddy: String? = nil) -> Step? {
+        let asked = harness.log.view(now: now).events.last {
+            $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil && $0.buddy == buddy
+        }
+        guard let asked, let id = asked["ask"]?.string else { return nil }
+        let answers = asked["answers"]?.array?.compactMap(\.string) ?? []
+        let answer = pick == Asks.ignored ? nil : pick == "b" ? answers.last : answers.first
+        return ask(id, question: asked["question"]?.string ?? "", pick: pick, answer: answer,
+                   keeps: asked["keeps"]?.bool ?? false, at: now, buddy: buddy)
+    }
+
     /// What you did to the board (`kind`: a stroke, a shake, face down…),
     /// which it reacted to at once: logged, and it may wake the brain, as
     /// a poke does. The core hears only `dismiss`, a finger held on the
@@ -279,7 +310,7 @@ public final class Pipeline {
     public func said(_ words: String, by: Core.Talker, buddy: String? = nil, at now: Int64) -> Step {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
-            harness.emit(Event(at: now, source: .mic, type: .talk, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
+            harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
         }
     }
 
@@ -365,11 +396,4 @@ public final class Pipeline {
         }
         return nil
     }
-}
-
-/// The first buddy's core for the prompt's heading, which reads its
-/// hatch day and stage on the pipeline's own queue.
-private final class FirstCore: @unchecked Sendable {
-    weak var core: Core?
-    init(_ core: Core?) { self.core = core }
 }

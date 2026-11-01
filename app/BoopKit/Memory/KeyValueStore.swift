@@ -36,6 +36,8 @@ public final class KeyValueStore {
             db = nil
             throw Refusal("\(path) is from a newer Boop (schema \(version), this one knows \(Self.schema)), so it's left alone")
         }
+        // Another process with the file open (a tool) makes it wait, not fail.
+        sqlite3_busy_timeout(db, 2000)
         try exec("PRAGMA journal_mode=WAL")
         try exec("CREATE TABLE IF NOT EXISTS kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
         // A file from before the version was kept (0) has schema 1's shape.
@@ -55,6 +57,39 @@ public final class KeyValueStore {
     }
 
     public func int(_ key: String) -> Int? { string(key).flatMap { Int($0) } }
+
+    /// Every key that starts with `prefix`, and its value: `day.`'s rows.
+    public func prefixed(_ prefix: String) -> [String: String] {
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, "SELECT key, value FROM kv WHERE key >= ? AND key < ?", -1, &statement, nil) == SQLITE_OK
+        else { return [:] }
+        defer { sqlite3_finalize(statement) }
+        sqlite3_bind_text(statement, 1, prefix, -1, Self.transient)
+        sqlite3_bind_text(statement, 2, prefix + "\u{10FFFF}", -1, Self.transient)
+        var out: [String: String] = [:]
+        while sqlite3_step(statement) == SQLITE_ROW, let k = sqlite3_column_text(statement, 0), let v = sqlite3_column_text(statement, 1) {
+            out[String(cString: k)] = String(cString: v)
+        }
+        return out
+    }
+
+    /// Forgets `keys`, all at once.
+    public func remove(_ keys: [String]) throws {
+        try exec("BEGIN IMMEDIATE")
+        do {
+            for key in keys {
+                var statement: OpaquePointer?
+                guard sqlite3_prepare_v2(db, "DELETE FROM kv WHERE key = ?", -1, &statement, nil) == SQLITE_OK else { throw error() }
+                defer { sqlite3_finalize(statement) }
+                sqlite3_bind_text(statement, 1, key, -1, Self.transient)
+                guard sqlite3_step(statement) == SQLITE_DONE else { throw error() }
+            }
+            try exec("COMMIT")
+        } catch {
+            try? exec("ROLLBACK")
+            throw error
+        }
+    }
 
     /// Keeps every value, replacing what each key had, all at once.
     public func set(_ values: [String: String]) throws {

@@ -63,7 +63,7 @@ extension Runtime {
                     // doesn't fit, and boop.log says whose it is.
                     "device_trouble": link.trouble?.description ?? NSNull(),
                     "link": options.link?.name ?? "none", "connected": link.connected, "debug": options.debug,
-                    "personality": personality.rawValue, "mood": moodNow, "brain": harness.brain?.id ?? "none",
+                    "talk": talk.rawValue, "mood": moodNow, "brain": harness.brain?.id ?? "none",
                     "taken_at_ms": now, "taken_at_wall_ms": options.wallClock(),
                     "sessions": core.sessionList(at: now).map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] },
                 ]

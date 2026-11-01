@@ -76,7 +76,7 @@ final class HushTests: XCTestCase {
         let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, hushed: { _ in hushedNow },
                                 hush: { ms, _ in hushes.append(ms) })
         let log = Transcript.log().view(now: 0)
-        let said = Event(at: 0, source: .mic, type: .talk, specificType: "device", data: ["words": "shh"])
+        let said = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "shh"])
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
         XCTAssertTrue(react.questions(now: poke, log: log).contains { $0.key == ReactOutput.sayKey })
         XCTAssertFalse(react.questions(now: said, log: log).first { $0.key == ReactOutput.moveKey }!.options.contains { $0.name == "unhush" },
@@ -100,7 +100,8 @@ final class HushTests: XCTestCase {
     }
 
     /// On Quiet, `say` offers no topic and no swear, and a small moment or
-    /// a finish says nothing; Normal and Chatty offer every one.
+    /// a finish says nothing; Normal offers every one, and Chatty every one
+    /// but "none".
     func testQuietHoldsInCode() throws {
         try requireVoice()
         var talk = Talk.quiet
@@ -117,9 +118,12 @@ final class HushTests: XCTestCase {
         XCTAssertEqual(queued.last?.anim, "task_complete", "which still plays")
         _ = react.run(["react.face": a("amused"), "say": a("tickled"), "react.intensity": a("medium")], now: poke, log: log)
         XCTAssertFalse(queued.last?.say?.takes.isEmpty ?? true, "a medium moment says how it feels")
-        for t in [Talk.normal, .chatty] {
-            talk = t
-            XCTAssertEqual(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey }?.options.count, 21, t.rawValue)
-        }
+        talk = .normal
+        XCTAssertEqual(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey }?.options.count, 21)
+        // Chatty says something at every face: no "none".
+        talk = .chatty
+        let chatty = try XCTUnwrap(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey })
+        XCTAssertEqual(chatty.options.count, 20)
+        XCTAssertFalse(chatty.options.contains { $0.name == "none" })
     }
 }

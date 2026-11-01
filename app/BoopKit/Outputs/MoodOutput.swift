@@ -24,10 +24,21 @@ public enum MoodOutput {
         return "\(name) has been \(current) for \(span)."
     }
 
-    /// Each mood and its meaning, the `mood` question's criterion, in the
-    /// pack's order (`MoodGraph.moods`), from the character pack's `moods`
-    /// (characters/CHARACTER.md §5). Each also has a file in the steering's
-    /// mood/, and a set of faces on the device.
+    /// Why the mood is what it is, for the person: its latest change's
+    /// cause, from the event that change answered (`for`) and that event's
+    /// line, `line`. `Reason.mood` makes the sentence ("Boop is lonely. You
+    /// came back after 26 hours away."). Nil before any change, for a
+    /// change nothing caused (the dashboard's), or once that event has left
+    /// the log.
+    public static func reason(_ mood: Choice, _ log: LogView, line: (Int) -> Line?) -> Reason? {
+        guard let latest = mood.latest(log), let seq = latest.about, let cause = log.event(seq) else { return nil }
+        return Reason.of(cause, line: line(seq))
+    }
+
+    /// Each lasting mood and its meaning, the `mood` question's criterion,
+    /// in the pack's order (`MoodGraph.moods`), from the character pack's
+    /// `moods` (characters/CHARACTER.md §5). Each also has a file in the
+    /// steering's mood/, and a set of faces on the device.
     public static var moods: [Option] { CharacterPack.active.options }
 
     /// The resting mood, the pack's `default_mood`: a new state directory
@@ -57,7 +68,7 @@ public enum MoodOutput {
     public static func options(from mood: String, in pack: CharacterPack = .active) -> [Option] {
         let moods = pack.options
         let meaning = { (name: String) in moods.first { $0.name == name }! }
-        let moves = MoodGraph.mood(mood, in: pack)?.moves ?? MoodGraph.mood(pack.defaultMood, in: pack)!.moves
+        let moves = MoodGraph.mood(mood, in: pack)?.neighbours ?? MoodGraph.mood(pack.defaultMood, in: pack)!.neighbours
         return [stay(mood, in: pack)]
             + moves.ordinary.map(meaning)
             + moves.dramatic.map(meaning).map { o in
@@ -72,21 +83,21 @@ public enum MoodOutput {
         Choice(name: outputName, start: pack.defaultMood, voice: voice, question: "After NOW, what is \(pack.name)'s mood?",
                       about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
                       said: { from, to in "\(pack.name)'s mood changed: \(from) → \(to)." },
-                      options: { current, _, _ in options(from: MoodGraph.mood(current) != nil ? current : pack.defaultMood, in: pack) })
+                      options: { current, _, _ in options(from: pack.settled(current) ?? pack.defaultMood, in: pack) })
     }
 
-    /// The mood as the log has it: the choice's value, read as its resting
-    /// mood (the choice's start) if it isn't one of the moods.
+    /// The mood as the log has it: the choice's value, a face-only mood
+    /// (from before there were lasting moods) read as the one it settles
+    /// into, and anything else as its resting mood (the choice's start).
     public static func value(_ mood: Choice, _ log: LogView) -> String {
-        let word = mood.value(log)
-        return MoodGraph.mood(word) != nil ? word : mood.start
+        CharacterPack.active.settled(mood.value(log)) ?? mood.start
     }
 
     /// Changes the mood now to any of the moods, off the graph, with a
     /// result for the current mood or one that isn't a mood: the dashboard
-    /// sets one through here.
-    public static func change(_ mood: Choice, to: String, log: LogView) -> OutputResult {
-        guard MoodGraph.mood(to) != nil else { return .failed("\(to) isn't a mood") }
+    /// sets one through here. A face-only mood sets the one it settles into.
+    public static func change(_ mood: Choice, to asked: String, log: LogView) -> OutputResult {
+        guard let to = CharacterPack.active.settled(asked) else { return .failed("\(asked) isn't a mood") }
         let from = value(mood, log)
         guard to != from else { return .failed("already \(to)") }
         return mood.set(to, log: log) ?? .failed("already \(to)")

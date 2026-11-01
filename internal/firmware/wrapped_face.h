@@ -2,7 +2,8 @@
 // it passes everything on to, and on top what a test needs that the pixel
 // face hasn't: the context it was last synced to (FaceContext), and an
 // agents' drawer as the gel's works, rows kRowH tall from canvas y kRowsTop
-// down, pulled kTravel canvas px from shut to open. The
+// down, pulled kTravel canvas px from shut to open; and, with `native`, a
+// face that draws natively, as the gel does, drawing nothing at all. The
 // gel's own drawer is tested with its pack.
 #pragma once
 #include <memory>
@@ -16,9 +17,10 @@ struct WrappedFace : render::Face {
   std::unique_ptr<render::Face> f = render::makeFace();
   render::FaceContext context;  // the last sync's
   bool drawers = true;          // it has a drawer
+  bool native = false;          // it draws natively, and draws nothing
 
   const char* name() const override { return f->name(); }
-  bool drawsNative() const override { return f->drawsNative(); }
+  bool drawsNative() const override { return native || f->drawsNative(); }
   const void* assets(size_t& bytes) const override { return f->assets(bytes); }
   void readAssetsFrom(const void* copy) override { f->readAssetsFrom(copy); }
   const voice::EffectClips& clips() const override { return f->clips(); }
@@ -34,8 +36,8 @@ struct WrappedFace : render::Face {
   void alert(uint32_t t, bool replacing) override { f->alert(t, replacing); }
   uint8_t lookVariant() const override { return f->lookVariant(); }
   void newLook() override { f->newLook(); }
-  void showLookVariant(uint8_t v) override { f->showLookVariant(v); }
-  bool playPastime(const char* clip, uint32_t t) override { return f->playPastime(clip, t); }
+  bool showLookVariant(uint8_t v) override { return f->showLookVariant(v); }
+  bool playPastime(const char* name, uint32_t t) override { return f->playPastime(name, t); }
   void watch(const render::Stream* stream) override { f->watch(stream); }
   void finger(bool down, int x, int y) override { f->finger(down, x, y); }
   void letGo(int vx, int vy) override { f->letGo(vx, vy); }
@@ -80,6 +82,7 @@ struct WrappedFace : render::Face {
   bool draw(render::Canvas& canvas, render::Surface* native, const render::SceneShow& show, uint32_t t,
             const char* bubble, const render::SignShow& sign, const render::DoneShow& done, const render::Strip& strip,
             bool dirty) override {
+    if (this->native) return true;
     return f->draw(canvas, native, show, t, bubble, sign, done, strip, dirty);
   }
   int cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) override {

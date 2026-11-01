@@ -137,20 +137,6 @@ public enum EventLine {
         return "\(agent)'s commands keep failing on \(thread): \(count) in \(minutes) minutes, each one hitting \(name) in the face. The turn goes on."
     }
 
-    /// Any other tool use, with the personality's `tool_uses: all`.
-    public static func routine(agent: String, category: String, thread: String, failed: Bool?) -> String {
-        let what = switch category {
-        case "shell": "ran a command"
-        case "edit": "edited a file"
-        case "read": "read a file"
-        case "search": "searched"
-        case "web": "looked something up on the web"
-        case "subagent": "started a subagent"
-        default: "used a tool"
-        }
-        return "\(agent) \(what) on \(thread)." + (failed == true ? " It failed." : "")
-    }
-
     /// `You said to Boop: "…"`: what you said on push-to-talk, quoted and
     /// cut to `messageMax`, like your prompt. Nil for no words.
     public static func said(_ words: String, to name: String = CharacterPack.active.name) -> String? {
@@ -180,9 +166,35 @@ public enum EventLine {
     /// You stepping away from the Mac.
     public static let away = "You stepped away from the Mac."
 
-    /// `You came back to the Mac after a long break.`: the break's band.
+    /// `You came back to the Mac after 12 hours away.`
+    /// How long, in numbers past a short break: what it means (a night, a
+    /// day, a weekend) is the steering's to say. The band stays in the
+    /// line's facts (`Band.away`), for code that reads it.
     public static func back(ms: Int64) -> String {
-        "You came back to the Mac after a \(Band.away(ms: ms)) break."
+        let minutes = ms / 60_000, hours = ms / 3_600_000, days = ms / 86_400_000
+        if ms < shortBreakMs { return "You came back to the Mac after a short break." }
+        if hours < 2 { return "You came back to the Mac after \(minutes) min away." }
+        if hours < 48 { return "You came back to the Mac after \(hours) hours away." }
+        return "You came back to the Mac after \(days) days away."
+    }
+
+    /// Away less than this is a short break, said with no number.
+    public static let shortBreakMs: Int64 = 15 * 60_000
+
+    /// You answered an ask: `You answered Boop's "fav snack?": cookie.`
+    public static func answered(_ question: String, answer: String, name: String = CharacterPack.active.name) -> String {
+        "You answered \(name)'s \"\(question)\": \(answer)."
+    }
+
+    /// Nobody answered an ask: `You didn't answer Boop's "fav snack?".`
+    public static func unanswered(_ question: String, name: String = CharacterPack.active.name) -> String {
+        "You didn't answer \(name)'s \"\(question)\"."
+    }
+
+    /// Under the line that tells the dream: `Boop dreamed about Monday:
+    /// you stroked it 4 times; 7 turns on "api", 3 failed.`
+    public static func dreamed(weekday: String, sentence: String, name: String = CharacterPack.active.name) -> String {
+        "\(name) dreamed about \(weekday): \(sentence)."
     }
 
     /// What you did to the board, which reacted at once; nil for a gesture
@@ -289,9 +301,14 @@ public enum EventLine {
         - An idle check-in ("Nothing has happened for 20 min") means the person is
           around but no agent is working. A compacted context means the agent's
           memory was squeezed to make room; it carries on from a summary.
-        - "You" stepping away from the Mac and coming back is the person. Breaks
-          are short (under 15 minutes), long (under 2 hours) or very long (2
-          hours or more).
+        - "You" stepping away from the Mac and coming back is the person. A
+          short break is under 15 minutes; past that the line says how long,
+          in minutes, hours or days.
+        - "You answered \(name)'s" question is the person tapping one of the two
+          answers \(name) held up; it answers as to anything said to it, with a
+          glad face and a sign back for the answer.
+        - "\(name) dreamed about Monday" is the day before, as \(name) kept it
+          overnight, told the first time the person shows up after it.
         """
     }
 

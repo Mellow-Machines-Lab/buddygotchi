@@ -85,7 +85,7 @@ struct MoodTile: View {
     @ObservedObject private var stills = SlimeStills.shared
 
     static func snapshot(_ mood: String) -> StateSnapshot {
-        StateSnapshot(base: "idle", mood: mood, attn: nil, busy: 0, vol: 0)
+        StateSnapshot(base: "idle", mood: mood, attn: nil, working: 0, vol: 0)
     }
 
     var body: some View {

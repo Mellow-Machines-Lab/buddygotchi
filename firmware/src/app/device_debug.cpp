@@ -19,7 +19,7 @@ using linkkit::Link;
 constexpr uint32_t kDefaultPressMs = 100;
 // dbg.shot sends the palette as it's laid out in memory: 256 RGB565
 // entries, low byte first.
-static_assert(sizeof(render::kPalette.c) == 512, "the palette is 256 entries");
+static_assert(sizeof(render::PaletteTable::c) == 512, "the palette is 256 entries");
 static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "the palette goes out as it's stored");
 
 // Copying a voice file onto the card over USB:
@@ -69,6 +69,18 @@ __attribute__((noinline)) size_t cardCopy(Hal& hal, JsonObjectConst doc, char* b
 bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
   char buf[160];
   if (!std::strcmp(type, "dbg.pattern")) {
+    // A face that draws natively has no canvas until the pattern asks for
+    // one, from the board's surface memory (PSRAM on the AMOLED).
+    if (!canvas_.pixels()) {
+      auto* px = static_cast<uint8_t*>(hal_.allocateSurface(size_t(render::kWidth) * render::kHeight));
+      if (!px) {
+        static const char kNone[] = "{\"t\":\"dbg.pattern\",\"ok\":false}";
+        kit().reply(from, kNone, sizeof kNone - 1);
+        return true;
+      }
+      canvas_ = render::Canvas(px);
+      ownsCanvas_ = true;
+    }
     // With "fill", a solid screen of that palette index (webcam framing).
     // With "target": [x, y], a cross to tap on black (boopctl calibrate).
     live_.patternFill = doc["fill"] | -1;
@@ -80,10 +92,11 @@ bool Device::debug(const char* type, JsonObjectConst doc, Link from) {
     kit().reply(from, "{\"t\":\"dbg.pattern\"}", 19);
   } else if (!std::strcmp(type, "dbg.look")) {
     // A look's variation, from 1, shown until it turns: for scenarios and
-    // tools, since the face picks its own.
-    b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1));
+    // tools, since the face picks its own. Not ok on a face that ignores it.
+    const char* reply = b_.face().showLookVariant(uint8_t((doc["variant"] | 1) - 1)) ? "{\"t\":\"dbg.look\",\"ok\":true}"
+                                                                                    : "{\"t\":\"dbg.look\",\"ok\":false}";
     dirty_ = true;
-    kit().reply(from, "{\"t\":\"dbg.look\"}", 16);
+    kit().reply(from, reply, std::strlen(reply));
   } else if (!std::strcmp(type, "dbg.pastime")) {
     // A pastime, by its clip's name, played now: for scenarios and tools,
     // since the face deals its own.
@@ -241,6 +254,17 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["expr"] = nullptr;
   if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
+  // The lane's text when it isn't the `say`'s: the reaction's reason, or
+  // an ask's answers.
+  const char* lane = b_.laneText(t);
+  if (lane && lane != b_.bubble(t) && !b_.asking(t))
+    d["reason"] = lane;
+  else d["reason"] = nullptr;
+  // An ask up: its answers as the lane shows them.
+  if (b_.asking(t))
+    d["ask"] = lane;
+  else
+    d["ask"] = nullptr;
   // The work stream: how many lanes show, and the word forward's gag.
   const render::Stream& stream = b_.stream();
   d["calls"] = stream.on ? stream.laneCount : 0;
@@ -327,8 +351,8 @@ bool Device::shot(linkkit::Shot& s, uint32_t t) {
   }
   s.w = render::kWidth;
   s.h = render::kHeight;
-  s.data[0] = reinterpret_cast<const uint8_t*>(render::kPalette.c);
-  s.size[0] = sizeof(render::kPalette.c);
+  s.data[0] = reinterpret_cast<const uint8_t*>(render::palette().c);
+  s.size[0] = sizeof(render::palette().c);
   s.data[1] = canvas_.pixels();
   s.size[1] = size_t(render::kWidth) * render::kHeight;
   return true;

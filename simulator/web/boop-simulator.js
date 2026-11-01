@@ -17,6 +17,14 @@ const PANEL = { pixel: CANVAS, gel: [502, 410] };  // each face's panel, until i
 export const SHAKE = [[1700, 60], [300, 60], [1700, 60], [300, 60], [1700, 60], [300, 60], [1000, 0]];
 /// A tap, in the canvas's pixels: beside the nose, since a boop on it is a gesture.
 export const TAP = [CANVAS[0] / 4, CANVAS[1] / 2];
+/// A stroke, a finger's path across the face, a point every 60 ms: far
+/// enough and slow enough to be one (firmware/src/app/touch_gesture.h).
+export const STROKE = [[90, 160], ...Array.from({ length: 10 }, (_, i) => [104 + 14 * i, 160])];
+/// A tickle: a finger wiggling in one spot.
+/// The lane's middle, in the canvas's pixels: where an ask's answers show
+/// (firmware/src/render/screens.h, kLaneTop and below).
+export const LANE_Y = 222;
+export const TICKLE = Array.from({ length: 14 }, (_, i) => [160 + (i % 2 ? 8 : -8), 100 + (i % 3) * 4]);
 /// How often a page keeping a board company says its `state` again, as the
 /// app does every 10 s, so the board never takes its Mac for gone.
 export const HEARTBEAT_MS = 8000;
@@ -241,6 +249,15 @@ export class DemoPlayer extends EventTarget {
     this.#board.send(line);
   }
 
+  // A finger down at the first point, through the rest 60 ms apart, then
+  // lifted: slow enough to be a stroke, not a swipe.
+  #path(points) {
+    const [first, ...rest] = points;
+    this.#board.touch(...first);
+    rest.forEach(([x, y], i) => setTimeout(() => this.#board.touch(x, y), 60 * (i + 1)));
+    setTimeout(() => this.#board.release(), 60 * (rest.length + 1));
+  }
+
   #happen(event) {
     if (event.cause) this.dispatchEvent(new CustomEvent('cause', { detail: event.cause }));
     // A finger on the screen, beside the nose (a boop there is a gesture),
@@ -259,6 +276,27 @@ export class DemoPlayer extends EventTarget {
     if (event.input === 'press') {
       this.#board.boot(true);
       setTimeout(() => this.#board.boot(false), 60);
+    }
+    // A gesture, in the shapes the board knows (firmware/src/app/
+    // touch_gesture.h, motion_gesture.h): a stroke drags slowly across the
+    // face, a boop taps its nose, a tickle wiggles in one spot, a shake
+    // shakes it.
+    if (event.input === 'stroke') this.#path(STROKE);
+    if (event.input === 'nose') {
+      this.#board.touch(160, 134);
+      this.#board.release();
+    }
+    if (event.input === 'tickle') this.#path(TICKLE);
+    // An answer to the buddy's question: a tap in the lane, the left half
+    // for its first answer, the right for its second.
+    if (event.input === 'answer-a' || event.input === 'answer-b') {
+      this.#board.touch(event.input === 'answer-a' ? CANVAS[0] / 4 : (CANVAS[0] * 3) / 4, LANE_Y);
+      this.#board.release();
+    }
+    if (event.input === 'dizzy') {
+      (async () => {
+        for (const [az, ms] of SHAKE) { this.#board.motion(0, 0, az); await new Promise(r => setTimeout(r, ms)); }
+      })();
     }
     if (event.line) {
       if (event.line.startsWith('{"t":"state"')) this.#state = event.line;

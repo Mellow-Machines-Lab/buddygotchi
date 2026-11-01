@@ -1,16 +1,15 @@
 // The canvas palette: index → RGB565. Every colour on
 // the screen comes from this one table: "Warm Terminal", black glass with
-// grey text and one amber accent, plus the bring-up colours; then the
-// animation bank's colours, flat, which faces.h lists; then the finish's
-// sage and clay.
+// grey text and one amber accent, plus the bring-up colours; the finish's
+// sage and clay in its last two entries; and between, from kFaceColorBase,
+// the face's own colours, which a face that draws the canvas writes in as
+// it's made (useFaceColors): the pixel face's designs'.
 //
 // Anti-aliased edges (the text, and the strip's round icons) use ramps: 8 steps
 // from black up to an ink colour. The table is computed with integer maths
 // at compile time, so the board and the simulator agree.
 #pragma once
 #include <cstdint>
-
-#include "faces.h"
 
 namespace render {
 
@@ -62,11 +61,10 @@ constexpr int kInkBase = 16;        // ink i, level k at kInkBase + i * 8 + k - 
 constexpr int kOnAmberBase = 8;
 constexpr int kInkOnAmber = 0x40;
 static_assert(kOnAmberBase >= kFixedCount && kOnAmberBase + kLevels <= kInkBase, "the amber ramp fits before the inks");
-constexpr int kPaletteUsed = kInkBase + kInkCount * kLevels;
-static_assert(kPaletteUsed == faces::kSceneBase, "the scene colours start after the ramps");
-// The finish's marks, flat, in the entries after the scene colours.
-constexpr uint8_t kSage = faces::kSceneBase + faces::kColorCount - 1, kClay = kSage + 1;
-static_assert(faces::kSceneBase + faces::kColorCount - 1 + 2 <= 256, "palette overflow");
+// The first entry of the face's own colours, after the ramps.
+constexpr int kFaceColorBase = kInkBase + kInkCount * kLevels;
+// The finish's marks, flat, in the last two entries.
+constexpr uint8_t kSage = 254, kClay = 255;
 
 // The index for ink `ink` at coverage `level` (0..8) over black.
 constexpr uint8_t inkAt(int ink, int level) {
@@ -108,18 +106,27 @@ constexpr PaletteTable makePalette() {
     for (int k = 1; k <= kLevels; ++k) p.c[inkAt(ink, k)] = rgb565(mix(kGlass, inkRgb(ink), k, kLevels));
   }
   for (int k = 1; k <= kLevels; ++k) p.c[textAt(kInkOnAmber, k)] = rgb565(mix(kAmberRgb, kGlass, k, kLevels));
-  // The animation bank's colours, flat (render/scene.cpp), after the ramps.
-  for (int i = 1; i < faces::kColorCount; ++i) {
-    const faces::Color& c = faces::kColors[i];
-    p.c[faces::kSceneBase + i - 1] = rgb565(c.r, c.g, c.b);
-  }
   p.c[kSage] = rgb565(kSageRgb), p.c[kClay] = rgb565(kClayRgb);
   return p;
 }
 
-constexpr PaletteTable kPalette = makePalette();
+// The palette in use: the engine's colours, and the face's once it has
+// written them.
+inline PaletteTable& palette() {
+  static PaletteTable p = makePalette();
+  return p;
+}
+
+// A face's own colours, `colors[1]` on (0 is the black field), into the
+// entries from kFaceColorBase: colour i at kFaceColorBase + i - 1, as many
+// as fit before the sage.
+template <class Color>
+void useFaceColors(const Color* colors, int count) {
+  for (int i = 1; i < count && kFaceColorBase + i - 1 < kSage; ++i)
+    palette().c[kFaceColorBase + i - 1] = rgb565(colors[i].r, colors[i].g, colors[i].b);
+}
 
 // The full 256-entry table as sent in a screenshot; unused entries are black.
-inline uint16_t paletteAt(int index) { return index >= 0 && index < 256 ? kPalette.c[index] : 0; }
+inline uint16_t paletteAt(int index) { return index >= 0 && index < 256 ? palette().c[index] : 0; }
 
 }  // namespace render

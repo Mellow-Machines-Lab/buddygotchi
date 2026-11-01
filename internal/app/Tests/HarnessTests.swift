@@ -24,7 +24,7 @@ final class HarnessTests: XCTestCase {
     /// outputs, as MellowHarness needs.
     func testQuestionKeysMustBeUniqueAcrossActions() {
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
-        let (harness, _) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering, personality: { .default },
+        let (harness, _) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering,
                                            queue: { _, _ in })
         let keys = harness.outputs.flatMap { $0.questions(now: nil, log: Self.log).map(\.key) }
         XCTAssertEqual(keys, askedKeys)
@@ -38,12 +38,12 @@ final class HarnessTests: XCTestCase {
         let steering = RuntimeTests.steering
         func prompt(_ steering: Steering) throws -> String {
             let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
-            let (harness, _) = Runtime.harness(pipeline: pipeline, steering: steering, personality: { .default },
+            let (harness, _) = Runtime.harness(pipeline: pipeline, steering: steering,
                                                queue: { _, _ in })
             return harness.prompt(for: try XCTUnwrap(pipeline.poke(at: 1000).recorded.first))
         }
         let whole = try prompt(steering)
-        XCTAssertTrue(whole.contains(steering.personality(.default).text + "\n\n" + steering.mood(MoodOutput.initial)), whole)
+        XCTAssertTrue(whole.contains(steering.personality.text + "\n\n" + steering.mood(MoodOutput.initial)), whole)
         var files = steering.files
         files["nature/sweet"] = "At heart it is sweet."
         let stray = try prompt(Steering(files: files, frontMatter: steering.frontMatter))
@@ -107,6 +107,8 @@ final class HarnessTests: XCTestCase {
         XCTAssertNil(printer.readable(DebugLog.head("You are.\nMOOD\ngrumpy\n\n", at: 8)))
         XCTAssertEqual(printer.readable(pass), "  pass scripted 1 ms: \n    │ HISTORY (oldest first)\n    │ h\n    │ \n    │ NOW (14:23, Tuesday)\n    │ n")
         XCTAssertEqual(DebugLog.split("You are.\n\nHISTORY (oldest first)\nh").head, "You are.\n\n")
+        XCTAssertEqual(DebugLog.split("You are.\n\n\(ContextSection.heading)\nAgents: x.\n\nHISTORY (oldest first)\nh").head, "You are.\n\n",
+                       "CONTEXT goes with the pass")
     }
 
     // MARK: The outputs
@@ -281,7 +283,7 @@ final class HarnessTests: XCTestCase {
         queued.removeAll()
         // The four questions, the same at every event.
         XCTAssertEqual(react.questions(now: nil, log: Self.log).map(\.key), ["react.face", "react.move", "react.intensity", "say"])
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + MoodOutput.moods.map(\.name),
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + CharacterPack.active.moods.map(\.id),
                        "the faces are every mood's")
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big", "huge"])
@@ -313,7 +315,7 @@ final class HarnessTests: XCTestCase {
     /// last changed (how long a mood lasts is the steering's call). It's
     /// MellowHarness's `Choice`.
     func testMood() throws {
-        XCTAssertEqual(MoodOutput.moods.map(\.name), CharacterPack.active.moods.map(\.id))
+        XCTAssertEqual(MoodOutput.moods.map(\.name), CharacterPack.active.lasting.map(\.id), "the lasting moods only")
         XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
         XCTAssertEqual(MoodOutput.initial, "calm")
         let log = Transcript.log()
@@ -327,7 +329,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm", "a new Boop starts calm")
         func offered() -> [String] { mood.questions(now: nil, log: view())[0].options.map(\.name) }
         XCTAssertEqual(mood.questions(now: nil, log: view()).map(\.key), ["mood"])
-        XCTAssertEqual(offered(), ["calm"] + MoodGraph.moves["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
+        XCTAssertEqual(offered(), ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
         let stay = try XCTUnwrap(mood.questions(now: nil, log: view())[0].options.first)
         XCTAssertEqual(stay, Option("calm", "Stay calm: NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine."),
                        "the resting mood never fades")
@@ -337,11 +339,11 @@ final class HarnessTests: XCTestCase {
                        "any other mood stays only until its minutes are up")
         for m in MoodGraph.moods {
             let options = MoodOutput.options(from: m)
-            XCTAssertEqual(options.map(\.name), [m] + MoodGraph.moves[m]!.ordinary + MoodGraph.moves[m]!.dramatic, m)
+            XCTAssertEqual(options.map(\.name), [m] + MoodGraph.neighbours[m]!.ordinary + MoodGraph.neighbours[m]!.dramatic, m)
             for o in options.dropFirst() {
                 let meaning = MoodOutput.moods.first { $0.name == o.name }!
                 XCTAssertEqual(o.what, meaning.what, "\(m) → \(o.name) carries its meaning")
-                let jump = MoodGraph.moves[m]!.dramatic.contains(o.name)
+                let jump = MoodGraph.neighbours[m]!.dramatic.contains(o.name)
                 XCTAssertEqual(o.notFor?.hasSuffix(MoodOutput.jump) ?? false, jump, "\(m) → \(o.name): only a jump says so")
                 if jump { XCTAssertEqual(o.notFor, [meaning.notFor, MoodOutput.jump].compactMap { $0 }.joined(separator: " ")) }
                 else { XCTAssertEqual(o.notFor, meaning.notFor) }
@@ -355,7 +357,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm")
         XCTAssertEqual(run(["mood": a("annoyed")]),
                        .done("\(creature)'s mood changed: calm → annoyed.", facts: ["from": "calm", "to": "annoyed"]))
-        XCTAssertEqual(offered(), ["annoyed"] + MoodGraph.moves["annoyed"]!.all, "the next pass is offered annoyed's moves")
+        XCTAssertEqual(offered(), ["annoyed"] + MoodGraph.neighbours["annoyed"]!.all, "the next pass is offered annoyed's moves")
         XCTAssertEqual(run(["mood": a("grumpy")])?.message, "\(creature)'s mood changed: annoyed → grumpy.", "straight after, a jump too")
         XCTAssertNil(run(["mood": a("happy")]), "grumpy never moves straight to happy")
         XCTAssertNil(run(["mood": a("excited")]), "nor to excited")
@@ -364,6 +366,9 @@ final class HarnessTests: XCTestCase {
         log.append(Event.did("\(creature)'s mood changed: grumpy → delighted.", for: nil, action: mood.name, by: "brain",
                              facts: ["from": "grumpy", "to": "delighted"]), now: 1)
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm", "one that isn't a mood reads as calm")
+        log.append(Event.did("\(creature)'s mood changed: grumpy → tired.", for: nil, action: mood.name, by: "brain",
+                             facts: ["from": "grumpy", "to": "tired"]), now: 1)
+        XCTAssertEqual(MoodOutput.value(mood, view()), "lazy", "a face-only mood, from a log of before, reads as the one it settles into")
     }
 
     /// The mood the dashboard sets changes as Jev's does,
@@ -372,7 +377,7 @@ final class HarnessTests: XCTestCase {
     /// mood.
     func testAForcedMoodChangesItAsJevsDoes() throws {
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView())
-        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering, personality: { .default },
+        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: RuntimeTests.steering,
                                               queue: { _, _ in })
         var told: [String] = []
         harness.on(Event.did) { e in if e.action == MoodOutput.outputName, e["ok"]?.bool == true { told.append(e["to"]!.string!) } }
@@ -386,6 +391,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(harness.force(["mood": "proud"], by: Runtime.forcedBy).map(\.result.message),
                        ["\(creature)'s mood changed: grumpy → proud."], "Jev's, right after")
         XCTAssertEqual(told, ["grumpy", "proud"], "the device hears each change")
+        XCTAssertEqual(change("tired")?.message, "\(creature)'s mood changed: proud → lazy.", "a face-only mood sets the one it settles into")
     }
 
     /// Each mood's file says where it leaves for, and
@@ -393,11 +399,12 @@ final class HarnessTests: XCTestCase {
     func testEachMoodLeavesOnlyForItsNeighbours() throws {
         for mood in MoodGraph.moods {
             let text = RuntimeTests.steering.mood(mood)
-            XCTAssertTrue(text.hasPrefix("MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())."), mood)
+            let opening = "MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())"
+            XCTAssertTrue(text.hasPrefix(opening + ".") || text.hasPrefix(opening + " is "), "\(mood) opens with its name")
             let leaves = try! XCTUnwrap(text.range(of: "Leaves for"), mood)
             let named = Set(text[leaves.lowerBound...].split { !$0.isLetter }.map(String.init)).intersection(MoodGraph.moods)
-            XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.moves[mood]?.all ?? [])),
-                          "\(mood) leaves only for its neighbours, not \(named.subtracting((MoodGraph.moves[mood]?.all ?? []) + [mood]).sorted())")
+            XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.neighbours[mood]?.all ?? [])),
+                          "\(mood) leaves only for its neighbours, not \(named.subtracting((MoodGraph.neighbours[mood]?.all ?? []) + [mood]).sorted())")
         }
     }
 

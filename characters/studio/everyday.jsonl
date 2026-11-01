@@ -1,4 +1,4 @@
-// Everyday transitions, a shot every 40 ms, for internal/tools/fluid/measure.py:
+// Everyday transitions, a shot every 40 ms, which the studio's Rank records:
 // idle, to working, a mood change, a finish, back to idle, a poke, a stroke,
 // to asleep. Not a golden scenario: run it on its own (boopctl sim PATH).
 {"t": "dbg.reset"}

@@ -115,8 +115,13 @@ public final class DemoRecorder: @unchecked Sendable {
             let says = words.isEmpty ? "" : " and says “\(words)”"
             switch message["name"] as? String {
             case DeviceReaction.react:
-                guard let face = args["mood"] as? String else { return "\(name) reacts\(says)" }
-                return "\(name) makes \("aeiou".contains(face.prefix(1)) ? "an" : "a") \(face) face\(says)"
+                // An ask holds up its question, with its two answers.
+                let asks = (args["ask"] as? [String: Any]).flatMap { ask -> String? in
+                    guard let q = args["sign"] as? String, let a = ask["a"] as? String, let b = ask["b"] as? String else { return nil }
+                    return " and asks “\(q)”: \(a) or \(b)"
+                } ?? ""
+                guard let face = args["mood"] as? String else { return "\(name) reacts\(asks)\(says)" }
+                return "\(name) makes \("aeiou".contains(face.prefix(1)) ? "an" : "a") \(face) face\(asks)\(says)"
             case "task_complete": return "\(name) \(args["outcome"] as? String == "failure" ? "slumps" : "celebrates")\(says)"
             case "reply_ready": return "\(name) perks up\(says)"
             case "wake_up": return "\(name) stretches and yawns\(says)"

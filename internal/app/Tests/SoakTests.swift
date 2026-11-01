@@ -180,6 +180,7 @@ struct SoakWork {
     }
 
     static let moods = MoodOutput.moods.map(\.name)
+    static let faces = CharacterPack.active.moods.map(\.id)
 
     /// A pass's answers, with a probability for each of many options, as
     /// Jev's carry them.
@@ -188,7 +189,7 @@ struct SoakWork {
             Answer(choice: pick, probabilities: Dictionary(uniqueKeysWithValues: names.map { ($0, $0 == pick ? 0.62 : 0.38 / Double(names.count - 1)) }))
         }
         let animations = ["none", "success", "failure", "wiggle", "nod", "shrug", "gasp", "cheer", "sulk", "yawn", "bounce", "spin"]
-        return ["mood": spread(moods, moods[n % moods.count]), ReactOutput.faceKey: spread(moods, "happy"),
+        return ["mood": spread(moods, moods[n % moods.count]), ReactOutput.faceKey: spread(faces, "happy"),
                 ReactOutput.moveKey: spread(animations, "success"), ReactOutput.intensityKey: spread(["small", "medium", "big", "huge"], "small"),
                 ReactOutput.sayKey: spread(["none", "glad", "upset", "tickled"] + (0..<16).map { "topic\($0)" }, "topic3")]
     }

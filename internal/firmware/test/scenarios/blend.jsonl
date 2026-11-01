@@ -1,6 +1,6 @@
 // Switching designs: each switch dissolves over 200 ms, and a switch
 // mid-switch dissolves from the picture that shows more: working's, 150 ms
-// in, then still working's for the stopped 75 ms into the cheer. Idle's
+// in, then still working's for the start 75 ms into the cheer. Idle's
 // plain face is the rig face, and so is working's, so going to work the face
 // stays whole as the desk dissolves in around it.
 {"clock":0}
@@ -16,15 +16,15 @@
 {"t":"do","name":"task_complete","play":"now","args":{"outcome":"success","variant":1}}
 {"clock":1225}
 {"shot":"to-cheer-75ms"}
-{"t":"do","name":"stopped","play":"now"}
+{"t":"do","name":"starting","play":"now","args":{"ctx":"new_task"}}
 {"clock":1300}
-{"shot":"interrupted-75ms"}
-{"expect":{"moment":{"anim":"stopped","left_ms":4125}}}
-// A rule's reaction, happy's 4.2 s stopped: it ends at 5425, and working
+{"shot":"to-starting-75ms"}
+{"expect":{"moment":{"anim":"starting","left_ms":3725}}}
+// A rule's reaction, happy's 3.8 s start: it ends at 5025, and working
 // dissolves back.
-{"clock":5424}
-{"expect":{"moment":{"anim":"stopped","left_ms":1}}}
-{"clock":5425}
+{"clock":5024}
+{"expect":{"moment":{"anim":"starting","left_ms":1}}}
+{"clock":5025}
 {"expect":{"moment":null}}
-{"clock":5500}
+{"clock":5100}
 {"shot":"back-to-working-75ms"}

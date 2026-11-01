@@ -67,8 +67,11 @@ struct OverviewPane: View {
                         if let growth = status.growth {
                             PaneSection("Growth") { growthCard(growth, daysOld: status.daysOld) }
                         }
-                        if !status.diary.isEmpty {
-                            PaneSection("Diary") { diaryCard(status.diary) }
+                        if !status.notes.isEmpty {
+                            PaneSection("What \(model.name) remembers") { notesCard(status.notes) }
+                        }
+                        if !status.recently.isEmpty {
+                            PaneSection("Recently") { recentlyCard(status.recently) }
                         }
                     }
                 }
@@ -104,6 +107,13 @@ struct OverviewPane: View {
                         // On a line of its own: beside the name or the
                         // headline, the buttons on the right leave it no room.
                         if let mood = model.status?.snapshot.mood { moodLabel(mood) }
+                        // Why it feels so, in plain words, so a face never
+                        // needs decoding.
+                        if let why = model.status?.moodReason?.cause {
+                            Text(why).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .animation(.boopSettle, value: why)
+                        }
                     }
                 }
                 .accessibilityElement(children: .combine)
@@ -131,17 +141,17 @@ struct OverviewPane: View {
 
     private let faceSize: CGFloat = 46
 
-    /// The pack's slime whenever it has a mirror, connected or not, so the
-    /// face never changes creature: unless the board connected draws the
-    /// pixel face, or Boop couldn't start, which the still face's crossed
-    /// eyes say.
+    /// The pack's mirror of the board whenever it has one, connected or
+    /// not, so the face never changes creature: unless the board connected
+    /// runs another character, or Boop couldn't start, which the still
+    /// face's crossed eyes say.
     private var showsSlime: Bool {
         guard SlimeFeed.folder != nil, model.startError == nil else { return false }
-        return !(model.status?.connected == true && model.status?.device?.face == .pixel)
+        return !(model.status?.connected == true && model.status?.device?.hasTheCharacter == false)
     }
 
     /// The slime while the runtime starts, before its first status.
-    private static let waking = StateSnapshot(base: "asleep", mood: CharacterPack.active.startupMood, attn: nil, busy: 0, vol: 0)
+    private static let waking = StateSnapshot(base: "asleep", mood: CharacterPack.active.startupMood, attn: nil, working: 0, vol: 0)
 
     /// Boop's mood in words, labelled, so it doesn't rest on telling the
     /// faces apart. The face already draws in the mood's designs.
@@ -164,7 +174,6 @@ struct OverviewPane: View {
         if let status = model.status {
             let s = status.snapshot
             let all: [(String, String)?] = [
-                status.personality != .default ? ("theatermasks.fill", status.personality.rawValue.capitalized) : nil,
                 status.talk != .default ? ("bubble.left.and.bubble.right.fill", status.talk.title) : nil,
                 s.vol == 0 ? ("speaker.slash.fill", "Muted") : nil,
             ]
@@ -364,10 +373,45 @@ struct OverviewPane: View {
         }
     }
 
-    // MARK: Diary
+    // MARK: Memory
 
-    /// The diary's last week: a line a day, newest first.
-    private func diaryCard(_ lines: [Runtime.Status.DiaryLine]) -> some View {
+    /// The written memory's notes, a section each, each with a pin, which
+    /// keeps it from aging and from the night's edits, and a cross, which
+    /// forgets it for good.
+    private func notesCard(_ notes: [WrittenMemory.Note]) -> some View {
+        Card {
+            VStack(alignment: .leading, spacing: Theme.gapSnug) {
+                ForEach(WrittenMemory.Section.allCases, id: \.self) { section in
+                    let these = notes.filter { $0.section == section }
+                    if !these.isEmpty {
+                        Text(section.heading.replacingOccurrences(of: "Boop", with: model.name))
+                            .font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
+                        ForEach(these, id: \.id) { note in
+                            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                Text(note.text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                                Button { model.runtime?.pinNote(note.id, !note.pinned) } label: {
+                                    Image(systemName: note.pinned ? "pin.fill" : "pin").font(.system(size: 10))
+                                }
+                                .buttonStyle(.quiet)
+                                .help(note.pinned ? "Let it age as the others do" : "Keep it for good, as it is")
+                                Button { model.runtime?.forgetNote(note.id) } label: {
+                                    Image(systemName: "xmark").font(.system(size: 10))
+                                }
+                                .buttonStyle(.quiet)
+                                .help("Forget it")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Recently
+
+    /// The memory's recent days: a line a day, newest first.
+    private func recentlyCard(_ lines: [Runtime.Status.DayLine]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(lines) { entry in

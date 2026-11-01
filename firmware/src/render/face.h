@@ -31,10 +31,6 @@ struct FaceSource {
   // on its last frame after that, while the reaction holds on for its `say`.
   uint32_t playMs = 0;
   uint32_t id = 0;
-  // The animation is a finish that names whose turn it was (DoneShow): a
-  // face that marks that on screen may leave out a result card of its own.
-  // Not part of the design: changing it starts nothing over.
-  bool named = false;
   bool operator==(const FaceSource& o) const {
     return anim == o.anim && at == o.at && look == o.look && lookVariant == o.lookVariant &&
            animVariant == o.animVariant && mood == o.mood && playMs == o.playMs;
@@ -143,13 +139,14 @@ class Face {
   virtual uint8_t lookVariant() const = 0;
   virtual void newLook() {}
   // Shows the look's variation v (from 0) until it turns: dbg.look's, for
-  // scenarios and tools. A face that picks by its own clock may ignore it.
-  virtual void showLookVariant(uint8_t v) { (void)v; }
-  // Plays the pastime whose clip is `clip` from t, whoever's turn it would
-  // be: dbg.pastime's, for scenarios and tools. False for one the face
-  // hasn't (a face with none has none).
-  virtual bool playPastime(const char* clip, uint32_t t) {
-    (void)clip, (void)t;
+  // scenarios and tools. False for a face that picks by its own clock (the
+  // gel's), which ignores it.
+  virtual bool showLookVariant(uint8_t v) { return (void)v, false; }
+  // Plays the pastime named `name` from t, whoever's turn it would be:
+  // dbg.pastime's, for scenarios and tools. False for one the face hasn't
+  // (a face with none has none).
+  virtual bool playPastime(const char* name, uint32_t t) {
+    (void)name, (void)t;
     return false;
   }
   // The work stream to draw (render/stream.h), the device's, set before

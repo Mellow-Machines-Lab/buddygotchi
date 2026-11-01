@@ -39,6 +39,69 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth.xp(for: event(1, .poke, from: .device)), 0)
     }
 
+    /// Care earns too: a care gesture 3, a word to Boop 3, an answered ask
+    /// 5, coming back 2; a poke, a thump or an ignored ask nothing.
+    func testCareEarnsXP() {
+        func you(_ type: Event.Kind, _ specific: String, _ phase: Event.Phase? = nil) -> Event {
+            Event(at: 1_000, source: .device, type: type, phase: phase, specificType: specific)
+        }
+        XCTAssertEqual([Growth.careXP, Growth.talkXP, Growth.answerXP, Growth.backXP], [3, 3, 5, 2])
+        XCTAssertEqual(Growth.earning(for: you(.gesture, "stroke"))?.xp, 3)
+        XCTAssertEqual(Growth.earning(for: you(.gesture, "stroke"))?.pool, .care)
+        XCTAssertEqual(Growth.xp(for: you(.said, "mic")), 3)
+        XCTAssertEqual(Growth.xp(for: you(.ask, "a")), 5)
+        XCTAssertEqual(Growth.xp(for: you(.ask, Asks.ignored)), 0)
+        XCTAssertEqual(Growth.xp(for: Event(at: 1, source: .mac, type: .presence, phase: .end, specificType: "unlocked")), 2)
+        XCTAssertEqual(Growth.xp(for: you(.gesture, "startle")), 0)
+        XCTAssertEqual(Growth.xp(for: you(.poke, "input")), 0)
+        XCTAssertEqual(Growth.earning(for: event(1, .tool, .end))?.pool, .work)
+    }
+
+    /// Counts `e` as the runtime does with no caps in the way: what it earns.
+    @discardableResult
+    func count(_ growth: GrowthStore, _ e: Event, day: String = "2026-10-22") -> Bool {
+        growth.count(e, earned: Growth.xp(for: e), day: day)
+    }
+
+    /// Pins Growth.workPerDay and carePerDay (60 each): each pool earns at
+    /// most 60 XP a Boop day, apart, and a new Boop day starts both again.
+    /// The memory reader keeps the day's totals (its tallies' workXP and
+    /// careXP) and hands growth what each event earned as it reads it.
+    func testEachPoolIsCappedADay() throws {
+        XCTAssertEqual([Growth.workPerDay, Growth.carePerDay], [60, 60])
+        let store = try KeyValueStore(directory: nil)
+        let reader = MemoryReader(store: store, time: LocalTime())
+        let runner = Checkpointed(reader, store: store, time: LocalTime(), note: { _ in })
+        let growth = GrowthStore(store)
+        let first: Int64 = 1_793_000_000_000, next = first + 24 * 3_600_000
+        var seq = 0
+        var counted = false
+        reader.earned = { e, xp in counted = growth.count(e, earned: xp) }
+        func feed(_ e: Event) -> Bool {
+            var e = e
+            seq += 1
+            e.seq = seq
+            counted = false
+            runner.feed(e, line: nil)
+            return counted
+        }
+        func stroke(_ at: Int64) -> Bool { feed(Event(at: at, source: .device, type: .gesture, specificType: "stroke")) }
+        func turn(_ at: Int64) -> Bool {
+            feed(Event(at: at, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s1", data: ["outcome": .string("done")]))
+        }
+        for _ in 0..<20 { XCTAssertTrue(stroke(first)) }
+        XCTAssertFalse(stroke(first), "care's 60 reached")
+        XCTAssertEqual(growth.growth.xp, 60)
+        for _ in 0..<12 { XCTAssertTrue(turn(first)) }
+        XCTAssertFalse(turn(first), "the work's 60 apart")
+        XCTAssertEqual(growth.growth.xp, 120)
+        XCTAssertEqual(runner.state?.careXP, 60)
+        XCTAssertEqual(runner.state?.workXP, 60)
+        XCTAssertTrue(stroke(next), "a new Boop day")
+        XCTAssertEqual(growth.growth.xp, 123)
+        XCTAssertEqual(runner.state?.careXP, 3)
+    }
+
     /// Six stages at 0, 200, 1,000, 4,000, 12,000 and 30,000 XP.
     func testStagesStartAtTheirThresholds() {
         XCTAssertEqual(Growth.stages.map(\.from), [0, 200, 1_000, 4_000, 12_000, 30_000])
@@ -112,11 +175,11 @@ final class GrowthTests: XCTestCase {
     /// alone, so a launch's read-back can't count it again.
     func testEachEventCountsOnceAndIsKept() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertTrue(growth.count(event(1, .tool, .end)))
-        XCTAssertFalse(growth.count(event(2, .tool, .start)))
-        XCTAssertTrue(growth.count(event(3, .turn, .end, ["outcome": .string("done")])))
-        XCTAssertFalse(growth.count(event(3, .turn, .end, ["outcome": .string("done")])))
-        XCTAssertFalse(growth.count(event(1, .tool, .end)))
+        XCTAssertTrue(count(growth, event(1, .tool, .end)))
+        XCTAssertFalse(count(growth, event(2, .tool, .start)))
+        XCTAssertTrue(count(growth, event(3, .turn, .end, ["outcome": .string("done")])))
+        XCTAssertFalse(count(growth, event(3, .turn, .end, ["outcome": .string("done")])))
+        XCTAssertFalse(count(growth, event(1, .tool, .end)))
         XCTAssertEqual(growth.growth.xp, 6)
 
         let again = GrowthStore(try KeyValueStore(directory: dir))
@@ -127,9 +190,9 @@ final class GrowthTests: XCTestCase {
     func testCrossingAThresholdReachesTheNextStage() throws {
         let lines = Lines()
         let growth = GrowthStore(try KeyValueStore(directory: nil), log: { lines.add($0) })
-        for seq in 1...39 { growth.count(event(seq, .turn, .end, ["outcome": .string("done")])) }
+        for seq in 1...39 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
         XCTAssertEqual(growth.growth.stage, 1)
-        growth.count(event(40, .turn, .end, ["outcome": .string("done")]))
+        count(growth, event(40, .turn, .end, ["outcome": .string("done")]))
         XCTAssertEqual(growth.growth, Growth(xp: 200, stage: 2))
         XCTAssertEqual(lines.all, ["growth: reached stage 2, Sprout, at 200 XP"])
     }
@@ -139,7 +202,7 @@ final class GrowthTests: XCTestCase {
     func testTheDayAStageWasReachedIsKept() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertNil(growth.reachedDay)
-        for seq in 1...40 { growth.count(event(seq, .turn, .end, ["outcome": .string("done")]), day: "2026-10-22") }
+        for seq in 1...40 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")]), day: "2026-10-22") }
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.reachedDay, "2026-10-22")
     }
@@ -148,13 +211,13 @@ final class GrowthTests: XCTestCase {
     /// follows it rather than skipping what's new.
     func testCountingFollowsATranscriptThatStartsAgain() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        growth.count(event(500, .tool, .end))
+        count(growth, event(500, .tool, .end))
         growth.follow(transcriptAt: 600)
         XCTAssertEqual(growth.lastSeq, 500)
         growth.follow(transcriptAt: 0)
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.lastSeq, 0)
-        XCTAssertTrue(growth.count(event(1, .tool, .end)))
+        XCTAssertTrue(count(growth, event(1, .tool, .end)))
         XCTAssertEqual(growth.growth.xp, 2)
     }
 }

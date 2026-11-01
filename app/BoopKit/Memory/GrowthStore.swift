@@ -5,7 +5,9 @@ import MellowHarness
 /// the stage, the day it was reached and the last event counted, as
 /// `growth.` keys in the key-value
 /// store. It counts each event as it's logged, once: an event at or before
-/// the last one counted is left alone. Touched only on `home`.
+/// the last one counted is left alone. What an event earns within the
+/// day's caps is the memory reader's to say (`MemoryReader.earned`), which
+/// keeps the day's totals. Touched only on `home`.
 public final class GrowthStore {
     public static let xpKey = "growth.xp"
     public static let stageKey = "growth.stage"
@@ -38,12 +40,13 @@ public final class GrowthStore {
         save()
     }
 
-    /// Counts `e`, on `day`, and returns whether the XP changed.
+    /// Counts `e`, which earned `earned` XP within its pool's cap for the
+    /// day, on `day` (the calendar's, for the day a stage was reached),
+    /// and returns whether the XP changed.
     @discardableResult
-    public func count(_ e: Event, day: @autoclosure () -> String = LocalTime().day(Int64(Date().timeIntervalSince1970 * 1000))) -> Bool {
-        guard e.seq > lastSeq else { return false }
-        let earned = Growth.xp(for: e)
-        guard earned > 0 else { return false }
+    public func count(_ e: Event, earned: Int,
+                      day: @autoclosure () -> String = LocalTime().day(Int64(Date().timeIntervalSince1970 * 1000))) -> Bool {
+        guard e.seq > lastSeq, earned > 0 else { return false }
         let before = growth.stage
         growth = Growth(xp: growth.xp + earned, stage: growth.stage)
         lastSeq = e.seq

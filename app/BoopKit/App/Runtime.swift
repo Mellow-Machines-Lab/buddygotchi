@@ -18,8 +18,6 @@ public final class Runtime: @unchecked Sendable {
         public var link: Transport?
         /// The static parts of Jev's state: a copy of `characters/boop/steering/`.
         public var steering: Steering
-        /// Override the personality in `settings.json` for this run only.
-        public var personality: Personality?
         /// Override how much it says in `settings.json` for this run only.
         public var talk: Talk?
         /// Builds the brain from Jev's key; nil for no brain. Tests pass
@@ -116,15 +114,17 @@ public final class Runtime: @unchecked Sendable {
     public var latest: StateSnapshot? { rigs[0].latest }
     /// Boop's name, from `long-term.md`.
     public let name: String
-    /// Boop's memory: long-term.md, read at launch, and the diary, which
-    /// the brain's diary output writes a line to each day.
+    /// Boop's long-term memory: long-term.md, read at launch.
     public let memory: MemoryStore
+    /// The readers of the transcript (`Memory`): the day's tallies and
+    /// journal, and the dream they make. Nil when the key-value store fell
+    /// back to memory for this launch: then no reader runs.
+    public private(set) var remembers: Memory?
+    /// The key-value store growth and memory keep their rows in; it keeps
+    /// an away's start too (`PresenceDetector.awayKey`).
+    var keyValues: KeyValueStore?
     public private(set) var settings: AppSettings
-    /// The personality running now, touched only on `home`. Starts as the
-    /// saved one, unless this run overrides it.
-    public private(set) var personality: Personality
-    /// How much it says now (`Talk`), touched only on `home`, as the
-    /// personality is.
+    /// How much it says now (`Talk`), touched only on `home`.
     public private(set) var talk: Talk
     /// The first buddy's core.
     var core: Core { pipeline.core }
@@ -181,9 +181,6 @@ public final class Runtime: @unchecked Sendable {
     var grew = false
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
-    /// The diary's last week as the popover shows it, kept while neither
-    /// the diary nor the day changes.
-    var shownDiary: (week: [(day: String, line: String)], today: String, lines: [Status.DiaryLine])?
     /// This launch's debug lines outside debug mode, for `saveReport`: in
     /// debug mode the file has them.
     let recent: DebugLog.Recent
@@ -225,7 +222,7 @@ public final class Runtime: @unchecked Sendable {
     /// Push-to-talk: turns the Mac's mic on (true) or off, as the core
     /// says. Once it's off, the app hands what it heard to `said`, or calls
     /// `heardNothing`; with none set (headless), turning it off hears
-    /// nothing. The core keeps push-to-talk's state (`Core.Talk`). On `home`.
+    /// nothing. The core keeps push-to-talk's state (`Core.Listening`). On `home`.
     public var onListen: ((Bool) -> Void)?
 
     // Here and away. All on `home`.
@@ -288,9 +285,8 @@ public final class Runtime: @unchecked Sendable {
         let clock = options.clock
 
         let now = options.clock()
-        personality = options.personality ?? settings.personality
         talk = options.talk ?? settings.talk
-        let rules = options.steering.rules(personality, talk: talk)
+        let rules = options.steering.rules(talk: talk)
         let places = self.places
         // The only buddy goes by the name you gave it, in what it hears and
         // what it counts as its name.
@@ -337,24 +333,28 @@ public final class Runtime: @unchecked Sendable {
 
         // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
-        var personalityNow: () -> Personality = { .default }
         var talkNow: () -> Talk = { .default }
+        var memoryNow: () -> String? = { nil }
+        var remembersNow: () -> Memory? = { nil }
+        let wallNow = options.wallClock
         var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
         var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
         let rigs = self.rigs
+        let made = pipeline
         let moods = Runtime.brain(pipeline, rigs.map { rig in
-            let link = rig.link, pack = rig.buddy.pack
-            // Each buddy speaks its own pack's personality of the saved
-            // name, or its first. Only the first is the one long-term.md
-            // set up.
-            return Mind(buddy: rig.buddy, steering: rig.steering, personality: { Personality(personalityNow().rawValue, in: pack) },
+            let link = rig.link, pack = rig.buddy.pack, rigCore = made.core(rig.buddy.id)
+            // Each buddy speaks its own pack's personality. Only the first
+            // is the one long-term.md set up.
+            return Mind(buddy: rig.buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        talk: { talkNow() },
-                        diary: rig === rigs[0] ? { day, line in
-                            // The pass that wrote it changes the popover.
-                            do { try memory.appendDiary(day: day, line: line) } catch { log("diary: can't write: \(error)") }
-                        } : nil, effects: { effected(rig, $0) })
+                        talk: { talkNow() }, effects: { effected(rig, $0) },
+                        memory: rig === rigs[0] ? { memoryNow() } : { nil },
+                        askable: { about, log, questions, mood in
+                            Asks.askable(about, log, questions: questions, core: rigCore, mood: mood, talk: talkNow(),
+                                         memory: remembersNow(), wall: wallNow())
+                        }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
+                        company: { remembersNow()?.today })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -365,9 +365,11 @@ public final class Runtime: @unchecked Sendable {
         debugWriter = Runtime.debugLines(pipeline: pipeline, emit: { line in if holding { held.append(line) } else { emit(line) } })
         // Growth's store, or one in memory for this launch if the file won't open.
         let values: KeyValueStore
+        var fellBack = false
         do { values = try KeyValueStore(directory: options.stateDir) } catch {
-            log("growth: \(error); keeping XP in memory until the app quits")
+            log("growth: \(error); keeping XP in memory until the app quits, and remembering no day")
             values = try KeyValueStore(directory: nil)
+            fellBack = true
         }
         growth = GrowthStore(values, log: log)
         // The view and the cores pick up where the last launch left them.
@@ -380,14 +382,31 @@ public final class Runtime: @unchecked Sendable {
         holding = false
         held.forEach(emit)
         if read > 0 { log("transcript: read back \(read) events") }
-        presence = PresenceDetector(away: view.away(logNow))
+        // An away the log no longer holds (a relaunch during a long
+        // absence) is still an away: its start is kept.
+        keyValues = values
+        presence = PresenceDetector(away: view.away(logNow) || values.string(PresenceDetector.awayKey) != nil)
         growth.follow(transcriptAt: transcript.lastSeq)
+        // Memory picks up where it stopped: the files' events it missed,
+        // read as the day they came, then a dream not yet told logged again
+        // if its event has left the log. Its days close from the next input.
+        if !fellBack {
+            let remembers = Memory(store: values, time: options.time, writer: AppleIntelligenceWriter.onThisMac, files: memory,
+                                   queue: home, note: log)
+            remembers.runner.follow(transcriptAt: transcript.lastSeq)
+            let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
+            remembers.catchUp(Transcript.events(in: folder, after: remembers.runner.seq, from: remembers.runner.day ?? ""))
+            remembers.relog(unlessIn: logNow)
+            home.sync { remembers.attach(to: pipeline) }
+            self.remembers = remembers
+        }
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
-        personalityNow = { [weak self] in self?.personality ?? .default }
         talkNow = { [weak self] in self?.talk ?? .default }
+        memoryNow = { [weak self] in self?.memorySection() }
+        remembersNow = { [weak self] in self?.remembers }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
         effected = { [weak self] rig, fx in self?.run(fx, on: rig) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
@@ -416,11 +435,15 @@ public final class Runtime: @unchecked Sendable {
             run(core(rig).moodChanged(at: options.clock()), on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
-        // Every event as it's logged, never the read-back's: those were counted.
-        harness.on("*") { [weak self] e in
+        // Every event as it's logged, never the read-back's: those were
+        // counted. What it earned within the day's caps is the memory
+        // reader's, as it reads it; with no memory (its store won't open),
+        // what it earns, uncapped.
+        let grow: (Event, Int) -> Void = { [weak self] e, earned in
             guard let self else { return }
             let before = growth.growth.stage, now = options.clock()
-            guard growth.count(e, day: options.time.day(options.wallClock())) else { return }
+            let wall = options.wallClock()
+            guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
             grew = true
             // A stage reached makes the rest of the day a party, and Boop
             // celebrates it now, unless Boop hatched today.
@@ -428,19 +451,26 @@ public final class Runtime: @unchecked Sendable {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
             }
         }
+        if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
     }
 
     /// Boop's brain for one buddy, the process's character (`brain`): the
     /// evals' and the tests'. `queue` plays a reaction, whose end
     /// `reactions` reads, and `speaks` says whether the device plays
     /// Voice's takes.
-    public static func harness(pipeline: Pipeline, steering: Steering, personality: @escaping () -> Personality,
+    public static func harness(pipeline: Pipeline, steering: Steering,
                                reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
-                               diary: @escaping (String, String) -> Void = { _, _ in }) -> (harness: Harness, mood: Choice) {
-        let mind = Mind(buddy: pipeline.buddies[0], steering: steering, personality: personality, reactions: reactions,
-                        queue: queue, speaks: speaks, talk: talk, diary: diary)
+                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
+                               wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
+        let core = pipeline.core
+        let mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
+                        queue: queue, speaks: speaks, talk: talk, memory: memory,
+                        askable: { about, log, questions, mood in
+                            Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
+                        }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
+                        company: { remembers?.today })
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -495,7 +525,7 @@ public final class Runtime: @unchecked Sendable {
             changed()
             options.log("boop: running on \(options.stateDir.path), socket \(options.socketPath), "
                         + "link \(rigs.map { ($0.tag.map { "\($0) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
-                        + "personality \(personality.rawValue), talk \(talk.rawValue), "
+                        + "talk \(talk.rawValue), "
                         + "mood \(moodNow), brain \(harness.brain?.id ?? "none (reading Jev's key)")"
                         + (options.debug ? ", debug log \(debugLogURL.path)" : ""))
         }
@@ -564,6 +594,12 @@ public final class Runtime: @unchecked Sendable {
                                  now: now) { _ in }
             if let id, let thread = who.opens { rig.reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
         }
+    }
+
+    /// MEMORY for Jev: the written memory, its Recently named from today's
+    /// Boop day; nil with none.
+    func memorySection() -> String? {
+        memory.written().section(today: options.time.boopDay(options.wallClock()))
     }
 
     /// Lets go of the remembered board: Boop takes any over Bluetooth
@@ -641,6 +677,19 @@ public final class Runtime: @unchecked Sendable {
     /// and a back wakes the brain.
     func recordPresence(_ e: Event) {
         options.log("presence: \(e.phase == .start ? "away" : "back") (\(e.specificType))")
+        var e = e
+        // The away's start is kept, so its back pairs with it whatever the
+        // log still holds.
+        do {
+            if e.phase == .start, let since = e["since"]?.int {
+                try keyValues?.set([PresenceDetector.awayKey: String(since)])
+            } else if e.phase == .end {
+                if e["since"] == nil, let since = keyValues?.string(PresenceDetector.awayKey).flatMap({ Int64($0) }) {
+                    e.data["since"] = .int(since)
+                }
+                try keyValues?.remove([PresenceDetector.awayKey])
+            }
+        } catch { options.log("presence: can't keep the away: \(error)") }
         run(pipeline.presence(e))
     }
 
@@ -746,25 +795,13 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// A new personality: the view's rules and Jev's
-    /// state from the next event.
-    public func setPersonality(_ personality: Personality) {
-        home.async { [self] in
-            self.personality = personality
-            saveSettings { $0.personality = personality }
-            view.setRules(options.steering.rules(personality, talk: talk))
-            options.log("personality \(personality.rawValue)")
-            changed()
-        }
-    }
-
     /// How much it says: the view's rules and Jev's state from the next
     /// event, kept in `settings.json`.
     public func setTalk(_ talk: Talk) {
         home.async { [self] in
             self.talk = talk
             saveSettings { $0.talk = talk }
-            view.setRules(options.steering.rules(personality, talk: talk))
+            view.setRules(options.steering.rules(talk: talk))
             options.log("talk \(talk.rawValue)")
             changed()
         }

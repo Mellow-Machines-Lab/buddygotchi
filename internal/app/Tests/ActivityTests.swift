@@ -297,7 +297,7 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.activity, session: "a", tool: "Bash", id: "t", done: true)
         rig.wait(2000)
         XCTAssertNil(rig.act)
-        XCTAssertEqual(rig.state.busy, 2)
+        XCTAssertEqual(rig.state.working, 2)
     }
 }
 
@@ -329,32 +329,34 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(reactionNames(rig.send(.sessionStart, subagent: "a1")), [], "a subagent's own start")
     }
 
-    /// An interrupt that ends a turn plays stopped: Esc
-    /// on a call, Claude's idle notice after Esc between calls, or Codex's
-    /// `Interrupt`. The idle notice after a turn that finished, or one from
-    /// before the last prompt, plays nothing.
-    func testAnInterruptPlaysStopped() {
+    /// An interrupt that ends a turn stops it, which reaches the brain
+    /// (no rule reaction plays): Esc on a call, Claude's idle notice after
+    /// Esc between calls, or Codex's `Interrupt`. The idle notice after a
+    /// turn that finished, or one from before the last prompt, ends nothing.
+    func testAnInterruptStopsTheTurn() {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.send(.activity, tool: "Bash", id: "b")
-        XCTAssertEqual(reactionNames(rig.send(.turnStopped, tool: "Bash")), ["stopped"])
+        let esc = rig.send(.turnStopped, tool: "Bash")
+        XCTAssertEqual(finished(esc), ["stopped"])
+        XCTAssertEqual(reactionNames(esc), [], "the stream and the brain have it")
         rig.wait(61_000)
-        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), [], "the notice after it: the turn is over")
+        XCTAssertEqual(finished(rig.send(.turnStopped, notice: true)), [], "the notice after it: the turn is over")
         rig.send(.turnStart)
         rig.wait(10_000)
-        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), [], "from before the prompt")
+        XCTAssertEqual(finished(rig.send(.turnStopped, notice: true)), [], "from before the prompt")
         rig.wait(60_000)
-        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), ["stopped"], "Esc between calls, a minute on")
+        XCTAssertEqual(finished(rig.send(.turnStopped, notice: true)), ["stopped"], "Esc between calls, a minute on")
         rig.send(.turnStart)
         rig.wait(5000)
         rig.send(.turnEnd)
         rig.wait(60_000)
-        XCTAssertEqual(reactionNames(rig.send(.turnStopped, notice: true)), [], "Claude sat at its prompt after finishing")
+        XCTAssertEqual(finished(rig.send(.turnStopped, notice: true)), [], "Claude sat at its prompt after finishing")
 
         let codex = CoreRig()
         codex.send(.turnStart, .codex)
-        XCTAssertEqual(reactionNames(codex.send(.turnStopped, .codex)), ["stopped"])
-        XCTAssertEqual(reactionNames(codex.send(.turnStopped, .codex)), [], "no turn open")
+        XCTAssertEqual(finished(codex.send(.turnStopped, .codex)), ["stopped"])
+        XCTAssertEqual(finished(codex.send(.turnStopped, .codex)), [], "no turn open")
     }
 
     /// A failed call plays no rule reaction of its own, however it
@@ -377,26 +379,18 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(reactionNames(codex.send(.activity, .codex, tool: "shell", done: true)), [])
     }
 
-    /// A helper Boop saw start plays helper_return when
-    /// it ends while its turn goes on; with hooks that don't say when
-    /// helpers start, its `Task` or `Agent` call's end does. Never twice
-    /// for one helper, for one Boop didn't see start, for a helper that
-    /// failed, or after the turn ended.
-    func testAHelperReturning() {
+    /// A helper coming back plays no rule reaction: the work stream's
+    /// "back" and the brain have it. Its own `SubagentStop`, or with hooks
+    /// that don't say when helpers start, its `Task` or `Agent` call's end.
+    func testAHelperReturningPlaysNoRuleReaction() {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.send(.activity, tool: "Agent", id: "A")
         rig.send(.subagentStart, subagent: "h1")
-        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "h1")), ["helper_return"])
-        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Agent", id: "A", done: true)), [], "not twice")
-        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "h2")), [], "never seen starting")
+        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "h1")), [])
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Agent", id: "A", done: true)), [])
         rig.send(.activity, tool: "Task", id: "T")
-        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Task", id: "T", done: true)), ["helper_return"], "older hooks")
-        rig.send(.activity, tool: "Task", id: "F")
-        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Task", failed: true, id: "F", error: "other")), [], "it failed")
-        rig.send(.subagentStart, subagent: "bg")
-        rig.send(.turnEnd)
-        XCTAssertEqual(reactionNames(rig.send(.subagentEnd, subagent: "bg")), [], "after the turn ended")
+        XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Task", id: "T", done: true)), [], "older hooks")
     }
 
     /// Every reaction the rules play is recorded as a `did` named after
@@ -405,7 +399,6 @@ final class CoreRuleReactionTests: XCTestCase {
     /// leave out records nothing.
     func testEachRuleReactionIsRecorded() {
         let rig = CoreRig()
-        let name = CharacterPack.active.name
         func did(_ fx: Fx) -> [String] {
             let seq = rig.pipeline.transcript.events.last { $0.agent != nil }!.seq
             return rig.pipeline.transcript.view(now: rig.now).dids(for: seq)
@@ -422,10 +415,9 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(did(start), ["starting rule "], "recorded with no message: every turn starts with it")
         XCTAssertNil(events(start).first?.reaction, "not shown under its line")
         rig.send(.subagentStart, subagent: "h1")
-        XCTAssertEqual(did(rig.send(.subagentEnd, subagent: "h1")),
-                       ["helper_return rule \(name) reacted to the helper coming back on its own."])
+        XCTAssertEqual(did(rig.send(.subagentEnd, subagent: "h1")), [], "a helper back is the brain's")
         rig.send(.activity, tool: "Bash", id: "3")
-        XCTAssertEqual(did(rig.send(.turnStopped, tool: "Bash")), ["stopped rule \(name) reacted to the stop on its own."])
+        XCTAssertEqual(did(rig.send(.turnStopped, tool: "Bash")), [], "and a stop")
         rig.send(.turnStart, session: "s2")
         rig.send(.needsYou, session: "s2", tool: "Bash")
         XCTAssertEqual(did(rig.send(.turnStart)), [], "needs you shows: no rule reaction")

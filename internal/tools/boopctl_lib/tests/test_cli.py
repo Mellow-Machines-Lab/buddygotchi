@@ -19,7 +19,7 @@ from fake_board import FakeBoard  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
 COMMANDS = ["ping", "board", "state", "factory", "shot", "send", "play", "takes", "card", "sim", "mirror", "run", "perf", "latency", "soak", "e2e",
-            "cam", "dash", "day", "workday", "reference", "calibrate"]
+            "cam", "dash", "day", "reference", "calibrate"]
 
 
 def firmware_names(path: str, start: str, item: str = r'"(\w+)"', end: str = "};") -> list:
@@ -517,7 +517,7 @@ class TakesTests(unittest.TestCase):
 
     def test_the_takes_are_the_boards(self):
         takes = cli.takes()
-        self.assertEqual(len(takes), 3159)
+        self.assertEqual(len(takes), 2995)
         self.assertEqual([t.id for t in takes], sorted((t.id for t in takes), key=str.encode), "the pack's order: by id")
         go = cli.take("previous.go")
         self.assertEqual((go.id, go.text, go.ms), ("previous.go", "Go", 638))
@@ -532,7 +532,7 @@ class TakesTests(unittest.TestCase):
         self.assertTrue(all("again" in t.text.lower() for t in cli.chosen_takes("again")))
         self.assertEqual([t.id for t in cli.chosen_takes("mamma mia")], ["new.d14"])
         self.assertEqual({t.text for t in cli.chosen_takes("boom")}, {"Bada bing bada boom", "Boom shakalaka"})
-        self.assertEqual(len(cli.chosen_takes(None)), 3159)
+        self.assertEqual(len(cli.chosen_takes(None)), 2995)
         with self.assertRaises(cli.DeviceError):
             cli.chosen_takes("banana")
 
@@ -574,8 +574,7 @@ class SoakTests(unittest.TestCase):
         self.assertFalse(any("id" in m or "mood" in m.get("args", {}) for m in dos), "the rest aren't waited on")
         # Each asks to play as the Mac or a tool would.
         plays = {m["name"]: (m["play"], m.get("ttl")) for m in dos}
-        self.assertEqual(plays, {"starting": ("if_free", None), "stopped": ("if_free", None), "error": ("if_free", None),
-                                 "helper_return": ("if_free", None),
+        self.assertEqual(plays, {"starting": ("if_free", None),
                                  "task_complete": ("next", 5000), "reply_ready": ("next", 5000), "wake_up": ("next", 5000),
                                  "notice": ("next", 5000), "react": ("next", 5000)})
 

@@ -28,8 +28,19 @@ def confirms(line: Line) -> Callable[[Line], bool]:
     """Which debug.jsonl line shows that a dev line landed."""
     if line["dev"] == "answer":
         return lambda o: kind(o) == "pass" and o["pass"].get("by") == "dashboard"
+    if line["dev"] == "close_day":
+        # The dream, logged at once; the night's write comes later.
+        return lambda o: kind(o) == "event" and o["event"].get("kind") == "dream"
     return lambda o: (kind(o) == "event" and (a := action(o["event"])) is not None
                       and a["by"] == "dashboard" and a["name"] == "mood")
+
+
+def late_text(command: str) -> str:
+    """What a command with nothing in debug.jsonl after CONFIRM_S says."""
+    if command == "close_day":
+        return (f"close_day: no dream within {CONFIRM_S:g} s: nobody was there today, today is dreamed of already, "
+                "or Boop isn't running with --debug (boop.log says which)")
+    return f"{command}: nothing in debug.jsonl within {CONFIRM_S:g} s. Is Boop running with --debug?"
 
 
 class Pending:

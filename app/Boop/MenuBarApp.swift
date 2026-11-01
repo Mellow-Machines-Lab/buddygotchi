@@ -12,14 +12,9 @@ enum MenuBarApp {
         let stateDir = args["--state-dir"].map { URL(fileURLWithPath: $0) } ?? AppSettings.defaultStateDir()
         guard let link = LinkSetting(args["--link"] ?? "ble") else { fail("--link is ble, usb:SOCKET or none") }
         let debug = args.has("--debug")
-        if args.has("--simulator"), !AppModel.offersSimulator || link != .bluetooth {
-            fail("--simulator is for make dev's debug build and the internal build, on the board's link")
-        }
         MainActor.assumeIsolated {
             let app = NSApplication.shared
             let delegate = AppDelegate(stateDir: stateDir, link: link, debug: debug)
-            // On the simulator from the start, for good: no board, no Bluetooth.
-            if args.has("--simulator") { delegate.model.startOnSimulator = .stay }
             app.delegate = delegate
             app.setActivationPolicy(.accessory)
             // Ctrl-C on `make dev`, or a kill: quit as the menu's Quit does,
@@ -96,26 +91,23 @@ final class AppModel: ObservableObject {
     /// row still says why, until the hooks change.
     @Published var hookErrorsDismissed: Set<Agent> = []
     @Published var startError: String?
-    /// A simulator on this Mac, as a body to choose (`DeviceChooser`).
-    enum Simulator { case none, there, inUse }
-    @Published var simulator = Simulator.none
-    var usingSimulator: Bool { simulator == .inUse }
-    /// The runtime starts on the simulator: chosen in onboarding before it
-    /// started (`once`, back to the board when it stops, as Settings' choice
-    /// is), or for good: with `--simulator` (`make dev SIM=1`), or in the
-    /// internal build, which keeps the choice from launch to launch (`stay`).
-    enum SimulatorStart { case no, once, stay }
-    var startOnSimulator = SimulatorStart.no
+    /// The simulator is Boop's body (`DeviceChooser`), in its window.
+    @Published var usingSimulator = false
+    /// The runtime starts on the simulator: the body it was last given
+    /// (`AppSettings.simulator`), or chosen in onboarding before it started.
+    var startOnSimulator = false
     /// Boop's body is the simulator: chosen, or about to be when the
     /// runtime starts.
-    var onSimulator: Bool { devices.map { $0.choice == .simulator } ?? (startOnSimulator != .no) }
-    /// Where the simulator is, in Boop's words: "in your browser", or the
-    /// internal build's "in my window".
-    var simulatorWhere: String { Self.simulatorKind == .window ? "in my window" : "in your browser" }
-    /// Keeps the internal build's choice of body (`AppSettings.simulator`).
+    var onSimulator: Bool { devices.map { $0.choice == .simulator } ?? startOnSimulator }
+    /// Where the simulator is, in Boop's words.
+    let simulatorWhere = "in my window"
+    /// Keeps the choice of body for the next launch (`AppSettings.simulator`).
     var rememberBody: (DeviceChoice) -> Void = { _ in }
     var devices: DeviceChooser? {
-        didSet { devices?.onChoice { [weak self] _ in Task { @MainActor in self?.lookForSimulator() } } }
+        didSet {
+            devices?.onChoice { [weak self] choice in Task { @MainActor in self?.usingSimulator = choice == .simulator } }
+            usingSimulator = devices?.choice == .simulator
+        }
     }
     /// The "no brain yet" notice was closed, for this launch.
     @Published var noKeyDismissed = false
@@ -289,8 +281,6 @@ final class AppModel: ObservableObject {
         }
         refreshLoginItem()
     }
-    /// Who Boop is, chosen in settings.
-    var personality: Personality { status?.personality ?? .default }
     /// How much it says, chosen in settings.
     var talk: Talk { status?.talk ?? .default }
 
@@ -386,7 +376,7 @@ final class AppModel: ObservableObject {
         switch s.base {
         // Short, as "2 sessions need you" is: beside the Talk button the
         // headline has room for about twenty letters.
-        case "working": return s.busy == 1 ? "1 session working" : "\(s.busy) sessions working"
+        case "working": return s.working == 1 ? "1 session working" : "\(s.working) sessions working"
         case "idle": return "Hanging out"
         default: return "Napping"
         }
@@ -440,43 +430,28 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Which simulator this build offers as Boop's body: the browser's
-    /// (`make dev`'s debug build, over the page's socket), a window of the
-    /// app's own (the internal build, `make bundle INTERNAL=1`, with the
-    /// page in its Resources), or none (the release build `make bundle`
-    /// makes, which never looks).
-    enum SimulatorKind { case none, browser, window }
-    nonisolated static let simulatorKind: SimulatorKind = {
-        #if BOOP_INTERNAL
-        BoardWindow.folder == nil ? .none : .window
-        #elseif DEBUG
-        .browser
+    /// Whether this build offers the simulator as Boop's body, in a window
+    /// of the app's own: `make dev`'s debug build, with the page staged
+    /// beside it, and the internal build (`make bundle INTERNAL=1`), with
+    /// the page in its Resources. The release build `make bundle` makes
+    /// never does.
+    nonisolated static let offersSimulator: Bool = {
+        #if BOOP_INTERNAL || DEBUG
+        BoardWindow.folder != nil
         #else
-        .none
+        false
         #endif
     }()
-    nonisolated static var offersSimulator: Bool { simulatorKind != .none }
 
     /// What Settings says when the hook client is missing.
     static var clientMissing: String {
         AboutThisMac.isApp() ? "Boop's hook helper is missing. Install Boop again." : "agent-hook isn't built. Run make dev again."
     }
 
-    /// Looks for a running simulator, off the main thread: it's a look at
-    /// a socket. Only while there's someone to show it to: Settings, open.
-    func lookForSimulator() {
-        guard Self.offersSimulator, let devices else { return }
-        DispatchQueue.global(qos: .utility).async {
-            let found: Simulator = devices.choice == .simulator ? .inUse : devices.simulatorIsThere() ? .there : .none
-            Task { @MainActor in if found != self.simulator { self.simulator = found } }
-        }
-    }
-
-    /// Boop's body from now on. The internal build's window is chosen for
-    /// good, and the choice kept for the next launch.
+    /// Boop's body from now on, the choice kept for the next launch.
     func use(_ choice: DeviceChoice) {
-        devices?.choose(choice, stay: Self.simulatorKind == .window)
-        if Self.simulatorKind == .window { rememberBody(choice) }
+        devices?.choose(choice)
+        rememberBody(choice)
     }
 
     /// Makes the simulator Boop's body: now, if the runtime runs, else as it
@@ -485,20 +460,13 @@ final class AppModel: ObservableObject {
         if devices != nil {
             use(.simulator)
         } else {
-            startOnSimulator = Self.simulatorKind == .window ? .stay : .once
-            if Self.simulatorKind == .window { rememberBody(.simulator) }
+            startOnSimulator = true
+            rememberBody(.simulator)
         }
     }
 
-    /// Brings the simulator to the front: the internal build's window, or
-    /// the browser's page.
-    func showSimulator() {
-        switch Self.simulatorKind {
-        case .window: BoardWindow.shared.show()
-        case .browser: NSWorkspace.shared.open(URL(string: "http://127.0.0.1:8206/")!)
-        case .none: break
-        }
-    }
+    /// Brings the simulator's window to the front.
+    func showSimulator() { BoardWindow.shared.show() }
 
     var device: DeviceState {
         let how = switch link {
@@ -520,14 +488,13 @@ final class AppModel: ObservableObject {
                 return DeviceState(connected: false, trouble: "\(name) can't look for its body", short: "No \(how)", detail: why.words,
                                    fix: Self.bluetoothFix(why.cause))
             }
-            if usingSimulator, Self.simulatorKind == .window, !BoardWindow.shared.isShown {
+            if usingSimulator, !BoardWindow.shared.isShown {
                 return DeviceState(connected: false, trouble: "\(name)'s window is closed", short: "Window closed",
                                    detail: "\(name)'s body is the simulator, in a window of its own. Show it to bring \(name) back.",
                                    fix: .showSimulator)
             }
             if usingSimulator {
-                return DeviceState(connected: false, short: "Looking…", detail: Self.simulatorKind == .window
-                                   ? "Waking the simulator in its window." : "Looking for the simulator. Open its page in a browser.")
+                return DeviceState(connected: false, short: "Looking…", detail: "Waking the simulator in its window.")
             }
             return DeviceState(connected: false, short: "Looking…", detail: "Looking for it over \(how). Plug it into USB power.")
         }
@@ -578,13 +545,6 @@ final class AppModel: ObservableObject {
         guard status?.workStream != on else { return }
         status?.workStream = on
         runtime?.setWorkStream(on)
-    }
-
-    /// Takes effect from the next event.
-    func setPersonality(_ personality: Personality) {
-        guard personality != self.personality else { return }
-        status?.personality = personality
-        runtime?.setPersonality(personality)
     }
 
     /// Takes effect from the next event.
@@ -711,10 +671,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.start = { [weak self] in self?.startRuntime() }
         model.uninstall = { [weak self] in self?.uninstall() }
         model.log = { [log] in log.write($0) }
-        // The internal build starts on the body it was last given.
-        if AppModel.simulatorKind == .window, model.startOnSimulator == .no, AppSettings.load(from: stateDir).simulator {
-            model.startOnSimulator = .stay
-        }
+        // It starts on the body it was last given.
+        if AppModel.offersSimulator, AppSettings.load(from: stateDir).simulator { model.startOnSimulator = true }
         model.rememberBody = { [stateDir, log] choice in
             do {
                 try AppSettings.update(in: stateDir) { $0.simulator = choice == .simulator }
@@ -826,8 +784,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// Opening Boop again while it runs (from Finder, Spotlight or the
     /// Dock): onboarding's window, or the popover.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // The internal build's body, in its window, comes back too.
-        if AppModel.simulatorKind == .window, model.usingSimulator { BoardWindow.shared.show() }
+        // The simulator's window, Boop's body, comes back too.
+        if model.usingSimulator { BoardWindow.shared.show() }
         if onboardingWindow != nil { bringOnboardingForward() } else if !popover.isShown { showPopover() }
         return false
     }
@@ -935,7 +893,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac
         model.devices = options.link as? DeviceChooser
-        if model.startOnSimulator != .no { model.devices?.choose(.simulator, stay: model.startOnSimulator == .stay) }
+        if model.startOnSimulator { model.devices?.choose(.simulator) }
         do {
             let runtime = try Runtime(options)
             runtime.onChange = { [weak self] status in
@@ -978,15 +936,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             try runtime.start()
             // Only once it runs, so a failed start leaves nothing holding it.
             presenceSignals.start { [weak runtime] in runtime?.presence($0) }
-            // A simulator started or stopped on this Mac: looked for while
-            // Settings is open to show it.
-            let look = Timer.scheduledTimer(withTimeInterval: DeviceChooser.watchEvery, repeats: true) { [weak self] _ in
-                Task { @MainActor in
-                    guard let model = self?.model, model.shown, model.pane == .settings else { return }
-                    model.lookForSimulator()
-                }
-            }
-            look.tolerance = 0.5
             model.runtime = runtime
             model.startError = nil
             runtime.refresh()

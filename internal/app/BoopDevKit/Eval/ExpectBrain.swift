@@ -13,8 +13,8 @@ public protocol ScenarioBrain: AnyObject {
 /// belongs to, so a run with no key plays as the scenario says Boop should
 /// (internal/EVALS.md §2). A question gets the step's own `brain` answer,
 /// else the first of its `expect` set that the question offers, else what
-/// the pipeline check would answer. It prices scenarios, and turns them
-/// into demos (`DemoFromScenario`).
+/// the pipeline check would answer. It prices scenarios and runs
+/// `--scripted`.
 public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     public let id = "expect"
     /// The step being run; nil between steps.
@@ -76,7 +76,7 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     /// The offered move on a shortest path from `mood` to any of `targets`
     /// on the mood graph, or nil when none leads there.
     static func toward(_ targets: [String], from mood: String, offered: [String]) -> String? {
-        let moves = MoodGraph.moves
+        let moves = MoodGraph.neighbours
         var first: [String: String] = [:]  // each mood reached, by the move it started with
         var frontier: [String] = []
         for m in offered.dropFirst() where first[m] == nil {

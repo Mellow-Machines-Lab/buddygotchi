@@ -134,9 +134,12 @@ public final class TranscriptView {
         /// when each came, and whether the run came again, within `againMs`
         /// of the run before.
         var pokes: [String: (at: [Int64], again: Bool)] = [:]
-        /// The away you haven't come back from: its
-        /// event's `seq` and when you left.
-        var awaySince: (seq: Int, at: Int64)?
+        /// The away you haven't come back from, paired as the memory
+        /// reader pairs it.
+        var away = AwayAndBack()
+        /// The newest dream not yet told (a `dream` event): the first line
+        /// that's yours while you're at the Mac tells it.
+        var untold: Event?
         /// The buddies lying face down (`""` for the only one), from their
         /// `facedown` until their `peekaboo`.
         var faceDown: Set<String> = []
@@ -205,11 +208,6 @@ public final class TranscriptView {
         rng = SplitMix64(seed: seed)
     }
 
-    /// What you say to Boop wakes the brain even while something needs
-    /// you; nothing else does, a poke included: then a tap opens the
-    /// waiting thread.
-    public static let wakesWhileNeeded: Set<Event.Kind> = [.talk]
-
     /// The topics whose failing command fails a turn.
     static let checks: Set<String> = ["tests", "build", "deploy"]
 
@@ -265,7 +263,7 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -296,19 +294,23 @@ public final class TranscriptView {
     /// you said while the buddy (`e`'s, else `buddy`, else any) lies face
     /// down, which is do not disturb: the board would refuse a reaction.
     public func hold(_ e: Event, _ log: LogView, buddy: String? = nil, needsYou: () -> String?) -> String? {
-        if let type = e.type, !Self.wakesWhileNeeded.contains(type), let why = needsYou() { return why }
+        // What you say to Boop wakes the brain even while something needs
+        // you; nothing else does, a poke included: then a tap opens the
+        // waiting thread.
+        if let type = e.type, type != .said, let why = needsYou() { return why }
         if e.type == .reacted, (e["chain"]?.int ?? 1) > Buddy.maxRepliesInARow {
             return "the buddies have answered each other \(Buddy.maxRepliesInARow) times in a row"
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
         if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
+        if e.type == .ask, e.specificType == Asks.ignored { return "nobody answered \(name(e))'s question" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
         for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
         let key = e.buddy ?? buddy
         let down = key.map { fold.faceDown.contains($0) || fold.faceDown.contains("") } ?? !fold.faceDown.isEmpty
-        if down, e.type != .talk, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name(e)) is face down" }
+        if down, e.type != .said, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name(e)) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name(e)) is answering these pokes" }
@@ -318,14 +320,13 @@ public final class TranscriptView {
     /// Whether the kinds `keeps` names have lines: turns'
     /// starts and ends, "needs you", pokes, what you said, you stepping
     /// away and coming back, and heartbeats, and tool calls' ends when
-    /// notable, or every one with `allToolEnds` (the personality's
-    /// `tool_uses: all`).
-    public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool, allToolEnds: Bool) -> Bool {
+    /// notable.
+    public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool) -> Bool {
         switch (type, phase) {
-        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.talk?, nil), (.prompt?, nil),
+        case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.said?, nil), (.prompt?, nil),
              (.lastMessage?, nil), (.heartbeat?, nil),
              (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
-        case (.tool?, .end?): notable || allToolEnds
+        case (.tool?, .end?): notable
         default: false
         }
     }
@@ -371,10 +372,42 @@ public final class TranscriptView {
         return line
     }
 
+    /// Folds one event and returns its line, if it has one, with the
+    /// dream under it when it's the one that tells it (`told`).
+    func take(_ e: Event) -> Line? {
+        if e.type == .dream {
+            fold.at = max(fold.at, e.seq)
+            fold.untold = e
+            return nil
+        }
+        return told(foldLine(e), e)
+    }
+
+    /// Tells the dream not yet told the first time you show up after the
+    /// day closed: your coming back or, with none, your first touch (a
+    /// poke or a care gesture). Never a prompt (it has its own sign), a
+    /// word to the buddy (its reply's sign), an agent's event or a
+    /// heartbeat, so it never plays to an empty room. Its facts say which
+    /// dream, for the memory to mark it told, the reason and the dream's
+    /// signs.
+    func told(_ line: Line?, _ e: Event) -> Line? {
+        let showsUp = (e.type == .presence && e.phase == .end) || Yours.touch(e)
+        guard var line, let dream = fold.untold, showsUp, fold.away.since == nil,
+              let weekday = dream["weekday"]?.string, let sentence = dream["sentence"]?.string else { return line }
+        fold.untold = nil
+        let told = EventLine.dreamed(weekday: weekday, sentence: sentence, name: name(e))
+        line.notes.append(told)
+        line.facts["dream_day"] = dream["day"] ?? .null
+        line.facts["dream_tags"] = dream["tags"] ?? .array([])
+        line.facts["dream_told"] = .string(told)
+        line.facts["dream_fact"] = dream["fact"] ?? .null
+        return line
+    }
+
     /// Folds one event and returns its line, if it has one. The sessions'
     /// timers run to every event's time first, as the core's replay runs
     /// them.
-    func take(_ e: Event) -> Line? {
+    func foldLine(_ e: Event) -> Line? {
         fold.at = max(fold.at, e.seq)
         if e.kind == Event.did, e.action == WorkStream.action {
             // A word of the work stream that came forward: no line, and
@@ -416,7 +449,16 @@ public final class TranscriptView {
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
             if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
             return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
-        case .talk?: return talk(e)
+        case .said?: return talk(e)
+        case .ask?:
+            let question = e["question"]?.string ?? ""
+            guard e.specificType != Asks.ignored, let answer = e["answer"]?.string else {
+                return Line(EventLine.unanswered(question, name: name(e)), facts: ["q": e["q"] ?? .null, "pick": .string(Asks.ignored)])
+            }
+            noteActivity(e.at)
+            return Line(EventLine.answered(question, answer: answer, name: name(e)),
+                        facts: ["q": e["q"] ?? .null, "answer": .string(answer), "pick": .string(e.specificType),
+                                "keeps": e["keeps"] ?? .bool(false)])
         case .presence?: return presence(e)
         case .heartbeat?: return heartbeat(e)
         case .needsYou?: return needs(e)
@@ -424,7 +466,7 @@ public final class TranscriptView {
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name(e), why: e.specificType))
-        case .listen?, nil: return nil
+        case .listen?, .dream?, .memory?, nil: return nil
         }
     }
 
@@ -551,7 +593,7 @@ public final class TranscriptView {
     }
 
     /// A finished tool call: counted for the turn, and a line when it's
-    /// notable, or for every one with `tool_uses: all`.
+    /// notable.
     func toolDone(_ c: inout Counts, _ t: Thread, _ a: AgentEvent, topic: String?, started: Int64?) -> Line? {
         let failed = a.failed
         let tookMs = started.map { max(0, a.at - $0) }
@@ -587,15 +629,13 @@ public final class TranscriptView {
                 setTopic(&c, topic, "edited")
             }
         }
-        guard TranscriptView.keeps(.tool, .end, notable: notable, allToolEnds: rules.toolUses == .all) else { return nil }
+        guard TranscriptView.keeps(.tool, .end, notable: notable) else { return nil }
         let category = EventLine.category(ToolKind.of(a.tool))
         let result = failed.map { $0 ? "failed" : "ok" } ?? "unknown"
-        let text = notable && rung > 0
+        let text = rung > 0
             ? EventLine.failing(agent: t.agent.rawValue, thread: threadLine(t), count: rung, name: onlyName)
-            : notable
-            ? EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
+            : EventLine.check(agent: t.agent.rawValue, topic: topic!, thread: threadLine(t), failed: failed!,
                               inARow: failedBefore + 1)
-            : EventLine.routine(agent: t.agent.rawValue, category: category, thread: threadLine(t), failed: failed)
         var facts: [String: JSONValue] = [
             "thread": threadFacts(t), "tool": .string(category), "tool_name": .of(a.tool),
             "tool_use_id": .of(a.toolUseID), "topic": .of(topic), "result": .string(result),
@@ -790,23 +830,22 @@ public final class TranscriptView {
     /// back yet. The presence detector starts from this at launch.
     public func away(_ log: LogView) -> Bool {
         catchUp(log)
-        return fold.awaySince != nil
+        return fold.away.since != nil
     }
 
     /// You stepping away or coming back, as the presence detector decided:
     /// the view only pairs them. A back with no away
     /// before it makes no line.
     func presence(_ e: Event) -> Line? {
-        if e.phase == .start {
-            let since = e["since"]?.int ?? e.at
-            fold.awaySince = (e.seq, since)
+        switch fold.away.fold(e) {
+        case .away(let since)?:
             return Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)])
+        case .back(let ms?)?:
+            noteActivity(e.at)
+            return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
+        default:
+            return nil
         }
-        guard let away = fold.awaySince else { return nil }
-        fold.awaySince = nil
-        noteActivity(e.at)
-        let ms = max(0, e.at - away.at)
-        return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
     }
 
     // MARK: Heartbeats
@@ -858,7 +897,7 @@ public final class TranscriptView {
         // activity. Once you're away, or it's been quiet longer than that,
         // as over a night or a weekend, only the hourly heartbeat comes;
         // nothing reads the time of day.
-        if let gap = rules.idleBeatMs, fold.awaySince == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
+        if let gap = rules.idleBeatMs, fold.away.since == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
             if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
             guard let beat = idleBeat, now >= beat.due else { return nil }
             idleBeat = (last, now + Int64(rng.int(in: gap)))
@@ -872,7 +911,7 @@ public final class TranscriptView {
     public static let hourly = "idle"
 
     /// Whether you're away from the Mac, as the presence events say.
-    public var away: Bool { fold.awaySince != nil }
+    public var away: Bool { fold.away.since != nil }
 
     func heartbeat(_ e: Event) -> Line? {
         let now = e.at

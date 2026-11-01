@@ -9,26 +9,25 @@ import LinkKit
 // and agents (VERIFICATION.md L4).
 
 let usage = """
-    usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug] [--simulator]
-               The menu-bar app. The owner runs this; it uses Bluetooth by default. --simulator, in the
-               debug build only, makes the simulator its body from the start, onboarding included, and
-               waits for it while it's away: no board and no Bluetooth (make dev SIM=1). With a --state-dir
+    usage: Boop [--state-dir DIR] [--link ble|usb:SOCKET|none] [--debug]
+               The menu-bar app. The owner runs this; it uses Bluetooth by default, until the simulator,
+               in the debug and internal builds, is made its body in onboarding or Settings: a window of
+               its own, which it keeps from launch to launch. With a --state-dir
                other than the everyday one it never installs or repairs the hooks in ~/.claude and
                ~/.codex: they keep reporting to the everyday app's socket, and to this one's too, which
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
                onboarding (make dev FRESH=1).
-           Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH] [--personality NAME]
-                [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--labeler apple|none] [--name NAME]
+           Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH]
+                [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--name NAME]
                 [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
                 [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
-               is set up with --name (default Boop). --personality (one of the pack's) and --talk override the
-               saved ones for this run only.
+               is set up with --name (default Boop). --talk overrides the saved one for this run only.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
                reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
                every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
-               asks no brain at all, even with a key: only the rules, and dev lines' answers. --labeler apple
-               reads your prompts with Apple Intelligence, as the app does; none (the default) only counts them.
+               asks no brain at all, even with a key: only the rules, and dev lines' answers. Your prompts are
+               counted only, never read by Apple Intelligence.
                --buddies runs several buddies side by side, each with its place (left, right), its character pack,
                the agent it watches first and its own name; --links gives each its own link, in order (usb:SOCKET
                or none). A demo whose header names buddies runs them without --buddies. With several, a {"dev":…}
@@ -50,7 +49,8 @@ let usage = """
                reads it). The last 10 launches' files are kept as DIR/debug.1.jsonl (the latest) to
                debug.10.jsonl, and boopctl day sums them all up by the hour. Jev's state never reaches boop.log.
            Headless, or with --debug, the hook socket also takes {"dev":…} lines from boopctl dash: "answer"
-               (a forced pass) and "mood"; and for push-to-talk with no mic, "listen" (the app's button,
+               (a forced pass), "mood" and "close_day" (Boop's day closes now: the dream, then the night's write);
+               and for push-to-talk with no mic, "listen" (the app's button,
                {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"}).
            Boop --snapshots DIR
                Renders the popover's panes and the menu-bar icons to PNGs from fixtures, then exits.
@@ -106,16 +106,14 @@ func transport(_ link: LinkSetting, only: String? = nil, log: LogFile) -> Transp
 /// `devLines` the dashboard's `{"dev":…}` lines taken. The menu-bar app and `--headless` both start from these.
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
                     log: LogFile, buddies: [BuddySetting] = [], links: [LinkSetting] = []) -> Runtime.Options {
-    // The board over Bluetooth, or a simulator running on this Mac, when
-    // Settings is told to use it. Over Bluetooth, the one Boop takes only
+    // The board over Bluetooth, or the simulator's window, when onboarding
+    // or Settings makes it Boop's body. Over Bluetooth, the one Boop takes only
     // the board it remembered, and narrows to the first one tapped.
     let remembered = buddies.count > 1 ? nil : AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
     let board = transport(link, only: remembered, log: log)
-    // The simulator to choose: the internal build's window, or the browser's page over its socket.
-    let chooser = { (board: Transport) -> DeviceChooser in
-        AppModel.simulatorKind == .window
-            ? DeviceChooser(board: board, simulator: { BoardLink() }, isThere: { true }, log: { log.write($0) })
-            : DeviceChooser(board: board, log: { log.write($0) })
+    // The simulator to choose, in a window of the app's own, where the build offers it.
+    let chooser = { (board: Transport) -> Transport in
+        AppModel.offersSimulator ? DeviceChooser(board: board, simulator: { BoardLink() }, log: { log.write($0) }) : board
     }
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
     if let ble = board as? BLETransport, buddies.count <= 1 { options.chooseBoard = { ble.take(only: $0) } }
@@ -190,11 +188,11 @@ final class LogFile: @unchecked Sendable {
 let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contains("--snapshots"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
-    launchHeadless ? (["--state-dir", "--link", "--socket", "--personality", "--talk", "--brain", "--labeler", "--name", "--demo", "--record",
+    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record",
                        "--buddies", "--links"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
-    : (["--state-dir", "--link"], ["--debug", "--simulator"])
+    : (["--state-dir", "--link"], ["--debug"])
 let args = Arguments.parse(raw, options: launchOptions, flags: launchFlags, command: "boop", usage: usage)
 CharacterPack.use(bundledCharacter())
 if launchHeadless { Headless.run(args) }

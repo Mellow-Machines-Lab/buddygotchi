@@ -16,42 +16,25 @@ public struct PackCheck {
             problems.append("\(error)")
             return
         }
-        let used = Self.used(directory)
-        // A file the pack has, or takes from another with what it uses
-        // (CHARACTER.md §6), as the staged pack has it.
-        func file(_ path: String) -> URL {
-            let own = directory.appendingPathComponent(path)
-            if FileManager.default.fileExists(atPath: own.path) { return own }
-            for (shared, from) in used where path == shared || path.hasPrefix(shared + "/") {
-                return path == shared ? from : from.appendingPathComponent(String(path.dropFirst(shared.count + 1)))
-            }
-            return own
-        }
+        // A file of the pack's: each pack stands alone (CHARACTER.md §6).
+        func file(_ path: String) -> URL { directory.appendingPathComponent(path) }
         func has(_ path: String) -> Bool { FileManager.default.fileExists(atPath: file(path).path) }
 
-        // Steering: the guide and each personality, within the budgets, and
-        // the talk files all or none.
+        // Steering: the guide and each mood's file, within the budgets, and
+        // the asks.
         do {
             let steering = try Steering(directory: directory.appendingPathComponent("steering"), pack: pack)
-            for mood in pack.moods.map(\.id) where steering.files["mood/\(mood)"] == nil {
+            for mood in pack.lasting.map(\.id) where steering.files["mood/\(mood)"] == nil {
                 notes.append("steering/mood/\(mood).md is missing: \(mood) reads as \(pack.defaultMood)'s")
             }
             for (path, text) in steering.files.sorted(by: { $0.key < $1.key }) {
                 let budget = path.hasPrefix("guide") ? Steering.Budget.guide
-                    : path.hasPrefix("personality/") ? Steering.Budget.personality
-                    : path.hasPrefix("talk/") ? Steering.Budget.talk
-                    : path == "replies" ? Steering.Budget.replies : Steering.Budget.mood
+                    : path == "personality" ? Steering.Budget.personality
+                    : path == "replies" ? Steering.Budget.replies : path == "dreams" ? Steering.Budget.dreams
+                    : path == "asks" ? Steering.Budget.asks : Steering.Budget.mood
                 if Steering.tokens(text) > budget { notes.append("steering/\(path).md is over its budget: \(Steering.tokens(text)) > \(budget) tokens") }
             }
-            for path in steering.files.keys.sorted() where path.hasPrefix("nature/") {
-                notes.append("steering/\(path).md isn't read: who the creature is goes in its personality")
-            }
-            for t in Talk.allCases where steering.talk(t) == nil && steering.talks {
-                notes.append("steering/talk/\(t.rawValue).md is missing: \(t.rawValue) talks as the personality is written")
-            }
-            for path in steering.files.keys.sorted() where path.hasPrefix("talk/") && Talk(rawValue: String(path.dropFirst(5))) == nil {
-                notes.append("steering/\(path).md isn't quiet, normal or chatty: nothing reads it")
-            }
+            problems += Self.asks(steering.asks)
         } catch {
             problems.append("\(error)")
         }
@@ -92,21 +75,34 @@ public struct PackCheck {
 
     }
 
-    /// What a pack takes from the packs beside it (CHARACTER.md §6): each
-    /// path its `uses` names, with that file or folder in the pack that
-    /// shares it. charactergen.py checks that they're there.
-    public static func used(_ directory: URL) -> [(String, URL)] {
-        func json(_ folder: URL) -> [String: Any] {
-            (try? Data(contentsOf: folder.appendingPathComponent("character.json")))
-                .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] } ?? [:]
+    /// What's wrong with a pack's asks: a line neither a question with two
+    /// answers nor a follow-up, a question or answer too long for the
+    /// board, or a follow-up to a question or answer the file hasn't.
+    static func asks(_ lines: [TaggedLine]) -> [String] {
+        var found: [String] = []
+        let questions = Asks.questions(lines)
+        for line in lines where line.parts.count != 1 && line.parts.count != 3 {
+            found.append("steering/asks.md: \"\(line.text)\" isn't a question with two answers, nor a follow-up")
         }
-        let uses = json(directory)["uses"] as? [String: String] ?? [:]
-        return uses.sorted(by: { $0.key < $1.key }).flatMap { share, name -> [(String, URL)] in
-            let provider = directory.deletingLastPathComponent().appendingPathComponent(name)
-            let shares = json(provider)["shares"] as? [String: [String: Any]] ?? [:]
-            let files = shares[share]?["files"] as? [String] ?? []
-            return files.map { ($0, provider.appendingPathComponent($0)) }
+        for q in questions {
+            if q.question.count > Asks.maxQuestion {
+                found.append("steering/asks.md: \"\(q.question)\" is over \(Asks.maxQuestion) characters")
+            }
+            for answer in [q.a, q.b] where answer.count > Asks.maxAnswer {
+                found.append("steering/asks.md: \"\(answer)\" is over \(Asks.maxAnswer) characters")
+            }
         }
+        for line in lines where line.parts.count == 1 {
+            guard line.tags.count >= 2, let q = questions.first(where: { $0.id == line.tags[0] }),
+                  [q.a, q.b].map({ $0.lowercased() }).contains(line.tags[1]) else {
+                found.append("steering/asks.md: \"\(line.text)\" follows no question's answer: tag it [id answer]")
+                continue
+            }
+            if line.text.count > Signs.maxLength {
+                found.append("steering/asks.md: \"\(line.text)\" is over \(Signs.maxLength) characters")
+            }
+        }
+        return found
     }
 
     /// The version in a voice file's header (`voice/voice.bin`): its 16

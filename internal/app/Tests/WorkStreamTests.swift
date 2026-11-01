@@ -89,7 +89,7 @@ final class WorkStreamTests: XCTestCase {
     /// comes forward at most once every 8 s, and the same word at most once
     /// every 30 s (`ambientGapMs`, `sameWordGapMs`).
     func testAmbientCallsComeForwardNowAndThen() {
-        XCTAssertEqual([WorkStream.ambientGapMs, WorkStream.sameWordGapMs, WorkStream.holdMs], [8000, 30_000, 2500])
+        XCTAssertEqual([WorkStream.ambientGapMs, WorkStream.sameWordGapMs, WorkStream.showMs], [8000, 30_000, 2500])
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
         XCTAssertEqual(run(rig, "1", program: "grep"), ["grep arrive"])
@@ -259,7 +259,7 @@ final class WorkStreamTests: XCTestCase {
         let lanes = (0..<WorkStream.maxLanes).map {
             StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxWordBytes))
         }
-        let s = StateSnapshot(base: "working", act: "delegating", mood: "overwhelmed", attn: nil, busy: 12, idle: 9,
+        let s = StateSnapshot(base: "working", act: "delegating", mood: "overwhelmed", attn: nil, working: 12, idle: 9,
                               helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "tier5", "pal", "chonk", "legend", "reading"],
                               todo: .init(done: 99, total: 99), calls: lanes)
         XCTAssertLessThan(s.jsonLine.utf8.count, 440, s.jsonLine)

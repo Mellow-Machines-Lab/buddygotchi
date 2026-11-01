@@ -139,7 +139,7 @@
     $('[data-title]').style.setProperty('--hue',colourOf(sel.mood)||'#888');
     $('[data-title]').textContent=`${title(sel.mood)} · ${stateInfo[sel.state].label}${detail}`;
     $('[data-caption]').textContent=info?.caption||'';$('[data-caption]').hidden=!info?.caption;
-    $('[data-mood-term]').textContent=title(sel.mood);$('[data-mood-describe]').textContent=mood.meaning||'';
+    $('[data-mood-term]').textContent=title(sel.mood);$('[data-mood-describe]').textContent=mood.meaning||(mood.settles?`A face only: it settles into ${mood.settles}.`:'');
     $('[data-state-term]').textContent=stateInfo[sel.state].label;$('[data-state-describe]').textContent=stateInfo[sel.state].about;
     const note=$('[data-note]');note.hidden=plays===sel.mood;
     if(!note.hidden)note.textContent=`${label(sel.card)} has no ${title(sel.mood).toLowerCase()} art. It shows ${title(plays).toLowerCase()} instead, which is what plays here.`;
@@ -353,8 +353,8 @@
       about:'What it does and why: what sets each thing off and who decides, a rule on the Mac, the brain or the board, and what the brain reads and answers.'},
     {id:'animations',label:'Animations',views:{scene:'Scene',matrix:'Matrix',transitions:'Transitions',stills:'Stills'},
       about:'How it looks: one mood and state, all of them at once, the board between two, and the frames its tests hold it to.'},
-    {id:'words',label:'Words',views:{signs:'Signs',diary:'Diary',voice:'Voice'},
-      about:'What it says: the captions it holds up, its diary, and its recorded voice.'},
+    {id:'words',label:'Words',views:{signs:'Signs',dreams:'Dreams',voice:'Voice'},
+      about:'What it says: the captions it holds up, the signs it tells its dreams with, and its recorded voice.'},
     {id:'tests',label:'Tests',views:{evals:'Evals',demos:'Demos'},
       about:'What holds it to all this: the brain\'s eval scenarios, and the scripted demos it lives through.'},
     {id:'workbench',label:'Workbench',views:{references:'References',review:'Review'},

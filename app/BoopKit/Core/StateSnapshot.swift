@@ -129,7 +129,7 @@ public struct StateSnapshot: Equatable, Sendable {
     public var mood: String
     public var attn: Attention?
     /// Sessions working.
-    public var busy: Int
+    public var working: Int
     /// Sessions idle: their turn ended, and they wait for your next prompt.
     public var idle: Int
     /// Helpers (subagents) working, over every session.
@@ -222,14 +222,14 @@ public struct StateSnapshot: Equatable, Sendable {
     /// board's fields hold them.
     public static let maxTitleBytes = 30, maxProjectBytes = 22
 
-    public init(base: String, act: String? = nil, mood: String, attn: Attention?, busy: Int, idle: Int = 0, helpers: Int = 0,
+    public init(base: String, act: String? = nil, mood: String, attn: Attention?, working: Int, idle: Int = 0, helpers: Int = 0,
                 vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
                 skip: Int = 0, unlisted: Int = 0) {
         self.base = base
         self.act = act
         self.mood = mood
         self.attn = attn
-        self.busy = busy
+        self.working = working
         self.idle = idle
         self.helpers = helpers
         self.vol = vol
@@ -266,11 +266,12 @@ public struct StateSnapshot: Equatable, Sendable {
             if attn.id > 0 { a["id"] = .int(attn.id) }
             fields["attn"] = .object(a)
         }
-        fields["busy"] = .int(busy)
+        fields["busy"] = .int(working)  // the wire calls the count busy
         if idle > 0 { fields["idle"] = .int(idle) }
         if helpers > 0 { fields["helpers"] = .int(helpers) }
         fields["vol"] = .int(vol)
-        if !when.isEmpty { fields["when"] = .array(when.map { .string($0) }) }
+        let tags = when.filter(Occasions.board.contains)  // the tags the board reads
+        if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })

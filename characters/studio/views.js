@@ -13,9 +13,8 @@
   const FRAME_MS = StudioBoard.FRAME_MS, served = location.protocol !== 'file:';
   const time = ms => `${ms > 0 ? '+' : ''}${ms} ms`;
   // The everyday transitions, which Transitions' Rank records on the board
-  // and lists by their ratio, the jumpiest first: internal/tools/fluid/
-  // transitions.jsonl's, so the two measures compare, as charactergen reads
-  // them. Each a name, a start and an end, as the address has them
+  // and lists by their ratio, the jumpiest first: everyday.jsonl's, as
+  // charactergen reads them. Each a name, a start and an end, as the address has them
   // (mood/state, and /fact for a state with one); a finish over working is
   // asked in its own mood, as the recording's is.
   const EVERYDAY = window.StudioData?.everyday || [];
@@ -367,7 +366,7 @@
         s.drafts[item] = '';
         s.said[item] = `Saved to characters/${api.sel.pack}/review/notes.jsonl.`;
       } catch (error) {
-        s.said[item] = `Not saved (${error.message}): the studio's own server saves verdicts, node characters/studio/serve.cjs.`;
+        s.said[item] = `Not saved (${error.message}): the studio's server saves verdicts, python3 simulator/web/serve.py.`;
       }
       s.saving = false;
       render();

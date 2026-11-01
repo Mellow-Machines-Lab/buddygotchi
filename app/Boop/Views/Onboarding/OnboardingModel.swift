@@ -36,9 +36,9 @@ final class OnboardingModel: ObservableObject {
 
     // Act 4: when looking started, for the "can't find me" hint.
     @Published var lookingSince: Date?
-    /// Act 4: a simulator runs on this Mac (the debug build's), a body to
-    /// offer when there's no board.
-    @Published var simulatorHere = false
+    /// Act 4: the build has the simulator window, a body to offer when
+    /// there's no board.
+    @Published var simulatorHere = AppModel.offersSimulator
 
     // Act 5: what push-to-talk heard last, for the talk lesson.
     enum Talk: Equatable { case heard(String), nothing }
@@ -174,27 +174,13 @@ final class OnboardingModel: ObservableObject {
     /// past it. The finale's tips are the board's then, else the Mac's.
     var hasBoard: Bool { body == .joined || app.status?.connected == true }
 
-    /// Boop's body is the simulator, the board in the browser or the
-    /// internal build's window, so the acts say where to find it and how to
-    /// work it there.
+    /// Boop's body is the simulator window, so the acts say where to find
+    /// it and how to work it there.
     var onSimulator: Bool { app.onSimulator }
 
-    /// Looks for a running simulator while act 4 asks for the body, off
-    /// the main thread: it's a look at a socket. The internal build's
-    /// window is always there to open.
-    func watchForSimulator() async {
-        if AppModel.simulatorKind == .window { simulatorHere = true }
-        guard AppModel.simulatorKind == .browser else { return }
-        while !Task.isCancelled {
-            let here = await Task.detached { DeviceChooser.simulatorRuns() }.value
-            if here != simulatorHere { withAnimation(.boopEase(0.3)) { simulatorHere = here } }
-            try? await Task.sleep(for: .seconds(DeviceChooser.watchEvery))
-        }
-    }
-
-    /// No board: the simulator is the body, until it stops, as Settings'
-    /// choice is, or for good in the internal build. Chosen before the
-    /// runtime starts, so Bluetooth isn't asked for.
+    /// No board: the simulator window is the body, from now on, as
+    /// Settings' choice is. Chosen before the runtime starts, so Bluetooth
+    /// isn't asked for.
     func useSimulator() {
         app.useSimulator()
         log("onboarding: the simulator is my body")
@@ -296,8 +282,8 @@ final class OnboardingModel: ObservableObject {
     // MARK: Act 6's tour
 
     /// Whether act 6 tours, once an agent says hi: Boop has its body, and
-    /// it draws the work stream and the agents' drawer (the gel's face).
-    var tours: Bool { hasBoard && app.status?.device?.face == .gel }
+    /// it draws the work stream and the agents' drawer (the AMOLED).
+    var tours: Bool { hasBoard && app.status?.device?.drawsTheDrawer == true }
 
     /// The window's Boop after the hello: the board's own state, live, so
     /// your agent's words fall past it too. No sound.

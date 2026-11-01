@@ -40,6 +40,8 @@ extension Runtime {
             }
         case "report":
             saveReport { _ in }
+        case "close_day":
+            closeDay()
         default:
             break  // a dev line it doesn't know
         }
@@ -98,6 +100,29 @@ extension Runtime {
         let rig = rig(buddy)
         options.log("\(who): gesture \(kind)\(Runtime.whose(rig))")
         run(pipeline.gesture(kind, request: rig.latest?.attn?.id, at: options.clock(), buddy: rig.tag))
+        changed()
+    }
+
+    /// The question the buddy asked last answered, as its board would say
+    /// it (`ev ask`): `pick` "a", "b", "touch" (its first answer) or
+    /// "ignored". Nothing when it has asked nothing.
+    func answered(_ pick: String, who: String = "dev", buddy: String? = nil) {
+        let rig = rig(buddy)
+        options.log("\(who): answer \(pick)\(Runtime.whose(rig))")
+        guard let step = pipeline.answerLast(pick, at: options.clock(), buddy: rig.tag) else {
+            options.log("\(who): nothing was asked")
+            return
+        }
+        run(step)
+        changed()
+    }
+
+    /// Closes Boop's day now, as 5:00 would: the dream, then the night's
+    /// write (`Memory.closeNow`).
+    func closeDay(who: String = "dev") {
+        guard let remembers else { return options.log("\(who): no memory, so no day to close") }
+        options.log("\(who): closing Boop's day now")
+        remembers.closeNow(wall: options.wallClock())
         changed()
     }
 

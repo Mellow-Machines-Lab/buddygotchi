@@ -128,7 +128,8 @@ public struct DeviceInfo: Equatable, Sendable {
     public static let troubledResets: Set<String> = ["panic", "watchdog", "brownout", "other"]
 
     public init(_ hello: Hello) {
-        let pack = hello.fields["pack"]?.string.map { "\($0) \(hello.fields["pack_version"]?.string ?? "")" }
+        // `id version`; firmware from before says the version on its own.
+        let pack = hello.fields["pack"]?.string.map { p in hello.fields["pack_version"]?.string.map { "\(p) \($0)" } ?? p }
         self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string,
                   face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel, pack: pack,
                   reset: hello.fields["reset"]?.string, board: hello.fields["board"]?.string)
@@ -145,6 +146,15 @@ public struct DeviceInfo: Equatable, Sendable {
     /// doesn't say. With another, it still works: a mood it doesn't have
     /// draws its startup mood, and the voice has a check of its own.
     public var hasThePack: Bool { pack.map { $0 == Self.appPack } ?? true }
+
+    /// Whether its firmware was built with the app's character, whatever
+    /// its version, or it doesn't say: then it draws what the app's
+    /// mirror of the board draws.
+    public var hasTheCharacter: Bool { pack.map { $0.split(separator: " ").first.map(String.init) == CharacterPack.active.id } ?? true }
+
+    /// Whether it draws the work stream and the agents' drawer: the AMOLED
+    /// does, whatever face it runs.
+    public var drawsTheDrawer: Bool { BoardFirmware.board(of: self) == "amoled206" }
 
     /// What the log says when it says hello: who it is, and when its
     /// character pack or its card's voice isn't the app's.

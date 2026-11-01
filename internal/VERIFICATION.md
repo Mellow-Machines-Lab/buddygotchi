@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-10-26. How we check that Boop works, including what's on its
+Updated 2026-11-01. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -62,7 +62,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 
 | Target | What it does |
 | --- | --- |
-| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), and beside it the simulator (built again only when its sources changed, and left alone if one already runs), its page, the studio's matrix (with what the brain reads in each eval, `boopdev prompts`, written first) and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; Settings' Simulator row switches to the simulator and back. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. `SIM=1` passes `--simulator`: the simulator is the body from the start, onboarding's act 4 included, and stays it while it's away, so the app never uses Bluetooth (it fails without Emscripten). Without it, act 4 offers a running simulator as the body when there's no board. `dash`'s `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: the simulator, or a board's bridge), asked for there as `boopctl shot` would. Ctrl-C stops the app, the simulator and the dashboard |
+| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), with the simulator window's page beside it (built again only when its sources changed, `app/tools/simulator.sh`), the studio's server (left alone if one already runs) and its matrix (with what the brain reads in each eval, `boopdev prompts`, written first) and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; onboarding and Settings' Simulator row switch to the simulator window and back, and the choice is kept. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. Act 4 offers the simulator window as the body when there's no board (it needs Emscripten). `dash` reads only the app's `debug.jsonl`. Its Boop now pane has the face (the native simulator), the look, the mood and its reason, the Talk level (with "silent for N more min" while hushed), growth (the stage, the XP, and today's work and care XP against their caps) and the CONTEXT section as Jev last read it. Under it are three columns: the mood, with memory's rows (a day closing, its dream and whether it's been told, and the night's write with its changed and refused counts); the automatic reactions; and the decided ones, each with its sign, its reason, and an ask's question, two answers and pick. `m` sets one of the pack's lasting moods, `r` forces a pass, and `p` previews any look or face on the dashboard's own sim. `d` closes Boop's day now (`{"dev":"close_day"}`): the dream at once, then the night's write. The day opens again afresh, with today's tallies and XP caps reset, and a day already dreamed of keeps its dream. `s` shows the prompt Jev read, and `t` shows the timeline of every line. `b` asks the app for a bug report (as its ladybug does) and copies the path; any new report, from either, gets the device's screen as `screen.png` when the app reaches its device through a socket (`about.json`'s `link` is `usb:SOCKET`: a board's bridge, or the browser's simulator), asked for there as `boopctl shot` would. Ctrl-C stops the app, the studio's server and the dashboard |
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, `agent-hook` beside the binary, the character packs, icon and the firmware for each board the pack has a face for (`firmware/tools/package.py`, which Settings updates a board with) in Resources, the version from `VERSION` and the commit count as its build number, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 14.0 at least, so it still opens on macOS 14. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless`. `INTERNAL=1` makes the internal build, in `.build/internal/Boop.app`: compiled with `BOOP_INTERNAL`, and with the simulator's page, core and the pack's voice in `Resources/simulator/`, so the simulator is a body to choose, in a window of the app's own (`app/Boop/BoardWindow.swift`), and the choice is kept from launch to launch. It needs Emscripten. On the simulator it never uses Bluetooth, so an agent may open it on a folder of its own (`--state-dir`) and choose the simulator in onboarding's act 4 before anything looks for a board |
 | `make demo` | Asks which demo and where it plays, then plays it: on the simulator's page from its checked-in recording, at once, on a board, or with a real agent (`simulator/tools/demos.py`, [characters/DEMOS.md](../characters/DEMOS.md)). `NAME=` plays one without asking, `NAME=all` every one in the page |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
@@ -82,7 +82,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the fluidity measure's (`internal/tools/fluid/tests/`), the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
 
 **Tools.**
 
@@ -92,8 +92,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`, and `mirror`, which plays the gel's on the Mac's mirror of the
   board and on the simulator, both with no card, and compares every shot), measurements (`perf`, `latency`, `soak`), the pipeline check
-  (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`,
-  `workday`), and a reference a person gave, taken in and cut into frames
+  (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`), and a reference a person gave, taken in and cut into frames
   and contact sheets to read (`reference`,
   [CHARACTER.md](../characters/CHARACTER.md) §16). `--port` picks the
   serial port; without it, while a bridge runs (below), commands go
@@ -104,7 +103,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   `internal/app/Tests/Fixtures/readings.json`, on a Mac that has
   it: their kind, tone and phrases scored against floors, prompts and messages apart, planted
   secrets that must never come back, and how long a typical reading
-  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`), `prompts` (every eval scenario
+  takes; `ReadCheck` in BoopDevKit, its scoring pinned by `PromptTests`), `memory write` (the written
+  memory's night with Apple Intelligence over the fixture nights in
+  `internal/app/Tests/Fixtures/memory-nights.json`, each reply, the edits applied, the refusals
+  and the memory after it, for a person to judge the prompt by; its checks pinned by
+  `WrittenMemoryTests`), `prompts` (every eval scenario
   run with the expect brain, no key, and each pass's prompt, questions and answers written to
   `characters/studio/prompts.js` for the Character Studio's Brain view; `make dev` writes it) and `hooks` (Boop's hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
@@ -165,19 +168,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
   draws the app's placeholder icon at every size and packs it with
   `iconutil`; a second argument also writes a 1024-pixel PNG to look at.
-- `internal/tools/fluid/measure.py`: how fluid the everyday transitions
-  are (`transitions.jsonl`, and Pixel's, `transitions-pixel.jsonl`, with
-  idle's mood changes, the rig face's hand-overs and a working day, and
-  the gel's swipes and strokes in idle, `idle-swipes.jsonl`, recorded with
-  `boopctl sim`), each frame's
-  change against the median, and with `--sheets DIR` a contact sheet of
-  each. The Character Studio's Transitions measures and ranks the
-  everyday transitions on the board in the page by the same rule
-  ([characters/studio/README.md](../characters/studio/README.md)).
 - `node characters/studio/check.cjs`: the Character Studio in a headless
   browser, the character's own views, its behaviour map and brain, its
   matrix and its board's views (its README, Checking it). It needs
-  `boopdev prompts` run first.
+  `boopdev prompts` run first, and the studio's server
+  (`python3 simulator/web/serve.py`).
 - `internal/tools/fontgen/fontgen.py` (the device's fonts) and
   `internal/tools/mediagen/mediagen.py` (the READMEs' GIFs, from real
   runs, [its README](tools/mediagen/README.md)), with
@@ -406,7 +401,9 @@ gets at least one scenario. Their pictures are the golden images in
   jitter from a tickle, a steady hand from a desk and a press's jolt from
   a thump (`test_gesture`); Boop's vocabulary message in and message out, its
   rules for the queue, the debug channel and inputs (`test_device`),
-  the agents' drawer's among them, on the build's face with a drawer
+  the agents' drawer's and an ask's (a tap on either half of the lane,
+  a touch, a newer reaction, 45 s, each `ev ask` before its `ended`)
+  among them, on the build's face with a drawer
   (`internal/firmware/wrapped_face.h`),
   including unchanged heartbeats causing no redraw while changed state,
   reconnection and leaving the test pattern still draw at once, and each
@@ -636,6 +633,8 @@ retried once and counted as a link glitch.
    runs the scenarios the change touches, under a budget of Jev
    requests. As the final pass, `make eval` runs every scenario, 3 times
    each for an `always` one and once for the rest, with no budget. What it reports is in [EVALS.md](EVALS.md) §2.
+   After a change to the written memory's prompt or checks (`MemoryRequest`, `MemoryEdits`),
+   `boopdev memory write`, read night by night against each fixture's `accept`.
    After a change to how prompts or last messages are read (the scrubber, the cues or the
    labeler's instructions), `boopdev read-check`, which fails under its
    floors, and the scenarios with prompts or messages again with `--labeler apple`,
@@ -648,13 +647,6 @@ retried once and counted as a link glitch.
    against the steering files (`characters/boop/steering/`): are the reactions and
    mood changes in character and never nagging, and the words and how
    long each face holds right for what happened?
-3. After a change to the steering files or the questions, the working
-   day ([EVALS.md](EVALS.md) §5): `boopctl workday run` twice before the
-   change and twice after, same seed, and `boopctl workday report` and
-   `boopctl workday check` on each.
-   How often the mood changes per hour, whether a routine step changed
-   it, and how often, with which faces and which takes Boop reacts,
-   before against after.
 
 **Pass:** every scenario passes in every run, but for known gaps
 ([EVALS.md](EVALS.md) §1), and every `always` one does; no pass is dropped; the

@@ -255,7 +255,7 @@ func woke(_ fx: Fx) -> [String] {
 
 /// A chatty Boop's rules, for tests that need the working heartbeat often.
 extension Personality.Rules {
-    static let chatty = Personality.Rules(workBeatMs: 45_000...90_000, toolUses: .notable)
+    static let chatty = Personality.Rules(workBeatMs: 45_000...90_000)
 }
 
 /// The working heartbeats' lines: no rule mumbles,
@@ -304,7 +304,7 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(rig.state.base, "idle")
         let fx = rig.send(.turnStart)
         XCTAssertEqual(states(fx).last?.base, "working")
-        XCTAssertEqual(states(fx).last?.busy, 1)
+        XCTAssertEqual(states(fx).last?.working, 1)
         XCTAssertEqual(woke(fx), [#"claude started turn 1 on "landing"."#])
         XCTAssertNil(events(fx).first?.reaction, "a turn start's reaction is in the log, not HISTORY")
     }
@@ -348,14 +348,14 @@ final class CoreAgentWorkTests: XCTestCase {
 
     /// A turn you interrupt ends without `Stop`, so the
     /// interrupt (or Claude sitting at its prompt) ends it: idle at once,
-    /// with the rules' `stopped` reaction, no working
-    /// heartbeat after, and the brain hears of a stopped turn.
+    /// with no rule reaction, no working heartbeat after, and the brain
+    /// hears of a stopped turn.
     func testAnInterruptedTurnGoesIdleQuietly() {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.send(.activity, tool: "Bash", topic: "tests")
         let fx = rig.send(.turnStopped, tool: "Bash")
-        XCTAssertEqual(reactionNames(fx), ["stopped"])
+        XCTAssertEqual(reactionNames(fx), [])
         XCTAssertEqual(rig.state.base, "idle")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
         XCTAssertEqual(events(fx).map { $0.facts["outcome"] }, ["stopped"])
@@ -1485,7 +1485,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         list(2, 5, session: "c")
         rig.send(.turnEnd, session: "c")
         rig.send(.activity, session: "c", subagent: "h1", tool: "Bash")
-        XCTAssertEqual(rig.state.busy, 1, "its helper works on")
+        XCTAssertEqual(rig.state.working, 1, "its helper works on")
         XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 2, total: 5), "though its turn's start isn't known")
         rig.wait(9 * 60_000, every: 60_000)
         rig.send(.turnStart, session: "d")
@@ -1510,13 +1510,13 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(list)
         rig.wait(30 * 60_000, every: 60_000)
         XCTAssertTrue(rig.state.when.contains("tier5"))
-        XCTAssertEqual(rig.state.busy, 1)
+        XCTAssertEqual(rig.state.working, 1)
         XCTAssertNotNil(rig.state.todo)
         XCTAssertNotNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
         rig.wait(SessionFold.staleWorkMs - 30 * 60_000, every: 60_000)
         // Its last word an hour ago, it has dozed off (`Core.dozeOffMs`).
         XCTAssertEqual(rig.state.base, "asleep", "an hour silent")
-        XCTAssertEqual(rig.state.busy, 0)
+        XCTAssertEqual(rig.state.working, 0)
         XCTAssertNil(rig.state.todo)
         XCTAssertTrue(rig.state.when.contains("tier5"), "idle's now: its turn's last word was an hour ago")
         XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)), "no more check-ins")
@@ -1678,7 +1678,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         var heard = try XCTUnwrap(stop)
         heard.seq = 99
         XCTAssertEqual(deviceReactions(other.core.handle(heard)), [])
-        XCTAssertEqual(other.state.busy, 0)
+        XCTAssertEqual(other.state.working, 0)
     }
 
     /// A session that's gone with no `SessionEnd` ends: its process ended
@@ -1963,10 +1963,10 @@ final class CoreYouAndBoopTests: XCTestCase {
 
         rig.talk(true)
         XCTAssertTrue(stops(run(rig.core.micFailed("no mic", at: rig.now))))
-        XCTAssertEqual(rig.core.talk.trouble, "no mic")
+        XCTAssertEqual(rig.core.pushToTalk.trouble, "no mic")
         XCTAssertEqual(rig.pipeline.transcript.events.last { $0.type == .listen }?["trouble"], "no mic")
         rig.talk(true)
-        XCTAssertNil(rig.core.talk.trouble, "until the next try")
+        XCTAssertNil(rig.core.pushToTalk.trouble, "until the next try")
         run(rig.core.linkDown(at: rig.now))
         rig.wait(Core.replyWaitMs)
         XCTAssertFalse(rig.core.showsListening(at: rig.now))
@@ -2109,7 +2109,7 @@ final class CorePersonalityTests: XCTestCase {
     /// defaults for anything missing or unreadable.
     func testFrontMatter() {
         let chatter = Personality.Rules(frontMatter: "working_heartbeat: 30-60\ntool_uses: all")
-        XCTAssertEqual(chatter, Personality.Rules(workBeatMs: 30_000...60_000, toolUses: .all))
+        XCTAssertEqual(chatter, Personality.Rules(workBeatMs: 30_000...60_000), "tool_uses is no longer read")
         XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: none").workBeatMs, nil)
         XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: 60-30\ntool_uses: loud"), Personality.Rules())
         XCTAssertEqual(Personality.Rules(frontMatter: "chatter: 30-60"), Personality.Rules(),
@@ -2272,7 +2272,7 @@ final class CoreRulesTests: XCTestCase {
         let s = rig.state
         XCTAssertEqual(rig.sessions, [["claude", "landing", "waiting"], ["codex", "buddygotchi", "working"],
                                       ["claude", "jetpack", "working"], ["claude", "notes", "idle"]])
-        XCTAssertEqual([s.busy, s.waiting], [2, 1])
+        XCTAssertEqual([s.working, s.waiting], [2, 1])
         let when = s.when.map { "\"\($0)\"" }.joined(separator: ",")
         XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"calm","attn":{"agent":"claude","project":"landing","more":0,"id":1},"busy":2,"idle":1,"vol":6,"when":["# + when + "]}")
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
@@ -2552,7 +2552,7 @@ final class CoreFuzzTests: XCTestCase {
                 shots += 1
                 XCTAssertFalse(showing, "\(reaction.name) \(reaction.args) while something needs you\n\(why)")
                 XCTAssertNil(reaction.mood, why)
-                XCTAssertTrue(["starting", "stopped", "helper_return"].contains(reaction.anim ?? ""), why)
+                XCTAssertEqual(reaction.anim, "starting", why)
                 XCTAssertEqual(reaction.ctx != nil, reaction.anim == "starting", why)
             }
             for sent in states(fx) {

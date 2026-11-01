@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-26. How we check that Jev decides as Boop should: short
+Updated 2026-11-01. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -16,7 +16,7 @@ fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
 say how long Boop has been in it, and how much it says (normal unless the file says quiet
-or chatty), whose TALK section comes last, after MOOD. The runner (`Eval` in
+or chatty), told in CONTEXT's Talk row and held in code. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a reaction goes to a fake device, which answers at once with the
@@ -51,6 +51,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
 | `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
+| `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b`, `touch` (a stroke, its first answer) or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
 | `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
@@ -72,7 +73,11 @@ step's `session`, with the step's `workspace` if it has one.
 woken on the way to it and by it, so a `wait` checks the heartbeat its
 ticks brought: an idle one, or while a thread works, the working
 heartbeat. Each expectation is a set of acceptable values (`proud|happy`), so
-a scenario holds wherever more than one answer is right:
+a scenario holds wherever more than one answer is right. For `react`,
+`mood` and `say`, a leading `!` takes values away from everything the
+key may be: `!none` is any face, `!lonely` any lasting mood but lonely,
+`!swear` anything but a swear. Write the set the scenario means, not a
+long list that checks little:
 
 | Checked | Against |
 | --- | --- |
@@ -105,6 +110,8 @@ and to be tightened once Boop meets it (`Eval.judge`):
 | `min_variety` | The run plays fewer different reactions (face, animation and take) than this |
 | `words_said` | The share of the reactions played that said something falls outside this range |
 | `moves_on_graph` | A pass's `mood` answer wasn't one of the options it offered (or Jev gave none it could use), or the mood changed along something that isn't a move on the graph |
+| `signs_seen` | None of the signs it names (`"fav snack?|hat or bow?"`) was held up at any pass: for what Jev does now and then, such as asking, not at a given step |
+| `moods_seen` | A mood it names (`"lonely"`, or several, each required, `"lonely|sad"`) was never the mood at any pass: one that came and faded between two steps still counts |
 
 **Always and gaps.** An `always` scenario is Boop's character, not a
 tuning target: it runs 3 times by default, and every steering change
@@ -121,7 +128,6 @@ BOOP_JEV_KEY=… .build/debug/boopdev eval --only tests --timeline
 BOOP_JEV_KEY=… make eval                     # the final pass: every scenario, 3 runs for always and 1 for the rest
 .build/debug/boopdev eval --list             # every scenario's case, runs and requests; no key needed
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
-.build/debug/boopdev eval --to-demo DIR --only pokes   # a scenario as a demo, to watch (characters/DEMOS.md)
 .build/debug/boopdev prompts                 # what Jev reads and is asked at every pass, for the Character Studio's Brain view
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
 .build/debug/boopdev read-check              # Apple Intelligence's readings of sample prompts and last messages, scored; fails under its floors or on a leaked secret
@@ -139,11 +145,7 @@ It prices every run (`--list`), and `--scripted` runs every scenario
 once with it, with no key: what it checks is everything but Jev, that
 each step wakes the brain as it says, that the moods it expects lie on
 the graph's paths, and the whole-run checks a run can fail without Jev
-(`max_quiet_working`, `moves_on_graph`). `--to-demo DIR` writes each
-scenario as `DIR/<file>.jsonl`, each expecting step followed by a brain
-step with the expect brain's answers and the gaps cut to 2.5 s at most
-with a note of how long really passed, for `make demo` to play: auditing
-the evals is watching them.
+(`max_quiet_working`, `moves_on_graph`).
 
 **The API budget.** Every pass is one request to Jev, and a full
 `make eval` is about 660 of them (`--list` counts them), so it's the
@@ -170,7 +172,6 @@ the rest run once. A scenario can say its own `runs` (§3), as `53` says
 | `--timeline` | Prints every pass of every run: when, the line, what Boop did and the mood after |
 | `--list` | Prints each scenario's file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then the total, and runs nothing |
 | `--scripted` | Runs each scenario once with the expect brain: no key, no budget |
-| `--to-demo DIR` | Writes each scenario as a demo script in DIR, and runs nothing |
 | `--scenarios DIR`, `--steering DIR` | Other scenarios or steering files; by default the repo's, found from the working directory or from `boopdev`'s own place |
 
 The report gives each scenario's verdict (`pass`, `FAIL`, or `GAP` for a
@@ -193,8 +194,8 @@ at all when it didn't happen, a scenario starts in its `mood` and a
 step's `offered` is what its pass offered, and each whole-run check
 catches what it should, `moves_on_graph` an answer that wasn't offered.
 Every scenario passes with the expect brain and plays as a demo the pack
-can play, a scenario's `start` shows in the prompt's heading, and its
-`talk` puts that level's TALK after MOOD.
+can play, a scenario's `start` shows in CONTEXT's When row, and its
+`talk` shows that level's Talk row in CONTEXT (none for normal).
 
 ## 3. The scenario file
 
@@ -225,13 +226,14 @@ file-name order:
 | `case` | The situation and what Boop should do in it, in plain words and no harness terms, so the steps can be rewritten to fit it when the harness changes. Required |
 | `why` | The spec or steering file that says so |
 | `always` | `true` for Boop's character (§1): 3 runs by default, and `--always` runs these |
+| `scripted` | `true` for a scenario that checks the code's rules rather than Jev's choices (the mood kept on the graph, the screen's counts, which agent BOOT opens): it runs only with the expect brain, in `--scripted` and the unit tests, and a Jev run leaves it out. Never `always` |
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Occasions`): none by default |
+| `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
-| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), and `moves_on_graph` (`true`) |
-| `personality` | One of the pack's personalities: Boop's has only `boop`, the default |
+| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moves_on_graph` (`true`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |
 | `talk` | `normal` (the default), `quiet` or `chatty`: how much it says, chosen in Settings |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
@@ -247,7 +249,7 @@ file-name order:
 | `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
 | `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.face": "amused"}`), ahead of its `expect` |
-| `steps[].expect.diary` | `some` when a pass of the step (a heartbeat's on the way included) wrote the diary, `none` when none did |
+| `steps[].expect.dream` | `told` when a pass of the step (a heartbeat's on the way included) answered the line that told the dream, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
 | `steps[].expect` | Any of `react` (the face), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
@@ -266,11 +268,11 @@ the file and step.
 ## 4. The scenarios
 
 Each scenario's file says what it checks, in its `case`, so the list
-lives there: `boopdev eval --list` prints them all. They come in three
+lives there: `boopdev eval --list` prints them all. They come in four
 kinds, all with the `boop` personality unless the file says otherwise:
 
-- **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`130`): Boop's character. It never swears
+- **Always** (`03`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `27`–`29`,
+  `36`, `39`, `40`, `43`, `47`, `61`, `63`, `64`, `127`–`130`, `132`–`136`, `138`, `140`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -282,7 +284,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   matter-of-fact finishes and a streak of quick wins leave the mood
   alone, whatever faces they get (`28`);
   no face ever contradicts what happened; talked to, it always answers
-  with a face and a reply, even while it's still making one (`35`–`40`),
+  with a face and a reply (`36`, `39`, `40`),
   and asked about the agents it holds up what they're really doing, how
   long, a check's result, done, how many work and rest when asked about
   them all, or all quiet, never a guessed yes or no (`127`), and a
@@ -297,15 +299,19 @@ kinds, all with the `boop` personality unless the file says otherwise:
   played back (`130`); each
   finish is judged by what it says, done and working a success,
   couldn't finish or a failed turn a failure however upbeat its message
-  (`41`–`43`); and its mood only moves along
-  the graph, a step at a time (`47`, `49`, `53`); and coming back to the
-  Mac, after ten minutes or hours, it cheers, glad to see you (`63`,
-  `64`; a shorter break never reaches it).
-- **Tuning** (`01`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
-  `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`, `51`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`): single decisions (a long turn done says it went well,
-  `29`; a failure that really stings swears, `60`; and Boop picks a face
+  (`27`, `29`, `43`); and its mood only moves along
+  the graph, a step at a time (`05`, `47`); and coming back to the
+  Mac, after ten minutes or hours, a night's sleep included, it cheers,
+  glad to see you (`63`, `64`, `136`; a shorter break never reaches it),
+  and after a day away it missed you: lonely, until a stroke or a word
+  ends it at once (`135`).
+- **Tuning** (`10`–`12`, `15`, `18`, `19`, `21`, `22`, `24`–`26`,
+  `44`–`46`, `48`, `50`, `51`, `54`–`60`, `62`, `65`, `70`, `74`–`77`, `79`, `85`, `90`, `91`,
+  `94`–`97`, `99`–`114`, `118`–`126`, `131`, `137`, `139`, `141`–`148`, `150`): single decisions (a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
+  at the Mac for hours with no touch or word to it, Boop grows lonely,
+  and a word ends it, `137`; with the memory of a long fight, its end is
+  big, `138`, and a memory never turns a failure into a success, `139`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
   most of a busy half hour, `21`), never goes over 6 minutes of work
   with no reaction, even while another thread's quick turns keep waking
@@ -322,7 +328,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   answer is a reply (`44`, `45`), and a finish is judged by its words
   whatever the mood (`46`). And the graph's moves: a small failure from
   calm is a small step and a big one may jump (`48`), thanks bring a
-  whiny or wounded Boop back (`50`), an
+  sad or wounded Boop back (`50`), an
   irritated Boop answers as irritated, not grumpy (`54`), and hours of
   nothing fade excited through happy to calm (`55`). And talk moves
   the mood at once: one apology
@@ -331,26 +337,27 @@ kinds, all with the `boop` personality unless the file says otherwise:
   it's taken back, when it switches (`58`), and a plain question
   softens nothing (`59`). And work that finished while you were away
   from the Mac is celebrated as it ends, never replayed when you're
-  back, when Boop cheers to see you (`65`). And the rarer
-  moods: quiet takes a frightened Boop at most an ordinary step (`68`), and
+  back, when Boop cheers to see you (`65`). And, scripted, the rarer
+  moods: quiet takes a surprised Boop at most an ordinary step (`68`), and
   new work moves a comfy one only to a mood on offer (`69`). And
   the ladder of failure: a failure after a fix is a bigger cuss than
   the first, held longer and said aloud (`70`). And the moments the view now says: you answering a request
   gets a small pleased face (`74`), a compacted context leaves Boop a
   little lost (`75`), idle check-ins get a small face or nothing
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
-  again gets a louder grumble (`78`); quiet fades an excited Boop a
+  again gets a louder grumble (`16`); quiet fades an excited Boop a
   step at a time (`55`). And a Codex turn gets the same small
-  cheer as Claude's (`83`). On an occasion the
-  prompt's heading names, Boop plays along when you come back: on
+  cheer as Claude's (`14`). On an occasion CONTEXT's
+  When row names, Boop plays along when you come back: on
   Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello,
   and the screen has the day's tags; on April Fools' Day it may play a
   good finish as a failure, for the joke (`98`). Its opinions: a please
   warms it (`94`), capitals make it flinch (`95`), an agent's "You're
-  absolutely right!" gets an eye-roll (`96`). Once the day is over it
-  writes one diary line about it, and only one (`97`). Touched like a
+  absolutely right!" gets an eye-roll (`96`). Once its day is over at
+  5:00, it tells its dream about it the first time you show up, never to
+  an agent's event while you're away, and only once (`97`). Touched like a
   pet: a stroke calms a fed-up Boop, a shake makes it dizzy, and a
-  swipe, a quick stroke, is a stroke too (`99`). And the screen with no pass: BOOT
+  swipe, a quick stroke, is a stroke too (`99`). And, scripted, the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
   the helpers and idle agents are counted under the face (`93`); a
   request still shows after a two-hour lunch, since its agent still
@@ -380,7 +387,8 @@ kinds, all with the `boop` personality unless the file says otherwise:
   it can't know or at nonsense, a nap or a dance when asked (or no, to a
   trick it won't do), notme when asked to answer an agent for you, bye,
   and status for a question about the agents, how many are running
-  included (`126`).
+  included, each with a face, a second thing said while it still makes
+  its face for the first included (`126`).
 
 Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
@@ -388,115 +396,15 @@ back after a break and an idle check-in. PixelBuddy's `make eval` runs
 them (`boopdev eval` reads the pack in use's scenarios and steering), or
 from here `CHARACTER=pixel .build/debug/boopdev eval --runs 1`, once
 each, about 18 requests.
-- **Known gaps** (`20`): flipping tests don't flip the mood. Its `gap`
-  says why the steering can't get there alone.
+- **Scripted** (`53`, `68`, `69`, `92`, `93`, `115`–`117`): the code's
+  rules, which need no Jev: the mood kept on the graph through a busy
+  day (`53`) and from the rarer moods (`68`, `69`), and the screen. They
+  run only with the expect brain (§3, `scripted`).
+- **Known gaps** (`14`, `20`, `98`, `149`): a few minutes' turn done is
+  sometimes played big, flipping tests don't flip the mood, April Fools'
+  Day gets no joke, and a cuddly Boop's lean to affectionate doesn't
+  show. Each `gap` says why the steering can't get there alone.
 
 A new decision or a change to the steering files gets a scenario that
 shows it. Run the scenarios it touches with `--only` while you work, and
 `make eval` once, as the final pass, before it's committed (§2).
-
-## 5. The working day
-
-The scenarios check single decisions; the working day checks how they
-add up over a day: how often Boop's mood changes, whether a routine
-line changes it, and how often, and with which faces, Boop reacts.
-`boopctl workday` replays a scripted 8-hour day
-through the whole headless app and Jev on a compressed clock, in about
-five minutes:
-
-```sh
-make -C internal build
-BOOP_JEV_KEY=… internal/tools/boopctl workday run --state /tmp/tn-1 --out /tmp/tn-out/1
-internal/tools/boopctl workday report /tmp/tn-out/1/debug.jsonl /tmp/tn-out/2/debug.jsonl
-internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl
-internal/tools/boopctl workday plan    # the day's story
-```
-
-**The day** (`--seed 1` by default; the seed only moves lengths and
-gaps) runs from 09:00 to about 17:40: about 190 turns on four threads
-(Claude on `api`, and on `fix-nav` and `docs` in `landing`; Codex on
-`boop`), mostly routine turns of seconds to a few minutes, with two
-approvals; tests failing three times, then passing, in a 9-minute turn;
-a turn failing on a rate limit; a 22-minute turn whose build fails once
-and comes back; a stopped turn; lunch, over an hour with nothing, for
-the heartbeat; a build failing twice, then passing; four pokes in a
-row, and later two more runs of four a minute and a half apart; a 14-minute turn ending with its
-tests still failing, and the next turn fixing them; a coffee break; an
-hour of quick wins with an API error and a passing deploy; and a
-16-minute docs turn. An hour of nothing after it brings the evening's
-heartbeat. Every turn opens with a prompt (`PLAIN_PROMPTS` and
-`TONED_PROMPTS` in `workday.py`, drawn apart from the lengths and
-gaps): about one in five in words the counting reader hears a tone in,
-a please, thanks, capitals or "ultrathink"; the rest plain.
-
-**The run** starts `Boop --headless --brain jev --debug` with a fresh
-state directory and a fake device on a Unix socket (`--link usb:`) that
-says hello as Boop's device does and each `do` played to the end, so HISTORY reads as
-it would with a board, and whose taps make the pokes. It moves
-the app's clock to 09:00 the next morning, sends each step's hook straight
-to the app's socket in `agent-hook`'s wire form, moves the clock between
-them with `{"dev":"advance"}` (a minute at a time over a long gap, so the
-heartbeat comes when it would), and waits for every pass and the brain's
-reactions to end before the next step, so no view event waits behind
-Jev (a rule's needs-you, which lasts until the day answers the request
-steps later, isn't waited for). `--brain
-scripted` runs it without a key, and `--talk quiet` or `--talk chatty`
-with that level of talk.
-
-**The report** reads `debug.jsonl` as `boopctl day` and the dashboard
-do: a mood change's new mood and a reaction's face, move and intensity from
-the answers of the pass it ran for, and what it said from the takes its
-output recorded, never
-from an output's message. It gives, for each hour of the app's clock: turns ended,
-passes (and how many dropped), mood changes, with those on a routine
-step (a turn start, a plain prompt, or a finish done under 5 minutes) split into back
-to calm, the resting mood (a mood fading, as the guide says), and any
-other (which a routine step shouldn't cause); and reactions, as reacted/all for each
-kind of step that woke the brain: notable (a failure, a fix, a failed or
-stopped turn, a turn of 5 minutes or more, a poke), a finish
-done in 1 to 5 minutes, one under a minute, a turn start, your
-prompt toned (its line says how you sound or a name you said) and
-plain, and a heartbeat; and the faces used. Then how big the reactions were and
-the takes they said over the day (`none` for a reaction that said
-nothing), how long each mood
-lasted, and every mood change with the step that brought it. `--json`
-gives all that and every reaction.
-
-**Liveliness.** The report also gives, for the day: the longest stretch
-of work (any agent in a turn) with no reaction, and how many went over
-6 minutes; reactions per turn ended; how many reactions were the same
-as the one before (face, finish and what it said), and the longest run
-of the same; the share that said something; mood bounces (a mood
-changing back to the one it left within a minute); and the longest
-stretch of work with Boop calm, the resting mood, all through. A fun
-ledger gives an hour a row: reactions, how many said something, how
-many kinds, the longest run of the same, and the idle check-ins. `boopctl workday check FILE…` holds each run to loose
-limits (`LIMITS` in `internal/tools/boopctl_lib/workday.py`) and exits 1 if one fails:
-
-| Limit | Holds |
-| --- | --- |
-| `longest_quiet_min` | 8 at most |
-| `quiet_over_6_min` | 3 at most |
-| `min_reactions_per_turn` | 0.8 at least (reactions over turns ended) |
-| `mood_bounces` | 1 at most |
-| `min_mood_changes` | 10 at least |
-| `longest_rest_working_min` | 45 at most |
-| `repeat_pct` | 40 at most (reactions the same as the one before, in percent) |
-| `longest_same_run` | 3 at most |
-| `min_words_said` | 0.5 at least (the share of reactions that said something) |
-| `plain_prompts_said_pct` | 25 at most (plain prompts Boop said something about, in percent: most get a small face in silence) |
-| `min_toned_prompts_reacted_pct` | 80 at least (toned prompts that got a face, in percent) |
-
-```sh
-internal/tools/boopctl workday check /tmp/tn-out/1/debug.jsonl
-```
-
-Jev is stochastic, so run each side of a change at least twice. Warm it
-up on new steering first with a whole `boopdev eval --runs 1
---no-budget` (one scenario warms only the moods it passes through): its
-first passes on text it hasn't seen can go over the deadline (1500 ms,
-MellowHarness's `Harness.Options.deadlineMs`) and drop. A few can drop in
-a run that is warm too, so compare runs by their dropped passes as well.
-
-`internal/tools/boopctl_lib/tests/test_workday.py` checks the day and
-the report without the app (`make -C internal tools-test`).

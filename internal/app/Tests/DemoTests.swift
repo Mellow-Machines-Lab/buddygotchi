@@ -59,7 +59,30 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(DemoScript(#"{"you": "back", "minutes": 600}"#).steps[0].what, .back(ms: 36_000_000))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": 0}"#))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": "lots"}"#))
-        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, press, hold, talk, back or wait")) }
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, gesture, answer, press, hold, talk, back or wait")) }
+    }
+
+    /// An answer taps one side of the lane: `a`, the left, or `b`, the
+    /// right, which a recording replays on the board (`input`).
+    func testAnAnswerIsALeftOrRightTap() throws {
+        let left = try DemoScript(#"{"you": "answer", "pick": "a"}"#).steps[0]
+        XCTAssertEqual(left.what, .answer("a"))
+        XCTAssertEqual(left.input, "answer-a")
+        try XCTAssertEqual(DemoScript(#"{"you": "answer", "pick": "b"}"#).steps[0].input, "answer-b")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "answer", "pick": "c"}"#))
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "answer"}"#))
+    }
+
+    /// A gesture is one the board knows by itself, which a recording
+    /// replays on it as one (`input`): a stroke, a boop on the nose, a
+    /// tickle or a shake.
+    func testAGestureIsOneTheBoardKnows() throws {
+        let stroke = try DemoScript(#"{"you": "gesture", "kind": "stroke"}"#).steps[0]
+        XCTAssertEqual(stroke.what, .gesture("stroke"))
+        XCTAssertEqual(stroke.input, "stroke")
+        XCTAssertEqual(stroke.cause(creature: "Boop", agent: "claude")?.text, "You stroke Boop")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "gesture", "kind": "handoff"}"#), "not a gesture of care")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "gesture"}"#))
     }
 
     /// A hold is a finger kept on the needs-you screen, which a recording
@@ -176,8 +199,8 @@ final class DemoTests: XCTestCase {
         }
         try XCTAssertEqual(cause(#"{"you": "poke"}"#), .init(kind: "tap", text: "You poke Pip"))
         try XCTAssertEqual(cause(#"{"you": "talk", "text": "hello"}"#), .init(kind: "talk", text: "You say “hello”"))
-        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 600}"#), .init(kind: "back", text: "You come back to the Mac after a very long break"))
-        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 20}"#), .init(kind: "back", text: "You come back to the Mac after a long break"))
+        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 600}"#), .init(kind: "back", text: "You come back to the Mac after 10 hours away"))
+        try XCTAssertEqual(cause(#"{"you": "back", "minutes": 20}"#), .init(kind: "back", text: "You come back to the Mac after 20 min away"))
         try XCTAssertEqual(cause(#"{"agent": "prompt", "text": "Fix it"}"#), .init(kind: "prompt", text: "You ask Claude: “Fix it”"))
         try XCTAssertEqual(cause(#"{"agent": "read", "file": "a.js"}"#, agent: "codex"), .init(kind: "tool", text: "Codex reads a.js"))
         try XCTAssertEqual(cause(#"{"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}"#),
@@ -259,7 +282,7 @@ final class DemoTests: XCTestCase {
         XCTAssertEqual(problems.count, 4, "\(problems)")
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
         XCTAssertTrue(problems[1].hasPrefix("line 2: react.face has no choice jolly; it has none, \(pack.moods[0].id)"))
-        XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no mood ecstatic"))
+        XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no lasting mood ecstatic"))
         XCTAssertTrue(problems[3].hasPrefix("line 4: react.intensity has no choice medim"))
     }
 

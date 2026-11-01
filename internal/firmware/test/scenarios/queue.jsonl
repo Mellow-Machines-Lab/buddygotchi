@@ -27,13 +27,13 @@
 // second: a rule's reaction then is skipped (busy).
 {"clock":4676}
 {"expect":{"expr":"proud","audio":{"take":null},"turn":{"holder":{"id":2,"resting":false}}}}
-{"t":"do","id":7,"name":"error","play":"if_free"}
+{"t":"do","id":7,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}
 {"expect":{"moment":null,"expr":"proud","turn":{"holder":{"id":2}}}}
 // Then it rests: a rule's reaction may play now, and the reaction is done.
 {"clock":5176}
 {"expect":{"expr":"proud","turn":{"holder":{"id":2,"resting":true}}}}
-{"t":"do","id":4,"name":"stopped","play":"if_free"}
-{"expect":{"moment":{"anim":"stopped"},"expr":null,"turn":{"holder":{"id":4,"name":"stopped","resting":true},"waiting":[]}}}
+{"t":"do","id":4,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}
+{"expect":{"moment":{"anim":"starting"},"expr":null,"turn":{"holder":{"id":4,"name":"starting","resting":true},"waiting":[]}}}
 // A finish never rests: the reaction behind it waits, and past its 5 s
 // it's late. The finish ends at 10000 + 6400 ms, and nothing plays.
 {"clock":10000}

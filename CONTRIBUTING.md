@@ -61,9 +61,9 @@ One thing that will surprise you:
 
 | To | Run |
 | --- | --- |
-| Run Boop and print everything it sees and decides, with the simulator, the studio and the live dashboard open | `make dev` |
+| Run Boop and print everything it sees and decides, with the simulator window inside, the studio and the live dashboard open | `make dev` |
 | Go through the first launch's onboarding again, without touching your Boop | `make dev FRESH=1` |
-| Show Boop with no board: the simulator is its body from the first launch's onboarding on, with no Bluetooth | `make dev FRESH=1 SIM=1` |
+| Show Boop with no board: onboarding's "No board? Use the simulator window" makes it Boop's body | `make dev FRESH=1` |
 | Give someone without a board a Boop to try: the internal build, whose onboarding offers the simulator in a window of its own | `make bundle INTERNAL=1`, then zip and send `.build/internal/Boop.app` |
 | See what it did on a day, and why (`--date YYYY-MM-DD`) | `internal/tools/boopctl day --state-dir ~/Library/Application\ Support/Boop-dev` |
 | Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
@@ -73,13 +73,12 @@ One thing that will surprise you:
 hears your agents' hooks too (the everyday Boop installs them; this one
 never changes them, nor the login item), and keeps a Jev key of its own,
 which you give it once in its Settings. It starts on your board over
-Bluetooth; while the simulator runs, its Settings shows a **Simulator**
-row, where **Use it** switches to the board in your browser and **Use
-the board** switches back. Only one Boop can have the board, so use the
-simulator or quit the everyday Boop. With `SIM=1` it starts on the
-simulator instead and stays on it, onboarding included, and never uses
-Bluetooth: Boop as it is on the AMOLED board, for anyone without one.
-Ctrl-C stops the app, the simulator and the dashboard.
+Bluetooth; its Settings has a **Simulator** row, whose switch makes the
+simulator window Boop's body and back, and onboarding offers the window
+when there's no board. The choice is kept from launch to launch, and on
+the simulator it never uses Bluetooth. Only one Boop can have the board,
+so use the simulator or quit the everyday Boop. Ctrl-C stops the app, the
+studio's server and the dashboard.
 
 `make bundle INTERNAL=1` builds the internal build: Boop.app with what's
 ours and not for buyers, for now the simulator, the board's firmware in a
@@ -92,8 +91,10 @@ a Developer ID, so the first time macOS refuses to open it: they choose
 Open Anyway in System Settings → Privacy & Security. It's the real app,
 so it installs its hooks into their Claude Code and Codex.
 
-The dashboard shows the face, Boop's mood, its automatic reactions and the
-ones Jev decided, and can force any mood or reaction. `b` saves a bug
+The dashboard shows the face, Boop's mood and memory, its automatic
+reactions and the ones Jev decided, with the CONTEXT Jev last read. It can
+force a mood or a reaction, and `d` closes Boop's day at once, so the dream
+and the night's write show in seconds. `b` saves a bug
 report, as the popover's ladybug does, and with Boop on the simulator a
 report gets the board's screen too.
 

@@ -24,7 +24,7 @@ them has been waiting on you for ten minutes. Boop noticed.
 - 🏆 **Celebrates** a finish that earns it, and grumbles at a failed test (never at you).
 - 📦 **Counts who's done** under its face, and its button hands you the next one: whoever needs you, then the agent that finished last, at its thread on the Mac.
 - 👉 **Pokes back** when you tap it, and answers when you hold its button and talk.
-- 📔 **Keeps a diary**, a line a day about the one before, and dresses for the day: coffee in the morning, a nightcap at night, a costume on Halloween, a party hat on its milestone days.
+- 💭 **Dreams about your day**, and tells you the dream when you come back, and dresses for the day: coffee in the morning, a nightcap at night, a costume on Halloween, a party hat on its milestone days.
 
 It has moods of its own, and there's no reset button. It only watches:
 it never approves, denies or blocks anything an agent does.
@@ -128,8 +128,8 @@ used.
 | Watch a demo: pick one and where it plays (the browser, a board, or an agent) | `make demo` ([characters/DEMOS.md](characters/DEMOS.md)) |
 
 Start `make dev` from your own terminal: macOS stops anything that uses
-Bluetooth from an editor's or an agent's shell. No board? `make dev FRESH=1 SIM=1`
-makes the simulator in your browser Boop's body, from onboarding on. Debugging and the brain's
+Bluetooth from an editor's or an agent's shell. No board? `make dev FRESH=1`
+and onboarding's "No board? Use the simulator window" makes it Boop's body. Debugging and the brain's
 evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What leaves your Mac

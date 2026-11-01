@@ -1,7 +1,7 @@
 import MellowHarness
 
-/// How Boop grows: XP from what its agents get done, by
-/// plain rules, and a stage for the XP. The Mac app shows them, and the
+/// How Boop grows: XP from what its agents get done and from your care,
+/// by plain rules, each capped a day, and a stage for the XP. The Mac app shows them, and the
 /// board gets the stage as tags (`Occasions.stages`), so a pack can show it.
 public struct Growth: Equatable, Sendable {
     /// Every XP ever earned.
@@ -27,16 +27,38 @@ public struct Growth: Equatable, Sendable {
     /// XP for a turn that ends done.
     public static let turnXP = 5
 
-    /// What an event earns: only an agent's work that went somewhere.
-    public static func xp(for e: Event) -> Int {
-        guard e.from == .claude || e.from == .codex else { return 0 }
-        switch e.kind {
-        case Event.kind(.tool, .end): return e["failed"]?.bool == true ? 0 : toolXP
-        case Event.kind(.subagent, .end): return helperXP
-        case Event.kind(.turn, .end): return e["outcome"]?.string == "done" ? turnXP : 0
-        default: return 0
+    /// XP for a care gesture (`Yours.careGestures`), a word to Boop, an
+    /// answered ask and you coming back to the Mac.
+    public static let careXP = 3, talkXP = 3, answerXP = 5, backXP = 2
+    /// The most each pool earns in one Boop day (from 5:00).
+    public static let workPerDay = 60, carePerDay = 60
+    public static func cap(_ pool: Pool) -> Int { pool == .work ? workPerDay : carePerDay }
+
+    /// Where XP comes from: the agents' work, or your care.
+    public enum Pool: String, Sendable { case work, care }
+
+    /// What an event earns and from which pool: an agent's work that went
+    /// somewhere, or your care for Boop; nil for nothing.
+    public static func earning(for e: Event) -> (xp: Int, pool: Pool)? {
+        if e.from == .claude || e.from == .codex {
+            switch e.kind {
+            case Event.kind(.tool, .end): return e["failed"]?.bool == true ? nil : (toolXP, .work)
+            case Event.kind(.subagent, .end): return (helperXP, .work)
+            case Event.kind(.turn, .end): return e["outcome"]?.string == "done" ? (turnXP, .work) : nil
+            default: return nil
+            }
+        }
+        switch e.type {
+        case .gesture? where Yours.careGestures.contains(e.specificType): return (careXP, .care)
+        case .said?: return (talkXP, .care)
+        case .ask? where e.specificType != Asks.ignored: return (answerXP, .care)
+        case .presence? where e.phase == .end: return (backXP, .care)
+        default: return nil
         }
     }
+
+    /// What an event earns, before the day's caps.
+    public static func xp(for e: Event) -> Int { earning(for: e)?.xp ?? 0 }
 
     /// The stage `xp` reaches by the thresholds, from 1.
     public static func stage(for xp: Int) -> Int {

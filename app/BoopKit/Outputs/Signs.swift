@@ -13,19 +13,48 @@ public enum Signs {
     /// (firmware `kSignGlyphs`).
     public static let maxOffered = 6, maxYourWords = 3, maxLength = 18
 
+    /// The signs a dream may hold up (`dreams.md`): the lines whose tags
+    /// the day's `tags` (and the calendar's) all have, those with tags
+    /// first, in the file's order, so the lines about the person come
+    /// first, each once, at most `maxOffered`.
+    public static func dreams(_ lines: [TaggedLine], tags: [String]) -> [String] {
+        let on = Set(tags)
+        let fit = lines.filter { $0.fits(on) && $0.text.count <= maxLength }
+        var seen: Set<String> = []
+        return (fit.filter { !$0.tags.isEmpty } + fit.filter { $0.tags.isEmpty }).map(\.text)
+            .filter { seen.insert($0).inserted }.prefix(maxOffered).map { $0 }
+    }
+
     /// The tags a reading has for the buddy called `name`: its kind, tone
-    /// and length, `named` when you said its name, `words` when it kept a
-    /// phrase of yours, and the calendar's (`Occasions`, `night`,
-    /// `friday`…).
+    /// and length, `named` when you said its name, and the calendar's
+    /// (`Occasions`, `night`, `friday`…). A `{words}` line needs no tag: it
+    /// yields nothing without a phrase of yours.
     public static func tags(_ r: PromptReading, name: String, calendar: [String]) -> Set<String> {
-        Set([r.kind?.rawValue, r.tone?.rawValue, r.length.rawValue, r.named.contains(name) ? "named" : nil,
-             r.phrases.isEmpty ? nil : "words"].compactMap { $0 } + calendar)
+        Set([r.kind?.rawValue, r.tone?.rawValue, r.length.rawValue, r.named.contains(name) ? "named" : nil].compactMap { $0 } + calendar)
     }
 
     /// The captions that fit `reading`, for the buddy called `name`,
     /// filled in, that fit a sign: your words in a tagged line first, then
     /// your words as they are, at most `maxYourWords` of them, then the
     /// tagged captions, then the rest, each once, at most `maxOffered`.
+    /// A musing is held up at most this often.
+    public static let musingEveryMs: Int64 = 60 * 60_000
+
+    /// The idle musings: `signs.md`'s `[idle]` lines whose other tags the
+    /// calendar and the kept answers (`tags`) all have, their blanks filled
+    /// from the day so far, `{turns}` with its turns (a line that needs
+    /// them is left out under 2) and `{thread}` with its busiest thread;
+    /// at most `maxOffered`, each at most `maxLength`.
+    public static func musings(_ lines: [TaggedLine], tags: [String], turns: Int, thread: String) -> [String] {
+        let on = Set(tags + ["idle"])
+        return lines.filter { $0.tags.contains("idle") && $0.fits(on) }.compactMap { line -> String? in
+            if line.text.contains("{turns}"), turns < 2 { return nil }
+            if line.text.contains("{thread}"), thread.isEmpty { return nil }
+            let text = line.text.replacingOccurrences(of: "{turns}", with: String(turns)).replacingOccurrences(of: "{thread}", with: thread)
+            return drawn(text).flatMap { $0.count <= maxLength ? $0 : nil }
+        }.prefix(maxOffered).map { $0 }
+    }
+
     public static func offered(_ lines: [TaggedLine], reading: PromptReading, name: String = CharacterPack.active.name,
                                calendar: [String]) -> [String] {
         let on = tags(reading, name: name, calendar: calendar)

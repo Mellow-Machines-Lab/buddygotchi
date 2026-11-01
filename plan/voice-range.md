@@ -88,7 +88,7 @@ change with them; check them with `--only` those scenarios.
 
 **2a. Phrases in every face: 324 takes, already scripted.** The
 deferred plan has every phrase's script for its other moods.
-`plan/evidence/2026-10-25-voice-range/phrase-slots.json` picks 324 of
+`plan/voice-range/phrase-slots.json` picks 324 of
 them (`phrase_slots.py` there remakes it): for each meaning, up to two
 phrases in each voice mood that has none. After it, 13 meanings have a
 phrase in all 13 voice moods, and so in all 42 faces. Done, glad and

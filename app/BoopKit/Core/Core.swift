@@ -7,11 +7,10 @@ import MellowHarness
 /// decides which visual the device shows, what the
 /// agents are doing included (`act`), and which reactions the rules play.
 /// What it does by rule it records as `action`
-/// events: "needs you" showing and ending, and a poke (the `wiggle`
-/// action, by its older name: the device plays its poke), or while
+/// events: "needs you" showing and ending, and a poke's answer
+/// (`pokeAnswer`: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
-/// reaction it plays (`starting`, `stopped`, `helper_return`),
-/// as a `did` named after it. A session that's gone with no `SessionEnd`
+/// reaction it plays (`starting`), as a `did` named after it. A session that's gone with no `SessionEnd`
 /// it records as its end (`sessionGone`), and a Claude app thread whose
 /// agent's process ended while it waited or worked as its turn stopping
 /// (`agentGone`). It also
@@ -180,7 +179,7 @@ public final class Core {
     public static let dismissGesture = "dismiss"
 
     /// Push-to-talk, as the core keeps it (`Talk`).
-    public internal(set) var talk = Talk()
+    public internal(set) var pushToTalk = Listening()
 
     /// While Boop is hushed: who hushed it and until when (`Hush`).
     public internal(set) var hush: Hush?
@@ -205,8 +204,9 @@ public final class Core {
                                  archive: { readingBack.on ? .open : archive($0) })
     }
 
-    /// The rules' reactions.
-    public static let starting = "starting", stopped = "stopped", helperReturn = "helper_return"
+    /// The rules' reaction: a start's card. A stop and a helper coming back
+    /// play none: the work stream and the brain have them.
+    public static let starting = "starting"
     /// A prompt this soon after its session's start card shows no card of
     /// its own, and one this soon after its session's last turn ended is a
     /// follow-up, which shows none either.
@@ -355,31 +355,18 @@ public final class Core {
             if let shown = startCards.removeValue(forKey: key), now - shown < Core.startCardMs { return nil }
             if let ended = sessions[key]?.turn.lastEndedAt, now - ended < Core.followUpMs { return nil }
             return DeviceReaction(anim: Core.starting, ctx: "new_task")
-        case .callEnded(let call, let late):
+        case .callEnded(let call, _):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
-            // A call that failed plays nothing here: its word hits Boop in
-            // the work stream (`streamCall`).
-            if !late, event.failed != true, let call, Core.act(call) == .delegating, !call.sawSubagent {
-                // A helper's call returned, from hooks that don't say when
-                // helpers start: its `SubagentStop` can't.
-                return DeviceReaction(anim: Core.helperReturn)
-            }
             return nil
-        case .turnEnded(let outcome, let endedTurn):
-            // Only a stop that ends a turn plays its reaction: Claude's idle
-            // notice after a turn that finished doesn't, nor an agent gone,
-            // which nobody stopped.
+        case .turnEnded:
             held[key] = nil
-            return outcome == .stopped && endedTurn && event.hook != Core.agentGone ? DeviceReaction(anim: Core.stopped) : nil
-        case .subagentEnded(let returned):
-            // A helper Boop saw start returns, while its turn goes on.
-            return returned ? DeviceReaction(anim: Core.helperReturn) : nil
+            return nil
         case .sessionEnded:
             held[key] = nil
             startCards[key] = nil
             return nil
-        case .callStarted, .asked, .subagentStarted, .requestExpired, .agentGone, .sessionGone, .other:
+        case .callStarted, .asked, .subagentStarted, .subagentEnded, .requestExpired, .agentGone, .sessionGone, .other:
             return nil
         }
     }
@@ -389,16 +376,15 @@ public final class Core {
     /// something needs you or `listening` holds the screen. The device also skips
     /// it while a brain reaction plays (`if_free`), unless it holds up a
     /// sign (`BoopDevice.play`). Recorded as a `did` named after it, for
-    /// the event `seq` that played it, as the poke's `wiggle` is, so the
+    /// the event `seq` that played it, as the poke's answer is, so the
     /// brain hears that Boop already reacted: in the words `said`, or
     /// `played`'s.
     func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
         guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.reaction(rule))
-        let played = said ?? Core.played(rule, by: config.pack.name)
-        var did = Event.did(played ?? "", for: seq, action: anim, by: "rule",
+        var did = Event.did(said ?? "", for: seq, action: anim, by: "rule",
                             facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
-        if played == nil { did.data["message"] = nil }
+        if said == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
 
@@ -409,20 +395,6 @@ public final class Core {
         var fx: [CoreEffect] = []
         play(reaction, for: nil, now, &fx)
         return fx
-    }
-
-    /// What a rule reaction's `did` says Boop did, for HISTORY and NOW: `Boop
-    /// reacted to the stop on its own.` None for `starting`: most turns
-    /// start with it, so the brain hears the start itself and nothing
-    /// more, and the log alone keeps that it played.
-    static func played(_ reaction: DeviceReaction, by name: String = CharacterPack.active.name) -> String? {
-        let what: String
-        switch reaction.anim {
-        case Core.stopped?: what = "the stop"
-        case Core.helperReturn?: what = "the helper coming back"
-        default: return nil
-        }
-        return "\(name) reacted to \(what) on its own."
     }
 
     /// A tap on the device, recorded as the poke `seq`, on the brain's
@@ -558,10 +530,10 @@ public final class Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         expireHush(now, &fx)
-        if let mic = talk.mic, now - mic.since >= Self.listenLimitMs {
+        if let mic = pushToTalk.mic, now - mic.since >= Self.listenLimitMs {
             // The device's own button hits the same limit.
             stopListening(ListenWhy.limit, now, &fx)
-        } else if talk.mic == nil, let until = talk.replyUntil, now >= until {
+        } else if pushToTalk.mic == nil, let until = pushToTalk.replyUntil, now >= until {
             // The device stopped holding `listening` for the reply on its own.
             endListening(ListenWhy.timedOut, now, &fx, stop: false)
         }
@@ -600,7 +572,7 @@ public final class Core {
         let drawer = drawerOpen(at: now)
         let calls = config.workStream && base == "working" && attn == nil && !drawer
             ? stream.calls(Set(working.map(\.key))) : []
-        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, busy: working.count,
+        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, working: working.count,
                                      idle: rests.count, helpers: helpers, vol: config.volume,
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
@@ -634,6 +606,7 @@ public final class Core {
         return (shown + working + dismissed + idle).map { s in
             StatusReply.Agent(agent: s.agent.rawValue, places: [s.project, s.workspace, s.name].compactMap { $0 },
                          needsYou: needs.contains(s.key), workingSince: works.contains(s.key) ? s.turn.startedAt ?? now : nil,
+                         restingSince: works.contains(s.key) || needs.contains(s.key) ? nil : s.turn.lastEndedAt ?? s.lastEventAt,
                          todo: works.contains(s.key) ? s.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) } : nil,
                          result: results[s.key], asked: asked[s.key])
         }
@@ -815,7 +788,7 @@ public final class Core {
     /// still on. It shows over needs you, as listening does, its face and
     /// sign but not its voice (the board's rule).
     public var replyBlock: String? {
-        talk.mic != nil ? "the mic is on" : nil
+        pushToTalk.mic != nil ? "the mic is on" : nil
     }
 
     // MARK: - Rules
@@ -921,7 +894,7 @@ public final class Core {
     /// A poke: the device plays its poke (`poked`, `tap_spam` from the third
     /// in a row), and the brain hears of it through the view, which counts
     /// the pokes in a row. The rules add no animation of
-    /// their own, but record it, as the `wiggle` action whose older name and
+    /// their own, but record it, as the poke's answer (`pokeAnswer`), whose
     /// words Jev reads. While `listening` shows
     /// nothing replaces it: the device plays no poke, so nothing is
     /// recorded. While something needs you the device plays no poke either:
@@ -938,7 +911,7 @@ public final class Core {
         let name = config.pack.name
         if let waiting = groups(at: now).shown.first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
-        fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.wiggle, by: "rule", at: now)))
+        fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.pokeAnswer, by: "rule", at: now)))
     }
 
     /// Presses within this long of the last walk down the line: each opens
@@ -977,8 +950,11 @@ public final class Core {
         fx.append(.open(s.thread))
     }
 
-    /// The rule actions' names and messages.
-    public static let wiggle = "wiggle"
+    /// The rule actions' names and messages. The device's answer to a poke
+    /// keeps its older name on disk, and HISTORY's words for it: said as
+    /// an answer to the poke, Jev took the poke as answered and reacted to
+    /// none (2026-11-01).
+    public static let pokeAnswer = "wiggle"
     public static let openThread = "open_thread"
     public static func wiggled(by name: String = CharacterPack.active.name) -> String { "\(name) wiggled on its own." }
     public static func openedThread(by name: String = CharacterPack.active.name) -> String {

@@ -1,12 +1,12 @@
 # Character Studio
 
-Updated 2026-10-25. One page for everything a character pack makes its
+Updated 2026-11-01. One page for everything a character pack makes its
 character: who it is, how it feels, what it does and why, how it looks,
 what it says, and the tests that hold it to all that. Pick a pack, and its
 tabs show what's its own: its personality, its moods and what moves them,
 what sets each thing it does off and who decides it, what its brain reads
 and answers, every mood and state
-as the device plays them, its signs, diary and voice, its evals and
+as the device plays them, its signs, dream signs and voice, its evals and
 demos. The page belongs to the engine and names no character: the
 engine's lists (the states, the tags) only order what the pack fills in,
 so another pack fills the same page. Each pack that wants a preview
@@ -40,17 +40,17 @@ file can't load, and saving a verdict. For those, and to record and save
 review clips, use the server instead:
 
 ```sh
-node characters/studio/serve.cjs --port 4190
+python3 simulator/web/serve.py
 ```
 
-Then open `http://127.0.0.1:4190/`. It serves `characters/`, and the
-simulator's build at `/simulator/` (`simulator/web/dist/`, which
-`simulator/web/build.sh` makes for the staged pack and
-`simulator/web/build.sh PACK` for another; `make -C internal sim-test`
-makes both of this checkout's). `--capture-dir DIR` lets a pack's tools
-save the clips its studio entry names (`captures`) into `DIR`. `make
-simulator`'s server serves the studio too, the board included, but
-saves no verdicts.
+Then open `http://127.0.0.1:8206/characters/studio/`. The simulator's
+server serves `characters/` at `/characters/`, and the simulator's build
+at `/simulator/` (`simulator/web/dist/`, which `simulator/web/build.sh`
+makes for the staged pack and `simulator/web/build.sh PACK` for another;
+`make -C internal sim-test` makes both of this checkout's), and saves a
+verdict (`/review`). `--capture-dir DIR` lets a pack's tools save the
+clips its studio entry names (`captures`) into `DIR`. `make dev` and
+`make simulator` start the same server.
 
 ## What's on the page
 
@@ -65,15 +65,14 @@ nothing for (Stills, for a pack with no golden frames):
   each board wears and what it borrows (§6). Then how much it has of
   each part, in rows by tab, each opening it, and **Worth a look**: what
   it's missing (moods a preview has no art for, moods with no steering
-  file or no voice takes, no signs or diary) or waiting
+  file or no voice takes, no signs or dream signs) or waiting
   on you (review).
-- **Personality**: each personality (`steering/personality/`), its
+- **Personality**: the pack's personality (`steering/personality.md`), its
   settings in plain words (`working_heartbeat` 240-360 is "checks in on a
   turn every 4–6 min"), its words, a paragraph's first sentence and the
   rest as points, and its Examples as cards, what happened and after the
-  arrow what it does, six at first. Then the talk files, side by side
-  (`steering/talk/`: quiet, normal and chatty, with any check-in pace
-  they set), and the guide, folded.
+  arrow what it does, six at first. Then the guide, folded. (A pack has no
+  talk files: how much it says is held in code.)
 - **Moods**: the moods in their families, and the one picked: its
   meaning and face, its preview idle in it, and its map, the moods it can
   move to (`moves`), ordinary ones on the inner ring and dramatic ones,
@@ -84,7 +83,7 @@ nothing for (Stills, for a pack with no golden frames):
   leaves for and when, and when it fades. Its links open every state in
   it (Animations), its voice takes and the evals that expect it.
 - **Behavior**: the engine's, not the pack's, so every pack shows the
-  same, with its own personalities' settings and scenarios. **Map**: the
+  same, with its own personality's settings and scenarios. **Map**: the
   screen's layers, top first (no Mac, listening, needs you, a reaction,
   the look), then everything that puts something on the screen, by what
   sets it off (your agents, you at the Mac, your hand on the board, time
@@ -100,21 +99,22 @@ nothing for (Stills, for a pack with no golden frames):
   links to its passes.
 - **Animations**: **Scene**, **Matrix**, **Transitions** and
   **Stills**, below, with the pack's previews' cards over them: each
-  preview the pack declares or uses (Boop's pack shows its gel board,
+  preview the pack declares (Boop's pack shows its gel board,
   with the slime's tools, and Pixel's pixel face), and then a board for
   each face its boards have that it hasn't declared (On the board,
   below). Switching keeps the mood and state, so the same moment can be
   compared on all of them.
 - **Words**: **Signs**, each caption drawn as a sign with your words
-  filled in (`{words}`, `{WORDS}`), filtered by a tag; **Diary**, each
-  line filled in for a sample day; and **Voice**, how many takes the
+  filled in (`{words}`, `{WORDS}`), filtered by a tag; **Dreams**, each
+  sign it may hold up as it tells its dream, with the tags the day must
+  have; and **Voice**, how many takes the
   voice has recorded in each mood, of each kind (a take that's also a
   reply's words counts once), a cell's takes (or those a
   search finds) each with its words, what it answers and the finish it
   needs, and a Play that reads the take from the voice file in part
   (`voice.bin`, by its index, with HTTP ranges), so it needs the
   studio's own server (the simulator's, `simulator/web/serve.py`,
-  reads no ranges). A pack that uses another's voice (§6) shows that one.
+  reads no ranges).
 - **Tests**: **Evals**, each scenario (`evals/`) with its case, why,
   and each step's event and what it expects, filtered by always or a
   search, or from Moods by the mood its steps expect; and **Demos**, each
@@ -159,16 +159,14 @@ The scene's own parts:
   clock, asks for the end as the Mac would, and records a frame every
   40 ms, 5 before the change and 100 after: the frame under a scrubber,
   a bar for each frame's change from the one before (pixels whose
-  difference's luma is over 24 levels, as `internal/tools/fluid/measure.py`
-  counts them, the change's bar marked), and the frames in a strip. A
+  difference's luma is over 24 levels, the change's bar marked), and the frames in a strip. A
   frame several times the median is a jump. Beside it, **Rank** records
-  the everyday transitions, `internal/tools/fluid/transitions.jsonl`'s
-  so that the two measures compare (to working, a mood change, a finish
+  the everyday transitions, `everyday.jsonl`'s (to working, a mood change, a finish
   in its own mood, back to idle from it, a poke, a stroke, to asleep:
   its shots' names, which charactergen reads for the page,
   `everyday()`), on the same board, their changes only, and
   lists them as each comes, the **jumpiest** first: by the ratio of the
-  largest frame to the median, the same rule as `measure.py`'s; clicking
+  largest frame to the median; clicking
   one records it here.
 - **Stills**: the frames the pack's tests hold its faces to
   (`tests/golden-*/<group>/`), a group at a time: what each face draws,
@@ -245,14 +243,14 @@ own.
 ## Kept in sync
 
 Nothing about a character is written here. `packs.js` comes from the
-packs' `character.json` files, their steering (the personalities,
-talk files, guide, each mood's file, signs and diary), the voice each has or
-uses (its `mac/takes.tsv`, once for every pack that uses it), their
+packs' `character.json` files, their steering (the personality,
+guide, each mood's file, signs and dream signs), the voice each has or
+has (its `mac/takes.tsv`), their
 demos, evals and golden frames, references, review queues and notes,
 `states.json`, the acts the board draws while working (the firmware's
 `actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a
 reference's too) and the everyday transitions Rank records (those
-`internal/tools/fluid/transitions.jsonl` records, `everyday()`), the
+`everyday.jsonl` records, `everyday()`), the
 behaviour map (`behavior.json`, the engine's, with each number's value
 from its code, each brain's wake from the transcript view's `wakes` and
 `quiet`, and the personality settings Personality reads), and
@@ -368,12 +366,12 @@ copy, `BOOP_QA_BROWSER` at a browser), the simulator built (above),
 `boopdev prompts` run (above) and the server; `BOOP_QA_SHOTS=DIR` saves a screenshot of each view:
 
 ```sh
-node characters/studio/serve.cjs --port 4190
+python3 simulator/web/serve.py
 node characters/studio/check.cjs
 ```
 
 The logic needs no browser: the change measure and its summary, held to
-the rule `measure.py`'s test is (`internal/tools/fluid/tests/changed.json`),
+the rule `tests/changed.json` pins,
 how each state is asked of the board, the server, in a copy of it
 beside a pack of its own (its verdicts, which charactergen's review
 check then takes, its files in part, and the review clips it saves: only

@@ -198,7 +198,7 @@ final class PresenceTests: XCTestCase {
 
         rig.now = left + 3 * 60 * minute
         let b = try XCTUnwrap(back().first)
-        XCTAssertEqual(b.line, "You came back to the Mac after a very long break.")
+        XCTAssertEqual(b.line, "You came back to the Mac after 3 hours away.")
         XCTAssertEqual(b.name, "presence end")
         XCTAssertTrue(b.wakesBrain)
         XCTAssertNil(b.about)
@@ -219,6 +219,42 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(EventLine.back(ms: 5 * minute), "You came back to the Mac after a short break.")
     }
 
+    /// Away 20 hours is a day, more than a night's sleep, which stays very
+    /// long; 40 is days, a weekend: lonely's cue is a day, never a night.
+    func testADayAwayIsMoreThanANight() {
+        XCTAssertEqual(Band.away(ms: 10 * 60 * minute), "very long", "a night")
+        XCTAssertEqual(Band.away(ms: 20 * 60 * minute - 1), "very long")
+        XCTAssertEqual(Band.away(ms: 20 * 60 * minute), "a day")
+        XCTAssertEqual(Band.away(ms: 40 * 60 * minute), "days")
+        XCTAssertEqual(EventLine.back(ms: 26 * 60 * minute), "You came back to the Mac after 26 hours away.")
+        XCTAssertEqual(EventLine.back(ms: 3 * 24 * 60 * minute), "You came back to the Mac after 3 days away.")
+    }
+
+    /// The back line says how long in numbers past a short break
+    /// (EventLine.shortBreakMs, 15 min): minutes under 2 hours, hours under
+    /// 2 days, then days. What that means is the steering's.
+    func testTheBackLineSaysHowLong() {
+        XCTAssertEqual(EventLine.shortBreakMs, 15 * minute)
+        XCTAssertEqual(EventLine.back(ms: 15 * minute - 1), "You came back to the Mac after a short break.")
+        XCTAssertEqual(EventLine.back(ms: 119 * minute), "You came back to the Mac after 119 min away.")
+        XCTAssertEqual(EventLine.back(ms: 11 * 60 * minute), "You came back to the Mac after 11 hours away.")
+        XCTAssertEqual(EventLine.back(ms: 48 * 60 * minute), "You came back to the Mac after 2 days away.")
+        XCTAssertEqual(EventLine.back(ms: 30 * minute), "You came back to the Mac after 30 min away.")
+    }
+
+    /// A back whose away the log no longer holds (a relaunch during a long
+    /// absence) pairs with the start the runtime kept, its `since`.
+    func testABackAfterARelaunchPairsWithTheKeptAway() {
+        let rig = CoreRig()
+        let left = rig.now
+        rig.now = left + 26 * 60 * minute
+        var back = PresenceDetector.backEvent(why: "unlocked", at: rig.now)
+        back.data["since"] = .int(left)
+        let lines = events(rig.note(Fx(rig.pipeline.presence(back))))
+        XCTAssertEqual(lines.first?.line, "You came back to the Mac after 26 hours away.")
+        XCTAssertEqual(lines.first?.facts["away_ms"]?.int, 26 * 60 * minute)
+    }
+
     /// `hello` is a topic Jev is
     /// offered, every face has four or more of its takes, all greetings,
     /// and a glad sound then hello, as boop's Example asks, is a sound and
@@ -230,7 +266,7 @@ final class PresenceTests: XCTestCase {
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
-        for mood in MoodOutput.moods.map(\.name) {
+        for mood in CharacterPack.active.moods.map(\.id) {
             XCTAssertGreaterThanOrEqual(hello.filter { $0.moods.contains(mood) }.count, 4, mood)
         }
         var rng = SplitMix64(seed: 1)
@@ -327,7 +363,7 @@ final class PresenceRuntimeTests: XCTestCase {
         dev(runtime, #"{"dev":"advance","ms":1000}"#)
         XCTAssertEqual(presence(runtime), ["start locked", "end unlocked"])
         let back = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
-        XCTAssertEqual(back.line, "You came back to the Mac after a long break.")
+        XCTAssertEqual(back.line, "You came back to the Mac after 70 min away.")
         XCTAssertTrue(back.wakesBrain == false, "gated: headless here has no brain")
 
         dev(runtime, #"{"dev":"presence","idle_ms":1800000}"#)
@@ -350,7 +386,7 @@ final class PresenceRuntimeTests: XCTestCase {
         for _ in 0..<20 where presence(runtime).count < 2 { Thread.sleep(forTimeInterval: 0.05) }
         XCTAssertEqual(presence(runtime), ["start demo", "end demo"])
         let back = try XCTUnwrap(runtime.home.sync { runtime.pipeline.views.last })
-        XCTAssertEqual(back.line, "You came back to the Mac after a very long break.")
+        XCTAssertEqual(back.line, "You came back to the Mac after 10 hours away.")
         XCTAssertFalse(runtime.home.sync { runtime.pipeline.away }, "back, not away")
         XCTAssertNil(back.about, "a back is about no thread, so a wake-up for it names nobody's turn")
         runtime.stop()

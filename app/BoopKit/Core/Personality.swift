@@ -1,57 +1,24 @@
 import Foundation
 
-/// Who the character is: one of its pack's personalities, a file in the
-/// pack's `steering/personality/`, chosen in Settings
-/// (characters/CHARACTER.md §4). Its settings
-/// drive the view's rules; its text is the PERSONALITY section of Jev's
-/// state. Boop's pack has one, `boop`; how much it says is `Talk`'s.
-public struct Personality: RawRepresentable, Hashable, Sendable {
-    public let rawValue: String
-
-    /// One of the pack's personalities, or nil for a name it doesn't have.
-    public init?(rawValue: String) {
-        guard CharacterPack.active.personalities.contains(rawValue) else { return nil }
-        self.rawValue = rawValue
-    }
-
-    private init(named name: String) { rawValue = name }
-
-    /// `name` if `pack` has it, else `pack`'s first: a buddy of another
-    /// pack speaks its own personality of the same name.
-    public init(_ name: String, in pack: CharacterPack) {
-        rawValue = pack.personalities.contains(name) ? name : pack.personalities.first ?? "default"
-    }
-
-    /// The pack's personalities, in its order.
-    public static var allCases: [Personality] { CharacterPack.active.personalities.map(Personality.init(named:)) }
-
-    /// The pack's first personality: what a new Boop starts with, and what
-    /// a saved one the pack no longer has reads as.
-    public static var `default`: Personality { Personality(named: CharacterPack.active.personalities.first ?? "default") }
-
-    /// What it does, in one line, for Settings: the pack's `about` for it.
-    public var about: String? { CharacterPack.active.personalityAbout[rawValue] }
-
+/// Who the character is: its pack's one personality, `steering/personality.md`
+/// (characters/CHARACTER.md §7). Its front matter's settings drive the
+/// view's rules (`Rules`); its text is the PERSONALITY section of Jev's
+/// state. How much it says is `Talk`'s.
+public enum Personality {
     /// The settings a personality file's front matter sets for the core.
     public struct Rules: Equatable, Sendable {
-        /// Which finished tool calls the view keeps.
-        public enum ToolUses: String, Sendable { case notable, all }
-
         /// The working heartbeat's wait, in milliseconds, or none.
         public var workBeatMs: ClosedRange<Int>?
         /// The idle check-in's wait, in milliseconds, or none: only the
         /// hourly heartbeat, as before there were check-ins.
         public var idleBeatMs: ClosedRange<Int>?
-        public var toolUses: ToolUses
 
-        public init(workBeatMs: ClosedRange<Int>? = 90_000...180_000, idleBeatMs: ClosedRange<Int>? = nil,
-                    toolUses: ToolUses = .notable) {
+        public init(workBeatMs: ClosedRange<Int>? = 90_000...180_000, idleBeatMs: ClosedRange<Int>? = nil) {
             self.workBeatMs = workBeatMs
             self.idleBeatMs = idleBeatMs
-            self.toolUses = toolUses
         }
 
-        /// Reads `working_heartbeat`, `idle_heartbeat` and `tool_uses` from a
+        /// Reads `working_heartbeat` and `idle_heartbeat` from a
         /// front-matter block; anything missing or unreadable keeps its
         /// default.
         public init(frontMatter: String) {
@@ -60,7 +27,6 @@ public struct Personality: RawRepresentable, Hashable, Sendable {
                 let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
                 guard parts.count == 2 else { continue }
                 switch parts[0] {
-                case "tool_uses": if let t = ToolUses(rawValue: parts[1]) { toolUses = t }
                 case "working_heartbeat": workBeatMs = Rules.seconds(parts[1], else: workBeatMs)
                 case "idle_heartbeat": idleBeatMs = Rules.seconds(parts[1], else: idleBeatMs)
                 default: break

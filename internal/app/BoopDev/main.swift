@@ -13,7 +13,6 @@ let usages: [(command: String, text: String)] = [
     boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--labeler apple] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
     boopdev eval --scripted [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
-    boopdev eval --to-demo DIR [--only TEXT] [--always] [--scenarios DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
@@ -27,10 +26,9 @@ let usages: [(command: String, text: String)] = [
         prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
         nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
         scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
-        wakes the brain as it should, the screen, the whole-run checks it can meet). --to-demo writes each
-        scenario as a demo script, DIR/<scenario>.jsonl, the expect brain's answers as its brain steps, for
-        make demo to play (characters/DEMOS.md). A scenario with a known gap is reported GAP when it
-        fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
+        wakes the brain as it should, the screen, the whole-run checks it can meet). A scripted scenario,
+        one that checks only the code's rules, runs only so. A scenario with a known
+        gap is reported GAP when it fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
         /tmp/boop-eval, one JSON object a line. Exits 1 if any fails. The scenarios and steering
         default to the pack in use's (characters/CHARACTER.md §2): its evals/ and steering/.
     """),
@@ -60,6 +58,14 @@ let usages: [(command: String, text: String)] = [
         --min-phrases 0.75 by default) or a typical reading takes longer than --max-ms (1500). FILE defaults
         to the repo's internal/app/Tests/Fixtures/readings.json. It prints each miss, or with
         --verbose every reading. Needs Apple Intelligence; exits 1 without it.
+    """),
+    ("memory", """
+    boopdev memory write [--fixture FILE] [--only TEXT]
+        Runs the written memory's night with Apple Intelligence on this Mac, as the app does, over fixture nights
+        (each a memory, CERTAIN, yesterday's lines and what a person would accept), and prints each night's reply,
+        the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
+        defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
+        without it.
     """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
@@ -109,7 +115,7 @@ func findRepo() -> URL? {
 let evalBudget = 100
 
 func eval(_ raw: [String]) async {
-    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--to-demo", "--labeler"],
+    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--labeler"],
                          flags: ["--always", "--list", "--timeline", "--no-budget", "--scripted"])
     // The pack in use's scenarios and steering (characters/CHARACTER.md §2), unless given.
     func path(_ option: String, _ inPack: String) -> URL {
@@ -124,20 +130,16 @@ func eval(_ raw: [String]) async {
     }
     if args.has("--always") { list = list.filter(\.always) }
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
+    // A scripted scenario checks the code's rules: only the expect brain runs it.
+    let scripted = args.has("--scripted")
+    if !scripted {
+        let forJev = list.filter { !$0.scripted }
+        guard !forJev.isEmpty else { fail("\(list.map(\.file).joined(separator: ", ")): scripted, so run with --scripted") }
+        if forJev.count < list.count, !args.has("--list") { print("\(list.count - forJev.count) scripted scenario\(list.count - forJev.count == 1 ? "" : "s") left out: --scripted runs them") }
+        if !args.has("--list") { list = forJev }
+    }
     let steering: Steering
     do { steering = try Steering(directory: path("--steering", "steering")) } catch { fail("\(error)") }
-    if let dir = args["--to-demo"] {
-        let out = URL(fileURLWithPath: dir)
-        do {
-            try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
-            for s in list {
-                let file = out.appendingPathComponent((s.file as NSString).deletingPathExtension + ".jsonl")
-                try DemoFromScenario.script(s, signs: steering.signs).write(to: file, atomically: true, encoding: .utf8)
-                print(file.path)
-            }
-        } catch { fail("can't write the demos: \(error)") }
-        exit(0)
-    }
     let given = args["--runs"].map { Int($0) }
     if let given, (given ?? 0) < 1 { fail("--runs is a count, 1 or more") }
     let budget = args["--budget"].map { Int($0) }
@@ -155,15 +157,14 @@ func eval(_ raw: [String]) async {
     if args.has("--list") {
         for p in plan {
             let s = p.scenario
-            print("\(s.file)\(s.always ? "  [always]" : s.gap != nil ? "  [gap]" : "")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
+            print("\(s.file)\(s.always ? "  [always]" : s.scripted ? "  [scripted]" : s.gap != nil ? "  [gap]" : "")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
             print("    \(p.runs) run\(p.runs == 1 ? "" : "s") × about \(p.requests) requests")
             print("    \(s.story)")
             if let gap = s.gap { print("    gap: \(gap)") }
         }
-        print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests")
+        print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests, the scripted ones' included")
         exit(0)
     }
-    let scripted = args.has("--scripted")
     if scripted { plan = plan.map { ($0.scenario, 1, $0.requests) } }
     let limit = scripted || args.has("--no-budget") ? Int.max : budget.flatMap { $0 } ?? evalBudget
     if total > limit {
@@ -418,8 +419,50 @@ func readCheck(_ raw: [String]) async {
     guard short.isEmpty else { fail("boopdev read-check: " + short.joined(separator: "; ")) }
 }
 
+/// `boopdev memory write`: the night's write over fixture nights.
+func memory(_ raw: [String]) async {
+    guard raw.first == "write" else { fail("boopdev memory: the command is write\n\(usage)") }
+    let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])
+    guard let file = args["--fixture"].map({ URL(fileURLWithPath: $0) })
+            ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-nights.json"),
+          let data = try? Data(contentsOf: file),
+          let nights = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
+        fail("boopdev memory write: can't read the fixture; pass --fixture FILE")
+    }
+    guard let writer = AppleIntelligenceWriter.onThisMac, AppleIntelligenceLabeler.isAvailable else {
+        fail("boopdev memory write: Apple Intelligence isn't available on this Mac")
+    }
+    for night in nights {
+        let name = night["name"] as? String ?? "?"
+        if let only = args["--only"], !name.localizedCaseInsensitiveContains(only) { continue }
+        guard let day = night["day"] as? String, let certain = night["certain"] as? String,
+              let memory = WrittenMemory.from(notes: night["memory"] as? [String] ?? []) else {
+            fail("boopdev memory write: \(name) doesn't read")
+        }
+        let journal = (night["yesterday"] as? [String] ?? []).map { line in
+            (at: String(line.prefix(5)), line: String(line.dropFirst(6)))
+        }
+        let request = MemoryRequest.make(memory: memory, certain: certain, journal: journal)
+        let started = Date()
+        let reply = await writer.write(request)
+        let ms = Int(Date().timeIntervalSince(started) * 1000)
+        print("== \(name)  (\(ms) ms)")
+        print("   accept: \(night["accept"] as? String ?? "")")
+        guard case .reply(let text) = reply else { print("   no reply: \(reply)"); continue }
+        print("   reply:\n" + text.split(separator: "\n").map { "     " + $0 }.joined(separator: "\n"))
+        let (after, report) = MemoryEdits.apply(text, to: memory, numbered: request.numbered, day: day,
+                                                words: MemoryRequest.words(in: journal),
+                                                source: MemoryRequest.source(certain: certain, journal: journal))
+        print("   updated \(report.updated), added \(report.added), dropped \(report.dropped), kept \(report.kept), aged \(report.aged)")
+        for r in report.refused { print("   REFUSED \(r.why): \(r.line)") }
+        print("   after:\n" + after.markdown.split(separator: "\n").filter { $0.hasPrefix("- ") }.map { "     " + $0 }.joined(separator: "\n"))
+    }
+}
+
 let args = Array(CommandLine.arguments.dropFirst())
 switch args.first {
+case "memory":
+    await memory(Array(args.dropFirst()))
 case "eval":
     await eval(Array(args.dropFirst()))
 case "prompts":

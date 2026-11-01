@@ -3,11 +3,12 @@ import Foundation
 import LinkKit
 import WebKit
 
-/// The internal build's simulator: the board's firmware in a window of the
-/// app's own (simulator/README.md), Boop's body when there's no board on
-/// the desk. Its page (`simulator/web/app.html`, with the simulator's core
-/// beside it) is in the app's Resources, which `make bundle INTERNAL=1`
-/// puts there, served to the window by a scheme of its own, since a page
+/// The simulator window: the board's firmware in a window of the app's own
+/// (simulator/README.md), Boop's body when there's no board on the desk.
+/// Its page (`simulator/web/app.html`, with the simulator's core beside
+/// it, app/tools/simulator.sh) is in the internal build's Resources, which
+/// `make bundle INTERNAL=1` puts there, or beside `make dev`'s debug
+/// binary, served to the window by a scheme of its own, since a page
 /// from a file may not fetch its WebAssembly. Its USB is the app itself
 /// (`BoardLink`): what the board says comes in as messages, and what the
 /// app sends it goes in by script.

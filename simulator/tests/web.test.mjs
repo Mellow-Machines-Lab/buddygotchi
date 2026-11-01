@@ -419,6 +419,40 @@ test('several cables, each its own board and socket', { skip }, async t => {
   for (const end of Object.values(ends)) { end.page.close(); end.tool.destroy(); }
 });
 
+// A demo's stroke and tickle, as the page replays them, are the gestures
+// the board's own touch code names: a recording shows what it says.
+test("a demo's stroke and tickle are the board's own gestures", { skip }, async () => {
+  const { STROKE, TICKLE } = await import(path.join(dist, 'boop-simulator.js'));
+  for (const [name, points] of [['stroke', STROKE], ['tickle', TICKLE]]) {
+    const b = await board();
+    b.send(WORKING);
+    await b.run(200);
+    for (const [x, y] of points) { b.input(`touch ${x} ${y}`); await b.run(60); }
+    b.input('release');
+    await b.run(400);
+    const gestures = b.lines.filter(m => m.t === 'ev' && m.kind === 'gesture').map(m => m.did);
+    assert.deepEqual(gestures, [name], name);
+  }
+});
+
+// A demo's answer, as the page replays it, is a tap on that side of the
+// lane, which the board takes as the answer to its question.
+test("a demo's answer taps its side of the lane", { skip }, async () => {
+  const { LANE_Y } = await import(path.join(dist, 'boop-simulator.js'));
+  for (const [pick, x] of [['a', 80], ['b', 240]]) {
+    const b = await board();
+    b.send(QUIET);
+    b.send({ t: 'do', id: 1, name: 'react', play: 'now', args: { sign: 'fav snack?', ask: { q: 'snack', a: 'cookie', b: 'pizza' } } });
+    await b.run(200);
+    b.input(`touch ${x} ${LANE_Y}`);
+    await b.run(20);
+    b.input('release');
+    await b.run(400);
+    const asks = b.lines.filter(m => m.t === 'ev' && m.kind === 'ask').map(m => [m.did, m.data.answer]);
+    assert.deepEqual(asks, [[pick, pick === 'a' ? 'cookie' : 'pizza']], pick);
+  }
+});
+
 test('a recording plays into the board in order, and knows nothing of what its lines mean', { skip }, async () => {
   const { DemoPlayer } = await import(path.join(dist, 'boop-simulator.js'));
   const recording = {

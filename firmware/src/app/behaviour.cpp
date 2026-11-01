@@ -95,6 +95,8 @@ bool Behaviour::exprOn(uint32_t t) const { return expr_ && within(t, exprAt_, ex
 
 bool Behaviour::signOn(uint32_t t) const { return sign_.text[0] && within(t, sign_.at, sign_.ms); }
 
+bool Behaviour::askOn(uint32_t t) const { return ask_.q[0] && within(t, ask_.at, kAskMs); }
+
 bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
   if (!exprOn(t)) return false;
   mood = exprMood_;
@@ -122,6 +124,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
     if (sign_.text[0]) consider(sign_.at + sign_.ms);
+    if (ask_.q[0]) consider(ask_.at + kAskMs);
     consider(lastState_ + kNoAppMs);
     uint32_t faceAt;
     if (face_->nextDue(modelT_, t, faceAt)) consider(faceAt);
@@ -149,6 +152,7 @@ void Behaviour::resync(uint32_t t) {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;
     if (expr_ && !within(t, exprAt_, exprMs_)) expr_ = false;
+    if (ask_.q[0] && !askOn(t)) endAsk("ignored", ask_.at + kAskMs);
     // The finished turn lingers from the instant no part of its reaction
     // plays, then goes.
     if (done_.agent[0] && !done_.ending && !holds(done_.key, t))
@@ -168,8 +172,8 @@ void Behaviour::resync(uint32_t t) {
 // the reaction that last played is followed: it's the one the kit has
 // playing, and the kit ended any before it when the queue started this one.
 bool Behaviour::holds(uint32_t key, uint32_t t) const {
-  return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) ||
-         (exprOn(t) && exprKey_ == key) || (signOn(t) && sign_.key == key);
+  return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) || (exprOn(t) && exprKey_ == key) ||
+         (signOn(t) && sign_.key == key) || (askOn(t) && ask_.key == key);
 }
 
 // The first cut is the one reported.
@@ -197,6 +201,7 @@ bool Behaviour::nextEnd(uint32_t from, uint32_t to, uint32_t& at) const {
   if (say_.take >= 0) consider(say_.at + say_.ms);
   if (expr_) consider(exprAt_ + exprMs_);
   if (sign_.text[0]) consider(sign_.at + sign_.ms);
+  if (ask_.q[0]) consider(ask_.at + kAskMs);
   return found;
 }
 
@@ -226,8 +231,9 @@ void Behaviour::onState(const Model& m, uint32_t t) {
         cut(reaction_.key, CutBy::kNeedsYou), reaction_.anim = render::SceneState::kNone;
       done_ = Done{};  // its own screen takes the face at once
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
-      say_ = Say{};  // no `say` or sign while something needs you
-      sign_ = gone_ = Sign{};
+      say_ = Say{};  // no `say`, sign or ask while something needs you
+      if (ask_.q[0]) endAsk("ignored", t);
+      sign_ = gone_ = reason_ = Sign{};
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
@@ -287,6 +293,8 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   bool sign = in.sign[0] && !heldFrom(in, t);
   if (!anim && !say && !face && !sign) return false;  // stop_listening: admit did it all
   change(t, [&] {
+    // A newer reaction ends the ask that's up, unanswered.
+    if (ask_.q[0]) endAsk("ignored", t);
     // A reaction from the Mac takes the finished turn named down, unless
     // it names one itself: its animation a finish, or none.
     const bool finish = in.anim == render::SceneState::kTaskComplete || in.anim == render::SceneState::kReplyReady;
@@ -328,6 +336,36 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       if (say) sign_.ms = std::max(sign_.ms, voice + say_.ms);
       if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
       sign_.key = in.key;
+    }
+    // Why it plays, in the lane, as long as its sign would show; a newer
+    // reaction with none takes the old one down.
+    reason_ = Sign{};
+    if (in.reason[0] && (anim || face || say || sign)) {
+      copyStr(reason_.text, sizeof(reason_.text), in.reason);
+      reason_.reply = in.expr && in.reply[0];
+      reason_.at = t;
+      reason_.ms = kSignMinMs;
+      if (anim && !listen) reason_.ms = std::max(reason_.ms, reaction_.ms);
+      if (say) reason_.ms = std::max(reason_.ms, voice + say_.ms);
+      if (in.expr) reason_.ms = std::max(reason_.ms, exprMs_);
+      reason_.key = in.key;
+    }
+    // An ask: its question stays up, and its answers fill the lane, until
+    // a tap on one, a touch when it takes one, a newer reaction, or kAskMs.
+    if (in.askQ[0] && sign) {
+      ask_ = Ask{};
+      copyStr(ask_.q, sizeof(ask_.q), in.askQ);
+      copyStr(ask_.question, sizeof(ask_.question), in.sign);
+      copyStr(ask_.a, sizeof(ask_.a), in.askA);
+      copyStr(ask_.b, sizeof(ask_.b), in.askB);
+      // The answers either side of the lane's middle: the shorter padded
+      // to the longer, so the gap between them sits where a tap splits.
+      const int la = int(std::strlen(ask_.a)), lb = int(std::strlen(ask_.b)), w = std::max(la, lb);
+      std::snprintf(ask_.lane, sizeof(ask_.lane), "%*s    %-*s", w, ask_.a, w, ask_.b);
+      ask_.touch = in.askTouch;
+      ask_.at = t, ask_.key = in.key;
+      sign_.ms = std::max(sign_.ms, kAskMs);
+      reason_ = Sign{};
     }
     if (names) {
       done_ = Done{};
@@ -376,7 +414,7 @@ void Behaviour::endSay(uint32_t t, CutBy by) {
   say_ = Say{};
   expr_ = false;
   if (signOn(t)) signGoes(t);
-  sign_ = Sign{};
+  sign_ = reason_ = Sign{};
   ++reactionSeq_;
 }
 
@@ -450,6 +488,7 @@ void Behaviour::talkOn(uint32_t t, Rng& rng) {
       reaction_.ms = (t - reaction_.at) + kListenMs + kReplyWaitMs;
     } else {
       uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
+      if (ask_.q[0]) endAsk("ignored", t);
       endSay(t, CutBy::kTap);
       playAnim(render::SceneState::kListening, t, CutBy::kTap, 1, model_.mood, v);
     }
@@ -495,7 +534,6 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
     s.outcome = reaction_.requestedOutcome;
     s.ctx = reaction_.ctx;
     s.playMs = reaction_.playMs;
-    s.named = done_.agent[0] && done_.named && done_.key == reaction_.key;
   }
   return s;
 }
@@ -560,7 +598,8 @@ void Behaviour::setFaceDown(bool down, uint32_t t) {
     faceDown_ = down;
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
     if (down && signOn(t)) signGoes(t);
-    if (down) sign_ = Sign{};
+    if (down && ask_.q[0]) endAsk("ignored", t);
+    if (down) sign_ = reason_ = Sign{};
   });
 }
 
@@ -642,6 +681,50 @@ render::Strip Behaviour::strip(uint32_t t) const {
 
 // With no app, no `say` shows: it outranks the reactions.
 const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ? say_.text : nullptr; }
+
+const char* Behaviour::laneText(uint32_t t) const {
+  if (const char* said = bubble(t)) return said;
+  if (asking(t)) return ask_.lane;
+  if (!reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
+  if (model_.attn && !reason_.reply) return nullptr;
+  return reason_.text;
+}
+
+bool Behaviour::asking(uint32_t t) const { return askOn(t) && !noApp(t) && !model_.attn; }
+
+bool Behaviour::answer(const char* pick, uint32_t t, bool injected) {
+  if (!asking(t) || (!std::strcmp(pick, "touch") && !ask_.touch)) return false;
+  change(t, [&] { endAsk(pick, t, injected); });
+  return true;
+}
+
+void Behaviour::endAsk(const char* pick, uint32_t t, bool injected) {
+  askEnd_ = AskEnd{};
+  copyStr(askEnd_.q, sizeof(askEnd_.q), ask_.q);
+  copyStr(askEnd_.question, sizeof(askEnd_.question), ask_.question);
+  askEnd_.pick = pick;
+  if (!std::strcmp(pick, "a") || !std::strcmp(pick, "touch")) copyStr(askEnd_.answer, sizeof(askEnd_.answer), ask_.a);
+  if (!std::strcmp(pick, "b")) copyStr(askEnd_.answer, sizeof(askEnd_.answer), ask_.b);
+  askEnd_.injected = injected;
+  askEnded_ = true;
+  // Its question comes down with it, unless a newer reaction's took its place.
+  if (sign_.key == ask_.key && signOn(t)) {
+    signGoes(t);
+    sign_ = Sign{};
+  }
+  ask_ = Ask{};
+}
+
+void Behaviour::dropAsk(uint32_t t) {
+  if (ask_.q[0]) change(t, [&] { endAsk("ignored", t); });
+}
+
+bool Behaviour::takeAskEnd(AskEnd& e) {
+  if (!askEnded_) return false;
+  e = askEnd_;
+  askEnded_ = false;
+  return true;
+}
 
 void Behaviour::signGoes(uint32_t at) {
   gone_ = sign_;

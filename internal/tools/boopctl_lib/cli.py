@@ -13,7 +13,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from boopctl_lib import board, reference, scenario, workday
+from boopctl_lib import board, reference, scenario
 from boopctl_lib.common import (ANIMS, CTXS, MOODS, OLD_ANIMS, OUTCOMES, VOICE_FILE, REPO, RULE_REACTIONS, TTL_MS, Take, checkout_tmp,
                                 do, ended, restarted, take, takes)
 from boopctl_lib.device import Device, DeviceError, Sim
@@ -1160,9 +1160,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--camera", help="the camera id, from internal/tools/webcam/webcam.sh list "
                                     "(default: $BOOP_CAMERA or the built-in one)")
     p.set_defaults(func=cmd_cam)
-    p = sub.add_parser("dash", help="the live dashboard: Boop now with its face, and its mood, automatic reactions "
-                                    "and decided reactions side by side, from debug.jsonl; keys force a mood, a "
-                                    "reaction or an animation")
+    p = sub.add_parser("dash", help="the live dashboard: Boop now with its face, Talk, growth and CONTEXT, and its "
+                                    "mood and memory, automatic reactions and decided reactions side by side, from "
+                                    "debug.jsonl; keys force a mood or a reaction, close Boop's day, or preview a look")
     p.add_argument("--state-dir", help="the app's state directory, where Boop --debug writes debug.jsonl "
                                        "(default: the everyday app's, ~/Library/Application Support/Boop)")
     p.add_argument("--socket", help="the app's hook socket (default: STATE-DIR/boop.sock)")
@@ -1174,7 +1174,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--date", type=a_date, help="the local day, YYYY-MM-DD (default: the newest line's)")
     p.add_argument("file", nargs="*", help="read these debug logs instead, oldest launch first")
     p.set_defaults(func=cmd_day)
-    workday.add_parser(sub)
     reference.add_parser(sub)
     p = sub.add_parser("calibrate", help="touch calibration: tap 4 crosses (needs a person); kept in NVS")
     p.add_argument("--show", action="store_true", help="print the stored calibration instead")

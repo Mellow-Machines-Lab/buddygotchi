@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice file.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","stopped","error","helper_return","wake_up","listening","stop_listening","notice","call"],"voice":"\#(Take.voiceVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","wake_up","listening","stop_listening","notice","call"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -95,7 +95,7 @@ final class FakeTransport: Transport, @unchecked Sendable {
 }
 
 func sampleSnapshot(busy: Int = 0) -> StateSnapshot {
-    StateSnapshot(base: busy > 0 ? "working" : "idle", mood: "happy", attn: nil, busy: busy, vol: 6)
+    StateSnapshot(base: busy > 0 ? "working" : "idle", mood: "happy", attn: nil, working: busy, vol: 6)
 }
 
 /// Boop's vocabulary on LinkKit: its `state` and `do` lines,
@@ -169,7 +169,7 @@ final class DeviceLinkTests: XCTestCase {
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
         XCTAssertEqual(DeviceReaction(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
                        #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "stopped").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"stopped","play":"if_free"}"#)
+        XCTAssertEqual(DeviceReaction(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
         let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
@@ -284,7 +284,7 @@ final class DeviceLinkTests: XCTestCase {
         link.onHello = { DeviceInfo($0).logLines.forEach(lines.add) }
         link.connection(true, now: 0)
         func hello(_ pack: String?, _ version: String = CharacterPack.active.version) -> String {
-            String(FakeTransport.hello.dropLast()) + (pack.map { #","pack":"\#($0)","pack_version":"\#(version)"}"# } ?? "}")
+            String(FakeTransport.hello.dropLast()) + (pack.map { #","pack":"\#($0) \#(version)"}"# } ?? "}")
         }
         link.receive(hello(CharacterPack.active.id), now: 100)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true)
@@ -293,10 +293,24 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, false)
         XCTAssertTrue(lines.all.contains("device: its firmware is built with the other \(CharacterPack.active.version) character pack, "
                                          + "the app runs \(DeviceInfo.appPack): some of its faces won't match the app's moods"), "\(lines.all)")
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheCharacter, false)
         link.receive(hello(CharacterPack.active.id, "9.9.9"), now: 300)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, false, "another version")
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasTheCharacter, true, "the same character, another version")
         link.receive(hello(nil), now: 400)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.hasThePack, true, "firmware that doesn't say")
+        // Firmware from before said the version on its own.
+        let before = String(FakeTransport.hello.dropLast()) + #","pack":"\#(CharacterPack.active.id)","pack_version":"\#(CharacterPack.active.version)"}"#
+        link.receive(before, now: 500)
+        XCTAssertEqual(link.hello.map(DeviceInfo.init)?.pack, DeviceInfo.appPack)
+    }
+
+    /// The AMOLED draws the work stream and the agents' drawer, whatever
+    /// face it runs (Pixel Bro's pixel face among them); the CYD doesn't.
+    func testTheDrawerIsTheAmoleds() {
+        XCTAssertTrue(DeviceInfo(id: "b", fw: "1", voice: nil, face: .pixel, pack: nil, reset: nil, board: "amoled206").drawsTheDrawer)
+        XCTAssertFalse(DeviceInfo(id: "b", fw: "1", voice: nil, face: .pixel, pack: nil, reset: nil, board: "cyd24").drawsTheDrawer)
+        XCTAssertTrue(DeviceInfo(id: "b", fw: "1", voice: nil, face: .gel, pack: nil, reset: nil, board: nil).drawsTheDrawer, "older firmware: by its face")
     }
 
     /// The widest name the Mac sends: 47 bytes that JSON escapes to two
@@ -306,7 +320,7 @@ final class DeviceLinkTests: XCTestCase {
 
     /// The most calendar tags that can be on at once: a part of the day,
     /// a Friday the 13th that's also a holiday, Programmers' Day, Lunar
-    /// New Year and a party.
+    /// New Year and a party. The board gets those it reads.
     private let mostTags = ["morning", "friday", "friday13", "aprilfools", "programmers", "lunar", "party"]
 
     /// A line is at most 512 bytes. The biggest `state`,
@@ -324,10 +338,10 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(StateSnapshot.boardName("Ünïcödé café"), "Ünïcödé café")
         let s = StateSnapshot(base: "working", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                              busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
+                              working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","friday13","aprilfools","programmers","lunar","party"]}"#)
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","programmers","lunar","party"]}"#)
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 
@@ -338,9 +352,9 @@ final class DeviceLinkTests: XCTestCase {
         let every = mostTags + ["tier5"] + Occasions.stageTags + [Occasions.reading]
         let needs = StateSnapshot(base: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                                  busy: 999, idle: 999, helpers: 999, vol: 10, when: every)
+                                  working: 999, idle: 999, helpers: 999, vol: 10, when: every)
         XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
-        let todo = StateSnapshot(base: "working", act: "delegating", mood: "determined", attn: nil, busy: 999, idle: 999, helpers: 999,
+        let todo = StateSnapshot(base: "working", act: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
                                  vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
         XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
@@ -349,110 +363,65 @@ final class DeviceLinkTests: XCTestCase {
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {
-        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, busy: 2, vol: 6)
+        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, working: 2, vol: 6)
         XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
         XCTAssertEqual(working.visual, "delegating")
         XCTAssertEqual(working.look, "delegating")
         let s = StateSnapshot(base: "working", act: "delegating", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
-                              busy: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
+                              working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertEqual(s.visual, "needs_you", "needs you wins")
         XCTAssertLessThanOrEqual(Act.allCases.map(\.rawValue.utf8.count).max()!, "delegating".utf8.count)
     }
 
-    /// The simulator is a body to choose only while it runs
-    /// (`DeviceChooser`): chosen, the board is let go and its lines are no
-    /// longer heard; when the simulator stops, Boop is back on its board
-    /// by itself, within a couple of looks (`watchEvery`).
-    func testASimulatorIsADeviceToChooseWhileItRuns() throws {
-        let path = "/tmp/boop-test-sim-\(getpid()).sock"
-        let board = FakeTransport()
-        let chooser = DeviceChooser(board: board, simulatorSocket: path)
-        let lines = Lines(), ups = Lines(), choices = Lines()
+    /// The simulator, the app's own window (`DeviceChooser`): chosen, its
+    /// link is made then and started, the board's let go and its lines no
+    /// longer heard; chosen back, the board is Boop's body again. Whoever
+    /// shows the choice hears both changes.
+    func testTheSimulatorIsMadeWhenChosenAndTheBoardComesBack() {
+        let board = FakeTransport(), made = Lines(), choices = Lines(), lines = Lines(), ups = Lines()
+        let window = FakeTransport()
+        window.name = "simulator"
+        let chooser = DeviceChooser(board: board, simulator: { made.add("made"); return window })
         chooser.onChoice { choices.add($0.rawValue) }
         chooser.start(onLine: { lines.add($0) }, onConnection: { ups.add($0 ? "up" : "down") })
         XCTAssertEqual(chooser.choice, .board)
-        XCTAssertFalse(chooser.simulatorIsThere(), "nothing is running")
+        XCTAssertNotNil(board.onLine, "on the board until it's chosen")
+        XCTAssertEqual(made.all, [], "made only when it's chosen")
         board.onConnection?(true)
         board.onLine?("from the board")
-        XCTAssertEqual(lines.all, ["from the board"])
-
-        let simulator = try XCTUnwrap(EchoSocket(path))
-        defer { simulator.stop() }
-        XCTAssertTrue(chooser.simulatorIsThere())
-        XCTAssertEqual(chooser.choice, .board, "being there doesn't choose it")
         chooser.choose(.simulator)
+        XCTAssertEqual(made.all, ["made"])
         XCTAssertEqual(chooser.choice, .simulator)
         XCTAssertEqual(chooser.name, "simulator")
-        eventually("the board's link dropped, then the simulator's came up") { ups.all == ["up", "down", "up"] }
+        XCTAssertNotNil(window.onLine, "the window's link is started")
+        window.onConnection?(true)
         board.onLine?("from the board, late")
-        chooser.send("to the simulator")
-        eventually("the simulator's line, and not the board's") { lines.all == ["from the board", "to the simulator"] }
-        XCTAssertFalse(board.lines.contains("to the simulator"))
-
-        simulator.stop()
-        eventually("back on its board when the simulator stops", timeout: 3 * DeviceChooser.watchEvery) { chooser.choice == .board }
-        XCTAssertFalse(chooser.simulatorIsThere())
-        XCTAssertEqual(choices.all, ["simulator", "board"], "whoever shows the choice hears both changes")
+        window.onLine?("from the window")
+        XCTAssertEqual(lines.all, ["from the board", "from the window"], "the window's line, and not the board's")
+        XCTAssertEqual(ups.all, ["up", "down", "up"], "the board's link dropped, then the window's came up")
+        chooser.send("to the window")
+        XCTAssertTrue(window.lines.contains("to the window"))
+        XCTAssertFalse(board.lines.contains("to the window"))
+        chooser.choose(.board)
+        XCTAssertEqual(chooser.choice, .board)
+        XCTAssertEqual(choices.all, ["simulator", "board"])
         chooser.send("to the board")
         XCTAssertTrue(board.lines.contains("to the board"))
         chooser.stop()
     }
 
-    /// Chosen to stay before it starts (`make dev SIM=1`, a demo with no
-    /// board): the board is never started, so Bluetooth is never used, and
-    /// when the simulator stops Boop waits for it rather than going back.
-    func testASimulatorChosenToStayIsWaitedFor() throws {
-        let path = "/tmp/boop-test-stay-\(getpid()).sock"
-        let board = FakeTransport()
-        let chooser = DeviceChooser(board: board, simulatorSocket: path)
-        XCTAssertFalse(DeviceChooser.simulatorRuns(at: path))
-        let simulator = try XCTUnwrap(EchoSocket(path))
-        XCTAssertTrue(DeviceChooser.simulatorRuns(at: path))
-        chooser.choose(.simulator, stay: true)
-        let lines = Lines(), ups = Lines()
-        chooser.start(onLine: { lines.add($0) }, onConnection: { ups.add($0 ? "up" : "down") })
-        XCTAssertNil(board.onLine, "the board is never started")
-        eventually("the simulator's link came up") { ups.all == ["up"] }
-        chooser.send("to the simulator")
-        eventually("the simulator's line") { lines.all == ["to the simulator"] }
-        simulator.stop()
-        Thread.sleep(forTimeInterval: 2.5 * DeviceChooser.watchEvery)
-        XCTAssertEqual(chooser.choice, .simulator, "still on the simulator, waiting for it")
-        XCTAssertNil(board.onLine)
-        chooser.stop()
-    }
-
-    /// A simulator of the app's own (the internal build's window): chosen,
-    /// its link is made then and started, and the board's let go; it's
-    /// there to choose whenever the app says so.
-    func testASimulatorOfTheAppsOwnIsMadeWhenChosen() {
-        let board = FakeTransport(), made = Lines()
-        let window = FakeTransport()
-        window.name = "simulator"
-        let chooser = DeviceChooser(board: board, simulator: { made.add("made"); return window }, isThere: { true })
-        XCTAssertTrue(chooser.simulatorIsThere())
+    /// Chosen before it starts (the app kept the simulator as Boop's
+    /// body): the board is never started, so Bluetooth is never used.
+    func testTheSimulatorChosenBeforeTheStartLeavesTheBoardAlone() {
+        let board = FakeTransport(), window = FakeTransport()
+        let chooser = DeviceChooser(board: board, simulator: { window })
+        chooser.choose(.simulator)
         chooser.start(onLine: { _ in }, onConnection: { _ in })
-        XCTAssertNotNil(board.onLine, "on the board until it's chosen")
-        XCTAssertEqual(made.all, [], "made only when it's chosen")
-        chooser.choose(.simulator, stay: true)
-        XCTAssertEqual(made.all, ["made"])
-        XCTAssertNotNil(window.onLine, "the window's link is started")
-        XCTAssertEqual(chooser.name, "simulator")
-        chooser.send("to the window")
-        XCTAssertTrue(window.lines.contains("to the window"))
-        XCTAssertFalse(board.lines.contains("to the window"))
+        XCTAssertNil(board.onLine, "the board is never started")
+        XCTAssertNotNil(window.onLine)
         chooser.stop()
-    }
-
-    func testASocketThatIsNotThereIsNoSimulator() {
-        XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: "/tmp/boop-test-no-such-\(getpid()).sock").simulatorIsThere())
-        // A plain file of that name isn't one either.
-        let file = "/tmp/boop-test-file-\(getpid()).sock"
-        FileManager.default.createFile(atPath: file, contents: Data())
-        defer { unlink(file) }
-        XCTAssertFalse(DeviceChooser(board: FakeTransport(), simulatorSocket: file).simulatorIsThere())
     }
 
     func testLinkSettings() {
@@ -461,52 +430,6 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(LinkSetting("none"), LinkSetting.none)
         XCTAssertNil(LinkSetting("usb:"))
         XCTAssertNil(LinkSetting("wifi"))
-    }
-}
-
-/// A simulator's cable for a test: a Unix socket that takes one
-/// client and sends back whatever it's sent.
-final class EchoSocket: @unchecked Sendable {
-    let path: String
-    let fd: Int32
-    let lock = NSLock()
-    var clients: [Int32] = []
-
-    init?(_ path: String) {
-        self.path = path
-        unlink(path)
-        fd = socket(AF_UNIX, SOCK_STREAM, 0)
-        var address = sockaddr_un()
-        address.sun_family = sa_family_t(AF_UNIX)
-        withUnsafeMutableBytes(of: &address.sun_path) { $0.copyBytes(from: Array(path.utf8)) }
-        let bound = withUnsafePointer(to: &address) {
-            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { Darwin.bind(fd, $0, socklen_t(MemoryLayout<sockaddr_un>.size)) }
-        }
-        guard bound == 0, listen(fd, 4) == 0 else { return nil }
-        let listener = fd
-        Thread.detachNewThread {
-            while true {
-                let client = accept(listener, nil, nil)
-                guard client >= 0 else { return }
-                self.lock.withLock { self.clients.append(client) }
-                Thread.detachNewThread {
-                    var buffer = [UInt8](repeating: 0, count: 4096)
-                    while true {
-                        let n = read(client, &buffer, buffer.count)
-                        guard n > 0 else { break }
-                        _ = write(client, buffer, n)
-                    }
-                    close(client)
-                }
-            }
-        }
-    }
-
-    /// The simulator stops: its cable goes, and whoever was on it is dropped.
-    func stop() {
-        close(fd)
-        unlink(path)
-        lock.withLock { clients }.forEach { shutdown($0, SHUT_RDWR) }
     }
 }
 

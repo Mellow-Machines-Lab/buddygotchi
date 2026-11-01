@@ -44,6 +44,9 @@ final class RuntimeTests: XCTestCase {
         return options
     }
 
+    /// Wednesday 21 October 2026, noon UTC: no holiday, no milestone.
+    nonisolated static let ordinaryDay: TimeInterval = 1_792_584_000
+
     func makeRuntime(_ transport: FakeTransport, brain: ScriptedBrain = .pipelineCheck,
                      readJevKey: @escaping @Sendable (() -> String?) -> String? = { _ in "k" }) throws -> Runtime {
         try Runtime(options(transport, brain: brain, readJevKey: readJevKey))
@@ -90,7 +93,7 @@ final class RuntimeTests: XCTestCase {
     func testEveryHelloGetsTheMoodItself() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
-        let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, busy: 0, vol: 6)
+        let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
         let gelHello = FakeTransport.hello.dropLast() + #","face":"gel"}"#
         runtime.home.sync {
             runtime.show(logical)
@@ -219,7 +222,7 @@ final class RuntimeTests: XCTestCase {
                     && $0.contains(#""mood":"excited""#)
             }
         }
-        XCTAssertEqual(AppSettings.load(from: dir).personality, .default)
+        XCTAssertEqual(AppSettings.load(from: dir).talk, .default)
     }
 
     /// The agents' work earns XP as it happens, which
@@ -250,21 +253,30 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6))
     }
 
-    /// The popover's status carries the diary's days, named on the wall
-    /// clock's day.
-    func testTheStatusCarriesTheDiarysDays() throws {
-        var options = try options(FakeTransport())
-        options.time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
-        options.wallClock = { 1_792_670_400_000 }  // 2026-10-22, noon UTC
-        try MemoryStore(directory: dir).appendDiary(day: "2026-10-21", line: "Wednesday. Fine.")
-        let runtime = try Runtime(options)
+    /// From the popover: a note forgotten is gone for good, a pinned one
+    /// stays pinned, and forgetting what Boop learned about you empties
+    /// You, Your work and Recently, while You and Boop stays. The status
+    /// carries the notes and Recently for the popover.
+    func testThePersonControlsTheWrittenMemory() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        let files = try MemoryStore(directory: dir)
+        try files.keep(WrittenMemory.parse(WrittenMemoryTests.file), day: "2026-10-31")
         var statuses: [Runtime.Status] = []  // on `home`
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        eventually("a status") { runtime.home.sync { !statuses.isEmpty } }
-        let status = runtime.home.sync { statuses.last }
-        XCTAssertEqual(status?.diary.map { "\($0.when): \($0.line)" }, ["Yesterday: Fine."])
+        runtime.forgetNote(12)
+        runtime.pinNote(3, true)
+        eventually("the note forgotten, the other pinned") {
+            let m = files.written()
+            return !m.notes.contains { $0.id == 12 } && m.notes.first { $0.id == 3 }?.pinned == true
+        }
+        runtime.forgetAboutYou()
+        eventually("only You and Boop left") {
+            let m = files.written()
+            return m.notes.allSatisfy { $0.section == .boop } && m.notes.count == 2 && m.recently.isEmpty
+        }
+        eventually("the status carries the notes") { runtime.home.sync { statuses.last?.notes.count == 2 } }
     }
 
     /// Why the link can't look for the device
@@ -507,7 +519,12 @@ final class RuntimeTests: XCTestCase {
     /// beckon holding up "Tap me!", waking, and a celebration.
     func testOnboardingHearsTapsTalkAndHooksAndGreetsOnTheBoard() throws {
         let transport = FakeTransport()
-        let runtime = try makeRuntime(transport)
+        // An ordinary day: on a holiday the hook, the day's first agent
+        // event, would add the day's own greeting.
+        var options = try options(transport)
+        let started = Date(), day = Self.ordinaryDay
+        options.wallClock = { Int64((day + Date().timeIntervalSince(started)) * 1000) }
+        let runtime = try Runtime(options)
         let taps = Lines(), agents = Lines(), heard = Lines()
         runtime.onTap = { button, _ in taps.add(button ? "button" : "screen") }
         runtime.onAgentHook = { agents.add($0) }
@@ -785,7 +802,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
                       "the fake device never connected: \(printed)")
         let p = try XCTUnwrap(debugLines().compactMap { $0["pass"] as? [String: Any] }.first)
-        XCTAssertTrue((p["state"] as? String)?.hasPrefix("HISTORY (") == true)
+        XCTAssertTrue(["HISTORY (", "CONTEXT ("].contains { (p["state"] as? String)?.hasPrefix($0) == true }, "the pass's own part")
         XCTAssertTrue((debugLines().first { $0["head"] != nil }?["head"] as? String)?.hasPrefix("You are the mind of \(creature)") == true)
         XCTAssertEqual(p["questions"] as? [String], askedKeys)
 
@@ -1063,7 +1080,7 @@ final class RuntimeTests: XCTestCase {
     /// brain keeps the mood, whose options would change with it), every
     /// line sent to the device verbatim with who sent it (`brain` for the
     /// brain's reactions, `rule` for the rest), and a status line whenever
-    /// the mood, personality, brain, sessions or connection change.
+    /// the mood, brain, sessions or connection change.
     func testDebugModeWritesTheDashboardsLines() throws {
         let transport = FakeTransport()
         var options = try options(transport)
@@ -1084,7 +1101,7 @@ final class RuntimeTests: XCTestCase {
         let questions = try XCTUnwrap(lines.first?["questions"] as? [[String: Any]], "the questions come first")
         XCTAssertEqual(lines.filter { $0["questions"] != nil }.count, 1, "once: nothing changed them")
         XCTAssertEqual((questions[0]["options"] as? [[String: Any]])?.compactMap { $0["name"] as? String },
-                       ["calm"] + MoodGraph.moves["calm"]!.all, "staying calm, then calm's moves")
+                       ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying calm, then calm's moves")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
         XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.")
@@ -1112,10 +1129,12 @@ final class RuntimeTests: XCTestCase {
         }
         XCTAssertTrue(sentBy.contains { $0.by == "brain" }, "the brain's reaction")
 
-        // Status: only the facts the device lines don't carry, and only changes.
+        // Status: only the facts the device lines and CONTEXT don't carry,
+        // and only changes; the mood's reason once something moved it.
         let statuses = lines.compactMap { $0["status"] as? [String: Any] }
         XCTAssertFalse(statuses.isEmpty)
-        XCTAssertEqual(Set(statuses[0].keys), ["personality", "brain", "sessions", "connected", "stage"], "a state carries the mood")
+        XCTAssertEqual(Set(statuses[0].keys), ["brain", "sessions", "connected", "stage", "xp", "today_xp"], "a state carries the mood")
+        XCTAssertEqual(statuses[0]["today_xp"] as? [String: Int], ["work": 0, "work_cap": 60, "care": 0, "care_cap": 60])
         XCTAssertEqual(statuses.last?["brain"] as? String, "scripted")
         XCTAssertEqual(statuses.last?["connected"] as? Bool, true)
         let sessions = try XCTUnwrap(statuses.last?["sessions"] as? [[String: String]])
@@ -1231,7 +1250,74 @@ final class RuntimeTests: XCTestCase {
         let passes = lines.compactMap { $0["pass"] as? [String: Any] }
         XCTAssertNil(passes[0]["options"], "the launch's options, calm's")
         let moved = try XCTUnwrap(passes.last?["options"] as? [String: [String]])
-        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.moves["happy"]!.all])
+        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours["happy"]!.all])
+    }
+
+    /// `{"dev":"close_day"}`, the dashboard's `d`: Boop's day closes now,
+    /// as at 5:00, with its dream logged at once for the next coming back
+    /// or touch to tell, and the day opened afresh; a day dreamed of
+    /// already keeps its dream. The status line carries what CONTEXT
+    /// lacks: the XP, today's from each pool against its cap
+    /// (`Growth.workPerDay`, `carePerDay`).
+    func testClosingTheDayNowDreams() throws {
+        let transport = FakeTransport()
+        var options = try options(transport, readJevKey: { _ in nil })
+        options.debug = true
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        dev(#"{"dev":"tap"}"#)
+        eventually("the tap read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
+        let today = try XCTUnwrap(runtime.home.sync { runtime.remembers?.runner.day })
+        let dreams = { self.debugLines().compactMap { $0["event"] as? [String: Any] }.filter { $0["kind"] as? String == "dream" } }
+
+        dev(#"{"dev":"close_day"}"#)
+        eventually("the dream, logged at once") { dreams().count == 1 }
+        XCTAssertEqual((dreams().first?["data"] as? [String: Any])?["day"] as? String, today)
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.dream?.day }, today)
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.runner.day }, today, "the same day, opened afresh")
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.today?.yours }, 0)
+        dev(#"{"dev":"tap"}"#)
+        eventually("the next touch tells it") {
+            self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == today }
+        }
+        XCTAssertTrue(runtime.home.sync { runtime.remembers?.dream?.told } == true)
+        dev(#"{"dev":"close_day"}"#)
+        dev(#"{"dev":"tap"}"#)
+        eventually("the dev lines after it read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
+        XCTAssertEqual(dreams().count, 1, "a day dreamed of keeps its dream")
+
+        let status = try XCTUnwrap(debugLines().compactMap { $0["status"] as? [String: Any] }.last)
+        XCTAssertNotNil(status["xp"] as? Int)
+        XCTAssertEqual((status["today_xp"] as? [String: Int])?["work_cap"], Growth.workPerDay)
+        XCTAssertEqual((status["today_xp"] as? [String: Int])?["care_cap"], Growth.carePerDay)
+        XCTAssertEqual(Growth.workPerDay, 60, "the dashboard shows each pool against 60")
+        XCTAssertEqual(Growth.carePerDay, 60)
+    }
+
+    /// DebugLog.status: the stage, the XP, today's XP from each pool
+    /// against its cap and the mood's reason, which the dashboard shows
+    /// beside CONTEXT; a line only when something changed.
+    func testTheStatusLineCarriesWhatContextLacks() throws {
+        var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(base: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
+                                    sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234))
+        status.moodReason = Reason(cause: "You came back after 26 hours away.")
+        var today = MemoryReader.Tallies()
+        today.workXP = 12
+        today.careXP = 6
+        var last: String?
+        let line = try XCTUnwrap(DebugLog.status(status, today: today, at: 5, last: &last))
+        let o = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any])
+        let fields = try XCTUnwrap(o["status"] as? [String: Any])
+        XCTAssertEqual(fields["mood_reason"] as? String, "Pip is lonely. You came back after 26 hours away.")
+        XCTAssertEqual(fields["xp"] as? Int, 1234)
+        XCTAssertEqual(fields["stage"] as? Int, 3)
+        XCTAssertEqual(fields["today_xp"] as? [String: Int], ["work": 12, "work_cap": 60, "care": 6, "care_cap": 60])
+        XCTAssertNil(DebugLog.status(status, today: today, at: 6, last: &last), "unchanged")
+        today.workXP = 13
+        XCTAssertNotNil(DebugLog.status(status, today: today, at: 7, last: &last), "XP earned")
     }
 
     /// BOOT held and let go turns the mic on and off; with
@@ -1255,7 +1341,7 @@ final class RuntimeTests: XCTestCase {
             eventually("listening") { runtime.home.sync { runtime.core.listening?.by == .device } }
             transport.onLine?(#"{"t":"ev","kind":"talk_off"}"#)
             eventually("heard nothing") { transport.dos.contains { $0.hasSuffix(stop) } }
-            XCTAssertEqual(runtime.home.sync { self.recorded().filter { $0.type == .talk }.count }, 0)
+            XCTAssertEqual(runtime.home.sync { self.recorded().filter { $0.type == .said }.count }, 0)
             func listens() -> [String] {
                 runtime.home.sync { self.recorded().filter { $0.type == .listen }.map { $0.kind + " " + ($0["why"]?.string ?? "") } }
             }
@@ -1277,7 +1363,7 @@ final class RuntimeTests: XCTestCase {
                 XCTAssertEqual(after.count, 1, "\(after)")
                 XCTAssertTrue(after.first?.hasSuffix(stop) == true, "no reply: listening ends")
             }
-            let talk = try XCTUnwrap(runtime.home.sync { self.recorded().last { $0.type == .talk } })
+            let talk = try XCTUnwrap(runtime.home.sync { self.recorded().last { $0.type == .said } })
             XCTAssertEqual(talk["words"], "are the tests passing?")
             XCTAssertEqual(listens().count, 3, "listening had ended: nothing more to record")
 
@@ -1377,32 +1463,30 @@ final class RuntimeTests: XCTestCase {
         try XCTAssertThrowsError(try Runtime(options)) { XCTAssertEqual("\($0)", "\(Runtime.OpenError.notSetUp)") }
     }
 
-    /// characters/boop/steering/ has the guide, a file per mood, the personality, a talk file
-    /// for each level, the diary's lines, the signs' captions and the replies' signs. The static parts stay within their budgets, and the
-    /// personality's settings, with each talk's laid over them, are the ones below.
+    /// characters/boop/steering/ has the guide, a file per mood, the personality, the dream's
+    /// signs, the signs' captions, the replies' signs and the asks; no talk files, the Talk setting
+    /// being code's. The static parts stay within their budgets, and the personality's settings,
+    /// with each talk's pace laid over them (`Talk.pace`), are the ones below.
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
-        XCTAssertEqual(files, (["diary.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
-                               + ["personality/boop.md", "replies.md", "signs.md",
-                                  "talk/chatty.md", "talk/normal.md", "talk/quiet.md"]).sorted())
+        XCTAssertEqual(files, (["asks.md", "dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
+                               + ["personality.md", "replies.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
-        XCTAssertGreaterThanOrEqual(Self.steering.diary.count, 10, "a line for every kind of day")
-        let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000, toolUses: .notable)
-        XCTAssertEqual(Self.steering.personality(.default).rules, boop)
-        XCTAssertEqual(Self.steering.rules(.default, talk: .normal), boop, "normal keeps the personality's pace")
+        XCTAssertGreaterThanOrEqual(Self.steering.dreams.count, 10, "a sign for every kind of day")
+        let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000)
+        XCTAssertEqual(Self.steering.personality.rules, boop)
+        XCTAssertEqual(Self.steering.rules(talk: .normal), boop, "normal keeps the personality's pace")
         // Quiet looks in less often, chatty more; neither hears every tool use.
-        XCTAssertEqual(Self.steering.rules(.default, talk: .quiet),
-                       Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000, toolUses: .notable))
-        XCTAssertEqual(Self.steering.rules(.default, talk: .chatty),
-                       Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000, toolUses: .notable))
-        XCTAssertTrue(Self.steering.talk(.quiet)?.hasPrefix("TALK\nQuiet") ?? false)
-        XCTAssertTrue(Self.steering.talks)
+        XCTAssertEqual(Self.steering.rules(talk: .quiet),
+                       Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000))
+        XCTAssertEqual(Self.steering.rules(talk: .chatty),
+                       Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000))
         XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
-        XCTAssertTrue(Self.steering.personality(.default).text.hasPrefix("PERSONALITY\n"))
+        XCTAssertTrue(Self.steering.personality.text.hasPrefix("PERSONALITY\n"))
         XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
     }
 
@@ -1413,7 +1497,6 @@ final class RuntimeTests: XCTestCase {
         let old = #"{"mode":"calm","brain":"jev","classifier":"rules","writer":"none","volume":3,"focus":true,"away":true,"awaySince":"2026-09-20","finished":148,"projects":["jetpack"]}"#
         try Data(old.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
         let settings = AppSettings.load(from: dir)
-        XCTAssertEqual(settings.personality, .default)
         XCTAssertEqual(settings.volume, 3)
         try settings.save(to: dir)
         let text = try String(contentsOf: dir.appendingPathComponent(AppSettings.file), encoding: .utf8)
@@ -1446,18 +1529,16 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// The personality and how much it says are saved; a missing or
-    /// unknown one is the default. Chatter, the debugging personality
-    /// before Talk, comes back as boop, chatty.
-    func testSettingsKeepThePersonalityAndTalk() throws {
-        try requirePack("boop")  // its personality and its steering
+    /// How much it says is saved; a missing or unknown one is the default.
+    /// Chatter, the debugging personality before Talk, comes back chatty;
+    /// a saved personality is ignored, each pack having one.
+    func testSettingsKeepTheTalk() throws {
+        try requirePack("boop")  // its steering
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let cases: [(String, Personality, Talk)] = [(#"{"personality":"chatter"}"#, .default, .chatty),
-                                                    (#"{"personality":"loud","talk":"loud"}"#, .default, .normal),
-                                                    (#"{"talk":"quiet"}"#, .default, .quiet), (#"{}"#, .default, .normal)]
-        for (json, p, t) in cases {
+        let cases: [(String, Talk)] = [(#"{"personality":"chatter"}"#, .chatty), (#"{"personality":"loud","talk":"loud"}"#, .normal),
+                                       (#"{"talk":"quiet"}"#, .quiet), (#"{}"#, .normal)]
+        for (json, t) in cases {
             try Data(json.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
-            XCTAssertEqual(AppSettings.load(from: dir).personality, p, json)
             XCTAssertEqual(AppSettings.load(from: dir).talk, t, json)
         }
         var saved = AppSettings()
@@ -1469,13 +1550,13 @@ final class RuntimeTests: XCTestCase {
     /// How much it says takes effect from the next event, its check-ins'
     /// pace included, and is saved.
     func testANewTalkTakesEffectAtOnce() throws {
-        try requirePack("boop")  // its talk files
+        try requirePack("boop")  // its personality's pace
         let runtime = try makeRuntime(FakeTransport())
         var statuses: [Runtime.Status] = []  // on `home`
         runtime.onChange = { statuses.append($0) }
         try runtime.start()
         defer { runtime.stop() }
-        eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal && statuses.last?.talks == true } }
+        eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal } }
         runtime.setTalk(.chatty)
         eventually("chatty now") { runtime.home.sync { statuses.last?.talk == .chatty } }
         XCTAssertEqual(runtime.home.sync { runtime.view.rules.workBeatMs }, 120_000...180_000)
@@ -1533,7 +1614,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(poke.type, .poke)
         XCTAssertFalse(poke.wakesBrain, "it doesn't wake the brain")
         transport.onLine?(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":1}}"#)  // a finish the app didn't send: a poke
-        eventually("a poke") { recorded().contains { $0.actionName == Core.wiggle } }
+        eventually("a poke") { recorded().contains { $0.actionName == Core.pokeAnswer } }
         XCTAssertEqual(opened.all.count, 1)
     }
 
@@ -1875,13 +1956,13 @@ final class RuntimeTests: XCTestCase {
         device(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
         eventually("the finished thread opened") { opened.all == ["claude://code/continue?session=local_7db5"] }
         device(FakeTransport.ended(id, "done"))
-        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } })
+        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.pokeAnswer } })
         device(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
         eventually("lingering, it opens again") { opened.all.count == 2 }
-        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } })
+        XCTAssertFalse(runtime.home.sync { self.recorded().contains { $0.actionName == Core.pokeAnswer } })
         device(#"{"t":"ev","kind":"tap","did":"poked"}"#)
         XCTAssertEqual(opened.all.count, 2, "over")
-        XCTAssertTrue(runtime.home.sync { self.recorded().contains { $0.actionName == Core.wiggle } }, "a poke")
+        XCTAssertTrue(runtime.home.sync { self.recorded().contains { $0.actionName == Core.pokeAnswer } }, "a poke")
     }
 
     /// How an action's `end` event says it went.
@@ -2040,7 +2121,7 @@ final class RuntimeTests: XCTestCase {
     func testHistoryClosesWithTheMoodsTime() throws {
         let clock = VirtualClock(1_790_000_000_000)
         let pipeline = Pipeline(core: Core(config: .init()), view: TranscriptView(), clock: Harness.Clock(now: { clock.now }))
-        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, personality: { .default }, queue: { _, _ in })
+        let (harness, mood) = Runtime.harness(pipeline: pipeline, steering: Self.steering, queue: { _, _ in })
         func log() -> LogView { harness.log.view(now: clock.now) }
         func closing() -> String? { MoodOutput.sinceLine(mood, log(), at: clock.now) }
         func change(_ to: String) { harness.force(mood, by: Runtime.forcedBy) { MoodOutput.change(mood, to: to, log: log()) } }
@@ -2052,7 +2133,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(closing(), "\(creature) has been grumpy for 2 min.", "whole minutes, as HISTORY's")
         let relaunched = Pipeline(core: Core(config: .init()), view: TranscriptView(), transcript: harness.log,
                                   clock: Harness.Clock(now: { clock.now }))
-        let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, personality: { .default }, queue: { _, _ in })
+        let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, queue: { _, _ in })
         XCTAssertEqual(MoodOutput.sinceLine(again, log(), at: clock.now), "\(creature) has been grumpy for 2 min.",
                        "the mood and its time are the log's, so a relaunch keeps both")
         change("happy")
@@ -2197,7 +2278,7 @@ final class RuntimeTests: XCTestCase {
         }
         let sessions = runtime.home.sync { Set(runtime.harness.log.events.compactMap(\.session)) }
         XCTAssertEqual(sessions, ["demo", "demo-docs"])
-        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).busy }, 1, "the first still works")
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).working }, 1, "the first still works")
     }
 
     /// characters/DEMOS.md, with no agent: a todo sends the list's counts;

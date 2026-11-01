@@ -1,21 +1,22 @@
 // The studio's logic with no browser (README.md, "Checking it"): board.js's
-// change measure and its summary, held to the rule measure.py's test is
-// (internal/tools/fluid/tests/changed.json), and how it asks the board for
-// each state; and serve.cjs's review verdicts, which charactergen's review
-// check takes, its files in part and the review clips it saves, in a copy
-// of it beside a pack of its own; and markdown.js's rendering of a reading.
+// change measure and its summary, held to the rule changed.json pins,
+// and how it asks the board for
+// each state; and the studio's server's (simulator/web/serve.py) review
+// verdicts, which charactergen's review check takes, its files in part and
+// the review clips it saves, over a pack of its own; and markdown.js's
+// rendering of a reading.
 // Run: node --test
 // characters/studio/tests/
 const assert=require('node:assert/strict'),{test}=require('node:test'),fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {spawn,execFileSync}=require('node:child_process');
 const studio=path.resolve(__dirname,'..'),repo=path.resolve(studio,'../..');
 const {wiring,changed,summary}=require(path.join(studio,'board.js'));
-const pinned=JSON.parse(fs.readFileSync(path.join(repo,'internal/tools/fluid/tests/changed.json'),'utf8'));
+const pinned=JSON.parse(fs.readFileSync(path.join(__dirname,'changed.json'),'utf8'));
 // charactergen's, as it writes them for the page (packs.js): the acts the board draws while working.
 const python=code=>JSON.parse(execFileSync('python3',['-c',`import json,sys;sys.path.insert(0,${JSON.stringify(path.join(repo,'characters'))});import charactergen as gen;${code}`],{encoding:'utf8'}));
 const acts=python('print(json.dumps(gen.firmware_acts()))');
 
-test('a pixel changed when its difference\'s luma is over 24 levels, and a summary, as measure.py has them', () => {
+test('a pixel changed when its difference\'s luma is over 24 levels, and a summary, as changed.json pins them', () => {
   const {pairs,summaries}=pinned;
   const rgba=side=>Uint8ClampedArray.from(pairs.flatMap(p=>[...p[side],255]));
   for(const [a,b,counts] of pairs)assert.equal(changed(Uint8ClampedArray.from([...a,255]),Uint8ClampedArray.from([...b,255])),Number(counts),`${a} → ${b}`);
@@ -23,10 +24,10 @@ test('a pixel changed when its difference\'s luma is over 24 levels, and a summa
   for(const {changes,...expected} of summaries)assert.deepEqual(summary(changes),expected,`${changes}: the median, the first largest and their ratio`);
 });
 
-test('Rank\'s everyday transitions are transitions.jsonl\'s, by its shots\' names, and the board is asked for each', async () => {
+test('Rank\'s everyday transitions are everyday.jsonl\'s, by its shots\' names, and the board is asked for each', async () => {
   const {TAP}=await import(path.join(repo,'simulator/web/boop-simulator.js'));
   const wire=wiring({acts,tap:TAP}),everyday=python('print(json.dumps(gen.everyday()))');
-  const shots=fs.readFileSync(path.join(repo,'internal/tools/fluid/transitions.jsonl'),'utf8').match(/"shot": "\d+-[a-z-]+"/g)
+  const shots=fs.readFileSync(path.join(studio,'everyday.jsonl'),'utf8').match(/"shot": "\d+-[a-z-]+"/g)
     .map(s=>s.slice(s.indexOf('-')+1,-1).replace(/-/g,' '));
   assert.deepEqual(everyday.map(t=>t.name),[...new Set(shots)].slice(1),'each run of shots after the first');
   const facts=JSON.parse(fs.readFileSync(path.join(studio,'states.json'),'utf8')).facts;
@@ -56,7 +57,7 @@ test('the board is asked for each state as the Mac asks for it', async () => {
   assert.deepEqual(asked({mood:'calm',state:'notice'},over),[[0,'do','notice',{mood:'calm'}]],
     'a transition\'s reaction plays over its start\'s look, its state left as it was, in its own mood');
   assert.deepEqual(asked({mood:'excited',state:'task_complete'},{base:'working',busy:1}),[[0,'do','task_complete',{outcome:'success',mood:'excited'}]],
-    'a finish over working in its own mood, as internal/tools/fluid/transitions.jsonl asks for one');
+    'a finish over working in its own mood, as everyday.jsonl asks for one');
   assert.equal(wire({mood:'calm',state:'poked'},over).steps[0][1].base,'asleep','an input over its start\'s look');
   assert.deepEqual(wire({mood:'calm',state:'tap_spam'}).steps.slice(1).map(([ms,m])=>[ms,m.t]),[[0,'dbg.touch'],[200,'dbg.touch'],[400,'dbg.touch']],'the third tap within 3 s is tap spam');
   assert.deepEqual([wire({mood:'calm',state:'poked'}).steps[1][1].x,wire({mood:'calm',state:'poked'}).steps[1][1].y],TAP,'a tap where the simulator taps');
@@ -64,16 +65,24 @@ test('the board is asked for each state as the Mac asks for it', async () => {
   assert.equal(wire({mood:'calm',state:'no_app'}).after,30000,'no app: 30 s with no state (linkkit\'s kHostGoneMs)');
 });
 
-test('serve.cjs saves a verdict charactergen takes, only from its own page, and serves files in part', async t => {
+// The studio's server over `characters`, a folder of packs of its own, so
+// nothing lands in the real characters/: a page with nothing built, and its
+// USB socket in the folder beside it.
+const serve=(characters,port,...args)=>{
+  const dist=path.join(path.dirname(characters),'dist');fs.mkdirSync(dist,{recursive:true});fs.writeFileSync(path.join(dist,'boop-sim.wasm'),'');
+  return spawn('python3',[path.join(repo,'simulator','web','serve.py'),'--port',String(port),'--characters',characters,'--dist',dist,
+    '--socket',path.join(path.dirname(characters),`usb-${port}.sock`),'--voice',os.devnull,...args],{stdio:'ignore'});
+};
+
+test('the studio\'s server saves a verdict charactergen takes, only from its own page, and serves files in part', async t => {
   // A copy of the server beside a pack of its own, so nothing lands in the real characters/.
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'studio-')),pack=path.join(dir,'characters','pal');
-  fs.mkdirSync(path.join(dir,'characters','studio'),{recursive:true});fs.mkdirSync(path.join(pack,'review'),{recursive:true});
-  fs.copyFileSync(path.join(studio,'serve.cjs'),path.join(dir,'characters','studio','serve.cjs'));
+  fs.mkdirSync(path.join(pack,'review'),{recursive:true});
   fs.writeFileSync(path.join(pack,'character.json'),'{}');
   fs.writeFileSync(path.join(pack,'review','queue.json'),JSON.stringify([{id:'perk',title:'Notice',what:'A perk.',status:'in review'}]));
   fs.writeFileSync(path.join(pack,'clip.webm'),Buffer.from([0,1,2,3,4,5,6,7,8,9]));
   const port=20000+Math.floor(Math.random()*20000),url=`http://127.0.0.1:${port}`;
-  const server=spawn(process.execPath,[path.join(dir,'characters','studio','serve.cjs'),'--port',String(port)],{stdio:'ignore'});
+  const server=serve(path.join(dir,'characters'),port);
   t.after(()=>{server.kill();fs.rmSync(dir,{recursive:true,force:true});});
   for(let i=0;i<100;i++){try{await fetch(url);break;}catch{await new Promise(r=>setTimeout(r,50));}}
   const post=(body,headers={})=>fetch(`${url}/review`,{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json',Origin:url,...headers}});
@@ -99,9 +108,9 @@ test('serve.cjs saves a verdict charactergen takes, only from its own page, and 
   assert.equal(fs.readFileSync(path.join(pack,'review','notes.jsonl'),'utf8').trim().split('\n').length,2,'none of those saved');
   assert.equal(queue.length,1);
   // A file whole, and the parts a video seeking asks for.
-  const get=async range=>{const got=await fetch(`${url}/pal/clip.webm`,{headers:range?{Range:range}:{}});
+  const get=async range=>{const got=await fetch(`${url}/characters/pal/clip.webm`,{headers:range?{Range:range}:{}});
     return [got.status,got.headers.get('content-range'),[...new Uint8Array(await got.arrayBuffer())]];};
-  const whole=await fetch(`${url}/pal/clip.webm`);
+  const whole=await fetch(`${url}/characters/pal/clip.webm`);
   assert.deepEqual([whole.status,whole.headers.get('accept-ranges'),whole.headers.get('content-type')],[200,'bytes','video/webm']);
   assert.deepEqual(await get('bytes=2-5'),[206,'bytes 2-5/10',[2,3,4,5]]);
   assert.deepEqual(await get('bytes=8-'),[206,'bytes 8-9/10',[8,9]]);
@@ -115,19 +124,18 @@ test('serve.cjs saves a verdict charactergen takes, only from its own page, and 
 // asked; then only from its own page with its token, a WebM by its header,
 // named by a pack's `captures`, at most 8 MiB, each a new file, and an
 // upload gone quiet for 15 s closed.
-test('serve.cjs saves only the review clips a pack names, from its own page, never over one', async t => {
+test('the studio\'s server saves only the review clips a pack names, from its own page, never over one', async t => {
   const http=require('node:http');
   const webm=Buffer.from('GkXfo59ChoEBQveBAULygQRC84EIQoKEd2VibUKHgQJChYECGFOAZwEAAAAAAAHzEU2bdLpNu4tTq4QVSalmU6yBoU27i1OrhBZUrmtTrIHWTbuMU6uEElTDZ1OsggEyTbuMU6uEHFO7a1OsggHd7AEAAAAAAABZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVSalmsCrXsYMPQkBNgIxMYXZmNjMuMS4xMDFXQYxMYXZmNjMuMS4xMDFEiYhAj0AAAAAAABZUrmvXrgEAAAAAAABO14EBc8WIUyNHVZLGuuucgQAitZyDdW5kiIEAhoVWX1ZQOIOBASPjg4Q7msoA4JCwgQK6gQKagQJVsIRVuYEBVe6BAOwBAAAAAAAAAgAAElTDZ/pzc59jwIBnyJlFo4dFTkNPREVSRIeMTGF2ZjYzLjEuMTAxc3PVY8CLY8WIUyNHVZLGuutnyKBFo4dFTkNPREVSRIeTTGF2YzYzLjEuMTAxIGxpYnZweGfIoUWjiERVUkFUSU9ORIeTMDA6MDA6MDEuMDAwMDAwMDAwAB9DtnWn54EAo6KBAACAEAIAnQEqAgACAAvHCIWFiJmEiD+CAAwNYAD+5rUAHFO7a5G7j7OBALeK94EB8YIBsfCBAw==','base64');
   const max=8*1024*1024;
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'studio-')),pack=path.join(dir,'characters','pal'),clips=path.join(dir,'clips');
-  fs.mkdirSync(path.join(dir,'characters','studio'),{recursive:true});fs.mkdirSync(pack);
-  fs.copyFileSync(path.join(studio,'serve.cjs'),path.join(dir,'characters','studio','serve.cjs'));
+  fs.mkdirSync(pack,{recursive:true});
   fs.writeFileSync(path.join(pack,'character.json'),JSON.stringify({studio:[{id:'board-gel',board:'gel',captures:'sets.json'}]}));
   fs.writeFileSync(path.join(pack,'sets.json'),JSON.stringify({cases:['happy.working','sad.working','grumpy.terminal','frightened.asleep'].map(id=>({id}))}));
   const servers=[];
   t.after(()=>{for(const s of servers)s.kill();fs.rmSync(dir,{recursive:true,force:true});});
   const start=async(...args)=>{
-    const port=20000+Math.floor(Math.random()*20000),s=spawn(process.execPath,[path.join(dir,'characters','studio','serve.cjs'),'--port',String(port),...args],{stdio:'ignore'});
+    const port=20000+Math.floor(Math.random()*20000),s=serve(path.join(dir,'characters'),port,...args);
     servers.push(s);
     for(let i=0;i<100;i++){try{await fetch(`http://127.0.0.1:${port}/`);break;}catch{await new Promise(r=>setTimeout(r,50));}}
     return port;

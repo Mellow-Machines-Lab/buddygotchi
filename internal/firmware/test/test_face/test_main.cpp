@@ -11,6 +11,8 @@
 #include "render/font.h"
 #include "render/palette.h"
 #include "render/maths.h"
+#include "faces.h"
+#include "render/pixel/anim.h"
 #include "render/pixel/scene.h"
 #include "render/screens.h"
 #include "render/pixel/needs_you.h"
@@ -59,24 +61,28 @@ static void test_palette_ramps_run_from_black_to_the_ink() {
   TEST_ASSERT_EQUAL_HEX16(rgb565(kEyeRgb), paletteAt(inkAt(kInkEye, kLevels)));
   TEST_ASSERT_EQUAL_HEX16(rgb565(kAmberRgb), paletteAt(inkAt(kInkAmber, kLevels)));
   TEST_ASSERT_EQUAL_INT(kBlack, inkAt(kInkEye, 0));
-  TEST_ASSERT_TRUE(kPaletteUsed <= 256);
+  TEST_ASSERT_TRUE(kFaceColorBase < kSage);
   TEST_ASSERT_EQUAL_HEX16(rgb565(255, 0, 0), paletteAt(kRed));  // the bring-up pattern's colours stay
+  // The pixel face's designs' colours are its own: it writes them in as it's made.
+  render::pixel::PixelFace face;
+  const auto& first = render::faces::kColors[1];
+  TEST_ASSERT_EQUAL_HEX16(rgb565(first.r, first.g, first.b), paletteAt(kFaceColorBase));
+  TEST_ASSERT_EQUAL_HEX16(rgb565(kSageRgb), paletteAt(kSage));
 }
 
 // The animations, each by its design's state's name, and
 // nothing else: the brain's finish (task_complete, reply_ready), wake_up
-// and notice, the rules' reactions (starting, stopped, error, helper_return), a tap's
+// and notice, the rules' reaction (starting), a tap's
 // (poked, tap_spam), the board's own to a gesture (gesture) and listening.
 // The older names ("cheer", "wiggle") are gone
 // with the reaction message. Each plays its own design, and every design
 // has a loop.
 static void test_every_anim_has_a_name_and_ends() {
-  const char* names[] = {"task_complete", "reply_ready", "starting",  "stopped", "error",
-                         "helper_return", "poked",       "tap_spam",  "wake_up", "listening", "gesture",
-                         "notice"};
+  const char* names[] = {"task_complete", "reply_ready", "starting", "poked",  "tap_spam",
+                         "wake_up",       "listening",   "gesture",  "notice"};
   int reactions = 0;
   for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isReaction(SceneState(i));
-  TEST_ASSERT_EQUAL_INT(12, reactions);
+  TEST_ASSERT_EQUAL_INT(9, reactions);
   for (const char* name : names) {
     const SceneState a = reactionFromName(name);
     TEST_ASSERT_TRUE_MESSAGE(isReaction(a), name);
@@ -121,15 +127,14 @@ static void test_every_mood_has_a_name() {
   TEST_ASSERT_TRUE(moodFromName(nullptr) == Mood::kHappy);
 }
 
-// The designs' 25 states by name, in faces.h's order, the
+// The designs' 22 states by name, in faces.h's order, the
 // first seven keeping their numbers; a missing or unknown one is idle.
 static void test_every_state_has_a_name() {
-  TEST_ASSERT_EQUAL_INT(25, int(SceneState::kCount));
-  const char* names[] = {"idle",      "working",   "needs_you",  "task_complete", "asleep",  "no_app",
-                         "listening", "starting",  "planning",   "terminal",      "tool_use", "searching",
-                         "analyzing", "testing",   "delegating", "helper_return", "waiting", "reply_ready",
-                         "error",     "stopped",   "poked",      "tap_spam",      "wake_up", "gesture",
-                         "notice"};
+  TEST_ASSERT_EQUAL_INT(22, int(SceneState::kCount));
+  const char* names[] = {"idle",      "working",  "needs_you",  "task_complete", "asleep",      "no_app",
+                         "listening", "starting", "planning",   "terminal",      "tool_use",    "searching",
+                         "analyzing", "testing",  "delegating", "waiting",       "reply_ready", "poked",
+                         "tap_spam",  "wake_up",  "gesture",    "notice"};
   for (int i = 0; i < int(sizeof names / sizeof names[0]); ++i) {
     TEST_ASSERT_EQUAL_STRING(names[i], stateName(SceneState(i)));
     TEST_ASSERT_TRUE(stateFromName(names[i]) == SceneState(i));
@@ -302,7 +307,7 @@ static void test_the_bubble_takes_the_lane() {
         uint8_t v = with.at(x, y);
         amber += v == inkAt(kInkAmber, kLevels);
         eye += v == inkAt(kInkEye, kLevels);
-        TEST_ASSERT_TRUE(v < faces::kSceneBase);  // the design's colours are gone from the lane
+        TEST_ASSERT_TRUE(v < kFaceColorBase);  // the design's colours are gone from the lane
       }
     }
     TEST_ASSERT_TRUE(amber > 20);   // the word

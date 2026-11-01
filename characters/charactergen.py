@@ -8,16 +8,14 @@
     characters/charactergen.py --boards [PACK]
     characters/charactergen.py --sim-face [PACK]
 
---check checks a pack's character.json: its moods are exactly the
-universal ones (CHARACTER.md §5), and every move and default mood is
-one of them; what it uses from other packs is there (§6); its
-id and version fit the board's hello (§10); and its rig/ (§15): no
-unknown key, channel or name, and every value in its range. Without
-PACK, every pack in characters/.
+--check checks that a pack builds: its character.json has the moods and
+the startup mood moods.h needs, and an id and version that fit the board's hello (§10); and its rig/
+(§15) has no unknown key, channel or name, and every value in its range.
+Without PACK, every pack in characters/. Whether a pack plays, its moods
+and their graph included, is `boopdev check`'s, as the app loads it.
 
 --stage lays the chosen pack's files out in .character-build/ at the repo
-root for the builds to read (§2), with what it uses from other packs (§6)
-and two headers it makes for the firmware: moods.h from character.json,
+root for the builds to read (§2), and two headers it makes for the firmware: moods.h from character.json,
 the mood list in the pack's order with the board's startup mood, and
 rig_tables.h from rig/, the rig's tables. It checks the pack as --check
 does first. firmware/tools/pio.sh runs it before every PlatformIO build.
@@ -70,13 +68,11 @@ FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
 # The rig's channels, and the tags an occasion may need, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
 TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
-EVERYDAY = ROOT / "internal" / "tools" / "fluid" / "transitions.jsonl"
+EVERYDAY = ROOT / "characters" / "studio" / "everyday.jsonl"
 # What wakes the brain (the transcript view's wakes and quiet kinds), and
 # the personality settings the app reads, for the studio's behaviour map.
 WAKES = ROOT / "app" / "BoopKit" / "Core" / "TranscriptView.swift"
 SETTINGS = ROOT / "app" / "BoopKit" / "Core" / "Personality.swift"
-# The universal moods' one list, which the app's pack loader holds too.
-UNIVERSAL = ROOT / "app" / "BoopKit" / "Character" / "Moods.swift"
 
 
 def own_folder(folder: Path) -> Path:
@@ -115,7 +111,7 @@ def in_use() -> Path:
     """The pack the tools, tests and simulator read: one the environment
     chooses ($BOOP_CHARACTER or $CHARACTER), else the one last staged
     (.character-build/pack), else the chosen one. A pack that is the one
-    staged is read staged, with what it uses from other packs (§6). The
+    staged is read staged. The
     Swift and C++ code keeps the same rule by reading the environment and
     the pointer."""
     last = staged()
@@ -129,44 +125,11 @@ def camel(mood: str) -> str:
     return "k" + "".join(part.capitalize() for part in mood.split("_"))
 
 
-def universal_moods(source: Path = UNIVERSAL) -> list[str]:
-    """Every pack's moods: CharacterPack.universalMoods, one literal of
-    quoted names in the app's source."""
-    match = re.search(r"universalMoods = \[([^\]]*)\]", source.read_text())
-    if not match:
-        raise SystemExit(f"charactergen: no universalMoods in {source}")
-    return re.findall(r'"([a-z_]+)"', match.group(1))
-
-
-def mood_problems(character: dict, universal: list[str]) -> list[str]:
-    """What's wrong with a pack's moods, as the app's loader refuses them:
-    not exactly the universal moods, or a move, default or startup mood
-    that isn't one."""
-    ids = [m.get("id") for m in character.get("moods", [])]
-    problems = []
-    if len(ids) != len(set(ids)):
-        problems.append("moods names a mood twice")
-    if set(ids) != set(universal):
-        missing, extra = sorted(set(universal) - set(ids)), sorted(set(ids) - set(universal))
-        problems.append(f"moods aren't the universal ones (missing {missing}, extra {extra})")
-    names = set(ids)
-    for m in character.get("moods", []):
-        if not m.get("meaning"):
-            problems.append(f"{m.get('id')} has no meaning")
-        moves = m.get("moves", {})
-        for to in moves.get("ordinary", []) + moves.get("dramatic", []):
-            if to not in names:
-                problems.append(f"{m.get('id')} leads to {to}, which isn't a mood")
-    for key in ("default_mood", "startup_mood"):
-        if key in character and character[key] not in names:
-            problems.append(f"{key} {character[key]} isn't a mood")
-    return problems
-
-
 def moods_h(pack: Path, character: dict) -> str:
     """The firmware's moods.h, which staging writes: the mood list in the
     pack's order with the board's startup mood, and the pack's id and
-    version for the board's hello. pack_problems() has checked them."""
+    version for the board's hello. The app's loader checks the moods
+    themselves (boopdev check); pack_problems() that there are some."""
     moods = [m["id"] for m in character["moods"]]
     startup = character.get("startup_mood", character["default_mood"])
     source = f"characters/{pack.name}/character.json"
@@ -285,11 +248,9 @@ PIXEL_FACES = "firmware/include/faces.h"  # the pixel face's art, which facegen 
 
 def drawn_styles(pack: Path) -> list[str]:
     """The styles an expression may wear: the moods the pixel face the pack
-    has, or uses (§6), draws, whose eyes and mouth are its art (faces.h's
+    has draws, whose eyes and mouth are its art (faces.h's
     kMoodNames); none without one."""
     faces = pack / PIXEL_FACES
-    if not faces.is_file() and (pack / "character.json").is_file():
-        faces = used(pack)[0].get(PIXEL_FACES, faces)
     match = faces.is_file() and re.search(r"kMoodNames\[\d+\] = \{([^}]*)\}", faces.read_text())
     return re.findall(r'"(\w+)"', match.group(1)) if match else []
 
@@ -298,7 +259,8 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     """A pack's rig/ (CHARACTER.md §15) as rig_tables.h has it, and what's
     wrong with it, each problem with its file and key. Every file is
     optional, and one that's missing is empty."""
-    moods = universal_moods() if moods is None else moods
+    if moods is None:  # the pack's own, as its character.json names them
+        moods = [m.get("id") for m in load(pack).get("moods", [])] if (pack / "character.json").exists() else []
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
     drawn = drawn_styles(pack)
@@ -636,33 +598,6 @@ def load(pack: Path) -> dict:
     return json.loads((pack / "character.json").read_text())
 
 
-def used(pack: Path, character: dict | None = None) -> tuple[dict[str, Path], list[str]]:
-    """What a pack takes from others (§6): each path its `uses` brings in,
-    with that file or folder in the pack that shares it, and what's wrong
-    with them. `uses` names, for each share, the pack beside this one whose
-    `shares` lists the share's files. A pack takes another's own files
-    only, never what that one uses, and never a path it has itself."""
-    character = load(pack) if character is None else character
-    paths, problems = {}, []
-    for share, name in character.get("uses", {}).items():
-        provider = pack.parent / name
-        if not (provider / "character.json").is_file():
-            problems.append(f"uses {share} from {name}, which isn't a pack beside it")
-            continue
-        listed = load(provider).get("shares", {}).get(share)
-        if listed is None:
-            problems.append(f"uses {share} from {name}, which doesn't share it")
-            continue
-        for rel in listed.get("files", []):
-            if not (provider / rel).exists():
-                problems.append(f"{name}'s {share} names {rel}, which it doesn't have")
-            elif (pack / rel).exists():
-                problems.append(f"has {rel} of its own, and uses {name}'s ({share})")
-            else:
-                paths[rel] = provider / rel
-    return paths, problems
-
-
 def files_in(folder: Path) -> dict[str, Path]:
     """Every file in a folder or a file itself, by its path in it."""
     if folder.is_file():
@@ -677,13 +612,11 @@ def files_in(folder: Path) -> dict[str, Path]:
 UNSTAGED = ("design", "references", "review")
 
 
-def overlay(dest: Path, own: Path, extra: dict[str, Path]) -> None:
-    """Lays dest out as own's files plus extra's (path: its file or folder),
-    each file a link to its source in folders of their own: Foundation
-    won't list a folder through a link to it. UNSTAGED stays out."""
+def overlay(dest: Path, own: Path) -> None:
+    """Lays dest out as own's files, each a link to its source in folders
+    of their own: Foundation won't list a folder through a link to it.
+    UNSTAGED stays out."""
     files = files_in(own)
-    for rel, src in extra.items():
-        files.update({f"{rel}/{inner}".rstrip("/"): path for inner, path in files_in(src).items()})
     for rel, src in files.items():
         if rel.split("/", 1)[0] in UNSTAGED:
             continue
@@ -724,8 +657,7 @@ def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
 
 def everyday(source: Path = EVERYDAY) -> list[dict]:
     """The everyday transitions, which the studio's Rank records on the
-    board so that its measure and internal/tools/fluid/measure.py's
-    compare: those transitions.jsonl records. Each run of its shots with
+    board: those everyday.jsonl records. Each run of its shots with
     one name (`<ms>-<name>`) after the first is one, named so, from what
     showed before the messages that start it to what they ask for, each a
     cell as the studio's address has it (mood/state, and /fact for a state
@@ -896,7 +828,7 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
             problems += [f"{pack.name}: references/{folder.name}: {p}" for p in reference_problems(folder, moods, ids, rig)]
         problems += [f"{pack.name}: review/{p}" for p in reads.review(pack)[2]]
         entries = previews(character)
-        names = [e.get("id") for e in entries + [e for _, e in shared_previews(pack, character)] + boards(character)]
+        names = [e.get("id") for e in entries + boards(character)]
         if None in names or len(names) != len(set(names)):
             problems.append(f"{pack.name}: each of its studio entries needs an id of its own")
             continue
@@ -933,18 +865,6 @@ def state_problems(source: Path = FIRMWARE_STATES, spec: Path = CHARACTERS / "CH
 def files(entry: dict) -> list[str]:
     """The files a studio entry has the page load or show."""
     return entry.get("scripts", []) + entry.get("styles", []) + [entry[k] for k in ("icon", "captures") if entry.get(k)]
-
-
-def shared_previews(pack: Path, character: dict) -> list[tuple[Path, dict]]:
-    """The studio entries a pack takes with what it uses (§6): each share's
-    `studio` ids, with the pack that shares them."""
-    out = []
-    for share, name in character.get("uses", {}).items():
-        provider = pack.parent / name
-        if (provider / "character.json").is_file():
-            ids = load(provider).get("shares", {}).get(share, {}).get("studio", [])
-            out += [(provider, e) for e in previews(load(provider)) if e.get("id") in ids]
-    return out
 
 
 def boards(character: dict) -> list[dict]:
@@ -1032,7 +952,7 @@ def with_examples(text: str) -> dict:
 
 
 def tagged(path: Path) -> list[dict]:
-    """A list of `- [tags] words` lines (signs.md, diary.md): each line's tags and words."""
+    """A list of `- [tags] words` lines (signs.md, dreams.md): each line's tags and words."""
     found = steering(path)
     out = []
     for line in (found[1].splitlines() if found else []):
@@ -1123,7 +1043,7 @@ def eval_scenario(path: Path) -> dict | None:
         scenario = json.loads(path.read_text())
     except ValueError:
         return None  # EvalTests says why
-    keys = ("name", "case", "why", "always", "gap", "personality", "talk", "mood", "checks", "steps")
+    keys = ("name", "case", "why", "always", "gap", "talk", "mood", "checks", "steps")
     return {"id": path.stem, **{k: scenario[k] for k in keys if k in scenario}}
 
 
@@ -1142,16 +1062,15 @@ def stills(pack: Path, here) -> list[dict]:
 
 def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, dict] | None]:
     """What the studio shows of a pack's character: its personalities,
-    talk files, each mood's steering in parts, its signs and diary, its
+    talk files, each mood's steering in parts, its signs and dream signs, its
     voice's table (with the pack that has it, which may be another, §6),
     its demos, evals and stills. The voice comes back on its own, with the
     name of the pack whose it is, so the page holds a shared one once."""
     ids = [m["id"] for m in character["moods"]]
     folder = pack / "steering"
-    personalities = []
-    for p in character.get("personalities", []):
-        settings, text = steering(folder / "personality" / f"{p['id']}.md") or ({}, "")
-        personalities.append({**p, "settings": settings, **with_examples(text)})
+    # The pack's one personality, as a list of one for the page.
+    found = steering(folder / "personality.md")
+    personalities = [{"id": character["id"], "settings": found[0], **with_examples(found[1])}] if found else []
     order = {"quiet": 0, "normal": 1, "chatty": 2}
     talks = [{"id": f.stem, "settings": steering(f)[0], **with_examples(steering(f)[1])}
              for f in sorted((folder / "talk").glob("*.md"), key=lambda f: (order.get(f.stem, 3), f.stem))]
@@ -1160,8 +1079,7 @@ def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, 
         found = steering(folder / "mood" / f"{mood}.md")
         if found:
             mood_files[mood] = mood_steering(found[1], ids)
-    paths, _ = used(pack, character)
-    table = paths.get("mac/takes.tsv", pack / "mac" / "takes.tsv")
+    table = pack / "mac" / "takes.tsv"
     voice = None
     if table.is_file():
         owner = table.parent.parent
@@ -1172,13 +1090,12 @@ def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, 
         "version": character.get("version"),
         "startup_mood": character.get("startup_mood"),
         "faces": character.get("faces", {}),
-        "uses": character.get("uses", {}),
         "personalities": personalities,
         "talks": talks,
         "guide": guide[1] if guide else None,
         "steering": mood_files,
         "signs": tagged(folder / "signs.md"),
-        "diary": tagged(folder / "diary.md"),
+        "dreams": tagged(folder / "dreams.md"),
         "voice": voice[0] if voice else None,
         "demos": [demo_script(p) for p in sorted(pack.glob("demo/*.jsonl"))],
         "evals": [e for e in (eval_scenario(p) for p in sorted(pack.glob("evals/*.json"), key=eval_order)) if e],
@@ -1206,7 +1123,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
-        entries = [(pack, e) for e in previews(character)] + shared_previews(pack, character)
+        entries = [(pack, e) for e in previews(character)]
         for i, (home, entry) in enumerate(entries):
             borrows = wears(home, entry)
             for key in ("scripts", "styles"):
@@ -1225,7 +1142,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
             **about,
             "name": character["name"],
             "default_mood": character["default_mood"],
-            "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves") if k in m} for m in character["moods"]],
+            "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves", "settles") if k in m} for m in character["moods"]],
             "studio": [entry for _, entry in entries] + boards(character),
             "references": references_data(pack, page),
             "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
@@ -1261,19 +1178,24 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
 
 
 def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> list[str]:
-    """What stops a pack from staging: its moods (§5), what it uses (§6),
+    """What stops a pack from building: moods.h's moods and default mood,
     an id or version too long for the board's hello (§10), and its rig
-    (§15)."""
-    paths, problems = used(pack, character)
-    problems = mood_problems(character, universal_moods()) + problems
+    (§15). Whether it plays, its moods
+    and their graph included, is boopdev check's (PackCheck), as the app
+    loads it."""
+    problems = []
+    if not character.get("moods") or not all(m.get("id") for m in character["moods"]):
+        problems.append("moods names no mood, or one without an id")
+    if character.get("startup_mood", character.get("default_mood")) not in [m.get("id") for m in character.get("moods", [])]:
+        problems.append("its startup_mood, else its default_mood, isn't one of its moods")
     if len(character.get("id", "")) > 24 or len(character.get("version", "")) > 16:
         problems.append("id is at most 24 characters, and version 16")
-    # Each board's face (§9): a folder of the pack's, or one it uses.
+    # Each board's face (§9): a folder of the pack's.
     if not character.get("faces"):
         problems.append("faces names no board's face")
     for board, face in character.get("faces", {}).items():
         folder = f"firmware/src/render/{face}"
-        if not (pack / folder).is_dir() and not (folder in paths and paths[folder].is_dir()):
+        if not (pack / folder).is_dir():
             problems.append(f"faces gives {board} the {face} face, and there's no {folder}/")
     return problems + (reads or Reads()).rig(pack)[1]
 
@@ -1298,18 +1220,17 @@ def bundle(view: Path, dest: Path) -> None:
 
 
 def checked_pack(pack: Path, reads: Reads | None = None) -> tuple[dict, dict[str, Path]] | None:
-    """A pack's character.json and what it uses from other packs (§6), or
-    None, its problems printed, for a pack that can't be staged."""
+    """A pack's character.json, or None, its problems printed, for a pack
+    that can't be staged."""
     character = load(pack)
     problems = pack_problems(pack, character, reads)
     for problem in problems:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
-    return None if problems else (character, used(pack, character)[0])
+    return None if problems else character
 
 
 def stage(pack: Path, reads: Reads | None = None) -> int:
-    """The pack staged (.character-build/staged/<name>/): its own files and
-    what it uses from other packs (§6), as links, the one folder the tests,
+    """The pack staged (.character-build/staged/<name>/): its own files, as links, the one folder the tests,
     boopdev and the device tools read, and the pointer to it
     (.character-build/pack); from it, the firmware's files
     (.character-build/firmware/) with the generated moods.h and
@@ -1326,14 +1247,14 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
     checked = checked_pack(pack, reads)
     if checked is None:
         return 1
-    character, paths = checked
+    character = checked
     STAGE.mkdir(exist_ok=True)
     # Named by its id, as the app finds a buddy's pack, whatever its folder's called.
     name = character["id"]
     view = STAGE / "staged" / name
     with tempfile.TemporaryDirectory(dir=STAGE, prefix=".staging-") as temp:
         new = Path(temp)
-        overlay(new / "staged" / name, pack, paths)
+        overlay(new / "staged" / name, pack)
         firmware_from(new / "staged" / name, pack, character, new / "firmware")
         bundle(new / "staged" / name, new / "packs" / name)
         # Every other pack beside it goes in the app too, for buddies that
@@ -1344,7 +1265,7 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
                 continue
             with tempfile.TemporaryDirectory() as each:
                 theirs = load(other)["id"]
-                overlay(Path(each) / theirs, other, used(other)[0])
+                overlay(Path(each) / theirs, other)
                 bundle(Path(each) / theirs, new / "packs" / theirs)
         (new / "packs" / "chosen").write_text(f"{name}\n")
         # The firmware's test suites: the engine's, then the staged pack's
@@ -1414,10 +1335,10 @@ def firmware_to(pack: Path, dest: Path) -> int:
     checked = checked_pack(pack)
     if checked is None:
         return 1
-    character, paths = checked
+    character = checked
     if dest.exists():
         shutil.rmtree(dest)
-    overlay(dest / "view", pack, paths)
+    overlay(dest / "view", pack)
     firmware_from(dest / "view", pack, character, dest / "firmware")
     shutil.rmtree(dest / "view")
     return 0

@@ -1,6 +1,6 @@
 import Foundation
 
-/// One line of a pack's list of lines, such as `diary.md` or `signs.md`:
+/// One line of a pack's list of lines, such as `dreams.md` or `signs.md`:
 /// `- [failed long] Its words.`, the tags in brackets optional. It fits a
 /// moment that has every one of its tags.
 public struct TaggedLine: Equatable, Sendable {
@@ -14,6 +14,10 @@ public struct TaggedLine: Equatable, Sendable {
 
     /// Whether its words take one of yours (`{words}` or `{WORDS}`).
     public var hasWords: Bool { text.contains("{words}") || text.contains("{WORDS}") }
+
+    /// Its parts, split on ` | `: one for a plain line, more for one that
+    /// says several things (an ask's question and its two answers).
+    public var parts: [String] { text.components(separatedBy: " | ").map { $0.trimmingCharacters(in: .whitespaces) } }
 
     /// Whether `on` has all of its tags.
     public func fits(_ on: Set<String>) -> Bool { Set(tags).isSubset(of: on) }

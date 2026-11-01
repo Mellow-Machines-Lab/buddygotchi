@@ -72,14 +72,15 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(words(2026, 10, 22), [], "an ordinary day")
     }
 
-    /// The Mac's tags are the board's, in the same order
-    /// (firmware/src/render/tags.h), so a design's bits mean the same.
+    /// The board's tags are the Mac's but those no board reads, in the same
+    /// order (firmware/src/render/tags.h), so a design's bits mean the same.
     func testTheTagsAreTheBoards() throws {
         let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/render/tags.h"), encoding: .utf8)
         let list = try XCTUnwrap(header.range(of: #"kTagNames\[kTagCount\] = \{[^}]*\}"#, options: .regularExpression))
         let names = header[list].split(separator: "\"").enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
-        XCTAssertEqual(names, Occasions.all)
-        XCTAssertLessThanOrEqual(Occasions.all.count, 32, "a set of tags is 32 bits on the board")
+        XCTAssertEqual(names, Occasions.board)
+        XCTAssertEqual(Set(Occasions.all).subtracting(Occasions.board), Occasions.macOnly)
+        XCTAssertLessThanOrEqual(Occasions.board.count, 32, "a set of tags is 32 bits on the board")
     }
 
     /// A growth stage reached makes the rest of its day a party, on the

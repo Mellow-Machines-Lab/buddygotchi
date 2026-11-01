@@ -3,6 +3,7 @@ animations and moods, the messages to and from the board, the board's voice
 takes, a line to the app's hook socket, and noticing a board reset."""
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import os
@@ -33,16 +34,28 @@ def checkout_tmp(name: str) -> Path:
 # (characters/CHARACTER.md §9).
 MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_text())["moods"]
 
+
+
+@functools.lru_cache(maxsize=None)
+def lasting_moods(pack: Path | None = None) -> list[str]:
+    """The lasting moods of `pack` (the one in use by default), in its
+    order: those its character.json gives a `meaning`, which the mood
+    output can move to. A face-only mood has `settles` instead
+    (characters/CHARACTER.md §5)."""
+    character = json.loads(((pack or chosen_pack()) / "character.json").read_text())
+    return [m["id"] for m in character["moods"] if "meaning" in m]
+
+
 # The animations a `do` plays by name:
 # the brain's finish, wake-up and notice and the rules' reactions, each its
 # design's state. A tap's (poked, tap_spam) the device plays itself, never
 # by name.
-ANIMS = ["task_complete", "reply_ready", "wake_up", "notice", "starting", "stopped", "error", "helper_return"]
+ANIMS = ["task_complete", "reply_ready", "wake_up", "notice", "starting"]
 # Every name Boop's device plays, its `hello.does`:
 # the animations, the brain's reaction with no animation of its own
 # (`react`), and push-to-talk's start and its end with no reply.
-DOES = ["react", "task_complete", "reply_ready", "starting", "stopped", "error", "helper_return", "wake_up",
-        "listening", "stop_listening", "notice", "call"]
+DOES = ["react", "task_complete", "reply_ready", "starting", "wake_up", "listening",
+        "stop_listening", "notice", "call"]
 # The `do` names that play no animation: a face and a `say`, ending
 # push-to-talk, and the work stream's word that comes forward.
 NO_ANIM = {"react", "stop_listening", "call"}
@@ -51,7 +64,7 @@ NO_ANIM = {"react", "stop_listening", "call"}
 # task_complete's success.
 OLD_ANIMS = {"cheer": "task_complete"}
 # The reactions the rules send, never the brain.
-RULE_REACTIONS = {"starting", "stopped", "error", "helper_return"}
+RULE_REACTIONS = {"starting"}
 # The animations that play a turn's finish: the brain's
 # task_complete and reply_ready, and their older names in older logs (the
 # cheer).

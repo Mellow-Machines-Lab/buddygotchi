@@ -46,6 +46,8 @@ public struct Scenario: Sendable {
         /// `dizzy`… (render::Gesture's names, `facedown`, and `dismiss`, a
         /// finger held on the needs-you screen).
         public var kind: String?
+        /// How an ask answered ends: a, b, touch or ignored.
+        public var pick: String?
         /// A `to-do list` step's list, as `3/7`: done, of all.
         public var todos: StateSnapshot.Todo?
         /// How a reaction this step's passes start ends: `done` (the
@@ -103,8 +105,8 @@ public struct Scenario: Sendable {
         public var needs: Set<String>?
         public var todo: Set<String>?
         /// Whether a pass of the step, a heartbeat's on the way to it
-        /// included, wrote the diary (`some`) or none did (`none`).
-        public var diary: Set<String>?
+        /// included, told the dream (`told`) or none did (`none`).
+        public var dream: Set<String>?
         /// The sign the reaction held up: `some` for any, `none` for none,
         /// or words any of which it says (in any case: `still broken`
         /// passes "still broken :(").
@@ -122,7 +124,7 @@ public struct Scenario: Sendable {
         /// Whether any of it is about a pass.
         public var wantsAPass: Bool {
             react != nil || move != nil || intensity != nil || say != nil || said != nil
-                || mood != nil || offered != nil || diary != nil || sign != nil
+                || mood != nil || offered != nil || dream != nil || sign != nil
         }
 
         public init(react: Set<String>? = nil, move: Set<String>? = nil, intensity: Set<String>? = nil, say: Set<String>? = nil,
@@ -165,6 +167,14 @@ public struct Scenario: Sendable {
         /// options it offered, and every mood change was a move on the
         /// mood graph.
         public var onGraph = false
+        /// `moods_seen`: moods the run must reach at some pass, like
+        /// `lonely`; a mood that comes and fades between two steps still
+        /// counts.
+        public var moodsSeen: [String] = []
+        /// `signs_seen`: signs the run must hold up at some pass, any one
+        /// of them (`"fav snack?|hat or bow?"`): for what Jev does now and
+        /// then, not at a given step.
+        public var signsSeen: [String] = []
 
         public init() {}
 
@@ -178,7 +188,7 @@ public struct Scenario: Sendable {
         }
 
         static let keys = ["max_quiet_working", "max_same_in_a_row", "mood_changes", "no_mood_bounce_within",
-                           "reactions", "min_variety", "words_said", "moves_on_graph"]
+                           "reactions", "min_variety", "words_said", "moves_on_graph", "moods_seen", "signs_seen"]
     }
 
     public var name: String
@@ -190,6 +200,10 @@ public struct Scenario: Sendable {
     /// Boop's character, not a tuning target: runs 3 times by default, and
     /// `boopdev eval --always` runs only these.
     public var always: Bool
+    /// It checks the code's rules, not Jev's choices: it runs only with
+    /// the expect brain (`--scripted`, and the unit tests), and a Jev run
+    /// leaves it out.
+    public var scripted: Bool
     /// How many runs it gets when `--runs` doesn't say, if not the default
     /// for its kind (`Eval.runs`).
     public var runs: Int?
@@ -198,9 +212,8 @@ public struct Scenario: Sendable {
     /// Its failures are reported but don't fail the eval, and the report
     /// says when it passes after all.
     public var gap: String?
-    public var personality: Personality
-    /// How much it says, chosen in Settings, whose TALK section follows
-    /// MOOD as in the app: normal unless the file says.
+    /// How much it says, chosen in Settings, told in CONTEXT's Talk row
+    /// and held in code, as in the app: normal unless the file says.
     public var talk: Talk
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
@@ -214,10 +227,14 @@ public struct Scenario: Sendable {
     /// The day Boop hatched, `yyyy-MM-dd`, for its milestone days: nil for
     /// none.
     public var hatched: String?
+    /// The written memory the run starts with (`memory`): its notes, as
+    /// `memory.md` writes them without the id (`work · 2026-10-25 · "api"
+    /// kept failing`), and Recently's lines (`2026-10-25 · a long day`).
+    public var memory = WrittenMemory()
 
     public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
-                                "to-do list", "wait"]
+                                "to-do list", "wait", "ask answered"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
     /// doesn't take.
@@ -236,15 +253,27 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
               let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "runs", "gap", "personality", "talk", "mood", "checks", "steps", "start", "hatched"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
         self.why = why
         always = o["always"] as? Bool ?? false
+        scripted = o["scripted"] as? Bool ?? false
+        if always, scripted { throw bad("a scripted scenario asks Jev nothing, so it isn't always") }
         if let t = o["start"] {
             guard let text = t as? String, let ms = Scenario.date(text) else { throw bad("start is a UTC date and time, like 2026-10-31T09:00") }
             start = ms
+        }
+        if let m = o["memory"] {
+            guard let m = m as? [String: Any], Set(m.keys).isSubset(of: ["notes", "recently"]),
+                  let notes = (m["notes"] ?? []) as? [String], let recently = (m["recently"] ?? []) as? [String] else {
+                throw bad("memory has notes and recently, lists of lines")
+            }
+            guard let read = WrittenMemory.from(notes: notes, recently: recently) else {
+                throw bad("memory's lines are like work · 2026-10-25 · the note, and 2026-10-25 · the day")
+            }
+            memory = read
         }
         if let h = o["hatched"] {
             guard let day = h as? String, LocalTime.isDay(day) else { throw bad("hatched is a day, like 2026-09-01") }
@@ -287,12 +316,18 @@ public struct Scenario: Sendable {
                 guard let on = v as? Bool, on else { throw bad("checks.moves_on_graph is true") }
                 checks.onGraph = true
             }
+            if let v = c["moods_seen"] {
+                guard let text = v as? String else { throw bad("checks.moods_seen is like \"lonely|sad\"") }
+                checks.moodsSeen = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                let unknown = checks.moodsSeen.filter { MoodGraph.mood($0) == nil }
+                guard unknown.isEmpty else { throw bad("checks.moods_seen has \(unknown.joined(separator: ", ")), not a mood") }
+            }
+            if let v = c["signs_seen"] {
+                guard let text = v as? String, !text.isEmpty else { throw bad("checks.signs_seen is like \"fav snack?|hat or bow?\"") }
+                checks.signsSeen = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+            }
             self.checks = checks
         }
-        personality = try (o["personality"] as? String).map {
-            guard let p = Personality(rawValue: $0) else { throw bad("unknown personality \($0)") }
-            return p
-        } ?? .default
         talk = try (o["talk"] as? String).map {
             guard let t = Talk(rawValue: $0) else { throw bad("talk is quiet, normal or chatty") }
             return t
@@ -340,6 +375,10 @@ public struct Scenario: Sendable {
             step.helper = s["helper"] as? String
             step.kind = s["kind"] as? String
             if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
+            if event == "ask answered" {
+                step.pick = s["pick"] as? String ?? "a"
+                guard ["a", "b", "touch", Asks.ignored].contains(step.pick!) else { throw badStep("an ask's pick is a, b, touch or ignored") }
+            }
             if event == "said", step.words?.isEmpty != false { throw badStep("said needs words") }
             if event == "to-do list" {
                 guard let text = s["todos"] as? String, let list = StateSnapshot.Todo(text: text) else { throw badStep("to-do list needs todos, like 3/7") }
@@ -360,15 +399,27 @@ public struct Scenario: Sendable {
                 step.brain = answers
             }
             if let e = s["expect"] as? [String: Any] {
+                // What `!` takes away from: every value a key may be.
+                // `none` first, as the expect brain answers with the first.
+                let every: [String: [String]] = ["react": ["none"] + CharacterPack.active.moods.map(\.id), "mood": graphMoods,
+                                                 "say": ["none"] + ReactOutput.says.map(\.name)]
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
                     guard let text = v as? String else { throw badStep("expect.\(key) is like \"proud|excited\"") }
-                    let values = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
-                    step.expectOrder[key] = values
-                    return Set(values)
+                    // `!none`: anything but these, of what the key may be.
+                    let but = text.hasPrefix("!")
+                    let values = text.dropFirst(but ? 1 : 0).split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
+                    guard but else {
+                        step.expectOrder[key] = values
+                        return Set(values)
+                    }
+                    guard let all = every[key] else { throw badStep("expect.\(key) can't take !: only \(every.keys.sorted().joined(separator: ", ")) can") }
+                    guard Set(values).isSubset(of: all) else { throw badStep("expect.\(key) takes away \(values.joined(separator: "|")), not all of them its values") }
+                    step.expectOrder[key] = all.filter { !values.contains($0) }
+                    return Set(step.expectOrder[key] ?? [])
                 }
                 let keys = ["react", "move", "intensity", "say", "said", "mood", "offered", "opens", "idle",
-                            "helpers", "when", "needs", "todo", "diary", "sign"]
+                            "helpers", "when", "needs", "todo", "dream", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), move: try set("move"), intensity: try set("intensity"), say: try set("say"),
@@ -383,8 +434,9 @@ public struct Scenario: Sendable {
                 guard (todo ?? []).allSatisfy({ $0 == "none" || StateSnapshot.Todo(text: $0) != nil }) else { throw badStep("expect.todo is like 3/7, or none") }
                 step.expect?.needs = needs
                 step.expect?.todo = todo
-                let diary = try set("diary")
-                step.expect?.diary = diary
+                let dream = try set("dream")
+                guard (dream ?? []).isSubset(of: ["told", "none"]) else { throw badStep("expect.dream is told or none") }
+                step.expect?.dream = dream
                 let sign = try set("sign")
                 step.expect?.sign = sign
                 let unknownTags = (when ?? []).subtracting(Occasions.all)
@@ -398,9 +450,11 @@ public struct Scenario: Sendable {
                 let texts = Set(Take.all.map(\.text))
                 let unsaid = (step.expect?.said ?? []).subtracting(texts.union(["none", "some"]))
                 guard unsaid.isEmpty else { throw badStep("expect.said has \(unsaid.sorted().joined(separator: ", ")), not a take's text") }
+                // A face may be any mood's; a mood, or what's offered, only a lasting one's.
+                let faces = CharacterPack.active.moods.map(\.id) + ["none"]
                 for (key, values) in [("react", step.expect?.react), ("mood", step.expect?.mood), ("offered", step.expect?.offered)] {
-                    let unknown = (values ?? []).subtracting(graphMoods + (key == "react" ? ["none"] : []))
-                    guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not a mood") }
+                    let unknown = (values ?? []).subtracting(key == "react" ? faces : graphMoods)
+                    guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not \(key == "react" ? "a face" : "a lasting mood")") }
                 }
             }
             return step
@@ -481,8 +535,8 @@ public struct Eval {
         /// whether the needs-you screen showed, and the to-do list (`3/7`, or
         /// `none`).
         public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String)?
-        /// Whether the pass wrote the diary.
-        public var wrote = false
+        /// Whether the pass's line told the dream.
+        public var told = false
 
         public var passed: Bool {
             guard dropped == nil else { return false }
@@ -503,7 +557,7 @@ public struct Eval {
                 return false
             }
             if let m = expected.mood, !m.contains(mood) { return false }
-            if let d = expected.diary, !d.contains(wrote ? "some" : "none") { return false }
+            if let d = expected.dream, !d.contains(told ? "told" : "none") { return false }
             if let s = expected.sign, !Scenario.Expectation.sign(s, says: sign) { return false }
             if let o = expected.offered, o != Set(offered) { return false }
             return true
@@ -523,7 +577,7 @@ public struct Eval {
                         expected.when.map { "when \($0.sorted().joined(separator: " and "))" },
                         expected.needs.map { "needs \($0.sorted().joined(separator: "|"))" },
                         expected.todo.map { "todo \($0.sorted().joined(separator: "|"))" },
-                        expected.diary.map { "diary \($0.sorted().joined(separator: "|"))" },
+                        expected.dream.map { "dream \($0.sorted().joined(separator: "|"))" },
                         expected.sign.map { "sign \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
             let got = opened.map { "opened \($0)" }
                 ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo)" }
@@ -562,6 +616,8 @@ public struct Eval {
         /// What the mood question offered, and Jev's answer to it.
         public var offered: [String] = []
         public var answer: String?
+        /// The sign its reaction held up, if any.
+        public var sign: String?
     }
 
     /// A whole-run check's outcome.
@@ -620,7 +676,7 @@ public struct Eval {
         let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
         let start = scenario.start ?? Replay.defaultStart
         let clock = VirtualClock(start)
-        let rules = steering.rules(scenario.personality, talk: scenario.talk)
+        let rules = steering.rules(talk: scenario.talk)
         // Its agents are made up, and run all through it, their threads
         // never archived.
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
@@ -638,8 +694,12 @@ public struct Eval {
         // has; one left in progress stays so.
         let ending = Ending()
         let reactions = Reactions()
+        // Memory, in memory: the day's tallies, closed at 5:00 on the
+        // virtual clock, and the dream told the next time you show up.
+        let remembers = Memory(store: try KeyValueStore(directory: nil), time: time)
+        home.sync { remembers.attach(to: pipeline) }
         let (harness, mood) = Runtime.harness(
-            pipeline: pipeline, steering: steering, personality: { scenario.personality }, reactions: reactions,
+            pipeline: pipeline, steering: steering, reactions: reactions,
             queue: { reaction, pending in
                 ending.said = reaction.say?.text
                 ending.takes = reaction.say?.takes.map(\.text) ?? []
@@ -650,7 +710,8 @@ public struct Eval {
                 } else {
                     pending.finish(end)
                 }
-            }, talk: { scenario.talk })
+            }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
+            remembers: remembers, wall: { clock.now })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
@@ -679,7 +740,7 @@ public struct Eval {
             var lastSaid: String?  // what its reaction said
             var lastTakes: [String] = []  // and its takes' texts
             var lastSign: String?  // and the sign it held up
-            var wroteDiary = false  // any pass of the step, a heartbeat's on the way included
+            var toldDream = false  // any pass of the step, a heartbeat's on the way included
             func respond(_ views: [ViewEvent]) async {
                 for view in views where view.wakesBrain {
                     ending.said = nil
@@ -692,7 +753,7 @@ public struct Eval {
                     lastSign = ending.sign
                     last = record
                     onPass?(i + 1, record)
-                    if record.outputs.contains(where: { $0.name == DiaryOutput.outputName && $0.result.ok }) { wroteDiary = true }
+                    if view.facts["dream_day"] != nil { toldDream = true }
                     let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
                     let answers = record.answers
                     timeline.append(Pass(
@@ -703,7 +764,7 @@ public struct Eval {
                         intensity: ran ? ReactOutput.intensity(answers).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
-                        answer: answers[MoodOutput.outputName]?.choice))
+                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil))
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
@@ -773,7 +834,7 @@ public struct Eval {
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
                                 latencyMs: record.latencyMs,
-                                wrote: wroteDiary))
+                                told: toldDream))
         }
         if let s = since, let end = scenario.steps.last?.atMs { working.append((s, end)) }
         // A scripted brain's answers are the scenario's own: only the checks
@@ -843,6 +904,17 @@ public struct Eval {
             out.append(RunCheck(name: "words_said \(range.lowerBound)-\(range.upperBound)", passed: range.contains(share),
                                 detail: "\(said) of \(played.count) reactions said something"))
         }
+        if !c.signsSeen.isEmpty {
+            let at = timeline.first { $0.sign.map(c.signsSeen.contains) == true }
+            out.append(RunCheck(name: "signs_seen \(c.signsSeen.joined(separator: "|"))", passed: at != nil,
+                                detail: at.map { "\($0.sign ?? "") at \(clock($0.atMs))" }
+                                    ?? "never: \(timeline.compactMap(\.sign).joined(separator: ", "))"))
+        }
+        for mood in c.moodsSeen {
+            let at = timeline.first { $0.mood == mood }
+            out.append(RunCheck(name: "moods_seen \(mood)", passed: at != nil,
+                                detail: at.map { "\(mood) from \(clock($0.atMs))" } ?? "never \(mood): \(Set(timeline.map(\.mood)).sorted().joined(separator: ", "))"))
+        }
         if c.onGraph {
             // Each pass's answer against what it offered, and each change
             // against the graph, from the mood before it.
@@ -853,7 +925,7 @@ public struct Eval {
                     wrong = "at \(clock(p.atMs)): no usable mood answer"
                 } else if p.dropped == nil, let answer = p.answer, !p.offered.contains(answer) {
                     wrong = "at \(clock(p.atMs)): answered \(answer), offered \(p.offered.joined(separator: "|"))"
-                } else if p.mood != before, !(MoodGraph.moves[before]?.all.contains(p.mood) ?? false) {
+                } else if p.mood != before, !(MoodGraph.neighbours[before]?.all.contains(p.mood) ?? false) {
                     wrong = "at \(clock(p.atMs)): \(before) → \(p.mood) isn't a move"
                 }
                 before = p.mood
@@ -966,6 +1038,9 @@ public struct Eval {
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",
                                                  data: ["since": .int(now)])) }]
         case "back": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .end, specificType: "unlocked")) }]
+        // The board ends the last ask: the left answer tapped, the right,
+        // a touch, or nobody.
+        case "ask answered": return [{ $0.answerLast(step.pick ?? "a", at: now) ?? $0.tick(at: now) }]
         default: return []  // wait
         }
     }

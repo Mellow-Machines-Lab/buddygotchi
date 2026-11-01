@@ -48,9 +48,9 @@ struct BodyAct: View {
                 } else {
                     Text("This copy of Boop runs without a board.").font(.system(size: 13)).foregroundStyle(Theme.inkSoft)
                 }
-                // No board on the desk: the simulator running on this Mac will do.
+                // No board on the desk: the simulator window will do.
                 if model.hasLink, model.simulatorHere {
-                    Button("No board? Use the simulator in your browser", action: model.useSimulator).buttonStyle(.row)
+                    Button("No board? Use the simulator window", action: model.useSimulator).buttonStyle(.row)
                 }
             }
             Spacer(minLength: 0)
@@ -62,17 +62,11 @@ struct BodyAct: View {
                 ActNav(model: model, next: "Next") { model.skipBoard() }
             }
         }
-        .task { await model.watchForSimulator() }
     }
 
-    /// Where the body is when it's the simulator: the browser's page, or
-    /// the internal build's window.
-    static var onSimulator: String {
-        AppModel.simulatorKind == .window
-            ? "My body is the simulator: a board in a window of its own, with its screen, button and sounds. It opens beside this one."
-            : "My body is the simulator: the board in your browser, with its screen, button and sounds. "
-                + "Keep its page beside this window. My sound comes on with your first tap there."
-    }
+    /// Where the body is when it's the simulator: its window.
+    static let onSimulator = "My body is the simulator window: a board with its screen, button and sounds. It opens beside this one."
+
 
     // MARK: Looking, and found
 
@@ -136,8 +130,7 @@ struct BodyAct: View {
 
     private var hint: String {
         if model.onSimulator {
-            return AppModel.simulatorKind == .window ? "My window is opening beside this one."
-                : "Is the simulator's page open in your browser? It's at 127.0.0.1:8206."
+            return "My window is opening beside this one."
         }
         guard let since = model.lookingSince, Date().timeIntervalSince(since) > Self.hintAfter else {
             return "Keep me plugged in and close by."

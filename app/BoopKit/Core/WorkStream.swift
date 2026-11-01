@@ -65,7 +65,7 @@ struct WorkStream {
     /// A word forward holds the board this long; a notable or a sure one
     /// may wait this long for it; an ambient one needs this long since
     /// any word came forward, and this long since its word did.
-    static let holdMs: Int64 = 2500
+    static let showMs: Int64 = 2500
     static let waitMs: Int64 = 1500
     static let ambientGapMs: Int64 = 8000
     static let sameWordGapMs: Int64 = 30_000
@@ -355,7 +355,7 @@ struct WorkStream {
         for key in lanes.keys where !working.contains(key) { lanes[key] = nil }
     }
 
-    /// Whether `f` comes forward now: one at a time, held for `holdMs`. A
+    /// Whether `f` comes forward now: one at a time, held for `showMs`. A
     /// sure one cuts any other and waits up to `waitMs` behind another
     /// sure one; a notable one waits as long for the board to free; an
     /// ambient one needs the board free, `ambientGapMs` since anything
@@ -376,7 +376,7 @@ struct WorkStream {
             if let last = lastForwardAt, starts - last < Self.ambientGapMs { return nil }
             if let last = lastWordAt[f.word], starts - last < Self.sameWordGapMs { return nil }
         }
-        heldUntil = starts + Self.holdMs
+        heldUntil = starts + Self.showMs
         heldPriority = f.priority
         lastForwardAt = starts
         lastWordAt[f.word] = starts

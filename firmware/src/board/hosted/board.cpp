@@ -83,7 +83,8 @@ bool Board::tickRgba() {
       }
   } else {
     const uint8_t* index = device_->canvas().pixels();
-    for (size_t i = 0; i < n; ++i) put(i, render::kPalette.c[index[i]]);
+    const uint16_t* palette = render::palette().c;
+    for (size_t i = 0; i < n; ++i) put(i, palette[index[i]]);
   }
   picture_ = {out, w, h};
   device_->shown(hal_.realMs());

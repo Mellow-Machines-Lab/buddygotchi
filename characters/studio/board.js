@@ -8,8 +8,8 @@
 (() => {
   const SETTLE_MS = 2000;  // how long a recording's start plays before its end is asked for
   const NO_APP_MS = 30000;  // with no state this long, the board takes the Mac for gone (linkkit's kHostGoneMs)
-  const LEVELS = 24;  // a pixel changed when its difference's luma is over this (internal/tools/fluid/measure.py)
-  const DOES = ['listening', 'starting', 'helper_return', 'reply_ready', 'task_complete', 'error', 'stopped', 'wake_up', 'notice'];
+  const LEVELS = 24;  // a pixel changed when its difference's luma is over this (tests/changed.json)
+  const DOES = ['listening', 'starting', 'reply_ready', 'task_complete', 'wake_up', 'notice'];
   const STROKE = {t: 'dbg.touch', x: 60, y: 120, to_x: 220, to_y: 120, ms: 500};
 
   // How the board is asked for each of the studio's states (states.json),
@@ -49,8 +49,8 @@
   }
 
   // Pixels changed from one frame to the next (RGBA bytes): those whose
-  // difference's luma is over LEVELS, as measure.py counts them with Pillow
-  // (ImageChops.difference, then convert("L"), whose luma is this integer one).
+  // difference's luma is over LEVELS, Pillow's integer luma
+  // (ImageChops.difference, then convert("L")).
   function changed(a, b) {
     let n = 0;
     for (let i = 0; i < a.length; i += 4) {
@@ -59,8 +59,8 @@
     }
     return n;
   }
-  // A transition's changes in measure.py's terms (its summary(), the same
-  // rule, which internal/tools/fluid/tests/changed.json pins for both): the
+  // A transition's changes in a summary (the rule tests/changed.json
+  // pins): the
   // median, the upper of the middle two; the largest and where, the first;
   // and their ratio, several times the median for a cut.
   function summary(changes) {
@@ -74,7 +74,7 @@
   }
 
   const FRAME_MS = window.StudioData?.frame_ms;  // charactergen's, a reference's frames' too: the References view pairs them
-  const FROM_FILE = 'The board runs from a server: node characters/studio/serve.cjs --port 4190, then http://127.0.0.1:4190/.';
+  const FROM_FILE = 'The board runs from a server: python3 simulator/web/serve.py, then http://127.0.0.1:8206/characters/studio/.';
   let simulator = null;
   // The simulator's script, and wire() with its tap.
   const load = () => simulator ??= (location.protocol === 'file:' ? Promise.reject(Error(FROM_FILE)) : import('/simulator/boop-simulator.js'))

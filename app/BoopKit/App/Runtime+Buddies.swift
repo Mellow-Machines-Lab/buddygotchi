@@ -69,28 +69,39 @@ extension Runtime {
     public struct Mind {
         public var buddy: Buddy
         public var steering: Steering
-        public var personality: () -> Personality
         public var reactions: Reactions
         public var queue: (DeviceReaction, Pending) -> Void
         public var speaks: () -> Bool
         /// How much it says, chosen in Settings.
         public var talk: () -> Talk
-        /// Writes a day's diary line, for the buddy that keeps one (the
-        /// first, the one long-term.md set up); nil for none.
-        public var diary: ((_ day: String, _ line: String) -> Void)?
         /// Carries out the core's effects an output's choice caused (a hush):
         /// the app's show on the board; nil logs their records only.
         public var effects: (([CoreEffect]) -> Void)?
+        /// MEMORY, the written memory as Jev reads it, or nil for none.
+        public var memory: () -> String?
+        /// The questions it may ask at an event, of the pack's, in its mood
+        /// (`Asks.askable`); and the answers kept as tags at a time, for
+        /// every sign's lines.
+        public var askable: (Event, LogView, [Asks.Question], Choice) -> [Asks.Question]
+        public var answerTags: (Int64) -> [String]
+        /// Your company and the day so far, the memory reader's open day,
+        /// for CONTEXT; nil with no memory.
+        public var company: () -> MemoryReader.Tallies?
 
-        public init(buddy: Buddy, steering: Steering, personality: @escaping () -> Personality, reactions: Reactions,
+        public init(buddy: Buddy, steering: Steering, reactions: Reactions,
                     queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
-                    talk: @escaping () -> Talk = { .default }, diary: ((_ day: String, _ line: String) -> Void)? = nil,
-                    effects: (([CoreEffect]) -> Void)? = nil) {
-            self.diary = diary
+                    talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
+                    memory: @escaping () -> String? = { nil },
+                    askable: @escaping (Event, LogView, [Asks.Question], Choice) -> [Asks.Question] = { _, _, _, _ in [] },
+                    answerTags: @escaping (Int64) -> [String] = { _ in [] },
+                    company: @escaping () -> MemoryReader.Tallies? = { nil }) {
+            self.memory = memory
+            self.company = company
+            self.askable = askable
+            self.answerTags = answerTags
             self.effects = effects
             self.buddy = buddy
             self.steering = steering
-            self.personality = personality
             self.reactions = reactions
             self.queue = queue
             self.speaks = speaks
@@ -101,8 +112,8 @@ extension Runtime {
     /// Boop's brain on the pipeline's harness, the app's and the evals', so
     /// the two can't drift apart: for each buddy its outputs, mood then
     /// react, and the sections of Jev's state: the guide with how to read
-    /// the rest, PERSONALITY, MOOD, and what how much it says adds (its
-    /// `talk/` file, if any); then HISTORY, closed
+    /// the rest, PERSONALITY, MEMORY, MOOD and CONTEXT (how things stand,
+    /// the talk setting among it); then HISTORY, closed
     /// by how long the buddy has been in its mood and reaching back to the
     /// oldest working turn. With several buddies each is a voice: its own
     /// outputs and sections, and a prompt that opens with whom it answers
@@ -135,7 +146,8 @@ extension Runtime {
                 // The finished turn's length, from its line's facts.
                 guard let h, let now, case .int(let ms)? = h.line(now.seq)?.facts["length_ms"] else { return nil }
                 return ms
-            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs, calendar: { core.calendar(at: $0.at) },
+            }, speaks: m.speaks, pack: pack, voice: voice, signs: m.steering.signs,
+            calendar: { core.calendar(at: $0.at) + m.answerTags($0.at) },
             replies: m.steering.replies, status: { [weak h] said in
                 // What this buddy's agents are up to as you ask, and how
                 // each one's latest check or turn came out.
@@ -147,12 +159,19 @@ extension Runtime {
                 // What you said hushed it, or let it talk again.
                 let fx = ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at)
                 if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
-            }, talk: m.talk)
+            }, talk: m.talk, reason: { [weak h] about in
+                // Why, from the line the brain read for it. Weak: the
+                // harness holds this output.
+                guard let h, let about else { return nil }
+                return Reason.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()))
+            }, dreams: m.steering.dreams, told: { [weak h] about in
+                // The dream the line tells, by its tags.
+                guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
+                return tags.compactMap(\.string)
+            }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
+            today: m.company)
             h.output(mood)
             h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
-            if let write = m.diary, !m.steering.diary.isEmpty {
-                h.output(DiaryOutput(templates: m.steering.diary, time: core.config.time, creature: m.buddy.name, voice: voice, write: write))
-            }
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
             if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
             // The only buddy goes by the name you gave it, which the pack's
@@ -162,10 +181,25 @@ extension Runtime {
             h.section { _, v in
                 mine(v) ? m.steering.guide + renamed + "\n" + EventLine.reading(pack.name) + "\n" + EventLine.words(pack.name) : nil
             }
-            h.section { _, v in mine(v) ? m.steering.personality(m.personality()).text : nil }
+            h.section { _, v in mine(v) ? m.steering.personality.text : nil }
+            // What it remembers, after who it is and before how it feels.
+            h.section { _, v in mine(v) ? m.memory() : nil }
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
-            // Last, so it outranks what PERSONALITY and MOOD say of words.
-            h.section { _, v in mine(v) ? m.steering.talk(m.talk()) : nil }
+            // How things stand: when it is, the talk setting, the buddy,
+            // you, the agents, the day so far. Last before HISTORY.
+            h.section { [weak h] _, v in
+                guard mine(v), let h else { return nil }
+                let now = h.clock.now()
+                let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
+                let wall = core.wall(now), time = core.config.time
+                let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
+                let when = ContextSection.when(at: wall, occasions: Occasions.words(at: wall, hatched: core.config.hatched, name: pack.name,
+                                                                                    stage: core.config.stageReached, time: time),
+                                               time: time)
+                return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
+                                              buddy: buddy, company: m.company(),
+                                              agents: core.status(at: now, results: [:]), at: now, name: pack.name)
+            }
             return mood
         }
         h.closing { _, now, log, v in

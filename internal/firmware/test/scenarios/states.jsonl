@@ -46,37 +46,15 @@
 {"expect":{"moment":{"anim":"starting","variant":4}}}
 {"clock":17000}
 {"shot":"starting-compacted"}
-// Stopped, engaged, idle: the Mac's second variation.
-{"clock":20000}
-{"t":"state","base":"idle","mood":"engaged"}
-{"t":"do","name":"stopped","play":"now","args":{"variant":2}}
-{"expect":{"moment":{"anim":"stopped","left_ms":5734,"variant":2}}}
-{"clock":21000}
-{"shot":"stopped-engaged"}
-// A failed command, grumpy.
-{"clock":30000}
-{"t":"state","base":"working","mood":"grumpy","busy":1}
-{"t":"do","name":"error","play":"now","args":{"variant":1}}
-{"expect":{"moment":{"anim":"error","left_ms":2888}}}
-{"clock":31000}
-{"shot":"error-grumpy"}
-// A helper back, wounded, over delegating.
-{"clock":40000}
-{"t":"state","base":"working","act":"delegating","mood":"wounded","busy":1}
-{"t":"do","name":"helper_return","play":"now","args":{"variant":3}}
-{"expect":{"moment":{"anim":"helper_return","left_ms":7410,"variant":3}}}
-{"clock":41500}
-{"shot":"helper-return-wounded"}
 // None plays while something needs you, or while listening waits for the
 // reply, which a rule's reaction never ends.
 {"clock":50000}
 {"t":"state","base":"working","busy":1,"attn":{"agent":"claude","project":"landing","more":0}}
-{"t":"do","name":"error","play":"now","args":{"variant":1}}
+{"t":"do","name":"starting","play":"now","args":{"ctx":"new_task"}}
 {"expect":{"screen":"needs_you","moment":null}}
 {"t":"state","base":"working","busy":1}
 {"t":"do","name":"listening","play":"now","args":{"variant":1}}
 {"t":"do","name":"starting","play":"now","args":{"ctx":"new_task"}}
-{"t":"do","name":"helper_return","play":"now"}
 {"expect":{"moment":{"anim":"listening"}}}
 {"t":"do","name":"stop_listening","play":"now"}
 {"expect":{"moment":null}}

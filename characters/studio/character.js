@@ -1,5 +1,5 @@
 // The studio's views of the character itself (README.md): its Overview,
-// Personality and Moods, its words (Signs, Diary, Voice), its tests (Evals,
+// Personality and Moods, its words (Signs, Dreams, Voice), its tests (Evals,
 // Demos) and the Stills its tests hold its faces to. Everything here is the
 // pack's own, from charactergen.py's data (packs.js): the engine's lists
 // only order it. studio.js makes each view with its own calls (`api`); a
@@ -102,7 +102,7 @@
           {go: 'stills', n: stills, label: 'Stills', sub: stills ? `golden frames, ${count(pack.stills.length, 'set')}` : 'no golden frames'}]],
         ['What it says', [
           {go: 'signs', n: pack.signs.length, label: 'Signs', sub: 'captions it holds up'},
-          {go: 'diary', n: pack.diary.length, label: 'Diary lines', sub: 'one a day'},
+          {go: 'dreams', n: pack.dreams.length, label: 'Dream signs', sub: 'told each morning'},
           {go: 'voice', n: voice?.takes.length || 0, label: 'Voice takes', sub: !voice ? 'no voice' : pack.voice === api.sel.pack ? 'its own' : `${api.title(pack.voice)}'s voice`}]],
         ['What holds it', [
           {go: 'evals', n: pack.evals.length, label: 'Evals', sub: `${pack.evals.filter(e => e.always).length} always`},
@@ -126,7 +126,7 @@
         if (mute.length) out.push({text: `${count(mute.length, 'mood')} ${mute.length === 1 ? 'has' : 'have'} no voice takes: ${mute.map(api.title).join(', ')}.`, go: 'voice'});
       }
       if (!pack.signs.length) out.push({text: 'No signs, so it never holds one up.', go: 'signs'});
-      if (!pack.diary.length) out.push({text: 'No diary lines, so it keeps no diary.', go: 'diary'});
+      if (!pack.dreams.length) out.push({text: 'No dream signs, so it tells its dreams with none.', go: 'dreams'});
       const waiting = pack.review.queue.filter(i => i.status === 'in review');
       if (waiting.length) out.push({text: `${count(waiting.length, 'item')} ${waiting.length === 1 ? 'waits' : 'wait'} for your review.`, go: 'review'});
       return out;
@@ -172,7 +172,6 @@
     const SETTINGS = {
       working_heartbeat: ['Checks in on a turn', v => `every ${span(v)}`],
       idle_heartbeat: ['Checks in while idle', v => `every ${span(v)}`],
-      tool_uses: ['Tool uses it hears', v => `${v} ones`],
     };
     // An example: what happened (NOW) and, after →, what the character does.
     function example(text) {
@@ -197,7 +196,7 @@
         list.length > 1 && h('div', {className: 'segmented', role: 'group', 'aria-label': 'Personality'}, list.map(x =>
           h('button', {type: 'button', 'data-personality': x.id, 'aria-pressed': String(x.id === s.id)}, api.title(x.id)))),
         p ? panel({},
-          h('header', {className: 'panel-head'}, h('p', {className: 'eyebrow'}, 'Personality, picked in Settings'), h('h2', {}, api.title(p.id)), h('p', {className: 'lead'}, p.about)),
+          h('header', {className: 'panel-head'}, h('p', {className: 'eyebrow'}, 'Personality'), h('h2', {}, api.title(p.id)), h('p', {className: 'lead'}, p.about)),
           Object.keys(p.settings).length > 0 && h('div', {className: 'settings'}, Object.entries(p.settings).map(([k, v]) => {
             const [label, say] = SETTINGS[k] || [api.title(k), x => x];
             return h('div', {className: 'setting'}, h('small', {}, label), h('strong', {}, say(v)));
@@ -280,7 +279,7 @@
               family && badge(family.label),
               mood.id === pack.default_mood && badge('resting mood'),
               mood.id === pack.startup_mood && badge('wakes up in it')),
-            h('p', {className: 'lead'}, mood.meaning || ''),
+            h('p', {className: 'lead'}, mood.meaning || (mood.settles ? `A face only: it settles into ${mood.settles}.` : '')),
             h('div', {className: 'mood-visual'},
               h('figure', {className: 'mood-face'}, thumb,
                 h('figcaption', {}, wears !== mood.id ? `No art of its own here: it wears ${api.title(wears)}.` : mood.face || 'Idle, in this mood.'),
@@ -339,23 +338,21 @@
     return {state: s, enter: render, card: render, empty: () => !packOf(api).signs.length};
   }
 
-  // ── Diary ───────────────────────────────────────────────────────────────
-  // Each line it may write about yesterday, filled in for a sample day, with
-  // the tags the day must have.
-  function diary(api) {
-    const root = sheet(api, 'diary');
-    const DAY = {weekday: 'Tuesday', turns: 12, failed: 3, longest: 42, thread: 'search index', pokes: 7};
-    const fill = text => text.replace(/\{(\w+)\}/g, (m, k) => k in DAY ? String(DAY[k]) : m);
+  // ── Dreams ──────────────────────────────────────────────────────────────
+  // Each sign it may hold up as it tells its dream about yesterday, with
+  // the tags the day must have: the person's first, then the agents'.
+  function dreams(api) {
+    const root = sheet(api, 'dreams');
     function render() {
-      const list = packOf(api).diary;
+      const list = packOf(api).dreams;
       root.replaceChildren(panel({},
-        heading('Diary', `The lines ${packOf(api).name} may write about yesterday, one a day, on the brain's first pass of a new day. Here they're filled in for a sample day: ${DAY.weekday}, ${DAY.turns} turns, ${DAY.failed} failed, the longest ${DAY.longest} min on "${DAY.thread}", ${DAY.pokes} pokes.`),
-        !list.length ? h('p', {className: 'empty-note'}, 'This pack keeps no diary.')
+        heading('Dreams', `The signs ${packOf(api).name} may hold up as it tells its dream about yesterday, the first time you show up after its day closes at 5:00. A sign fits when the day has all its tags: the person's (fond, distant, here, late, answered) and the agents' (failed, clean, long, quiet, poked).`),
+        !list.length ? h('p', {className: 'empty-note'}, 'This pack has no dream signs: it tells its dreams with none.')
           : h('ol', {className: 'diary'}, list.map(x => h('li', {title: x.text},
             h('div', {className: 'when'}, x.tags.length ? x.tags.map(t => badge(t)) : h('small', {}, 'any day')),
-            h('p', {}, fill(x.text)))))));
+            h('p', {}, x.text))))));
     }
-    return {state: DAY, enter: render, card: render, empty: () => !packOf(api).diary.length};
+    return {state: {}, enter: render, card: render, empty: () => !packOf(api).dreams.length};
   }
 
   // ── Voice ───────────────────────────────────────────────────────────────
@@ -620,7 +617,7 @@
     };
   }
 
-  window.StudioCharacterViews = {overview, personality, moods, signs, diary, voice, evals, demos, stills};
+  window.StudioCharacterViews = {overview, personality, moods, signs, dreams, voice, evals, demos, stills};
   // The Map says a personality's settings as Personality does.
   window.StudioSpan = span;
 })();

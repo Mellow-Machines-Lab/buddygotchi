@@ -37,13 +37,10 @@ struct SettingsPane: View {
                     PaneSection("Sound") { sound }
                     PaneSection("Agents") { agents }
                     PaneSection("Device") { device }
-                    // Named for what's in it: a personality picker when
-                    // the pack has two, else Talk; the brain's key apart.
-                    // Nothing in it before the runtime says what talk levels the pack has.
-                    if Personality.allCases.count > 1 || model.status?.talks == true || brainNote != nil {
-                        PaneSection(Personality.allCases.count > 1 ? "Personality" : "Talk") { personality }
-                    }
+                    // How much it says; the brain's key apart.
+                    PaneSection("Talk") { talkSetting }
                     PaneSection("Brain") { Card(padding: 0) { key } }
+                    PaneSection("Memory") { Card(padding: 0) { memorySetting } }
                     PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -60,6 +57,16 @@ struct SettingsPane: View {
     }
 
     // MARK: Sound
+
+    /// What Boop remembers about you, where it's kept, what leaves the Mac,
+    /// and forgetting it.
+    private var memorySetting: some View {
+        SettingRow(icon: "brain", title: "What \(model.name) remembers",
+                   detail: "Written each night on this Mac. Its notes go to the brain with each request.") {
+            Button("Forget about me") { model.runtime?.forgetAboutYou() }.buttonStyle(.row).fixedSize()
+                .help("Forget the notes about you and your work, and your recent days")
+        }
+    }
 
     private var sound: some View {
         let s = model.status?.snapshot
@@ -178,20 +185,19 @@ struct SettingsPane: View {
                             .help("Let \(model.name) take any board, and remember the next one tapped")
                     }
                 }
-                // A simulator on this Mac is a body to choose: the browser's
-                // while it runs, the internal build's window always.
-                if model.simulator != .none {
+                // The simulator's window is a body to choose, on or off,
+                // in the builds that have it.
+                if AppModel.offersSimulator {
                     Hairline().padding(.leading, 40).padding(.trailing, 12)
                     SettingRow(icon: "macwindow", title: "Simulator", detail: simulatorDetail) {
                         HStack(spacing: 6) {
                             if model.usingSimulator {
                                 Button("Show") { model.showSimulator() }.buttonStyle(.row).fixedSize()
-                                    .help("Bring \(model.name)'s simulated board to the front")
+                                    .help("Bring \(model.name)'s simulator window to the front")
                             }
-                            Button(model.usingSimulator ? "Use the board" : "Use it") {
-                                model.use(model.usingSimulator ? .board : .simulator)
-                            }.buttonStyle(.row).fixedSize()
-                                .help(model.usingSimulator ? "Go back to \(model.name)'s board" : simulatorHelp)
+                            Toggle("Simulator", isOn: Binding(get: { model.usingSimulator }, set: { model.use($0 ? .simulator : .board) }))
+                                .toggleStyle(.boop).labelsHidden()
+                                .help(model.usingSimulator ? "Go back to \(model.name)'s board" : "Make the simulator window \(model.name)'s body, from now on")
                         }
                     }
                 }
@@ -199,19 +205,10 @@ struct SettingsPane: View {
         }
     }
 
-    /// What the simulator's row says: where it is, and whether it's in use.
+    /// What the simulator's row says: whether it's in use.
     private var simulatorDetail: String {
-        let window = AppModel.simulatorKind == .window
-        if model.usingSimulator {
-            return window ? "\(model.name)'s body is a simulated board in a window of its own, not its board."
-                : "\(model.name) is using the simulator in your browser, not its board."
-        }
-        return window ? "A simulated board in a window, for when the board isn't here." : "A simulated board is running on this Mac."
-    }
-
-    private var simulatorHelp: String {
-        AppModel.simulatorKind == .window ? "Use the simulated board as \(model.name)'s body, from now on"
-            : "Use the simulator as \(model.name)'s body until it stops"
+        model.usingSimulator ? "\(model.name)'s body is the simulator window, not its board."
+            : "The simulator window, a board for when the board isn't here."
     }
 
     private var firmwareRow: some View {
@@ -283,19 +280,12 @@ struct SettingsPane: View {
         return "Without a Jev API key, \(model.name) shows what the agents are doing and when one needs you, but doesn't react or change its mood, and shrugs when you talk to it."
     }
 
-    private var personality: some View {
+    private var talkSetting: some View {
         Card(padding: 0) {
             VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 8) {
-                    // A pack with one personality has nothing to choose.
-                    if Personality.allCases.count > 1 {
-                        RowPicker(label: "Personality", rows: Personality.allCases.map { .init(value: $0, title: $0.rawValue.capitalized, about: $0.about) },
-                                  chosen: Binding(get: { model.personality }, set: { model.setPersonality($0) }))
-                    }
-                    if model.status?.talks == true {
-                        RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
-                                  chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
-                    }
+                    RowPicker(label: "Talk", rows: Talk.allCases.map { .init(value: $0, title: $0.title, about: $0.about(model.name)) },
+                              chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
                 }
                 .padding(12)
                 .disabled(model.status == nil)

@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-26. A board with no board: the firmware's own code in a
+Updated 2026-11-01. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -22,31 +22,28 @@ the board shows now (`/board`, under USB below; the first board's, with
 several). The studio's own boards, a preview of each face, on which its
 Transitions and References record, are this `Board` too: the
 server serves the page's files again at `/simulator/`, where the studio
-looks for them under its own server as well
+looks for them
 ([characters/studio/README.md](../characters/studio/README.md), On the
-board).
+board). It is the studio's only server: it saves a review verdict to a
+pack's `review/notes.jsonl` (`/review`), and with `--capture-dir DIR` the
+review clips a pack names, only from its own page; `--characters DIR`
+serves another folder of packs.
 
-**With the Mac app.** `make dev` starts the simulator beside the debug
-app and opens its page. While the simulator runs, Boop's Settings shows it
-under Device: **Use it** makes it Boop's body, with your real hooks and
-brain, and **Use the board** goes back. The choice lasts while the
-simulator runs: when it stops, Boop is back on its board by itself, and
-the next launch starts with the board (`DeviceChooser`, in
-`app/BoopKit/DeviceLink/`). The app finds a simulator by its USB socket,
-`/tmp/boop-sim-usb.sock`, and only one that this user started.
+**With the Mac app.** The app's body is the simulator in one way: a
+window of its own, in `make dev`'s debug build and the internal build.
+Onboarding offers it when there's no board ("No board? Use the simulator
+window"), and Settings' Simulator row switches to it and back, with your
+real hooks and brain (`DeviceChooser`, in `app/BoopKit/DeviceLink/`).
+The choice is kept from launch to launch, and on the simulator the app
+never uses Bluetooth. Onboarding's lessons are done in the window: a
+click is a tap, BOOT (or Space) is the button, held while you talk to the
+Mac's mic, and a drag up from the strip opens the agents' drawer. The
+browser's page and its USB socket are for the tools (`boopctl sim`, the
+studio, `Boop --headless --link usb:…`), not the app.
 
-**With no board.** `make dev FRESH=1 SIM=1` shows Boop to someone who
-has no board: the simulator is its body from the first launch's
-onboarding on, and stays it, waiting for its page while it's closed, so
-the app never uses Bluetooth (`Boop --simulator`). Onboarding asks for
-the body in the browser, and its lessons are done there: a click is a
-tap, BOOT (or Space) is the button, held while you talk to the Mac's
-mic, and a drag up from the strip opens the agents' drawer. The first
-touch of the board turns its sound on. Without `SIM=1`, onboarding
-offers a running simulator when there's no board.
-
-**In the internal build.** `make bundle INTERNAL=1` builds Boop.app
-with the simulator inside: its page (`web/app.html`, which `build.sh`
+**The window.** `make dev` puts its page beside the debug binary
+(`.build/debug/simulator/`), and `make bundle INTERNAL=1` builds Boop.app
+with it inside, both with `app/tools/simulator.sh`: its page (`web/app.html`, which `build.sh`
 puts in `dist/` beside the others), core and the pack's voice in the
 app's Resources, shown in a window of the app's own
 (`app/Boop/BoardWindow.swift`), with no browser, server or socket. The
@@ -55,8 +52,8 @@ cable plugged in afresh, and the app sends the board its lines by
 script. Boop's body is the board until the simulator is chosen, in
 onboarding or Settings, and the choice is kept; closed, the window is
 the board unplugged, and Settings, the popover's notice or opening Boop
-again shows it. It's for someone without a board: a zip of the app is
-all they need.
+again shows it. The internal build is for someone without a board: a
+zip of the app is all they need.
 
 ## One core, two builds
 
@@ -153,7 +150,8 @@ whenever one changes, with no `led` on the AMOLED board) and `power`. The script
 board's messages mean: they pass through it. The script exports the
 rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
 for `board.motion`; `TAP`, where a tap lands, beside the nose (on it is
-a gesture), for `board.touch`; and `HEARTBEAT_MS`, how often a page that
+a gesture), for `board.touch`; `LANE_Y`, the lane's middle, where an
+ask's answers are tapped; and `HEARTBEAT_MS`, how often a page that
 keeps a board company says its `state` again, as the demo player does.
 `Board.make` compiles a build's WebAssembly once for every board a page
 makes from it.
@@ -208,13 +206,18 @@ more of:
   `Boop shows that it needs you`. The recorder writes them, since it knows
   what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
-  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `press`,
-  `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
+  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `gesture`,
+  `press`, `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
   screen, which the board reacts to by itself, as it does to a real one;
   `hold`, one kept there for the event's `hold` seconds (the demo's
   `DemoScript.holdSeconds`, past the board's hold on the needs-you screen;
-  1.2 for a recording that doesn't say); or `press`, BOOT.
+  1.2 for a recording that doesn't say); `press`, BOOT; or a gesture the
+  board knows by itself (a demo's `gesture` step): `stroke`, a finger
+  dragged slowly across the face; `nose`, a tap on its nose; `tickle`, a
+  finger wiggling in one spot; or `dizzy`, a shake on the motion sensor;
+  or `answer-a` or `answer-b`, a tap on the left or right half of the
+  lane, where a question's two answers show (a demo's `answer` step).
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,
 and under it each effect. Nothing of it is on the board's screen. Play, Pause and Restart are there; paused or over, the page

@@ -113,17 +113,23 @@ public enum DebugLog {
         return out
     }
 
-    /// What the device messages don't carry: the personality, the brain, the
-    /// sessions, whether the device is connected and Boop's stage (a
-    /// `state` carries the mood; the XP, which moves with every tool call,
-    /// stays out). Nil when it's the same as `last`; the runtime writes only
-    /// changes.
-    public static func status(_ status: Runtime.Status, at ms: Int64, last: inout String?) -> String? {
-        let value = Event.json(["personality": status.personality.rawValue, "brain": status.brain,
-                                "connected": status.connected,
-                                "stage": status.growth?.stage ?? 1,
-                                "sessions": status.sessions.map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] }]
-                               as [String: Any])
+    /// What the device messages and the prompt's CONTEXT don't carry: the
+    /// brain, the sessions, whether the device is connected, Boop's stage
+    /// and XP, today's XP from each pool against its cap (`today`, the
+    /// memory reader's tallies) and the mood's reason (a `state` carries
+    /// the mood). Nil when it's the same as `last`; the runtime writes only
+    /// changes, so one comes with every tool call that earns XP.
+    public static func status(_ status: Runtime.Status, today: MemoryReader.Tallies? = nil, at ms: Int64,
+                              last: inout String?) -> String? {
+        var fields: [String: Any] = ["brain": status.brain,
+                                     "connected": status.connected,
+                                     "stage": status.growth?.stage ?? 1,
+                                     "xp": status.growth?.xp ?? 0,
+                                     "today_xp": ["work": today?.workXP ?? 0, "work_cap": Growth.cap(.work),
+                                                  "care": today?.careXP ?? 0, "care_cap": Growth.cap(.care)],
+                                     "sessions": status.sessions.map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] }]
+        if let reason = status.moodReason { fields["mood_reason"] = reason.mood(status.snapshot.mood, name: status.name) }
+        let value = Event.json(fields)
         guard value != last else { return nil }
         last = value
         return line("status", value, at: ms)
@@ -354,11 +360,14 @@ public enum DebugLog {
 }
 
 extension DebugLog {
-    /// The state's head (the guide, PERSONALITY and MOOD), which changes
-    /// only with the personality or the mood, and its HISTORY and NOW,
-    /// which `debug.jsonl` logs apart.
+    /// The state's head (the guide, PERSONALITY, MEMORY and MOOD), which
+    /// changes only with the personality, the memory or the mood, and the
+    /// rest (CONTEXT, HISTORY and NOW), which `debug.jsonl` logs
+    /// apart.
     public static func split(_ state: String) -> (head: String, last: String) {
-        guard let r = state.range(of: "HISTORY (") else { return ("", state) }
+        // CONTEXT changes nearly every pass, so it goes with the pass.
+        let r = [ContextSection.heading, "HISTORY ("].compactMap { state.range(of: $0) }.min { $0.lowerBound < $1.lowerBound }
+        guard let r else { return ("", state) }
         return (String(state[..<r.lowerBound]), String(state[r.lowerBound...]))
     }
 }

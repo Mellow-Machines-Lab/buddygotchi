@@ -26,7 +26,9 @@ extension Event {
 
     /// What it is, whatever agent it came from.
     public enum Kind: String, Sendable, CaseIterable {
-        case session, turn, tool, subagent, poke, talk, presence, heartbeat
+        case session, turn, tool, subagent, poke, presence, heartbeat
+        /// What you said on push-to-talk; on disk by its older name.
+        case said = "talk"
         /// "Needs you" showing for a session, and clearing: the core's.
         case needsYou = "needs_you"
         /// Push-to-talk's listening: the Mac's mic going on (`start`), off
@@ -56,6 +58,19 @@ extension Event {
         /// The agent's last message's reading, after the turn end it came
         /// with: its facts are `MessageReading`'s, never the message.
         case lastMessage = "last_message"
+        /// Boop's day closed (`MemoryReader`): yesterday in tags and a
+        /// sentence, for Boop to tell when you next show up. Boop's own;
+        /// it wakes no pass.
+        case dream
+        /// The night's write to the written memory (`Memory`): which notes
+        /// it kept, changed, added, dropped and aged, and what it refused,
+        /// never their text. Boop's own; it wakes no pass.
+        case memory
+        /// An ask's end, which the board decides: you picked an answer
+        /// (`specific_type` `a` or `b`), a touch answered it (`touch`), or
+        /// nobody did (`ignored`), with the question's `q`, its words
+        /// (`question`), the `answer` and whether Boop `keeps` it.
+        case ask
     }
 
     /// Where in its life a thing with a start and an end is: a tool call
@@ -153,8 +168,13 @@ public enum Band {
     public static let veryShortMs: Int64 = 7000
 
     /// How long you were away from the Mac: short under 15 minutes, long
-    /// under 2 hours, very long past that.
+    /// under 2 hours, very long under `dayAwayMs` (a night's sleep is
+    /// very long), a day under `daysAwayMs`, days past that.
     public static func away(ms: Int64) -> String {
-        ms < 15 * 60_000 ? "short" : ms < 2 * 60 * 60_000 ? "long" : "very long"
+        ms < 15 * 60_000 ? "short" : ms < 2 * 60 * 60_000 ? "long" : ms < dayAwayMs ? "very long" : ms < daysAwayMs ? "a day" : "days"
     }
+    /// Away this long is a day: more than a night.
+    public static let dayAwayMs: Int64 = 20 * 60 * 60_000
+    /// Away this long is days: a weekend or more.
+    public static let daysAwayMs: Int64 = 40 * 60 * 60_000
 }

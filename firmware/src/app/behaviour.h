@@ -95,6 +95,21 @@ struct PlayedOut {
 // fonts, cut with ".." past them (render::foldText), in kSignBytes.
 constexpr int kSignGlyphs = 18;
 constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
+// An ask's answer (`ask`'s `a` and `b`): half the lane, cut the same way.
+constexpr int kAnswerGlyphs = 7;
+constexpr size_t kAnswerBytes = 2 * kAnswerGlyphs + 1;
+constexpr size_t kAskIdBytes = 24;
+
+// How an ask ended (`ev ask`): its question's id and words, what was
+// picked (`a`, `b`, `touch` or `ignored`) and the answer's words ("" when
+// ignored).
+struct AskEnd {
+  char q[kAskIdBytes] = "";
+  char question[kSignBytes] = "";
+  const char* pick = nullptr;
+  char answer[kAnswerBytes] = "";
+  bool injected = false;
+};
 // A reply's name (`reply`), with room for the longest, "comfort".
 constexpr size_t kReplyBytes = 12;
 
@@ -135,12 +150,22 @@ struct ReactionIn {
   uint32_t id = 0;
   // The words the buddy holds up on a sign while it plays, "" for none.
   char sign[kSignBytes] = "";
+  // Why it plays, in a few words (`reason`: "away 12 h", "stroked"): the
+  // lane shows it while it plays and no `say` fills the lane. "" for none.
+  char reason[kSignBytes] = "";
   // With an expression, the Mac's reply to what you said (`reply`): the
   // face plays its pack's clip for it as the expression starts. "" for none.
   char reply[kReplyBytes] = "";
   // It asks for the agents' drawer (`show` "drawer"), the rest of its
   // answer: Device opens it once the sign has been read.
   bool showDrawer = false;
+  // It asks you something (`ask`): the question's id, "" for none, its two
+  // answers, and whether a touch (a stroke, a boop…) answers it too. The
+  // question is its sign.
+  char askQ[kAskIdBytes] = "";
+  char askA[kAnswerBytes] = "";
+  char askB[kAnswerBytes] = "";
+  bool askTouch = false;
 };
 
 class Behaviour {
@@ -173,6 +198,10 @@ class Behaviour {
   // A reaction's sign shows from its start for as long as any part of it
   // plays, and at least this long, to be read.
   static constexpr uint32_t kSignMinMs = 2500;
+  // An ask waits this long for its answer, its question up and its
+  // answers in the lane, then ends `ignored`: inside the host's wait for
+  // a reaction's `ended`.
+  static constexpr uint32_t kAskMs = 45000;
   // The finished turn the brain's reaction names (its `who`) stays named
   // in the strip, and marked on the face, this long after the reaction
   // plays out, and a tap still opens its thread, unless another animation,
@@ -269,6 +298,25 @@ class Behaviour {
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
+  // What the lane's bubble shows at t, or null for the strip: the `say`'s
+  // text, else the reaction's reason for as long as its sign would show,
+  // under the same rules (none with no app, nor while something needs you
+  // unless it's a reply to what you said).
+  const char* laneText(uint32_t t) const;
+  // An ask is up: its answers in the lane, waiting for a tap. Not with no
+  // app or while something needs you.
+  bool asking(uint32_t t) const;
+  // Answers the ask that's up: `pick` "a", "b" or "touch" (which picks
+  // `a`; only when the ask takes a touch). False when there's none to
+  // answer. Its end waits in takeAskEnd.
+  bool answer(const char* pick, uint32_t t, bool injected);
+  // A newer reaction is about to play: the ask ends unanswered, so its end
+  // goes before the kit ends its reaction.
+  void dropAsk(uint32_t t);
+  // Whether a touch answers the ask that's up.
+  bool askTakesTouch(uint32_t t) const { return asking(t) && ask_.touch; }
+  // How the last ask ended, once, before its reaction's PlayedOut.
+  bool takeAskEnd(AskEnd& e);
   // The sign a reaction holds up, while it shows, and for the rig's fade
   // after it goes (a reaction's end, a tap's, being put face down), fading
   // out: no text with no app or while something needs you, which take it
@@ -466,6 +514,24 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
+  // The reaction's reason (laneText()), timed as its sign would be.
+  Sign reason_;
+  // The ask up, from `at` for kAskMs, its reaction's key; `lane` is its
+  // answers as the lane shows them. q "" for none.
+  struct Ask {
+    char q[kAskIdBytes] = "";
+    char question[kSignBytes] = "";
+    char a[kAnswerBytes] = "", b[kAnswerBytes] = "";
+    char lane[kSignBytes] = "";
+    bool touch = false;
+    uint32_t at = 0, key = 0;
+  };
+  Ask ask_;
+  AskEnd askEnd_;
+  bool askEnded_ = false;
+  bool askOn(uint32_t t) const;
+  // The ask ends, `pick` how; its sign comes down with it.
+  void endAsk(const char* pick, uint32_t t, bool injected = false);
   // The sign that went last, fading out from goneAt_ (sign()).
   Sign gone_;
   uint32_t goneAt_ = 0;

@@ -56,9 +56,6 @@ enum DoIndex : uint8_t {
   kTaskComplete,
   kReplyReady,
   kStarting,
-  kStopped,
-  kError,
-  kHelperReturn,
   kWakeUp,
   kListening,
   kStopListening,
@@ -66,15 +63,12 @@ enum DoIndex : uint8_t {
   kCall,
   kDoCount
 };
-constexpr const char* kDoNames[kDoCount] = {"react",         "task_complete", "reply_ready", "starting",
-                                            "stopped",       "error",         "helper_return", "wake_up",
-                                            "listening",     "stop_listening", "notice",      "call"};
-constexpr render::SceneState kDoAnims[kDoCount] = {render::SceneState::kNone,         render::SceneState::kTaskComplete,
-                                                   render::SceneState::kReplyReady,   render::SceneState::kStarting,
-                                                   render::SceneState::kStopped,      render::SceneState::kError,
-                                                   render::SceneState::kHelperReturn, render::SceneState::kWakeUp,
-                                                   render::SceneState::kListening,    render::SceneState::kNone,
-                                                   render::SceneState::kNotice,       render::SceneState::kNone};
+constexpr const char* kDoNames[kDoCount] = {"react",     "task_complete",  "reply_ready", "starting", "wake_up",
+                                            "listening", "stop_listening", "notice",      "call"};
+constexpr render::SceneState kDoAnims[kDoCount] = {
+    render::SceneState::kNone,      render::SceneState::kTaskComplete, render::SceneState::kReplyReady,
+    render::SceneState::kStarting,  render::SceneState::kWakeUp,       render::SceneState::kListening,
+    render::SceneState::kNone,      render::SceneState::kNotice,       render::SceneState::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -103,6 +97,7 @@ Device::Device(Hal& hal, uint8_t* pixels, std::unique_ptr<render::Face> face)
   }
 }
 Device::~Device() {
+  if (ownsCanvas_) hal_.releaseSurface(canvas_.pixels());
   if (!native_) return;
   if (native_->back().pixels) hal_.releaseSurface(native_->back().pixels);
   if (native_->front().pixels) hal_.releaseSurface(native_->front().pixels);
@@ -117,8 +112,10 @@ int Device::does(const char* const*& names) const {
 void Device::hello(JsonObject extra) {
   extra["voice"] = voice::assetsVersion();
   extra["face"] = b_.face().name();
-  extra["pack"] = render::kPackId;  // the character pack it was built with
-  extra["pack_version"] = render::kPackVersion;
+  // The character pack it was built with, as `id version`.
+  static char pack[48];
+  if (!*pack) std::snprintf(pack, sizeof pack, "%s %s", render::kPackId, render::kPackVersion);
+  extra["pack"] = static_cast<const char*>(pack);
   extra["reset"] = hal_.resetReason();  // why it last restarted: the Mac logs a crash or a watchdog
   if (*hal_.boardName()) extra["board"] = hal_.boardName();  // which firmware the Mac updates it with
 }
@@ -145,6 +142,18 @@ void Device::reset() {
 }
 
 void Device::drain() {
+  // An ask's end goes first: the Mac hears the answer before the reaction's
+  // `ended`.
+  AskEnd a;
+  if (b_.takeAskEnd(a)) {
+    JsonDocument d;
+    d["q"] = a.q;
+    d["question"] = a.question;
+    if (a.answer[0]) d["answer"] = a.answer;
+    char data[160];
+    serializeJson(d, data, sizeof(data));
+    kit().emit("ask", a.pick, data, a.injected);
+  }
   PlayedOut p;
   if (b_.takePlayedOut(p)) kit().ended(p.key, p.by == CutBy::kNone ? How::kDone : How::kCut, cutByName(p.by));
 }
@@ -259,9 +268,20 @@ ReactionIn Device::parse(const Do& c) {
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
   // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
   render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
+  // Why it plays, for the lane, cut the same.
+  render::foldText(args["reason"].as<const char*>(), kSignGlyphs, mo.reason, sizeof(mo.reason));
   // What a face it brings replies to what you said, by name.
   if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
   mo.showDrawer = !std::strcmp(args["show"] | "", "drawer");
+  // What it asks: the question's id and its two answers, each cut to half
+  // the lane. One with no id or an answer missing asks nothing.
+  JsonObjectConst ask = args["ask"];
+  if (ask) {
+    render::foldText(ask["a"].as<const char*>(), kAnswerGlyphs, mo.askA, sizeof(mo.askA));
+    render::foldText(ask["b"].as<const char*>(), kAnswerGlyphs, mo.askB, sizeof(mo.askB));
+    if (mo.askA[0] && mo.askB[0]) copyStr(mo.askQ, sizeof(mo.askQ), ask["q"].as<const char*>());
+    mo.askTouch = ask["touch"] | false;
+  }
   return mo;
 }
 
@@ -274,7 +294,8 @@ const char* Device::refuse(const Do& c, uint32_t t) {
   if (c.what == kCall) return b_.callShows(t) ? nullptr : "hidden";
   live_.parsed = parse(c);
   const char* why = b_.admit(live_.parsed, t);
-  drain();  // a listening reaction the reply ended
+  if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
+  drain();                  // a listening reaction the reply ended, or the ask's
   if (why) live_.parsed = ReactionIn{};
   return why;
 }
@@ -322,7 +343,10 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kReact:
       live_.restKey = c.key;
       live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
-      if (mo.sign[0] && b_.signUp(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      // An ask rests once its question has been read: anything newer may
+      // replace it, and ends it unanswered.
+      if (mo.sign[0] && b_.signUp(t) && !b_.asking(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      if (b_.asking(t) && after(t + Behaviour::kSignMinMs, live_.restAt)) live_.restAt = t + Behaviour::kSignMinMs;
       break;
     case kTaskComplete:
     case kReplyReady:
@@ -579,7 +603,14 @@ void Device::readInputs(uint32_t t) {
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
         const bool noseOnFinish = kind == TouchGesture::kGesture && g == render::Gesture::kNose && b_.finishShown(t);
-        if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
+        // While an ask is up, a tap in the lane is only its answer: the
+        // left half picks `a`, the right `b`.
+        const bool onAnswer = kind == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
+        if (onAnswer) {
+          input("tap", t);
+          b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
+          drain();
+        } else if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
           tapped(t, live_.touchInjected, false);
         else
           gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
@@ -762,10 +793,18 @@ void Device::tendDrawer(uint32_t t) {
 
 bool Device::needsYouShows(uint32_t t) const { return b_.look(t) == render::SceneState::kNeedsYou; }
 
+// The touches that answer an ask that takes one: the kind ones.
+static bool caring(render::Gesture g) {
+  using G = render::Gesture;
+  return g == G::kStroke || g == G::kNose || g == G::kTickle || g == G::kRuffle || g == G::kPickup || g == G::kDizzy;
+}
+
 void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) {
+  const bool answers = !swipe && caring(g) && b_.askTakesTouch(t);
   if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
   input("gesture", t);
   kit().emit("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, injected);
+  if (answers) b_.answer("touch", t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
 
@@ -897,7 +936,7 @@ void Device::render(uint32_t t) {
     // scroll, and the paw dropping over its edge once it has sprung open.
     makeDrawer(t);
     b_.face().drawer(&drawer_);
-    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.bubble(t), b_.sign(t),
+    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneText(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;
   }

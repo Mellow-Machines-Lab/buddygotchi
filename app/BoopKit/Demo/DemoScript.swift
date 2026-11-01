@@ -70,6 +70,12 @@ public struct DemoScript: Sendable {
             /// request.
             case hold
             case talk(String, hold: Double)
+            /// A gesture of yours to the board, one it knows by itself: a
+            /// stroke, a boop on its nose, a tickle or a shake (`dizzy`).
+            case gesture(String)
+            /// A tap on one of the answers the buddy's question shows in
+            /// its lane: `a`, the left, or `b`, the right.
+            case answer(String)
             /// Back at the Mac after this many ms away.
             case back(ms: Int64)
             /// This many ms pass at once.
@@ -260,6 +266,16 @@ public struct DemoScript: Sendable {
             } else if let does = string("you") {
                 switch does {
                 case "poke": what = .poke
+                case "gesture":
+                    guard let kind = string("kind"), DemoScript.gestures.contains(kind) else {
+                        throw Problem(description: "\(here): a gesture's kind is \(DemoScript.gestures.sorted().joined(separator: ", "))")
+                    }
+                    what = .gesture(kind)
+                case "answer":
+                    guard let pick = string("pick"), pick == "a" || pick == "b" else {
+                        throw Problem(description: "\(here): an answer's pick is a or b")
+                    }
+                    what = .answer(pick)
                 case "press": what = .press
                 case "hold": what = .hold
                 case "talk":
@@ -272,7 +288,7 @@ public struct DemoScript: Sendable {
                 case "wait":
                     guard let minutes = number("minutes"), minutes > 0 else { throw Problem(description: "\(here): a wait's minutes are more than 0") }
                     what = .wait(ms: Int64(minutes * 60_000))
-                default: throw Problem(description: "\(here): you is poke, press, hold, talk, back or wait")
+                default: throw Problem(description: "\(here): you is poke, gesture, answer, press, hold, talk, back or wait")
                 }
             } else if o["brain"] != nil || o["mood"] != nil {
                 what = .brain(o["brain"] as? [String: String] ?? [:], mood: string("mood"))
@@ -283,7 +299,7 @@ public struct DemoScript: Sendable {
             case .agent(let a) where a.does == .prompt: (1, 0)
             case .agent(let a) where a.does == .run || a.does == .compact: (1, 2)
             case .agent: (1, 0.6)
-            case .poke, .press, .hold, .talk, .back, .wait: (0.8, 0)
+            case .poke, .press, .hold, .talk, .back, .wait, .gesture, .answer: (0.8, 0)
             case .brain: (0.3, 0)
             }
             let buddy = string("buddy")
@@ -302,6 +318,9 @@ public struct DemoScript: Sendable {
     /// seconds: past the board's hold (TouchGesture::kHoldMs), so the
     /// board sees one.
     public static let holdSeconds = 1.2
+    /// The gestures a step may make: the care gestures the simulator and a
+    /// person can make on the board's screen or with it.
+    public static let gestures: Set<String> = ["stroke", "nose", "tickle", "dizzy"]
 
     /// `2026-10-31T09:00`, a demo's `start` and an eval's, in `timeZone`
     /// (this Mac's for a demo), as ms since 1970.
@@ -327,7 +346,7 @@ public struct DemoScript: Sendable {
         "demo": ["demo", "title", "agent", "buddies", "start"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "waits", "task", "prompt", "summary", "by",
                   "takes", "session", "reading", "todos"],
-        "you": ["you", "text", "hold", "minutes"],
+        "you": ["you", "text", "hold", "minutes", "kind", "pick"],
         "brain": ["brain", "mood"],
     ]
     static let anyStep = ["after", "note", "buddy"]
@@ -364,6 +383,8 @@ extension DemoScript.Step {
     public var input: String? {
         switch what {
         case .poke: "tap"
+        case .gesture(let kind): kind
+        case .answer(let pick): "answer-\(pick)"
         case .press: "press"
         case .hold: "hold"
         default: nil
@@ -378,11 +399,16 @@ extension DemoScript.Step {
         let found: DemoScript.Cause?
         switch what {
         case .poke: found = .init(kind: "tap", text: "You poke \(name)")
+        case .gesture(let kind):
+            let did = ["stroke": "You stroke \(name)", "nose": "You boop \(name)'s nose", "tickle": "You tickle \(name)",
+                       "dizzy": "You shake \(name)"]
+            found = .init(kind: "gesture", text: did[kind] ?? "You touch \(name)")
+        case .answer(let pick): found = .init(kind: "tap", text: "You tap \(pick == "a" ? "the left" : "the right") answer")
         case .press: found = .init(kind: "press", text: "You press \(name)'s button")
         case .hold: found = .init(kind: "hold", text: "You hold a finger on \(name)'s needs-you screen")
         case .wait(let ms): found = .init(kind: "wait", text: "\(Self.minutes(ms)) later")
         case .talk(let words, _): found = .init(kind: "talk", text: "You say “\(words)”")
-        case .back(let ms): found = .init(kind: "back", text: "You come back to the Mac after a \(Band.away(ms: ms)) break")
+        case .back(let ms): found = .init(kind: "back", text: EventLine.back(ms: ms).replacingOccurrences(of: "You came", with: "You come").replacingOccurrences(of: ".", with: ""))
         case .brain: found = nil
         case .agent(let a):
             let actor = a.byReviewer ? "The reviewer" : who
@@ -454,8 +480,8 @@ extension DemoScript {
                     found.append("line \(step.number): \(key) has no choice \(choice); it has \(choices.joined(separator: ", "))")
                 }
             }
-            if let mood, !pack.moods.map(\.id).contains(mood) {
-                found.append("line \(step.number): \(pack.id) has no mood \(mood); it has \(pack.moods.map(\.id).joined(separator: ", "))")
+            if let mood, !pack.lasting.map(\.id).contains(mood) {
+                found.append("line \(step.number): \(pack.id) has no lasting mood \(mood); it has \(pack.lasting.map(\.id).joined(separator: ", "))")
             }
         }
         return found

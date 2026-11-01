@@ -162,15 +162,13 @@ e2e:
 	cd $(ROOT) && internal/tools/boopctl e2e
 
 # The tools' own tests, with no board or camera: boopctl's commands (the
-# working day's script and report among them, the takes they read from
-# the voice pack, and a reference cut into frames with ffmpeg), the
-# fluidity measure, the webcam recorder on synthetic video, charactergen's
+# takes they read from the voice pack, and a reference cut into frames
+# with ffmpeg), the webcam recorder on synthetic video, charactergen's
 # staging and studio rules (internal/characters/), the studio's own logic
 # and server (with Node), that every demo's recording is up to date, and
 # each character pack's own (its tests/tools/).
 tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
-	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/fluid/tests
 	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests

@@ -69,7 +69,7 @@ final class DrawerTests: XCTestCase {
         XCTAssertTrue(rig.state.jsonLine.contains(#""list":[[\#(row.id),"w",0,"claude","landing",""]]"#), rig.state.jsonLine)
         XCTAssertFalse(rig.state.jsonLine.contains(#""calls""#))
         let named = StateSnapshot.Row(id: 9, status: "i", agent: "codex", title: "Hero copy", project: "landing")
-        var snapshot = StateSnapshot(base: "idle", mood: "calm", attn: nil, busy: 0, vol: 0, list: [named], unlisted: 2)
+        var snapshot = StateSnapshot(base: "idle", mood: "calm", attn: nil, working: 0, vol: 0, list: [named], unlisted: 2)
         XCTAssertEqual(snapshot.jsonLine,
                        #"{"t":"state","base":"idle","mood":"calm","busy":0,"vol":0,"list":[[9,"i",-1,"codex","Hero copy","landing"]],"unlisted":2}"#)
         snapshot.list = nil

@@ -154,8 +154,8 @@ final class ViewTests: XCTestCase {
     /// start is read but not kept, its wait on you is, and its end only
     /// when notable; sessions and subagents are never kept.
     func testTheKeepRule() {
-        func keeps(_ type: Event.Kind, _ phase: Event.Phase?, notable: Bool, all: Bool = false) -> Bool {
-            TranscriptView.keeps(type, phase, notable: notable, allToolEnds: all)
+        func keeps(_ type: Event.Kind, _ phase: Event.Phase?, notable: Bool) -> Bool {
+            TranscriptView.keeps(type, phase, notable: notable)
         }
         XCTAssertTrue(keeps(.turn, .start, notable: false))
         XCTAssertFalse(keeps(.tool, .start, notable: true))
@@ -167,8 +167,6 @@ final class ViewTests: XCTestCase {
         XCTAssertFalse(keeps(.subagent, .start, notable: true))
         XCTAssertFalse(keeps(.subagent, .end, notable: true))
         XCTAssertTrue(keeps(.poke, nil, notable: false))
-        XCTAssertTrue(keeps(.tool, .end, notable: false, all: true))
-        XCTAssertFalse(keeps(.tool, .start, notable: false, all: true))
 
         hook(.sessionStart)
         hook(.turnStart)
@@ -185,17 +183,12 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(hook(.turnEnd).map(\.line), [#"claude finished turn 1 on "fix-nav" (landing): done, a very short turn, no tool calls."#])
     }
 
-    /// Routine tool uses are only counted, unless the personality asks for
-    /// all of them.
-    func testRoutineToolUsesAreCountedOrWithAllBecomeEvents() {
+    /// Routine tool uses are only counted.
+    func testRoutineToolUsesAreCounted() {
         hook(.turnStart)
         XCTAssertEqual(hook(.activity, tool: "Edit", done: true), [])
-        rig.view.setRules(Personality.Rules(toolUses: .all))
-        XCTAssertEqual(hook(.activity, tool: "Edit", failed: false, done: true).map(\.line),
-                       [#"claude edited a file on "fix-nav" (landing)."#])
-        XCTAssertEqual(hook(.activity, tool: "mcp__x__y", failed: true, done: true, error: "other").map(\.line),
-                       [#"claude used a tool on "fix-nav" (landing). It failed."#])
-        XCTAssertEqual(hook(.turnEnd).first!.facts["tools_failed"], .int(1), "counted in the facts, not the line")
+        XCTAssertEqual(hook(.activity, tool: "mcp__x__y", failed: true, done: true, error: "other"), [])
+        XCTAssertEqual(hook(.turnEnd).first!.facts["tools_failed"], .int(1), "counted in the facts")
     }
 
     /// Codex says nothing about failures, so its tool uses are `unknown`
@@ -203,9 +196,7 @@ final class ViewTests: XCTestCase {
     func testCodexToolUsesAreUnknown() {
         hook(.turnStart, agent: .codex, session: "c1")
         XCTAssertEqual(hook(.activity, agent: .codex, session: "c1", tool: "shell", topic: "tests", done: true), [])
-        rig.view.setRules(Personality.Rules(toolUses: .all))
-        let e = hook(.activity, agent: .codex, session: "c1", tool: "shell", topic: "tests", done: true)
-        XCTAssertEqual(e.first?.facts["result"], "unknown")
+        XCTAssertEqual(hook(.turnEnd, agent: .codex, session: "c1").first?.facts["tools"], .int(1), "counted")
     }
 
     /// A failed check's error is in its facts, not its line.
@@ -363,7 +354,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(said[0].facts["by"], "device")
         let raw = try XCTUnwrap(rig.pipeline.transcript.events.last)
         XCTAssertEqual(raw.from, .mic)
-        XCTAssertEqual(raw.type, .talk)
+        XCTAssertEqual(raw.type, .said)
         XCTAssertEqual(raw.specificType, "device")
 
         let long = try XCTUnwrap(events(rig.said(String(repeating: "a", count: 2500), by: .app)).first)
@@ -748,11 +739,11 @@ final class ViewTests: XCTestCase {
         XCTAssertNil(second.threads["codex/c1"]?.needsSince, "the view's sessions agree")
         let shown = second.core.snapshot(at: rig.now)
         XCTAssertEqual(shown.attn?.agent, "claude", "its request still waits")
-        XCTAssertEqual(shown.busy, 1, "s2 still works")
+        XCTAssertEqual(shown.working, 1, "s2 still works")
         let answered = second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         XCTAssertEqual(needs(answered).map(\.phase), [.end])
         XCTAssertNil(second.threads["claude/s1"]?.needsSince, "the view folds the answer too")
-        XCTAssertEqual(second.core.snapshot(at: rig.now).busy, 2, "s1 works again")
+        XCTAssertEqual(second.core.snapshot(at: rig.now).working, 2, "s1 works again")
         XCTAssertNotNil(second.view.workingSince(at: rig.now, second.transcript.view(now: rig.now)))
     }
 
