@@ -369,7 +369,7 @@ unpushed local `main`.
 | The boards, `firmware/src/board/`, `firmware/platformio.ini`, flashing | `firmware/README.md` |
 | `simulator/` (the core, the page, the server and its cable, recording and playing demos, its tests) | `simulator/README.md`, `internal/VERIFICATION.md` |
 | `Makefile`, `internal/Makefile`, `internal/tools/`, `internal/app/BoopDev/`, `internal/skills/`, the simulator, tests, `.github/workflows/`, a budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |
-| `internal/app/BoopDevKit/Eval/`, `internal/app/Evals/`, `internal/tools/boopctl_lib/workday.py` | `internal/EVALS.md` |
+| `internal/app/BoopDevKit/Eval/`, `internal/app/Evals/` | `internal/EVALS.md` |
 | `Package.swift`, a package's `Package.swift`, what goes in `internal/` | `internal/README.md`, `documentation/architecture.html`, this file |
 | `characters/studio/`, a pack's `studio` entry or `studio/` adapter | `characters/studio/README.md`, `characters/CHARACTER.md` §12 |
 | The gel slime: its design (`character/design/slime-blob/`), `character/tools/slimegen/`, its engine (`character/firmware/src/render/gel/`) or `test_gel`, in SlimeBuddy | The slime package's `CONTINUITY.md` and `VALIDATION.md`, slimegen's `README.md`, there |

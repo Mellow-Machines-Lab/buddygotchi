@@ -92,8 +92,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   pass or fail (`factory`; `--auto` asks a person nothing), the scenarios (`sim`,
   `run`, and `mirror`, which plays the gel's on the Mac's mirror of the
   board and on the simulator, both with no card, and compares every shot), measurements (`perf`, `latency`, `soak`), the pipeline check
-  (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`,
-  `workday`), and a reference a person gave, taken in and cut into frames
+  (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`), and a reference a person gave, taken in and cut into frames
   and contact sheets to read (`reference`,
   [CHARACTER.md](../characters/CHARACTER.md) §16). `--port` picks the
   serial port; without it, while a bridge runs (below), commands go
@@ -647,13 +646,6 @@ retried once and counted as a link glitch.
    against the steering files (`characters/boop/steering/`): are the reactions and
    mood changes in character and never nagging, and the words and how
    long each face holds right for what happened?
-3. After a change to the steering files or the questions, the working
-   day ([EVALS.md](EVALS.md) §5): `boopctl workday run` twice before the
-   change and twice after, same seed, and `boopctl workday report` and
-   `boopctl workday check` on each.
-   How often the mood changes per hour, whether a routine step changed
-   it, and how often, with which faces and which takes Boop reacts,
-   before against after.
 
 **Pass:** every scenario passes in every run, but for known gaps
 ([EVALS.md](EVALS.md) §1), and every `always` one does; no pass is dropped; the
