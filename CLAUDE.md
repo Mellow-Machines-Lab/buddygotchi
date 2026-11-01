@@ -131,6 +131,9 @@ alters what the app sends the board, record them all again
   has it and whose firmware is on it. Keep it through a flash, a test and
   a flash back with `internal/tools/boopctl board hold -- CMD`
   ([internal/VERIFICATION.md](internal/VERIFICATION.md) §2).
+- A worktree is removed once its branch is merged into main
+  (`git worktree remove`, then `git branch -d`), so `.claude/worktrees/`
+  holds only work in progress.
 - A Unix socket's path has room for 103 bytes, so give `Boop --headless`
   a short state directory (under `/tmp`) or a short `--socket`.
 - Webcam recording works only from a terminal the Claude app opens (its
