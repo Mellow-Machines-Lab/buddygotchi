@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-10-26. A board with no board: the firmware's own code in a
+Updated 2026-10-31. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -208,13 +208,16 @@ more of:
   `Boop shows that it needs you`. The recorder writes them, since it knows
   what the messages mean and the page doesn't.
 - **`cause`:** what happened, in words, with a `kind` for its icon:
-  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `press`,
-  `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
+  `prompt`, `tool`, `tool_failed`, `compact`, `needs_you`, `tap`, `gesture`,
+  `press`, `hold`, `talk`, `back`, `wait`, `done`, `failed`, `stopped` or `note`.
 - **`input`:** what to do to the board itself: `tap`, a finger on its
   screen, which the board reacts to by itself, as it does to a real one;
   `hold`, one kept there for the event's `hold` seconds (the demo's
   `DemoScript.holdSeconds`, past the board's hold on the needs-you screen;
-  1.2 for a recording that doesn't say); or `press`, BOOT.
+  1.2 for a recording that doesn't say); `press`, BOOT; or a gesture the
+  board knows by itself (a demo's `gesture` step): `stroke`, a finger
+  dragged slowly across the face; `nose`, a tap on its nose; `tickle`, a
+  finger wiggling in one spot; or `dizzy`, a shake on the motion sensor.
 
 The page tells it as a story under the board (`DemoPlayer`): each cause,
 and under it each effect. Nothing of it is on the board's screen. Play, Pause and Restart are there; paused or over, the page

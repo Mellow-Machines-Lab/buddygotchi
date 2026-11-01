@@ -137,6 +137,10 @@ public final class TranscriptView {
         /// The away you haven't come back from: its
         /// event's `seq` and when you left.
         var awaySince: (seq: Int, at: Int64)?
+        /// When you last touched or talked to the buddy, or came back to
+        /// the Mac (`Yours.touched`): how long it's gone untouched counts
+        /// from here.
+        var touchedAt: Int64?
         /// The buddies lying face down (`""` for the only one), from their
         /// `facedown` until their `peekaboo`.
         var faceDown: Set<String> = []
@@ -401,6 +405,7 @@ public final class TranscriptView {
             return line
         }
         advance(to: e.at)
+        if Yours.touched(e) || (e.type == .presence && e.phase == .end) { fold.touchedAt = e.at }
         switch e.type {
         case .session?, .turn?, .tool?, .subagent?: return nil
         case .poke?: return poke(e)
@@ -900,11 +905,33 @@ public final class TranscriptView {
             fold.heartbeats = Int(hours)
             let t = Thread(s), minutes = (now - last) / 60_000
             return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
-                        facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
+                        notes: untouched(now, name: name(e)).map { [$0] } ?? [],
+                        facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes), "untouched_ms": untouchedMs(now).map { .int($0) } ?? .null])
         }
         guard hours > 0 else { return nil }
         fold.heartbeats = Int(hours)
-        return Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
+        return Line(EventLine.heartbeat(hours: Int(hours)), notes: untouched(now, name: name(e)).map { [$0] } ?? [],
+                    facts: ["idle_hours": .int(hours), "untouched_ms": untouchedMs(now).map { .int($0) } ?? .null])
+    }
+
+    /// How long you've been at the Mac without touching or talking to the
+    /// buddy before it's worth saying: lonely's cue (the pack's mood file).
+    /// Two hours, as the idle check-ins stop two hours after the last
+    /// activity (`idleWindowMs`).
+    public static let untouchedMs: Int64 = 2 * 60 * 60_000
+
+    /// How long it has gone untouched at `now`, while you're at the Mac;
+    /// nil while you're away, or before any touch or coming back.
+    func untouchedMs(_ now: Int64) -> Int64? {
+        guard fold.awaySince == nil, let since = fold.touchedAt else { return nil }
+        return now - since
+    }
+
+    /// The note under a quiet line once it has gone untouched for
+    /// `untouchedMs`, in whole hours.
+    func untouched(_ now: Int64, name: String) -> String? {
+        guard let ms = untouchedMs(now), ms >= Self.untouchedMs else { return nil }
+        return EventLine.untouched(hours: ms / 3_600_000, name: name)
     }
 
     // MARK: Needs you

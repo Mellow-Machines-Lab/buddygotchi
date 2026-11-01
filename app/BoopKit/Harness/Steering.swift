@@ -74,7 +74,7 @@ extension Steering {
     /// Budgets in tokens.
     public enum Budget {
         public static let guide = 400
-        public static let personality = 2600
+        public static let personality = 2650
         public static let talk = 250
         public static let mood = 225
         /// `replies.md`, whose lines are offered as the sign for what you said.

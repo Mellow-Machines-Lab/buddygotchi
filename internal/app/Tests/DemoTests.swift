@@ -59,7 +59,19 @@ final class DemoTests: XCTestCase {
         try XCTAssertEqual(DemoScript(#"{"you": "back", "minutes": 600}"#).steps[0].what, .back(ms: 36_000_000))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": 0}"#))
         try XCTAssertThrowsError(try DemoScript(#"{"you": "back", "minutes": "lots"}"#))
-        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, press, hold, talk, back or wait")) }
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "wave"}"#)) { XCTAssertTrue("\($0)".contains("you is poke, gesture, press, hold, talk, back or wait")) }
+    }
+
+    /// A gesture is one the board knows by itself, which a recording
+    /// replays on it as one (`input`): a stroke, a boop on the nose, a
+    /// tickle or a shake.
+    func testAGestureIsOneTheBoardKnows() throws {
+        let stroke = try DemoScript(#"{"you": "gesture", "kind": "stroke"}"#).steps[0]
+        XCTAssertEqual(stroke.what, .gesture("stroke"))
+        XCTAssertEqual(stroke.input, "stroke")
+        XCTAssertEqual(stroke.cause(creature: "Boop", agent: "claude")?.text, "You stroke Boop")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "gesture", "kind": "handoff"}"#), "not a gesture of care")
+        try XCTAssertThrowsError(try DemoScript(#"{"you": "gesture"}"#))
     }
 
     /// A hold is a finger kept on the needs-you screen, which a recording

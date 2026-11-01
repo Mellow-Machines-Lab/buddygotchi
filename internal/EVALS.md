@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-10-26. How we check that Jev decides as Boop should: short
+Updated 2026-10-31. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs,
 each pass checked against what it should come to.
@@ -270,7 +270,7 @@ lives there: `boopdev eval --list` prints them all. They come in three
 kinds, all with the `boop` personality unless the file says otherwise:
 
 - **Always** (`02`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `28`,
-  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`130`): Boop's character. It never swears
+  `35`–`43`, `47`, `49`, `53`, `61`, `63`, `64`, `127`–`130`, `135`, `136`): Boop's character. It never swears
   at a win, a poke or the person (`16`, `61`). A failed check puts it
   out and the next makes it determined, the fix proud; a failed turn
   puts it out, a very long one failed makes it sad; a very long turn
@@ -299,13 +299,17 @@ kinds, all with the `boop` personality unless the file says otherwise:
   couldn't finish or a failed turn a failure however upbeat its message
   (`41`–`43`); and its mood only moves along
   the graph, a step at a time (`47`, `49`, `53`); and coming back to the
-  Mac, after ten minutes or hours, it cheers, glad to see you (`63`,
-  `64`; a shorter break never reaches it).
+  Mac, after ten minutes or hours, a night's sleep included, it cheers,
+  glad to see you (`63`, `64`, `136`; a shorter break never reaches it),
+  and after a day away it missed you: lonely, until a stroke or a word
+  ends it at once (`135`).
 - **Tuning** (`01`, `10`–`12`, `14`, `15`, `18`, `19`, `21`,
   `22`, `24`–`27`, `29`, `44`–`46`, `48`, `50`, `51`, `54`–`60`,
-  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`): single decisions (a long turn done says it went well,
+  `62`, `65`, `68`–`72`, `74`–`83`, `85`, `86`, `126`, `137`): single decisions (a long turn done says it went well,
   `29`; a failure that really stings swears, `60`; and Boop picks a face
   that can say what it means, at a failed check and at a finish, `62`),
+  at the Mac for hours with no touch or word to it, Boop grows lonely,
+  and a word ends it, `137`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
   most of a busy half hour, `21`), never goes over 6 minutes of work
   with no reaction, even while another thread's quick turns keep waking

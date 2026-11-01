@@ -180,9 +180,22 @@ public enum EventLine {
     /// You stepping away from the Mac.
     public static let away = "You stepped away from the Mac."
 
-    /// `You came back to the Mac after a long break.`: the break's band.
+    /// `You came back to the Mac after a long break.`, or `after a day
+    /// away.`: the break's band.
     public static func back(ms: Int64) -> String {
-        "You came back to the Mac after a \(Band.away(ms: ms)) break."
+        let band = Band.away(ms: ms)
+        switch band {
+        case "a day": return "You came back to the Mac after a day away."
+        case "days": return "You came back to the Mac after days away."
+        default: return "You came back to the Mac after a \(band) break."
+        }
+    }
+
+    /// Under a check-in or a quiet hour, when you're at the Mac but haven't
+    /// touched or talked to the buddy for a while: `You haven't touched or
+    /// talked to Boop in 3 h.`
+    public static func untouched(hours: Int64, name: String = CharacterPack.active.name) -> String {
+        "You haven't touched or talked to \(name) in \(hours) h."
     }
 
     /// What you did to the board, which reacted at once; nil for a gesture
@@ -291,7 +304,10 @@ public enum EventLine {
           memory was squeezed to make room; it carries on from a summary.
         - "You" stepping away from the Mac and coming back is the person. Breaks
           are short (under 15 minutes), long (under 2 hours) or very long (2
-          hours or more).
+          hours or more, a night's sleep included); away a day is 20 hours or
+          more, and days 40 or more. "You haven't touched or talked to
+          \(name)" counts from the person's last poke, stroke or word to it,
+          or their coming back.
         """
     }
 

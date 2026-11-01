@@ -219,6 +219,44 @@ final class PresenceTests: XCTestCase {
         XCTAssertEqual(EventLine.back(ms: 5 * minute), "You came back to the Mac after a short break.")
     }
 
+    /// Away 20 hours is a day, more than a night's sleep, which stays very
+    /// long; 40 is days, a weekend: lonely's cue is a day, never a night.
+    func testADayAwayIsMoreThanANight() {
+        XCTAssertEqual(Band.away(ms: 10 * 60 * minute), "very long", "a night")
+        XCTAssertEqual(Band.away(ms: 20 * 60 * minute - 1), "very long")
+        XCTAssertEqual(Band.away(ms: 20 * 60 * minute), "a day")
+        XCTAssertEqual(Band.away(ms: 40 * 60 * minute), "days")
+        XCTAssertEqual(EventLine.back(ms: 26 * 60 * minute), "You came back to the Mac after a day away.")
+        XCTAssertEqual(EventLine.back(ms: 3 * 24 * 60 * minute), "You came back to the Mac after days away.")
+    }
+
+    /// At the Mac for two hours with no poke, stroke or word to Boop, a
+    /// quiet line says so (`TranscriptView.untouchedMs`, lonely's cue); a
+    /// touch ends it, and your prompts to agents don't count.
+    func testAQuietLineSaysWhenBoopWentUntouched() {
+        XCTAssertEqual(TranscriptView.untouchedMs, 2 * 60 * 60_000)
+        let rig = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
+        rig.poke()
+        let quiet = { (fx: Fx) in events(fx).filter { $0.type == .heartbeat } }
+        let untouched = { (fx: Fx) in quiet(fx).flatMap(\.notes).filter { $0.hasPrefix("You haven't touched or talked to") } }
+        // The agents work on, so the check-ins go on; nobody touches Boop.
+        var early: [String] = []
+        for _ in 0..<2 {
+            rig.turn(60_000)
+            early += untouched(rig.wait(40 * minute))
+        }
+        XCTAssertEqual(early, [], "under two hours untouched")
+        rig.turn(60_000)
+        rig.wait(40 * minute)
+        rig.turn(60_000)
+        let late = rig.wait(40 * minute)
+        XCTAssertFalse(untouched(late).isEmpty, "\(quiet(late).map(\.line))")
+        XCTAssertNotNil(quiet(late).last?.facts["untouched_ms"]?.int)
+        rig.poke()
+        rig.turn(60_000)
+        XCTAssertEqual(untouched(rig.wait(40 * minute)), [], "touched again")
+    }
+
     /// `hello` is a topic Jev is
     /// offered, every face has four or more of its takes, all greetings,
     /// and a glad sound then hello, as boop's Example asks, is a sound and

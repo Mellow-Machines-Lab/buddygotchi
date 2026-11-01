@@ -153,8 +153,13 @@ public enum Band {
     public static let veryShortMs: Int64 = 7000
 
     /// How long you were away from the Mac: short under 15 minutes, long
-    /// under 2 hours, very long past that.
+    /// under 2 hours, very long under `dayAwayMs` (a night's sleep is
+    /// very long), a day under `daysAwayMs`, days past that.
     public static func away(ms: Int64) -> String {
-        ms < 15 * 60_000 ? "short" : ms < 2 * 60 * 60_000 ? "long" : "very long"
+        ms < 15 * 60_000 ? "short" : ms < 2 * 60 * 60_000 ? "long" : ms < dayAwayMs ? "very long" : ms < daysAwayMs ? "a day" : "days"
     }
+    /// Away this long is a day: more than a night.
+    public static let dayAwayMs: Int64 = 20 * 60 * 60_000
+    /// Away this long is days: a weekend or more.
+    public static let daysAwayMs: Int64 = 40 * 60 * 60_000
 }

@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-10-26. A demo is a short, scripted stretch of work that a
+Updated 2026-10-31. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to the
 creature, and it reacts. Use demos to record videos, to show the
 creature off, and to check that everything works end to end.
@@ -59,6 +59,7 @@ creature's brain.
 | `{"agent": "compact"}` | The agent's context is full, so it compacts the conversation and goes on | `summary` (what its model writes of the work so far; required) |
 | `{"agent": "reply"}` | The agent's turn ends with this message, which Boop reads as it reads any agent's last message: only its reading reaches the brain | `text`, `fails` (the turn failed: Claude's `StopFailure`; Codex has none) |
 | `{"you": "poke"}` | You tap the creature | |
+| `{"you": "gesture"}` | You touch the creature in a way it knows by itself: a `stroke` across its face, a boop on its `nose`, a `tickle` or a shake (`dizzy`). The board reacts by itself, as to a tap, and the app hears what it was | `kind` |
 | `{"you": "press"}` | You press BOOT while an agent waits for you or sits idle: the board hands you the next one, and it opens on the Mac | |
 | `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |

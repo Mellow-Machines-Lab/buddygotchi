@@ -316,7 +316,7 @@ public final class ReactOutput: Output {
                notFor: "A check that failed while the turn goes on, or a turn that finished done, saying it's done."),
         Option("reply", "NOW's line says a turn finished, done, asking you something or only answering, often with no tool calls: no task finished.",
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
-        Option("wake up", "NOW's line says you came back to the Mac after a long or very long break: \(name) stretches, yawns and wakes up for you.",
+        Option("wake up", "NOW's line says you came back to the Mac after a long or very long break, or a day or days away: \(name) stretches, yawns and wakes up for you.",
                notFor: "A short break, a turn or a poke."),
         Option("notice", "NOW's line says you said \(name)'s name in your prompt: it looks up at you, as if it heard.",
                notFor: "A prompt that doesn't say its name, or anything but a prompt."),
