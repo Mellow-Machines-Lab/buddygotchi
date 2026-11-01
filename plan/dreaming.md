@@ -1,4 +1,4 @@
-# Dreaming: the plan (2026-10-27)
+# Dreaming: the plan (updated 2026-10-31)
 
 Boop knows the agents and not the person. Its long-term memory is its
 name, the day it hatched and a seed. HISTORY reaches back minutes, the
@@ -28,7 +28,7 @@ about you are secondary: they make it know you, not become yours.
 | Capability | What it is | What it gives first |
 | --- | --- | --- |
 | The reason | Every mood and reaction carries its cause in plain words, the app's voice under Boop's, and credits your care when it was the cause | "Boop is happy. You stroked it." in the popover; "stroked" on the board |
-| Your company in NOW | The lines the brain reads say how long you've been away, and how long since you touched or talked to Boop | Lonely with a real reason to enter and leave |
+| Your company in CONTEXT | A CONTEXT section in the prompt says how things stand: how long you've been at the Mac, how long since you touched or talked to Boop, what the agents are doing, how the day has gone | Lonely with a real reason to enter and leave |
 | Dreaming | The night pass: the day closes, Apple Intelligence on the Mac updates a short written memory of you, your work and your time with Boop, and the first wake tells the dream | The morning standup, about you first; a Boop that remembers you |
 | Asks | A reaction with two answers you tap, and the answer comes back as an event, a fact, and for some questions a part of Boop | "fav snack?" that Boop keeps for good; "pet me?" when lonely; "did it work?" after a finish |
 
@@ -181,37 +181,129 @@ mood's reason comes from its `did`'s `for` and survives a relaunch.
 **Demo.** None of its own: every recording is made again, since what
 the app sends changes (`make -C internal demos ALL=1`).
 
-## 2. Your company in NOW
+## 2. Your company in CONTEXT
 
-The view keeps one fold of your company, `Company`: the seq and time
-of the last of each thing you did (a poke, a gesture, a talk, a prompt,
-a back), and one phrase renderer puts a span of it into a line when it
-matters. Two spans first:
+Lonely, and much of what follows, needs Jev to know how things stand,
+not only what just happened. Today that standing state is bolted onto
+lines wherever it fits: the mood's duration as a closing line, the
+occasions in NOW's heading. The first draft of this plan bolted on one
+more, the untouched span at the end of a check-in. Instead (decided
+with the owner on 2026-10-31), the prompt gets a CONTEXT section:
+**events stay in their lines; how things stand goes in CONTEXT.**
 
-- **How long you've been away.** `Band.away` grows two bands: `a day`
-  from 20 hours (more than a night) and `days` from 40 hours (a weekend
-  or more). A night away stays `very long`. The line keeps its shape: `You came back
-  to the Mac after a day away.`, with `away_ms` in its facts for the
-  reason.
-- **How long since you touched or talked to Boop.** The working
-  check-ins and the idle check-ins say it once it passes 2 hours, while
-  you're here: `Nothing has happened for 20 min; claude sits idle on
-  "api". You haven't touched or talked to Boop in 2 h.` Two hours,
-  because the idle check-ins stop 2 hours after the last activity and
-  Boop dozes off an hour after: a sleeping Boop isn't lonely, and the
-  hourly heartbeat stays held as it is. Nothing new is logged: the fold
-  already sees those events.
+### CONTEXT
 
-**Lonely, written.** `lonely.md` gets Boop's voice, and `character.json`
-gets its edges: calm, comfy, bored and tired move to lonely. It enters
-when a check-in says you've been here 2 hours without a touch or a
-word, or you're back after a day away, and never while an agent works
-for you (then Boop has company). A stroke, a word, a poke or praise
-ends it at once, as grumpy ends at sorry: affectionate, or happy. It
-fades to calm after 20 minutes. Its faces lean lonely at the check-ins
-and glad at anything you do. Back after a day away is one reaction, the
-personality's Example: `→ lonely, wake up, says hello, small`, with the
-reason "You've been away 26 hours"; back after days is the big hello.
+A section built by code on every pass, from state the app already
+keeps:
+
+```
+CONTEXT (how things stand. Background, not news: react to NOW.)
+You: at the Mac for 3 h; you haven't touched or talked to Boop in 2 h.
+Agents: claude working on "api" for 12 min; codex idle on "blog" for 40 min.
+Today: 7 turns, 3 failed; you stroked Boop 4 times and talked to it twice.
+```
+
+**The prompt's order,** written here once: the guide, PERSONALITY,
+MEMORY, MOOD, CONTEXT, TALK, then HISTORY, NOW and the closing line.
+TALK stays the last section, so it still outranks the rest on words.
+Each section is one more `h.section` in `Runtime+Buddies`, so
+MellowHarness doesn't change.
+
+**Its rows,** one table, `Context.rows`. A row shows only when it has
+something worth saying, so an ordinary pass's CONTEXT is a line or two:
+
+| Row | Says | Shown when | From |
+| --- | --- | --- | --- |
+| You | "at the Mac for N h"; "you haven't touched or talked to Boop in N h" | At the Mac 1 h or more since you came back or first did something; untouched from 2 h, never while away | The view's presence pairing and its `Company` fold (the last yours event of each kind, `Yours` as dreaming-memory.md defines it) |
+| Agents | Each open session: "working on "api" for 12 min", "waiting on you", "idle for 40 min"; at most 3, then "and 2 more" | Any session open | `Core.status` |
+| Today | Turns and failed; strokes and talks | Once a turn finished, or you touched or talked to Boop, since 5:00 | The memory reader's open day, `Memory.today()` (so this row lands with §3's reader) |
+
+Spans are words with numbers ("for 12 min", "in 2 h"), never bands.
+The rules that need a threshold read the facts in code, not the words.
+
+**What stays out of CONTEXT:**
+- **Events and their counts:** streak rungs, "again", "2 times in a
+  row", a turn's length. They stay in their lines, where the
+  personality's Examples key off them.
+- **The mood's duration.** It stays the closing line under NOW. The
+  guide ("not while HISTORY ends 'for under a minute'") and every mood
+  file's fade are tuned against that line where it is; moving it would
+  retune every fade.
+- **The calendar and occasions.** They stay in NOW's heading, since
+  they are about the moment.
+- **Memory.** MEMORY is its own section, with its own rule.
+
+**Facts stay on the line, for the reason.** A check-in's line keeps
+the untouched span in its facts, though its words are in CONTEXT, so
+`Reason` still renders "You've been here 2 hours and haven't touched
+Boop" from the line Boop reacted to.
+
+**Its budget:** at most 120 tokens. A test pins the longest it can
+render: all three rows, three agents and "and 2 more".
+
+**Examples that need state** quote the CONTEXT row they depend on,
+above NOW:
+
+```
+- CONTEXT: You haven't touched or talked to Boop in 2 h.
+  NOW: Nothing has happened for 20 min; claude sits idle on "api".
+  → lonely, says quiet
+```
+
+**General because:** a new piece of standing state is one row. "You've
+said thanks 3 times today", "day 12 in a row" or a hush's minutes left
+are rows, not mechanisms.
+
+### How long you were away
+
+Coming back is an event, so it stays a line. `Band.away` grows two
+bands: `a day` from 20 hours (more than a night) and `days` from 40
+hours (a weekend or more). A night away stays `very long`. The line
+keeps its shape, `You came back to the Mac after a day away.`, with
+`away_ms` in its facts for the reason.
+
+### Lonely, written
+
+**Its edges,** in `character.json`: calm, comfy, bored and tired each
+gain lonely as an ordinary move. Lonely's own moves stay: whiny, sad,
+calm and affectionate, and happy as its jump.
+
+**How it enters,** in the mood files that lead to it, as every mood's
+entry is written: calm, comfy, bored and tired each gain one clause,
+
+```
+lonely at a check-in when CONTEXT says you haven't touched or talked
+to Boop in 2 h and no agent works, or when you come back after a day
+away;
+```
+
+so lonely enters at a check-in or a coming back, never at a finish or
+a prompt, and never while an agent works for you: then Boop has
+company.
+
+**`lonely.md`,** in Boop's voice, replacing the template text:
+
+```
+MOOD
+Lonely. Boop misses you: you were away a day or more, or you've been
+at the Mac for hours without a touch or a word.
+Its faces lean lonely and small; it says little, a quiet sound.
+Anything you do to it ends it at once, even in its first minutes: a
+stroke, a poke or a word, affectionate; praise or love, happy; with
+that face.
+Leaves for calm when an agent starts work for you; sad when a very long
+turn fails or the agent gives up.
+Fades to calm once Boop has been lonely for 20 min.
+```
+
+**The personality's Examples** gain two, for coming back:
+
+```
+- NOW: You came back to the Mac after a day away.
+  → lonely, wake up, says hello, small
+- NOW: You came back to the Mac after days away.
+  → excited, wake up, says hello, big
+```
 
 **The morning is a reunion, not a guilt trip** (decided 2026-10-27).
 Back after a night is the happy wake-up it is now, with the dream told
@@ -220,26 +312,33 @@ on it (§3): Boop is glad because you came back, and the reason says so
 for hours at the Mac with no touch or word. Daily guilt wears a bond
 down; a daily reunion that you cause builds it.
 
-**General because:** a span of your company is one key in the fold and
-one phrase, as the to-do count and the tiers were; the phrase is code,
-as every line for the brain is. "You've said thanks 3 times today" or
-"day 12 in a row" are the same shape, not new mechanisms.
+### Checking it
 
-**Pins.** `TranscriptViewTests`: the untouched span counts from the
-last poke, gesture or talk, and from the back when there has been none
-since; it shows from 2 hours and never while away; the new bands at 20
-and 40 hours. `LonelyEvals`: back after a night (10 hours) is a glad
-wake-up, never lonely; back after 26 hours is a lonely wake-up with
-`lonely` offered, then a stroke makes it affectionate; 2 hours at
-the Mac untouched enters lonely and a word ends it; a working agent
-keeps it out; nothing enters lonely inside an hour. The eval pins the
-pick and the offered moves (`offered`), not the heading.
+**Pure tests.** `ContextTests`: each row's threshold (at the Mac from
+1 h, untouched from 2 h, never while away, Today only after something
+happened); the agents' order and "and N more"; the 120-token ceiling;
+the section's place in the prompt. `TranscriptViewTests`: the `Company`
+fold counts only yours events; the untouched span runs from the last
+poke, care gesture or talk, or from the back when there was none; the
+bands at 20 and 40 hours.
+
+**Evals,** run with `--only` (one scenario at a time costs one Jev call
+per pass):
+
+| Scenario | Steps | Expects |
+| --- | --- | --- |
+| `135-lonely-after-a-day-away` | Away, back after 26 h | A lonely face with `wake up`; `lonely` offered |
+| `136-glad-after-a-night` | Away, back after 10 h | Happy, excited or curious; never lonely |
+| `137-untouched-two-hours` | Turns finish and you prompt for 3 h, never touching or talking to Boop; idle check-ins between | Lonely at a check-in after 2 h untouched, never before, never at a finish |
+| `138-a-stroke-ends-lonely` | From lonely, a stroke | Affectionate, at once |
+| `139-company-keeps-lonely-out` | 2 h untouched while a turn works | Never lonely |
+| `140-back-after-days` | Away, back after 50 h | The big hello, not lonely |
 
 **Demo.** `lonely.jsonl`: a day of work, you away a day and a night,
-back (the lonely wake-up, its reason), two hours untouched (the check-in, and
-the ask of §4 once built), a stroke, the glad face. Needs a
-`{"you": "gesture", "kind": "stroke"}` step, which the evals have and
-`DemoScript` lacks.
+back (the lonely wake-up and its reason), two hours of work without a
+touch (a check-in, and the ask of §4 once built), a stroke, the glad
+face. It needs a `{"you": "gesture", "kind": "stroke"}` step, which
+the evals have and `DemoScript` lacks.
 
 ## 3. Dreaming
 
@@ -266,17 +365,51 @@ diary. How it is kept, with the night's prompt, is designed in
   written, and grows.
 
 **The tell.** Boop tells the dream the first time you show up after a
-day closes: your coming back, or your first poke, prompt or word,
-never an agent's event or while you're away. **It leads with you.**
+day closes, on the first pass whose NOW is yours while you're not away:
+
+- **Your coming back** (a `presence` end): the move is `wake up`, as
+  now, and the dream is told on it.
+- **Or, with no coming back since the close** (the Mac stayed awake
+  and you never stepped away long enough), **your first touch**: a poke
+  or a care gesture. The board has already reacted to the touch itself;
+  the brain's reaction adds the face and the dream's sign, with no move.
+- **Never** a prompt (it has its own sign, from `signs.md`), a word to
+  Boop (its reply's sign), an agent's event or a heartbeat, so it never
+  plays to an empty room.
+
+The view marks the line as a telling: the dream's sentence under it,
+indented, and `dream` in its facts, which is how the sign table knows
+to offer `dreams.md`. **It leads with you.**
 Its reason puts your care first and the agents' day second ("Boop
 dreamed about Monday: you stroked it 4 times; 7 turns on 'api'."), and
 its sign is one of `dreams.md`'s, a tagged list like `replies.md` whose
 tags are the dream's, which `react.sign` picks as it picks a reply's.
-The lines about you come first in the file, so they are offered first:
-`[fond] dreamt of u`, `[fond] warm dreams`, `[answered] i remember!`,
-`[distant] where were u?`; then the agents': `[failed] bad dream`,
-`[clean] sweet dreams`, `[long] what a day`, `[quiet] dreamt of
-nothing`. A day with no care at all is told by the agents' day alone,
+The lines about you come first in the file, so they are offered
+first. The pack's `steering/dreams.md`, at most 18 glyphs a line:
+
+```
+- [fond] dreamt of u
+- [fond] warm dreams
+- [fond here] u stayed all day
+- [answered] i remember!
+- [distant] where were u?
+- [late] up so late!
+- [failed] bad dream
+- [failed long] long night...
+- [clean] sweet dreams
+- [long] what a day
+- [poked] ouch, dreams
+- [quiet] dreamt of nothing
+- zzz... hi!
+```
+
+The personality gains one Example, for any temperament:
+
+```
+- NOW: You came back to the Mac after a very long break.
+    Boop dreamed about Monday: you stroked it 4 times; 7 turns on "api", 3 failed.
+  → happy, wake up, says hello, holding up a dream's sign
+``` A day with no care at all is told by the agents' day alone,
 plainly, never as a reproach, and a day you weren't there at all has no
 dream. The first wake of Boop's day has one owner: on an occasion day
 the occasion's sign comes first and the dream is only narrated, one
@@ -352,11 +485,26 @@ so the brain is offered them first. Quizzes like tabs or spaces are
 flavour: Boop learns a fact and teases you with it. One answered stays
 off for 30 days; any ask ignored stays off for a day.
 
-**Who asks.** The brain: `react.move` gains `ask`, "Boop asks you
-something, from what it may ask now", offered only when `asks.md` has
-a line for the moment and the output's rule allows one, and
-`react.sign` picks the question, from the sign table (§3). The question
-is the sign; the two answers go in the `do`'s `ask` (`a`, `b`, and
+**Who asks.** The brain: `react.move` gains `ask`, offered only when
+`asks.md` has a line for the moment and the output's rule allows one:
+
+```
+ask: Boop asks you something, from the questions offered: idle and settled, now and then. Not at news: a finish, a failure, your prompt or what you said.
+```
+
+`react.sign` picks the question, from the sign table (§3). The
+personality says when, in one sentence among its rules ("Idle and
+settled, it now and then asks you something, as its Examples do; never
+at news."), and gains two Examples:
+
+```
+- NOW: Nothing has happened for 25 min; claude sits idle on "api".
+  → curious, asks, holding up "fav snack?"
+- NOW: You answered Boop's "fav snack?": cookie.
+  → happy, says glad, holding up "nom nom"
+```
+
+The question is the sign; the two answers go in the `do`'s `ask` (`a`, `b`, and
 `touch` when the line has the tag), and the reason says what to do.
 
 **On the board.** The two answers fill the lane as two targets, left
@@ -414,31 +562,59 @@ idle stretch, "fav snack?", a tap, and a day later the cookie in
 Boop's snack-time look. The board, the mirror and the simulator draw the two
 targets.
 
-## Order
+## Making room in the steering
 
-1. **The reason.** Everything after it is explained by it, and it
-   changes every recording, so it goes first.
-2. **Your company in NOW, and lonely.** Small, and the first thing a
-   person feels.
-3. **Dreaming:** the reader, the dream and its telling, then the
-   written memory and MEMORY (dreaming-memory.md's build order). The
-   written memory needs a week of tuning on the owner's Mac.
-4. **Asks,** with the ask record. The largest: the board, the mirror, a
-   new event and a new demo step.
+The steering is full. Measured on 2026-10-31, in Steering's four bytes
+a token:
 
-Each lands as one squash-merged commit: the pack's side first
-(SlimeBuddy: `lonely.md` and its edges, `dreams.md`, `asks.md`, the
-Examples, the evals, the demo, its recording, the mirror), then this
-repository's. Pixel takes none of the
-files and keeps working: a pack without `asks.md` is never offered an
-ask, without `dreams.md` tells nothing, and the reason and the company
-in NOW need no pack file.
+| Part | Now | Budget | This plan adds |
+| --- | --- | --- | --- |
+| `personality/boop.md` | about 2,620 | 2,600 | About 190: the two coming-back Examples (§2), the telling's (§3), the ask's sentence and two Examples (§4) |
+| `guide.md` | about 399 | 400 | Nothing: CONTEXT's and MEMORY's rules live in their own headings |
+| `mood/calm.md` | about 207 | 225 | About 25: the clause into lonely (§2) |
+| `mood/comfy.md`, `bored.md`, `tired.md` | 100 to 118 | 225 | The same clause; they fit |
+
+So two budgets rise, each pinned in `Steering.Budget` and checked by
+`boopdev check`: **personality to 2,800** and **mood to 250**. Each is a
+guard against a file growing by accident, not a product rule, and the
+tokens go to Jev on every pass, about 7% more for the personality.
+Raising them is the owner's call, because the gate for it is a full Jev
+eval run (Open calls, below). The other way is trimming `boop.md` by
+200 tokens first, which risks the Examples the evals are tuned on.
+
+## Build, step by step
+
+Each step is one squash-merged commit in each repository it touches:
+the pack's side first (SlimeBuddy), pushed, then this repository's.
+Pixel takes none of the pack files and keeps working: a pack without
+`dreams.md` tells nothing, without `asks.md` is never offered an ask,
+and the reason and CONTEXT need no pack file.
+
+| Step | SlimeBuddy (the pack) | buddygotchi (the engine) | Checked by |
+| --- | --- | --- | --- |
+| **1. The reason** | Nothing | `Reason` and its table, `Dressing` folded in; `MoodOutput.reason` from the `did`'s `for`; the `do`'s `reason`; the board's lane draws it (firmware, the mirror rebuilt into the pack); the popover's Feeling row and headline | `ReasonTests`; the firmware's lane test; `make -C internal mirror`; every demo recorded again (`demos ALL=1`), since what the app sends changes |
+| **2. CONTEXT and lonely** | `lonely.md`; lonely's edges in `character.json`; the clause in calm, comfy, bored and tired; the coming-back Examples; evals 135 to 140; `lonely.jsonl` and its recording | `Context.rows` (You and Agents; Today waits for step 3a); the `Company` fold and `Yours`; the section order; the away bands; the raised budgets; the demo's `gesture` step | `ContextTests`, `TranscriptViewTests`; the six evals with `--only`; then the full eval run the budgets need |
+| **3a. The reader and the dream** | `dreams.md`; the telling's Example; `diary.md` removed; the dream evals; `dream.jsonl` and its recording | `TranscriptReader`, `Checkpointed`, `MemoryReader`, `LocalTime.boopDay`; `dream.last` and `wake.day`; the telling in the view; the sign table; CONTEXT's Today row; `DiaryOutput` removed, the popover's Diary gone | dreaming-memory.md's reader, day, telling and memory-reader tests; the dream evals |
+| **3b. The written memory** | Nothing | `MemoryWriter`, `MemoryEdits`, `memory.md` and `MemoryStore`'s part; the `memory` event; `boopdev memory write` and its fixtures | `MemoryEditsTests`, `MemoryWriterTests`; a week of nights on the owner's Mac, the file read each morning, before step 3c |
+| **3c. MEMORY** | The memory evals | The MEMORY section and its budget; the evals' `memory` seed | `MemorySectionTests`; the memory evals |
+| **3d. What Boop remembers** | Nothing | The popover's pane (Recently, notes with delete and pin), Forget, the sentence in Settings | `Boop --snapshots` |
+| **4. Asks** | `asks.md`; the ask's sentence and Examples; the ask evals; `asks.jsonl` and its recording; the targets in the gel's lane | `TaggedLine.parts`; `react.move`'s `ask`; the `do`'s `ask`, `ev ask` and the `ask` event; the ask record; the targets on the board, the mirror and the simulator; the demo's `answer` step | `TaggedLineTests`, `AsksTests`, `CoreTests`, firmware `test_ask`; the ask evals |
+
+Step 1 changes every recording and explains everything after it, so it
+goes first. Step 2 is the first thing a person feels. Step 3b needs
+its week of tuning before 3c lets Jev read the memory.
+
+## Open calls for the owner
+
+1. **Raise the personality budget to 2,800 and the mood budget to 250,**
+   gated by one full Jev eval run. Recommended over trimming `boop.md`,
+   whose Examples the evals are tuned on.
 
 ## What it adds up to
 
 | Priority (2026-10-27) | Built from |
 | --- | --- |
-| 4. Absence that matters, lonely real, "pet me?" | §2's spans and `lonely.md`; §1's reason under it; §4's `[lonely touch]` ask |
+| 4. Absence that matters, lonely real, "pet me?" | §2's CONTEXT and `lonely.md`; §1's reason under it; §4's `[lonely touch]` ask |
 | 5. Idle questions, remembered answers | §4's `[idle]` asks, the `keeps` ones part of Boop for good; the ask record, and the answer in the written memory |
 | Care as the cause (the principle) | §3's You and Boop notes; §1's reason crediting you; §3's tell leading with you; §4's kept answers |
 | 6. Morning standup | §3's tell, on the wake-up that exists, with §1's reason as the narration |
@@ -482,7 +658,9 @@ traits are the bond:
 and `answer` steps, the new scenarios); `simulator/README.md` (the
 targets and the `answer` step in `simulator/tools/demos.py`);
 `documentation/architecture.html` (memory of you, the reason, the ask
-event, the memory reader, `memory.md`); `CLAUDE.md`'s Words (reason, ask, dream replacing diary, the written memory; and that
+event, the memory reader, `memory.md`, and the prompt's sections:
+MEMORY and CONTEXT); `internal/EVALS.md` (the scenario's `memory`
+seed); `mellowharness/` nothing, since the sections are Boop's; `CLAUDE.md`'s Words (reason, ask, dream replacing diary, the written memory; and that
 a demo's `run` step's `ask` key is the agent's permission request, a
 wire name that keeps its name); `internal/VERIFICATION.md` if a tool
 changes; the slime package's `CONTINUITY.md` for the targets. LinkKit's spec doesn't change: `reason`, `ask` and `ev
@@ -568,3 +746,13 @@ memory, kept by a checkpointed reader and written each night by Apple
 Intelligence (Macs with it only); the dream replaces the diary; the
 counted memory (traits, the bond as tags, `state.you`) waits until a
 feature needs exact, tag-driven memory. dreaming-memory.md has it.
+
+**Planned in detail** (2026-10-31, with the owner): the untouched span
+and the other standing state move to a CONTEXT section, events staying
+in their lines and the mood's duration staying the closing line;
+lonely gets its mood file, its edges, the clause that enters it and its
+Examples; the telling happens on your coming back or else your first
+touch, never a prompt or a word, with `dreams.md` drafted; the ask gets
+its move's text and Examples; the steering's budgets are measured and
+two of them must rise; and the build is a table of steps, each with the
+pack's side, the engine's and its checks.

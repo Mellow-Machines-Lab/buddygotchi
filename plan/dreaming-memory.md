@@ -56,7 +56,7 @@ all day on a Mac left awake, and agents log events overnight; counting
 those as you would make every desk Mac "here" all night.
 
 `Yours`, one set in code, used by the memory reader and by
-dreaming.md §2's company fold alike:
+CONTEXT's You row (dreaming.md §2) alike:
 
 | Yours | Not yours |
 | --- | --- |
@@ -148,7 +148,8 @@ public protocol TranscriptReader {
 | `close(day, live)` | Writes the dream (below); when `live`, starts the night's write in the background |
 
 **The tallies** are what the day's counts need to say, nothing kept
-past the close:
+past the close. `Memory.today()` gives the open day's to CONTEXT's
+Today row (dreaming.md §2):
 
 | Tally | From |
 | --- | --- |
@@ -184,11 +185,12 @@ When a day closes, the reader writes `dream.last`:
 - **Its sentence** puts your care first and the agents' day second.
 - **A day with no yours event writes no dream:** nobody was there.
 
-**The telling** is the brain's. The first pass after a close on an
-event that is yours, with the view not away, tells the newest untold
-dream: your coming back, or your first poke, prompt or word of the day.
-Never an agent's event or a heartbeat. That line gets the dream under
-it:
+**The telling** is the brain's. It tells the newest untold dream on
+the first pass after a close whose NOW is your coming back, or, with
+no coming back since the close, your first touch; never a prompt, a
+word, an agent's event or a heartbeat, and never while you're away
+(dreaming.md §3 has the moves and the signs). That line gets the dream
+under it:
 
 ```
 NOW (09:02, Tuesday)
@@ -338,8 +340,8 @@ changed, added, dropped and refused, never the text.
 
 ## MEMORY in Jev's prompt
 
-A section after PERSONALITY and before MOOD and TALK, rendered from
-`memory.md` on every pass:
+A section after PERSONALITY and before MOOD (the prompt's order is in
+dreaming.md §2), rendered from `memory.md` on every pass:
 
 ```
 MEMORY (what Boop remembers. Old news unless NOW is about it: it can make a face or a moment bigger, never change what NOW says happened.)
@@ -409,14 +411,8 @@ failed turn into a success.
 
 ## Build order
 
-1. **The reader and the dream,** with `dreams.md` and the telling; the
-   diary goes. This alone ends the diary's five bugs.
-2. **The written memory:** the writer, the checks, `memory.md`, the
-   `memory` event; run for a week on the owner's Mac before Jev reads
-   it.
-3. **MEMORY in Jev's prompt,** with Jev's evals.
-4. **The popover's memory and forgetting.**
-5. **The ask record,** with dreaming.md §4.
+In dreaming.md, Build, step by step: steps 3a to 3d are this memory,
+and the ask record lands with step 4.
 
 ## Decided with the owner
 
@@ -424,6 +420,9 @@ failed turn into a success.
   busiest thread is named; Macs with Apple Intelligence only; one
   described memory for v1; the dream replaces the diary; no "start
   over"; You and Boop never dropped; the ask record kept.
+- **2026-10-31, later:** how things stand goes to Jev in a CONTEXT
+  section (dreaming.md §2), whose Today row reads the memory reader's
+  open day.
 
 ## Later: counted memory
 
