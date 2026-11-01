@@ -362,9 +362,11 @@ section.
 
 One row per question Boop has asked (dreaming.md §4), written when the
 ask ends: `ask.<id>` = `{"asked", "pick", "keeps"}`. A question with a
-pick stays off for 30 days, and one that `keeps` for good; an ignored
-one, for a day. A kept answer (`cookie`) is a tag from then on, and any
-other answer for 30 days, for the pack's lines (`[spaces] traitor`).
+pick stays off for 30 days, one that `keeps` for good, and one tagged
+`daily` until the next day; an ignored one, for a day. A kept answer
+(`cookie`) is a tag from then on, for the pack's lines and, through
+`state.you`, its board looks (dreaming.md §4); any other answer, for 30
+days, for the pack's lines (`[no] hmph`).
 The answer also reaches the journal, so the night's write can add it
 to You and Boop.
 
