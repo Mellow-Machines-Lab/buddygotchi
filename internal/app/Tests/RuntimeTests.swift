@@ -1111,7 +1111,7 @@ final class RuntimeTests: XCTestCase {
                        + "or HISTORY shows \(Self.name) still having the one it calls for, about the same thing (in progress).")
         XCTAssertEqual(none["not_for"] as? String, "Something new said to \(Self.name), which always gets a moment of its own, even while one plays; "
                        + "a turn that finished done or failed, which always gets a moment and its finish; "
-                       + "or anything PERSONALITY's Examples react to that \(Self.name) isn't already doing.")
+                       + "or anything PERSONALITY reacts to that \(Self.name) isn't already doing.")
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
         // Sent: every line the link sent, verbatim and in order, and by whom.
