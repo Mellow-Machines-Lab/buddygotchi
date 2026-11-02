@@ -2,8 +2,8 @@ import Foundation
 import MellowHarness
 
 /// A reader of the transcript that remembers where it stopped: it goes
-/// through the events in order, keeps a little state, and does its work
-/// when Boop's day ends. Every memory is one; `Checkpointed` runs it, so a
+/// through the events in order, keeps a little state, and hears when
+/// Boop's day ends. Every memory is one; `Checkpointed` runs it, so a
 /// memory has no cursor, catch-up or crash handling of its own.
 public protocol TranscriptReader: AnyObject {
     associatedtype State: Codable
@@ -86,13 +86,12 @@ public final class Checkpointed<R: TranscriptReader> {
         save()
     }
 
-    /// Closes the open day now, as 5:00 would, and opens the same day
-    /// afresh, its carry kept: debug mode's `close_day`. The day closes
-    /// again at 5:00, where a reader that writes once a day (the dream)
-    /// keeps what it wrote now.
-    public func closeNow() {
-        guard let c = checkpoint else { return }
-        checkpoint = closed(c, to: c.day, live: true)
+    /// Starts with no checkpoint at event `seq` of the day `day`, as
+    /// `state`: a reader added later reads from where the others are, not
+    /// from the transcript's start.
+    public func begin(at seq: Int, day: String, state: R.State) {
+        guard checkpoint == nil else { return }
+        checkpoint = Checkpoint(seq: seq, day: day, state: state)
         save()
     }
 

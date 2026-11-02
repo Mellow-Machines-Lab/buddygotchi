@@ -61,11 +61,11 @@ extension Event {
         /// The agent's last message's reading, after the turn end it came
         /// with: its facts are `MessageReading`'s, never the message.
         case lastMessage = "last_message"
-        /// Boop's day closed (`MemoryReader`): yesterday in tags and a
+        /// Boop dreamed (`Memory.dream`): everything since the last dream in tags and a
         /// sentence, for Boop to tell when you next show up. Boop's own;
         /// it wakes no pass.
         case dream
-        /// The night's write to the written memory (`Memory`): which notes
+        /// The dream's write to the written memory (`Memory`): which notes
         /// it kept, changed, added, dropped and aged, and what it refused,
         /// never their text. Boop's own; it wakes no pass.
         case memory

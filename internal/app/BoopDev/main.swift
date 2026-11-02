@@ -419,7 +419,7 @@ func readCheck(_ raw: [String]) async {
     guard short.isEmpty else { fail("boopdev read-check: " + short.joined(separator: "; ")) }
 }
 
-/// `boopdev memory write`: the night's write over fixture nights.
+/// `boopdev memory write`: the dream's write over fixture nights.
 func memory(_ raw: [String]) async {
     guard raw.first == "write" else { fail("boopdev memory: the command is write\n\(usage)") }
     let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])

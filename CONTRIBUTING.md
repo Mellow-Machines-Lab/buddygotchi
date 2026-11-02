@@ -93,8 +93,8 @@ so it installs its hooks into their Claude Code and Codex.
 
 The dashboard shows the face, Boop's mood and memory, its automatic
 reactions and the ones Jev decided, with the CONTEXT Jev last read. It can
-force a mood or a reaction, and `d` closes Boop's day at once, so the dream
-and the night's write show in seconds. `b` saves a bug
+force a mood or a reaction, and `d` dreams at once, so the dream and its
+write show in seconds; `D` previews them and keeps nothing. `b` saves a bug
 report, as the popover's ladybug does, and with Boop on the simulator a
 report gets the board's screen too.
 

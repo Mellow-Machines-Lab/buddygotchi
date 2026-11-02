@@ -371,10 +371,10 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| Boop's day | 5:00 to 5:00; it closes each night | | |
-| dream | Yesterday as tags and a sentence (`MemoryReader`, `Dream`, `dreams.md`) | diary, journal | |
+| Boop's day | 5:00 to 5:00, today for CONTEXT's Today row and the XP caps; it triggers nothing | | |
+| dream | Everything since the last dream as tags and a sentence, and the memory's update from it: on `d`, once a sleep, or after two days (`DreamReader`, `Memory.dream`, `dreams.md`) | diary, journal, closing the day | |
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
-| the night's write | Apple Intelligence editing the written memory (`MemoryEdits`) | | |
+| the dream's write | Apple Intelligence editing the written memory as Boop dreams (`MemoryEdits`) | the night's write | |
 | growth | XP and stages, Hatchling to Legend | | |
 | special day | A holiday, a milestone day, Boop's birthday, a stage reached | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |

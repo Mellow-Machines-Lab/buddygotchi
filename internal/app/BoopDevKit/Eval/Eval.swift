@@ -694,8 +694,8 @@ public struct Eval {
         // has; one left in progress stays so.
         let ending = Ending()
         let reactions = Reactions()
-        // Memory, in memory: the day's tallies, closed at 5:00 on the
-        // virtual clock, and the dream told the next time you show up.
+        // Memory, in memory: the day's tallies and the dream of everything
+        // since the last, on the virtual clock, told the next time you show up.
         let remembers = Memory(store: try KeyValueStore(directory: nil), time: time)
         home.sync { remembers.attach(to: pipeline) }
         let (harness, mood) = Runtime.harness(

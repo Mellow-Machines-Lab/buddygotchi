@@ -44,7 +44,7 @@ public final class MemoryStore {
 
     // MARK: The written memory
 
-    /// `memory.md`, as it is now: empty before the first night's write.
+    /// `memory.md`, as it is now: empty before the first dream's write.
     public func written() -> WrittenMemory {
         (try? String(contentsOf: url(WrittenMemory.fileName), encoding: .utf8)).map(WrittenMemory.parse) ?? WrittenMemory()
     }

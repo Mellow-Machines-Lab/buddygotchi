@@ -191,10 +191,10 @@ public enum EventLine {
         "You didn't answer \(name)'s \"\(question)\"."
     }
 
-    /// Under the line that tells the dream: `Boop dreamed about Monday:
-    /// you stroked it 4 times; 7 turns on "api", 3 failed.`
-    public static func dreamed(weekday: String, sentence: String, name: String = CharacterPack.active.name) -> String {
-        "\(name) dreamed about \(weekday): \(sentence)."
+    /// Under the line that tells the dream: `Boop dreamed about the last 2
+    /// days: you stroked it 4 times; 7 turns on "api", 3 failed.`
+    public static func dreamed(about: String, sentence: String, name: String = CharacterPack.active.name) -> String {
+        "\(name) dreamed about \(about): \(sentence)."
     }
 
     /// A BOOT press that handed you an agent; what it opened is the core's

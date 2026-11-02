@@ -40,8 +40,10 @@ extension Runtime {
             }
         case "report":
             saveReport { _ in }
-        case "close_day":
-            closeDay()
+        case "dream_now":
+            dreamNow()
+        case "dream_preview":
+            previewDream()
         default:
             break  // a dev line it doesn't know
         }
@@ -117,13 +119,27 @@ extension Runtime {
         changed()
     }
 
-    /// Closes Boop's day now, as 5:00 would: the dream, then the night's
-    /// write (`Memory.closeNow`).
-    func closeDay(who: String = "dev") {
-        guard let remembers else { return options.log("\(who): no memory, so no day to close") }
-        options.log("\(who): closing Boop's day now")
-        remembers.closeNow(wall: options.wallClock())
+    /// Dreams now, the dashboard's `d`: the dream, then its write
+    /// (`Memory.dreamNow`).
+    func dreamNow(who: String = "dev") {
+        guard let remembers else { return options.log("\(who): no memory, so no dream") }
+        options.log("\(who): dreaming now")
+        remembers.dreamNow(at: pipeline.harness.clock.now())
+        remembers.tick(wall: options.wallClock())
         changed()
+    }
+
+    /// What dreaming now would do, the dashboard's `D`, with nothing
+    /// committed (`Memory.preview`): one `dream_preview` line in
+    /// debug.jsonl, and nothing in the transcript.
+    func previewDream(who: String = "dev") {
+        guard let remembers else { return options.log("\(who): no memory, so no dream") }
+        options.log("\(who): previewing a dream")
+        let now = pipeline.harness.clock.now(), home = self.home
+        Task { [weak self] in
+            let p = await remembers.preview(at: now)
+            home.async { self?.debugWriter?.line(DebugLog.dreamPreview(p, at: now)) }
+        }
     }
 
     /// Who forces passes and outputs, for no event: the dashboard's.

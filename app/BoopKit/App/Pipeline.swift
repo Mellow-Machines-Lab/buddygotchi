@@ -318,6 +318,16 @@ public final class Pipeline {
         input(at: event.at) { harness.emit(event) }
     }
 
+    /// Whether Boop is asleep and no agent works: you're away, or every
+    /// buddy dozed off (asleep with agents to watch, not merely none yet).
+    /// When the memory dreams by itself.
+    public func asleepAndIdle(at now: Int64) -> Bool {
+        let cores = buddies.map { self.cores[$0.id]! }
+        let doing = cores.map { $0.snapshot(at: now).doing }
+        guard !doing.contains("working") else { return false }
+        return view.away || zip(cores, doing).allSatisfy { !$0.sessions.isEmpty && $1 == "asleep" }
+    }
+
     /// The core's timers, then the harness's tick: a check-in if one is
     /// due, and what's been in progress too long ended.
     @discardableResult

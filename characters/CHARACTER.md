@@ -367,8 +367,8 @@ What the brain reads, in plain Markdown:
   what moves it, and when it fades. A missing file reads as
   `default_mood`'s.
 - `dreams.md` (optional): the signs the creature may hold up as it
-  tells its dream about yesterday. Its day closes at 5:00 into a dream,
-  the day in tags and a sentence (`MemoryReader`), and the person's
+  tells its dream. A dream is everything since the last one, in tags and
+  a sentence (`DreamReader`), made once a sleep or after two days, and the person's
   first coming back after it, or with none their first touch (a poke or
   a stroke), tells it; never a prompt or a word, which have signs of
   their own. Each line is `- [tags] words`: the tags (optional) the day

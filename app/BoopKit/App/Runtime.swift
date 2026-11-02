@@ -393,9 +393,9 @@ public final class Runtime: @unchecked Sendable {
         if !fellBack {
             let remembers = Memory(store: values, time: options.time, writer: AppleIntelligenceWriter.onThisMac, files: memory,
                                    queue: home, note: log)
-            remembers.runner.follow(transcriptAt: transcript.lastSeq)
+            remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
-            remembers.catchUp(Transcript.events(in: folder, after: remembers.runner.seq, from: remembers.runner.day ?? ""))
+            remembers.catchUp(Transcript.events(in: folder, after: remembers.seq, from: remembers.from))
             remembers.relog(unlessIn: logNow)
             home.sync { remembers.attach(to: pipeline) }
             self.remembers = remembers

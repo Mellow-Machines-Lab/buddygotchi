@@ -1253,13 +1253,14 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours["happy"]!.all])
     }
 
-    /// `{"dev":"close_day"}`, the dashboard's `d`: Boop's day closes now,
-    /// as at 5:00, with its dream logged at once for the next coming back
-    /// or touch to tell, and the day opened afresh; a day dreamed of
-    /// already keeps its dream. The status line carries what CONTEXT
+    /// `{"dev":"dream_now"}`, the dashboard's `d`: Boop dreams now of
+    /// everything since the last dream, the dream logged at once for the
+    /// next coming back or touch to tell; with nothing new since, no dream.
+    /// `{"dev":"dream_preview"}`, its `D`: one `dream_preview` line in
+    /// debug.jsonl and nothing else. The status line carries what CONTEXT
     /// lacks: the XP, today's from each pool against its cap
     /// (`Growth.workPerDay`, `carePerDay`).
-    func testClosingTheDayNowDreams() throws {
+    func testDreamingNowAndItsPreview() throws {
         let transport = FakeTransport()
         var options = try options(transport, readJevKey: { _ in nil })
         options.debug = true
@@ -1269,25 +1270,28 @@ final class RuntimeTests: XCTestCase {
         connect(transport, runtime)
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         dev(#"{"dev":"tap"}"#)
-        eventually("the tap read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
-        let today = try XCTUnwrap(runtime.home.sync { runtime.remembers?.runner.day })
+        eventually("the tap read") { runtime.home.sync { runtime.remembers?.span?.new } == true }
         let dreams = { self.debugLines().compactMap { $0["event"] as? [String: Any] }.filter { $0["kind"] as? String == "dream" } }
 
-        dev(#"{"dev":"close_day"}"#)
+        dev(#"{"dev":"dream_preview"}"#)
+        eventually("the preview's line") { self.debugLines().contains { $0["dream_preview"] != nil } }
+        let preview = try XCTUnwrap(debugLines().compactMap { $0["dream_preview"] as? [String: Any] }.last)
+        XCTAssertNotNil(preview["dream"] as? [String: Any])
+        XCTAssertEqual(dreams().count, 0, "the preview dreams nothing")
+        XCTAssertTrue(runtime.home.sync { runtime.remembers?.span?.new } == true, "nor moves the checkpoint")
+
+        dev(#"{"dev":"dream_now"}"#)
         eventually("the dream, logged at once") { dreams().count == 1 }
-        XCTAssertEqual((dreams().first?["data"] as? [String: Any])?["day"] as? String, today)
-        XCTAssertEqual(runtime.home.sync { runtime.remembers?.dream?.day }, today)
-        XCTAssertEqual(runtime.home.sync { runtime.remembers?.runner.day }, today, "the same day, opened afresh")
-        XCTAssertEqual(runtime.home.sync { runtime.remembers?.today?.yours }, 0)
+        let day = try XCTUnwrap((dreams().first?["data"] as? [String: Any])?["day"] as? String)
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.dream?.day }, day)
+        XCTAssertTrue(runtime.home.sync { runtime.remembers?.span?.new } == false, "the span starts again")
+        dev(#"{"dev":"dream_now"}"#)
         dev(#"{"dev":"tap"}"#)
         eventually("the next touch tells it") {
-            self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == today }
+            self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == day }
         }
+        XCTAssertEqual(dreams().count, 1, "nothing new since: no second dream")
         XCTAssertTrue(runtime.home.sync { runtime.remembers?.dream?.told } == true)
-        dev(#"{"dev":"close_day"}"#)
-        dev(#"{"dev":"tap"}"#)
-        eventually("the dev lines after it read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
-        XCTAssertEqual(dreams().count, 1, "a day dreamed of keeps its dream")
 
         let status = try XCTUnwrap(debugLines().compactMap { $0["status"] as? [String: Any] }.last)
         XCTAssertNotNil(status["xp"] as? Int)

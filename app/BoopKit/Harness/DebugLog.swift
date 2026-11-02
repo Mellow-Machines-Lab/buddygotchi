@@ -19,6 +19,28 @@ public enum DebugLog {
         "{\"\(kind)\":\(json),\"received_at_ms\":\(ms)}"
     }
 
+    /// A dream's preview (`Memory.preview`), for the dashboard's `D`: the
+    /// dream (or null, nothing new), the writer's edits by note id, what it
+    /// refused and why, and `memory.md` before and after (null without a
+    /// writer). Nothing of it is kept.
+    public static func dreamPreview(_ p: Memory.Preview, at ms: Int64) -> String {
+        func ids(_ xs: [Int]) -> [String] { xs.map { "m\($0)" } }
+        var out: [String: Any] = ["before": p.before ?? NSNull(), "after": p.after ?? NSNull()]
+        if let d = p.dream {
+            out["dream"] = ["about": d.about ?? d.weekday, "range": d.range ?? d.day, "tags": d.tags, "sentence": d.sentence,
+                            "fact": d.fact]
+        } else {
+            out["dream"] = NSNull()
+        }
+        if let r = p.report {
+            out["edits"] = ["kept": ids(r.kept), "updated": ids(r.updated), "added": ids(r.added), "dropped": ids(r.dropped),
+                            "aged": ids(r.aged), "refused": r.refused.map { ["line": $0.line, "why": $0.why] }]
+        } else {
+            out["edits"] = NSNull()
+        }
+        return line("dream_preview", JSONLine.encode(out), at: ms)
+    }
+
     /// A message sent to the device, verbatim, and who sent it: `brain` for
     /// the brain's reactions, `rule` for everything else, the link's own
     /// messages (every `state`, the `hello` ask) among them.
@@ -216,6 +238,12 @@ public enum DebugLog {
 
         public func view(_ v: ViewEvent) {
             if holding { held.append(DebugLog.view(v)) } else { emit(DebugLog.view(v)) }
+        }
+
+        /// A line of its own, not an event's (the dream's preview): after
+        /// the pass whose outputs are running, if one is.
+        public func line(_ line: String) {
+            if holding { held.append(line) } else { emit(line) }
         }
 
         /// A pass: its state's head when it changed, its line, then what
