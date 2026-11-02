@@ -262,8 +262,7 @@ def frame_us(sample: dict, overlapped: bool) -> int:
 WORKING = {"t": "state", "base": "working", "act": "terminal", "mood": "happy", "busy": 1}
 STREAM = {**WORKING, "busy": 2, "todo": {"done": 3, "total": 7}, "calls": [[0, 0, "grep"], [1, 0, "edit +18"]]}
 STREAM_CALLS = [do("call", a=i % 2, w=word, **{"as": gag})
-                for i, (word, gag) in enumerate([("make", "bonk"), ("deploy", "launch"), ("task", "helper"),
-                                                 ("test", "pass"), ("read", "look"), ("done", "gather")])]
+                for i, (word, gag) in enumerate([("make", "bonk"), ("task", "helper"), ("done", "gather")])]
 PERF_SCENES = [
     ("working", WORKING, None, 30),
     ("stream", STREAM, STREAM_CALLS, None),

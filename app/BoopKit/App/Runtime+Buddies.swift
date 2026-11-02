@@ -144,6 +144,10 @@ extension Runtime {
                 guard !m.reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
                 m.reactions.pokesStopped()
             }
+            // What an output's own act comes to, carried out.
+            let carryOut = { [weak pipeline] (fx: [CoreEffect], at: Int64) in
+                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+            }
             let react = MomentOutput(queue: m.queue, blocked: { core.reactionBlock }, replyBlocked: { core.replyBlock }, who: { [weak h] now in
                 // Weak: the harness holds this output.
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
@@ -162,13 +166,11 @@ extension Runtime {
                 let now = h.clock.now(), log = h.log.view(now: now)
                 return StatusReply.answer(core.status(at: now, results: view.results(log), asked: view.asked(log)), words: words, at: now,
                                           stretchSince: core.stretchSince(at: now))
-            }, moment: { core.moment(at: $0.at) }, hushed: { core.hushed(at: $0) != nil }, hush: { [weak pipeline] ms, at in
+            }, moment: { core.moment(at: $0.at) }, hushed: { core.hushed(at: $0) != nil }, hush: { ms, at in
                 // What you said hushed it, or let it talk again.
-                let fx = ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at)
-                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
-            }, nap: { [weak pipeline] at in
-                let fx = core.nap(at: at)
-                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+                carryOut(ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at), at)
+            }, nap: { at in
+                carryOut(core.nap(at: at), at)
             }, talk: m.talk, reason: { [weak h] about in
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
@@ -189,9 +191,8 @@ extension Runtime {
                 // At an ask's moment, within the core's caps.
                 Asks.moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(m.company(), at: about.at)).isEmpty
                     ? [] : core.wishable(at: about.at)
-            }, makeWish: { [weak pipeline] kind, at in
-                let fx = core.makeWish(kind, at: at)
-                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+            }, makeWish: { kind, at in
+                carryOut(core.makeWish(kind, at: at), at)
             }, wishDone: m.wishDone,
             today: m.company)
             h.output(mood)

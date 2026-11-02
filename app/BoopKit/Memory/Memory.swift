@@ -19,6 +19,8 @@ import MellowHarness
 /// writer off it and lands its edits back on it (`queue`).
 public final class Memory: @unchecked Sendable {
     public let store: KeyValueStore
+    /// `wishDone`'s answers: every `state` asks, and they change only here.
+    private var wishesDone: [String: Bool] = [:]
     public let reader: MemoryReader
     public let runner: Checkpointed<MemoryReader>
     public let dreamReader: DreamReader
@@ -183,12 +185,20 @@ public final class Memory: @unchecked Sendable {
 
     /// Whether you've met a wish of `kind` once (`wish.<kind>`). Until
     /// then it shows how. For you, not for one buddy: you know how now.
-    public func wishDone(_ kind: Core.WishKind) -> Bool { store.string("wish.\(kind.rawValue)") != nil }
+    public func wishDone(_ kind: Core.WishKind) -> Bool {
+        if let known = wishesDone[kind.rawValue] { return known }
+        let done = store.string("wish.\(kind.rawValue)") != nil
+        wishesDone[kind.rawValue] = done
+        return done
+    }
 
     /// Keeps a wish met (the `wish_end` event).
     func recordWish(_ e: Event) {
         guard e.type == .wish, e.phase == .end, e.specificType == Core.WishEnd.met.rawValue, let kind = e["kind"]?.string else { return }
-        do { try store.set(["wish.\(kind)": time.boopDay(e.at)]) } catch { note("memory: can't keep the wish: \(error)") }
+        do {
+            try store.set(["wish.\(kind)": time.boopDay(e.at)])
+            wishesDone[kind] = true
+        } catch { note("memory: can't keep the wish: \(error)") }
     }
 
     // MARK: The ask record
