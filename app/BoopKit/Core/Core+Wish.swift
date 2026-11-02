@@ -50,8 +50,8 @@ extension Core {
     public func wishable(at now: Int64) -> [WishKind] {
         guard wish == nil, !awayFromMac, needsYouBlock == nil, listening == nil,
               hushed(at: now) == nil else { return [] }
+        guard !dozes(at: now) else { return [] }
         let doing = snapshot(at: now).doing
-        guard !dozing(doing) else { return [] }
         return WishKind.allCases.filter { kind in
             switch kind {
             case .pet: true
@@ -105,14 +105,17 @@ extension Core {
 
     /// Whether the wish's wait counts now: while you're here, it hasn't
     /// dozed off and nothing needs you. The board shows its icon only then.
-    func wishCounts(doing: String, attn: StateSnapshot.Attention?) -> Bool {
-        wish != nil && !awayFromMac && !dozing(doing) && attn == nil
+    func wishCounts(dozed: Bool, attn: StateSnapshot.Attention?) -> Bool {
+        wish != nil && !awayFromMac && !dozed && attn == nil
     }
 
     /// Whether Boop sleeps past wanting anything: asleep with agents to
     /// watch, or from its nap. With none open and you here, its look is
     /// asleep with time on its hands, so it may still want something.
-    func dozing(_ doing: String) -> Bool { doing == "asleep" && (!sessions.isEmpty || napping) }
+    func dozes(at now: Int64) -> Bool {
+        let (shown, dismissed, working, idle) = groups(at: now)
+        return working.isEmpty && dozedOff(at: now, rests: resting(idle: idle, dismissed: dismissed), waiting: !shown.isEmpty || !dismissed.isEmpty)
+    }
 
     /// The wish's clock: it closes quietly when the day ends, grows while
     /// it counts, and gives up at `wishGivesUpMs`, with the rule's Moment,
@@ -121,7 +124,7 @@ extension Core {
         guard var w = wish else { return }
         if config.time.boopDay(wall(w.since)) != wishDayNow(now) { return endWish(.closed, now, &fx) }
         let s = snapshot(at: now)
-        if wishCounts(doing: s.doing, attn: s.attn) { w.waitedMs += max(0, now - w.countedTo) }
+        if wishCounts(dozed: dozes(at: now), attn: s.attn) { w.waitedMs += max(0, now - w.countedTo) }
         w.countedTo = now
         wish = w
         guard w.waitedMs >= Self.wishGivesUpMs else { return }

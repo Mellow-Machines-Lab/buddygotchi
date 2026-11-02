@@ -117,7 +117,7 @@ struct Stream {
     bool live = false;
   };
 
-  static constexpr int kActBytes = 24;  // WorkStream.maxActBytes and its end
+  static constexpr int kActBytes = 24;  // a sign's longest words and their end
   // The act running, as the Mac's `state` says it (`wact`), or its result.
   struct ActIn {
     ActKind kind = ActKind::kNone;
