@@ -239,8 +239,10 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(Eval.plan(always, level: .standard, named: false)?.runs, 1)
         XCTAssertEqual(Eval.plan(always, level: .quick, named: false)?.runs, 1)
         XCTAssertEqual(Eval.plan(tuning, level: .full, named: false)?.runs, 1)
-        let busy = try XCTUnwrap(all.first { $0.file.hasPrefix("53-") })
-        XCTAssertEqual(Eval.plan(busy, level: .full, named: false)?.runs, 1, "53 says runs 1: the code already holds its moves to the graph")
+        var busy = try XCTUnwrap(all.first { $0.file.hasPrefix("53-") })
+        busy.always = true
+        busy.scripted = false
+        XCTAssertEqual(Eval.plan(busy, level: .full, named: false)?.runs, 1, "a scenario's own runs win: 53 says 1, the code already holds its moves to the graph")
         // 05's four pokes, a second apart then a turn start: a pass each.
         let pokes = try Scenario(file: Self.fixtures.appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
         let price = try await Eval.price(pokes, steering: RuntimeTests.steering)
