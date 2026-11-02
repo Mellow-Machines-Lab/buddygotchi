@@ -2,8 +2,8 @@ import Foundation
 
 /// What's true now, as tags: the part of the day, the weekday, a holiday, a
 /// milestone day since Boop hatched, how long the agents have worked or
-/// sat idle, Boop's growth stage, and whether the latest turn's prompt was
-/// an essay or for docs. The core sends them in the `state`
+/// sat idle, Boop's growth stage, and whether Boop is hushed. The core
+/// sends them in the `state`
 /// message (`when`), and the board shows only the designs whose tags are
 /// all on (characters/CHARACTER.md §9). The board adds `busy` and
 /// `frantic` itself, from the `state` message's count of sessions working.
@@ -12,9 +12,8 @@ import Foundation
 /// firmware's list in the same order (firmware/src/render/tags.h).
 public enum Occasions {
     /// Every tag: the calendar's, the board's own two for how busy the
-    /// agents are, the tiers, the stages, then the latest turn's `reading`
-    /// and `hushed`.
-    public static let all = calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [reading, hushed]
+    /// agents are, the tiers, the stages, then `hushed`.
+    public static let all = calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [hushed]
 
     /// The tags no board reads: the signs and the brain have them, and the
     /// `state` message leaves them out.
@@ -23,14 +22,8 @@ public enum Occasions {
     /// The tags the board reads, in its order: every tag but `macOnly`.
     public static let board = all.filter { !macOnly.contains($0) }
 
-    /// On while the latest turn you prompted lasts, when its prompt's
-    /// reading `reads`: the board's reading glasses.
-    public static let reading = "reading"
     /// On while Boop is hushed (`Core.Hush`): the gel zips its mouth.
     public static let hushed = "hushed"
-    /// Whether a prompt's reading puts `reading` on for its turn: you wrote
-    /// an essay of a prompt, or asked for docs.
-    public static func reads(_ prompt: PromptReading) -> Bool { prompt.length == .essay || prompt.kind == .docs }
 
     /// The calendar's tags, the ones `tags(at:)` gives: the part of the
     /// day, the weekday, the holidays and a party.

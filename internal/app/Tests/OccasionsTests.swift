@@ -182,14 +182,13 @@ final class OccasionsTests: XCTestCase {
 
     /// The popover's reasons choose as the board does
     /// (firmware/src/render/tags.cpp): one hat, the first that fits; on
-    /// the gel, glasses for your prompt over Friday's shades, neither
-    /// asleep, and pyjamas with the nightcap only bare-eyed; the sun in the
+    /// the gel, Friday's shades, not asleep, and pyjamas with the nightcap only bare-eyed; the sun in the
     /// morning, with a coffee while awake; confetti at a party or New Year.
     func testTheReasonsAreTheBoards() {
-        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, reading: Bool = false, asleep: Bool = false,
+        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, asleep: Bool = false,
                      gel: Bool = true) -> [String] {
             let at = ms(y, mo, d, h), day = utc.day(at)
-            let when = Occasions.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc) + (reading ? [Occasions.reading] : [])
+            let when = Occasions.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc)
             let occasions = Occasions.occasions(at: at, hatched: "2026-09-01", name: "Pip", stage: stage.map { ($0, day) }, time: utc)
             return Dressing.now(when: when, occasions: occasions, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
@@ -203,9 +202,6 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(reasons(2027, 3, 14), ["It's Pi Day: -"])
         XCTAssertEqual(reasons(2026, 10, 23), ["It's Friday: shades"])
         XCTAssertEqual(reasons(2026, 10, 23, 9), ["It's morning: the sun and a coffee"], "shades from noon")
-        XCTAssertEqual(reasons(2026, 10, 23, reading: true), ["Your prompt was an essay, or asked for docs: reading glasses"])
-        XCTAssertEqual(reasons(2026, 10, 22, 23, reading: true),
-                       ["It's night: a nightcap", "Your prompt was an essay, or asked for docs: reading glasses"])
         XCTAssertEqual(reasons(2026, 10, 23, asleep: true), [])
         XCTAssertEqual(reasons(2026, 10, 23, gel: false), [])
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
@@ -290,32 +286,6 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(tiers(), ["tier1"], "idle's")
         rig.send(.turnStart, session: "a")
         XCTAssertEqual(tiers(), [], "a new stretch")
-    }
-
-    /// Pins `Occasions.reads`: a prompt's reading puts `reading` on when
-    /// you wrote an essay or asked for docs, and the board hears it while
-    /// that turn lasts, as the latest prompt's reading says.
-    func testAnEssayOrDocsPutsReadingOnForItsTurn() {
-        XCTAssertTrue(Occasions.reads(PromptReading(length: .essay)))
-        XCTAssertTrue(Occasions.reads(PromptReading(length: .words, kind: .docs)))
-        XCTAssertFalse(Occasions.reads(PromptReading(length: .paragraph, kind: .fix)))
-        let rig = CoreRig()
-        let reading = { rig.state.when.contains(Occasions.reading) }
-        rig.send(.turnStart, prompt: String(repeating: "Write the whole thing up for me, please. ", count: 20))
-        XCTAssertTrue(reading(), "an essay of a prompt")
-        rig.send(.activity, tool: "Edit")
-        rig.wait(60_000)
-        XCTAssertTrue(reading(), "while its turn lasts")
-        rig.send(.turnEnd)
-        XCTAssertFalse(reading(), "its turn ended")
-        rig.note(Fx(rig.pipeline.agent(rig.event(.turnStart, prompt: "update the readme"), labels: .prompt(.init(kind: .docs)))))
-        XCTAssertTrue(reading(), "a prompt for docs")
-        rig.send(.turnStart, session: "s2", prompt: "fix the login bug")
-        XCTAssertFalse(reading(), "the latest prompt is neither")
-        rig.send(.turnEnd, session: "s2")
-        rig.send(.turnEnd)
-        rig.send(.turnStart, prompt: "and the next")
-        XCTAssertFalse(reading(), "a turn has its own prompt's")
     }
 
     /// Every growth stage reached is a tag, so a design for Pal shows at

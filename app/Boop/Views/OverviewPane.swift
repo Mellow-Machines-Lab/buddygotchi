@@ -368,7 +368,6 @@ struct OverviewPane: View {
         case .occasion: "party.popper"
         case .night: "moon.stars"
         case .morning: "sun.horizon"
-        case .reading: "eyeglasses"
         case .friday: "sunglasses"
         }
     }

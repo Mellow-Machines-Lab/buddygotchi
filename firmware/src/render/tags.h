@@ -1,7 +1,6 @@
 // The tags on now: what the Mac sends in `state.when` (the part of the
 // day, Friday, a holiday, a milestone day, every tier the agents'
-// working stretch or their rest has reached, the first growth stage,
-// `reading` while the latest turn's prompt was an essay or for docs, and
+// working stretch or their rest has reached, the first growth stage, and
 // `hushed` while you've told Boop to be quiet),
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a gag that carries tags fits only while every
@@ -13,10 +12,11 @@
 
 namespace render {
 
-constexpr int kTagCount = 22;
-constexpr const char* kTagNames[kTagCount] = {
-    "morning", "day",   "evening", "night", "friday", "newyear", "valentines", "halloween", "winter", "programmers", "lunar",
-    "party",   "busy",  "frantic", "tier1", "tier2",  "tier3",   "tier4",      "tier5",     "sprout", "reading",     "hushed"};
+constexpr int kTagCount = 21;
+constexpr const char* kTagNames[kTagCount] = {"morning",    "day",       "evening", "night",       "friday", "newyear",
+                                              "valentines", "halloween", "winter",  "programmers", "lunar",  "party",
+                                              "busy",       "frantic",   "tier1",   "tier2",       "tier3",  "tier4",
+                                              "tier5",      "sprout",    "hushed"};
 static_assert(kTagCount <= 32, "a set of tags is 32 bits");
 
 // The tag's bit in a set of tags, or 0 for a name that isn't one.
@@ -58,10 +58,10 @@ int workPace(int working);
 // Day), a nightcap at night, a bobble hat in winter; else none.
 enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
 Outfit outfitFor(uint32_t when);
-// What it wears over its eyes then (the gel's layers): reading glasses
-// while `reading` is on, else shades on a Friday from noon to night
-// (the day and the evening, not the morning); else none.
-enum class Eyewear : uint8_t { kNone, kGlasses, kShades };
+// What it wears over its eyes then (the gel's layers): shades on a
+// Friday from noon to night (the day and the evening, not the morning);
+// else none.
+enum class Eyewear : uint8_t { kNone, kShades };
 Eyewear eyewearFor(uint32_t when);
 // What's in the air for the tags on, as bits: snow in winter, confetti on
 // a party day or New Year's Day, hearts on Valentine's.

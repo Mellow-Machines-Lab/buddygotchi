@@ -182,8 +182,7 @@ public final class Pipeline {
 
     /// A reading, for the turn start or end `turn` that brought its text,
     /// as logged: logged, with the session and the buddy of that turn, and
-    /// it wakes the brain in the turn event's place. The core hears only
-    /// your prompt's, for the `reading` tag (`Core.promptRead`).
+    /// it wakes the brain in the turn event's place.
     /// Nil, logging nothing, once the session moved on (a slow labeler):
     /// your prompt's once its turn ended or another began, the agent's
     /// last message's once the next turn began. The turn event's own line
@@ -200,9 +199,6 @@ public final class Pipeline {
         let id = buddy(watching: turn)
         harness.emit(Event(at: now, source: turn.from ?? .mac, type: heard.kind, specificType: "reading", session: turn.session,
                            buddy: id, data: heard.facts))
-        if case .prompt(let reading) = heard, let agent = turn.agent, let session = turn.session {
-            run(core(id).promptRead(reading, agent: agent, session: session, at: now), buddy: id)
-        }
     }
 
     /// The device's poke, on the buddy `buddy` (nil for the only one): the

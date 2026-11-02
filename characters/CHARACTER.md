@@ -604,9 +604,7 @@ Besides drawing each mood and state, a face:
   dismissed; the Mac sends the last reached and the board takes every one
   below it as on, `render::reached`, so a design for `tier2` shows from
   then on, at work or idle as its look says), `sprout` from the first
-  growth stage reached on, and `reading` while the turn the latest
-  prompt's reading came for lasts, when you wrote it an essay or asked for
-  docs (`Occasions.reads`), and `hushed` while the creature is hushed
+  growth stage reached on, and `hushed` while the creature is hushed
   (`Core.Hush`), from the Mac's `state.when`, and `busy` (2–3
   sessions working) and `frantic` (4 or more), which the board adds from
   `state.busy`. The Mac has more tags (`weekend`, `friday13`, `piday`,
@@ -644,12 +642,11 @@ Besides drawing each mood and state, a face:
   front lower down for its hands, its eyes, and two rings low on its body
   where pyjamas sit), so they move, squash and leave the screen with it: a
   striped nightcap at night flopping down its side (and its lids a little
-  lower), with pyjamas to match but while it wears reading glasses, a
+  lower), with pyjamas to match but while it wears shades, a
   party hat on a party day, New Year's Day, Lunar New Year and
   Programmers' Day, a witch hat at Halloween, a bobble hat in winter
   (`render::outfitFor`'s order, so Halloween's hat wins over the nightcap
-  and its pyjamas); reading glasses while `reading` is on, else shades on a
-  Friday from noon to night, neither while it sleeps, and the shades off
+  and its pyjamas); shades on a Friday from noon to night, neither while it sleeps, and the shades off
   while it shows a feeling, a reaction, needs you or listening
   (`render::eyewearFor`; the
   Mac's popover says why each is on, choosing as the board does,
@@ -662,7 +659,7 @@ Besides drawing each mood and state, a face:
   twinkling stars at night and the sun, glowing, its rays turning, in the morning. Each comes and goes through
   the rig's layer stack (§15), fading over 200 ms, a new one after the
   old has gone. Peekaboo's gesture takes the
-  outfit off. Pixel wears neither the pyjamas nor the glasses, nor has the
+  outfit off. Pixel wears neither the pyjamas nor the shades, nor has the
   sky (its coffee is its morning designs'); the Mac's mirror
   is the board's own firmware, so it wears them as the board does.
 - **Times them.** Each design's loop length (`loopMs`), which sets how
@@ -1179,7 +1176,7 @@ then, and the rig's stretch over its rig-drawn desks.
 place among a face's own drawing, is a layer of the rig's stack
 (`render/rig/layers.h`), back to front: the scene behind the body (the
 gel's night sky or morning sun), what's worn over the eyes or on the body
-(glasses, pyjamas), the hat, the air (snow, confetti, hearts) and what's
+(shades, pyjamas), the hat, the air (snow, confetti, hearts) and what's
 beside it (Zs, the gel's morning coffee). Each shows a content,
 the face's own number for what it draws there, at an opacity that eases
 in and out over the rig's fade (`kFadeMs`, 200 ms); a new content waits

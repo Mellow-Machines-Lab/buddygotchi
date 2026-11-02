@@ -44,7 +44,6 @@ Outfit outfitFor(uint32_t when) {
 }
 
 Eyewear eyewearFor(uint32_t when) {
-  if (hasTag(when, "reading")) return Eyewear::kGlasses;
   if (hasTag(when, "friday") && !hasTag(when, "night") && !hasTag(when, "morning")) return Eyewear::kShades;
   return Eyewear::kNone;
 }
