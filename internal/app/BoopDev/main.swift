@@ -61,8 +61,8 @@ let usages: [(command: String, text: String)] = [
     """),
     ("memory", """
     boopdev memory write [--fixture FILE] [--only TEXT]
-        Runs the written memory's night with Apple Intelligence on this Mac, as the app does, over fixture nights
-        (each a memory, CERTAIN, yesterday's lines and what a person would accept), and prints each night's reply,
+        Runs the dream's write with Apple Intelligence on this Mac, as the app does, over fixture nights
+        (each a memory, CERTAIN, its RECENT lines and what a person would accept), and prints each night's reply,
         the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
         defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
         without it.

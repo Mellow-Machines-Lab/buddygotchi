@@ -15,7 +15,7 @@ first use and after an edit. Run it from the repository root;
 
 macOS gives camera access to the app that launched the process, so run
 `record` from a terminal that has it. For agents here, that's a terminal
-the Claude app opens ([CLAUDE.md](../../../CLAUDE.md)); from an agent's
+the Claude app opens (its Terminal panel); from an agent's
 own shell `record` says the camera is missing or access is denied. If
 macOS asks, allow it in System Settings → Privacy & Security → Camera.
 Listing cameras never records.

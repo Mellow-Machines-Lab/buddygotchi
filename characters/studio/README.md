@@ -75,7 +75,7 @@ nothing for (Stills, for a pack with no golden frames):
   talk files: how much it says is held in code.)
 - **Moods**: the moods in their families, and the one picked: its
   meaning and face, its preview idle in it, and its map, the moods it can
-  move to (`moves`), ordinary ones on the inner ring and dramatic ones,
+  move to (`moves`), neighbours on the inner ring and jumps,
   dashed, on the outer, each opening its mood, with the moods it's
   reached from under it. Then its steering file in parts, by how each
   sentence starts (charactergen's `mood_steering()`): what it is, its
@@ -84,8 +84,8 @@ nothing for (Stills, for a pack with no golden frames):
   it (Animations), its voice takes and the evals that expect it.
 - **Behavior**: the engine's, not the pack's, so every pack shows the
   same, with its own personality's settings and scenarios. **Map**: the
-  screen's layers, top first (no Mac, listening, needs you, a reaction,
-  the look), then everything that puts something on the screen, by what
+  screen's layers, top first (no Mac, listening, needs you, a Moment,
+  Doing), then everything that puts something on the screen, by what
   sets it off (your agents, you at the Mac, your hand on the board, time
   passing): who decides it, a rule on the Mac, the brain or the board,
   each state it plays (opening it in Animations), what the brain makes of
@@ -146,15 +146,15 @@ The scene's own parts:
   it opens that scene. Served by the simulator's server (`make dev`, or `make -C internal simulator`)
   ([simulator/README.md](../../simulator/README.md)), the matrix also
   marks the cell the simulated board shows now, from the board's own
-  `dbg.state` once a second: no app or needs you, else a reaction
-  playing, else its look (the agents' activity while working), in the
+  `dbg.state` once a second: no app or needs you, else a Moment
+  playing, else its Doing (the agents' activity while working), in the
   mood its face wears, with the variation it plays; clicking the marked
   cell opens that variation. The simulator's link names the board to ask,
   `&board=/board` (`/board/NAME` for one of several); without it the page
   asks nothing.
 
 - **Transitions** (on the board): a start, a mood and a state, and an
-  end, a mood and a state or a reaction (task complete, notice…), on the
+  end, a mood and a state or a Moment (task complete, notice…), on the
   board's own firmware. It plays the start for 2 s on the board's frozen
   clock, asks for the end as the Mac would, and records a frame every
   40 ms, 5 before the change and 100 after: the frame under a scrubber,
@@ -170,7 +170,7 @@ The scene's own parts:
   one records it here.
 - **Stills**: the frames the pack's tests hold its faces to
   (`tests/golden-*/<group>/`), a group at a time: what each face draws,
-  occasions and gestures among them.
+  the `occasions` and `gestures` groups among them.
 - **References**: each of the pack's references (CHARACTER.md §16), its
   status, kind and note, the agent's reading (its `reading.md`, rendered
   by `markdown.js`: headings, paragraphs, lists, tables and code) and
@@ -211,11 +211,11 @@ The board's preview (`board.js`) is its firmware itself: the simulator's
 build (`boop-sim-PACK.js`, or `boop-sim.js` for the staged pack, checked
 by its `hello`), powered on with the face; the page compiles each
 build's WebAssembly once for all its boards. It takes each of the
-studio's states as the Mac and a finger would ask for it: a look is a
-`state` (the activity while working, an act the firmware draws, needs
-you an `attn`), a reaction a `do` over working (idle for waking up), or
-as a transition's end over its start's look, in its own mood, a poke or
-taps in a row or a stroke a touch, where the simulator taps, and no Mac
+studio's states as the Mac and a finger would ask for it: a Doing is a
+`state` (the activity while working, one the firmware draws, needs
+you an `attn`), a Moment a `do` over working (idle for waking up), or
+as a transition's end over its start's Doing, in its own mood, a poke or
+pokes in a row or a stroke a touch, where the simulator taps, and no Mac
 30 s with no state. On the stage it plays from a
 `dbg.reset`, its clock running, says its state again as often as the
 simulator's page does, and picks its own variations; a matrix cell
@@ -247,7 +247,7 @@ packs' `character.json` files, their steering (the personality,
 guide, each mood's file, signs and dream signs), the voice each has or
 has (its `mac/takes.tsv`), their
 demos, evals and golden frames, references, review queues and notes,
-`states.json`, the acts the board draws while working (the firmware's
+`states.json`, the activities the board draws while working (the firmware's
 `actFromName`), the frames' 40 ms (charactergen's `FRAME_MS`, a
 reference's too) and the everyday transitions Rank records (those
 `everyday.jsonl` records, `everyday()`), the

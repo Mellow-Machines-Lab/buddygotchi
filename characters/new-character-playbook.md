@@ -1,6 +1,6 @@
 # A new character: the playbook, and what would make it repeatable
 
-Updated 2026-10-26. Written while building Pixel Bro
+Updated 2026-11-01. Written while building Pixel Bro
 ([Mellow-Machines-Lab/PixelBro](https://github.com/Mellow-Machines-Lab/PixelBro)),
 the third character: Pixel's body with a new soul, on the AMOLED. The first
 half is the playbook as it ran, so the next character can follow it. The
@@ -12,7 +12,7 @@ pick from. Nothing here is decided.
 1. **Write the bible first.** One page in the pack's `design/` (Pixel
    Bro's is `design/BRO.md`): who the character is, the few rules every
    interaction follows, the line it never crosses, and a table of every
-   look and reaction. Every worker after this reads it, and it is what
+   look and Moment. Every worker after this reads it, and it is what
    keeps the steering, the voice and the art one character.
 2. **Copy the closest pack's repository**, not only its `character/`:
    the Makefile, CI, CLAUDE.md and README are what make it a repository of

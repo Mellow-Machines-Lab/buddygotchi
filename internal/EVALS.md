@@ -19,18 +19,18 @@ say how long Boop has been in it, and how much it says (normal unless the file s
 or chatty), told in CONTEXT's Talk row and held in code. The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
-that a reaction goes to a fake device, which answers at once with the
+that a Moment goes to a fake device, which answers at once with the
 `ended` the step names, `done` unless it says otherwise (`reaction`,
 §3), read as the app reads the device's (`Reactions`), so HISTORY shows
 it as played. A step's
-`failed: cut short: you tapped Boop` is the device's `cut` by a tap,
+`failed: cut short: you tapped Boop` is the device's `cut` by a poke,
 held as the app holds it: in progress while the pokes go on, done once
 they stop; `failed: waited too long` is its `skipped`, `late`.
 
 For each step it moves the clock a second at a time to the step's time,
-ticking the pipeline as the app does, so heartbeats and other timers
+ticking the pipeline as the app does, so check-ins and other timers
 fire on the way, and hands each tick's view events that wake the brain
-to the harness at that tick, so a heartbeat is answered when it comes.
+to the harness at that tick, so a check-in is answered when it comes.
 Then it feeds the step's raw events to the pipeline, one input at a
 time, and hands every view event that wakes the brain to the harness as
 it's made, straight through without MellowHarness's loop (`Harness.respond`,
@@ -52,7 +52,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
 | `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b`, `touch` (a stroke, its first answer) or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
-| `gesture` | What you did to the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
+| `gesture` | A touch on the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
 | `helper started`, `helper returned` | The agent sends a helper off (`SubagentStart`), and it comes back (`SubagentStop`), the step's `helper` (`h1` unless it says) |
@@ -64,15 +64,15 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
-| `wait` | Nothing; only time passes: a heartbeat may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
+| `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
 step's `session`, with the step's `workspace` if it has one.
 
 **The check.** A step with `expect` is checked against the last pass
-woken on the way to it and by it, so a `wait` checks the heartbeat its
+woken on the way to it and by it, so a `wait` checks the check-in its
 ticks brought: an idle one, or while a thread works, the working
-heartbeat. Each expectation is a set of acceptable values (`proud|happy`), so
+one. Each expectation is a set of acceptable values (`proud|happy`), so
 a scenario holds wherever more than one answer is right. For `react`,
 `mood` and `say`, a leading `!` takes values away from everything the
 key may be: `!none` is any face, `!lonely` any lasting mood but lonely,
@@ -81,11 +81,11 @@ long list that checks little:
 
 | Checked | Against |
 | --- | --- |
-| `react` | Jev's pick for the `react.face` question: `none` or a mood's face |
-| `move` | The move the reaction played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
-| `intensity` | How big the moment was, Jev's `react.intensity` pick (`small` to `huge`: how long the face held and how big what it said), or `none` when `react` didn't react |
+| `react` | Jev's pick for the `react.face` question: `none` or an emotion |
+| `move` | The move the Moment played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
+| `intensity` | The Moment's size, Jev's `react.intensity` pick (`small` to `huge`: how long the emotion held and how big what it said), or `none` when `react` didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
-| `sign` | The sign the reaction held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
+| `sign` | The sign the Moment held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `mood` | Boop's mood after the pass |
 | `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every move the graph has from it, so a scenario can pin the graph |
@@ -97,18 +97,18 @@ fail without it.
 
 **The whole-run checks.** A scenario's `checks` are judged over every
 pass of a run, checked or not, for how lively Boop stays: an animated
-Boop that doesn't sit on one look, repeat itself or flail. Each is loose, there to catch a clear failure,
+Boop that doesn't sit on one emotion, repeat itself or flail. Each is loose, there to catch a clear failure,
 and to be tightened once Boop meets it (`Eval.judge`):
 
 | Check | Fails when |
 | --- | --- |
-| `max_quiet_working` | The turn runs longer than this with no reaction played, counted from its start or the last reaction to the next or its end |
-| `max_same_in_a_row` | More reactions than this in a row are the same face, animation and take (however long each held) |
+| `max_quiet_working` | The turn runs longer than this with no Moment played, counted from its start or the last Moment to the next or its end |
+| `max_same_in_a_row` | More Moments than this in a row are the same emotion, animation and take (however long each held) |
 | `mood_changes` | The mood changes a number of times outside this range (`1-3`, `2-` for 2 or more, `-2` for 2 at most) |
 | `no_mood_bounce_within` | A mood changes back to the one it just left sooner than this |
-| `reactions` | The run plays a number of reactions outside this range |
-| `min_variety` | The run plays fewer different reactions (face, animation and take) than this |
-| `words_said` | The share of the reactions played that said something falls outside this range |
+| `reactions` | The run plays a number of Moments outside this range |
+| `min_variety` | The run plays fewer different Moments (emotion, animation and take) than this |
+| `words_said` | The share of the Moments played that said something falls outside this range |
 | `moves_on_graph` | A pass's `mood` answer wasn't one of the options it offered (or Jev gave none it could use), or the mood changed along something that isn't a move on the graph |
 | `signs_seen` | None of the signs it names (`"fav snack?|hat or bow?"`) was held up at any pass: for what Jev does now and then, such as asking, not at a given step |
 | `moods_seen` | A mood it names (`"lonely"`, or several, each required, `"lonely|sad"`) was never the mood at any pass: one that came and faded between two steps still counts |
@@ -230,7 +230,7 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
-| `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Occasions`): none by default |
+| `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`): none by default |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moves_on_graph` (`true`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |
@@ -247,12 +247,12 @@ file-name order:
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
 | `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
 | `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
-| `steps[].reaction` | How a reaction this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
+| `steps[].reaction` | How a Moment this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.face": "amused"}`), ahead of its `expect` |
-| `steps[].expect.dream` | `told` when a pass of the step (a heartbeat's on the way included) answered the line that told the dream, `none` when none did |
+| `steps[].expect.dream` | `told` when a pass of the step (a check-in's on the way included) answered the line that told the dream, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
 | `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
-| `steps[].expect` | Any of `react` (the face), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
+| `steps[].expect` | Any of `react` (the emotion), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key
 or check, a starting `mood`, or an expected `react`, `mood` or `offered`,
@@ -314,14 +314,14 @@ kinds, all with the `boop` personality unless the file says otherwise:
   big, `138`, and a memory never turns a failure into a success, `139`),
   and the liveliness brief: Boop reacts often (every quick win, `19`;
   most of a busy half hour, `21`), never goes over 6 minutes of work
-  with no reaction, even while another thread's quick turns keep waking
+  with no Moment, even while another thread's quick turns keep waking
   the brain (`18`, `21`, `22`), and its mood drifts (calm → engaged →
   determined → excited), never flipping back within a minute; in a long
   grind it may ease back and return (`18`, `51`). Runs are ladders, not
   repeats: a streak of quick wins climbs from happy to excited to amused
   to comfy and round again (`19`), a round of check-ins on a long turn
   from engaged to hopeful to bored to determined (`85`), and a busy half hour never plays the same
-  reaction three times running (`21`, `22`). The
+  Moment three times running (`21`, `22`). The
   moods the words bring (`24`–`27`): a frustrated request annoyed, a
   step toward determined, thanks excited, a long turn's hard work done
   proud, an agent giving up sad. The finishes: a question back or an
@@ -347,7 +347,7 @@ kinds, all with the `boop` personality unless the file says otherwise:
   (`76`), a poke while it sleeps startles it (`77`), and a barrage
   again gets a louder grumble (`16`); quiet fades an excited Boop a
   step at a time (`55`). And a Codex turn gets the same small
-  cheer as Claude's (`14`). On an occasion CONTEXT's
+  cheer as Claude's (`14`). On a special day CONTEXT's
   When row names, Boop plays along when you come back: on
   Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello,
   and the screen has the day's tags; on April Fools' Day it may play a

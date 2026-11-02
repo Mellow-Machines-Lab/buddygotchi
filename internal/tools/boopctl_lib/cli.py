@@ -1161,8 +1161,8 @@ def build_parser() -> argparse.ArgumentParser:
                                     "(default: $BOOP_CAMERA or the built-in one)")
     p.set_defaults(func=cmd_cam)
     p = sub.add_parser("dash", help="the live dashboard: Boop now with its face, Talk, growth and CONTEXT, and its "
-                                    "mood and memory, automatic reactions and decided reactions side by side, from "
-                                    "debug.jsonl; keys force a mood or a reaction, close Boop's day, or preview a look")
+                                    "mood and memory, the rules' Moments and Jev's side by side, from "
+                                    "debug.jsonl; keys force a mood or a Moment, dream now or preview a dream, or preview a look")
     p.add_argument("--state-dir", help="the app's state directory, where Boop --debug writes debug.jsonl "
                                        "(default: the everyday app's, ~/Library/Application Support/Boop)")
     p.add_argument("--socket", help="the app's hook socket (default: STATE-DIR/boop.sock)")
