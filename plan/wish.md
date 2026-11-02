@@ -32,9 +32,13 @@ it's met.
 
 ## Making one: Jev picks the time
 
-No hardcoded trigger. At the moments asks use (an idle check-in, a
-working check-in, a finished turn, the dream's telling) the react output
-offers one more question, `wish: none | pet | chat | work`, only when:
+No hardcoded trigger, and no new question. At the moments asks use, the
+react output's sign question ("Does Boop hold up something?",
+`ReactOutput.questions`) already offers `none`, the musings and the asks.
+A wish is three more options there, the pack's words ("pet me?", "talk
+to me?", "work with me?"); picking one makes the wish, as the brain's
+`hush` reply calls the core (`core.wish(.pet, at:)`). The sign plays as
+part of the reaction. Each is offered only when:
 
 - no wish is open, and none was made this day (`boopDay`);
 - you're at the Mac and the buddy is awake;
@@ -47,12 +51,16 @@ about one a day, when it feels like it. CONTEXT's You row says "no wish
 yet today", and from midday "no wish yet today, and the day's half
 gone": a nudge, not a trigger. Code holds the cap: one a day, one open.
 
-On Quiet a wish is still made, as the icon and the sign, with no sound.
+On Quiet a wish is still made, as the icon and the sign, with no sound:
+unlike asks (`Asks.allowed`), the wish options are offered on Quiet.
 
 ## While it waits
 
-- The icon stays in the strip, beside the count chips, carried in
-  `state` (`state.wish`), so the board times nothing.
+- The icon is a tiny thought bubble beside the buddy's head, not a chip
+  in the strip: it looks like wanting, not like a status. On Pixel's
+  one-line lane it is text ("wants: pet"). It is carried in `state`
+  (`state.wish`, none while the wait is paused), so the board times
+  nothing.
 - The popover's Feeling row: "Boop wishes for a pet (40 min)."
 - Jev may hold the sign up again once at a later check-in.
 - A turn doesn't block or pause it. The icon stays beside the working
@@ -95,11 +103,13 @@ A rule in the core meets it at once; the brain isn't on this path.
 
 ## Memory keeps the pattern
 
-- The MemoryReader counts wishes made, met and missed (each `missed`
-  with how long you were at the Mac while it waited, so a day away
-  doesn't read as neglect).
-- CONTEXT's Today row: "wishes met 5 of the last 7 days."
-- The night's writer sees them and may write a You and Boop line: "You
+- Each miss's event says how long you were at the Mac while it waited,
+  so a day away doesn't read as neglect.
+- CONTEXT's Today row says only today's: "Boop's wish today: met." No
+  count over several days and no new store: the written memory carries
+  the pattern.
+- Wish events are notable lines in the day's journal, so the night's
+  writer sees them and may write a You and Boop line: "You
   always pet Boop when it asks.", "You've missed Boop's wishes three
   days running." Jev reads it as MEMORY, so a neglected buddy leans
   sulkier and needier, a loved one warmer.
@@ -122,16 +132,21 @@ agent interaction meets every open `work` wish.
 
 | Piece | Change |
 | --- | --- |
-| Core | `Core+Wish.swift`: the open wish, the rules that meet it, the wait clock and its pauses, the 3 h give-up, the 5:00 close; transcript events `wish` (start, met, missed) |
-| React output | the `wish` question, offered only when eligible (the shape of `Asks.askable`) |
-| CONTEXT | the You row's wish facts and "no wish yet today"; the Today row's count |
-| Reason | rows for made, met, waiting and missed |
-| MemoryReader | made, met and missed counts |
-| Wire (LinkKit stays generic) | `state.wish`, the met and give-up reactions; the firmware draws three icons, the fulfilment animation and the fade |
-| Pack (SlimeBuddy first, Pixel's one-line lane too) | each kind's words; the pet ask removed; sad, lonely, calm and comfy steering lines |
-| Evals | made at a morning check-in; met by a stroke → happy or comfy; waited an hour at the Mac → sad; away all day → not sad; missed three days → MEMORY's lean; `work` not offered mid-turn |
+| Core | `Core+Wish.swift`, on the shape of `Core+Hush.swift`: `Wish { kind, since, waitedMs, countedTo }` per buddy; a new `Event.Kind.wish`, `wish_start` (the kind as `specific_type`) and `wish_end` (`met`, `gaveup`, `closed`); `replayWish` on launch; the wait grows in `advance(to:)` only while you're here, it's awake and nothing needs you; at 3 h `wish_end gaveup` and the rule's reaction `wish_gone`, which wakes Jev; on `newDay` `wish_end closed`, quietly |
+| Rules that meet it | pet: `gesture` `stroke`. chat: `said`. work: a `turn_start` from a prompt you sent, or a `needs_you_end` after you answered. Then `wish_end met`, the rule's reaction `wish_met` through the board's queue, and the event wakes Jev |
+| React output | the three options in the sign question, with the gates above |
+| CONTEXT | the You row: "Boop's wish: a pet, waiting 70 min while you were here.", "no wish yet today"; the Today row: today's only |
+| Reason | rows for made, met, waiting and gave up |
+| Memory | wish events as notable journal lines; no new store |
+| Wire (LinkKit stays generic) | `state.wish`, reactions `wish_met` and `wish_gone`; the firmware draws the thought bubble with three icons, the fulfilment animation (sparkle, bounce, the icon pops into a heart) and the fade |
+| Pack (SlimeBuddy first, Pixel's lane text too) | `asks.md` lines `[wish pet] pet me?`, `[wish pet met] <3` and the same for chat and work, no new file; the pet ask removed; sad, lonely, calm and comfy steering lines |
+| Evals (`--only` the new ones, no full run) | made at a morning check-in; met by a stroke → happy or comfy; waited an hour at the Mac → sad; away all day → not sad; missed three days → MEMORY's lean; `work` not offered mid-turn |
+| Board's checks | goldens, the simulator, the mirror rebuilt, `make -C internal demos ALL=1` (the state changes what the board gets) |
 | Tests that pin the numbers | one a day, one open, 3 h give-up, 5:00 close, the pauses |
 | Docs | CLAUDE.md Words (`wish`), `documentation/architecture.html`, `characters/CHARACTER.md`, `linkkit` docs only if the protocol changes, `internal/EVALS.md` |
+
+Order: the core, wire and pack lines with scripted tests; then the
+firmware; then the steering and evals.
 
 Timings to tune by eval and feel: about 1 h before sad (steering), 3 h
 give-up (code).
