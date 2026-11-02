@@ -4,6 +4,34 @@ Updated 2026-11-02. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Morning report, the night of 2026-11-01
+
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01/`.
+
+**Landed:** the eval levels and daily limit; must and feel evals with a judge; the prompt cut to level A; the rest of the wish; every lock and unlock reaching Jev; idle check-ins with no agents; no plug on a Boop already asleep; any brief touch on a finish opens its thread; the finish's low sign; the falling word and three work acts; the memory pane; alive without the Mac.
+
+**Not landed:** growth. It's on branch `growth`, with its pack commits in the clones under `.claude/worktrees/growth`: keep that worktree. The core and body work are done and tested with no board. It predates the cleanup and review fixes, and it changes existing users' stages (Chonk starts at 5,000, and the old saved stage is ignored). Look at `frames-growth/` and try it on the board first.
+
+**The prompt: level A, about 4,800 tokens, down from about 6,800.** Tags `prompt-level-A`, `-B` and `-C` keep the others.
+
+| Level | Tokens | Musts | Judge: reasonable, odd, unreasonable | Mood moves | Passes with a moment |
+| --- | --- | --- | --- | --- | --- |
+| A | 4,800 | 18/18 | 67, 15, 9 | 235 | 85% |
+| B | 3,140 | 10/18 | 64, 17, 10 | 149 | 84% |
+| C | 2,100 | 8/18 | 50, 26, 15 | 144 | 68% |
+
+A is the only level that holds the musts, and it keeps moods fluid. B's judged feel is close to A's, so B's musts are the question if the prompt must go lower: they mostly failed on replies, hush and Talk. At C, pokes made Boop happier and strokes stopped lifting its mood. No must rule was moved into code.
+
+**Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) fails twice: the hush it picks is too small. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
+
+**Wishes:** no cap in code, as the owner said. A guideline alone gave no wish; one added line in the sign question gave one, in one Chatty run, at 39 min. Normal talk is unmeasured.
+
+**Jev requests:** 2,336 on Nov 1 and 283 on Nov 2 by the limit's count, which began partway through Nov 1 (before it, one full run of about 1,000 isn't counted).
+
+**Flag for the owner:** `make eval` is refused without `BOOP_JEV_OVER_LIMIT=1`, so the bare command never runs. That's what was asked, but it's a surprise: `boopdev eval --level standard` is the merge check.
+
+**Choices to overrule if you disagree:** a ruffle also meets a pet wish. A wish may come while Boop is asleep only for having no agents. The plug no longer stays up after a touch: Boop sleeps again after 5 minutes. Chat is offered only once push-to-talk works. Jev rarely speaks over an act from a calm mood, and I didn't push it.
+
 ## Now: the simplify branch, on the board (2026-11-01)
 
 What the `simplify` branches change on the board, for the owner to look
