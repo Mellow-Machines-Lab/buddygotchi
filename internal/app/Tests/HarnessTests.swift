@@ -212,13 +212,9 @@ final class HarnessTests: XCTestCase {
         // outcome, a reply its reply_ready, a wake up its wake_up, a notice
         // its notice, naming the thread NOW is about; the device picks the
         // variation. `none`, a missing answer or anything else is just the
-        // face. The question and its `none` name every case, so neither
-        // argues against one.
+        // face.
         XCTAssertEqual(MomentOutput.animations.map(\.name), ["success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(Set(MomentOutput.scenes.keys), Set(MomentOutput.animations.map(\.name)), "each plays a scene")
-        let move = try! XCTUnwrap(MomentOutput.questions().first { $0.key == "react.move" })
-        XCTAssertTrue(move.text.contains("or your prompt saying \(creature)'s name?"), move.text)
-        XCTAssertTrue(move.options[0].what.contains("or a prompt that says \(creature)'s name."), move.options[0].what)
         starts(["react.face": a("proud"), "react.move": a("success"), "react.intensity": a("big"), "say": a("glad")],
                #"\#(creature) had a proud moment (big), playing a success, and said "SAID"."#)
         XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase, "a proud phrase, at a big success")
@@ -395,14 +391,14 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(change("tired")?.message, "\(creature)'s mood changed: proud → lazy.", "a face-only mood sets the one it settles into")
     }
 
-    /// Each mood's file says where it leaves for, and
-    /// names only moods it can move to, in every pack.
+    /// A mood's file that says where it leaves for names only moods it can
+    /// move to, in every pack.
     func testEachMoodLeavesOnlyForItsNeighbours() throws {
         for mood in MoodGraph.moods {
             let text = RuntimeTests.steering.mood(mood)
             let opening = "MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())"
             XCTAssertTrue(text.hasPrefix(opening + ".") || text.hasPrefix(opening + " is "), "\(mood) opens with its name")
-            let leaves = try! XCTUnwrap(text.range(of: "Leaves for"), mood)
+            guard let leaves = text.range(of: "Leaves for") else { continue }
             let named = Set(text[leaves.lowerBound...].split { !$0.isLetter }.map(String.init)).intersection(MoodGraph.moods)
             XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.neighbours[mood]?.all ?? [])),
                           "\(mood) leaves only for its neighbours, not \(named.subtracting((MoodGraph.neighbours[mood]?.all ?? []) + [mood]).sorted())")

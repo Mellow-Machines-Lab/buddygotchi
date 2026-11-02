@@ -61,7 +61,7 @@ final class ContextTests: XCTestCase {
     func testTheTalkAndBoopRows() {
         XCTAssertNil(ContextSection.talk(.normal, name: "Boop"))
         XCTAssertEqual(ContextSection.talk(.chatty, name: "Boop"),
-                       "Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY's silent Examples.")
+                       "Talk: chatty. You asked Boop to say something at every face; this outranks PERSONALITY.")
         XCTAssertEqual(ContextSection.talk(.quiet, name: "Boop"),
                        "Talk: quiet. You asked Boop to say less: nothing at small moments, and never a swear.")
         XCTAssertEqual(ContextSection.talk(.quiet, silentMs: 8 * minute - 1000, name: "Boop"),

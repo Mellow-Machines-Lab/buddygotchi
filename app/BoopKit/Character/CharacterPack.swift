@@ -129,8 +129,9 @@ extension CharacterPack {
         guard lastingNames.contains(defaultMood) else { throw CharacterPackError("\(source): default_mood \(defaultMood) isn't a lasting mood") }
         guard lastingNames.contains(startupMood) else { throw CharacterPackError("\(source): startup_mood \(startupMood) isn't a lasting mood") }
 
-        options = lasting.map { Option($0.id, $0.meaning!, notFor: $0.notFor) }
-        faces = moods.map { Option($0.id, $0.face, notFor: $0.faceNotFor) }
+        options = lasting.map { Option($0.id, $0.meaning!) }
+        // The face's name says "a calm face": only what it means goes to Jev.
+        faces = moods.map { m in Option(m.id, m.face.split(separator: ":", maxSplits: 1).last.map { $0.trimmingCharacters(in: .whitespaces) } ?? m.face) }
         byId = Dictionary(uniqueKeysWithValues: moods.map { ($0.id, $0) })
     }
 

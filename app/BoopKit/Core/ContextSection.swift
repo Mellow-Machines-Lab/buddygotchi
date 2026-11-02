@@ -54,7 +54,7 @@ public enum ContextSection {
         }
         return switch t {
         case .normal: nil
-        case .chatty: "Talk: chatty. You asked \(name) to say something at every face; this outranks PERSONALITY's silent Examples."
+        case .chatty: "Talk: chatty. You asked \(name) to say something at every face; this outranks PERSONALITY."
         case .quiet: "Talk: quiet. You asked \(name) to say less: nothing at small moments, and never a swear."
         }
     }

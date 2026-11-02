@@ -190,10 +190,10 @@ public final class MomentOutput: Output {
         return feelings(of: pack.name).filter { has.contains($0.name) }
     }
     static func feelings(of name: String) -> [Option] { [
-        Option("upset", "Something went wrong or let \(name) down: a check or a turn failing, the agent stuck or giving up, a rude prompt."),
-        Option("glad", "Something went right: a turn done and working, a check passing, a big win, a kind prompt.", notFor: "A failure."),
-        Option("tickled", "Poked or teased: a poke, a tap, or a playful prompt."),
-        Option("shaken", "Moved roughly: shaken, again and again, or the desk thumped."),
+        Option("upset", "Something went wrong or let \(name) down."),
+        Option("glad", "Something went right.", notFor: "A failure."),
+        Option("tickled", "Poked or teased."),
+        Option("shaken", "Moved roughly."),
     ] }
 
     /// What NOW can be about, the rest of what `say` offers: each a topic
@@ -201,22 +201,22 @@ public final class MomentOutput: Output {
     /// of each, as for `feelings`.
     public static var topics: [Option] { topics(of: CharacterPack.active.name) }
     static func topics(of name: String) -> [Option] { [
-        Option("start", "A turn starting: off it goes."),
-        Option("helpers", "The agent starting a subagent: helpers sent off."),
-        Option("helper back", "A subagent finishing: a helper back with its report."),
-        Option("retry", "The same thing again: a retry, a check run again after failing, or the person saying it's still broken."),
-        Option("work", "Work going on: edits, steady progress, a long or hard turn."),
-        Option("tests", "Tests: running, failing or passing."),
-        Option("command", "A command or a build running in the terminal."),
-        Option("tool", "A tool: the web, an MCP tool, something fetched or looked up."),
-        Option("looking", "Searching or reading: the agent looking through files, or something puzzling."),
-        Option("planning", "Planning: the agent in plan mode, or thinking before it acts."),
+        Option("start", "A turn starting."),
+        Option("helpers", "Helpers sent off."),
+        Option("helper back", "A helper back."),
+        Option("retry", "The same thing again: a retry, or still broken."),
+        Option("work", "Work going on."),
+        Option("tests", "Tests."),
+        Option("command", "A command or build."),
+        Option("tool", "A tool: the web, something fetched."),
+        Option("looking", "Searching or reading."),
+        Option("planning", "Planning."),
         Option("done", "A long turn finished, done and working."),
-        Option("answer", "A turn that only answered something or asked something back."),
-        Option("stopped", "A turn stopped: interrupted, or the agent giving up."),
-        Option("waiting", "Waiting: a long command, or the agent waiting on something slow."),
-        Option("quiet", "Nothing going on: a quiet check-in."),
-        Option("hello", "The person back at the Mac after a break, or greeting \(name): a hello."),
+        Option("answer", "A turn that only answered or asked back."),
+        Option("stopped", "A turn stopped, or the agent giving up."),
+        Option("waiting", "Waiting on something slow."),
+        Option("quiet", "Nothing going on."),
+        Option("hello", "The person back, or greeting \(name)."),
     ] }
 
     /// What Boop replies to what you said on push-to-talk, its move then:
@@ -233,27 +233,23 @@ public final class MomentOutput: Output {
         let agents = "A question about the agents or their work, which is status."
         let request = "Asking \(name) to do something, which is nap, dance, notme or no."
         return [
-            Option("yes", "Yes: agreeing, or yes to a question about \(name) itself (\"are you awake?\", \"are you okay?\"). It nods.",
-                   notFor: agents + " " + request),
-            Option("no", "No: disagreeing, no to a question about \(name) itself, or turning down something it's asked to do (\"roll over\", \"go away\", a trick when it isn't in the mood). It shakes its head.",
-                   notFor: agents + " Asking it to do something for an agent, which is notme."),
-            Option("huh", "Huh: \(name) can't answer it: words that make no sense, are cut off or aren't meant for it, or a question it can't know, about the world, the weather or dinner. It shrugs, or tilts its head.",
-                   notFor: agents + " A question about \(name) itself, which is yes or no."),
-            Option("hello", "Hello: a greeting, even one that asks how it's going (\"hey, how's it going?\", \"what's up?\"), calling out for \(name) (\"where are you?\"), or you saying you're back. It waves.",
-                   notFor: "Goodbye or good night, which is bye; a question about the agents' work, which is status."),
-            Option("bye", "Bye: goodbye, good night, or you saying you're off for a while. It waves you off."),
-            Option("thanks", "Thanks: something good: praise or thanks for \(name) or the work (\"good job\", \"nice one\"), your good news (\"we shipped it\"), or wishing you luck. It puffs up, proud."),
-            Option("love", "Love: affection for \(name), or making up with it: \"I love you\", \"good boy\", \"you're cute\", \"sorry, \(name)\". It snuggles up."),
-            Option("ouch", "Ouch: rude words or an insult to \(name). It flinches."),
-            Option("comfort", "Comfort: you sound tired, sad or stressed, or tell it bad news. It leans in close."),
-            Option("hehe", "Hehe: a joke, teasing or something silly. It giggles."),
-            Option("status", "Status: a question about the agents or their work: done yet, how long, how many are running, what they're doing (\"what are you doing?\" too, asked of \(name) at its desk), anyone need me, how's the work going, did it work, how long you've been at it. It holds up the answer on a sign, from what it knows.",
-                   notFor: "A question about \(name) itself, which is yes, no or huh; a greeting, which is hello."),
-            Option("nap", "Nap: asked to sleep or rest: \"go to sleep\", \"nap time\". It yawns and settles down for a nap."),
-            Option("hush", "Hush: asked to stop talking: \"shh\", \"be quiet\", \"shut up\", \"stop talking\". It zips its lips and says nothing for a while, as long as the moment is big: 15 min small, 30 medium, an hour big, two hours huge.",
-                   notFor: "Asked to go to sleep or take a nap, which is nap, even at night; rude words that aren't asking for quiet, which is ouch."),
-            Option("dance", "Dance: asked to dance or wiggle. It dances."),
-            Option("notme", "Not me: asked to answer, approve, allow, stop or tell an agent something (\"tell claude yes\", \"approve it\", \"go ahead\"). \(name) never does: it shakes its head and looks to the Mac.",
+            Option("yes", "Yes: agreeing, or yes about \(name) itself.", notFor: agents + " " + request),
+            Option("no", "No: disagreeing, or turning down what it's asked to do.", notFor: agents),
+            Option("huh", "Huh: words that make no sense, or a question it can't know.", notFor: agents),
+            Option("hello", "Hello: a greeting, or you saying you're back.", notFor: "A question about the agents' work, which is status."),
+            Option("bye", "Bye: goodbye or good night."),
+            Option("thanks", "Thanks: praise, thanks or your good news."),
+            Option("love", "Love: affection for \(name), or making up with it."),
+            Option("ouch", "Ouch: rude words to \(name)."),
+            Option("comfort", "Comfort: you sound tired, sad or stressed, or tell it bad news."),
+            Option("hehe", "Hehe: a joke or teasing."),
+            Option("status", "Status: a question about the agents or their work, or how long you've been at it. It holds up the answer from what it knows.",
+                   notFor: "A question about \(name) itself, or a greeting."),
+            Option("nap", "Nap: asked to sleep or rest."),
+            Option("hush", "Hush: asked to stop talking. It says nothing for a while, as long as the moment is big: 15 min small, 30 medium, an hour big, two hours huge.",
+                   notFor: "Asked to sleep; rude words that aren't asking for quiet."),
+            Option("dance", "Dance: asked to dance or wiggle."),
+            Option("notme", "Not me: asked to answer, approve, allow, stop or tell an agent something. \(name) never does.",
                    notFor: "A question about the agents, which is status."),
         ]
     }
@@ -308,11 +304,10 @@ public final class MomentOutput: Output {
     /// How big a moment is, the smallest first: how long the face holds,
     /// a loop more each step, and how big what it says is (`Size`).
     public static let sizeOptions = [
-        Option("small", "A small moment: the usual. The face holds once, and what it says is a sound."),
-        Option("medium", "A moment that stands out. It holds twice, and says a word."),
-        Option("big", "A big moment, such as a long turn's hard work done or the top of a streak. It holds three times, and says a phrase."),
-        Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish (a long turn done after failed checks), or a long turn that failed after failed checks or turns before it. It holds four times, and says a phrase.",
-               notFor: "A check failing mid-turn."),
+        Option("small", "The usual: the face holds once, with a sound."),
+        Option("medium", "It stands out: it holds twice, with a word."),
+        Option("big", "A big moment: it holds three times, with a phrase."),
+        Option("huge", "The biggest: a very long or hard-won turn's end. It holds four times, with a phrase.", notFor: "A check failing mid-turn."),
     ]
 
     /// What an intensity sets: how many loops the face holds and the kind
@@ -353,14 +348,11 @@ public final class MomentOutput: Output {
     /// brain judges each one.
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
-        Option("success", "NOW's line says a turn finished, done, and doesn't say the agent couldn't finish, asks you something or only answers.",
-               notFor: "A check that passed while the turn goes on, a turn that finished failed, one saying it couldn't finish, or one asking you something or only answering."),
-        Option("failure", "NOW's line says a turn finished, failed; or finished done, but saying it couldn't finish.",
-               notFor: "A check that failed while the turn goes on, or a turn that finished done, saying it's done."),
-        Option("reply", "NOW's line says a turn finished, done, asking you something or only answering, often with no tool calls: no task finished.",
-               notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
-        Option("wake up", "NOW's line says you came back to the Mac after an hour or more away. \(name) stretches, yawns and wakes up for you."),
-        Option("notice", "NOW's line says you said \(name)'s name in your prompt: it looks up at you, as if it heard."),
+        Option("success", "A turn finished, done, and not giving up, asking or only answering.", notFor: "A check passing mid-turn, or a turn that failed."),
+        Option("failure", "A turn finished failed, or done but saying it couldn't finish.", notFor: "A check failing mid-turn, or a turn that finished done, saying it's done."),
+        Option("reply", "A turn finished done, asking you something or only answering.", notFor: "Work done, or a failed turn."),
+        Option("wake up", "You came back after an hour or more away."),
+        Option("notice", "Your prompt says \(name)'s name."),
     ] }
 
     /// The animation `react.move` picked at an event, or nil for none, a
@@ -622,19 +614,16 @@ public final class MomentOutput: Output {
         let name = pack.name
         let byBoth = "PERSONALITY and MOOD"
         // What it says is CONTEXT's Talk row's to steer first, when the setting isn't normal.
-        let byTalk = "CONTEXT's Talk row first, when it's there, over everything else on how much \(name) says; then PERSONALITY and MOOD"
+        let byTalk = "CONTEXT's Talk row first, then PERSONALITY and MOOD"
         return [
-            Question(key: emotionKey, text: "How should \(name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.",
+            Question(key: emotionKey, text: "How should \(name) react to NOW, if at all?",
                      about: "the NOW section", judgeBy: byBoth,
-                     options: [Option("none", "Stay quiet: nothing in NOW is worth a moment, "
-                                          + "or HISTORY shows \(name) still having the one it calls for, about the same thing (in progress).",
-                                      notFor: "Something new said to \(name), which always gets a moment of its own, even while one plays; "
-                                          + "a turn that finished done or failed, which always gets a moment and its finish; "
-                                          + "or anything PERSONALITY reacts to that \(name) isn't already doing.")]
+                     options: [Option("none", "Stay quiet: nothing in NOW is worth a moment, or HISTORY shows the one it calls for still in progress.",
+                                      notFor: "Something new said to \(name), or a turn that finished: those always get a moment.")]
                          + pack.faces),
-            Question(key: moveKey, text: "If \(name) reacts, does its body make a move: a turn that finished, and how it ended, you back after an hour or more away, or your prompt saying \(name)'s name?",
+            Question(key: moveKey, text: "If \(name) reacts, does its body make a move?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
-                     options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after an hour or more away, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, a short break and a stopped turn all get none.")]
+                     options: [Option("none", "Just the face: anything else, a check, a poke or a check-in too.")]
                          + MomentOutput.animations(of: name)),
             Question(key: sizeKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds its emotion and the more it says.",
                      about: "the NOW section", judgeBy: byBoth, options: MomentOutput.sizeOptions),
