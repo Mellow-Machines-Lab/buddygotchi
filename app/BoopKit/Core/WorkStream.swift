@@ -266,12 +266,12 @@ struct WorkStream {
     }
 
     /// An act goes when its result has shown, or, with no end heard, when
-    /// its session has stopped working.
-    mutating func keepAct(working: Set<String>, at now: Int64) {
+    /// its session is no longer in `alive`: working, or waiting on you.
+    mutating func keepAct(alive: Set<String>, at now: Int64) {
         guard let running = act else { return }
         if let until = running.until {
             if now >= until { act = nil }
-        } else if !working.contains(running.session) {
+        } else if !alive.contains(running.session) {
             act = nil
         }
     }

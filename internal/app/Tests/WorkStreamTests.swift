@@ -388,6 +388,36 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "no end heard: it ends with the turn")
     }
 
+    /// An act's own session asking for approval, a push asked for most of
+    /// all, doesn't end it: needs you holds the screen, then it comes back
+    /// where it got to and ends by its result. Dismissed, it goes on too. Its
+    /// session's turn ending is what ends an act with no end heard.
+    func testAnActComesBackAfterItsOwnNeedsYou() throws {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.send(call(rig, "1", program: "git push"))
+        let full = rig.core.stream.act?.full
+        XCTAssertEqual(full, true)
+        rig.send(.needsYou, tool: "Bash")
+        XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "needs you holds the screen")
+        XCTAssertNotNil(rig.core.stream.act, "and the act waits behind it")
+        XCTAssertEqual(rig.core.stream.act?.full, full)
+        rig.now += 1000
+        rig.send(call(rig, "1", program: "git push", failed: false))
+        XCTAssertEqual(rig.core.stream.act?.passed, true, "and has its end")
+        XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "it comes back")
+
+        let dismissed = CoreRig(workStream: true)
+        dismissed.send(.turnStart)
+        dismissed.send(call(dismissed, "1", program: "git push"))
+        dismissed.send(.needsYou, tool: "Bash")
+        let attn = try XCTUnwrap(dismissed.state.attn)
+        dismissed.note(Fx(dismissed.pipeline.gesture(Core.dismissGesture, request: attn.id, at: dismissed.now)))
+        XCTAssertNotNil(dismissed.core.snapshot(at: dismissed.now).fields["wact"], "dismissed, it shows again")
+        dismissed.send(.turnEnd)
+        XCTAssertNil(dismissed.core.stream.act, "and its turn ending ends it")
+    }
+
     /// The small version's failure after a long run gets the full ending;
     /// a short one's doesn't, and a push's never does.
     func testALongRunsFailureEndsInFull() {

@@ -1119,9 +1119,11 @@ public final class Core {
         recordNeeds(now, &fx)
         tidyNotes()
         updateActs(now)
-        let working = Set(groups(at: now).working.map(\.key))
+        let (shown, dismissed, active, _) = groups(at: now)
+        let working = Set(active.map(\.key))
         stream.keep(working)
-        stream.keepAct(working: working, at: now)
+        // A session waiting on you is still at its call: its act comes back.
+        stream.keepAct(alive: working.union((shown + dismissed).map(\.key)), at: now)
         keepStretch(at: now)
         numberRows()
         let snapshot = snapshot(at: now)
