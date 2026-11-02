@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-01. The contract a character pack meets, so that any
+Updated 2026-11-02. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator

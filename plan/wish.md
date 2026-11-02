@@ -1,6 +1,6 @@
 # The wish
 
-Updated 2026-11-01. The plan for Boop's one want a day: a need you can
+Updated 2026-11-02. The plan for Boop's one want a day: a need you can
 see, met by one thing you do, with an instant reward, and a small cost
 when you leave it. Decided with the owner on 2026-11-01. Build it after
 `streamline`; the other ideas from the same talk (chapters, keepsakes,
