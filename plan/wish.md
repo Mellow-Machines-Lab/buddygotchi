@@ -150,3 +150,21 @@ firmware; then the steering and evals.
 
 Timings to tune by eval and feel: about 1 h before sad (steering), 3 h
 give-up (code).
+
+## After the first build (decided 2026-11-01)
+
+The first build on `wish` differs from the above in three places:
+
+- **When a wish comes.** Replace the idle Example ("no wish yet today" →
+  "pet me?") with guidelines: what makes Boop want something and when it
+  wouldn't, and let Jev's own judgment pick the moment. The owner prefers
+  guidelines to Examples: Examples cost context. Keep them short, and
+  measure: a wish on most days, not at the first idle check-in every
+  time. Code's one-a-day cap stays.
+- **Sad or lonely.** Keep the mood graph as it is. Comfy and lazy going
+  lonely at an ignored wish is fine, as long as the mood does move, so
+  evals check that it moves, not which. Lonely's "rare" wording must not
+  block it.
+- **Giving up.** `wish_gone` gets a small silent body beat, a sigh and a
+  slump of about a second as the bubble fades, played at once by the
+  firmware. The feeling after it stays Jev's.
