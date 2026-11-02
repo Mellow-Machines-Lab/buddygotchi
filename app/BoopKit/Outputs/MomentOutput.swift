@@ -464,10 +464,11 @@ public final class MomentOutput: Output {
                                        text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, or a wish? PERSONALITY says when; now and then, not every time.",
                                        about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment, the questions that shape \(pack.name) first",
                                        // The caps are a ceiling, not a schedule: "none" on every level.
-                                       options: [Option("none", "Nothing: \(pack.name) doesn't ask or muse now.")]
+                                       options: [Option("none", "Nothing: \(pack.name) doesn't ask, muse or wish now.",
+                                                         notFor: wishes.isEmpty ? nil : "An idle moment with CONTEXT saying no wish yet today.")]
                                            + musings.map { Option($0, "A musing to hold up, asking nothing.") }
                                            + wishes.map { w in
-                                               Option(w.sign, "A wish: \(pack.name) wants \(w.kind.words) from you, today's one, and shows it until you give it. At most one a day, when it feels like it; CONTEXT says if it's made one.")
+                                               Option(w.sign, "Today's wish: \(pack.name) wants \(w.kind.words) from you, and shows it until you give it. It makes one wish about every day: with CONTEXT saying no wish yet today, this is a good moment for it, unless \(pack.name) is too cross to want anything.")
                                            }
                                            + questions.map { q in
                                                Option(q.question, "Ask: \"\(q.question)\", \(q.a) or \(q.b)."
