@@ -197,26 +197,6 @@ public enum EventLine {
         "\(name) dreamed about \(weekday): \(sentence)."
     }
 
-    /// What you did to the board, which reacted at once; nil for a gesture
-    /// it doesn't know.
-    public static func gesture(_ kind: String, name: String = CharacterPack.active.name) -> String? {
-        switch kind {
-        case "stroke": "You stroked \(name)."
-        case "ruffle": "You stroked \(name) the wrong way."
-        case "swipe": "You swiped \(name), a quick stroke."
-        case "nose": "You booped \(name)'s nose."
-        case "tickle": "You tickled \(name)."
-        case "dizzy": "You shook \(name)."
-        case "pickup": "You picked \(name) up."
-        case "putdown": "You put \(name) down."
-        case "startle": "You thumped the desk next to \(name)."
-        case "facedown": "You turned \(name) face down."
-        case "peekaboo": "You turned \(name) back up."
-        case Core.dismissGesture: "You held a finger on \(name)'s needs-you screen, to stop it showing; the agent still waits."
-        default: nil
-        }
-    }
-
     /// A BOOT press that handed you an agent; what it opened is the core's
     /// record under it.
     public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }

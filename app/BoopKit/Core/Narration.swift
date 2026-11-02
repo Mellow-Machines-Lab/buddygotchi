@@ -32,21 +32,6 @@ public struct Narration: Equatable, Sendable {
     /// day away."
     public func mood(_ mood: String, name: String) -> String { "\(name) is \(mood). \(cause)" }
 
-    /// What a care gesture did, as the cause and the board's fact, by the
-    /// gesture's name (render::Gesture's, and the app's `facedown`). Nil
-    /// for one that isn't the person's doing to the buddy itself.
-    static let gestures: [String: (cause: String, fact: String)] = [
-        "stroke": ("You stroked it.", "stroked"),
-        "ruffle": ("You stroked it the wrong way.", "ruffled"),
-        "nose": ("You booped its nose.", "booped"),
-        "tickle": ("You tickled it.", "tickled"),
-        "dizzy": ("You shook it.", "shaken"),
-        "pickup": ("You picked it up.", "picked up"),
-        "startle": ("You thumped the desk.", "thump!"),
-        "facedown": ("You turned it face down.", "face down"),
-        "peekaboo": ("You turned it back up.", "peekaboo"),
-    ]
-
     /// The cause of NOW's event `e`, from its line, `line` (nil when the
     /// line isn't known). One row per kind of event, each a sentence in
     /// the person's words: never the brain's line, which names threads
@@ -78,7 +63,7 @@ public struct Narration: Equatable, Sendable {
             return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: "poked x\(count)")
                 : Narration(cause: "You poked it.", fact: "poked")
         case .gesture?:
-            return gestures[e.specificType].map { Narration(cause: $0.cause, fact: $0.fact) }
+            return Touch(e)?.narration.map { Narration(cause: $0.cause, fact: $0.fact) }
         case .ask?:
             guard e.specificType != Asks.ignored else { return Narration(cause: "Nobody answered its question.") }
             guard let answer = facts["answer"]?.string else { return nil }

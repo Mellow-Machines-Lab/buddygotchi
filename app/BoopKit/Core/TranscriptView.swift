@@ -448,7 +448,7 @@ public final class TranscriptView {
             noteActivity(e.at)
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
             if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
-            return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
+            return Touch(e)?.line(name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .said?: return talk(e)
         case .ask?:
             let question = e["question"]?.string ?? ""

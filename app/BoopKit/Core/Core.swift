@@ -172,7 +172,7 @@ public final class Core {
     final class Flag { var on = false }
     /// The board's gesture for dismissing: a finger held on the needs-you
     /// screen, with the number of the request it showed (`attn.id`).
-    public static let dismissGesture = "dismiss"
+    public static let dismissGesture = Touch.dismiss.rawValue
 
     /// Push-to-talk, as the core keeps it (`Talk`).
     public internal(set) var pushToTalk = Listening()

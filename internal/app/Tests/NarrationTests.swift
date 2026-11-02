@@ -103,7 +103,7 @@ final class NarrationTests: XCTestCase {
     /// No fact is longer than a sign: one that would be is dropped, never
     /// cut mid-word on the board.
     func testAFactFitsASign() {
-        for (_, g) in Narration.gestures { XCTAssertLessThanOrEqual(g.fact.count, Narration.maxFact, g.fact) }
+        for g in Touch.allCases.compactMap(\.narration) { XCTAssertLessThanOrEqual(g.fact.count, Narration.maxFact, g.fact) }
         XCTAssertNil(Narration(cause: "x", fact: String(repeating: "a", count: Narration.maxFact + 1)).fact)
         XCTAssertEqual(Narration.maxFact, 18, "the board's sign width, firmware kSignGlyphs")
     }

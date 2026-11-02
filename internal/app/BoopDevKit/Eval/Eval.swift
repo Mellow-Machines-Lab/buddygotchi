@@ -374,7 +374,7 @@ public struct Scenario: Sendable {
             step.words = s["words"] as? String
             step.helper = s["helper"] as? String
             step.kind = s["kind"] as? String
-            if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
+            if event == "gesture", step.kind.flatMap({ Touch(rawValue: $0)?.line() }) == nil { throw badStep("gesture needs a kind the board makes") }
             if event == "ask answered" {
                 step.pick = s["pick"] as? String ?? "a"
                 guard ["a", "b", "touch", Asks.ignored].contains(step.pick!) else { throw badStep("an ask's pick is a, b, touch or ignored") }

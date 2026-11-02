@@ -113,7 +113,7 @@ public final class MemoryReader: TranscriptReader {
         case .poke?:
             t.pokes += 1
             t.touches += 1
-        case .gesture? where Yours.careGestures.contains(e.specificType):
+        case .gesture? where Touch(e)?.isCare == true:
             t.touches += 1
             if e.specificType == "stroke" { t.strokes += 1 }
         case .said?:
