@@ -110,14 +110,13 @@ public enum Asks {
     /// don't belong there: `idle`, an idle check-in, and `lonely` too when
     /// lonely may begin there (the buddy is lonely, or CONTEXT says you
     /// haven't touched or talked to it for an hour or more: whether it is
-    /// is the steering's); `finished`, a turn's finish (its end, or its last
-    /// message's reading).
+    /// is the steering's). Never at a finish: its sign names the thread, and
+    /// a wish waits for a check-in.
     public static func moment(_ about: Event, _ log: LogView, mood: Choice, untouchedMs: Int64?) -> [String] {
         if about.type == .checkIn, about.specificType == "check_in" {
             let lonely = MoodOutput.value(mood, log) == "lonely" || (untouchedMs ?? 0) >= ContextSection.untouchedShownMs
             return lonely ? ["idle", "lonely"] : ["idle"]
         }
-        if about.type == .lastMessage || (about.type == .turn && about.phase == .end) { return ["finished"] }
         return []
     }
 

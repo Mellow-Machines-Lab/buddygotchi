@@ -1,7 +1,7 @@
 # The finish's sign
 
-Updated 2026-11-01. Decided with the owner on 2026-11-01. The hanging
-ticket can't say which thread finished, so Boop holds up its name, low,
+Updated 2026-11-02. Built; the owner's board check is below. Decided with
+the owner on 2026-11-01. The hanging ticket can't say which thread finished, so Boop holds up its name, low,
 after the cheer.
 
 ## Why
@@ -47,8 +47,8 @@ A finish that names a thread:
 - **No sign from Jev at a finish that names a thread.** "Did it work?"
   goes for good: its lines in `asks.md`, the `finished` moment of
   `Asks.moment`, and eval 148. Wishes no longer come at a finish, only at
-  check-ins and the dream's telling (this replaces that part of
-  `plan/wish.md`).
+  check-ins (this replaces that part of `plan/wish.md`; the dream's telling
+  offers none today, and this didn't add one).
 
 ## The build
 

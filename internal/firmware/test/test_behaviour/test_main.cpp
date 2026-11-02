@@ -2456,7 +2456,7 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
 // down: no longer named, it leaves in kDoneLeaveMs. A new needs-you takes
 // it at once.
 static void test_a_face_for_a_finished_turn_marks_it() {
-  static_assert(Behaviour::kFinishLingerMs == 3000, "a finished turn stays marked 3 s after its reaction");
+  static_assert(Behaviour::kFinishLingerMs == 5000, "a finished turn stays marked 5 s after its reaction");
   static_assert(Behaviour::kDoneLeaveMs == 400, "taken down, it leaves in 400 ms");
   Rig r;
   r.at(1000);
@@ -3500,6 +3500,71 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
 // plan/lock-and-unlock.md: a Boop asleep when the Mac goes quiet stays
 // asleep with no plug, until a touch shows the plug; awake, the plug shows
 // at the same 30 s as ever; the Mac's next state ends it.
+static void test_a_finishs_sign_lifts_as_its_words_end() {
+  TEST_ASSERT_EQUAL_UINT32(5000, Behaviour::kFinishLingerMs);
+  TEST_ASSERT_EQUAL_UINT32(3000, Behaviour::kFinishSignByMs);
+  TEST_ASSERT_EQUAL_size_t(52, app::kThreadBytes);
+  const auto finish = [](Rig& r, const char* take) {
+    r.state(base("idle"));
+    ReactionIn in;
+    in.anim = SceneState::kTaskComplete;
+    in.whoAgent = "codex", in.whoThread = "fix-nav";
+    in.key = 5;
+    if (take) in.said = true, in.take = voice::takeIndex(take);
+    onReaction(r.b, in, r.t);
+  };
+  {  // No words: at once.
+    Rig r;
+    r.at(1000);
+    finish(r, nullptr);
+    TEST_ASSERT_EQUAL_INT32(0, r.b.done(r.t).signMs);
+    r.at(r.t + 500);
+    TEST_ASSERT_EQUAL_INT32(500, r.b.done(r.t).signMs);
+  }
+  if (voicefile::open()) {
+    {  // Short words: as they end.
+      Rig r;
+      r.at(1000);
+      r.state(base("idle"));
+      ReactionIn in;  // a face for the turn, so its words start at once
+      in.whoAgent = "codex", in.whoThread = "fix-nav";
+      in.key = 5;
+      in.said = true, in.take = voice::takeIndex(kGo);
+      onReaction(r.b, in, r.t);
+      TEST_ASSERT_EQUAL_INT32(-1, r.b.done(r.t).signMs);
+      TEST_ASSERT_TRUE(r.b.done(r.t).shows());
+      uint32_t t = r.t;
+      while (r.b.laneBubble(t) || r.b.sayAhead(t)) r.at(t += 16);
+      TEST_ASSERT_TRUE(r.b.done(t).signMs >= 0 && r.b.done(t).signMs <= 16);
+    }
+  }
+  if (voicefile::open()) {  // The latest: kFinishSignByMs, the words going on.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    ReactionIn in;
+    in.anim = SceneState::kTaskComplete;
+    in.whoAgent = "codex", in.whoThread = "fix-nav";
+    in.key = 5;
+    in.said = true, in.take = voice::takeIndex(kGo), in.then = voice::takeIndex(kGo);
+    onReaction(r.b, in, r.t);
+    r.at(1000 + Behaviour::kFinishSignByMs - 1);
+    TEST_ASSERT_EQUAL_INT32(-1, r.b.done(r.t).signMs);
+    r.at(1000 + Behaviour::kFinishSignByMs);
+    TEST_ASSERT_TRUE(r.b.laneBubble(r.t) != nullptr || r.b.sayAhead(r.t));  // still talking
+    TEST_ASSERT_EQUAL_INT32(0, r.b.done(r.t).signMs);
+  }
+  {  // A reaction naming none takes it down, with its fall.
+    Rig r;
+    r.at(1000);
+    finish(r, nullptr);
+    r.at(r.t + 500);
+    r.react(SceneState::kPoked);
+    r.at(r.t + 1);
+    TEST_ASSERT_TRUE(r.b.done(r.t).leftMs >= 0 && r.b.done(r.t).leftMs <= int32_t(Behaviour::kDoneLeaveMs));
+  }
+}
+
 static void test_a_sleeping_boop_gets_no_plug_until_touched() {
   auto silent = [](Rig& r) {
     r.at(Behaviour::kNoAppMs + 1);
@@ -3571,6 +3636,7 @@ int main() {
   RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
+  RUN_TEST(test_a_finishs_sign_lifts_as_its_words_end);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);

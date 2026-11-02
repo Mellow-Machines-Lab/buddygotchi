@@ -201,7 +201,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | Boop's own beat | A Moment with no outside event: an idle check-in, a musing, an ask | | |
 | emotion | The expression for one Moment, any of the pack's 42 faces | face | `react.face`, a `do`'s `mood` |
 | size | How much the Moment matters: small, medium, big, huge | intensity, loops | `react.intensity`, `loops` |
-| finish | The animation a turn's end plays, scaled by the turn's length; the ticket and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
+| finish | The animation a turn's end plays, scaled by the turn's length; the low sign and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
 | greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
 | wave | Boop's answer to your lock or unlock: `bye` or `hello`, or `reply-wave`, slighter, when small; a snub has none | | `reply` |
 | reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
@@ -220,6 +220,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
+| low sign | A card Boop holds up in the strip's place, two lines at most: a finish's thread (`gel::LowSign`) | ticket | |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet, normal, chatty, or silent for a while (a hush) (`Talk`, `Core.Hush`) | chattiness, mute (that's the volume) | `talk`, `hush`, `hushed` |
 | narration | The Mac's plain words for why, never Jev's or Boop's voice (`Narration`) | explanation, caption | `reason` |

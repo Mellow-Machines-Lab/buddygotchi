@@ -821,6 +821,13 @@ public final class MomentOutput: Output {
             // the turn it's about while it plays.
             reaction.who = who(about)
         }
+        // A finish that names its thread holds up nothing of the brain's:
+        // the face holds up that name.
+        if reaction.who != nil {
+            reaction.sign = nil
+            reaction.ask = nil
+            asking = nil
+        }
         // Why, for the person: the board shows the fact in its lane, unless
         // the strip already names the finished turn it's about.
         let why = reason(about)

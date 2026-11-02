@@ -179,10 +179,11 @@ final class DeviceLinkTests: XCTestCase {
         let quoted = Moment(anim: "reply_ready",
                                   who: .init(agent: "codex", thread: #"fix "nav"\"#, opens: ThreadRef(agent: "codex", session: "s")))
         XCTAssertEqual(quoted.args.json, #"{"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
-        XCTAssertEqual(Moment.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
+        XCTAssertEqual(Moment.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex-and-the-rest-of-it").thread,
+                       "claude/cheer-animation-thread-codex-and-the-rest..")
         let byLength = Take.all.sorted { $0.id.utf8.count > $1.id.utf8.count }
         let longest = Moment.Say(takes: [byLength[0], byLength[1]])
-        let longestWho = Moment.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
+        let longestWho = Moment.Who(agent: "claude", thread: String(repeating: "\"", count: StateSnapshot.maxThreadBytes))
         XCTAssertLessThanOrEqual(Moment(anim: "task_complete", say: longest, mood: "determined", loops: Moment.maxLoops,
                                               who: longestWho, outcome: "failure")
                                      .line(id: Wire.maxId, play: .next).utf8.count, Wire.maxLine)

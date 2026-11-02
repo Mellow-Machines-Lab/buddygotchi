@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-01. How we check that Boop works, including what's on its
+Updated 2026-11-02. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -562,4 +562,4 @@ sure the finger lifted.
 | An `ended` | The link gives up on it at the `do`'s `ttl` plus 60 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §5 |
 | An output's `run` | Logged if it takes over 300 ms | `outputSlowMs` in `mellowharness/Sources/MellowHarness/Harness.swift` |
 | `state` keepalive | Every 10 s; the device gives up on the app after 30 s | [linkkit/SPEC.md](../linkkit/SPEC.md) §9, `kNoAppMs` in `firmware/src/app/behaviour.h` |
-| Protocol message | At most 512 bytes; each text field has its own cap (`attn.project` 47 bytes, `who.thread` 23, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 |
+| Protocol message | At most 512 bytes; each text field has its own cap (`attn.project` 47 bytes, `who.thread` 50, …), so every `state` fits | [linkkit/SPEC.md](../linkkit/SPEC.md) §9 |

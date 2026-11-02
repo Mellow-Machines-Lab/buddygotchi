@@ -80,7 +80,7 @@ final class NarrationTests: XCTestCase {
         XCTAssertEqual(of(.session, .start, facts: ["thread": wt]), "claude's memory on buddygotchi was compacted.")
         XCTAssertEqual(of(.needsYou, .start, facts: ["thread": wt]), "claude needs you on buddygotchi.")
         XCTAssertNil(Narration.of(Event(at: harnessT0, source: .claude, type: .turn, phase: .end, specificType: "Stop"),
-                                  line: Line("LINE", facts: ["thread": wt, "outcome": "done"]))?.fact, "a finish's ticket names it")
+                                  line: Line("LINE", facts: ["thread": wt, "outcome": "done"]))?.fact, "a finish's sign names it")
         XCTAssertTrue(Narration.looksLikeAnID("agent-a3ff514bdd7c3721f"))
         XCTAssertFalse(Narration.looksLikeAnID("fix-nav"))
         XCTAssertFalse(Narration.looksLikeAnID("v2-launch-2026"))

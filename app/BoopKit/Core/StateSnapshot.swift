@@ -29,6 +29,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// of 16 on the screen.
     public static let maxNameBytes = 23
     public static let maxSignBytes = 47
+    /// A finish's thread (`who.thread`): what the gel's low sign holds on
+    /// two lines, and the device keeps in a field of 52 bytes.
+    public static let maxThreadBytes = 50
 
     /// `text` precomposed (NFC) and cut to at most `max` bytes of UTF-8, on
     /// a character boundary. Finder names folders decomposed (e and

@@ -74,6 +74,10 @@ struct DoneShow {
   Outcome outcome = Outcome::kNone;
   uint32_t ms = 0;
   int32_t leftMs = -1;
+  // How long the thread's name has been up, for a face that holds it up
+  // (holdsUpFinish): -1 until the words end, or until a long cheer's
+  // Behaviour::kFinishSignByMs.
+  int32_t signMs = -1;
   bool shows() const { return agent != nullptr; }
 };
 // How far a sign sits below its place `ms` after it went up, the same on
@@ -180,6 +184,9 @@ class Face {
   // slower, as it does on a face that doesn't follow the finger; one that
   // carries it on as it lets go may only feel it go by.
   virtual bool playsSwipe() const { return true; }
+  // Whether it holds up the finished turn's name itself (DoneShow::signMs):
+  // from then on the strip doesn't repeat it.
+  virtual bool holdsUpFinish() const { return false; }
   // The agents' drawer (render/drawer.h): whether this face has one, the
   // device's, set before each frame as the stream is, how far a finger
   // pulls it from shut to open (canvas px), the session open under a

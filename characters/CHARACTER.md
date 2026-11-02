@@ -347,9 +347,9 @@ asks.
 
 - `- [id tags] question | a | b` is a question. Its first tag is its id,
   then the tags it needs:
-  - its moment: `idle` (an idle check-in), `lonely` (an idle check-in where
+  - its moment: `idle` (an idle check-in) or `lonely` (an idle check-in where
     the buddy is lonely, or CONTEXT says you haven't touched it for an hour
-    or more) or `finished` (a turn's finish);
+    or more). Never a finish, whose thread the face names;
   - the calendar's, and your kept answers;
   - `daily`: it may come back the next day, whatever the answer;
   - `keeps`: asked once, ever, and its answer becomes a tag for good, as
@@ -610,11 +610,13 @@ Besides drawing each mood and state, a face:
   poke doesn't. A reply with an emotion is the one Moment whose face and
   sign show over the needs-you screen, as `listening` does.
 - **May mark a finished turn.** The brain's Moment for a finished turn names
-  whose turn it was (the `do`'s `who`). The engine names it in the strip,
-  and opens its thread on a tap, while any part of the Moment plays and 3 s
-  after (`Behaviour::kFinishLingerMs`); it leaves in 0.4 s (`kDoneLeaveMs`).
-  A face gets it as `DoneShow` and may mark it as its own: the gel's rim
-  glows and a ticket hangs from the top.
+  whose turn it was (the `do`'s `who`, its thread at most 50 bytes). The
+  engine names it in the strip, and opens its thread on a tap, while any
+  part of the Moment plays and 5 s after (`Behaviour::kFinishLingerMs`); it
+  leaves in 0.4 s (`kDoneLeaveMs`). A face gets it as `DoneShow` and may mark
+  it as its own, and one that holds up the name (`holdsUpFinish`, as its
+  words end, `DoneShow::signMs`, by 3 s at the latest) takes it out of the
+  strip: the gel's rim glows, and the low sign rises in the strip's place.
 - **Answers your words.** A Moment with an emotion may carry its reply
   (`reply`, the `do`'s args, `FaceContext::reply`): a face that can plays a
   move for it, once, as the emotion starts. The gel plays the pack's clip

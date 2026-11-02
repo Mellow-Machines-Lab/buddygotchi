@@ -32,7 +32,9 @@ it's met.
 
 ## Making one: Jev picks the time
 
-No hardcoded trigger, and no new question. At the moments asks use, the
+No hardcoded trigger, and no new question. At an idle check-in, a moment
+asks use (never at a finish, whose sign names its thread:
+`plan/finish-sign.md`), the
 react output's sign question ("Does Boop hold up something?",
 `ReactOutput.questions`) already offers `none`, the musings and the asks.
 A wish is three more options there, the pack's words ("pet me?", "talk

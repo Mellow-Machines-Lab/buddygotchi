@@ -115,6 +115,9 @@ struct AskEnd {
 };
 // A reply's name (`reply`), with room for the longest, "comfort".
 constexpr size_t kReplyBytes = 12;
+// A finished turn's thread (`who.thread`), as long as the Mac sends it, with
+// room for what the fonts fold it from.
+constexpr size_t kThreadBytes = 52;
 
 // A reaction from the Mac as Device parsed its args, already
 // held in range: the do's name as an animation (none for `react`), a
@@ -205,12 +208,16 @@ class Behaviour {
   // answers in the lane, then ends `ignored`: inside the host's wait for
   // a reaction's `ended`.
   static constexpr uint32_t kAskMs = 45000;
-  // The finished turn the brain's reaction names (its `who`) stays named
-  // in the strip, and marked on the face, this long after the reaction
-  // plays out, and a tap still opens its thread, unless another animation,
-  // another reaction or a needs-you comes first. One taken down early by
-  // anything but a needs-you leaves in kDoneLeaveMs.
-  static constexpr uint32_t kFinishLingerMs = 3000;
+  // The finished turn the brain's reaction names (its `who`) stays named,
+  // and marked on the face, this long after the reaction plays out, time
+  // to read its name, and a tap still opens its thread, unless another
+  // animation, another reaction or a needs-you comes first. One taken down
+  // early by anything but a needs-you leaves in kDoneLeaveMs.
+  static constexpr uint32_t kFinishLingerMs = 5000;
+  // A face that holds up the name lifts it as the reaction's words end, at
+  // once with none, and this long in at the latest, even if the cheer or
+  // the words go on.
+  static constexpr uint32_t kFinishSignByMs = 3000;
   static constexpr uint32_t kDoneLeaveMs = 400;
 
   void reset(uint32_t t, Rng& rng);
@@ -422,11 +429,13 @@ class Behaviour {
   // it's no longer named (the strip, a tap) and leaves in kDoneLeaveMs.
   struct Done {
     char agent[12] = "";  // empty for none
-    char thread[24] = "";
+    char thread[kThreadBytes] = "";
     render::Outcome outcome = render::Outcome::kNone;  // its finish's result; kNone for a reply or a face
     uint32_t id = 0, key = 0, at = 0;
     bool ending = false, named = true;
     uint32_t endAt = 0, endMs = 0;
+    bool signUp = false;  // the face's sign is up, since signAt (kFinishSignByMs)
+    uint32_t signAt = 0;
   };
   // A `say`: its one or two takes, the bubble with their text, and the
   // mouth following their loudness. It plays over whatever face is showing,
@@ -503,7 +512,9 @@ class Behaviour {
   // the finished turn named (null for none), whole.
   static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
   void touchAlone(uint32_t t);  // a touch ends sleepsOn
-  render::Strip stripAt(uint32_t t) const { return sleepsOn(t) ? render::Strip{} : stripOf(model_, noApp(t), finishOn(t)); }
+  void liftFinishSign(uint32_t t);
+  const Done* stripFinish(uint32_t t) const;  // the finish the strip names
+  render::Strip stripAt(uint32_t t) const { return sleepsOn(t) ? render::Strip{} : stripOf(model_, noApp(t), stripFinish(t)); }
   // At every change: the strip kept while it shows, and its fade turned
   // when it comes or goes.
   void followLane(uint32_t t);

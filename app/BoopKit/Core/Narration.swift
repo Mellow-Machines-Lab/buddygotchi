@@ -127,7 +127,7 @@ public struct Narration: Equatable, Sendable {
     }
 
     /// A turn's end: how it went, by its outcome and what its last
-    /// message said. No fact: the finish's ticket names the thread.
+    /// message said. No fact: the finish's sign names the thread.
     static func finish(_ outcome: String, _ facts: [String: JSONValue], agent: String, on: String) -> Narration {
         let message = facts["message"]?.object?["kind"]?.string.flatMap(MessageReading.Kind.init(rawValue:))
         let length = facts["length_ms"]?.int.map { Band.length(ms: $0) }

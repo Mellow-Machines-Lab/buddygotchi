@@ -19,7 +19,8 @@ public struct Moment: Equatable, Sendable {
     public struct Who: Equatable, Sendable {
         /// `claude` or `codex`.
         public var agent: String
-        /// The thread's name, cut as `StateSnapshot.clip` cuts names.
+        /// The thread's name, cut as `StateSnapshot.clip` cuts names, to
+        /// `maxThreadBytes`.
         public var thread: String
         /// Where a tap on the finish opens the thread.
         /// Not sent: the device's tap names the finish's `do` id instead.
@@ -27,7 +28,7 @@ public struct Moment: Equatable, Sendable {
 
         public init(agent: String, thread: String, opens: ThreadRef? = nil) {
             self.agent = agent
-            self.thread = StateSnapshot.clip(thread, marked: true)
+            self.thread = StateSnapshot.clip(thread, marked: true, max: StateSnapshot.maxThreadBytes)
             self.opens = opens
         }
     }

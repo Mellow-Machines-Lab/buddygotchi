@@ -128,6 +128,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     };
     if (reaction_.anim != render::SceneState::kNone) consider(reaction_.at + reaction_.ms);
     if (done_.agent[0] && done_.ending) consider(done_.endAt + done_.endMs);
+    if (done_.agent[0] && !done_.signUp) consider(done_.at + kFinishSignByMs);
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
     if (sign_.text[0]) consider(sign_.at + sign_.ms);
@@ -164,6 +165,7 @@ void Behaviour::resync(uint32_t t) {
     // plays, then goes.
     if (done_.agent[0] && !done_.ending && !holds(done_.key, t))
       done_.ending = true, done_.endAt = t, done_.endMs = kFinishLingerMs;
+    liftFinishSign(t);
     if (done_.agent[0] && done_.ending && !within(t, done_.endAt, done_.endMs)) done_ = Done{};
     if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true;
   });
@@ -382,6 +384,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       copyStr(done_.thread, sizeof(done_.thread), in.whoThread);
       done_.outcome = anim ? reaction_.outcome : render::Outcome::kNone;
       done_.id = in.id, done_.key = in.key, done_.at = t;
+      liftFinishSign(t);
     }
     if (in.key) playing_ = PlayedOut{in.key, CutBy::kNone};
   });
@@ -639,6 +642,18 @@ void Behaviour::takeDown(uint32_t t) {
   if (!sooner) done_.ending = true, done_.endAt = t, done_.endMs = kDoneLeaveMs;
 }
 
+// As its reaction's words end, at once with none, or kFinishSignByMs in.
+void Behaviour::liftFinishSign(uint32_t t) {
+  if (!done_.agent[0] || done_.signUp) return;
+  const bool talking = sayDue(t) && say_.key == done_.key;
+  if (!talking || int32_t(t - done_.at) >= int32_t(kFinishSignByMs)) done_.signUp = true, done_.signAt = t;
+}
+
+const Behaviour::Done* Behaviour::stripFinish(uint32_t t) const {
+  const Done* f = finishOn(t);
+  return f && f->signUp && face_->holdsUpFinish() ? nullptr : f;
+}
+
 uint32_t Behaviour::finishShown(uint32_t t) const {
   const Done* f = finishOn(t);
   return f ? f->id : 0;
@@ -651,6 +666,7 @@ render::DoneShow Behaviour::done(uint32_t t) const {
   d.agent = done_.agent, d.thread = done_.thread, d.outcome = done_.outcome;
   d.ms = t - done_.at;
   d.leftMs = done_.ending ? int32_t(done_.endAt + done_.endMs - t) : -1;
+  if (done_.signUp) d.signMs = int32_t(t - done_.signAt);
   return d;
 }
 
@@ -680,7 +696,7 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish)
 // change's that advance stops at (no app, a finish's linger ending).
 void Behaviour::followLane(uint32_t t) {
   const bool shows = stripAt(t).shows();
-  const Done* finish = finishOn(t);
+  const Done* finish = stripFinish(t);
   if (shows) laneModel_ = model_, laneNoApp_ = plugShows(t), laneFinishes_ = finish != nullptr;
   if (shows && finish) laneFinish_ = *finish;
   lane_.retarget(shows ? 1000 : 0, t);
