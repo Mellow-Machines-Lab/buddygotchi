@@ -264,7 +264,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     heard_ = true;
   });
   stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
-  stream_.setAct(m.workAct, m.attn, t);
+  stream_.setAct(m.workAct, m.attn || listening(t), t);  // both hold the screen
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;
