@@ -680,11 +680,15 @@ Besides drawing each mood and state, a face:
   BOOT to hand over, and last how far down its to-do list the longest
   turn with one is, as `3/7`, in both packs; a finished turn's tick in
   sage or cross in clay) and the speech bubble, their text cut by
-  `render::cutAt`. The bubble shows the `say`'s words, else, while a
-  reaction plays with nothing said, its reason, a few plain words of why
-  (`reason`: "stroked", "away 12 h"), so a face never needs decoding;
-  the face draws whichever text it's handed, the same way. The face calls
-  `drawLane` to draw them. The engine
+  `render::cutAt`. The bubble shows the `say`'s words (or an ask's
+  answers). The face is handed a second text, the caption: the reaction's
+  reason, the app's narration of why in a few words, at most 18
+  characters, as you'd caption it (`reason`: "you picked Boop up", "you
+  were away 12 h"), so a face never needs decoding. It is not speech: the
+  gel draws it small and grey on the lane's last line, under a bubble
+  that leaves it room or alone in the strip's place, never as a bubble
+  (`render/gel/lane.h`); Pixel, whose lane has one line, shows it in the
+  bubble when nothing is said. The face calls `drawLane` to draw them. The engine
   fades the strip in as it comes and out as it goes, over the rig's 200 ms
   fade, from the moment it came or went, and hands the face its opacity
   with it (`Strip::opacity`): `drawLane` dithers it on the canvas, and a

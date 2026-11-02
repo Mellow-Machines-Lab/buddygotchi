@@ -936,7 +936,7 @@ void Device::render(uint32_t t) {
     // scroll, and the paw dropping over its edge once it has sprung open.
     makeDrawer(t);
     b_.face().drawer(&drawer_);
-    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneText(t), b_.sign(t),
+    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;
   }

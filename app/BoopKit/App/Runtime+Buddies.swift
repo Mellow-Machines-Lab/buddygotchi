@@ -163,7 +163,8 @@ extension Runtime {
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
                 guard let h, let about else { return nil }
-                return Narration.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()))
+                return Narration.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()),
+                                    name: pack.name)
             }, dreams: m.steering.dreams, told: { [weak h] about in
                 // The dream the line tells, by its tags.
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }

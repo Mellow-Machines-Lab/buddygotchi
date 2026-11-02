@@ -146,7 +146,7 @@ td.where{font-size:13px;white-space:nowrap}
     <tbody>
       <tr><td><b>Voice</b></td><td>What Boop says aloud: none, a sound, a word, a phrase, a swear, as recorded takes. The bubble is its caption</td><td>A Moment (the <code>say</code>)</td></tr>
       <tr><td><b>Sign</b></td><td>A caption Boop holds up, at most 18 characters, often your own words; an ask is a sign that is a question</td><td>A Moment (the <code>sign</code>)</td></tr>
-      <tr><td><b>Narration</b></td><td>The Mac's plain words for why: a sentence for the popover, a few words for the lane. Never Boop's voice, never Jev's</td><td>The Mac (<code>Narration</code>, the <code>do</code>'s <code>reason</code>)</td></tr>
+      <tr><td><b>Narration</b></td><td>The Mac's plain words for why: a sentence for the popover, and a caption of a few words under the board's bubble ("you picked Boop up"). Never Boop's voice, never Jev's</td><td>The Mac (<code>Narration</code>, the <code>do</code>'s <code>reason</code>)</td></tr>
     </tbody>
   </table></div>
   <p>Four ideas hold the rest up. <b>The agents</b>: sessions, turns, calls, checks, helpers, to-dos and needs you. <b>You</b>: what you do to Boop (touch, words, presence, the button). <b>Time</b>, two clocks: how long (working or resting, the tiers) and what day (the part of the day, Boop's 5:00 day, special days, growth). <b>Tags and dressing</b>: tags are facts true now (Friday, busy, a party), and dressing is how Doing shows them (a hat, shades, the sun, faster typing).</p>
@@ -192,7 +192,7 @@ td.where{font-size:13px;white-space:nowrap}
   </table></div>
 
   <h3>The lane</h3>
-  <p>The bottom band shows one thing at a time (<code>Behaviour::laneText</code>), in this order: the bubble while the voice plays; an ask's two answers, when nothing needs you; the narration's words (under needs you, only a reply's); else the strip, which shows the needs-you name first, then a finish's names, then the counts. A finish's ticket hangs over the face, not in the lane.</p>
+  <p>The bottom band (<code>Behaviour::laneBubble</code> and <code>caption</code>) shows the bubble while the voice plays, or an ask's two answers when nothing needs you; and the narration's words as a caption, small and grey on its last line, under the bubble or alone, never as a bubble (under needs you, only a reply's; none while an ask's answers show). With neither, the strip: the needs-you name first, then a finish's names, then the counts. A finish's ticket hangs over the face, not in the lane.</p>
 </section>
 
 <section id="works">

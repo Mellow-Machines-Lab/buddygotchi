@@ -298,11 +298,15 @@ class Behaviour {
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
-  // What the lane's bubble shows at t, or null for the strip: the `say`'s
-  // text, else the reaction's reason for as long as its sign would show,
-  // under the same rules (none with no app, nor while something needs you
-  // unless it's a reply to what you said).
-  const char* laneText(uint32_t t) const;
+  // What the lane's bubble shows at t, or null: the `say`'s text, else an
+  // ask's answers.
+  const char* laneBubble(uint32_t t) const;
+  // The caption under the bubble at t, or null: the reaction's reason, the
+  // app's narration of why, for as long as its sign would show, under the
+  // same rules (none with no app, nor while something needs you unless
+  // it's a reply to what you said), and none while an ask's answers fill
+  // the lane. It shows with the bubble or alone, never as one.
+  const char* caption(uint32_t t) const;
   // An ask is up: its answers in the lane, waiting for a tap. Not with no
   // app or while something needs you.
   bool asking(uint32_t t) const;
@@ -514,7 +518,7 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
-  // The reaction's reason (laneText()), timed as its sign would be.
+  // The reaction's reason (caption()), timed as its sign would be.
   Sign reason_;
   // The ask up, from `at` for kAskMs, its reaction's key; `lane` is its
   // answers as the lane shows them. q "" for none.

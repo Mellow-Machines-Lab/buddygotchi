@@ -203,12 +203,14 @@ class Face {
   // the press's dip.
   virtual SceneShow show(uint32_t t, bool mouthOpen, int dy) const = 0;
   // Draws the face, the sign it holds up, the finished turn its reaction
-  // is about if it marks one, and the shared lane: into the canvas, or into
+  // is about if it marks one, and the shared lane, with the bubble's words
+  // and the caption under it, the reaction's reason (either may be null):
+  // into the canvas, or into
   // `native` when it draws natively. `dirty` when something besides the
   // face's own clock changed since the last frame. Returns false when the
   // pixels have not changed.
   virtual bool draw(Canvas& canvas, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
-                    const SignShow& sign, const DoneShow& done, const Strip& strip, bool dirty) = 0;
+                    const char* caption, const SignShow& sign, const DoneShow& done, const Strip& strip, bool dirty) = 0;
   // The sounds due at t, each with its own duck, and whether the last
   // ones should stop first; `shown` is false while the test pattern hides
   // the face.

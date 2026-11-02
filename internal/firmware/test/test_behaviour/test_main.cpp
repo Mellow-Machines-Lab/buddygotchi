@@ -347,7 +347,7 @@ static int designOf(const SceneShow& s) { return render::sceneOf(s.mood, s.state
 // after a message, when an unchanged picture is drawn again too.
 static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
   render::Canvas c{px.data()};
-  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.done(r.t), r.b.strip(r.t), dirty);
+  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.caption(r.t), r.b.sign(r.t), r.b.done(r.t), r.b.strip(r.t), dirty);
 }
 // The needs-you screen shows.
 static bool needsYouShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
@@ -736,7 +736,7 @@ static void test_a_lane_at_the_same_dither_level_isnt_drawn_again() {
   render::Strip strip = r.b.strip(r.t);
   auto draw = [&](int opacity, bool dirty) {
     strip.opacity = opacity;
-    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, r.b.sign(r.t), r.b.done(r.t), strip, dirty);
+    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, nullptr, r.b.sign(r.t), r.b.done(r.t), strip, dirty);
   };
   TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(500, true).hi);
   TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(530, true).hi);
@@ -1626,21 +1626,21 @@ static ReactionIn waited(uint32_t id, const char* take = kGo) {
 // take it down. Once down it fades out over the rig's fade, its words
 // kept (render::SignShow::opacity), but under needs you, which takes it at
 // once.
-// A reaction's reason (`reason`) shows in the lane's bubble while the
-// reaction plays and no `say` fills it, as long as its sign would show; a
-// newer reaction with none takes it down, and while something needs you
-// it doesn't show.
-static void test_a_reason_shows_in_the_lane() {
+// A reaction's reason (`reason`) is the lane's caption while the reaction
+// plays, as long as its sign would show, never the bubble's words; a newer
+// reaction with none takes it down, and while something needs you it
+// doesn't show.
+static void test_a_reason_is_the_lanes_caption() {
   Rig r;
   r.state(base("idle"));
   r.at(1000);
   ReactionIn stroked = expressive(render::Mood::kComfy, nullptr);
   std::snprintf(stroked.reason, sizeof stroked.reason, "%s", "stroked");
   stroked.key = 1;
-  auto lane = [&] { const char* s = r.b.laneText(r.t); return std::string(s ? s : "-"); };
+  auto lane = [&] { const char* s = r.b.caption(r.t); return std::string(s ? s : "-"); };
   onReaction(r.b, stroked, r.t);
   TEST_ASSERT_EQUAL_STRING("stroked", lane().c_str());
-  TEST_ASSERT_NULL(r.b.bubble(r.t));  // the `say`'s bubble is the take's only
+  TEST_ASSERT_NULL(r.b.laneBubble(r.t));  // alone, never as a bubble
   r.at(1000 + Behaviour::kSignMinMs - 1);
   TEST_ASSERT_EQUAL_STRING("stroked", lane().c_str());
   // A newer reaction with no reason takes it down.
@@ -1656,6 +1656,23 @@ static void test_a_reason_shows_in_the_lane() {
   back.key = 3;
   onReaction(r.b, back, r.t);
   TEST_ASSERT_EQUAL_STRING("-", lane().c_str());
+}
+
+// A spoken reaction shows its words in the bubble and its reason as the
+// caption under it, both at once.
+static void test_a_spoken_reaction_shows_its_words_and_its_caption() {
+  NEEDS_VOICE_PACK();
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  ReactionIn picked = expressive(render::Mood::kHappy);
+  std::snprintf(picked.reason, sizeof picked.reason, "%s", "you picked Boop up");
+  picked.key = 1;
+  onReaction(r.b, picked, r.t);
+  for (int i = 0; i < 100 && !r.b.bubble(r.t); ++i) r.at(r.t + 20);
+  TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
+  TEST_ASSERT_EQUAL_STRING(r.b.bubble(r.t), r.b.laneBubble(r.t));
+  TEST_ASSERT_EQUAL_STRING("you picked Boop up", r.b.caption(r.t));
 }
 
 static void test_a_sign_shows_while_its_reaction_plays() {
@@ -2378,7 +2395,7 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
           dirty = true;
         }
         r.at(t);
-        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.sign(t), r.b.done(t), r.b.strip(t), dirty);
+        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.caption(t), r.b.sign(t), r.b.done(t), r.b.strip(t), dirty);
         dirty = false;
         for (uint32_t shot : shots)
           if (shot == t) lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
@@ -3545,7 +3562,8 @@ int main() {
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
-  RUN_TEST(test_a_reason_shows_in_the_lane);
+  RUN_TEST(test_a_reason_is_the_lanes_caption);
+  RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   return UNITY_END();
 }

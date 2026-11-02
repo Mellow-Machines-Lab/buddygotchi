@@ -39,7 +39,8 @@ public struct Narration: Equatable, Sendable {
     /// missing what it needs, gives no reason, and the Mac shows the mood
     /// alone. The board gets a fact only where it adds something the
     /// screen doesn't show.
-    public static func of(_ e: Event, line: Line?, untouchedMs: Int64? = nil) -> Narration? {
+    public static func of(_ e: Event, line: Line?, untouchedMs: Int64? = nil, name: String = CharacterPack.active.name) -> Narration? {
+        func fit(_ options: String...) -> String? { Self.fit(options, name: name) }
         let facts = line?.facts ?? [:]
         // The line that tells the dream: the dream is the reason.
         if let told = facts["dream_told"]?.string { return Narration(cause: told, fact: facts["dream_fact"]?.string) }
@@ -54,21 +55,21 @@ public struct Narration: Equatable, Sendable {
         case .presence? where e.phase == .end:
             guard case .int(let ms)? = facts["away_ms"] else { return nil }
             let span = Self.span(ms: ms)
-            return Narration(cause: "You came back after \(span.words) away.", fact: "away \(span.short)")
+            return Narration(cause: "You came back after \(span.words) away.", fact: fit("you were away \(span.short)", "away \(span.short)"))
         case .presence?:
             return Narration(cause: "You stepped away.")
         case .poke?:
             let count = facts["in_a_row"]?.int ?? 1
-            if facts["asleep"]?.bool == true { return Narration(cause: "You poked it while it slept.", fact: "woken up") }
-            return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: "poked x\(count)")
-                : Narration(cause: "You poked it.", fact: "poked")
+            if facts["asleep"]?.bool == true { return Narration(cause: "You poked it while it slept.", fact: fit("you woke {name}")) }
+            return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: fit("you poked {name} x\(count)"))
+                : Narration(cause: "You poked it.", fact: fit("you poked {name}"))
         case .gesture?:
-            return Touch(e)?.narration.map { Narration(cause: $0.cause, fact: $0.fact) }
+            return Touch(e)?.narration.map { Narration(cause: $0.cause, fact: fit($0.fact)) }
         case .ask?:
             guard e.specificType != Asks.ignored else { return Narration(cause: "Nobody answered its question.") }
             guard let answer = facts["answer"]?.string else { return nil }
-            return facts["keeps"]?.bool == true ? Narration(cause: "It will remember: \(answer).", fact: "remembered!")
-                : Narration(cause: "You answered: \(answer).", fact: "\(answer)!")
+            return facts["keeps"]?.bool == true ? Narration(cause: "It will remember: \(answer).", fact: fit("{name} will remember"))
+                : Narration(cause: "You answered: \(answer).", fact: fit("you picked \(answer)", "\(answer)!"))
         case .said?:
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
@@ -89,7 +90,7 @@ public struct Narration: Equatable, Sendable {
         case .session? where e.phase == .start:
             return Narration(cause: "\(agent)'s memory\(on) was compacted.")
         case .tool?:
-            return check(facts, agent: agent, on: on)
+            return check(facts, agent: agent, on: on, name: name)
         case .checkIn?:
             if case .int(let ms)? = facts["working_ms"] {
                 let span = Self.span(ms: ms)
@@ -100,7 +101,7 @@ public struct Narration: Equatable, Sendable {
                 // from CONTEXT's company.
                 let hours = ms / 3_600_000
                 return Narration(cause: "You've been here \(hours) hour\(hours == 1 ? "" : "s") and haven't touched it.",
-                                 fact: "untouched \(hours) h")
+                                 fact: fit("no touch in \(hours) h"))
             }
             if case .int(let minutes)? = facts["idle_minutes"] {
                 return Narration(cause: "Nothing has happened for \(Self.span(ms: minutes * 60_000).words).")
@@ -136,20 +137,21 @@ public struct Narration: Equatable, Sendable {
 
     /// A tool call worth a line: a check failing or passing again, or the
     /// agent's calls failing again and again.
-    static func check(_ facts: [String: JSONValue], agent: String, on: String) -> Narration? {
+    static func check(_ facts: [String: JSONValue], agent: String, on: String, name: String) -> Narration? {
+        func fit(_ options: String...) -> String? { Self.fit(options, name: name) }
         if case .int(let rung)? = facts["failing"] {
             return Narration(cause: "\(agent)'s calls\(on) keep failing: \(rung) times in \(WorkStream.ladderMs / 60_000) minutes.",
-                             fact: "fails x\(rung)")
+                             fact: fit("calls failed x\(rung)"))
         }
         guard let topic = facts["topic"]?.string, TranscriptView.checks.contains(topic) else { return nil }
         let before = facts["failed_before"]?.int ?? 0
         let subject = topic == "tests" ? "The tests\(on)" : "The \(topic)\(on)"
         switch facts["result"]?.string {
         case "failed"?:
-            return before > 0 ? Narration(cause: "\(subject) failed again: \(before + 1) times in a row.", fact: "\(topic) x\(before + 1)")
-                : Narration(cause: "\(subject) failed.", fact: "\(topic) failed")
+            return before > 0 ? Narration(cause: "\(subject) failed again: \(before + 1) times in a row.", fact: fit("\(topic) failed x\(before + 1)", "\(topic) x\(before + 1)"))
+                : Narration(cause: "\(subject) failed.", fact: fit("\(topic) failed"))
         case "ok"? where before > 0:
-            return Narration(cause: "\(subject) \(topic == "tests" ? "pass" : "passes") again.", fact: "\(topic) pass")
+            return Narration(cause: "\(subject) \(topic == "tests" ? "pass" : "passes") again.", fact: fit(topic == "tests" ? "tests pass again" : "\(topic) passes again", "\(topic) passes"))
         default:
             return nil
         }
@@ -190,6 +192,19 @@ public struct Narration: Equatable, Sendable {
     static func looksLikeAnID(_ name: String) -> Bool {
         name.split(whereSeparator: { "-_./".contains($0) })
             .contains { $0.count >= 8 && $0.contains(where: \.isNumber) }
+    }
+
+    /// The board's caption: the first of `options`, longest first, that
+    /// fits a sign's width with `{name}` the buddy's name, else with "it";
+    /// nil when none does.
+    static func fit(_ options: [String], name: String) -> String? {
+        for o in options {
+            for who in [name, "it"] {
+                let s = o.replacingOccurrences(of: "{name}", with: who)
+                if s.count <= maxFact { return s }
+            }
+        }
+        return nil
     }
 
     /// A span of `ms` in words and as the board's few characters: "25

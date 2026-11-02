@@ -682,10 +682,13 @@ render::Strip Behaviour::strip(uint32_t t) const {
 // With no app, no `say` shows: it outranks the reactions.
 const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ? say_.text : nullptr; }
 
-const char* Behaviour::laneText(uint32_t t) const {
+const char* Behaviour::laneBubble(uint32_t t) const {
   if (const char* said = bubble(t)) return said;
-  if (asking(t)) return ask_.lane;
-  if (!reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
+  return asking(t) ? ask_.lane : nullptr;
+}
+
+const char* Behaviour::caption(uint32_t t) const {
+  if (asking(t) || !reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
   if (model_.attn && !reason_.reply) return nullptr;
   return reason_.text;
 }

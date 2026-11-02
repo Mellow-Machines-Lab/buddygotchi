@@ -48,20 +48,21 @@ public enum Touch: String, CaseIterable, Sendable {
         }
     }
 
-    /// The narration's cause and the board's fact; nil for a touch that
-    /// isn't the person's doing to the buddy itself, and for a poke, whose
-    /// narration counts the run (`Narration.of`).
+    /// The narration's cause and the board's caption, `{name}` where the
+    /// buddy's name goes (`Narration.fit`); nil for a touch that isn't the
+    /// person's doing to the buddy itself, and for a poke, whose narration
+    /// counts the run (`Narration.of`).
     public var narration: (cause: String, fact: String)? {
         switch self {
-        case .stroke: ("You stroked it.", "stroked")
-        case .ruffle: ("You stroked it the wrong way.", "ruffled")
-        case .nose: ("You booped its nose.", "booped")
-        case .tickle: ("You tickled it.", "tickled")
-        case .dizzy: ("You shook it.", "shaken")
-        case .pickup: ("You picked it up.", "picked up")
-        case .startle: ("You thumped the desk.", "thump!")
-        case .facedown: ("You turned it face down.", "face down")
-        case .peekaboo: ("You turned it back up.", "peekaboo")
+        case .stroke: ("You stroked it.", "you stroked {name}")
+        case .ruffle: ("You stroked it the wrong way.", "you ruffled {name}")
+        case .nose: ("You booped its nose.", "you booped {name}")
+        case .tickle: ("You tickled it.", "you tickled {name}")
+        case .dizzy: ("You shook it.", "you shook {name}")
+        case .pickup: ("You picked it up.", "you picked {name} up")
+        case .startle: ("You thumped the desk.", "a thump nearby")
+        case .facedown: ("You turned it face down.", "you turned {name} over")
+        case .peekaboo: ("You turned it back up.", "you flipped {name} up")
         case .poke, .swipe, .putdown, .dismiss: nil
         }
     }

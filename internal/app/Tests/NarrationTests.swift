@@ -18,19 +18,20 @@ final class NarrationTests: XCTestCase {
             Narration.of(event(.presence, "unlocked", phase: .end), line: Line("You came back.", facts: ["away_ms": .int(ms)]))
         }
         XCTAssertEqual(back(25 * 60_000), Narration(cause: "You came back after 25 minutes away.", fact: "away 25 min"))
-        XCTAssertEqual(back(12 * 3_600_000), Narration(cause: "You came back after 12 hours away.", fact: "away 12 h"))
-        XCTAssertEqual(back(26 * 3_600_000)?.fact, "away 26 h")
-        XCTAssertEqual(back(3 * 86_400_000), Narration(cause: "You came back after 3 days away.", fact: "away 3 d"))
+        XCTAssertEqual(back(12 * 3_600_000), Narration(cause: "You came back after 12 hours away.", fact: "you were away 12 h"))
+        XCTAssertEqual(back(26 * 3_600_000)?.fact, "you were away 26 h")
+        XCTAssertEqual(back(3 * 86_400_000), Narration(cause: "You came back after 3 days away.", fact: "you were away 3 d"))
     }
 
     /// Every care gesture, and a poke, gives the board a fact; what you
     /// said gives none, as the sign answers it.
     func testTouchesGiveTheBoardAFactAndWordsDont() {
-        XCTAssertEqual(Narration.of(event(.gesture, "stroke"), line: nil), Narration(cause: "You stroked it.", fact: "stroked"))
-        XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(4)])),
-                       Narration(cause: "You poked it 4 times in a row.", fact: "poked x4"))
-        XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]))?.fact,
-                       "woken up")
+        XCTAssertEqual(Narration.of(event(.gesture, "stroke"), line: nil, name: "Boop"), Narration(cause: "You stroked it.", fact: "you stroked Boop"))
+        XCTAssertEqual(Narration.of(event(.gesture, "pickup"), line: nil, name: "Bartholomew")?.fact, "you picked it up", "a long name gives way to it")
+        XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(4)]), name: "Boop"),
+                       Narration(cause: "You poked it 4 times in a row.", fact: "you poked Boop x4"))
+        XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]), name: "Boop")?.fact,
+                       "you woke Boop")
         let said = Narration.of(event(.said, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))
         XCTAssertEqual(said, Narration(cause: "You said \"hi\"."))
     }
@@ -41,7 +42,7 @@ final class NarrationTests: XCTestCase {
         let check = event(.checkIn, "check_in")
         let line = Line("Nothing has happened for 20 min; claude sits idle on \"api\".")
         XCTAssertEqual(Narration.of(check, line: line, untouchedMs: 2 * 3_600_000 + 60_000),
-                       Narration(cause: "You've been here 2 hours and haven't touched it.", fact: "untouched 2 h"))
+                       Narration(cause: "You've been here 2 hours and haven't touched it.", fact: "no touch in 2 h"))
         XCTAssertNil(Narration.of(check, line: line, untouchedMs: 3_600_000 - 1), "under an hour, and no minutes in its facts")
         XCTAssertEqual(Narration.of(check, line: Line(line.text, facts: ["idle_minutes": .int(20)]), untouchedMs: 0),
                        Narration(cause: "Nothing has happened for 20 minutes."))
@@ -103,7 +104,7 @@ final class NarrationTests: XCTestCase {
     /// No fact is longer than a sign: one that would be is dropped, never
     /// cut mid-word on the board.
     func testAFactFitsASign() {
-        for g in Touch.allCases.compactMap(\.narration) { XCTAssertLessThanOrEqual(g.fact.count, Narration.maxFact, g.fact) }
+        for g in Touch.allCases.compactMap(\.narration) { XCTAssertNotNil(Narration.fit([g.fact], name: "Bartholomew"), g.fact) }
         XCTAssertNil(Narration(cause: "x", fact: String(repeating: "a", count: Narration.maxFact + 1)).fact)
         XCTAssertEqual(Narration.maxFact, 18, "the board's sign width, firmware kSignGlyphs")
     }
@@ -125,8 +126,8 @@ final class NarrationTests: XCTestCase {
                                 reason: { $0.flatMap { Narration.of($0, line: nil) } })
         let log = Transcript.log().view(now: 0)
         let result = try XCTUnwrap(react.run(["react.face": Answer(choice: "comfy", probabilities: ["comfy": 1])], now: stroke, log: log))
-        XCTAssertEqual(queued.last?.reason, "stroked")
-        XCTAssertEqual(queued.last?.args["reason"], .string("stroked"))
+        XCTAssertEqual(queued.last?.reason, "you stroked \(CharacterPack.active.name)")
+        XCTAssertEqual(queued.last?.args["reason"], .string("you stroked \(CharacterPack.active.name)"))
         XCTAssertEqual(result.facts["reason"], .string("\(CharacterPack.active.name) is comfy. You stroked it."))
 
         let finished = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil },

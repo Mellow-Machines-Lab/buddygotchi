@@ -254,12 +254,10 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["expr"] = nullptr;
   if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
-  // The lane's text when it isn't the `say`'s: the reaction's reason, or
-  // an ask's answers.
-  const char* lane = b_.laneText(t);
-  if (lane && lane != b_.bubble(t) && !b_.asking(t))
-    d["reason"] = lane;
+  // The caption, the reaction's reason; and an ask's answers in the lane.
+  if (const char* caption = b_.caption(t)) d["reason"] = caption;
   else d["reason"] = nullptr;
+  const char* lane = b_.laneBubble(t);
   // An ask up: its answers as the lane shows them.
   if (b_.asking(t))
     d["ask"] = lane;
