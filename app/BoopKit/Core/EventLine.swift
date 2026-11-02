@@ -251,6 +251,12 @@ public enum EventLine {
         "Nothing has happened for \(minutes) min; \(agent) sits idle on \(thread)."
     }
 
+    /// The idle check-in with no session open: `Nothing has happened for
+    /// 40 min; no agents are open.`
+    public static func idle(minutes: Int) -> String {
+        "Nothing has happened for \(minutes) min; no agents are open."
+    }
+
     /// The agent's context compacted, mid-work.
     public static func compacted(agent: String, thread: String) -> String {
         "\(agent)'s context on \(thread) was compacted; it picks up where it left off."

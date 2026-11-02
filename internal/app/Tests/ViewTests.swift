@@ -614,7 +614,7 @@ final class ViewTests: XCTestCase {
     /// With a personality's `idle_heartbeat`, the idle check-in comes at
     /// that pace for 2 hours after the last activity while a session is
     /// open, as a check-in naming the thread last active; then hourly as
-    /// ever. Never while you're away, and never with no session open.
+    /// ever. Never while you're away.
     func testIdleCheckIns() {
         XCTAssertEqual(TranscriptView.idleWindowMs, 2 * 60 * 60_000)
         rig = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
@@ -638,11 +638,33 @@ final class ViewTests: XCTestCase {
         rig.pipeline.presence(PresenceDetector.awayEvent(why: "locked", since: rig.now, at: rig.now))
         XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "no check-in while you're away")
 
-        // No session open: hourly only, as before check-ins.
-        let asleep = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
-        asleep.poke()
-        XCTAssertEqual(asleep.views.filter { $0.type == .checkIn }, [])
-        XCTAssertEqual(asleep.wait(61 * 60_000).views.filter { $0.type == .checkIn }.map(\.line), ["Nothing has happened for 1 hour."])
+    }
+
+    /// With no session open an idle check-in still comes, you at the Mac and
+    /// recent activity needed, at twice the gap (`noAgentsGapTimes`), so 30
+    /// to 60 minutes for a personality's 15 to 30, then hourly.
+    func testIdleCheckInsWithNoSessionOpenComeAtTwiceTheGap() {
+        XCTAssertEqual(TranscriptView.noAgentsGapTimes, 2)
+        let quiet = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
+        XCTAssertEqual(events(quiet.wait(60 * 60_000)).filter { $0.type == .checkIn }, [], "no activity, no check-in")
+
+        let here = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
+        here.poke()
+        let beats = events(here.wait(4 * 60 * 60_000)).filter { $0.type == .checkIn }
+        let idle = beats.filter { $0.facts["idle_minutes"] != nil }
+        XCTAssertFalse(idle.isEmpty, beats.map(\.line).joined(separator: "\n"))
+        XCTAssertTrue(idle.allSatisfy { $0.line.hasPrefix("Nothing has happened for ") && $0.line.hasSuffix(" min; no agents are open.") && $0.wakesBrain })
+        let minutes = idle.compactMap { $0.facts["idle_minutes"]?.int }
+        XCTAssertGreaterThanOrEqual(minutes[0], 30, "twice the 15")
+        XCTAssertLessThanOrEqual(minutes[0], 60, "twice the 30")
+        XCTAssertTrue(zip(minutes, minutes.dropFirst()).allSatisfy { $1 - $0 >= 30 && $1 - $0 <= 60 }, "\(minutes)")
+        XCTAssertLessThan(minutes.last ?? 0, 120, "only within 2 hours of the last activity")
+        XCTAssertTrue(beats.contains { $0.facts["idle_hours"]?.int == 3 }, "then hourly")
+
+        let away = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
+        away.poke()
+        away.pipeline.presence(PresenceDetector.awayEvent(why: "locked", since: away.now, at: away.now))
+        XCTAssertEqual(events(away.wait(59 * 60_000)).filter { $0.type == .checkIn }, [], "never while you're away")
     }
 
     /// The length band, at its edges: very short under 7 s, short under a

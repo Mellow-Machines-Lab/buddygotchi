@@ -108,6 +108,28 @@ final class WishTests: XCTestCase {
         XCTAssertNotNil(onFinish.core.wish, "it opened the thread")
     }
 
+    /// With no agents open its look is asleep, but Boop may still want
+    /// something while you're here, and the wait counts. Dozed off with agents
+    /// open, or on its nap, or you away, it doesn't.
+    func testASleepingLookWithNoAgentsMayStillWish() {
+        let none = CoreRig()
+        XCTAssertEqual(none.core.snapshot(at: none.now).doing, "asleep")
+        XCTAssertTrue(none.core.wishable(at: none.now).contains(.pet))
+        none.core.makeWish(.pet, at: none.now)
+        XCTAssertEqual(none.state.wish, "pet", "the board shows it")
+        none.wait(600_000, every: 60_000)
+        XCTAssertEqual(none.core.wish?.waitedMs, 600_000)
+
+        let napping = CoreRig()
+        napping.core.nap(at: napping.now)
+        XCTAssertEqual(napping.core.wishable(at: napping.now), [], "its nap is sleep")
+
+        let dozed = rig()
+        dozed.core.nap(at: dozed.now)
+        XCTAssertEqual(dozed.core.snapshot(at: dozed.now).doing, "asleep")
+        XCTAssertEqual(dozed.core.wishable(at: dozed.now), [])
+    }
+
     /// Pins `Core.wishGivesUpMs`: three hours you could have answered, away
     /// and asleep not counting; then the rule's Moment, which wakes Jev.
     func testItWaitsOnlyWhileYouCouldAnswerThenGivesUp() {

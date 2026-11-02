@@ -284,7 +284,8 @@ included.
 
 - Its front matter sets the check-ins: `working_heartbeat` (seconds between
   check-ins on a turn) and `idle_heartbeat` (seconds between idle check-ins
-  while you're around and no agent works; without it, only the hourly one).
+  while you're around and no agent works, twice that with no agent open;
+  without it, only the hourly one).
   Pixel's: `working_heartbeat: 120-240`.
 - Its Examples quote NOW's lines as the view writes them, where your prompt
   and the agent's last message are only their readings:

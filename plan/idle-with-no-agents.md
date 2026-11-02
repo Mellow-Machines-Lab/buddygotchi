@@ -1,6 +1,6 @@
 # Idle with no agents
 
-Updated 2026-11-01. Decided with the owner on 2026-11-01. Small on
+Updated 2026-11-02. Built. Decided with the owner on 2026-11-01. Small on
 purpose: no new activities, no play mode, no new pastimes.
 
 An idle check-in comes only with a session open, you at the Mac and recent

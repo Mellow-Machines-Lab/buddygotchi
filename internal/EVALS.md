@@ -65,7 +65,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
-| `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity while a session is open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
+| `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
 step's `session`, with the step's `workspace` if it has one.
@@ -298,9 +298,10 @@ the file and step.
 packs keep strict scenarios of their own, in their words: a scenario with no
 brief is a must.
 
-- **Code checks** (`53`, `68`, `69`, `92`, `93`, `115`–`117`, `164`, `166`):
+- **Code checks** (`53`, `68`, `69`, `92`, `93`, `115`–`117`, `164`, `166`, `168`):
   `scripted`, the code's rules, which need no Jev: the mood kept on the graph
-  and the screen, one reaction at a long unlock, the nap asleep at once.
+  and the screen, one reaction at a long unlock, the nap asleep at once, a wish
+  on offer with no agents open.
 - **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `123`, `126`,
   `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so
   exact checks stay. A failed turn is never celebrated, and neither is an agent

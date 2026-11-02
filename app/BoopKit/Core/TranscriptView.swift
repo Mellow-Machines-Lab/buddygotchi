@@ -943,12 +943,15 @@ public final class TranscriptView {
         }
         nextWorkBeatAt = nil
         guard !working, let last = fold.lastActivityAt else { return nil }
-        // An idle check-in, at the personality's pace: a session is open,
-        // you're at the Mac, and it's within `idleWindowMs` of the last
-        // activity. Once you're away, or it's been quiet longer than that,
-        // as over a night or a weekend, only the hourly check-in comes;
-        // nothing reads the time of day.
-        if let gap = rules.idleCheckInMs, fold.away.since == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
+        // An idle check-in, at the personality's pace: you're at the Mac,
+        // and it's within `idleWindowMs` of the last activity. With no
+        // session open it comes `noAgentsGapTimes` as far apart, which spares
+        // Jev. Once you're away, or it's been quiet longer than that, as over
+        // a night or a weekend, only the hourly check-in comes; nothing reads
+        // the time of day.
+        if let idle = rules.idleCheckInMs, fold.away.since == nil, now - last < Self.idleWindowMs {
+            let times = fold.sessions.sessions.isEmpty ? Self.noAgentsGapTimes : 1
+            let gap = (idle.lowerBound * times)...(idle.upperBound * times)
             if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
             guard let beat = idleBeat, now >= beat.due else { return nil }
             idleBeat = (last, now + Int64(rng.int(in: gap)))
@@ -957,6 +960,10 @@ public final class TranscriptView {
         guard (now - last) / Self.hourlyMs > Int64(fold.hourlies) else { return nil }
         return Event(at: now, source: .clock, type: .checkIn, specificType: Self.hourly)
     }
+
+    /// How many times the personality's gap an idle check-in waits with no
+    /// session open.
+    public static let noAgentsGapTimes = 2
 
     /// The hourly check-in's kind, after a quiet stretch.
     public static let hourly = "idle"
@@ -984,11 +991,14 @@ public final class TranscriptView {
         }
         guard let last = fold.lastActivityAt else { return nil }
         let hours = (now - last) / Self.hourlyMs
-        if e.specificType == "check_in",
-           let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) {
+        if e.specificType == "check_in" {
             // An idle check-in: you're around, and no agent works.
             fold.hourlies = Int(hours)
-            let t = Thread(s), minutes = (now - last) / 60_000
+            let minutes = (now - last) / 60_000
+            guard let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) else {
+                return Line(EventLine.idle(minutes: Int(minutes)), facts: ["idle_minutes": .int(minutes)])
+            }
+            let t = Thread(s)
             return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
                         facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
         }

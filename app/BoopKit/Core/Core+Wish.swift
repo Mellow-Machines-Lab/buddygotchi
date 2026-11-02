@@ -43,7 +43,7 @@ extension Core {
     func wishDayNow(_ now: Int64) -> String { config.time.boopDay(wall(now)) }
 
     /// The wishes Boop may make at `now`: none while one is open, none
-    /// unless you're here, it's awake and nothing needs
+    /// unless you're here, it hasn't dozed off and nothing needs
     /// you, it isn't listening or hushed; `work` only while no agent works,
     /// else your next prompt meets it for nothing; `chat` only once
     /// push-to-talk works, so it never waits on what you couldn't answer.
@@ -51,7 +51,7 @@ extension Core {
         guard wish == nil, !awayFromMac, needsYouBlock == nil, listening == nil,
               hushed(at: now) == nil else { return [] }
         let doing = snapshot(at: now).doing
-        guard doing != "asleep" else { return [] }
+        guard !dozing(doing) else { return [] }
         return WishKind.allCases.filter { kind in
             switch kind {
             case .pet: true
@@ -103,11 +103,16 @@ extension Core {
                                 data: ["kind": .string(w.kind.rawValue), "waited_ms": .int(w.waitedMs)])))
     }
 
-    /// Whether the wish's wait counts now: while you're here, it's awake
-    /// and nothing needs you. The board shows its icon only then.
+    /// Whether the wish's wait counts now: while you're here, it hasn't
+    /// dozed off and nothing needs you. The board shows its icon only then.
     func wishCounts(doing: String, attn: StateSnapshot.Attention?) -> Bool {
-        wish != nil && !awayFromMac && doing != "asleep" && attn == nil
+        wish != nil && !awayFromMac && !dozing(doing) && attn == nil
     }
+
+    /// Whether Boop sleeps past wanting anything: asleep with agents to
+    /// watch, or from its nap. With none open and you here, its look is
+    /// asleep with time on its hands, so it may still want something.
+    func dozing(_ doing: String) -> Bool { doing == "asleep" && (!sessions.isEmpty || napping) }
 
     /// The wish's clock: it closes quietly when the day ends, grows while
     /// it counts, and gives up at `wishGivesUpMs`, with the rule's Moment,
