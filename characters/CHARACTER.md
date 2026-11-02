@@ -564,8 +564,10 @@ Besides drawing each mood and state, a face:
     the latest session came to rest. The Mac sends the last reached and the
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
-  - `sprout` from the first growth stage reached on, and `hushed` while the
-    buddy is hushed (`Core.Hush`).
+  - The growth stage Boop is at, `hatchling`, `sprout` or `chonk`, none at
+    Buddy (`Tags.stages`), which can go back; and `hushed` while the buddy is
+    hushed (`Core.Hush`). The gel's body and its pastimes go by the stage;
+    nothing useful does.
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board
     adds from `state.busy`. The working looks also play at 125% and 160%
     then (`render::workPace`, `FaceContext::pace`).

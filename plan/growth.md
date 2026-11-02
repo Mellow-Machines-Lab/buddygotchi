@@ -95,19 +95,19 @@ Still to look at on the board: whether a Hatchling's face reads at arm's length.
 
 Storyboard: `/tmp/boop-storyboard/stages.html`.
 
-## The build
+## What's built, and what isn't (2026-11-02)
 
-The scaling comes first, as its own commit. If the gel can't scale well in
-the time there is, build everything else on one size with the sprout and
-Chonk's look left out, and say so.
+Built on the `growth` branches: the stages, the wish's +40, going backwards
+and the reason, the body by stage tags, the ceremony on the board, the
+sprout, a stage on each pastime row (Hatchling, Sprout or Buddy), the flop, the
+silhouette in the popover, and the studio's grouping.
 
-- Core: `Growth` with four stages (5,000 for Chonk), the wish's +40, the
-  decay and its test; the highest stage is no longer kept for good, and a
-  saved XP or stage past the new table is clamped.
-- Board: body settings by the stage tags, the ceremony, the bar; a stage
-  number on each pastime row, and the first spread of them. Pixel is frozen.
-- Mac: the bar and the silhouette in the popover; the reason for shrinking.
-- The Character Studio's Behavior tab groups pastimes by stage.
-- Grep for Pal and Legend: CONTEXT's Boop row, `Days`, evals and docs.
-- Evals (`--only`), tests that pin the numbers, the mirror, demos, docs.
-- Frames of the four stages and the ceremony for the owner.
+Not built:
+
+- The board's growth bar, and the wish's heart flying into it: it needs a
+  new field on `state`, for the XP's share. The bar is only in the popover.
+- A voice for growing through Jev: the sign is the rule's, "I'm a Sprout!".
+- Voice pitch and how it moves, by stage: the body settings are size, eyes and
+  squash.
+- A pastime only a Chonk knows: a Buddy would deal differently, as a board
+  with no tag is a Buddy.
