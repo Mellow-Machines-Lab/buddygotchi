@@ -73,6 +73,8 @@ public final class MomentOutput: Output {
     /// the core's caps; and making one, when its sign is picked.
     let wishable: (Event, LogView) -> [Core.WishKind]
     let makeWish: (Core.WishKind, Int64) -> Void
+    /// Whether you've met a kind of wish once: until then its sign shows how.
+    let wishDone: (Core.WishKind) -> Bool
     /// The day so far, for the idle musings' blanks.
     let today: () -> MemoryReader.Tallies?
 
@@ -90,7 +92,7 @@ public final class MomentOutput: Output {
     /// The wishes on offer at `about`, each with the pack's sign for it.
     func wishOptions(_ about: Event?, _ log: LogView) -> [(kind: Core.WishKind, sign: String)] {
         guard let about, !asks.isEmpty, told(about) == nil else { return [] }
-        return wishable(about, log).compactMap { kind in Asks.wishSign(asks, kind).map { (kind, $0) } }
+        return wishable(about, log).compactMap { kind in Asks.wishSign(asks, kind, showsHow: !wishDone(kind)).map { (kind, $0) } }
     }
 
     func askOptions(_ about: Event?, _ log: LogView) -> [Asks.Question] {
@@ -140,6 +142,7 @@ public final class MomentOutput: Output {
                 askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] },
                 wishable: @escaping (Event, LogView) -> [Core.WishKind] = { _, _ in [] },
                 makeWish: @escaping (Core.WishKind, Int64) -> Void = { _, _ in },
+                wishDone: @escaping (Core.WishKind) -> Bool = { _ in false },
                 today: @escaping () -> MemoryReader.Tallies? = { nil }) {
         self.today = today
         let seed = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
@@ -169,6 +172,7 @@ public final class MomentOutput: Output {
         self.askable = askable
         self.wishable = wishable
         self.makeWish = makeWish
+        self.wishDone = wishDone
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }

@@ -186,6 +186,8 @@ public final class Core {
     var wishEnded: (day: String, how: WishEnd)?
     /// What the board holds up as each wish is met: the pack's words.
     public var wishMetSigns: [WishKind: String] = [:]
+    /// Whether you've met a kind of wish once: until then the board shows how.
+    public var wishDone: (WishKind) -> Bool = { _ in false }
     /// Whether you're away from the Mac, for the wish's wait.
     var awayFromMac = false
 
@@ -565,7 +567,10 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         if drawer { list(into: &snapshot, at: now) }
-        if wishCounts(doing: base, attn: attn) { snapshot.wish = wish?.kind.rawValue }
+        if wishCounts(doing: base, attn: attn), let kind = wish?.kind {
+            snapshot.wish = kind.rawValue
+            snapshot.wishHow = !wishDone(kind)
+        }
         return snapshot
     }
 

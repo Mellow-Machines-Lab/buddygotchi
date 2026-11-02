@@ -49,6 +49,7 @@ struct Model {
   int todoDone = 0, todoTotal = 0;
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
+  bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;

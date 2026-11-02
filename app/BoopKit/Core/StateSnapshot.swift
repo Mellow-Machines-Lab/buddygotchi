@@ -168,6 +168,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
     public var wish: String?
+    /// Whether the wish shows how, its icon moving: until you've met one of its kind.
+    public var wishHow = false
 
     /// A working session's lane in the work stream (`WorkStream`): its
     /// slot, which picks its column and colour on the board, how many
@@ -278,6 +280,7 @@ public struct StateSnapshot: Equatable, Sendable {
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if let wish { fields["wish"] = .string(wish) }
+        if wishHow { fields["wish_how"] = true }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }

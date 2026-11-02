@@ -688,6 +688,8 @@ render::WishShow Behaviour::wishShow(uint32_t t) const {
     show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
   } else {
     show.kind = model_.wish;
+    show.how = model_.wishHow;
+    show.ms = t;
   }
   return show;
 }

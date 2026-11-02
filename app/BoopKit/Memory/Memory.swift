@@ -174,8 +174,21 @@ public final class Memory: @unchecked Sendable {
     func heard(_ e: Event, line: Line?) {
         if let day = line?.facts["dream_day"]?.string { told(day) }
         recordAsk(e)
+        recordWish(e)
         runner.feed(e, line: line)
         dreams.feed(e, line: line)
+    }
+
+    // MARK: The wish's "done once"
+
+    /// Whether you've met a wish of `kind` once (`wish.<kind>`). Until
+    /// then it shows how. For you, not for one buddy: you know how now.
+    public func wishDone(_ kind: Core.WishKind) -> Bool { store.string("wish.\(kind.rawValue)") != nil }
+
+    /// Keeps a wish met (the `wish_end` event).
+    func recordWish(_ e: Event) {
+        guard e.type == .wish, e.phase == .end, e.specificType == Core.WishEnd.met.rawValue, let kind = e["kind"]?.string else { return }
+        do { try store.set(["wish.\(kind)": time.boopDay(e.at)]) } catch { note("memory: can't keep the wish: \(error)") }
     }
 
     // MARK: The ask record
@@ -291,6 +304,7 @@ public final class Memory: @unchecked Sendable {
     /// readers, with no lines.
     public func catchUp(_ events: [Event]) {
         for e in events {
+            recordWish(e)
             if e.seq > runner.seq { runner.feed(e, line: nil, live: false) }
             if e.seq > dreams.seq { dreams.feed(e, line: nil, live: false) }
         }

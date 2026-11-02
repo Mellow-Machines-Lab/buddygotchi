@@ -53,9 +53,12 @@ public enum Asks {
     }
 
     /// A wish's words from the pack's lines: `[wish pet] pet me?`, the sign
-    /// that makes it, and `[wish pet met] <3`, the sign as it's met.
-    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind) -> String? {
-        lines.first { $0.tags == ["wish", kind.rawValue] }?.text
+    /// that makes it; `[wish pet how] stroke my face?`, that sign while it
+    /// shows how, if the pack has one; and `[wish pet met] <3`, the sign as
+    /// it's met.
+    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind, showsHow: Bool = false) -> String? {
+        (showsHow ? lines.first { $0.tags == ["wish", kind.rawValue, "how"] }?.text : nil)
+            ?? lines.first { $0.tags == ["wish", kind.rawValue] }?.text
     }
     public static func wishMetSign(_ lines: [TaggedLine], _ kind: Core.WishKind) -> String? {
         lines.first { $0.tags == ["wish", kind.rawValue, "met"] }?.text

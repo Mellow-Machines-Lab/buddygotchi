@@ -1689,6 +1689,11 @@ static void test_the_wish_shows_and_pops() {
   m.wish = render::WishShow::kPet;
   r.state(m);
   TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  TEST_ASSERT_FALSE(r.b.wishShow(r.t).how);
+  m.wishHow = true;
+  r.state(m);
+  TEST_ASSERT_TRUE(r.b.wishShow(r.t).how);
+  m.wishHow = false;
   m.wish = render::WishShow::kNone;
   r.state(m);
   r.b.wishPopped(true, r.t);

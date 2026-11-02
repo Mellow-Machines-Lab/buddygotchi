@@ -194,6 +194,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
            : !std::strcmp(wish, "chat") ? render::WishShow::kChat
            : !std::strcmp(wish, "work") ? render::WishShow::kWork
                                         : render::WishShow::kNone;
+  m.wishHow = doc["wish_how"] | false;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());

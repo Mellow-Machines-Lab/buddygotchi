@@ -18,7 +18,7 @@
 namespace render {
 
 // Boop's wish, as the board shows it: its kind while it waits (the Mac's
-// `state.wish`), and for kPopMs after a wish_met or wish_gone Moment, how it
+// `state.wish`), whether it shows how, its icon moving (`state.wish_how`), and for kPopMs after a wish_met or wish_gone Moment, how it
 // went: the icon pops into a heart, or fades, the face slumping with it.
 struct WishShow {
   enum Kind : uint8_t { kNone, kPet, kChat, kWork };
@@ -27,6 +27,8 @@ struct WishShow {
   Kind kind = kNone;
   Pop pop = kWaiting;
   uint32_t popAge = 0;
+  bool how = false;
+  uint32_t ms = 0;  // the board's clock, for the icon's motion
 };
 
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,

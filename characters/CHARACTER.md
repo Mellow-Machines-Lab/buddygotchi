@@ -332,8 +332,11 @@ prompt or your words, which have signs of their own.
 A line tagged `wish` in `asks.md` is its one want a day, not a question:
 `[wish pet] pet me?` is the sign that makes it, `[wish pet met] <3` what it
 holds up as it's met, for the kinds `pet`, `chat` and `work`; code says what
-meets each. A pack with no such line makes no wish. The gel draws the
-thought bubble (`state.wish`), and a lane with none says `wants: pet`.
+meets each. `[wish pet how] stroke my face?`, optional, is the sign that makes
+it until you've met that kind once: it says what to do. A pack with no such
+line makes no wish. The gel draws the thought bubble (`state.wish`), its icon
+moving while it shows how (`state.wish_how`), and a lane with none says
+`wants: pet`.
 
 **`asks.md`** (optional): what it may ask you, with two answers you tap
 (`Asks`). Ask only what does something with the answer: it becomes part of

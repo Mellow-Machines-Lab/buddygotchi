@@ -173,6 +173,61 @@ final class WishTests: XCTestCase {
         XCTAssertEqual(core.wishRow(at: morning, name: "Boop", idle: true), "no wish yet today")
     }
 
+    /// Showing how: until you've met a kind once, the pack's longer sign and
+    /// `state.wish_how`; a "done once" kept per kind ends both for that kind.
+    func testDoneOnceEndsTheShowingHow() throws {
+        let lines = TaggedLine.parse("""
+            - [wish pet] pet me?
+            - [wish pet how] stroke my face?
+            - [wish chat] talk to me?
+            """)
+        XCTAssertEqual(Asks.wishSign(lines, .pet, showsHow: true), "stroke my face?")
+        XCTAssertEqual(Asks.wishSign(lines, .pet), "pet me?")
+        XCTAssertEqual(Asks.wishSign(lines, .chat, showsHow: true), "talk to me?", "a pack with no such line")
+
+        let r = rig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: r.time)
+        memory.attach(to: r.pipeline)
+        r.core.wishDone = memory.wishDone
+        XCTAssertFalse(memory.wishDone(.pet))
+        r.core.makeWish(.pet, at: r.now)
+        XCTAssertTrue(r.core.snapshot(at: r.now).wishHow)
+        XCTAssertTrue(r.core.snapshot(at: r.now).jsonLine.contains(#""wish_how":true"#))
+        r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
+        XCTAssertTrue(memory.wishDone(.pet), "done once")
+        XCTAssertFalse(memory.wishDone(.chat), "for that kind")
+        r.core.makeWish(.pet, at: r.now)
+        XCTAssertEqual(r.core.snapshot(at: r.now).wish, "pet")
+        XCTAssertFalse(r.core.snapshot(at: r.now).wishHow, "still, from here on")
+        XCTAssertFalse(r.core.snapshot(at: r.now).jsonLine.contains("wish_how"))
+        r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
+        r.core.makeWish(.chat, at: r.now)
+        XCTAssertTrue(r.core.snapshot(at: r.now).wishHow, "a kind not yet met")
+    }
+
+    /// The sign question offers its how sign until done, then the plain one.
+    func testTheSignOfferedFollowsDoneOnce() throws {
+        let lines = TaggedLine.parse("""
+            - [wish pet] pet me?
+            - [wish pet how] stroke my face?
+            """)
+        var done = false
+        var made: [Core.WishKind] = []
+        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, asks: lines, wishable: { _, _ in [.pet] },
+                                 makeWish: { k, _ in made.append(k) }, wishDone: { _ in done })
+        let log = Transcript.log().view(now: 0)
+        let checkIn = Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in")
+        func offered() throws -> [String] {
+            try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey }).options.map(\.name)
+        }
+        XCTAssertEqual(try? offered(), ["none", "stroke my face?"])
+        _ = react.run(["react.face": Answer(choice: "curious", probabilities: ["curious": 1]),
+                       Signs.questionKey: Answer(choice: "stroke my face?", probabilities: ["stroke my face?": 1])], now: checkIn, log: log)
+        XCTAssertEqual(made, [.pet], "the how sign makes the wish")
+        done = true
+        XCTAssertEqual(try? offered(), ["none", "pet me?"])
+    }
+
     /// The sign question offers the pack's wishes at an ask's moment, and
     /// picking one makes it; Quiet says nothing with it.
     func testPickingItsSignMakesIt() throws {

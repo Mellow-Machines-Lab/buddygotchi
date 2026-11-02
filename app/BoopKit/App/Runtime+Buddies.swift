@@ -87,6 +87,9 @@ extension Runtime {
         /// Your company and the day so far, the memory reader's open day,
         /// for CONTEXT; nil with no memory.
         public var company: () -> MemoryReader.Tallies?
+        /// Whether you've met a kind of wish once, kept with the memory:
+        /// until then it shows how.
+        public var wishDone: (Core.WishKind) -> Bool
 
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
                     queue: @escaping (Moment, Pending) -> Void, speaks: @escaping () -> Bool,
@@ -94,8 +97,10 @@ extension Runtime {
                     memory: @escaping () -> String? = { nil },
                     askable: @escaping (Event, LogView, [Asks.Question], Choice) -> [Asks.Question] = { _, _, _, _ in [] },
                     answerTags: @escaping (Int64) -> [String] = { _ in [] },
-                    company: @escaping () -> MemoryReader.Tallies? = { nil }) {
+                    company: @escaping () -> MemoryReader.Tallies? = { nil },
+                    wishDone: @escaping (Core.WishKind) -> Bool = { _ in false }) {
             self.memory = memory
+            self.wishDone = wishDone
             self.company = company
             self.askable = askable
             self.answerTags = answerTags
@@ -128,6 +133,7 @@ extension Runtime {
         let moods = minds.map { m -> Choice in
             let voice = pipeline.tag(m.buddy.id), pack = m.buddy.pack, core = pipeline.core(m.buddy.id)
             for kind in Core.WishKind.allCases { core.wishMetSigns[kind] = Asks.wishMetSign(m.steering.asks, kind) }
+            core.wishDone = m.wishDone
             let mood = MoodOutput.choice(voice: voice, pack: pack)
             // A reaction your tap cut short is in progress while the pokes
             // go on, and done once anything else happens. A reaction's end,
@@ -183,7 +189,7 @@ extension Runtime {
             }, makeWish: { [weak pipeline] kind, at in
                 let fx = core.makeWish(kind, at: at)
                 if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
-            },
+            }, wishDone: m.wishDone,
             today: m.company)
             h.output(mood)
             h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)

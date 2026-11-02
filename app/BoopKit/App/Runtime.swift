@@ -354,7 +354,7 @@ public final class Runtime: @unchecked Sendable {
                             Asks.askable(about, log, questions: questions, core: rigCore, mood: mood, talk: talkNow(),
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
-                        company: { remembersNow()?.today })
+                        company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -470,7 +470,7 @@ public final class Runtime: @unchecked Sendable {
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
-                        company: { remembers?.today })
+                        company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
