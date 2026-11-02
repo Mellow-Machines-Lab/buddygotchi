@@ -333,7 +333,7 @@ public final class Pipeline {
     public func presence(_ event: Event) -> Step {
         input(at: event.at) {
             harness.emit(event)
-            for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, at: event.at), buddy: tag(b.id)) }
+            for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, since: event["since"]?.int, at: event.at), buddy: tag(b.id)) }
             if event.phase == .end { endNaps(nil, at: event.at) }
         }
     }

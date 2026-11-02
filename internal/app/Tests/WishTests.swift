@@ -180,6 +180,33 @@ final class WishTests: XCTestCase {
         XCTAssertNil(other.core.wish)
     }
 
+    /// Pins `Core.wishTickGapMs`: a lid closed for three hours with a wish
+    /// open adds nothing, with or without an away after the wake, and an
+    /// away takes back only what was counted after its `since`.
+    func testTheMacsSleepIsntWaiting() {
+        XCTAssertEqual(Core.wishTickGapMs, 2 * 60_000)
+        let minute: Int64 = 60_000
+        // With no agent open, so nothing dozes off and the wait counts.
+        let r = CoreRig()
+        r.core.makeWish(.pet, at: r.now)
+        r.wait(10 * minute, every: minute)
+        XCTAssertEqual(r.core.wish?.waitedMs, 10 * minute)
+        let slept = r.now
+        r.now += 3 * 60 * minute
+        _ = r.core.tick(at: r.now)
+        XCTAssertNotNil(r.core.wish, "it doesn't give up on waking")
+        XCTAssertEqual(r.core.wish?.waitedMs, 10 * minute, "the steady clock ran on; the wait didn't")
+        r.pipeline.presence(PresenceDetector.awayEvent(why: "asleep", since: slept, at: r.now))
+        XCTAssertEqual(r.core.wish?.waitedMs, 10 * minute, "the away arrives after the wake and takes back nothing")
+        r.pipeline.presence(PresenceDetector.backEvent(why: "woke", at: r.now))
+
+        // Idle: ticks counted right up to the away being noticed.
+        r.wait(30 * minute, every: minute)
+        XCTAssertEqual(r.core.wish?.waitedMs, 40 * minute)
+        r.pipeline.presence(PresenceDetector.awayEvent(why: "idle", since: r.now - 20 * minute, at: r.now))
+        XCTAssertEqual(r.core.wish?.waitedMs, 20 * minute, "only up to its since")
+    }
+
     /// CONTEXT's rows say the facts; the board's wire has the kind.
     func testContextSaysIt() {
         let r = rig()

@@ -23,11 +23,15 @@ extension Core {
 
     /// The wish open: its kind, when it was made, and how long it has
     /// waited while you could answer it, counted up to `countedTo`.
+    /// `runFrom` is where the unbroken run of counted time up to there
+    /// began, nil if the last tick didn't count: an away takes back only
+    /// what that run counted after you'd gone.
     public struct Wish: Equatable, Sendable {
         public var kind: WishKind
         public var since: Int64
         public var waitedMs: Int64 = 0
         public var countedTo: Int64
+        public var runFrom: Int64?
     }
 
     /// How a wish ends: you met it, it waited too long, or the day ended.
@@ -36,6 +40,11 @@ extension Core {
     /// How long a wish waits, counting only time you could answer it, before
     /// Boop takes it down.
     public static let wishGivesUpMs: Int64 = 3 * 60 * 60_000
+
+    /// A gap between two of the wish's ticks longer than this isn't time you
+    /// could answer it: the Mac slept, or Boop wasn't running. The clock runs
+    /// through both, and the away, if any, only comes after the wake.
+    public static let wishTickGapMs: Int64 = 2 * 60_000
 
     /// The rules' Moments: a wish met, and one given up on.
     public static let wishMet = "wish_met", wishGone = "wish_gone"
@@ -124,7 +133,13 @@ extension Core {
         guard var w = wish else { return }
         if config.time.boopDay(wall(w.since)) != wishDayNow(now) { return endWish(.closed, now, &fx) }
         let s = snapshot(at: now)
-        if wishCounts(dozed: dozes(at: now), attn: s.attn) { w.waitedMs += max(0, now - w.countedTo) }
+        let gap = now - w.countedTo
+        if gap <= Self.wishTickGapMs, wishCounts(dozed: dozes(at: now), attn: s.attn) {
+            w.waitedMs += max(0, gap)
+            w.runFrom = w.runFrom ?? w.countedTo
+        } else {
+            w.runFrom = nil
+        }
         w.countedTo = now
         wish = w
         guard w.waitedMs >= Self.wishGivesUpMs else { return }
@@ -134,9 +149,10 @@ extension Core {
     }
 
     /// You stepped away from the Mac or came back (the presence detector's):
-    /// a wish's wait counts only while you're here.
+    /// a wish's wait counts only while you're here, so an away gives back
+    /// what the ticks counted after `since`, when you really went.
     @discardableResult
-    public func presence(away: Bool, at now: Int64) -> [CoreEffect] {
+    public func presence(away: Bool, since: Int64? = nil, at now: Int64) -> [CoreEffect] {
         guard away != awayFromMac else { return [] }
         guard wish != nil else {
             awayFromMac = away
@@ -145,6 +161,11 @@ extension Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         tickWish(now, &fx)
+        if away, let since, var w = wish, let run = w.runFrom {
+            w.waitedMs = max(0, w.waitedMs - max(0, now - max(since, run)))
+            w.runFrom = nil
+            wish = w
+        }
         awayFromMac = away
         publish(now, &fx)
         return fx
