@@ -93,12 +93,10 @@ short as their meaning allows; the Docs table applies as usual.
 ## 4. Jev's budget
 
 Three full runs, one for each level, each scenario once. `eval --list`
-says a full run is about 622 requests. The daily limit is 1000
-(`JevAllowance`), so that's about 1,866 requests against about 700 left on
-2026-11-01 and 1000 on the 2nd. Don't set `BOOP_JEV_OVER_LIMIT`: only the
-owner says that. Order the runs to fit, using `eval --list` first. If the
-last doesn't fit, run its must evals and a sample of feel evals, and say
-which. Keep room for `--only` runs for the rest of the queue.
+says a full run is about 622 requests. The owner raised the daily limit
+for this: `JevAllowance.dailyLimit` goes from 1000 to 2500. That is room
+to finish, with re-runs and `--only` runs, not more full runs. Don't set
+`BOOP_JEV_OVER_LIMIT`. Report how many requests the night used.
 
 ## 5. The morning report
 
