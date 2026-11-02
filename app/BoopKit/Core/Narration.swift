@@ -64,6 +64,9 @@ public struct Narration: Equatable, Sendable {
             return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: fit("you poked {name} x\(count)"))
                 : Narration(cause: "You poked it.", fact: fit("you poked {name}"))
         case .gesture?:
+            if let count = facts["in_a_row"]?.int, count > 1 {
+                return Narration(cause: "You shook it \(count) times in a row.", fact: fit("you shook {name} x\(count)"))
+            }
             return Touch(e)?.narration.map { Narration(cause: $0.cause, fact: fit($0.fact)) }
         case .ask?:
             guard e.specificType != Asks.ignored else { return Narration(cause: "Nobody answered its question.") }

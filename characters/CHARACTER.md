@@ -426,7 +426,9 @@ picks the kind: a sound small, a word medium, a phrase big or huge.
   the board reports, then a take a line, tab separated: id, text, part,
   meaning, kind, moods (space separated), finish (empty for any) and ms. A
   take that's also a reply's words is in it again, by the same id, as part
-  `reply`: the voice file has it once.
+  `reply`, and one that's also a second feeling (the slime's `shaken`, from
+  its startled and cross words) again as that feeling: the voice file has
+  it once. `say` offers a pack only the feelings its table has takes of.
 
 Both are built files and checked in, and a pack has both or neither. Boop's
 pack holds the recordings and voicegen, the tool that makes the two files;

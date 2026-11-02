@@ -32,6 +32,10 @@ final class NarrationTests: XCTestCase {
                        Narration(cause: "You poked it 4 times in a row.", fact: "you poked Boop x4"))
         XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]), name: "Boop")?.fact,
                        "you woke Boop")
+        XCTAssertEqual(Narration.of(event(.gesture, "dizzy"), line: Line("", facts: ["in_a_row": .int(1)]), name: "Boop"),
+                       Narration(cause: "You shook it.", fact: "you shook Boop"))
+        XCTAssertEqual(Narration.of(event(.gesture, "dizzy"), line: Line("", facts: ["in_a_row": .int(3)]), name: "Boop"),
+                       Narration(cause: "You shook it 3 times in a row.", fact: "you shook Boop x3"))
         let said = Narration.of(event(.said, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))
         XCTAssertEqual(said, Narration(cause: "You said \"hi\"."))
     }

@@ -177,6 +177,10 @@ final class CoreRig {
     @discardableResult
     func poke() -> Fx { note(Fx(pipeline.poke(at: now))) }
 
+    /// A gesture from the device: `dizzy` for a shake.
+    @discardableResult
+    func gesture(_ kind: String) -> Fx { note(Fx(pipeline.gesture(kind, at: now))) }
+
     /// What push-to-talk heard, after `by`'s button.
     @discardableResult
     func said(_ words: String, by: Core.Talker = .device) -> Fx { note(Fx(pipeline.said(words, by: by, at: now))) }
