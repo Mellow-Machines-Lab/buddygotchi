@@ -256,45 +256,128 @@ git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
 
 ## Words
 
-One concept, one word, in code, comments and docs. Wire and on-disk keys
-keep their names.
+One concept, one word, in code, comments, the prompt and docs. Wire and
+on-disk keys keep their names (the last column). The model they name,
+and its rules, is [documentation/architecture.html](documentation/architecture.html#model):
+Boop shows three layers, **Doing**, **Mood** and **Moment**, and says
+things on three channels, **voice**, **sign** and **narration**.
 
-| Word | Means | Not |
-| --- | --- | --- |
-| reaction | What plays on the device: the brain's, a rule's, or the board's own (a tap) | one-shot, moment, request |
-| reply | What Boop answers to what you said on push-to-talk (`ReactOutput.replies`, `react.move`'s answer to it, the `do`'s `reply`): yes, hello, status…, with its clip and sign; the reaction that ends `listening` | answer (that's a topic), response |
-| sign | A short caption the buddy holds up while a reaction plays, often your own words (`Signs`, a pack's `signs.md`, the `do`'s `sign`) | banner, label |
-| the written memory | `memory.md`: short notes about you, your work and you and the buddy, and a line a day, which Apple Intelligence edits each night and Jev reads as MEMORY (`WrittenMemory`, `MemoryEdits`, `MemoryRequest`) | diary, memory file |
-| reason | Why the buddy does what it does, in plain words rendered on the Mac from the line the brain answered, never by the brain: a sentence for the Mac, a few words for the board's lane (`Reason`, the `do`'s `reason`) | explanation, caption (that's a sign) |
-| CONTEXT | The prompt's section for how things stand, built each pass: when it is (the calendar's occasions included), Talk, the buddy, you (at the Mac, untouched), the agents, the day so far (`ContextSection`); events stay in their lines | NOW (that's the event), status (that's the reply's) |
-| musing | A sign the buddy holds up at an idle check-in, a line of the pack's `signs.md` tagged `[idle]`, its blanks filled from the day so far (`Signs`); at most one every `Signs.musingEveryMs` | thought, quip |
-| lasting mood | One of the pack's moods with a meaning, which the buddy settles into and moves between by the mood graph (`CharacterPack.Mood.lasting`) | |
-| face | Any of the 42 moods' looks: a lasting mood's, or a face-only one's, which plays for a reaction and settles into a lasting mood (`settles`) | expression (for the whole) |
-| ask | A question the buddy holds up with two answers you tap in the lane, from the pack's `asks.md`; it never needs an answer (`Asks`, a `react.sign` that is a question, the `do`'s `ask`, `ev ask`) | quiz, prompt (that's yours to an agent) |
-| reading | What Boop takes from your prompt, or an agent's last message, in its place: its kind, tone, length, which buddies' names you said, and a few of its words (`PromptReading`, `MessageReading`) | summary, label (for the whole) |
-| the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4). A turn is only ever an agent's | the turn |
-| message | One JSON line on the wire (`hello`, `state`, `do`, `ev`) | line |
-| line | What the brain reads for one event (MellowHarness's `Line`) | |
-| take | One recorded clip of the voice; a `say` is up to two | line |
-| step | One row of a demo script or an eval scenario | line |
-| output | What the brain's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action |
-| transcript | Boop's event files: MellowHarness's log, kept as files (`app/BoopKit/Harness/Transcript.swift`) | the log |
-| activity | What an agent is doing: working, idle, a tool | state (the `state` message keeps its name) |
-| the prompt | What Jev reads on each pass | the state |
-| speeds | Reflex, reactive and deliberative (documentation/architecture.html) | loops (`loops` is a repeat count) |
-| the voice file | `voice/voice.bin`, on the board's card | voice pack |
-| needs you | An agent waiting on you (the wire's `attn`; the face's knock is a sound) | attn, alert |
-| the agents' drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to tap open on the Mac (`render::Drawer`, `state`'s `list`, `ev drawer`) | roll call, list view |
-| the needs-you screen | What the board shows while an agent needs you: who's asking, in amber, until you answer or hold a finger on it | sign (that's a reaction's caption) |
-| buddy | One board running one character pack, with its own name, place, mood, face and agents (`Buddy`); several share one transcript and brain, each a voice of MellowHarness's | body, creature (for one of several) |
-| dream | Boop's day as it closes at 5:00, in tags and a sentence, told the first time you show up after it (`MemoryReader`, `Dream`, a pack's `dreams.md`); it replaced the diary | diary, journal (the journal is the day's notable lines) |
-| gesture | What you do to the board that it reacts to itself (BOOT's hand-off, a stroke, a shake, face down…), the `gesture` state's variations and the `gesture` event | touch, motion (for one) |
-| tag | One thing true now that a design may need (`state.when`: the part of the day, a holiday, a milestone day; and the board's own `busy`, `frantic`); a design that needs tags is an occasion | flag, label |
-| tier | How long the agents have worked (their working stretch) or rested: `tier1` from 30 s to `tier5` from 10 minutes, a tag (`Occasions.tiers`) | stage (that's growth's) |
-| pastime | What the gel does to pass the time in a look: a rig clip and its drawing in time with it, dealt by tier or wait (`render/gel/pastimes.h`); the kit is what the tiers put out round it | gag (the engine's), bit |
-| personality | The pack's personality file: the whole of who the buddy is, its temperament included (characters/CHARACTER.md §7) | nature (the sweet-or-cheeky choice it replaced) |
-| talk | How much the buddy says, quiet, normal or chatty, picked in Settings (`Talk`, CONTEXT's Talk row): held in code, Quiet's `say` with no topic or swear, Chatty's with no "none", and each level's check-in pace (`Talk.pace`) | chattiness, verbosity |
-| hush | Talk's fourth level, silent for a while, set by what you say or the app's button, then back to the setting: the buddy says nothing, its faces going on (`Core.Hush`, the `hush` event, the `hushed` tag; CONTEXT's Talk row says it) | mute (that's the volume), quiet (that's another talk level) |
+**The agents**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| agent | Claude Code or Codex | | |
+| session | One conversation, with its thread's name and project | thread (for the conversation) | `session` |
+| turn | From your prompt to its finish: done, failed, stopped or answering | | `turn` |
+| call | One tool use | tool call, tool use | `call` |
+| check | A test or build run, which passes or fails | | |
+| helper | A subagent | subagent (in prose) | `subagent` |
+| to-do | An agent's plan, "3/7" | todo list | `todo` |
+| needs you | An agent waiting on your approval: a request | attn, alert | `attn` |
+| the line | Agents waiting for you, in order | | |
+| reading | What Boop takes from a text in its place: kind, tone, length, names said, a few words (`PromptReading`, `MessageReading`) | summary, label | `reading` |
+
+**You**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| touch | Anything you do to the board with a finger or a hand: a poke, a stroke, a ruffle, a nose boop, a tickle, a swipe, a shake, a pick-up, a put-down, a thump, peekaboo | tap, gesture (as two kinds) | `tap`, `gesture` |
+| poke | One tap on the face; a run is several in a row | tap | `tap` |
+| care | The touches and words that count as caring (strokes, kind words, talking, coming back) | | |
+| words | What you say to Boop on push-to-talk | talk (for the event), said | `talk` |
+| listening | Boop hearing you, while BOOT or the mic is held | push-to-talk (the state) | `listening` |
+| presence | You at the Mac, away, or back | | `presence_start`, `presence_end` |
+| button | BOOT: hands you the next agent in the line | press, hand-off | `press` |
+| dismiss | A finger held on the needs-you screen | | |
+| face down | Do not disturb: Moments are refused, Doing goes on | | `facedown` |
+
+**Doing**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| doing | What Boop is busy with: resting, working, asleep, listening, no app | base, look (for the state) | `base` |
+| look | Only the art that draws a Doing | | |
+| activity | How it's working: testing, delegating, terminal, searching, analysing, a tool, waiting, planning | act | `act` |
+| tier | How long it's been working or resting: tier 1 at 30 s to tier 5 at 10 min (`Occasions.tiers`) | stage (that's growth's) | `tier1`…`tier5` |
+| pastime | What Boop does to pass the time, by Doing and tier or wait (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
+| kit | Props shown while true: mugs, headphones, the zone, the plant | | |
+| dressing | Outfits and decorations from tags: a hat, shades, the sun, the air | outfit, layers, occasion (as a design) | |
+| pace | Working faster when busy or frantic | | `busy`, `frantic` |
+| the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
+| the strip | The counts along the bottom | | |
+| the drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to open on the Mac (`render::Drawer`) | roll call, list view | `list`, `drawer` |
+| the needs-you screen | Amber, naming who's waiting, until you answer or dismiss it | sign (that's a Moment's) | |
+
+**Mood**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| mood | One of the pack's 16 lasting moods (`CharacterPack.Mood.lasting`) | (a Moment's emotion) | `mood` |
+| resting mood | Calm, where moods settle | default mood | |
+| neighbours | The moods a mood can move to; a jump is a big move | moves (the graph's), ordinary and dramatic | |
+| fade | A mood settling after its minutes | | |
+| mood file | The steering for one mood (`steering/mood/`) | | |
+
+**Moment**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| moment | A beat on top of Doing: event, emotion, size, voice and sign; made by the board, the rules or Jev | reaction (for the beat), one-shot | `do` |
+| event | What happened: a finish, a check, you came back, your words, your prompt naming Boop, a touch, or Boop's own beat | | |
+| Boop's own beat | A Moment with no outside event: an idle check-in, a musing, an ask | | |
+| emotion | The expression for one Moment, any of the pack's 42 faces | face | `react.face`, a `do`'s `mood` |
+| size | How much the Moment matters: small, medium, big, huge | intensity, loops | `react.intensity`, `loops` |
+| finish | The animation a turn's end plays, scaled by the turn's length; the ticket and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
+| greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
+| reply | Boop's answer to your words, with its clip and sign (`ReactOutput.replies`) | answer (that's a topic), response | `reply` |
+| ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`; never needs an answer | quiz, prompt | `ask` |
+| musing | Boop's own beat with a sign and no question, a `[idle]` line of `signs.md` | thought, quip | |
+| the telling | The Moment at your first showing up after 5:00 that tells the dream | | |
+| variation | Which version of a design plays; the board picks | | `variant` |
+| the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4) | the turn | |
+
+**Voice, sign and narration**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear | say | `say` |
+| take | One recorded clip; a lead sound may come first | line | `take` |
+| the voice file | `voice/voice.bin`, on the board's card | voice pack | |
+| sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
+| bubble | The voice's words as text in the lane | | |
+| talk | How much Boop says: quiet, normal, chatty, or silent for a while (a hush) (`Talk`, `Core.Hush`) | chattiness, mute (that's the volume) | `talk`, `hush`, `hushed` |
+| narration | The Mac's plain words for why, never Jev's or Boop's voice (`Reason`) | explanation, caption | `reason` |
+
+**The mind**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| transcript | Every event, one file a day (`Transcript`) | the log | |
+| line | One event as a sentence Jev reads (MellowHarness's `Line`) | | |
+| message | One JSON line on the wire: `hello`, `state`, `do`, `ev` | line | |
+| the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD, CONTEXT, HISTORY, NOW | the state | |
+| CONTEXT | The prompt's section for how things stand: When, Talk, the buddy, you, the agents, the day so far (`ContextSection`) | NOW (that's the event), status | |
+| pass | One request to Jev | | |
+| wake, hold | Whether an event asks Jev at all | | |
+| check-in | Boop looking in by itself: working (during a turn), idle (while you're here), hourly | heartbeat | `check_in`, `working`, `idle` |
+| output | What Jev's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action | |
+| speeds | Reflex, reactive and deliberative | loops | |
+| personality | Who Boop is, temperament included (characters/CHARACTER.md §7) | nature | |
+| steering | The pack's text Jev reads | | |
+| buddy | One board running one pack, with its own name, Doing, Mood and agents (`Buddy`) | body, creature | |
+| step | One row of a demo script or an eval scenario | line | |
+
+**Memory and time**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| Boop's day | 5:00 to 5:00; it closes each night | | |
+| dream | Yesterday as tags and a sentence (`MemoryReader`, `Dream`, `dreams.md`) | diary, journal | |
+| written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
+| the night's write | Apple Intelligence editing the written memory (`MemoryEdits`) | | |
+| growth | XP and stages, Hatchling to Legend | | |
+| special day | A holiday, a milestone day, Boop's birthday, a stage reached | occasion (for a day) | |
+| tag | A fact true now, sent to the board | flag, label | `when` |
 
 ## Architecture rules
 

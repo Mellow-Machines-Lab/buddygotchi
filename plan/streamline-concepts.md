@@ -201,6 +201,39 @@ where the code may differ, phase 1 checks it and phase 5 fixes it.
     Moment, but it never carries an emotion or a voice, and it never
     keeps a real Moment waiting.
 
+## What phase 1 found (2026-11-01)
+
+Each rule above, checked against the code. The model as the code does
+it is in `documentation/architecture.html#model`. Where the code
+differs from a rule above, one of two calls was made: the rule is
+**amended** to what the code does, because the code's way is deliberate
+and nothing is wrong with it; or it's a **break**, fixed in phase 5.
+
+| Rule | Verdict | Call |
+| --- | --- | --- |
+| 1. Three authors | Holds, but onboarding's finale cheers in happy (`Runtime.onboard`), and the shrug with no Jev sends the mood it's in | Amended: onboarding is a script, and its finale's happy is part of it; the shrug's mood is the mood, so nothing differs |
+| 2. Boop's own beats | Holds: a musing once an hour, an ask once an hour and 3 a day (6 Chatty, none Quiet), check-ins by `Talk.pace`, only within 2 h of activity | — |
+| 3. A mood change is seen | Partly: no bridge while asleep, with no app or under needs you (the new mood's art is there after); under a Moment with its own emotion the bridge runs from that emotion when it ends; the CYD dissolves only when the design differs | Amended: "seen as soon as Boop shows its mood". Bridging a mood nobody can see would cost frames for nothing |
+| 4. Emotion within mood | Holds | — |
+| 5. One priority | Partly: listening (and its reply) outranks needs you, on the board and the Mac; a newer Moment replaces a resting one only when nothing waits; the rules' Moments are dropped while a busy one plays (`if_free`) | Amended: the order is listening, needs you, Moments, Doing. You talking to Boop is the one thing that should win over a request |
+| 6. Two sizes | Holds; a finish with no turn length is sized by its loops, a finish above small plays once, a sad finish is small | — |
+| 7. Several agents | Partly: needs you is a screen on top, not a Doing; "busiest" is the working session with the latest event; the activities include a tool and waiting | Amended to the code |
+| 8. Buddies | Partly: only the first buddy's prompt has MEMORY (`Runtime.brain`) | Amended: the written memory is the one onboarding set up for the first buddy, and its "You and Boop" is about that buddy. Sharing it is a design question for the owner, not a rename |
+| 9. Silence | Partly: Quiet also offers no asks and no sign for a calm prompt that doesn't name Boop; face down refuses Moments (they don't wait) | Amended: Quiet is fewer interruptions by design (`Talk`); a Moment held through face down would play stale when it's picked up |
+| 10. The work stream | Partly: a word waiting counts toward the queue's four, so in a busy queue it can push the oldest waiting Moment out (`kit.cpp`); a word arriving while a Moment rests ends that Moment for the Mac early | **Break 1**, fixed in phase 5. The early end is left: the Moment has played, its sign stays up, and the Mac only learns it ended |
+| You (the input table) | Put down, peekaboo, a swipe, dismiss and an ask's answer all wake Jev; the button is only a line (its poke fallback wakes); missing rows: swipe, ask answers, hush, going away, a tap on a ticket, the drawer | Amended: the table in architecture.html is the code's |
+| The lane | The bubble comes first, even over the needs-you name; the needs-you name and a finish's names are inside the strip; the ticket hangs over the face | Amended: the bubble only shows over needs you for a reply, which outranks it (rule 5) |
+
+**Phase 5, the breaks to build:**
+
+1. *A word from the work stream never pushes a Moment out of the
+   queue.* LinkKit's full queue makes room by dropping the `do` with the
+   least time left to live, the newcomer included, instead of the oldest.
+   With equal times to live (every Moment has 5 s) that is the oldest, as
+   before; a word (1.5 s) loses to any Moment with more time left than it
+   has. The app can't veto a `do` as it joins the queue (it's asked only
+   as one starts), so the rule belongs to the queue.
+
 ## The surfaces
 
 **1. Voice, sign, narration.** One owner each, as in the model. Every
