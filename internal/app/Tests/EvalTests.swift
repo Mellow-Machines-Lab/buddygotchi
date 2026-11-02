@@ -300,6 +300,10 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(refusal.contains("1 left"), refusal)
         try XCTAssertNil(try allowance().refusal(estimate: 1))
 
+        // A whole full run needs the override, even when it fits.
+        try XCTAssertNotNil(try allowance().refusal(estimate: 1, wholeFullRun: true))
+        try XCTAssertNil(try allowance(overridden: true).refusal(estimate: 1, wholeFullRun: true))
+
         // Reaching it partway stops the brain, which asks nothing more.
         let second = CountedBrain(echo, allowance: allowance())
         _ = try await second.answer(state: "", questions: [], deadline: .seconds(1))

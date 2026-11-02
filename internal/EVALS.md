@@ -182,9 +182,10 @@ used, left and the estimate. A run that reaches the limit partway stops,
 drops the run it was in, reports the scenarios that finished, and exits 1. A file
 that can't be read refuses too: with no count, no requests.
 
-A full run doesn't fit in a day's limit, on purpose. `BOOP_JEV_OVER_LIMIT=1`
-goes past it, for that command, and the run's output says so; its requests
-still count. `make eval` doesn't set it. An agent sets it only when the owner
+A whole full run is refused without `BOOP_JEV_OVER_LIMIT=1`, even when it
+would fit in what's left; `--level full --only TEXT` isn't, while it fits.
+The variable also goes past the limit, for that command, and the run's output
+says so; its requests still count. `make eval` doesn't set it. An agent sets it only when the owner
 says so in that request. The limit replaced the old budget per command.
 
 | Flag | Does |

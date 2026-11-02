@@ -51,8 +51,8 @@ demo:
 	esac
 
 # The harness eval scenarios (internal/EVALS.md) against Jev at the full level,
-# only when the owner asks or before a release. It's over the day's request limit
-# unless BOOP_JEV_OVER_LIMIT=1 is set, which this never sets (internal/EVALS.md §2).
+# only when the owner asks or before a release. It's refused unless
+# BOOP_JEV_OVER_LIMIT=1 is set, which this never sets (internal/EVALS.md §2).
 # While developing, run .build/debug/boopdev eval --only TEXT instead.
 # They need Jev's key in BOOP_JEV_KEY and fail without it
 # (internal/VERIFICATION.md L5). Builds boopdev alone, with the chosen

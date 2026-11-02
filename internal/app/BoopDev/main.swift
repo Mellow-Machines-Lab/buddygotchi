@@ -196,7 +196,7 @@ func eval(_ raw: [String]) async {
         plan = those.map { ($0.scenario, runsOf($0.scenario, level), Eval.scriptsSetup($0.scenario, level: level)) }
         estimate = total(level).requests
         do {
-            if let refusal = try allowance.refusal(estimate: estimate) { fail("boopdev eval: \(refusal)") }
+            if let refusal = try allowance.refusal(estimate: estimate, wholeFullRun: level == .full && !named) { fail("boopdev eval: \(refusal)") }
         } catch { fail("boopdev eval: can't read today's count: \(error)") }
     }
     let brain: any Brain

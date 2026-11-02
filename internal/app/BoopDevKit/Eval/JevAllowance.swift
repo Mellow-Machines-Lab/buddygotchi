@@ -43,10 +43,15 @@ public final class JevAllowance: @unchecked Sendable {
     /// Today's requests so far.
     public func used() throws -> Int { try locked { $0.used } }
 
-    /// Why a run of about `estimate` requests may not start, or nil when it may.
-    public func refusal(estimate: Int) throws -> String? {
+    /// Why a run of about `estimate` requests may not start, or nil when it
+    /// may. A whole full run always needs the override, even when it would fit.
+    public func refusal(estimate: Int, wholeFullRun: Bool = false) throws -> String? {
         let used = try used()
         let left = max(0, limit - used)
+        if wholeFullRun, !overridden {
+            return "a whole full run is only for when the owner asks: \(Self.overrideVariable)=1. "
+                + "About \(estimate) requests, with \(used) used and \(left) left today."
+        }
         guard estimate > left, !overridden else { return nil }
         return "today's limit of \(limit) Jev requests: \(used) used, \(left) left, and this run is about \(estimate). "
             + "Narrow it with --only or a lower --level. Only when the owner says so: \(Self.overrideVariable)=1"
