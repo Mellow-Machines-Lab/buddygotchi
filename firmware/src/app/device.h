@@ -329,7 +329,7 @@ class Device : public linkkit::App {
     uint32_t saidSeq = 0;
     LastInput last;
   };
-  ReactionIn parse(const linkkit::Do& c);
+  ReactionIn parse(const linkkit::Do& c, uint32_t t);
   void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
   void tapped(uint32_t t, bool injected, bool button);  // a tap, from BOOT or the panel

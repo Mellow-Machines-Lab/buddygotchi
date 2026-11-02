@@ -76,10 +76,16 @@ extension Core {
         guard wish?.kind == kind else { return [] }
         var fx: [CoreEffect] = []
         advance(to: now)
-        endWish(.met, now, &fx)
-        play(Moment(anim: Self.wishMet, sign: wishMetSigns[kind]), for: nil, now, &fx)
+        metWish(now, &fx)
         publish(now, &fx)
         return fx
+    }
+
+    /// The open wish met: its end and the board's fulfilment.
+    func metWish(_ now: Int64, _ fx: inout [CoreEffect]) {
+        guard let kind = wish?.kind else { return }
+        endWish(.met, now, &fx)
+        play(Moment(anim: Self.wishMet, sign: wishMetSigns[kind]), for: nil, now, &fx)
     }
 
     func endWish(_ how: WishEnd, _ now: Int64, _ fx: inout [CoreEffect]) {

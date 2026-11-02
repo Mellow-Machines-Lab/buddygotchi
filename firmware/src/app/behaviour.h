@@ -256,6 +256,8 @@ class Behaviour {
   // refused ("facedown") and the screen dims; needs you still shows.
   void setFaceDown(bool down, uint32_t t);
   bool faceDown() const { return faceDown_; }
+  // Whether a touch's own answer (`gesture`) plays at t.
+  bool gesturing(uint32_t t) const { return reactionOn(t) && reaction_.anim == render::SceneState::kGesture; }
   // No app, something needs you, or `listening` waits for the reply: a
   // tap or another animation doesn't take the face over, and a touch is a
   // tap, never a gesture.

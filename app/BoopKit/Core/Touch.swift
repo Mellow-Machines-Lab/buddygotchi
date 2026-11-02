@@ -28,6 +28,16 @@ public enum Touch: String, CaseIterable, Sendable {
         }
     }
 
+    /// A touch on the buddy itself, which meets a pet wish: anything you do
+    /// by hand to its face, the wrong-way stroke too. Not a shake, a pick-up
+    /// or turning it over, nor the drawer's swipe.
+    public var meetsPetWish: Bool {
+        switch self {
+        case .poke, .stroke, .ruffle, .nose, .tickle: true
+        case .swipe, .dizzy, .pickup, .putdown, .startle, .facedown, .peekaboo, .dismiss: false
+        }
+    }
+
     /// The brain's line for it, which the board already answered; a poke's
     /// is its own, by the run (`EventLine.poke`).
     public func line(name: String = CharacterPack.active.name) -> String? {

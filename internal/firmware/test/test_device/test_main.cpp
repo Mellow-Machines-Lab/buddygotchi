@@ -2335,6 +2335,29 @@ static std::string momentOf(Rig& r) {
   return d["moment"]["anim"].as<std::string>() + " " + std::to_string(d["moment"]["variant"].as<int>());
 }
 
+// A wish met plays notice's design, unless a touch's own answer plays: that
+// stays, the bigger one, under the heart. With nothing to show but the heart,
+// it's still not refused.
+static void test_a_stroke_keeps_its_answer_when_it_meets_a_wish() {
+  Rig r;
+  clockAt(r, 1000);
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"wish\":\"pet\"}");
+  doLine(r, 1, "wish_met", "next", "{\"sign\":\"<3\"}");
+  TEST_ASSERT_TRUE(has(momentOf(r), "notice"));
+
+  Rig s;
+  clockAt(s, 1000);
+  s.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"wish\":\"pet\"}");
+  s.usbLine("{\"t\":\"dbg.touch\",\"x\":60,\"y\":120,\"to_x\":180,\"to_y\":120,\"ms\":400}");
+  for (int i = 0; i < 8; ++i) s.usbLine("{\"t\":\"dbg.clock\",\"step\":60}");
+  TEST_ASSERT_TRUE(has(s.usb.text, "\"did\":\"stroke\""));
+  TEST_ASSERT_TRUE(has(momentOf(s), "gesture"));
+  s.usb.text.clear();
+  doLine(s, 1, "wish_met", "next", "{}");
+  TEST_ASSERT_FALSE(has(s.usb.text, "\"skipped\""));
+  TEST_ASSERT_TRUE(has(momentOf(s), "gesture"));
+}
+
 // A touch from (160, 60) straight down to (160, 200) over `ms`, on a frozen
 // clock from 1000 ms, a reading every `stepMs`, until `until`.
 static void strokeDown(Rig& r, uint32_t ms, uint32_t stepMs, uint32_t until) {
@@ -2804,6 +2827,7 @@ int main() {
   RUN_TEST(test_the_face_plays_its_designs_sounds);
   RUN_TEST(test_a_call_comes_forward_over_the_work);
   RUN_TEST(test_a_wish_left_plays_at_once);
+  RUN_TEST(test_a_stroke_keeps_its_answer_when_it_meets_a_wish);
   RUN_TEST(test_boot_only_shuts_the_open_drawer);
   RUN_TEST(test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px);
   RUN_TEST(test_a_pick_is_the_row_the_finger_went_down_on);

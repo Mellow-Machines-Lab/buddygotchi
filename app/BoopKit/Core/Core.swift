@@ -403,11 +403,11 @@ public final class Core {
     /// finish for `finish`'s thread, if the device said so. The device has
     /// already reacted.
     @discardableResult
-    public func poke(at now: Int64, seq: Int? = nil, finish: ThreadRef? = nil) -> [CoreEffect] {
+    public func poke(at now: Int64, seq: Int? = nil, finish: ThreadRef? = nil, touch: Bool = true) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
         startDayIfNew(now, &fx)
-        poked(now, seq: seq, finish: finish, &fx)
+        poked(now, seq: seq, finish: finish, touch: touch, &fx)
         publish(now, &fx)
         return fx
     }
@@ -886,7 +886,7 @@ public final class Core {
     /// the tap opens the thread the sign names on the Mac, recorded as the
     /// `open_thread` action. Nor on the brain's finish
     /// that names whose turn it was: the tap opens that thread.
-    func poked(_ now: Int64, seq: Int?, finish: ThreadRef?, _ fx: inout [CoreEffect]) {
+    func poked(_ now: Int64, seq: Int?, finish: ThreadRef?, touch: Bool, _ fx: inout [CoreEffect]) {
         guard !showsListening(at: now) else { return }
         func open(_ thread: ThreadRef, _ message: String) {
             fx.append(.record(Event.did(message, for: seq, action: Core.openThread, by: "rule",
@@ -897,6 +897,8 @@ public final class Core {
         if let waiting = groups(at: now).shown.first { return open(waiting.thread, Core.openedThread(by: name)) }
         if let finish { return open(finish, Core.openedFinished(by: name)) }
         fx.append(.record(Event.did(Core.wiggled(by: name), for: seq, action: Core.pokeAnswer, by: "rule", at: now)))
+        // A poke that's only a poke, by a finger on the face, is a touch: it meets a pet wish.
+        if touch, wish?.kind == .pet { metWish(now, &fx) }
     }
 
     /// Presses within this long of the last walk down the line: each opens

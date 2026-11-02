@@ -1,3 +1,4 @@
+import AgentHooks
 import Foundation
 import MellowHarness
 import XCTest
@@ -41,8 +42,6 @@ final class WishTests: XCTestCase {
     func testWhatMeetsEachKind() {
         var r = rig()
         r.core.makeWish(.pet, at: r.now)
-        r.poke()
-        XCTAssertNotNil(r.core.wish, "a poke isn't a pet")
         let met = r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
         XCTAssertEqual(wishEvents(met).last, "wish end met")
         XCTAssertTrue(moments(met).contains { $0.anim == Core.wishMet }, "the board's fulfilment")
@@ -56,6 +55,45 @@ final class WishTests: XCTestCase {
         r.core.makeWish(.work, at: r.now)
         r.send(.turnStart, prompt: "and the next thing")
         XCTAssertNil(r.core.wish, "a prompt you sent")
+    }
+
+    /// Which touches meet a pet wish: a stroke, a poke, a nose boop, a tickle
+    /// and the wrong-way stroke; not a shake, a pick-up or face down, nor
+    /// anything else that isn't a hand on its face.
+    func testWhichTouchesMeetAPetWish() {
+        XCTAssertEqual(Set(Touch.allCases.filter(\.meetsPetWish)), [.poke, .stroke, .ruffle, .nose, .tickle])
+        for touch in Touch.allCases where touch != .poke {
+            let r = rig()
+            r.core.makeWish(.pet, at: r.now)
+            let fx = r.note(Fx(r.pipeline.gesture(touch.rawValue, at: r.now)))
+            XCTAssertEqual(r.core.wish == nil, touch.meetsPetWish, touch.rawValue)
+            XCTAssertEqual(moments(fx).contains { $0.anim == Core.wishMet }, touch.meetsPetWish, touch.rawValue)
+        }
+        // Only a pet wish.
+        let chat = rig()
+        chat.core.makeWish(.chat, at: chat.now)
+        chat.note(Fx(chat.pipeline.gesture("stroke", at: chat.now)))
+        XCTAssertNotNil(chat.core.wish, "a stroke isn't a chat")
+    }
+
+    /// A poke on its face meets it, the heart popping; BOOT's poke isn't a
+    /// touch, and a poke that opens a thread is that and no more.
+    func testAPokeMeetsAPetWish() {
+        let r = rig()
+        r.core.makeWish(.pet, at: r.now)
+        let met = r.note(Fx(r.pipeline.poke(at: r.now)))
+        XCTAssertEqual(wishEvents(met).last, "wish end met")
+        XCTAssertTrue(moments(met).contains { $0.anim == Core.wishMet })
+
+        let button = CoreRig()
+        button.core.wish = Core.Wish(kind: .pet, since: button.now, countedTo: button.now)
+        button.note(Fx(button.pipeline.press(at: button.now)))
+        XCTAssertNotNil(button.core.wish, "BOOT with nobody in line")
+
+        let onFinish = rig()
+        onFinish.core.makeWish(.pet, at: onFinish.now)
+        onFinish.note(Fx(onFinish.pipeline.poke(at: onFinish.now, finish: ThreadRef(agent: "claude", session: "s"))))
+        XCTAssertNotNil(onFinish.core.wish, "it opened the thread")
     }
 
     /// Pins `Core.wishGivesUpMs`: three hours you could have answered, away

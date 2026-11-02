@@ -211,10 +211,10 @@ public final class Pipeline {
     /// thread means "take me there", not a poke: the core records
     /// `open_thread` for it, which holds it back.
     @discardableResult
-    public func poke(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
+    public func poke(at now: Int64, finish: ThreadRef? = nil, byButton: Bool = false, buddy: String? = nil) -> Step {
         input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", buddy: buddy))
-            run(core(buddy).poke(at: now, seq: e.seq, finish: finish), buddy: buddy)
+            run(core(buddy).poke(at: now, seq: e.seq, finish: finish, touch: !byButton), buddy: buddy)
         }
     }
 
@@ -224,7 +224,7 @@ public final class Pipeline {
     @discardableResult
     public func press(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
         let core = core(buddy)
-        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, buddy: buddy) }
+        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, byButton: true, buddy: buddy) }
         return input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
             run(core.press(at: now, seq: e.seq), buddy: buddy)
@@ -271,7 +271,7 @@ public final class Pipeline {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
             if kind == Core.dismissGesture, let request { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
-            if kind == "stroke" { run(core(buddy).meetWish(.pet, at: now), buddy: buddy) }
+            if Touch(rawValue: kind)?.meetsPetWish == true { run(core(buddy).meetWish(.pet, at: now), buddy: buddy) }
         }
     }
 

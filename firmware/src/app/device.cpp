@@ -242,7 +242,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
 // outcome or the start's context; else the device picks one of those,
 // never the one it showed last. A finish's `loops` and `turn` (the tier its
 // turn reached) may size it, the face's call; one they sized plays once.
-ReactionIn Device::parse(const Do& c) {
+ReactionIn Device::parse(const Do& c, uint32_t t) {
   ReactionIn mo;
   mo.key = c.key;
   mo.id = c.id > 0 ? uint32_t(c.id) : 0;
@@ -252,6 +252,10 @@ ReactionIn Device::parse(const Do& c) {
   }
   JsonObjectConst args = c.args;
   mo.anim = c.what < kDoCount ? kDoAnims[c.what] : render::SceneState::kNone;
+  // A touch's own answer stays when it meets a wish: the bigger one, the heart over it.
+  if (c.what == kWishMet && b_.gesturing(t)) mo.anim = render::SceneState::kNone;
+  // A touch's own answer stays when it meets a wish: the bigger one, the heart over it.
+  if (c.what == kWishMet && b_.gesturing(t)) mo.anim = render::SceneState::kNone;
   mo.expr = render::parseMood(args["mood"], mo.mood);  // unknown or missing: the state's mood
   mo.loops = heldTo(args["loops"], 1, Behaviour::kMaxLoops, 1);
   if (mo.anim != render::SceneState::kNone) {
@@ -303,8 +307,10 @@ const char* Device::refuse(const Do& c, uint32_t t) {
   if (c.what == kCall) return b_.callShows(t) ? nullptr : "hidden";
   // A wish left has no animation of the Mac's to play: only face down refuses it.
   if (c.what == kWishGone) return b_.faceDown() ? "facedown" : nullptr;
-  live_.parsed = parse(c);
+  live_.parsed = parse(c, t);
   const char* why = b_.admit(live_.parsed, t);
+  // A wish met pops its heart even with nothing else to show.
+  if (c.what == kWishMet && why && !std::strcmp(why, "nothing")) why = nullptr;
   if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
   drain();                  // a listening reaction the reply ended, or the ask's
   if (why) live_.parsed = ReactionIn{};
@@ -345,7 +351,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     return;
   }
   if (c.what == kWishMet) b_.wishPopped(true, t);
-  const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);
+  const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c, t);
   live_.parsed = ReactionIn{};
   uint32_t seq = b_.reactionSeq();
   // A `say`'s sound goes with its bubble: now, or at its animation's voice
