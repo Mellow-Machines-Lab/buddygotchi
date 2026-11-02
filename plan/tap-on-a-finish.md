@@ -1,8 +1,8 @@
 # A tap anywhere on a finish opens its thread
 
-Updated 2026-11-01. Asked for by the owner on 2026-11-01: while a finish
-names whose turn it was, tapping anywhere should open that thread, not
-only the sign.
+Updated 2026-11-02. Built, the owner's board check still to do. Asked for
+by the owner on 2026-11-01: while a finish names whose turn it was, tapping
+anywhere should open that thread, not only the sign.
 
 ## What the code does
 
@@ -27,8 +27,9 @@ While `finishShown`:
 
 A test pins it: during a finish, a brief swipe and a brief tickle open
 the thread, a slow stroke doesn't, and away from a finish all stay
-gestures. Add the classifier's name to the `device: tap` log line, so a
-real miss can be read from `boop.log`.
+gestures. The `tap`'s `data.was` carries the classifier's name when it
+called the touch something else, and the `device: tap` log line prints it,
+so a real miss can be read from `boop.log`.
 
 Look for the owner's board check: tap the face, the rim and the strip
 during a finish; each opens the thread.

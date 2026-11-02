@@ -56,7 +56,8 @@ extension Runtime {
         case "tap":
             let finish = BoopDevice.finish(tapped: ev), button = BoopDevice.button(tapped: ev)
             if rig === rigs[0] { onBoardTap?(button) }
-            options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
+            options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? "")
+                + (BoopDevice.was(tapped: ev).map { " was \($0)" } ?? ""))
             remember(on: rig)
             let opens = finish.flatMap { rig.reactions.opens(finish: $0) }
             // Onboarding hears every tap and BOOT press, which it was, and

@@ -59,6 +59,10 @@ public enum BoopDevice {
     /// Whether a `tap` was BOOT (`src` `button`), not the screen.
     public static func button(tapped ev: DeviceEvent) -> Bool { ev.data["src"]?.string == "button" }
 
+    /// What the touch's path would have made it, had it not landed where
+    /// any touch is a tap: for the log, to read a real miss by.
+    public static func was(tapped ev: DeviceEvent) -> String? { ev.data["was"]?.string }
+
     public static func finish(tapped ev: DeviceEvent) -> Int? {
         guard let on = ev.data["on"]?.int, (1...Wire.maxId).contains(on) else { return nil }
         return on

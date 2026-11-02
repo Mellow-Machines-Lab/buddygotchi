@@ -419,14 +419,15 @@ bool Device::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
 // A tap goes to the Mac as what the device did about it: the poke, or the
 // press dip while the face is held or a finish names whose turn it was,
 // with that finish's id, the thread the Mac opens.
-void Device::tapped(uint32_t t, bool injected, bool button) {
+void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
   uint32_t finish = b_.finishShown(t);
   const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
   input("tap", t);
   // Where it came from (`src`), and the finish it landed on, if any.
-  char on[24] = "", data[48];
+  char on[24] = "", classed[32] = "", data[80];
   if (finish) std::snprintf(on, sizeof(on), ",\"on\":%lu", (unsigned long)finish);
-  std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s}", button ? "button" : "screen", on);
+  if (was) std::snprintf(classed, sizeof(classed), ",\"was\":\"%s\"", was);
+  std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s%s}", button ? "button" : "screen", on, classed);
   kit().emit("tap", did, data, injected);
   drain();  // the poke cuts an animation
 }
@@ -600,9 +601,10 @@ void Device::readInputs(uint32_t t) {
       // counts the kTouchReleaseMs the device waits to be sure. Its path
       // may make it a gesture: a stroke, a ruffle, a swipe, a tickle, a
       // boop on the nose; then the board reacts as one, but not while the
-      // face is held, where a touch is a tap. A boop on the nose while the
-      // brain's finish names whose turn it was is a tap on it too: the
-      // nose is the face's middle, where you tap to open that thread.
+      // face is held, where a touch is a tap. While a finish names whose
+      // turn it was, any brief touch and any boop on the nose is a tap on
+      // it, opening that thread: a quick tap is rarely a perfect one. A
+      // longer stroke stays a stroke, so petting opens nothing.
       // A touch that began on the needs-you screen was for it: it gives no tap
       // once its hold dismissed it, or once the screen has gone (its request
       // answered or dismissed on the Mac).
@@ -629,7 +631,9 @@ void Device::readInputs(uint32_t t) {
           live_.drawerTouchedAt = t;  // a drag across it: it lets go, picking nothing
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
-        const bool noseOnFinish = kind == TouchGesture::kGesture && g == render::Gesture::kNose && b_.finishShown(t);
+        const bool nose = kind == TouchGesture::kGesture && g == render::Gesture::kNose;
+        const bool tapOnFinish =
+            kind != TouchGesture::kTap && b_.finishShown(t) && (nose || live_.lastTouch.ms < kBriefOnFinishMs);
         // While an ask is up, a tap in the lane is only its answer: the
         // left half picks `a`, the right `b`.
         const bool onAnswer = kind == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
@@ -637,8 +641,8 @@ void Device::readInputs(uint32_t t) {
           input("tap", t);
           b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
           drain();
-        } else if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
-          tapped(t, live_.touchInjected, false);
+        } else if (kind == TouchGesture::kTap || b_.held(t) || tapOnFinish)
+          tapped(t, live_.touchInjected, false, kind == TouchGesture::kTap ? nullptr : live_.lastTouchWas);
         else
           gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
       }

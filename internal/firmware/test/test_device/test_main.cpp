@@ -46,9 +46,10 @@ struct FakeHal : app::Hal {
   int effectStops = 0;
   void effect(const voice::Effect& e) override { effects.push_back(e); }
   void stopEffects() override { ++effectStops; }
-  bool touching = false;  // the panel, at the middle of the face
+  bool touching = false;  // the panel, at the middle of the face, or where a test puts it
+  int touchX = 160, touchY = 100;
   bool touch(int& x, int& y) override {
-    if (touching) x = 160, y = 100;
+    if (touching) x = touchX, y = touchY;
     return touching;
   }
   bool lifted = false;  // the panel says the finger lifted, once
@@ -502,7 +503,7 @@ static void test_the_nose_on_a_named_finish_is_a_tap() {
             "\"who\":{\"agent\":\"claude\",\"thread\":\"fix-nav\"}}}");
   r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":134}");
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
-  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"screen\",\"on\":42}}\n"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"screen\",\"on\":42,\"was\":\"nose\"}}\n"));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ended\""));  // not cut
   // With no finish, the nose is a boop.
@@ -513,6 +514,74 @@ static void test_the_nose_on_a_named_finish_is_a_tap() {
   r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"kind\":\"gesture\",\"did\":\"nose\""));
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+}
+
+// plan/tap-on-a-finish.md: while a finish shows, a touch under 400 ms opens
+// its thread, whatever the classifier calls it; a slow stroke stays a stroke;
+// away from a finish every one stays a gesture.
+static void test_a_brief_touch_on_a_finish_is_a_tap() {
+  TEST_ASSERT_EQUAL_UINT32(400, app::Device::kBriefOnFinishMs);
+  const char* finish = "{\"t\":\"do\",\"id\":42,\"name\":\"reply_ready\",\"play\":\"now\",\"args\":{"
+                       "\"who\":{\"agent\":\"claude\",\"thread\":\"fix-nav\"}}}";
+  const auto tapWas = [](const char* was) {
+    return std::string("{\"t\":\"ev\",\"kind\":\"tap\",\"did\":\"dip\",\"data\":{\"src\":\"screen\",\"on\":42,\"was\":\"") + was +
+           "\"}}\n";
+  };
+  // A touch from (160, 60) down to (160, 200) over `ms`.
+  const auto stroke = [](Rig& r, const char* first, uint32_t ms, uint32_t stepMs, uint32_t until) {
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+    if (first) r.usbLine(first);
+    char line[96];
+    std::snprintf(line, sizeof(line), "{\"t\":\"dbg.touch\",\"x\":160,\"y\":60,\"to_x\":160,\"to_y\":200,\"ms\":%u}",
+                  unsigned(ms));
+    r.usbLine(line);
+    for (uint32_t t = 1000 + stepMs; t <= until; t += stepMs) {
+      std::snprintf(line, sizeof(line), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(t));
+      r.usbLine(line);
+    }
+  };
+  // A finger wiggling in one spot for 200 ms, on the panel.
+  const auto tickle = [](Rig& r, const char* first) {
+    r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+    r.usbLine("{\"t\":\"dbg.clock\",\"run\":true}");
+    if (first) r.usbLine(first);
+    r.hal.touchY = 60;
+    for (uint32_t ms = 100; ms < 400; ms += 5) {
+      r.hal.real = ms;
+      r.hal.touching = ms < 300;
+      r.hal.touchX = 150 + ((ms - 100) / 20 % 2) * 30;
+      r.kit.tick();
+    }
+  };
+  {  // A quick swipe.
+    Rig r;
+    stroke(r, finish, 160, 40, 1400);
+    TEST_ASSERT_TRUE(has(r.usb.text, tapWas("swipe").c_str()));
+    TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+    TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"ended\""));  // the finish plays on
+  }
+  {  // A brief tickle.
+    Rig r;
+    tickle(r, finish);
+    TEST_ASSERT_TRUE(has(r.usb.text, tapWas("tickle").c_str()));
+    TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"gesture\""));
+  }
+  {  // A slow stroke stays a stroke, and opens nothing.
+    Rig r;
+    stroke(r, finish, 900, 100, 2000);
+    TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"stroke\"}\n"));
+    TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
+  }
+  {  // Away from a finish, they're gestures.
+    Rig swipe, wiggle;
+    stroke(swipe, nullptr, 160, 40, 1400);
+    TEST_ASSERT_TRUE(has(swipe.usb.text, "\"kind\":\"gesture\",\"did\":\"swipe\""));
+    TEST_ASSERT_FALSE(has(swipe.usb.text, "\"kind\":\"tap\""));
+    tickle(wiggle, nullptr);
+    TEST_ASSERT_TRUE(has(wiggle.usb.text, "\"kind\":\"gesture\",\"did\":\"tickle\""));
+    TEST_ASSERT_FALSE(has(wiggle.usb.text, "\"kind\":\"tap\""));
+  }
 }
 
 // The resistive panel misses readings under a light press, so a
@@ -2884,6 +2953,7 @@ int main() {
   RUN_TEST(test_a_lift_the_panel_reports_taps_at_once);
   RUN_TEST(test_a_tap_on_a_named_finish_carries_its_id);
   RUN_TEST(test_the_nose_on_a_named_finish_is_a_tap);
+  RUN_TEST(test_a_brief_touch_on_a_finish_is_a_tap);
   RUN_TEST(test_a_reaction_carries_its_expression);
   RUN_TEST(test_a_touch_ends_while_the_clock_is_frozen);
   RUN_TEST(test_a_frozen_clock_runs_again_after_60s_without_debug);
