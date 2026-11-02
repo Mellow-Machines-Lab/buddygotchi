@@ -196,7 +196,12 @@ void stripWhole(Canvas& c, const Strip& s) {
   }
   // Then how many work, the helpers at work, and the agents idle, waiting
   // for you.
-  drawCounts(&c, s, x);
+  x = drawCounts(&c, s, x);
+  if (s.wish && !s.agent && !s.doneAgent) {
+    char wants[16];
+    std::snprintf(wants, sizeof(wants), "wants: %s", s.wish);
+    drawString(c, kSmall, x + 8, ty, wants, kInkGrey);
+  }
   if (s.noApp) iconNoApp(c, kWidth - kMargin - 16, cy - 8);
 }
 }  // namespace

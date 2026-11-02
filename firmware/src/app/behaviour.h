@@ -47,6 +47,8 @@ struct Model {
   // The to-do list of the longest turn working that has one (`todo`),
   // done of total; 0 of 0 for none.
   int todoDone = 0, todoTotal = 0;
+  // The wish waiting (`wish`), while its wait counts.
+  render::WishShow::Kind wish = render::WishShow::kNone;
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;
@@ -295,6 +297,10 @@ class Behaviour {
   // showing what it last showed, so how often frames are drawn doesn't
   // change one. While it shows, what it shows changes at once.
   render::Strip strip(uint32_t t) const;
+  // The wish to show at t: the one waiting, or for WishShow::kPopMs after
+  // wish_met or wish_gone, how the last one went.
+  render::WishShow wishShow(uint32_t t) const;
+  void wishPopped(bool met, uint32_t t);
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
@@ -518,6 +524,10 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
+  // The last wish shown, and when one last popped and how.
+  render::WishShow::Kind lastWish_ = render::WishShow::kNone;
+  uint32_t wishPopAt_ = 0;
+  render::WishShow::Pop wishPop_ = render::WishShow::kWaiting;
   // The reaction's reason (caption()), timed as its sign would be.
   Sign reason_;
   // The ask up, from `at` for kAskMs, its reaction's key; `lane` is its

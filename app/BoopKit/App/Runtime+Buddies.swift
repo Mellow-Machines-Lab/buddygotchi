@@ -127,6 +127,7 @@ extension Runtime {
         }
         let moods = minds.map { m -> Choice in
             let voice = pipeline.tag(m.buddy.id), pack = m.buddy.pack, core = pipeline.core(m.buddy.id)
+            for kind in Core.WishKind.allCases { core.wishMetSigns[kind] = Asks.wishMetSign(m.steering.asks, kind) }
             let mood = MoodOutput.choice(voice: voice, pack: pack)
             // A reaction your tap cut short is in progress while the pokes
             // go on, and done once anything else happens. A reaction's end,
@@ -163,6 +164,11 @@ extension Runtime {
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
                 guard let h, let about else { return nil }
+                // A check-in over a wish left an hour or more: that's why.
+                if about.type == .checkIn, let w = core.wish, w.waitedMs >= 60 * 60_000 {
+                    let span = ContextSection.span(w.waitedMs)
+                    return Narration(cause: "\(pack.name) wished for \(w.kind.words) \(span) ago.", fact: "wish: \(span)")
+                }
                 return Narration.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()),
                                     name: pack.name)
             }, dreams: m.steering.dreams, told: { [weak h] about in
@@ -170,6 +176,14 @@ extension Runtime {
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
                 return tags.compactMap(\.string)
             }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
+            wishable: { [mood] about, log in
+                // At an ask's moment, within the core's caps.
+                Asks.moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(m.company(), at: about.at)).isEmpty
+                    ? [] : core.wishable(at: about.at)
+            }, makeWish: { [weak pipeline] kind, at in
+                let fx = core.makeWish(kind, at: at)
+                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+            },
             today: m.company)
             h.output(mood)
             h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
@@ -199,7 +213,8 @@ extension Runtime {
                                                time: time)
                 return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),
-                                              agents: core.status(at: now, results: [:]), at: now, name: pack.name)
+                                              agents: core.status(at: now, results: [:]), wish: core.wishRow(at: now, name: pack.name),
+                                              wishToday: core.wishToday(at: now, name: pack.name), at: now, name: pack.name)
             }
             return mood
         }

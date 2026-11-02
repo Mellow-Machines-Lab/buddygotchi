@@ -165,6 +165,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The to-do list of the longest turn working that has one, while
     /// nothing needs you; nil sends none.
     public var todo: Todo?
+    /// The wish waiting, by its kind, while its wait counts: the board
+    /// shows its icon then, and times nothing.
+    public var wish: String?
 
     /// A working session's lane in the work stream (`WorkStream`): its
     /// slot, which picks its column and colour on the board, how many
@@ -274,6 +277,7 @@ public struct StateSnapshot: Equatable, Sendable {
         let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
+        if let wish { fields["wish"] = .string(wish) }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }

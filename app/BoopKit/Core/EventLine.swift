@@ -202,6 +202,18 @@ public enum EventLine {
         count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
     }
 
+    /// Boop's wish: made, and how it ended.
+    public static func wished(_ kind: Core.WishKind, name: String = CharacterPack.active.name) -> String {
+        "\(name) wished for \(kind.words)."
+    }
+    public static func wishEnded(_ how: Core.WishEnd, _ kind: Core.WishKind, waitedMs: Int64, name: String = CharacterPack.active.name) -> String {
+        switch how {
+        case .met: "You gave \(name) its wish: \(kind.words)."
+        case .gaveup: "\(name) gave up on its wish for \(kind.words), after \(ContextSection.span(waitedMs)) with you here."
+        case .closed: "\(name)'s wish for \(kind.words) ended with the day."
+        }
+    }
+
     /// A BOOT press that handed you an agent; what it opened is the core's
     /// record under it.
     public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }

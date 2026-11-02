@@ -109,6 +109,10 @@ struct OverviewPane: View {
                         if let mood = model.status?.snapshot.mood { moodLabel(mood) }
                         // Why it feels so, in plain words, so a face never
                         // needs decoding.
+                        if let wish = model.status?.wishing {
+                            Text(wish).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         if let why = model.status?.moodReason?.cause {
                             Text(why).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)

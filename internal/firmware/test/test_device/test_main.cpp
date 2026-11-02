@@ -262,7 +262,7 @@ static void test_hello_on_the_first_message_and_every_minute() {
   std::string hello = std::string(
                           "{\"t\":\"hello\",\"kit\":1,\"app\":\"boop\",\"id\":\"b00p-0000\",\"fw\":\"t\",\"does\":["
                           "\"react\",\"task_complete\",\"reply_ready\",\"starting\","
-                          "\"wake_up\",\"listening\",\"stop_listening\",\"notice\",\"call\"],\"voice\":\"") +
+                          "\"wake_up\",\"listening\",\"stop_listening\",\"notice\",\"call\",\"wish_met\",\"wish_gone\"],\"voice\":\"") +
                       voice::assetsVersion() + "\",\"face\":\"pixel\",\"pack\":\"" + render::kPackId +
                       " " + render::kPackVersion + "\",\"reset\":\"power\"}\n";
   TEST_ASSERT_EQUAL(12, int(std::strlen(voice::assetsVersion())));

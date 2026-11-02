@@ -67,7 +67,7 @@ public enum ContextSection {
 
     /// The You row: "You: at the Mac for 3 h; you haven't touched or talked
     /// to Boop in 2 h; Boop was last lonely 40 min ago."
-    static func you(_ c: MemoryReader.Tallies?, at now: Int64, name: String) -> String? {
+    static func you(_ c: MemoryReader.Tallies?, wish: String? = nil, at now: Int64, name: String) -> String? {
         guard let c, c.awaySince == nil else { return nil }
         var parts: [String] = []
         if let here = c.hereSince, now - here >= hereShownMs { parts.append("at the Mac for \(span(now - here))") }
@@ -75,6 +75,7 @@ public enum ContextSection {
             parts.append("you haven't touched or talked to \(name) in \(span(ms))")
         }
         if let ended = c.lonelyEndedAt, now - ended < lastLonelyShownMs { parts.append("\(name) was last lonely \(span(now - ended)) ago") }
+        if let wish { parts.append(wish) }
         return parts.isEmpty ? nil : "You: " + parts.joined(separator: "; ") + "."
     }
 
@@ -109,10 +110,10 @@ public enum ContextSection {
 
     /// The section, or nil when no row has anything to say.
     public static func section(when: String? = nil, talk t: Talk = .normal, silentMs: Int64? = nil, buddy b: Buddy? = nil,
-                               company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], at now: Int64,
-                               name: String) -> String? {
-        let rows = [when, talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, at: now, name: name), agents(list, at: now),
-                    today(company, name: name)].compactMap { $0 }
+                               company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], wish: String? = nil,
+                               wishToday: String? = nil, at now: Int64, name: String) -> String? {
+        let rows = [when, talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, wish: wish, at: now, name: name),
+                    agents(list, at: now), today(company, name: name), wishToday].compactMap { $0 }
         return rows.isEmpty ? nil : ([heading] + rows).joined(separator: "\n")
     }
 

@@ -199,6 +199,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
 | reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
 | ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`; never needs an answer | quiz, prompt | `ask` |
+| wish | Boop's one want a day, kind pet, chat or work, its sign picked by Jev like an ask's; a rule meets it at once by a stroke, push-to-talk or working with an agent (`Core.Wish`, `[wish …]` in `asks.md`, `state.wish`, `wish_met`, `wish_gone`) | need, request | `wish` |
 | musing | Boop's own beat with a sign and no question, a `[idle]` line of `signs.md` | thought, quip | |
 | the telling | The Moment at your first showing up after 5:00 that tells the dream | | |
 | variation | Which version of a design plays; the board picks | | `variant` |

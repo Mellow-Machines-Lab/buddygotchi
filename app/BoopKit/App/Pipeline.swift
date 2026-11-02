@@ -170,7 +170,12 @@ public final class Pipeline {
             if let id { event.data["voice"] = .string(id) }
             let core = core(id)
             let e = harness.emit(core.unrepeated(event))
-            run(core.handle(e), buddy: id)
+            let fx = core.handle(e)
+            run(fx, buddy: id)
+            // A prompt you sent, or a request you answered, is working with
+            // the agents: it meets every buddy's `work` wish.
+            let answered = fx.contains { if case .record(let r) = $0 { r.type == .needsYou && r.phase == .end && r["outcome"]?.string == "done" } else { false } }
+            if (e.type == .turn && e.phase == .start) || answered { meetWishes(.work, at: event.at) }
             if let text { emit(PromptIntake.heard(text, names: buddies.map(\.name), labels: labels), about: event, at: event.at) }
         }
     }
@@ -266,6 +271,7 @@ public final class Pipeline {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
             if kind == Core.dismissGesture, let request { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
+            if kind == "stroke" { run(core(buddy).meetWish(.pet, at: now), buddy: buddy) }
         }
     }
 
@@ -307,15 +313,24 @@ public final class Pipeline {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
             harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
+            if let buddy { run(core(buddy).meetWish(.chat, at: now), buddy: buddy) } else { meetWishes(.chat, at: now) }
         }
     }
 
+    /// Meets every buddy's open wish of `kind`.
+    func meetWishes(_ kind: Core.WishKind, at now: Int64) {
+        for b in buddies { run(cores[b.id]!.meetWish(kind, at: now), buddy: tag(b.id)) }
+    }
+
     /// You stepping away from the Mac or coming back, as the presence
-    /// detector decided: logged, but never the
-    /// core's. Only a back wakes the brain.
+    /// detector decided: logged, and the core hears it for the wish's wait.
+    /// Only a back wakes the brain.
     @discardableResult
     public func presence(_ event: Event) -> Step {
-        input(at: event.at) { harness.emit(event) }
+        input(at: event.at) {
+            harness.emit(event)
+            for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, at: event.at), buddy: tag(b.id)) }
+        }
     }
 
     /// Whether Boop is asleep and no agent works: you're away, or every

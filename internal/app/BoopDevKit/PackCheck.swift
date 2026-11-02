@@ -80,6 +80,15 @@ public struct PackCheck {
     /// board, or a follow-up to a question or answer the file hasn't.
     static func asks(_ lines: [TaggedLine]) -> [String] {
         var found: [String] = []
+        // A wish's lines: its sign and what it holds up as it's met.
+        let wishes = lines.filter { $0.tags.first == "wish" }
+        for line in wishes {
+            let form = line.parts.count == 1 && Core.WishKind(rawValue: line.tags.dropFirst().first ?? "") != nil
+                && (line.tags.count == 2 || (line.tags.count == 3 && line.tags[2] == "met"))
+            if !form { found.append("steering/asks.md: \"\(line.text)\" is no wish: tag it [wish pet|chat|work] or [wish pet|chat|work met]") }
+            if line.text.count > Signs.maxLength { found.append("steering/asks.md: \"\(line.text)\" is over \(Signs.maxLength) characters") }
+        }
+        let lines = lines.filter { $0.tags.first != "wish" }
         let questions = Asks.questions(lines)
         for line in lines where line.parts.count != 1 && line.parts.count != 3 {
             found.append("steering/asks.md: \"\(line.text)\" isn't a question with two answers, nor a follow-up")

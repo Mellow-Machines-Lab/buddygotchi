@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice file.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","wake_up","listening","stop_listening","notice","call"],"voice":"\#(Take.voiceVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","wake_up","listening","stop_listening","notice","call","wish_met","wish_gone"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []

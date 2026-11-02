@@ -69,6 +69,11 @@ extension Event {
         /// it kept, changed, added, dropped and aged, and what it refused,
         /// never their text. Boop's own; it wakes no pass.
         case memory
+        /// Boop's wish: made (`start`, the kind as its `specific_type`) and
+        /// ended (`end`: `met`, `gaveup` or `closed`, with its `kind` and
+        /// how long it waited, `waited_ms`). The core's: it reads them back
+        /// on launch.
+        case wish
         /// An ask's end, which the board decides: you picked an answer
         /// (`specific_type` `a` or `b`), a touch answered it (`touch`), or
         /// nobody did (`ignored`), with the question's `q`, its words

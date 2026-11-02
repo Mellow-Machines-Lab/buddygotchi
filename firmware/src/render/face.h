@@ -16,6 +16,19 @@
 #include "voice/effects.h"
 
 namespace render {
+
+// Boop's wish, as the board shows it: its kind while it waits (the Mac's
+// `state.wish`), and for kPopMs after a wish_met or wish_gone Moment, how it
+// went: the icon pops into a heart, or fades.
+struct WishShow {
+  enum Kind : uint8_t { kNone, kPet, kChat, kWork };
+  enum Pop : uint8_t { kWaiting, kMet, kGone };
+  static constexpr uint32_t kPopMs = 900;
+  Kind kind = kNone;
+  Pop pop = kWaiting;
+  uint32_t popAge = 0;
+};
+
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,
 // else the look, with the host facts a variation is chosen for.
 struct FaceSource {
@@ -152,6 +165,9 @@ class Face {
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }
+  // The wish to show (WishShow), set before each frame: a face that draws
+  // no thought bubble ignores it.
+  virtual void wish(const WishShow& show) { (void)show; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }

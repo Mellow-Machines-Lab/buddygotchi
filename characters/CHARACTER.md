@@ -329,6 +329,12 @@ prompt or your words, which have signs of their own.
   each at most 18 characters.
 - A pack without the file tells its dreams with no sign.
 
+A line tagged `wish` in `asks.md` is its one want a day, not a question:
+`[wish pet] pet me?` is the sign that makes it, `[wish pet met] <3` what it
+holds up as it's met, for the kinds `pet`, `chat` and `work`; code says what
+meets each. A pack with no such line makes no wish. The gel draws the
+thought bubble (`state.wish`), and a lane with none says `wants: pet`.
+
 **`asks.md`** (optional): what it may ask you, with two answers you tap
 (`Asks`). Ask only what does something with the answer: it becomes part of
 the buddy (`keeps`), it gets a touch (`touch`), or it goes into memory; idle
@@ -487,6 +493,7 @@ then go.
 | `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 5 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
+| `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart; a wish left, which only fades the bubble | the Mac's rules |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name | the Mac (the brain) |
 | `gesture` | The board's own Moment for a touch, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose` (a tap on the face's middle; on the brain's finish that names whose turn it was, a tap on that opens the thread), `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
 | `poked` | A poke | the board |

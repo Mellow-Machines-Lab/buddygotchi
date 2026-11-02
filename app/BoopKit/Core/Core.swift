@@ -179,6 +179,15 @@ public final class Core {
 
     /// While Boop is hushed: who hushed it and until when (`Hush`).
     public internal(set) var hush: Hush?
+    /// The wish open (`Wish`), the Boop day the last was made, and how
+    /// today's ended.
+    public internal(set) var wish: Wish?
+    var wishDay: String?
+    var wishEnded: (day: String, how: WishEnd)?
+    /// What the board holds up as each wish is met: the pack's words.
+    public var wishMetSigns: [WishKind: String] = [:]
+    /// Whether you're away from the Mac, for the wish's wait.
+    var awayFromMac = false
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -311,6 +320,8 @@ public final class Core {
         }
         advance(to: event.at)
         if event.type == .hush { replayHush(event) }
+        if event.type == .wish { replayWish(event) }
+        if event.type == .presence { awayFromMac = event.phase == .start }
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
@@ -506,6 +517,7 @@ public final class Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         expireHush(now, &fx)
+        tickWish(now, &fx)
         if let mic = pushToTalk.mic, now - mic.since >= Self.listenLimitMs {
             // The device's own button hits the same limit.
             stopListening(ListenWhy.limit, now, &fx)
@@ -553,6 +565,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         if drawer { list(into: &snapshot, at: now) }
+        if wishCounts(doing: base, attn: attn) { snapshot.wish = wish?.kind.rawValue }
         return snapshot
     }
 

@@ -120,6 +120,7 @@ td.where{font-size:13px;white-space:nowrap}
   <a href="#works">How Boop works</a>
   <a href="#prompt">What Jev reads</a>
   <a href="#memory">Memory</a>
+  <a href="#wish">The wish</a>
   <a href="#narration">Narration and asks</a>
   <a href="#rules">The rules</a>
   <a href="#shape">The shape</a>
@@ -251,6 +252,11 @@ Boop did nothing on its own.</pre>
     <li><b>A dream</b> updates the memory from everything since its checkpoint (<code>Memory.dream</code>): it makes the dream, the span in tags and a sentence, which Boop tells the next time you show up ("Boop dreamed about Thursday to Saturday: …"); it runs the dream's write; and it moves the checkpoint. Hooks reach only a running app, so a Mac closed for days dreams once of what was recorded. It dreams when you press <code>d</code> on the dashboard; by itself once a sleep, after Boop has been asleep with no agent working for 20 minutes (you away, or dozed off); and at once when it hasn't in two days. Each only with something new, one at a time. <code>D</code> on the dashboard previews it, the dream and the write's edits, and keeps nothing.</li>
     <li><b>The written memory</b>, <code>memory.md</code>, is short notes in three sections and a line for each dream's day. Apple Intelligence edits it at each dream from the journal (<code>MemoryEdits</code>). You can read and edit it. Jev reads it as MEMORY. Only <code>MemoryStore</code> reads and writes the files.</li>
   </ul>
+</section>
+
+<section id="wish">
+  <h2>The wish</h2>
+  <p>Boop's one want a day: pet, chat or work, each met by what you do anyway. Jev picks when, as one more option in the sign question at an ask's moments; code holds the rest (<code>Core+Wish.swift</code>): one a day, one open, <code>work</code> only while no agent works, offered on Quiet too with no sound. It's kept like the hush, as <code>wish_start</code> and <code>wish_end</code> (<code>met</code>, <code>gaveup</code>, <code>closed</code>), read back on launch. A stroke, push-to-talk, or a prompt you send or a request you answer meets it at once, by a rule, with the board's <code>wish_met</code>; Jev then hears it. While it waits the board shows a thought bubble (<code>state.wish</code>) and the wait counts only while you're here, it's awake and nothing needs you. CONTEXT's You row says how long, and turning sad or lonely at about an hour is Jev's, by steering. Code takes it down at three hours (<code>wish_gone</code>, which wakes Jev) and closes it quietly at 5:00. Wish lines are notable in the journal, so the written memory carries the pattern.</p>
 </section>
 
 <section id="narration">

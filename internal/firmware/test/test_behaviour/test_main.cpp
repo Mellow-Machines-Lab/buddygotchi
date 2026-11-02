@@ -1675,6 +1675,30 @@ static void test_a_spoken_reaction_shows_its_words_and_its_caption() {
   TEST_ASSERT_EQUAL_STRING("you picked Boop up", r.b.caption(r.t));
 }
 
+// The wish on the board: the kind while the Mac says it waits; met or left,
+// how it went for WishShow::kPopMs, whatever state comes under it; no pop
+// with no wish shown before.
+static void test_the_wish_shows_and_pops() {
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+  r.b.wishPopped(true, r.t);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kWaiting), int(r.b.wishShow(r.t).pop));
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  m.wish = render::WishShow::kNone;
+  r.state(m);
+  r.b.wishPopped(true, r.t);
+  r.at(r.t + render::WishShow::kPopMs - 1);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  TEST_ASSERT_EQUAL(int(render::WishShow::kMet), int(r.b.wishShow(r.t).pop));
+  r.at(r.t + 1);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+}
+
 static void test_a_sign_shows_while_its_reaction_plays() {
   Rig r;
   r.state(base("idle"));
@@ -3563,6 +3587,7 @@ int main() {
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
   RUN_TEST(test_a_reason_is_the_lanes_caption);
+  RUN_TEST(test_the_wish_shows_and_pops);
   RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   return UNITY_END();

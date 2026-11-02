@@ -52,6 +52,15 @@ public enum Asks {
             .map(\.text).filter { $0.count <= Signs.maxLength }
     }
 
+    /// A wish's words from the pack's lines: `[wish pet] pet me?`, the sign
+    /// that makes it, and `[wish pet met] <3`, the sign as it's met.
+    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind) -> String? {
+        lines.first { $0.tags == ["wish", kind.rawValue] }?.text
+    }
+    public static func wishMetSign(_ lines: [TaggedLine], _ kind: Core.WishKind) -> String? {
+        lines.first { $0.tags == ["wish", kind.rawValue, "met"] }?.text
+    }
+
     /// What's kept of a question asked: the day, and the answer once
     /// there is one (`ask.<id>` in the key-value store).
     public struct Record: Codable, Equatable, Sendable {

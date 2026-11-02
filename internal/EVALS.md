@@ -409,3 +409,5 @@ each, about 18 requests.
 A new decision or a change to the steering files gets a scenario that
 shows it. Run the scenarios it touches with `--only` while you work, and
 `make eval` once, as the final pass, before it's committed (§2).
+
+The wish's scenarios are 152 to 156, with 145: they make a wish by the `wish` step (`kind`), as the brain's pick of its sign does.

@@ -52,6 +52,8 @@ extension Runtime {
         /// ("You came back after 26 hours away."). Nil when nothing in the
         /// log says.
         public var moodReason: Narration?
+        /// The wish waiting, for the popover: "Boop wishes for a pet (40 min)."
+        public var wishing: String?
         /// Why the board looks as it does: what Boop celebrates today, and
         /// what it wears or shows for each.
         public var dressing: [Narration.Dressing] = []
@@ -138,6 +140,7 @@ extension Runtime {
         let written = memory.written(), today = options.time.boopDay(wall)
         status.notes = written.notes
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
+        status.wishing = core.wish.map { "\(name) wishes for \($0.kind.words) (\(ContextSection.span($0.waitedMs)))." }
         status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
         let config = core.config
         status.dressing = Narration.Dressing.now(when: status.snapshot.when,

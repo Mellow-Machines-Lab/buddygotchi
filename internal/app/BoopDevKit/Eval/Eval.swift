@@ -232,7 +232,7 @@ public struct Scenario: Sendable {
     /// kept failing`), and Recently's lines (`2026-10-25 · a long day`).
     public var memory = WrittenMemory()
 
-    public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
+    public static let events = ["wish", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
                                 "to-do list", "wait", "ask answered"]
 
@@ -1031,6 +1031,10 @@ public struct Eval {
         case "helper returned": return [hook(.subagent, .end, "SubagentStop", subagent: step.helper ?? "h1")]
         // What you did to the board, which reacted to it at once: a hold
         // names the request the needs-you screen shows, as the board does.
+        case "wish":
+            // A wish made, as the brain's pick of its sign makes it.
+            let kind = Core.WishKind(rawValue: step.kind ?? "") ?? .pet
+            return [{ $0.effects($0.core.makeWish(kind, at: now), at: now) }]
         case "gesture":
             return [{ $0.gesture(step.kind ?? "stroke", request: $0.core.snapshot(at: now).attn?.id, at: now) }]
         // What the presence detector would decide: you

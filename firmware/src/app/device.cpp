@@ -61,14 +61,18 @@ enum DoIndex : uint8_t {
   kStopListening,
   kNotice,
   kCall,
+  kWishMet,
+  kWishGone,
   kDoCount
 };
 constexpr const char* kDoNames[kDoCount] = {"react",     "task_complete",  "reply_ready", "starting", "wake_up",
-                                            "listening", "stop_listening", "notice",      "call"};
+                                            "listening", "stop_listening", "notice",      "call",     "wish_met",
+                                            "wish_gone"};
 constexpr render::SceneState kDoAnims[kDoCount] = {
     render::SceneState::kNone,      render::SceneState::kTaskComplete, render::SceneState::kReplyReady,
     render::SceneState::kStarting,  render::SceneState::kWakeUp,       render::SceneState::kListening,
-    render::SceneState::kNone,      render::SceneState::kNotice,       render::SceneState::kNone};
+    render::SceneState::kNone,      render::SceneState::kNotice,       render::SceneState::kNone,
+    render::SceneState::kNotice,    render::SceneState::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -185,6 +189,11 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   JsonObjectConst todo = doc["todo"];
   m.todoDone = todo["done"] | 0;
   m.todoTotal = todo["total"] | 0;
+  const char* wish = doc["wish"] | "";
+  m.wish = !std::strcmp(wish, "pet")    ? render::WishShow::kPet
+           : !std::strcmp(wish, "chat") ? render::WishShow::kChat
+           : !std::strcmp(wish, "work") ? render::WishShow::kWork
+                                        : render::WishShow::kNone;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
@@ -325,6 +334,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     kit().ended(c.key);
     return;
   }
+  if (c.what == kWishMet || c.what == kWishGone) b_.wishPopped(c.what == kWishMet, t);
   const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);
   live_.parsed = ReactionIn{};
   uint32_t seq = b_.reactionSeq();
@@ -936,6 +946,7 @@ void Device::render(uint32_t t) {
     // scroll, and the paw dropping over its edge once it has sprung open.
     makeDrawer(t);
     b_.face().drawer(&drawer_);
+    b_.face().wish(b_.wishShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;

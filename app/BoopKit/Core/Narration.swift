@@ -77,6 +77,11 @@ public struct Narration: Equatable, Sendable {
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
             return Narration(cause: "You said \"\(words)\".")
+        case .wish?:
+            guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }
+            return how == .met ? Narration(cause: "You gave \(name) its wish: \(kind.words).", fact: fit("wish met!"))
+                : how == .gaveup ? Narration(cause: "\(name) wished for \(kind.words), and you left it.", fact: fit("wish left"))
+                : nil
         case .press?:
             return Narration(cause: e.specificType == Core.drawerPick ? "You opened a thread from its drawer." : "You pressed its button.")
         case .hush?:

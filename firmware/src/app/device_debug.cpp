@@ -263,6 +263,9 @@ void Device::state(JsonObject d, uint32_t t) {
     d["ask"] = lane;
   else
     d["ask"] = nullptr;
+  static constexpr const char* kWishNames[] = {nullptr, "pet", "chat", "work"};
+  if (const char* wish = kWishNames[b_.wishShow(t).kind]) d["wish"] = wish;
+  else d["wish"] = nullptr;
   // The work stream: how many lanes show, and the word forward's style.
   const render::Stream& stream = b_.stream();
   d["calls"] = stream.on ? stream.laneCount : 0;

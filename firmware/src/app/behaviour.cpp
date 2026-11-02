@@ -217,6 +217,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     // Another visual starts the looks' rotation over: the face picks its
     // first variation itself, from those that fit now.
     bool look = m.attn != model_.attn || m.look() != model_.look();
+    if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
@@ -653,6 +654,8 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish)
   // needs you.
   s.todoDone = m.todoDone;
   s.todoTotal = m.todoTotal;
+  static constexpr const char* kWishWords[] = {nullptr, "pet", "chat", "work"};
+  s.wish = kWishWords[m.wish];
   if (m.attn) s.agent = m.agent, s.project = m.project, s.name = m.name, s.more = m.more;
   if (finish) s.doneAgent = finish->agent, s.doneThread = finish->thread, s.doneOutcome = finish->outcome;
   return s;
@@ -677,6 +680,22 @@ render::Strip Behaviour::strip(uint32_t t) const {
     s = stripOf(laneModel_, laneNoApp_, laneFinishes_ ? &laneFinish_ : nullptr);
   s.opacity = lane_.value(t);
   return s;
+}
+
+render::WishShow Behaviour::wishShow(uint32_t t) const {
+  render::WishShow show;
+  if (wishPop_ != render::WishShow::kWaiting && t - wishPopAt_ < render::WishShow::kPopMs) {
+    show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
+  } else {
+    show.kind = model_.wish;
+  }
+  return show;
+}
+
+void Behaviour::wishPopped(bool met, uint32_t t) {
+  if (lastWish_ == render::WishShow::kNone) return;
+  wishPop_ = met ? render::WishShow::kMet : render::WishShow::kGone;
+  wishPopAt_ = t;
 }
 
 // With no app, no `say` shows: it outranks the reactions.
