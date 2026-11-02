@@ -3,7 +3,7 @@
 // working stretch or their rest has reached, the first growth stage, and
 // `hushed` while you've told Boop to be quiet),
 // and how busy the agents are, which the board reads from `state.busy`
-// (busyTags). A design or a gag that carries tags fits only while every
+// (busyTags). A design or a pastime that carries tags fits only while every
 // one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
 // in this order (Tags.board, app/BoopKit/Core/Tags.swift), and
 // facegen numbers a design's tags by it.

@@ -18,9 +18,9 @@ const char* moodName(Mood m);
 // The designs' states, in faces.h's order: the first
 // seven keep the numbers they had before the rest came. Idle, working,
 // asleep, needs you, no app and what the agents are doing (planning to
-// waiting) are looks, what the face shows when no reaction plays; the rest
-// are the reactions' animations (isReaction), each playing its own state's
-// design.
+// waiting) are looks: Doing, what the face shows when no Moment plays;
+// the rest are the Moments' animations (isMoment), each playing its own
+// state's design.
 // kNone, past the designs, is no animation.
 enum class SceneState : uint8_t {
   kIdle,
@@ -52,14 +52,14 @@ enum class SceneState : uint8_t {
 // "none" for kNone.
 const char* stateName(SceneState s);
 SceneState stateFromName(const char* name);  // kIdle if missing or unknown
-// The reactions' animations: the brain's finish (task_complete, a turn done
+// The Moments' animations: the brain's finish (task_complete, a turn done
 // or failed; reply_ready, an answer or a question back) and its wake_up
 // (you back at the Mac after a long break) and its notice (you named it in
 // your prompt: it looks up at you), the rules'
 // reaction (starting, a start's card), a tap's (poked, and
 // tap_spam from the third in a row), the board's own to a gesture
 // (gesture) and push-to-talk's listening, until the reply.
-bool isReaction(SceneState s);
+bool isMoment(SceneState s);
 
 // What a gesture is, for the board's own reaction to it (SceneState::
 // kGesture): its variations are these, in this order, and a face with

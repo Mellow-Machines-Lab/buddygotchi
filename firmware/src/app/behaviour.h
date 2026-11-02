@@ -118,7 +118,7 @@ constexpr size_t kReplyBytes = 12;
 // `say`, a face, a sign. With no anim, only the `say`, the face or the
 // sign.
 struct ReactionIn {
-  render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isReaction)
+  render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isMoment)
   // It had a `say` field: the reply `listening` waits for, even with no
   // take. `stop_listening` is empty: it ends `listening` and does nothing
   // else.
@@ -376,8 +376,8 @@ class Behaviour {
   // agents work and nothing needs you.
   const render::Stream& stream() const { return stream_; }
   bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t); }
-  void call(const char* word, uint8_t slot, render::CallGag gag, uint16_t count, uint32_t t) {
-    stream_.startCall(word, slot, gag, count, t);
+  void call(const char* word, uint8_t slot, render::CallStyle style, uint16_t count, uint32_t t) {
+    stream_.startCall(word, slot, style, count, t);
   }
   // The variation the look shows, from 0: the Mac's, until the variations
   // rotate.

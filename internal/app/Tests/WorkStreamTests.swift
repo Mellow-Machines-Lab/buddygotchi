@@ -132,7 +132,7 @@ final class WorkStreamTests: XCTestCase {
 
     /// A lookup that exits 1 found nothing: a shrug. A timeout, a request
     /// you denied, a check: each its own.
-    func testEachFailuresGag() {
+    func testEachFailuresStyle() {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
         run(rig, "0", program: "ls")
@@ -162,16 +162,16 @@ final class WorkStreamTests: XCTestCase {
     func testANotableCallWaitsBriefly() {
         XCTAssertEqual(WorkStream.waitMs, 1500)
         var s = WorkStream()
-        let notable = WorkStream.Forward(slot: 0, word: "x", gag: "land", priority: .notable)
+        let notable = WorkStream.Forward(slot: 0, word: "x", style: "land", priority: .notable)
         XCTAssertNotNil(s.offer(notable, at: 0))
         XCTAssertNil(s.offer(notable, at: 500), "2 s left of the 2.5 s")
         XCTAssertNotNil(s.offer(notable, at: 1000), "free in 1.5 s")
         XCTAssertEqual(s.lastForwardAt, 2500, "it plays when the board frees")
-        XCTAssertNil(s.offer(WorkStream.Forward(slot: 0, word: "y", gag: "land", priority: .ambient), at: 3000),
+        XCTAssertNil(s.offer(WorkStream.Forward(slot: 0, word: "y", style: "land", priority: .ambient), at: 3000),
                      "an ambient one never waits")
-        XCTAssertNotNil(s.offer(WorkStream.Forward(slot: 0, word: "z", gag: "bonk", priority: .always), at: 3000),
+        XCTAssertNotNil(s.offer(WorkStream.Forward(slot: 0, word: "z", style: "bonk", priority: .always), at: 3000),
                         "a sure one cuts a notable one")
-        XCTAssertNil(s.offer(WorkStream.Forward(slot: 0, word: "z", gag: "bonk", priority: .always), at: 3200),
+        XCTAssertNil(s.offer(WorkStream.Forward(slot: 0, word: "z", style: "bonk", priority: .always), at: 3200),
                      "and waits only 1.5 s behind another sure one")
     }
 

@@ -262,7 +262,7 @@ public final class Core {
         guard !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.call(f.args))
         var did = Event.did("", for: seq, action: WorkStream.action, by: "rule",
-                            facts: ["as": .string(f.gag), "word": .string(f.word), "session": .string(key)], at: now)
+                            facts: ["as": .string(f.style), "word": .string(f.word), "session": .string(key)], at: now)
         did.data["message"] = nil
         fx.append(.record(did))
     }

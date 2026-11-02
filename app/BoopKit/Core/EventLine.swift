@@ -48,20 +48,20 @@ public enum EventLine {
 
     static func nth(_ n: Int) -> String { (0..<4).contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
 
-    /// The note on the work stream's moments that hit Boop, by their gags
+    /// The note on the work stream's moments that hit Boop, by their styles
     /// (`WorkStream.hits`): `Failed commands hit Boop in the face 3 times
     /// (a helmet on by the last); a command timed out and landed on Boop's
     /// head.`
-    public static func hits(_ gags: [String], name: String = CharacterPack.active.name) -> String? {
+    public static func hits(_ styles: [String], name: String = CharacterPack.active.name) -> String? {
         var parts: [String] = []
-        let bonks = gags.filter(WorkStream.ladder.contains)
+        let bonks = styles.filter(WorkStream.ladder.contains)
         if !bonks.isEmpty {
             let times = bonks.count == 1 ? "once" : bonks.count == 2 ? "twice" : "\(bonks.count) times"
             let top = bonks.contains("throw") ? " (it threw the last one back)" : bonks.contains("helmet") ? " (a helmet on by the last)" : ""
             parts.append("failed commands hit \(name) in the face \(times)\(top)")
         }
-        if gags.contains("timeout") { parts.append("a command timed out and landed on \(name)'s head") }
-        if gags.contains("no") { parts.append("you said no to a request and \(name) flinched") }
+        if styles.contains("timeout") { parts.append("a command timed out and landed on \(name)'s head") }
+        if styles.contains("no") { parts.append("you said no to a request and \(name) flinched") }
         guard !parts.isEmpty else { return nil }
         let text = parts.joined(separator: "; ")
         return text.prefix(1).uppercased() + text.dropFirst() + "."

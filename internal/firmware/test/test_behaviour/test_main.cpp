@@ -3325,10 +3325,10 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_EQUAL_INT(1, live());
   s.prune(last + render::Stream::kFallMs);
   TEST_ASSERT_EQUAL_INT(0, live());
-  s.startCall("make", 2, render::callGagFromName("bonk"), 0, 5000);
-  TEST_ASSERT_TRUE(s.call.live && s.call.gag == render::CallGag::kBonk);
-  TEST_ASSERT_EQUAL_STRING("bonk", render::callGagName(s.call.gag));
-  TEST_ASSERT_TRUE(render::callGagFromName("nonsense") == render::CallGag::kLand);
+  s.startCall("make", 2, render::callStyleFromName("bonk"), 0, 5000);
+  TEST_ASSERT_TRUE(s.call.live && s.call.style == render::CallStyle::kBonk);
+  TEST_ASSERT_EQUAL_STRING("bonk", render::callStyleName(s.call.style));
+  TEST_ASSERT_TRUE(render::callStyleFromName("nonsense") == render::CallStyle::kLand);
   s.prune(5000 + render::Stream::kCallMs);
   TEST_ASSERT_FALSE(s.call.live);
 
@@ -3344,7 +3344,7 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_FALSE(s.accepts(10100 + render::Stream::kEndMs));
   TEST_ASSERT_EQUAL_INT(1, live());
   // A turn's end gathers its lane's words: they're its for kTakeMs, then gone.
-  s.startCall("done", 0, render::callGagFromName("gather"), 0, 10200);
+  s.startCall("done", 0, render::callStyleFromName("gather"), 0, 10200);
   int taken = 0;
   for (const auto& w : s.words) taken += s.taken(w);
   TEST_ASSERT_EQUAL_INT(1, taken);
@@ -3358,7 +3358,7 @@ static void test_the_work_streams_words() {
   // from there.
   s.setLanes(lanes, 1, true, false, 20000);
   TEST_ASSERT_EQUAL_INT(1, live());
-  s.startCall("rate limit", 0, render::CallGag::kFreeze, 0, 21000);
+  s.startCall("rate limit", 0, render::CallStyle::kFreeze, 0, 21000);
   TEST_ASSERT_TRUE(s.frozen());
   s.prune(21000 + render::Stream::kCallMs - 1);
   TEST_ASSERT_EQUAL_INT(1, live());  // 3.5 s old, held
@@ -3369,7 +3369,7 @@ static void test_the_work_streams_words() {
     if (w.live) TEST_ASSERT_EQUAL_UINT32(20000 + render::Stream::kCallMs, w.born);
 
   // Something needs you: everything goes at once.
-  s.startCall("make", 0, render::CallGag::kBonk, 0, 24000);
+  s.startCall("make", 0, render::CallStyle::kBonk, 0, 24000);
   s.setLanes(nullptr, 0, false, true, 24100);
   TEST_ASSERT_FALSE(s.call.live);
   TEST_ASSERT_EQUAL_INT(0, live());

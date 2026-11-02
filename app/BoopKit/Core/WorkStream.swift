@@ -7,7 +7,7 @@ import LinkKit
 /// A plain rule, as "needs you" is: it reads each call's tool, topic,
 /// program, glimpse, size and result, never what the call said, and
 /// decides which word each call is and which calls come forward, one at a
-/// time, as which gag. The board flies the words and plays the gags; the brain
+/// time, in which style. The board flies the words and plays each style; the brain
 /// hears none of it but the moments that hit (`TranscriptView`).
 struct WorkStream {
     /// A working session's lane on the board: its slot, which picks its
@@ -37,23 +37,23 @@ struct WorkStream {
     struct Forward: Equatable {
         var slot: Int
         var word: String
-        /// The gag, one of `gags`.
-        var gag: String
+        /// The style, one of `styles`.
+        var style: String
         var priority: Priority
         /// A combo's count, else nil.
         var count: Int?
 
         /// The `do`'s `args`.
-        var args: JSONObject { BoopDevice.call(word, gag: gag, slot: slot, count: count) }
+        var args: JSONObject { BoopDevice.call(word, style: style, slot: slot, count: count) }
     }
 
-    /// The gags the board knows for a word that comes forward.
-    static let gags = [
+    /// The styles the board knows for a word that comes forward.
+    static let styles = [
         "arrive", "look", "land", "stir", "stamp", "launch", "poof", "plane", "phone", "page", "helper", "back",
         "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet", "throw", "shrug",
         "timeout", "no", "combo", "topple", "compact", "buried", "freeze", "drop", "gather",
     ]
-    /// The gags of a moment that hits Boop that the brain hears of: not a
+    /// The styles of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
     static let hits: Set<String> = ["bonk", "bonk2", "helmet", "throw", "timeout", "no"]
     /// The failure ladder's rungs: one agent's failures within `ladderMs`.
@@ -78,7 +78,7 @@ struct WorkStream {
 
     /// Whether a call's end climbs the failure ladder: a failure, but not
     /// a lookup that found nothing, a timeout, a request you denied, or a
-    /// check's, which have gags of their own.
+    /// check's, which have styles of their own.
     static func climbs(_ e: AgentEvent) -> Bool {
         guard e.failed == true else { return false }
         switch e.error {
@@ -108,7 +108,7 @@ struct WorkStream {
 
     // MARK: Words
 
-    /// The word for a call, which its combos count and its gags read:
+    /// The word for a call, which its combos count and its styles read:
     /// its program, or a check's topic for a program alone (`make`,
     /// `tests`); with a subcommand the program says more (`make fw-test`).
     static func word(_ e: AgentEvent, program: String?) -> String {
@@ -197,9 +197,9 @@ struct WorkStream {
         return cut
     }
 
-    /// The gag a word that comes forward now and then plays: its program's
+    /// The style a word that comes forward now and then plays: its program's
     /// family's.
-    static func ambientGag(_ e: AgentEvent, word: String) -> String {
+    static func ambientStyle(_ e: AgentEvent, word: String) -> String {
         switch e.toolKind ?? .other {
         case .read, .search: return "look"
         case .edit: return e.topic == "docs" ? "page" : "land"
@@ -239,14 +239,14 @@ struct WorkStream {
         }
         if !called.contains(key) {
             called.insert(key)
-            return offer(Forward(slot: slot, word: shown, gag: "arrive", priority: .notable), at: now)
+            return offer(Forward(slot: slot, word: shown, style: "arrive", priority: .notable), at: now)
         }
         if let topic = e.topic, TranscriptView.checks.contains(topic) {
-            let gag = topic == "tests" ? "cross" : topic == "build" ? "stack" : "launch"
-            return offer(Forward(slot: slot, word: word, gag: gag, priority: .notable), at: now)
+            let style = topic == "tests" ? "cross" : topic == "build" ? "stack" : "launch"
+            return offer(Forward(slot: slot, word: word, style: style, priority: .notable), at: now)
         }
         if e.toolKind == .subagent {
-            return offer(Forward(slot: slot, word: word, gag: "helper", priority: .notable), at: now)
+            return offer(Forward(slot: slot, word: word, style: "helper", priority: .notable), at: now)
         }
         return nil
     }
@@ -261,35 +261,35 @@ struct WorkStream {
             combo[key] = nil
             let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
             failures[key] = recent
-            let gag = Self.ladder[min(recent.count, Self.ladder.count) - 1]
-            return offer(Forward(slot: slot, word: word, gag: gag, priority: .always), at: now)
+            let style = Self.ladder[min(recent.count, Self.ladder.count) - 1]
+            return offer(Forward(slot: slot, word: word, style: style, priority: .always), at: now)
         }
         if e.failed == true {
             combo[key] = nil
             switch e.error {
             case ToolError.exitCode where e.topic == Topic.inspect:
                 // A lookup that exits 1 found nothing.
-                return offer(Forward(slot: slot, word: word, gag: "shrug", priority: .always), at: now)
+                return offer(Forward(slot: slot, word: word, style: "shrug", priority: .always), at: now)
             case ToolError.timeout:
-                return offer(Forward(slot: slot, word: "timeout", gag: "timeout", priority: .always), at: now)
+                return offer(Forward(slot: slot, word: "timeout", style: "timeout", priority: .always), at: now)
             case ToolError.denied:
-                return offer(Forward(slot: slot, word: "NO", gag: "no", priority: .always), at: now)
+                return offer(Forward(slot: slot, word: "NO", style: "no", priority: .always), at: now)
             default:
                 // A failing build's tower falls on it; failing tests or a
                 // deploy rain on it.
-                return offer(Forward(slot: slot, word: "FAIL", gag: check == "build" ? "topple" : "hail",
+                return offer(Forward(slot: slot, word: "FAIL", style: check == "build" ? "topple" : "hail",
                                      priority: .always), at: now)
             }
         }
         if let check, e.failed == false {
-            let (shown, gag) = check == "tests" ? ("PASS", "pass") : check == "build" ? ("built", "built") : ("shipped", "launch")
-            return offer(Forward(slot: slot, word: shown, gag: gag, priority: .always), at: now)
+            let (shown, style) = check == "tests" ? ("PASS", "pass") : check == "build" ? ("built", "built") : ("shipped", "launch")
+            return offer(Forward(slot: slot, word: shown, style: style, priority: .always), at: now)
         }
         let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
         if e.toolKind == .edit, added + removed >= Self.bigEdit {
-            let gag = removed > added ? "shatter" : "land"
+            let style = removed > added ? "shatter" : "land"
             let shown = removed > added ? "-\(removed)" : Self.shown(e, word: word)
-            return offer(Forward(slot: slot, word: shown, gag: gag, priority: .notable), at: now)
+            return offer(Forward(slot: slot, word: shown, style: style, priority: .notable), at: now)
         }
         var run = combo[key].flatMap { $0.word == word && now - $0.at <= Self.comboGapMs ? $0 : nil }
             ?? (word: word, count: 0, at: now)
@@ -297,9 +297,9 @@ struct WorkStream {
         run.at = now
         combo[key] = run
         if Self.combos.contains(run.count) {
-            return offer(Forward(slot: slot, word: word, gag: "combo", priority: .notable, count: run.count), at: now)
+            return offer(Forward(slot: slot, word: word, style: "combo", priority: .notable, count: run.count), at: now)
         }
-        return offer(Forward(slot: slot, word: Self.shown(e, word: word), gag: Self.ambientGag(e, word: word),
+        return offer(Forward(slot: slot, word: Self.shown(e, word: word), style: Self.ambientStyle(e, word: word),
                              priority: .ambient), at: now)
     }
 
@@ -307,7 +307,7 @@ struct WorkStream {
     /// finished turn falls as.
     mutating func helperBack(_ key: String, at now: Int64) -> Forward? {
         guard let lane = lanes[key] else { return nil }
-        return offer(Forward(slot: lane.slot, word: "back", gag: "back", priority: .notable), at: now)
+        return offer(Forward(slot: lane.slot, word: "back", style: "back", priority: .notable), at: now)
     }
 
     /// A turn of session `e.key` ending, if it called a tool: done, it
@@ -319,7 +319,7 @@ struct WorkStream {
         guard called.contains(key) else { return nil }
         called.remove(key)
         combo[key] = nil
-        let shown: (word: String, gag: String)
+        let shown: (word: String, style: String)
         switch e.outcome {
         case .done?: shown = ("done", "gather")
         case .failed?:
@@ -332,7 +332,7 @@ struct WorkStream {
         case .stopped?: shown = ("stopped", "drop")
         case nil: return nil
         }
-        return offer(Forward(slot: lanes[key]?.slot ?? freeSlot(), word: shown.word, gag: shown.gag, priority: .always),
+        return offer(Forward(slot: lanes[key]?.slot ?? freeSlot(), word: shown.word, style: shown.style, priority: .always),
                      at: now)
     }
 
@@ -340,7 +340,7 @@ struct WorkStream {
     /// squashed into a cube.
     mutating func compacted(_ key: String, at now: Int64) -> Forward? {
         guard let lane = lanes[key] else { return nil }
-        return offer(Forward(slot: lane.slot, word: "context", gag: "compact", priority: .always), at: now)
+        return offer(Forward(slot: lane.slot, word: "context", style: "compact", priority: .always), at: now)
     }
 
     /// A turn starting in `key`: its next call is its first.

@@ -19,7 +19,7 @@ namespace render {
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,
 // else the look, with the host facts a variation is chosen for.
 struct FaceSource {
-  SceneState anim = SceneState::kNone;  // the reaction's animation (isReaction), kNone for none
+  SceneState anim = SceneState::kNone;  // the reaction's animation (isMoment), kNone for none
   uint32_t at = 0;
   SceneState look = SceneState::kIdle;
   uint8_t lookVariant = 0, animVariant = 0;

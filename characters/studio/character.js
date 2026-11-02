@@ -409,7 +409,7 @@
     }
     function render() {
       const pack = packOf(api), v = voiceOf(api);
-      if (!v) { root.replaceChildren(panel({}, heading('Voice'), h('p', {className: 'empty-note'}, `${pack.name} has no voice: its reactions play faces and sound effects only.`))); return; }
+      if (!v) { root.replaceChildren(panel({}, heading('Voice'), h('p', {className: 'empty-note'}, `${pack.name} has no voice: its moments play faces and sound effects only.`))); return; }
       const kinds = Object.entries(v.takes.reduce((n, t) => (n[t[4]] = (n[t[4]] || 0) + 1, n), {})).sort((a, b) => b[1] - a[1]).map(([k]) => k);
       const cell = (mood, kind) => v.takes.filter(t => t[5].includes(mood) && t[4] === kind).length;
       const most = Math.max(1, ...pack.moods.flatMap(m => kinds.map(k => cell(m.id, k))));

@@ -1,7 +1,7 @@
 // The work stream (the Mac's WorkStream): each working agent's tool calls
 // as words falling past the buddy from its lane, and now and then one that
 // comes forward and hits it. The Mac decides which word comes forward and
-// as which gag; the device keeps the words falling and times the flight,
+// as which style; the device keeps the words falling and times the flight,
 // and a face draws them. Fixed sizes, no heap.
 #pragma once
 #include <cstdint>
@@ -9,7 +9,7 @@
 namespace render {
 
 // What a word that comes forward does, by the `call` do's `as`.
-enum class CallGag : uint8_t {
+enum class CallStyle : uint8_t {
   kLand,  // drops on its head and sinks in (and any `as` the board doesn't know)
   kArrive,
   kLook,
@@ -45,10 +45,10 @@ enum class CallGag : uint8_t {
   kGather,   // its turn is done
   kCount
 };
-CallGag callGagFromName(const char* name);
-const char* callGagName(CallGag gag);
+CallStyle callStyleFromName(const char* name);
+const char* callStyleName(CallStyle style);
 
-// How a gag moves: where its word flies, what it does there and what the
+// How a style moves: where its word flies, what it does there and what the
 // body does when it lands.
 enum class CallMove : uint8_t {
   kSink,     // onto the crown, sinking in: a squash and a ripple
@@ -75,10 +75,10 @@ enum class CallMove : uint8_t {
   kDrop,     // the words falling drop, switched off
   kGather,   // its lane's words gathered into its mouth
 };
-CallMove callMove(CallGag gag);
+CallMove callMove(CallStyle style);
 // How long its word flies before it lands, when the body answers: a
 // timeout's falls slowly, the rest quickly.
-uint32_t callFlightMs(CallGag gag);
+uint32_t callFlightMs(CallStyle style);
 
 struct Stream {
   static constexpr int kLanes = 4;        // WorkStream.maxLanes
@@ -128,7 +128,7 @@ struct Stream {
   struct Call {
     char text[kWordBytes] = "";
     uint8_t slot = 0;
-    CallGag gag = CallGag::kLand;
+    CallStyle style = CallStyle::kLand;
     uint16_t count = 0;  // a combo's
     uint32_t at = 0;
     bool live = false;
@@ -162,10 +162,10 @@ struct Stream {
   // Whether the word forward is freezing the words, and whether it takes
   // `w` (a gather its lane's, a compaction or a drop all of them falling
   // as it came).
-  bool frozen() const { return call.live && call.gag == CallGag::kFreeze; }
+  bool frozen() const { return call.live && call.style == CallStyle::kFreeze; }
   bool taken(const Word& w) const;
   // A word comes forward at t (the `call` do).
-  void startCall(const char* text, uint8_t slot, CallGag gag, uint16_t count, uint32_t t);
+  void startCall(const char* text, uint8_t slot, CallStyle style, uint16_t count, uint32_t t);
   // Forgets what has finished by t.
   void prune(uint32_t t);
   void clear();

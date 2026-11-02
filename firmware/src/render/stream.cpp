@@ -10,11 +10,11 @@ namespace render {
 
 namespace {
 
-constexpr const char* kGagNames[] = {"land",  "arrive", "look",   "stir",    "stamp",   "launch", "poof",  "plane",
+constexpr const char* kCallStyleNames[] = {"land",  "arrive", "look",   "stir",    "stamp",   "launch", "poof",  "plane",
                                      "phone", "page",   "helper", "back",    "shatter", "cross",  "stack", "pass",
                                      "built", "hail",   "bonk",   "bonk2",   "helmet",  "throw",  "shrug", "timeout",
                                      "no",    "combo",  "topple", "compact", "buried",  "freeze", "drop",  "gather"};
-static_assert(sizeof(kGagNames) / sizeof(kGagNames[0]) == int(CallGag::kCount), "a name for every gag");
+static_assert(sizeof(kCallStyleNames) / sizeof(kCallStyleNames[0]) == int(CallStyle::kCount), "a name for every style");
 
 // The same few bits for the same word, slot and count on every board, so a
 // word falls where it did in the simulator.
@@ -25,53 +25,53 @@ uint32_t mix(uint32_t h) {
 
 }  // namespace
 
-const char* callGagName(CallGag gag) { return gag < CallGag::kCount ? kGagNames[int(gag)] : "land"; }
+const char* callStyleName(CallStyle style) { return style < CallStyle::kCount ? kCallStyleNames[int(style)] : "land"; }
 
-CallGag callGagFromName(const char* name) {
-  if (!name) return CallGag::kLand;
-  for (int i = 0; i < int(CallGag::kCount); ++i)
-    if (!std::strcmp(name, kGagNames[i])) return CallGag(i);
-  return CallGag::kLand;
+CallStyle callStyleFromName(const char* name) {
+  if (!name) return CallStyle::kLand;
+  for (int i = 0; i < int(CallStyle::kCount); ++i)
+    if (!std::strcmp(name, kCallStyleNames[i])) return CallStyle(i);
+  return CallStyle::kLand;
 }
 
-CallMove callMove(CallGag gag) {
-  switch (gag) {
-    case CallGag::kArrive: return CallMove::kArrive;
-    case CallGag::kLook: return CallMove::kLook;
-    case CallGag::kStir: return CallMove::kStir;
-    case CallGag::kStamp: return CallMove::kStamp;
-    case CallGag::kLaunch: return CallMove::kRocket;
-    case CallGag::kPoof: return CallMove::kPoof;
-    case CallGag::kPlane: return CallMove::kPlane;
-    case CallGag::kPhone: return CallMove::kPhone;
-    case CallGag::kPage: return CallMove::kPage;
-    case CallGag::kBonk:
-    case CallGag::kBonk2:
-    case CallGag::kHelmet:
-    case CallGag::kThrow:
-    case CallGag::kNo:
-    case CallGag::kTimeout: return CallMove::kHit;
-    case CallGag::kShrug: return CallMove::kShrug;
-    case CallGag::kShatter: return CallMove::kShatter;
-    case CallGag::kHail: return CallMove::kHail;
-    case CallGag::kPass:
-    case CallGag::kBuilt: return CallMove::kCheer;
-    case CallGag::kCombo: return CallMove::kCombo;
-    case CallGag::kCross:
-    case CallGag::kStack: return CallMove::kDesk;
-    case CallGag::kTopple: return CallMove::kTopple;
-    case CallGag::kCompact: return CallMove::kCompact;
-    case CallGag::kBuried: return CallMove::kBuried;
-    case CallGag::kFreeze: return CallMove::kFreeze;
-    case CallGag::kDrop: return CallMove::kDrop;
-    case CallGag::kGather: return CallMove::kGather;
+CallMove callMove(CallStyle style) {
+  switch (style) {
+    case CallStyle::kArrive: return CallMove::kArrive;
+    case CallStyle::kLook: return CallMove::kLook;
+    case CallStyle::kStir: return CallMove::kStir;
+    case CallStyle::kStamp: return CallMove::kStamp;
+    case CallStyle::kLaunch: return CallMove::kRocket;
+    case CallStyle::kPoof: return CallMove::kPoof;
+    case CallStyle::kPlane: return CallMove::kPlane;
+    case CallStyle::kPhone: return CallMove::kPhone;
+    case CallStyle::kPage: return CallMove::kPage;
+    case CallStyle::kBonk:
+    case CallStyle::kBonk2:
+    case CallStyle::kHelmet:
+    case CallStyle::kThrow:
+    case CallStyle::kNo:
+    case CallStyle::kTimeout: return CallMove::kHit;
+    case CallStyle::kShrug: return CallMove::kShrug;
+    case CallStyle::kShatter: return CallMove::kShatter;
+    case CallStyle::kHail: return CallMove::kHail;
+    case CallStyle::kPass:
+    case CallStyle::kBuilt: return CallMove::kCheer;
+    case CallStyle::kCombo: return CallMove::kCombo;
+    case CallStyle::kCross:
+    case CallStyle::kStack: return CallMove::kDesk;
+    case CallStyle::kTopple: return CallMove::kTopple;
+    case CallStyle::kCompact: return CallMove::kCompact;
+    case CallStyle::kBuried: return CallMove::kBuried;
+    case CallStyle::kFreeze: return CallMove::kFreeze;
+    case CallStyle::kDrop: return CallMove::kDrop;
+    case CallStyle::kGather: return CallMove::kGather;
     default: return CallMove::kSink;
   }
 }
 
-uint32_t callFlightMs(CallGag gag) {
-  if (gag == CallGag::kTimeout) return 1400;
-  switch (callMove(gag)) {
+uint32_t callFlightMs(CallStyle style) {
+  if (style == CallStyle::kTimeout) return 1400;
+  switch (callMove(style)) {
     case CallMove::kHit: return 380;
     case CallMove::kSink:
     case CallMove::kArrive: return 520;
@@ -103,10 +103,10 @@ bool Stream::drawn(uint32_t t) const { return on || (ending && int32_t(t - ended
 
 bool Stream::taken(const Word& w) const {
   if (!call.live || !w.live || int32_t(w.born - call.at) > 0) return false;
-  switch (call.gag) {
-    case CallGag::kGather: return w.slot == call.slot;
-    case CallGag::kCompact:
-    case CallGag::kDrop: return true;
+  switch (call.style) {
+    case CallStyle::kGather: return w.slot == call.slot;
+    case CallStyle::kCompact:
+    case CallStyle::kDrop: return true;
     default: return false;
   }
 }
@@ -182,10 +182,10 @@ void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_
   }
 }
 
-void Stream::startCall(const char* text, uint8_t slot, CallGag gag, uint16_t count, uint32_t t) {
+void Stream::startCall(const char* text, uint8_t slot, CallStyle style, uint16_t count, uint32_t t) {
   std::snprintf(call.text, sizeof(call.text), "%s", text ? text : "");
   call.slot = slot;
-  call.gag = gag;
+  call.style = style;
   call.count = count;
   call.at = t;
   call.live = true;

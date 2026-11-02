@@ -2514,7 +2514,7 @@ static void test_reset_reads_motion_from_0() {
 // `ended` sent then (resting, it waited for whatever came next, and after
 // a quiet minute the host gave up on it), and the next reaction plays.
 // With no lanes working, or while something needs you, it's skipped
-// `hidden`. dbg.state says the lanes showing and the word's gag.
+// `hidden`. dbg.state says the lanes showing and the word's style.
 static void test_a_call_comes_forward_over_the_work() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");

@@ -240,7 +240,7 @@ struct WhatIDoAct: View {
                     withAnimation(.linear(duration: beat.cardSeconds)) { played = 1 }
                 }
                 switch beat {
-                case .failing: model.feed.call(BoopDevice.call("FAIL", gag: "hail", slot: 0))
+                case .failing: model.feed.call(BoopDevice.call("FAIL", style: "hail", slot: 0))
                 case .asking: OnboardingSound.play(.step)
                 case .finished: model.feed.reaction(Moment(anim: "task_complete", outcome: "success"))
                 default: break

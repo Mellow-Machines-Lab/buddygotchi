@@ -41,9 +41,9 @@ public enum BoopDevice {
     /// The work stream's word that comes forward, as the board plays it.
     public static let call = "call"
     /// A `call`'s `args`: `word`, in the colour of lane `slot`, playing
-    /// `gag` (one of `WorkStream.gags`), and a combo's `count`.
-    public static func call(_ word: String, gag: String, slot: Int, count: Int? = nil) -> JSONObject {
-        var args: JSONObject = ["a": .int(slot), "w": .string(word), "as": .string(gag)]
+    /// `style` (one of `WorkStream.styles`), and a combo's `count`.
+    public static func call(_ word: String, style: String, slot: Int, count: Int? = nil) -> JSONObject {
+        var args: JSONObject = ["a": .int(slot), "w": .string(word), "as": .string(style)]
         if let count { args["n"] = .int(count) }
         return args
     }

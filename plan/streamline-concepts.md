@@ -224,6 +224,16 @@ and nothing is wrong with it; or it's a **break**, fixed in phase 5.
 | You (the input table) | Put down, peekaboo, a swipe, dismiss and an ask's answer all wake Jev; the button is only a line (its poke fallback wakes); missing rows: swipe, ask answers, hush, going away, a tap on a ticket, the drawer | Amended: the table in architecture.html is the code's |
 | The lane | The bubble comes first, even over the needs-you name; the needs-you name and a finish's names are inside the strip; the ticket hangs over the face | Amended: the bubble only shows over needs you for a reply, which outranks it (rule 5) |
 
+**Phase 4's call.** The gel's "gag" (a yawn, a sneeze, a holiday's
+bounce: its short comedy) is a *bit* in the engine's and the face's code
+(`playBit`, `bitOf`, `Body::kBit`, `Shows::kBit`) and the docs, but the
+generated `slime::Gag` table keeps its design's word: `gags` is a key of
+the slime's design data (`expressions.json`) that slimegen and the
+voice's tools read, and renaming a pack's design format is more than a
+rename that draws nothing new. The work stream's gag is the word's
+*style* (`render::CallStyle`, `WorkStream`'s `style`; `CallMove` is
+already how it moves); the wire's `as` keeps its values.
+
 **Phase 5, the breaks to build:**
 
 1. *A word from the work stream never pushes a Moment out of the

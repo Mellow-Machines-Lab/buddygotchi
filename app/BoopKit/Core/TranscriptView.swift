@@ -412,9 +412,9 @@ public final class TranscriptView {
         if e.kind == Event.did, e.action == WorkStream.action {
             // A word of the work stream that came forward: no line, and
             // counted for the turn's lines when it hit Boop.
-            if let gag = e["as"]?.string, WorkStream.hits.contains(gag), let key = e["session"]?.string,
+            if let style = e["as"]?.string, WorkStream.hits.contains(style), let key = e["session"]?.string,
                fold.counts[key] != nil || fold.sessions.sessions[key] != nil {
-                fold.counts[key, default: Counts()].hits.append(gag)
+                fold.counts[key, default: Counts()].hits.append(style)
             }
             return nil
         }

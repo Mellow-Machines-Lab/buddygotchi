@@ -557,13 +557,13 @@ the face draws the look in another mood for a while, and the voice may
 speak.
 
 **A word of the work stream** (`call`) is no state of its own either
-(`render/stream.h`): `w` the word, `a` its lane's slot, `as` its gag
-(`bonk`, `shrug`, `land`… `render::CallGag`), `n` a combo's count. It
+(`render/stream.h`): `w` the word, `a` its lane's slot, `as` its style
+(`bonk`, `shrug`, `land`… `render::CallStyle`), `n` a combo's count. It
 plays at once over the agents' work and holds nothing up, its `ended`
 sent as it starts; with no lane
 working, or while something needs you, it's skipped `hidden`. A face
 draws it if it draws the stream (`Face::watch`). A failed call is one
-of its gags, never a reaction of its own.
+of its styles, never a Moment of its own.
 
 ### What else a face does
 
@@ -1195,7 +1195,7 @@ show changes at once.
 
 **The gel on the rig.** The gel keeps its own engine for what no channel
 reaches: each mood's face is its own art crossing over on its own
-windows, and its scenes, gags and springs move its body (the slime's
+windows, and its scenes, bits (its design's `gags`) and springs move its body (the slime's
 CONTINUITY.md). Its face (`render/gel/face.h`) holds a mixer of its own,
 which plays the staged rig's clips, and the painter lays the mixer's
 channels over the pose the engine gives (`applyRig`): `squash` (the
@@ -1226,7 +1226,7 @@ off the screen (`tier5`), never within 90 s of the last
 (`kMoveGapMs`). Each is for one look, at work and idle from a tier,
 while something needs you or asleep from a wait, and an occasion (§9)
 whenever its tag is on. They're one table, a row each, whose body is a
-clip of the rig, a gag of the engine's (the yawn, the sneeze, idle's
+clip of the rig, a bit of the engine's (the yawn, the sneeze, idle's
 occasions) or a take of its (busier typing, a deeper snore, the dream);
 the work's stretch from `tier4` is a row too. The gel deals them all,
 one at a time while the engine shows the look itself, after a rest of 4
@@ -1243,11 +1243,11 @@ its hand), headphones from `tier3`, which it puts on first where you can
 see it, the hat winning the head, and from `tier5` a mug more on the
 stack every 10 minutes and a few motes drifting up beside it; idle, a
 plant from `tier3` that grows to `tier5`. `dbg.pastime` plays one by its
-name (its clip's, gag's or take's), for scenarios and tools. A reaction whose state names a
+name (its clip's, bit's or take's), for scenarios and tools. A reaction whose state names a
 clip of the rig (Boop's `notice`) plays it once, as its moment starts, and the clip's cues sound
 the contacts they name (the slime's contact kinds). The gel's recipe for
 that state times it, the clip's length and a little more for the body to
-settle (slimegen), with no gag or contact of its own, and its takes are
+settle (slimegen), with no bit or contact of its own, and its takes are
 the one clip, each under a face the board borrows (`kNoticeFaces`).
 
 ## 16. References and review (optional)
@@ -1342,7 +1342,7 @@ pack staging. The app doesn't bundle either folder.
   look-around, a yawn, a finish's face) is still baked, since the rig's
   parts are one drawing of each eye. The gel plays the rig's clips (a
   look's occasions, a reaction's) over its own engine; its expressions,
-  recipes, gags and springs are still its own.
+  recipes, bits and springs are still its own.
 - A face is C++ code. A picture-based face, with frames per state and
   mood drawn by an engine renderer, would let a character be drawn with
   no code.

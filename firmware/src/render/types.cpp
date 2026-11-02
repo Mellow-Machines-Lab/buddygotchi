@@ -36,7 +36,7 @@ const char* stateName(SceneState s) {
 
 const char* gestureName(Gesture g) { return int(g) < int(Gesture::kCount) ? kGestureNames[int(g)] : "handoff"; }
 
-bool isReaction(SceneState s) {
+bool isMoment(SceneState s) {
   switch (s) {
     case SceneState::kTaskComplete:
     case SceneState::kReplyReady:
@@ -53,7 +53,7 @@ bool isReaction(SceneState s) {
 
 SceneState reactionFromName(const char* name) {
   const SceneState s = stateFromName(name);
-  return name && isReaction(s) ? s : SceneState::kNone;
+  return name && isMoment(s) ? s : SceneState::kNone;
 }
 
 SceneState stateFromName(const char* name) {
