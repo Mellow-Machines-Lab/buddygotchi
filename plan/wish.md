@@ -168,3 +168,24 @@ The first build on `wish` differs from the above in three places:
 - **Giving up.** `wish_gone` gets a small silent body beat, a sigh and a
   slump of about a second as the bubble fades, played at once by the
   firmware. The feeling after it stays Jev's.
+
+## Teaching what meets a wish (decided 2026-11-01)
+
+A new owner doesn't know Boop can be stroked or talked to, so the wish
+teaches it, with no tutorial and no new concept.
+
+- **Any touch meets a pet wish:** a stroke, a tap (`poke`), a nose boop or
+  a tickle; not a shake, a pick-up or face down. The heart always pops. A
+  stroke keeps its bigger answer, its own gesture's.
+- **The first time, the wish shows how.** Until you've met a kind once,
+  its sign says more, in the pack's words, and the bubble's icon moves (a
+  hand sliding across, a dot pulsing). After that, the plain sign and a
+  still icon. What's kept: a "done once" for each kind, in the key-value
+  store, as the asks' records are; `state.wish` carries whether to show
+  how, so the board keeps nothing.
+- **The chat wish is offered only once push-to-talk works:** the
+  recognizer and the mic both authorized (`Talk.swift` already checks
+  this). Boop never gets sad over a wish you couldn't answer.
+
+Tests pin which touches meet it, that "done once" ends the showing how,
+and that chat isn't offered unauthorized.
