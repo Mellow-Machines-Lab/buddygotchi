@@ -1,4 +1,5 @@
 import AppKit
+import BoopKit
 import SwiftUI
 
 /// The app's palette, the device's "Warm Terminal": warm paper
@@ -159,6 +160,47 @@ struct Card<Content: View>: View {
 
 /// A labelled section: a small, tracked-out label, then its content. Space
 /// and the label separate sections, not rules.
+/// A pane's title row: a Back chevron and its title.
+struct PaneTitle: View {
+    let title: String
+    let back: () -> Void
+
+    init(_ title: String, back: @escaping () -> Void) {
+        self.title = title
+        self.back = back
+    }
+
+    var body: some View {
+        HStack(spacing: Theme.gapTight) {
+            Button(action: back) {
+                Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
+            }
+            .buttonStyle(.quiet)
+            .keyboardShortcut("[", modifiers: .command)
+            .accessibilityLabel("Back")
+            Text(title).font(.boop(16)).lineLimit(1).minimumScaleFactor(0.8)
+            Spacer()
+        }
+        .padding(.horizontal, Theme.gutter - 8)
+        .padding(.top, Theme.gutter - 4)
+        .padding(.bottom, Theme.gap)
+    }
+}
+
+/// One of the memory's recent days: when, and its line.
+struct DayRow: View {
+    let entry: Runtime.Status.DayLine
+    var selectable = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(entry.when).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
+            let line = Text(entry.line).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+            if selectable { line.textSelection(.enabled) } else { line }
+        }
+    }
+}
+
 struct PaneSection<Content: View>: View {
     let label: String
     @ViewBuilder var content: Content

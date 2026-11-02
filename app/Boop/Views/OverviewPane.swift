@@ -418,10 +418,7 @@ struct OverviewPane: View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(lines) { entry in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.when).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
-                        Text(entry.line).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
-                    }
+                    DayRow(entry: entry)
                 }
             }
         }
