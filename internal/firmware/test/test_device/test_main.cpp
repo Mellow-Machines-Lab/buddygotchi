@@ -516,7 +516,7 @@ static void test_the_nose_on_a_named_finish_is_a_tap() {
   TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"tap\""));
 }
 
-// plan/tap-on-a-finish.md: while a finish shows, a touch under 400 ms opens
+// While a finish shows, a touch under 400 ms opens
 // its thread, whatever the classifier calls it; a slow stroke stays a stroke;
 // away from a finish every one stays a gesture.
 static void test_a_brief_touch_on_a_finish_is_a_tap() {

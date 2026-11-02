@@ -3512,7 +3512,7 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
 // for them all the next day; the next state brings them back.
-// plan/lock-and-unlock.md: a Boop asleep when the Mac goes quiet stays
+// A Boop asleep when the Mac goes quiet stays
 // asleep with no plug, until a touch shows the plug; awake, the plug shows
 // at the same 30 s as ever; the Mac's next state ends it.
 static void test_a_finishs_sign_lifts_as_its_words_end() {

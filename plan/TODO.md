@@ -1,6 +1,6 @@
 # TODO
 
-Updated 2026-11-01. What's next, one at a time, top first. Tick an item
+Updated 2026-11-02. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
@@ -13,6 +13,39 @@ at after `make flash` and a new voice on the card (the report of
 - [ ] Pastimes still come by tier; a yawn or sneeze from `tier1`; busy typing still speeds up.
 - [ ] Free heap at boot is about 76.8 KB higher than before.
 - [ ] The voice plays once the card has the new `voice.bin` (`353ddadc006b`).
+
+## Owed on the board, from the night of 2026-11-01
+
+From the plans that were finished and deleted, for the owner, after
+`make flash`:
+- [ ] Work acts: the look and the frame rate of the push, the tests and the build, full and small.
+- [ ] A finish's low sign: can you read the thread's name at arm's length, and does a cheer still read?
+- [ ] A tap on a finish: the face, the rim and the strip during a finish each open the thread.
+- [ ] A lock and an unlock: a wave, a snub or the nap; a Boop asleep when the Mac goes quiet stays asleep with no plug until you touch it.
+- [ ] Alive without the Mac: it breathes, sleeps, answers a poke or a stroke in its last mood, and gives a small hello when the Mac returns.
+- [ ] The wish's bubble: its place beside the head, its how, the heart popping; none during a full act or with no Mac.
+
+## Now: from the night's review (2026-11-02)
+
+- [ ] A dream's write can be lost if the writer fails (`Memory.swift`, `dream()`).
+- [ ] Several buddies don't replay an away (`Pipeline.readBack`).
+- [ ] The Pixel wish's text (`screens.h:48`, `sameModel`).
+- [ ] A `Measure` around `paintActFront`, for the board's frame rate check.
+- [ ] **For the owner:** `make eval` refuses without the override, so your bare command never runs.
+- [ ] Stale `ReactOutput` mentions in SlimeBuddy's asks' and replies' comments.
+- [ ] Remove the dead lost-link path.
+- [ ] Acts: wall caching and a frame cap.
+- [ ] Unify the acts' timing.
+- [ ] The idle `tower` pastime is hard to read.
+- [ ] The takes "We pushing!", "shipped!" and "built it!" aren't recorded: until then Jev has the voice's existing words.
+- [ ] Jev rarely speaks over an act from a calm mood.
+- [ ] The duplicated memory cards on the Overview ("What Boop remembers", "Recently") and the Memory pane: whether they move is the owner's call.
+- [ ] Eval Level A's 7 confirmed unreasonable runs: 11, 19, 47, 90, 91, 96, 140.
+- [ ] No standard eval run since items 2 to 10 of the night.
+- [ ] Pixel Bro's clone fails `boopdev check`: `personality.md` is missing.
+- [ ] A chat wish already open when you take back the mic's authorization still waits and can give up: nothing rechecks it.
+- [ ] A wish can give up while you're idle, before the away is noticed: the away takes back the wait, but not a give-up already played.
+- [ ] A wish's wait read back on launch counts time a needs-you or a doze held, and time Boop wasn't running between two events of the same day: the transcript has no launch marker, and the wait isn't recorded until its end.
 
 ## Now: left by the finished plans (2026-11-01)
 

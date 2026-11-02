@@ -8,7 +8,7 @@ private let t0: Int64 = 1_790_000_000_000
 private let minute: Int64 = 60_000
 
 /// Every lock and unlock of the Mac: the detector makes the events, the view
-/// their lines, and Jev picks a wave, a snub or the nap (`plan/lock-and-unlock.md`).
+/// their lines, and Jev picks a wave, a snub or the nap.
 final class LockTests: XCTestCase {
     static func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 1]) }
 
