@@ -341,13 +341,29 @@ public final class MomentOutput: Output {
     /// What a move at your lock or unlock is, as a reply's lines and words
     /// know it: `bye`, `hello` or `nap`; nil at any other event, or for no
     /// wave.
-    static func waved(_ answers: Answers, about: Event?) -> String? {
+    static func waved(_ answers: Answers, about: Event?, size: Size) -> Reply? {
         guard let about, about.type == .lock else { return nil }
         switch answers[moveKey]?.choice {
-        case wave?: return about.phase == .start ? "bye" : "hello"
-        case "nap"? where about.phase == .start: return "nap"
+        case wave?:
+            let word = about.phase == .start ? "bye" : "hello"
+            return Reply(word: word, played: size.name == "small" ? wave : word, did: ", waving")
+        case "nap"? where about.phase == .start:
+            return Reply(word: "nap", played: "nap", did: ", going to sleep", naps: true)
         default: return nil
         }
+    }
+
+    /// A move as a reply: to what you said, or at your lock or unlock.
+    struct Reply {
+        /// Its name, which picks its lines and words.
+        var word: String
+        /// What the board plays: a small wave is the slighter motion; the
+        /// nap and what you said are as they are.
+        var played: String
+        /// How HISTORY's line says it.
+        var did: String
+        /// Whether Boop goes for its nap.
+        var naps = false
     }
 
     /// How long after an `ouch` a reply is making up (`makeup`, a tag its
@@ -736,8 +752,15 @@ public final class MomentOutput: Output {
         // 3. The effect: the face, its move, held as long as the moment is
         // big, and the `say`, if Voice has a take of what it says, as big,
         // in this face's mood. To what you said, the move is the reply.
-        let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : Self.waved(answers, about: about)
         let size = Self.size(answers)
+        let replied: Reply?
+        if talk {
+            let word = Self.played(Self.reply(answers), words: about?["words"]?.string ?? "")
+            replied = Reply(word: word, played: word, did: ", replying \(word)")
+        } else {
+            replied = Self.waved(answers, about: about, size: size)
+        }
+        let reply = replied?.word
         let pick = talk ? nil : Self.animation(answers)
         let at = about?.at ?? 0
         // A wish the brain picked, its sign being the wish.
@@ -803,9 +826,7 @@ public final class MomentOutput: Output {
             reaction.sign = asking?.question
             reaction.ask = asking
         }
-        // A small wave is the slighter motion; the nap and what you said
-        // are as they are.
-        reaction.reply = !talk && reply != "nap" && reply != nil && size.name == "small" ? Self.wave : reply
+        reaction.reply = replied?.played
         reaction.show = show
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
@@ -837,13 +858,13 @@ public final class MomentOutput: Output {
         // Hushed for as long as the moment is big, or let talk again.
         if reply == "hush" { hush(Core.hushMsBySize[Self.sizes.firstIndex(of: size) ?? 1], at) }
         if reply == "unhush" { hush(nil, at) }
-        if reply == "nap", !talk { nap(at) }
+        if replied?.naps == true { nap(at) }
         if let wishing { makeWish(wishing.kind, at) }
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
         let did = "\(pack.name) had \(Self.article(choice)) \(choice) moment (\(size.name))"
             + (pick.map { ", playing \(Self.article($0)) \($0)" }
-                ?? reply.map { talk ? ", replying \($0)" : $0 == "nap" ? ", going to sleep" : ", waving" } ?? "")
+                ?? replied?.did ?? "")
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }
