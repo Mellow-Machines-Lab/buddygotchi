@@ -2,7 +2,7 @@ import Foundation
 import MellowHarness
 
 // The wish: Boop's one want a day, met by one thing you do anyway. The
-// brain picks when (a sign it holds up), and code holds the rest: one a day,
+// brain picks when (a sign it holds up), and how often; code holds the rest:
 // one open, what meets it, how long it waits. Kept as the hush is: the core
 // holds it, records it starting and ending in the transcript, and reads it
 // back on launch.
@@ -42,12 +42,12 @@ extension Core {
 
     func wishDayNow(_ now: Int64) -> String { config.time.boopDay(wall(now)) }
 
-    /// The wishes Boop may make at `now`: none while one is open or if one
-    /// was made today, none unless you're here, it's awake and nothing needs
+    /// The wishes Boop may make at `now`: none while one is open, none
+    /// unless you're here, it's awake and nothing needs
     /// you, it isn't listening or hushed; `work` only while no agent works,
     /// else your next prompt meets it for nothing.
     public func wishable(at now: Int64) -> [WishKind] {
-        guard wish == nil, wishDay != wishDayNow(now), !awayFromMac, needsYouBlock == nil, listening == nil,
+        guard wish == nil, !awayFromMac, needsYouBlock == nil, listening == nil,
               hushed(at: now) == nil else { return [] }
         let doing = snapshot(at: now).doing
         guard doing != "asleep" else { return [] }

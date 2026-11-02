@@ -17,9 +17,10 @@ final class WishTests: XCTestCase {
         return rig
     }
 
-    /// Pins the caps: one open, one a day (`Core.wishable`); none while
-    /// something needs you or you're away; `work` not while an agent works.
-    func testOneOpenOneADayAndItsGates() {
+    /// Pins the gates (`Core.wishable`): one open, and how many a day is
+    /// Jev's; none while something needs you or you're away; `work` not
+    /// while an agent works.
+    func testOneOpenAndItsGates() {
         let rig = rig()
         XCTAssertEqual(rig.core.wishable(at: rig.now), Core.WishKind.allCases)
         rig.send(.turnStart, prompt: "next")
@@ -33,7 +34,7 @@ final class WishTests: XCTestCase {
         XCTAssertEqual(rig.core.wishable(at: rig.now), [], "one open")
         rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
         XCTAssertNil(rig.core.wish, "met")
-        XCTAssertEqual(rig.core.wishable(at: rig.now), [], "one a day")
+        XCTAssertEqual(rig.core.wishable(at: rig.now), Core.WishKind.allCases, "no cap on how many a day")
     }
 
     /// What meets each kind, at once, by a rule, and nothing else does.
@@ -105,7 +106,6 @@ final class WishTests: XCTestCase {
         XCTAssertEqual(other.core.wish?.kind, .chat)
         other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .end, specificType: "met", data: ["kind": "chat"]))
         XCTAssertNil(other.core.wish)
-        XCTAssertEqual(other.core.wishable(at: r.now), [], "one a day, across a launch")
     }
 
     /// CONTEXT's rows say the facts; the board's wire has the kind.
