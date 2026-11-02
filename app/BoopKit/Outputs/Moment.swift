@@ -92,7 +92,7 @@ public struct Moment: Equatable, Sendable {
     /// drawer, for a question about all of them (`StatusReply`). Nil sends
     /// none.
     public var show: String?
-    /// Why it plays, short enough for the board's lane (`Reason.fact`):
+    /// Why it plays, short enough for the board's lane (`Narration.fact`):
     /// the board shows it there while the reaction plays and nothing is
     /// said. Nil sends none.
     public var reason: String?
@@ -117,10 +117,10 @@ public struct Moment: Equatable, Sendable {
     }
 
     /// A finished turn's length as a finish's `turn`: the tier it reached,
-    /// as the tags count them (`Occasions.tiers`), from 1 for `tier1` to 5
+    /// as the tags count them (`Tags.tiers`), from 1 for `tier1` to 5
     /// for `tier5`, and 0 short of the first.
     public static func turn(lengthMs: Int64) -> Int {
-        Occasions.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
+        Tags.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
     }
 
     /// The animations the Mac asks the device to play, each its design

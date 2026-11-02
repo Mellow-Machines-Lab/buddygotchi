@@ -57,9 +57,9 @@ public final class MomentOutput: Output {
     let signs: [TaggedLine]
     let calendar: (Event) -> [String]
     /// Why it reacts to the event the brain answered, in plain words
-    /// (`Reason`), or nil: its fact goes to the board's lane, and its
+    /// (`Narration`), or nil: its fact goes to the board's lane, and its
     /// sentence to the transcript.
-    let reason: (Event?) -> Reason?
+    let reason: (Event?) -> Narration?
     /// The pack's dream signs (`dreams.md`), and the tags of the dream an
     /// event's line tells, or nil when it tells none: the telling holds up
     /// one of the signs those tags fit.
@@ -125,7 +125,7 @@ public final class MomentOutput: Output {
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
-                talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Reason? = { _ in nil },
+                talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Narration? = { _ in nil },
                 dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }, asks: [TaggedLine] = [],
                 askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] },
                 today: @escaping () -> MemoryReader.Tallies? = { nil }) {

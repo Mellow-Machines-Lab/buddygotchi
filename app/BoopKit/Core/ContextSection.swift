@@ -38,11 +38,11 @@ public enum ContextSection {
     }
 
     /// The When row, first: the time, the weekday, the part of the day, and
-    /// the calendar's occasions in words: "When: 09:02, Saturday, morning;
+    /// the special days in words: "When: 09:02, Saturday, morning;
     /// Halloween."
-    public static func when(at wall: Int64, occasions: [String], time: LocalTime) -> String {
-        "When: " + [time.clock(wall), time.weekday(wall), Occasions.dayPart(at: wall, time: time)].joined(separator: ", ")
-            + (occasions.isEmpty ? "" : "; " + occasions.joined(separator: ", ")) + "."
+    public static func when(at wall: Int64, specialDays: [String], time: LocalTime) -> String {
+        "When: " + [time.clock(wall), time.weekday(wall), Days.dayPart(at: wall, time: time)].joined(separator: ", ")
+            + (specialDays.isEmpty ? "" : "; " + specialDays.joined(separator: ", ")) + "."
     }
 
     /// The Talk row, when the setting isn't normal: what it asks, and why

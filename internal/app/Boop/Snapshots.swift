@@ -566,8 +566,8 @@ enum Snapshots {
             // shades.
             ("celebrating", {
                 var s = status(sessions: [["claude", "jetpack", "work"]])
-                s.dressing = [Dressing(kind: .occasion, why: "Mochi became a Buddy today", what: "a party hat and confetti"),
-                              Dressing(kind: .friday, why: "It's Friday", what: "shades")]
+                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi became a Buddy today", what: "a party hat and confetti"),
+                              Narration.Dressing(kind: .friday, why: "It's Friday", what: "shades")]
                 return model(installer, status: s)
             }()),
             ("quiet", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], talk: .quiet))),

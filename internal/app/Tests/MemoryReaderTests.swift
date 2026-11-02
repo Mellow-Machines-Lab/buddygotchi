@@ -188,7 +188,7 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(told(back), [dream.day])
         let line = try XCTUnwrap(events(back).first)
         XCTAssertEqual(line.notes.last, "\(rig.pipeline.buddies[0].name) dreamed about \(dream.weekday): \(dream.sentence).")
-        XCTAssertEqual(Reason.of(rig.pipeline.transcript.event(line.seq)!, line: Line(line.line, facts: line.facts))?.fact,
+        XCTAssertEqual(Narration.of(rig.pipeline.transcript.event(line.seq)!, line: Line(line.line, facts: line.facts))?.fact,
                        dream.fact, "the dream is the reason")
         XCTAssertTrue(memory.dream?.told == true)
         XCTAssertEqual(told(rig.poke()), [], "told once")

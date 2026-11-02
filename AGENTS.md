@@ -298,7 +298,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | doing | What Boop is busy with: resting, working, asleep, listening, no app | base, look (for the state) | `base` |
 | look | Only the art that draws a Doing | | |
 | activity | How it's working: testing, delegating, terminal, searching, analysing, a tool, waiting, planning | act | `act` |
-| tier | How long it's been working or resting: tier 1 at 30 s to tier 5 at 10 min (`Occasions.tiers`) | stage (that's growth's) | `tier1`…`tier5` |
+| tier | How long it's been working or resting: tier 1 at 30 s to tier 5 at 10 min (`Tags.tiers`) | stage (that's growth's) | `tier1`…`tier5` |
 | pastime | What Boop does to pass the time, by Doing and tier or wait (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
 | kit | Props shown while true: mugs, headphones, the zone, the plant | | |
 | dressing | Outfits and decorations from tags: a hat, shades, the sun, the air | outfit, layers, occasion (as a design) | |
@@ -346,7 +346,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet, normal, chatty, or silent for a while (a hush) (`Talk`, `Core.Hush`) | chattiness, mute (that's the volume) | `talk`, `hush`, `hushed` |
-| narration | The Mac's plain words for why, never Jev's or Boop's voice (`Reason`) | explanation, caption | `reason` |
+| narration | The Mac's plain words for why, never Jev's or Boop's voice (`Narration`) | explanation, caption | `reason` |
 
 **The mind**
 

@@ -66,8 +66,8 @@
       {"id": "long-turn", "when": "A turn runs long",
        "decides": ["rule", "board"], "plays": ["working"],
        "does": "The Mac adds the tier the agents' working stretch has reached, tier1 to tier5 (a quick reply carries the stretch on); the gel settles into the tier's calm base, puts out its kit (headphones it puts on first) and plays the tier's pastimes, after a rest, the newest tier's most often, a move (the coffee reach, the melt, the stretch break) never soon after the last; both faces stretch from tier4.",
-       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
-                   {"what": "tier5 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"},
+       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
+                   {"what": "tier5 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"},
                    {"what": "rest at least", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kRestMinMs", "unit": "ms"},
                    {"what": "rest at most", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kRestMaxMs", "unit": "ms"},
                    {"what": "the newest tier's", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kNewestPct", "unit": "%"},
@@ -122,9 +122,9 @@
       {"id": "rest-tiers", "when": "Agents rest a while",
        "decides": ["rule", "board"], "plays": ["idle"],
        "does": "The Mac adds the tier their rest has reached, tier1 to tier5, the same ladder as work's; the gel plays the tier's pastimes (a bubble, a book, a tower, counting sheep), grows its plant from tier3, and nods off at tier5.",
-       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
-                   {"what": "tier3 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier3\", ([0-9_ *]+)\\)", "unit": "ms"},
-                   {"what": "tier5 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"}]}
+       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
+                   {"what": "tier3 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier3\", ([0-9_ *]+)\\)", "unit": "ms"},
+                   {"what": "tier5 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"}]}
     ]},
     {"id": "you", "label": "You, at the Mac", "about": "What you write and say, and whether you're there.", "rows": [
       {"id": "prompt", "when": "Your prompt, read on the Mac",

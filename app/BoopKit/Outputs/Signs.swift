@@ -27,7 +27,7 @@ public enum Signs {
 
     /// The tags a reading has for the buddy called `name`: its kind, tone
     /// and length, `named` when you said its name, and the calendar's
-    /// (`Occasions`, `night`, `friday`…). A `{words}` line needs no tag: it
+    /// (`Tags`, `night`, `friday`…). A `{words}` line needs no tag: it
     /// yields nothing without a phrase of yours.
     public static func tags(_ r: PromptReading, name: String, calendar: [String]) -> Set<String> {
         Set([r.kind?.rawValue, r.tone?.rawValue, r.length.rawValue, r.named.contains(name) ? "named" : nil].compactMap { $0 } + calendar)

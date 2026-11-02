@@ -20,7 +20,7 @@ final class HushTests: XCTestCase {
         let start = rig.now
         let fx = rig.note(Fx(rig.pipeline.effects(rig.core.hush(forMs: Core.hushMs, by: .app, at: rig.now), at: rig.now)))
         XCTAssertEqual(rig.core.hushed(at: rig.now), Core.Hush(by: .app, until: start + 30 * min))
-        XCTAssertTrue(fx.contains { if case .state(let s) = $0 { return s.when.contains(Occasions.hushed) } else { return false } },
+        XCTAssertTrue(fx.contains { if case .state(let s) = $0 { return s.when.contains(Tags.hushed) } else { return false } },
                       "the board hears of it")
         let hush = try XCTUnwrap(rig.pipeline.transcript.view(now: rig.now).events.last { $0.type == .hush })
         XCTAssertEqual(hush.phase, .start)
@@ -29,7 +29,7 @@ final class HushTests: XCTestCase {
         XCTAssertNotNil(rig.core.hushed(at: rig.now))
         rig.wait(2000)
         XCTAssertNil(rig.core.hushed(at: rig.now), "over at 30 min")
-        XCTAssertFalse(rig.core.snapshot(at: rig.now).when.contains(Occasions.hushed))
+        XCTAssertFalse(rig.core.snapshot(at: rig.now).when.contains(Tags.hushed))
         let end = try XCTUnwrap(rig.pipeline.transcript.view(now: rig.now).events.last { $0.type == .hush })
         XCTAssertEqual(end.phase, .end)
         XCTAssertEqual(end.specificType, "timer")

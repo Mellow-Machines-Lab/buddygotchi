@@ -51,10 +51,10 @@ extension Runtime {
         /// Why Boop feels as it does: what moved its mood last, in words
         /// ("You came back after 26 hours away."). Nil when nothing in the
         /// log says.
-        public var moodReason: Reason?
+        public var moodReason: Narration?
         /// Why the board looks as it does: what Boop celebrates today, and
         /// what it wears or shows for each.
-        public var dressing: [Dressing] = []
+        public var dressing: [Narration.Dressing] = []
 
         /// A day's line, as the popover shows it.
         public struct DayLine: Sendable, Equatable, Identifiable {
@@ -140,8 +140,8 @@ extension Runtime {
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
         status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
         let config = core.config
-        status.dressing = Dressing.now(when: status.snapshot.when,
-                                       occasions: Occasions.occasions(at: wall, hatched: config.hatched, name: name,
+        status.dressing = Narration.Dressing.now(when: status.snapshot.when,
+                                       specialDays: Days.special(at: wall, hatched: config.hatched, name: name,
                                                                       stage: config.stageReached, time: options.time),
                                        asleep: status.snapshot.doing == "asleep", gel: status.device?.face != .pixel)
         status.talk = talk

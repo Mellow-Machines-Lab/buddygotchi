@@ -34,7 +34,7 @@ final class ReplayTests: XCTestCase {
             let helpers = (object["helpers"] as? Int).map { " +\($0) helper" + ($0 == 1 ? "" : "s") } ?? ""
             // The tier reached, working's or idle's, which a state is sent
             // for.
-            let tiers = Set(Occasions.tiers.map(\.tag))
+            let tiers = Set(Tags.tiers.map(\.tag))
             let tier = (object["when"] as? [String] ?? []).first(where: tiers.contains).map { " " + $0 } ?? ""
             return "\(parts[0]) \(look) \(who) \(waiting)\(helpers)\(tier)"
         }

@@ -343,7 +343,7 @@ struct OverviewPane: View {
 
     /// What Boop is celebrating today, and the night, your prompt or the
     /// Friday: each reason, and what the board wears or shows for it.
-    private func dressingCard(_ reasons: [Dressing]) -> some View {
+    private func dressingCard(_ reasons: [Narration.Dressing]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(reasons) { reason in
@@ -363,9 +363,9 @@ struct OverviewPane: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func symbol(_ kind: Dressing.Kind) -> String {
+    private func symbol(_ kind: Narration.Dressing.Kind) -> String {
         switch kind {
-        case .occasion: "party.popper"
+        case .specialDay: "party.popper"
         case .night: "moon.stars"
         case .morning: "sun.horizon"
         case .friday: "sunglasses"

@@ -127,7 +127,7 @@ final class SignTests: XCTestCase {
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle"] + Occasions.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle"] + Days.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)
@@ -158,7 +158,7 @@ final class SignTests: XCTestCase {
             XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, line.text)
             XCTAssertNotNil(Signs.drawn(filled), line.text)
             XCTAssertFalse(filled.contains("{"), "only {words}: \(line.text)")
-            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Occasions.calendarTags + MomentOutput.momentTags), "\(line.tags)")
+            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Days.calendarTags + MomentOutput.momentTags), "\(line.tags)")
         }
     }
 

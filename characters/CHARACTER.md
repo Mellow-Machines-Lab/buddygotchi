@@ -597,7 +597,7 @@ Besides drawing each mood and state, a face:
   occasion with its sign, and celebrates a stage the moment it's reached,
   so a hat worn all day has a moment you saw), the tiers
   (`tier1` from 30 seconds, `tier2` from a minute, `tier3` from 2,
-  `tier4` from 5 and `tier5` from 10, `Occasions.tiers`: how long the
+  `tier4` from 5 and `tier5` from 10, `Tags.tiers`: how long the
   agents' working stretch has run, from the first turn of it, a rest of
   under 30 seconds carrying it on, or once nothing works, how long since
   the latest session came to rest, its turn ended or its request
@@ -609,7 +609,7 @@ Besides drawing each mood and state, a face:
   sessions working) and `frantic` (4 or more), which the board adds from
   `state.busy`. The Mac has more tags (`weekend`, `friday13`, `piday`,
   `aprilfools`, `may4` and the later growth stages), for its signs and the
-  brain, and sends the board none of them (`Occasions.macOnly`). A design that fits
+  brain, and sends the board none of them (`Tags.macOnly`). A design that fits
   only while its tags are on shows only then; a look starts on one while
   it fits, turns to one two times in three, and a reaction always takes
   one. Pixel's are `occasion-art.mjs` in its bank: coffee in the
@@ -650,7 +650,7 @@ Besides drawing each mood and state, a face:
   while it shows a feeling, a reaction, needs you or listening
   (`render::eyewearFor`; the
   Mac's popover says why each is on, choosing as the board does,
-  `Dressing`); snow in
+  `Narration.Dressing`); snow in
   winter, confetti on a party day and New Year's Day, hearts on
   Valentine's, Zs while it sleeps at night; a mug of coffee, steaming,
   held at its side while it's idle or at work in the morning and lifted

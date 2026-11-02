@@ -349,7 +349,7 @@ final class DeviceLinkTests: XCTestCase {
     /// and the to-do count goes only with nothing needing you. The widest line
     /// either way, with every tag that can be on at once, fits.
     func testTheTiersStagesAndToDoCountFitTheLine() {
-        let every = mostTags + ["tier5"] + Occasions.stageTags + [Occasions.hushed]
+        let every = mostTags + ["tier5"] + Tags.stageTags + [Tags.hushed]
         let needs = StateSnapshot(doing: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   working: 999, idle: 999, helpers: 999, vol: 10, when: every)

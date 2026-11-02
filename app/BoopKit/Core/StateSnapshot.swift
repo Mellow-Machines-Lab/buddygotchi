@@ -136,7 +136,7 @@ public struct StateSnapshot: Equatable, Sendable {
     /// Helpers (subagents) working, over every session.
     public var helpers: Int
     public var vol: Int
-    /// What's true now (`Occasions`): the part of the day, a holiday, how
+    /// What's true now (`Tags`): the part of the day, a holiday, how
     /// busy the agents are. The device shows the designs whose tags are
     /// all on, and picks each look's variation itself.
     public var when: [String]
@@ -271,7 +271,7 @@ public struct StateSnapshot: Equatable, Sendable {
         if idle > 0 { fields["idle"] = .int(idle) }
         if helpers > 0 { fields["helpers"] = .int(helpers) }
         fields["vol"] = .int(vol)
-        let tags = when.filter(Occasions.board.contains)  // the tags the board reads
+        let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if !calls.isEmpty {

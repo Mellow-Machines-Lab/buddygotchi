@@ -2557,7 +2557,7 @@ final class CoreFuzzTests: XCTestCase {
             }
             for sent in states(fx) {
                 XCTAssertTrue(sent.activity == nil || (sent.doing == "working" && sent.attn == nil), "\(sent.jsonLine)\n\(why)")
-                XCTAssertTrue(sent.when.allSatisfy(Occasions.all.contains), why)
+                XCTAssertTrue(sent.when.allSatisfy(Tags.all.contains), why)
                 if sent.activity != nil { acts += 1 }
             }
             if let sent = states(fx).last {

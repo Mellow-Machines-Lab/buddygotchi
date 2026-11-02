@@ -5,7 +5,7 @@
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a gag that carries tags fits only while every
 // one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
-// in this order (Occasions.board, app/BoopKit/Core/Occasions.swift), and
+// in this order (Tags.board, app/BoopKit/Core/Tags.swift), and
 // facegen numbers a design's tags by it.
 #pragma once
 #include <cstdint>

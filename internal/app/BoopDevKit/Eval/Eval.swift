@@ -439,7 +439,7 @@ public struct Scenario: Sendable {
                 step.expect?.dream = dream
                 let sign = try set("sign")
                 step.expect?.sign = sign
-                let unknownTags = (when ?? []).subtracting(Occasions.all)
+                let unknownTags = (when ?? []).subtracting(Tags.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
                                              ("intensity", step.expect?.intensity, MomentOutput.sizeOptions.map(\.name)),

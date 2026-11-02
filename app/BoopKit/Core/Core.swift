@@ -41,7 +41,7 @@ public final class Core {
         /// for none.
         public var hatched: String?
         /// The growth stage Boop reached last and the day it did: that day
-        /// is a party, unless it's the day Boop hatched (`Occasions`).
+        /// is a party, unless it's the day Boop hatched (`Days`).
         public var stageReached: (name: String, day: String)?
         /// Whether the board shows the work stream (`WorkStream`): the
         /// setting's, on unless you turn it off.
@@ -67,7 +67,7 @@ public final class Core {
     /// The mood now, as the mood output keeps it.
     public var moodNow: String { mood() }
     /// The growth stage Boop is at, from 1, which every `state` carries as
-    /// its tags (`Occasions.stages`): the runtime reads it from the growth
+    /// its tags (`Tags.stages`): the runtime reads it from the growth
     /// store. A Hatchling's until it's set.
     var stage: () -> Int = { 1 }
 
@@ -444,13 +444,13 @@ public final class Core {
     /// at once. Reached just now (`celebrate`), Boop celebrates it then,
     /// with the confetti and a sign saying what it grew into, so the party
     /// has a moment you can see. Not on the day Boop hatched, your first
-    /// with it: then it's no occasion (`Occasions.occasions`).
+    /// with it: then it's no occasion (`Days.special`).
     @discardableResult
     public func reachedStage(_ name: String, day: String? = nil, celebrate: Bool = false, at now: Int64) -> [CoreEffect] {
         config.stageReached = (name, day ?? self.day(now))
         var fx: [CoreEffect] = []
         publish(now, &fx)
-        if celebrate, let sign = Occasions.greeting(occasions(at: now)) {
+        if celebrate, let sign = Days.greeting(specialDays(at: now)) {
             play(Core.celebration(sign: sign), for: nil, now, &fx,
                  said: "\(config.pack.name) celebrated becoming a \(name), holding up a sign: \"\(sign)\".")
         }
@@ -463,9 +463,9 @@ public final class Core {
         Moment(anim: "task_complete", loops: 2, outcome: "success", sign: sign)
     }
 
-    /// Today's occasions at `now` (`Occasions.occasions`).
-    func occasions(at now: Int64) -> [Occasions.Occasion] {
-        Occasions.occasions(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
+    /// Today's occasions at `now` (`Days.special`).
+    func specialDays(at now: Int64) -> [Days.SpecialDay] {
+        Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
     }
 
     /// On a day with an occasion, the first agent's event Boop sees greets
@@ -479,7 +479,7 @@ public final class Core {
         let today = day(now)
         guard greetedDay != today, !needsYouShowing, !showsListening(at: now) else { return }
         greetedDay = today
-        guard let sign = Occasions.greeting(occasions(at: now)) else { return }
+        guard let sign = Days.greeting(specialDays(at: now)) else { return }
         play(Moment(anim: waking ? "wake_up" : "notice", sign: sign), for: nil, now, &fx,
              said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
     }
@@ -559,7 +559,7 @@ public final class Core {
     /// How long every session rests, nothing waiting on you, before Boop
     /// falls asleep with them still open (a terminal left open overnight):
     /// at night from the last tier, by day after an hour.
-    public static let dozeOffNightMs = Occasions.tiers.last!.fromMs
+    public static let dozeOffNightMs = Tags.tiers.last!.fromMs
     public static let dozeOffMs: Int64 = 60 * 60_000
 
     /// Whether Boop has dozed off at `now` though sessions are open: they
@@ -653,12 +653,12 @@ public final class Core {
     /// When the working stretch that `working`, the sessions working at
     /// `now`, are in began: the earliest start among their turns, or the
     /// stretch's own start when they took up again within
-    /// `Occasions.stretchRestMs` of resting. None while nothing works.
+    /// `Tags.stretchRestMs` of resting. None while nothing works.
     func stretchStart(_ working: [Session], at now: Int64) -> Int64? {
         guard !working.isEmpty else { return nil }
         let begun = working.compactMap(\.turn.startedAt).min() ?? now
         guard let s = stretch else { return begun }
-        if let rested = s.rested, begun - rested >= Occasions.stretchRestMs { return begun }
+        if let rested = s.rested, begun - rested >= Tags.stretchRestMs { return begun }
         return min(s.start, begun)
     }
 
@@ -684,20 +684,20 @@ public final class Core {
     /// The tags on at `now`: the calendar's, then the tier reached, from the start
     /// of the working stretch (`workingSince`), else from when the latest
     /// session came to rest (`idleSince`), then the growth stage's, then
-    /// `hushed`, in `Occasions.all`'s order.
+    /// `hushed`, in `Tags.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
-        if let since = workingSince ?? idleSince, let tier = Occasions.tier(after: now - since) { on.append(tier) }
-        on += Occasions.stages(stage())
-        if hushed(at: now) != nil { on.append(Occasions.hushed) }
-        return Occasions.all.filter(on.contains)
+        if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
+        on += Tags.stages(stage())
+        if hushed(at: now) != nil { on.append(Tags.hushed) }
+        return Tags.all.filter(on.contains)
     }
 
     /// The calendar's tags, worked out once a quarter of an hour.
     func calendar(at now: Int64) -> [String] {
         let wall = wall(now), slot = wall / 900_000, stage = config.stageReached?.day
         if let c = whenCache, c.slot == slot, c.hatched == config.hatched, c.stage == stage { return c.tags }
-        let tags = Occasions.tags(at: wall, hatched: config.hatched, party: stage == config.time.day(wall), time: config.time)
+        let tags = Days.tags(at: wall, hatched: config.hatched, party: stage == config.time.day(wall), time: config.time)
         whenCache = (slot, config.hatched, stage, tags)
         return tags
     }

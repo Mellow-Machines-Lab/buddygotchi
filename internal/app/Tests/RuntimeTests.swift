@@ -1303,7 +1303,7 @@ final class RuntimeTests: XCTestCase {
     func testTheStatusLineCarriesWhatContextLacks() throws {
         var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(doing: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
                                     sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234))
-        status.moodReason = Reason(cause: "You came back after 26 hours away.")
+        status.moodReason = Narration(cause: "You came back after 26 hours away.")
         var today = MemoryReader.Tallies()
         today.workXP = 12
         today.careXP = 6

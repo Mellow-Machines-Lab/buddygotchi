@@ -2,9 +2,9 @@ import Foundation
 import XCTest
 @testable import BoopKit
 
-/// What's true now, as tags (`Occasions`): the board's designs and the
+/// What's true now, as tags (`Tags`): the board's designs and the
 /// prompt's heading both read them.
-final class OccasionsTests: XCTestCase {
+final class DaysTests: XCTestCase {
     let utc = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
 
     func ms(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, _ mi: Int = 0) -> Int64 {
@@ -14,10 +14,10 @@ final class OccasionsTests: XCTestCase {
     }
 
     func tags(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, _ mi: Int = 0, hatched: String? = nil) -> [String] {
-        Occasions.tags(at: ms(y, mo, d, h, mi), hatched: hatched, time: utc)
+        Days.tags(at: ms(y, mo, d, h, mi), hatched: hatched, time: utc)
     }
 
-    /// Pins `Occasions.dayParts`: morning from 05:00, day from 11:00,
+    /// Pins `Days.dayParts`: morning from 05:00, day from 11:00,
     /// evening from 17:00, night from 22:00 until 05:00.
     func testThePartsOfTheDay() {
         for (h, mi, part) in [(4, 59, "night"), (5, 0, "morning"), (10, 59, "morning"), (11, 0, "day"), (16, 59, "day"),
@@ -47,7 +47,7 @@ final class OccasionsTests: XCTestCase {
         XCTAssertFalse(tags(2026, 2, 18).contains("lunar"))
     }
 
-    /// Pins `Occasions.isMilestone`: a party on the 10th and 50th days
+    /// Pins `Days.isMilestone`: a party on the 10th and 50th days
     /// since hatching, every 100th, and each anniversary; and the heading's
     /// words for each.
     func testMilestoneDaysAreAParty() {
@@ -60,10 +60,10 @@ final class OccasionsTests: XCTestCase {
         XCTAssertTrue(party(2026, 12, 10), "100 days")
         XCTAssertTrue(party(2027, 3, 20), "200 days")
         XCTAssertTrue(party(2027, 9, 1), "a year")
-        XCTAssertTrue(Occasions.tags(at: ms(2026, 10, 22), hatched: hatched, party: true, time: utc).contains("party"),
+        XCTAssertTrue(Days.tags(at: ms(2026, 10, 22), hatched: hatched, party: true, time: utc).contains("party"),
                       "a stage reached")
         func words(_ y: Int, _ mo: Int, _ d: Int) -> [String] {
-            Occasions.words(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc)
+            Days.words(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc)
         }
         XCTAssertEqual(words(2026, 10, 21), ["Pip is 50 days old"])
         XCTAssertEqual(words(2026, 10, 31), ["Halloween"])
@@ -78,9 +78,9 @@ final class OccasionsTests: XCTestCase {
         let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/render/tags.h"), encoding: .utf8)
         let list = try XCTUnwrap(header.range(of: #"kTagNames\[kTagCount\] = \{[^}]*\}"#, options: .regularExpression))
         let names = header[list].split(separator: "\"").enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
-        XCTAssertEqual(names, Occasions.board)
-        XCTAssertEqual(Set(Occasions.all).subtracting(Occasions.board), Occasions.macOnly)
-        XCTAssertLessThanOrEqual(Occasions.board.count, 32, "a set of tags is 32 bits on the board")
+        XCTAssertEqual(names, Tags.board)
+        XCTAssertEqual(Set(Tags.all).subtracting(Tags.board), Tags.macOnly)
+        XCTAssertLessThanOrEqual(Tags.board.count, 32, "a set of tags is 32 bits on the board")
     }
 
     /// A growth stage reached makes the rest of its day a party, on the
@@ -93,7 +93,7 @@ final class OccasionsTests: XCTestCase {
         core.reachedStage("Sprout", at: now)
         XCTAssertTrue(core.snapshot(at: now).when.contains("party"))
         XCTAssertFalse(core.snapshot(at: now + 24 * 3_600_000).when.contains("party"), "the next day isn't")
-        XCTAssertEqual(Occasions.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
+        XCTAssertEqual(Days.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
     }
 
     /// Every occasion has a sign that fits the board's (`Signs.maxLength`
@@ -102,18 +102,18 @@ final class OccasionsTests: XCTestCase {
     /// calendar's.
     func testEachOccasionHasASignThatFits() {
         let hatched = "2026-09-01"
-        var signs = Occasions.holidays.map(\.sign) + ["Friday the 13th!", "Programmers' Day!", "Lunar New Year!"]
+        var signs = Days.holidays.map(\.sign) + ["Friday the 13th!", "Programmers' Day!", "Lunar New Year!"]
         for (y, mo, d) in [(2026, 9, 11), (2027, 9, 1), (2028, 9, 1), (2029, 6, 7)] {
-            signs += Occasions.occasions(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc).map(\.sign)
+            signs += Days.special(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc).map(\.sign)
         }
-        signs += Growth.stages.map { Occasions.occasions(at: ms(2026, 10, 22), hatched: nil, name: "Pip", stage: ($0.name, "2026-10-22"),
+        signs += Growth.stages.map { Days.special(at: ms(2026, 10, 22), hatched: nil, name: "Pip", stage: ($0.name, "2026-10-22"),
                                                          time: utc)[0].sign }
         for sign in signs {
             XCTAssertLessThanOrEqual(sign.count, Signs.maxLength, sign)
             XCTAssertTrue(sign.unicodeScalars.allSatisfy { (0x20...0x7E).contains($0.value) }, sign)
         }
         func greeting(_ y: Int, _ mo: Int, _ d: Int, stage: String? = nil) -> String? {
-            Occasions.greeting(Occasions.occasions(at: ms(y, mo, d), hatched: hatched, name: "Pip",
+            Days.greeting(Days.special(at: ms(y, mo, d), hatched: hatched, name: "Pip",
                                                    stage: stage.map { ($0, utc.day(ms(y, mo, d))) }, time: utc))
         }
         XCTAssertEqual(greeting(2026, 9, 11), "Day 10!")
@@ -122,9 +122,9 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(greeting(2027, 9, 1), "1 year old!")
         XCTAssertEqual(greeting(2028, 9, 1), "2 years old!")
         XCTAssertNil(greeting(2026, 10, 22), "an ordinary day")
-        XCTAssertEqual(Occasions.occasions(at: ms(2026, 10, 21), hatched: hatched, name: "Pip", time: utc).map(\.why),
+        XCTAssertEqual(Days.special(at: ms(2026, 10, 21), hatched: hatched, name: "Pip", time: utc).map(\.why),
                        ["Pip is 50 days old today"])
-        XCTAssertEqual(Occasions.occasions(at: ms(2026, 10, 31), hatched: nil, name: "Pip", time: utc).map(\.why), ["It's Halloween"])
+        XCTAssertEqual(Days.special(at: ms(2026, 10, 31), hatched: nil, name: "Pip", time: utc).map(\.why), ["It's Halloween"])
     }
 
     /// Growing a stage just now plays its moment: the confetti, holding up
@@ -188,9 +188,9 @@ final class OccasionsTests: XCTestCase {
         func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, asleep: Bool = false,
                      gel: Bool = true) -> [String] {
             let at = ms(y, mo, d, h), day = utc.day(at)
-            let when = Occasions.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc)
-            let occasions = Occasions.occasions(at: at, hatched: "2026-09-01", name: "Pip", stage: stage.map { ($0, day) }, time: utc)
-            return Dressing.now(when: when, occasions: occasions, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
+            let when = Days.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc)
+            let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", stage: stage.map { ($0, day) }, time: utc)
+            return Narration.Dressing.now(when: when, specialDays: specialDays, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
         XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout"), ["Pip became a Sprout today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat and confetti"])
@@ -219,23 +219,23 @@ final class OccasionsTests: XCTestCase {
         core.setWallClock(now, at: now)
         XCTAssertEqual(moments(core.reachedStage("Sprout", celebrate: true, at: now)), [], "no cheer")
         XCTAssertFalse(core.snapshot(at: now).when.contains("party"), "a Sprout on the day it hatched")
-        XCTAssertEqual(core.occasions(at: now), [], "no greeting, and nothing for the popover")
-        XCTAssertTrue(Occasions.tags(at: ms(2027, 1, 1), hatched: "2027-01-01", party: true, time: utc).contains("party"),
+        XCTAssertEqual(core.specialDays(at: now), [], "no greeting, and nothing for the popover")
+        XCTAssertTrue(Days.tags(at: ms(2027, 1, 1), hatched: "2027-01-01", party: true, time: utc).contains("party"),
                       "hatched on New Year's Day")
-        XCTAssertTrue(Occasions.tags(at: ms(2026, 10, 23), hatched: "2026-10-22", party: true, time: utc).contains("party"),
+        XCTAssertTrue(Days.tags(at: ms(2026, 10, 23), hatched: "2026-10-22", party: true, time: utc).contains("party"),
                       "a stage reached the day after")
     }
 
-    /// Pins `Occasions.tiers`: `tier1` from 30 seconds, `tier2` from a
+    /// Pins `Tags.tiers`: `tier1` from 30 seconds, `tier2` from a
     /// minute, `tier3` from 2, `tier4` from 5 and `tier5` from 10, the last.
     /// The last reached is sent; the board takes the ones below it as on.
     func testTheTiers() {
-        XCTAssertEqual(Occasions.tiers.map(\.fromMs), [30_000, 60_000, 120_000, 300_000, 600_000])
+        XCTAssertEqual(Tags.tiers.map(\.fromMs), [30_000, 60_000, 120_000, 300_000, 600_000])
         for (s, tag) in [(0, nil), (29, nil), (30, "tier1"), (59, "tier1"), (60, "tier2"), (119, "tier2"), (120, "tier3"),
                          (299, "tier3"), (300, "tier4"), (599, "tier4"), (600, "tier5"), (7200, "tier5")] as [(Int64, String?)] {
-            XCTAssertEqual(Occasions.tier(after: s * 1000), tag, "\(s) s")
+            XCTAssertEqual(Tags.tier(after: s * 1000), tag, "\(s) s")
         }
-        XCTAssertEqual(Occasions.stretchRestMs, 30_000, "a rest shorter than the first tier keeps a working stretch")
+        XCTAssertEqual(Tags.stretchRestMs, 30_000, "a rest shorter than the first tier keeps a working stretch")
     }
 
     /// The board hears the tier in `state.when`: the working stretch's,
@@ -267,7 +267,7 @@ final class OccasionsTests: XCTestCase {
         XCTAssertEqual(tiers(), [], "back to work, a new stretch")
     }
 
-    /// Pins `Occasions.stretchRestMs`: a reply within 30 seconds of the
+    /// Pins `Tags.stretchRestMs`: a reply within 30 seconds of the
     /// agents coming to rest carries their working stretch on, so its tiers
     /// keep climbing; a longer rest starts a new one.
     func testAQuickReplyKeepsTheWorkingStretch() {
@@ -291,11 +291,11 @@ final class OccasionsTests: XCTestCase {
     /// Every growth stage reached is a tag, so a design for Pal shows at
     /// Pal and after; a Hatchling has none.
     func testEveryStageReachedIsOn() {
-        XCTAssertEqual(Occasions.stages(1), [])
-        XCTAssertEqual(Occasions.stages(2), ["sprout"])
-        XCTAssertEqual(Occasions.stages(4), ["sprout", "buddy", "pal"])
-        XCTAssertEqual(Occasions.stages(Growth.stages.count), Occasions.stageTags)
-        XCTAssertEqual(Occasions.stageTags, ["sprout", "buddy", "pal", "chonk", "legend"])
+        XCTAssertEqual(Tags.stages(1), [])
+        XCTAssertEqual(Tags.stages(2), ["sprout"])
+        XCTAssertEqual(Tags.stages(4), ["sprout", "buddy", "pal"])
+        XCTAssertEqual(Tags.stages(Growth.stages.count), Tags.stageTags)
+        XCTAssertEqual(Tags.stageTags, ["sprout", "buddy", "pal", "chonk", "legend"])
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         core.stage = { 3 }
         XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(2), ["sprout", "buddy"])
