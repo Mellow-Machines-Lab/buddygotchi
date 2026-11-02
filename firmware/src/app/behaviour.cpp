@@ -64,6 +64,13 @@ void Behaviour::reset(uint32_t t, Rng& rng) {
 
 bool Behaviour::noApp(uint32_t t) const { return stale_ || int32_t(t - lastState_) >= int32_t(kNoAppMs); }
 
+// A Mac that goes to sleep is no news to a Boop already asleep: it sleeps on
+// with no plug, until a touch shows why nothing answers. Its model is the
+// last state, which nothing changes while the Mac is silent.
+bool Behaviour::sleepsOn(uint32_t t) const {
+  return noApp(t) && !touchedAlone_ && model_.base == render::SceneState::kAsleep && !model_.attn;
+}
+
 bool Behaviour::reactionOn(uint32_t t) const {
   return reaction_.anim != render::SceneState::kNone && within(t, reaction_.at, reaction_.ms);
 }
@@ -222,6 +229,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
     stale_ = false;
+    touchedAlone_ = false;
     blOverride_ = false;
     if (fresh) {  // a new needs-you: its performance plays from the start, and it wins
       alerted_ = true, alertAt_ = t, ++alerts_;
@@ -443,6 +451,11 @@ void Behaviour::startSay(const ReactionIn& in, uint32_t t, uint32_t at) {
 void Behaviour::pressDown(uint32_t t) {
   pressed_ = true;
   pressAt_ = t;
+  touchAlone(t);
+}
+
+void Behaviour::touchAlone(uint32_t t) {
+  if (sleepsOn(t)) change(t, [&] { touchedAlone_ = true; });
 }
 
 void Behaviour::pressUp() { pressed_ = false; }
@@ -474,6 +487,7 @@ const char* Behaviour::press(uint32_t t, Rng& rng) {
 }
 
 void Behaviour::gesture(render::Gesture g, uint32_t t) {
+  touchAlone(t);
   if (held(t) || (g != render::Gesture::kHandoff && finishShown(t))) return;
   const int n = face_->variants(model_.mood, render::SceneState::kGesture);
   const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
@@ -509,7 +523,7 @@ void Behaviour::talkOff(uint32_t t) {
 // ---- What shows ------------------------------------------------------------
 
 render::SceneState Behaviour::look(uint32_t t) const {
-  if (noApp(t)) return render::SceneState::kNoApp;
+  if (plugShows(t)) return render::SceneState::kNoApp;
   return model_.attn ? render::SceneState::kNeedsYou : model_.look();
 }
 
@@ -518,7 +532,7 @@ render::SceneState Behaviour::look(uint32_t t) const {
 // doing, idle, working or asleep.
 Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
   Source s;
-  if (noApp(t)) {  // no Mac to pick a variation: the first
+  if (plugShows(t)) {  // no Mac to pick a variation: the first
     s.look = render::SceneState::kNoApp;
     s.mood = model_.mood;
     return s;
@@ -557,7 +571,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.more = model_.more;
   // With no app the Mac's tags are stale: a night's or a holiday's would
   // stay up all the next day.
-  c.when = noApp(t) ? 0 : model_.when;
+  c.when = plugShows(t) ? 0 : model_.when;
   c.lookMs = t - lookAt_;
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
@@ -667,7 +681,7 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish)
 void Behaviour::followLane(uint32_t t) {
   const bool shows = stripAt(t).shows();
   const Done* finish = finishOn(t);
-  if (shows) laneModel_ = model_, laneNoApp_ = noApp(t), laneFinishes_ = finish != nullptr;
+  if (shows) laneModel_ = model_, laneNoApp_ = plugShows(t), laneFinishes_ = finish != nullptr;
   if (shows && finish) laneFinish_ = *finish;
   lane_.retarget(shows ? 1000 : 0, t);
 }

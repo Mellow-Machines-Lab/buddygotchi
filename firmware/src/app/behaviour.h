@@ -293,6 +293,10 @@ class Behaviour {
   // A press has just come in: feedback the redraw cap mustn't hold back.
   bool pressEasing(uint32_t t) const;
   bool noApp(uint32_t t) const;
+  // No app, and the plug and the no-app look stay away: Boop was asleep when
+  // the Mac went quiet, and nobody has touched the board since.
+  bool sleepsOn(uint32_t t) const;
+  bool plugShows(uint32_t t) const { return noApp(t) && !sleepsOn(t); }
   uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
   // The lane's strip at t, at its opacity: easing in over the rig's fade
@@ -498,7 +502,8 @@ class Behaviour {
   // What the strip shows: what the Mac last said, with no app or not, and
   // the finished turn named (null for none), whole.
   static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
-  render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t)); }
+  void touchAlone(uint32_t t);  // a touch ends sleepsOn
+  render::Strip stripAt(uint32_t t) const { return sleepsOn(t) ? render::Strip{} : stripOf(model_, noApp(t), finishOn(t)); }
   // At every change: the strip kept while it shows, and its fade turned
   // when it comes or goes.
   void followLane(uint32_t t);
@@ -515,6 +520,8 @@ class Behaviour {
   // Latched once the Mac has been silent kNoAppMs, so "no app" holds
   // however long the silence (the clock's differences wrap after 24 days).
   bool stale_ = false;
+  // Touched with the Mac gone, until its next state (sleepsOn).
+  bool touchedAlone_ = false;
   bool blOverride_ = false;  // dbg.light, until the next state
   uint8_t blSet_ = 255;
   // The level the state asked for at the last change, like src_ for the

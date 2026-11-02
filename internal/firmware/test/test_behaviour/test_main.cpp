@@ -3497,6 +3497,53 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
 // for them all the next day; the next state brings them back.
+// plan/lock-and-unlock.md: a Boop asleep when the Mac goes quiet stays
+// asleep with no plug, until a touch shows the plug; awake, the plug shows
+// at the same 30 s as ever; the Mac's next state ends it.
+static void test_a_sleeping_boop_gets_no_plug_until_touched() {
+  auto silent = [](Rig& r) {
+    r.at(Behaviour::kNoAppMs + 1);
+    TEST_ASSERT_TRUE(r.b.noApp(r.t));
+  };
+  Rig awake;
+  awake.state(base("idle"));
+  silent(awake);
+  TEST_ASSERT_TRUE(awake.b.look(awake.t) == SceneState::kNoApp);
+  TEST_ASSERT_TRUE(awake.b.strip(awake.t).noApp);
+
+  Rig r;
+  r.state(base("asleep"));
+  silent(r);
+  r.at(r.t + 1000);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).noApp);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kAsleep);
+  TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
+  // Still gone, so a Moment is refused as ever.
+  ReactionIn in;
+  in.anim = SceneState::kPoked;
+  TEST_ASSERT_EQUAL_STRING("no_app", r.b.admit(in, r.t));
+
+  r.b.pressDown(r.t);
+  r.b.pressUp();
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
+  r.at(r.t + 500);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNoApp);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).noApp);
+  r.at(r.t + 60000);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);  // it stays, once shown
+
+  // The Mac back and asleep, then gone again: asleep again, no plug.
+  r.state(base("asleep"));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+  r.at(r.t + Behaviour::kNoAppMs + 1);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+
+  // A motion gesture is a touch too.
+  r.b.gesture(render::Gesture::kPickup, r.t);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
+}
+
 static void test_no_app_is_silent_and_wears_no_tags() {
   TEST_ASSERT_EQUAL_INT(0, Model{}.vol);
   auto face = std::make_unique<testface::WrappedFace>();
@@ -3523,6 +3570,7 @@ int main() {
   RUN_TEST(test_falling_words_stay_on_screen_and_the_clock_runs_on);
   RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
+  RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);

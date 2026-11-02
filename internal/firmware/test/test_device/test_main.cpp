@@ -829,6 +829,11 @@ static void test_repeated_states_dont_redraw_the_picture() {
     TEST_ASSERT_TRUE(r.px == before);
     // And after no app it still reconnects, even with the same model.
     r.usbLine("{\"t\":\"dbg.clock\",\"step\":30000}");
+    if (state == states[0]) {  // a sleeping Boop sleeps on until a touch
+      TEST_ASSERT_TRUE(r.screen() == "face");
+      r.usbLine("{\"t\":\"dbg.press\",\"ms\":100}");
+      r.usbLine("{\"t\":\"dbg.clock\",\"step\":200}");
+    }
     TEST_ASSERT_TRUE(r.screen() == "no_app");
     r.dev.takeFrame();
     r.usbLine(state);

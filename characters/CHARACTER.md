@@ -486,7 +486,7 @@ show when no Moment plays.
 | `delegating` | An agent hands work to a helper | the Mac |
 | `waiting` | A tool takes its time; nothing is asked of you | the Mac |
 | `needs_you` | An agent waits for your approval or answer on the Mac | the Mac |
-| `no_app` | The board has lost the Mac | the board |
+| `no_app` | The board has lost the Mac; a Boop already asleep sleeps on until you touch the board | the board |
 
 **Moments' animations** play once over the look, or `loops` times (1 to 6),
 then go.

@@ -1,6 +1,6 @@
 # Lock and unlock
 
-Updated 2026-11-02. Built, but for its last part. Boop answers every lock and unlock of the Mac: a
+Updated 2026-11-02. Built. Boop answers every lock and unlock of the Mac: a
 slight silent wave by default, more when it has been a while, a goodnight
 at night, a snub when it's cross. Decided with the owner on 2026-11-01.
 Build on `wish`. Nothing here needs a permission: `PresenceSignals`
@@ -52,7 +52,7 @@ The steering sets the defaults; Jev may depart from them:
 | Tests that pin | The away's 10 minutes unchanged; one reaction at a long unlock |
 | Docs | CLAUDE.md Words if a word is added, `documentation/architecture.html`, `internal/EVALS.md` |
 
-## Last, separate: no plug on a sleeping Boop
+## No plug on a sleeping Boop
 
 So it can't hold up the wave. When the board hears nothing for
 `kHostGoneMs` (30 s) it shows the plug and the no-app look. On a Mac
