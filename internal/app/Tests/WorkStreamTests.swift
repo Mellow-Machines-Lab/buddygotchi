@@ -458,4 +458,14 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(run(rig, "1", program: "grep"), [])
         XCTAssertEqual(rig.state.calls, [])
     }
+
+    /// characters/CHARACTER.md §4: the scene is the pack's. Boop's says it, and
+    /// a pack that draws no acts, as Pixel, is told only what the agent did.
+    func testAnActsSceneIsThePacks() throws {
+        XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "build", thread: "\"api\"", name: "Mo", pack: .active),
+                       "claude is building on \"api\". Mo has put on a hard hat, by itself, and is hammering at a little house.")
+        let pixel = try CharacterPack.named(id: "pixel")
+        XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "push", thread: "\"api\"", pack: pixel), "claude is pushing on \"api\".")
+        XCTAssertEqual(EventLine.actEnded(agent: "claude", kind: "tests", thread: "\"api\"", passed: false, pack: pixel), "claude's tests failed on \"api\".")
+    }
 }

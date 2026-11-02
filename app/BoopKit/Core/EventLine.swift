@@ -129,27 +129,26 @@ public enum EventLine {
     }
 
     /// A work act's start or its result, for Jev to say something over what
-    /// Boop already does by rule: `claude is pushing on "api". Boop has
-    /// climbed on a rocket for it, by itself.`
-    public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name) -> String {
-        switch kind {
-        case "build": "\(agent) is building on \(thread). \(name) has put on a hard hat, by itself, and is hammering at a little house."
-        case "tests": "\(agent) is running tests on \(thread). \(name) has strapped itself to a sled facing a wall, by itself, and is holding its breath."
-        default: "\(agent) is pushing on \(thread). \(name) has climbed on a rocket for it, by itself, and is blasting off."
+    /// Boop already does by rule: the agent's clause, then the scene the pack
+    /// draws for it, if it says one (`character.json`'s `acts`):
+    /// `claude is pushing on "api". Boop has climbed on a rocket for it, by itself.`
+    public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name,
+                                  pack: CharacterPack = .active) -> String {
+        let doing: String = switch kind {
+        case "build": "\(agent) is building on \(thread)."
+        case "tests": "\(agent) is running tests on \(thread)."
+        default: "\(agent) is pushing on \(thread)."
         }
+        return [doing, pack.actScene(kind, "start", name: name)].compactMap { $0 }.joined(separator: " ")
     }
-    public static func actEnded(agent: String, kind: String, thread: String, passed: Bool, name: String = CharacterPack.active.name) -> String {
-        switch kind {
-        case "build":
-            passed ? "\(agent)'s build worked on \(thread), and the turn goes on. \(name)'s little house is done, a flag on it, by itself."
-                : "\(agent)'s build failed on \(thread). \(name)'s little house has fallen apart, by itself."
-        case "tests":
-            passed ? "\(agent)'s tests passed on \(thread), and the turn goes on. \(name)'s sled has stopped just short of the wall, by itself."
-                : "\(agent)'s tests failed on \(thread). \(name) has hit the wall and slid down it, by itself."
-        default:
-            passed ? "\(agent)'s push went through on \(thread), and the turn goes on. \(name) is parachuting back down, by itself."
-                : "\(agent)'s push failed on \(thread). \(name) has crash-landed, by itself, its rocket in the ground."
+    public static func actEnded(agent: String, kind: String, thread: String, passed: Bool, name: String = CharacterPack.active.name,
+                                pack: CharacterPack = .active) -> String {
+        let how: String = switch kind {
+        case "build": passed ? "\(agent)'s build worked on \(thread), and the turn goes on." : "\(agent)'s build failed on \(thread)."
+        case "tests": passed ? "\(agent)'s tests passed on \(thread), and the turn goes on." : "\(agent)'s tests failed on \(thread)."
+        default: passed ? "\(agent)'s push went through on \(thread), and the turn goes on." : "\(agent)'s push failed on \(thread)."
         }
+        return [how, pack.actScene(kind, passed ? "pass" : "fail", name: name)].compactMap { $0 }.joined(separator: " ")
     }
 
     /// Commands failing one after another (the work stream's failure
