@@ -481,7 +481,10 @@ it's small, a word medium, a phrase big or huge):
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take. Its
   first line holds the voice file's version, the same one the board
   reports. A take that's also a reply's words is in it again, by the
-  same id, as part `reply`: the voice file has it once.
+  same id, as part `reply`, and one that's also a second feeling (the
+  slime's `shaken`, from its startled and cross words) again as that
+  feeling: the voice file has it once. `say` offers a pack only the
+  feelings its table has takes of.
 
 A pack may have them, or not. Both are built files and
 checked in. The one voice there is is Boop's: 2,722 takes recorded, and

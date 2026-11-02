@@ -29,6 +29,10 @@ final class ReasonTests: XCTestCase {
         XCTAssertEqual(Reason.of(event(.gesture, "stroke"), line: nil), Reason(cause: "You stroked it.", fact: "stroked"))
         XCTAssertEqual(Reason.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(4)])),
                        Reason(cause: "You poked it 4 times in a row.", fact: "poked x4"))
+        XCTAssertEqual(Reason.of(event(.gesture, "dizzy"), line: Line("", facts: ["in_a_row": .int(1)])),
+                       Reason(cause: "You shook it.", fact: "shaken"))
+        XCTAssertEqual(Reason.of(event(.gesture, "dizzy"), line: Line("", facts: ["in_a_row": .int(3)])),
+                       Reason(cause: "You shook it 3 times in a row.", fact: "shaken x3"))
         XCTAssertEqual(Reason.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]))?.fact,
                        "woken up")
         let said = Reason.of(event(.said, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))

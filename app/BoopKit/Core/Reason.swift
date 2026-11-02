@@ -67,6 +67,9 @@ public struct Reason: Equatable, Sendable {
                 : Reason(cause: "You poked it.", fact: "poked")
         case .gesture?:
             guard let g = gestures[e.specificType] else { return line.map { Reason(cause: $0.text) } }
+            if let count = facts["in_a_row"]?.int, count > 1 {
+                return Reason(cause: "You shook it \(count) times in a row.", fact: "shaken x\(count)")
+            }
             return Reason(cause: g.cause, fact: g.fact)
         case .ask? where e.specificType != Asks.ignored:
             guard let answer = facts["answer"]?.string else { return line.map { Reason(cause: $0.text) } }

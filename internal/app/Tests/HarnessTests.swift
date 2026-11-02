@@ -288,10 +288,15 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big", "huge"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name),
-                       ["none", "swear", "upset", "glad", "tickled"] + ReactOutput.topics.map(\.name))
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.count, 21, "none, 3 feelings, a swear and the 16 topics")
+                       ["none", "swear", "upset", "glad", "tickled", "shaken"] + ReactOutput.topics.map(\.name))
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.count, 22, "none, 4 feelings, a swear and the 16 topics")
         XCTAssertLessThanOrEqual(ReactOutput.sizes.map(\.loops).max() ?? 0, DeviceReaction.maxLoops, "the device plays them all")
         XCTAssertEqual(Set(ReactOutput.feelings.map(\.name)), Voice.answers(.feeling), "a feeling for every take's, and none without one")
+        // A pack's say offers only the feelings its voice has: Pixel's
+        // older copy of the voice has no shaken takes.
+        if let pixel = try? CharacterPack.named(id: "pixel") {
+            XCTAssertEqual(ReactOutput.feelings(in: pixel).map(\.name), ["upset", "glad", "tickled"])
+        }
         XCTAssertEqual(Set(ReactOutput.topics.map(\.name)), Voice.answers(.about), "a topic for every take's, and none without one")
     }
 

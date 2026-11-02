@@ -356,8 +356,9 @@ kinds, all with the `boop` personality unless the file says otherwise:
   absolutely right!" gets an eye-roll (`96`). Once its day is over at
   5:00, it tells its dream about it the first time you show up, never to
   an agent's event while you're away, and only once (`97`). Touched like a
-  pet: a stroke calms a fed-up Boop, a shake makes it dizzy, and a
-  swipe, a quick stroke, is a stroke too (`99`). And, scripted, the screen with no pass: BOOT
+  pet: a stroke calms a fed-up Boop, a shake startles it, and a
+  swipe, a quick stroke, is a stroke too (`99`); shakes in a row go
+  from a startled whoa to cross, as pokes do (`151`). And, scripted, the screen with no pass: BOOT
   walks the line, who needs you first, then the newest idle (`92`), and
   the helpers and idle agents are counted under the face (`93`); a
   request still shows after a two-hour lunch, since its agent still

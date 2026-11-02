@@ -454,6 +454,33 @@ final class ViewTests: XCTestCase {
         XCTAssertTrue(events(rig.poke())[0].wakesBrain, "3 s apart is a new run")
     }
 
+    /// A shake's line counts the shakes in a row, each within
+    /// `shakesInARowMs` (4 s) of the last, so Boop can go from whoa to
+    /// cross; every shake wakes the brain, even while Boop reacts to one.
+    func testShakesInARow() {
+        XCTAssertEqual(TranscriptView.shakesInARowMs, 4000)
+        let shake = TranscriptView.shake
+        var shakes: [ViewEvent] = []
+        for _ in 0..<5 {
+            let e = events(rig.gesture(shake))[0]
+            XCTAssertTrue(e.wakesBrain, "every shake wakes the brain")
+            shakes.append(e)
+            if shakes.count == 3 {
+                rig.pipeline.record(Event.action(at: rig.now, phase: .start, name: "react",
+                                                 data: ["for": .int(Int64(e.seq)), "by": "brain", "ok": true,
+                                                        "message": "Boop did it."]))
+            }
+            rig.wait(1600)
+        }
+        XCTAssertEqual(shakes.map(\.line), ["You shook \(creature).", "You shook \(creature) 2 times in a row.",
+                                            "You shook \(creature) 3 times in a row.", "You shook \(creature) 4 times in a row.",
+                                            "You shook \(creature) 5 times in a row."])
+        XCTAssertEqual(shakes[2].facts["in_a_row"], .int(3))
+        rig.wait(4000)
+        XCTAssertEqual(events(rig.gesture(shake))[0].line, "You shook \(creature).", "4 s apart is a new run")
+        XCTAssertEqual(events(rig.gesture("stroke"))[0].line, "You stroked \(creature).", "other gestures aren't counted")
+    }
+
     /// An hour with nothing happening, and no thread working,
     /// brings a heartbeat, and so does every hour after that. While a
     /// thread works, the working heartbeat comes instead.

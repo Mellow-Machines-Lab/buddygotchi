@@ -217,6 +217,11 @@ public enum EventLine {
         }
     }
 
+    /// `You shook Boop.`, or `You shook Boop 3 times in a row.`
+    public static func shake(inARow count: Int, name: String = CharacterPack.active.name) -> String {
+        count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
+    }
+
     /// A BOOT press that handed you an agent; what it opened is the core's
     /// record under it.
     public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }

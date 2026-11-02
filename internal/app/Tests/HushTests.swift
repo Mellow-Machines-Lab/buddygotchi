@@ -110,7 +110,7 @@ final class HushTests: XCTestCase {
         let log = Transcript.log().view(now: 0)
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
         let quiet = try XCTUnwrap(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey })
-        XCTAssertEqual(quiet.options.map(\.name), ["none", "upset", "glad", "tickled"])
+        XCTAssertEqual(quiet.options.map(\.name), ["none", "upset", "glad", "tickled", "shaken"])
         _ = react.run(["react.face": a("amused"), "say": a("tickled"), "react.intensity": a("small")], now: poke, log: log)
         XCTAssertEqual(queued.last?.say?.takes, [], "a small moment says nothing")
         _ = react.run(["react.face": a("happy"), "react.move": a("success"), "say": a("glad"), "react.intensity": a("big")], now: poke, log: log)
@@ -119,11 +119,11 @@ final class HushTests: XCTestCase {
         _ = react.run(["react.face": a("amused"), "say": a("tickled"), "react.intensity": a("medium")], now: poke, log: log)
         XCTAssertFalse(queued.last?.say?.takes.isEmpty ?? true, "a medium moment says how it feels")
         talk = .normal
-        XCTAssertEqual(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey }?.options.count, 21)
+        XCTAssertEqual(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey }?.options.count, 22)
         // Chatty says something at every face: no "none".
         talk = .chatty
         let chatty = try XCTUnwrap(react.questions(now: poke, log: log).first { $0.key == ReactOutput.sayKey })
-        XCTAssertEqual(chatty.options.count, 20)
+        XCTAssertEqual(chatty.options.count, 21)
         XCTAssertFalse(chatty.options.contains { $0.name == "none" })
     }
 }

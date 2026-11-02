@@ -134,6 +134,8 @@ public final class TranscriptView {
         /// when each came, and whether the run came again, within `againMs`
         /// of the run before.
         var pokes: [String: (at: [Int64], again: Bool)] = [:]
+        /// The run of shakes going on, on each buddy: when each came.
+        var shakes: [String: [Int64]] = [:]
         /// The away you haven't come back from, paired as the memory
         /// reader pairs it.
         var away = AwayAndBack()
@@ -233,6 +235,13 @@ public final class TranscriptView {
     /// run; to fewer, the pokes after it still wake the brain, so Boop can
     /// go from glad to miffed to grumpy.
     public static let answersRunFrom = 3
+    /// A shake within this of the one before is another in a row, which
+    /// its line counts; every shake wakes the brain. The board finds a
+    /// shake at most every 1.5 s (`MotionGesture::kQuietMs`), so a hand
+    /// that keeps shaking makes one every 1.5 to 2 s.
+    public static let shakesInARowMs: Int64 = 4000
+    /// The board's gesture for a shake.
+    public static let shake = "dizzy"
     /// While no thread works, a heartbeat after this long with no event,
     /// and again every time as long again passes.
     public static let heartbeatMs: Int64 = 60 * 60 * 1000
@@ -448,6 +457,7 @@ public final class TranscriptView {
             noteActivity(e.at)
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
             if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
+            if e.specificType == Self.shake { return shake(e) }
             return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .said?: return talk(e)
         case .ask?:
@@ -754,6 +764,19 @@ public final class TranscriptView {
         return Line(EventLine.poke(inARow: count, name: name(e), asleep: asleep, again: run.again),
                     facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds)), "asleep": .bool(asleep),
                             "again": .bool(run.again)])
+    }
+
+    /// A shake, with how many came in a row: each within `shakesInARowMs`
+    /// of the one before.
+    func shake(_ e: Event) -> Line {
+        let who = e.buddy ?? ""
+        var run = fold.shakes[who] ?? []
+        if let last = run.last, e.at - last >= Self.shakesInARowMs { run = [] }
+        run.append(e.at)
+        fold.shakes[who] = run
+        let seconds = max(1, Int((e.at - run[0] + 999) / 1000))
+        return Line(EventLine.shake(inARow: run.count, name: name(e)),
+                    facts: ["gesture": .string(Self.shake), "in_a_row": .int(Int64(run.count)), "seconds": .int(Int64(seconds))])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to

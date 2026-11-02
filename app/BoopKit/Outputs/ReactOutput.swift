@@ -168,15 +168,22 @@ public final class ReactOutput: Output {
 
     /// How Boop can feel about NOW, the first of what `say` offers. Every
     /// feeling take has one, and every face has takes of each: tests check
-    /// both, so all are offered.
+    /// both. A pack's `say` offers those its voice has takes of: `shaken`
+    /// is newer than some packs' copies of the voice.
     public static var feelings: [Option] { feelings(of: CharacterPack.active.name) }
+    static func feelings(in pack: CharacterPack) -> [Option] {
+        let has = Set(Take.all(in: pack).filter { $0.part == .feeling }.map(\.meaning))
+        return feelings(of: pack.name).filter { has.contains($0.name) }
+    }
     static func feelings(of name: String) -> [Option] { [
         Option("upset", "Something went wrong or let \(name) down: a check or a turn failing, the agent stuck or giving up, a rude prompt.",
                notFor: "A win, a poke, or work going on, however long; a failed turn that really stings, which swears."),
         Option("glad", "Something went right: a turn done and working, a check passing, a big win, a kind prompt.",
                notFor: "A failure, or work still going on."),
         Option("tickled", "Poked or teased: a poke, a tap, or a playful prompt.",
-               notFor: "A failure, or the agent's work."),
+               notFor: "A failure, the agent's work, or a shake."),
+        Option("shaken", "Moved roughly: shaken, again and again, or the desk thumped.",
+               notFor: "A poke, a stroke or a pick-up, or the agent's work."),
     ] }
 
     /// What NOW can be about, the rest of what `say` offers: each a topic
@@ -328,13 +335,15 @@ public final class ReactOutput: Output {
 
     /// What Boop says, `say`'s options: nothing, a feeling, a swear, or
     /// what NOW is about.
-    public static var says: [Option] { says(of: CharacterPack.active.name) }
-    static func says(of name: String) -> [Option] {
+    public static var says: [Option] { says(in: .active) }
+    static func says(in pack: CharacterPack) -> [Option] {
+        let name = pack.name
+        return
         [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish) where PERSONALITY's Examples say \"in silence\", a prompt soon after another reaction, and wherever CONTEXT's Talk row asks for silence.",
                 notFor: "Anything PERSONALITY gives words to: what stands out, a failure, a poke."),
          Option("swear", "A swear, upset: a failed turn that really stings, in an irritated or grumpy face, as PERSONALITY's Examples swear.",
                 notFor: "A win, a poke, words to \(name), or anything about the person.")]
-            + feelings(of: name)
+            + feelings(in: pack)
             + topics(of: name)
     }
 
@@ -629,7 +638,7 @@ public final class ReactOutput: Output {
             Question(key: intensityKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds the face and the more it says.",
                      about: "the NOW section", judgeBy: byBoth, options: ReactOutput.intensities),
             Question(key: sayKey, text: "If \(name) reacts, what does it say, in its face's mood: nothing, as the routine often gets, how it feels, or what NOW is about?",
-                     about: "the NOW section", judgeBy: byTalk, options: ReactOutput.says(of: name)),
+                     about: "the NOW section", judgeBy: byTalk, options: ReactOutput.says(in: pack)),
         ]
     }
 
