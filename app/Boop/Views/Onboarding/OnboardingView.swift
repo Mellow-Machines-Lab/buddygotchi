@@ -90,18 +90,18 @@ extension StateSnapshot {
     /// snapshots to draw each through the slime engine.
     static var onboardingLooks: [(String, StateSnapshot)] {
         [("hello", .onboarding(mood: "happy")),
-         ("napping", .onboarding(base: "asleep", mood: "comfy")),
+         ("napping", .onboarding(doing: "asleep", mood: "comfy")),
          ("looking", .onboarding(mood: "curious")),
          ("jumping", .onboarding(mood: "excited"))]
             + WhatIDoAct.Step.allCases.map { ("demo-\($0)", $0.look(drops: 3)) }
     }
 
     /// The on-screen Boop's look, for the mirror: no sound, one agent at most.
-    static func onboarding(base: String = "idle", act: String? = nil, mood: String = "happy",
+    static func onboarding(doing: String = "idle", activity: String? = nil, mood: String = "happy",
                            waiting: String? = nil) -> StateSnapshot {
-        StateSnapshot(base: base, act: act, mood: mood,
+        StateSnapshot(doing: doing, activity: activity, mood: mood,
                       attn: waiting.map { .init(agent: $0, project: "landing", more: 0, id: 1) },
-                      working: base == "working" ? 1 : 0, vol: 0)
+                      working: doing == "working" ? 1 : 0, vol: 0)
     }
 }
 

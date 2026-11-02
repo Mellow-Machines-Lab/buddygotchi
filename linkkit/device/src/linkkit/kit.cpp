@@ -347,9 +347,19 @@ void Kit::enqueue(const Do& c, uint32_t t) {
   // Args too long to keep (only numbers can grow, written again, past the
   // message they came in on) leave no room to wait.
   if (measureJson(c.args) >= kMaxLine) return sendEnded(c.id, c.from, How::kSkipped, "full");
-  if (nWaiting_ == kMaxWaiting) {  // the oldest makes room
-    sendEnded(waiting_[0].id, waiting_[0].from, How::kSkipped, "full");
-    removeWaiting(0);
+  if (nWaiting_ == kMaxWaiting) {
+    // The one with the least time left to live makes room, the newcomer
+    // too: it was the likeliest to go `late` anyway. With equal ttls, the
+    // oldest.
+    int least = -1;
+    int32_t left = int32_t(c.ttl);
+    for (int i = 0; i < nWaiting_; ++i) {
+      const int32_t l = int32_t(waiting_[i].ttl) - int32_t(t - waiting_[i].at);
+      if (l < left || (least < 0 && l == left)) least = i, left = l;
+    }
+    if (least < 0) return sendEnded(c.id, c.from, How::kSkipped, "full");
+    sendEnded(waiting_[least].id, waiting_[least].from, How::kSkipped, "full");
+    removeWaiting(least);
   }
   int slot = 0;
   while (slotsUsed_ & (1u << slot)) ++slot;

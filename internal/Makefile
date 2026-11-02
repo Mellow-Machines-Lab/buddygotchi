@@ -3,7 +3,7 @@
 # them as `make -C internal <target>` from the repo root. Every recipe runs
 # from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: build app simulator check test tools packs fw fw-test sim sim-test mirror demos e2e tools-test
+.PHONY: build app simulator check test tools packs new-character fw fw-test sim sim-test mirror demos e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -58,6 +58,12 @@ check: packs test fw-test tools-test sim mirror
 # characters/ (internal/tools/packs.py). Every check needs both.
 packs:
 	cd $(ROOT) && python3 internal/tools/packs.py
+
+# A new character from a working pack: a copy of Pixel's as ID and NAME
+# (TO=DIR, by default beside this repository), linked into characters/ and
+# checked (characters/new-character-playbook.md).
+new-character: build
+	cd $(ROOT) && python3 internal/tools/new_character.py $(ID) "$(NAME)" $(if $(TO),--to $(TO))
 
 # Swift unit tests through the XCTest shim (there's no Xcode here):
 # `build` (one `swift build` of the whole package, the tests' runner

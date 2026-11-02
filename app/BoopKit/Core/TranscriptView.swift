@@ -28,7 +28,7 @@ public struct ViewEvent: Equatable, Sendable {
     /// holding it back when it came.
     public var wakesBrain: Bool
     /// The thread it's about, as the view keys threads; nil for pokes,
-    /// what you said and idle heartbeats.
+    /// what you said and idle check-ins.
     public var about: String?
     /// For logs, evals and tests; the brain never sees them.
     public var facts: [String: JSONValue] = [:]
@@ -55,7 +55,7 @@ public struct ViewEvent: Equatable, Sendable {
 }
 
 /// Boop's lines: MellowHarness's transforms for the
-/// kinds the brain hears of, their wakes and holds, and the heartbeats'
+/// kinds the brain hears of, their wakes and holds, and the check-ins'
 /// timed checks, registered on MellowHarness's `Harness` (`register`). Each line
 /// is a function of the log up to its event: the agents' lines need each
 /// thread's turn so far (which turn, how long, its tool calls, failure
@@ -91,7 +91,7 @@ public final class TranscriptView {
         /// last one finished: a finish done in under `quickWinMs` within
         /// `winRunGapMs` of the last.
         var wins: (run: Int, at: Int64)?
-        /// This turn's working heartbeats.
+        /// This turn's working check-ins.
         var checkIns = 0
         /// The work stream's moments that hit Boop this turn
         /// (`WorkStream.hits`), and how many of them a line has said.
@@ -146,9 +146,11 @@ public final class TranscriptView {
         /// `facedown` until their `peekaboo`.
         var faceDown: Set<String> = []
         /// The last agent event, poke, thing you said or coming back, and
-        /// the idle heartbeats since.
+        /// the idle check-ins since.
         var lastActivityAt: Int64?
-        var heartbeats = 0
+        var hourlies = 0
+        /// When the screen last locked, for the next lock's line.
+        var lastLockAt: Int64?
         /// The last event folded, and whether the last agent event had a
         /// line: a request it answered says so only when it didn't.
         var at = 0
@@ -181,7 +183,7 @@ public final class TranscriptView {
         }
     }
 
-    /// The personality's settings: how often the working heartbeat comes
+    /// The personality's settings: how often the working check-in comes
     /// and which tool uses wake the brain.
     public private(set) var rules: Personality.Rules
     let place: (String) -> Place
@@ -191,7 +193,7 @@ public final class TranscriptView {
     /// order, and a start over would miss what has aged out of memory.
     var refolds = 0
 
-    /// The working heartbeat's schedule, Boop's own timer:
+    /// The working check-in's schedule, Boop's own timer:
     /// when it's next due, nil until work starts and again once Boop starts
     /// a reaction (the newest `react` start it has seen), with its random
     /// waits.
@@ -214,7 +216,7 @@ public final class TranscriptView {
     static let checks: Set<String> = ["tests", "build", "deploy"]
 
     /// A failed call that takes the work stream's failure ladder to this
-    /// rung or the next (the helmet, then the throw) is a line that wakes
+    /// rung or the next (the third bonk, then the throw) is a line that wakes
     /// the brain: a stray failure is only a bonk, and past the top rung
     /// the bonks go quiet again.
     public static let wakingRungs = 3...4
@@ -242,12 +244,12 @@ public final class TranscriptView {
     public static let shakesInARowMs: Int64 = 4000
     /// The board's gesture for a shake.
     public static let shake = "dizzy"
-    /// While no thread works, a heartbeat after this long with no event,
+    /// While no thread works, a check-in after this long with no event,
     /// and again every time as long again passes.
-    public static let heartbeatMs: Int64 = 60 * 60 * 1000
+    public static let hourlyMs: Int64 = 60 * 60 * 1000
     /// For this long after the last agent event, poke, thing you said or
     /// coming back, while a session is open and you're at the Mac, the
-    /// idle heartbeat comes at the personality's `idle_heartbeat` pace
+    /// idle check-in comes at the personality's `idle_heartbeat` pace
     /// instead: an idle check-in, so Boop has something to fidget at
     /// while you're around.
     public static let idleWindowMs: Int64 = 2 * 60 * 60 * 1000
@@ -256,7 +258,7 @@ public final class TranscriptView {
     public static let againMs: Int64 = 2 * 60_000
 
     /// A new personality's settings, from the next event on. The working
-    /// heartbeat starts its wait again at the new pace.
+    /// check-in starts its wait again at the new pace.
     public func setRules(_ rules: Personality.Rules) {
         self.rules = rules
         nextWorkBeatAt = nil
@@ -271,16 +273,16 @@ public final class TranscriptView {
     /// keeps its line but waits for its reading to wake the brain
     /// (`hold`).
     public static let wakes: [String: Int] = [
-        "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2,
+        "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
     /// opens an agent is the board's own reaction, as a tap that opens a
     /// thread is.
-    public static let quiet = ["presence_start", "needs_you_start", "press", "hush_end"]
+    public static let quiet = ["presence_start", "needs_you_start", "press", "hush_end", "wish_start"]
 
-    /// Registers Boop's lines, wakes, holds and heartbeats on `h`. Weakly:
+    /// Registers Boop's lines, wakes, holds and check-ins on `h`. Weakly:
     /// a harness its runtime let go of may still tick once, and does nothing.
     /// `needsYou` says why nothing but what you said may wake the brain now
     /// for a buddy (something needs you on its board), or nil: the only
@@ -293,7 +295,7 @@ public final class TranscriptView {
         for kind in Self.quiet {
             h.input(kind) { [weak self] e, log in self?.line(e, log) }
         }
-        h.tick { [weak self] now, log in self?.heartbeat(at: now, log) }
+        h.tick { [weak self] now, log in self?.checkIn(at: now, log) }
     }
 
     /// Why `e` may not wake the brain now, or nil if it may:
@@ -312,7 +314,12 @@ public final class TranscriptView {
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
         if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
+        if e.type == .act, e["full"]?.bool != true { return "the small version of the act has no voice" }
+        if e.type == .act, e.phase == .end, e["passed"]?.bool == false, e["topic"]?.string.map(Self.checks.contains) == true {
+            return "the check's failure is its own line"
+        }
         if e.type == .ask, e.specificType == Asks.ignored { return "nobody answered \(name(e))'s question" }
+        if e.type == .wish, e.specificType == Core.WishEnd.closed.rawValue { return "the day ended: \(name(e))'s wish closes quietly" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
@@ -328,13 +335,14 @@ public final class TranscriptView {
 
     /// Whether the kinds `keeps` names have lines: turns'
     /// starts and ends, "needs you", pokes, what you said, you stepping
-    /// away and coming back, and heartbeats, and tool calls' ends when
-    /// notable.
+    /// away and coming back, locks and unlocks, and check-ins, and tool
+    /// calls' ends when notable.
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool) -> Bool {
         switch (type, phase) {
         case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.said?, nil), (.prompt?, nil),
-             (.lastMessage?, nil), (.heartbeat?, nil),
-             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
+             (.lastMessage?, nil), (.checkIn?, nil),
+             (.presence?, .start?), (.presence?, .end?), (.lock?, .start?), (.lock?, .end?),
+             (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable
         default: false
         }
@@ -392,19 +400,19 @@ public final class TranscriptView {
         return told(foldLine(e), e)
     }
 
-    /// Tells the dream not yet told the first time you show up after the
-    /// day closed: your coming back or, with none, your first touch (a
+    /// Tells the dream not yet told the first time you show up after it
+    /// was dreamed: your coming back or, with none, your first touch (a
     /// poke or a care gesture). Never a prompt (it has its own sign), a
     /// word to the buddy (its reply's sign), an agent's event or a
-    /// heartbeat, so it never plays to an empty room. Its facts say which
+    /// check-in, so it never plays to an empty room. Its facts say which
     /// dream, for the memory to mark it told, the reason and the dream's
     /// signs.
     func told(_ line: Line?, _ e: Event) -> Line? {
         let showsUp = (e.type == .presence && e.phase == .end) || Yours.touch(e)
         guard var line, let dream = fold.untold, showsUp, fold.away.since == nil,
-              let weekday = dream["weekday"]?.string, let sentence = dream["sentence"]?.string else { return line }
+              let about = (dream["about"] ?? dream["weekday"])?.string, let sentence = dream["sentence"]?.string else { return line }
         fold.untold = nil
-        let told = EventLine.dreamed(weekday: weekday, sentence: sentence, name: name(e))
+        let told = EventLine.dreamed(about: about, sentence: sentence, name: name(e))
         line.notes.append(told)
         line.facts["dream_day"] = dream["day"] ?? .null
         line.facts["dream_tags"] = dream["tags"] ?? .array([])
@@ -421,9 +429,9 @@ public final class TranscriptView {
         if e.kind == Event.did, e.action == WorkStream.action {
             // A word of the work stream that came forward: no line, and
             // counted for the turn's lines when it hit Boop.
-            if let gag = e["as"]?.string, WorkStream.hits.contains(gag), let key = e["session"]?.string,
+            if let style = e["as"]?.string, WorkStream.hits.contains(style), let key = e["session"]?.string,
                fold.counts[key] != nil || fold.sessions.sessions[key] != nil {
-                fold.counts[key, default: Counts()].hits.append(gag)
+                fold.counts[key, default: Counts()].hits.append(style)
             }
             return nil
         }
@@ -458,7 +466,7 @@ public final class TranscriptView {
             if e.specificType == "facedown" { fold.faceDown.insert(e.buddy ?? "") }
             if e.specificType == "peekaboo" { fold.faceDown.remove(e.buddy ?? "") }
             if e.specificType == Self.shake { return shake(e) }
-            return EventLine.gesture(e.specificType, name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
+            return Touch(e)?.line(name: name(e)).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .said?: return talk(e)
         case .ask?:
             let question = e["question"]?.string ?? ""
@@ -470,12 +478,28 @@ public final class TranscriptView {
                         facts: ["q": e["q"] ?? .null, "answer": .string(answer), "pick": .string(e.specificType),
                                 "keeps": e["keeps"] ?? .bool(false)])
         case .presence?: return presence(e)
-        case .heartbeat?: return heartbeat(e)
+        case .lock?: return lock(e)
+        case .checkIn?: return checkIn(e)
         case .needsYou?: return needs(e)
         case .reacted?: return e["message"]?.string.map { Line($0) }
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name(e), why: e.specificType))
+        case .wish?:
+            if e.phase == .start { return Core.WishKind(rawValue: e.specificType).map { Line(EventLine.wished($0, name: name(e))) } }
+            guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }
+            let waited = e["waited_ms"]?.int ?? 0
+            if how == .met { noteActivity(e.at) }
+            return Line(EventLine.wishEnded(how, kind, waitedMs: waited, name: name(e)),
+                        facts: ["wish": .string(how.rawValue), "kind": .string(kind.rawValue), "waited_ms": .int(waited)])
+        case .act?:
+            guard let key = e["session"]?.string, let s = fold.sessions.sessions[key] else { return nil }
+            let t = Thread(s), agent = t.agent.rawValue, thread = threadLine(t)
+            let pack = buddies.first { $0.id == e.buddy }?.pack ?? .active
+            let text = e.phase == .start
+                ? EventLine.actStarted(agent: agent, kind: e.specificType, thread: thread, name: name(e), pack: pack)
+                : EventLine.actEnded(agent: agent, kind: e.specificType, thread: thread, passed: e["passed"]?.bool ?? true, name: name(e), pack: pack)
+            return Line(text, facts: ["act": .string(e.specificType), "thread": threadFacts(t)])
         case .listen?, .dream?, .memory?, nil: return nil
         }
     }
@@ -706,7 +730,7 @@ public final class TranscriptView {
 
     func noteActivity(_ now: Int64) {
         fold.lastActivityAt = now
-        fold.heartbeats = 0
+        fold.hourlies = 0
     }
 
     // MARK: Your prompt
@@ -796,7 +820,7 @@ public final class TranscriptView {
         // The pokes the run's reactions can answer: from the third in a row.
         let answering = Set(run.dropFirst(Self.answersRunFrom - 1).map(\.seq))
         let mine = { (d: Event) in d.buddy == e.buddy }
-        guard let reaction = log.lastDid(ReactOutput.outputName, where: {
+        guard let reaction = log.lastDid(MomentOutput.outputName, where: {
             $0["open"]?.bool == true && $0.about.map(answering.contains) == true && mine($0)
         }) else { return false }
         guard log.ended(reaction.seq) == nil else { return false }
@@ -871,12 +895,28 @@ public final class TranscriptView {
         }
     }
 
-    // MARK: Heartbeats
+    /// The Mac's screen locked or unlocked. A lock says how long since the
+    /// last, and an unlock how long it was locked; an unlock ending an away
+    /// has no line, so no pass: the back that follows at your first touch is
+    /// the one reaction. An unlock is you, so it's activity.
+    func lock(_ e: Event) -> Line? {
+        if e.phase == .start {
+            let sinceLast = fold.lastLockAt.map { max(0, e.at - $0) }
+            fold.lastLockAt = e.at
+            return Line(EventLine.locked(sinceLastMs: sinceLast), facts: sinceLast.map { ["since_last_ms": .int($0)] } ?? [:])
+        }
+        noteActivity(e.at)
+        guard fold.away.since == nil, let since = e["since"]?.int else { return nil }
+        let ms = max(0, e.at - since)
+        return Line(EventLine.unlocked(afterMs: ms), facts: ["locked_ms": .int(ms)])
+    }
+
+    // MARK: Check-ins
 
     /// The sessions working on a turn at `now`: working, as agent-hooks
     /// groups them and the core shows them, their timers run to then, with
     /// a turn open. A background helper working on after the main agent's
-    /// `Stop` is no turn, so no working heartbeat speaks of it.
+    /// `Stop` is no turn, so no working check-in speaks of it.
     func working(at now: Int64) -> [SessionTracker.Session] {
         advance(to: now)
         return fold.sessions.grouped(at: now).working.filter { $0.turn.startedAt != nil }
@@ -889,54 +929,61 @@ public final class TranscriptView {
         return working(at: now).compactMap(\.turn.startedAt).min()
     }
 
-    /// A heartbeat, if one is due at `now`, for MellowHarness to
+    /// A check-in, if one is due at `now`, for MellowHarness to
     /// emit: while threads work, once the personality's wait has passed
     /// with no reaction from Boop; while none works, each whole hour since
     /// the last agent event, poke, thing you said or coming back.
-    public func heartbeat(at now: Int64, _ log: LogView) -> Event? {
+    public func checkIn(at now: Int64, _ log: LogView) -> Event? {
         catchUp(log)
-        // Boop started a reaction: the working heartbeat starts its wait
+        // Boop started a reaction: the working check-in starts its wait
         // again, so it comes after a stretch of work with no reaction,
         // however many events woke the brain in it.
-        if let react = log.lastDid(ReactOutput.outputName, where: { $0["open"]?.bool == true }),
+        if let react = log.lastDid(MomentOutput.outputName, where: { $0["open"]?.bool == true }),
            react.seq > reactSeen {
             reactSeen = react.seq
             nextWorkBeatAt = nil
         }
         let working = !working(at: now).isEmpty
-        if working, let gap = rules.workBeatMs {
+        if working, let gap = rules.workCheckInMs {
             guard let due = nextWorkBeatAt else {
                 nextWorkBeatAt = now + Int64(rng.int(in: gap))
                 return nil
             }
             guard now >= due else { return nil }
             nextWorkBeatAt = now + Int64(rng.int(in: gap))
-            return Event(at: now, source: .clock, type: .heartbeat, specificType: "working")
+            return Event(at: now, source: .clock, type: .checkIn, specificType: "working")
         }
         nextWorkBeatAt = nil
         guard !working, let last = fold.lastActivityAt else { return nil }
-        // An idle check-in, at the personality's pace: a session is open,
-        // you're at the Mac, and it's within `idleWindowMs` of the last
-        // activity. Once you're away, or it's been quiet longer than that,
-        // as over a night or a weekend, only the hourly heartbeat comes;
-        // nothing reads the time of day.
-        if let gap = rules.idleBeatMs, fold.away.since == nil, !fold.sessions.sessions.isEmpty, now - last < Self.idleWindowMs {
+        // An idle check-in, at the personality's pace: you're at the Mac,
+        // and it's within `idleWindowMs` of the last activity. With no
+        // session open it comes `noAgentsGapTimes` as far apart, which spares
+        // Jev. Once you're away, or it's been quiet longer than that, as over
+        // a night or a weekend, only the hourly check-in comes; nothing reads
+        // the time of day.
+        if let idle = rules.idleCheckInMs, fold.away.since == nil, now - last < Self.idleWindowMs {
+            let times = fold.sessions.sessions.isEmpty ? Self.noAgentsGapTimes : 1
+            let gap = (idle.lowerBound * times)...(idle.upperBound * times)
             if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
             guard let beat = idleBeat, now >= beat.due else { return nil }
             idleBeat = (last, now + Int64(rng.int(in: gap)))
-            return Event(at: now, source: .clock, type: .heartbeat, specificType: "check_in")
+            return Event(at: now, source: .clock, type: .checkIn, specificType: "check_in")
         }
-        guard (now - last) / Self.heartbeatMs > Int64(fold.heartbeats) else { return nil }
-        return Event(at: now, source: .clock, type: .heartbeat, specificType: Self.hourly)
+        guard (now - last) / Self.hourlyMs > Int64(fold.hourlies) else { return nil }
+        return Event(at: now, source: .clock, type: .checkIn, specificType: Self.hourly)
     }
 
-    /// The hourly heartbeat's kind, after a quiet stretch.
+    /// How many times the personality's gap an idle check-in waits with no
+    /// session open.
+    public static let noAgentsGapTimes = 2
+
+    /// The hourly check-in's kind, after a quiet stretch.
     public static let hourly = "idle"
 
     /// Whether you're away from the Mac, as the presence events say.
     public var away: Bool { fold.away.since != nil }
 
-    func heartbeat(_ e: Event) -> Line? {
+    func checkIn(_ e: Event) -> Line? {
         let now = e.at
         let working = working(at: now)
         if let s = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
@@ -955,18 +1002,21 @@ public final class TranscriptView {
                                 "check_in": .int(Int64(c.checkIns))])
         }
         guard let last = fold.lastActivityAt else { return nil }
-        let hours = (now - last) / Self.heartbeatMs
-        if e.specificType == "check_in",
-           let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) {
+        let hours = (now - last) / Self.hourlyMs
+        if e.specificType == "check_in" {
             // An idle check-in: you're around, and no agent works.
-            fold.heartbeats = Int(hours)
-            let t = Thread(s), minutes = (now - last) / 60_000
+            fold.hourlies = Int(hours)
+            let minutes = (now - last) / 60_000
+            guard let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) else {
+                return Line(EventLine.idle(minutes: Int(minutes)), facts: ["idle_minutes": .int(minutes)])
+            }
+            let t = Thread(s)
             return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
                         facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
         }
         guard hours > 0 else { return nil }
-        fold.heartbeats = Int(hours)
-        return Line(EventLine.heartbeat(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
+        fold.hourlies = Int(hours)
+        return Line(EventLine.checkIn(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
     }
 
     // MARK: Needs you
@@ -1009,7 +1059,7 @@ public final class TranscriptView {
 
     /// The thread an event is about, as the view keys threads: an agent's
     /// or "needs you"'s session, or the thread its line's facts name (a
-    /// working heartbeat's); nil for the rest.
+    /// working check-in's); nil for the rest.
     public static func about(_ e: Event, facts: [String: JSONValue]?) -> String? {
         // A finish brought back by a request's clearing is its own thread's.
         if facts?[missedFact] == true, let key = thread(facts) { return key }

@@ -49,7 +49,8 @@ let usage = """
                reads it). The last 10 launches' files are kept as DIR/debug.1.jsonl (the latest) to
                debug.10.jsonl, and boopctl day sums them all up by the hour. Jev's state never reaches boop.log.
            Headless, or with --debug, the hook socket also takes {"dev":…} lines from boopctl dash: "answer"
-               (a forced pass), "mood" and "close_day" (Boop's day closes now: the dream, then the night's write);
+               (a forced pass), "mood", "dream_now" (Boop dreams now: the dream, then its write) and
+               "dream_preview" (what dreaming now would do, to debug.jsonl, nothing kept);
                and for push-to-talk with no mic, "listen" (the app's button,
                {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"}).
            Boop --snapshots DIR
@@ -129,6 +130,7 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
         }
     }
     options.log = { log.write($0) }
+    options.pushToTalkWorks = { SpeechListener.allowed }
     options.debug = debug
     options.debugPrint = { log.echo($0) }
     options.devLines = devLines

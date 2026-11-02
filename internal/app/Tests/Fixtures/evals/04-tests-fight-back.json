@@ -1,0 +1,13 @@
+{
+  "name": "Failing tests put Boop out, then determined, and passing after them proud",
+  "case": "The agent's tests fail three times in a row, two minutes apart, while it keeps working, and then pass. At the first failure Boop is put out: annoyed, with an annoyed or determined face, naming the tests or saying nothing about them. At the next it roots for the agent, turning determined. It stays determined through the last repeat, not grumpy. When the tests finally pass it turns proud, with a proud face, meaning relief or pride The second failure is a repeat, and Boop says so.",
+  "always": true,
+  "why": "character/steering/mood/: calm leaves for annoyed at a failed check, annoyed for determined at another, and determined stays through more failures, since a repeat reads as the first did; the pass after failing leaves determined for proud; character/steering/guide.md: each change shows, with the new mood's face",
+  "steps": [
+    {"event": "turn started", "at": "0s", "workspace": "fix-nav"},
+    {"event": "command", "at": "1m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "annoyed", "say": "tests|none|upset|glad|tickled"}},
+    {"event": "command", "at": "3m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "annoyed|determined", "mood": "determined", "said": "some", "intensity": "small|medium"}},
+    {"event": "command", "at": "5m", "topic": "tests", "failed": true, "workspace": "fix-nav", "expect": {"react": "determined|annoyed|none", "mood": "determined"}},
+    {"event": "command", "at": "7m", "topic": "tests", "failed": false, "workspace": "fix-nav", "expect": {"react": "proud", "say": "glad", "mood": "proud"}}
+  ]
+}

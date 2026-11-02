@@ -18,20 +18,7 @@ struct SettingsPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // The title row: a Back chevron and the title.
-            HStack(spacing: Theme.gapTight) {
-                Button { model.pane = .overview } label: {
-                    Image(systemName: "chevron.left").font(.system(size: 12, weight: .semibold))
-                }
-                .buttonStyle(.quiet)
-                .keyboardShortcut("[", modifiers: .command)
-                .accessibilityLabel("Back")
-                Text("Settings").font(.boop(16))
-                Spacer()
-            }
-            .padding(.horizontal, Theme.gutter - 8)
-            .padding(.top, Theme.gutter - 4)
-            .padding(.bottom, Theme.gap)
+            PaneTitle("Settings") { model.pane = .overview }
             FittedScroll(maxHeight: maxHeight) {
                 VStack(alignment: .leading, spacing: Theme.gapSection) {
                     PaneSection("Sound") { sound }
@@ -62,7 +49,7 @@ struct SettingsPane: View {
     /// and forgetting it.
     private var memorySetting: some View {
         SettingRow(icon: "brain", title: "What \(model.name) remembers",
-                   detail: "Written each night on this Mac. Its notes go to the brain with each request.") {
+                   detail: "Written on this Mac as Boop dreams. Its notes go to the brain with each request.") {
             Button("Forget about me") { model.runtime?.forgetAboutYou() }.buttonStyle(.row).fixedSize()
                 .help("Forget the notes about you and your work, and your recent days")
         }

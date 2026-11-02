@@ -69,7 +69,7 @@ final class DrawerTests: XCTestCase {
         XCTAssertTrue(rig.state.jsonLine.contains(#""list":[[\#(row.id),"w",0,"claude","landing",""]]"#), rig.state.jsonLine)
         XCTAssertFalse(rig.state.jsonLine.contains(#""calls""#))
         let named = StateSnapshot.Row(id: 9, status: "i", agent: "codex", title: "Hero copy", project: "landing")
-        var snapshot = StateSnapshot(base: "idle", mood: "calm", attn: nil, working: 0, vol: 0, list: [named], unlisted: 2)
+        var snapshot = StateSnapshot(doing: "idle", mood: "calm", attn: nil, working: 0, vol: 0, list: [named], unlisted: 2)
         XCTAssertEqual(snapshot.jsonLine,
                        #"{"t":"state","base":"idle","mood":"calm","busy":0,"vol":0,"list":[[9,"i",-1,"codex","Hero copy","landing"]],"unlisted":2}"#)
         snapshot.list = nil
@@ -91,6 +91,21 @@ final class DrawerTests: XCTestCase {
         XCTAssertTrue(long.state.fits, "\(long.state.jsonLine.utf8.count) \(long.state.jsonLine)")
         XCTAssertEqual(Core.rowCuts.first?.title, StateSnapshot.maxTitleBytes)
         XCTAssertEqual(Core.rowCuts.last?.project, 0)
+
+        // A wish's fields count too: every length of escaped name, however
+        // close the rows come to the line.
+        for extra in 0..<60 {
+            let wishing = CoreRig(workStream: true)
+            for i in 1...7 {
+                wishing.send(.turnStart, session: "w\(i)", project: String(repeating: "\"", count: extra) + "\(i)")
+                wishing.send(.turnEnd, session: "w\(i)", project: String(repeating: "\"", count: extra) + "\(i)")
+            }
+            wishing.core.makeWish(.chat, at: wishing.now)
+            wishing.pipeline.drawer(open: true, at: wishing.now)
+            let line = wishing.core.snapshot(at: wishing.now)
+            XCTAssertEqual(line.wish, "chat")
+            XCTAssertTrue(line.fits, "\(extra): \(line.jsonLine.utf8.count) \(line.jsonLine)")
+        }
 
         let rig = CoreRig(workStream: true)
         for i in 1...6 { rig.send(.turnStart, session: "s\(i)", project: "p\(i)") }

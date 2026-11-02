@@ -52,6 +52,18 @@ public enum Asks {
             .map(\.text).filter { $0.count <= Signs.maxLength }
     }
 
+    /// A wish's words from the pack's lines: `[wish pet] pet me?`, the sign
+    /// that makes it; `[wish pet how] stroke my face?`, that sign while it
+    /// shows how, if the pack has one; and `[wish pet met] <3`, the sign as
+    /// it's met.
+    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind, showsHow: Bool = false) -> String? {
+        (showsHow ? lines.first { $0.tags == ["wish", kind.rawValue, "how"] }?.text : nil)
+            ?? lines.first { $0.tags == ["wish", kind.rawValue] }?.text
+    }
+    public static func wishMetSign(_ lines: [TaggedLine], _ kind: Core.WishKind) -> String? {
+        lines.first { $0.tags == ["wish", kind.rawValue, "met"] }?.text
+    }
+
     /// What's kept of a question asked: the day, and the answer once
     /// there is one (`ask.<id>` in the key-value store).
     public struct Record: Codable, Equatable, Sendable {
@@ -98,14 +110,13 @@ public enum Asks {
     /// don't belong there: `idle`, an idle check-in, and `lonely` too when
     /// lonely may begin there (the buddy is lonely, or CONTEXT says you
     /// haven't touched or talked to it for an hour or more: whether it is
-    /// is the steering's); `finished`, a turn's finish (its end, or its last
-    /// message's reading).
+    /// is the steering's). Never at a finish: its sign names the thread, and
+    /// a wish waits for a check-in.
     public static func moment(_ about: Event, _ log: LogView, mood: Choice, untouchedMs: Int64?) -> [String] {
-        if about.type == .heartbeat, about.specificType == "check_in" {
+        if about.type == .checkIn, about.specificType == "check_in" {
             let lonely = MoodOutput.value(mood, log) == "lonely" || (untouchedMs ?? 0) >= ContextSection.untouchedShownMs
             return lonely ? ["idle", "lonely"] : ["idle"]
         }
-        if about.type == .lastMessage || (about.type == .turn && about.phase == .end) { return ["finished"] }
         return []
     }
 
@@ -121,7 +132,7 @@ public enum Asks {
         guard !moment.isEmpty else { return [] }
         let now = about.at, time = core.config.time
         if core.needsYouBlock != nil || core.listening != nil || core.hushed(at: now) != nil { return [] }
-        let askedAt = log.events.filter { $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil }.map(\.at)
+        let askedAt = log.events.filter { $0.kind == Event.did && $0.action == MomentOutput.outputName && $0["ask"] != nil }.map(\.at)
         let today = time.boopDay(wall)
         guard allowed(talk: talk, askedAt: askedAt, now: now, sameDay: { time.boopDay($0) == time.boopDay(now) }) else { return [] }
         let tags = Set(moment + core.calendar(at: now) + memory.answerTags(at: wall))

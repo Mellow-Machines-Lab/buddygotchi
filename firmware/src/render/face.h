@@ -16,10 +16,25 @@
 #include "voice/effects.h"
 
 namespace render {
+
+// Boop's wish, as the board shows it: its kind while it waits (the Mac's
+// `state.wish`), whether it shows how, its icon moving (`state.wish_how`), and for kPopMs after a wish_met or wish_gone Moment, how it
+// went: the icon pops into a heart, or fades, the face slumping with it.
+struct WishShow {
+  enum Kind : uint8_t { kNone, kPet, kChat, kWork };
+  enum Pop : uint8_t { kWaiting, kMet, kGone };
+  static constexpr uint32_t kPopMs = 900;
+  Kind kind = kNone;
+  Pop pop = kWaiting;
+  uint32_t popAge = 0;
+  bool how = false;
+  uint32_t ms = 0;  // the board's clock, for the icon's motion
+};
+
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,
 // else the look, with the host facts a variation is chosen for.
 struct FaceSource {
-  SceneState anim = SceneState::kNone;  // the reaction's animation (isReaction), kNone for none
+  SceneState anim = SceneState::kNone;  // the reaction's animation (isMoment), kNone for none
   uint32_t at = 0;
   SceneState look = SceneState::kIdle;
   uint8_t lookVariant = 0, animVariant = 0;
@@ -59,6 +74,10 @@ struct DoneShow {
   Outcome outcome = Outcome::kNone;
   uint32_t ms = 0;
   int32_t leftMs = -1;
+  // How long the thread's name has been up, for a face that holds it up
+  // (holdsUpFinish): -1 until the words end, or until a long cheer's
+  // Behaviour::kFinishSignByMs.
+  int32_t signMs = -1;
   bool shows() const { return agent != nullptr; }
 };
 // How far a sign sits below its place `ms` after it went up, the same on
@@ -152,6 +171,9 @@ class Face {
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }
+  // The wish to show (WishShow), set before each frame: a face that draws
+  // no thought bubble ignores it.
+  virtual void wish(const WishShow& show) { (void)show; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }
@@ -162,6 +184,9 @@ class Face {
   // slower, as it does on a face that doesn't follow the finger; one that
   // carries it on as it lets go may only feel it go by.
   virtual bool playsSwipe() const { return true; }
+  // Whether it holds up the finished turn's name itself (DoneShow::signMs):
+  // from then on the strip doesn't repeat it.
+  virtual bool holdsUpFinish() const { return false; }
   // The agents' drawer (render/drawer.h): whether this face has one, the
   // device's, set before each frame as the stream is, how far a finger
   // pulls it from shut to open (canvas px), the session open under a
@@ -203,12 +228,14 @@ class Face {
   // the press's dip.
   virtual SceneShow show(uint32_t t, bool mouthOpen, int dy) const = 0;
   // Draws the face, the sign it holds up, the finished turn its reaction
-  // is about if it marks one, and the shared lane: into the canvas, or into
+  // is about if it marks one, and the shared lane, with the bubble's words
+  // and the caption under it, the reaction's reason (either may be null):
+  // into the canvas, or into
   // `native` when it draws natively. `dirty` when something besides the
   // face's own clock changed since the last frame. Returns false when the
   // pixels have not changed.
   virtual bool draw(Canvas& canvas, Surface* native, const SceneShow& show, uint32_t t, const char* bubble,
-                    const SignShow& sign, const DoneShow& done, const Strip& strip, bool dirty) = 0;
+                    const char* caption, const SignShow& sign, const DoneShow& done, const Strip& strip, bool dirty) = 0;
   // The sounds due at t, each with its own duck, and whether the last
   // ones should stop first; `shown` is false while the test pattern hides
   // the face.

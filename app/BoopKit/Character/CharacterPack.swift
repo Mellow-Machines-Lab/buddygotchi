@@ -48,6 +48,10 @@ public struct CharacterPack: Sendable {
     /// The moods the creature settles into, in the pack's order: the mood
     /// question's options and the graph's nodes.
     public let lasting: [Mood]
+    /// What the pack draws for each work act, by kind and by `start`, `pass`
+    /// or `fail`, as Jev reads it, with `{name}` for the creature's name
+    /// (CHARACTER.md §4). Empty for a pack that draws none.
+    public let acts: [String: [String: String]]
 
     // Derived once, since the mood output reads them on every pass.
     let options: [Option]
@@ -106,6 +110,7 @@ extension CharacterPack {
         defaultMood = try string("default_mood")
         startupMood = json["startup_mood"] as? String ?? defaultMood
         moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
+        acts = json["acts"] as? [String: [String: String]] ?? [:]
         // The board reports the id, and the firmware names each mood in code.
         guard id.wholeMatch(of: /[a-z0-9-]+/) != nil else { throw CharacterPackError("\(source): id \(id) isn't lower case, digits and -") }
         let names = Set(moods.map(\.id))
@@ -166,6 +171,12 @@ extension CharacterPack {
 
     /// The same pack under another name: two buddies running one pack
     /// need two names.
+    /// The scene of a work act at `moment` (`start`, `pass` or `fail`), if
+    /// the pack draws one.
+    public func actScene(_ kind: String, _ moment: String, name: String) -> String? {
+        acts[kind]?[moment]?.replacingOccurrences(of: "{name}", with: name)
+    }
+
     public func named(_ name: String) -> CharacterPack {
         var copy = self
         copy.name = name

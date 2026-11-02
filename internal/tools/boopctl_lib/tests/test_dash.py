@@ -568,7 +568,7 @@ class ControlsTests(unittest.TestCase):
     def test_a_preview_reaction_says_its_take(self):
         """As the react output sends it, played `now` so
         it replaces what the sim shows; what react.move picks is its
-        scene, with a finish's outcome (ReactOutput.scenes)."""
+        scene, with a finish's outcome (MomentOutput.scenes)."""
         line = controls.preview_reaction("grumpy", "new.d14", 3)
         self.assertEqual(line, {"t": "do", "name": "react", "play": "now",
                                 "args": {"mood": "grumpy", "loops": 3, "say": {"take": "new.d14"}}})
@@ -610,7 +610,7 @@ class MemoryTests(unittest.TestCase):
     through agent-hook (a prompt, a test run, a finish), a forced pass
     holding up the sign "please <3" at the prompt, a second turn, a forced
     pass asking "did it work?" and a touch on the sim's lane answering no,
-    `{"dev":"close_day"}`, a tap that told the dream, and the night's write
+    `{"dev":"close_day"}` (now `dream_now`), a tap that told the dream, and the night's write
     by Apple Intelligence on the Mac it ran on, which refused all four of
     its edits."""
 
@@ -700,22 +700,22 @@ class MemoryTests(unittest.TestCase):
         self.assertNotIn("  sign: “pet me?”", self.texts(board.decided_column()), "an ask's sign is its question")
 
     def test_memory_in_the_mood_column(self):
-        """A day closing, its dream and the line that told it, and the
-        night's write, changed and refused, newest first."""
+        """A dream and the line that told it, and the dream's write,
+        changed and refused, newest first."""
         mood = self.texts(self.board.mood_column())
-        night = next(i for i, text in enumerate(mood) if "☾ the night's write for 2026-11-01" in text)
+        night = next(i for i, text in enumerate(mood) if "☾ the dream's write for 2026-11-01" in text)
         self.assertTrue(mood[night].endswith(": 0 changed, 4 refused"))
         self.assertEqual(mood[night + 1], "  Recently's line: the dream's sentence, as the writer's didn't pass")
         self.assertEqual([t.split(")")[0] for t in mood[night + 2:night + 6]],
                          ["  ✗ refused (ungrounded", "  ✗ refused (form", "  ✗ refused (form", "  ✗ refused (ungrounded"])
         self.assertTrue(all(len(t) <= feed.REFUSED_CHARS + 20 for t in mood[night + 2:night + 6]), "a long line is cut")
         dream = night + 6
-        self.assertTrue(mood[dream].endswith("☾ the day closed: Sunday 2026-11-01"))
+        self.assertTrue(mood[dream].endswith("☾ dreamed about Sunday (2026-11-01)"))
         self.assertEqual(mood[dream + 1], '  dream: you poked it once; 2 turns on "jetpack" [answered, clean]')
         self.assertRegex(mood[dream + 2], r"^  told at \d\d:\d\d:\d\d: ▸ You poked Pip again\.$")
-        self.assertIn(("mood", '☾ the day closed: Sunday 2026-11-01, dreamed: you poked it once; 2 turns on "jetpack"'),
+        self.assertIn(("mood", '☾ dreamed about Sunday (2026-11-01): you poked it once; 2 turns on "jetpack"'),
                       self.rows)
-        self.assertIn(("mood", "☾ the night's write: 0 changed, 4 refused"), self.rows)
+        self.assertIn(("mood", "☾ the dream's write: 0 changed, 4 refused"), self.rows)
         untold = Board()
         for line in fixture_lines(MEMORY):
             if line.get("view", {}).get("facts", {}).get("dream_day"):
@@ -737,11 +737,30 @@ class MemoryTests(unittest.TestCase):
         self.assertNotIn("crying", boop, "a face only, which settles into sad")
         self.assertEqual(len(MOODS), 42, "Preview keeps every face")
 
-    def test_closing_the_day_lands_with_its_dream(self):
+    def test_dreaming_now_lands_with_its_dream(self):
         pending = controls.Pending()
-        pending.add({"dev": "close_day"}, now=0)
-        self.assertEqual([x for x in map(pending.seen, fixture_lines(MEMORY)) if x], ["close_day"])
-        self.assertIn("nobody was there today", controls.late_text("close_day"))
+        pending.add({"dev": "dream_now"}, now=0)
+        self.assertEqual([x for x in map(pending.seen, fixture_lines(MEMORY)) if x], ["dream_now"])
+        self.assertIn("nothing new since the last dream", controls.late_text("dream_now"))
+
+    def test_a_dreams_preview_reads_as_words(self):
+        pending = controls.Pending()
+        pending.add({"dev": "dream_preview"}, now=0)
+        line = {"dream_preview": {"dream": {"about": "Thursday to Saturday", "range": "Thursday 2026-10-29 to Saturday 2026-10-31",
+                                            "tags": ["fond"], "sentence": "you stroked it 3 times", "fact": "stroked x3"},
+                                  "edits": {"kept": [], "updated": [], "added": ["m1"], "dropped": [], "aged": [],
+                                            "refused": [{"line": "add you: x", "why": "ungrounded"}]},
+                                  "before": "# Boop's memory\n", "after": "# Boop's memory\n- You stroke Boop.\n"},
+                "received_at_ms": 1}
+        self.assertEqual(pending.seen(line), "dream_preview")
+        text = controls.preview_text(line["dream_preview"])
+        self.assertIn("Nothing was kept", text)
+        self.assertIn("you stroked it 3 times", text)
+        self.assertIn("added: m1", text)
+        self.assertIn("add you: x  (ungrounded)", text)
+        self.assertIn("+- You stroke Boop.", text)
+        self.assertIn("the dream alone", controls.preview_text({"dream": line["dream_preview"]["dream"], "edits": None}))
+        self.assertIn("Nothing new", controls.preview_text({"dream": None}))
         self.assertIn("Is Boop running with --debug?", controls.late_text("mood"))
 
 
@@ -921,16 +940,16 @@ class AppTests(unittest.TestCase):
                 self.assertEqual(face.restarts[-1], latest, "leaving Preview replays the latest state")
                 self.assertIn("live", app.query_one("#face").border_title)
 
-                # `d` closes Boop's day: landed with the dream, in the mood column.
+                # `d` dreams now: landed with the dream, in the mood column.
                 await pick("d")
-                self.assertEqual(server.wait(3)[-1], {"dev": "close_day"})
+                self.assertEqual(server.wait(3)[-1], {"dev": "dream_now"})
                 with log.open("a") as f:
                     f.write('{"event":{"seq":29,"at":1790498700003,"source":"boop","kind":"dream","data":{"day":"2026-09-27",'
                             '"weekday":"Sunday","sentence":"a quiet day","tags":["quiet"],"fact":"quiet day",'
                             '"specific_type":"dream"}},"received_at_ms":1790498700003}\n')
                 app.poll()
-                self.assertNotIn("close_day", [name for _, name, _ in app.pending.waiting])
-                self.assertIn("☾ the day closed: Sunday 2026-09-27", plain(app.query_one("#mood")))
+                self.assertNotIn("dream_now", [name for _, name, _ in app.pending.waiting])
+                self.assertIn("☾ dreamed about Sunday (2026-09-27)", plain(app.query_one("#mood")))
 
                 self.assertEqual({b.key: b.description for b in Dash.BINDINGS}["s"], "the prompt Jev read")
                 await pilot.press("s")

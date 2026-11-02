@@ -47,6 +47,9 @@ struct Model {
   // The to-do list of the longest turn working that has one (`todo`),
   // done of total; 0 of 0 for none.
   int todoDone = 0, todoTotal = 0;
+  // The wish waiting (`wish`), while its wait counts.
+  render::WishShow::Kind wish = render::WishShow::kNone;
+  bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;
@@ -58,6 +61,8 @@ struct Model {
   // work and nothing needs you.
   render::Stream::Lane lanes[render::Stream::kLanes];
   int laneCount = 0;
+  // The work act it plays out (`wact`, render/stream.h), by the Mac's word.
+  render::Stream::ActIn workAct;
   // The agents' drawer's rows (`list`, render/drawer.h), which the Mac
   // sends while the board says it's open, and the sessions before them
   // (`skip`) and after (`unlisted`); `listed` when the state had a list at
@@ -112,13 +117,18 @@ struct AskEnd {
 };
 // A reply's name (`reply`), with room for the longest, "comfort".
 constexpr size_t kReplyBytes = 12;
+// A finished turn's thread (`who.thread`), as long as the Mac sends it, with
+// room for what the fonts fold it from.
+constexpr size_t kThreadBytes = 52;
 
 // A reaction from the Mac as Device parsed its args, already
 // held in range: the do's name as an animation (none for `react`), a
 // `say`, a face, a sign. With no anim, only the `say`, the face or the
 // sign.
 struct ReactionIn {
-  render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isReaction)
+  render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isMoment)
+  // A wish met pops its heart even with nothing else to show.
+  bool wishMet = false;
   // It had a `say` field: the reply `listening` waits for, even with no
   // take. `stop_listening` is empty: it ends `listening` and does nothing
   // else.
@@ -178,6 +188,8 @@ class Behaviour {
   // (linkkit/SPEC.md §5) with no `state`, on the device clock, which a
   // tool can freeze and step.
   static constexpr uint32_t kNoAppMs = linkkit::kHostGoneMs;
+  // Alone, the time it stays awake after the Mac went quiet or after a touch.
+  static constexpr uint32_t kAloneSleepMs = 5 * 60 * 1000;
   static constexpr uint32_t kBubbleReadMs = 1200;  // the text stays up after the take
   static constexpr uint32_t kPressEaseMs = 60;     // a press draws at once this long
   static constexpr int kPressPx = 2;                // a press dips the face this far
@@ -202,19 +214,23 @@ class Behaviour {
   // answers in the lane, then ends `ignored`: inside the host's wait for
   // a reaction's `ended`.
   static constexpr uint32_t kAskMs = 45000;
-  // The finished turn the brain's reaction names (its `who`) stays named
-  // in the strip, and marked on the face, this long after the reaction
-  // plays out, and a tap still opens its thread, unless another animation,
-  // another reaction or a needs-you comes first. One taken down early by
-  // anything but a needs-you leaves in kDoneLeaveMs.
-  static constexpr uint32_t kFinishLingerMs = 3000;
+  // The finished turn the brain's reaction names (its `who`) stays named,
+  // and marked on the face, this long after the reaction plays out, time
+  // to read its name, and a tap still opens its thread, unless another
+  // animation, another reaction or a needs-you comes first. One taken down
+  // early by anything but a needs-you leaves in kDoneLeaveMs.
+  static constexpr uint32_t kFinishLingerMs = 5000;
+  // A face that holds up the name lifts it as the reaction's words end, at
+  // once with none, and this long in at the latest, even if the cheer or
+  // the words go on.
+  static constexpr uint32_t kFinishSignByMs = 3000;
   static constexpr uint32_t kDoneLeaveMs = 400;
 
   void reset(uint32_t t, Rng& rng);
   // At power-on no Mac has spoken: "no app" from the start, until the
   // first state, rather than a face for kNoAppMs.
   void startWithNoApp() {
-    change(modelT_, [&] { stale_ = true; });
+    change(modelT_, [&] { stale_ = true, aloneFrom_ = modelT_; });
   }
 
   // Messages from the Mac, at time t.
@@ -254,9 +270,11 @@ class Behaviour {
   // refused ("facedown") and the screen dims; needs you still shows.
   void setFaceDown(bool down, uint32_t t);
   bool faceDown() const { return faceDown_; }
-  // No app, something needs you, or `listening` waits for the reply: a
-  // tap or another animation doesn't take the face over, and a touch is a
-  // tap, never a gesture.
+  // Whether a touch's own answer (`gesture`) plays at t.
+  bool gesturing(uint32_t t) const { return reactionOn(t) && reaction_.anim == render::SceneState::kGesture; }
+  // Something needs you, with the Mac here to answer it, or `listening`
+  // waits for the reply: a tap or another animation doesn't take the face
+  // over, and a touch is a tap, never a gesture.
   bool held(uint32_t t) const;
   // Whether `in`'s face and sign are held at t: as held, but a reply to
   // what you said shows over needs you.
@@ -276,7 +294,7 @@ class Behaviour {
   void advance(uint32_t t, Rng& rng);
 
   // Queries at t (after advance).
-  // The look: kNoApp, kNeedsYou, or what the Mac says (Model::look).
+  // The look: resting or asleep with no app, kNeedsYou, or what the Mac says (Model::look).
   render::SceneState look(uint32_t t) const;
   // The face at t: its design, the design's clock, and what the device
   // adds on top (render/face.h).
@@ -288,6 +306,10 @@ class Behaviour {
   // A press has just come in: feedback the redraw cap mustn't hold back.
   bool pressEasing(uint32_t t) const;
   bool noApp(uint32_t t) const;
+  // No app, asleep, and no plug: Boop was asleep when the Mac went quiet and
+  // nobody has touched the board since, or it fell asleep alone.
+  bool sleepsOn(uint32_t t) const;
+  bool plugShows(uint32_t t) const { return noApp(t) && !sleepsOn(t); }
   uint32_t led(uint32_t t) const;
   uint8_t backlight(uint32_t t) const;
   // The lane's strip at t, at its opacity: easing in over the rig's fade
@@ -295,14 +317,22 @@ class Behaviour {
   // showing what it last showed, so how often frames are drawn doesn't
   // change one. While it shows, what it shows changes at once.
   render::Strip strip(uint32_t t) const;
+  // The wish to show at t: the one waiting, or for WishShow::kPopMs after
+  // wish_met or wish_gone, how the last one went.
+  render::WishShow wishShow(uint32_t t) const;
+  void wishPopped(bool met, uint32_t t);
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
-  // What the lane's bubble shows at t, or null for the strip: the `say`'s
-  // text, else the reaction's reason for as long as its sign would show,
-  // under the same rules (none with no app, nor while something needs you
-  // unless it's a reply to what you said).
-  const char* laneText(uint32_t t) const;
+  // What the lane's bubble shows at t, or null: the `say`'s text, else an
+  // ask's answers.
+  const char* laneBubble(uint32_t t) const;
+  // The caption under the bubble at t, or null: the reaction's reason, the
+  // app's narration of why, for as long as its sign would show, under the
+  // same rules (none with no app, nor while something needs you unless
+  // it's a reply to what you said), and none while an ask's answers fill
+  // the lane. It shows with the bubble or alone, never as one.
+  const char* caption(uint32_t t) const;
   // An ask is up: its answers in the lane, waiting for a tap. Not with no
   // app or while something needs you.
   bool asking(uint32_t t) const;
@@ -372,8 +402,8 @@ class Behaviour {
   // agents work and nothing needs you.
   const render::Stream& stream() const { return stream_; }
   bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t); }
-  void call(const char* word, uint8_t slot, render::CallGag gag, uint16_t count, uint32_t t) {
-    stream_.startCall(word, slot, gag, count, t);
+  void call(const char* word, uint8_t slot, render::CallStyle style, uint32_t t) {
+    stream_.startCall(word, slot, style, t);
   }
   // The variation the look shows, from 0: the Mac's, until the variations
   // rotate.
@@ -405,11 +435,13 @@ class Behaviour {
   // it's no longer named (the strip, a tap) and leaves in kDoneLeaveMs.
   struct Done {
     char agent[12] = "";  // empty for none
-    char thread[24] = "";
+    char thread[kThreadBytes] = "";
     render::Outcome outcome = render::Outcome::kNone;  // its finish's result; kNone for a reply or a face
     uint32_t id = 0, key = 0, at = 0;
     bool ending = false, named = true;
     uint32_t endAt = 0, endMs = 0;
+    bool signUp = false;  // the face's sign is up, since signAt (kFinishSignByMs)
+    uint32_t signAt = 0;
   };
   // A `say`: its one or two takes, the bubble with their text, and the
   // mouth following their loudness. It plays over whatever face is showing,
@@ -485,7 +517,16 @@ class Behaviour {
   // What the strip shows: what the Mac last said, with no app or not, and
   // the finished turn named (null for none), whole.
   static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
-  render::Strip stripAt(uint32_t t) const { return stripOf(model_, noApp(t), finishOn(t)); }
+  bool sleptThrough() const;  // meaningful with no app
+  struct Parts {
+    bool anim = false, say = false, face = false, sign = false;
+    bool any() const { return anim || say || face || sign; }
+  };
+  Parts partsOf(const ReactionIn& in, uint32_t t) const;
+  void touchAlone(uint32_t t);  // a touch wakes it, and starts kAloneSleepMs over
+  void liftFinishSign(uint32_t t);
+  const Done* stripFinish(uint32_t t) const;  // the finish the strip names
+  render::Strip stripAt(uint32_t t) const { return sleepsOn(t) ? render::Strip{} : stripOf(model_, noApp(t), stripFinish(t)); }
   // At every change: the strip kept while it shows, and its fade turned
   // when it comes or goes.
   void followLane(uint32_t t);
@@ -502,6 +543,13 @@ class Behaviour {
   // Latched once the Mac has been silent kNoAppMs, so "no app" holds
   // however long the silence (the clock's differences wrap after 24 days).
   bool stale_ = false;
+  // Touched with the Mac gone, until its next state (sleepsOn).
+  bool touchedAlone_ = false;
+  // Alone: when the Mac went quiet or the last touch came, and latched like
+  // stale_ once kAloneSleepMs has passed since.
+  uint32_t aloneFrom_ = 0;
+  bool aloneAsleep_ = false;
+  bool heard_ = false;  // a state has come, so a later one is the Mac's return
   bool blOverride_ = false;  // dbg.light, until the next state
   uint8_t blSet_ = 255;
   // The level the state asked for at the last change, like src_ for the
@@ -514,7 +562,11 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
-  // The reaction's reason (laneText()), timed as its sign would be.
+  // The last wish shown, and when one last popped and how.
+  render::WishShow::Kind lastWish_ = render::WishShow::kNone;
+  uint32_t wishPopAt_ = 0;
+  render::WishShow::Pop wishPop_ = render::WishShow::kWaiting;
+  // The reaction's reason (caption()), timed as its sign would be.
   Sign reason_;
   // The ask up, from `at` for kAskMs, its reaction's key; `lane` is its
   // answers as the lane shows them. q "" for none.

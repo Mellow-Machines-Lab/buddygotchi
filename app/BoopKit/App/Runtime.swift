@@ -76,6 +76,9 @@ public final class Runtime: @unchecked Sendable {
         /// Intelligence on macOS 26, which labels while it's on. None
         /// (headless's unless it asks, and the tests') counts them only.
         public var labeler: (any PromptLabeler)?
+        /// Whether push-to-talk works now, the recognizer and the mic both
+        /// authorized, for the chat wish: the app and headless ask macOS.
+        public var pushToTalkWorks: @Sendable () -> Bool = { true }
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
             self.stateDir = stateDir
@@ -337,7 +340,7 @@ public final class Runtime: @unchecked Sendable {
         var memoryNow: () -> String? = { nil }
         var remembersNow: () -> Memory? = { nil }
         let wallNow = options.wallClock
-        var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
+        var queued: (Rig, Moment, Pending) -> Void = { _, _, _ in }
         var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
         let rigs = self.rigs
         let made = pipeline
@@ -354,7 +357,7 @@ public final class Runtime: @unchecked Sendable {
                             Asks.askable(about, log, questions: questions, core: rigCore, mood: mood, talk: talkNow(),
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
-                        company: { remembersNow()?.today })
+                        company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -393,16 +396,19 @@ public final class Runtime: @unchecked Sendable {
         if !fellBack {
             let remembers = Memory(store: values, time: options.time, writer: AppleIntelligenceWriter.onThisMac, files: memory,
                                    queue: home, note: log)
-            remembers.runner.follow(transcriptAt: transcript.lastSeq)
+            remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
-            remembers.catchUp(Transcript.events(in: folder, after: remembers.runner.seq, from: remembers.runner.day ?? ""))
+            remembers.catchUp(Transcript.events(in: folder, after: remembers.seq, from: remembers.from))
             remembers.relog(unlessIn: logNow)
             home.sync { remembers.attach(to: pipeline) }
             self.remembers = remembers
         }
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
-        for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
+        for rig in rigs {
+            core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 }
+            core(rig).pushToTalkWorks = options.pushToTalkWorks
+        }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }
@@ -459,7 +465,7 @@ public final class Runtime: @unchecked Sendable {
     /// `reactions` reads, and `speaks` says whether the device plays
     /// Voice's takes.
     public static func harness(pipeline: Pipeline, steering: Steering,
-                               reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
+                               reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
                                memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
@@ -470,7 +476,7 @@ public final class Runtime: @unchecked Sendable {
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
-                        company: { remembers?.today })
+                        company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -554,12 +560,12 @@ public final class Runtime: @unchecked Sendable {
     /// Pixel's trophy).
     public enum Greeting: Sendable {
         case beckon, wake, hello, finale
-        var reaction: DeviceReaction {
+        var reaction: Moment {
             switch self {
-            case .beckon: DeviceReaction(anim: "notice", loops: 2, sign: Self.tapMe)
-            case .wake: DeviceReaction(anim: "wake_up")
-            case .hello: DeviceReaction(anim: "task_complete", loops: 2, outcome: "success")
-            case .finale: DeviceReaction(anim: "task_complete", mood: "happy", loops: 3, outcome: "success", variant: 1)
+            case .beckon: Moment(anim: "notice", loops: 2, sign: Self.tapMe)
+            case .wake: Moment(anim: "wake_up")
+            case .hello: Moment(anim: "task_complete", loops: 2, outcome: "success")
+            case .finale: Moment(anim: "task_complete", mood: "happy", loops: 3, outcome: "success", variant: 1)
             }
         }
         /// The beckon's sign, which onboarding's window points at.
@@ -585,10 +591,10 @@ public final class Runtime: @unchecked Sendable {
     /// Onboarding's cheer for `who`'s finished turn: a finish that names
     /// it, sent as the brain's are, so a tap on it opens its thread
     /// (`Reactions.sent`), as it will after any finished turn.
-    public func cheer(_ who: DeviceReaction.Who) {
+    public func cheer(_ who: Moment.Who) {
         home.async { [self] in
             let rig = rigs[0], now = options.clock()
-            let reaction = DeviceReaction(anim: "task_complete", loops: 2, who: who, outcome: "success")
+            let reaction = Moment(anim: "task_complete", loops: 2, who: who, outcome: "success")
             options.log("onboarding: a cheer for \(who.agent)'s \(who.thread) on the board")
             let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
                                  now: now) { _ in }
@@ -695,7 +701,14 @@ public final class Runtime: @unchecked Sendable {
 
     /// A signal from the Mac for the presence detector.
     func presenceSignal(_ signal: PresenceDetector.Signal) {
-        if let e = presence.signal(signal, at: options.clock()) { recordPresence(e) }
+        for e in presence.signal(signal, at: options.clock()) {
+            if e.type == .lock {
+                options.log("presence: \(e.specificType)")
+                run(pipeline.lock(e))
+            } else {
+                recordPresence(e)
+            }
+        }
     }
 
     /// Carries out a core's effects from a call outside the pipeline: the

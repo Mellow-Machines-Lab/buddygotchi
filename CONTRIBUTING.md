@@ -49,12 +49,12 @@ the tests and the tools agents use to check their work, is in
 
 One thing that will surprise you:
 
-- **Jev runs (`make eval`) need your own key** in `BOOP_JEV_KEY`.
+- **Jev runs (`boopdev eval`) need your own key** in `BOOP_JEV_KEY`.
   `--brain scripted` runs the whole pipeline without one. To use the key
   you saved in Boop's Settings:
 
   ```sh
-  BOOP_JEV_KEY=$(security find-generic-password -s com.boopcomputer.boop -a jev -w) make eval
+  BOOP_JEV_KEY=$(security find-generic-password -s com.boopcomputer.boop -a jev -w) .build/debug/boopdev eval
   ```
 
 ## Debugging and evals
@@ -66,7 +66,7 @@ One thing that will surprise you:
 | Show Boop with no board: onboarding's "No board? Use the simulator window" makes it Boop's body | `make dev FRESH=1` |
 | Give someone without a board a Boop to try: the internal build, whose onboarding offers the simulator in a window of its own | `make bundle INTERNAL=1`, then zip and send `.build/internal/Boop.app` |
 | See what it did on a day, and why (`--date YYYY-MM-DD`) | `internal/tools/boopctl day --state-dir ~/Library/Application\ Support/Boop-dev` |
-| Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
+| Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `.build/debug/boopdev eval` ([which level](internal/EVALS.md#2-running-them); `make eval` is the full one) |
 
 `make dev` runs the debug app on a folder of its own,
 `~/Library/Application Support/Boop-dev`, beside your everyday Boop: it
@@ -92,11 +92,77 @@ Open Anyway in System Settings → Privacy & Security. It's the real app,
 so it installs its hooks into their Claude Code and Codex.
 
 The dashboard shows the face, Boop's mood and memory, its automatic
-reactions and the ones Jev decided, with the CONTEXT Jev last read. It can
-force a mood or a reaction, and `d` closes Boop's day at once, so the dream
-and the night's write show in seconds. `b` saves a bug
+Moments and the ones Jev decided, with the CONTEXT Jev last read. It can
+force a mood or a Moment, and `d` dreams at once, so the dream and its
+write show in seconds; `D` previews them and keeps nothing. `b` saves a bug
 report, as the popover's ladybug does, and with Boop on the simulator a
 report gets the board's screen too.
 
 How each level of checking works, from unit tests to the board, is in
 [internal/VERIFICATION.md](internal/VERIFICATION.md).
+
+## Working across the repositories
+
+Which repository holds what is in [CLAUDE.md](CLAUDE.md#repositories).
+
+`agent-hooks/` and `mellowharness/` are git submodules: each is a
+clone of its own repository, and this one records which commit it's on.
+Contributors work in those repositories directly; this one only bumps.
+
+**Setting up.** A fresh clone needs `git clone --recurse-submodules`, and
+**every new worktree**, the app's included, starts with both folders
+empty and no packs: run this in it before anything else, or the build
+can't find the packages or a character:
+
+```sh
+git submodule update --init && make -C internal packs
+```
+
+To change a character from here, work in its clone
+(`characters/.repos/SlimeBuddy`, which `characters/boop` links into) on
+a branch, as in a submodule, and give it the push URL below.
+
+To push from a submodule (the owner's, when asked), point it at the SSH
+alias that can write to the organisation:
+
+```sh
+git -C agent-hooks remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/AgentHooks.git
+git -C mellowharness remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/MellowHarness.git
+git -C characters/.repos/SlimeBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/SlimeBuddy.git
+git -C characters/.repos/PixelBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/PixelBuddy.git
+```
+
+**Changing a package.** A submodule is checked out on no branch, and a
+commit made there is easy to lose. So:
+
+1. In the submodule, start a branch from its `main`:
+   `git -C agent-hooks switch -c <branch> origin/main`.
+2. Commit there, with the package's own docs (the table below) in the
+   same commit.
+3. Push the branch and open a pull request in the package's
+   repository; it's squash-merged there. Only the owner pushes, or says
+   to.
+4. Bump this repository to the merged commit (below), in the same commit
+   as Boop's side of the change.
+
+Until the package's change is merged, this repository may point at the
+branch's commit while you work, but never commit a pointer to a commit
+that isn't pushed: `git push --recurse-submodules=check` refuses to.
+
+**Bumping.** To take a package's newer commits, contributors' included:
+
+```sh
+git -C agent-hooks fetch && git -C agent-hooks checkout origin/main
+git add agent-hooks && git commit
+```
+
+The message says what came in: `agent-hooks: bump to <short sha>`, then
+each new commit's subject (`git -C agent-hooks log --oneline OLD..NEW`).
+
+**Releasing** is separate from pushing, and only when the owner asks: tag
+any commit on the package's `main` as a version, and push the tag. Apps
+using the package (`from: "1.0.0"`) see it then.
+
+```sh
+git -C agent-hooks tag 1.1.0 <commit> && git -C agent-hooks push origin 1.1.0
+```

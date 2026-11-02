@@ -1,7 +1,7 @@
 # Boop's firmware
 
 The board is Boop's body: it draws the face, plays the sounds, lights the
-LED and reports taps, over Bluetooth or USB. It's Boop's app on LinkKit's
+LED and reports touches, over Bluetooth or USB. It's Boop's app on LinkKit's
 device library (`linkkit/device/`), built with PlatformIO for two boards.
 How it fits with the Mac is in
 [architecture.html](../documentation/architecture.html).
@@ -43,7 +43,7 @@ which the boards, the native simulator and the WebAssembly one all
 build. Its `rig/` is the engine both faces are moving onto: the rig's
 channels, the types of a pack's tables, the ramp its fades ease on and
 the anchors a face reports (`rig.h`), and the mixer that plays a mood's
-styles, a look and reactions into the channels each frame (`mixer.h`).
+styles, a look and Moments' clips into the channels each frame (`mixer.h`).
 Staging writes the pack's rig as `rig_tables.h`
 ([CHARACTER.md](../characters/CHARACTER.md) §15). The pixel face draws
 its face from it, with its moods' own art as parts, wherever a design's

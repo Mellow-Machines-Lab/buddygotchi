@@ -50,8 +50,9 @@ demo:
 	  *) echo "make demo: IN is claude, simulated-claude-terminal or simulated-codex-terminal, or nothing" >&2; exit 1 ;; \
 	esac
 
-# The harness eval scenarios (internal/EVALS.md) against Jev, all of them with no
-# request budget: the final pass (internal/EVALS.md §2 counts its requests).
+# The harness eval scenarios (internal/EVALS.md) against Jev at the full level,
+# only when the owner asks or before a release. It's refused unless
+# BOOP_JEV_OVER_LIMIT=1 is set, which this never sets (internal/EVALS.md §2).
 # While developing, run .build/debug/boopdev eval --only TEXT instead.
 # They need Jev's key in BOOP_JEV_KEY and fail without it
 # (internal/VERIFICATION.md L5). Builds boopdev alone, with the chosen
@@ -60,7 +61,7 @@ eval:
 	$(PACK)
 	python3 characters/charactergen.py --stage
 	swift build $(SWIFT_CHECK) --product boopdev
-	.build/debug/boopdev eval --no-budget
+	.build/debug/boopdev eval --level full
 
 # Build and upload over USB (auto-reset, no BOOT press), for whichever
 # board is plugged in; BOARD (cyd24 or amoled206) or BOOP_PORT picks one

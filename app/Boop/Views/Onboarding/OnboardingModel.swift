@@ -354,9 +354,9 @@ final class OnboardingModel: ObservableObject {
                 try? await Task.sleep(for: .seconds(1))
                 continue
             }
-            let who = DeviceReaction.Who(agent: session.agent, thread: session.name ?? session.project, opens: thread)
+            let who = Moment.Who(agent: session.agent, thread: session.name ?? session.project, opens: thread)
             app.runtime?.cheer(who)
-            feed.reaction(DeviceReaction(anim: "task_complete", loops: 2, who: who, outcome: "success"))
+            feed.reaction(Moment(anim: "task_complete", loops: 2, who: who, outcome: "success"))
             try? await Task.sleep(for: Self.cheerEvery)
         }
     }

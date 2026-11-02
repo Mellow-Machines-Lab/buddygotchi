@@ -114,7 +114,7 @@ public final class DemoRecorder: @unchecked Sendable {
             let words = said.compactMap { texts[$0] }.joined(separator: " ")
             let says = words.isEmpty ? "" : " and says “\(words)”"
             switch message["name"] as? String {
-            case DeviceReaction.react:
+            case Moment.react:
                 // An ask holds up its question, with its two answers.
                 let asks = (args["ask"] as? [String: Any]).flatMap { ask -> String? in
                     guard let q = args["sign"] as? String, let a = ask["a"] as? String, let b = ask["b"] as? String else { return nil }

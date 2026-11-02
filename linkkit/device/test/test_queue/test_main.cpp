@@ -202,7 +202,9 @@ static void test_a_refused_head_is_skipped_and_the_next_tries() {
   TEST_ASSERT_EQUAL(3, r.kit.queue().id);
 }
 
-// §4, §9: at most 4 `do`s wait; a fifth ends the oldest `skipped`, `full`.
+// §4, §9: at most 4 `do`s wait; with a fifth, the one with the least time
+// left to live, the fifth included, ends `skipped`, `full`: with equal
+// ttls, the oldest.
 static void test_at_most_4_wait() {
   TEST_ASSERT_EQUAL(4, linkkit::kMaxWaiting);
   Rig r;
@@ -215,6 +217,25 @@ static void test_at_most_4_wait() {
   TEST_ASSERT_EQUAL(4, r.kit.queue().waiting);
   TEST_ASSERT_EQUAL(3, r.kit.queue().wait[0].id);
   TEST_ASSERT_EQUAL(6, r.kit.queue().wait[3].id);
+}
+
+// §4: a short-lived `do` never pushes out one with longer to wait: it goes
+// itself when the queue is full, and one with less left than it goes first.
+static void test_a_full_queue_drops_the_least_time_left() {
+  Rig r;
+  r.doLine(1, "say", "now");
+  for (int id = 2; id <= 5; ++id) r.doLine(id, "say", "next");
+  r.doLine(6, "say", "next", ",\"ttl\":1500");
+  TEST_ASSERT_TRUE(has(r.usb.text, ended(6, "skipped", "full")));
+  TEST_ASSERT_FALSE(has(r.usb.text, ended(2, "skipped", "full")));
+  TEST_ASSERT_EQUAL(4, r.kit.queue().waiting);
+  Rig short_first;
+  short_first.doLine(1, "say", "now");
+  short_first.doLine(2, "say", "next", ",\"ttl\":1500");
+  for (int id = 3; id <= 5; ++id) short_first.doLine(id, "say", "next");
+  short_first.doLine(6, "say", "next");
+  TEST_ASSERT_TRUE(has(short_first.usb.text, ended(2, "skipped", "full")));
+  TEST_ASSERT_EQUAL(3, short_first.kit.queue().wait[0].id);
 }
 
 // §4, the app reports: a report for a key that isn't playing, or has
@@ -442,6 +463,7 @@ int main() {
   RUN_TEST(test_refuse_skips_and_leaves_the_one_playing_alone);
   RUN_TEST(test_a_refused_head_is_skipped_and_the_next_tries);
   RUN_TEST(test_at_most_4_wait);
+  RUN_TEST(test_a_full_queue_drops_the_least_time_left);
   RUN_TEST(test_each_do_ends_exactly_once);
   RUN_TEST(test_cut_and_drop_waiting);
   RUN_TEST(test_drop_waiting_from_one_link);

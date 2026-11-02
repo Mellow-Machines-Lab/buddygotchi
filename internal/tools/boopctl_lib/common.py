@@ -55,10 +55,10 @@ ANIMS = ["task_complete", "reply_ready", "wake_up", "notice", "starting"]
 # the animations, the brain's reaction with no animation of its own
 # (`react`), and push-to-talk's start and its end with no reply.
 DOES = ["react", "task_complete", "reply_ready", "starting", "wake_up", "listening",
-        "stop_listening", "notice", "call"]
+        "stop_listening", "notice", "call", "wish_met", "wish_gone"]
 # The `do` names that play no animation: a face and a `say`, ending
 # push-to-talk, and the work stream's word that comes forward.
-NO_ANIM = {"react", "stop_listening", "call"}
+NO_ANIM = {"react", "stop_listening", "call", "wish_gone"}
 # The older name of an animation, which older logs have and `boopctl
 # play` still takes; the device doesn't know it: `cheer` is
 # task_complete's success.

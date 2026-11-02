@@ -34,7 +34,7 @@ final class ReplayTests: XCTestCase {
             let helpers = (object["helpers"] as? Int).map { " +\($0) helper" + ($0 == 1 ? "" : "s") } ?? ""
             // The tier reached, working's or idle's, which a state is sent
             // for.
-            let tiers = Set(Occasions.tiers.map(\.tag))
+            let tiers = Set(Tags.tiers.map(\.tag))
             let tier = (object["when"] as? [String] ?? []).first(where: tiers.contains).map { " " + $0 } ?? ""
             return "\(parts[0]) \(look) \(who) \(waiting)\(helpers)\(tier)"
         }
@@ -189,9 +189,8 @@ final class ReplayTests: XCTestCase {
         let rules = effects.filter { $0.hasPrefix("do ") && !$0.contains(#""name":"call""#) }
         XCTAssertEqual(rules.map { $0.contains(#""name":"starting""#) }, [true],
                        "the rules play the start, its prompt just after showing no card of its own; the finish is the brain's")
-        // The work stream: each test run's start and result come forward.
-        let calls = effects.filter { $0.contains(#""name":"call""#) }
-        XCTAssertGreaterThanOrEqual(calls.filter { $0.contains(#""as":"cross""#) }.count, 1, "\(calls)")
+        // The test runs are a work act, in `state`.
+        XCTAssertTrue(effects.contains { $0.hasPrefix("state") && $0.contains(#""wact":["tests","running tests",1]"#) }, "\(effects)")
         XCTAssertTrue(effects.contains(#"view last_message · claude finished turn 1 on "fixture-project": done, a long turn, 10 tool calls."#), "\(effects)")
         let states = effects.filter { $0.hasPrefix("state") }
         // A tier reached mid-run sends a state too: count the runs.

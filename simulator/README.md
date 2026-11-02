@@ -36,7 +36,7 @@ window"), and Settings' Simulator row switches to it and back, with your
 real hooks and brain (`DeviceChooser`, in `app/BoopKit/DeviceLink/`).
 The choice is kept from launch to launch, and on the simulator the app
 never uses Bluetooth. Onboarding's lessons are done in the window: a
-click is a tap, BOOT (or Space) is the button, held while you talk to the
+click is a poke, BOOT (or Space) is the button, held while you talk to the
 Mac's mic, and a drag up from the strip opens the agents' drawer. The
 browser's page and its USB socket are for the tools (`boopctl sim`, the
 studio, `Boop --headless --link usb:…`), not the app.
@@ -93,7 +93,7 @@ board, and with the pixel face, the CYD. Where they differ is below:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`), its corners rounded as the AMOLED's are (in proportion to its height) and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a tap, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle a gesture (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it. On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it. On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | The AMOLED's motion sensor, lying flat on the desk from power-on; with `motion`, buttons that move the board as it feels it: Shake, Pick up and Put down, Thump, Face down and Face up. The CYD's board has no sensor until something tilts it |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click, so the first touch of the board, its screen or BOOT, turns it on, as Sound on does; once Sound on or off is clicked, that's the choice |
@@ -149,8 +149,8 @@ board says, `frame`, `parts` (`{"led":0,"backlight":255,"amp":false,"card":"ok"}
 whenever one changes, with no `led` on the AMOLED board) and `power`. The script knows nothing of what the
 board's messages mean: they pass through it. The script exports the
 rest of a page's hand: `SHAKE`, a shake as the motion sensor reads it,
-for `board.motion`; `TAP`, where a tap lands, beside the nose (on it is
-a gesture), for `board.touch`; `LANE_Y`, the lane's middle, where an
+for `board.motion`; `TAP`, where a poke lands, beside the nose (on it is
+a nose boop), for `board.touch`; `LANE_Y`, the lane's middle, where an
 ask's answers are tapped; and `HEARTBEAT_MS`, how often a page that
 keeps a board company says its `state` again, as the demo player does.
 `Board.make` compiles a build's WebAssembly once for every board a page
@@ -212,9 +212,9 @@ more of:
   screen, which the board reacts to by itself, as it does to a real one;
   `hold`, one kept there for the event's `hold` seconds (the demo's
   `DemoScript.holdSeconds`, past the board's hold on the needs-you screen;
-  1.2 for a recording that doesn't say); `press`, BOOT; or a gesture the
+  1.2 for a recording that doesn't say); `press`, BOOT; or a touch the
   board knows by itself (a demo's `gesture` step): `stroke`, a finger
-  dragged slowly across the face; `nose`, a tap on its nose; `tickle`, a
+  dragged slowly across the face; `nose`, a boop on its nose; `tickle`, a
   finger wiggling in one spot; or `dizzy`, a shake on the motion sensor;
   or `answer-a` or `answer-b`, a tap on the left or right half of the
   lane, where a question's two answers show (a demo's `answer` step).
@@ -251,7 +251,7 @@ afresh at every power-on and reset, and the server hangs up on its
 clients whenever a board plugs in or leaves, as a board that restarts
 drops its Bluetooth link. So the app connects again within a second and
 greets the board that's there now, rather than wait up to 10 s for its
-next heartbeat with a board that's forgotten it.
+next keepalive with a board that's forgotten it.
 
 **What the board shows.** `GET /board` (`/board/NAME` for a cable) sends
 the board `{"t":"dbg.state"}` as a tool on the cable would, so the
@@ -342,7 +342,7 @@ make -C internal sim-test
 - **`tests/web.test.mjs`**, the WebAssembly build under Node, driven as
   the page drives it: hello and drawing (on Pixel's build when the
   staged pack is a gel one), a native face's panel, a touch
-  that's a tap however soon it lifts, BOOT held as talking, a new boot, a
+  that's a poke however soon it lifts, BOOT held as talking, a new boot, a
   shake and face down and up through the motion sensor, a
   `say`'s sound asked for a chunk at a time, and the card staying in its
   slot through a reset. The gel's board is the AMOLED's: no LED among its

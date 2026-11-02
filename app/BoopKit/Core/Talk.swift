@@ -7,7 +7,7 @@ import Foundation
 /// code, saying nothing while its faces go on). CONTEXT's Talk row
 /// (`ContextSection.talk`) tells the brain the level, which
 /// outranks what PERSONALITY and MOOD say of words, with each level's
-/// check-in pace (`pace`). It steers the brain, and on Quiet `ReactOutput` holds
+/// check-in pace (`pace`). It steers the brain, and on Quiet `MomentOutput` holds
 /// to it in code: `say` offers no topic and no swear, and a small moment or
 /// a finish says nothing. Nothing in code holds a reaction back.
 public enum Talk: String, CaseIterable, Codable, Sendable {

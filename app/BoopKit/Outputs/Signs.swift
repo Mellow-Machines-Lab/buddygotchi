@@ -27,7 +27,7 @@ public enum Signs {
 
     /// The tags a reading has for the buddy called `name`: its kind, tone
     /// and length, `named` when you said its name, and the calendar's
-    /// (`Occasions`, `night`, `friday`…). A `{words}` line needs no tag: it
+    /// (`Tags`, `night`, `friday`…). A `{words}` line needs no tag: it
     /// yields nothing without a phrase of yours.
     public static func tags(_ r: PromptReading, name: String, calendar: [String]) -> Set<String> {
         Set([r.kind?.rawValue, r.tone?.rawValue, r.length.rawValue, r.named.contains(name) ? "named" : nil].compactMap { $0 } + calendar)
@@ -84,7 +84,7 @@ public enum Signs {
     /// What a buddy may hold up replying `reply` to what you said: the
     /// pack's lines for it (`replies.md`) that fit the calendar's and the
     /// moment's tags, only those with the most of the moment's
-    /// (`ReactOutput.momentTags`: a `nap` while an agent works beats a
+    /// (`MomentOutput.momentTags`: a `nap` while an agent works beats a
     /// plain one), the calendar's joining the plain ones (a night `bye`
     /// among the rest, so it's not the only one all night), a line with
     /// `{words}` once for each of `phrases`, and not `avoiding` (the last
@@ -93,7 +93,7 @@ public enum Signs {
                                avoiding: String? = nil) -> [String] {
         let on = Set([reply] + calendar)
         let fit = lines.filter { $0.tags.first == reply && $0.fits(on) }
-        func moment(_ line: TaggedLine) -> Int { line.tags.filter(ReactOutput.momentTags.contains).count }
+        func moment(_ line: TaggedLine) -> Int { line.tags.filter(MomentOutput.momentTags.contains).count }
         guard let most = fit.map(moment).max() else { return [] }
         var pool: [String] = []
         for line in fit where moment(line) == most {

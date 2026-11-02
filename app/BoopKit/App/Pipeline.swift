@@ -97,7 +97,7 @@ public final class Pipeline {
         // With several buddies, one's reaction is an event the others hear,
         // one more in its chain when it answers another's.
         harness.on(Event.did) { [unowned self] d in
-            guard several, d.action == ReactOutput.outputName, d["ok"]?.bool == true, let who = d.buddy else { return }
+            guard several, d.action == MomentOutput.outputName, d["ok"]?.bool == true, let who = d.buddy else { return }
             let answered = d.about.flatMap(harness.log.event)
             let chain = answered?.type == .reacted ? (answered?["chain"]?.int ?? 1) + 1 : 1
             harness.emit(Event(at: d.at, source: .boop, type: .reacted, specificType: "brain", buddy: who,
@@ -170,7 +170,12 @@ public final class Pipeline {
             if let id { event.data["voice"] = .string(id) }
             let core = core(id)
             let e = harness.emit(core.unrepeated(event))
-            run(core.handle(e), buddy: id)
+            let fx = core.handle(e)
+            run(fx, buddy: id)
+            // A prompt you sent, or a request you answered, is working with
+            // the agents: it meets every buddy's `work` wish.
+            let answered = fx.contains { if case .record(let r) = $0 { r.type == .needsYou && r.phase == .end && r["outcome"]?.string == "done" } else { false } }
+            if (e.type == .turn && e.phase == .start) || answered { meetWishes(.work, at: event.at) }
             if let text { emit(PromptIntake.heard(text, names: buddies.map(\.name), labels: labels), about: event, at: event.at) }
         }
     }
@@ -182,8 +187,7 @@ public final class Pipeline {
 
     /// A reading, for the turn start or end `turn` that brought its text,
     /// as logged: logged, with the session and the buddy of that turn, and
-    /// it wakes the brain in the turn event's place. The core hears only
-    /// your prompt's, for the `reading` tag (`Core.promptRead`).
+    /// it wakes the brain in the turn event's place.
     /// Nil, logging nothing, once the session moved on (a slow labeler):
     /// your prompt's once its turn ended or another began, the agent's
     /// last message's once the next turn began. The turn event's own line
@@ -200,9 +204,6 @@ public final class Pipeline {
         let id = buddy(watching: turn)
         harness.emit(Event(at: now, source: turn.from ?? .mac, type: heard.kind, specificType: "reading", session: turn.session,
                            buddy: id, data: heard.facts))
-        if case .prompt(let reading) = heard, let agent = turn.agent, let session = turn.session {
-            run(core(id).promptRead(reading, agent: agent, session: session, at: now), buddy: id)
-        }
     }
 
     /// The device's poke, on the buddy `buddy` (nil for the only one): the
@@ -210,10 +211,11 @@ public final class Pipeline {
     /// thread means "take me there", not a poke: the core records
     /// `open_thread` for it, which holds it back.
     @discardableResult
-    public func poke(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
+    public func poke(at now: Int64, finish: ThreadRef? = nil, touch: Bool = true, buddy: String? = nil) -> Step {
         input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", buddy: buddy))
-            run(core(buddy).poke(at: now, seq: e.seq, finish: finish), buddy: buddy)
+            endNaps(buddy, at: now)
+            run(core(buddy).poke(at: now, seq: e.seq, finish: finish, touch: touch), buddy: buddy)
         }
     }
 
@@ -223,9 +225,10 @@ public final class Pipeline {
     @discardableResult
     public func press(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
         let core = core(buddy)
-        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, buddy: buddy) }
+        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, touch: false, buddy: buddy) }
         return input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
+            endNaps(buddy, at: now)
             run(core.press(at: now, seq: e.seq), buddy: buddy)
         }
     }
@@ -251,7 +254,7 @@ public final class Pipeline {
     @discardableResult
     public func answerLast(_ pick: String, at now: Int64, buddy: String? = nil) -> Step? {
         let asked = harness.log.view(now: now).events.last {
-            $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil && $0.buddy == buddy
+            $0.kind == Event.did && $0.action == MomentOutput.outputName && $0["ask"] != nil && $0.buddy == buddy
         }
         guard let asked, let id = asked["ask"]?.string else { return nil }
         let answers = asked["answers"]?.array?.compactMap(\.string) ?? []
@@ -269,7 +272,9 @@ public final class Pipeline {
     public func gesture(_ kind: String, request: Int? = nil, at now: Int64, buddy: String? = nil) -> Step {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
+            endNaps(buddy, at: now)
             if kind == Core.dismissGesture, let request { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
+            if Touch(rawValue: kind)?.meetsPetWish == true { run(core(buddy).meetWish(.pet, at: now), buddy: buddy) }
         }
     }
 
@@ -311,18 +316,55 @@ public final class Pipeline {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
             harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
+            endNaps(buddy, at: now)
+            if let buddy { run(core(buddy).meetWish(.chat, at: now), buddy: buddy) } else { meetWishes(.chat, at: now) }
         }
     }
 
-    /// You stepping away from the Mac or coming back, as the presence
-    /// detector decided: logged, but never the
-    /// core's. Only a back wakes the brain.
-    @discardableResult
-    public func presence(_ event: Event) -> Step {
-        input(at: event.at) { harness.emit(event) }
+    /// Meets every buddy's open wish of `kind`.
+    func meetWishes(_ kind: Core.WishKind, at now: Int64) {
+        for b in buddies { run(cores[b.id]!.meetWish(kind, at: now), buddy: tag(b.id)) }
     }
 
-    /// The core's timers, then the harness's tick: a heartbeat if one is
+    /// You stepping away from the Mac or coming back, as the presence
+    /// detector decided: logged, and the core hears it for the wish's wait.
+    /// Only a back wakes the brain.
+    @discardableResult
+    public func presence(_ event: Event) -> Step {
+        input(at: event.at) {
+            harness.emit(event)
+            for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, since: event["since"]?.int, at: event.at), buddy: tag(b.id)) }
+            if event.phase == .end { endNaps(nil, at: event.at) }
+        }
+    }
+
+    /// The Mac's screen locked or unlocked (the presence detector's): logged,
+    /// and each wakes the brain, but an unlock ending an away, whose back is
+    /// the one reaction (`TranscriptView.lock`). An unlock ends a nap.
+    @discardableResult
+    public func lock(_ event: Event) -> Step {
+        input(at: event.at) {
+            harness.emit(event)
+            if event.phase == .end { endNaps(nil, at: event.at) }
+        }
+    }
+
+    /// You showed up: `buddy`'s nap ends, or every buddy's (`Core.nap`).
+    func endNaps(_ buddy: String?, at now: Int64) {
+        for b in buddies where buddy == nil || b.id == buddy { run(cores[b.id]!.endNap(at: now), buddy: tag(b.id)) }
+    }
+
+    /// Whether Boop is asleep and no agent works: you're away, or every
+    /// buddy dozed off (asleep with agents to watch, not merely none yet).
+    /// When the memory dreams by itself.
+    public func asleepAndIdle(at now: Int64) -> Bool {
+        let cores = buddies.map { self.cores[$0.id]! }
+        let doing = cores.map { $0.snapshot(at: now).doing }
+        guard !doing.contains("working") else { return false }
+        return view.away || zip(cores, doing).allSatisfy { !$0.sessions.isEmpty && $1 == "asleep" }
+    }
+
+    /// The core's timers, then the harness's tick: a check-in if one is
     /// due, and what's been in progress too long ended.
     @discardableResult
     public func tick(at now: Int64) -> Step {
@@ -386,12 +428,12 @@ public final class Pipeline {
         if let why = view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock }) {
             return why
         }
-        // The hourly heartbeat costs a request: while Boop sleeps or you're
+        // The hourly check-in costs a request: while Boop sleeps or you're
         // away (your coming back has a pass of its own), only while its mood
         // has somewhere to settle, its resting one not reached. The view's
         // caught up to it now.
-        if e.type == .heartbeat, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
-            if core.snapshot(at: e.at).base == "asleep" { return "\(core.config.pack.name) is asleep" }
+        if e.type == .checkIn, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
+            if core.snapshot(at: e.at).doing == "asleep" { return "\(core.config.pack.name) is asleep" }
             if view.away { return "you're away" }
         }
         return nil

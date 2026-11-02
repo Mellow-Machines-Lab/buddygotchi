@@ -15,7 +15,7 @@ extension CoreRig {
     }
 
     /// What the working look shows now: `state.act`.
-    var act: String? { state.act }
+    var act: String? { state.activity }
 }
 
 // MARK: - What the agents are doing
@@ -45,9 +45,9 @@ final class CoreActivityTests: XCTestCase {
             let rig = CoreRig()
             rig.send(.turnStart, agent)
             let fx = rig.send(.activity, agent, tool: tool, topic: topic)
-            XCTAssertEqual(states(fx).last?.act, act, "\(tool) \(topic ?? "")")
+            XCTAssertEqual(states(fx).last?.activity, act, "\(tool) \(topic ?? "")")
             XCTAssertEqual(rig.state.visual, act, tool)
-            XCTAssertEqual(rig.state.base, "working", "\(tool): the base stays working")
+            XCTAssertEqual(rig.state.doing, "working", "\(tool): the base stays working")
         }
         let rig = CoreRig()
         rig.send(.turnStart)
@@ -70,7 +70,7 @@ final class CoreActivityTests: XCTestCase {
         XCTAssertEqual(rig.state.visual, "needs_you")
         rig.send(.turnStart, session: "b")
         rig.send(.activity, session: "b", tool: "Read", id: "r")
-        XCTAssertEqual(rig.state.base, "working")
+        XCTAssertEqual(rig.state.doing, "working")
         XCTAssertNil(rig.act, "another session's read too, while something needs you")
         rig.send(.turnEnd, session: "b")
         rig.wait(30_000)
@@ -82,7 +82,7 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.turnEnd)
         XCTAssertNil(rig.act, "idle has none")
         XCTAssertEqual(rig.state.visual, "idle")
-        XCTAssertFalse(rig.log.contains { if case .state(let s) = $0 { s.act != nil && s.base != "working" } else { false } })
+        XCTAssertFalse(rig.log.contains { if case .state(let s) = $0 { s.activity != nil && s.doing != "working" } else { false } })
     }
 
     /// With several calls running the highest shows,
@@ -101,7 +101,7 @@ final class CoreActivityTests: XCTestCase {
         ]
         for (n, call) in climb.enumerated() {
             let fx = rig.send(.activity, tool: call.tool, topic: call.topic, id: "c\(n)")
-            XCTAssertEqual(states(fx).last?.act, call.act, "\(call.tool): at once")
+            XCTAssertEqual(states(fx).last?.activity, call.act, "\(call.tool): at once")
         }
         for n in climb.indices.reversed() {
             rig.send(.activity, tool: climb[n].tool, id: "c\(n)", done: true)
@@ -122,7 +122,7 @@ final class CoreActivityTests: XCTestCase {
         let rig = CoreRig()
         rig.send(.turnStart)
         var acts: [String?] = []
-        func note(_ fx: Fx) { acts += states(fx).map(\.act) }
+        func note(_ fx: Fx) { acts += states(fx).map(\.activity) }
         for n in 0..<8 {  // a read of 50 ms every 600 ms
             note(rig.send(.activity, tool: "Read", id: "r\(n)"))
             rig.now += 50
@@ -145,7 +145,7 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.turnStart)
         rig.send(.activity, tool: "Read", id: "r")
         rig.now += 100
-        XCTAssertEqual(states(rig.send(.activity, tool: "Bash", id: "b")).last?.act, "terminal")
+        XCTAssertEqual(states(rig.send(.activity, tool: "Bash", id: "b")).last?.activity, "terminal")
         rig.now += 100
         rig.send(.activity, tool: "Bash", id: "b", done: true)
         rig.tick(after: 1499)
@@ -234,7 +234,7 @@ final class CoreActivityTests: XCTestCase {
         let idle = CoreRig()
         idle.send(.sessionStart)
         XCTAssertEqual(states(idle.send(.subagentStart, subagent: "z")), [], "not activity")
-        XCTAssertEqual(idle.state.base, "idle")
+        XCTAssertEqual(idle.state.doing, "idle")
     }
 
     /// A subagent that ended runs nothing more: its calls go with it, as
@@ -314,13 +314,13 @@ final class CoreRuleReactionTests: XCTestCase {
             let rig = CoreRig()
             let fx = rig.send(.sessionStart, source: source)
             XCTAssertEqual(reactionNames(fx), ["starting \(ctx)"], source ?? "no source")
-            let reaction = deviceReactions(fx)[0]
+            let reaction = moments(fx)[0]
             XCTAssertNil(reaction.mood)
             XCTAssertEqual(reaction.ctx, ctx, "the device picks a variation for it")
         }
         let rig = CoreRig()
         let fx = rig.send(.turnStart)
-        let start = deviceReactions(fx)
+        let start = moments(fx)
         XCTAssertEqual(start.count, 1)
         XCTAssertEqual(start[0].line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")

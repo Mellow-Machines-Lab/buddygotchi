@@ -44,7 +44,8 @@ bool sameModel(const Model& a, const Model& b) {
   return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
-         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
+         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && a.workAct.kind == b.workAct.kind &&
+         a.workAct.result == b.workAct.result;
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -61,14 +62,18 @@ enum DoIndex : uint8_t {
   kStopListening,
   kNotice,
   kCall,
+  kWishMet,
+  kWishGone,
   kDoCount
 };
 constexpr const char* kDoNames[kDoCount] = {"react",     "task_complete",  "reply_ready", "starting", "wake_up",
-                                            "listening", "stop_listening", "notice",      "call"};
+                                            "listening", "stop_listening", "notice",      "call",     "wish_met",
+                                            "wish_gone"};
 constexpr render::SceneState kDoAnims[kDoCount] = {
     render::SceneState::kNone,      render::SceneState::kTaskComplete, render::SceneState::kReplyReady,
     render::SceneState::kStarting,  render::SceneState::kWakeUp,       render::SceneState::kListening,
-    render::SceneState::kNone,      render::SceneState::kNotice,       render::SceneState::kNone};
+    render::SceneState::kNone,      render::SceneState::kNotice,       render::SceneState::kNone,
+    render::SceneState::kNotice,    render::SceneState::kNone};
 
 // A number the device holds to lo–hi: any JSON number,
 // one past either end (even too big for an int) as that end, and a
@@ -185,6 +190,12 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   JsonObjectConst todo = doc["todo"];
   m.todoDone = todo["done"] | 0;
   m.todoTotal = todo["total"] | 0;
+  const char* wish = doc["wish"] | "";
+  m.wish = !std::strcmp(wish, "pet")    ? render::WishShow::kPet
+           : !std::strcmp(wish, "chat") ? render::WishShow::kChat
+           : !std::strcmp(wish, "work") ? render::WishShow::kWork
+                                        : render::WishShow::kNone;
+  m.wishHow = doc["wish_how"] | false;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
@@ -197,6 +208,19 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     l.slot = uint8_t(heldTo(lane[0], 0, render::Stream::kLanes - 1, 0));
     l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
     render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
+  }
+  // The work act, `[kind, words, full, result]`: its result "p" or "f" once
+  // the command has ended, as its words change to say so.
+  JsonArrayConst workAct = doc["wact"].as<JsonArrayConst>();
+  if (workAct.size() >= 2) {
+    m.workAct.kind = render::actKindFromName(workAct[0].as<const char*>());
+    render::foldText(workAct[1].as<const char*>(), render::Stream::kActBytes - 1, m.workAct.text,
+                     sizeof(m.workAct.text));
+    m.workAct.full = workAct[2] | 0;
+    const char* result = workAct[3] | "";
+    m.workAct.result = *result == 'p'   ? render::ActResult::kPass
+                       : *result == 'f' ? render::ActResult::kFail
+                                        : render::ActResult::kRunning;
   }
   // The agents' drawer's rows, `[id, status, slot, agent, title,
   // project]`: status "n" needs you, "w" working, else idle; slot -1 for
@@ -233,7 +257,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
 // outcome or the start's context; else the device picks one of those,
 // never the one it showed last. A finish's `loops` and `turn` (the tier its
 // turn reached) may size it, the face's call; one they sized plays once.
-ReactionIn Device::parse(const Do& c) {
+ReactionIn Device::parse(const Do& c, uint32_t t) {
   ReactionIn mo;
   mo.key = c.key;
   mo.id = c.id > 0 ? uint32_t(c.id) : 0;
@@ -243,6 +267,9 @@ ReactionIn Device::parse(const Do& c) {
   }
   JsonObjectConst args = c.args;
   mo.anim = c.what < kDoCount ? kDoAnims[c.what] : render::SceneState::kNone;
+  // A touch's own answer stays when it meets a wish: the bigger one, the heart over it.
+  mo.wishMet = c.what == kWishMet;
+  if (mo.wishMet && b_.gesturing(t)) mo.anim = render::SceneState::kNone;
   mo.expr = render::parseMood(args["mood"], mo.mood);  // unknown or missing: the state's mood
   mo.loops = heldTo(args["loops"], 1, Behaviour::kMaxLoops, 1);
   if (mo.anim != render::SceneState::kNone) {
@@ -292,7 +319,9 @@ ReactionIn Device::parse(const Do& c) {
 const char* Device::refuse(const Do& c, uint32_t t) {
   // A word of the work stream shows only over the agents' work.
   if (c.what == kCall) return b_.callShows(t) ? nullptr : "hidden";
-  live_.parsed = parse(c);
+  // A wish left has no animation of the Mac's to play: only face down refuses it.
+  if (c.what == kWishGone) return b_.faceDown() ? "facedown" : nullptr;
+  live_.parsed = parse(c, t);
   const char* why = b_.admit(live_.parsed, t);
   if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
   drain();                  // a listening reaction the reply ended, or the ask's
@@ -317,7 +346,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     char word[render::Stream::kWordBytes];
     render::foldText(args["w"].as<const char*>(), render::Stream::kWordBytes - 1, word, sizeof(word));
     b_.call(word, uint8_t(heldTo(args["a"], 0, render::Stream::kLanes - 1, 0)),
-            render::callGagFromName(args["as"].as<const char*>()), uint16_t(heldTo(args["n"], 0, 999, 0)), t);
+            render::callStyleFromName(args["as"].as<const char*>()), t);
     dirty_ = true;
     // It holds nothing up, so it's over as it starts: resting, its
     // `ended` would wait for whatever came next, and after a quiet minute
@@ -325,7 +354,16 @@ void Device::onDo(const Do& c, uint32_t t) {
     kit().ended(c.key);
     return;
   }
-  const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);
+  if (c.what == kWishGone) {
+    // The bubble fades as the face sighs and slumps, at once and in silence.
+    // Over as it starts: what comes next is Jev's.
+    b_.wishPopped(false, t);
+    dirty_ = true;
+    kit().ended(c.key);
+    return;
+  }
+  if (c.what == kWishMet) b_.wishPopped(true, t);
+  const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c, t);
   live_.parsed = ReactionIn{};
   uint32_t seq = b_.reactionSeq();
   // A `say`'s sound goes with its bubble: now, or at its animation's voice
@@ -392,15 +430,21 @@ bool Device::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
 // A tap goes to the Mac as what the device did about it: the poke, or the
 // press dip while the face is held or a finish names whose turn it was,
 // with that finish's id, the thread the Mac opens.
-void Device::tapped(uint32_t t, bool injected, bool button) {
+// With no app a touch is the board's alone: no Mac hears of it later.
+void Device::tell(const char* event, const char* did, const char* data, uint32_t t, bool injected) {
+  if (!b_.noApp(t)) kit().emit(event, did, data, injected);
+}
+
+void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
   uint32_t finish = b_.finishShown(t);
   const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
   input("tap", t);
   // Where it came from (`src`), and the finish it landed on, if any.
-  char on[24] = "", data[48];
+  char on[24] = "", classed[32] = "", data[80];
   if (finish) std::snprintf(on, sizeof(on), ",\"on\":%lu", (unsigned long)finish);
-  std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s}", button ? "button" : "screen", on);
-  kit().emit("tap", did, data, injected);
+  if (was) std::snprintf(classed, sizeof(classed), ",\"was\":\"%s\"", was);
+  std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s%s}", button ? "button" : "screen", on, classed);
+  tell("tap", did, data, t, injected);
   drain();  // the poke cuts an animation
 }
 
@@ -434,6 +478,7 @@ void Device::readInputs(uint32_t t) {
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
       b_.pressUp();
+      if (b_.noApp(t)) break;  // nobody to hear it
       if (drawerOpen(t) > 0) moveDrawer(0, t, live_.bootInjected);  // its face listens, out from under the drawer
       // The reactions waiting would end it: dropped for every Mac that
       // hears talk_on, which for a tool's dbg.press is only USB's.
@@ -444,6 +489,7 @@ void Device::readInputs(uint32_t t) {
       drain();  // listening cuts what played
       break;
     case ButtonGesture::kHoldEnd:  // let go, or the 30 s cap
+      if (b_.noApp(t)) break;
       b_.talkOff(t);
       input("talk_off", t);
       kit().emit("talk_off", nullptr, nullptr, live_.bootInjected);
@@ -573,9 +619,10 @@ void Device::readInputs(uint32_t t) {
       // counts the kTouchReleaseMs the device waits to be sure. Its path
       // may make it a gesture: a stroke, a ruffle, a swipe, a tickle, a
       // boop on the nose; then the board reacts as one, but not while the
-      // face is held, where a touch is a tap. A boop on the nose while the
-      // brain's finish names whose turn it was is a tap on it too: the
-      // nose is the face's middle, where you tap to open that thread.
+      // face is held, where a touch is a tap. While a finish names whose
+      // turn it was, any brief touch and any boop on the nose is a tap on
+      // it, opening that thread: a quick tap is rarely a perfect one. A
+      // longer stroke stays a stroke, so petting opens nothing.
       // A touch that began on the needs-you screen was for it: it gives no tap
       // once its hold dismissed it, or once the screen has gone (its request
       // answered or dismissed on the Mac).
@@ -602,7 +649,9 @@ void Device::readInputs(uint32_t t) {
           live_.drawerTouchedAt = t;  // a drag across it: it lets go, picking nothing
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
-        const bool noseOnFinish = kind == TouchGesture::kGesture && g == render::Gesture::kNose && b_.finishShown(t);
+        const bool nose = kind == TouchGesture::kGesture && g == render::Gesture::kNose;
+        const bool tapOnFinish =
+            kind != TouchGesture::kTap && b_.finishShown(t) && (nose || live_.lastTouch.ms < kBriefOnFinishMs);
         // While an ask is up, a tap in the lane is only its answer: the
         // left half picks `a`, the right `b`.
         const bool onAnswer = kind == TouchGesture::kTap && b_.asking(t) && live_.lastTouch.y0 >= render::kLaneTop;
@@ -610,8 +659,8 @@ void Device::readInputs(uint32_t t) {
           input("tap", t);
           b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
           drain();
-        } else if (kind == TouchGesture::kTap || b_.held(t) || noseOnFinish)
-          tapped(t, live_.touchInjected, false);
+        } else if (kind == TouchGesture::kTap || b_.held(t) || tapOnFinish)
+          tapped(t, live_.touchInjected, false, kind == TouchGesture::kTap ? nullptr : live_.lastTouchWas);
         else
           gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
       }
@@ -803,7 +852,7 @@ void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) 
   const bool answers = !swipe && caring(g) && b_.askTakesTouch(t);
   if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
   input("gesture", t);
-  kit().emit("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, injected);
+  tell("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, t, injected);
   if (answers) b_.answer("touch", t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
@@ -824,7 +873,7 @@ void Device::readMotion(uint32_t t) {
       b_.setFaceDown(true, t);
       hush();
       hal_.stopEffects();  // do not disturb: the face's sounds too
-      kit().emit("gesture", "facedown", nullptr, live_.injMotion);
+      tell("gesture", "facedown", nullptr, t, live_.injMotion);
       dirty_ = true;
       break;
     case MotionGesture::kFaceUp:
@@ -936,7 +985,8 @@ void Device::render(uint32_t t) {
     // scroll, and the paw dropping over its edge once it has sprung open.
     makeDrawer(t);
     b_.face().drawer(&drawer_);
-    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneText(t), b_.sign(t),
+    b_.face().wish(b_.wishShow(t));
+    if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;
   }

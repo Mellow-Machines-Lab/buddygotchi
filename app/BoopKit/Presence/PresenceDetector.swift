@@ -4,9 +4,10 @@ import MellowHarness
 /// The only code that decides whether you're at the Mac.
 /// It hears the Mac's raw signals (locks, sleeps, wakes) and, on
 /// every tick, its idle time, and makes the `presence` events: a start when
-/// you stepped away, an end when you're back. Nothing after it decides
-/// again. Plain state with no clock or OS calls of its own, so tests drive
-/// it; the runtime keeps one on `home`.
+/// you stepped away, an end when you're back. It also makes a `lock` event
+/// for every lock and unlock, which say nothing of whether you're here.
+/// Nothing after it decides again. Plain state with no clock or OS calls of
+/// its own, so tests drive it; the runtime keeps one on `home`.
 public struct PresenceDetector {
     public struct Config: Sendable {
         /// A lock or sleep this long is an away; a shorter one is nothing,
@@ -48,25 +49,33 @@ public struct PresenceDetector {
         self.away = away
     }
 
-    /// A signal from the Mac at `now`. An unlock or a wake after a lock or
-    /// sleep that lasted `lockAwayMs` makes the away it was, if no tick
-    /// saw it first: the Mac doesn't tick while it sleeps.
-    public mutating func signal(_ signal: Signal, at now: Int64) -> Event? {
+    /// A signal from the Mac at `now`: what it makes, in order. A lock or
+    /// an unlock makes its `lock` event, once however many of the Mac's
+    /// notifications say so. An unlock or a wake after a lock or sleep that
+    /// lasted `lockAwayMs` makes the away it was, if no tick saw it first:
+    /// the Mac doesn't tick while it sleeps.
+    public mutating func signal(_ signal: Signal, at now: Int64) -> [Event] {
         switch signal {
         case .locked:
-            if lockedAt == nil { lockedAt = now }
-            return nil
+            guard lockedAt == nil else { return [] }
+            lockedAt = now
+            return [Self.lockEvent(at: now)]
         case .asleep:
             if asleepAt == nil { asleepAt = now }
-            return nil
+            return []
         case .unlocked, .woke:
             let since = signal == .unlocked ? lockedAt : asleepAt
             let why: Signal = signal == .unlocked ? .locked : .asleep
-            var out: Event?
+            var out: [Event] = []
             if !away, let since, now - since >= config.lockAwayMs {
-                out = goAway(why.rawValue, since: since, at: now)
+                out.append(goAway(why.rawValue, since: since, at: now))
             }
-            if signal == .unlocked { lockedAt = nil } else { asleepAt = nil }
+            if signal == .unlocked {
+                if let since { out.append(Self.unlockEvent(since: since, at: now)) }
+                lockedAt = nil
+            } else {
+                asleepAt = nil
+            }
             if away { cleared = signal }
             return out
         }
@@ -110,5 +119,15 @@ public struct PresenceDetector {
 
     public static func backEvent(why: String, at now: Int64) -> Event {
         Event(at: now, source: .mac, type: .presence, phase: .end, specificType: why)
+    }
+
+    /// The `lock` events: the screen locked at `now`; and unlocked at `now`,
+    /// locked since `since`.
+    public static func lockEvent(at now: Int64) -> Event {
+        Event(at: now, source: .mac, type: .lock, phase: .start, specificType: Signal.locked.rawValue)
+    }
+
+    public static func unlockEvent(since: Int64, at now: Int64) -> Event {
+        Event(at: now, source: .mac, type: .lock, phase: .end, specificType: Signal.unlocked.rawValue, data: ["since": .int(since)])
     }
 }

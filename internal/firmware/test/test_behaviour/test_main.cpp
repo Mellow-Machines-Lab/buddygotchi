@@ -347,7 +347,7 @@ static int designOf(const SceneShow& s) { return render::sceneOf(s.mood, s.state
 // after a message, when an unchanged picture is drawn again too.
 static void drawFace(Rig& r, std::vector<uint8_t>& px, bool dirty) {
   render::Canvas c{px.data()};
-  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.sign(r.t), r.b.done(r.t), r.b.strip(r.t), dirty);
+  r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, r.b.bubble(r.t), r.b.caption(r.t), r.b.sign(r.t), r.b.done(r.t), r.b.strip(r.t), dirty);
 }
 // The needs-you screen shows.
 static bool needsYouShows(Rig& r) { return r.b.strip(r.t).agent && r.b.show(r.t).state == SceneState::kNeedsYou; }
@@ -736,7 +736,7 @@ static void test_a_lane_at_the_same_dither_level_isnt_drawn_again() {
   render::Strip strip = r.b.strip(r.t);
   auto draw = [&](int opacity, bool dirty) {
     strip.opacity = opacity;
-    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, r.b.sign(r.t), r.b.done(r.t), strip, dirty);
+    return r.b.face().draw(c, nullptr, r.b.show(r.t), r.t, nullptr, nullptr, r.b.sign(r.t), r.b.done(r.t), strip, dirty);
   };
   TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(500, true).hi);
   TEST_ASSERT_EQUAL_INT(8, render::Dither::fade(530, true).hi);
@@ -844,10 +844,10 @@ static void test_nothing_cuts_hard_as_it_plays_out() {
   TEST_ASSERT_TRUE(frames > 100000);
 }
 
-// No app holds however long the Mac stays away, even
-// past the 24.9 days where the clock's differences wrap, and whatever had
-// finished stays finished when they come round again at 49.7 days: the
-// no-app design, no old `say`, press dip or backlight fade.
+// Alone holds however long the Mac stays away, even past the 24.9 days where
+// the clock's differences wrap, and whatever had finished stays finished when
+// they come round again at 49.7 days: resting, then asleep, with no old `say`
+// or press dip.
 static void test_no_app_holds_for_weeks() {
   NEEDS_VOICE_PACK();
   Rig r;
@@ -858,37 +858,27 @@ static void test_no_app_holds_for_weeks() {
   r.at(1100);
   r.b.pressUp();
   r.at(Behaviour::kNoAppMs);
-  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
-  const uint32_t start = Behaviour::kNoAppMs + 200;
-  r.at(start);
-  const SceneShow noApp = r.b.show(start);
-  TEST_ASSERT_TRUE(noApp.state == SceneState::kNoApp);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);  // not working: nothing works with no app
+  uint64_t now = r.t;
   // The clock moves on a minute at a time, as the ticks would take it.
-  uint64_t now = start;
   auto walk = [&](uint64_t to) {
     while (now + 60000 < to) now += 60000, r.at(uint32_t(now));
     now = to;
     r.at(uint32_t(now));
   };
-  // The no-app design repeats every loop.
-  const uint64_t loop = render::loopMs(render::Mood::kHappy, SceneState::kNoApp);
-  walk(start + loop * ((1ull << 31) / loop + 1));  // past 2^31 ms, on a whole loop after the switch to no app
-  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
-  TEST_ASSERT_TRUE(render::sceneFrame(noApp) == render::sceneFrame(r.b.show(r.t)));
+  walk((1ull << 31) + 5000);  // past 2^31 ms
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
   TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
   walk(0x100000000ull + 1150);  // 2^32 ms after the release, 150 after the `say` started
   TEST_ASSERT_NULL(r.b.bubble(r.t));
-  // No `say`'s bubble or mouth, no press, no blink: only the design.
   SceneShow s = r.b.show(r.t);
-  TEST_ASSERT_TRUE(s.state == SceneState::kNoApp);
+  TEST_ASSERT_TRUE(s.state == SceneState::kAsleep);
   TEST_ASSERT_FALSE(s.mouthOpen);
   TEST_ASSERT_FALSE(s.eyesShut);
   TEST_ASSERT_EQUAL_INT(0, s.dy);
-  walk(0x100000000ull + Behaviour::kNoAppMs + 50);  // 2^32 ms after the dimming began
-  TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
-  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).noApp);
   r.state(base("idle"));
-  TEST_ASSERT_TRUE(onFace(r.b, r.t));
+  TEST_ASSERT_FALSE(r.b.noApp(r.t));
 }
 
 // ---- Push-to-talk ----------------------------------------------------------
@@ -1626,21 +1616,21 @@ static ReactionIn waited(uint32_t id, const char* take = kGo) {
 // take it down. Once down it fades out over the rig's fade, its words
 // kept (render::SignShow::opacity), but under needs you, which takes it at
 // once.
-// A reaction's reason (`reason`) shows in the lane's bubble while the
-// reaction plays and no `say` fills it, as long as its sign would show; a
-// newer reaction with none takes it down, and while something needs you
-// it doesn't show.
-static void test_a_reason_shows_in_the_lane() {
+// A reaction's reason (`reason`) is the lane's caption while the reaction
+// plays, as long as its sign would show, never the bubble's words; a newer
+// reaction with none takes it down, and while something needs you it
+// doesn't show.
+static void test_a_reason_is_the_lanes_caption() {
   Rig r;
   r.state(base("idle"));
   r.at(1000);
   ReactionIn stroked = expressive(render::Mood::kComfy, nullptr);
   std::snprintf(stroked.reason, sizeof stroked.reason, "%s", "stroked");
   stroked.key = 1;
-  auto lane = [&] { const char* s = r.b.laneText(r.t); return std::string(s ? s : "-"); };
+  auto lane = [&] { const char* s = r.b.caption(r.t); return std::string(s ? s : "-"); };
   onReaction(r.b, stroked, r.t);
   TEST_ASSERT_EQUAL_STRING("stroked", lane().c_str());
-  TEST_ASSERT_NULL(r.b.bubble(r.t));  // the `say`'s bubble is the take's only
+  TEST_ASSERT_NULL(r.b.laneBubble(r.t));  // alone, never as a bubble
   r.at(1000 + Behaviour::kSignMinMs - 1);
   TEST_ASSERT_EQUAL_STRING("stroked", lane().c_str());
   // A newer reaction with no reason takes it down.
@@ -1656,6 +1646,68 @@ static void test_a_reason_shows_in_the_lane() {
   back.key = 3;
   onReaction(r.b, back, r.t);
   TEST_ASSERT_EQUAL_STRING("-", lane().c_str());
+}
+
+// A spoken reaction shows its words in the bubble and its reason as the
+// caption under it, both at once.
+static void test_a_spoken_reaction_shows_its_words_and_its_caption() {
+  NEEDS_VOICE_PACK();
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  ReactionIn picked = expressive(render::Mood::kHappy);
+  std::snprintf(picked.reason, sizeof picked.reason, "%s", "you picked Boop up");
+  picked.key = 1;
+  onReaction(r.b, picked, r.t);
+  for (int i = 0; i < 100 && !r.b.bubble(r.t); ++i) r.at(r.t + 20);
+  TEST_ASSERT_NOT_NULL(r.b.bubble(r.t));
+  TEST_ASSERT_EQUAL_STRING(r.b.bubble(r.t), r.b.laneBubble(r.t));
+  TEST_ASSERT_EQUAL_STRING("you picked Boop up", r.b.caption(r.t));
+}
+
+// The wish on the board: the kind while the Mac says it waits; met or left,
+// how it went for WishShow::kPopMs, whatever state comes under it; no pop
+// with no wish shown before.
+static void test_the_wish_shows_and_pops() {
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+  r.b.wishPopped(true, r.t);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kWaiting), int(r.b.wishShow(r.t).pop));
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  TEST_ASSERT_FALSE(r.b.wishShow(r.t).how);
+  m.wishHow = true;
+  r.state(m);
+  TEST_ASSERT_TRUE(r.b.wishShow(r.t).how);
+  m.wishHow = false;
+  m.wish = render::WishShow::kNone;
+  r.state(m);
+  r.b.wishPopped(true, r.t);
+  r.at(r.t + render::WishShow::kPopMs - 1);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  TEST_ASSERT_EQUAL(int(render::WishShow::kMet), int(r.b.wishShow(r.t).pop));
+  r.at(r.t + 1);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+}
+
+// With no app the wish's bubble goes: nothing waits on a Mac that isn't there,
+// and no touch could meet it. It comes back with the app, if it's still open.
+static void test_the_wish_goes_with_the_app() {
+  Rig r;
+  Model m = base("idle");
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  r.at(r.t + Behaviour::kNoAppMs);
+  TEST_ASSERT_TRUE(r.b.noApp(r.t));
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+  r.state(m);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
 }
 
 static void test_a_sign_shows_while_its_reaction_plays() {
@@ -1964,8 +2016,10 @@ static void test_life_is_blinks_at_their_pace() {
   checkGaps(blinkStarts(w, true, 120000), 0, 2000, 5000);
   w.busy = 3;
   checkGaps(blinkStarts(w, true, 120000), 0, 2000, 5000);
-  std::vector<uint32_t> none = deviceBlinks(blinkStarts(base("idle"), false, 180000));
-  TEST_ASSERT_TRUE(none.empty() || none.back() < 30000);  // no app: no blinks after 30 s
+  // No app: it rests and blinks until it falls asleep alone.
+  std::vector<uint32_t> alone = deviceBlinks(blinkStarts(base("idle"), false, Behaviour::kNoAppMs + Behaviour::kAloneSleepMs + 20000));
+  TEST_ASSERT_TRUE(alone.back() > 2 * Behaviour::kNoAppMs);
+  TEST_ASSERT_TRUE(alone.back() < Behaviour::kNoAppMs + Behaviour::kAloneSleepMs + 500);
 }
 
 static void test_asleep_breathes_and_never_blinks() {
@@ -2140,20 +2194,11 @@ static void test_a_held_face_counts_taps_but_only_dips() {
   l.b.tap(l.t, l.rng);
   TEST_ASSERT_EQUAL(SceneState::kListening, l.anim());
   TEST_ASSERT_EQUAL_INT(1, l.b.taps());
-  // No app.
-  Rig n;
-  n.state(base("idle"));
-  n.at(Behaviour::kNoAppMs);
-  const uint32_t seq = n.b.reactionSeq();
-  n.b.tap(n.t, n.rng);
-  TEST_ASSERT_TRUE(n.b.look(n.t) == SceneState::kNoApp);
-  TEST_ASSERT_TRUE(n.b.show(n.t).state == SceneState::kNoApp);
-  TEST_ASSERT_EQUAL(seq, n.b.reactionSeq());
 }
 
-// With no state for 30 s the device shows the no-app
-// design (backlight 60), with the unplugged icon in the strip; on
-// reconnect the face dissolves into whatever the next state says.
+// With no state for 30 s Boop rests, with the unplugged icon in the strip, and
+// a stale needs you is gone; on reconnect it shows what the next state says,
+// after a small hello.
 static void test_no_app_at_30s_and_reconnect_comes_back() {
   Rig r;
   r.at(1000);
@@ -2164,31 +2209,21 @@ static void test_no_app_at_30s_and_reconnect_comes_back() {
   TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNeedsYou);
   TEST_ASSERT_EQUAL_STRING("codex", r.b.strip(r.t).agent);
   r.at(31000);
-  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNoApp);
-  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));  // dimming over kBacklightEaseMs
-  TEST_ASSERT_TRUE(r.b.backlight(r.t + Behaviour::kBacklightEaseMs / 2) < 255);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kIdle);
+  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));
   TEST_ASSERT_EQUAL_HEX32(0, r.b.led(r.t));
   // The strip keeps only the unplugged icon: the counts are stale.
   render::Strip strip = r.b.strip(r.t);
   TEST_ASSERT_TRUE(strip.noApp);
   TEST_ASSERT_NULL(strip.agent);
   TEST_ASSERT_EQUAL(0, strip.busy);
-  r.at(31000 + Behaviour::kBacklightEaseMs);
-  TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
-  SceneShow s = r.b.show(r.t);
-  TEST_ASSERT_TRUE(s.state == SceneState::kNoApp);
-  TEST_ASSERT_FALSE(s.eyesShut);
   r.at(40000);
   r.state(base("idle"));
-  r.state(base("idle"));
-  TEST_ASSERT_TRUE(onFace(r.b, r.t));
-  TEST_ASSERT_FALSE(r.b.blinking(r.t));
-  s = r.b.show(r.t);
-  TEST_ASSERT_TRUE(s.state == SceneState::kIdle);
-  TEST_ASSERT_FALSE(s.eyesShut);
-  TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
-  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t + Behaviour::kBacklightEaseMs));
+  TEST_ASSERT_EQUAL(SceneState::kNotice, r.anim());  // the hello
+  r.at(40000 + 20000);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kIdle);
+  TEST_ASSERT_EQUAL(255, r.b.backlight(r.t));
 }
 
 // The brain's finish with `who` names that agent and
@@ -2378,7 +2413,7 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
           dirty = true;
         }
         r.at(t);
-        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.sign(t), r.b.done(t), r.b.strip(t), dirty);
+        r.b.face().draw(c, nullptr, r.b.show(t), t, r.b.bubble(t), r.b.caption(t), r.b.sign(t), r.b.done(t), r.b.strip(t), dirty);
         dirty = false;
         for (uint32_t shot : shots)
           if (shot == t) lanes.emplace_back(px.begin() + render::kStripTop * render::kWidth, px.end());
@@ -2410,7 +2445,7 @@ static void test_the_lane_is_the_same_whatever_the_draw_cadence() {
 // down: no longer named, it leaves in kDoneLeaveMs. A new needs-you takes
 // it at once.
 static void test_a_face_for_a_finished_turn_marks_it() {
-  static_assert(Behaviour::kFinishLingerMs == 3000, "a finished turn stays marked 3 s after its reaction");
+  static_assert(Behaviour::kFinishLingerMs == 5000, "a finished turn stays marked 5 s after its reaction");
   static_assert(Behaviour::kDoneLeaveMs == 400, "taken down, it leaves in 400 ms");
   Rig r;
   r.at(1000);
@@ -2843,8 +2878,8 @@ static void test_what_shows_first() {
   TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kListening);  // 2. listening over needs you
   r.at(1000 + Behaviour::kNoAppMs);
   TEST_ASSERT_EQUAL(SceneState::kListening, r.anim());
-  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kNoApp);  // 1. no app over all of it
-  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kNoApp);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kIdle);  // 1. no app over all of it: only resting
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
 }
 
 // A `say` that comes with an animation starts at its design's
@@ -3253,6 +3288,32 @@ static void test_boot_hands_over_while_someone_waits() {
   TEST_ASSERT_EQUAL_STRING("peekaboo", render::gestureName(render::Gesture::kPeekaboo));
 }
 
+// An act hides while listening holds the screen, as while something needs
+// you, and comes back where it got to: the Mac's `state` leaves `wact` out then.
+static void test_listening_hides_an_act_and_it_resumes() {
+  Rig r;
+  r.at(1000);
+  Model m = base("working");
+  m.workAct.kind = render::ActKind::kPush, m.workAct.full = true;
+  r.state(m);
+  r.at(3000);
+  TEST_ASSERT_EQUAL_INT(2000, r.b.stream().actNow(r.t).ageMs);
+  r.talkOn();
+  Model gone = m;
+  gone.workAct = render::Stream::ActIn{};
+  r.state(gone);
+  TEST_ASSERT_FALSE(r.b.stream().actNow(r.t).shows());
+  r.at(4000);
+  r.state(m);
+  TEST_ASSERT_TRUE(r.b.stream().actNow(r.t).shows());
+  TEST_ASSERT_EQUAL_INT(3000, r.b.stream().actNow(r.t).ageMs);
+  // With nothing holding the screen, an act gone from the state is over.
+  r.stop();
+  r.state(gone);
+  r.state(m);
+  TEST_ASSERT_EQUAL_INT(0, r.b.stream().actNow(r.t).ageMs);
+}
+
 // The work stream's model (render/stream.h): a lane whose count moves drops
 // a word for each new call, at most kDropsPerState (one) a `state`, each
 // kWordGapPx behind its lane's newest and never faster, so they never
@@ -3308,10 +3369,10 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_EQUAL_INT(1, live());
   s.prune(last + render::Stream::kFallMs);
   TEST_ASSERT_EQUAL_INT(0, live());
-  s.startCall("make", 2, render::callGagFromName("bonk"), 0, 5000);
-  TEST_ASSERT_TRUE(s.call.live && s.call.gag == render::CallGag::kBonk);
-  TEST_ASSERT_EQUAL_STRING("bonk", render::callGagName(s.call.gag));
-  TEST_ASSERT_TRUE(render::callGagFromName("nonsense") == render::CallGag::kLand);
+  s.startCall("make", 2, render::callStyleFromName("bonk"), 5000);
+  TEST_ASSERT_TRUE(s.call.live && s.call.style == render::CallStyle::kBonk);
+  TEST_ASSERT_EQUAL_STRING("bonk", render::callStyleName(s.call.style));
+  TEST_ASSERT_TRUE(render::callStyleFromName("nonsense") == render::CallStyle::kLand);
   s.prune(5000 + render::Stream::kCallMs);
   TEST_ASSERT_FALSE(s.call.live);
 
@@ -3327,7 +3388,7 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_FALSE(s.accepts(10100 + render::Stream::kEndMs));
   TEST_ASSERT_EQUAL_INT(1, live());
   // A turn's end gathers its lane's words: they're its for kTakeMs, then gone.
-  s.startCall("done", 0, render::callGagFromName("gather"), 0, 10200);
+  s.startCall("done", 0, render::callStyleFromName("gather"), 10200);
   int taken = 0;
   for (const auto& w : s.words) taken += s.taken(w);
   TEST_ASSERT_EQUAL_INT(1, taken);
@@ -3341,7 +3402,7 @@ static void test_the_work_streams_words() {
   // from there.
   s.setLanes(lanes, 1, true, false, 20000);
   TEST_ASSERT_EQUAL_INT(1, live());
-  s.startCall("rate limit", 0, render::CallGag::kFreeze, 0, 21000);
+  s.startCall("rate limit", 0, render::CallStyle::kFreeze, 21000);
   TEST_ASSERT_TRUE(s.frozen());
   s.prune(21000 + render::Stream::kCallMs - 1);
   TEST_ASSERT_EQUAL_INT(1, live());  // 3.5 s old, held
@@ -3352,7 +3413,7 @@ static void test_the_work_streams_words() {
     if (w.live) TEST_ASSERT_EQUAL_UINT32(20000 + render::Stream::kCallMs, w.born);
 
   // Something needs you: everything goes at once.
-  s.startCall("make", 0, render::CallGag::kBonk, 0, 24000);
+  s.startCall("make", 0, render::CallStyle::kBonk, 24000);
   s.setLanes(nullptr, 0, false, true, 24100);
   TEST_ASSERT_FALSE(s.call.live);
   TEST_ASSERT_EQUAL_INT(0, live());
@@ -3451,6 +3512,220 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
 // for them all the next day; the next state brings them back.
+// A Boop asleep when the Mac goes quiet stays
+// asleep with no plug, until a touch shows the plug; awake, the plug shows
+// at the same 30 s as ever; the Mac's next state ends it.
+static void test_a_finishs_sign_lifts_as_its_words_end() {
+  TEST_ASSERT_EQUAL_UINT32(5000, Behaviour::kFinishLingerMs);
+  TEST_ASSERT_EQUAL_UINT32(3000, Behaviour::kFinishSignByMs);
+  TEST_ASSERT_EQUAL_size_t(52, app::kThreadBytes);
+  const auto finish = [](Rig& r, const char* take) {
+    r.state(base("idle"));
+    ReactionIn in;
+    in.anim = SceneState::kTaskComplete;
+    in.whoAgent = "codex", in.whoThread = "fix-nav";
+    in.key = 5;
+    if (take) in.said = true, in.take = voice::takeIndex(take);
+    onReaction(r.b, in, r.t);
+  };
+  {  // No words: at once.
+    Rig r;
+    r.at(1000);
+    finish(r, nullptr);
+    TEST_ASSERT_EQUAL_INT32(0, r.b.done(r.t).signMs);
+    r.at(r.t + 500);
+    TEST_ASSERT_EQUAL_INT32(500, r.b.done(r.t).signMs);
+  }
+  if (voicefile::open()) {
+    {  // Short words: as they end.
+      Rig r;
+      r.at(1000);
+      r.state(base("idle"));
+      ReactionIn in;  // a face for the turn, so its words start at once
+      in.whoAgent = "codex", in.whoThread = "fix-nav";
+      in.key = 5;
+      in.said = true, in.take = voice::takeIndex(kGo);
+      onReaction(r.b, in, r.t);
+      TEST_ASSERT_EQUAL_INT32(-1, r.b.done(r.t).signMs);
+      TEST_ASSERT_TRUE(r.b.done(r.t).shows());
+      uint32_t t = r.t;
+      while (r.b.laneBubble(t) || r.b.sayAhead(t)) r.at(t += 16);
+      TEST_ASSERT_TRUE(r.b.done(t).signMs >= 0 && r.b.done(t).signMs <= 16);
+    }
+  }
+  if (voicefile::open()) {  // The latest: kFinishSignByMs, the words going on.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    ReactionIn in;
+    in.anim = SceneState::kTaskComplete;
+    in.whoAgent = "codex", in.whoThread = "fix-nav";
+    in.key = 5;
+    in.said = true, in.take = voice::takeIndex(kGo), in.then = voice::takeIndex(kGo);
+    onReaction(r.b, in, r.t);
+    r.at(1000 + Behaviour::kFinishSignByMs - 1);
+    TEST_ASSERT_EQUAL_INT32(-1, r.b.done(r.t).signMs);
+    r.at(1000 + Behaviour::kFinishSignByMs);
+    TEST_ASSERT_TRUE(r.b.laneBubble(r.t) != nullptr || r.b.sayAhead(r.t));  // still talking
+    TEST_ASSERT_EQUAL_INT32(0, r.b.done(r.t).signMs);
+  }
+  {  // A reaction naming none takes it down, with its fall.
+    Rig r;
+    r.at(1000);
+    finish(r, nullptr);
+    r.at(r.t + 500);
+    r.react(SceneState::kPoked);
+    r.at(r.t + 1);
+    TEST_ASSERT_TRUE(r.b.done(r.t).leftMs >= 0 && r.b.done(r.t).leftMs <= int32_t(Behaviour::kDoneLeaveMs));
+  }
+}
+
+// Pins `Behaviour::sleepsOn`: a Boop that goes on sleeping when the Mac goes
+// quiet has no plug until touched, and one that falls asleep alone is the same.
+static void test_a_sleeping_boop_gets_no_plug_until_touched() {
+  auto silent = [](Rig& r) {
+    r.at(Behaviour::kNoAppMs + 1);
+    TEST_ASSERT_TRUE(r.b.noApp(r.t));
+  };
+  Rig awake;
+  awake.state(base("idle"));
+  silent(awake);
+  TEST_ASSERT_TRUE(awake.b.look(awake.t) == SceneState::kIdle);
+  TEST_ASSERT_TRUE(awake.b.strip(awake.t).noApp);  // awake, the small plug
+
+  Rig r;
+  r.state(base("asleep"));
+  silent(r);
+  r.at(r.t + 1000);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+  TEST_ASSERT_FALSE(r.b.strip(r.t).noApp);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kAsleep);
+  TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
+  // Still gone, so a Moment is refused as ever.
+  ReactionIn in;
+  in.anim = SceneState::kPoked;
+  TEST_ASSERT_EQUAL_STRING("no_app", r.b.admit(in, r.t));
+
+  r.b.pressDown(r.t);
+  r.b.pressUp();
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
+  r.at(r.t + 500);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).noApp);
+  r.at(r.t + 60000);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);  // it stays awake a while
+
+  // The Mac back and asleep, then gone again: asleep again, no plug.
+  r.state(base("asleep"));
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+  r.at(r.t + Behaviour::kNoAppMs + 1);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+
+  // A motion gesture is a touch too.
+  r.b.gesture(render::Gesture::kPickup, r.t);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
+}
+
+// Alone, it rests, falls asleep on the board's clock with the plug gone, and a
+// touch wakes it for the same time again. A touch that sleeps on no Mac's
+// model works from a stale needs you or a working look too.
+static void test_alone_it_rests_then_sleeps_and_a_touch_wakes_it() {
+  Rig r;
+  r.state(attn());
+  const uint32_t gone = Behaviour::kNoAppMs;
+  r.at(gone);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
+  TEST_ASSERT_TRUE(r.b.strip(r.t).noApp);
+  r.at(gone + Behaviour::kAloneSleepMs - 1);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
+  TEST_ASSERT_TRUE(r.b.plugShows(r.t));
+  r.at(gone + Behaviour::kAloneSleepMs);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+  TEST_ASSERT_FALSE(r.b.plugShows(r.t));
+  r.at(r.t + Behaviour::kBacklightEaseMs + render::rig::kFadeMs);  // the strip and the light ease out
+  TEST_ASSERT_FALSE(r.b.strip(r.t).shows());
+  TEST_ASSERT_EQUAL(60, r.b.backlight(r.t));
+
+  const uint32_t touch = r.t;
+  r.b.gesture(render::Gesture::kStroke, touch);
+  TEST_ASSERT_TRUE(r.b.look(touch) == SceneState::kIdle);
+  TEST_ASSERT_TRUE(r.b.plugShows(touch));
+  r.at(touch + Behaviour::kAloneSleepMs - 1);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kIdle);
+  r.at(touch + Behaviour::kAloneSleepMs);
+  TEST_ASSERT_TRUE(r.b.look(r.t) == SceneState::kAsleep);
+}
+
+// The held rule's change: with no app a touch is no longer held. A poke and a
+// stroke play the board's own reaction in the last mood, and voice, a sign and
+// the Mac's reactions stay refused.
+static void test_alone_a_touch_gets_the_boards_own_reaction() {
+  Rig r;
+  Model m = base("working");
+  m.mood = render::Mood::kGrumpy;
+  r.state(m);
+  r.at(Behaviour::kNoAppMs);
+  TEST_ASSERT_FALSE(r.b.held(r.t));
+  TEST_ASSERT_EQUAL_STRING("poked", r.b.tap(r.t, r.rng));
+  SceneShow poked = r.b.show(r.t);
+  TEST_ASSERT_TRUE(poked.state == SceneState::kPoked);
+  TEST_ASSERT_TRUE(poked.mood == render::Mood::kGrumpy);
+  r.at(r.t + 20000);
+  r.b.gesture(render::Gesture::kStroke, r.t);
+  TEST_ASSERT_TRUE(r.b.show(r.t).state == SceneState::kGesture);
+
+  // A stale needs you holds nothing either.
+  Rig n;
+  n.state(attn());
+  n.at(Behaviour::kNoAppMs);
+  TEST_ASSERT_EQUAL_STRING("poked", n.b.tap(n.t, n.rng));
+
+  ReactionIn in;
+  in.anim = SceneState::kWakeUp;
+  TEST_ASSERT_EQUAL_STRING("no_app", r.b.admit(in, r.t));
+  r.b.talkOn(r.t, r.rng);  // nobody to hear it
+  TEST_ASSERT_EQUAL(SceneState::kGesture, r.anim());
+}
+
+// The Mac's return is a small hello, by the board, unless there is something
+// else to show: a needs you, a sleeping Boop, or a board face down. The first
+// state after power-on is no return.
+static void test_the_macs_return_gets_a_small_hello() {
+  auto back = [](Model m, Rig& r) {
+    r.at(r.t + Behaviour::kNoAppMs);
+    r.state(m);
+  };
+  Rig r;
+  r.state(base("idle"));
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  r.at(5000);
+  r.state(base("idle"));  // a keepalive is no return
+  TEST_ASSERT_EQUAL(SceneState::kNone, r.anim());
+  back(base("working"), r);
+  TEST_ASSERT_EQUAL(SceneState::kNotice, r.anim());
+  TEST_ASSERT_EQUAL_STRING("", ended(r).c_str());
+
+  Rig boot;
+  boot.b.startWithNoApp();
+  boot.state(base("idle"));
+  TEST_ASSERT_EQUAL(SceneState::kNone, boot.anim());
+
+  Rig needs;
+  needs.state(base("idle"));
+  back(attn(), needs);
+  TEST_ASSERT_EQUAL(SceneState::kNone, needs.anim());
+
+  Rig sleeping;
+  sleeping.state(base("idle"));
+  back(base("asleep"), sleeping);
+  TEST_ASSERT_EQUAL(SceneState::kNone, sleeping.anim());
+
+  Rig down;
+  down.state(base("idle"));
+  down.b.setFaceDown(true, down.t);
+  back(base("idle"), down);
+  TEST_ASSERT_EQUAL(SceneState::kNone, down.anim());
+}
+
 static void test_no_app_is_silent_and_wears_no_tags() {
   TEST_ASSERT_EQUAL_INT(0, Model{}.vol);
   auto face = std::make_unique<testface::WrappedFace>();
@@ -3473,10 +3748,13 @@ static void test_no_app_is_silent_and_wears_no_tags() {
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
+  RUN_TEST(test_listening_hides_an_act_and_it_resumes);
   RUN_TEST(test_the_work_streams_words);
   RUN_TEST(test_falling_words_stay_on_screen_and_the_clock_runs_on);
   RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
+  RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
+  RUN_TEST(test_a_finishs_sign_lifts_as_its_words_end);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);
@@ -3545,7 +3823,13 @@ int main() {
   RUN_TEST(test_press_shows_within_20ms);
   RUN_TEST(test_gestures_send_the_right_inputs);
   RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
-  RUN_TEST(test_a_reason_shows_in_the_lane);
+  RUN_TEST(test_a_reason_is_the_lanes_caption);
+  RUN_TEST(test_the_wish_shows_and_pops);
+  RUN_TEST(test_the_wish_goes_with_the_app);
+  RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
+  RUN_TEST(test_alone_it_rests_then_sleeps_and_a_touch_wakes_it);
+  RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);
+  RUN_TEST(test_the_macs_return_gets_a_small_hello);
   return UNITY_END();
 }

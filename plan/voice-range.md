@@ -147,7 +147,7 @@ and work have sounds to lead with.
 What you say on push-to-talk gets a reply (`react.move`), its clip and
 a sign that answers you (`replies.md`). The sign answers well; the
 voice doesn't. A reply has no takes of its own: it says `say`'s pick,
-else a feeling or topic it borrows (`ReactOutput.replyWords`). So, from
+else a feeling or topic it borrows (`MomentOutput.replyWords`). So, from
 the takes there are:
 
 | You say | Reply | Boop says today |
@@ -164,7 +164,7 @@ reply's name. To what you said, `say`'s none still means silence, as
 TALK and the Examples steer it; any other answer says the reply's own
 take, as big as the intensity (a sound small, a word medium, a phrase
 big), in the face's mood. With none in that face, a feeling `say`
-picked, else the one the reply borrows (`ReactOutput.replyWords`), and
+picked, else the one the reply borrows (`MomentOutput.replyWords`), and
 never a topic: a topic is the agents' work, never what you said, and
 silence beats "Vamos" to "rough day". The prompt doesn't change: Jev
 already picks the reply. Later, `say` asked of what you said could

@@ -25,6 +25,9 @@ public struct Scenario: Sendable {
         public var agent: Event.Source?
         /// A command: its topic, and whether it failed.
         public var topic: String?
+        /// A `command`'s program and which half of it: `start` or `end`, else both.
+        public var program: String?
+        public var half: String?
         public var failed: Bool?
         /// A failed turn's error class.
         public var error: String?
@@ -62,6 +65,8 @@ public struct Scenario: Sendable {
         /// The step's own answers for the expect brain, one choice a
         /// question, as a demo's brain step has them.
         public var brain: [String: String]?
+        /// Whether its passes are checked, so Jev answers them at every level.
+        public var asksJev: Bool { expect?.wantsAPass ?? false }
     }
 
     /// What a pass should come to: each a set of acceptable values, `none`
@@ -104,7 +109,9 @@ public struct Scenario: Sendable {
         /// the working agent's to-do list (`3/7`, or `none`).
         public var needs: Set<String>?
         public var todo: Set<String>?
-        /// Whether a pass of the step, a heartbeat's on the way to it
+        /// What Boop is busy with after the step (`asleep`, `idle`, `working`).
+        public var doing: Set<String>?
+        /// Whether a pass of the step, a check-in's on the way to it
         /// included, told the dream (`told`) or none did (`none`).
         public var dream: Set<String>?
         /// The sign the reaction held up: `some` for any, `none` for none,
@@ -120,11 +127,13 @@ public struct Scenario: Sendable {
             return wanted.contains { $0 == "some" || caption.range(of: $0, options: .caseInsensitive) != nil }
         }
         /// Whether any of it is about the screen.
-        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil }
+        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil || doing != nil }
         /// Whether any of it is about a pass.
-        public var wantsAPass: Bool {
-            react != nil || move != nil || intensity != nil || say != nil || said != nil
-                || mood != nil || offered != nil || dream != nil || sign != nil
+        public var wantsAPass: Bool { checksAChoice || offered != nil || dream != nil }
+        /// Whether it checks one of Jev's own choices, which a feel scenario
+        /// leaves to the judge.
+        var checksAChoice: Bool {
+            react != nil || move != nil || intensity != nil || say != nil || said != nil || mood != nil || sign != nil
         }
 
         public init(react: Set<String>? = nil, move: Set<String>? = nil, intensity: Set<String>? = nil, say: Set<String>? = nil,
@@ -197,17 +206,25 @@ public struct Scenario: Sendable {
     /// the harness changes (the file's `case`).
     public var story: String
     public var why: String
-    /// Boop's character, not a tuning target: runs 3 times by default, and
-    /// `boopdev eval --always` runs only these.
+    /// Boop's character, not a tuning target: runs 3 times at the full level,
+    /// and `boopdev eval --always` runs only these.
     public var always: Bool
     /// It checks the code's rules, not Jev's choices: it runs only with
     /// the expect brain (`--scripted`, and the unit tests), and a Jev run
     /// leaves it out.
     public var scripted: Bool
-    /// How many runs it gets when `--runs` doesn't say, if not the default
-    /// for its kind (`Eval.runs`).
+    /// How many runs it gets when `--runs` doesn't say, at any level, if
+    /// not the default (`Eval.runs`).
     public var runs: Int?
     public var checks: Checks?
+    /// A feel scenario's brief, for the judge to read a run against: it has
+    /// no exact checks on Jev's choices. With none, the scenario is a must.
+    public struct Brief: Sendable {
+        public var judge: String
+        public var reasonable: String
+        public var unreasonable: String
+    }
+    public var brief: Brief?
     /// A known gap: why Boop can't pass this today, and what would fix it.
     /// Its failures are reported but don't fail the eval, and the report
     /// says when it passes after all.
@@ -232,8 +249,8 @@ public struct Scenario: Sendable {
     /// kept failing`), and Recently's lines (`2026-10-25 · a long day`).
     public var memory = WrittenMemory()
 
-    public static let events = ["turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
+    public static let events = ["wish", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
+                                "away", "back", "lock", "unlock", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
                                 "to-do list", "wait", "ask answered"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
@@ -250,10 +267,19 @@ public struct Scenario: Sendable {
         self.file = file.lastPathComponent
         func bad(_ why: String) -> Error { EvalError("\(file.lastPathComponent): \(why)") }
         guard let o = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any] else { throw bad("not a JSON object") }
-        guard let name = o["name"] as? String, let story = o["case"] as? String, let why = o["why"] as? String,
-              let raw = o["steps"] as? [[String: Any]]
+        if let judge = o["judge"] as? String {
+            guard let reasonable = o["reasonable"] as? String, let unreasonable = o["unreasonable"] as? String else {
+                throw bad("a feel scenario needs judge, reasonable and unreasonable")
+            }
+            guard o["case"] == nil, o["why"] == nil, o["always"] == nil, o["gap"] == nil else {
+                throw bad("a feel scenario has its brief, with no case, why, always or gap")
+            }
+            brief = Brief(judge: judge, reasonable: reasonable, unreasonable: unreasonable)
+        }
+        guard let name = o["name"] as? String, let story = brief?.judge ?? (o["case"] as? String),
+              let why = brief != nil ? "" : (o["why"] as? String), let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -359,6 +385,8 @@ public struct Scenario: Sendable {
                 throw badStep("\(key) is only for \(only.joined(separator: " and "))")
             }
             step.topic = s["topic"] as? String
+            step.program = s["program"] as? String
+            step.half = s["half"] as? String
             step.failed = s["failed"] as? Bool
             step.error = s["error"] as? String
             step.prompt = s["prompt"] as? String
@@ -374,7 +402,7 @@ public struct Scenario: Sendable {
             step.words = s["words"] as? String
             step.helper = s["helper"] as? String
             step.kind = s["kind"] as? String
-            if event == "gesture", step.kind.flatMap({ EventLine.gesture($0) }) == nil { throw badStep("gesture needs a kind the board makes") }
+            if event == "gesture", step.kind.flatMap({ Touch(rawValue: $0)?.line() }) == nil { throw badStep("gesture needs a kind the board makes") }
             if event == "ask answered" {
                 step.pick = s["pick"] as? String ?? "a"
                 guard ["a", "b", "touch", Asks.ignored].contains(step.pick!) else { throw badStep("an ask's pick is a, b, touch or ignored") }
@@ -402,7 +430,7 @@ public struct Scenario: Sendable {
                 // What `!` takes away from: every value a key may be.
                 // `none` first, as the expect brain answers with the first.
                 let every: [String: [String]] = ["react": ["none"] + CharacterPack.active.moods.map(\.id), "mood": graphMoods,
-                                                 "say": ["none"] + ReactOutput.says.map(\.name)]
+                                                 "say": ["none"] + MomentOutput.says.map(\.name)]
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
                     guard let text = v as? String else { throw badStep("expect.\(key) is like \"proud|excited\"") }
@@ -419,7 +447,7 @@ public struct Scenario: Sendable {
                     return Set(step.expectOrder[key] ?? [])
                 }
                 let keys = ["react", "move", "intensity", "say", "said", "mood", "offered", "opens", "idle",
-                            "helpers", "when", "needs", "todo", "dream", "sign"]
+                            "helpers", "when", "needs", "todo", "doing", "dream", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), move: try set("move"), intensity: try set("intensity"), say: try set("say"),
@@ -433,17 +461,19 @@ public struct Scenario: Sendable {
                 guard (needs ?? []).isSubset(of: ["shown", "none"]) else { throw badStep("expect.needs is shown or none") }
                 guard (todo ?? []).allSatisfy({ $0 == "none" || StateSnapshot.Todo(text: $0) != nil }) else { throw badStep("expect.todo is like 3/7, or none") }
                 step.expect?.needs = needs
+                let doing = try set("doing")
+                step.expect?.doing = doing
                 step.expect?.todo = todo
                 let dream = try set("dream")
                 guard (dream ?? []).isSubset(of: ["told", "none"]) else { throw badStep("expect.dream is told or none") }
                 step.expect?.dream = dream
                 let sign = try set("sign")
                 step.expect?.sign = sign
-                let unknownTags = (when ?? []).subtracting(Occasions.all)
+                let unknownTags = (when ?? []).subtracting(Tags.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
-                for (key, values, known) in [("say", step.expect?.say, ReactOutput.says.map(\.name)),
-                                             ("intensity", step.expect?.intensity, ReactOutput.intensities.map(\.name)),
-                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush"])] {
+                for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
+                                             ("intensity", step.expect?.intensity, MomentOutput.sizeOptions.map(\.name)),
+                                             ("move", step.expect?.move, (MomentOutput.animations + MomentOutput.replies).map(\.name) + ["unhush", MomentOutput.wave])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -459,7 +489,11 @@ public struct Scenario: Sendable {
             }
             return step
         }
-        guard checks != nil || steps.contains(where: { $0.expect != nil }) else { throw bad("expects nothing") }
+        if brief != nil {
+            if let i = steps.firstIndex(where: { $0.expect?.checksAChoice == true }) { throw bad("step \(i + 1): a feel scenario checks no choice of Jev's; the judge reads them") }
+        } else {
+            guard checks != nil || steps.contains(where: { $0.expect != nil }) else { throw bad("expects nothing") }
+        }
     }
 
     /// `1-3`, `2-` (2 or more), `-4` (4 at most) or `3`, of counts or of
@@ -534,7 +568,7 @@ public struct Eval {
         /// What the screen showed: the idle and helper counts, the tags,
         /// whether the needs-you screen showed, and the to-do list (`3/7`, or
         /// `none`).
-        public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String)?
+        public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String, doing: String)?
         /// Whether the pass's line told the dream.
         public var told = false
 
@@ -547,6 +581,7 @@ public struct Eval {
                 if let w = expected.when, !w.isSubset(of: shown.when) { return false }
                 if let n = expected.needs, !n.contains(shown.needs ? "shown" : "none") { return false }
                 if let t = expected.todo, !t.contains(shown.todo) { return false }
+                if let d = expected.doing, !d.contains(shown.doing) { return false }
                 return true
             }
             if let r = expected.react, !r.contains(react ?? "none") { return false }
@@ -580,7 +615,7 @@ public struct Eval {
                         expected.dream.map { "dream \($0.sorted().joined(separator: "|"))" },
                         expected.sign.map { "sign \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
             let got = opened.map { "opened \($0)" }
-                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo)" }
+                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo), doing \($0.doing)" }
                 ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), move \(move ?? "none"), intensity \(intensity ?? "none"), say \(say ?? "none"), said \(said ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
@@ -618,6 +653,12 @@ public struct Eval {
         public var answer: String?
         /// The sign its reaction held up, if any.
         public var sign: String?
+        /// The brain that answered it.
+        public var brain: String?
+        /// The step it came on, from 1, a check-in's on the way to it included.
+        public var step = 0
+        /// The narration its reaction carried, if any.
+        public var narration: String?
     }
 
     /// A whole-run check's outcome.
@@ -646,11 +687,14 @@ public struct Eval {
     /// Whether the whole-run checks on Jev's own choices (its variety, its
     /// mood's changes, what it says) are judged: not with a scripted brain.
     public var judgesChoices: Bool { !(brain is ScenarioBrain) }
+    /// Whether the expect brain answers every pass but those of a step that
+    /// expects one, which `brain` answers (the quick level).
+    public var scriptsSetup = false
     /// Reads each prompt and last message in place of its `reading`: Apple
     /// Intelligence for `--labeler apple`, so a run checks it too.
     public var labeler: (any PromptLabeler)?
     /// Hears each pass of a run with the step it came on (from 1), a
-    /// heartbeat's on the way to the step included: `boopdev prompts`.
+    /// check-in's on the way to the step included: `boopdev prompts`.
     public var onPass: ((_ step: Int, _ pass: Harness.Pass) -> Void)?
 
     public init(brain: any Brain, steering: Steering) {
@@ -658,16 +702,87 @@ public struct Eval {
         self.steering = steering
     }
 
-    /// How many runs a scenario gets unless `--runs` says (internal/EVALS.md
-    /// §2): its own `runs`, else 3 for an `always` one, Boop's character,
-    /// and 1 for the rest.
-    public static func runs(_ scenario: Scenario) -> Int { scenario.runs ?? (scenario.always ? 3 : 1) }
+    /// How much of the eval a run asks Jev (internal/EVALS.md §2).
+    public enum Level: String, CaseIterable, Sendable {
+        /// The must scenarios; Jev answers only the passes of steps that
+        /// expect one, unless whole-run checks read them all.
+        case quick
+        /// Every scenario once, every pass to Jev.
+        case standard
+        /// Standard, with `always` scenarios 3 times.
+        case full
+    }
 
-    /// About how many requests one run of a scenario sends Jev: its passes
-    /// with the scripted brain, no key needed. A real run can differ by a
-    /// pass or two, since what Jev answers can move what wakes it later.
-    public static func requests(_ scenario: Scenario, steering: Steering) async throws -> Int {
-        try await Eval(brain: ExpectBrain(), steering: steering).run(scenario).timeline.count
+    /// How `level` runs a scenario against Jev; nil when it leaves the
+    /// scenario out.
+    public struct Plan: Sendable, Equatable {
+        /// How many runs: `--runs`, else its own `runs`, else 3 at the full
+        /// level for an `always` one, Boop's character, and 1 for the rest.
+        public var runs: Int
+        /// Whether the expect brain answers its setup. Whole-run checks and
+        /// the judge read every pass, so those scenarios play in full.
+        public var scriptsSetup: Bool
+        /// Whether a failed run gets its one re-run: a must's does, to
+        /// confirm before it blocks, unless `--runs` or its own runs repeat it.
+        public var rerunsOnFailure: Bool
+        /// `--scripted`: each scenario once, with the expect brain.
+        public static let scripted = Plan(runs: 1, scriptsSetup: false, rerunsOnFailure: false)
+    }
+
+    /// The plan for a scenario at `level`. Quick leaves out a feel scenario
+    /// unless `--only` named it, and a scripted scenario never goes to Jev.
+    public static func plan(_ scenario: Scenario, level: Level, named: Bool, given: Int? = nil) -> Plan? {
+        guard !scenario.scripted, level != .quick || scenario.brief == nil || named else { return nil }
+        let runs = given ?? scenario.runs ?? (level == .full && scenario.always ? 3 : 1)
+        return Plan(runs: runs,
+                    scriptsSetup: level == .quick && scenario.checks == nil && scenario.brief == nil,
+                    rerunsOnFailure: scenario.brief == nil && scenario.gap == nil && runs == 1)
+    }
+
+    /// One run as a line for the judge (internal/EVALS.md §2): the scenario,
+    /// its brief, and per pass the line Jev read and what Boop did.
+    public static func trajectory(_ result: Result, scenario: Scenario) -> [String: Any] {
+        var out: [String: Any] = ["file": scenario.file, "name": scenario.name, "group": scenario.brief == nil ? "must" : "feel",
+                                  "talk": scenario.talk.rawValue, "starts_in_mood": scenario.mood, "checks_passed": result.passed]
+        if let b = scenario.brief {
+            out["brief"] = ["judge": b.judge, "reasonable": b.reasonable, "unreasonable": b.unreasonable]
+        }
+        out["passes"] = result.timeline.map { p -> [String: Any] in
+            var pass: [String: Any] = ["step": p.step, "at_s": p.atMs / 1000, "line": p.line, "mood": p.mood, "brain": p.brain ?? "none"]
+            if let r = p.reaction {
+                pass["face"] = r.face
+                pass["move"] = r.move
+                pass["said"] = r.said
+                pass["size"] = p.intensity ?? "small"
+            }
+            if let sign = p.sign { pass["sign"] = sign }
+            if let n = p.narration { pass["narration"] = n }
+            if let d = p.dropped { pass["dropped"] = d }
+            return pass
+        }
+        return out
+    }
+
+    /// About how many passes one run of a scenario asks a brain, counted with
+    /// the expect brain, no key needed: all of them, and those of steps that
+    /// expect one. A real run can differ by a pass or two, since what Jev
+    /// answers can move what wakes it later.
+    public struct Price: Sendable {
+        public var all = 0
+        public var expected = 0
+    }
+
+    public static func price(_ scenario: Scenario, steering: Steering) async throws -> Price {
+        final class Tally: @unchecked Sendable { var price = Price() }
+        let tally = Tally()
+        var runner = Eval(brain: ExpectBrain(), steering: steering)
+        runner.onPass = { step, pass in
+            guard pass.held == nil else { return }
+            tally.price.all += 1
+            if scenario.steps[step - 1].asksJev { tally.price.expected += 1 }
+        }
+        _ = try await runner.run(scenario)
+        return tally.price
     }
 
     /// One run of a scenario, from a fresh core and transcript, the mood
@@ -694,8 +809,8 @@ public struct Eval {
         // has; one left in progress stays so.
         let ending = Ending()
         let reactions = Reactions()
-        // Memory, in memory: the day's tallies, closed at 5:00 on the
-        // virtual clock, and the dream told the next time you show up.
+        // Memory, in memory: the day's tallies and the dream of everything
+        // since the last, on the virtual clock, told the next time you show up.
         let remembers = Memory(store: try KeyValueStore(directory: nil), time: time)
         home.sync { remembers.attach(to: pipeline) }
         let (harness, mood) = Runtime.harness(
@@ -704,6 +819,7 @@ public struct Eval {
                 ending.said = reaction.say?.text
                 ending.takes = reaction.say?.takes.map(\.text) ?? []
                 ending.sign = reaction.sign
+                ending.narration = reaction.reason
                 guard let end = ending.end else { return ending.open.append(pending) }
                 if let ended = Eval.ended(end) {
                     reactions.read(.ended(ended), pending).map(pending.finish)
@@ -733,19 +849,21 @@ public struct Eval {
         var working: [(Int64, Int64)] = []
         var since: Int64?
         var open: Set<String> = []
+        let setup = scriptsSetup ? ExpectBrain() : nil
         for (i, step) in scenario.steps.enumerated() {
             // Time passes a second at a time, as the app ticks, and what a
-            // tick brings (a heartbeat) is answered then, as in the app.
+            // tick brings (a check-in) is answered then, as in the app.
             var last: Harness.Pass?
             var lastSaid: String?  // what its reaction said
             var lastTakes: [String] = []  // and its takes' texts
             var lastSign: String?  // and the sign it held up
-            var toldDream = false  // any pass of the step, a heartbeat's on the way included
+            var toldDream = false  // any pass of the step, a check-in's on the way included
             func respond(_ views: [ViewEvent]) async {
                 for view in views where view.wakesBrain {
                     ending.said = nil
                     ending.takes = []
                     ending.sign = nil
+                    ending.narration = nil
                     guard let e = home.sync(execute: { harness.log.event(view.seq) }),
                           let record = await harness.respond(to: e) else { continue }
                     lastSaid = ending.said
@@ -754,24 +872,25 @@ public struct Eval {
                     last = record
                     onPass?(i + 1, record)
                     if view.facts["dream_day"] != nil { toldDream = true }
-                    let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
+                    let ran = record.outputs.contains { $0.name == MomentOutput.outputName && $0.result.ok }
                     let answers = record.answers
                     timeline.append(Pass(
                         atMs: clock.now - start, line: view.line,
-                        reaction: ran ? Reaction(face: answers[ReactOutput.faceKey]?.choice ?? "none",
-                                                 move: ReactOutput.move(answers) ?? "none",
+                        reaction: ran ? Reaction(face: answers[MomentOutput.emotionKey]?.choice ?? "none",
+                                                 move: MomentOutput.move(answers) ?? "none",
                                                  said: ending.said ?? "none") : nil,
-                        intensity: ran ? ReactOutput.intensity(answers).name : nil,
+                        intensity: ran ? MomentOutput.size(answers).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
-                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil))
+                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil, brain: record.brain, step: i + 1, narration: ran ? ending.narration : nil))
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
-            // The expect brain answers the step's passes, a heartbeat's on
+            // The expect brain answers the step's passes, a check-in's on
             // the way to it included, from the step.
-            let scripted = brain as? ScenarioBrain
-            scripted?.willRun(step, ahead: scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] }.first ?? [])
+            let scripted = (setup ?? brain) as? ScenarioBrain
+            if let setup { home.sync { harness.use(step.asksJev ? brain : setup) } }
+            scripted?.willRun(step, ahead: scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] ?? $0.brain?[MoodOutput.outputName].map { [$0] } }.first ?? [])
             while clock.now < start + step.atMs {
                 clock.now = min(start + step.atMs, clock.now + 1000)
                 await respond(home.sync { pipeline.tick(at: clock.now).views })
@@ -800,6 +919,10 @@ public struct Eval {
                 }
             default: break
             }
+            // A step that writes its brain's answers wakes the brain, as an expecting one does.
+            if brain is ScenarioBrain, step.brain != nil, last == nil {
+                throw EvalError("\(scenario.file) step \(i + 1): has brain answers, but nothing woke the brain")
+            }
             guard let expect = step.expect else { continue }
             if expect.wantsTheScreen {
                 // What the screen shows now: the core's state, with no pass.
@@ -810,7 +933,8 @@ public struct Eval {
                 check.expected.when = expect.when
                 check.expected.needs = expect.needs
                 check.expected.todo = expect.todo
-                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo?.text ?? "none")
+                check.expected.doing = expect.doing
+                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo?.text ?? "none", shown.doing)
                 checks.append(check)
                 if !expect.wantsAPass, expect.opens == nil { continue }
             }
@@ -825,12 +949,12 @@ public struct Eval {
             guard let record = last else {
                 throw EvalError("\(scenario.file) step \(i + 1): expects a pass, but nothing woke the brain")
             }
-            let react = record.answers[ReactOutput.faceKey]?.choice
-            let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
+            let react = record.answers[MomentOutput.emotionKey]?.choice
+            let ran = record.outputs.contains { $0.name == MomentOutput.outputName && $0.result.ok }
             checks.append(Check(step: i + 1, line: record.line ?? "", expected: expect, react: react,
-                                move: ran ? ReactOutput.move(record.answers) : nil,
-                                intensity: ran ? ReactOutput.intensity(record.answers).name : nil,
-                                say: ran ? ReactOutput.saying(record.answers) : nil,
+                                move: ran ? MomentOutput.move(record.answers) : nil,
+                                intensity: ran ? MomentOutput.size(record.answers).name : nil,
+                                say: ran ? MomentOutput.saying(record.answers) : nil,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
                                 latencyMs: record.latencyMs,
@@ -942,7 +1066,7 @@ public struct Eval {
         result.timeline.map { p in
             let t = "\(p.atMs / 60_000):\(String(format: "%02d", p.atMs / 1000 % 60))"
             let did = p.dropped.map { "dropped: \($0)" } ?? p.reaction.map { "\($0.text), \(p.intensity ?? "small")" } ?? "none"
-            return "    \(t)  \(p.line)  → \(did)  [\(p.mood)]"
+            return "    \(t)  \(p.line)  → \(did)  [\(p.mood)]\(p.brain == ExpectBrain().id ? "  (expect brain)" : "")"
         }
     }
 
@@ -967,6 +1091,8 @@ public struct Eval {
         /// What the last pass's reaction said, if any, and its takes'
         /// texts.
         var said: String?
+        /// And the narration it carried.
+        var narration: String?
         var takes: [String] = []
         var sign: String?
     }
@@ -996,9 +1122,18 @@ public struct Eval {
             if let topic = step.topic { end["topic"] = .string(topic) }
             if step.failed == true { end["error"] = "exit_code" }
             var start: [String: JSONValue] = ["tool": "Bash"]
-            if let topic = step.topic { start["topic"] = .string(topic) }
-            return [hook(.tool, .start, "PreToolUse", start),
-                    hook(.tool, .end, step.failed == true && source == .claude ? "PostToolUseFailure" : "PostToolUse", end)]
+            // A whole command in one moment is no work act: its start would
+            // be a pass of its own. `half` plays one.
+            if let topic = step.topic, step.half != nil { start["topic"] = .string(topic) }
+            if let program = step.program {
+                start["program"] = .string(program)
+                end["program"] = .string(program)
+                start["tool_use_id"] = "eval-command"
+                end["tool_use_id"] = "eval-command"
+            }
+            let hooks = [hook(.tool, .start, "PreToolUse", start),
+                         hook(.tool, .end, step.failed == true && source == .claude ? "PostToolUseFailure" : "PostToolUse", end)]
+            return step.half == "start" ? [hooks[0]] : step.half == "end" ? [hooks[1]] : hooks
         // An edit that removes `count` lines and adds none: the counts the
         // hook gives, never the text.
         case "edit":
@@ -1031,6 +1166,10 @@ public struct Eval {
         case "helper returned": return [hook(.subagent, .end, "SubagentStop", subagent: step.helper ?? "h1")]
         // What you did to the board, which reacted to it at once: a hold
         // names the request the needs-you screen shows, as the board does.
+        case "wish":
+            // A wish made, as the brain's pick of its sign makes it.
+            let kind = Core.WishKind(rawValue: step.kind ?? "") ?? .pet
+            return [{ $0.effects($0.core.makeWish(kind, at: now), at: now) }]
         case "gesture":
             return [{ $0.gesture(step.kind ?? "stroke", request: $0.core.snapshot(at: now).attn?.id, at: now) }]
         // What the presence detector would decide: you
@@ -1038,6 +1177,13 @@ public struct Eval {
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",
                                                  data: ["since": .int(now)])) }]
         case "back": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .end, specificType: "unlocked")) }]
+        // The screen locks and unlocks, as the detector says so at once:
+        // an `unlock` is since the last `lock`.
+        case "lock": return [{ $0.lock(PresenceDetector.lockEvent(at: now)) }]
+        case "unlock": return [{ p in
+            let since = p.transcript.events.last { $0.kind == Event.kind(.lock, .start) }?.at ?? now
+            return p.lock(PresenceDetector.unlockEvent(since: since, at: now))
+        }]
         // The board ends the last ask: the left answer tapped, the right,
         // a touch, or nobody.
         case "ask answered": return [{ $0.answerLast(step.pick ?? "a", at: now) ?? $0.tick(at: now) }]
@@ -1054,11 +1200,11 @@ public struct Eval {
 
     /// One scenario's runs, readably: its verdict, and each failing step
     /// once.
-    public static func report(_ runs: [Result], story: String? = nil, gap: String? = nil) -> [String] {
+    public static func report(_ runs: [Result], story: String? = nil, gap: String? = nil, judged: Bool = false) -> [String] {
         guard let first = runs.first else { return [] }
         let passed = runs.filter(\.passed).count
         let tally = runs.count > 1 ? "  (\(passed)/\(runs.count) runs)" : ""
-        let verdict = passed == runs.count ? (gap == nil ? "pass  " : "pass  (gap closed: take out its gap) ") : gap == nil ? "FAIL  " : "GAP   "
+        let verdict = passed == runs.count ? (judged ? "judge " : gap == nil ? "pass  " : "pass  (gap closed: take out its gap) ") : gap == nil ? "FAIL  " : "GAP   "
         var lines = [verdict + "\(first.file)  \(first.scenario)\(tally)"]
         if passed < runs.count, let gap { lines.append("  gap: \(gap)") }
         if passed < runs.count, let story { lines.append("  case: \(story)") }

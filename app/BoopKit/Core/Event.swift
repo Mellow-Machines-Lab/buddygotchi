@@ -4,7 +4,7 @@ import MellowHarness
 
 /// Boop's view of an event: what MellowHarness's event
 /// holds for Boop. An agent's hook, a poke, what
-/// you said, away and back, a heartbeat, "needs you" and push-to-talk's
+/// you said, away and back, a check-in, "needs you" and push-to-talk's
 /// listening are each a type,
 /// and a type with a lifetime a phase: the event's `kind` is the two
 /// together (`tool_end`, `poke`). The source's own name for it, the
@@ -26,7 +26,14 @@ extension Event {
 
     /// What it is, whatever agent it came from.
     public enum Kind: String, Sendable, CaseIterable {
-        case session, turn, tool, subagent, poke, presence, heartbeat
+        case session, turn, tool, subagent, poke, presence
+        /// The Mac's screen locking (`start`) and unlocking (`end`), every
+        /// time, however short: Boop answers each. An away and a back are
+        /// `presence`, which go on as they are.
+        case lock
+        /// Boop looking in by itself: working, idle (`check_in`) or
+        /// hourly; on disk by its older name.
+        case checkIn = "heartbeat"
         /// What you said on push-to-talk; on disk by its older name.
         case said = "talk"
         /// "Needs you" showing for a session, and clearing: the core's.
@@ -52,20 +59,29 @@ extension Event {
         /// (`end`, why as its `specific_type`). The core's: it reads them
         /// back on launch.
         case hush
+        /// A work act starting or coming to its result (`WorkStream.Act`):
+        /// `specific_type` is its kind, with its `session`, its sign's
+        /// `words`, whether it's `full`, and at its end whether it `passed`.
+        case act
         /// Your prompt's reading, after the turn start it came with: its
         /// facts are `PromptReading`'s, never the prompt.
         case prompt
         /// The agent's last message's reading, after the turn end it came
         /// with: its facts are `MessageReading`'s, never the message.
         case lastMessage = "last_message"
-        /// Boop's day closed (`MemoryReader`): yesterday in tags and a
+        /// Boop dreamed (`Memory.dream`): everything since the last dream in tags and a
         /// sentence, for Boop to tell when you next show up. Boop's own;
         /// it wakes no pass.
         case dream
-        /// The night's write to the written memory (`Memory`): which notes
+        /// The dream's write to the written memory (`Memory`): which notes
         /// it kept, changed, added, dropped and aged, and what it refused,
         /// never their text. Boop's own; it wakes no pass.
         case memory
+        /// Boop's wish: made (`start`, the kind as its `specific_type`) and
+        /// ended (`end`: `met`, `gaveup` or `closed`, with its `kind` and
+        /// how long it waited, `waited_ms`). The core's: it reads them back
+        /// on launch.
+        case wish
         /// An ask's end, which the board decides: you picked an answer
         /// (`specific_type` `a` or `b`), a touch answered it (`touch`), or
         /// nobody did (`ignored`), with the question's `q`, its words

@@ -262,8 +262,7 @@ def frame_us(sample: dict, overlapped: bool) -> int:
 WORKING = {"t": "state", "base": "working", "act": "terminal", "mood": "happy", "busy": 1}
 STREAM = {**WORKING, "busy": 2, "todo": {"done": 3, "total": 7}, "calls": [[0, 0, "grep"], [1, 0, "edit +18"]]}
 STREAM_CALLS = [do("call", a=i % 2, w=word, **{"as": gag})
-                for i, (word, gag) in enumerate([("make", "bonk"), ("deploy", "launch"), ("task", "helper"),
-                                                 ("test", "pass"), ("read", "look"), ("done", "gather")])]
+                for i, (word, gag) in enumerate([("make", "bonk"), ("task", "helper"), ("done", "gather")])]
 PERF_SCENES = [
     ("working", WORKING, None, 30),
     ("stream", STREAM, STREAM_CALLS, None),
@@ -1161,8 +1160,8 @@ def build_parser() -> argparse.ArgumentParser:
                                     "(default: $BOOP_CAMERA or the built-in one)")
     p.set_defaults(func=cmd_cam)
     p = sub.add_parser("dash", help="the live dashboard: Boop now with its face, Talk, growth and CONTEXT, and its "
-                                    "mood and memory, automatic reactions and decided reactions side by side, from "
-                                    "debug.jsonl; keys force a mood or a reaction, close Boop's day, or preview a look")
+                                    "mood and memory, the rules' Moments and Jev's side by side, from "
+                                    "debug.jsonl; keys force a mood or a Moment, dream now or preview a dream, or preview a look")
     p.add_argument("--state-dir", help="the app's state directory, where Boop --debug writes debug.jsonl "
                                        "(default: the everyday app's, ~/Library/Application Support/Boop)")
     p.add_argument("--socket", help="the app's hook socket (default: STATE-DIR/boop.sock)")

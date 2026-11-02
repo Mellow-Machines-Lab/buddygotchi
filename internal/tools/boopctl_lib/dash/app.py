@@ -93,18 +93,20 @@ class Picker(ModalScreen[str | None]):
 
 
 class StateView(ModalScreen[None]):
-    """The whole prompt the brain read last."""
+    """A page of text over the dashboard: the whole prompt the brain read
+    last, or a dream's preview."""
 
-    BINDINGS = [Binding("escape,s,q", "dismiss(None)", "close")]
+    BINDINGS = [Binding("escape,s,q,D", "dismiss(None)", "close")]
     DEFAULT_CSS = "StateView { background: $background 90%; } StateView > VerticalScroll { border: round $accent; }"
 
-    def __init__(self, state: str) -> None:
+    def __init__(self, state: str, title: str = "the prompt Jev read (s or Escape closes)") -> None:
         super().__init__()
         self.state = state
+        self.title_text = title
 
     def compose(self) -> ComposeResult:
         with VerticalScroll() as scroll:
-            scroll.border_title = "the prompt Jev read (s or Escape closes)"
+            scroll.border_title = self.title_text
             yield Static(Text(self.state))
 
 
@@ -132,7 +134,8 @@ class Dash(App[None]):
         Binding("r", "react", "react"),
         Binding("p", "preview", "preview"),
         Binding("t", "timeline", "toggle timeline"),
-        Binding("d", "close_day", "close the day"),
+        Binding("d", "dream_now", "dream now"),
+        Binding("D", "dream_preview", "preview a dream"),
         Binding("s", "state", "the prompt Jev read"),
         Binding("b", "report", "bug report"),
         Binding("q", "quit", "quit"),
@@ -214,6 +217,9 @@ class Dash(App[None]):
                                     width=self.row_width())
             if done := self.pending.seen(line):
                 self.notify(f"{done}: landed")
+                if done == "dream_preview":
+                    self.push_screen(StateView(controls.preview_text(line["dream_preview"]),
+                                               "a dream's preview: nothing kept (D or Escape closes)"))
             if live and not catching_up and kind(line) == "sent":
                 self.face.send(line["sent"])
         if live and catching_up and (lines or restarted):
@@ -416,10 +422,15 @@ class Dash(App[None]):
         if self.look and self.face:
             self.face.send(controls.preview_state(self.board.state, self.look, self.look_mood))
 
-    def action_close_day(self) -> None:
-        """Boop's day closes now, as at 5:00: the dream, in the mood column
-        at once, then the night's write when the writer answers."""
-        self.command({"dev": "close_day"})
+    def action_dream_now(self) -> None:
+        """Boop dreams now of everything since the last dream: the dream,
+        in the mood column at once, then its write when the writer answers."""
+        self.command({"dev": "dream_now"})
+
+    def action_dream_preview(self) -> None:
+        """What dreaming now would do, nothing kept: shown when its
+        `dream_preview` line lands."""
+        self.command({"dev": "dream_preview"})
 
     def action_state(self) -> None:
         if self.board.jev_state:

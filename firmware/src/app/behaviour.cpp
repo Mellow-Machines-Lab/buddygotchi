@@ -64,6 +64,18 @@ void Behaviour::reset(uint32_t t, Rng& rng) {
 
 bool Behaviour::noApp(uint32_t t) const { return stale_ || int32_t(t - lastState_) >= int32_t(kNoAppMs); }
 
+// A Mac that goes to sleep is no news to a Boop already asleep: it sleeps on
+// with no plug, until a touch shows why nothing answers. Its model is the
+// last state, which nothing changes while the Mac is silent.
+bool Behaviour::sleptThrough() const {
+  return !touchedAlone_ && model_.base == render::SceneState::kAsleep && !model_.attn;
+}
+
+// Awake alone, Boop rests and the small plug says the Mac is gone. It falls
+// asleep on the board's own clock, and that sleep has no plug either: a
+// touch wakes it and shows it. So the plug is never on a sleeping Boop.
+bool Behaviour::sleepsOn(uint32_t t) const { return noApp(t) && (aloneAsleep_ || sleptThrough()); }
+
 bool Behaviour::reactionOn(uint32_t t) const {
   return reaction_.anim != render::SceneState::kNone && within(t, reaction_.at, reaction_.ms);
 }
@@ -72,11 +84,11 @@ bool Behaviour::listening(uint32_t t) const {
   return reactionOn(t) && reaction_.anim == render::SceneState::kListening;
 }
 
-// What shows, first first: no app, listening, needs you,
-// then a tap's poke and the reactions, then the look. So with no app, while
-// something needs you and while listening waits for the reply, a tap only
-// dips the face and a reaction's animation is skipped.
-bool Behaviour::held(uint32_t t) const { return noApp(t) || model_.attn || listening(t); }
+// What shows, first first: listening, needs you, then a tap's poke and the
+// reactions, then the look. So while something needs you and while listening
+// waits for the reply, a tap only dips the face. With no app a stale needs
+// you holds nothing: a touch gets the board's own reaction.
+bool Behaviour::held(uint32_t t) const { return (model_.attn && !noApp(t)) || listening(t); }
 
 // Whether the face and sign of `in` are held at t: as held(t), but the
 // reply to what you said shows over needs you, as listening does.
@@ -121,11 +133,13 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     };
     if (reaction_.anim != render::SceneState::kNone) consider(reaction_.at + reaction_.ms);
     if (done_.agent[0] && done_.ending) consider(done_.endAt + done_.endMs);
+    if (done_.agent[0] && !done_.signUp) consider(done_.at + kFinishSignByMs);
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
     if (sign_.text[0]) consider(sign_.at + sign_.ms);
     if (ask_.q[0]) consider(ask_.at + kAskMs);
     consider(lastState_ + kNoAppMs);
+    if (stale_ && !aloneAsleep_) consider(aloneFrom_ + kAloneSleepMs);
     uint32_t faceAt;
     if (face_->nextDue(modelT_, t, faceAt)) consider(faceAt);
     if (!found) break;
@@ -157,8 +171,10 @@ void Behaviour::resync(uint32_t t) {
     // plays, then goes.
     if (done_.agent[0] && !done_.ending && !holds(done_.key, t))
       done_.ending = true, done_.endAt = t, done_.endMs = kFinishLingerMs;
+    liftFinishSign(t);
     if (done_.agent[0] && done_.ending && !within(t, done_.endAt, done_.endMs)) done_ = Done{};
-    if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true;
+    if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true, aloneFrom_ = t, lookAt_ = t;
+    if (stale_ && !aloneAsleep_ && !within(t, aloneFrom_, kAloneSleepMs)) aloneAsleep_ = true, lookAt_ = t;
   });
 }
 
@@ -216,11 +232,14 @@ void Behaviour::onState(const Model& m, uint32_t t) {
                             std::strncmp(model_.project, m.project, sizeof(m.project)));
     // Another visual starts the looks' rotation over: the face picks its
     // first variation itself, from those that fit now.
-    bool look = m.attn != model_.attn || m.look() != model_.look();
+    const bool back = noApp(t);
+    bool look = back || m.attn != model_.attn || m.look() != model_.look();
+    if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
     stale_ = false;
+    touchedAlone_ = aloneAsleep_ = false;
     blOverride_ = false;
     if (fresh) {  // a new needs-you: its performance plays from the start, and it wins
       alerted_ = true, alertAt_ = t, ++alerts_;
@@ -237,9 +256,15 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
-    // shows what the state says.
+    // shows what the state says. The Mac's return gets a small hello of the
+    // board's own, unless Boop has something else to show or is asleep. A
+    // first state after power-on isn't a return.
+    if (back && heard_ && !m.attn && m.base != render::SceneState::kAsleep && !faceDown_ && !listening(t))
+      playAnim(render::SceneState::kNotice, t, CutBy::kNone, 1, m.mood, 0);
+    heard_ = true;
   });
   stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
+  stream_.setAct(m.workAct, m.attn || listening(t), t);  // both hold the screen
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;
@@ -268,30 +293,35 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 // The reply to what you said (`reply`, with a face) shows over needs you
 // too, as listening did: its face, its clip and its sign, but no `say`;
 // then the needs-you screen is back.
+// Which parts of `in` play at t. With no app no reaction from the Mac does.
+Behaviour::Parts Behaviour::partsOf(const ReactionIn& in, uint32_t t) const {
+  Parts p;
+  const bool listen = in.anim == render::SceneState::kListening;
+  p.anim = in.anim != render::SceneState::kNone && (listen || !(noApp(t) || held(t)));
+  p.say = in.take >= 0 && !model_.attn && !noApp(t);
+  p.face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
+  p.sign = in.sign[0] && !heldFrom(in, t);
+  return p;
+}
+
 const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   const bool listen = in.anim == render::SceneState::kListening;
   const bool wasListening = listening(t);
   if (wasListening && !listen && (in.said || in.empty)) change(t, [&] { reaction_.anim = render::SceneState::kNone; });
   if (in.empty) return wasListening ? nullptr : "not_listening";
   if (faceDown_ && !listen) return "facedown";  // do not disturb
-  bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
-  bool say = in.take >= 0 && !model_.attn && !noApp(t);
-  bool face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
-  bool sign = in.sign[0] && !heldFrom(in, t);
-  if (anim || say || face || sign) return nullptr;
+  if (partsOf(in, t).any()) return nullptr;
   if (noApp(t)) return "no_app";
   if (listening(t)) return "listening";
   if (model_.attn) return "needs_you";
-  return "nothing";
+  return in.wishMet ? nullptr : "nothing";
 }
 
 bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   const bool listen = in.anim == render::SceneState::kListening;
-  bool anim = in.anim != render::SceneState::kNone && (listen || !held(t));
-  bool say = in.take >= 0 && !model_.attn && !noApp(t);
-  bool face = in.expr && !heldFrom(in, t);
-  bool sign = in.sign[0] && !heldFrom(in, t);
-  if (!anim && !say && !face && !sign) return false;  // stop_listening: admit did it all
+  const Parts parts = partsOf(in, t);
+  const bool anim = parts.anim, say = parts.say, face = parts.face, sign = parts.sign;
+  if (!parts.any()) return false;  // stop_listening: admit did it all
   change(t, [&] {
     // A newer reaction ends the ask that's up, unanswered.
     if (ask_.q[0]) endAsk("ignored", t);
@@ -373,6 +403,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       copyStr(done_.thread, sizeof(done_.thread), in.whoThread);
       done_.outcome = anim ? reaction_.outcome : render::Outcome::kNone;
       done_.id = in.id, done_.key = in.key, done_.at = t;
+      liftFinishSign(t);
     }
     if (in.key) playing_ = PlayedOut{in.key, CutBy::kNone};
   });
@@ -442,6 +473,11 @@ void Behaviour::startSay(const ReactionIn& in, uint32_t t, uint32_t at) {
 void Behaviour::pressDown(uint32_t t) {
   pressed_ = true;
   pressAt_ = t;
+  touchAlone(t);
+}
+
+void Behaviour::touchAlone(uint32_t t) {
+  if (noApp(t)) change(t, [&] { touchedAlone_ = true, aloneAsleep_ = false, aloneFrom_ = t; });
 }
 
 void Behaviour::pressUp() { pressed_ = false; }
@@ -454,6 +490,7 @@ void Behaviour::pressUp() { pressed_ = false; }
 // expression play on over it, so a barrage doesn't cut short the one
 // answer it gets.
 const char* Behaviour::tap(uint32_t t, Rng& rng) {
+  touchAlone(t);
   bool inRun = taps_ > 0 && int32_t(t - lastTap_) < int32_t(kTapRunMs);
   taps_ = inRun ? std::min(taps_ + 1, 1000) : 1;
   lastTap_ = t;
@@ -473,6 +510,7 @@ const char* Behaviour::press(uint32_t t, Rng& rng) {
 }
 
 void Behaviour::gesture(render::Gesture g, uint32_t t) {
+  touchAlone(t);
   if (held(t) || (g != render::Gesture::kHandoff && finishShown(t))) return;
   const int n = face_->variants(model_.mood, render::SceneState::kGesture);
   const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
@@ -483,6 +521,7 @@ void Behaviour::gesture(render::Gesture g, uint32_t t) {
 // whatever else plays as a tap would. Already listening (the Mac's own
 // mic), it carries on with the same design.
 void Behaviour::talkOn(uint32_t t, Rng& rng) {
+  if (noApp(t)) return;  // nobody to hear it
   change(t, [&] {
     if (listening(t)) {
       reaction_.ms = (t - reaction_.at) + kListenMs + kReplyWaitMs;
@@ -508,24 +547,23 @@ void Behaviour::talkOff(uint32_t t) {
 // ---- What shows ------------------------------------------------------------
 
 render::SceneState Behaviour::look(uint32_t t) const {
-  if (noApp(t)) return render::SceneState::kNoApp;
+  if (noApp(t)) return sleepsOn(t) ? render::SceneState::kAsleep : render::SceneState::kIdle;
   return model_.attn ? render::SceneState::kNeedsYou : model_.look();
 }
 
-// No app shows over everything; then an animation (listening only, while
-// something needs you) over the look: needs you's, or what the agents are
-// doing, idle, working or asleep.
+// An animation (listening only, while something needs you) over the look:
+// needs you's, or what the agents are doing, idle, working or asleep. With
+// no app, the board's own touches over resting or asleep, in the last mood:
+// what the Mac asked for is over.
 Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
   Source s;
-  if (noApp(t)) {  // no Mac to pick a variation: the first
-    s.look = render::SceneState::kNoApp;
-    s.mood = model_.mood;
-    return s;
-  }
-  s.mood = exprOn(t) ? exprMood_ : model_.mood;  // the reaction's expression, or the mood
-  s.look = model_.attn ? render::SceneState::kNeedsYou : model_.look();
-  s.lookVariant = face_->lookVariant();
-  if (reactionOn(t)) {
+  const bool alone = noApp(t);
+  s.mood = !alone && exprOn(t) ? exprMood_ : model_.mood;  // the reaction's expression, or the mood
+  s.look = look(t);
+  s.lookVariant = alone ? 0 : face_->lookVariant();  // no Mac to pick a variation: the first
+  const bool own = reaction_.anim == render::SceneState::kPoked || reaction_.anim == render::SceneState::kTapSpam ||
+                   reaction_.anim == render::SceneState::kGesture;
+  if (reactionOn(t) && (!alone || own)) {
     s.anim = reaction_.anim;
     s.at = reaction_.at;
     s.animVariant = reaction_.variant;
@@ -548,6 +586,12 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.act = model_.act;
   c.attention = model_.attn;
   c.borrowed = exprOn(t);
+  const bool alone = noApp(t);
+  if (alone) {
+    c.look = c.base = look(t);
+    c.working = c.mayVary = c.attention = c.borrowed = false;
+    c.act = render::FaceContext{}.act;
+  }
   if (c.borrowed) c.reply = exprReply_, c.replyAt = exprAt_;
   c.attentionId = model_.attnId;
   c.agent = model_.agent;
@@ -556,7 +600,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.more = model_.more;
   // With no app the Mac's tags are stale: a night's or a holiday's would
   // stay up all the next day.
-  c.when = noApp(t) ? 0 : model_.when;
+  c.when = alone && !sleptThrough() ? 0 : model_.when;
   c.lookMs = t - lookAt_;
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
@@ -604,7 +648,7 @@ void Behaviour::setFaceDown(bool down, uint32_t t) {
 }
 
 uint8_t Behaviour::blTarget(uint32_t t) const {
-  if (noApp(t)) return 60;      // dimmed like asleep
+  if (noApp(t)) return faceDown_ ? 20 : sleepsOn(t) ? 60 : 255;  // dimmed as with the Mac
   if (model_.attn) return 255;  // dimming never hides "needs you"
   if (faceDown_) return 20;     // face down: do not disturb
   if (model_.base == render::SceneState::kAsleep) return 60;
@@ -624,6 +668,18 @@ void Behaviour::takeDown(uint32_t t) {
   if (!sooner) done_.ending = true, done_.endAt = t, done_.endMs = kDoneLeaveMs;
 }
 
+// As its reaction's words end, at once with none, or kFinishSignByMs in.
+void Behaviour::liftFinishSign(uint32_t t) {
+  if (!done_.agent[0] || done_.signUp) return;
+  const bool talking = sayDue(t) && say_.key == done_.key;
+  if (!talking || int32_t(t - done_.at) >= int32_t(kFinishSignByMs)) done_.signUp = true, done_.signAt = t;
+}
+
+const Behaviour::Done* Behaviour::stripFinish(uint32_t t) const {
+  const Done* f = finishOn(t);
+  return f && f->signUp && face_->holdsUpFinish() ? nullptr : f;
+}
+
 uint32_t Behaviour::finishShown(uint32_t t) const {
   const Done* f = finishOn(t);
   return f ? f->id : 0;
@@ -636,6 +692,7 @@ render::DoneShow Behaviour::done(uint32_t t) const {
   d.agent = done_.agent, d.thread = done_.thread, d.outcome = done_.outcome;
   d.ms = t - done_.at;
   d.leftMs = done_.ending ? int32_t(done_.endAt + done_.endMs - t) : -1;
+  if (done_.signUp) d.signMs = int32_t(t - done_.signAt);
   return d;
 }
 
@@ -653,6 +710,8 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish)
   // needs you.
   s.todoDone = m.todoDone;
   s.todoTotal = m.todoTotal;
+  static constexpr const char* kWishWords[] = {nullptr, "pet", "chat", "work"};
+  s.wish = kWishWords[m.wish];
   if (m.attn) s.agent = m.agent, s.project = m.project, s.name = m.name, s.more = m.more;
   if (finish) s.doneAgent = finish->agent, s.doneThread = finish->thread, s.doneOutcome = finish->outcome;
   return s;
@@ -663,8 +722,8 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish)
 // change's that advance stops at (no app, a finish's linger ending).
 void Behaviour::followLane(uint32_t t) {
   const bool shows = stripAt(t).shows();
-  const Done* finish = finishOn(t);
-  if (shows) laneModel_ = model_, laneNoApp_ = noApp(t), laneFinishes_ = finish != nullptr;
+  const Done* finish = stripFinish(t);
+  if (shows) laneModel_ = model_, laneNoApp_ = plugShows(t), laneFinishes_ = finish != nullptr;
   if (shows && finish) laneFinish_ = *finish;
   lane_.retarget(shows ? 1000 : 0, t);
 }
@@ -679,13 +738,35 @@ render::Strip Behaviour::strip(uint32_t t) const {
   return s;
 }
 
+render::WishShow Behaviour::wishShow(uint32_t t) const {
+  render::WishShow show;
+  if (noApp(t)) return show;  // nothing waits on a Mac that isn't there
+  if (wishPop_ != render::WishShow::kWaiting && t - wishPopAt_ < render::WishShow::kPopMs) {
+    show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
+  } else {
+    show.kind = model_.wish;
+    show.how = model_.wishHow;
+    show.ms = t;
+  }
+  return show;
+}
+
+void Behaviour::wishPopped(bool met, uint32_t t) {
+  if (lastWish_ == render::WishShow::kNone) return;
+  wishPop_ = met ? render::WishShow::kMet : render::WishShow::kGone;
+  wishPopAt_ = t;
+}
+
 // With no app, no `say` shows: it outranks the reactions.
 const char* Behaviour::bubble(uint32_t t) const { return sayOn(t) && !noApp(t) ? say_.text : nullptr; }
 
-const char* Behaviour::laneText(uint32_t t) const {
+const char* Behaviour::laneBubble(uint32_t t) const {
   if (const char* said = bubble(t)) return said;
-  if (asking(t)) return ask_.lane;
-  if (!reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
+  return asking(t) ? ask_.lane : nullptr;
+}
+
+const char* Behaviour::caption(uint32_t t) const {
+  if (asking(t) || !reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
   if (model_.attn && !reason_.reply) return nullptr;
   return reason_.text;
 }

@@ -15,7 +15,7 @@ import XCTest
 final class FakeTransport: Transport, @unchecked Sendable {
     /// Boop's device, playing every name the app sends, with the app's
     /// voice file.
-    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","wake_up","listening","stop_listening","notice","call"],"voice":"\#(Take.voiceVersion)"}"#
+    static let hello = #"{"t":"hello","kit":1,"app":"boop","id":"b00p-54fe","fw":"1.0.0","does":["react","task_complete","reply_ready","starting","wake_up","listening","stop_listening","notice","call","wish_met","wish_gone"],"voice":"\#(Take.voiceVersion)"}"#
 
     let lock = NSLock()
     var lines: [String] = []
@@ -95,12 +95,12 @@ final class FakeTransport: Transport, @unchecked Sendable {
 }
 
 func sampleSnapshot(busy: Int = 0) -> StateSnapshot {
-    StateSnapshot(base: busy > 0 ? "working" : "idle", mood: "happy", attn: nil, working: busy, vol: 6)
+    StateSnapshot(doing: busy > 0 ? "working" : "idle", mood: "happy", attn: nil, working: busy, vol: 6)
 }
 
 /// Boop's vocabulary on LinkKit: its `state` and `do` lines,
 /// what its `hello` and taps mean, and the `--link` setting.
-extension DeviceReaction {
+extension Moment {
     /// The `do` line the link sends for it, with `id` and `play`: what the
     /// device reads.
     func line(id: Int, play: Wire.Play, ttl: Int = Wire.defaultTTL) -> String {
@@ -163,27 +163,28 @@ final class DeviceLinkTests: XCTestCase {
     /// push-to-talk's listening. The longest one fits in a line.
     func testDoLinesMatchTheProtocol() throws {
         try requireVoice()
-        XCTAssertEqual(DeviceReaction(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
+        XCTAssertEqual(Moment(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
-        XCTAssertEqual(DeviceReaction(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
+        XCTAssertEqual(Moment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
+        XCTAssertEqual(Moment(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
                        #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
-        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud",
+        XCTAssertEqual(Moment(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
+        let finish = Moment(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
                        #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
-        let quoted = DeviceReaction(anim: "reply_ready",
+        let quoted = Moment(anim: "reply_ready",
                                   who: .init(agent: "codex", thread: #"fix "nav"\"#, opens: ThreadRef(agent: "codex", session: "s")))
         XCTAssertEqual(quoted.args.json, #"{"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
-        XCTAssertEqual(DeviceReaction.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
+        XCTAssertEqual(Moment.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex-and-the-rest-of-it").thread,
+                       "claude/cheer-animation-thread-codex-and-the-rest..")
         let byLength = Take.all.sorted { $0.id.utf8.count > $1.id.utf8.count }
-        let longest = DeviceReaction.Say(takes: [byLength[0], byLength[1]])
-        let longestWho = DeviceReaction.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
-        XCTAssertLessThanOrEqual(DeviceReaction(anim: "task_complete", say: longest, mood: "determined", loops: DeviceReaction.maxLoops,
+        let longest = Moment.Say(takes: [byLength[0], byLength[1]])
+        let longestWho = Moment.Who(agent: "claude", thread: String(repeating: "\"", count: StateSnapshot.maxThreadBytes))
+        XCTAssertLessThanOrEqual(Moment(anim: "task_complete", say: longest, mood: "determined", loops: Moment.maxLoops,
                                               who: longestWho, outcome: "failure")
                                      .line(id: Wire.maxId, play: .next).utf8.count, Wire.maxLine)
     }
@@ -205,7 +206,7 @@ final class DeviceLinkTests: XCTestCase {
                        "sent into nothing, then the ask and the state on connect, then the state for the hello")
         XCTAssertEqual(transport.sent.last, sampleSnapshot(busy: 2).jsonLine)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.id, "b00p-54fe")
-        XCTAssertNotNil(link.do("react", args: DeviceReaction(say: .go).args, now: 300) { _ in })
+        XCTAssertNotNil(link.do("react", args: Moment(say: .go).args, now: 300) { _ in })
 
         link.receive(#"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#, now: 400)
         XCTAssertEqual(link.trouble, .tooOld)
@@ -236,7 +237,7 @@ final class DeviceLinkTests: XCTestCase {
             .map { String(body[Range($0.range(at: 1), in: body)!]) }
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(hello.does, firmware, "the fake device plays what the firmware does")
-        let sent = DeviceReaction.anims + [DeviceReaction.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
+        let sent = Moment.anims + [Moment.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
         XCTAssertEqual(Set(sent).subtracting(firmware), [], "every name the Mac sends is one the firmware plays")
     }
 
@@ -336,7 +337,7 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertNil(StateSnapshot.boardName("日本語のバグ"))
         XCTAssertNil(StateSnapshot.boardName("🐛🔥✨"), "nothing left")
         XCTAssertEqual(StateSnapshot.boardName("Ünïcödé café"), "Ünïcödé café")
-        let s = StateSnapshot(base: "working", mood: "determined",
+        let s = StateSnapshot(doing: "working", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
@@ -345,16 +346,16 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 
-    /// The tier reached, every growth stage and `reading` are tags too;
+    /// The tier reached, every growth stage and `hushed` are tags too;
     /// and the to-do count goes only with nothing needing you. The widest line
     /// either way, with every tag that can be on at once, fits.
     func testTheTiersStagesAndToDoCountFitTheLine() {
-        let every = mostTags + ["tier5"] + Occasions.stageTags + [Occasions.reading]
-        let needs = StateSnapshot(base: "working", mood: "determined",
+        let every = mostTags + ["tier5"] + Tags.stageTags + [Tags.hushed]
+        let needs = StateSnapshot(doing: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   working: 999, idle: 999, helpers: 999, vol: 10, when: every)
         XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
-        let todo = StateSnapshot(base: "working", act: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
+        let todo = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
                                  vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
         XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
@@ -363,11 +364,11 @@ final class DeviceLinkTests: XCTestCase {
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {
-        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, working: 2, vol: 6)
+        let working = StateSnapshot(doing: "working", activity: "delegating", mood: "happy", attn: nil, working: 2, vol: 6)
         XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
         XCTAssertEqual(working.visual, "delegating")
         XCTAssertEqual(working.look, "delegating")
-        let s = StateSnapshot(base: "working", act: "delegating", mood: "determined",
+        let s = StateSnapshot(doing: "working", activity: "delegating", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)

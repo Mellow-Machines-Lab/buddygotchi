@@ -58,7 +58,7 @@ enum SlimeSnapshots {
     /// act and mood (a mood it doesn't know reads as its startup mood), and
     /// needs you exactly when the snapshot does.
     static func shows(_ snapshot: StateSnapshot, _ state: [String: Any]) -> Bool {
-        state["base"] as? String == snapshot.base && state["act"] as? String == snapshot.act
+        state["base"] as? String == snapshot.doing && state["act"] as? String == snapshot.activity
             && state["mood"] as? String == snapshot.mood
             && state["screen"] as? String == (snapshot.attn == nil ? "face" : "needs_you")
     }

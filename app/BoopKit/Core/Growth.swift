@@ -2,7 +2,7 @@ import MellowHarness
 
 /// How Boop grows: XP from what its agents get done and from your care,
 /// by plain rules, each capped a day, and a stage for the XP. The Mac app shows them, and the
-/// board gets the stage as tags (`Occasions.stages`), so a pack can show it.
+/// board gets the stage as tags (`Tags.stages`), so a pack can show it.
 public struct Growth: Equatable, Sendable {
     /// Every XP ever earned.
     public var xp: Int
@@ -27,7 +27,7 @@ public struct Growth: Equatable, Sendable {
     /// XP for a turn that ends done.
     public static let turnXP = 5
 
-    /// XP for a care gesture (`Yours.careGestures`), a word to Boop, an
+    /// XP for a care gesture (`Touch.isCare`), a word to Boop, an
     /// answered ask and you coming back to the Mac.
     public static let careXP = 3, talkXP = 3, answerXP = 5, backXP = 2
     /// The most each pool earns in one Boop day (from 5:00).
@@ -49,7 +49,7 @@ public struct Growth: Equatable, Sendable {
             }
         }
         switch e.type {
-        case .gesture? where Yours.careGestures.contains(e.specificType): return (careXP, .care)
+        case .gesture? where Touch(e)?.isCare == true: return (careXP, .care)
         case .said?: return (talkXP, .care)
         case .ask? where e.specificType != Asks.ignored: return (answerXP, .care)
         case .presence? where e.phase == .end: return (backXP, .care)

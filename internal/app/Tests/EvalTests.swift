@@ -15,6 +15,10 @@ final class EvalTests: XCTestCase {
         return CharacterPack.active.directory.appendingPathComponent("evals")
     }
 
+    /// Scenarios with exact checks, kept here: these tests pin the runner, and
+    /// a pack's scenarios can go to the judge.
+    static var fixtures: URL { CharacterPackTests.repo.appendingPathComponent("internal/app/Tests/Fixtures/evals") }
+
     func testEveryScenarioReads() throws {
         // Pixel's own, which PixelBuddy's make eval runs, read too.
         let pixels = try Scenario.load(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel/evals"))
@@ -77,7 +81,7 @@ final class EvalTests: XCTestCase {
             }
             return ["mood": a(mood), "react.face": a("none"), "say": a("none")]
         }
-        let scenario = try Scenario(file: try Self.scenarios().appendingPathComponent("04-tests-fight-back.json"))
+        let scenario = try Scenario(file: Self.fixtures.appendingPathComponent("04-tests-fight-back.json"))
         let result = try await Eval(brain: brain, steering: RuntimeTests.steering).run(scenario)
         XCTAssertEqual(result.checks.count, 4)
         XCTAssertTrue(result.passed, result.checks.filter { !$0.passed }.map(\.summary).joined(separator: "\n"))
@@ -88,7 +92,7 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(result.checks[2].mood, "determined")
         XCTAssertEqual(result.checks[3].mood, "proud", "2 minutes after the last failure: no rule holds a mood")
         let last = try XCTUnwrap(states.all.last)
-        XCTAssertTrue(last.contains("\n  Boop made a determined face (medium), and said \"\(said)\".\n"), last)
+        XCTAssertTrue(last.contains("\n  Boop had a determined moment (medium), and said \"\(said)\".\n"), last)
     }
 
     /// EVALS.md §3: a step's `reaction` says how the reactions its passes
@@ -105,8 +109,8 @@ final class EvalTests: XCTestCase {
         for (file, shown) in [("11-comeback-still-showing.json", true), ("12-comeback-that-didnt-happen.json", false)] {
             _ = try await eval.run(try Scenario(file: try Self.scenarios().appendingPathComponent(file)))
             let finish = try XCTUnwrap(states.all.last)
-            XCTAssertEqual(finish.contains("\n  Boop made a proud face (small). (in progress)\n"), shown, finish)
-            XCTAssertEqual(finish.contains("after failing.\n  Boop made"), shown, "one that didn't happen isn't shown: \(finish)")
+            XCTAssertEqual(finish.contains("\n  Boop had a proud moment (small). (in progress)\n"), shown, finish)
+            XCTAssertEqual(finish.contains("after failing.\n  Boop had"), shown, "one that didn't happen isn't shown: \(finish)")
         }
         let bad = FileManager.default.temporaryDirectory.appendingPathComponent("bad-reaction-\(UUID().uuidString).json")
         try Data(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","reaction":"maybe","expect":{"react":"none"}}]}"#.utf8)
@@ -131,7 +135,7 @@ final class EvalTests: XCTestCase {
             return [:]
         }
         _ = try await Eval(brain: brain, steering: RuntimeTests.steering)
-            .run(try Scenario(file: try Self.scenarios().appendingPathComponent("27-agent-gives-up.json")))
+            .run(try Scenario(file: Self.fixtures.appendingPathComponent("27-agent-gives-up.json")))
         XCTAssertTrue(states.all.first?.contains("\nYou asked claude on \"landing\" for a fix, in a few words.") == true, states.all.first ?? "no pass")
         XCTAssertFalse(states.all.joined().contains("fix the login redirect"), "the prompt's words never reach Jev")
         XCTAssertTrue(states.all.last?.contains(#"\#nclaude finished turn 1 on "landing": done, a long turn, no tool calls, giving up, saying it couldn't finish.\#n  Its words: "I'm stuck"."#) == true,
@@ -156,7 +160,7 @@ final class EvalTests: XCTestCase {
     /// A brain that stays quiet fails what should react, and the report
     /// says what was wanted and what came.
     func testAQuietBrainFailsAndTheReportSaysWhy() async throws {
-        let scenario = try Scenario(file: try Self.scenarios().appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
+        let scenario = try Scenario(file: Self.fixtures.appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
         let result = try await Eval(brain: ScriptedBrain(always: [:]), steering: RuntimeTests.steering).run(scenario)
         XCTAssertFalse(result.passed)
         let report = Eval.report([result])
@@ -223,21 +227,157 @@ final class EvalTests: XCTestCase {
         }
     }
 
-    /// EVALS.md §2: an always scenario runs 3 times, the rest once, unless
-    /// the file says; and what a run costs is its passes, counted with the
-    /// scripted brain before Jev is asked anything.
+    /// EVALS.md §2: an always scenario runs 3 times at the full level and
+    /// once below it, the rest once, unless the file says; and what a run
+    /// costs is its passes, counted with the expect brain before Jev is
+    /// asked anything.
     func testRunsAndTheirCost() async throws {
         let all = try Scenario.load(directory: try Self.scenarios())
         let always = try XCTUnwrap(all.first { $0.always && $0.runs == nil })
         let tuning = try XCTUnwrap(all.first { !$0.always && $0.runs == nil })
-        XCTAssertEqual(Eval.runs(always), 3)
-        XCTAssertEqual(Eval.runs(tuning), 1)
-        let busy = try XCTUnwrap(all.first { $0.file.hasPrefix("53-") })
-        XCTAssertEqual(Eval.runs(busy), 1, "53 says runs 1: the code already holds its moves to the graph")
+        XCTAssertEqual(Eval.plan(always, level: .full, named: false)?.runs, 3)
+        XCTAssertEqual(Eval.plan(always, level: .standard, named: false)?.runs, 1)
+        XCTAssertEqual(Eval.plan(always, level: .quick, named: false)?.runs, 1)
+        XCTAssertEqual(Eval.plan(tuning, level: .full, named: false)?.runs, 1)
+        var busy = try XCTUnwrap(all.first { $0.file.hasPrefix("53-") })
+        busy.always = true
+        busy.scripted = false
+        XCTAssertEqual(Eval.plan(busy, level: .full, named: false)?.runs, 1, "a scenario's own runs win: 53 says 1, the code already holds its moves to the graph")
         // 05's four pokes, a second apart then a turn start: a pass each.
-        let pokes = try Scenario(file: try Self.scenarios().appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
-        let requests = try await Eval.requests(pokes, steering: RuntimeTests.steering)
-        XCTAssertEqual(requests, 4)
+        let pokes = try Scenario(file: Self.fixtures.appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
+        let price = try await Eval.price(pokes, steering: RuntimeTests.steering)
+        XCTAssertEqual(price.all, 4)
+    }
+
+    /// EVALS.md §2: which scenarios each level runs, and which brain answers
+    /// which pass.
+    func testLevelsSayWhoAnswers() async throws {
+        let all = try Scenario.load(directory: try Self.scenarios())
+        let feel = try XCTUnwrap(all.first { $0.brief != nil })
+        let must = try XCTUnwrap(all.first { $0.brief == nil && $0.checks == nil && !$0.scripted })
+        let checked = try XCTUnwrap(all.first { $0.brief == nil && $0.checks != nil && !$0.scripted })
+        let rules = try XCTUnwrap(all.first(where: \.scripted))
+        XCTAssertNil(Eval.plan(feel, level: .quick, named: false), "quick runs the musts")
+        XCTAssertNotNil(Eval.plan(feel, level: .quick, named: true), "and a feel scenario --only names")
+        XCTAssertEqual(Eval.plan(feel, level: .quick, named: true)?.scriptsSetup, false, "in full, for the judge")
+        XCTAssertNotNil(Eval.plan(feel, level: .standard, named: false))
+        XCTAssertNotNil(Eval.plan(checked, level: .quick, named: false), "a must with whole-run checks runs at quick")
+        XCTAssertEqual(Eval.plan(checked, level: .quick, named: true)?.scriptsSetup, false, "and plays in full: they read every pass")
+        XCTAssertEqual(Eval.plan(must, level: .quick, named: true)?.scriptsSetup, true)
+        XCTAssertEqual(Eval.plan(must, level: .standard, named: true)?.scriptsSetup, false)
+        XCTAssertEqual(Eval.plan(must, level: .full, named: true)?.scriptsSetup, false)
+        XCTAssertNil(Eval.plan(rules, level: .full, named: true), "a scripted scenario never goes to Jev")
+        XCTAssertEqual(Eval.plan(must, level: .quick, named: false)?.rerunsOnFailure, true, "a must's failure gets one re-run")
+        XCTAssertEqual(Eval.plan(feel, level: .quick, named: true)?.rerunsOnFailure, false, "a feel scenario's is the judge's call")
+        XCTAssertEqual(Eval.plan(must, level: .quick, named: false, given: 3)?.rerunsOnFailure, false, "--runs says how many")
+
+        // A setup step and a checked step: each pass says who answered.
+        let scenario = try XCTUnwrap(all.first { s in
+            s.brief == nil && s.checks == nil && !s.scripted && s.steps.contains(where: \.asksJev) && s.steps.contains { !$0.asksJev && $0.event != "session started" }
+        })
+        let quick = try await whoAnswers(scenario, steering: RuntimeTests.steering, scriptsSetup: true)
+        XCTAssertFalse(quick.isEmpty)
+        for pass in quick {
+            XCTAssertEqual(pass.brain, scenario.steps[pass.step - 1].asksJev ? "stand-in" : "expect", "step \(pass.step)")
+        }
+        XCTAssertTrue(quick.contains { $0.brain == "expect" }, "a setup pass costs nothing")
+        let full = try await whoAnswers(scenario, steering: RuntimeTests.steering, scriptsSetup: false)
+        XCTAssertTrue(full.allSatisfy { $0.brain == "stand-in" })
+    }
+
+    /// EVALS.md §1: a feel scenario has a brief, checks none of Jev's choices,
+    /// and its run goes to the judge as a trajectory that says who answered.
+    func testAFeelScenarioIsForTheJudge() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("feel-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        func write(_ text: String) throws -> URL {
+            let file = dir.appendingPathComponent("\(UUID().uuidString).json")
+            try text.write(to: file, atomically: true, encoding: .utf8)
+            return file
+        }
+        let head = #""name":"n","judge":"j","reasonable":"r","unreasonable":"u","steps":"#
+        let step = #"{"event":"pokes","at":"0s","brain":{"mood":"curious"}}"#
+        let scenario = try Scenario(file: try write("{\(head)[\(step)]}"))
+        XCTAssertEqual(scenario.brief?.judge, "j")
+        let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(scenario)
+        XCTAssertTrue(result.passed, "no exact checks to fail")
+        let line = Eval.trajectory(result, scenario: scenario)
+        XCTAssertEqual(line["group"] as? String, "feel")
+        let pass = try XCTUnwrap((line["passes"] as? [[String: Any]])?.first)
+        XCTAssertEqual(pass["brain"] as? String, "expect")
+        XCTAssertEqual(pass["mood"] as? String, "curious", "a step's brain answers still play")
+        XCTAssertNotNil((line["brief"] as? [String: String])?["unreasonable"])
+        XCTAssertThrowsNoShim { _ = try Scenario(file: try write(#"{\#(head)[{"event":"pokes","at":"0s","expect":{"mood":"curious"}}]}"#)) }
+        XCTAssertThrowsNoShim { _ = try Scenario(file: try write(#"{"always":true,\#(head)[\#(step)]}"#)) }
+    }
+
+    private func XCTAssertThrowsNoShim(_ body: () throws -> Void, line: UInt = #line) {
+        do {
+            try body()
+            XCTFail("should have refused it", line: line)
+        } catch {}
+    }
+
+    /// EVALS.md §2: the day's limit adds up across commands, refuses a run
+    /// over it, gives way to the override, and starts again the next day.
+    func testTheDailyLimit() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("limit-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("count.json")
+        final class Day: @unchecked Sendable { var name = "2026-11-01" }
+        let day = Day()
+        func allowance(overridden: Bool = false) -> JevAllowance {
+            JevAllowance(file: file, limit: 3, overridden: overridden, today: { day.name })
+        }
+        XCTAssertEqual(JevAllowance.dailyLimit, 2500, "the owner's limit")
+
+        // Two commands share the file.
+        let echo = ScriptedBrain(always: [:])
+        let first = CountedBrain(echo, allowance: allowance())
+        _ = try await first.answer(state: "", questions: [], deadline: .seconds(1))
+        _ = try await first.answer(state: "", questions: [], deadline: .seconds(1))
+        XCTAssertEqual(first.requests, 2)
+        try XCTAssertEqual(try allowance().used(), 2)
+
+        // Over what's left, the run is refused and says the numbers.
+        let refusal = try XCTUnwrap(try allowance().refusal(estimate: 2))
+        XCTAssertTrue(refusal.contains("2 used"), refusal)
+        XCTAssertTrue(refusal.contains("1 left"), refusal)
+        try XCTAssertNil(try allowance().refusal(estimate: 1))
+
+        // A whole full run needs the override, even when it fits.
+        try XCTAssertNotNil(try allowance().refusal(estimate: 1, wholeFullRun: true))
+        try XCTAssertNil(try allowance(overridden: true).refusal(estimate: 1, wholeFullRun: true))
+
+        // Reaching it partway stops the brain, which asks nothing more.
+        let second = CountedBrain(echo, allowance: allowance())
+        _ = try await second.answer(state: "", questions: [], deadline: .seconds(1))
+        XCTAssertNil(second.stopped)
+        do {
+            _ = try await second.answer(state: "", questions: [], deadline: .seconds(1))
+            XCTFail("past the limit")
+        } catch {}
+        XCTAssertNotNil(second.stopped)
+        XCTAssertEqual(second.requests, 1)
+        try XCTAssertEqual(try allowance().used(), 3)
+
+        // The override goes past it, and still counts.
+        try XCTAssertNil(try allowance(overridden: true).refusal(estimate: 50))
+        let over = CountedBrain(echo, allowance: allowance(overridden: true))
+        _ = try await over.answer(state: "", questions: [], deadline: .seconds(1))
+        try XCTAssertEqual(try allowance().used(), 4)
+
+        day.name = "2026-11-02"
+        try XCTAssertEqual(try allowance().used(), 0)
+        day.name = "2026-11-01"
+
+        // With no count to trust, no requests.
+        try Data("not a count".utf8).write(to: file)
+        do {
+            _ = try allowance().used()
+            XCTFail("a count that doesn't read")
+        } catch {}
     }
 
     /// EVALS.md §3's whole-run checks, against a brain that makes the same
@@ -365,7 +505,7 @@ final class EvalTests: XCTestCase {
         let expect = try XCTUnwrap(try Scenario(file: file).steps.first?.expect)
         XCTAssertEqual(expect.react, Set(CharacterPack.active.moods.map(\.id)))
         XCTAssertEqual(expect.mood, Set(MoodGraph.moods).subtracting(["lonely"]))
-        XCTAssertEqual(expect.say, Set(ReactOutput.says.map(\.name) + ["none"]).subtracting(["swear"]))
+        XCTAssertEqual(expect.say, Set(MomentOutput.says.map(\.name) + ["none"]).subtracting(["swear"]))
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"move":"!none"}}]}"#, "expect.move can't take !"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"mood":"!sulky"}}]}"#, "expect.mood takes away sulky")] {
             let bad = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")
@@ -474,4 +614,21 @@ final class EvalTests: XCTestCase {
             .write(to: file, atomically: true, encoding: .utf8)
         try XCTAssertThrowsError(try Scenario(file: file)) { XCTAssertTrue("\($0)".contains("start is a UTC date and time")) }
     }
+}
+
+/// Each pass of a run and the brain that answered it, with a stand-in for Jev.
+private func whoAnswers(_ scenario: Scenario, steering: Steering, scriptsSetup: Bool) async throws -> [(step: Int, brain: String?)] {
+    struct StandIn: Brain {
+        let id = "stand-in"
+        func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
+            try await ExpectBrain().answer(state: state, questions: questions, deadline: deadline)
+        }
+    }
+    final class Heard: @unchecked Sendable { var passes: [(step: Int, brain: String?)] = [] }
+    let heard = Heard()
+    var runner = Eval(brain: StandIn(), steering: steering)
+    runner.scriptsSetup = scriptsSetup
+    runner.onPass = { step, pass in heard.passes.append((step, pass.brain)) }
+    _ = try await runner.run(scenario)
+    return heard.passes
 }

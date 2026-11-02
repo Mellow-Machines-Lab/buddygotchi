@@ -31,8 +31,8 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
     }
 
     /// Which question each `expect` field answers.
-    public static let questions = ["react": ReactOutput.faceKey, "move": ReactOutput.moveKey, "intensity": ReactOutput.intensityKey,
-                                   "say": ReactOutput.sayKey, "mood": MoodOutput.outputName, "sign": Signs.questionKey]
+    public static let questions = ["react": MomentOutput.emotionKey, "move": MomentOutput.moveKey, "intensity": MomentOutput.sizeKey,
+                                   "say": MomentOutput.sayKey, "mood": MoodOutput.outputName, "sign": Signs.questionKey]
 
     /// What `step` answers for each question, in the order to try:
     /// its `brain`'s, then its `expect`'s.

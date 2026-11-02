@@ -109,6 +109,10 @@ struct OverviewPane: View {
                         if let mood = model.status?.snapshot.mood { moodLabel(mood) }
                         // Why it feels so, in plain words, so a face never
                         // needs decoding.
+                        if let wish = model.status?.wishing {
+                            Text(wish).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
                         if let why = model.status?.moodReason?.cause {
                             Text(why).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -151,7 +155,7 @@ struct OverviewPane: View {
     }
 
     /// The slime while the runtime starts, before its first status.
-    private static let waking = StateSnapshot(base: "asleep", mood: CharacterPack.active.startupMood, attn: nil, working: 0, vol: 0)
+    private static let waking = StateSnapshot(doing: "asleep", mood: CharacterPack.active.startupMood, attn: nil, working: 0, vol: 0)
 
     /// Boop's mood in words, labelled, so it doesn't rest on telling the
     /// faces apart. The face already draws in the mood's designs.
@@ -343,7 +347,7 @@ struct OverviewPane: View {
 
     /// What Boop is celebrating today, and the night, your prompt or the
     /// Friday: each reason, and what the board wears or shows for it.
-    private func dressingCard(_ reasons: [Dressing]) -> some View {
+    private func dressingCard(_ reasons: [Narration.Dressing]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(reasons) { reason in
@@ -363,12 +367,11 @@ struct OverviewPane: View {
         .accessibilityElement(children: .combine)
     }
 
-    private func symbol(_ kind: Dressing.Kind) -> String {
+    private func symbol(_ kind: Narration.Dressing.Kind) -> String {
         switch kind {
-        case .occasion: "party.popper"
+        case .specialDay: "party.popper"
         case .night: "moon.stars"
         case .morning: "sun.horizon"
-        case .reading: "eyeglasses"
         case .friday: "sunglasses"
         }
     }
@@ -415,10 +418,7 @@ struct OverviewPane: View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(lines) { entry in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(entry.when).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
-                        Text(entry.line).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
-                    }
+                    DayRow(entry: entry)
                 }
             }
         }

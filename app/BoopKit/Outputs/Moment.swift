@@ -14,12 +14,13 @@ import LinkKit
 /// its design. The finish for a thread's turn, or a face for it, says
 /// `who`: the device names it in the strip, and marks it on the face, while
 /// it plays and for a moment after.
-public struct DeviceReaction: Equatable, Sendable {
+public struct Moment: Equatable, Sendable {
     /// The agent and thread the finish is for.
     public struct Who: Equatable, Sendable {
         /// `claude` or `codex`.
         public var agent: String
-        /// The thread's name, cut as `StateSnapshot.clip` cuts names.
+        /// The thread's name, cut as `StateSnapshot.clip` cuts names, to
+        /// `maxThreadBytes`.
         public var thread: String
         /// Where a tap on the finish opens the thread.
         /// Not sent: the device's tap names the finish's `do` id instead.
@@ -27,7 +28,7 @@ public struct DeviceReaction: Equatable, Sendable {
 
         public init(agent: String, thread: String, opens: ThreadRef? = nil) {
             self.agent = agent
-            self.thread = StateSnapshot.clip(thread, marked: true)
+            self.thread = StateSnapshot.clip(thread, marked: true, max: StateSnapshot.maxThreadBytes)
             self.opens = opens
         }
     }
@@ -84,7 +85,7 @@ public struct DeviceReaction: Equatable, Sendable {
     /// for none.
     public var sign: String?
     /// With a brain reaction to what you said, its reply
-    /// (`ReactOutput.replies`): the board plays its pack's clip for it
+    /// (`MomentOutput.replies`): the board plays its pack's clip for it
     /// over the face. Nil sends none.
     public var reply: String?
     /// With a reply, one of the board's own screens that shows the rest of
@@ -92,7 +93,7 @@ public struct DeviceReaction: Equatable, Sendable {
     /// drawer, for a question about all of them (`StatusReply`). Nil sends
     /// none.
     public var show: String?
-    /// Why it plays, short enough for the board's lane (`Reason.fact`):
+    /// Why it plays, short enough for the board's lane (`Narration.fact`):
     /// the board shows it there while the reaction plays and nothing is
     /// said. Nil sends none.
     public var reason: String?
@@ -117,17 +118,17 @@ public struct DeviceReaction: Equatable, Sendable {
     }
 
     /// A finished turn's length as a finish's `turn`: the tier it reached,
-    /// as the tags count them (`Occasions.tiers`), from 1 for `tier1` to 5
+    /// as the tags count them (`Tags.tiers`), from 1 for `tier1` to 5
     /// for `tier5`, and 0 short of the first.
     public static func turn(lengthMs: Int64) -> Int {
-        Occasions.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
+        Tags.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
     }
 
     /// The animations the Mac asks the device to play, each its design
     /// state's name, besides `listening`, which only push-to-talk plays
     /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
     /// plays itself.
-    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", "starting"]
+    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", "starting", Core.wishMet, Core.wishGone]
     /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 

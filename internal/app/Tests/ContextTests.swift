@@ -52,8 +52,8 @@ final class ContextTests: XCTestCase {
     func testTheWhenRow() {
         let utc = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
         let halloween: Int64 = 1_793_437_320_000  // 2026-10-31 09:02 UTC, a Saturday
-        XCTAssertEqual(ContextSection.when(at: halloween, occasions: ["Halloween"], time: utc), "When: 09:02, Saturday, morning; Halloween.")
-        XCTAssertEqual(ContextSection.when(at: halloween + 12 * 3_600_000, occasions: [], time: utc), "When: 21:02, Saturday, evening.")
+        XCTAssertEqual(ContextSection.when(at: halloween, specialDays: ["Halloween"], time: utc), "When: 09:02, Saturday, morning; Halloween.")
+        XCTAssertEqual(ContextSection.when(at: halloween + 12 * 3_600_000, specialDays: [], time: utc), "When: 21:02, Saturday, evening.")
         let section = ContextSection.section(when: "When: 09:02, Saturday, morning.", company: nil, agents: [], at: halloween, name: "Boop")
         XCTAssertEqual(section, ContextSection.heading + "\nWhen: 09:02, Saturday, morning.")
     }

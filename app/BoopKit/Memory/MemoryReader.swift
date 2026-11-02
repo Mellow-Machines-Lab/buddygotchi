@@ -2,20 +2,18 @@ import AgentHooks
 import Foundation
 import MellowHarness
 
-/// Boop's day as it goes, then as a dream: the one reader of the
-/// transcript in v1 (`TranscriptReader`). Through the day it keeps your
-/// company (when you last touched or talked to Boop, came back, and when
-/// a lonely spell last ended, which CONTEXT says), the
-/// tallies (strokes, talks, hours at the Mac, turns) and the journal (the
-/// notable lines Jev read, for the night's write); when the day closes it
-/// writes the dream, yesterday in tags and a sentence, your care first,
-/// which Boop tells the next time you show up. Nothing is kept past the
-/// close but the dream.
+/// Boop's day as it goes, a reader of the transcript (`TranscriptReader`):
+/// your company (when you last touched or talked to Boop, came back, and
+/// when a lonely spell last ended, which CONTEXT says), the day's tallies
+/// (strokes, talks, hours at the Mac, turns) for CONTEXT's Today row, and
+/// the XP each pool earned today within its cap. Its day is a calendar
+/// idea and triggers nothing: the dream is `DreamReader`'s, over
+/// everything since the last one.
 public final class MemoryReader: TranscriptReader {
     public let name = "memory"
 
-    /// What a day's counts need to say. Only events that are yours
-    /// (`Yours`) count as you.
+    /// What a day's counts, or a dream's span's, need to say. Only events
+    /// that are yours (`Yours`) count as you.
     public struct Tallies: Codable, Equatable, Sendable {
         public var strokes = 0, touches = 0, pokes = 0, talks = 0, kind = 0
         public var back = 0, hereMinutes = 0, prompts = 0, late = 0, answered = 0
@@ -43,7 +41,8 @@ public final class MemoryReader: TranscriptReader {
         /// before the first, and in a checkpoint from before they were kept.
         public var workXP: Int?, careXP: Int?
         /// The notable lines Jev read, each with its time (`HH:mm`), for
-        /// the night's write; at most `journalMax`.
+        /// the dream's write; at most `journalMax`. A dream's span keeps it;
+        /// a day's is empty.
         public var journal: [Note] = []
 
         public struct Note: Codable, Equatable, Sendable {
@@ -73,12 +72,6 @@ public final class MemoryReader: TranscriptReader {
     /// Each event read that earned XP, with how much within its pool's cap
     /// for the day: growth adds it, as the reader reads it.
     public var earned: (Event, Int) -> Void = { _, _ in }
-    /// A dream written: `Memory` logs it and keeps whether it was told.
-    var wrote: (Dream) -> Void = { _ in }
-    /// A day closed that you were in, with its tallies and journal, and
-    /// whether live: `Memory` starts the night's write.
-    var closed: (_ day: String, _ tallies: Tallies, _ live: Bool) -> Void = { _, _, _ in }
-
     public init(store: KeyValueStore, time: LocalTime, place: @escaping (String) -> Place = { Place.at(cwd: $0) }) {
         self.store = store
         self.time = time
@@ -103,6 +96,14 @@ public final class MemoryReader: TranscriptReader {
             if earning.pool == .work { t.workXP = had + xp } else { t.careXP = had + xp }
             if xp > 0 { earned(e, xp) }
         }
+        Self.count(e, into: &t, time: time, place: place)
+        return t != before
+    }
+
+    /// Counts `e` into `t`: what's yours, your company, the touches,
+    /// talks, prompts, presence and turns. The day's reader and the dream's
+    /// both count so.
+    static func count(_ e: Event, into t: inout Tallies, time: LocalTime, place: (String) -> Place) {
         if Yours.did(e) {
             t.yours += 1
             t.lastYours = e.at
@@ -113,7 +114,7 @@ public final class MemoryReader: TranscriptReader {
         case .poke?:
             t.pokes += 1
             t.touches += 1
-        case .gesture? where Yours.careGestures.contains(e.specificType):
+        case .gesture? where Touch(e)?.isCare == true:
             t.touches += 1
             if e.specificType == "stroke" { t.strokes += 1 }
         case .said?:
@@ -151,25 +152,24 @@ public final class MemoryReader: TranscriptReader {
                 t.threads[p.map { $0.workspace ?? $0.project } ?? "work", default: 0] += 1
             }
         default:
-            if e.kind == Event.did, e.action == ReactOutput.outputName, let reply = e["reply"]?.string,
+            if e.kind == Event.did, e.action == MomentOutput.outputName, let reply = e["reply"]?.string,
                reply == "love" || reply == "thanks" { t.kind += 1 }
             if e.kind == Event.did, e.action == MoodOutput.outputName, e["ok"]?.bool != false, e["from"]?.string == "lonely",
                e["to"]?.string != "lonely" { t.lonelyEndedAt = e.at }
         }
-        if let line, let note = Self.note(e, line) { keep(note, at: e.at, in: &t) }
-        return t != before
     }
 
-    /// A line worth the night's write, or nil: your prompts and what you
+    /// A line worth the dream's write, or nil: your prompts and what you
     /// said to Boop, turns that finished long, failed or gave up, a check
     /// that failed again or passed after failing, and you back after a long
     /// break. Never tool calls, gestures (the tallies count them),
-    /// heartbeats or Boop's own reactions.
+    /// check-ins or Boop's own reactions.
     static func note(_ e: Event, _ line: Line) -> (line: String, plain: Bool)? {
         let text = ([line.text] + line.notes).joined(separator: "\n  ")
         switch e.type {
         case .prompt?: return (text, !line.notes.contains { $0.hasPrefix("Your words") })
         case .said?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
+        case .wish?: return (text, false)
         case .turn? where e.phase == .end:
             let long = (line.facts["length_ms"]?.int ?? 0) >= 5 * 60_000
             return long || e["outcome"]?.string != "done" ? (text, true) : nil
@@ -181,7 +181,7 @@ public final class MemoryReader: TranscriptReader {
         }
     }
 
-    func keep(_ note: (line: String, plain: Bool), at: Int64, in t: inout Tallies) {
+    static func keep(_ note: (line: String, plain: Bool), at: Int64, in t: inout Tallies, time: LocalTime) {
         t.journal.append(Tallies.Note(at: time.clock(at), line: note.line, plain: note.plain))
         while t.journal.count > Self.journalMax {
             let i = t.journal.firstIndex { $0.plain } ?? 0
@@ -189,19 +189,10 @@ public final class MemoryReader: TranscriptReader {
         }
     }
 
-    public func close(day: String, state t: Tallies, live: Bool) {
-        // Nobody was there: no dream.
-        guard t.yours > 0 else { return }
-        var t = t
-        if let here = t.hereSince, let last = t.lastYours { t.hereMinutes += Int(max(0, last - here) / 60_000) }
-        let dream = Dream(day: day, weekday: time.weekday(of: day), tags: Self.tags(t), sentence: Self.sentence(t),
-                          fact: Self.fact(t))
-        if let kept = Dream.last(in: store), kept.day == day { return }  // closed twice: the same dream
-        wrote(dream)
-        closed(day, t, live)
-    }
+    /// A day over: nothing to do, as the next day opens with what carries.
+    public func close(day: String, state: Tallies, live: Bool) {}
 
-    /// The day's tags, for `dreams.md`'s signs: yours first, then the
+    /// The span's tags, for `dreams.md`'s signs: yours first, then the
     /// agents'.
     static func tags(_ t: Tallies) -> [String] {
         var tags: [String] = []
@@ -219,7 +210,7 @@ public final class MemoryReader: TranscriptReader {
         return tags
     }
 
-    /// The day in a sentence, your care first: "you stroked it 4 times; 7
+    /// The span in a sentence, your care first: "you stroked it 4 times; 7
     /// turns on \"api\", 3 failed".
     static func sentence(_ t: Tallies) -> String {
         func times(_ n: Int) -> String { n == 1 ? "once" : "\(n) times" }
@@ -231,7 +222,7 @@ public final class MemoryReader: TranscriptReader {
         if t.turns > 0 {
             parts.append("\(t.turns) turn\(t.turns == 1 ? "" : "s") on \"\(t.thread)\"" + (t.failed > 0 ? ", \(t.failed) failed" : ""))
         }
-        return parts.isEmpty ? "a quiet day" : parts.joined(separator: "; ")
+        return parts.isEmpty ? "a quiet time" : parts.joined(separator: "; ")
     }
 
     /// The dream for the board's lane, a few words: "stroked x4".
@@ -240,30 +231,40 @@ public final class MemoryReader: TranscriptReader {
         if t.talks > 0 { return "talked x\(t.talks)" }
         if t.failed > 0 { return "\(t.failed) failed" }
         if t.turns > 0 { return t.turns == 1 ? "1 turn" : "\(t.turns) turns" }
-        return "quiet day"
+        return "a quiet time"
     }
 }
 
-/// Yesterday as Boop dreamed it: the day it was, its tags, a sentence and
-/// a few words for the board, and whether it has been told and logged.
-/// The newest is kept as `dream.last` in the key-value store.
+/// Boop's dream: everything since the last one, as it dreamed it, made
+/// when it dreams (`Memory.dream`). The day it ended, its tags, a sentence
+/// and a few words for the board, how the telling says the span (`about`)
+/// and its dates (`range`), and whether it has been told and logged. The
+/// newest is kept as `dream.last` in the key-value store.
 public struct Dream: Codable, Equatable, Sendable {
     public var day: String
     public var weekday: String
     public var tags: [String]
     public var sentence: String
     public var fact: String
+    /// "Tuesday afternoon", "Thursday to Saturday"; nil in a dream kept before
+    /// dreams had spans, told by its weekday.
+    public var about: String?
+    /// "Thursday 2026-10-30 to Saturday 2026-11-01"; nil as `about`.
+    public var range: String?
     public var told = false
     public var logged = false
 
     public static let key = "dream.last"
 
-    public init(day: String, weekday: String, tags: [String], sentence: String, fact: String) {
+    public init(day: String, weekday: String, tags: [String], sentence: String, fact: String, about: String? = nil,
+                range: String? = nil) {
         self.day = day
         self.weekday = weekday
         self.tags = tags
         self.sentence = sentence
         self.fact = fact
+        self.about = about
+        self.range = range
     }
 
     /// The newest dream kept, or nil.
@@ -279,6 +280,6 @@ public struct Dream: Codable, Equatable, Sendable {
     func event(at: Int64) -> Event {
         Event(at: at, source: .boop, type: .dream, specificType: "dream",
               data: ["day": .string(day), "weekday": .string(weekday), "tags": .array(tags.map { .string($0) }),
-                     "sentence": .string(sentence), "fact": .string(fact)])
+                     "sentence": .string(sentence), "fact": .string(fact), "about": .string(about ?? weekday)])
     }
 }

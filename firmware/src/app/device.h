@@ -177,6 +177,9 @@ class Device : public linkkit::App {
   // spot, is the tap that opens the thread; a longer one is a hold let go
   // early, and sends nothing.
   static constexpr uint32_t kNeedsYouTapMs = 300;
+  // While a finish shows a touch shorter than this is a tap, whatever its
+  // path made it: it opens the thread. A longer one stays a stroke.
+  static constexpr uint32_t kBriefOnFinishMs = 400;
   // A reaction rests this long after its `say` and bubble,
   // so the next one, the brain's or a rule's, doesn't follow it at once:
   // the same pause the Mac left between them before the device had the queue.
@@ -329,10 +332,12 @@ class Device : public linkkit::App {
     uint32_t saidSeq = 0;
     LastInput last;
   };
-  ReactionIn parse(const linkkit::Do& c);
+  ReactionIn parse(const linkkit::Do& c, uint32_t t);
   void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
-  void tapped(uint32_t t, bool injected, bool button);  // a tap, from BOOT or the panel
+  // A tap, from BOOT or the panel; `was` is what else the path would have made it.
+  void tell(const char* event, const char* did, const char* data, uint32_t t, bool injected);
+  void tapped(uint32_t t, bool injected, bool button, const char* was = nullptr);
   // A gesture the board reacts to itself, then tells the Mac (`ev gesture`,
   // `did` its name); `facedown` plays nothing. A quick swipe goes as
   // kSwipeGesture, and plays the stroke g if the face plays one for it.

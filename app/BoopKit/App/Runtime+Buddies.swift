@@ -70,7 +70,7 @@ extension Runtime {
         public var buddy: Buddy
         public var steering: Steering
         public var reactions: Reactions
-        public var queue: (DeviceReaction, Pending) -> Void
+        public var queue: (Moment, Pending) -> Void
         public var speaks: () -> Bool
         /// How much it says, chosen in Settings.
         public var talk: () -> Talk
@@ -87,15 +87,20 @@ extension Runtime {
         /// Your company and the day so far, the memory reader's open day,
         /// for CONTEXT; nil with no memory.
         public var company: () -> MemoryReader.Tallies?
+        /// Whether you've met a kind of wish once, kept with the memory:
+        /// until then it shows how.
+        public var wishDone: (Core.WishKind) -> Bool
 
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
-                    queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
+                    queue: @escaping (Moment, Pending) -> Void, speaks: @escaping () -> Bool,
                     talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
                     memory: @escaping () -> String? = { nil },
                     askable: @escaping (Event, LogView, [Asks.Question], Choice) -> [Asks.Question] = { _, _, _, _ in [] },
                     answerTags: @escaping (Int64) -> [String] = { _ in [] },
-                    company: @escaping () -> MemoryReader.Tallies? = { nil }) {
+                    company: @escaping () -> MemoryReader.Tallies? = { nil },
+                    wishDone: @escaping (Core.WishKind) -> Bool = { _ in false }) {
             self.memory = memory
+            self.wishDone = wishDone
             self.company = company
             self.askable = askable
             self.answerTags = answerTags
@@ -127,6 +132,8 @@ extension Runtime {
         }
         let moods = minds.map { m -> Choice in
             let voice = pipeline.tag(m.buddy.id), pack = m.buddy.pack, core = pipeline.core(m.buddy.id)
+            for kind in Core.WishKind.allCases { core.wishMetSigns[kind] = Asks.wishMetSign(m.steering.asks, kind) }
+            core.wishDone = m.wishDone
             let mood = MoodOutput.choice(voice: voice, pack: pack)
             // A reaction your tap cut short is in progress while the pokes
             // go on, and done once anything else happens. A reaction's end,
@@ -137,11 +144,15 @@ extension Runtime {
                 guard !m.reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
                 m.reactions.pokesStopped()
             }
-            let react = ReactOutput(queue: m.queue, blocked: { core.reactionBlock }, replyBlocked: { core.replyBlock }, who: { [weak h] now in
+            // What an output's own act comes to, carried out.
+            let carryOut = { [weak pipeline] (fx: [CoreEffect], at: Int64) in
+                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+            }
+            let react = MomentOutput(queue: m.queue, blocked: { core.reactionBlock }, replyBlocked: { core.replyBlock }, who: { [weak h] now in
                 // Weak: the harness holds this output.
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
-                return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
+                return Moment.Who(agent: who.agent, thread: who.thread, opens: who.opens)
             }, turnMs: { [weak h] now in
                 // The finished turn's length, from its line's facts.
                 guard let h, let now, case .int(let ms)? = h.line(now.seq)?.facts["length_ms"] else { return nil }
@@ -155,23 +166,37 @@ extension Runtime {
                 let now = h.clock.now(), log = h.log.view(now: now)
                 return StatusReply.answer(core.status(at: now, results: view.results(log), asked: view.asked(log)), words: words, at: now,
                                           stretchSince: core.stretchSince(at: now))
-            }, moment: { core.moment(at: $0.at) }, hushed: { core.hushed(at: $0) != nil }, hush: { [weak pipeline] ms, at in
+            }, moment: { core.moment(at: $0.at) }, hushed: { core.hushed(at: $0) != nil }, hush: { ms, at in
                 // What you said hushed it, or let it talk again.
-                let fx = ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at)
-                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+                carryOut(ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at), at)
+            }, nap: { at in
+                carryOut(core.nap(at: at), at)
             }, talk: m.talk, reason: { [weak h] about in
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
                 guard let h, let about else { return nil }
-                return Reason.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()))
+                // A check-in over a wish left an hour or more: that's why.
+                if about.type == .checkIn, let w = core.wish, w.waitedMs >= 60 * 60_000 {
+                    let span = ContextSection.span(w.waitedMs)
+                    return Narration(cause: "\(pack.name) wished for \(w.kind.words) \(span) ago.", fact: "wish: \(span)")
+                }
+                return Narration.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()),
+                                    name: pack.name)
             }, dreams: m.steering.dreams, told: { [weak h] about in
                 // The dream the line tells, by its tags.
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
                 return tags.compactMap(\.string)
             }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
+            wishable: { [mood] about, log in
+                // At an ask's moment, within the core's caps.
+                Asks.moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(m.company(), at: about.at)).isEmpty
+                    ? [] : core.wishable(at: about.at)
+            }, makeWish: { kind, at in
+                carryOut(core.makeWish(kind, at: at), at)
+            }, wishDone: m.wishDone,
             today: m.company)
             h.output(mood)
-            h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
+            h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
             if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
             // The only buddy goes by the name you gave it, which the pack's
@@ -187,18 +212,21 @@ extension Runtime {
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
             // How things stand: when it is, the talk setting, the buddy,
             // you, the agents, the day so far. Last before HISTORY.
-            h.section { [weak h] _, v in
+            h.section { [weak h] log, v in
                 guard mine(v), let h else { return nil }
                 let now = h.clock.now()
+                // NOW is an idle check-in when one is the newest thing to happen.
+                let idle = log.events.last { !$0.fromHarness }.map(MomentOutput.isCheckIn) == true
                 let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let wall = core.wall(now), time = core.config.time
                 let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
-                let when = ContextSection.when(at: wall, occasions: Occasions.words(at: wall, hatched: core.config.hatched, name: pack.name,
+                let when = ContextSection.when(at: wall, specialDays: Days.words(at: wall, hatched: core.config.hatched, name: pack.name,
                                                                                     stage: core.config.stageReached, time: time),
                                                time: time)
                 return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),
-                                              agents: core.status(at: now, results: [:]), at: now, name: pack.name)
+                                              agents: core.status(at: now, results: [:]), wish: core.wishRow(at: now, name: pack.name, idle: idle),
+                                              wishToday: core.wishToday(at: now, name: pack.name), at: now, name: pack.name)
             }
             return mood
         }

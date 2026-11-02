@@ -39,6 +39,8 @@ struct Strip {
   // (hidden with no list).
   int todoDone = 0, todoTotal = 0;
   bool noApp = false;
+  // Boop's wish, for a lane with no thought bubble: "pet", or null.
+  const char* wish = nullptr;
   // How strongly the lane draws it, 0 … 1000: it fades in as it comes and
   // out as it goes (Behaviour::strip).
   int opacity = 1000;

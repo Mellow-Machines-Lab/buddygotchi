@@ -26,13 +26,13 @@ public enum MoodOutput {
 
     /// Why the mood is what it is, for the person: its latest change's
     /// cause, from the event that change answered (`for`) and that event's
-    /// line, `line`. `Reason.mood` makes the sentence ("Boop is lonely. You
+    /// line, `line`. `Narration.mood` makes the sentence ("Boop is lonely. You
     /// came back after 26 hours away."). Nil before any change, for a
     /// change nothing caused (the dashboard's), or once that event has left
     /// the log.
-    public static func reason(_ mood: Choice, _ log: LogView, line: (Int) -> Line?) -> Reason? {
+    public static func reason(_ mood: Choice, _ log: LogView, line: (Int) -> Line?) -> Narration? {
         guard let latest = mood.latest(log), let seq = latest.about, let cause = log.event(seq) else { return nil }
-        return Reason.of(cause, line: line(seq))
+        return Narration.of(cause, line: line(seq))
     }
 
     /// Each lasting mood and its meaning, the `mood` question's criterion,
@@ -48,7 +48,7 @@ public enum MoodOutput {
 
     /// A dramatic move's "not for": it's a jump
     /// only a fresh, big event earns.
-    public static let jump = "A check failing or passing, routine work, or a fade: this jump needs a fresh, big event in NOW, such as a turn that finished failed, the agent giving up, a barrage of pokes, a long turn finishing, thanks, rude words or sad news."
+    public static let jump = "Routine work or a fade: this jump needs a fresh, big event in NOW."
 
     /// Staying in `mood`: when NOW is no reason MOOD gives to leave it. The
     /// resting mood never fades; every other one does once it has lasted
@@ -58,8 +58,8 @@ public enum MoodOutput {
         guard mood != pack.defaultMood else {
             return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine.")
         }
-        return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets, and \(pack.name) hasn't been \(mood) as long as MOOD says it lasts. No change is fine.",
-                      notFor: "\(pack.name) \(mood) for as long as MOOD says it lasts, or longer, as HISTORY's last line says: then it fades, as MOOD says.")
+        return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine.",
+                      notFor: "\(pack.name) \(mood) for as long as MOOD says it lasts, as HISTORY's last line says: then it fades.")
     }
 
     /// The `mood` question's options for `mood`: stay, then each of its

@@ -4,13 +4,13 @@ import Foundation
 /// for good, pin one so it never ages or changes, or forget what Boop
 /// learned about them. You and Boop stays: it's Boop's, made by their care.
 extension Runtime {
-    /// Forgets the note `id`, for good: the night's write never sees it again.
+    /// Forgets the note `id`, for good: the dream's write never sees it again.
     public func forgetNote(_ id: Int) {
         home.async { [self] in editMemory { $0.notes.removeAll { $0.id == id } } }
     }
 
     /// Pins the note `id`, or lets it go: a pinned note never ages and the
-    /// night's write never changes it.
+    /// dream's write never changes it.
     public func pinNote(_ id: Int, _ pinned: Bool) {
         home.async { [self] in
             editMemory { m in

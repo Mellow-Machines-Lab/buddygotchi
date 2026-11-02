@@ -81,14 +81,14 @@ static void test_every_anim_has_a_name_and_ends() {
   const char* names[] = {"task_complete", "reply_ready", "starting", "poked",  "tap_spam",
                          "wake_up",       "listening",   "gesture",  "notice"};
   int reactions = 0;
-  for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isReaction(SceneState(i));
+  for (int i = 0; i < int(SceneState::kCount); ++i) reactions += isMoment(SceneState(i));
   TEST_ASSERT_EQUAL_INT(9, reactions);
   for (const char* name : names) {
     const SceneState a = reactionFromName(name);
-    TEST_ASSERT_TRUE_MESSAGE(isReaction(a), name);
+    TEST_ASSERT_TRUE_MESSAGE(isMoment(a), name);
     TEST_ASSERT_EQUAL_STRING(name, stateName(a));  // its own design
   }
-  TEST_ASSERT_FALSE(isReaction(SceneState::kNone));
+  TEST_ASSERT_FALSE(isMoment(SceneState::kNone));
   TEST_ASSERT_EQUAL_STRING("none", stateName(SceneState::kNone));
   TEST_ASSERT_TRUE(reactionFromName("cheer") == SceneState::kNone);
   TEST_ASSERT_TRUE(reactionFromName("wiggle") == SceneState::kNone);

@@ -2,7 +2,7 @@ import Foundation
 import MellowHarness
 
 /// The written memory, `memory.md`: short notes in three sections (You,
-/// Your work, You and Boop) that Apple Intelligence edits each night
+/// Your work, You and Boop) that Apple Intelligence edits as Boop dreams
 /// (`MemoryEdits`), and a line a day for the last week (Recently). Jev
 /// reads it as MEMORY. Plain Markdown the person may read and edit: a
 /// deleted line is gone for good, "pinned" keeps a note from aging and
@@ -80,7 +80,7 @@ public struct WrittenMemory: Equatable, Sendable {
 
     static let recentlyHeading = "Recently"
     static let intro = """
-        Written each night by Apple Intelligence on this Mac. Delete a line to
+        Written by Apple Intelligence on this Mac as Boop dreams. Delete a line to
         make Boop forget it, or add "pinned" to keep it.
         """
 

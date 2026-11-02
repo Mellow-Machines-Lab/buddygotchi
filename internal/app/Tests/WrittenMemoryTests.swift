@@ -3,13 +3,13 @@ import MellowHarness
 import XCTest
 @testable import BoopKit
 
-/// The written memory: memory.md, the night's edits and their checks, the
+/// The written memory: memory.md, the dream's edits and their checks, the
 /// request the writer gets, and MEMORY as Jev reads it.
 final class WrittenMemoryTests: XCTestCase {
     static let file = """
         # Boop's memory
 
-        Written each night by Apple Intelligence on this Mac.
+        Written by Apple Intelligence on this Mac as Boop dreams.
 
         ## You
         - m3 · 2026-10-20, 2026-10-30 · You work late most nights, and you say please to claude.
@@ -123,8 +123,14 @@ final class WrittenMemoryTests: XCTestCase {
         XCTAssertFalse(r.day, "the day line's number isn't yesterday's")
     }
 
+    /// A dream of Friday 2026-10-30, from `t`.
+    static func friday(_ t: MemoryReader.Tallies) -> Dream {
+        Dream(day: "2026-10-30", weekday: "Friday", tags: MemoryReader.tags(t), sentence: MemoryReader.sentence(t),
+              fact: MemoryReader.fact(t), about: "today", range: "Friday 2026-10-30")
+    }
+
     /// With no day line that passes, Recently gets the dream's own
-    /// sentence, which is always true.
+    /// sentence, which is always true, by the span's weekdays.
     func testRecentlyFallsBackOnTheDream() async throws {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("boop-memory-\(UUID().uuidString.prefix(8))")
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -133,7 +139,7 @@ final class WrittenMemoryTests: XCTestCase {
                             writer: StubWriter(reply: "day: Friday: you flew to the moon.\nend"), files: files)
         var t = MemoryReader.Tallies()
         t.strokes = 2
-        let asked = await memory.ask(day: "2026-10-30", tallies: t)
+        let asked = await memory.ask(Self.friday(t), tallies: t)
         let night = try XCTUnwrap(asked)
         memory.apply(night)
         XCTAssertEqual(files.written().recently.first?.text, "Friday: you stroked it 2 times.")
@@ -171,7 +177,8 @@ final class WrittenMemoryTests: XCTestCase {
     }
 
     /// The request: the notes numbered in the file's order of sections,
-    /// pinned ones marked; CERTAIN from the tallies; YESTERDAY's oldest
+    /// pinned ones marked; CERTAIN from the tallies and the span's dates;
+    /// RECENT's oldest
     /// lines left out first until it fits.
     func testTheRequest() {
         let m = WrittenMemory.parse(Self.file)
@@ -182,8 +189,10 @@ final class WrittenMemoryTests: XCTestCase {
         t.turns = 9
         t.failed = 1
         t.threads = ["api": 6, "blog": 3]
-        let certain = MemoryRequest.certain(t, day: "2026-10-27", weekday: "Tuesday")
-        XCTAssertEqual(certain, "Yesterday was Tuesday 2026-10-27. You were at the Mac 7 hours, stroked Boop 3 times and talked to it twice. Agents finished 9 turns, 1 failed, most on \"api\".")
+        let certain = MemoryRequest.certain(t, range: "Tuesday 2026-10-27")
+        XCTAssertEqual(MemoryRequest.certain(t, range: "Monday 2026-10-26 to Tuesday 2026-10-27").prefix(46),
+                       "From Monday 2026-10-26 to Tuesday 2026-10-27. ")
+        XCTAssertEqual(certain, "On Tuesday 2026-10-27. You were at the Mac 7 hours, stroked Boop 3 times and talked to it twice. Agents finished 9 turns, 1 failed, most on \"api\".")
         let journal = (0..<400).map { (at: String(format: "%02d:00", $0 % 24), line: "You asked claude on \"api\" for a fix, in a sentence, line \($0).") }
         let r = MemoryRequest.make(memory: m, certain: certain, journal: journal)
         XCTAssertEqual(r.numbered, [3, 12, 15, 9, 11])
@@ -194,7 +203,7 @@ final class WrittenMemoryTests: XCTestCase {
         XCTAssertTrue(MemoryRequest.instructions.contains("Never drop a boop note"))
     }
 
-    /// The night's write: the writer's reply, checked and applied to
+    /// The dream's write: the writer's reply, checked and applied to
     /// memory.md, which the next pass reads.
     func testTheNightsWriteKeepsMemoryMd() async throws {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("boop-memory-\(UUID().uuidString.prefix(8))")
@@ -205,7 +214,7 @@ final class WrittenMemoryTests: XCTestCase {
                             files: files)
         var t = MemoryReader.Tallies()
         t.strokes = 3
-        let asked = await memory.ask(day: "2026-10-30", tallies: t)
+        let asked = await memory.ask(Self.friday(t), tallies: t)
         let night = try XCTUnwrap(asked)
         XCTAssertTrue(night.request.text.contains("stroked Boop 3 times"))
         let report = try XCTUnwrap(memory.apply(night))

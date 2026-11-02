@@ -10,22 +10,28 @@ import MellowHarness
 /// Each subcommand's usage, in the order `boopdev --help` lists them.
 let usages: [(command: String, text: String)] = [
     ("eval", """
-    boopdev eval [--runs N] [--only TEXT] [--always] [--budget N | --no-budget] [--labeler apple] [--timeline] [--scenarios DIR] [--steering DIR]
-    boopdev eval --list [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
+    boopdev eval [--level quick|standard|full] [--runs N] [--only TEXT] [--always] [--labeler apple] [--timeline] [--scenarios DIR] [--steering DIR]
+    boopdev eval --list [--level quick|standard|full] [--runs N] [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
     boopdev eval --scripted [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
-        checks. Needs Jev's key in BOOP_JEV_KEY and fails without it. --runs runs each scenario N times
-        (default the scenario's own runs, else 3 for an always scenario and 1 for the rest); it passes only
-        if every run does. Before asking Jev anything it counts the requests the runs will send (each run's
-        passes with the scripted brain) and stops if that's over --budget (default 100); --no-budget is for
-        the final pass (make eval). --labeler apple reads each prompt and last message with Apple Intelligence on
+        checks. Needs Jev's key in BOOP_JEV_KEY and fails without it. --level says how much asks Jev: quick (the
+        default) the must scenarios, Jev answering only the passes of steps that expect one and the expect
+        brain the rest unless whole-run checks read them all, and --only also runs a named feel scenario, in
+        full; standard is every scenario once, every pass to Jev; full is that with always scenarios 3 times,
+        only when the owner asks (make eval). A must's failed run gets one re-run. A feel scenario has no exact
+        checks on Jev: its trajectory goes beside the run's file, for the judge (EVALS.md §2). --runs runs each scenario N times (default
+        the scenario's own runs, else 1, or 3 for an always scenario at full); it passes only if every run does.
+        Before asking Jev anything it counts the requests (each run's passes with the expect brain), and refuses
+        the run if that's more than what's left of the day's limit across every command and worktree, kept in
+        ~/.boopdev/jev-requests.json. A run that reaches the limit stops and reports what finished.
+        BOOP_JEV_OVER_LIMIT=1 goes past the limit, only when the owner says so. --labeler apple reads each prompt and last message with Apple Intelligence on
         this Mac, in place of the step's own reading, so a run checks the reading too. --always runs only
         the always scenarios, Boop's character. --timeline
-        prints every pass of every run. --list prints each scenario's case, runs and requests, and runs
-        nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
-        scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
+        prints every pass of every run. --list prints each scenario at the level with its case, runs and
+        requests, all three levels' totals and today's count, and runs nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
+        scenario expects, with no key and no Jev requests: what it checks is everything but Jev (that each step
         wakes the brain as it should, the screen, the whole-run checks it can meet). A scripted scenario,
         one that checks only the code's rules, runs only so. A scenario with a known
         gap is reported GAP when it fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
@@ -61,8 +67,8 @@ let usages: [(command: String, text: String)] = [
     """),
     ("memory", """
     boopdev memory write [--fixture FILE] [--only TEXT]
-        Runs the written memory's night with Apple Intelligence on this Mac, as the app does, over fixture nights
-        (each a memory, CERTAIN, yesterday's lines and what a person would accept), and prints each night's reply,
+        Runs the dream's write with Apple Intelligence on this Mac, as the app does, over fixture nights
+        (each a memory, CERTAIN, its RECENT lines and what a person would accept), and prints each night's reply,
         the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
         defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
         without it.
@@ -109,14 +115,9 @@ func findRepo() -> URL? {
     return nil
 }
 
-/// How many Jev requests `boopdev eval` may send unless `--budget` or
-/// `--no-budget` says (internal/EVALS.md §2): enough for a handful of
-/// scenarios while developing, not the whole eval, which is the final pass.
-let evalBudget = 100
-
 func eval(_ raw: [String]) async {
-    let args = arguments("eval", raw, options: ["--runs", "--only", "--budget", "--scenarios", "--steering", "--labeler"],
-                         flags: ["--always", "--list", "--timeline", "--no-budget", "--scripted"])
+    let args = arguments("eval", raw, options: ["--level", "--runs", "--only", "--scenarios", "--steering", "--labeler"],
+                         flags: ["--always", "--list", "--timeline", "--scripted"])
     // The pack in use's scenarios and steering (characters/CHARACTER.md §2), unless given.
     func path(_ option: String, _ inPack: String) -> URL {
         if let given = args[option] { return URL(fileURLWithPath: given) }
@@ -129,6 +130,10 @@ func eval(_ raw: [String]) async {
         list = list.filter { $0.name.localizedCaseInsensitiveContains(only) || $0.file.contains(only) }
     }
     if args.has("--always") { list = list.filter(\.always) }
+    guard let level = Eval.Level(rawValue: args["--level"] ?? "quick") else {
+        fail("boopdev eval: --level is quick, standard or full, not \(args["--level"] ?? "")")
+    }
+    let named = args["--only"] != nil
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
     // A scripted scenario checks the code's rules: only the expect brain runs it.
     let scripted = args.has("--scripted")
@@ -142,45 +147,71 @@ func eval(_ raw: [String]) async {
     do { steering = try Steering(directory: path("--steering", "steering")) } catch { fail("\(error)") }
     let given = args["--runs"].map { Int($0) }
     if let given, (given ?? 0) < 1 { fail("--runs is a count, 1 or more") }
-    let budget = args["--budget"].map { Int($0) }
-    if let budget, (budget ?? 0) < 1 { fail("--budget is a count of Jev requests, 1 or more") }
-    if budget != nil, args.has("--no-budget") { fail("--budget or --no-budget, not both") }
-    // What the eval will cost before it asks Jev anything (EVALS.md §2):
-    // each scenario's passes with the scripted brain, times its runs.
-    var plan: [(scenario: Scenario, runs: Int, requests: Int)] = []
-    for scenario in list {
-        let requests: Int
-        do { requests = try await Eval.requests(scenario, steering: steering) } catch { fail("\(error)") }
-        plan.append((scenario, given.flatMap { $0 } ?? Eval.runs(scenario), requests))
+    func planOf(_ s: Scenario, _ level: Eval.Level) -> Eval.Plan? {
+        Eval.plan(s, level: level, named: named, given: given.flatMap { $0 })
     }
-    let total = plan.reduce(0) { $0 + $1.runs * $1.requests }
-    if args.has("--list") {
-        for p in plan {
+    let listing = args.has("--list")
+    // What the eval will cost before it asks Jev anything (EVALS.md §2):
+    // each scenario's passes with the expect brain, times its runs. Only
+    // what's used: nothing for --scripted, all for --list, else the level's.
+    var priced: [(scenario: Scenario, price: Eval.Price)] = []
+    for scenario in list where !scripted && (listing || planOf(scenario, level) != nil) {
+        do { priced.append((scenario, try await Eval.price(scenario, steering: steering))) } catch { fail("\(error)") }
+    }
+    func requests(_ price: Eval.Price, _ plan: Eval.Plan) -> Int { plan.scriptsSetup ? price.expected : price.all }
+    func total(_ level: Eval.Level) -> (scenarios: Int, requests: Int) {
+        let those = priced.compactMap { p in planOf(p.scenario, level).map { (p.price, $0) } }
+        return (those.count, those.reduce(0) { $0 + $1.1.runs * requests($1.0, $1.1) })
+    }
+    let allowance = JevAllowance(overridden: JevAllowance.overriddenByEnvironment())
+    if listing {
+        for p in priced where p.scenario.scripted || planOf(p.scenario, level) != nil {
             let s = p.scenario
             print("\(s.file)\(s.always ? "  [always]" : s.scripted ? "  [scripted]" : s.gap != nil ? "  [gap]" : "")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
-            print("    \(p.runs) run\(p.runs == 1 ? "" : "s") × about \(p.requests) requests")
+            if let plan = planOf(s, level) {
+                print("    \(plan.runs) run\(plan.runs == 1 ? "" : "s") × about \(requests(p.price, plan)) requests")
+            } else {
+                print("    expect brain only, no Jev requests")
+            }
             print("    \(s.story)")
             if let gap = s.gap { print("    gap: \(gap)") }
         }
-        print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests, the scripted ones' included")
+        for l in Eval.Level.allCases {
+            let t = total(l)
+            print("\(l == level ? "▸" : " ") \(l.rawValue): \(t.scenarios) scenario\(t.scenarios == 1 ? "" : "s"), about \(t.requests) Jev requests")
+        }
+        do {
+            let used = try allowance.used()
+            print("today: \(used) of \(allowance.limit) used, in \(allowance.file.path)")
+        } catch { print("today: \(error)") }
         exit(0)
     }
-    if scripted { plan = plan.map { ($0.scenario, 1, $0.requests) } }
-    let limit = scripted || args.has("--no-budget") ? Int.max : budget.flatMap { $0 } ?? evalBudget
-    if total > limit {
-        let costliest = plan.sorted { $0.runs * $0.requests > $1.runs * $1.requests }.prefix(5)
-            .map { "  \($0.scenario.file): \($0.runs) × \($0.requests)" }
-        fail((["boopdev eval: about \(total) Jev requests, over the budget of \(limit); narrow it with --only or --runs 1, "
-               + "raise --budget, or pass --no-budget for the final pass. The costliest:"] + costliest).joined(separator: "\n"))
+    var plan: [(scenario: Scenario, plan: Eval.Plan)]
+    let estimate: Int
+    if scripted {
+        plan = list.map { ($0, Eval.Plan.scripted) }
+        estimate = 0
+    } else {
+        plan = priced.compactMap { p in planOf(p.scenario, level).map { (p.scenario, $0) } }
+        guard !plan.isEmpty else { fail("boopdev eval: nothing to run at the \(level.rawValue) level") }
+        let left = list.count - plan.count
+        if left > 0 { print("\(left) scenario\(left == 1 ? "" : "s") with whole-run checks left out: --level standard runs them") }
+        estimate = total(level).requests
+        do {
+            if let refusal = try allowance.refusal(estimate: estimate, wholeFullRun: level == .full && !named) { fail("boopdev eval: \(refusal)") }
+        } catch { fail("boopdev eval: can't read today's count: \(error)") }
     }
     let brain: any Brain
+    var counted: CountedBrain?
     if scripted {
         brain = ExpectBrain()
     } else {
         guard let key = JevKey.environment() else {
             fail("boopdev eval asks Jev, and needs its API key in \(JevKey.variable)")
         }
-        brain = JevBrain(key: key)
+        counted = CountedBrain(JevBrain(key: key), allowance: allowance)
+        brain = counted!
+        if allowance.overridden { print("\(JevAllowance.overrideVariable) is set: this run may pass today's limit of \(allowance.limit)") }
     }
     var runner = Eval(brain: brain, steering: steering)
     switch args["--labeler"] {
@@ -193,21 +224,53 @@ func eval(_ raw: [String]) async {
     let log = evalDebugLog()
     DebugLog.start(log)
     runner.debugLog = log
-    print("\(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(total) Jev requests")
+    print(scripted ? "\(plan.count) scenario\(plan.count == 1 ? "" : "s") with the expect brain"
+        : "\(level.rawValue): \(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(estimate) Jev requests")
     print("every event, view event and pass goes to \(log.path)")
     var results: [[Eval.Result]] = []
     var gapsFailed = 0
     var failed = false
-    for (scenario, runs, _) in plan {
+    var stopped: String?
+    let trajectories = log.deletingPathExtension().appendingPathExtension("trajectories.jsonl")
+    var judged = 0
+    // One run. Nil when the limit cut it short, which says nothing about Jev.
+    func play(_ scenario: Scenario) async -> Eval.Result? {
+        do {
+            let result = try await runner.run(scenario)
+            if let why = counted?.stopped {
+                stopped = why
+                return nil
+            }
+            if !scripted { LineFile.append(JSONLine.encode(Eval.trajectory(result, scenario: scenario)), to: trajectories) }
+            return result
+        } catch {
+            if let why = counted?.stopped {
+                stopped = why
+                return nil
+            }
+            fail("\(error)")
+        }
+    }
+    scenarios: for (scenario, plan) in plan {
         var rs: [Eval.Result] = []
-        for _ in 1...runs {
-            do { rs.append(try await runner.run(scenario)) } catch { fail("\(error)") }
+        runner.scriptsSetup = plan.scriptsSetup
+        for _ in 1...plan.runs {
+            guard let result = await play(scenario) else { break scenarios }
+            rs.append(result)
+        }
+        // A must's failure gets its one re-run, to confirm before it blocks.
+        if plan.rerunsOnFailure, rs.contains(where: { !$0.passed }) {
+            for line in Eval.report(rs, story: scenario.story) { print(line) }
+            guard let again = await play(scenario) else { break scenarios }
+            print("  re-run: \(again.passed ? "passed, so it doesn't block" : "failed again")")
+            rs = [again]
         }
         results.append(rs)
+        if scenario.brief != nil, !scripted { judged += 1 }
         if !rs.allSatisfy(\.passed) {
             if scenario.gap != nil { gapsFailed += 1 } else { failed = true }
         }
-        for line in Eval.report(rs, story: scenario.story, gap: scenario.gap) { print(line) }
+        for line in Eval.report(rs, story: scenario.story, gap: scenario.gap, judged: scenario.brief != nil && !scripted) { print(line) }
         if args.has("--timeline") {
             for (i, r) in rs.enumerated() {
                 print("  run \(i + 1)\(r.passed ? "" : " (failed)"):")
@@ -220,8 +283,14 @@ func eval(_ raw: [String]) async {
     if !latencies.isEmpty {
         print("latency: median \(latencies[latencies.count / 2]) ms, slowest \(latencies.last!) ms (deadline \(Harness.Options().deadlineMs) ms)")
     }
+    if let counted {
+        let today = (try? allowance.used()).map { "; today \($0) of \(allowance.limit)" } ?? ""
+        print("requests: \(counted.requests) to Jev, about \(estimate) expected\(today)")
+    }
+    if judged > 0 { print("feel: \(judged) for the judge; each run's trajectory: \(trajectories.path)") }
+    if let stopped { print("stopped: \(stopped); \(results.count) of \(plan.count) scenarios finished, the rest didn't run") }
     print("every event and pass, with its state: \(log.path)")
-    exit(failed ? 1 : 0)
+    exit(failed || stopped != nil ? 1 : 0)
 }
 
 func prompts(_ raw: [String]) async {
@@ -419,7 +488,7 @@ func readCheck(_ raw: [String]) async {
     guard short.isEmpty else { fail("boopdev read-check: " + short.joined(separator: "; ")) }
 }
 
-/// `boopdev memory write`: the night's write over fixture nights.
+/// `boopdev memory write`: the dream's write over fixture nights.
 func memory(_ raw: [String]) async {
     guard raw.first == "write" else { fail("boopdev memory: the command is write\n\(usage)") }
     let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])

@@ -75,8 +75,8 @@ final class SignTests: XCTestCase {
     /// picks rides on the reaction (`do`'s `sign`) and in HISTORY's line;
     /// a caption it wasn't offered is dropped.
     func testReactAsksForASignOnlyForAPrompt() throws {
-        var queued: [DeviceReaction] = []
-        let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, speaks: { false }, signs: lines)
+        var queued: [Moment] = []
+        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, speaks: { false }, signs: lines)
         let log = Transcript.log().view(now: 0)
         let reading = Event(at: 0, source: .claude, type: .prompt, specificType: "reading", session: "s1",
                             data: PromptReading(length: .sentence, kind: .cleanup).facts)
@@ -110,7 +110,7 @@ final class SignTests: XCTestCase {
         XCTAssertTrue(step.views.contains { $0.line.contains("and said Bo's name.") }, "\(step.views.map(\.line))")
         let log = pipeline.transcript.view(now: 1)
         func signs(_ buddy: Buddy) -> [String] {
-            ReactOutput(queue: { _, _ in }, blocked: { nil }, pack: buddy.pack, signs: lines).offered(reading, log)
+            MomentOutput(queue: { _, _ in }, blocked: { nil }, pack: buddy.pack, signs: lines).offered(reading, log)
         }
         XCTAssertEqual(signs(buddies[1]), ["me?!", "plain caption"])
         XCTAssertEqual(signs(buddies[0]), ["plain caption"], "its own name wasn't said")
@@ -127,7 +127,7 @@ final class SignTests: XCTestCase {
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle"] + Occasions.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle"] + Days.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)
@@ -147,7 +147,7 @@ final class SignTests: XCTestCase {
     /// the agents' facts; `dunno` too, a huh at a question, and `unhush`,
     /// offered while hushed), any more the calendar's or the moment's.
     func testThePacksRepliesFit() throws {
-        let replies = Set(ReactOutput.replies.map(\.name)).subtracting(["status"]).union(["dunno", "unhush"])
+        let replies = Set(MomentOutput.replies.map(\.name)).subtracting(["status"]).union(["dunno", "unhush"])
         let file = CharacterPackTests.repo.appendingPathComponent("characters/boop/steering/replies.md")
         let lines = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
         XCTAssertEqual(Set(lines.compactMap(\.tags.first)), replies, "a line or more for every reply")
@@ -158,7 +158,7 @@ final class SignTests: XCTestCase {
             XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, line.text)
             XCTAssertNotNil(Signs.drawn(filled), line.text)
             XCTAssertFalse(filled.contains("{"), "only {words}: \(line.text)")
-            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Occasions.calendarTags + ReactOutput.momentTags), "\(line.tags)")
+            XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Days.calendarTags + MomentOutput.momentTags), "\(line.tags)")
         }
     }
 

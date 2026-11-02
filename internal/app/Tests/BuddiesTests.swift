@@ -62,7 +62,7 @@ final class BuddiesTests: XCTestCase {
         XCTAssertEqual(Runtime.speakers(e, all), ["right", "left", "middle"])
         e = Event(at: 1, source: .boop, type: .reacted, specificType: "brain", buddy: "middle")
         XCTAssertEqual(Runtime.speakers(e, all), ["left", "right"], "a reaction wakes only the others")
-        e = Event(at: 1, source: .clock, type: .heartbeat, specificType: "quiet")
+        e = Event(at: 1, source: .clock, type: .checkIn, specificType: "quiet")
         XCTAssertEqual(Runtime.speakers(e, all), ["left", "middle", "right"])
     }
 
@@ -113,8 +113,8 @@ final class BuddiesTests: XCTestCase {
         let pixelsFirst = passes.first { $0["voice"]?.string == "left" }
         XCTAssertEqual(pixelsFirst?["for"]?.int, reacted.first.map { Int64($0.seq) })
         XCTAssertEqual(reacted.first?.buddy, "right")
-        XCTAssertTrue(reacted.first?["message"]?.string?.hasPrefix("Boop made") == true, "\(reacted.first?.data ?? [:])")
-        XCTAssertTrue(reacted.contains { $0["message"]?.string?.hasPrefix("Pixel made") == true })
+        XCTAssertTrue(reacted.first?["message"]?.string?.hasPrefix("Boop had") == true, "\(reacted.first?.data ?? [:])")
+        XCTAssertTrue(reacted.contains { $0["message"]?.string?.hasPrefix("Pixel had") == true })
         // Each reply is one more in its chain, and past the failsafe a
         // reaction no longer wakes the others.
         let held = passes.compactMap { $0["held"]?.string }

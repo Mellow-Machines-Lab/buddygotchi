@@ -80,10 +80,10 @@ struct WrappedFace : render::Face {
   bool blinking(uint32_t t) const override { return f->blinking(t); }
   render::SceneShow show(uint32_t t, bool mouthOpen, int dy) const override { return f->show(t, mouthOpen, dy); }
   bool draw(render::Canvas& canvas, render::Surface* native, const render::SceneShow& show, uint32_t t,
-            const char* bubble, const render::SignShow& sign, const render::DoneShow& done, const render::Strip& strip,
+            const char* bubble, const char* caption, const render::SignShow& sign, const render::DoneShow& done, const render::Strip& strip,
             bool dirty) override {
     if (this->native) return true;
-    return f->draw(canvas, native, show, t, bubble, sign, done, strip, dirty);
+    return f->draw(canvas, native, show, t, bubble, caption, sign, done, strip, dirty);
   }
   int cues(uint32_t t, bool shown, voice::FxEvent* out, bool& changed) override {
     return f->cues(t, shown, out, changed);

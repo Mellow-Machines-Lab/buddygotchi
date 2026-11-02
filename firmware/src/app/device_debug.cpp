@@ -190,11 +190,8 @@ void Device::ping(JsonObject d) {
 
 const char* Device::screenName(uint32_t t) const {
   if (live_.pattern) return "pattern";
-  switch (b_.look(t)) {
-    case render::SceneState::kNoApp: return "no_app";
-    case render::SceneState::kNeedsYou: return "needs_you";
-    default: return "face";
-  }
+  if (b_.plugShows(t)) return "no_app";
+  return b_.look(t) == render::SceneState::kNeedsYou ? "needs_you" : "face";
 }
 
 void Device::state(JsonObject d, uint32_t t) {
@@ -254,22 +251,27 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["expr"] = nullptr;
   if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
-  // The lane's text when it isn't the `say`'s: the reaction's reason, or
-  // an ask's answers.
-  const char* lane = b_.laneText(t);
-  if (lane && lane != b_.bubble(t) && !b_.asking(t))
-    d["reason"] = lane;
+  // The caption, the reaction's reason; and an ask's answers in the lane.
+  if (const char* caption = b_.caption(t)) d["reason"] = caption;
   else d["reason"] = nullptr;
+  const char* lane = b_.laneBubble(t);
   // An ask up: its answers as the lane shows them.
   if (b_.asking(t))
     d["ask"] = lane;
   else
     d["ask"] = nullptr;
-  // The work stream: how many lanes show, and the word forward's gag.
+  static constexpr const char* kWishNames[] = {nullptr, "pet", "chat", "work"};
+  if (const char* wish = kWishNames[b_.wishShow(t).kind]) d["wish"] = wish;
+  else d["wish"] = nullptr;
+  d["wish_how"] = b_.wishShow(t).how;
+  // The work stream: how many lanes show, and the word forward's style.
   const render::Stream& stream = b_.stream();
   d["calls"] = stream.on ? stream.laneCount : 0;
-  if (stream.drawn(t) && stream.call.live) d["call"] = render::callGagName(stream.call.gag);
+  if (stream.drawn(t) && stream.call.live) d["call"] = render::callStyleName(stream.call.style);
   else d["call"] = nullptr;
+  const render::Stream::ActNow act = stream.actNow(t);
+  if (act.shows()) d["wact"] = act.text;
+  else d["wact"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;
   d["vol"] = m.vol;

@@ -3,7 +3,7 @@ import LinkKit
 
 /// Boop's vocabulary on LinkKit (linkkit/SPEC.md is the
 /// protocol under it): what Boop calls its device, the names it plays
-/// beside the reactions' own (`DeviceReaction`), and what its `hello` and taps
+/// beside the reactions' own (`Moment`), and what its `hello` and taps
 /// mean to the app. The link itself, with its ids, `ended`s and transports,
 /// is LinkKit's `DeviceLink`.
 public enum BoopDevice {
@@ -25,7 +25,7 @@ public enum BoopDevice {
     /// stage) next, waiting its turn for up to `reactionTTL`, as a sign is
     /// worth reading; and the rest only if nothing else plays: a late rule
     /// reaction is worse than none.
-    public static func play(_ reaction: DeviceReaction) -> Wire.Play {
+    public static func play(_ reaction: Moment) -> Wire.Play {
         reaction.name == listening ? .now : reaction.sign != nil ? .next : .ifFree
     }
     /// Why the device drops the reactions waiting when push-to-talk starts:
@@ -41,11 +41,9 @@ public enum BoopDevice {
     /// The work stream's word that comes forward, as the board plays it.
     public static let call = "call"
     /// A `call`'s `args`: `word`, in the colour of lane `slot`, playing
-    /// `gag` (one of `WorkStream.gags`), and a combo's `count`.
-    public static func call(_ word: String, gag: String, slot: Int, count: Int? = nil) -> JSONObject {
-        var args: JSONObject = ["a": .int(slot), "w": .string(word), "as": .string(gag)]
-        if let count { args["n"] = .int(count) }
-        return args
+    /// `style` (one the board's `render::CallStyle` knows).
+    public static func call(_ word: String, style: String, slot: Int) -> JSONObject {
+        ["a": .int(slot), "w": .string(word), "as": .string(style)]
     }
 
     /// The link to Boop's device over `transport`, or to none.
@@ -58,6 +56,10 @@ public enum BoopDevice {
     /// the tap opens that thread.
     /// Whether a `tap` was BOOT (`src` `button`), not the screen.
     public static func button(tapped ev: DeviceEvent) -> Bool { ev.data["src"]?.string == "button" }
+
+    /// What the touch's path would have made it, had it not landed where
+    /// any touch is a tap: for the log, to read a real miss by.
+    public static func was(tapped ev: DeviceEvent) -> String? { ev.data["was"]?.string }
 
     public static func finish(tapped ev: DeviceEvent) -> Int? {
         guard let on = ev.data["on"]?.int, (1...Wire.maxId).contains(on) else { return nil }

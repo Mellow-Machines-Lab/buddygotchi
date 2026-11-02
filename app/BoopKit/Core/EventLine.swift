@@ -48,26 +48,26 @@ public enum EventLine {
 
     static func nth(_ n: Int) -> String { (0..<4).contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
 
-    /// The note on the work stream's moments that hit Boop, by their gags
+    /// The note on the work stream's moments that hit Boop, by their styles
     /// (`WorkStream.hits`): `Failed commands hit Boop in the face 3 times
-    /// (a helmet on by the last); a command timed out and landed on Boop's
+    /// (seeing more stars by the last); a command timed out and landed on Boop's
     /// head.`
-    public static func hits(_ gags: [String], name: String = CharacterPack.active.name) -> String? {
+    public static func hits(_ styles: [String], name: String = CharacterPack.active.name) -> String? {
         var parts: [String] = []
-        let bonks = gags.filter(WorkStream.ladder.contains)
+        let bonks = styles.filter(WorkStream.ladder.contains)
         if !bonks.isEmpty {
             let times = bonks.count == 1 ? "once" : bonks.count == 2 ? "twice" : "\(bonks.count) times"
-            let top = bonks.contains("throw") ? " (it threw the last one back)" : bonks.contains("helmet") ? " (a helmet on by the last)" : ""
+            let top = bonks.contains("throw") ? " (it threw the last one back)" : bonks.contains("bonk3") ? " (seeing more stars by the last)" : ""
             parts.append("failed commands hit \(name) in the face \(times)\(top)")
         }
-        if gags.contains("timeout") { parts.append("a command timed out and landed on \(name)'s head") }
-        if gags.contains("no") { parts.append("you said no to a request and \(name) flinched") }
+        if styles.contains("timeout") { parts.append("a command timed out and landed on \(name)'s head") }
+        if styles.contains("no") { parts.append("you said no to a request and \(name) flinched") }
         guard !parts.isEmpty else { return nil }
         let text = parts.joined(separator: "; ")
         return text.prefix(1).uppercased() + text.dropFirst() + "."
     }
 
-    /// A working heartbeat's note for its rung of a round, from the second:
+    /// A working check-in's note for its rung of a round, from the second:
     /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.
     public static func checkIn(_ rung: Int, name: String = CharacterPack.active.name) -> String? {
         rung > 1 ? "\(name)'s \(nth(rung)) check-in of a round on this turn." : nil
@@ -128,6 +128,29 @@ public enum EventLine {
         return inARow > 1 ? "\(agent)'s \(topic) failed again on \(thread), \(inARow) times in a row." : "\(agent)'s \(topic) failed on \(thread)."
     }
 
+    /// A work act's start or its result, for Jev to say something over what
+    /// Boop already does by rule: the agent's clause, then the scene the pack
+    /// draws for it, if it says one (`character.json`'s `acts`):
+    /// `claude is pushing on "api". Boop has climbed on a rocket for it, by itself.`
+    public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name,
+                                  pack: CharacterPack = .active) -> String {
+        let doing: String = switch kind {
+        case "build": "\(agent) is building on \(thread)."
+        case "tests": "\(agent) is running tests on \(thread)."
+        default: "\(agent) is pushing on \(thread)."
+        }
+        return [doing, pack.actScene(kind, "start", name: name)].compactMap { $0 }.joined(separator: " ")
+    }
+    public static func actEnded(agent: String, kind: String, thread: String, passed: Bool, name: String = CharacterPack.active.name,
+                                pack: CharacterPack = .active) -> String {
+        let how: String = switch kind {
+        case "build": passed ? "\(agent)'s build worked on \(thread), and the turn goes on." : "\(agent)'s build failed on \(thread)."
+        case "tests": passed ? "\(agent)'s tests passed on \(thread), and the turn goes on." : "\(agent)'s tests failed on \(thread)."
+        default: passed ? "\(agent)'s push went through on \(thread), and the turn goes on." : "\(agent)'s push failed on \(thread)."
+        }
+        return [how, pack.actScene(kind, passed ? "pass" : "fail", name: name)].compactMap { $0 }.joined(separator: " ")
+    }
+
     /// Commands failing one after another (the work stream's failure
     /// ladder, `TranscriptView.wakingRungs`), while the turn goes on:
     /// `claude's commands keep failing on "api": 3 in 2 minutes, each one
@@ -181,6 +204,26 @@ public enum EventLine {
     /// Away less than this is a short break, said with no number.
     public static let shortBreakMs: Int64 = 15 * 60_000
 
+    /// You locked the Mac, with how long since the last lock, if the log
+    /// knows: `You locked the Mac, first time in 3 h.` from `lockWhileMs`,
+    /// `You locked the Mac again, 5 min after the last time.` under it. Facts
+    /// only: what they mean is the steering's.
+    public static func locked(sinceLastMs ms: Int64?) -> String {
+        guard let ms else { return "You locked the Mac, first time in a while." }
+        if ms >= lockWhileMs { return "You locked the Mac, first time in \(ms / 3_600_000) h." }
+        return "You locked the Mac again, \(span(ms)) after the last time."
+    }
+
+    /// A lock this long after the last is the first in a while.
+    public static let lockWhileMs: Int64 = 60 * 60_000
+
+    /// You unlocked the Mac after a lock too short to be an away:
+    /// `You unlocked the Mac after 2 min.`
+    public static func unlocked(afterMs ms: Int64) -> String { "You unlocked the Mac after \(span(ms))." }
+
+    /// A short span in whole minutes, or under a minute.
+    static func span(_ ms: Int64) -> String { ms < 60_000 ? "under a minute" : "\(ms / 60_000) min" }
+
     /// You answered an ask: `You answered Boop's "fav snack?": cookie.`
     public static func answered(_ question: String, answer: String, name: String = CharacterPack.active.name) -> String {
         "You answered \(name)'s \"\(question)\": \(answer)."
@@ -191,35 +234,27 @@ public enum EventLine {
         "You didn't answer \(name)'s \"\(question)\"."
     }
 
-    /// Under the line that tells the dream: `Boop dreamed about Monday:
-    /// you stroked it 4 times; 7 turns on "api", 3 failed.`
-    public static func dreamed(weekday: String, sentence: String, name: String = CharacterPack.active.name) -> String {
-        "\(name) dreamed about \(weekday): \(sentence)."
-    }
-
-    /// What you did to the board, which reacted at once; nil for a gesture
-    /// it doesn't know.
-    public static func gesture(_ kind: String, name: String = CharacterPack.active.name) -> String? {
-        switch kind {
-        case "stroke": "You stroked \(name)."
-        case "ruffle": "You stroked \(name) the wrong way."
-        case "swipe": "You swiped \(name), a quick stroke."
-        case "nose": "You booped \(name)'s nose."
-        case "tickle": "You tickled \(name)."
-        case "dizzy": "You shook \(name)."
-        case "pickup": "You picked \(name) up."
-        case "putdown": "You put \(name) down."
-        case "startle": "You thumped the desk next to \(name)."
-        case "facedown": "You turned \(name) face down."
-        case "peekaboo": "You turned \(name) back up."
-        case Core.dismissGesture: "You held a finger on \(name)'s needs-you screen, to stop it showing; the agent still waits."
-        default: nil
-        }
+    /// Under the line that tells the dream: `Boop dreamed about the last 2
+    /// days: you stroked it 4 times; 7 turns on "api", 3 failed.`
+    public static func dreamed(about: String, sentence: String, name: String = CharacterPack.active.name) -> String {
+        "\(name) dreamed about \(about): \(sentence)."
     }
 
     /// `You shook Boop.`, or `You shook Boop 3 times in a row.`
     public static func shake(inARow count: Int, name: String = CharacterPack.active.name) -> String {
         count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
+    }
+
+    /// Boop's wish: made, and how it ended.
+    public static func wished(_ kind: Core.WishKind, name: String = CharacterPack.active.name) -> String {
+        "\(name) wished for \(kind.words)."
+    }
+    public static func wishEnded(_ how: Core.WishEnd, _ kind: Core.WishKind, waitedMs: Int64, name: String = CharacterPack.active.name) -> String {
+        switch how {
+        case .met: "You gave \(name) its wish: \(kind.words)."
+        case .gaveup: "\(name) gave up on its wish for \(kind.words), after \(ContextSection.span(waitedMs)) with you here."
+        case .closed: "\(name)'s wish for \(kind.words) ended with the day."
+        }
     }
 
     /// A BOOT press that handed you an agent; what it opened is the core's
@@ -229,7 +264,7 @@ public enum EventLine {
         "You picked an agent from \(name)'s list."
     }
 
-    public static func heartbeat(hours: Int) -> String {
+    public static func checkIn(hours: Int) -> String {
         "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."
     }
 
@@ -237,6 +272,12 @@ public enum EventLine {
     /// idle on "api".`, the thread last active.
     public static func idle(minutes: Int, agent: String, thread: String) -> String {
         "Nothing has happened for \(minutes) min; \(agent) sits idle on \(thread)."
+    }
+
+    /// The idle check-in with no session open: `Nothing has happened for
+    /// 40 min; no agents are open.`
+    public static func idle(minutes: Int) -> String {
+        "Nothing has happened for \(minutes) min; no agents are open."
     }
 
     /// The agent's context compacted, mid-work.
@@ -253,7 +294,7 @@ public enum EventLine {
         "You answered \(agent) on \(thread)."
     }
 
-    /// The working heartbeat: `claude is still working on "fix-nav"
+    /// The working check-in: `claude is still working on "fix-nav"
     /// (landing), a long turn, running tests.`, the band of the turn so far
     /// and what its latest command or edit was about.
     public static func working(agent: String, thread: String, ms: Int64, topic: String? = nil) -> String {
@@ -309,6 +350,9 @@ public enum EventLine {
         - "You" stepping away from the Mac and coming back is the person. A
           short break is under 15 minutes; past that the line says how long,
           in minutes, hours or days.
+        - "You locked the Mac" and "You unlocked the Mac" are the person's screen,
+          and the person may be going. An unlock after a real break has no line
+          of its own: that is "You came back".
         - "You answered \(name)'s" question is the person tapping one of the two
           answers \(name) held up; it answers as to anything said to it, with a
           glad face and a sign back for the answer.

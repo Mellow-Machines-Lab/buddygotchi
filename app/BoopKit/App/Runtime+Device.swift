@@ -56,7 +56,8 @@ extension Runtime {
         case "tap":
             let finish = BoopDevice.finish(tapped: ev), button = BoopDevice.button(tapped: ev)
             if rig === rigs[0] { onBoardTap?(button) }
-            options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? ""))
+            options.log("device\(Runtime.whose(rig)): tap" + (ev.did.map { " (\($0))" } ?? "") + (finish.map { " on do \($0)" } ?? "")
+                + (BoopDevice.was(tapped: ev).map { " was \($0)" } ?? ""))
             remember(on: rig)
             let opens = finish.flatMap { rig.reactions.opens(finish: $0) }
             // Onboarding hears every tap and BOOT press, which it was, and
@@ -121,7 +122,7 @@ extension Runtime {
     /// (`BoopDevice.play`). The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
-    func playRule(_ reaction: DeviceReaction, on rig: Rig? = nil) {
+    func playRule(_ reaction: Moment, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction), ttl: BoopDevice.reactionTTL, by: .rule,
                     now: options.clock()) { _ in }
@@ -139,7 +140,7 @@ extension Runtime {
     /// queue (`next`, for up to 5 s), and its handle, ended once it's
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
-    func queue(_ reaction: DeviceReaction, _ pending: Pending, on rig: Rig? = nil) {
+    func queue(_ reaction: Moment, _ pending: Pending, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
         let now = options.clock(), reactions = rig.reactions
         let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,

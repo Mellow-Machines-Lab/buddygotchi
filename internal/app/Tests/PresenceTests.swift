@@ -36,7 +36,8 @@ final class PresenceTests: XCTestCase {
         }
 
         mutating func signal(_ s: PresenceDetector.Signal) {
-            if let e = detector.signal(s, at: now) { made.append(e) }
+            // The `lock` events are `LockTests`'.
+            made += detector.signal(s, at: now).filter { $0.type == .presence }
         }
 
         /// What it made, as `start locked` and `end input`.
@@ -262,7 +263,7 @@ final class PresenceTests: XCTestCase {
     func testEveryFaceCanSayHello() throws {
         try requireVoice()
         let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey"]
-        XCTAssertTrue(ReactOutput.topics.map(\.name).contains("hello"))
+        XCTAssertTrue(MomentOutput.topics.map(\.name).contains("hello"))
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })
@@ -276,16 +277,16 @@ final class PresenceTests: XCTestCase {
         }
     }
 
-    /// Coming back is activity, so the idle heartbeat counts
+    /// Coming back is activity, so the idle check-in counts
     /// its hour from the back, not from the last agent event.
-    func testComingBackRestartsTheIdleHeartbeat() {
+    func testComingBackRestartsTheIdleCheckIn() {
         let rig = CoreRig()
         rig.poke()
         rig.wait(30 * minute)
         rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .start, specificType: "idle",
                                     data: ["since": .int(rig.now - 30 * minute)]))
         rig.pipeline.presence(Event(at: rig.now + 1000, source: .mac, type: .presence, phase: .end, specificType: "input"))
-        let beats = { (fx: Fx) in events(fx).filter { $0.type == .heartbeat } }
+        let beats = { (fx: Fx) in events(fx).filter { $0.type == .checkIn } }
         XCTAssertEqual(beats(rig.wait(40 * minute)), [], "an hour since the poke, but not since you came back")
         XCTAssertEqual(beats(rig.wait(21 * minute)).map(\.line), ["Nothing has happened for 1 hour."])
     }

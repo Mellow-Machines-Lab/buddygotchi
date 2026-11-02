@@ -243,7 +243,7 @@ class Board:
         return None
 
     def _raw(self, event: Line, at: int) -> tuple[str, str] | None:
-        """A raw event: actions, and memory's (a dream, the night's write)
+        """A raw event: actions, and memory's (a dream, the dream's write)
         and an ask's end, which the columns show; the view says the rest."""
         seq = event.get("seq")
         if row := self._memory(event, at):
@@ -271,15 +271,15 @@ class Board:
         return None
 
     def _memory(self, event: Line, at: int) -> tuple[str, str] | None:
-        """A day closing with its dream, the night's write and an ask's end,
+        """A dream, the dream's write and an ask's end,
         each to its column; their timeline rows."""
         data, k = event.get("data") or {}, event.get("kind")
         if k == "dream":
             self.moods.append({"at": at, "dream": data, "told": None})
-            return "mood", f"☾ the day closed: {dream_text(data)}"
+            return "mood", f"☾ dreamed about {dream_text(data)}"
         if k == "memory":
             self.moods.append({"at": at, "night": data})
-            return "mood", f"☾ the night's write: {night_text(data)}"
+            return "mood", f"☾ the dream's write: {night_text(data)}"
         if k == "ask":
             pick = data.get("specific_type")
             row = next((r for r in reversed(self.decided)
@@ -477,7 +477,7 @@ class Board:
 
     def mood_column(self) -> list[tuple[str, str]]:
         """The mood now, then its changes and memory's rows (a day closing
-        with its dream and whether it's told, the night's write), newest
+        with its dream and whether it's told, the dream's write), newest
         first."""
         changes = [r for r in self.moods if "mood" in r]
         if not changes:
@@ -491,14 +491,14 @@ class Board:
                 out.append(("fail", f"{clock(r['at'])} ✗ forced mood refused: {r['refused']}"))
             elif "dream" in r:
                 d = r["dream"]
-                out.append(("mood", f"{clock(r['at'])} ☾ the day closed: {dream_day(d)}"))
+                out.append(("mood", f"{clock(r['at'])} ☾ dreamed about {dream_day(d)}"))
                 out.append(("dim", f"  dream: {d.get('sentence', '?')}" + (f" [{', '.join(d['tags'])}]" if d.get("tags") else "")))
                 told = r["told"]
                 out.append(("ok", f"  told at {clock(told['at'])}: ▸ {told['line']}") if told
                            else ("dim", "  not told yet: at your next coming back or touch"))
             elif "night" in r:
                 n = r["night"]
-                out.append(("mood", f"{clock(r['at'])} ☾ the night's write for {n.get('day', '?')}: {night_text(n)}"))
+                out.append(("mood", f"{clock(r['at'])} ☾ the dream's write for {n.get('day', '?')}: {night_text(n)}"))
                 if not n.get("day_line"):
                     out.append(("dim", "  Recently's line: the dream's sentence, as the writer's didn't pass"))
                 for refused in n.get("refused") or []:
@@ -597,11 +597,11 @@ FACE, MOVE, INTENSITY, SAY = "react.face", "react.move", "react.intensity", "say
 # too, `proud-cheer`); the move `react.animation`, or to what you said
 # `react.reply`; the intensity `react.loops`, by how long it held.
 OLDER = {FACE: ("react.mood", "react"), MOVE: ("react.animation", "react.reply"), INTENSITY: ("react.loops",)}
-# The intensities, smallest first, and how long each held, as
+# The sizeOptions, smallest first, and how long each held, as
 # `react.loops` named them.
 INTENSITIES = ["small", "medium", "big", "huge"]
 HOLDS = ["once", "twice", "three times", "four times"]
-# The moves at an event (ReactOutput.animations); any other move is a
+# The moves at an event (MomentOutput.animations); any other move is a
 # reply to what you said.
 MOVES = ["success", "failure", "reply", "wake up", "notice"]
 
@@ -714,16 +714,17 @@ def growth_text(st: Line) -> str:
 
 
 def dream_day(d: Line) -> str:
-    """The day a dream is of: `Saturday 2026-10-31`."""
-    return f"{d.get('weekday', '?')} {d.get('day', '?')}"
+    """What a dream is of, and the day it was dreamed: `Thursday to
+    Saturday (2026-10-31)`; a dream from before spans, by its weekday."""
+    return f"{d.get('about') or d.get('weekday', '?')} ({d.get('day', '?')})"
 
 
 def dream_text(d: Line) -> str:
-    return f"{dream_day(d)}, dreamed: {d.get('sentence', '?')}"
+    return f"{dream_day(d)}: {d.get('sentence', '?')}"
 
 
 def night_text(n: Line) -> str:
-    """What the night's write changed and refused, in counts."""
+    """What the dream's write changed and refused, in counts."""
     parts = [f"{len(n.get(k) or [])} {k}" for k in ("added", "updated", "dropped", "aged") if n.get(k)]
     changed = sum(len(n.get(k) or []) for k in ("added", "updated", "dropped", "aged"))
     return (f"{changed} changed" + (f" ({', '.join(parts)})" if parts else "")

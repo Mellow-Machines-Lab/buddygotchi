@@ -51,10 +51,12 @@ extension Runtime {
         /// Why Boop feels as it does: what moved its mood last, in words
         /// ("You came back after 26 hours away."). Nil when nothing in the
         /// log says.
-        public var moodReason: Reason?
+        public var moodReason: Narration?
+        /// The wish waiting, for the popover: "Boop wishes for a pet (40 min)."
+        public var wishing: String?
         /// Why the board looks as it does: what Boop celebrates today, and
         /// what it wears or shows for each.
-        public var dressing: [Dressing] = []
+        public var dressing: [Narration.Dressing] = []
 
         /// A day's line, as the popover shows it.
         public struct DayLine: Sendable, Equatable, Identifiable {
@@ -138,12 +140,13 @@ extension Runtime {
         let written = memory.written(), today = options.time.boopDay(wall)
         status.notes = written.notes
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
+        status.wishing = core.wish.map { "\(name) wishes for \($0.kind.words) (\(ContextSection.span($0.waitedMs)))." }
         status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
         let config = core.config
-        status.dressing = Dressing.now(when: status.snapshot.when,
-                                       occasions: Occasions.occasions(at: wall, hatched: config.hatched, name: name,
+        status.dressing = Narration.Dressing.now(when: status.snapshot.when,
+                                       specialDays: Days.special(at: wall, hatched: config.hatched, name: name,
                                                                       stage: config.stageReached, time: options.time),
-                                       asleep: status.snapshot.base == "asleep", gel: status.device?.face != .pixel)
+                                       asleep: status.snapshot.doing == "asleep", gel: status.device?.face != .pixel)
         status.talk = talk
         status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: Double(wall + $0.until - now) / 1000) }
         status.uncleanExit = uncleanExit

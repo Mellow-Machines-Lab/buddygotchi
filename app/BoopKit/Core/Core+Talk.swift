@@ -84,11 +84,11 @@ extension Core {
     public func shrug(sign: String?, at now: Int64) -> [CoreEffect] {
         talkStep { fx in
             guard !needsYouShowing else { return }
-            var shrug = DeviceReaction(mood: mood(), sign: sign)
+            var shrug = Moment(mood: mood(), sign: sign)
             shrug.reply = Core.noBrainReply
             fx.append(.reaction(shrug))
             fx.append(.record(Event.did("\(config.pack.name) shrugged: it has no brain to answer with yet.", for: nil,
-                                        action: DeviceReaction.react, by: "rule", at: now)))
+                                        action: Moment.react, by: "rule", at: now)))
         }
     }
 
@@ -166,7 +166,7 @@ extension Core {
         guard pushToTalk.mic == nil else { return }
         pushToTalk = Listening(mic: Listening.Mic(by: talker, since: now), by: talker)
         recordListen(.start, now, &fx)
-        if talker == .app { fx.append(.reaction(DeviceReaction(anim: BoopDevice.listening))) }
+        if talker == .app { fx.append(.reaction(Moment(anim: BoopDevice.listening))) }
         fx.append(.listen(true, by: talker))
     }
 
@@ -195,7 +195,7 @@ extension Core {
         }
         pushToTalk.mic = nil
         pushToTalk.replyUntil = nil
-        if stop { fx.append(.reaction(DeviceReaction(anim: BoopDevice.stopListening))) }
+        if stop { fx.append(.reaction(Moment(anim: BoopDevice.stopListening))) }
     }
 
     /// A `listen_start`, `listen_wait` or `listen_end` record: the core's,

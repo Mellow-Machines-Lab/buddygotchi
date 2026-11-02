@@ -28,18 +28,20 @@ def confirms(line: Line) -> Callable[[Line], bool]:
     """Which debug.jsonl line shows that a dev line landed."""
     if line["dev"] == "answer":
         return lambda o: kind(o) == "pass" and o["pass"].get("by") == "dashboard"
-    if line["dev"] == "close_day":
-        # The dream, logged at once; the night's write comes later.
+    if line["dev"] == "dream_now":
+        # The dream, logged at once; its write comes later.
         return lambda o: kind(o) == "event" and o["event"].get("kind") == "dream"
+    if line["dev"] == "dream_preview":
+        return lambda o: kind(o) == "dream_preview"
     return lambda o: (kind(o) == "event" and (a := action(o["event"])) is not None
                       and a["by"] == "dashboard" and a["name"] == "mood")
 
 
 def late_text(command: str) -> str:
     """What a command with nothing in debug.jsonl after CONFIRM_S says."""
-    if command == "close_day":
-        return (f"close_day: no dream within {CONFIRM_S:g} s: nobody was there today, today is dreamed of already, "
-                "or Boop isn't running with --debug (boop.log says which)")
+    if command == "dream_now":
+        return (f"dream_now: no dream within {CONFIRM_S:g} s: nothing new since the last dream, a dream still being "
+                "made, or Boop isn't running with --debug (boop.log says which)")
     return f"{command}: nothing in debug.jsonl within {CONFIRM_S:g} s. Is Boop running with --debug?"
 
 
@@ -85,7 +87,7 @@ def preview_state(latest: Line | None, look: str, mood: str | None = None) -> Li
 
 
 # What `react.move` picks at an event, as the device plays it: its
-# animation and a finish's outcome (ReactOutput.scenes).
+# animation and a finish's outcome (MomentOutput.scenes).
 SCENES = {"success": ("task_complete", "success"), "failure": ("task_complete", "failure"), "reply": ("reply_ready", None),
           "wake up": ("wake_up", None), "notice": ("notice", None)}
 
@@ -102,3 +104,25 @@ def preview_reaction(face: str, take: str | None, loops: int = 1, move: str | No
     if outcome:
         args["outcome"] = outcome
     return do(name, **args)
+
+
+def preview_text(p: Line) -> str:
+    """A dream's preview (`D`) in words: the dream, the writer's edits and
+    refusals, and memory.md before and after as a diff. Nothing of it was
+    kept."""
+    import difflib
+    out = ["Nothing was kept: no dream, no checkpoint moved, memory.md as it was.", ""]
+    d = p.get("dream")
+    if not d:
+        return "\n".join(out + ["Nothing new since the last dream: no dream to make."])
+    out += [f"The dream, about {d.get('about', '?')} ({d.get('range', '?')}):", f"  {d.get('sentence', '?')}",
+            f"  tags: {', '.join(d.get('tags') or []) or 'none'}   board: {d.get('fact', '')}", ""]
+    e = p.get("edits")
+    if e is None:
+        return "\n".join(out + ["No writer on this Mac (Apple Intelligence off or missing): the dream alone."])
+    for k in ("kept", "updated", "added", "dropped", "aged"):
+        out.append(f"{k}: {', '.join(e.get(k) or []) or 'none'}")
+    out += ["refused:"] + ([f"  {r['line']}  ({r['why']})" for r in e.get("refused") or []] or ["  none"]) + ["", "memory.md:"]
+    diff = difflib.unified_diff((p.get("before") or "").splitlines(), (p.get("after") or "").splitlines(),
+                                "before", "after", lineterm="")
+    return "\n".join(out + (list(diff) or ["  no change"]))

@@ -70,8 +70,8 @@ final class RuntimeTests: XCTestCase {
             runtime.device(FakeTransport.hello)
             let pending = Pending()
             pending.bind { ends.append($0) }
-            runtime.queue(DeviceReaction(anim: "task_complete", mood: "happy", loops: 2, outcome: "success"), pending)
-            runtime.playRule(DeviceReaction(anim: "starting"))
+            runtime.queue(Moment(anim: "task_complete", mood: "happy", loops: 2, outcome: "success"), pending)
+            runtime.playRule(Moment(anim: "starting"))
             runtime.link.tick(now: runtime.options.clock() + DeviceLink.keepaliveMs)
             XCTAssertEqual(mirrored, Array(transport.sent.dropFirst(before)), "the board's lines, each as sent")
             XCTAssertEqual(transport.dos.count, 2)
@@ -93,7 +93,7 @@ final class RuntimeTests: XCTestCase {
     func testEveryHelloGetsTheMoodItself() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
-        let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
+        let logical = StateSnapshot(doing: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
         let gelHello = FakeTransport.hello.dropLast() + #","face":"gel"}"#
         runtime.home.sync {
             runtime.show(logical)
@@ -656,7 +656,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(heads[0].contains(opening("calm")), "the first pass read calm")
         XCTAssertTrue(heads[1].contains(opening("engaged")), "the next reads the new mood's file")
         XCTAssertTrue(Take.all.contains { $0.meaning == "work" && $0.moods.contains("grumpy")
-                          && passes()[1].contains(#"\#(Self.name) made a grumpy face (small), and said \"\#($0.text)\"."#) },
+                          && passes()[1].contains(#"\#(Self.name) had a grumpy moment (small), and said \"\#($0.text)\"."#) },
                       "HISTORY shows what the outputs did")
         XCTAssertFalse(lines.lock.withLock { lines.log.contains { $0.contains("PERSONALITY") } }, "the state stays out of boop.log")
     }
@@ -794,9 +794,9 @@ final class RuntimeTests: XCTestCase {
         let pass = try XCTUnwrap(printed.first { $0.hasPrefix("  pass scripted") })
         XCTAssertTrue(pass.contains("react.face excited 1.00"), pass)
         XCTAssertTrue(pass.contains("    │ You are the mind of \(creature)"), "the first state in full")
-        let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(Self.name) made an excited face (small)") }, "\(printed)")
+        let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(Self.name) had an excited moment (small)") }, "\(printed)")
         if !Take.all.isEmpty {  // a pack with a voice says a start take with it
-            let word = String(started.dropFirst("  … react: \(Self.name) made an excited face (small), and said \"".count).dropLast(2))
+            let word = String(started.dropFirst("  … react: \(Self.name) had an excited moment (small), and said \"".count).dropLast(2))
             XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "start" && $0.moods.contains("excited") }, "a start take: \(word)")
         }
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
@@ -1058,7 +1058,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         let thread = ThreadRef(agent: "claude", session: "s1", app: HostApp.claude, appSession: "local_7db5")
-        runtime.cheer(DeviceReaction.Who(agent: "claude", thread: "jetpack", opens: thread))
+        runtime.cheer(Moment.Who(agent: "claude", thread: "jetpack", opens: thread))
         eventually("the cheer") { transport.dos("task_complete").count == 1 }
         let cheer = transport.dos("task_complete")[0]
         XCTAssertTrue(cheer.contains(#""who":{"agent":"claude","thread":"jetpack"}"#), cheer)
@@ -1104,14 +1104,14 @@ final class RuntimeTests: XCTestCase {
                        ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying calm, then calm's moves")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
-        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.")
+        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.")
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
-        XCTAssertEqual(none["what"] as? String, "Stay quiet: nothing in NOW is worth a face, "
-                       + "or HISTORY shows \(Self.name) still making the one it calls for, about the same thing (in progress).")
-        XCTAssertEqual(none["not_for"] as? String, "Something new said to \(Self.name), which always gets a face of its own, even while one plays; "
-                       + "a turn that finished done or failed, which always gets a face and its finish; "
-                       + "or anything PERSONALITY's Examples react to that \(Self.name) isn't already doing.")
+        XCTAssertEqual(none["what"] as? String, "Stay quiet: nothing in NOW is worth a moment, "
+                       + "or HISTORY shows \(Self.name) still having the one it calls for, about the same thing (in progress).")
+        XCTAssertEqual(none["not_for"] as? String, "Something new said to \(Self.name), which always gets a moment of its own, even while one plays; "
+                       + "a turn that finished done or failed, which always gets a moment and its finish; "
+                       + "or anything PERSONALITY reacts to that \(Self.name) isn't already doing.")
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
         // Sent: every line the link sent, verbatim and in order, and by whom.
@@ -1233,7 +1233,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual((pass["answers"] as? [String: [String: Any]])?["react.face"]?["p"] as? [String: Double], ["grumpy": 1])
         let actions = debugActions().filter { $0.actionPhase != .end && $0["by"] == "dashboard" }
         let worked = try XCTUnwrap(actions.first?["message"]?.string)
-        XCTAssertTrue(Take.all.contains { worked == "\(Self.name) made a grumpy face (small), and said \"\($0.text)\"." && $0.meaning == "work"
+        XCTAssertTrue(Take.all.contains { worked == "\(Self.name) had a grumpy moment (small), and said \"\($0.text)\"." && $0.meaning == "work"
             && $0.moods.contains("grumpy") }, worked)
         XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(Self.name)'s mood changed: calm → grumpy.",
                                                               "\(Self.name)'s mood changed: grumpy → happy.",
@@ -1253,13 +1253,14 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours["happy"]!.all])
     }
 
-    /// `{"dev":"close_day"}`, the dashboard's `d`: Boop's day closes now,
-    /// as at 5:00, with its dream logged at once for the next coming back
-    /// or touch to tell, and the day opened afresh; a day dreamed of
-    /// already keeps its dream. The status line carries what CONTEXT
+    /// `{"dev":"dream_now"}`, the dashboard's `d`: Boop dreams now of
+    /// everything since the last dream, the dream logged at once for the
+    /// next coming back or touch to tell; with nothing new since, no dream.
+    /// `{"dev":"dream_preview"}`, its `D`: one `dream_preview` line in
+    /// debug.jsonl and nothing else. The status line carries what CONTEXT
     /// lacks: the XP, today's from each pool against its cap
     /// (`Growth.workPerDay`, `carePerDay`).
-    func testClosingTheDayNowDreams() throws {
+    func testDreamingNowAndItsPreview() throws {
         let transport = FakeTransport()
         var options = try options(transport, readJevKey: { _ in nil })
         options.debug = true
@@ -1269,25 +1270,28 @@ final class RuntimeTests: XCTestCase {
         connect(transport, runtime)
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         dev(#"{"dev":"tap"}"#)
-        eventually("the tap read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
-        let today = try XCTUnwrap(runtime.home.sync { runtime.remembers?.runner.day })
+        eventually("the tap read") { runtime.home.sync { runtime.remembers?.span?.new } == true }
         let dreams = { self.debugLines().compactMap { $0["event"] as? [String: Any] }.filter { $0["kind"] as? String == "dream" } }
 
-        dev(#"{"dev":"close_day"}"#)
+        dev(#"{"dev":"dream_preview"}"#)
+        eventually("the preview's line") { self.debugLines().contains { $0["dream_preview"] != nil } }
+        let preview = try XCTUnwrap(debugLines().compactMap { $0["dream_preview"] as? [String: Any] }.last)
+        XCTAssertNotNil(preview["dream"] as? [String: Any])
+        XCTAssertEqual(dreams().count, 0, "the preview dreams nothing")
+        XCTAssertTrue(runtime.home.sync { runtime.remembers?.span?.new } == true, "nor moves the checkpoint")
+
+        dev(#"{"dev":"dream_now"}"#)
         eventually("the dream, logged at once") { dreams().count == 1 }
-        XCTAssertEqual((dreams().first?["data"] as? [String: Any])?["day"] as? String, today)
-        XCTAssertEqual(runtime.home.sync { runtime.remembers?.dream?.day }, today)
-        XCTAssertEqual(runtime.home.sync { runtime.remembers?.runner.day }, today, "the same day, opened afresh")
-        XCTAssertEqual(runtime.home.sync { runtime.remembers?.today?.yours }, 0)
+        let day = try XCTUnwrap((dreams().first?["data"] as? [String: Any])?["day"] as? String)
+        XCTAssertEqual(runtime.home.sync { runtime.remembers?.dream?.day }, day)
+        XCTAssertTrue(runtime.home.sync { runtime.remembers?.span?.new } == false, "the span starts again")
+        dev(#"{"dev":"dream_now"}"#)
         dev(#"{"dev":"tap"}"#)
         eventually("the next touch tells it") {
-            self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == today }
+            self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == day }
         }
+        XCTAssertEqual(dreams().count, 1, "nothing new since: no second dream")
         XCTAssertTrue(runtime.home.sync { runtime.remembers?.dream?.told } == true)
-        dev(#"{"dev":"close_day"}"#)
-        dev(#"{"dev":"tap"}"#)
-        eventually("the dev lines after it read") { runtime.home.sync { runtime.remembers?.today?.yours ?? 0 } > 0 }
-        XCTAssertEqual(dreams().count, 1, "a day dreamed of keeps its dream")
 
         let status = try XCTUnwrap(debugLines().compactMap { $0["status"] as? [String: Any] }.last)
         XCTAssertNotNil(status["xp"] as? Int)
@@ -1301,9 +1305,9 @@ final class RuntimeTests: XCTestCase {
     /// against its cap and the mood's reason, which the dashboard shows
     /// beside CONTEXT; a line only when something changed.
     func testTheStatusLineCarriesWhatContextLacks() throws {
-        var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(base: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
+        var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(doing: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
                                     sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234))
-        status.moodReason = Reason(cause: "You came back after 26 hours away.")
+        status.moodReason = Narration(cause: "You came back after 26 hours away.")
         var today = MemoryReader.Tallies()
         today.workXP = 12
         today.careXP = 6
@@ -1474,17 +1478,17 @@ final class RuntimeTests: XCTestCase {
                                + ["personality.md", "replies.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.dreams.count, 10, "a sign for every kind of day")
-        let boop = Personality.Rules(workBeatMs: 240_000...360_000, idleBeatMs: 900_000...1_800_000)
+        let boop = Personality.Rules(workCheckInMs: 240_000...360_000, idleCheckInMs: 900_000...1_800_000)
         XCTAssertEqual(Self.steering.personality.rules, boop)
         XCTAssertEqual(Self.steering.rules(talk: .normal), boop, "normal keeps the personality's pace")
         // Quiet looks in less often, chatty more; neither hears every tool use.
         XCTAssertEqual(Self.steering.rules(talk: .quiet),
-                       Personality.Rules(workBeatMs: 480_000...720_000, idleBeatMs: 1_800_000...3_600_000))
+                       Personality.Rules(workCheckInMs: 480_000...720_000, idleCheckInMs: 1_800_000...3_600_000))
         XCTAssertEqual(Self.steering.rules(talk: .chatty),
-                       Personality.Rules(workBeatMs: 120_000...180_000, idleBeatMs: 600_000...900_000))
-        XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleBeatMs, "no idle check-ins unless a personality asks")
-        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleBeatMs)
-        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleBeatMs, "unreadable keeps the default")
+                       Personality.Rules(workCheckInMs: 120_000...180_000, idleCheckInMs: 600_000...900_000))
+        XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleCheckInMs, "no idle check-ins unless a personality asks")
+        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleCheckInMs)
+        XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleCheckInMs, "unreadable keeps the default")
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
         XCTAssertTrue(Self.steering.personality.text.hasPrefix("PERSONALITY\n"))
         XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
@@ -1559,7 +1563,7 @@ final class RuntimeTests: XCTestCase {
         eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal } }
         runtime.setTalk(.chatty)
         eventually("chatty now") { runtime.home.sync { statuses.last?.talk == .chatty } }
-        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workBeatMs }, 120_000...180_000)
+        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workCheckInMs }, 120_000...180_000)
         XCTAssertEqual(AppSettings.load(from: dir).talk, .chatty)
     }
 
@@ -1786,7 +1790,7 @@ final class RuntimeTests: XCTestCase {
     /// in HISTORY: wounded's 14.3 s of nodding off, held four times, is
     /// 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
-        let held = Int64(ReactOutput.sizes.map(\.loops).max() ?? 0)
+        let held = Int64(MomentOutput.sizes.map(\.loops).max() ?? 0)
         let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../characters/pixel/firmware/include").standardizedFileURL
         func longest(_ file: String, _ start: String, _ pattern: String) throws -> Int64 {
@@ -1810,7 +1814,7 @@ final class RuntimeTests: XCTestCase {
         let longestPlay = max(held * longestLoop, latestVoice + longestLine + bubbleRead)
         XCTAssertGreaterThan(longestPlay, 30_000)
         XCTAssertLessThan(longestPlay, DeviceLink.answerGraceMs)
-        XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, ReactOutput.openForMs)
+        XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, MomentOutput.openForMs)
     }
 
     /// The rules' reaction goes to the device right
@@ -1906,7 +1910,7 @@ final class RuntimeTests: XCTestCase {
         var ends: [Pending.End] = []
         let pending = Pending()
         pending.bind { ends.append($0) }
-        runtime.home.sync { runtime.queue(DeviceReaction(say: .test(ms: 100), mood: "sad"), pending) }
+        runtime.home.sync { runtime.queue(Moment(say: .test(ms: 100), mood: "sad"), pending) }
         XCTAssertEqual(transport.dos("react").count, 1)
         clock.now += 70_000  // the clock jumps
         runtime.home.sync { runtime.tick() }
@@ -1944,7 +1948,7 @@ final class RuntimeTests: XCTestCase {
         let pending = Pending()
         pending.bind { ends.append($0) }
         runtime.home.sync {
-            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud",
+            runtime.queue(Moment(anim: "task_complete", say: .init(takes: []), mood: "proud",
                                        who: .init(agent: "claude", thread: "jetpack", opens: thread), outcome: "success"), pending)
         }
         let id = FakeTransport.id(try XCTUnwrap(transport.dos("task_complete").first))
@@ -2337,7 +2341,7 @@ final class RuntimeTests: XCTestCase {
                 .map { "\($0.specificType) \($0["source"]?.string ?? "")" }
         }
         XCTAssertEqual(starts, ["SessionStart startup", agent == "claude" ? "SessionStart compact" : "PostCompact compact"], agent)
-        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).base }, "working",
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).doing }, "working",
                        "\(agent): the turn goes on")
     }
 

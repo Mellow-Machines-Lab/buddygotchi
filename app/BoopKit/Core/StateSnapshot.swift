@@ -29,6 +29,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// of 16 on the screen.
     public static let maxNameBytes = 23
     public static let maxSignBytes = 47
+    /// A finish's thread (`who.thread`): what the gel's low sign holds on
+    /// two lines, and the device keeps in a field of 52 bytes.
+    public static let maxThreadBytes = 50
 
     /// `text` precomposed (NFC) and cut to at most `max` bytes of UTF-8, on
     /// a character boundary. Finder names folders decomposed (e and
@@ -118,12 +121,13 @@ public struct StateSnapshot: Equatable, Sendable {
         return word > 0 && 2 * word >= most ? word : solid
     }
 
-    /// `asleep`, `idle` or `working`.
-    public var base: String
-    /// What the agents are doing, one of `Act`'s names, only while `base`
-    /// is `working` and nothing needs you: the look shows it in working's
-    /// place. Nil sends none.
-    public var act: String?
+    /// What Boop is busy with, `asleep`, `idle` or `working`: the wire's
+    /// `base`.
+    public var doing: String
+    /// How the agents are working, one of `Act`'s names, only while
+    /// `doing` is `working` and nothing needs you: the look shows it in
+    /// working's place. Nil sends none. The wire's `act`.
+    public var activity: String?
     /// Boop's mood, one of the pack's moods, which
     /// picks the set of faces the device draws everything in.
     public var mood: String
@@ -135,7 +139,7 @@ public struct StateSnapshot: Equatable, Sendable {
     /// Helpers (subagents) working, over every session.
     public var helpers: Int
     public var vol: Int
-    /// What's true now (`Occasions`): the part of the day, a holiday, how
+    /// What's true now (`Tags`): the part of the day, a holiday, how
     /// busy the agents are. The device shows the designs whose tags are
     /// all on, and picks each look's variation itself.
     public var when: [String]
@@ -164,6 +168,11 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The to-do list of the longest turn working that has one, while
     /// nothing needs you; nil sends none.
     public var todo: Todo?
+    /// The wish waiting, by its kind, while its wait counts: the board
+    /// shows its icon then, and times nothing.
+    public var wish: String?
+    /// Whether the wish shows how, its icon moving: until you've met one of its kind.
+    public var wishHow = false
 
     /// A working session's lane in the work stream (`WorkStream`): its
     /// slot, which picks its column and colour on the board, how many
@@ -184,6 +193,25 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The lanes, while the agents work and nothing needs you; none sends
     /// none.
     public var calls: [Call]
+
+    /// The work act running or its result (`WorkStream.Act`): which, what its
+    /// sign says, whether it plays fully, and how it ended, `p` or `f`.
+    public struct WorkAct: Equatable, Sendable {
+        public var kind: String
+        public var words: String
+        public var full: Bool
+        public var result: String?
+
+        public init(kind: String, words: String, full: Bool, result: String? = nil) {
+            self.kind = kind
+            self.words = words
+            self.full = full
+            self.result = result
+        }
+    }
+
+    /// The act, while nothing else holds the screen.
+    public var workAct: WorkAct?
 
     /// One session in the board's agents' drawer: its number there, the one
     /// a tap on its row sends back (`ev drawer` `pick`), whether it needs
@@ -222,11 +250,11 @@ public struct StateSnapshot: Equatable, Sendable {
     /// board's fields hold them.
     public static let maxTitleBytes = 30, maxProjectBytes = 22
 
-    public init(base: String, act: String? = nil, mood: String, attn: Attention?, working: Int, idle: Int = 0, helpers: Int = 0,
+    public init(doing: String, activity: String? = nil, mood: String, attn: Attention?, working: Int, idle: Int = 0, helpers: Int = 0,
                 vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
                 skip: Int = 0, unlisted: Int = 0) {
-        self.base = base
-        self.act = act
+        self.doing = doing
+        self.activity = activity
         self.mood = mood
         self.attn = attn
         self.working = working
@@ -242,8 +270,8 @@ public struct StateSnapshot: Equatable, Sendable {
     }
 
     /// The look the device shows when nothing needs you: what the agents
-    /// are doing, else the base.
-    public var look: String { act ?? base }
+    /// are doing, else what Boop is.
+    public var look: String { activity ?? doing }
 
     /// The visual the device shows for it: needs you's while something
     /// does, else the look.
@@ -256,8 +284,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The message's fields after its `t`, in the protocol's order: the
     /// app's part of LinkKit's `state` (linkkit/SPEC.md §3).
     public var fields: JSONObject {
-        var fields: JSONObject = ["base": .string(base)]
-        if let act { fields["act"] = .string(act) }
+        var fields: JSONObject = ["base": .string(doing)]
+        if let activity { fields["act"] = .string(activity) }
         fields["mood"] = .string(mood)
         if let attn {
             var a: JSONObject = ["agent": .string(attn.agent), "project": .string(attn.project)]
@@ -270,11 +298,18 @@ public struct StateSnapshot: Equatable, Sendable {
         if idle > 0 { fields["idle"] = .int(idle) }
         if helpers > 0 { fields["helpers"] = .int(helpers) }
         fields["vol"] = .int(vol)
-        let tags = when.filter(Occasions.board.contains)  // the tags the board reads
+        let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
+        if let wish { fields["wish"] = .string(wish) }
+        if wishHow { fields["wish_how"] = true }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
+        }
+        if let workAct {
+            var wact: [JSONObject.Value] = [.string(workAct.kind), .string(workAct.words), .int(workAct.full ? 1 : 0)]
+            if let result = workAct.result { wact.append(.string(result)) }
+            fields["wact"] = .array(wact)
         }
         if let list {
             fields["list"] = .array(list.map {

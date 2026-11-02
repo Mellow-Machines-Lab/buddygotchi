@@ -13,7 +13,7 @@ public enum MemoryEdits {
     public struct Report: Equatable, Sendable {
         public var kept: [Int] = [], updated: [Int] = [], added: [Int] = [], dropped: [Int] = [], aged: [Int] = []
         public var refused: [Refused] = []
-        /// Whether the reply gave yesterday's line for Recently.
+        /// Whether the reply gave the dream's line for Recently.
         public var day = false
 
         public struct Refused: Equatable, Sendable {

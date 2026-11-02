@@ -1,8 +1,36 @@
 # TODO
 
-Updated 2026-11-01. What's next, one at a time, top first. Tick an item
+Updated 2026-11-02. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Morning report, the night of 2026-11-01
+
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01/`.
+
+**Landed:** the eval levels and daily limit; must and feel evals with a judge; the prompt cut to level A; the rest of the wish; every lock and unlock reaching Jev; idle check-ins with no agents; no plug on a Boop already asleep; any brief touch on a finish opens its thread; the finish's low sign; the falling word and three work acts; the memory pane; alive without the Mac.
+
+**Not landed:** growth. It's on branch `growth`, with its pack commits in the clones under `.claude/worktrees/growth`: keep that worktree. The core and body work are done and tested with no board. It predates the cleanup and review fixes, and it changes existing users' stages (Chonk starts at 5,000, and the old saved stage is ignored). Look at `frames-growth/` and try it on the board first.
+
+**The prompt: level A, about 4,800 tokens, down from about 6,800.** Tags `prompt-level-A`, `-B` and `-C` keep the others.
+
+| Level | Tokens | Musts | Judge: reasonable, odd, unreasonable | Mood moves | Passes with a moment |
+| --- | --- | --- | --- | --- | --- |
+| A | 4,800 | 18/18 | 67, 15, 9 | 235 | 85% |
+| B | 3,140 | 10/18 | 64, 17, 10 | 149 | 84% |
+| C | 2,100 | 8/18 | 50, 26, 15 | 144 | 68% |
+
+A is the only level that holds the musts, and it keeps moods fluid. B's judged feel is close to A's, so B's musts are the question if the prompt must go lower: they mostly failed on replies, hush and Talk. At C, pokes made Boop happier and strokes stopped lifting its mood. No must rule was moved into code.
+
+**Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) fails twice: the hush it picks is too small. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
+
+**Wishes:** no cap in code, as the owner said. A guideline alone gave no wish; one added line in the sign question gave one, in one Chatty run, at 39 min. Normal talk is unmeasured.
+
+**Jev requests:** 2,336 on Nov 1 and 283 on Nov 2 by the limit's count, which began partway through Nov 1 (before it, one full run of about 1,000 isn't counted).
+
+**Flag for the owner:** `make eval` is refused without `BOOP_JEV_OVER_LIMIT=1`, so the bare command never runs. That's what was asked, but it's a surprise: `boopdev eval --level standard` is the merge check.
+
+**Choices to overrule if you disagree:** a ruffle also meets a pet wish. A wish may come while Boop is asleep only for having no agents. The plug no longer stays up after a touch: Boop sleeps again after 5 minutes. Chat is offered only once push-to-talk works. Jev rarely speaks over an act from a calm mood, and I didn't push it.
 
 ## Now: the simplify branch, on the board (2026-11-01)
 
@@ -13,6 +41,39 @@ at after `make flash` and a new voice on the card (the report of
 - [ ] Pastimes still come by tier; a yawn or sneeze from `tier1`; busy typing still speeds up.
 - [ ] Free heap at boot is about 76.8 KB higher than before.
 - [ ] The voice plays once the card has the new `voice.bin` (`353ddadc006b`).
+
+## Owed on the board, from the night of 2026-11-01
+
+From the plans that were finished and deleted, for the owner, after
+`make flash`:
+- [ ] Work acts: the look and the frame rate of the push, the tests and the build, full and small.
+- [ ] A finish's low sign: can you read the thread's name at arm's length, and does a cheer still read?
+- [ ] A tap on a finish: the face, the rim and the strip during a finish each open the thread.
+- [ ] A lock and an unlock: a wave, a snub or the nap; a Boop asleep when the Mac goes quiet stays asleep with no plug until you touch it.
+- [ ] Alive without the Mac: it breathes, sleeps, answers a poke or a stroke in its last mood, and gives a small hello when the Mac returns.
+- [ ] The wish's bubble: its place beside the head, its how, the heart popping; none during a full act or with no Mac.
+
+## Now: from the night's review (2026-11-02)
+
+- [ ] A dream's write can be lost if the writer fails (`Memory.swift`, `dream()`).
+- [ ] Several buddies don't replay an away (`Pipeline.readBack`).
+- [ ] The Pixel wish's text (`screens.h:48`, `sameModel`).
+- [ ] A `Measure` around `paintActFront`, for the board's frame rate check.
+- [ ] **For the owner:** `make eval` refuses without the override, so your bare command never runs.
+- [ ] Stale `ReactOutput` mentions in SlimeBuddy's asks' and replies' comments.
+- [ ] Remove the dead lost-link path.
+- [ ] Acts: wall caching and a frame cap.
+- [ ] Unify the acts' timing.
+- [ ] The idle `tower` pastime is hard to read.
+- [ ] The takes "We pushing!", "shipped!" and "built it!" aren't recorded: until then Jev has the voice's existing words.
+- [ ] Jev rarely speaks over an act from a calm mood.
+- [ ] The duplicated memory cards on the Overview ("What Boop remembers", "Recently") and the Memory pane: whether they move is the owner's call.
+- [ ] Eval Level A's 7 confirmed unreasonable runs: 11, 19, 47, 90, 91, 96, 140.
+- [ ] No standard eval run since items 2 to 10 of the night.
+- [ ] Pixel Bro's clone fails `boopdev check`: `personality.md` is missing.
+- [ ] A chat wish already open when you take back the mic's authorization still waits and can give up: nothing rechecks it.
+- [ ] A wish can give up while you're idle, before the away is noticed: the away takes back the wait, but not a give-up already played.
+- [ ] A wish's wait read back on launch counts time a needs-you or a doze held, and time Boop wasn't running between two events of the same day: the transcript has no launch marker, and the wait isn't recorded until its end.
 
 ## Now: left by the finished plans (2026-11-01)
 
@@ -277,3 +338,45 @@ session, Bluetooth and the boards can show.
       113 × 92 (2026-10-24, the simulator's `BOOP_SIM_NATIVE`), the
       slime, desk and needs-you plate scale, but the lane's text, dots
       and sign come out several times too big and run off the panel.
+
+## The five repositories: a recommendation (investigated 2026-11-01, nothing changed)
+
+**How it is.** The engine fetches the packs it's tested with from
+`characters/packs.json`, at each pack's `main`, into `characters/.repos/`.
+Each pack in turn pins the engine as `engine/`, a submodule, and its
+`Makefile` runs every target through it (`make setup` links the pack in
+and chooses it). A pack's CI checks it against its pinned engine; the
+engine's checks run against the packs' `main`. A change that spans both
+lands pack first (or the engine's checks fail), but the pack's CI runs
+against the old pin until the engine is pushed and bumped: each such
+change is three commits in two repositories, and for a while one side's
+checks are red. The gel's engine (`render/gel/`) is the pack's own C++,
+so most slime work is exactly such a change.
+
+**Can the packs drop `engine/`?** Who builds a pack on its own: its CI,
+and a contributor who clones only SlimeBuddy or PixelBuddy and runs
+`make flash` or `make dev`. Buyers never do: they get Boop.app with its
+packs inside. Both need *an* engine at a known commit, not a submodule.
+Recommendation: yes, replace the submodule with a pinned commit in the
+pack (`character.json`'s `engine`, or one line in `Makefile`) that
+`make setup` clones into an ignored `.engine/`. The same reproducibility,
+no gitlink to bump by hand, no nested submodules (the engine's own two)
+inside a submodule, and a pack clone needs no `--recurse-submodules`.
+
+**What would make cross-repo changes lighter**, in order of payoff:
+1. *Bring the two first-party packs back in as folders* (`characters/boop`,
+   `characters/pixel`): one commit per change, one CI, no bump dance.
+   Keep SlimeBuddy and PixelBuddy as their public faces, published from
+   those folders by `git subtree split` on release. Pixel Bro and any
+   third-party pack stay outside, on a pinned engine. This undoes the
+   split of 2026-10-26, so it's the owner's call; it's the only option
+   that removes the problem rather than easing it.
+2. Short of that, *pin the packs in the engine too*: `packs.json` names
+   each pack's commit, not `main`, and `packs.py --bump` moves them. The
+   engine's checks are then reproducible, and a cross-repo change is:
+   the pack's branch pushed, the engine's commit pinning it, the pack's
+   pin moved by a script, with neither side red in between.
+3. A `boopctl` command that starts one branch name in the engine and
+   both packs, runs `make -C internal check` across them, and prints the
+   pushes in order (package, engine, packs), so the order is a tool's,
+   not a person's memory.

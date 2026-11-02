@@ -211,7 +211,7 @@ private struct PlugIn: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            OnboardingBuddy(model: model, snapshot: .onboarding(base: "asleep", mood: "comfy"), size: 150, face: .asleep)
+            OnboardingBuddy(model: model, snapshot: .onboarding(doing: "asleep", mood: "comfy"), size: 150, face: .asleep)
                 .overlay(alignment: .topTrailing) {
                     Text("z z")
                         .font(.boop(18, .heavy))

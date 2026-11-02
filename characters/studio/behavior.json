@@ -11,8 +11,8 @@
                 {"what": "an event is answered only within", "in": "mellowharness/Sources/MellowHarness/Harness.swift", "name": "maxWaitMs", "unit": "ms"},
                 {"what": "HISTORY reaches back", "in": "mellowharness/Sources/MellowHarness/Harness.swift", "name": "historyMs", "unit": "ms"},
                 {"what": "HISTORY holds at most", "in": "mellowharness/Sources/MellowHarness/Harness.swift", "name": "historyLimit", "unit": "count"},
-                {"what": "a reaction counts as playing for at most", "in": "app/BoopKit/Outputs/ReactOutput.swift", "name": "openForMs", "unit": "ms"},
-                {"what": "it speaks only when sure of the words to", "in": "app/BoopKit/Outputs/ReactOutput.swift", "name": "sayFloor", "unit": "share"},
+                {"what": "a reaction counts as playing for at most", "in": "app/BoopKit/Outputs/MomentOutput.swift", "name": "openForMs", "unit": "ms"},
+                {"what": "it speaks only when sure of the words to", "in": "app/BoopKit/Outputs/MomentOutput.swift", "name": "sayFloor", "unit": "share"},
                 {"what": "buddies answer each other at most", "in": "app/BoopKit/Buddies/Buddy.swift", "name": "maxRepliesInARow", "unit": "count"}]
   },
   "layers": [
@@ -66,22 +66,21 @@
       {"id": "long-turn", "when": "A turn runs long",
        "decides": ["rule", "board"], "plays": ["working"],
        "does": "The Mac adds the tier the agents' working stretch has reached, tier1 to tier5 (a quick reply carries the stretch on); the gel settles into the tier's calm base, puts out its kit (headphones it puts on first) and plays the tier's pastimes, after a rest, the newest tier's most often, a move (the coffee reach, the melt, the stretch break) never soon after the last; both faces stretch from tier4.",
-       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
-                   {"what": "tier5 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"},
+       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
+                   {"what": "tier5 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"},
                    {"what": "rest at least", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kRestMinMs", "unit": "ms"},
                    {"what": "rest at most", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kRestMaxMs", "unit": "ms"},
                    {"what": "the newest tier's", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kNewestPct", "unit": "%"},
                    {"what": "a move at most every", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kMoveGapMs", "unit": "ms"}]},
       {"id": "stream", "when": "Each tool call (the work stream)",
        "decides": ["rule", "board"], "plays": [],
-       "does": "The call's word falls past the face. The Mac picks one at a time to come forward as a gag: a turn's first call, a check starting, a helper, a big edit, a combo, a failure's bonk, a check's PASS or FAIL, the turn's end (gathered, buried, frozen, dropped). The board draws the rest. The brain hears only the bonks and timeouts, on its next line.",
+       "does": "The call's word falls behind the face: that's most calls. The Mac picks one at a time to come forward in a style of its own: a helper, a big edit, a failure's bonk, the turn's end (gathered, buried, frozen, dropped). Tests, a build, a push, a deploy or a pull request are a work act instead: a scene and a low sign by rule, for as long as it runs, the full one first in a while, and Jev's voice over it. The board draws the rest. The brain hears only the bonks and timeouts, on its next line, and a full act's start and end.",
        "numbers": [{"what": "a word shows", "in": "app/BoopKit/Core/WorkStream.swift", "name": "showMs", "unit": "ms"},
-                   {"what": "ordinary calls at most every", "in": "app/BoopKit/Core/WorkStream.swift", "name": "ambientGapMs", "unit": "ms"},
-                   {"what": "the same word again after", "in": "app/BoopKit/Core/WorkStream.swift", "name": "sameWordGapMs", "unit": "ms"},
+                   {"what": "a full act at most every", "in": "app/BoopKit/Core/WorkStream.swift", "name": "fullEveryMs", "unit": "ms"},
                    {"what": "lanes", "in": "app/BoopKit/Core/WorkStream.swift", "name": "maxLanes", "unit": "count"}]},
       {"id": "tool-failed", "when": "A tool call fails",
        "decides": ["rule", "brain"], "plays": [],
-       "does": "No card: the failed call's word hits Boop in the work stream, harder for each failure within two minutes (bonk, bonk again, a helmet, throwing it back). A denial, a timeout and a lookup that found nothing have gags of their own. The third and fourth failures wake the brain, which may grunt or swear in its face; a stray one is only a bonk.",
+       "does": "No card: the failed call's word hits Boop in the work stream, harder for each failure within two minutes (bonk, bonk again, a helmet, throwing it back). A denial, a timeout and a lookup that found nothing have styles of their own. The third and fourth failures wake the brain, which may grunt or swear in its face; a stray one is only a bonk.",
        "brain": {"kinds": ["tool_end"], "note": "The ladder's third and fourth rungs, a check failing, or passing after failing, have a line."},
        "numbers": [{"what": "the bonks climb within", "in": "app/BoopKit/Core/WorkStream.swift", "name": "ladderMs", "unit": "ms"},
                    {"what": "the brain wakes from rung", "in": "app/BoopKit/Core/TranscriptView.swift", "find": "wakingRungs = (\\d+)\\.\\.\\.", "unit": "count"}],
@@ -122,9 +121,9 @@
       {"id": "rest-tiers", "when": "Agents rest a while",
        "decides": ["rule", "board"], "plays": ["idle"],
        "does": "The Mac adds the tier their rest has reached, tier1 to tier5, the same ladder as work's; the gel plays the tier's pastimes (a bubble, a book, a tower, counting sheep), grows its plant from tier3, and nods off at tier5.",
-       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
-                   {"what": "tier3 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier3\", ([0-9_ *]+)\\)", "unit": "ms"},
-                   {"what": "tier5 from", "in": "app/BoopKit/Core/Occasions.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"}]}
+       "numbers": [{"what": "tier1 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier1\", ([0-9_ *]+)\\)", "unit": "ms"},
+                   {"what": "tier3 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier3\", ([0-9_ *]+)\\)", "unit": "ms"},
+                   {"what": "tier5 from", "in": "app/BoopKit/Core/Tags.swift", "find": "\\(\"tier5\", ([0-9_ *]+)\\)", "unit": "ms"}]}
     ]},
     {"id": "you", "label": "You, at the Mac", "about": "What you write and say, and whether you're there.", "rows": [
       {"id": "prompt", "when": "Your prompt, read on the Mac",
@@ -192,16 +191,16 @@
        "brain": {"kinds": ["heartbeat"]},
        "setting": "idle_heartbeat",
        "numbers": [{"what": "only within", "in": "app/BoopKit/Core/TranscriptView.swift", "name": "idleWindowMs", "unit": "ms"},
-                   {"what": "else every", "in": "app/BoopKit/Core/TranscriptView.swift", "name": "heartbeatMs", "unit": "ms"}]},
+                   {"what": "else every", "in": "app/BoopKit/Core/TranscriptView.swift", "name": "hourlyMs", "unit": "ms"}]},
       {"id": "calendar", "when": "The time of day, the weekday, a holiday, a milestone day",
        "decides": ["rule", "board"], "plays": ["wake_up"],
-       "does": "The Mac sends the day's tags; the board dresses for them (a nightcap, shades on Friday, a witch's hat, snow) and picks the designs that need them. On a day with an occasion, the first agent's event of a launch wakes it holding up the day's sign (Happy Halloween!, Day 50!). The popover says why it's dressed as it is. The brain hears the day in NOW's heading."},
+       "does": "The Mac sends the day's tags; the board dresses for them (a nightcap, shades on Friday, a witch's hat, snow) and picks the designs that need them. On a special day, the first agent's event of a launch wakes it holding up the day's sign (Happy Halloween!, Day 50!). The popover says why it's dressed as it is. The brain hears the day in NOW's heading."},
       {"id": "mood", "when": "Any pass of the brain",
        "decides": ["brain"], "plays": [],
        "does": "The brain may move the mood to a neighbour on the pack's map (Moods). Every look is drawn in it at once. A mood fades only as its steering says; no timer does it."},
-      {"id": "dream", "when": "Boop's day closes at 5:00, and you next show up",
+      {"id": "dream", "when": "Boop dreams (asleep with no agent working for 20 minutes, after two days, or d), and you next show up",
        "decides": ["rule", "brain"], "plays": [],
-       "does": "The day's tallies close into a dream, with no brain. The first line that's yours after it (you coming back, a poke, a word, a prompt) tells it: the brain picks a sign for the day's tags, and the lane shows a few words of it."}
+       "does": "Everything since the last dream goes into a dream, with no brain, and the written memory is updated. The first line that's yours after it (you coming back, a poke, a word, a prompt) tells it: the brain picks a sign for the day's tags, and the lane shows a few words of it."}
     ]}
   ]
 }

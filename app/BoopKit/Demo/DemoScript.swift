@@ -448,10 +448,10 @@ extension DemoScript.Step {
 extension DemoScript {
     /// Each question a brain step may answer, and its choices in `pack`.
     public static func choices(in pack: CharacterPack = .active) -> [String: [String]] {
-        var offered = Dictionary(uniqueKeysWithValues: ReactOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
-        offered[ReactOutput.faceKey] = ["none"] + pack.faces.map(\.name)
+        var offered = Dictionary(uniqueKeysWithValues: MomentOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
+        offered[MomentOutput.emotionKey] = ["none"] + pack.faces.map(\.name)
         // What you said is answered with a reply for its move.
-        offered[ReactOutput.moveKey]? += ReactOutput.replies(of: pack.name).map(\.name) + ["unhush"]
+        offered[MomentOutput.moveKey]? += MomentOutput.replies(of: pack.name).map(\.name) + ["unhush"]
         return offered
     }
 
