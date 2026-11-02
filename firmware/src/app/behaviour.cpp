@@ -67,14 +67,14 @@ bool Behaviour::noApp(uint32_t t) const { return stale_ || int32_t(t - lastState
 // A Mac that goes to sleep is no news to a Boop already asleep: it sleeps on
 // with no plug, until a touch shows why nothing answers. Its model is the
 // last state, which nothing changes while the Mac is silent.
-bool Behaviour::sleptThrough(uint32_t t) const {
-  return noApp(t) && !touchedAlone_ && model_.base == render::SceneState::kAsleep && !model_.attn;
+bool Behaviour::sleptThrough() const {
+  return !touchedAlone_ && model_.base == render::SceneState::kAsleep && !model_.attn;
 }
 
 // Awake alone, Boop rests and the small plug says the Mac is gone. It falls
 // asleep on the board's own clock, and that sleep has no plug either: a
 // touch wakes it and shows it. So the plug is never on a sleeping Boop.
-bool Behaviour::sleepsOn(uint32_t t) const { return noApp(t) && (aloneAsleep_ || sleptThrough(t)); }
+bool Behaviour::sleepsOn(uint32_t t) const { return noApp(t) && (aloneAsleep_ || sleptThrough()); }
 
 bool Behaviour::reactionOn(uint32_t t) const {
   return reaction_.anim != render::SceneState::kNone && within(t, reaction_.at, reaction_.ms);
@@ -89,10 +89,6 @@ bool Behaviour::listening(uint32_t t) const {
 // waits for the reply, a tap only dips the face. With no app a stale needs
 // you holds nothing: a touch gets the board's own reaction.
 bool Behaviour::held(uint32_t t) const { return (model_.attn && !noApp(t)) || listening(t); }
-
-// Whether a reaction from the Mac's animation is skipped: as held(t), and
-// with no app, which never plays one.
-bool Behaviour::heldFromMac(uint32_t t) const { return noApp(t) || model_.attn || listening(t); }
 
 // Whether the face and sign of `in` are held at t: as held(t), but the
 // reply to what you said shows over needs you, as listening does.
@@ -268,7 +264,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     heard_ = true;
   });
   stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
-  stream_.setAct(m.workAct, m.attn || m.base == render::SceneState::kListening, t);
+  stream_.setAct(m.workAct, m.attn, t);
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;
@@ -297,30 +293,35 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 // The reply to what you said (`reply`, with a face) shows over needs you
 // too, as listening did: its face, its clip and its sign, but no `say`;
 // then the needs-you screen is back.
+// Which parts of `in` play at t. With no app no reaction from the Mac does.
+Behaviour::Parts Behaviour::partsOf(const ReactionIn& in, uint32_t t) const {
+  Parts p;
+  const bool listen = in.anim == render::SceneState::kListening;
+  p.anim = in.anim != render::SceneState::kNone && (listen || !(noApp(t) || held(t)));
+  p.say = in.take >= 0 && !model_.attn && !noApp(t);
+  p.face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
+  p.sign = in.sign[0] && !heldFrom(in, t);
+  return p;
+}
+
 const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   const bool listen = in.anim == render::SceneState::kListening;
   const bool wasListening = listening(t);
   if (wasListening && !listen && (in.said || in.empty)) change(t, [&] { reaction_.anim = render::SceneState::kNone; });
   if (in.empty) return wasListening ? nullptr : "not_listening";
   if (faceDown_ && !listen) return "facedown";  // do not disturb
-  bool anim = in.anim != render::SceneState::kNone && (listen || !heldFromMac(t));
-  bool say = in.take >= 0 && !model_.attn && !noApp(t);
-  bool face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
-  bool sign = in.sign[0] && !heldFrom(in, t);
-  if (anim || say || face || sign) return nullptr;
+  if (partsOf(in, t).any()) return nullptr;
   if (noApp(t)) return "no_app";
   if (listening(t)) return "listening";
   if (model_.attn) return "needs_you";
-  return "nothing";
+  return in.wishMet ? nullptr : "nothing";
 }
 
 bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   const bool listen = in.anim == render::SceneState::kListening;
-  bool anim = in.anim != render::SceneState::kNone && (listen || !heldFromMac(t));
-  bool say = in.take >= 0 && !model_.attn && !noApp(t);
-  bool face = in.expr && !heldFrom(in, t);
-  bool sign = in.sign[0] && !heldFrom(in, t);
-  if (!anim && !say && !face && !sign) return false;  // stop_listening: admit did it all
+  const Parts parts = partsOf(in, t);
+  const bool anim = parts.anim, say = parts.say, face = parts.face, sign = parts.sign;
+  if (!parts.any()) return false;  // stop_listening: admit did it all
   change(t, [&] {
     // A newer reaction ends the ask that's up, unanswered.
     if (ask_.q[0]) endAsk("ignored", t);
@@ -578,14 +579,19 @@ Behaviour::Source Behaviour::sourceAt(uint32_t t) const {
 render::FaceContext Behaviour::contextAt(uint32_t t) const {
   render::FaceContext c;
   c.mood = model_.mood;
+  c.look = model_.look();
+  c.working = model_.base == render::SceneState::kWorking;
+  c.mayVary = !held(t) && !reactionOn(t) && !exprOn(t);
+  c.base = model_.base;
+  c.act = model_.act;
+  c.attention = model_.attn;
+  c.borrowed = exprOn(t);
   const bool alone = noApp(t);
-  c.look = alone ? look(t) : model_.look();
-  c.working = !alone && model_.base == render::SceneState::kWorking;
-  c.mayVary = !alone && !held(t) && !reactionOn(t) && !exprOn(t);
-  c.base = alone ? look(t) : model_.base;
-  c.act = alone ? render::FaceContext{}.act : model_.act;
-  c.attention = !alone && model_.attn;
-  c.borrowed = !alone && exprOn(t);
+  if (alone) {
+    c.look = c.base = look(t);
+    c.working = c.mayVary = c.attention = c.borrowed = false;
+    c.act = render::FaceContext{}.act;
+  }
   if (c.borrowed) c.reply = exprReply_, c.replyAt = exprAt_;
   c.attentionId = model_.attnId;
   c.agent = model_.agent;
@@ -594,7 +600,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.more = model_.more;
   // With no app the Mac's tags are stale: a night's or a holiday's would
   // stay up all the next day.
-  c.when = alone && !sleptThrough(t) ? 0 : model_.when;
+  c.when = alone && !sleptThrough() ? 0 : model_.when;
   c.lookMs = t - lookAt_;
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
