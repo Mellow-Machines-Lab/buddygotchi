@@ -236,7 +236,7 @@ final class ViewTests: XCTestCase {
     /// The view lets late hooks go as the
     /// core does (`SessionFold`). Claude's idle notice within 30 s of a
     /// prompt ends no turn; a call's result that lands after its turn
-    /// stopped opens none, so no working heartbeat comes; and a session
+    /// stopped opens none, so no working check-in comes; and a session
     /// that ended isn't back until it starts again.
     func testLateHooksAreLetGoAsTheCoreLetsThemGo() {
         XCTAssertEqual(SessionFold.idleNoticeMinMs, 30_000)
@@ -248,18 +248,18 @@ final class ViewTests: XCTestCase {
         rig.wait(1000)
         XCTAssertEqual(hook(.turnStopped, tool: "Bash").map(\.name), ["turn end"])
         hook(.activity, tool: "Bash", done: true, id: "t1")
-        XCTAssertEqual(workBeats(rig.wait(10 * 60_000)), [], "the late result opened no turn")
+        XCTAssertEqual(workCheckIns(rig.wait(10 * 60_000)), [], "the late result opened no turn")
         hook(.sessionEnd)
         hook(.activity, tool: "Bash", id: "t2")
-        XCTAssertEqual(workBeats(rig.wait(10 * 60_000)), [], "a call from before the end")
+        XCTAssertEqual(workCheckIns(rig.wait(10 * 60_000)), [], "a call from before the end")
         XCTAssertEqual(hook(.turnStart).first?.line, #"claude started turn 1 on "fix-nav" (landing)."#, "back, from turn 1")
     }
 
     /// The view's sessions are agent-hooks' `SessionTracker`, as the core's
-    /// are, so the working heartbeat comes only while the core shows the
+    /// are, so the working check-in comes only while the core shows the
     /// session working. Here a request waits, a subagent's call goes on
     /// beside it, and then the safety net's 10 silent minutes expire the
-    /// request: the session is idle, and no working heartbeat says
+    /// request: the session is idle, and no working check-in says
     /// otherwise. Before, the view kept a fold of its own, which counted
     /// the safety net from the request only, and so worked on for the
     /// hour.
@@ -273,7 +273,7 @@ final class ViewTests: XCTestCase {
         XCTAssertNotNil(rig.state.attn, "the subagent's call doesn't answer the request")
         rig.wait(SessionFold.safetyNetMs)
         XCTAssertEqual(rig.state.doing, "idle")
-        XCTAssertEqual(workBeats(rig.wait(20 * 60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(20 * 60_000)), [], "no working check-in")
         XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
     }
 
@@ -455,16 +455,16 @@ final class ViewTests: XCTestCase {
     }
 
     /// An hour with nothing happening, and no thread working,
-    /// brings a heartbeat, and so does every hour after that. While a
-    /// thread works, the working heartbeat comes instead.
-    func testHeartbeats() {
-        XCTAssertEqual(TranscriptView.heartbeatMs, 60 * 60_000)
-        let idle = { (views: [ViewEvent]) in views.filter { $0.type == .heartbeat && $0.facts["idle_hours"] != nil } }
+    /// brings a check-in, and so does every hour after that. While a
+    /// thread works, the working check-in comes instead.
+    func testCheckIns() {
+        XCTAssertEqual(TranscriptView.hourlyMs, 60 * 60_000)
+        let idle = { (views: [ViewEvent]) in views.filter { $0.type == .checkIn && $0.facts["idle_hours"] != nil } }
         hook(.turnStart)
         rig.wait(50 * 60_000)
         XCTAssertEqual(idle(rig.views), [], "a thread was working")
-        let working = rig.views.filter { $0.type == .heartbeat }
-        XCTAssertGreaterThan(working.count, 10, "the working heartbeat instead")
+        let working = rig.views.filter { $0.type == .checkIn }
+        XCTAssertGreaterThan(working.count, 10, "the working check-in instead")
         XCTAssertTrue(working.allSatisfy { $0.line.hasPrefix(#"claude is still working on "fix-nav" (landing), a "#) && $0.wakesBrain })
         XCTAssertEqual(working.last?.line, #"claude is still working on "fix-nav" (landing), a very long turn."#)
         hook(.turnEnd)
@@ -508,14 +508,14 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(win(), .int(1), "10 minutes after the last win starts again")
     }
 
-    /// Each working heartbeat on a turn is numbered in a note from the
+    /// Each working check-in on a turn is numbered in a note from the
     /// second of each round of 4, and says what the turn's latest command
     /// was about; the next turn starts counting again.
     func testCheckInsAreNumberedAndSayTheTopic() {
         hook(.turnStart)
         hook(.activity, tool: "Bash", topic: "tests", id: "t")
         rig.wait(20 * 60_000)
-        let beats = rig.views.filter { $0.type == .heartbeat }
+        let beats = rig.views.filter { $0.type == .checkIn }
         XCTAssertGreaterThan(beats.count, 5)
         XCTAssertTrue(beats.allSatisfy { $0.line.hasSuffix(" turn, running tests.") }, beats.map(\.line).joined(separator: "\n"))
         XCTAssertEqual(EventLine.round, 4)
@@ -528,7 +528,7 @@ final class ViewTests: XCTestCase {
         hook(.turnStart)
         let before = rig.views.count
         rig.wait(4 * 60_000)
-        let next = rig.views.dropFirst(before).filter { $0.type == .heartbeat }
+        let next = rig.views.dropFirst(before).filter { $0.type == .checkIn }
         XCTAssertEqual(next.first?.notes, [], "a new turn's first check-in")
         XCTAssertTrue(next.first?.line.hasSuffix(" turn.") ?? false, "and no topic yet: \(next.first?.line ?? "none")")
         XCTAssertEqual(EventLine.working(agent: "codex", thread: "\"x\"", ms: 0, topic: "inspect"), #"codex is still working on "x", a very short turn."#)
@@ -584,17 +584,17 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(fresh.first?.facts["asleep"], .bool(false))
     }
 
-    /// With a personality's `idle_heartbeat`, the idle heartbeat comes at
+    /// With a personality's `idle_heartbeat`, the idle check-in comes at
     /// that pace for 2 hours after the last activity while a session is
     /// open, as a check-in naming the thread last active; then hourly as
     /// ever. Never while you're away, and never with no session open.
     func testIdleCheckIns() {
         XCTAssertEqual(TranscriptView.idleWindowMs, 2 * 60 * 60_000)
         rig = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
-        XCTAssertEqual(rig.view.rules.idleBeatMs, 900_000...1_800_000)
+        XCTAssertEqual(rig.view.rules.idleCheckInMs, 900_000...1_800_000)
         hook(.turnStart)
         hook(.turnEnd)
-        let idle = { (views: [ViewEvent]) in views.filter { $0.type == .heartbeat } }
+        let idle = { (views: [ViewEvent]) in views.filter { $0.type == .checkIn } }
         let beats = idle(events(rig.wait(3 * 60 * 60_000)))
         let checkIns = beats.filter { $0.facts["idle_minutes"] != nil }
         XCTAssertGreaterThanOrEqual(checkIns.count, 4, beats.map(\.line).joined(separator: "\n"))
@@ -614,8 +614,8 @@ final class ViewTests: XCTestCase {
         // No session open: hourly only, as before check-ins.
         let asleep = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
         asleep.poke()
-        XCTAssertEqual(asleep.views.filter { $0.type == .heartbeat }, [])
-        XCTAssertEqual(asleep.wait(61 * 60_000).views.filter { $0.type == .heartbeat }.map(\.line), ["Nothing has happened for 1 hour."])
+        XCTAssertEqual(asleep.views.filter { $0.type == .checkIn }, [])
+        XCTAssertEqual(asleep.wait(61 * 60_000).views.filter { $0.type == .checkIn }.map(\.line), ["Nothing has happened for 1 hour."])
     }
 
     /// The length band, at its edges: very short under 7 s, short under a

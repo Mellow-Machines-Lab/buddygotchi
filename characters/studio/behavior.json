@@ -192,7 +192,7 @@
        "brain": {"kinds": ["heartbeat"]},
        "setting": "idle_heartbeat",
        "numbers": [{"what": "only within", "in": "app/BoopKit/Core/TranscriptView.swift", "name": "idleWindowMs", "unit": "ms"},
-                   {"what": "else every", "in": "app/BoopKit/Core/TranscriptView.swift", "name": "heartbeatMs", "unit": "ms"}]},
+                   {"what": "else every", "in": "app/BoopKit/Core/TranscriptView.swift", "name": "hourlyMs", "unit": "ms"}]},
       {"id": "calendar", "when": "The time of day, the weekday, a holiday, a milestone day",
        "decides": ["rule", "board"], "plays": ["wake_up"],
        "does": "The Mac sends the day's tags; the board dresses for them (a nightcap, shades on Friday, a witch's hat, snow) and picks the designs that need them. On a day with an occasion, the first agent's event of a launch wakes it holding up the day's sign (Happy Halloween!, Day 50!). The popover says why it's dressed as it is. The brain hears the day in NOW's heading."},

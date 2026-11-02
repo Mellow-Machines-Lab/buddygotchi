@@ -2,7 +2,7 @@ import Foundation
 import MellowHarness
 
 /// What counts as you: an event is yours only if you did it. The hourly
-/// heartbeat fires all day on a Mac left awake, and agents log events
+/// check-in fires all day on a Mac left awake, and agents log events
 /// overnight, so reading those as you would make an empty room look
 /// lived in. The view's company and the memory both ask here.
 public enum Yours {

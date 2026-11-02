@@ -41,7 +41,7 @@ public final class MomentOutput: Output {
     /// needs you, as listening does. `blocked`'s when not given.
     let replyBlocked: (() -> String?)?
     /// The agent and thread the event the brain answers is about, or nil
-    /// (a poke, an idle heartbeat): a finish, or a face for a finished
+    /// (a poke, an idle check-in): a finish, or a face for a finished
     /// turn, names it on the device.
     let who: (Event?) -> Moment.Who?
     /// How long the turn that event finished ran, in ms, or nil when it
@@ -73,7 +73,7 @@ public final class MomentOutput: Output {
     let today: () -> MemoryReader.Tallies?
 
     /// Whether `e` is an idle check-in.
-    static func isCheckIn(_ e: Event) -> Bool { e.type == .heartbeat && e.specificType == "check_in" }
+    static func isCheckIn(_ e: Event) -> Bool { e.type == .checkIn && e.specificType == "check_in" }
 
     /// Whether it held up a musing in the last `Signs.musingEveryMs`.
     static func mused(_ log: LogView, at now: Int64) -> Bool {

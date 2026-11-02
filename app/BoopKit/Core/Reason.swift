@@ -72,7 +72,7 @@ public struct Reason: Equatable, Sendable {
             guard let answer = facts["answer"]?.string else { return line.map { Reason(cause: $0.text) } }
             return facts["keeps"]?.bool == true ? Reason(cause: "It will remember: \(answer).", fact: "remembered!")
                 : Reason(cause: "You answered: \(answer).", fact: "\(answer)!")
-        case .heartbeat? where e.specificType == "check_in":
+        case .checkIn? where e.specificType == "check_in":
             // A check-in after hours with no touch or word: how long, from
             // CONTEXT's company.
             guard let ms = untouchedMs, ms >= ContextSection.untouchedShownMs else { return line.map { Reason(cause: $0.text) } }

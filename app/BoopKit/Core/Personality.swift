@@ -7,15 +7,15 @@ import Foundation
 public enum Personality {
     /// The settings a personality file's front matter sets for the core.
     public struct Rules: Equatable, Sendable {
-        /// The working heartbeat's wait, in milliseconds, or none.
-        public var workBeatMs: ClosedRange<Int>?
+        /// The working check-in's wait, in milliseconds, or none.
+        public var workCheckInMs: ClosedRange<Int>?
         /// The idle check-in's wait, in milliseconds, or none: only the
-        /// hourly heartbeat, as before there were check-ins.
-        public var idleBeatMs: ClosedRange<Int>?
+        /// hourly check-in, as before there were check-ins.
+        public var idleCheckInMs: ClosedRange<Int>?
 
-        public init(workBeatMs: ClosedRange<Int>? = 90_000...180_000, idleBeatMs: ClosedRange<Int>? = nil) {
-            self.workBeatMs = workBeatMs
-            self.idleBeatMs = idleBeatMs
+        public init(workCheckInMs: ClosedRange<Int>? = 90_000...180_000, idleCheckInMs: ClosedRange<Int>? = nil) {
+            self.workCheckInMs = workCheckInMs
+            self.idleCheckInMs = idleCheckInMs
         }
 
         /// Reads `working_heartbeat` and `idle_heartbeat` from a
@@ -27,8 +27,8 @@ public enum Personality {
                 let parts = line.split(separator: ":", maxSplits: 1).map { $0.trimmingCharacters(in: .whitespaces) }
                 guard parts.count == 2 else { continue }
                 switch parts[0] {
-                case "working_heartbeat": workBeatMs = Rules.seconds(parts[1], else: workBeatMs)
-                case "idle_heartbeat": idleBeatMs = Rules.seconds(parts[1], else: idleBeatMs)
+                case "working_heartbeat": workCheckInMs = Rules.seconds(parts[1], else: workCheckInMs)
+                case "idle_heartbeat": idleCheckInMs = Rules.seconds(parts[1], else: idleCheckInMs)
                 default: break
                 }
             }

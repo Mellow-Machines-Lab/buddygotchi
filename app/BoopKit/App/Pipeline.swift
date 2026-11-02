@@ -318,7 +318,7 @@ public final class Pipeline {
         input(at: event.at) { harness.emit(event) }
     }
 
-    /// The core's timers, then the harness's tick: a heartbeat if one is
+    /// The core's timers, then the harness's tick: a check-in if one is
     /// due, and what's been in progress too long ended.
     @discardableResult
     public func tick(at now: Int64) -> Step {
@@ -382,11 +382,11 @@ public final class Pipeline {
         if let why = view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock }) {
             return why
         }
-        // The hourly heartbeat costs a request: while Boop sleeps or you're
+        // The hourly check-in costs a request: while Boop sleeps or you're
         // away (your coming back has a pass of its own), only while its mood
         // has somewhere to settle, its resting one not reached. The view's
         // caught up to it now.
-        if e.type == .heartbeat, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
+        if e.type == .checkIn, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
             if core.snapshot(at: e.at).doing == "asleep" { return "\(core.config.pack.name) is asleep" }
             if view.away { return "you're away" }
         }

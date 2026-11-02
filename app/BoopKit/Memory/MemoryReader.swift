@@ -164,7 +164,7 @@ public final class MemoryReader: TranscriptReader {
     /// said to Boop, turns that finished long, failed or gave up, a check
     /// that failed again or passed after failing, and you back after a long
     /// break. Never tool calls, gestures (the tallies count them),
-    /// heartbeats or Boop's own reactions.
+    /// check-ins or Boop's own reactions.
     static func note(_ e: Event, _ line: Line) -> (line: String, plain: Bool)? {
         let text = ([line.text] + line.notes).joined(separator: "\n  ")
         switch e.type {

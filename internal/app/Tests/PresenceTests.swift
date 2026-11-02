@@ -276,16 +276,16 @@ final class PresenceTests: XCTestCase {
         }
     }
 
-    /// Coming back is activity, so the idle heartbeat counts
+    /// Coming back is activity, so the idle check-in counts
     /// its hour from the back, not from the last agent event.
-    func testComingBackRestartsTheIdleHeartbeat() {
+    func testComingBackRestartsTheIdleCheckIn() {
         let rig = CoreRig()
         rig.poke()
         rig.wait(30 * minute)
         rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .start, specificType: "idle",
                                     data: ["since": .int(rig.now - 30 * minute)]))
         rig.pipeline.presence(Event(at: rig.now + 1000, source: .mac, type: .presence, phase: .end, specificType: "input"))
-        let beats = { (fx: Fx) in events(fx).filter { $0.type == .heartbeat } }
+        let beats = { (fx: Fx) in events(fx).filter { $0.type == .checkIn } }
         XCTAssertEqual(beats(rig.wait(40 * minute)), [], "an hour since the poke, but not since you came back")
         XCTAssertEqual(beats(rig.wait(21 * minute)).map(\.line), ["Nothing has happened for 1 hour."])
     }

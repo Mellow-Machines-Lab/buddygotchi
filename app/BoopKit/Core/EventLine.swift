@@ -67,7 +67,7 @@ public enum EventLine {
         return text.prefix(1).uppercased() + text.dropFirst() + "."
     }
 
-    /// A working heartbeat's note for its rung of a round, from the second:
+    /// A working check-in's note for its rung of a round, from the second:
     /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.
     public static func checkIn(_ rung: Int, name: String = CharacterPack.active.name) -> String? {
         rung > 1 ? "\(name)'s \(nth(rung)) check-in of a round on this turn." : nil
@@ -224,7 +224,7 @@ public enum EventLine {
         "You picked an agent from \(name)'s list."
     }
 
-    public static func heartbeat(hours: Int) -> String {
+    public static func checkIn(hours: Int) -> String {
         "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."
     }
 
@@ -248,7 +248,7 @@ public enum EventLine {
         "You answered \(agent) on \(thread)."
     }
 
-    /// The working heartbeat: `claude is still working on "fix-nav"
+    /// The working check-in: `claude is still working on "fix-nav"
     /// (landing), a long turn, running tests.`, the band of the turn so far
     /// and what its latest command or edit was about.
     public static func working(agent: String, thread: String, ms: Int64, topic: String? = nil) -> String {

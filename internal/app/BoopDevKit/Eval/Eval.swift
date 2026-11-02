@@ -104,7 +104,7 @@ public struct Scenario: Sendable {
         /// the working agent's to-do list (`3/7`, or `none`).
         public var needs: Set<String>?
         public var todo: Set<String>?
-        /// Whether a pass of the step, a heartbeat's on the way to it
+        /// Whether a pass of the step, a check-in's on the way to it
         /// included, told the dream (`told`) or none did (`none`).
         public var dream: Set<String>?
         /// The sign the reaction held up: `some` for any, `none` for none,
@@ -650,7 +650,7 @@ public struct Eval {
     /// Intelligence for `--labeler apple`, so a run checks it too.
     public var labeler: (any PromptLabeler)?
     /// Hears each pass of a run with the step it came on (from 1), a
-    /// heartbeat's on the way to the step included: `boopdev prompts`.
+    /// check-in's on the way to the step included: `boopdev prompts`.
     public var onPass: ((_ step: Int, _ pass: Harness.Pass) -> Void)?
 
     public init(brain: any Brain, steering: Steering) {
@@ -735,12 +735,12 @@ public struct Eval {
         var open: Set<String> = []
         for (i, step) in scenario.steps.enumerated() {
             // Time passes a second at a time, as the app ticks, and what a
-            // tick brings (a heartbeat) is answered then, as in the app.
+            // tick brings (a check-in) is answered then, as in the app.
             var last: Harness.Pass?
             var lastSaid: String?  // what its reaction said
             var lastTakes: [String] = []  // and its takes' texts
             var lastSign: String?  // and the sign it held up
-            var toldDream = false  // any pass of the step, a heartbeat's on the way included
+            var toldDream = false  // any pass of the step, a check-in's on the way included
             func respond(_ views: [ViewEvent]) async {
                 for view in views where view.wakesBrain {
                     ending.said = nil
@@ -768,7 +768,7 @@ public struct Eval {
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
-            // The expect brain answers the step's passes, a heartbeat's on
+            // The expect brain answers the step's passes, a check-in's on
             // the way to it included, from the step.
             let scripted = brain as? ScenarioBrain
             scripted?.willRun(step, ahead: scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] }.first ?? [])

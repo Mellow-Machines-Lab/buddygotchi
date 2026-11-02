@@ -112,7 +112,7 @@ final class AsksTests: XCTestCase {
         let questions = Asks.questions(lines)
         rig.send(.sessionStart)
         func askable(_ memory: Memory?) -> [String] {
-            let about = Event(at: rig.now, source: .clock, type: .heartbeat, specificType: "check_in")
+            let about = Event(at: rig.now, source: .clock, type: .checkIn, specificType: "check_in")
             return Asks.askable(about, rig.pipeline.harness.log.view(now: rig.now), questions: questions, core: rig.core,
                                 mood: MoodOutput.choice(), talk: .normal, memory: memory, wall: rig.now).map(\.id)
         }

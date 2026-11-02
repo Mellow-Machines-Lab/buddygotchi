@@ -38,7 +38,7 @@ final class ReasonTests: XCTestCase {
     /// An idle check-in an hour or more with no touch or word says so, as
     /// CONTEXT's You row does; under an hour it says its line.
     func testALonelyCheckInSaysHowLongBoopWentUntouched() {
-        let check = event(.heartbeat, "check_in")
+        let check = event(.checkIn, "check_in")
         let line = Line("Nothing has happened for 20 min; claude sits idle on \"api\".")
         XCTAssertEqual(Reason.of(check, line: line, untouchedMs: 2 * 3_600_000 + 60_000),
                        Reason(cause: "You've been here 2 hours and haven't touched it.", fact: "untouched 2 h"))

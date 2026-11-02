@@ -101,7 +101,7 @@ public enum Asks {
     /// is the steering's); `finished`, a turn's finish (its end, or its last
     /// message's reading).
     public static func moment(_ about: Event, _ log: LogView, mood: Choice, untouchedMs: Int64?) -> [String] {
-        if about.type == .heartbeat, about.specificType == "check_in" {
+        if about.type == .checkIn, about.specificType == "check_in" {
             let lonely = MoodOutput.value(mood, log) == "lonely" || (untouchedMs ?? 0) >= ContextSection.untouchedShownMs
             return lonely ? ["idle", "lonely"] : ["idle"]
         }

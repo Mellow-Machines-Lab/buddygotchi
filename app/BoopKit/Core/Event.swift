@@ -4,7 +4,7 @@ import MellowHarness
 
 /// Boop's view of an event: what MellowHarness's event
 /// holds for Boop. An agent's hook, a poke, what
-/// you said, away and back, a heartbeat, "needs you" and push-to-talk's
+/// you said, away and back, a check-in, "needs you" and push-to-talk's
 /// listening are each a type,
 /// and a type with a lifetime a phase: the event's `kind` is the two
 /// together (`tool_end`, `poke`). The source's own name for it, the
@@ -26,7 +26,10 @@ extension Event {
 
     /// What it is, whatever agent it came from.
     public enum Kind: String, Sendable, CaseIterable {
-        case session, turn, tool, subagent, poke, presence, heartbeat
+        case session, turn, tool, subagent, poke, presence
+        /// Boop looking in by itself: working, idle (`check_in`) or
+        /// hourly; on disk by its older name.
+        case checkIn = "heartbeat"
         /// What you said on push-to-talk; on disk by its older name.
         case said = "talk"
         /// "Needs you" showing for a session, and clearing: the core's.

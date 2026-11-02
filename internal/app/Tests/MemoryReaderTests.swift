@@ -46,8 +46,8 @@ final class MemoryReaderTests: XCTestCase {
         let morning = at(2026, 10, 27, 9)
         _ = reader.read(Event(seq: 1, at: morning, source: .mac, type: .presence, phase: .end, specificType: "unlocked"), line: nil, into: &t)
         _ = reader.read(Event(seq: 2, at: morning + hour, source: .claude, type: .prompt, specificType: "UserPromptSubmit"), line: nil, into: &t)
-        _ = reader.read(Event(seq: 3, at: morning + hour, source: .clock, type: .heartbeat, specificType: "check_in"), line: nil, into: &t)
-        XCTAssertNil(t.touchedAt, "a prompt or a heartbeat isn't touching Boop")
+        _ = reader.read(Event(seq: 3, at: morning + hour, source: .clock, type: .checkIn, specificType: "check_in"), line: nil, into: &t)
+        XCTAssertNil(t.touchedAt, "a prompt or a check-in isn't touching Boop")
         XCTAssertEqual(t.backAt, morning)
         _ = reader.read(Event(seq: 4, at: morning + 2 * hour, source: .device, type: .gesture, specificType: "stroke"), line: nil, into: &t)
         _ = reader.read(Event(seq: 5, at: morning + 2 * hour, source: .device, type: .gesture, specificType: "facedown"), line: nil, into: &t)
@@ -97,7 +97,7 @@ final class MemoryReaderTests: XCTestCase {
               session: session, cwd: cwd, data: data)
     }
 
-    /// The day's tallies count only what's yours (Yours): a heartbeat, an
+    /// The day's tallies count only what's yours (Yours): a check-in, an
     /// agent's turn or BOOT's hand-off is never you; the care gestures are
     /// the allow-list's. An away counts from when it began.
     func testTheTalliesCountWhatsYours() throws {
@@ -105,8 +105,8 @@ final class MemoryReaderTests: XCTestCase {
         var t = reader.open(day: "2026-10-26", carry: nil)
         let nine = at(2026, 10, 26, 9)
         let read = { (e: Event) in _ = reader.read(e, line: nil, into: &t) }
-        read(event(.heartbeat, "idle", at: nine - hour))
-        XCTAssertEqual(t.yours, 0, "a heartbeat isn't you")
+        read(event(.checkIn, "idle", at: nine - hour))
+        XCTAssertEqual(t.yours, 0, "a check-in isn't you")
         read(event(.gesture, "stroke", at: nine))
         read(event(.gesture, "stroke", at: nine + 60_000))
         read(event(.gesture, "handoff", at: nine + 120_000))
@@ -136,7 +136,7 @@ final class MemoryReaderTests: XCTestCase {
         var dreams: [Dream] = []
         reader.wrote = { dreams.append($0) }
         var t = reader.open(day: "2026-10-26", carry: nil)
-        _ = reader.read(event(.heartbeat, "idle", at: at(2026, 10, 26, 9)), line: nil, into: &t)
+        _ = reader.read(event(.checkIn, "idle", at: at(2026, 10, 26, 9)), line: nil, into: &t)
         reader.close(day: "2026-10-26", state: t, live: true)
         XCTAssertEqual(dreams, [], "nobody was there")
         _ = reader.read(event(.poke, "input", at: at(2026, 10, 26, 10)), line: nil, into: &t)

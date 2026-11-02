@@ -62,7 +62,7 @@ final class BuddiesTests: XCTestCase {
         XCTAssertEqual(Runtime.speakers(e, all), ["right", "left", "middle"])
         e = Event(at: 1, source: .boop, type: .reacted, specificType: "brain", buddy: "middle")
         XCTAssertEqual(Runtime.speakers(e, all), ["left", "right"], "a reaction wakes only the others")
-        e = Event(at: 1, source: .clock, type: .heartbeat, specificType: "quiet")
+        e = Event(at: 1, source: .clock, type: .checkIn, specificType: "quiet")
         XCTAssertEqual(Runtime.speakers(e, all), ["left", "middle", "right"])
     }
 

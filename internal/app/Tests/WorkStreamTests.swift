@@ -283,7 +283,7 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(dids.map { $0["as"]?.string }, ["arrive", "bonk", "bonk2"])
         XCTAssertTrue(dids.allSatisfy { $0["message"] == nil }, "HISTORY doesn't list them")
 
-        let beat = rig.wait(200_000).views.first { $0.type == .heartbeat }
+        let beat = rig.wait(200_000).views.first { $0.type == .checkIn }
         XCTAssertEqual(beat?.notes.last, "Failed commands hit Boop in the face twice.", "\(String(describing: beat))")
         rig.now += 1000
         run(rig, "3", program: "curl", failed: true, error: "timeout")

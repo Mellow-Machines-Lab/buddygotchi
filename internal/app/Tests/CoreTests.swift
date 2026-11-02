@@ -253,15 +253,15 @@ func woke(_ fx: Fx) -> [String] {
     events(fx).filter(\.wakesBrain).map(\.line)
 }
 
-/// A chatty Boop's rules, for tests that need the working heartbeat often.
+/// A chatty Boop's rules, for tests that need the working check-in often.
 extension Personality.Rules {
-    static let chatty = Personality.Rules(workBeatMs: 45_000...90_000)
+    static let chatty = Personality.Rules(workCheckInMs: 45_000...90_000)
 }
 
-/// The working heartbeats' lines: no rule mumbles,
+/// The working check-ins' lines: no rule mumbles,
 /// so this is how a quiet stretch of work reaches the brain.
-func workBeats(_ fx: Fx) -> [String] {
-    events(fx).filter { $0.type == .heartbeat && $0.facts["working_ms"] != nil }.map(\.line)
+func workCheckIns(_ fx: Fx) -> [String] {
+    events(fx).filter { $0.type == .checkIn && $0.facts["working_ms"] != nil }.map(\.line)
 }
 
 /// A new, empty directory under the system's temporary one, named
@@ -348,7 +348,7 @@ final class CoreAgentWorkTests: XCTestCase {
 
     /// A turn you interrupt ends without `Stop`, so the
     /// interrupt (or Claude sitting at its prompt) ends it: idle at once,
-    /// with no rule reaction, no working heartbeat after, and the brain
+    /// with no rule reaction, no working check-in after, and the brain
     /// hears of a stopped turn.
     func testAnInterruptedTurnGoesIdleQuietly() {
         let rig = CoreRig()
@@ -359,7 +359,7 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(rig.state.doing, "idle")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
         XCTAssertEqual(events(fx).map { $0.facts["outcome"] }, ["stopped"])
-        XCTAssertEqual(workBeats(rig.wait(10 * 60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(10 * 60_000)), [], "no working check-in")
 
         rig.send(.turnStart, session: "s2")
         rig.send(.needsYou, session: "s2", tool: "Bash")
@@ -388,7 +388,7 @@ final class CoreAgentWorkTests: XCTestCase {
             XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]], asker)
             XCTAssertEqual(woke(fx), [#"claude finished turn 1 on "landing": stopped, a long turn, no tool calls."#],
                            "\(asker): the notice answered the request before the stop applied")
-            XCTAssertEqual(workBeats(rig.wait(10 * 60_000)), [], "\(asker): no working heartbeat")
+            XCTAssertEqual(workCheckIns(rig.wait(10 * 60_000)), [], "\(asker): no working check-in")
         }
         for askers in [["a1"], ["", "a1"], ["a1", "a2"]] {
             let rig = CoreRig()
@@ -407,7 +407,7 @@ final class CoreAgentWorkTests: XCTestCase {
     /// result of a call that started before then lands just after it: Esc
     /// as a parallel call finished, a subagent's call racing the interrupt,
     /// or Codex's aborted command after its `Interrupt`. The result still
-    /// counts, but the session stays idle, with no working heartbeat, and only one
+    /// counts, but the session stays idle, with no working check-in, and only one
     /// stopped turn is recorded. A call that starts afterwards works again.
     func testALateResultDoesntRestartAStoppedTurn() {
         let rig = CoreRig(rules: .chatty)
@@ -419,7 +419,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.now += 50
         rig.send(.activity, tool: "Read", failed: false, id: "r")
         XCTAssertEqual(rig.state.doing, "idle", "the parallel Read's result")
-        XCTAssertEqual(workBeats(rig.wait(60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(60_000)), [], "no working check-in")
         XCTAssertEqual(events(rig.send(.turnStopped, notice: true)), [], "one stopped turn, not two")
 
         rig.send(.turnStart)
@@ -456,7 +456,7 @@ final class CoreAgentWorkTests: XCTestCase {
     /// brain hears of it, and the aborted call's
     /// result is then a late one that doesn't start the turn again. Before,
     /// the stop was dropped for a session no longer working, and the late
-    /// result made it work, with working heartbeats, for up to an hour.
+    /// result made it work, with working check-ins, for up to an hour.
     func testAStopAfterTheSafetyNetEndsTheOpenTurn() {
         let rig = CoreRig(rules: .chatty)
         rig.send(.turnStart, .codex, session: "c")
@@ -472,7 +472,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.now += 50
         rig.send(.activity, .codex, session: "c", tool: "shell", id: "c1", done: true)
         XCTAssertEqual(rig.state.doing, "idle", "the aborted command's result is late")
-        XCTAssertEqual(workBeats(rig.wait(30 * 60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(30 * 60_000)), [], "no working check-in")
         XCTAssertEqual(rig.state.doing, "idle")
 
         // Claude: a subagent asks, the safety net clears it, and Esc
@@ -624,10 +624,10 @@ final class CoreAgentWorkTests: XCTestCase {
     /// Only the main agent's call
     /// opens a turn. A background helper that works on after the main
     /// agent's `Stop` shows working, and its results count, but it's no
-    /// turn: no working heartbeat, and Claude's idle notice finishes
+    /// turn: no working check-in, and Claude's idle notice finishes
     /// nothing and plays no `stopped`. Its end, with no call left running,
     /// makes the session idle. Before, its first call opened a turn that
-    /// its end left working, heartbeats and all, until the idle notice
+    /// its end left working, check-ins and all, until the idle notice
     /// stopped that turn with a `stopped` nobody caused.
     func testABackgroundHelperIsNoTurn() {
         let rig = CoreRig(rules: .chatty)
@@ -640,7 +640,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.send(.activity, subagent: "a1", tool: "Bash", topic: "tests", id: "b")
         XCTAssertEqual(rig.state.doing, "working")
         XCTAssertEqual(rig.state.activity, "testing")
-        XCTAssertEqual(workBeats(rig.wait(5 * 60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(5 * 60_000)), [], "no working check-in")
         let failed = rig.send(.activity, subagent: "a1", tool: "Bash", topic: "tests", failed: true, id: "b")
         XCTAssertEqual(woke(failed), [#"claude's tests failed on "landing"."#])
         XCTAssertEqual(rig.state.doing, "working")
@@ -1183,7 +1183,7 @@ final class CoreNeedsYouTests: XCTestCase {
         rig.turn(5000)
         XCTAssertEqual(states(rig.send(.subagentEnd, subagent: "a1")), [])
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
-        XCTAssertEqual(workBeats(rig.wait(10 * 60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(10 * 60_000)), [], "no working check-in")
 
         rig.send(.subagentEnd, session: "s2", subagent: "a1")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"], ["claude", "landing", "idle"]])
@@ -1338,7 +1338,7 @@ final class CoreNeedsYouTests: XCTestCase {
 
     /// After 10 minutes with no events "needs you" clears,
     /// and the session goes idle rather than back to working: no sweat drop
-    /// and no working heartbeat while the agent may still be waiting on its prompt.
+    /// and no working check-in while the agent may still be waiting on its prompt.
     func testSafetyNetClearsAfterTenQuietMinutes() {
         XCTAssertEqual(SessionFold.safetyNetMs, 600_000)
         let rig = CoreRig(rules: .chatty)
@@ -1350,7 +1350,7 @@ final class CoreNeedsYouTests: XCTestCase {
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.state.doing, "idle")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
-        XCTAssertEqual(workBeats(rig.wait(600_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(600_000)), [], "no working check-in")
         XCTAssertEqual(states(rig.send(.activity, tool: "Bash")).last?.doing, "working", "until the agent acts again")
     }
 
@@ -1368,7 +1368,7 @@ final class CoreNeedsYouTests: XCTestCase {
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(events(fx), [], "it never showed")
         XCTAssertEqual(rig.sessions, [["codex", "landing", "idle"]])
-        XCTAssertEqual(workBeats(rig.wait(600_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(600_000)), [], "no working check-in")
     }
 
     func testWhileSomethingNeedsYouNothingWakesTheBrain() {
@@ -2009,13 +2009,13 @@ final class CoreYouAndBoopTests: XCTestCase {
     /// Timers run on the steady time the core is
     /// given, and days and times of day on the wall clock the app reports.
     /// Setting the Mac's clock back an hour doesn't stretch the working
-    /// heartbeat's wait; moving it past midnight starts a new day.
+    /// check-in's wait; moving it past midnight starts a new day.
     func testTimersFollowTheSteadyClockAndDaysTheWallClock() {
         let rig = CoreRig(seed: 7, rules: .chatty)
         rig.send(.turnStart)
         rig.wait(1000)
         rig.core.setWallClock(rig.now - 3_600_000, at: rig.now)  // the Mac's clock set back an hour
-        XCTAssertFalse(workBeats(rig.wait(120_000)).isEmpty, "the working heartbeat, on time")
+        XCTAssertFalse(workCheckIns(rig.wait(120_000)).isEmpty, "the working check-in, on time")
         rig.core.setWallClock(rig.now + CoreRig.day, at: rig.now)
         let fx = rig.send(.sessionStart)
         XCTAssertTrue(fx.contains(.newDay(date: "2026-10-15")))
@@ -2051,42 +2051,42 @@ final class CoreYouAndBoopTests: XCTestCase {
 // MARK: - Personalities
 
 final class CorePersonalityTests: XCTestCase {
-    /// The gaps between working heartbeats over two working hours.
+    /// The gaps between working check-ins over two working hours.
     func beatGaps(_ rig: CoreRig) -> [Int64] {
         rig.send(.turnStart)
         var times: [Int64] = []
         for _ in 0..<7200 {
-            if !workBeats(rig.wait(1000)).isEmpty { times.append(rig.now) }
+            if !workCheckIns(rig.wait(1000)).isEmpty { times.append(rig.now) }
             rig.send(.activity)  // keep it working
         }
         return zip(times, times.dropFirst()).map { $1 - $0 }
     }
 
-    /// The working heartbeat keeps the
+    /// The working check-in keeps the
     /// personality's pace, or never comes.
-    func testTheWorkingHeartbeatKeepsThePersonalitysPace() {
-        let fast = beatGaps(CoreRig(seed: 7, rules: Personality.Rules(workBeatMs: 30_000...60_000)))
+    func testTheWorkingCheckInKeepsThePersonalitysPace() {
+        let fast = beatGaps(CoreRig(seed: 7, rules: Personality.Rules(workCheckInMs: 30_000...60_000)))
         XCTAssertGreaterThan(fast.count, 100)
         for gap in fast { XCTAssertTrue((30_000...61_000).contains(gap), "\(gap)") }
         let usual = beatGaps(CoreRig(seed: 7))
         XCTAssertGreaterThan(usual.count, 25)
         for gap in usual { XCTAssertTrue((90_000...181_000).contains(gap), "\(gap)") }
-        XCTAssertEqual(beatGaps(CoreRig(seed: 7, rules: Personality.Rules(workBeatMs: nil))), [])
+        XCTAssertEqual(beatGaps(CoreRig(seed: 7, rules: Personality.Rules(workCheckInMs: nil))), [])
     }
 
-    /// The working heartbeat waits from Boop's last
+    /// The working check-in waits from Boop's last
     /// reaction, not from the last event that woke the brain. Quick turns
-    /// on another thread every 30 s don't hold off a long turn's heartbeats
+    /// on another thread every 30 s don't hold off a long turn's check-ins
     /// (45–90 s here); a reaction every 30 s does.
-    func testTheWorkingHeartbeatWaitsFromBoopsLastReaction() {
+    func testTheWorkingCheckInWaitsFromBoopsLastReaction() {
         func beats(reacting: Bool) -> Int {
             let rig = CoreRig(seed: 7, rules: .chatty)
             rig.send(.turnStart, session: "long")
             var n = 0
             for _ in 0..<20 {
-                n += workBeats(rig.wait(15_000)).count
+                n += workCheckIns(rig.wait(15_000)).count
                 rig.send(.turnStart, session: "quick")
-                n += workBeats(rig.wait(15_000)).count
+                n += workCheckIns(rig.wait(15_000)).count
                 rig.send(.turnEnd, session: "quick")
                 if reacting { rig.react() }
             }
@@ -2098,26 +2098,26 @@ final class CorePersonalityTests: XCTestCase {
 
     /// A new personality applies from the next event, with no restart.
     func testANewPersonalityAppliesAtOnce() {
-        let rig = CoreRig(rules: Personality.Rules(workBeatMs: nil))
+        let rig = CoreRig(rules: Personality.Rules(workCheckInMs: nil))
         rig.send(.turnStart)
-        XCTAssertEqual(workBeats(rig.wait(300_000)), [], "no working heartbeat")
-        rig.view.setRules(Personality.Rules(workBeatMs: 30_000...60_000))
-        XCTAssertFalse(workBeats(rig.wait(61_000)).isEmpty, "a working heartbeat within 60 s")
+        XCTAssertEqual(workCheckIns(rig.wait(300_000)), [], "no working check-in")
+        rig.view.setRules(Personality.Rules(workCheckInMs: 30_000...60_000))
+        XCTAssertFalse(workCheckIns(rig.wait(61_000)).isEmpty, "a working check-in within 60 s")
     }
 
     /// A personality file's front matter, and its
     /// defaults for anything missing or unreadable.
     func testFrontMatter() {
         let chatter = Personality.Rules(frontMatter: "working_heartbeat: 30-60\ntool_uses: all")
-        XCTAssertEqual(chatter, Personality.Rules(workBeatMs: 30_000...60_000), "tool_uses is no longer read")
-        XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: none").workBeatMs, nil)
+        XCTAssertEqual(chatter, Personality.Rules(workCheckInMs: 30_000...60_000), "tool_uses is no longer read")
+        XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: none").workCheckInMs, nil)
         XCTAssertEqual(Personality.Rules(frontMatter: "working_heartbeat: 60-30\ntool_uses: loud"), Personality.Rules())
         XCTAssertEqual(Personality.Rules(frontMatter: "chatter: 30-60"), Personality.Rules(),
                        "an older file's chatter is ignored: no rule mumbles")
     }
 }
 
-// MARK: - The working heartbeat, screen and inputs
+// MARK: - The working check-in, screen and inputs
 
 final class CoreRulesTests: XCTestCase {
     /// Onboarding's greeting is a rule's reaction: it plays, and the
@@ -2185,24 +2185,24 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertNotEqual(waiting.state.doing, "asleep")
     }
 
-    /// The hourly heartbeat wakes no brain while Boop sleeps (a session
+    /// The hourly check-in wakes no brain while Boop sleeps (a session
     /// left open overnight dozes off) or you're away, once its mood is the
     /// resting one: it would cost a request a night's hour and say a word
     /// to a sleeping board. A mood with somewhere to settle still gets it.
-    func testTheHourlyHeartbeatLetsASleepingBoopBe() {
+    func testTheHourlyCheckInLetsASleepingBoopBe() {
         let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
         rig.core.mood = { CharacterPack.active.defaultMood }
         rig.send(.turnStart)
         rig.send(.turnEnd)
-        let night = rig.wait(6 * 3_600_000, every: 60_000).views.filter { $0.type == .heartbeat }
-        XCTAssertFalse(night.isEmpty, "the heartbeats still come, and are logged")
+        let night = rig.wait(6 * 3_600_000, every: 60_000).views.filter { $0.type == .checkIn }
+        XCTAssertFalse(night.isEmpty, "the check-ins still come, and are logged")
         XCTAssertEqual(night.filter(\.wakesBrain).count, 0, "but wake no brain")
 
         let grumpy = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)
         grumpy.core.mood = { "grumpy" }
         grumpy.send(.turnStart)
         grumpy.send(.turnEnd)
-        let settling = grumpy.wait(3 * 3_600_000, every: 60_000).views.filter { $0.type == .heartbeat && $0.wakesBrain }
+        let settling = grumpy.wait(3 * 3_600_000, every: 60_000).views.filter { $0.type == .checkIn && $0.wakesBrain }
         XCTAssertFalse(settling.isEmpty, "a grumpy Boop can still calm down overnight")
     }
 
@@ -2213,7 +2213,7 @@ final class CoreRulesTests: XCTestCase {
     /// Every 1.5–3 minutes of quiet
     /// work, day or night, the brain hears how long the thread working
     /// longest has worked, and on what.
-    func testTheWorkingHeartbeatEveryOneAndAHalfToThreeMinutesOfQuietWork() {
+    func testTheWorkingCheckInEveryOneAndAHalfToThreeMinutesOfQuietWork() {
         for start in [CoreRig.start, CoreRig.start + 9 * 3600 * 1000 + 1_800_000] {  // 14:00 and 23:30
             let rig = CoreRig(start: start, seed: 7)
             rig.send(.turnStart)
@@ -2223,7 +2223,7 @@ final class CoreRulesTests: XCTestCase {
             for _ in 0..<3600 {
                 let fx = rig.wait(1000)
                 rig.send(.activity)  // keep it working
-                for m in workBeats(fx) {
+                for m in workCheckIns(fx) {
                     times.append(rig.now)
                     said.append(m)
                 }
@@ -2239,26 +2239,26 @@ final class CoreRulesTests: XCTestCase {
 
     /// The wait counts from Boop's last reaction. An
     /// event that wakes the brain doesn't start it again, so a failure Boop
-    /// didn't react to leaves the heartbeat due on time; one it reacted to
+    /// didn't react to leaves the check-in due on time; one it reacted to
     /// starts the wait again.
-    func testAReactionRestartsTheWorkingHeartbeatAndAnEventAloneDoesnt() {
-        let rig = CoreRig(seed: 7, rules: Personality.Rules(workBeatMs: 60_000...60_000))
+    func testAReactionRestartsTheWorkingCheckInAndAnEventAloneDoesnt() {
+        let rig = CoreRig(seed: 7, rules: Personality.Rules(workCheckInMs: 60_000...60_000))
         rig.send(.turnStart)
         rig.wait(1000)  // the wait starts: due in 60 s
         rig.wait(50_000)
         XCTAssertEqual(woke(rig.send(.activity, tool: "Bash", topic: "tests", failed: true)).count, 1, "a failure wakes it")
-        XCTAssertEqual(workBeats(rig.wait(20_000)).count, 1, "60 s after work started, with no reaction")
+        XCTAssertEqual(workCheckIns(rig.wait(20_000)).count, 1, "60 s after work started, with no reaction")
         rig.wait(50_000)
         rig.send(.activity, tool: "Bash", topic: "tests", failed: true)
         rig.react()
-        XCTAssertEqual(workBeats(rig.wait(20_000)), [], "not 60 s after the last heartbeat: Boop reacted")
-        XCTAssertEqual(workBeats(rig.wait(60_000)).count, 1, "60 s after the reaction")
+        XCTAssertEqual(workCheckIns(rig.wait(20_000)), [], "not 60 s after the last check-in: Boop reacted")
+        XCTAssertEqual(workCheckIns(rig.wait(60_000)).count, 1, "60 s after the reaction")
     }
 
-    func testNoWorkingHeartbeatWhenIdle() {
+    func testNoWorkingCheckInWhenIdle() {
         let rig = CoreRig()
         rig.send(.sessionStart)
-        XCTAssertEqual(workBeats(rig.wait(600_000)), [])
+        XCTAssertEqual(workCheckIns(rig.wait(600_000)), [])
     }
 
     /// The `state` message carries the busy and idle counts and
@@ -2420,7 +2420,7 @@ final class CoreRulesTests: XCTestCase {
         rig.send(.sessionEnd, .codex, session: "c")
         rig.send(.activity, .codex, session: "c", tool: "shell", id: "c1", done: true)
         XCTAssertEqual(rig.state.doing, "asleep")
-        XCTAssertEqual(workBeats(rig.wait(30 * 60_000)), [], "no working heartbeat")
+        XCTAssertEqual(workCheckIns(rig.wait(30 * 60_000)), [], "no working check-in")
         XCTAssertEqual(rig.sessions, [])
 
         // Another session is untouched: its finish wakes the brain.
