@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-10-16. The contract between a host (a Mac app) and a small
+Updated 2026-11-01. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: four messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -148,8 +148,10 @@ it then ends `done`).
   with why; or only those from one link, when what drops them reached
   only that link's host). A report for an id that isn't playing, or has
   already ended, is ignored: each `do` gets exactly one `ended`.
-- **At most 4 `do`s wait.** A fifth ends the oldest waiting as `skipped`,
-  `full`. A `do` whose `args` the device can't keep while it waits (they'd
+- **At most 4 `do`s wait.** With a fifth, the one with the least time
+  left to live, the fifth included, ends `skipped`, `full`: with equal
+  `ttl`s, the oldest waiting, and a short-lived `do` never pushes out one
+  with longer to wait. A `do` whose `args` the device can't keep while it waits (they'd
   take a whole message once written again) ends `skipped`, `full` at once.
 - **Same id again.** A `do` whose id matches one still playing or waiting
   comes from a later launch of the host (ids never repeat within a

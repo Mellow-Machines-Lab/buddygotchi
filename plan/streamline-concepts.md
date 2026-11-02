@@ -234,7 +234,7 @@ rename that draws nothing new. The work stream's gag is the word's
 *style* (`render::CallStyle`, `WorkStream`'s `style`; `CallMove` is
 already how it moves); the wire's `as` keeps its values.
 
-**Phase 5, the breaks to build:**
+**Phase 5, the breaks to build (built):**
 
 1. *A word from the work stream never pushes a Moment out of the
    queue.* LinkKit's full queue makes room by dropping the `do` with the
