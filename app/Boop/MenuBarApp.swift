@@ -34,7 +34,7 @@ enum MenuBarApp {
 }
 
 enum Pane: Equatable {
-    case overview, settings
+    case overview, settings, memory
 }
 
 /// What the person has chosen so far in onboarding: a name, and which
@@ -991,13 +991,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         model.shown = true
     }
 
-    /// Settings closes back to the overview; setup stays where it was.
+    /// Settings and the memory close back to the overview; setup stays where it was.
     func popoverDidClose(_ notification: Notification) {
         model.shown = false
         model.slime.show(false)
         // A finished update's word has been seen; one going on keeps going.
         if case .done = model.firmwareWrite { model.firmwareWrite = .idle }
-        if model.pane == .settings { model.pane = .overview }
+        if model.pane != .overview { model.pane = .overview }
     }
 
     /// Settings' Uninstall: asks first, then takes out the hooks, the

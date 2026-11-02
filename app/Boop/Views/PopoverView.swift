@@ -2,8 +2,8 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// The popover. One 360 pt column on warm paper; Overview and Settings
-/// open inside it. Setup is onboarding's, in its own window.
+/// The popover. One 360 pt column on warm paper; Overview, Settings and
+/// What Boop knows open inside it. Setup is onboarding's, in its own window.
 struct PopoverView: View {
     @ObservedObject var model: AppModel
     var onClose: () -> Void = {}
@@ -25,6 +25,7 @@ struct PopoverView: View {
                 switch model.pane {
                 case .overview: OverviewPane(model: model, maxHeight: limit - 44)
                 case .settings: SettingsPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
+                case .memory: MemoryPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
                 }
             }
             .transition(.opacity)
@@ -37,8 +38,8 @@ struct PopoverView: View {
         .animation(.boopSettle, value: model.pane)
         // Closed, it's out of sight but not gone: nothing loops, for nobody.
         .environment(\.stillMotion, still || !model.shown)
-        // Esc goes back from Settings first, as its chevron does.
-        .onExitCommand { if model.pane == .settings { model.pane = .overview } else { onClose() } }
+        // Esc goes back from another pane first, as its chevron does.
+        .onExitCommand { if model.pane != .overview { model.pane = .overview } else { onClose() } }
     }
 
     private var footer: some View {
@@ -52,6 +53,14 @@ struct PopoverView: View {
                         Label("Settings", systemImage: "gearshape")
                     }
                     .keyboardShortcut(",", modifiers: .command)
+                    Button {
+                        model.pane = .memory
+                    } label: {
+                        Image(systemName: "brain")
+                    }
+                    .keyboardShortcut("m", modifiers: [.command, .shift])
+                    .help("What \(model.name) knows about you")
+                    .accessibilityLabel("What \(model.name) knows about you")
                     Button {
                         model.saveReport()
                     } label: {

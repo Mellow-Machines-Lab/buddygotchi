@@ -72,6 +72,15 @@ enum Snapshots {
                     gel.hooks[.claude] = .installed
                     shot("overview-gel", gel, pane: .overview)
                 }
+                // What Boop knows: with notes, with a section still empty, with none.
+                shot("memory", model(installer, status: status()), pane: .memory)
+                var partly = status()
+                partly.notes.removeAll { $0.section == .work }
+                shot("memory-partly", model(installer, status: partly), pane: .memory)
+                var unknown = status()
+                (unknown.notes, unknown.recently) = ([], [])
+                shot("memory-empty", model(installer, status: unknown), pane: .memory)
+                shot("memory-not-running", model(installer, status: nil), pane: .memory)
                 let settings = model(installer, status: status(sessions: [["codex", "landing", "work"]]))
                 try? installer.install(.claude)
                 settings.refreshHooks()
