@@ -107,7 +107,8 @@ extension Core {
     func endWish(_ how: WishEnd, _ now: Int64, _ fx: inout [CoreEffect]) {
         guard let w = wish else { return }
         wish = nil
-        wishEnded = (wishDayNow(now), how)
+        // A wish closed by the day's end ended on its own day, not the new one's.
+        wishEnded = (wishDayNow(how == .closed ? w.since : now), how)
         fx.append(.record(Event(at: now, source: .boop, type: .wish, phase: .end, specificType: how.rawValue,
                                 data: ["kind": .string(w.kind.rawValue), "waited_ms": .int(w.waitedMs)])))
     }
@@ -191,8 +192,9 @@ extension Core {
             wishDay = wishDayNow(e.at)
             wishEnded = nil
         } else if e.phase == .end {
+            let how = WishEnd(rawValue: e.specificType)
+            wishEnded = how.map { (wishDayNow($0 == .closed ? wish?.since ?? e.at : e.at), $0) }
             wish = nil
-            wishEnded = WishEnd(rawValue: e.specificType).map { (wishDayNow(e.at), $0) }
         }
     }
 

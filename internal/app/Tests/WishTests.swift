@@ -168,6 +168,15 @@ final class WishTests: XCTestCase {
         XCTAssertNil(core.wish)
         XCTAssertEqual(core.wishEnded?.how, .closed)
         XCTAssertFalse(fx.contains { if case .reaction = $0 { true } else { false } })
+        // It closed yesterday's wish: the new day's rows don't say both.
+        let morning = evening + 8 * 3_600_000
+        XCTAssertEqual(core.wishRow(at: morning, name: "Boop"), "no wish yet today")
+        XCTAssertNil(core.wishToday(at: morning, name: "Boop"), "nor that it closed today")
+        let read = Core(config: .init(time: LocalTime(timeZone: TimeZone(identifier: "UTC")!)))
+        read.setWallClock(morning, at: morning)
+        read.replay(Event(at: evening, source: .boop, type: .wish, phase: .start, specificType: "pet"))
+        read.replay(Event(at: morning, source: .boop, type: .wish, phase: .end, specificType: "closed", data: ["kind": "pet"]))
+        XCTAssertNil(read.wishToday(at: morning, name: "Boop"), "read back too")
     }
 
     /// Kept like the hush: a launch reads an open wish back, and its wait:
