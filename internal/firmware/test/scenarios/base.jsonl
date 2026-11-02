@@ -35,11 +35,10 @@
 {"clock":31200}
 {"expect":{"screen":"no_app","bl":255,"led":"#000000"}}
 {"clock":31350}
-{"expect":{"screen":"no_app","bl":60}}
+{"expect":{"screen":"no_app","bl":255}}
 {"clock":31500}
 {"shot":"no-app"}
-// Reconnect: the next state, idle's rig face cross-fading in over no app's
-// design (100 ms of 150 in).
+// Reconnect: the next state, with the board's small hello.
 {"t":"state","base":"idle","busy":0}
 {"clock":31600}
 {"expect":{"screen":"face","life":null}}

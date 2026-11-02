@@ -190,11 +190,8 @@ void Device::ping(JsonObject d) {
 
 const char* Device::screenName(uint32_t t) const {
   if (live_.pattern) return "pattern";
-  switch (b_.look(t)) {
-    case render::SceneState::kNoApp: return "no_app";
-    case render::SceneState::kNeedsYou: return "needs_you";
-    default: return "face";
-  }
+  if (b_.plugShows(t)) return "no_app";
+  return b_.look(t) == render::SceneState::kNeedsYou ? "needs_you" : "face";
 }
 
 void Device::state(JsonObject d, uint32_t t) {

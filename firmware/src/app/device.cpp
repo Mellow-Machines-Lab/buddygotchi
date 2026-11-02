@@ -442,7 +442,8 @@ void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
   if (finish) std::snprintf(on, sizeof(on), ",\"on\":%lu", (unsigned long)finish);
   if (was) std::snprintf(classed, sizeof(classed), ",\"was\":\"%s\"", was);
   std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s%s}", button ? "button" : "screen", on, classed);
-  kit().emit("tap", did, data, injected);
+  // With no app the touch is the board's alone: no Mac hears of it later.
+  if (!b_.noApp(t)) kit().emit("tap", did, data, injected);
   drain();  // the poke cuts an animation
 }
 
@@ -476,6 +477,7 @@ void Device::readInputs(uint32_t t) {
       break;
     case ButtonGesture::kHoldStart:  // push-to-talk: listening at once, before the Mac hears
       b_.pressUp();
+      if (b_.noApp(t)) break;  // nobody to hear it
       if (drawerOpen(t) > 0) moveDrawer(0, t, live_.bootInjected);  // its face listens, out from under the drawer
       // The reactions waiting would end it: dropped for every Mac that
       // hears talk_on, which for a tool's dbg.press is only USB's.
@@ -486,6 +488,7 @@ void Device::readInputs(uint32_t t) {
       drain();  // listening cuts what played
       break;
     case ButtonGesture::kHoldEnd:  // let go, or the 30 s cap
+      if (b_.noApp(t)) break;
       b_.talkOff(t);
       input("talk_off", t);
       kit().emit("talk_off", nullptr, nullptr, live_.bootInjected);
@@ -848,7 +851,7 @@ void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) 
   const bool answers = !swipe && caring(g) && b_.askTakesTouch(t);
   if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
   input("gesture", t);
-  kit().emit("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, injected);
+  if (!b_.noApp(t)) kit().emit("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, injected);
   if (answers) b_.answer("touch", t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
@@ -869,7 +872,7 @@ void Device::readMotion(uint32_t t) {
       b_.setFaceDown(true, t);
       hush();
       hal_.stopEffects();  // do not disturb: the face's sounds too
-      kit().emit("gesture", "facedown", nullptr, live_.injMotion);
+      if (!b_.noApp(t)) kit().emit("gesture", "facedown", nullptr, live_.injMotion);
       dirty_ = true;
       break;
     case MotionGesture::kFaceUp:

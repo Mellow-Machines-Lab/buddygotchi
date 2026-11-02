@@ -845,6 +845,7 @@ static void test_a_still_picture_isnt_redrawn() {
     for (Rig* x : {&r, &fresh}) {
       x->usbLine(c.base);
       if (c.reaction) x->usbLine(c.reaction);
+      x->usbLine("{\"t\":\"dbg.clock\",\"step\":600}");  // past the dissolve from resting, at power-on
     }
     for (int ms = 2; ms <= c.ms + 2; ms += 2) {
       r.usbLine("{\"t\":\"dbg.clock\",\"step\":2}");
@@ -1035,8 +1036,47 @@ static void test_power_on_shows_no_app_until_a_state() {
   TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
 }
 
-// No app after 30 s of silence. dbg.state still says
-// "no_app", the backlight dims to 60 and the face is asleep.
+// Pins that a touch with no app is the board's alone: the Mac, on Bluetooth and
+// silent for 30 s, hears no tap or gesture, then or when it returns, and the
+// return sends no new message.
+static void test_alone_nothing_is_emitted_as_if_the_mac_heard() {
+  Rig r;
+  const char* idle = "{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}";
+  const auto press = [&](uint32_t at) {
+    char step[64];
+    std::snprintf(step, sizeof(step), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(at));
+    r.usbLine(step);
+    r.hal.boot = true;
+    r.kit.tick();
+    std::snprintf(step, sizeof(step), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(at + 60));
+    r.usbLine(step);
+    r.hal.boot = false;
+    r.kit.tick();
+    std::snprintf(step, sizeof(step), "{\"t\":\"dbg.clock\",\"freeze\":%u}", unsigned(at + 600));
+    r.usbLine(step);
+  };
+  r.kit.connected();
+  r.bleLine(idle);
+  r.kit.tick();
+  press(1000);  // with the Mac there, it hears: the rig is sound
+  TEST_ASSERT_TRUE(has(r.ble.text, "\"kind\":\"tap\""));
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":40000}");
+  TEST_ASSERT_EQUAL_STRING("no_app", r.screen().c_str());
+  r.ble.text.clear();
+  r.usb.text.clear();
+  press(40000);
+  r.usbLine("{\"t\":\"dbg.touch\",\"x\":160,\"y\":120,\"ms\":40}");
+  runClock(r, 40700, 41000);
+  TEST_ASSERT_EQUAL_STRING("no_app", r.screen().c_str());
+  TEST_ASSERT_FALSE(has(r.ble.text, "\"t\":\"ev\""));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"t\":\"ev\""));
+  r.bleLine(idle);
+  r.kit.tick();
+  TEST_ASSERT_FALSE(has(r.ble.text, "\"t\":\"ev\""));  // the return tells of nothing
+}
+
+// No app after 30 s of silence. dbg.state says "no_app" while the plug shows;
+// the face rests at full light until it falls asleep alone.
 static void test_no_app_after_30s_of_silence() {
   Rig r;
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
@@ -1044,12 +1084,12 @@ static void test_no_app_after_30s_of_silence() {
   TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
   r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":30000}");
   TEST_ASSERT_EQUAL_STRING("no_app", r.screen().c_str());
-  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":30150}");  // dimmed over the blend
-  TEST_ASSERT_EQUAL(60, r.hal.bl);
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":30150}");
+  TEST_ASSERT_EQUAL(255, r.hal.bl);
   r.usb.text.clear();
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"screen\":\"no_app\""));
-  TEST_ASSERT_TRUE(has(r.usb.text, "\"bl\":60"));
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"bl\":255"));
   r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
   TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
 }
@@ -2968,6 +3008,7 @@ int main() {
   RUN_TEST(test_no_app_after_30s_of_silence);
   RUN_TEST(test_power_on_shows_no_app_until_a_state);
   RUN_TEST(test_reaction_plays_then_ends_and_a_new_one_replaces_it);
+  RUN_TEST(test_alone_nothing_is_emitted_as_if_the_mac_heard);
   RUN_TEST(test_a_reaction_with_nothing_to_play_is_ignored);
   RUN_TEST(test_a_strip_touch_is_a_tap);
   RUN_TEST(test_reset_forgets_the_mac_and_freezes_at_0);

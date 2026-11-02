@@ -186,6 +186,8 @@ class Behaviour {
   // (linkkit/SPEC.md §5) with no `state`, on the device clock, which a
   // tool can freeze and step.
   static constexpr uint32_t kNoAppMs = linkkit::kHostGoneMs;
+  // Alone, the time it stays awake after the Mac went quiet or after a touch.
+  static constexpr uint32_t kAloneSleepMs = 5 * 60 * 1000;
   static constexpr uint32_t kBubbleReadMs = 1200;  // the text stays up after the take
   static constexpr uint32_t kPressEaseMs = 60;     // a press draws at once this long
   static constexpr int kPressPx = 2;                // a press dips the face this far
@@ -226,7 +228,7 @@ class Behaviour {
   // At power-on no Mac has spoken: "no app" from the start, until the
   // first state, rather than a face for kNoAppMs.
   void startWithNoApp() {
-    change(modelT_, [&] { stale_ = true; });
+    change(modelT_, [&] { stale_ = true, aloneFrom_ = modelT_; });
   }
 
   // Messages from the Mac, at time t.
@@ -272,6 +274,7 @@ class Behaviour {
   // tap or another animation doesn't take the face over, and a touch is a
   // tap, never a gesture.
   bool held(uint32_t t) const;
+  bool heldFromMac(uint32_t t) const;
   // Whether `in`'s face and sign are held at t: as held, but a reply to
   // what you said shows over needs you.
   bool heldFrom(const ReactionIn& in, uint32_t t) const;
@@ -290,7 +293,7 @@ class Behaviour {
   void advance(uint32_t t, Rng& rng);
 
   // Queries at t (after advance).
-  // The look: kNoApp, kNeedsYou, or what the Mac says (Model::look).
+  // The look: resting or asleep with no app, kNeedsYou, or what the Mac says (Model::look).
   render::SceneState look(uint32_t t) const;
   // The face at t: its design, the design's clock, and what the device
   // adds on top (render/face.h).
@@ -302,8 +305,8 @@ class Behaviour {
   // A press has just come in: feedback the redraw cap mustn't hold back.
   bool pressEasing(uint32_t t) const;
   bool noApp(uint32_t t) const;
-  // No app, and the plug and the no-app look stay away: Boop was asleep when
-  // the Mac went quiet, and nobody has touched the board since.
+  // No app, asleep, and no plug: Boop was asleep when the Mac went quiet and
+  // nobody has touched the board since, or it fell asleep alone.
   bool sleepsOn(uint32_t t) const;
   bool plugShows(uint32_t t) const { return noApp(t) && !sleepsOn(t); }
   uint32_t led(uint32_t t) const;
@@ -513,7 +516,8 @@ class Behaviour {
   // What the strip shows: what the Mac last said, with no app or not, and
   // the finished turn named (null for none), whole.
   static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
-  void touchAlone(uint32_t t);  // a touch ends sleepsOn
+  bool sleptThrough(uint32_t t) const;
+  void touchAlone(uint32_t t);  // a touch wakes it, and starts kAloneSleepMs over
   void liftFinishSign(uint32_t t);
   const Done* stripFinish(uint32_t t) const;  // the finish the strip names
   render::Strip stripAt(uint32_t t) const { return sleepsOn(t) ? render::Strip{} : stripOf(model_, noApp(t), stripFinish(t)); }
@@ -535,6 +539,11 @@ class Behaviour {
   bool stale_ = false;
   // Touched with the Mac gone, until its next state (sleepsOn).
   bool touchedAlone_ = false;
+  // Alone: when the Mac went quiet or the last touch came, and latched like
+  // stale_ once kAloneSleepMs has passed since.
+  uint32_t aloneFrom_ = 0;
+  bool aloneAsleep_ = false;
+  bool heard_ = false;  // a state has come, so a later one is the Mac's return
   bool blOverride_ = false;  // dbg.light, until the next state
   uint8_t blSet_ = 255;
   // The level the state asked for at the last change, like src_ for the
