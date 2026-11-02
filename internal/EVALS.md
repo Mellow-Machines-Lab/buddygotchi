@@ -123,10 +123,12 @@ take the gap out.
 ## 2. Running them
 
 ```sh
-BOOP_JEV_KEY=… .build/debug/boopdev eval --only apology   # while developing: the scenarios you touched, under the budget
+BOOP_JEV_KEY=… .build/debug/boopdev eval --only apology   # while working: the scenarios you touched
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only tests --timeline
-BOOP_JEV_KEY=… make eval                     # the final pass: every scenario, 3 runs for always and 1 for the rest
-.build/debug/boopdev eval --list             # every scenario's case, runs and requests; no key needed
+BOOP_JEV_KEY=… .build/debug/boopdev eval     # quick: the default
+BOOP_JEV_KEY=… .build/debug/boopdev eval --level standard   # before a branch merges
+BOOP_JEV_OVER_LIMIT=1 BOOP_JEV_KEY=… make eval   # full: only when the owner asks, or before a release
+.build/debug/boopdev eval --list             # every scenario's case, runs and requests, the three levels' totals and today's count; no key needed
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
 .build/debug/boopdev prompts                 # what Jev reads and is asked at every pass, for the Character Studio's Brain view
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
@@ -147,30 +149,52 @@ each step wakes the brain as it says, that the moods it expects lie on
 the graph's paths, and the whole-run checks a run can fail without Jev
 (`max_quiet_working`, `moves_on_graph`).
 
-**The API budget.** Every pass is one request to Jev, and a full
-`make eval` is about 660 of them (`--list` counts them), so it's the
-final pass before a commit, once. While developing, run the scenarios
-the change is about with `--only`. Before it asks Jev anything,
-`boopdev eval` counts each
-run's passes with the scripted brain (about right: what Jev answers can
-move a later pass or two), times its runs, prints the total, and stops
-with the costliest scenarios if that's over the budget: 100 requests,
-or `--budget N`. `make eval` passes `--no-budget`.
+**The levels.** Every request to Jev costs, so a run asks only what it
+needs. `--list` gives each level's total for the suite as it stands.
 
-Repeat runs are for the scenarios that need them: an `always` one runs
-3 times, since it's Boop's character and a flaky pass there matters;
-the rest run once. A scenario can say its own `runs` (§3), as `53` says
-1: it's long, and the code already holds its moves to the graph.
+| Level | Runs | Jev answers |
+| --- | --- | --- |
+| `quick`, the default | The scenarios with no whole-run `checks`. `--only` also runs a named scenario that has them, in full, since its checks read every pass | Only the passes of steps whose `expect` is about a pass. The expect brain answers the setup in between, a step's own `brain` answers and the mood's path on the graph included |
+| `standard` | Quick's, and the scenarios with whole-run `checks` | Every pass |
+| `full` | The same scenarios as standard, `always` ones 3 times | Every pass |
+
+A scenario's own `runs` (§3) holds at every level, and `--runs N` overrides
+both. Each pass in the run's file says which brain answered it, and
+`--timeline` marks the expect brain's. A scripted setup hides what Jev would
+have done there: its moods and HISTORY are the scenario's, not Jev's.
+
+**Which to run.**
+
+- A code-only change that leaves prompts unchanged: no Jev run.
+- While working: `--only` on the scenarios the change touches.
+- A change that touches steering or prompts broadly: quick.
+- Before a branch merges: standard.
+- Only when the owner asks, or before a release: full (`make eval`).
+
+**The daily limit.** Evals may send Jev `JevAllowance.dailyLimit` real
+requests a local day, across every command and worktree. The count is in
+`~/.boopdev/jev-requests.json`. The expect brain's passes and the Boop app's
+own don't count. A retry inside one answer isn't counted apart from it.
+Before it asks Jev anything, `boopdev eval` counts each run's passes with
+the expect brain (about right: what Jev answers can move a later pass or
+two), and refuses the whole run if that's more than what's left, printing
+used, left and the estimate. A run that reaches the limit partway stops,
+drops the run it was in, reports the scenarios that finished, and exits 1. A file
+that can't be read refuses too: with no count, no requests.
+
+A full run doesn't fit in a day's limit, on purpose. `BOOP_JEV_OVER_LIMIT=1`
+goes past it, for that command, and the run's output says so; its requests
+still count. `make eval` doesn't set it. An agent sets it only when the owner
+says so in that request. The limit replaced the old budget per command.
 
 | Flag | Does |
 | --- | --- |
-| `--runs N` | Runs each scenario N times (default its own `runs`, else 3 for an `always` scenario and 1 for the rest). It passes only if every run does |
-| `--budget N` | Stops before asking Jev if the run would send more than about N requests (default 100) |
-| `--no-budget` | No budget: the final pass (`make eval`) |
+| `--level L` | `quick` (the default), `standard` or `full`, above |
+| `--runs N` | Runs each scenario N times (default its own `runs`, else 1, or 3 for an `always` scenario at `full`). It passes only if every run does |
 | `--only TEXT` | Only the scenarios whose name contains TEXT (any case) or whose file name does |
 | `--always` | Only the `always` scenarios |
 | `--timeline` | Prints every pass of every run: when, the line, what Boop did and the mood after |
-| `--list` | Prints each scenario's file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then the total, and runs nothing |
+| `--list` | Prints each scenario at the level with its file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then all three levels' totals and today's count, and runs nothing |
 | `--scripted` | Runs each scenario once with the expect brain: no key, no budget |
 | `--scenarios DIR`, `--steering DIR` | Other scenarios or steering files; by default the repo's, found from the working directory or from `boopdev`'s own place |
 
@@ -178,8 +202,8 @@ The report gives each scenario's verdict (`pass`, `FAIL`, or `GAP` for a
 known gap), with how many runs passed (`2/3 runs`) when there's more than
 one; for one that failed, its gap and case, then each failing step and
 whole-run check once, with what was wanted and what came. Then it gives
-how many scenarios passed in every run, and how many known gaps failed, and the median and slowest latency against the pass's
-deadline. It exits 1 if any
+how many scenarios passed in every run, and how many known gaps failed, the median and slowest latency against the pass's
+deadline, and the requests the run really sent to Jev beside the estimate and today's count. It exits 1 if any
 scenario failed that isn't a known gap.
 Every event, view event and pass of every run goes to a file of its own
 in `/tmp/boop-eval` (files over a day old are cleared), one JSON
@@ -225,9 +249,9 @@ file-name order:
 | `name` | What it checks, in a line |
 | `case` | The situation and what Boop should do in it, in plain words and no harness terms, so the steps can be rewritten to fit it when the harness changes. Required |
 | `why` | The spec or steering file that says so |
-| `always` | `true` for Boop's character (§1): 3 runs by default, and `--always` runs these |
+| `always` | `true` for Boop's character (§1): 3 runs at the full level, and `--always` runs these |
 | `scripted` | `true` for a scenario that checks the code's rules rather than Jev's choices (the mood kept on the graph, the screen's counts, which agent BOOT opens): it runs only with the expect brain, in `--scripted` and the unit tests, and a Jev run leaves it out. Never `always` |
-| `runs` | How many runs it gets without `--runs`, when its kind's default (§2) is too many or too few |
+| `runs` | How many runs it gets without `--runs`, at every level, when the default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`): none by default |
@@ -395,8 +419,8 @@ Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
 its words and with its steering: a failed turn, pokes, a long finish,
 back after a break and an idle check-in. PixelBuddy's `make eval` runs
 them (`boopdev eval` reads the pack in use's scenarios and steering), or
-from here `CHARACTER=pixel .build/debug/boopdev eval --runs 1`, once
-each, about 18 requests.
+from here `CHARACTER=pixel .build/debug/boopdev eval --level standard`,
+once each (`--list` prices it).
 - **Scripted** (`53`, `68`, `69`, `92`, `93`, `115`–`117`): the code's
   rules, which need no Jev: the mood kept on the graph through a busy
   day (`53`) and from the rarer moods (`68`, `69`), and the screen. They

@@ -49,12 +49,12 @@ the tests and the tools agents use to check their work, is in
 
 One thing that will surprise you:
 
-- **Jev runs (`make eval`) need your own key** in `BOOP_JEV_KEY`.
+- **Jev runs (`boopdev eval`) need your own key** in `BOOP_JEV_KEY`.
   `--brain scripted` runs the whole pipeline without one. To use the key
   you saved in Boop's Settings:
 
   ```sh
-  BOOP_JEV_KEY=$(security find-generic-password -s com.boopcomputer.boop -a jev -w) make eval
+  BOOP_JEV_KEY=$(security find-generic-password -s com.boopcomputer.boop -a jev -w) .build/debug/boopdev eval
   ```
 
 ## Debugging and evals
@@ -66,7 +66,7 @@ One thing that will surprise you:
 | Show Boop with no board: onboarding's "No board? Use the simulator window" makes it Boop's body | `make dev FRESH=1` |
 | Give someone without a board a Boop to try: the internal build, whose onboarding offers the simulator in a window of its own | `make bundle INTERNAL=1`, then zip and send `.build/internal/Boop.app` |
 | See what it did on a day, and why (`--date YYYY-MM-DD`) | `internal/tools/boopctl day --state-dir ~/Library/Application\ Support/Boop-dev` |
-| Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `make eval` |
+| Check the brain against the eval scenarios (needs `BOOP_JEV_KEY`, above) | `.build/debug/boopdev eval` ([which level](internal/EVALS.md#2-running-them); `make eval` is the full one) |
 
 `make dev` runs the debug app on a folder of its own,
 `~/Library/Application Support/Boop-dev`, beside your everyday Boop: it

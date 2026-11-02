@@ -223,21 +223,111 @@ final class EvalTests: XCTestCase {
         }
     }
 
-    /// EVALS.md §2: an always scenario runs 3 times, the rest once, unless
-    /// the file says; and what a run costs is its passes, counted with the
-    /// scripted brain before Jev is asked anything.
+    /// EVALS.md §2: an always scenario runs 3 times at the full level and
+    /// once below it, the rest once, unless the file says; and what a run
+    /// costs is its passes, counted with the expect brain before Jev is
+    /// asked anything.
     func testRunsAndTheirCost() async throws {
         let all = try Scenario.load(directory: try Self.scenarios())
         let always = try XCTUnwrap(all.first { $0.always && $0.runs == nil })
         let tuning = try XCTUnwrap(all.first { !$0.always && $0.runs == nil })
-        XCTAssertEqual(Eval.runs(always), 3)
-        XCTAssertEqual(Eval.runs(tuning), 1)
+        XCTAssertEqual(Eval.runs(always, level: .full), 3)
+        XCTAssertEqual(Eval.runs(always, level: .standard), 1)
+        XCTAssertEqual(Eval.runs(always, level: .quick), 1)
+        XCTAssertEqual(Eval.runs(tuning, level: .full), 1)
         let busy = try XCTUnwrap(all.first { $0.file.hasPrefix("53-") })
-        XCTAssertEqual(Eval.runs(busy), 1, "53 says runs 1: the code already holds its moves to the graph")
+        XCTAssertEqual(Eval.runs(busy, level: .full), 1, "53 says runs 1: the code already holds its moves to the graph")
         // 05's four pokes, a second apart then a turn start: a pass each.
         let pokes = try Scenario(file: try Self.scenarios().appendingPathComponent("05-pokes-glad-miffed-grumpy.json"))
-        let requests = try await Eval.requests(pokes, steering: RuntimeTests.steering)
-        XCTAssertEqual(requests, 4)
+        let price = try await Eval.price(pokes, steering: RuntimeTests.steering)
+        XCTAssertEqual(price.all, 4)
+    }
+
+    /// EVALS.md §2: which scenarios each level runs, and which brain answers
+    /// which pass.
+    func testLevelsSayWhoAnswers() async throws {
+        let all = try Scenario.load(directory: try Self.scenarios())
+        let checked = try XCTUnwrap(all.first { $0.checks != nil && !$0.scripted })
+        let plain = try XCTUnwrap(all.first { $0.checks == nil && !$0.scripted })
+        let rules = try XCTUnwrap(all.first(where: \.scripted))
+        XCTAssertFalse(Eval.runs(checked, at: .quick, named: false), "quick leaves out whole-run checks")
+        XCTAssertTrue(Eval.runs(checked, at: .quick, named: true), "unless --only names it")
+        XCTAssertFalse(Eval.scriptsSetup(checked, level: .quick), "and then it plays in full")
+        XCTAssertTrue(Eval.runs(checked, at: .standard, named: false))
+        XCTAssertTrue(Eval.scriptsSetup(plain, level: .quick))
+        XCTAssertFalse(Eval.scriptsSetup(plain, level: .standard))
+        XCTAssertFalse(Eval.scriptsSetup(plain, level: .full))
+        XCTAssertFalse(Eval.runs(rules, at: .full, named: true), "a scripted scenario never goes to Jev")
+
+        // A setup step and a checked step: each pass says who answered.
+        let scenario = try XCTUnwrap(all.first { s in
+            s.checks == nil && !s.scripted && s.steps.contains(where: \.asksJev) && s.steps.contains { !$0.asksJev && $0.event == "turn finished" }
+        })
+        let quick = try await whoAnswers(scenario, steering: RuntimeTests.steering, scriptsSetup: true)
+        XCTAssertFalse(quick.isEmpty)
+        for pass in quick {
+            XCTAssertEqual(pass.brain, scenario.steps[pass.step - 1].asksJev ? "stand-in" : "expect", "step \(pass.step)")
+        }
+        XCTAssertTrue(quick.contains { $0.brain == "expect" }, "a setup pass costs nothing")
+        let full = try await whoAnswers(scenario, steering: RuntimeTests.steering, scriptsSetup: false)
+        XCTAssertTrue(full.allSatisfy { $0.brain == "stand-in" })
+    }
+
+    /// EVALS.md §2: the day's limit adds up across commands, refuses a run
+    /// over it, gives way to the override, and starts again the next day.
+    func testTheDailyLimit() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("limit-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let file = dir.appendingPathComponent("count.json")
+        final class Day: @unchecked Sendable { var name = "2026-11-01" }
+        let day = Day()
+        func allowance(overridden: Bool = false) -> JevAllowance {
+            JevAllowance(file: file, limit: 3, overridden: overridden, today: { day.name })
+        }
+        XCTAssertEqual(JevAllowance.dailyLimit, 1000, "the owner's limit")
+
+        // Two commands share the file.
+        let echo = ScriptedBrain(always: [:])
+        let first = CountedBrain(echo, allowance: allowance())
+        _ = try await first.answer(state: "", questions: [], deadline: .seconds(1))
+        _ = try await first.answer(state: "", questions: [], deadline: .seconds(1))
+        XCTAssertEqual(first.requests, 2)
+        try XCTAssertEqual(try allowance().used(), 2)
+
+        // Over what's left, the run is refused and says the numbers.
+        let refusal = try XCTUnwrap(try allowance().refusal(estimate: 2))
+        XCTAssertTrue(refusal.contains("2 used"), refusal)
+        XCTAssertTrue(refusal.contains("1 left"), refusal)
+        try XCTAssertNil(try allowance().refusal(estimate: 1))
+
+        // Reaching it partway stops the brain, which asks nothing more.
+        let second = CountedBrain(echo, allowance: allowance())
+        _ = try await second.answer(state: "", questions: [], deadline: .seconds(1))
+        XCTAssertNil(second.stopped)
+        do {
+            _ = try await second.answer(state: "", questions: [], deadline: .seconds(1))
+            XCTFail("past the limit")
+        } catch {}
+        XCTAssertNotNil(second.stopped)
+        XCTAssertEqual(second.requests, 1)
+        try XCTAssertEqual(try allowance().used(), 3)
+
+        // The override goes past it, and still counts.
+        try XCTAssertNil(try allowance(overridden: true).refusal(estimate: 50))
+        let over = CountedBrain(echo, allowance: allowance(overridden: true))
+        _ = try await over.answer(state: "", questions: [], deadline: .seconds(1))
+        try XCTAssertEqual(try allowance().used(), 4)
+
+        day.name = "2026-11-02"
+        try XCTAssertEqual(try allowance().used(), 0)
+        day.name = "2026-11-01"
+
+        // With no count to trust, no requests.
+        try Data("not a count".utf8).write(to: file)
+        do {
+            _ = try allowance().used()
+            XCTFail("a count that doesn't read")
+        } catch {}
     }
 
     /// EVALS.md §3's whole-run checks, against a brain that makes the same
@@ -474,4 +564,21 @@ final class EvalTests: XCTestCase {
             .write(to: file, atomically: true, encoding: .utf8)
         try XCTAssertThrowsError(try Scenario(file: file)) { XCTAssertTrue("\($0)".contains("start is a UTC date and time")) }
     }
+}
+
+/// Each pass of a run and the brain that answered it, with a stand-in for Jev.
+private func whoAnswers(_ scenario: Scenario, steering: Steering, scriptsSetup: Bool) async throws -> [(step: Int, brain: String?)] {
+    struct StandIn: Brain {
+        let id = "stand-in"
+        func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
+            try await ExpectBrain().answer(state: state, questions: questions, deadline: deadline)
+        }
+    }
+    final class Heard: @unchecked Sendable { var passes: [(step: Int, brain: String?)] = [] }
+    let heard = Heard()
+    var runner = Eval(brain: StandIn(), steering: steering)
+    runner.scriptsSetup = scriptsSetup
+    runner.onPass = { step, pass in heard.passes.append((step, pass.brain)) }
+    _ = try await runner.run(scenario)
+    return heard.passes
 }

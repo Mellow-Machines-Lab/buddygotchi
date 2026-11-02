@@ -70,7 +70,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 14.0 at least. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless`. `INTERNAL=1` makes the internal build, in `.build/internal/Boop.app`, with the simulator as a body to choose, in a window of the app's own (`app/Boop/BoardWindow.swift`). It needs Emscripten. On the simulator it never uses Bluetooth, so an agent may open it on a folder of its own (`--state-dir`) and choose the simulator in onboarding's act 4 before anything looks for a board |
 | `make demo` | Asks which demo and where it plays, then plays it: on the simulator's page from its checked-in recording, at once, on a board, or with a real agent (`simulator/tools/demos.py`, [characters/DEMOS.md](../characters/DEMOS.md)). `NAME=` plays one without asking, `NAME=all` every one in the page |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
-| `make eval` | Every eval scenario against Jev, with no request budget (L5, [EVALS.md](EVALS.md) §2). It needs `BOOP_JEV_KEY` |
+| `make eval` | Every eval scenario against Jev at the full level (L5, [EVALS.md](EVALS.md) §2), only when the owner asks or before a release. It needs `BOOP_JEV_KEY`, and `BOOP_JEV_OVER_LIMIT=1` to pass the day's request limit |
 | `make clean` | Deletes every build's output. It keeps `internal/tools/.venv` and `firmware/.platformio-core` |
 | `make -C internal build` | The Mac app, `boopdev`, the tests' runner, `agent-hook`, `mellowharness-emit`, `beacon`, `linkkit-bridge` and `linkkit-flash`. Importing a target that isn't a declared dependency fails it ([internal/README.md](README.md), How it's wired) |
 | `make -C internal app` | What `make dev` needs: the Mac app, `agent-hook` and `boopdev`, without the tests |
@@ -480,11 +480,14 @@ retried once and counted as a link glitch.
 
 1. First, with no key, `boopdev eval --scripted`: every scenario with the
    expect brain, so anything that fails is the pipeline's, the screen's or
-   the scenario's, not Jev's. While developing, `boopdev eval --only TEXT`
-   (with `BOOP_JEV_KEY`) runs the scenarios the change touches, under a
-   budget of Jev requests. As the final pass, `make eval` runs every
-   scenario, 3 times each for an `always` one and once for the rest, with
-   no budget. What it reports is in [EVALS.md](EVALS.md) §2.
+   the scenario's, not Jev's. A code-only change that leaves prompts unchanged needs no
+   Jev run. While working, `boopdev eval --only TEXT` (with `BOOP_JEV_KEY`)
+   runs the scenarios the change touches. `boopdev eval` runs the quick level,
+   for a change to steering or prompts broadly, and `--level standard` runs
+   before a branch merges. `make eval` runs the full level only when the owner
+   asks or before a release. All of them count against a daily limit of Jev
+   requests. The levels, the limit and what a run reports are in
+   [EVALS.md](EVALS.md) §2.
    After a change to the written memory's prompt or checks (`MemoryRequest`, `MemoryEdits`),
    `boopdev memory write`, read case by case against each fixture's `accept`.
    After a change to how prompts or last messages are read (the scrubber, the cues or the

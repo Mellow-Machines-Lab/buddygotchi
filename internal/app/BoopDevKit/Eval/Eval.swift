@@ -62,6 +62,8 @@ public struct Scenario: Sendable {
         /// The step's own answers for the expect brain, one choice a
         /// question, as a demo's brain step has them.
         public var brain: [String: String]?
+        /// Whether its passes are checked, so Jev answers them at every level.
+        public var asksJev: Bool { expect?.wantsAPass ?? false }
     }
 
     /// What a pass should come to: each a set of acceptable values, `none`
@@ -197,15 +199,15 @@ public struct Scenario: Sendable {
     /// the harness changes (the file's `case`).
     public var story: String
     public var why: String
-    /// Boop's character, not a tuning target: runs 3 times by default, and
-    /// `boopdev eval --always` runs only these.
+    /// Boop's character, not a tuning target: runs 3 times at the full level,
+    /// and `boopdev eval --always` runs only these.
     public var always: Bool
     /// It checks the code's rules, not Jev's choices: it runs only with
     /// the expect brain (`--scripted`, and the unit tests), and a Jev run
     /// leaves it out.
     public var scripted: Bool
-    /// How many runs it gets when `--runs` doesn't say, if not the default
-    /// for its kind (`Eval.runs`).
+    /// How many runs it gets when `--runs` doesn't say, at any level, if
+    /// not the default (`Eval.runs`).
     public var runs: Int?
     public var checks: Checks?
     /// A known gap: why Boop can't pass this today, and what would fix it.
@@ -618,6 +620,8 @@ public struct Eval {
         public var answer: String?
         /// The sign its reaction held up, if any.
         public var sign: String?
+        /// The brain that answered it.
+        public var brain: String?
     }
 
     /// A whole-run check's outcome.
@@ -646,6 +650,9 @@ public struct Eval {
     /// Whether the whole-run checks on Jev's own choices (its variety, its
     /// mood's changes, what it says) are judged: not with a scripted brain.
     public var judgesChoices: Bool { !(brain is ScenarioBrain) }
+    /// Whether the expect brain answers every pass but those of a step that
+    /// expects one, which `brain` answers (the quick level).
+    public var scriptsSetup = false
     /// Reads each prompt and last message in place of its `reading`: Apple
     /// Intelligence for `--labeler apple`, so a run checks it too.
     public var labeler: (any PromptLabeler)?
@@ -658,16 +665,56 @@ public struct Eval {
         self.steering = steering
     }
 
-    /// How many runs a scenario gets unless `--runs` says (internal/EVALS.md
-    /// §2): its own `runs`, else 3 for an `always` one, Boop's character,
-    /// and 1 for the rest.
-    public static func runs(_ scenario: Scenario) -> Int { scenario.runs ?? (scenario.always ? 3 : 1) }
+    /// How much of the eval a run asks Jev (internal/EVALS.md §2).
+    public enum Level: String, CaseIterable, Sendable {
+        /// The scenarios with no whole-run checks; Jev answers only the
+        /// passes of steps that expect one.
+        case quick
+        /// Quick, and the scenarios with whole-run checks, played in full.
+        case standard
+        /// Every pass of every scenario, `always` ones 3 times.
+        case full
+    }
 
-    /// About how many requests one run of a scenario sends Jev: its passes
-    /// with the scripted brain, no key needed. A real run can differ by a
-    /// pass or two, since what Jev answers can move what wakes it later.
-    public static func requests(_ scenario: Scenario, steering: Steering) async throws -> Int {
-        try await Eval(brain: ExpectBrain(), steering: steering).run(scenario).timeline.count
+    /// How many runs a scenario gets unless `--runs` says: its own `runs`,
+    /// else 3 at the full level for an `always` one, Boop's character, and 1
+    /// for the rest.
+    public static func runs(_ scenario: Scenario, level: Level) -> Int {
+        scenario.runs ?? (level == .full && scenario.always ? 3 : 1)
+    }
+
+    /// Whether `level` runs a scenario against Jev. Quick leaves out one
+    /// with whole-run checks unless `--only` named it.
+    public static func runs(_ scenario: Scenario, at level: Level, named: Bool) -> Bool {
+        !scenario.scripted && (level != .quick || scenario.checks == nil || named)
+    }
+
+    /// Whether `level` has the expect brain answer a scenario's setup. Whole-run
+    /// checks read every pass, so a scenario with them always plays in full.
+    public static func scriptsSetup(_ scenario: Scenario, level: Level) -> Bool {
+        level == .quick && scenario.checks == nil
+    }
+
+    /// About how many passes one run of a scenario asks a brain, counted with
+    /// the expect brain, no key needed: all of them, and those of steps that
+    /// expect one. A real run can differ by a pass or two, since what Jev
+    /// answers can move what wakes it later.
+    public struct Price: Sendable {
+        public var all = 0
+        public var expected = 0
+    }
+
+    public static func price(_ scenario: Scenario, steering: Steering) async throws -> Price {
+        final class Tally: @unchecked Sendable { var price = Price() }
+        let tally = Tally()
+        var runner = Eval(brain: ExpectBrain(), steering: steering)
+        runner.onPass = { step, pass in
+            guard pass.held == nil else { return }
+            tally.price.all += 1
+            if scenario.steps[step - 1].asksJev { tally.price.expected += 1 }
+        }
+        _ = try await runner.run(scenario)
+        return tally.price
     }
 
     /// One run of a scenario, from a fresh core and transcript, the mood
@@ -733,6 +780,7 @@ public struct Eval {
         var working: [(Int64, Int64)] = []
         var since: Int64?
         var open: Set<String> = []
+        let setup = scriptsSetup ? ExpectBrain() : nil
         for (i, step) in scenario.steps.enumerated() {
             // Time passes a second at a time, as the app ticks, and what a
             // tick brings (a check-in) is answered then, as in the app.
@@ -764,13 +812,14 @@ public struct Eval {
                         intensity: ran ? MomentOutput.size(answers).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
-                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil))
+                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil, brain: record.brain))
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
             // The expect brain answers the step's passes, a check-in's on
             // the way to it included, from the step.
-            let scripted = brain as? ScenarioBrain
+            let scripted = (setup ?? brain) as? ScenarioBrain
+            if let setup { home.sync { harness.use(step.asksJev ? brain : setup) } }
             scripted?.willRun(step, ahead: scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] }.first ?? [])
             while clock.now < start + step.atMs {
                 clock.now = min(start + step.atMs, clock.now + 1000)
@@ -942,7 +991,7 @@ public struct Eval {
         result.timeline.map { p in
             let t = "\(p.atMs / 60_000):\(String(format: "%02d", p.atMs / 1000 % 60))"
             let did = p.dropped.map { "dropped: \($0)" } ?? p.reaction.map { "\($0.text), \(p.intensity ?? "small")" } ?? "none"
-            return "    \(t)  \(p.line)  → \(did)  [\(p.mood)]"
+            return "    \(t)  \(p.line)  → \(did)  [\(p.mood)]\(p.brain == ExpectBrain().id ? "  (expect brain)" : "")"
         }
     }
 

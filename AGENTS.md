@@ -58,6 +58,10 @@ make -C internal test                                 # the Swift tests
 make -C internal demos                                # records each new or changed demo script
 ```
 
+Jev requests cost, and evals have a daily limit: a code-only change that
+leaves prompts unchanged needs no Jev run. Which level to run is in
+[internal/EVALS.md](internal/EVALS.md) §2.
+
 A new or changed demo script is recorded in the same commit (`make -C
 internal demos`, then commit the pack's `demo/recordings/`). When a change
 alters what the app sends the board, record them all (`ALL=1`).
