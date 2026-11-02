@@ -233,24 +233,21 @@ public final class MomentOutput: Output {
         let agents = "A question about the agents or their work, which is status."
         let request = "Asking \(name) to do something, which is nap, dance, notme or no."
         return [
-            Option("yes", "Yes: agreeing, or yes about \(name) itself.", notFor: agents + " " + request),
-            Option("no", "No: disagreeing, or turning down what it's asked to do.", notFor: agents),
-            Option("huh", "Huh: words that make no sense, or a question it can't know.", notFor: agents),
-            Option("hello", "Hello: a greeting, or you saying you're back.", notFor: "A question about the agents' work, which is status."),
-            Option("bye", "Bye: goodbye or good night."),
-            Option("thanks", "Thanks: praise, thanks or your good news."),
-            Option("love", "Love: affection for \(name), or making up with it."),
-            Option("ouch", "Ouch: rude words to \(name)."),
-            Option("comfort", "Comfort: you sound tired, sad or stressed, or tell it bad news."),
-            Option("hehe", "Hehe: a joke or teasing."),
-            Option("status", "Status: a question about the agents or their work, or how long you've been at it. It holds up the answer from what it knows.",
-                   notFor: "A question about \(name) itself, or a greeting."),
-            Option("nap", "Nap: asked to sleep or rest."),
-            Option("hush", "Hush: asked to stop talking. It says nothing for a while, as long as the moment is big: 15 min small, 30 medium, an hour big, two hours huge.",
-                   notFor: "Asked to sleep; rude words that aren't asking for quiet."),
-            Option("dance", "Dance: asked to dance or wiggle."),
-            Option("notme", "Not me: asked to answer, approve, allow, stop or tell an agent something. \(name) never does.",
-                   notFor: "A question about the agents, which is status."),
+            Option("yes", "Agreeing.", notFor: agents + " " + request),
+            Option("no", "Disagreeing, or turning it down.", notFor: agents),
+            Option("huh", "Can't answer.", notFor: agents),
+            Option("hello", "A greeting.", notFor: agents),
+            Option("bye", "Goodbye."),
+            Option("thanks", "Praise, thanks or good news."),
+            Option("love", "Affection, or making up."),
+            Option("ouch", "Rude words."),
+            Option("comfort", "You're low, or bad news."),
+            Option("hehe", "A joke or teasing."),
+            Option("status", "A question about the agents or their work."),
+            Option("nap", "Asked to sleep."),
+            Option("hush", "Asked to stop talking. The bigger the moment, the longer: 15 min small to two hours huge."),
+            Option("dance", "Asked to dance."),
+            Option("notme", "Asked to answer or tell an agent something. \(name) never does."),
         ]
     }
 
@@ -304,10 +301,10 @@ public final class MomentOutput: Output {
     /// How big a moment is, the smallest first: how long the face holds,
     /// a loop more each step, and how big what it says is (`Size`).
     public static let sizeOptions = [
-        Option("small", "The usual: the face holds once, with a sound."),
-        Option("medium", "It stands out: it holds twice, with a word."),
-        Option("big", "A big moment: it holds three times, with a phrase."),
-        Option("huge", "The biggest: a very long or hard-won turn's end. It holds four times, with a phrase.", notFor: "A check failing mid-turn."),
+        Option("small", "The usual."),
+        Option("medium", "It stands out."),
+        Option("big", "A big moment."),
+        Option("huge", "The biggest: a very long or hard-won turn's end."),
     ]
 
     /// What an intensity sets: how many loops the face holds and the kind
@@ -334,9 +331,8 @@ public final class MomentOutput: Output {
     static func says(in pack: CharacterPack) -> [Option] {
         let name = pack.name
         return
-        [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish), a prompt soon after another reaction, and wherever CONTEXT's Talk row asks for silence."),
-         Option("swear", "A swear, upset: a failed turn that really stings, in an irritated or grumpy face.",
-                notFor: "A win, a poke, words to \(name), or anything about the person.")]
+        [Option("none", "Nothing."),
+         Option("swear", "A swear, at a failed turn that stings.", notFor: "Anything about the person.")]
             + feelings(in: pack)
             + topics(of: name)
     }
@@ -348,10 +344,10 @@ public final class MomentOutput: Output {
     /// brain judges each one.
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
-        Option("success", "A turn finished, done, and not giving up, asking or only answering.", notFor: "A check passing mid-turn, or a turn that failed."),
-        Option("failure", "A turn finished failed, or done but saying it couldn't finish.", notFor: "A check failing mid-turn, or a turn that finished done, saying it's done."),
-        Option("reply", "A turn finished done, asking you something or only answering.", notFor: "Work done, or a failed turn."),
-        Option("wake up", "You came back after an hour or more away."),
+        Option("success", "A turn finished done."),
+        Option("failure", "A turn finished failed, or giving up."),
+        Option("reply", "A turn that only answered or asked."),
+        Option("wake up", "You back after an hour or more away."),
         Option("notice", "Your prompt says \(name)'s name."),
     ] }
 
@@ -618,12 +614,11 @@ public final class MomentOutput: Output {
         return [
             Question(key: emotionKey, text: "How should \(name) react to NOW, if at all?",
                      about: "the NOW section", judgeBy: byBoth,
-                     options: [Option("none", "Stay quiet: nothing in NOW is worth a moment, or HISTORY shows the one it calls for still in progress.",
-                                      notFor: "Something new said to \(name), or a turn that finished: those always get a moment.")]
+                     options: [Option("none", "Nothing worth a moment, or one in progress.")]
                          + pack.faces),
             Question(key: moveKey, text: "If \(name) reacts, does its body make a move?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
-                     options: [Option("none", "Just the face: anything else, a check, a poke or a check-in too.")]
+                     options: [Option("none", "Just the face.")]
                          + MomentOutput.animations(of: name)),
             Question(key: sizeKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds its emotion and the more it says.",
                      about: "the NOW section", judgeBy: byBoth, options: MomentOutput.sizeOptions),

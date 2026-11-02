@@ -1108,7 +1108,6 @@ final class RuntimeTests: XCTestCase {
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
         XCTAssertNotNil(none["what"] as? String)
-        XCTAssertNotNil(none["not_for"] as? String)
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
         // Sent: every line the link sent, verbatim and in order, and by whom.

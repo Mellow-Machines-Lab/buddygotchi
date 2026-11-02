@@ -48,7 +48,7 @@ public enum MoodOutput {
 
     /// A dramatic move's "not for": it's a jump
     /// only a fresh, big event earns.
-    public static let jump = "Routine work or a fade: this jump needs a fresh, big event in NOW."
+    public static let jump = "A jump: only a big event."
 
     /// Staying in `mood`: when NOW is no reason MOOD gives to leave it. The
     /// resting mood never fades; every other one does once it has lasted
@@ -56,10 +56,10 @@ public enum MoodOutput {
     /// its staying says it isn't for then.
     static func stay(_ mood: String, in pack: CharacterPack) -> Option {
         guard mood != pack.defaultMood else {
-            return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine.")
+            return Option(mood, "Stay.")
         }
-        return Option(mood, "Stay \(mood): NOW is no reason MOOD gives to leave it, whatever face it gets. No change is fine.",
-                      notFor: "\(pack.name) \(mood) for as long as MOOD says it lasts, as HISTORY's last line says: then it fades.")
+        return Option(mood, "Stay.",
+                      notFor: "Past its minutes: then it fades.")
     }
 
     /// The `mood` question's options for `mood`: stay, then each of its
