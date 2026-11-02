@@ -27,7 +27,7 @@ from rich.console import Console  # noqa: E402
 from boopctl_lib.common import REPO, send_line  # noqa: E402
 from boopctl_lib.dash import controls  # noqa: E402
 from boopctl_lib.dash.app import PREVIEW_RESEND_S, Dash, StateView  # noqa: E402
-from boopctl_lib.dash.face import CROP, SCALE, blocks, render  # noqa: E402
+from boopctl_lib.dash.face import CROP, NATIVE_BLOCK, SCALE, blocks, native_rows, render  # noqa: E402
 from boopctl_lib.dash import feed  # noqa: E402
 from boopctl_lib.dash.feed import STALE_S, Board, Follower, clock, kind  # noqa: E402
 from boopctl_lib.scenario import GOLDEN  # noqa: E402
@@ -504,6 +504,22 @@ class FaceTests(unittest.TestCase):
                         1, 2, 1, 2, 0, 1])
         self.assertEqual(blocks(pixels, 6, (0, 0, 6, 3)), [[1, 0]])
         self.assertEqual(blocks(bytes(4), 2, (0, 0, 2, 2)), [[0]], "an edge block may be smaller")
+
+    def test_a_native_face_draws_from_its_own_colours(self):
+        """The gel draws natively and sends its panel in RGB565 with no
+        palette: the face is sampled from it, above the lane, and a frame
+        like that used to kill the face's thread, leaving it "starting"."""
+        import struct
+        w, h = 20, 20
+        red, blue = 0xF800, 0x001F
+        pixels = b"".join(struct.pack("<H", red if y < 8 else blue) for y in range(h) for _ in range(w))
+        rows = native_rows(pixels, (w, h))
+        self.assertEqual(len(rows[0]), w // NATIVE_BLOCK)
+        self.assertEqual(len(rows), -(-int(h * 192 / 240) // NATIVE_BLOCK), "nothing below the lane")
+        self.assertEqual(rows[0][0], red)
+        self.assertEqual(rows[-1][0], blue)
+        text = render((None, pixels, (w, h)))
+        self.assertTrue(text.plain.startswith("▀"))
 
     def test_the_face_stays_in_the_crop(self):
         """Every golden frame's face (everything drawn above the bottom

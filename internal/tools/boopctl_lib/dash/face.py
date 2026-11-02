@@ -4,8 +4,10 @@ with half blocks at exactly 1/3 scale, the face's 3-px grid."""
 from __future__ import annotations
 
 import queue
+import sys
 import threading
 import time
+from array import array
 from collections import Counter
 from itertools import groupby
 from typing import Callable
@@ -24,6 +26,12 @@ SCALE = 3
 # blocks, so 107×32 cells.
 CROP = (0, 0, 320, 192)
 FPS = 12
+# A face that draws natively (the gel) sends its whole panel in RGB565, no
+# palette: it's sampled one pixel in every NATIVE_BLOCK×NATIVE_BLOCK block,
+# a terminal's worth (about 100×66 blocks for the AMOLED's 502×410), above
+# its lane, which starts as far down as the canvas's does.
+NATIVE_BLOCK = 5
+LANE_FROM = 192 / 240
 
 
 def blocks(indexes: bytes, width: int, box: tuple[int, int, int, int]) -> list[list[int]]:
@@ -41,15 +49,29 @@ def blocks(indexes: bytes, width: int, box: tuple[int, int, int, int]) -> list[l
     return rows
 
 
-def halfblocks(rows: list[list[int]], palette: list[int]) -> Text:
+def native_rows(pixels: bytes, size: tuple[int, int]) -> list[list[int]]:
+    """The RGB565 colour at the middle of each NATIVE_BLOCK block of a
+    native frame, above its lane."""
+    width, height = size
+    values = array("H", pixels)
+    if sys.byteorder != "little":
+        values.byteswap()
+    lane, mid = int(height * LANE_FROM), NATIVE_BLOCK // 2
+    return [[values[min(by + mid, lane - 1) * width + min(bx + mid, width - 1)] for bx in range(0, width, NATIVE_BLOCK)]
+            for by in range(0, lane, NATIVE_BLOCK)]
+
+
+def halfblocks(rows: list[list[int]], palette: list[int] | None) -> Text:
     """Two block rows per line of ▀: its colour the top one, its background
-    the bottom one. Runs of the same pair share one span."""
+    the bottom one. Runs of the same pair share one span. With no palette,
+    the rows hold RGB565 colours themselves."""
     styles: dict[tuple[int, int], Style] = {}
+    colour = (lambda v: v) if palette is None else (lambda i: palette[i])
 
     def style(top: int, bottom: int) -> Style:
         if (top, bottom) not in styles:
-            styles[top, bottom] = Style(color="#%02x%02x%02x" % rgb888(palette[top]),
-                                        bgcolor="#%02x%02x%02x" % rgb888(palette[bottom]))
+            styles[top, bottom] = Style(color="#%02x%02x%02x" % rgb888(colour(top)),
+                                        bgcolor="#%02x%02x%02x" % rgb888(colour(bottom)))
         return styles[top, bottom]
 
     text = Text(no_wrap=True, overflow="crop")
@@ -62,9 +84,11 @@ def halfblocks(rows: list[list[int]], palette: list[int]) -> Text:
     return text
 
 
-def render(shot: tuple[list[int], bytes, tuple[int, int]]) -> Text:
-    palette, indexes, (width, _) = shot
-    return halfblocks(blocks(indexes, width, CROP), palette)
+def render(shot: tuple[list[int] | None, bytes, tuple[int, int]]) -> Text:
+    palette, pixels, size = shot
+    if palette is None:  # a face that draws natively: the panel in RGB565
+        return halfblocks(native_rows(pixels, size), None)
+    return halfblocks(blocks(pixels, size[0], CROP), palette)
 
 
 class SimFace:
@@ -113,3 +137,5 @@ class SimFace:
                     time.sleep(max(0.0, 1 / FPS - (time.monotonic() - started)))
         except (DeviceError, OSError, ValueError) as exc:
             self.on_error(f"the native simulator stopped: {exc}")
+        except Exception as exc:  # noqa: BLE001 - a dead thread would leave the panel "starting" for good
+            self.on_error(f"the native simulator's face failed: {type(exc).__name__}: {exc}")
