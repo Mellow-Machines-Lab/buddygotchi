@@ -2541,6 +2541,21 @@ static void test_a_call_comes_forward_over_the_work() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "hidden")));
 }
 
+// A wish left has no animation, sign or word, and the board still plays it,
+// at once: its bubble fades (the face slumps with it), and it's over as it
+// starts. Only face down refuses it.
+static void test_a_wish_left_plays_at_once() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"wish\":\"pet\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wish\":\"pet\""));
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  doLine(r, 1, "wish_gone", "next", "{}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wish\":\"pet\""));
+  clockAt(r, r.kit.now() + render::WishShow::kPopMs);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wish\":null"));
+}
+
 // ---- The agents' drawer, on a face that has one (wrapped_face.h) -----------
 
 namespace {
@@ -2788,6 +2803,7 @@ int main() {
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_the_face_plays_its_designs_sounds);
   RUN_TEST(test_a_call_comes_forward_over_the_work);
+  RUN_TEST(test_a_wish_left_plays_at_once);
   RUN_TEST(test_boot_only_shuts_the_open_drawer);
   RUN_TEST(test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px);
   RUN_TEST(test_a_pick_is_the_row_the_finger_went_down_on);

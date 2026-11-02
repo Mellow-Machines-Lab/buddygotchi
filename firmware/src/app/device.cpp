@@ -301,6 +301,8 @@ ReactionIn Device::parse(const Do& c) {
 const char* Device::refuse(const Do& c, uint32_t t) {
   // A word of the work stream shows only over the agents' work.
   if (c.what == kCall) return b_.callShows(t) ? nullptr : "hidden";
+  // A wish left has no animation of the Mac's to play: only face down refuses it.
+  if (c.what == kWishGone) return b_.faceDown() ? "facedown" : nullptr;
   live_.parsed = parse(c);
   const char* why = b_.admit(live_.parsed, t);
   if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
@@ -334,7 +336,15 @@ void Device::onDo(const Do& c, uint32_t t) {
     kit().ended(c.key);
     return;
   }
-  if (c.what == kWishMet || c.what == kWishGone) b_.wishPopped(c.what == kWishMet, t);
+  if (c.what == kWishGone) {
+    // The bubble fades as the face sighs and slumps, at once and in silence.
+    // Over as it starts: what comes next is Jev's.
+    b_.wishPopped(false, t);
+    dirty_ = true;
+    kit().ended(c.key);
+    return;
+  }
+  if (c.what == kWishMet) b_.wishPopped(true, t);
   const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c);
   live_.parsed = ReactionIn{};
   uint32_t seq = b_.reactionSeq();

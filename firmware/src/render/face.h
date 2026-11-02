@@ -19,7 +19,7 @@ namespace render {
 
 // Boop's wish, as the board shows it: its kind while it waits (the Mac's
 // `state.wish`), and for kPopMs after a wish_met or wish_gone Moment, how it
-// went: the icon pops into a heart, or fades.
+// went: the icon pops into a heart, or fades, the face slumping with it.
 struct WishShow {
   enum Kind : uint8_t { kNone, kPet, kChat, kWork };
   enum Pop : uint8_t { kWaiting, kMet, kGone };
