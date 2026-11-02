@@ -48,43 +48,163 @@ public struct Narration: Equatable, Sendable {
     ]
 
     /// The cause of NOW's event `e`, from its line, `line` (nil when the
-    /// line isn't known: the reason is then the event's kind alone). One
-    /// row per kind of line: a kind with no row says its line, and gives
-    /// the board nothing.
+    /// line isn't known). One row per kind of event, each a sentence in
+    /// the person's words: never the brain's line, which names threads
+    /// by their folders and turns by number. A kind with no row, or a row
+    /// missing what it needs, gives no reason, and the Mac shows the mood
+    /// alone. The board gets a fact only where it adds something the
+    /// screen doesn't show.
     public static func of(_ e: Event, line: Line?, untouchedMs: Int64? = nil) -> Narration? {
         let facts = line?.facts ?? [:]
         // The line that tells the dream: the dream is the reason.
         if let told = facts["dream_told"]?.string { return Narration(cause: told, fact: facts["dream_fact"]?.string) }
+        let thread = facts["thread"]?.object
+        let agent = thread?["agent"]?.string ?? e.agent?.rawValue ?? "the agent"
+        let on = place(thread).map { " on \($0)" } ?? ""
+        // A finish, with its last message's reading if it came, whichever
+        // event brought it (a turn's end, its reading, or needs you
+        // clearing over a finish you missed).
+        if let outcome = facts["outcome"]?.string { return finish(outcome, facts, agent: agent, on: on) }
         switch e.type {
         case .presence? where e.phase == .end:
-            guard case .int(let ms)? = facts["away_ms"] else { return line.map { Narration(cause: $0.text) } }
+            guard case .int(let ms)? = facts["away_ms"] else { return nil }
             let span = Self.span(ms: ms)
             return Narration(cause: "You came back after \(span.words) away.", fact: "away \(span.short)")
+        case .presence?:
+            return Narration(cause: "You stepped away.")
         case .poke?:
             let count = facts["in_a_row"]?.int ?? 1
             if facts["asleep"]?.bool == true { return Narration(cause: "You poked it while it slept.", fact: "woken up") }
             return count > 1 ? Narration(cause: "You poked it \(count) times in a row.", fact: "poked x\(count)")
                 : Narration(cause: "You poked it.", fact: "poked")
         case .gesture?:
-            guard let g = gestures[e.specificType] else { return line.map { Narration(cause: $0.text) } }
-            return Narration(cause: g.cause, fact: g.fact)
-        case .ask? where e.specificType != Asks.ignored:
-            guard let answer = facts["answer"]?.string else { return line.map { Narration(cause: $0.text) } }
+            return gestures[e.specificType].map { Narration(cause: $0.cause, fact: $0.fact) }
+        case .ask?:
+            guard e.specificType != Asks.ignored else { return Narration(cause: "Nobody answered its question.") }
+            guard let answer = facts["answer"]?.string else { return nil }
             return facts["keeps"]?.bool == true ? Narration(cause: "It will remember: \(answer).", fact: "remembered!")
                 : Narration(cause: "You answered: \(answer).", fact: "\(answer)!")
-        case .checkIn? where e.specificType == "check_in":
-            // A check-in after hours with no touch or word: how long, from
-            // CONTEXT's company.
-            guard let ms = untouchedMs, ms >= ContextSection.untouchedShownMs else { return line.map { Narration(cause: $0.text) } }
-            let hours = ms / 3_600_000
-            return Narration(cause: "You've been here \(hours) hour\(hours == 1 ? "" : "s") and haven't touched it.", fact: "untouched \(hours) h")
         case .said?:
             // The sign answers what you said: the board needs no fact.
-            guard let words = facts["words"]?.string, !words.isEmpty else { return line.map { Narration(cause: $0.text) } }
+            guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
             return Narration(cause: "You said \"\(words)\".")
+        case .press?:
+            return Narration(cause: e.specificType == Core.drawerPick ? "You opened a thread from its drawer." : "You pressed its button.")
+        case .hush?:
+            guard e.phase == .start else { return Narration(cause: "It may talk again.") }
+            let minutes = e["minutes"]?.int ?? 0
+            return Narration(cause: minutes > 0 ? "You told it to be quiet for \(minutes) minutes." : "You told it to be quiet.")
+        case .prompt?:
+            guard let reading = PromptReading(facts: e.data) else { return nil }
+            return Narration(cause: asked(reading, agent: agent, on: on))
+        case .needsYou?:
+            return e.phase == .start ? Narration(cause: "\(agent) needs you\(on).") : Narration(cause: "You answered \(agent)\(on).")
+        case .turn? where e.phase == .start:
+            return Narration(cause: "\(agent) started work\(on).")
+        case .session? where e.phase == .start:
+            return Narration(cause: "\(agent)'s memory\(on) was compacted.")
+        case .tool?:
+            return check(facts, agent: agent, on: on)
+        case .checkIn?:
+            if case .int(let ms)? = facts["working_ms"] {
+                let span = Self.span(ms: ms)
+                return Narration(cause: "\(agent) has been working\(on) for \(span.words).", fact: "working \(span.short)")
+            }
+            if e.specificType == "check_in", let ms = untouchedMs, ms >= ContextSection.untouchedShownMs {
+                // A check-in after hours with no touch or word: how long,
+                // from CONTEXT's company.
+                let hours = ms / 3_600_000
+                return Narration(cause: "You've been here \(hours) hour\(hours == 1 ? "" : "s") and haven't touched it.",
+                                 fact: "untouched \(hours) h")
+            }
+            if case .int(let minutes)? = facts["idle_minutes"] {
+                return Narration(cause: "Nothing has happened for \(Self.span(ms: minutes * 60_000).words).")
+            }
+            if case .int(let hours)? = facts["idle_hours"] {
+                return Narration(cause: "Nothing has happened for \(Self.span(ms: hours * 3_600_000).words).")
+            }
+            return nil
         default:
-            return line.map { Narration(cause: $0.text) }
+            return nil
         }
+    }
+
+    /// A turn's end: how it went, by its outcome and what its last
+    /// message said. No fact: the finish's ticket names the thread.
+    static func finish(_ outcome: String, _ facts: [String: JSONValue], agent: String, on: String) -> Narration {
+        let message = facts["message"]?.object?["kind"]?.string.flatMap(MessageReading.Kind.init(rawValue:))
+        let length = facts["length_ms"]?.int.map { Band.length(ms: $0) }
+        let wins = facts["wins_in_a_row"]?.int ?? 0
+        switch outcome {
+        case "failed": return Narration(cause: "\(agent)'s turn\(on) failed.")
+        case "stopped": return Narration(cause: "\(agent)'s turn\(on) was stopped.")
+        default: break
+        }
+        if message == .stuck { return Narration(cause: "\(agent) gave up\(on).") }
+        if message == .question { return Narration(cause: "\(agent) has a question for you\(on).") }
+        if let topic = facts["comeback"]?.string { return Narration(cause: "\(agent) got the \(topic) passing\(on).") }
+        if wins > 1 { return Narration(cause: "\(agent) finished \(wins) quick turns in a row\(on).") }
+        if length == "very long" { return Narration(cause: "\(agent) finished a long turn\(on).") }
+        if length == "very short" { return Narration(cause: "\(agent) answered you\(on).") }
+        return Narration(cause: "\(agent) finished a turn\(on).")
+    }
+
+    /// A tool call worth a line: a check failing or passing again, or the
+    /// agent's calls failing again and again.
+    static func check(_ facts: [String: JSONValue], agent: String, on: String) -> Narration? {
+        if case .int(let rung)? = facts["failing"] {
+            return Narration(cause: "\(agent)'s calls\(on) keep failing: \(rung) times in \(WorkStream.ladderMs / 60_000) minutes.",
+                             fact: "fails x\(rung)")
+        }
+        guard let topic = facts["topic"]?.string, TranscriptView.checks.contains(topic) else { return nil }
+        let before = facts["failed_before"]?.int ?? 0
+        let subject = topic == "tests" ? "The tests\(on)" : "The \(topic)\(on)"
+        switch facts["result"]?.string {
+        case "failed"?:
+            return before > 0 ? Narration(cause: "\(subject) failed again: \(before + 1) times in a row.", fact: "\(topic) x\(before + 1)")
+                : Narration(cause: "\(subject) failed.", fact: "\(topic) failed")
+        case "ok"? where before > 0:
+            return Narration(cause: "\(subject) \(topic == "tests" ? "pass" : "passes") again.", fact: "\(topic) pass")
+        default:
+            return nil
+        }
+    }
+
+    /// Your prompt, from its reading alone: what you asked for and how
+    /// you sounded, never your words.
+    static func asked(_ r: PromptReading, agent: String, on: String) -> String {
+        let what: String
+        switch r.kind {
+        case .question?: what = "You asked \(agent) a question\(on)"
+        case .carryOn?: what = "You told \(agent) to carry on\(on)"
+        case let kind?: what = "You asked \(agent) \(kind.words)\(on)"
+        case nil: what = "You wrote to \(agent)\(on)"
+        }
+        let how: String
+        switch r.tone {
+        case .calm?, nil: how = ""
+        case .frustrated?: how = ", sounding frustrated"
+        case .shouting?: how = ", shouting"
+        case let tone?: how = ", " + (tone.words ?? "")
+        }
+        return what + how + "."
+    }
+
+    /// Where a thread works, as the person knows it: its workspace (a
+    /// branch or a worktree) when that's a name, else its project. Nil
+    /// for none.
+    static func place(_ thread: [String: JSONValue]?) -> String? {
+        guard let thread else { return nil }
+        if let w = thread["workspace"]?.string, !w.isEmpty, !looksLikeAnID(w) { return w }
+        return thread["project"]?.string.flatMap { $0 == "unknown" || $0.isEmpty ? nil : $0 }
+    }
+
+    /// Whether a name reads as an id, not a name: a part of it, split at
+    /// dashes, underscores and dots, eight characters or more with a digit
+    /// in it (`bridge-cse-01357dh6…`, `agent-a3ff514bdd7c3721f`).
+    static func looksLikeAnID(_ name: String) -> Bool {
+        name.split(whereSeparator: { "-_./".contains($0) })
+            .contains { $0.count >= 8 && $0.contains(where: \.isNumber) }
     }
 
     /// A span of `ms` in words and as the board's few characters: "25

@@ -42,16 +42,62 @@ final class NarrationTests: XCTestCase {
         let line = Line("Nothing has happened for 20 min; claude sits idle on \"api\".")
         XCTAssertEqual(Narration.of(check, line: line, untouchedMs: 2 * 3_600_000 + 60_000),
                        Narration(cause: "You've been here 2 hours and haven't touched it.", fact: "untouched 2 h"))
-        XCTAssertEqual(Narration.of(check, line: line, untouchedMs: 3_600_000 - 1), Narration(cause: line.text))
+        XCTAssertNil(Narration.of(check, line: line, untouchedMs: 3_600_000 - 1), "under an hour, and no minutes in its facts")
+        XCTAssertEqual(Narration.of(check, line: Line(line.text, facts: ["idle_minutes": .int(20)]), untouchedMs: 0),
+                       Narration(cause: "Nothing has happened for 20 minutes."))
     }
 
-    /// A kind of line with no row of its own says its line, and gives the
-    /// board nothing; with no line, there's no reason.
-    func testAnyOtherLineSaysItself() {
-        let turn = Event(at: harnessT0, source: .claude, type: .turn, phase: .end, specificType: "Stop")
-        XCTAssertEqual(Narration.of(turn, line: Line("claude finished turn 3 on \"api\": done.")),
-                       Narration(cause: "claude finished turn 3 on \"api\": done."))
-        XCTAssertNil(Narration.of(turn, line: nil))
+    /// The commonest causes in the person's words, with the place they
+    /// know: a worktree's folder, an id, gives way to its project.
+    func testTheCommonestCausesInPlainWords() {
+        let wt: JSONValue = ["agent": "claude", "name": "bridge-cse-01357dh6iqt7edrmibm2hd5w", "turn": 18,
+                             "project": "buddygotchi", "workspace": "bridge-cse-01357dh6iqt7edrmibm2hd5w"]
+        let branch: JSONValue = ["agent": "codex", "name": "fix-nav", "project": "landing", "workspace": "fix-nav"]
+        func of(_ type: Event.Kind, _ phase: Event.Phase? = nil, _ specific: String = "", data: [String: JSONValue] = [:],
+                facts: [String: JSONValue]) -> String? {
+            Narration.of(Event(at: harnessT0, source: .claude, type: type, phase: phase, specificType: specific, data: data),
+                         line: Line("LINE", facts: facts))?.cause
+        }
+        let failed = of(.turn, .end, facts: ["thread": wt, "outcome": "failed", "length_ms": 600_000])
+        XCTAssertEqual(failed, "claude's turn on buddygotchi failed.")
+        XCTAssertEqual(of(.turn, .end, facts: ["thread": wt, "outcome": "done", "length_ms": 600_000]),
+                       "claude finished a long turn on buddygotchi.")
+        XCTAssertEqual(of(.lastMessage, facts: ["thread": wt, "outcome": "done", "message": ["kind": "stuck"]]),
+                       "claude gave up on buddygotchi.")
+        XCTAssertEqual(of(.lastMessage, facts: ["thread": branch, "outcome": "done", "message": ["kind": "question"]]),
+                       "codex has a question for you on fix-nav.")
+        XCTAssertEqual(of(.prompt, data: ["kind": "fix", "tone": "frustrated", "length": "sentence"], facts: ["thread": wt]),
+                       "You asked claude for a fix on buddygotchi, sounding frustrated.")
+        XCTAssertEqual(of(.tool, .end, facts: ["thread": wt, "topic": "tests", "result": "failed", "failed_before": 2]),
+                       "The tests on buddygotchi failed again: 3 times in a row.")
+        XCTAssertEqual(of(.checkIn, facts: ["thread": wt, "working_ms": .int(12 * 60_000)]),
+                       "claude has been working on buddygotchi for 12 minutes.")
+        XCTAssertEqual(of(.session, .start, facts: ["thread": wt]), "claude's memory on buddygotchi was compacted.")
+        XCTAssertEqual(of(.needsYou, .start, facts: ["thread": wt]), "claude needs you on buddygotchi.")
+        XCTAssertNil(Narration.of(Event(at: harnessT0, source: .claude, type: .turn, phase: .end, specificType: "Stop"),
+                                  line: Line("LINE", facts: ["thread": wt, "outcome": "done"]))?.fact, "a finish's ticket names it")
+        XCTAssertTrue(Narration.looksLikeAnID("agent-a3ff514bdd7c3721f"))
+        XCTAssertFalse(Narration.looksLikeAnID("fix-nav"))
+        XCTAssertFalse(Narration.looksLikeAnID("v2-launch-2026"))
+    }
+
+    /// Pins that the reason never says the brain's line: every kind of
+    /// event gives a sentence of its own or none, and none reads like a
+    /// line (a turn by its number, a thread's folder in quotes).
+    func testNoReasonIsTheBrainsLine() {
+        let thread: JSONValue = ["agent": "claude", "name": "bridge-cse-01357dh6", "turn": 18, "project": "buddygotchi",
+                                 "workspace": "bridge-cse-01357dh6"]
+        let line = Line("claude finished turn 18 on \"bridge-cse-01357dh6\": done.", facts: ["thread": thread])
+        for kind in Event.Kind.allCases {
+            for phase: Event.Phase? in [nil, .start, .wait, .end] {
+                let e = Event(at: harnessT0, source: .claude, type: kind, phase: phase, specificType: "")
+                guard let cause = Narration.of(e, line: line)?.cause else { continue }
+                XCTAssertNotEqual(cause, line.text, "\(kind) \(String(describing: phase))")
+                XCTAssertNil(cause.range(of: #"turn \d+ on"#, options: .regularExpression), cause)
+                XCTAssertFalse(cause.contains("bridge-cse"), cause)
+                XCTAssertFalse(cause.contains("\""), cause)
+            }
+        }
     }
 
     /// No fact is longer than a sign: one that would be is dropped, never
