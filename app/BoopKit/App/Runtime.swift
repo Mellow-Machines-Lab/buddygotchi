@@ -65,6 +65,9 @@ public final class Runtime: @unchecked Sendable {
         /// Every message sent to the device, as it's sent, for whoever
         /// records them (`DemoRecorder`). On whichever thread sends it.
         public var onDeviceLine: (@Sendable (String) -> Void)?
+        /// Boop full size whatever its XP, for a demo: from before the
+        /// first `state`, which goes out before a demo's first step.
+        public var fullSize = false
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
@@ -408,8 +411,7 @@ public final class Runtime: @unchecked Sendable {
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs {
-            // A demo shows Boop full size, whatever the state folder has earned.
-            core(rig).stage = { [weak self] in self.map { $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
+            core(rig).stage = { [weak self] in self.map { $0.options.fullSize || $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
         growth.decay(today: options.time.day(options.wallClock()))

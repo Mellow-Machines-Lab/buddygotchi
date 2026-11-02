@@ -178,7 +178,7 @@ class StudioRuleTests(unittest.TestCase):
         about = {k: v for k, v in data["packs"]["plain"].items() if k not in shown}
         self.assertEqual(about, {"id": "plain", "version": "0.1.0", "startup_mood": None, "faces": {"cyd24": "face"},
                                  "personalities": [], "talks": [], "guide": None, "steering": {}, "signs": [], "dreams": [],
-                                 "voice": None, "demos": [], "evals": [], "stills": []})
+                                 "voice": None, "demos": [], "evals": [], "stills": [], "pastimes": []})
 
     def test_a_board_for_each_face(self):
         """The studio's own preview of each face a pack's boards have, once each, in the order the boards name them."""
