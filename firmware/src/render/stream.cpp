@@ -10,10 +10,10 @@ namespace render {
 
 namespace {
 
-constexpr const char* kCallStyleNames[] = {"land",  "arrive", "look",   "stir",    "stamp",   "poof",  "plane",
-                                     "phone", "page",   "helper", "back",    "shatter", "cross",  "stack", "pass",
-                                     "built", "hail",   "bonk",   "bonk2",   "helmet",  "throw",  "shrug", "timeout",
-                                     "no",    "combo",  "topple", "compact", "buried",  "freeze", "drop",  "gather"};
+constexpr const char* kCallStyleNames[] = {"land",   "helper", "back",    "shatter", "cross", "stack", "pass",
+                                           "built",  "hail",   "bonk",    "bonk2",   "helmet", "throw", "shrug",
+                                           "timeout", "no",    "topple",  "compact", "buried", "freeze", "drop",
+                                           "gather"};
 static_assert(sizeof(kCallStyleNames) / sizeof(kCallStyleNames[0]) == int(CallStyle::kCount), "a name for every style");
 
 // The same few bits for the same word, slot and count on every board, so a
@@ -36,14 +36,6 @@ CallStyle callStyleFromName(const char* name) {
 
 CallMove callMove(CallStyle style) {
   switch (style) {
-    case CallStyle::kArrive: return CallMove::kArrive;
-    case CallStyle::kLook: return CallMove::kLook;
-    case CallStyle::kStir: return CallMove::kStir;
-    case CallStyle::kStamp: return CallMove::kStamp;
-    case CallStyle::kPoof: return CallMove::kPoof;
-    case CallStyle::kPlane: return CallMove::kPlane;
-    case CallStyle::kPhone: return CallMove::kPhone;
-    case CallStyle::kPage: return CallMove::kPage;
     case CallStyle::kBonk:
     case CallStyle::kBonk2:
     case CallStyle::kHelmet:
@@ -55,7 +47,6 @@ CallMove callMove(CallStyle style) {
     case CallStyle::kHail: return CallMove::kHail;
     case CallStyle::kPass:
     case CallStyle::kBuilt: return CallMove::kCheer;
-    case CallStyle::kCombo: return CallMove::kCombo;
     case CallStyle::kCross:
     case CallStyle::kStack: return CallMove::kDesk;
     case CallStyle::kTopple: return CallMove::kTopple;
@@ -72,13 +63,10 @@ uint32_t callFlightMs(CallStyle style) {
   if (style == CallStyle::kTimeout) return 1400;
   switch (callMove(style)) {
     case CallMove::kHit: return 380;
-    case CallMove::kSink:
-    case CallMove::kArrive: return 520;
+    case CallMove::kSink: return 520;
     case CallMove::kHail:
     case CallMove::kCheer:
-    case CallMove::kCombo:
     case CallMove::kDrop: return 300;
-    case CallMove::kPlane:
     case CallMove::kGather: return 700;  // the words reach its mouth
     case CallMove::kTopple: return 1000;  // its wobble, then the fall
     case CallMove::kCompact: return 900;  // squashed, then the cube's drop
@@ -181,11 +169,10 @@ void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_
   }
 }
 
-void Stream::startCall(const char* text, uint8_t slot, CallStyle style, uint16_t count, uint32_t t) {
+void Stream::startCall(const char* text, uint8_t slot, CallStyle style, uint32_t t) {
   std::snprintf(call.text, sizeof(call.text), "%s", text ? text : "");
   call.slot = slot;
   call.style = style;
-  call.count = count;
   call.at = t;
   call.live = true;
 }

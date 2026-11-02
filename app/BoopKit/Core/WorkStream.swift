@@ -2,13 +2,14 @@ import AgentHooks
 import Foundation
 import LinkKit
 
-/// The work stream: every tool call as a word that falls past Boop from
-/// its agent's lane, and now and then one that comes forward and hits it.
-/// A plain rule, as "needs you" is: it reads each call's tool, topic,
-/// program, glimpse, size and result, never what the call said, and
-/// decides which word each call is and which calls come forward, one at a
-/// time, in which style. The board flies the words and plays each style; the brain
-/// hears none of it but the moments that hit (`TranscriptView`).
+/// The work stream: every tool call as a word that falls behind Boop from
+/// its agent's lane, and the few that come forward and hit it: a failure,
+/// a helper, a big edit, a turn's end. A plain rule, as "needs you" is: it
+/// reads each call's tool, topic, program, glimpse, size and result, never
+/// what the call said, and decides which word each call is and which calls
+/// come forward, one at a time, in which style. The board flies the words and
+/// plays each style; the brain hears none of it but the moments that hit
+/// (`TranscriptView`).
 struct WorkStream {
     /// A working session's lane on the board: its slot, which picks its
     /// column and colour, how many calls it has made since it got the
@@ -24,11 +25,9 @@ struct WorkStream {
     enum Priority: Int, Comparable {
         /// A failure, a check's result: always.
         case always
-        /// A check starting, a big edit, a helper, a turn's first call, a
-        /// combo: when nothing else is forward.
+        /// A check starting, a big edit, a helper: when nothing else is
+        /// forward.
         case notable
-        /// Anything else: now and then.
-        case ambient
 
         static func < (a: Self, b: Self) -> Bool { a.rawValue < b.rawValue }
     }
@@ -40,18 +39,15 @@ struct WorkStream {
         /// The style, one of `styles`.
         var style: String
         var priority: Priority
-        /// A combo's count, else nil.
-        var count: Int?
 
         /// The `do`'s `args`.
-        var args: JSONObject { BoopDevice.call(word, style: style, slot: slot, count: count) }
+        var args: JSONObject { BoopDevice.call(word, style: style, slot: slot) }
     }
 
     /// The styles the board knows for a word that comes forward.
     static let styles = [
-        "arrive", "look", "land", "stir", "stamp", "poof", "plane", "phone", "page", "helper", "back",
-        "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet", "throw", "shrug",
-        "timeout", "no", "combo", "topple", "compact", "buried", "freeze", "drop", "gather",
+        "land", "helper", "back", "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet",
+        "throw", "shrug", "timeout", "no", "topple", "compact", "buried", "freeze", "drop", "gather",
     ]
     /// The styles of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
@@ -63,16 +59,9 @@ struct WorkStream {
     static let action = BoopDevice.call
 
     /// A word forward holds the board this long; a notable or a sure one
-    /// may wait this long for it; an ambient one needs this long since
-    /// any word came forward, and this long since its word did.
+    /// may wait this long for it.
     static let showMs: Int64 = 2500
     static let waitMs: Int64 = 1500
-    static let ambientGapMs: Int64 = 8000
-    static let sameWordGapMs: Int64 = 30_000
-    /// A combo is the same word from one session, each within this of the
-    /// last, and comes forward at these counts.
-    static let comboGapMs: Int64 = 3000
-    static let combos: Set<Int> = [5, 10, 20]
     /// One session's failures within this climb the ladder.
     static let ladderMs: Int64 = 120_000
 
@@ -133,17 +122,14 @@ struct WorkStream {
 
     var lanes: [String: Lane] = [:]
     var heldUntil: Int64 = .min
-    var heldPriority = Priority.ambient
-    var lastForwardAt: Int64?
-    var lastWordAt: [String: Int64] = [:]
+    var heldPriority = Priority.notable
     var failures: [String: [Int64]] = [:]
-    var combo: [String: (word: String, count: Int, at: Int64)] = [:]
     /// The sessions whose turn has had a call since it started.
     var called: Set<String> = []
 
     // MARK: Words
 
-    /// The word for a call, which its combos count and its styles read:
+    /// The word for a call, which its styles read:
     /// its program, or a check's topic for a program alone (`make`,
     /// `tests`); with a subcommand the program says more (`make fw-test`).
     static func word(_ e: AgentEvent, program: String?) -> String {
@@ -232,27 +218,6 @@ struct WorkStream {
         return cut
     }
 
-    /// The style a word that comes forward now and then plays: its program's
-    /// family's.
-    static func ambientStyle(_ e: AgentEvent, word: String) -> String {
-        switch e.toolKind ?? .other {
-        case .read, .search: return "look"
-        case .edit: return e.topic == "docs" ? "page" : "land"
-        case .web: return "plane"
-        case .mcp: return "phone"
-        case .subagent: return "helper"
-        default: break
-        }
-        if e.topic == Topic.inspect { return "look" }
-        switch word {
-        case "python", "node", "ruby", "perl", "deno", "bun", "loop", "osascript": return "stir"
-        case "git commit", "git tag": return "stamp"
-        case "rm", "rmdir", "git clean", "git rm": return "poof"
-        case "curl", "wget", "gh", "gh pr", "gh issue", "gh run", "gh api", "ssh", "scp", "rsync": return "plane"
-        default: return "land"
-        }
-    }
-
     // MARK: Acts
 
     /// The act a shell call plays out, and its sign's words, by its topic and
@@ -318,8 +283,7 @@ struct WorkStream {
     // MARK: Calls
 
     /// A tool call starting in session `key`: its word joins its lane, and
-    /// a turn's first call, a check starting or a helper going off may
-    /// come forward.
+    /// a check starting or a helper going off may come forward.
     mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program), shown = Self.shown(e, word: word)
         // A lane of its own while one is free: a fifth session gets none,
@@ -335,10 +299,7 @@ struct WorkStream {
         }
         // The act it plays out is what shows, not a word forward.
         if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
-        if !called.contains(key) {
-            called.insert(key)
-            return offer(Forward(slot: slot, word: shown, style: "arrive", priority: .notable), at: now)
-        }
+        called.insert(key)
         if let topic = e.topic, TranscriptView.checks.contains(topic) {
             guard topic != "deploy" else { return nil }
             let style = topic == "tests" ? "cross" : "stack"
@@ -350,21 +311,19 @@ struct WorkStream {
         return nil
     }
 
-    /// A tool call ending: a failure, a check's result, a big edit, a
-    /// combo, or now and then any call, comes forward.
+    /// A tool call ending: a failure, a check's result or a big edit comes
+    /// forward. Anything else is only its word, falling.
     mutating func ended(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program)
         let slot = lanes[key]?.slot ?? freeSlot()
         let check = e.topic.flatMap { TranscriptView.checks.contains($0) ? $0 : nil }
         if Self.climbs(e) {
-            combo[key] = nil
             let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
             failures[key] = recent
             let style = Self.ladder[min(recent.count, Self.ladder.count) - 1]
             return offer(Forward(slot: slot, word: word, style: style, priority: .always), at: now)
         }
         if e.failed == true {
-            combo[key] = nil
             switch e.error {
             case ToolError.exitCode where e.topic == Topic.inspect:
                 // A lookup that exits 1 found nothing.
@@ -391,16 +350,7 @@ struct WorkStream {
             let shown = removed > added ? "-\(removed)" : Self.shown(e, word: word)
             return offer(Forward(slot: slot, word: shown, style: style, priority: .notable), at: now)
         }
-        var run = combo[key].flatMap { $0.word == word && now - $0.at <= Self.comboGapMs ? $0 : nil }
-            ?? (word: word, count: 0, at: now)
-        run.count += 1
-        run.at = now
-        combo[key] = run
-        if Self.combos.contains(run.count) {
-            return offer(Forward(slot: slot, word: word, style: "combo", priority: .notable, count: run.count), at: now)
-        }
-        return offer(Forward(slot: slot, word: Self.shown(e, word: word), style: Self.ambientStyle(e, word: word),
-                             priority: .ambient), at: now)
+        return nil
     }
 
     /// A helper coming back to its turn: "back", never the "done" a
@@ -418,7 +368,6 @@ struct WorkStream {
         let key = e.key
         guard called.contains(key) else { return nil }
         called.remove(key)
-        combo[key] = nil
         let shown: (word: String, style: String)
         switch e.outcome {
         case .done?: shown = ("done", "gather")
@@ -446,7 +395,6 @@ struct WorkStream {
     /// A turn starting in `key`: its next call is its first.
     mutating func turnStarted(_ key: String) {
         called.remove(key)
-        combo[key] = nil
     }
 
     /// Keeps the lanes of the sessions in `working` only, freeing the
@@ -457,10 +405,8 @@ struct WorkStream {
 
     /// Whether `f` comes forward now: one at a time, held for `showMs`. A
     /// sure one cuts any other and waits up to `waitMs` behind another
-    /// sure one; a notable one waits as long for the board to free; an
-    /// ambient one needs the board free, `ambientGapMs` since anything
-    /// came forward and `sameWordGapMs` since its word did. A word that
-    /// waits plays when the board frees; the board times it.
+    /// sure one; a notable one waits as long for the board to free. A word
+    /// that waits plays when the board frees; the board times it.
     mutating func offer(_ f: Forward, at now: Int64) -> Forward? {
         var starts = now
         if now < heldUntil {
@@ -472,14 +418,8 @@ struct WorkStream {
                 return nil
             }
         }
-        if f.priority == .ambient {
-            if let last = lastForwardAt, starts - last < Self.ambientGapMs { return nil }
-            if let last = lastWordAt[f.word], starts - last < Self.sameWordGapMs { return nil }
-        }
         heldUntil = starts + Self.showMs
         heldPriority = f.priority
-        lastForwardAt = starts
-        lastWordAt[f.word] = starts
         return f
     }
 

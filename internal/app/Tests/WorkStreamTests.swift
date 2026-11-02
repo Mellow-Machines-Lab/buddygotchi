@@ -85,30 +85,20 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(WorkStream.maxWordBytes, 14)
     }
 
-    /// A turn's first call arrives; then, with nothing notable, a call
-    /// comes forward at most once every 8 s, and the same word at most once
-    /// every 30 s (`ambientGapMs`, `sameWordGapMs`).
-    func testAmbientCallsComeForwardNowAndThen() {
-        XCTAssertEqual([WorkStream.ambientGapMs, WorkStream.sameWordGapMs, WorkStream.showMs], [8000, 30_000, 2500])
+    /// Almost every call is only its word, falling: nothing comes forward.
+    func testAnOrdinaryCallIsOnlyItsWord() {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
-        XCTAssertEqual(run(rig, "1", program: "grep"), ["grep arrive"])
-        rig.now += 3000
-        XCTAssertEqual(run(rig, "2", program: "sed"), [], "within 8 s of the arrival")
-        rig.now += 5000
-        XCTAssertEqual(run(rig, "3", program: "python"), ["python stir"])
+        for (i, program) in ["grep", "python", "git commit", "curl", "rm"].enumerated() {
+            rig.now += 9000
+            XCTAssertEqual(run(rig, "\(i)", program: program), [], program)
+        }
         rig.now += 9000
-        XCTAssertEqual(run(rig, "4", program: "python"), [], "python came forward 9 s ago")
-        rig.now += 22_000
-        XCTAssertEqual(run(rig, "5", program: "python"), ["python stir"], "30 s on")
-        rig.now += 9000
-        XCTAssertEqual(run(rig, "6", tool: "Read"), ["read look"])
-        rig.now += 9000
-        XCTAssertEqual(run(rig, "7", program: "git commit"), ["git commit stamp"])
+        XCTAssertEqual(run(rig, "r", tool: "Read"), [])
+        XCTAssertEqual(rig.core.stream.calls(Set(rig.core.stream.lanes.keys)).first?.count, 6, "each counts for its word")
     }
 
-    /// A failure always comes forward: it cuts an ambient word that plays.
-    /// One session's failures within 2 minutes climb the ladder
+    /// A failure always comes forward. One session's failures within 2 minutes climb the ladder
     /// (`ladderMs`): a bonk, a harder one, a helmet, then thrown back.
     func testFailuresClimbTheLadder() {
         XCTAssertEqual(WorkStream.ladderMs, 120_000)
@@ -116,8 +106,7 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart)
         run(rig, "0", program: "ls")
         rig.now += 9000
-        XCTAssertEqual(run(rig, "1", topic: "inspect", program: "cat"), ["cat look"])
-        XCTAssertEqual(run(rig, "2", program: "make", failed: true, error: "exit_code"), ["make bonk"], "cuts the ambient one")
+        XCTAssertEqual(run(rig, "2", program: "make", failed: true, error: "exit_code"), ["make bonk"])
         rig.now += 10_000
         XCTAssertEqual(run(rig, "3", program: "make", failed: true, error: "exit_code"), ["make bonk2"])
         rig.now += 10_000
@@ -158,7 +147,7 @@ final class WorkStreamTests: XCTestCase {
     }
 
     /// A notable call waits up to 1.5 s for the board (`waitMs`), and is
-    /// dropped past that; an ambient one isn't sent at all while one plays.
+    /// dropped past that.
     func testANotableCallWaitsBriefly() {
         XCTAssertEqual(WorkStream.waitMs, 1500)
         var s = WorkStream()
@@ -166,32 +155,11 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertNotNil(s.offer(notable, at: 0))
         XCTAssertNil(s.offer(notable, at: 500), "2 s left of the 2.5 s")
         XCTAssertNotNil(s.offer(notable, at: 1000), "free in 1.5 s")
-        XCTAssertEqual(s.lastForwardAt, 2500, "it plays when the board frees")
-        XCTAssertNil(s.offer(WorkStream.Forward(slot: 0, word: "y", style: "land", priority: .ambient), at: 3000),
-                     "an ambient one never waits")
+        XCTAssertEqual(s.heldUntil, 5000, "it plays when the board frees")
         XCTAssertNotNil(s.offer(WorkStream.Forward(slot: 0, word: "z", style: "bonk", priority: .always), at: 3000),
                         "a sure one cuts a notable one")
         XCTAssertNil(s.offer(WorkStream.Forward(slot: 0, word: "z", style: "bonk", priority: .always), at: 3200),
                      "and waits only 1.5 s behind another sure one")
-    }
-
-    /// The same word from one session, each within 3 s of the last, is a
-    /// combo that comes forward at 5, 10 and 20 (`comboGapMs`, `combos`).
-    func testARunIsACombo() {
-        XCTAssertEqual(WorkStream.comboGapMs, 3000)
-        XCTAssertEqual(WorkStream.combos, [5, 10, 20])
-        let rig = CoreRig(workStream: true)
-        rig.send(.turnStart)
-        run(rig, "0", program: "ls")
-        rig.now += 9000
-        var sent: [String] = []
-        for i in 1...10 {
-            rig.now += 2000
-            sent += run(rig, "\(i)", topic: "inspect", program: "sed")
-        }
-        XCTAssertEqual(sent, ["sed look", "sed combo", "sed combo"], "the first ambient, then the 5th and 10th")
-        let args = rig.log.compactMap { if case .call(let a) = $0 { return a } else { return nil } }
-        XCTAssertEqual(args.compactMap { $0["n"]?.int }, [5, 10])
     }
 
     /// An edit of 100 lines or more is notable: a deletion shatters.
@@ -280,7 +248,7 @@ final class WorkStreamTests: XCTestCase {
         run(rig, "2", program: "make", failed: true, error: "exit_code")
         XCTAssertEqual(rig.views.filter(\.wakesBrain).count, before, "no call woke the brain")
         let dids = rig.pipeline.transcript.events.filter { $0.kind == Event.did && $0.action == WorkStream.action }
-        XCTAssertEqual(dids.map { $0["as"]?.string }, ["arrive", "bonk", "bonk2"])
+        XCTAssertEqual(dids.map { $0["as"]?.string }, ["bonk", "bonk2"])
         XCTAssertTrue(dids.allSatisfy { $0["message"] == nil }, "HISTORY doesn't list them")
 
         let beat = rig.wait(200_000).views.first { $0.type == .checkIn }
@@ -296,9 +264,11 @@ final class WorkStreamTests: XCTestCase {
     func testTheBrainNeverHearsAGlimpse() {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
+        var shown: [String] = []
         for id in 0..<6 {
             rig.now += 3000
             rig.send(call(rig, "\(id)", program: "sed", glimpse: "PlanB.swift acmeSecret"))
+            shown += rig.core.stream.lanes.values.map(\.word)
             rig.now += 200
             rig.send(call(rig, "\(id)", program: "sed", glimpse: "PlanB.swift acmeSecret", failed: id > 2,
                           error: id > 2 ? "exit_code" : nil))
@@ -307,7 +277,6 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnEnd)
         let heard = rig.views.flatMap { [$0.line] + $0.notes }.joined(separator: "\n")
         XCTAssertFalse(heard.contains("PlanB") || heard.contains("acmeSecret"), heard)
-        let shown = rig.pipeline.transcript.events.compactMap { $0["word"]?.string }
         XCTAssertTrue(shown.contains { $0 == "PlanB.swift" || $0 == "acmeSecret" }, "the board does show it: \(shown)")
     }
 

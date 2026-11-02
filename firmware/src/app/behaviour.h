@@ -398,8 +398,8 @@ class Behaviour {
   // agents work and nothing needs you.
   const render::Stream& stream() const { return stream_; }
   bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t); }
-  void call(const char* word, uint8_t slot, render::CallStyle style, uint16_t count, uint32_t t) {
-    stream_.startCall(word, slot, style, count, t);
+  void call(const char* word, uint8_t slot, render::CallStyle style, uint32_t t) {
+    stream_.startCall(word, slot, style, t);
   }
   // The variation the look shows, from 0: the Mac's, until the variations
   // rotate.

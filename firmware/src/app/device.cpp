@@ -349,7 +349,7 @@ void Device::onDo(const Do& c, uint32_t t) {
     char word[render::Stream::kWordBytes];
     render::foldText(args["w"].as<const char*>(), render::Stream::kWordBytes - 1, word, sizeof(word));
     b_.call(word, uint8_t(heldTo(args["a"], 0, render::Stream::kLanes - 1, 0)),
-            render::callStyleFromName(args["as"].as<const char*>()), uint16_t(heldTo(args["n"], 0, 999, 0)), t);
+            render::callStyleFromName(args["as"].as<const char*>()), t);
     dirty_ = true;
     // It holds nothing up, so it's over as it starts: resting, its
     // `ended` would wait for whatever came next, and after a quiet minute

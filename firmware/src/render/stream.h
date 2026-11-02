@@ -11,14 +11,6 @@ namespace render {
 // What a word that comes forward does, by the `call` do's `as`.
 enum class CallStyle : uint8_t {
   kLand,  // drops on its head and sinks in (and any `as` the board doesn't know)
-  kArrive,
-  kLook,
-  kStir,
-  kStamp,
-  kPoof,
-  kPlane,
-  kPhone,
-  kPage,
   kHelper,
   kBack,
   kShatter,
@@ -34,7 +26,6 @@ enum class CallStyle : uint8_t {
   kShrug,
   kTimeout,
   kNo,
-  kCombo,
   kTopple,  // a build's tower falls on it
   // The whole turn's moments.
   kCompact,  // its context compacted
@@ -51,20 +42,11 @@ const char* callStyleName(CallStyle style);
 // body does when it lands.
 enum class CallMove : uint8_t {
   kSink,     // onto the crown, sinking in: a squash and a ripple
-  kArrive,   // a turn's first: onto the crown with a twinkle
-  kLook,     // beside the head, a magnifier sweeping it; the monitor's page scrolls
-  kStir,     // into a pot on the desk, bubbling
-  kStamp,    // onto a card beside it, stamped
-  kPoof,     // beside it, gone in a puff
-  kPlane,    // a paper plane from the edge, caught
-  kPhone,    // a phone beside it ringing, the word its call
-  kPage,     // a page beside it, turning
   kHit,      // between the eyes: knocked back, dizzy, stars
   kShrug,    // beside the head, then an empty bubble: a shrug
   kShatter,  // above the crown, bursting into bits it swallows
   kHail,     // a run of them raining on the crown, an umbrella too late
   kCheer,    // up over the head, with confetti: a hop
-  kCombo,    // its count popping over the head
   kDesk,     // to the desk: the monitor's spinner, count, or a tower of bricks
   kTopple,   // the tower wobbles and falls on its head
   kCompact,  // the words falling squashed into a cube that thuds onto the desk
@@ -94,7 +76,7 @@ constexpr uint32_t actResultMs(bool full) { return full ? 6000 : 2600; }
 
 struct Stream {
   static constexpr int kLanes = 4;        // WorkStream.maxLanes
-  static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and room for a combo's count
+  static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and a little room
   static constexpr int kWords = 8;        // falling at once, at most: the frame rate's budget
   // A word falls for this long, and at most this many drop for one `state`
   // however many calls it counts: the state names only a lane's latest
@@ -141,7 +123,6 @@ struct Stream {
     char text[kWordBytes] = "";
     uint8_t slot = 0;
     CallStyle style = CallStyle::kLand;
-    uint16_t count = 0;  // a combo's
     uint32_t at = 0;
     bool live = false;
   };
@@ -212,7 +193,7 @@ struct Stream {
   bool frozen() const { return call.live && call.style == CallStyle::kFreeze; }
   bool taken(const Word& w) const;
   // A word comes forward at t (the `call` do).
-  void startCall(const char* text, uint8_t slot, CallStyle style, uint16_t count, uint32_t t);
+  void startCall(const char* text, uint8_t slot, CallStyle style, uint32_t t);
   // Forgets what has finished by t.
   void prune(uint32_t t);
   void clear();

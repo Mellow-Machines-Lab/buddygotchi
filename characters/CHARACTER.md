@@ -519,8 +519,7 @@ draws the look in another emotion for a while, and the voice may speak.
 
 **A word of the work stream** (`call`) is no state of its own either
 (`render/stream.h`), and never a Moment: `w` the word, `a` its lane's slot,
-`as` its style (`bonk`, `shrug`, `land`… `render::CallStyle`), `n` a combo's
-count. It plays at once over the agents' work and holds nothing up, its
+`as` its style (`bonk`, `shrug`, `land`… `render::CallStyle`). It plays at once over the agents' work and holds nothing up, its
 `ended` sent as it starts. With no lane working, or while something needs
 you, it's skipped `hidden`. A failed call is one of its styles.
 
