@@ -26,8 +26,7 @@ wishes, not by stages.
 A stage changes only:
 
 1. **Body settings,** one row per stage, applied to every animation: size,
-   eyes, how it moves, voice pitch, and at most one feature (a sprout, a
-   mark, gold). No animation is drawn per stage.
+   eyes, how it moves, voice pitch, and at most one feature (the sprout). No animation is drawn per stage.
 2. **Which pastimes and tricks it knows:** one stage number on each row of
    the existing table, so the show unfolds with no new art. The Character
    Studio's Behavior tab groups them by stage. Asked for a trick it doesn't
@@ -35,14 +34,17 @@ A stage changes only:
 
 Going backwards affects only these.
 
-| Stage | XP | Look |
-| --- | --- | --- |
-| Hatchling | 0 | Small, huge eyes, clumsy, squeaky |
-| Sprout | 200 | A little bigger, bouncy, a sprout |
-| Buddy | 1,000 | Full size |
-| Pal | 4,000 | Confident, a mark |
-| Chonk | 12,000 | Big, slow, deep |
-| Legend | 30,000 | Big, smooth, gold |
+Four stages, to start with (the owner, 2026-11-01): Pal and Legend go, and
+more can come later from real use.
+
+| Stage | XP | About when | Look |
+| --- | --- | --- | --- |
+| Hatchling | 0 | Day 1 | Small, huge eyes, clumsy, squeaky |
+| Sprout | 200 | Day 2 | A little bigger, bouncy, a sprout |
+| Buddy | 1,000 | Week 2 | Full size |
+| Chonk | 5,000 | Week 6 or so | Big, slow, deep |
+
+At Chonk the bar stays full. Going backwards still applies.
 
 Growing plays a ceremony: a glow, a pop, the new shape, and a sign ("i
 grew!", "new: dance!"), with the voice through Jev. The popover shows the
@@ -53,7 +55,7 @@ next stage as a silhouette.
 - Whether the gel can scale its body and eyes without breaking props, the
   desk and faces; nothing in the engine does yet. Voice pitch exists
   (`voice/effects.h`).
-- Whether a Hatchling's face reads at arm's length, and Chonk fits with the
+- Whether a Hatchling's face reads at arm's length (the owner liked it as drawn), and Chonk fits with the
   low sign and the desk.
 
 Storyboard: `/tmp/boop-storyboard/stages.html`.
