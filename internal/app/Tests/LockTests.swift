@@ -170,5 +170,12 @@ final class LockTests: XCTestCase {
         XCTAssertTrue(rig.pipeline.asleepAndIdle(at: rig.now), "the dream follows by itself")
         rig.pipeline.said("hey", by: .device, at: rig.now)
         XCTAssertEqual(doing(), "idle", "and your words")
+        // BOOT with someone in the line is you showing up too: once they're
+        // answered it stays awake, not back to its nap.
+        rig.send(.needsYou, tool: "Bash")
+        rig.core.nap(at: rig.now)
+        XCTAssertFalse(rig.core.line(at: rig.now).isEmpty)
+        rig.pipeline.press(at: rig.now)
+        XCTAssertFalse(rig.core.napping, "and BOOT")
     }
 }

@@ -228,6 +228,7 @@ public final class Pipeline {
         guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, touch: false, buddy: buddy) }
         return input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
+            endNaps(buddy, at: now)
             run(core.press(at: now, seq: e.seq), buddy: buddy)
         }
     }
