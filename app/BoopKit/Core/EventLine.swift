@@ -181,6 +181,26 @@ public enum EventLine {
     /// Away less than this is a short break, said with no number.
     public static let shortBreakMs: Int64 = 15 * 60_000
 
+    /// You locked the Mac, with how long since the last lock, if the log
+    /// knows: `You locked the Mac, first time in 3 h.` from `lockWhileMs`,
+    /// `You locked the Mac again, 5 min after the last time.` under it. Facts
+    /// only: what they mean is the steering's.
+    public static func locked(sinceLastMs ms: Int64?) -> String {
+        guard let ms else { return "You locked the Mac, first time in a while." }
+        if ms >= lockWhileMs { return "You locked the Mac, first time in \(ms / 3_600_000) h." }
+        return "You locked the Mac again, \(span(ms)) after the last time."
+    }
+
+    /// A lock this long after the last is the first in a while.
+    public static let lockWhileMs: Int64 = 60 * 60_000
+
+    /// You unlocked the Mac after a lock too short to be an away:
+    /// `You unlocked the Mac after 2 min.`
+    public static func unlocked(afterMs ms: Int64) -> String { "You unlocked the Mac after \(span(ms))." }
+
+    /// A short span in whole minutes, or under a minute.
+    static func span(_ ms: Int64) -> String { ms < 60_000 ? "under a minute" : "\(ms / 60_000) min" }
+
     /// You answered an ask: `You answered Boop's "fav snack?": cookie.`
     public static func answered(_ question: String, answer: String, name: String = CharacterPack.active.name) -> String {
         "You answered \(name)'s \"\(question)\": \(answer)."
@@ -301,6 +321,9 @@ public enum EventLine {
         - "You" stepping away from the Mac and coming back is the person. A
           short break is under 15 minutes; past that the line says how long,
           in minutes, hours or days.
+        - "You locked the Mac" and "You unlocked the Mac" are the person's screen,
+          and the person may be going. An unlock after a real break has no line
+          of its own: that is "You came back".
         - "You answered \(name)'s" question is the person tapping one of the two
           answers \(name) held up; it answers as to anything said to it, with a
           glad face and a sign back for the answer.

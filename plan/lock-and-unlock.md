@@ -1,6 +1,6 @@
 # Lock and unlock
 
-Updated 2026-11-01. Boop answers every lock and unlock of the Mac: a
+Updated 2026-11-02. Built, but for its last part. Boop answers every lock and unlock of the Mac: a
 slight silent wave by default, more when it has been a while, a goodnight
 at night, a snub when it's cross. Decided with the owner on 2026-11-01.
 Build on `wish`. Nothing here needs a permission: `PresenceSignals`

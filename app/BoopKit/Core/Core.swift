@@ -192,6 +192,9 @@ public final class Core {
     public var pushToTalkWorks: () -> Bool = { true }
     /// Whether you're away from the Mac, for the wish's wait.
     var awayFromMac = false
+    /// Whether Boop went to sleep at your lock at night (`nap`), until you
+    /// show up. A launch forgets it, as nothing else hangs on it.
+    var napping = false
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -582,10 +585,37 @@ public final class Core {
     public static let dozeOffNightMs = Tags.tiers.last!.fromMs
     public static let dozeOffMs: Int64 = 60 * 60_000
 
-    /// Whether Boop has dozed off at `now` though sessions are open: they
-    /// all rest, the latest since `rests.max()`, and nothing waits on you.
+    /// Boop sleeps at once, as Jev chose at your lock at night, with agents
+    /// open or not, and the dream follows as for any sleep. An agent's work
+    /// or a request still shows; once they're over it sleeps on.
+    @discardableResult
+    public func nap(at now: Int64) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        napping = true
+        publish(now, &fx)
+        return fx
+    }
+
+    /// You showed up (an unlock, your coming back, a touch or your words):
+    /// the nap is over.
+    @discardableResult
+    public func endNap(at now: Int64) -> [CoreEffect] {
+        guard napping else { return [] }
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        napping = false
+        publish(now, &fx)
+        return fx
+    }
+
+    /// Whether Boop has dozed off at `now` though sessions are open: it
+    /// went for a nap, or they all rest, the latest since `rests.max()`;
+    /// and nothing waits on you.
     func dozedOff(at now: Int64, rests: [Int64], waiting: Bool) -> Bool {
-        guard !waiting, let since = rests.max() else { return false }
+        guard !waiting else { return false }
+        if napping { return true }
+        guard let since = rests.max() else { return false }
         return now - since >= (calendar(at: now).contains("night") ? Self.dozeOffNightMs : Self.dozeOffMs)
     }
 

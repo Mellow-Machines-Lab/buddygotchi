@@ -36,7 +36,8 @@ final class PresenceTests: XCTestCase {
         }
 
         mutating func signal(_ s: PresenceDetector.Signal) {
-            if let e = detector.signal(s, at: now) { made.append(e) }
+            // The `lock` events are `LockTests`'.
+            made += detector.signal(s, at: now).filter { $0.type == .presence }
         }
 
         /// What it made, as `start locked` and `end input`.

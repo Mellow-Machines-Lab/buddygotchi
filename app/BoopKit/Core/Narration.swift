@@ -58,6 +58,9 @@ public struct Narration: Equatable, Sendable {
             return Narration(cause: "You came back after \(span.words) away.", fact: fit("you were away \(span.short)", "away \(span.short)"))
         case .presence?:
             return Narration(cause: "You stepped away.")
+        case .lock?:
+            return e.phase == .start ? Narration(cause: "You locked the Mac.", fact: fit("you locked the Mac", "Mac locked"))
+                : Narration(cause: "You unlocked the Mac.", fact: fit("you unlocked it", "Mac unlocked"))
         case .poke?:
             let count = facts["in_a_row"]?.int ?? 1
             if facts["asleep"]?.bool == true { return Narration(cause: "You poked it while it slept.", fact: fit("you woke {name}")) }

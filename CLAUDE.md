@@ -159,6 +159,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | words | What you say to Boop on push-to-talk | talk (for the event), said | `talk` |
 | listening | Boop hearing you, while BOOT or the mic is held | push-to-talk (the state) | `listening` |
 | presence | You at the Mac, away, or back | | `presence_start`, `presence_end` |
+| lock, unlock | The Mac's screen locking and unlocking, every time however short; an away only after 10 min | | `lock_start`, `lock_end` |
 | button | BOOT: hands you the next agent in the line | press, hand-off | `press` |
 | dismiss | A finger held on the needs-you screen | | |
 | face down | Do not disturb: Moments are refused, Doing goes on | | `facedown` |
@@ -168,6 +169,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | doing | What Boop is busy with: resting, working, asleep, listening, no app | base, look (for the state) | `base` |
+| nap | Boop asleep at once, Jev's pick at a lock at night, until you show up (`Core.nap`) | | `reply`: `nap`, `base`: `asleep` |
 | look | Only the art that draws a Doing | | |
 | activity | How it's working: testing, delegating, terminal, searching, analysing, a tool, waiting, planning | act | `act` |
 | tier | How long it's been working or resting: tier 1 at 30 s to tier 5 at 10 min (`Tags.tiers`) | stage (that's growth's) | `tier1`…`tier5` |
@@ -201,6 +203,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | size | How much the Moment matters: small, medium, big, huge | intensity, loops | `react.intensity`, `loops` |
 | finish | The animation a turn's end plays, scaled by the turn's length; the ticket and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
 | greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
+| wave | Boop's answer to your lock or unlock: `bye` or `hello`, or `reply-wave`, slighter, when small; a snub has none | | `reply` |
 | reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
 | ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`; never needs an answer | quiz, prompt | `ask` |
 | wish | Boop's want, about one a day by its steering, kind pet, chat or work, its sign picked by Jev like an ask's; a rule meets it at once by a touch on its face, push-to-talk or working with an agent; until you've met a kind once it shows how; left too long it sighs and slumps (`Core.Wish`, `[wish …]` in `asks.md`, `state.wish`, `wish_how`, `wish_met`, `wish_gone`) | need, request | `wish` |

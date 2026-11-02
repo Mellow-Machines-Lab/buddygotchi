@@ -113,6 +113,8 @@ public final class MomentOutput: Output {
     /// or with nil lets it talk.
     let hushed: (Int64) -> Bool
     let hush: (_ ms: Int64?, _ at: Int64) -> Void
+    /// Boop goes to sleep now, at your lock at night (`Core.nap`).
+    let nap: (Int64) -> Void
     /// How much it says, chosen in Settings: on Quiet, `say` offers no
     /// topic and no swear, and a small moment or a finish says nothing.
     let talk: () -> Talk
@@ -137,6 +139,7 @@ public final class MomentOutput: Output {
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
+                nap: @escaping (Int64) -> Void = { _ in },
                 talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Narration? = { _ in nil },
                 dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }, asks: [TaggedLine] = [],
                 askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] },
@@ -164,6 +167,7 @@ public final class MomentOutput: Output {
         self.moment = moment
         self.hushed = hushed
         self.hush = hush
+        self.nap = nap
         self.talk = talk
         self.reason = reason
         self.dreams = dreams
@@ -291,6 +295,61 @@ public final class MomentOutput: Output {
         "is", "are", "can", "could", "do", "does", "did", "should",
     ]
 
+    /// `react.move`'s answer at your lock or unlock for a wave, and the board's
+    /// reply for one that's small: a slighter motion than `bye` or `hello`,
+    /// the pack's `reply-wave` clip.
+    public static let wave = "wave"
+
+    /// The questions at your lock or unlock, from `asked`: a face always, as
+    /// you did something it answers; the move is a wave or none, and at a
+    /// lock at night (`mayNap`) the nap.
+    static func lockQuestions(_ asked: [Question], lock: Bool, mayNap: Bool, in pack: CharacterPack) -> [Question] {
+        let name = pack.name
+        return asked.map { q in
+            switch q.key {
+            case emotionKey:
+                return Question(key: q.key, text: "Which emotion does \(name) show as you \(lock ? "lock" : "unlock") the Mac? It always shows one.",
+                                about: q.about, judgeBy: q.judgeBy, options: q.options.filter { $0.name != "none" })
+            case moveKey:
+                return Question(key: q.key, text: "Does \(name) wave as you \(lock ? "lock" : "unlock") the Mac? The wave is as big as the moment.",
+                                about: "the NOW section", judgeBy: "PERSONALITY and MOOD",
+                                options: [Option("none", "No wave: \(name) is cross with you, and turns away or huffs."),
+                                          Option(wave, lock ? "It waves you off: slight when the moment is small." : "It waves hello: slight when the moment is small.")]
+                                    + (mayNap ? [Option("nap", "It says good night and falls asleep at once, until you're back.")] : []))
+            case sayKey:
+                // Any answer but none says the wave's own word; these say so.
+                return Question(key: q.key, text: "What does \(name) say aloud \(lock ? "as you go" : "as you're back"), in the emotion it shows?",
+                                about: q.about, judgeBy: q.judgeBy,
+                                options: q.options.map { o in
+                                    switch o.name {
+                                    case "none": Option("none", "Nothing: a routine lock or unlock, the wave in silence, or wherever CONTEXT's Talk row asks for silence.")
+                                    case "hello": Option("hello", lock ? "A word for your going: goodbye, or good night." : "A word for your being back: hello.")
+                                    default: o
+                                    }
+                                })
+            default: return q
+            }
+        }
+    }
+
+    /// Whether `about`, your lock, may put Boop to sleep: at night, with no
+    /// agent working for it to watch.
+    func mayNap(_ about: Event) -> Bool {
+        about.phase == .start && calendar(about).contains("night") && !moment(about).contains("working")
+    }
+
+    /// What a move at your lock or unlock is, as a reply's lines and words
+    /// know it: `bye`, `hello` or `nap`; nil at any other event, or for no
+    /// wave.
+    static func waved(_ answers: Answers, about: Event?) -> String? {
+        guard let about, about.type == .lock else { return nil }
+        switch answers[moveKey]?.choice {
+        case wave?: return about.phase == .start ? "bye" : "hello"
+        case "nap"? where about.phase == .start: return "nap"
+        default: return nil
+        }
+    }
+
     /// How long after an `ouch` a reply is making up (`makeup`, a tag its
     /// sign may have).
     public static let makeupMs: Int64 = 10 * 60_000
@@ -378,6 +437,7 @@ public final class MomentOutput: Output {
     /// nil for none.
     public static func move(_ answers: Answers) -> String? {
         if let a = animation(answers) { return a }
+        if answers[moveKey]?.choice == wave { return wave }
         guard let choice = answers[moveKey]?.choice, (replies + [unhush(of: CharacterPack.active.name)]).contains(where: { $0.name == choice })
         else { return nil }
         return reply(answers)
@@ -439,6 +499,16 @@ public final class MomentOutput: Output {
                                      options: [Option("facts", "With a status reply: the agents' facts, none of these.")]
                                          + captions.map { Option($0.text, "With \(Self.article($0.replies[0])) \($0.replies.joined(separator: " or ")) reply"
                                                                  + ($0.replies.contains("dunno") ? " (dunno, a huh to a question)." : ".")) })]
+        }
+        if let about, about.type == .lock {
+            let lock = about.phase == .start
+            let asked = Self.speech(Self.lockQuestions(asked, lock: lock, mayNap: mayNap(about), in: pack), hushed: hushedNow, talk: talk(), in: pack)
+            let captions = offered(now, log)
+            guard !captions.isEmpty else { return asked }
+            return asked + [Question(key: Signs.questionKey,
+                                     text: "If \(pack.name) waves, does it hold up a sign as you \(lock ? "go" : "come back")? PERSONALITY says when.",
+                                     about: "NOW and CONTEXT", judgeBy: "PERSONALITY and MOOD",
+                                     options: [Option("none", "No sign: the wave alone.")] + captions.map { Option($0, "A sign that says this.") })]
         }
         let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
         // A question it may ask, the sign being the ask; at an idle
@@ -503,6 +573,11 @@ public final class MomentOutput: Output {
         guard let about = Self.about(now, log) else { return [] }
         // The line that tells the dream: a sign the dream's tags fit.
         if let tags = told(about) { return Signs.dreams(dreams, tags: tags + calendar(about)) }
+        // Your lock or unlock: the lines for its goodbye or hello, by the
+        // moment: `bye working` while an agent works.
+        if about.type == .lock {
+            return Signs.replies(replies, about.phase == .start ? "bye" : "hello", calendar: replyTags(about))
+        }
         // An ask answered: what it holds up after that answer.
         if about.type == .ask, let q = about["q"]?.string, let answer = about["answer"]?.string {
             return Asks.followUps(asks, id: q, answer: answer)
@@ -661,7 +736,7 @@ public final class MomentOutput: Output {
         // 3. The effect: the face, its move, held as long as the moment is
         // big, and the `say`, if Voice has a take of what it says, as big,
         // in this face's mood. To what you said, the move is the reply.
-        let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : nil
+        let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : Self.waved(answers, about: about)
         let size = Self.size(answers)
         let pick = talk ? nil : Self.animation(answers)
         let at = about?.at ?? 0
@@ -706,11 +781,14 @@ public final class MomentOutput: Output {
         let say = Moment.Say(takes: said)
         let sign: String?
         var show: String?
-        if let reply, let about {
+        if talk, let reply, let about {
             (sign, show) = replySign(reply, about, answers)
             // The board opens no drawer over the needs-you screen: the
             // sign answers alone then.
             if blocked() != nil { show = nil }
+        } else if about?.type == .lock, reply == nil {
+            // A snub holds up nothing.
+            sign = nil
         } else {
             let picked = answers[Signs.questionKey]?.choice
             sign = wishing?.sign ?? picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
@@ -725,7 +803,9 @@ public final class MomentOutput: Output {
             reaction.sign = asking?.question
             reaction.ask = asking
         }
-        reaction.reply = reply
+        // A small wave is the slighter motion; the nap and what you said
+        // are as they are.
+        reaction.reply = !talk && reply != "nap" && reply != nil && size.name == "small" ? Self.wave : reply
         reaction.show = show
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
@@ -750,11 +830,13 @@ public final class MomentOutput: Output {
         // Hushed for as long as the moment is big, or let talk again.
         if reply == "hush" { hush(Core.hushMsBySize[Self.sizes.firstIndex(of: size) ?? 1], at) }
         if reply == "unhush" { hush(nil, at) }
+        if reply == "nap", !talk { nap(at) }
         if let wishing { makeWish(wishing.kind, at) }
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
         let did = "\(pack.name) had \(Self.article(choice)) \(choice) moment (\(size.name))"
-            + (pick.map { ", playing \(Self.article($0)) \($0)" } ?? reply.map { ", replying \($0)" } ?? "")
+            + (pick.map { ", playing \(Self.article($0)) \($0)" }
+                ?? reply.map { talk ? ", replying \($0)" : $0 == "nap" ? ", going to sleep" : ", waving" } ?? "")
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }

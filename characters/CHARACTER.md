@@ -856,6 +856,8 @@ Some clips' ids mean something to a face:
 
 - `blink`: Pixel's face plays it at each blink, but in a design that blinks
   on its own.
+- `reply-wave`: the gel plays it for a small wave at your lock or unlock
+  of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
 - `reply-<name>`: the gel plays it for that reply, one for each of
   `MomentOutput.replies` and `dunno`. A `nap` or a `dance` while the look is
   idle or asleep plays the gel's own pastime instead.

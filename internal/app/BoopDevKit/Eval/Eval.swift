@@ -112,6 +112,8 @@ public struct Scenario: Sendable {
         /// the working agent's to-do list (`3/7`, or `none`).
         public var needs: Set<String>?
         public var todo: Set<String>?
+        /// What Boop is busy with after the step (`asleep`, `idle`, `working`).
+        public var doing: Set<String>?
         /// Whether a pass of the step, a check-in's on the way to it
         /// included, told the dream (`told`) or none did (`none`).
         public var dream: Set<String>?
@@ -128,7 +130,7 @@ public struct Scenario: Sendable {
             return wanted.contains { $0 == "some" || caption.range(of: $0, options: .caseInsensitive) != nil }
         }
         /// Whether any of it is about the screen.
-        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil }
+        public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil || doing != nil }
         /// Whether any of it is about a pass.
         public var wantsAPass: Bool {
             react != nil || move != nil || intensity != nil || say != nil || said != nil
@@ -249,7 +251,7 @@ public struct Scenario: Sendable {
     public var memory = WrittenMemory()
 
     public static let events = ["wish", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
-                                "away", "back", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
+                                "away", "back", "lock", "unlock", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
                                 "to-do list", "wait", "ask answered"]
 
     /// How a reaction ends, from a step's `reaction`: nil for a value it
@@ -444,7 +446,7 @@ public struct Scenario: Sendable {
                     return Set(step.expectOrder[key] ?? [])
                 }
                 let keys = ["react", "move", "intensity", "say", "said", "mood", "offered", "opens", "idle",
-                            "helpers", "when", "needs", "todo", "dream", "sign"]
+                            "helpers", "when", "needs", "todo", "doing", "dream", "sign"]
                 let unknown = Set(e.keys).subtracting(keys)
                 guard unknown.isEmpty else { throw badStep("expect has only \(keys.joined(separator: ", "))") }
                 step.expect = Expectation(react: try set("react"), move: try set("move"), intensity: try set("intensity"), say: try set("say"),
@@ -458,6 +460,8 @@ public struct Scenario: Sendable {
                 guard (needs ?? []).isSubset(of: ["shown", "none"]) else { throw badStep("expect.needs is shown or none") }
                 guard (todo ?? []).allSatisfy({ $0 == "none" || StateSnapshot.Todo(text: $0) != nil }) else { throw badStep("expect.todo is like 3/7, or none") }
                 step.expect?.needs = needs
+                let doing = try set("doing")
+                step.expect?.doing = doing
                 step.expect?.todo = todo
                 let dream = try set("dream")
                 guard (dream ?? []).isSubset(of: ["told", "none"]) else { throw badStep("expect.dream is told or none") }
@@ -468,7 +472,7 @@ public struct Scenario: Sendable {
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
                                              ("intensity", step.expect?.intensity, MomentOutput.sizeOptions.map(\.name)),
-                                             ("move", step.expect?.move, (MomentOutput.animations + MomentOutput.replies).map(\.name) + ["unhush"])] {
+                                             ("move", step.expect?.move, (MomentOutput.animations + MomentOutput.replies).map(\.name) + ["unhush", MomentOutput.wave])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -563,7 +567,7 @@ public struct Eval {
         /// What the screen showed: the idle and helper counts, the tags,
         /// whether the needs-you screen showed, and the to-do list (`3/7`, or
         /// `none`).
-        public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String)?
+        public var screen: (idle: Int, helpers: Int, when: [String], needs: Bool, todo: String, doing: String)?
         /// Whether the pass's line told the dream.
         public var told = false
 
@@ -576,6 +580,7 @@ public struct Eval {
                 if let w = expected.when, !w.isSubset(of: shown.when) { return false }
                 if let n = expected.needs, !n.contains(shown.needs ? "shown" : "none") { return false }
                 if let t = expected.todo, !t.contains(shown.todo) { return false }
+                if let d = expected.doing, !d.contains(shown.doing) { return false }
                 return true
             }
             if let r = expected.react, !r.contains(react ?? "none") { return false }
@@ -609,7 +614,7 @@ public struct Eval {
                         expected.dream.map { "dream \($0.sorted().joined(separator: "|"))" },
                         expected.sign.map { "sign \($0.sorted().joined(separator: "|"))" }].compactMap { $0 }
             let got = opened.map { "opened \($0)" }
-                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo)" }
+                ?? screen.map { "idle \($0.idle), helpers \($0.helpers), when \($0.when.joined(separator: " ")), needs \($0.needs ? "shown" : "none"), todo \($0.todo), doing \($0.doing)" }
                 ?? dropped.map { "dropped: \($0)" }
                 ?? "react \(react ?? "none"), move \(move ?? "none"), intensity \(intensity ?? "none"), say \(say ?? "none"), said \(said ?? "none"), mood \(mood)"
                 + (expected.offered == nil ? "" : ", offered \(offered.sorted().joined(separator: "|"))")
@@ -926,7 +931,8 @@ public struct Eval {
                 check.expected.when = expect.when
                 check.expected.needs = expect.needs
                 check.expected.todo = expect.todo
-                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo?.text ?? "none")
+                check.expected.doing = expect.doing
+                check.screen = (shown.idle, shown.helpers, shown.when, shown.attn != nil, shown.todo?.text ?? "none", shown.doing)
                 checks.append(check)
                 if !expect.wantsAPass, expect.opens == nil { continue }
             }
@@ -1160,6 +1166,13 @@ public struct Eval {
         case "away": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .start, specificType: "locked",
                                                  data: ["since": .int(now)])) }]
         case "back": return [{ $0.presence(Event(at: now, source: .mac, type: .presence, phase: .end, specificType: "unlocked")) }]
+        // The screen locks and unlocks, as the detector says so at once:
+        // an `unlock` is since the last `lock`.
+        case "lock": return [{ $0.lock(PresenceDetector.lockEvent(at: now)) }]
+        case "unlock": return [{ p in
+            let since = p.transcript.events.last { $0.kind == Event.kind(.lock, .start) }?.at ?? now
+            return p.lock(PresenceDetector.unlockEvent(since: since, at: now))
+        }]
         // The board ends the last ask: the left answer tapped, the right,
         // a touch, or nobody.
         case "ask answered": return [{ $0.answerLast(step.pick ?? "a", at: now) ?? $0.tick(at: now) }]

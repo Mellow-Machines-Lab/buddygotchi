@@ -149,6 +149,8 @@ public final class TranscriptView {
         /// the idle check-ins since.
         var lastActivityAt: Int64?
         var hourlies = 0
+        /// When the screen last locked, for the next lock's line.
+        var lastLockAt: Int64?
         /// The last event folded, and whether the last agent event had a
         /// line: a request it answered says so only when it didn't.
         var at = 0
@@ -271,7 +273,7 @@ public final class TranscriptView {
     /// keeps its line but waits for its reading to wake the brain
     /// (`hold`).
     public static let wakes: [String: Int] = [
-        "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
+        "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
         "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0,
     ]
 
@@ -329,13 +331,14 @@ public final class TranscriptView {
 
     /// Whether the kinds `keeps` names have lines: turns'
     /// starts and ends, "needs you", pokes, what you said, you stepping
-    /// away and coming back, and check-ins, and tool calls' ends when
-    /// notable.
+    /// away and coming back, locks and unlocks, and check-ins, and tool
+    /// calls' ends when notable.
     public static func keeps(_ type: Event.Kind?, _ phase: Event.Phase?, notable: Bool) -> Bool {
         switch (type, phase) {
         case (.turn?, .start?), (.turn?, .end?), (.tool?, .wait?), (.poke?, nil), (.press?, nil), (.gesture?, nil), (.said?, nil), (.prompt?, nil),
              (.lastMessage?, nil), (.checkIn?, nil),
-             (.presence?, .start?), (.presence?, .end?), (.needsYou?, .start?), (.needsYou?, .end?): true
+             (.presence?, .start?), (.presence?, .end?), (.lock?, .start?), (.lock?, .end?),
+             (.needsYou?, .start?), (.needsYou?, .end?): true
         case (.tool?, .end?): notable
         default: false
         }
@@ -471,6 +474,7 @@ public final class TranscriptView {
                         facts: ["q": e["q"] ?? .null, "answer": .string(answer), "pick": .string(e.specificType),
                                 "keeps": e["keeps"] ?? .bool(false)])
         case .presence?: return presence(e)
+        case .lock?: return lock(e)
         case .checkIn?: return checkIn(e)
         case .needsYou?: return needs(e)
         case .reacted?: return e["message"]?.string.map { Line($0) }
@@ -877,6 +881,22 @@ public final class TranscriptView {
         default:
             return nil
         }
+    }
+
+    /// The Mac's screen locked or unlocked. A lock says how long since the
+    /// last, and an unlock how long it was locked; an unlock ending an away
+    /// has no line, so no pass: the back that follows at your first touch is
+    /// the one reaction. An unlock is you, so it's activity.
+    func lock(_ e: Event) -> Line? {
+        if e.phase == .start {
+            let sinceLast = fold.lastLockAt.map { max(0, e.at - $0) }
+            fold.lastLockAt = e.at
+            return Line(EventLine.locked(sinceLastMs: sinceLast), facts: sinceLast.map { ["since_last_ms": .int($0)] } ?? [:])
+        }
+        noteActivity(e.at)
+        guard fold.away.since == nil, let since = e["since"]?.int else { return nil }
+        let ms = max(0, e.at - since)
+        return Line(EventLine.unlocked(afterMs: ms), facts: ["locked_ms": .int(ms)])
     }
 
     // MARK: Check-ins

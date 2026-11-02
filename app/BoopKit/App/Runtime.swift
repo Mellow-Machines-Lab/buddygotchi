@@ -701,7 +701,14 @@ public final class Runtime: @unchecked Sendable {
 
     /// A signal from the Mac for the presence detector.
     func presenceSignal(_ signal: PresenceDetector.Signal) {
-        if let e = presence.signal(signal, at: options.clock()) { recordPresence(e) }
+        for e in presence.signal(signal, at: options.clock()) {
+            if e.type == .lock {
+                options.log("presence: \(e.specificType)")
+                run(pipeline.lock(e))
+            } else {
+                recordPresence(e)
+            }
+        }
     }
 
     /// Carries out a core's effects from a call outside the pipeline: the

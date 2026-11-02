@@ -27,6 +27,10 @@ extension Event {
     /// What it is, whatever agent it came from.
     public enum Kind: String, Sendable, CaseIterable {
         case session, turn, tool, subagent, poke, presence
+        /// The Mac's screen locking (`start`) and unlocking (`end`), every
+        /// time, however short: Boop answers each. An away and a back are
+        /// `presence`, which go on as they are.
+        case lock
         /// Boop looking in by itself: working, idle (`check_in`) or
         /// hourly; on disk by its older name.
         case checkIn = "heartbeat"

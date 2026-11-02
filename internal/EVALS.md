@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-01. How we check that Jev decides as Boop should: short
+Updated 2026-11-02. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -60,6 +60,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
 | `away` | You lock the screen and leave: a `presence` start, `locked`, since this moment, `You stepped away from the Mac.`, which wakes no pass |
 | `back` | You unlock it: a `presence` end, `unlocked`, `You came back to the Mac after a long break.` with the break's band since the last `away` |
+| `lock`, `unlock` | The screen locks or unlocks, however short: a `lock` start, or end since the last `lock`, each waking a pass: `You locked the Mac, first time in a while.`, `You unlocked the Mac after 2 min.`. After an `away` the unlock has no line, so no pass: its `back` is the one reaction |
 | `session started` | A Claude session opens with no turn (`SessionStart`, `startup`): Boop is awake and idle, not asleep. No line, so no pass |
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
@@ -82,7 +83,7 @@ long list that checks little:
 | Checked | Against |
 | --- | --- |
 | `react` | Jev's pick for the `react.face` question: `none` or an emotion |
-| `move` | The move the Moment played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); or `none` when it played none or Boop didn't react |
+| `move` | The move the Moment played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); at your lock or unlock `wave`, or at a night's lock `nap`; or `none` when it played none or Boop didn't react |
 | `intensity` | The Moment's size, Jev's `react.intensity` pick (`small` to `huge`: how long the emotion held and how big what it said), or `none` when `react` didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the Moment held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
@@ -277,7 +278,7 @@ file-name order:
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.face": "amused"}`), ahead of its `expect` |
 | `steps[].expect.dream` | `told` when a pass of the step (a check-in's on the way included) answered the line that told the dream, `none` when none did |
 | `steps[].expect.opens` | What a `press` opened, `agent thread` (`claude docs`), checked with no pass |
-| `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), and the working agent's to-do list (`3/7`, or `none`) |
+| `steps[].expect.idle`, `helpers`, `when`, `needs`, `todo`, `doing` | What the screen shows after the step, from the core's `state`, checked with no pass: how many sessions sit idle, how many helpers work (each a `\|` set of counts), tags that must all be on (`halloween\|morning`), whether the needs-you screen shows (`shown` or `none`), the working agent's to-do list (`3/7`, or `none`), and the Doing (`asleep`, `idle`, `working`) |
 | `steps[].expect` | Any of `react` (the emotion), `move`, `intensity`, `say`, `said` (a take's text, or `some` or `none`), `mood`, `offered` and `sign`, each a `\|`-separated list |
 
 A file with no `case`, an unknown key, event, personality, `expect` key
@@ -297,8 +298,9 @@ the file and step.
 packs keep strict scenarios of their own, in their words: a scenario with no
 brief is a must.
 
-- **Code checks** (`53`, `68`, `69`, `92`, `93`, `115`–`117`): `scripted`, the
-  code's rules, which need no Jev: the mood kept on the graph and the screen.
+- **Code checks** (`53`, `68`, `69`, `92`, `93`, `115`–`117`, `164`, `166`):
+  `scripted`, the code's rules, which need no Jev: the mood kept on the graph
+  and the screen, one reaction at a long unlock, the nap asleep at once.
 - **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `123`, `126`,
   `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so
   exact checks stay. A failed turn is never celebrated, and neither is an agent

@@ -214,6 +214,7 @@ public final class Pipeline {
     public func poke(at now: Int64, finish: ThreadRef? = nil, byButton: Bool = false, buddy: String? = nil) -> Step {
         input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", buddy: buddy))
+            endNaps(buddy, at: now)
             run(core(buddy).poke(at: now, seq: e.seq, finish: finish, touch: !byButton), buddy: buddy)
         }
     }
@@ -270,6 +271,7 @@ public final class Pipeline {
     public func gesture(_ kind: String, request: Int? = nil, at now: Int64, buddy: String? = nil) -> Step {
         input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind, buddy: buddy))
+            endNaps(buddy, at: now)
             if kind == Core.dismissGesture, let request { run(core(buddy).dismiss(request: request, at: now), buddy: buddy) }
             if Touch(rawValue: kind)?.meetsPetWish == true { run(core(buddy).meetWish(.pet, at: now), buddy: buddy) }
         }
@@ -313,6 +315,7 @@ public final class Pipeline {
         let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
         return input(at: now) {
             harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
+            endNaps(buddy, at: now)
             if let buddy { run(core(buddy).meetWish(.chat, at: now), buddy: buddy) } else { meetWishes(.chat, at: now) }
         }
     }
@@ -330,7 +333,24 @@ public final class Pipeline {
         input(at: event.at) {
             harness.emit(event)
             for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, at: event.at), buddy: tag(b.id)) }
+            if event.phase == .end { endNaps(nil, at: event.at) }
         }
+    }
+
+    /// The Mac's screen locked or unlocked (the presence detector's): logged,
+    /// and each wakes the brain, but an unlock ending an away, whose back is
+    /// the one reaction (`TranscriptView.lock`). An unlock ends a nap.
+    @discardableResult
+    public func lock(_ event: Event) -> Step {
+        input(at: event.at) {
+            harness.emit(event)
+            if event.phase == .end { endNaps(nil, at: event.at) }
+        }
+    }
+
+    /// You showed up: `buddy`'s nap ends, or every buddy's (`Core.nap`).
+    func endNaps(_ buddy: String?, at now: Int64) {
+        for b in buddies where buddy == nil || b.id == buddy { run(cores[b.id]!.endNap(at: now), buddy: tag(b.id)) }
     }
 
     /// Whether Boop is asleep and no agent works: you're away, or every

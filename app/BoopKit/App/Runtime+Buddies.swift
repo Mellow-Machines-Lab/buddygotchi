@@ -166,6 +166,9 @@ extension Runtime {
                 // What you said hushed it, or let it talk again.
                 let fx = ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at)
                 if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
+            }, nap: { [weak pipeline] at in
+                let fx = core.nap(at: at)
+                if let effects = m.effects { effects(fx) } else { pipeline?.effects(fx, buddy: voice, at: at) }
             }, talk: m.talk, reason: { [weak h] about in
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
