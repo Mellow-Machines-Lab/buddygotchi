@@ -88,7 +88,7 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(result.checks[2].mood, "determined")
         XCTAssertEqual(result.checks[3].mood, "proud", "2 minutes after the last failure: no rule holds a mood")
         let last = try XCTUnwrap(states.all.last)
-        XCTAssertTrue(last.contains("\n  Boop made a determined face (medium), and said \"\(said)\".\n"), last)
+        XCTAssertTrue(last.contains("\n  Boop had a determined moment (medium), and said \"\(said)\".\n"), last)
     }
 
     /// EVALS.md §3: a step's `reaction` says how the reactions its passes
@@ -105,8 +105,8 @@ final class EvalTests: XCTestCase {
         for (file, shown) in [("11-comeback-still-showing.json", true), ("12-comeback-that-didnt-happen.json", false)] {
             _ = try await eval.run(try Scenario(file: try Self.scenarios().appendingPathComponent(file)))
             let finish = try XCTUnwrap(states.all.last)
-            XCTAssertEqual(finish.contains("\n  Boop made a proud face (small). (in progress)\n"), shown, finish)
-            XCTAssertEqual(finish.contains("after failing.\n  Boop made"), shown, "one that didn't happen isn't shown: \(finish)")
+            XCTAssertEqual(finish.contains("\n  Boop had a proud moment (small). (in progress)\n"), shown, finish)
+            XCTAssertEqual(finish.contains("after failing.\n  Boop had"), shown, "one that didn't happen isn't shown: \(finish)")
         }
         let bad = FileManager.default.temporaryDirectory.appendingPathComponent("bad-reaction-\(UUID().uuidString).json")
         try Data(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","reaction":"maybe","expect":{"react":"none"}}]}"#.utf8)

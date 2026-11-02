@@ -287,7 +287,7 @@ public enum DebugLog {
     ///     ▸ 12 tool end: claude's tests failed on "fix-nav" (landing).
     ///       pass jev:jev-latest 240 ms: mood grumpy 0.69 · react.face annoyed 0.63 · react.move none 0.81 · react.intensity medium 0.58 · say tests 0.74
     ///       ✓ mood: Boop's mood changed: happy → grumpy.
-    ///       … react: Boop made an annoyed face (medium), and said "Test"
+    ///       … react: Boop had an annoyed moment (medium), and said "Test"
     ///       ✓ react (15) done
     public final class Printer {
         var shownFullState = false

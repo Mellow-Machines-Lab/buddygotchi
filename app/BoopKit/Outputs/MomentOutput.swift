@@ -565,14 +565,14 @@ public final class MomentOutput: Output {
         return asked.map { q in
             switch q.key {
             case emotionKey:
-                return Question(key: q.key, text: "Which face does \(name) make at what you said? It always makes one.", about: q.about,
+                return Question(key: q.key, text: "Which emotion does \(name) show at what you said? It always shows one.", about: q.about,
                                 judgeBy: q.judgeBy, options: q.options.filter { $0.name != "none" })
             case moveKey:
                 return Question(key: q.key, text: "What does \(name) reply to what you said? It answers what you meant with its body and a sign, never with words of its own.",
                                 about: "the words NOW quotes", judgeBy: "what the person meant, then PERSONALITY's Examples and MOOD",
                                 options: replies(of: name))
             case sayKey:
-                return Question(key: q.key, text: "What does \(name) say back as it replies, in its face's mood? Talked to, it mostly says something, a sound at least; now and then nothing.",
+                return Question(key: q.key, text: "What does \(name) say back aloud as it replies, in the emotion it shows? Talked to, it mostly says something, a sound at least; now and then nothing.",
                                 about: "the words NOW quotes", judgeBy: q.judgeBy,
                                 options: q.options.map { $0.name == "none" ? talkSilence(of: name) : $0 })
             default: return q
@@ -614,21 +614,21 @@ public final class MomentOutput: Output {
         // What it says is CONTEXT's Talk row's to steer first, when the setting isn't normal.
         let byTalk = "CONTEXT's Talk row first, when it's there, over everything else on how much \(name) says; then PERSONALITY's Examples, then MOOD"
         return [
-            Question(key: emotionKey, text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.",
+            Question(key: emotionKey, text: "How should \(name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
-                     options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
-                                          + "or HISTORY shows \(name) still making the one it calls for, about the same thing (in progress).",
-                                      notFor: "Something new said to \(name), which always gets a face of its own, even while one plays; "
-                                          + "a turn that finished done or failed, which always gets a face and its finish; "
+                     options: [Option("none", "Stay quiet: nothing in NOW is worth a moment, "
+                                          + "or HISTORY shows \(name) still having the one it calls for, about the same thing (in progress).",
+                                      notFor: "Something new said to \(name), which always gets a moment of its own, even while one plays; "
+                                          + "a turn that finished done or failed, which always gets a moment and its finish; "
                                           + "or anything PERSONALITY's Examples react to that \(name) isn't already doing.")]
                          + pack.faces),
             Question(key: moveKey, text: "If \(name) reacts, does its body make a move: a turn that finished, and how it ended, you back after an hour or more away, or your prompt saying \(name)'s name?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
                      options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after an hour or more away, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, a short break and a stopped turn all get none.")]
                          + MomentOutput.animations(of: name)),
-            Question(key: sizeKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds the face and the more it says.",
+            Question(key: sizeKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds its emotion and the more it says.",
                      about: "the NOW section", judgeBy: byBoth, options: MomentOutput.sizeOptions),
-            Question(key: sayKey, text: "If \(name) reacts, what does it say, in its face's mood: nothing, as the routine often gets, how it feels, or what NOW is about?",
+            Question(key: sayKey, text: "If \(name) reacts, what does it say aloud, in the emotion it shows: nothing, as the routine often gets, how it feels, or what NOW is about?",
                      about: "the NOW section", judgeBy: byTalk, options: MomentOutput.says(of: name)),
         ]
     }
@@ -733,9 +733,8 @@ public final class MomentOutput: Output {
         if reply == "unhush" { hush(nil, at) }
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
-        let face = "\(Self.article(choice)) \(choice) face (\(size.name))"
-        let did = pick.map { "\(pack.name) played \(Self.article($0)) \($0) in \(face)" }
-            ?? "\(pack.name) made \(face)" + (reply.map { ", replying \($0)" } ?? "")
+        let did = "\(pack.name) had \(Self.article(choice)) \(choice) moment (\(size.name))"
+            + (pick.map { ", playing \(Self.article($0)) \($0)" } ?? reply.map { ", replying \($0)" } ?? "")
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }

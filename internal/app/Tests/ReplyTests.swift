@@ -81,7 +81,7 @@ final class ReplyTests: XCTestCase {
             react.run(answers.mapValues { a($0) }, now: now, log: Self.log)?.message
         }
         let hello = try XCTUnwrap(run(["react.face": "happy", "react.move": "hello", "say": "hello", "react.intensity": "medium"], said))
-        XCTAssertTrue(hello.hasPrefix("\(creature) made a happy face (medium), replying hello, holding up a sign: "), hello)
+        XCTAssertTrue(hello.hasPrefix("\(creature) had a happy moment (medium), replying hello, holding up a sign: "), hello)
         XCTAssertEqual(queued.last?.reply, "hello")
         XCTAssertEqual(queued.last?.loops, 2)
         XCTAssertNil(queued.last?.anim, "it plays over the face")

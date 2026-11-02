@@ -33,7 +33,7 @@ final class ParityTests: XCTestCase {
         rig.now += 1000
         let third = poke()
         // The brain's reaction to the third poke in a row, as the harness logs it.
-        let open = h.emit(Event.did("Boop made a grumpy face, held twice.", for: third.seq, action: MomentOutput.outputName,
+        let open = h.emit(Event.did("Boop had a grumpy moment, held twice.", for: third.seq, action: MomentOutput.outputName,
                                     by: "brain", open: true))
         rig.now += 1500
         _ = poke()  // the tap that cut it
@@ -52,7 +52,7 @@ final class ParityTests: XCTestCase {
         rig.wait(1000)
         XCTAssertEqual(h.log.ended(open.seq)?["why"]?.string, Harness.noWord, "nothing ended it, so the ceiling does")
 
-        let uncut = h.emit(Event.did("Boop made a happy face.", for: nil, action: MomentOutput.outputName, by: "brain", open: true))
+        let uncut = h.emit(Event.did("Boop had a happy moment.", for: nil, action: MomentOutput.outputName, by: "brain", open: true))
         rig.wait(MomentOutput.openForMs - 1000)
         XCTAssertNil(h.log.ended(uncut.seq))
         rig.wait(1000)

@@ -198,7 +198,7 @@ final class CoreRig {
     /// Boop starts a reaction, as the harness records one.
     func react() {
         pipeline.record(Event.action(at: now, phase: .start, name: MomentOutput.outputName,
-                              data: ["for": .null, "by": "brain", "ok": true, "message": "Boop made a happy face."]))
+                              data: ["for": .null, "by": "brain", "ok": true, "message": "Boop had a happy moment."]))
     }
 
     /// Moves the clock, ticking once a second like the app does, or every
