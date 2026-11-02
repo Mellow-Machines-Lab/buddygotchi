@@ -45,13 +45,20 @@ extension Core {
     /// The wishes Boop may make at `now`: none while one is open, none
     /// unless you're here, it's awake and nothing needs
     /// you, it isn't listening or hushed; `work` only while no agent works,
-    /// else your next prompt meets it for nothing.
+    /// else your next prompt meets it for nothing; `chat` only once
+    /// push-to-talk works, so it never waits on what you couldn't answer.
     public func wishable(at now: Int64) -> [WishKind] {
         guard wish == nil, !awayFromMac, needsYouBlock == nil, listening == nil,
               hushed(at: now) == nil else { return [] }
         let doing = snapshot(at: now).doing
         guard doing != "asleep" else { return [] }
-        return WishKind.allCases.filter { $0 != .work || doing != "working" }
+        return WishKind.allCases.filter { kind in
+            switch kind {
+            case .pet: true
+            case .chat: pushToTalkWorks()
+            case .work: doing != "working"
+            }
+        }
     }
 
     /// Makes the wish `kind`, recorded as `wish_start`, if it may be made.

@@ -38,6 +38,18 @@ final class WishTests: XCTestCase {
         XCTAssertEqual(rig.core.wishable(at: rig.now), Core.WishKind.allCases, "no cap on how many a day")
     }
 
+    /// The chat wish is offered only once push-to-talk works: Boop never gets
+    /// sad over a wish you couldn't answer. The rest don't depend on it.
+    func testChatIsOfferedOnlyOncePushToTalkWorks() {
+        let r = rig()
+        r.core.pushToTalkWorks = { false }
+        XCTAssertEqual(r.core.wishable(at: r.now), [.pet, .work])
+        XCTAssertTrue(r.core.makeWish(.chat, at: r.now).isEmpty)
+        XCTAssertNil(r.core.wish)
+        r.core.pushToTalkWorks = { true }
+        XCTAssertEqual(r.core.wishable(at: r.now), Core.WishKind.allCases)
+    }
+
     /// What meets each kind, at once, by a rule, and nothing else does.
     func testWhatMeetsEachKind() {
         var r = rig()

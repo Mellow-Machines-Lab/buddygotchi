@@ -188,6 +188,8 @@ public final class Core {
     public var wishMetSigns: [WishKind: String] = [:]
     /// Whether you've met a kind of wish once: until then the board shows how.
     public var wishDone: (WishKind) -> Bool = { _ in false }
+    /// Whether push-to-talk works: the recognizer and the mic both authorized.
+    public var pushToTalkWorks: () -> Bool = { true }
     /// Whether you're away from the Mac, for the wish's wait.
     var awayFromMac = false
 

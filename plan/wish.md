@@ -192,3 +192,6 @@ teaches it, with no tutorial and no new concept.
 
 Tests pin which touches meet it, that "done once" ends the showing how,
 and that chat isn't offered unauthorized.
+
+These two sections are built. A chat wish already open when you take back
+the mic's authorization still waits and can give up: nothing rechecks it.

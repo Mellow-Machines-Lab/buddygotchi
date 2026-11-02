@@ -76,6 +76,9 @@ public final class Runtime: @unchecked Sendable {
         /// Intelligence on macOS 26, which labels while it's on. None
         /// (headless's unless it asks, and the tests') counts them only.
         public var labeler: (any PromptLabeler)?
+        /// Whether push-to-talk works now, the recognizer and the mic both
+        /// authorized, for the chat wish: the app and headless ask macOS.
+        public var pushToTalkWorks: @Sendable () -> Bool = { true }
 
         public init(stateDir: URL, socketPath: String, link: Transport?, steering: Steering) {
             self.stateDir = stateDir
@@ -402,7 +405,10 @@ public final class Runtime: @unchecked Sendable {
         }
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
-        for rig in rigs { core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 } }
+        for rig in rigs {
+            core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 }
+            core(rig).pushToTalkWorks = options.pushToTalkWorks
+        }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }

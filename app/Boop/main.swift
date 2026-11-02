@@ -130,6 +130,7 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
         }
     }
     options.log = { log.write($0) }
+    options.pushToTalkWorks = { SpeechListener.allowed }
     options.debug = debug
     options.debugPrint = { log.echo($0) }
     options.devLines = devLines
