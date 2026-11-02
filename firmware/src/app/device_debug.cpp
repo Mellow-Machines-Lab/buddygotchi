@@ -272,6 +272,9 @@ void Device::state(JsonObject d, uint32_t t) {
   d["calls"] = stream.on ? stream.laneCount : 0;
   if (stream.drawn(t) && stream.call.live) d["call"] = render::callStyleName(stream.call.style);
   else d["call"] = nullptr;
+  const render::Stream::ActNow act = stream.actNow(t);
+  if (act.shows()) d["wact"] = act.text;
+  else d["wact"] = nullptr;
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;
   d["vol"] = m.vol;

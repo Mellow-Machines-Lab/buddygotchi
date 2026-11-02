@@ -251,6 +251,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     // shows what the state says.
   });
   stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
+  stream_.setAct(m.workAct, m.attn || m.base == render::SceneState::kListening, t);
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;

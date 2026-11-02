@@ -61,6 +61,8 @@ struct Model {
   // work and nothing needs you.
   render::Stream::Lane lanes[render::Stream::kLanes];
   int laneCount = 0;
+  // The work act it plays out (`wact`, render/stream.h), by the Mac's word.
+  render::Stream::ActIn workAct;
   // The agents' drawer's rows (`list`, render/drawer.h), which the Mac
   // sends while the board says it's open, and the sessions before them
   // (`skip`) and after (`unlisted`); `listed` when the state had a list at

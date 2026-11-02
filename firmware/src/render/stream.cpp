@@ -10,7 +10,7 @@ namespace render {
 
 namespace {
 
-constexpr const char* kCallStyleNames[] = {"land",  "arrive", "look",   "stir",    "stamp",   "launch", "poof",  "plane",
+constexpr const char* kCallStyleNames[] = {"land",  "arrive", "look",   "stir",    "stamp",   "poof",  "plane",
                                      "phone", "page",   "helper", "back",    "shatter", "cross",  "stack", "pass",
                                      "built", "hail",   "bonk",   "bonk2",   "helmet",  "throw",  "shrug", "timeout",
                                      "no",    "combo",  "topple", "compact", "buried",  "freeze", "drop",  "gather"};
@@ -40,7 +40,6 @@ CallMove callMove(CallStyle style) {
     case CallStyle::kLook: return CallMove::kLook;
     case CallStyle::kStir: return CallMove::kStir;
     case CallStyle::kStamp: return CallMove::kStamp;
-    case CallStyle::kLaunch: return CallMove::kRocket;
     case CallStyle::kPoof: return CallMove::kPoof;
     case CallStyle::kPlane: return CallMove::kPlane;
     case CallStyle::kPhone: return CallMove::kPhone;
@@ -189,6 +188,53 @@ void Stream::startCall(const char* text, uint8_t slot, CallStyle style, uint16_t
   call.count = count;
   call.at = t;
   call.live = true;
+}
+
+ActKind actKindFromName(const char* name) {
+  if (!name) return ActKind::kNone;
+  if (!std::strcmp(name, "tests")) return ActKind::kTests;
+  if (!std::strcmp(name, "push")) return ActKind::kPush;
+  if (!std::strcmp(name, "build")) return ActKind::kBuild;
+  return ActKind::kNone;
+}
+
+void Stream::setAct(const ActIn& in, bool hold, uint32_t t) {
+  if (in.kind == ActKind::kNone) {
+    if (hold && act.kind != ActKind::kNone) act.hidden = true;
+    else act = Act{};
+    return;
+  }
+  // The same run goes on, or comes to its result; anything else is a new one.
+  const bool same = act.kind == in.kind && (act.result == ActResult::kRunning || in.result != ActResult::kRunning);
+  if (!same) {
+    act = Act{};
+    act.kind = in.kind, act.at = t;
+  }
+  act.hidden = false;
+  act.full = in.full;
+  if (in.result == ActResult::kRunning) {
+    std::snprintf(act.text, sizeof(act.text), "%s", in.text);
+  } else if (act.result == ActResult::kRunning) {
+    act.result = in.result;
+    std::snprintf(act.resultText, sizeof(act.resultText), "%s", in.text);
+    const uint32_t ready = act.at + actLeadMs(act.kind, act.full);
+    act.resultAt = int32_t(ready - t) > 0 ? ready : t;
+    if (!act.text[0]) std::snprintf(act.text, sizeof(act.text), "%s", in.text);
+  }
+}
+
+Stream::ActNow Stream::actNow(uint32_t t) const {
+  ActNow now;
+  if (act.kind == ActKind::kNone || act.hidden) return now;
+  now.kind = act.kind, now.full = act.full, now.text = act.text;
+  now.ageMs = std::max(0, int(int32_t(t - act.at)));
+  if (act.result != ActResult::kRunning && int32_t(t - act.resultAt) >= 0) {
+    now.result = act.result, now.text = act.resultText;
+    now.resultMs = int(int32_t(t - act.resultAt));
+    now.leftMs = int(actResultMs(act.full)) - now.resultMs;
+    if (now.leftMs <= 0) now.kind = ActKind::kNone;
+  }
+  return now;
 }
 
 void Stream::prune(uint32_t t) {

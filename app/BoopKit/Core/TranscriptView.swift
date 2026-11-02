@@ -274,7 +274,7 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -314,6 +314,10 @@ public final class TranscriptView {
         }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name(e)) is face down" }
         if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
+        if e.type == .act, e["full"]?.bool != true { return "the small version of the act has no voice" }
+        if e.type == .act, e.phase == .end, e["passed"]?.bool == false, e["topic"]?.string.map(Self.checks.contains) == true {
+            return "the check's failure is its own line"
+        }
         if e.type == .ask, e.specificType == Asks.ignored { return "nobody answered \(name(e))'s question" }
         if e.type == .wish, e.specificType == Core.WishEnd.closed.rawValue { return "the day ended: \(name(e))'s wish closes quietly" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
@@ -488,6 +492,13 @@ public final class TranscriptView {
             if how == .met { noteActivity(e.at) }
             return Line(EventLine.wishEnded(how, kind, waitedMs: waited, name: name(e)),
                         facts: ["wish": .string(how.rawValue), "kind": .string(kind.rawValue), "waited_ms": .int(waited)])
+        case .act?:
+            guard let key = e["session"]?.string, let s = fold.sessions.sessions[key] else { return nil }
+            let t = Thread(s), agent = t.agent.rawValue, thread = threadLine(t)
+            let text = e.phase == .start
+                ? EventLine.actStarted(agent: agent, kind: e.specificType, thread: thread, name: name(e))
+                : EventLine.actEnded(agent: agent, kind: e.specificType, thread: thread, passed: e["passed"]?.bool ?? true, name: name(e))
+            return Line(text, facts: ["act": .string(e.specificType), "thread": threadFacts(t)])
         case .listen?, .dream?, .memory?, nil: return nil
         }
     }

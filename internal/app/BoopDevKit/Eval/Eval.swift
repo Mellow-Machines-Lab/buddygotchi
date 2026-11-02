@@ -25,6 +25,9 @@ public struct Scenario: Sendable {
         public var agent: Event.Source?
         /// A command: its topic, and whether it failed.
         public var topic: String?
+        /// A `command`'s program and which half of it: `start` or `end`, else both.
+        public var program: String?
+        public var half: String?
         public var failed: Bool?
         /// A failed turn's error class.
         public var error: String?
@@ -386,6 +389,8 @@ public struct Scenario: Sendable {
                 throw badStep("\(key) is only for \(only.joined(separator: " and "))")
             }
             step.topic = s["topic"] as? String
+            step.program = s["program"] as? String
+            step.half = s["half"] as? String
             step.failed = s["failed"] as? Bool
             step.error = s["error"] as? String
             step.prompt = s["prompt"] as? String
@@ -1121,8 +1126,15 @@ public struct Eval {
             if step.failed == true { end["error"] = "exit_code" }
             var start: [String: JSONValue] = ["tool": "Bash"]
             if let topic = step.topic { start["topic"] = .string(topic) }
-            return [hook(.tool, .start, "PreToolUse", start),
-                    hook(.tool, .end, step.failed == true && source == .claude ? "PostToolUseFailure" : "PostToolUse", end)]
+            if let program = step.program {
+                start["program"] = .string(program)
+                end["program"] = .string(program)
+                start["tool_use_id"] = "eval-command"
+                end["tool_use_id"] = "eval-command"
+            }
+            let hooks = [hook(.tool, .start, "PreToolUse", start),
+                         hook(.tool, .end, step.failed == true && source == .claude ? "PostToolUseFailure" : "PostToolUse", end)]
+            return step.half == "start" ? [hooks[0]] : step.half == "end" ? [hooks[1]] : hooks
         // An edit that removes `count` lines and adds none: the counts the
         // hook gives, never the text.
         case "edit":

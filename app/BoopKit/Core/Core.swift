@@ -239,10 +239,30 @@ public final class Core {
         startDayIfNew(now, &fx)
         if let reaction { play(reaction, for: event.seq, now, &fx) }
         greetDay(now, waking: wasAsleep, &fx)
-        let forward = streamCall(agentEvent, program: agentEvent.program, at: now)
+        let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
+        let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
         if let forward { call(forward, session: agentEvent.key, for: event.seq, now, &fx) }
         return fx
+    }
+
+    /// A call beginning or ending a work act, recorded so Jev hears of it.
+    /// Whether it ended one, as then its word comes forward no further.
+    func streamAct(_ e: AgentEvent, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) -> Bool {
+        guard config.workStream, e.kind == .tool, e.tool != nil else { return false }
+        var phase = Event.Phase.start
+        var changed: WorkStream.Act?
+        switch e.phase {
+        case .start: changed = stream.startAct(e, program: e.program, at: now) { [time = config.time] in time.day($0) == time.day(now) }
+        case .end: changed = stream.endAct(e, at: now); phase = .end
+        default: break
+        }
+        guard let act = changed else { return false }
+        var data: [String: JSONValue] = ["session": .string(act.session), "words": .string(act.words), "full": .bool(act.full)]
+        if let passed = act.passed { data["passed"] = .bool(passed) }
+        if let topic = e.topic { data["topic"] = .string(topic) }
+        fx.append(.record(Event(at: now, source: .boop, type: .act, phase: phase, specificType: act.kind, data: data)))
+        return phase == .end
     }
 
     /// What the work stream makes of an agent's event: a call joins its
@@ -567,10 +587,16 @@ public final class Core {
         let drawer = drawerOpen(at: now)
         let calls = config.workStream && base == "working" && attn == nil && !drawer
             ? stream.calls(Set(working.map(\.key))) : []
+        // An act in `state` while nothing else holds the screen: back when
+        // that's over, where it got to.
+        let workAct = config.workStream && attn == nil && !showsListening(at: now) ? stream.act.map {
+            StateSnapshot.WorkAct(kind: $0.kind, words: $0.words, full: $0.full, result: $0.passed.map { $0 ? "p" : "f" })
+        } : nil
         var snapshot = StateSnapshot(doing: base, activity: act, mood: mood(), attn: attn, working: working.count,
                                      idle: rests.count, helpers: helpers, vol: config.volume,
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
+        snapshot.workAct = workAct
         if drawer { list(into: &snapshot, at: now) }
         if wishCounts(doing: base, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
@@ -1094,6 +1120,7 @@ public final class Core {
         tidyNotes()
         updateActs(now)
         stream.keep(Set(groups(at: now).working.map(\.key)))
+        stream.keepAct(working: Set(groups(at: now).working.map(\.key)), at: now)
         keepStretch(at: now)
         numberRows()
         let snapshot = snapshot(at: now)

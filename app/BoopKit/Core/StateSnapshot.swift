@@ -194,6 +194,25 @@ public struct StateSnapshot: Equatable, Sendable {
     /// none.
     public var calls: [Call]
 
+    /// The work act running or its result (`WorkStream.Act`): which, what its
+    /// sign says, whether it plays fully, and how it ended, `p` or `f`.
+    public struct WorkAct: Equatable, Sendable {
+        public var kind: String
+        public var words: String
+        public var full: Bool
+        public var result: String?
+
+        public init(kind: String, words: String, full: Bool, result: String? = nil) {
+            self.kind = kind
+            self.words = words
+            self.full = full
+            self.result = result
+        }
+    }
+
+    /// The act, while nothing else holds the screen.
+    public var workAct: WorkAct?
+
     /// One session in the board's agents' drawer: its number there, the one
     /// a tap on its row sends back (`ev drawer` `pick`), whether it needs
     /// you, works or rests (`n`, `w`, `i`), its work stream lane's slot,
@@ -286,6 +305,11 @@ public struct StateSnapshot: Equatable, Sendable {
         if wishHow { fields["wish_how"] = true }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
+        }
+        if let workAct {
+            let full = workAct.full ? 1 : 0
+            fields["wact"] = workAct.result.map { .array([.string(workAct.kind), .string(workAct.words), .int(full), .string($0)]) }
+                ?? .array([.string(workAct.kind), .string(workAct.words), .int(full)])
         }
         if let list {
             fields["list"] = .array(list.map {

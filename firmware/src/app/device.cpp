@@ -44,7 +44,8 @@ bool sameModel(const Model& a, const Model& b) {
   return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
-         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name);
+         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && a.workAct.kind == b.workAct.kind &&
+         a.workAct.result == b.workAct.result;
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -207,6 +208,19 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     l.slot = uint8_t(heldTo(lane[0], 0, render::Stream::kLanes - 1, 0));
     l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
     render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
+  }
+  // The work act, `[kind, words, full, result]`: its result "p" or "f" once
+  // the command has ended, as its words change to say so.
+  JsonArrayConst workAct = doc["wact"].as<JsonArrayConst>();
+  if (workAct.size() >= 2) {
+    m.workAct.kind = render::actKindFromName(workAct[0].as<const char*>());
+    render::foldText(workAct[1].as<const char*>(), render::Stream::kActBytes - 1, m.workAct.text,
+                     sizeof(m.workAct.text));
+    m.workAct.full = workAct[2] | 0;
+    const char* result = workAct[3] | "";
+    m.workAct.result = *result == 'p'   ? render::ActResult::kPass
+                       : *result == 'f' ? render::ActResult::kFail
+                                        : render::ActResult::kRunning;
   }
   // The agents' drawer's rows, `[id, status, slot, agent, title,
   // project]`: status "n" needs you, "w" working, else idle; slot -1 for

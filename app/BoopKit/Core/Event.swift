@@ -59,6 +59,10 @@ extension Event {
         /// (`end`, why as its `specific_type`). The core's: it reads them
         /// back on launch.
         case hush
+        /// A work act starting or coming to its result (`WorkStream.Act`):
+        /// `specific_type` is its kind, with its `session`, its sign's
+        /// `words`, whether it's `full`, and at its end whether it `passed`.
+        case act
         /// Your prompt's reading, after the turn start it came with: its
         /// facts are `PromptReading`'s, never the prompt.
         case prompt

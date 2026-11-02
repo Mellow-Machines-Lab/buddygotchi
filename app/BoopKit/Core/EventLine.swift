@@ -128,6 +128,22 @@ public enum EventLine {
         return inARow > 1 ? "\(agent)'s \(topic) failed again on \(thread), \(inARow) times in a row." : "\(agent)'s \(topic) failed on \(thread)."
     }
 
+    /// A work act's start or its result, for Jev to say something over what
+    /// Boop already does by rule: `claude is pushing on "api". Boop has
+    /// climbed on a rocket for it, by itself.`
+    public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name) -> String {
+        switch kind {
+        default: "\(agent) is pushing on \(thread). \(name) has climbed on a rocket for it, by itself, and is blasting off."
+        }
+    }
+    public static func actEnded(agent: String, kind: String, thread: String, passed: Bool, name: String = CharacterPack.active.name) -> String {
+        switch kind {
+        default:
+            passed ? "\(agent)'s push went through on \(thread), and the turn goes on. \(name) is parachuting back down, by itself."
+                : "\(agent)'s push failed on \(thread). \(name) has crash-landed, by itself, its rocket in the ground."
+        }
+    }
+
     /// Commands failing one after another (the work stream's failure
     /// ladder, `TranscriptView.wakingRungs`), while the turn goes on:
     /// `claude's commands keep failing on "api": 3 in 2 minutes, each one

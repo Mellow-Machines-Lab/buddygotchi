@@ -337,6 +337,110 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(fail("8"), [], "a new climb")
     }
 
+    /// The act a shell call plays out, by its topic and program; a pull
+    /// request only when it creates or merges one.
+    func testWhichCallsAreActs() {
+        let rig = CoreRig(workStream: true)
+        func act(_ topic: String? = nil, program: String? = nil, glimpse: String? = nil) -> String? {
+            guard let e = AgentEvent(call(rig, "1", topic: topic, program: program, glimpse: glimpse)) else { return nil }
+            return WorkStream.actFor(e, program: program).map { "\($0.kind) \($0.words)" }
+        }
+        XCTAssertEqual(act(program: "git push"), "push git push")
+        XCTAssertEqual(act("deploy", program: "vercel"), "push deploy")
+        XCTAssertEqual(act(program: "gh pr", glimpse: "create landing"), "push pull request")
+        XCTAssertEqual(act(program: "gh pr", glimpse: "merge"), "push pull request")
+        XCTAssertNil(act(program: "gh pr", glimpse: "view"))
+        XCTAssertNil(act(program: "git log"))
+    }
+
+    /// An act is in `state` while it runs, and comes to its result there,
+    /// held for the opening's rest and the result's time (`leadMs`, `resultMs`,
+    /// the board's `actLeadMs`, `actResultMs`). No word forward either way.
+    func testAnActInTheState() throws {
+        XCTAssertEqual(WorkStream.leadMs("push", full: true), 3400)
+        XCTAssertEqual(WorkStream.resultMs(full: true), 6000)
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        run(rig, "0", program: "ls")
+        rig.now += 3000
+        XCTAssertEqual(calls(rig.send(call(rig, "1", program: "git push"))), [])
+        var act = try XCTUnwrap(rig.core.snapshot(at: rig.now).fields["wact"])
+        XCTAssertEqual(act, .array([.string("push"), .string("git push"), .int(1)]))
+        rig.now += 1000
+        XCTAssertEqual(calls(rig.send(call(rig, "1", program: "git push", failed: false))), [])
+        act = try XCTUnwrap(rig.core.snapshot(at: rig.now).fields["wact"])
+        XCTAssertEqual(act, .array([.string("push"), .string("shipped!"), .int(1), .string("p")]))
+        rig.tick(after: 2400 + 6000 - 1)
+        XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "its opening's rest, then its result")
+        rig.tick(after: 1)
+        XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"])
+    }
+
+    /// The full act plays when its kind hasn't for 30 minutes, or it's the
+    /// first of the day; otherwise the small version. It pins the rule.
+    func testTheFullActIsTheFirstInAWhile() {
+        XCTAssertEqual(WorkStream.fullEveryMs, 30 * 60_000)
+        var s = WorkStream()
+        s.fullAt["push"] = 0
+        XCTAssertFalse(s.isFull("push", at: 30 * 60_000 - 1) { _ in true })
+        XCTAssertTrue(s.isFull("push", at: 30 * 60_000) { _ in true })
+        XCTAssertTrue(s.isFull("push", at: 1000) { _ in false }, "the first of the day")
+        XCTAssertTrue(s.isFull("tests", at: 1000) { _ in true }, "each kind for itself")
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        run(rig, "1", program: "git push")
+        rig.now += 60_000
+        rig.send(call(rig, "2", program: "git push"))
+        XCTAssertEqual(rig.core.snapshot(at: rig.now).fields["wact"], .array([.string("push"), .string("git push"), .int(0)]))
+    }
+
+    /// What Boop says over an act is Jev's: a full act's start and result
+    /// wake the brain, the small version's never do, and neither does a
+    /// check's failure twice.
+    func testAnActWakesTheBrainOnlyWhenFull() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        func woke(_ id: String, failed: Bool? = nil) -> [String] {
+            rig.now += 500
+            let before = rig.views.count
+            rig.send(call(rig, id, program: "git push", failed: failed))
+            return rig.views[before...].filter(\.wakesBrain).map(\.line)
+        }
+        XCTAssertEqual(woke("1"), [#"claude is pushing on "landing". Boop has climbed on a rocket for it, by itself, and is blasting off."#])
+        XCTAssertEqual(woke("1", failed: false), [#"claude's push went through on "landing", and the turn goes on. Boop is parachuting back down, by itself."#])
+        XCTAssertEqual(woke("2"), [], "the small version")
+        XCTAssertEqual(woke("2", failed: true), [])
+    }
+
+    /// One act at a time; a command with no end heard ends with its turn; a
+    /// needs-you or listening holds it out of `state`, and it comes back.
+    func testAnActsEdges() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.send(.turnStart, session: "s2")
+        rig.send(call(rig, "1", program: "git push"))
+        rig.send(call(rig, "2", program: "git push", session: "s2"))
+        XCTAssertEqual(rig.core.stream.act?.callID, "1", "the other agent's is only its word")
+        rig.send(.needsYou, session: "s2")
+        XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "needs you holds the screen")
+        rig.send(.turnEnd, session: "s2")
+        XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "and it comes back")
+        rig.send(.turnEnd)
+        XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "no end heard: it ends with the turn")
+    }
+
+    /// A timeout or a request you denied isn't a result: the act stops, and
+    /// its word says what happened.
+    func testAnActWithNoResultStops() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.send(call(rig, "1", program: "git push"))
+        rig.now += 1000
+        let sent = calls(rig.send(call(rig, "1", program: "git push", failed: true, error: "denied")))
+        XCTAssertNil(rig.core.stream.act)
+        XCTAssertEqual(sent, ["NO no"])
+    }
+
     /// A word that comes forward waits on the board at most 1.5 s
     /// (`BoopDevice.callTTL`): it was news only just now.
     func testAWordForwardWaitsOnlyBriefly() {

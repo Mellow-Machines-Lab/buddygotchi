@@ -524,6 +524,15 @@ count. It plays at once over the agents' work and holds nothing up, its
 `ended` sent as it starts. With no lane working, or while something needs
 you, it's skipped `hidden`. A failed call is one of its styles.
 
+**A work act** (`wact` in `state`, `render::Stream::ActIn`) is a command the
+face plays out while it runs, part of Doing and never a Moment:
+`[kind, words, full, result]`, the kind `push`, the words its low sign's, `full`
+1 for the whole scene or 0 for the small version (the words alone), and the
+result `p` or `f` once the command has ended, as the words change to say so.
+The Mac holds a result for the board's `actLeadMs`, less what's run of it, and
+`actResultMs`. A face that doesn't draw it ignores it, as Pixel does. The gel's
+scenes are `render/gel/act.h`.
+
 ### What else a face does
 
 The engine's interface is `render::Face` (`firmware/src/render/face.h`).

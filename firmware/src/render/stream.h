@@ -15,7 +15,6 @@ enum class CallStyle : uint8_t {
   kLook,
   kStir,
   kStamp,
-  kLaunch,
   kPoof,
   kPlane,
   kPhone,
@@ -56,7 +55,6 @@ enum class CallMove : uint8_t {
   kLook,     // beside the head, a magnifier sweeping it; the monitor's page scrolls
   kStir,     // into a pot on the desk, bubbling
   kStamp,    // onto a card beside it, stamped
-  kRocket,   // onto the crown, then up and away on a rocket
   kPoof,     // beside it, gone in a puff
   kPlane,    // a paper plane from the edge, caught
   kPhone,    // a phone beside it ringing, the word its call
@@ -79,6 +77,20 @@ CallMove callMove(CallStyle style);
 // How long its word flies before it lands, when the body answers: a
 // timeout's falls slowly, the rest quickly.
 uint32_t callFlightMs(CallStyle style);
+
+// A work act (the Mac's WorkStream.Act): a command Boop plays out, for as
+// long as the Mac's `state` says it runs. The full act plays a scene with a
+// low sign; a small one is only its prop and sign.
+enum class ActKind : uint8_t { kNone, kTests, kPush, kBuild };
+enum class ActResult : uint8_t { kRunning, kPass, kFail };
+ActKind actKindFromName(const char* name);
+// How long its opening plays, however soon the command ends: a result waits
+// for it. Then how long the result shows. The Mac's `WorkStream.Act` holds
+// the result in `state` for the same times.
+constexpr uint32_t actLeadMs(ActKind kind, bool full) {
+  return !full ? 900 : kind == ActKind::kPush ? 3400 : 1800;
+}
+constexpr uint32_t actResultMs(bool full) { return full ? 6000 : 2600; }
 
 struct Stream {
   static constexpr int kLanes = 4;        // WorkStream.maxLanes
@@ -133,6 +145,41 @@ struct Stream {
     uint32_t at = 0;
     bool live = false;
   };
+
+  static constexpr int kActBytes = 24;  // WorkStream.maxActBytes and its end
+  // The act running, as the Mac's `state` says it (`wact`), or its result.
+  struct ActIn {
+    ActKind kind = ActKind::kNone;
+    bool full = false;
+    ActResult result = ActResult::kRunning;
+    char text[kActBytes] = "";
+  };
+  struct Act {
+    ActKind kind = ActKind::kNone;
+    bool full = false;
+    ActResult result = ActResult::kRunning;
+    char text[kActBytes] = "", resultText[kActBytes] = "";  // its sign's words, running and at its result
+    uint32_t at = 0, resultAt = 0;  // when it began, and when its result's scene begins
+    bool hidden = false;            // something else holds the screen: it runs on, unseen
+  };
+  Act act;
+  // The act from a `state`. `hold`: something else holds the screen, so an
+  // act that's gone from the state only waits to come back, where it would
+  // have got to. A result that came before the opening is over waits for it.
+  void setAct(const ActIn& in, bool hold, uint32_t t);
+  // What of it shows at t: no kind when nothing does. Its result's words and
+  // result only from when its scene begins.
+  struct ActNow {
+    ActKind kind = ActKind::kNone;
+    bool full = false;
+    ActResult result = ActResult::kRunning;
+    const char* text = "";
+    int ageMs = 0;     // since it began
+    int resultMs = 0;  // since its result's scene began
+    int leftMs = -1;   // how long until its result has gone, -1 with no end yet
+    bool shows() const { return kind != ActKind::kNone; }
+  };
+  ActNow actNow(uint32_t t) const;
 
   Lane lanes[kLanes];
   int laneCount = 0;

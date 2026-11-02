@@ -209,7 +209,7 @@ public final class MomentOutput: Output {
     /// of each, as for `feelings`.
     public static var topics: [Option] { topics(of: CharacterPack.active.name) }
     static func topics(of name: String) -> [Option] { [
-        Option("start", "A turn starting: off it goes."),
+        Option("start", "A turn starting, or a push going off: off it goes."),
         Option("helpers", "The agent starting a subagent: helpers sent off."),
         Option("helper back", "A subagent finishing: a helper back with its report."),
         Option("retry", "The same thing again: a retry, a check run again after failing, or the person saying it's still broken."),

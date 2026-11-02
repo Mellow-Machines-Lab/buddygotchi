@@ -49,7 +49,7 @@ struct WorkStream {
 
     /// The styles the board knows for a word that comes forward.
     static let styles = [
-        "arrive", "look", "land", "stir", "stamp", "launch", "poof", "plane", "phone", "page", "helper", "back",
+        "arrive", "look", "land", "stir", "stamp", "poof", "plane", "phone", "page", "helper", "back",
         "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet", "throw", "shrug",
         "timeout", "no", "combo", "topple", "compact", "buried", "freeze", "drop", "gather",
     ]
@@ -95,6 +95,41 @@ struct WorkStream {
     static let maxWordBytes = 14
     /// The `state` carries a lane's new word at most this often.
     static let sendEveryMs: Int64 = 250
+
+    /// A work act: a command Boop plays out for as long as it runs, by a
+    /// plain rule, with a low sign saying what's running. The board draws
+    /// it from `state` and times nothing but its own beats; the result ends
+    /// it. What Boop says over it is Jev's (`Event.Kind.act`).
+    struct Act: Equatable {
+        /// `push`.
+        var kind: String
+        /// What its sign says now.
+        var words: String
+        /// Its session, and the call it plays out.
+        var session: String
+        var callID: String?
+        /// The full scene, or only the prop and the sign: see `isFull`.
+        var full: Bool
+        var startedAt: Int64
+        /// How it ended, once it has, and until when `state` holds that.
+        var passed: Bool?
+        var until: Int64?
+    }
+    /// The full act plays when its kind hasn't played fully in this long, or
+    /// it's the first of the day; otherwise the small version.
+    static let fullEveryMs: Int64 = 30 * 60_000
+    /// How long an act's opening plays, however soon its command ends, and
+    /// how long its result shows: `actLeadMs` and `actResultMs` on the board.
+    static func leadMs(_ kind: String, full: Bool) -> Int64 { !full ? 900 : kind == "push" ? 3400 : 1800 }
+    static func resultMs(full: Bool) -> Int64 { full ? 6000 : 2600 }
+    /// The longest sign's words, in bytes (`Stream::kActBytes`, less its end).
+    static let maxActBytes = 23
+    /// What each act's sign says at a pass; a failure's says `FAIL`.
+    static let passWords = ["push": "shipped!"]
+
+    var act: Act?
+    /// When each kind last played fully.
+    var fullAt: [String: Int64] = [:]
 
     var lanes: [String: Lane] = [:]
     var heldUntil: Int64 = .min
@@ -212,10 +247,71 @@ struct WorkStream {
         switch word {
         case "python", "node", "ruby", "perl", "deno", "bun", "loop", "osascript": return "stir"
         case "git commit", "git tag": return "stamp"
-        case "git push", "vercel", "fly", "flyctl", "wrangler": return "launch"
         case "rm", "rmdir", "git clean", "git rm": return "poof"
         case "curl", "wget", "gh", "gh pr", "gh issue", "gh run", "gh api", "ssh", "scp", "rsync": return "plane"
         default: return "land"
+        }
+    }
+
+    // MARK: Acts
+
+    /// The act a shell call plays out, and its sign's words, by its topic and
+    /// program: never its text, but a pull request's verb, which is its
+    /// glimpse's first piece.
+    static func actFor(_ e: AgentEvent, program: String?) -> (kind: String, words: String)? {
+        guard e.toolKind == .shell else { return nil }
+        if e.topic == "deploy" { return ("push", "deploy") }
+        if program == "git push" { return ("push", "git push") }
+        if program == "gh pr", let verb = e.glimpse?.split(separator: " ").first, verb == "create" || verb == "merge" {
+            return ("push", "pull request")
+        }
+        return nil
+    }
+
+    /// Whether an act of `kind` starting at `now` plays fully: it hasn't for
+    /// `fullEveryMs`, or it's the first of `day`.
+    func isFull(_ kind: String, at now: Int64, sameDay: (Int64) -> Bool) -> Bool {
+        guard let last = fullAt[kind] else { return true }
+        return now - last >= Self.fullEveryMs || !sameDay(last)
+    }
+
+    /// A shell call starting may begin an act: one at a time, so another
+    /// agent's call while one runs is only its word.
+    mutating func startAct(_ e: AgentEvent, program: String?, at now: Int64, sameDay: (Int64) -> Bool) -> Act? {
+        guard let (kind, words) = Self.actFor(e, program: program), act == nil || act?.passed != nil else { return nil }
+        let full = isFull(kind, at: now, sameDay: sameDay)
+        if full { fullAt[kind] = now }
+        act = Act(kind: kind, words: words, session: e.key, callID: e.toolUseID, full: full, startedAt: now)
+        return act
+    }
+
+    /// A call ending ends the act it plays out, by its result. A timeout or
+    /// a request you denied isn't a result: those have words of their own,
+    /// and the act just stops.
+    mutating func endAct(_ e: AgentEvent, at now: Int64) -> Act? {
+        guard var running = act, running.passed == nil, running.session == e.key,
+              running.callID == nil || e.toolUseID == nil || running.callID == e.toolUseID else { return nil }
+        if e.error == ToolError.timeout || e.error == ToolError.denied || e.failed == nil {
+            act = nil
+            return nil
+        }
+        let passed = e.failed == false
+        running.passed = passed
+        running.words = passed ? Self.passWords[running.kind] ?? "PASS" : "FAIL"
+        running.until = max(now, running.startedAt + Self.leadMs(running.kind, full: running.full))
+            + Self.resultMs(full: running.full)
+        act = running
+        return running
+    }
+
+    /// An act goes when its result has shown, or, with no end heard, when
+    /// its session has stopped working.
+    mutating func keepAct(working: Set<String>, at now: Int64) {
+        guard let running = act else { return }
+        if let until = running.until {
+            if now >= until { act = nil }
+        } else if !working.contains(running.session) {
+            act = nil
         }
     }
 
@@ -237,12 +333,15 @@ struct WorkStream {
         } else {
             slot = freeSlot()
         }
+        // The act it plays out is what shows, not a word forward.
+        if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
         if !called.contains(key) {
             called.insert(key)
             return offer(Forward(slot: slot, word: shown, style: "arrive", priority: .notable), at: now)
         }
         if let topic = e.topic, TranscriptView.checks.contains(topic) {
-            let style = topic == "tests" ? "cross" : topic == "build" ? "stack" : "launch"
+            guard topic != "deploy" else { return nil }
+            let style = topic == "tests" ? "cross" : "stack"
             return offer(Forward(slot: slot, word: word, style: style, priority: .notable), at: now)
         }
         if e.toolKind == .subagent {
@@ -282,7 +381,8 @@ struct WorkStream {
             }
         }
         if let check, e.failed == false {
-            let (shown, style) = check == "tests" ? ("PASS", "pass") : check == "build" ? ("built", "built") : ("shipped", "launch")
+            guard check != "deploy" else { return nil }
+            let (shown, style) = check == "tests" ? ("PASS", "pass") : ("built", "built")
             return offer(Forward(slot: slot, word: shown, style: style, priority: .always), at: now)
         }
         let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
