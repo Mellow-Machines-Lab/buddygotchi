@@ -48,8 +48,8 @@ part of the reaction. Each is offered only when:
 
 Jev picks when and which, by mood, MEMORY and CONTEXT. The guide says
 about one a day, when it feels like it. CONTEXT's You row says "no wish
-yet today", and from midday "no wish yet today, and the day's half
-gone": a nudge, not a trigger. Code holds only one open at a time; how many a day is Jev's, by the steering (the owner's call, 2026-11-01).
+yet today", and at an idle check-in from midday "no wish yet today, and
+the day's half gone": a nudge, not a trigger. Code holds only one open at a time; how many a day is Jev's, by the steering (the owner's call, 2026-11-01).
 
 On Quiet a wish is still made, as the icon and the sign, with no sound:
 unlike asks (`Asks.allowed`), the wish options are offered on Quiet.
@@ -161,6 +161,9 @@ The first build on `wish` differs from the above in three places:
   guidelines to Examples: Examples cost context. Keep them short, and
   measure: a wish on most days, not at the first idle check-in every
   time. Code has no daily cap, so the guidelines carry how often: about one a day.
+  Built as a guideline in PERSONALITY and a line in the sign question ("With
+  no wish yet today and half an hour or more of quiet, a wish fits best.");
+  only an idle check-in hears "and the day's half gone".
 - **Sad or lonely.** Keep the mood graph as it is. Comfy and lazy going
   lonely at an ignored wish is fine, as long as the mood does move, so
   evals check that it moves, not which. Lonely's "rare" wording must not

@@ -444,8 +444,9 @@ public final class MomentOutput: Output {
         let wishes = wishOptions(about, log)
         if !questions.isEmpty || !musings.isEmpty || !wishes.isEmpty {
             return speech + [Question(key: Signs.questionKey,
-                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, or a wish? PERSONALITY says when; now and then, not every time.",
-                                       about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment, the questions that shape \(pack.name) first",
+                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, or a wish? PERSONALITY says when; now and then, not every time."
+                                           + (wishes.isEmpty ? "" : " With no wish yet today and half an hour or more of quiet, a wish fits best."),
+                                       about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment",
                                        // The caps are a ceiling, not a schedule: "none" on every level.
                                        options: [Option("none", "Nothing: \(pack.name) doesn't ask, muse or wish now.")]
                                            + musings.map { Option($0, "A musing to hold up, asking nothing.") }

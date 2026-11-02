@@ -143,15 +143,16 @@ extension Core {
     }
 
     /// The wish for CONTEXT's You row: "Boop's wish: a pet, waiting 70 min
-    /// while you were here."; with none made today, that, and from noon
-    /// that the day's half gone, a nudge and not a trigger. Nil once one was
-    /// made today and ended (the Today row says how).
-    public func wishRow(at now: Int64, name: String) -> String? {
+    /// while you were here."; with none made today, that, and at an idle
+    /// check-in (`idle`) from noon that the day's half gone: a nudge for the
+    /// moment a wish suits, which at a poke would only press. Nil once one
+    /// was made today and ended (the Today row says how).
+    public func wishRow(at now: Int64, name: String, idle: Bool = false) -> String? {
         if let w = wish {
             return "\(name)'s wish: \(w.kind.words), waiting \(ContextSection.span(w.waitedMs)) while you were here"
         }
         guard wishDay != wishDayNow(now) else { return nil }
-        return config.time.components(wall(now)).hour >= 12 ? "no wish yet today, and the day's half gone" : "no wish yet today"
+        return idle && config.time.components(wall(now)).hour >= 12 ? "no wish yet today, and the day's half gone" : "no wish yet today"
     }
 
     /// The wish for CONTEXT's Today row: "Boop's wish today: met.".

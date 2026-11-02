@@ -112,12 +112,27 @@ final class WishTests: XCTestCase {
     func testContextSaysIt() {
         let r = rig()
         XCTAssertTrue(r.core.wishRow(at: r.now, name: "Boop")?.hasPrefix("no wish yet today") == true)
+        XCTAssertFalse(r.core.wishRow(at: r.now, name: "Boop")?.contains("half gone") == true, "the nudge is only for an idle check-in")
         r.core.makeWish(.pet, at: r.now)
         XCTAssertEqual(r.core.wishRow(at: r.now, name: "Boop"), "Boop's wish: a pet, waiting 1 min while you were here")
         XCTAssertTrue(r.state.jsonLine.contains(#""wish":"pet""#), r.state.jsonLine)
         r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
         XCTAssertNil(r.core.wishRow(at: r.now, name: "Boop"))
         XCTAssertEqual(r.core.wishToday(at: r.now, name: "Boop"), "Boop's wish today: met.")
+    }
+
+    /// The nudge, from noon, and only at an idle check-in: elsewhere, such as
+    /// at a poke, it would only press.
+    func testTheDaysHalfGoneOnlyAtAnIdleCheckIn() {
+        let core = Core(config: .init(time: LocalTime(timeZone: TimeZone(identifier: "UTC")!)))
+        var c = Calendar(identifier: .gregorian)
+        c.timeZone = TimeZone(identifier: "UTC")!
+        let afternoon = Int64(c.date(from: DateComponents(year: 2026, month: 10, day: 26, hour: 15))!.timeIntervalSince1970 * 1000)
+        let morning = afternoon - 6 * 3_600_000
+        core.setWallClock(afternoon, at: afternoon)
+        XCTAssertEqual(core.wishRow(at: afternoon, name: "Boop", idle: true), "no wish yet today, and the day's half gone")
+        XCTAssertEqual(core.wishRow(at: afternoon, name: "Boop"), "no wish yet today")
+        XCTAssertEqual(core.wishRow(at: morning, name: "Boop", idle: true), "no wish yet today")
     }
 
     /// The sign question offers the pack's wishes at an ask's moment, and

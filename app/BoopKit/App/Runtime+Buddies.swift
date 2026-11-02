@@ -202,9 +202,11 @@ extension Runtime {
             h.section { log, v in mine(v) ? m.steering.mood(MoodOutput.value(mood, log), in: pack) : nil }
             // How things stand: when it is, the talk setting, the buddy,
             // you, the agents, the day so far. Last before HISTORY.
-            h.section { [weak h] _, v in
+            h.section { [weak h] log, v in
                 guard mine(v), let h else { return nil }
                 let now = h.clock.now()
+                // NOW is an idle check-in when one is the newest thing to happen.
+                let idle = log.events.last { !$0.fromHarness }.map(MomentOutput.isCheckIn) == true
                 let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let wall = core.wall(now), time = core.config.time
                 let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
@@ -213,7 +215,7 @@ extension Runtime {
                                                time: time)
                 return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),
-                                              agents: core.status(at: now, results: [:]), wish: core.wishRow(at: now, name: pack.name),
+                                              agents: core.status(at: now, results: [:]), wish: core.wishRow(at: now, name: pack.name, idle: idle),
                                               wishToday: core.wishToday(at: now, name: pack.name), at: now, name: pack.name)
             }
             return mood
