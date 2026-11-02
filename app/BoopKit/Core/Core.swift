@@ -596,11 +596,12 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
-        if drawer { list(into: &snapshot, at: now) }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
             snapshot.wishHow = !wishDone(kind)
         }
+        // Last: its rows are what gets cut to fit the board's line.
+        if drawer { list(into: &snapshot, at: now) }
         return snapshot
     }
 
