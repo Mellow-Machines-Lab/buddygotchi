@@ -23,10 +23,9 @@ struct WorkStream {
 
     /// How sure a call is to come forward.
     enum Priority: Int, Comparable {
-        /// A failure, a check's result: always.
+        /// A failure: always.
         case always
-        /// A check starting, a big edit, a helper: when nothing else is
-        /// forward.
+        /// A big edit, a helper: when nothing else is forward.
         case notable
 
         static func < (a: Self, b: Self) -> Bool { a.rawValue < b.rawValue }
@@ -46,8 +45,8 @@ struct WorkStream {
 
     /// The styles the board knows for a word that comes forward.
     static let styles = [
-        "land", "helper", "back", "shatter", "stack", "built", "bonk", "bonk2", "bonk3", "throw",
-        "shrug", "timeout", "no", "topple", "compact", "buried", "freeze", "drop", "gather",
+        "land", "helper", "back", "shatter", "bonk", "bonk2", "bonk3", "throw",
+        "shrug", "timeout", "no", "compact", "buried", "freeze", "drop", "gather",
     ]
     /// The styles of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
@@ -90,7 +89,7 @@ struct WorkStream {
     /// it from `state` and times nothing but its own beats; the result ends
     /// it. What Boop says over it is Jev's (`Event.Kind.act`).
     struct Act: Equatable {
-        /// `push` or `tests`.
+        /// `push`, `tests` or `build`.
         var kind: String
         /// What its sign says now.
         var words: String
@@ -114,7 +113,7 @@ struct WorkStream {
     /// The longest sign's words, in bytes (`Stream::kActBytes`, less its end).
     static let maxActBytes = 23
     /// What each act's sign says at a pass; a failure's says `FAIL`.
-    static let passWords = ["push": "shipped!", "tests": "PASS"]
+    static let passWords = ["push": "shipped!", "tests": "PASS", "build": "BUILT"]
     /// A failure after this long gets the full ending, whichever version
     /// started: not a push's, whose crash needs its rocket's start.
     static let longRunMs: Int64 = 60_000
@@ -229,6 +228,7 @@ struct WorkStream {
     static func actFor(_ e: AgentEvent, program: String?) -> (kind: String, words: String)? {
         guard e.toolKind == .shell else { return nil }
         if e.topic == "tests" { return ("tests", "running tests") }
+        if e.topic == "build" { return ("build", "building") }
         if e.topic == "deploy" { return ("push", "deploy") }
         if program == "git push" { return ("push", "git push") }
         if program == "gh pr", let verb = e.glimpse?.split(separator: " ").first, verb == "create" || verb == "merge" {
@@ -288,7 +288,7 @@ struct WorkStream {
     // MARK: Calls
 
     /// A tool call starting in session `key`: its word joins its lane, and
-    /// a check starting or a helper going off may come forward.
+    /// a helper going off may come forward.
     mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program), shown = Self.shown(e, word: word)
         // A lane of its own while one is free: a fifth session gets none,
@@ -305,22 +305,16 @@ struct WorkStream {
         // The act it plays out is what shows, not a word forward.
         if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
         called.insert(key)
-        if let topic = e.topic, TranscriptView.checks.contains(topic) {
-            guard topic == "build" else { return nil }
-            return offer(Forward(slot: slot, word: word, style: "stack", priority: .notable), at: now)
-        }
         if e.toolKind == .subagent {
             return offer(Forward(slot: slot, word: word, style: "helper", priority: .notable), at: now)
         }
         return nil
     }
 
-    /// A tool call ending: a failure, a check's result or a big edit comes
-    /// forward. Anything else is only its word, falling.
+    /// A tool call ending: a failure or a big edit comes forward. Anything else is only its word, falling.
     mutating func ended(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program)
         let slot = lanes[key]?.slot ?? freeSlot()
-        let check = e.topic.flatMap { TranscriptView.checks.contains($0) ? $0 : nil }
         if Self.climbs(e) {
             let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
             failures[key] = recent
@@ -337,15 +331,9 @@ struct WorkStream {
             case ToolError.denied:
                 return offer(Forward(slot: slot, word: "NO", style: "no", priority: .always), at: now)
             default:
-                // A failing build's tower falls on it; a check's act has its own
-                // ending, and another agent's act its word.
-                guard check == "build" else { return nil }
-                return offer(Forward(slot: slot, word: "FAIL", style: "topple", priority: .always), at: now)
+                // A check's act has its own ending, and another agent's act its word.
+                return nil
             }
-        }
-        if let check, e.failed == false {
-            guard check == "build" else { return nil }
-            return offer(Forward(slot: slot, word: "built", style: "built", priority: .always), at: now)
         }
         let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
         if e.toolKind == .edit, added + removed >= Self.bigEdit {

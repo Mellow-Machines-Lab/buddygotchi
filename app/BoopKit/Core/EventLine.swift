@@ -133,12 +133,16 @@ public enum EventLine {
     /// climbed on a rocket for it, by itself.`
     public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name) -> String {
         switch kind {
+        case "build": "\(agent) is building on \(thread). \(name) has put on a hard hat, by itself, and is hammering at a little house."
         case "tests": "\(agent) is running tests on \(thread). \(name) has strapped itself to a sled facing a wall, by itself, and is holding its breath."
         default: "\(agent) is pushing on \(thread). \(name) has climbed on a rocket for it, by itself, and is blasting off."
         }
     }
     public static func actEnded(agent: String, kind: String, thread: String, passed: Bool, name: String = CharacterPack.active.name) -> String {
         switch kind {
+        case "build":
+            passed ? "\(agent)'s build worked on \(thread), and the turn goes on. \(name)'s little house is done, a flag on it, by itself."
+                : "\(agent)'s build failed on \(thread). \(name)'s little house has fallen apart, by itself."
         case "tests":
             passed ? "\(agent)'s tests passed on \(thread), and the turn goes on. \(name)'s sled has stopped just short of the wall, by itself."
                 : "\(agent)'s tests failed on \(thread). \(name) has hit the wall and slid down it, by itself."

@@ -74,7 +74,7 @@
                    {"what": "a move at most every", "in": "characters/boop/firmware/src/render/gel/pastimes.h", "name": "kMoveGapMs", "unit": "ms"}]},
       {"id": "stream", "when": "Each tool call (the work stream)",
        "decides": ["rule", "board"], "plays": [],
-       "does": "The call's word falls behind the face: that's most calls. The Mac picks one at a time to come forward in a style of its own: a helper, a big edit, a check, a failure's bonk, the turn's end (gathered, buried, frozen, dropped). Tests, a push, a deploy or a pull request are a work act instead: a scene and a low sign by rule, for as long as it runs, the full one first in a while, and Jev's voice over it. The board draws the rest. The brain hears only the bonks and timeouts, on its next line, and a full act's start and end.",
+       "does": "The call's word falls behind the face: that's most calls. The Mac picks one at a time to come forward in a style of its own: a helper, a big edit, a failure's bonk, the turn's end (gathered, buried, frozen, dropped). Tests, a build, a push, a deploy or a pull request are a work act instead: a scene and a low sign by rule, for as long as it runs, the full one first in a while, and Jev's voice over it. The board draws the rest. The brain hears only the bonks and timeouts, on its next line, and a full act's start and end.",
        "numbers": [{"what": "a word shows", "in": "app/BoopKit/Core/WorkStream.swift", "name": "showMs", "unit": "ms"},
                    {"what": "a full act at most every", "in": "app/BoopKit/Core/WorkStream.swift", "name": "fullEveryMs", "unit": "ms"},
                    {"what": "lanes", "in": "app/BoopKit/Core/WorkStream.swift", "name": "maxLanes", "unit": "count"}]},

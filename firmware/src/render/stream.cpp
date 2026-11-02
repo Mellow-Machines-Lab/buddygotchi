@@ -10,9 +10,9 @@ namespace render {
 
 namespace {
 
-constexpr const char* kCallStyleNames[] = {"land",  "helper", "back",   "shatter", "stack",  "built",   "bonk",   "bonk2",
-                                           "bonk3", "throw",  "shrug",  "timeout", "no",     "topple",  "compact", "buried",
-                                           "freeze", "drop",  "gather"};
+constexpr const char* kCallStyleNames[] = {"land",   "helper", "back",    "shatter", "bonk",   "bonk2",  "bonk3",
+                                           "throw",  "shrug",  "timeout", "no",      "compact", "buried", "freeze",
+                                           "drop",   "gather"};
 static_assert(sizeof(kCallStyleNames) / sizeof(kCallStyleNames[0]) == int(CallStyle::kCount), "a name for every style");
 
 // The same few bits for the same word, slot and count on every board, so a
@@ -43,9 +43,6 @@ CallMove callMove(CallStyle style) {
     case CallStyle::kTimeout: return CallMove::kHit;
     case CallStyle::kShrug: return CallMove::kShrug;
     case CallStyle::kShatter: return CallMove::kShatter;
-    case CallStyle::kBuilt: return CallMove::kCheer;
-    case CallStyle::kStack: return CallMove::kDesk;
-    case CallStyle::kTopple: return CallMove::kTopple;
     case CallStyle::kCompact: return CallMove::kCompact;
     case CallStyle::kBuried: return CallMove::kBuried;
     case CallStyle::kFreeze: return CallMove::kFreeze;
@@ -60,10 +57,8 @@ uint32_t callFlightMs(CallStyle style) {
   switch (callMove(style)) {
     case CallMove::kHit: return 380;
     case CallMove::kSink: return 520;
-    case CallMove::kCheer:
     case CallMove::kDrop: return 300;
     case CallMove::kGather: return 700;  // the words reach its mouth
-    case CallMove::kTopple: return 1000;  // its wobble, then the fall
     case CallMove::kCompact: return 900;  // squashed, then the cube's drop
     case CallMove::kBuried: return 1200;  // the pile reaching its eyes
     case CallMove::kFreeze: return 600;   // the poke

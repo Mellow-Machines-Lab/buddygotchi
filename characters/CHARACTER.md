@@ -525,7 +525,7 @@ you, it's skipped `hidden`. A failed call is one of its styles.
 
 **A work act** (`wact` in `state`, `render::Stream::ActIn`) is a command the
 face plays out while it runs, part of Doing and never a Moment:
-`[kind, words, full, result]`, the kind `push` or `tests`, the words its low sign's, `full`
+`[kind, words, full, result]`, the kind `push`, `tests` or `build`, the words its low sign's, `full`
 1 for the whole scene or 0 for the small version (the words alone), and the
 result `p` or `f` once the command has ended, as the words change to say so.
 The Mac holds a result for the board's `actLeadMs`, less what's run of it, and

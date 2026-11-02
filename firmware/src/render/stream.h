@@ -14,8 +14,6 @@ enum class CallStyle : uint8_t {
   kHelper,
   kBack,
   kShatter,
-  kStack,
-  kBuilt,
   kBonk,
   kBonk2,
   kBonk3,
@@ -23,7 +21,6 @@ enum class CallStyle : uint8_t {
   kShrug,
   kTimeout,
   kNo,
-  kTopple,  // a build's tower falls on it
   // The whole turn's moments.
   kCompact,  // its context compacted
   kBuried,   // its context ran out
@@ -42,9 +39,6 @@ enum class CallMove : uint8_t {
   kHit,      // between the eyes: knocked back, dizzy, stars
   kShrug,    // beside the head, then an empty bubble: a shrug
   kShatter,  // above the crown, bursting into bits it swallows
-  kCheer,    // up over the head, with confetti: a hop
-  kDesk,     // to the desk: the monitor's spinner, count, or a tower of bricks
-  kTopple,   // the tower wobbles and falls on its head
   kCompact,  // the words falling squashed into a cube that thuds onto the desk
   kBuried,   // words piling up as bricks, to its eyes
   kFreeze,   // the words falling stop where they are, icy, and it pokes one

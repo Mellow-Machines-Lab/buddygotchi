@@ -128,20 +128,10 @@ final class WorkStreamTests: XCTestCase {
         for (i, (topic, program, error, expected)) in [
             ("inspect", "grep", "exit_code", "grep shrug"), (nil, "curl", "timeout", "timeout timeout"),
             (nil, "rm", "denied", "NO no"),
-            ("build", "make", "exit_code", "FAIL topple"),
-        ].enumerated() {
+                    ].enumerated() {
             rig.now += 3000
             XCTAssertEqual(run(rig, "\(i + 1)", ms: 4000, topic: topic, program: program, failed: true, error: error).last, expected)
         }
-    }
-
-    /// A check comes forward as it starts, and with its result.
-    func testAChecksStartAndResult() {
-        let rig = CoreRig(workStream: true)
-        rig.send(.turnStart)
-        run(rig, "0", program: "ls")
-        rig.now += 3000
-        XCTAssertEqual(run(rig, "2", ms: 4000, topic: "build", program: "make"), ["build stack", "built built"])
     }
 
     /// A notable call waits up to 1.5 s for the board (`waitMs`), and is
@@ -314,6 +304,7 @@ final class WorkStreamTests: XCTestCase {
         }
         XCTAssertEqual(act(program: "git push"), "push git push")
         XCTAssertEqual(act("tests", program: "make test"), "tests running tests")
+        XCTAssertEqual(act("build", program: "make"), "build building")
         XCTAssertEqual(act("deploy", program: "vercel"), "push deploy")
         XCTAssertEqual(act(program: "gh pr", glimpse: "create landing"), "push pull request")
         XCTAssertEqual(act(program: "gh pr", glimpse: "merge"), "push pull request")

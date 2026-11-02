@@ -1,11 +1,17 @@
 # Work acts
 
-Updated 2026-11-01. Decided with the owner on 2026-11-01, who signed off a
+Updated 2026-11-02. Decided with the owner on 2026-11-01, who signed off a
 storyboard (`/tmp/boop-storyboard/index.html`, rough props on real gel
 faces). The work stream has about 31 small pictures to decode, and even the
 owner couldn't read the pot or the bricks. Replace them with the falling
 word by default and three big acts Boop plays out. More acts come later,
 only from actual use: not risky commands or installs, not now.
+
+**Built on the night branch, 2026-11-02:** the default and all three acts
+(`WorkStream.Act`, `state`'s `wact`, `gel/act.h`). Owed: the board's look and
+frame rate, and recordings for "we pushing!", "shipped!" and "built it!": until
+then Jev has the voice's existing words ("Launch", "Testing", "Phew..."). In the
+evals Jev mostly chose silence over an act from a calm mood.
 
 ## The model
 
