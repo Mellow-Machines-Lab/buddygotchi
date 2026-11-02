@@ -170,13 +170,26 @@ final class WishTests: XCTestCase {
         XCTAssertFalse(fx.contains { if case .reaction = $0 { true } else { false } })
     }
 
-    /// Kept like the hush: a launch reads an open wish back.
+    /// Kept like the hush: a launch reads an open wish back, and its wait:
+    /// the time between the events read while you were here, an away counting
+    /// only up to its `since`, and nothing for the time Boop wasn't running.
     func testALaunchReadsItBack() {
+        let minute: Int64 = 60_000
         let r = rig()
         let other = CoreRig()
-        other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .start, specificType: "chat"))
-        XCTAssertEqual(other.core.wish?.kind, .chat)
-        other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .end, specificType: "met", data: ["kind": "chat"]))
+        let t = other.now
+        other.core.replay(Event(at: t, source: .boop, type: .wish, phase: .start, specificType: "pet"))
+        XCTAssertEqual(other.core.wish?.kind, .pet)
+        other.core.replay(PresenceDetector.awayEvent(why: "idle", since: t + 30 * minute, at: t + 60 * minute))
+        XCTAssertEqual(other.core.wish?.waitedMs, 30 * minute, "up to the away's since")
+        other.core.replay(PresenceDetector.backEvent(why: "input", at: t + 210 * minute))
+        XCTAssertEqual(other.core.wish?.waitedMs, 30 * minute, "away doesn't count")
+        other.now = t + 300 * minute
+        _ = other.core.tick(at: other.now)
+        XCTAssertEqual(other.core.wish?.waitedMs, 30 * minute, "the launch's first tick adds nothing")
+        other.wait(60_000)
+        XCTAssertEqual(other.core.wish?.waitedMs, 31 * minute, "and it goes on from there")
+        other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .end, specificType: "met", data: ["kind": "pet"]))
         XCTAssertNil(other.core.wish)
     }
 

@@ -340,6 +340,7 @@ public final class Core {
     public func replay(_ event: Event) {
         readingBack.on = true
         defer { readingBack.on = false }
+        replayWishWait(event)
         if let agentEvent = AgentEvent(event) {
             _ = fold(agentEvent, ref: event.seq)
             return

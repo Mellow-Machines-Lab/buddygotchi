@@ -171,6 +171,18 @@ extension Core {
         return fx
     }
 
+    /// The wait of a wish read back, as far as `e`: the time between the
+    /// events read, while you were here. An away counts only up to its
+    /// `since`. Boop not running leaves no event, so a launch's first tick
+    /// (`wishTickGapMs`) doesn't count the time since the last one.
+    func replayWishWait(_ e: Event) {
+        guard var w = wish else { return }
+        let goes = e.type == .presence && e.phase == .start
+        if !awayFromMac { w.waitedMs += max(0, min(e.at, goes ? e["since"]?.int ?? e.at : e.at) - w.countedTo) }
+        w.countedTo = max(w.countedTo, e.at)
+        wish = w
+    }
+
     /// A wish's start or end read back from the transcript: what a launch
     /// keeps. The wait goes on from the last event read.
     func replayWish(_ e: Event) {
