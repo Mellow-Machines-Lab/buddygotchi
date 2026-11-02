@@ -277,3 +277,45 @@ session, Bluetooth and the boards can show.
       113 × 92 (2026-10-24, the simulator's `BOOP_SIM_NATIVE`), the
       slime, desk and needs-you plate scale, but the lane's text, dots
       and sign come out several times too big and run off the panel.
+
+## The five repositories: a recommendation (investigated 2026-11-01, nothing changed)
+
+**How it is.** The engine fetches the packs it's tested with from
+`characters/packs.json`, at each pack's `main`, into `characters/.repos/`.
+Each pack in turn pins the engine as `engine/`, a submodule, and its
+`Makefile` runs every target through it (`make setup` links the pack in
+and chooses it). A pack's CI checks it against its pinned engine; the
+engine's checks run against the packs' `main`. A change that spans both
+lands pack first (or the engine's checks fail), but the pack's CI runs
+against the old pin until the engine is pushed and bumped: each such
+change is three commits in two repositories, and for a while one side's
+checks are red. The gel's engine (`render/gel/`) is the pack's own C++,
+so most slime work is exactly such a change.
+
+**Can the packs drop `engine/`?** Who builds a pack on its own: its CI,
+and a contributor who clones only SlimeBuddy or PixelBuddy and runs
+`make flash` or `make dev`. Buyers never do: they get Boop.app with its
+packs inside. Both need *an* engine at a known commit, not a submodule.
+Recommendation: yes, replace the submodule with a pinned commit in the
+pack (`character.json`'s `engine`, or one line in `Makefile`) that
+`make setup` clones into an ignored `.engine/`. The same reproducibility,
+no gitlink to bump by hand, no nested submodules (the engine's own two)
+inside a submodule, and a pack clone needs no `--recurse-submodules`.
+
+**What would make cross-repo changes lighter**, in order of payoff:
+1. *Bring the two first-party packs back in as folders* (`characters/boop`,
+   `characters/pixel`): one commit per change, one CI, no bump dance.
+   Keep SlimeBuddy and PixelBuddy as their public faces, published from
+   those folders by `git subtree split` on release. Pixel Bro and any
+   third-party pack stay outside, on a pinned engine. This undoes the
+   split of 2026-10-26, so it's the owner's call; it's the only option
+   that removes the problem rather than easing it.
+2. Short of that, *pin the packs in the engine too*: `packs.json` names
+   each pack's commit, not `main`, and `packs.py --bump` moves them. The
+   engine's checks are then reproducible, and a cross-repo change is:
+   the pack's branch pushed, the engine's commit pinning it, the pack's
+   pin moved by a script, with neither side red in between.
+3. A `boopctl` command that starts one branch name in the engine and
+   both packs, runs `make -C internal check` across them, and prints the
+   pushes in order (package, engine, packs), so the order is a tool's,
+   not a person's memory.
