@@ -8,7 +8,7 @@ import MellowHarness
 /// adds up. An expect brain's passes and the Boop app's own don't count.
 public final class JevAllowance: @unchecked Sendable {
     /// The limit. Raise it here.
-    public static let dailyLimit = 1000
+    public static let dailyLimit = 2500
     /// Set to 1 to go past the limit: only when the owner says so, for that request.
     public static let overrideVariable = "BOOP_JEV_OVER_LIMIT"
     /// `NSHomeDirectory()` ignores `HOME`, so a temporary `HOME` can't start a new count.

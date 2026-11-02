@@ -284,7 +284,7 @@ final class EvalTests: XCTestCase {
         func allowance(overridden: Bool = false) -> JevAllowance {
             JevAllowance(file: file, limit: 3, overridden: overridden, today: { day.name })
         }
-        XCTAssertEqual(JevAllowance.dailyLimit, 1000, "the owner's limit")
+        XCTAssertEqual(JevAllowance.dailyLimit, 2500, "the owner's limit")
 
         // Two commands share the file.
         let echo = ScriptedBrain(always: [:])
