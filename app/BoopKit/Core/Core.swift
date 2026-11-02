@@ -68,8 +68,8 @@ public final class Core {
     public var moodNow: String { mood() }
     /// The growth stage Boop is at, from 1, which every `state` carries as
     /// its tags (`Tags.stages`): the runtime reads it from the growth
-    /// store. A Hatchling's until it's set.
-    var stage: () -> Int = { 1 }
+    /// store. Buddy's, the full size, until it's set.
+    var stage: () -> Int = { 3 }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker

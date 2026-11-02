@@ -1,6 +1,6 @@
 # Growth
 
-Updated 2026-11-01. Decided with the owner on 2026-11-01. Boop is whole from
+Updated 2026-11-02. Decided with the owner on 2026-11-01. Boop is whole from
 the first minute. Growth only adds delight.
 
 ## One bar, fed by XP
@@ -50,13 +50,48 @@ Growing plays a ceremony: a glow, a pop, the new shape, and a sign ("i
 grew!", "new: dance!"), with the voice through Jev. The popover shows the
 next stage as a silhouette.
 
-## To check first
+## The scaling test (2026-11-02)
 
-- Whether the gel can scale its body and eyes without breaking props, the
-  desk and faces; nothing in the engine does yet. Voice pitch exists
-  (`voice/effects.h`).
-- Whether a Hatchling's face reads at arm's length (the owner liked it as drawn), and Chonk fits with the
-  low sign and the desk.
+The gel can do it, on the simulator; the board is owed. The finishes already
+scale the body, its face and its anchors about a point
+(`PaintControls::scale`), so a stage's body is that one scale, multiplied in,
+about where it stands on the desk (`BodySettings`, the gel's `painter.h`).
+Every frame of `tests/scenarios-gel/growth.jsonl` shows the four stages side
+by side, over faces, hats, the desk, pastimes, finishes, acts, the wish, the
+drawer and both signs.
+
+| Stage | Size | Eyes | Body's pixels | Rows from the top (Buddy's 92) |
+| --- | --- | --- | --- | --- |
+| Hatchling | 0.55 | 1.55 | 0.31 of Buddy's | 195 |
+| Sprout | 0.70 | 1.25 | 0.49 | 161 |
+| Buddy | 1 | 1 | 1 | 92 |
+| Chonk | 1.12, squashed | 0.85 | 1.21 | 90 |
+
+What broke, and what fixes it:
+
+- **A Chonk at a plain 1.2 leaves the screen.** Its hats, the trophy and its
+  crown are cut at the top. So it's about 1.19 wide and no taller than Buddy,
+  which reads as big and round, and is the plan's "Big" within what fits.
+- **The keyboard and the paws** hid a small body's mouth: they scale with
+  it now, about the desk's front. The desk and the monitor stay.
+- **The nose** was a fixed spot on the canvas, above a small body's face.
+  The face now says how far it's dropped (`Face::noseDrop`).
+
+What didn't break: the hats, the kit, the shades, the wish's bubble, the work
+stream, the acts and the finishes all sit on the anchors, and the low sign and
+the needs-you card sit on the screen. Two smaller things stay as they are, for
+the owner to judge: a Hatchling's Mega Boop doesn't fill the screen, and the
+reaction's sign is as wide as ever, so it crosses a Hatchling's mouth, as it
+does Buddy's.
+
+The cost: no new memory, as it's a few integers a frame and no buffer, and
+smaller stages shade fewer pixels. A Chonk shades 21% more of the body. A
+frame's time on the host didn't separate the stages from the noise (2.0 to
+2.5 ms a frame), so **the Chonk's frames a second on the AMOLED are unmeasured**;
+`boopctl perf --scenes` with a saved XP past Chonk's is owed there. Mega Boop
+already draws far more of the screen than any Chonk.
+
+Still to look at on the board: whether a Hatchling's face reads at arm's length.
 
 Storyboard: `/tmp/boop-storyboard/stages.html`.
 

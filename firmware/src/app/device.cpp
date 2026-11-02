@@ -608,7 +608,7 @@ void Device::readInputs(uint32_t t) {
     live_.touchPath.velocity(vx, vy);
     if (!live_.drawerTouch) b_.face().letGo(vx, vy);
     render::Gesture g = render::Gesture::kHandoff;
-    const TouchGesture::Kind kind = live_.touchPath.up(g);
+    const TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop());
     live_.lastTouch = live_.touchPath.path();
     live_.lastTouchWas = kind == TouchGesture::kGesture ? render::gestureName(g)
                          : kind == TouchGesture::kSwipe ? kSwipeGesture

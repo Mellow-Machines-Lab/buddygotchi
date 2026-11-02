@@ -406,7 +406,8 @@ public final class Runtime: @unchecked Sendable {
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs {
-            core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 }
+            // A demo shows Boop full size, whatever the state folder has earned.
+            core(rig).stage = { [weak self] in self.map { $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }

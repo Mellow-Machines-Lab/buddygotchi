@@ -1,7 +1,7 @@
 // The tags on now: what the Mac sends in `state.when` (the part of the
 // day, Friday, a holiday, a milestone day, every tier the agents'
-// working stretch or their rest has reached, the first growth stage, and
-// `hushed` while you've told Boop to be quiet),
+// working stretch or their rest has reached, the growth stage other than
+// Buddy, the full size a board starts at, and `hushed` while you've told Boop to be quiet),
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a pastime that carries tags fits only while every
 // one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
@@ -12,11 +12,11 @@
 
 namespace render {
 
-constexpr int kTagCount = 21;
+constexpr int kTagCount = 23;
 constexpr const char* kTagNames[kTagCount] = {"morning",    "day",       "evening", "night",       "friday", "newyear",
                                               "valentines", "halloween", "winter",  "programmers", "lunar",  "party",
                                               "busy",       "frantic",   "tier1",   "tier2",       "tier3",  "tier4",
-                                              "tier5",      "sprout",    "hushed"};
+                                              "tier5",      "hatchling", "sprout",  "chonk",       "hushed"};
 static_assert(kTagCount <= 32, "a set of tags is 32 bits");
 
 // The tag's bit in a set of tags, or 0 for a name that isn't one.

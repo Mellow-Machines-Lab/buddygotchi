@@ -187,6 +187,9 @@ class Face {
   // Whether it holds up the finished turn's name itself (DoneShow::signMs):
   // from then on the strip doesn't repeat it.
   virtual bool holdsUpFinish() const { return false; }
+  // How far below its usual place the nose is now, on the canvas: a face
+  // that draws the body smaller, where it stands, has it lower.
+  virtual int noseDrop() const { return 0; }
   // The agents' drawer (render/drawer.h): whether this face has one, the
   // device's, set before each frame as the stream is, how far a finger
   // pulls it from shut to open (canvas px), the session open under a

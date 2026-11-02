@@ -288,17 +288,17 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(tiers(), [], "a new stretch")
     }
 
-    /// Every growth stage reached is a tag, so a design for Pal shows at
-    /// Pal and after; a Hatchling has none.
-    func testEveryStageReachedIsOn() {
-        XCTAssertEqual(Tags.stages(1), [])
+    /// The stage Boop is at is a tag, not those it has passed, as it can
+    /// go back; Buddy, the full size, has none.
+    func testOnlyTheStageItIsAtIsOn() {
+        XCTAssertEqual(Tags.stageTags, ["hatchling", "sprout", "chonk"])
+        XCTAssertEqual(Tags.stages(1), ["hatchling"])
         XCTAssertEqual(Tags.stages(2), ["sprout"])
-        XCTAssertEqual(Tags.stages(4), ["sprout", "buddy", "pal"])
-        XCTAssertEqual(Tags.stages(Growth.stages.count), Tags.stageTags)
-        XCTAssertEqual(Tags.stageTags, ["sprout", "buddy", "pal", "chonk", "legend"])
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
+        core.stage = { 2 }
+        XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(1), ["sprout"])
         core.stage = { 3 }
-        XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(2), ["sprout", "buddy"])
+        XCTAssertFalse(core.snapshot(at: ms(2026, 10, 22)).when.contains { Tags.stageTags.contains($0) }, "Buddy's none")
     }
 
     /// A demo's hold keeps its finger down longer than the board's hold
