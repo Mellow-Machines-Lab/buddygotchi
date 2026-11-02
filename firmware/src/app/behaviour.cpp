@@ -740,6 +740,7 @@ render::Strip Behaviour::strip(uint32_t t) const {
 
 render::WishShow Behaviour::wishShow(uint32_t t) const {
   render::WishShow show;
+  if (noApp(t)) return show;  // nothing waits on a Mac that isn't there
   if (wishPop_ != render::WishShow::kWaiting && t - wishPopAt_ < render::WishShow::kPopMs) {
     show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
   } else {

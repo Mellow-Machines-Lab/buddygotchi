@@ -1694,6 +1694,22 @@ static void test_the_wish_shows_and_pops() {
   TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
 }
 
+// With no app the wish's bubble goes: nothing waits on a Mac that isn't there,
+// and no touch could meet it. It comes back with the app, if it's still open.
+static void test_the_wish_goes_with_the_app() {
+  Rig r;
+  Model m = base("idle");
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  r.at(r.t + Behaviour::kNoAppMs);
+  TEST_ASSERT_TRUE(r.b.noApp(r.t));
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+  r.state(m);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+}
+
 static void test_a_sign_shows_while_its_reaction_plays() {
   Rig r;
   r.state(base("idle"));
@@ -3809,6 +3825,7 @@ int main() {
   RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
   RUN_TEST(test_a_reason_is_the_lanes_caption);
   RUN_TEST(test_the_wish_shows_and_pops);
+  RUN_TEST(test_the_wish_goes_with_the_app);
   RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   RUN_TEST(test_alone_it_rests_then_sleeps_and_a_touch_wakes_it);
