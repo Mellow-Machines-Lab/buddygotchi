@@ -418,6 +418,21 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertNil(dismissed.core.stream.act, "and its turn ending ends it")
     }
 
+    /// A new turn in an act's session means its end was lost: the act goes,
+    /// and it doesn't hold the screen or stop the next one starting. Another
+    /// session's new turn leaves it.
+    func testANewTurnClearsAnActWithALostEnd() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.send(call(rig, "1", program: "git push"))
+        rig.send(.turnStart, session: "other")
+        XCTAssertNotNil(rig.core.stream.act, "another session's turn")
+        rig.send(.turnStart)
+        XCTAssertNil(rig.core.stream.act, "its own")
+        rig.send(call(rig, "2", topic: "tests", program: "make test"))
+        XCTAssertEqual(rig.core.stream.act?.callID, "2")
+    }
+
     /// The small version's failure after a long run gets the full ending;
     /// a short one's doesn't, and a push's never does.
     func testALongRunsFailureEndsInFull() {

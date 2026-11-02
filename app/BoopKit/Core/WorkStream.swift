@@ -374,9 +374,11 @@ struct WorkStream {
         return offer(Forward(slot: lane.slot, word: "context", style: "compact", priority: .always), at: now)
     }
 
-    /// A turn starting in `key`: it has called no tool yet, so `turnEnded` waits for its first.
+    /// A turn starting in `key`: it has called no tool yet, so `turnEnded`
+    /// waits for its first; and an act of its still running had its end lost.
     mutating func turnStarted(_ key: String) {
         called.remove(key)
+        if act?.session == key, act?.passed == nil { act = nil }
     }
 
     /// Keeps the lanes of the sessions in `working` only, freeing the
