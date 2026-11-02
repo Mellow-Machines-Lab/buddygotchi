@@ -427,7 +427,7 @@ What the brain reads, in plain Markdown:
   you said on push-to-talk (`Signs.replies`). The brain picks a reply (the
   `react.move` question's options for what you said): yes, no, huh,
   hello, bye, thanks, love, ouch, comfort, hehe, status, nap, hush, dance
-  or notme (`ReactOutput.replies`), and while hushed unhush; a `huh` to a
+  or notme (`MomentOutput.replies`), and while hushed unhush; a `huh` to a
   question plays as `dunno`, a shrug. A `hush` hushes the creature for
   as long as the moment is big (`Core.hushMsBySize`: 15 minutes small to
   two hours huge; the app's Hush button, 30): it says nothing until then,
@@ -461,7 +461,7 @@ What the brain reads, in plain Markdown:
   said, `say` mostly says something, and then Voice says the reply's own
   words, its takes in the voice (§8): a yes says "Yep", a no "Tsk". With
   none in the face, it says a feeling `say` picked, else one the reply
-  borrows (`ReactOutput.replyWords`: thanks a glad sound), and never a
+  borrows (`MomentOutput.replyWords`: thanks a glad sound), and never a
   topic. A pack without the file holds
   up nothing for a reply but the facts.
 
@@ -540,7 +540,7 @@ the brain's, a rule's, or the board's own.
 | State | When it plays | Sent by |
 | --- | --- | --- |
 | `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller). One card for a start: a session's first prompt within a minute of its start card shows none, nor does a follow-up within 5 minutes of its last turn (`Core.startCardMs`, `followUpMs`) | the Mac |
-| `task_complete` | A turn ends; `outcome` is `success` or `failure`, and `turn` the tier it reached, as the tags count them: 0 short of `tier1`, then 1 to 5 (`DeviceReaction.turn`) | the Mac (the brain) |
+| `task_complete` | A turn ends; `outcome` is `success` or `failure`, and `turn` the tier it reached, as the tags count them: 0 short of `tier1`, then 1 to 5 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name. Pixel's has three variations (`notice-art.mjs`), the gel's three takes under a face it borrows, as a gesture's (`notices` in its `expressions.json`) | the Mac (the brain) |
@@ -991,7 +991,7 @@ its notice besides, which the gel plays
 (§16's reference became it), the clips for its replies to what you said,
 which the gel plays over the face (`reply-yes` … `reply-notme`: a nod, a
 shake of the head, a shrug, a head tilt, a yawn, a wiggle and so on, one
-for each of `ReactOutput.replies` and `dunno`; a `nap` or a `dance` while
+for each of `MomentOutput.replies` and `dunno`; a `nap` or a `dance` while
 the look is idle or asleep plays the gel's own pastime instead, the
 snuggle under its blanket or the dance), working's base for each tier,
 which only the gel loops, and the gel's pastimes' clips (below, The gel

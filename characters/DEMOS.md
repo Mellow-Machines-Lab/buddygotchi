@@ -143,7 +143,7 @@ A brain step answers the questions that the real brain gets:
 | `say` | what it says: `none`, a feeling (`glad`, `upset`, `tickled`), `swear`, or a topic (`start`, `tests`, `done`…); only a pack with a voice says it |
 
 The choices and what each means are in
-`app/BoopKit/Outputs/ReactOutput.swift`. `boopdev check` lists them when
+`app/BoopKit/Outputs/MomentOutput.swift`. `boopdev check` lists them when
 an answer is wrong. A pack with no voice ignores the `say` answer, so
 one script plays with or without a voice.
 

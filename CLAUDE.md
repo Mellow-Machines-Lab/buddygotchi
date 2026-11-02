@@ -329,7 +329,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | size | How much the Moment matters: small, medium, big, huge | intensity, loops | `react.intensity`, `loops` |
 | finish | The animation a turn's end plays, scaled by the turn's length; the ticket and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
 | greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
-| reply | Boop's answer to your words, with its clip and sign (`ReactOutput.replies`) | answer (that's a topic), response | `reply` |
+| reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
 | ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`; never needs an answer | quiz, prompt | `ask` |
 | musing | Boop's own beat with a sign and no question, a `[idle]` line of `signs.md` | thought, quip | |
 | the telling | The Moment at your first showing up after 5:00 that tells the dream | | |

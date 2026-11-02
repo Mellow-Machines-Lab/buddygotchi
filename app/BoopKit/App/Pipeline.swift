@@ -97,7 +97,7 @@ public final class Pipeline {
         // With several buddies, one's reaction is an event the others hear,
         // one more in its chain when it answers another's.
         harness.on(Event.did) { [unowned self] d in
-            guard several, d.action == ReactOutput.outputName, d["ok"]?.bool == true, let who = d.buddy else { return }
+            guard several, d.action == MomentOutput.outputName, d["ok"]?.bool == true, let who = d.buddy else { return }
             let answered = d.about.flatMap(harness.log.event)
             let chain = answered?.type == .reacted ? (answered?["chain"]?.int ?? 1) + 1 : 1
             harness.emit(Event(at: d.at, source: .boop, type: .reacted, specificType: "brain", buddy: who,
@@ -247,7 +247,7 @@ public final class Pipeline {
     @discardableResult
     public func answerLast(_ pick: String, at now: Int64, buddy: String? = nil) -> Step? {
         let asked = harness.log.view(now: now).events.last {
-            $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil && $0.buddy == buddy
+            $0.kind == Event.did && $0.action == MomentOutput.outputName && $0["ask"] != nil && $0.buddy == buddy
         }
         guard let asked, let id = asked["ask"]?.string else { return nil }
         let answers = asked["answers"]?.array?.compactMap(\.string) ?? []

@@ -773,7 +773,7 @@ public final class TranscriptView {
         // The pokes the run's reactions can answer: from the third in a row.
         let answering = Set(run.dropFirst(Self.answersRunFrom - 1).map(\.seq))
         let mine = { (d: Event) in d.buddy == e.buddy }
-        guard let reaction = log.lastDid(ReactOutput.outputName, where: {
+        guard let reaction = log.lastDid(MomentOutput.outputName, where: {
             $0["open"]?.bool == true && $0.about.map(answering.contains) == true && mine($0)
         }) else { return false }
         guard log.ended(reaction.seq) == nil else { return false }
@@ -875,7 +875,7 @@ public final class TranscriptView {
         // Boop started a reaction: the working heartbeat starts its wait
         // again, so it comes after a stretch of work with no reaction,
         // however many events woke the brain in it.
-        if let react = log.lastDid(ReactOutput.outputName, where: { $0["open"]?.bool == true }),
+        if let react = log.lastDid(MomentOutput.outputName, where: { $0["open"]?.bool == true }),
            react.seq > reactSeen {
             reactSeen = react.seq
             nextWorkBeatAt = nil

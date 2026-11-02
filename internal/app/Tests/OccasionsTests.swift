@@ -137,10 +137,10 @@ final class OccasionsTests: XCTestCase {
             return core
         }
         let now = ms(2026, 10, 22, 10)
-        XCTAssertEqual(deviceReactions(core().reachedStage("Sprout", at: now)), [], "at launch")
+        XCTAssertEqual(moments(core().reachedStage("Sprout", at: now)), [], "at launch")
         let fx = core().reachedStage("Sprout", celebrate: true, at: now)
-        let cheer = DeviceReaction(anim: "task_complete", loops: 2, outcome: "success", sign: "I'm a Sprout!")
-        XCTAssertEqual(deviceReactions(fx), [cheer])
+        let cheer = Moment(anim: "task_complete", loops: 2, outcome: "success", sign: "I'm a Sprout!")
+        XCTAssertEqual(moments(fx), [cheer])
         XCTAssertEqual(BoopDevice.play(cheer), .next, "a sign waits its turn")
         XCTAssertTrue(fx.contains { if case .state(let s) = $0 { return s.when.contains("party") } else { return false } },
                       "the party hat is on as it plays")
@@ -155,16 +155,16 @@ final class OccasionsTests: XCTestCase {
     func testASpecialDayIsGreetedOnce() {
         let rig = CoreRig(start: ms(2026, 10, 31, 14))
         let first = rig.send(.turnStart)
-        XCTAssertEqual(deviceReactions(first).map(\.sign), [nil, "Happy Halloween!"])
-        XCTAssertEqual(deviceReactions(first).last?.anim, "wake_up")
-        XCTAssertEqual(deviceReactions(rig.send(.turnStart, session: "s2")).compactMap(\.sign), [], "once")
-        XCTAssertEqual(deviceReactions(CoreRig().send(.turnStart)).compactMap(\.sign), [], "an ordinary day")
+        XCTAssertEqual(moments(first).map(\.sign), [nil, "Happy Halloween!"])
+        XCTAssertEqual(moments(first).last?.anim, "wake_up")
+        XCTAssertEqual(moments(rig.send(.turnStart, session: "s2")).compactMap(\.sign), [], "once")
+        XCTAssertEqual(moments(CoreRig().send(.turnStart)).compactMap(\.sign), [], "an ordinary day")
 
         // Awake at midnight, at work: it notices the day, not wakes up.
         let late = CoreRig(start: ms(2026, 10, 30, 23))
         late.send(.turnStart)
         late.now = ms(2026, 10, 31, 0) + 60_000
-        let midnight = deviceReactions(late.send(.activity, tool: "Bash"))
+        let midnight = moments(late.send(.activity, tool: "Bash"))
         XCTAssertEqual(midnight.map(\.anim), ["notice"])
         XCTAssertEqual(midnight.map(\.sign), ["Happy Halloween!"])
 
@@ -173,10 +173,10 @@ final class OccasionsTests: XCTestCase {
         waiting.send(.turnStart)
         waiting.send(.needsYou, tool: "Bash")
         waiting.now = ms(2026, 10, 31, 0) + 60_000
-        XCTAssertEqual(deviceReactions(waiting.send(.activity, session: "s2", tool: "Read")).compactMap(\.sign), [],
+        XCTAssertEqual(moments(waiting.send(.activity, session: "s2", tool: "Read")).compactMap(\.sign), [],
                        "not over needs you")
         waiting.now += 1000
-        XCTAssertEqual(deviceReactions(waiting.send(.activity, tool: "Read")).compactMap(\.sign), ["Happy Halloween!"],
+        XCTAssertEqual(moments(waiting.send(.activity, tool: "Read")).compactMap(\.sign), ["Happy Halloween!"],
                        "once it's answered")
     }
 
@@ -217,7 +217,7 @@ final class OccasionsTests: XCTestCase {
         let core = Core(config: .init(time: utc, hatched: "2026-10-22"), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
-        XCTAssertEqual(deviceReactions(core.reachedStage("Sprout", celebrate: true, at: now)), [], "no cheer")
+        XCTAssertEqual(moments(core.reachedStage("Sprout", celebrate: true, at: now)), [], "no cheer")
         XCTAssertFalse(core.snapshot(at: now).when.contains("party"), "a Sprout on the day it hatched")
         XCTAssertEqual(core.occasions(at: now), [], "no greeting, and nothing for the popover")
         XCTAssertTrue(Occasions.tags(at: ms(2027, 1, 1), hatched: "2027-01-01", party: true, time: utc).contains("party"),

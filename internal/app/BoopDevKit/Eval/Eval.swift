@@ -402,7 +402,7 @@ public struct Scenario: Sendable {
                 // What `!` takes away from: every value a key may be.
                 // `none` first, as the expect brain answers with the first.
                 let every: [String: [String]] = ["react": ["none"] + CharacterPack.active.moods.map(\.id), "mood": graphMoods,
-                                                 "say": ["none"] + ReactOutput.says.map(\.name)]
+                                                 "say": ["none"] + MomentOutput.says.map(\.name)]
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
                     guard let text = v as? String else { throw badStep("expect.\(key) is like \"proud|excited\"") }
@@ -441,9 +441,9 @@ public struct Scenario: Sendable {
                 step.expect?.sign = sign
                 let unknownTags = (when ?? []).subtracting(Occasions.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
-                for (key, values, known) in [("say", step.expect?.say, ReactOutput.says.map(\.name)),
-                                             ("intensity", step.expect?.intensity, ReactOutput.intensities.map(\.name)),
-                                             ("move", step.expect?.move, (ReactOutput.animations + ReactOutput.replies).map(\.name) + ["unhush"])] {
+                for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
+                                             ("intensity", step.expect?.intensity, MomentOutput.sizeOptions.map(\.name)),
+                                             ("move", step.expect?.move, (MomentOutput.animations + MomentOutput.replies).map(\.name) + ["unhush"])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -754,14 +754,14 @@ public struct Eval {
                     last = record
                     onPass?(i + 1, record)
                     if view.facts["dream_day"] != nil { toldDream = true }
-                    let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
+                    let ran = record.outputs.contains { $0.name == MomentOutput.outputName && $0.result.ok }
                     let answers = record.answers
                     timeline.append(Pass(
                         atMs: clock.now - start, line: view.line,
-                        reaction: ran ? Reaction(face: answers[ReactOutput.faceKey]?.choice ?? "none",
-                                                 move: ReactOutput.move(answers) ?? "none",
+                        reaction: ran ? Reaction(face: answers[MomentOutput.emotionKey]?.choice ?? "none",
+                                                 move: MomentOutput.move(answers) ?? "none",
                                                  said: ending.said ?? "none") : nil,
-                        intensity: ran ? ReactOutput.intensity(answers).name : nil,
+                        intensity: ran ? MomentOutput.size(answers).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
                         answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil))
@@ -825,12 +825,12 @@ public struct Eval {
             guard let record = last else {
                 throw EvalError("\(scenario.file) step \(i + 1): expects a pass, but nothing woke the brain")
             }
-            let react = record.answers[ReactOutput.faceKey]?.choice
-            let ran = record.outputs.contains { $0.name == ReactOutput.outputName && $0.result.ok }
+            let react = record.answers[MomentOutput.emotionKey]?.choice
+            let ran = record.outputs.contains { $0.name == MomentOutput.outputName && $0.result.ok }
             checks.append(Check(step: i + 1, line: record.line ?? "", expected: expect, react: react,
-                                move: ran ? ReactOutput.move(record.answers) : nil,
-                                intensity: ran ? ReactOutput.intensity(record.answers).name : nil,
-                                say: ran ? ReactOutput.saying(record.answers) : nil,
+                                move: ran ? MomentOutput.move(record.answers) : nil,
+                                intensity: ran ? MomentOutput.size(record.answers).name : nil,
+                                say: ran ? MomentOutput.saying(record.answers) : nil,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
                                 latencyMs: record.latencyMs,

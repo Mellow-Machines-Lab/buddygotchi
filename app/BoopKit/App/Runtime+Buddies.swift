@@ -70,7 +70,7 @@ extension Runtime {
         public var buddy: Buddy
         public var steering: Steering
         public var reactions: Reactions
-        public var queue: (DeviceReaction, Pending) -> Void
+        public var queue: (Moment, Pending) -> Void
         public var speaks: () -> Bool
         /// How much it says, chosen in Settings.
         public var talk: () -> Talk
@@ -89,7 +89,7 @@ extension Runtime {
         public var company: () -> MemoryReader.Tallies?
 
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
-                    queue: @escaping (DeviceReaction, Pending) -> Void, speaks: @escaping () -> Bool,
+                    queue: @escaping (Moment, Pending) -> Void, speaks: @escaping () -> Bool,
                     talk: @escaping () -> Talk = { .default }, effects: (([CoreEffect]) -> Void)? = nil,
                     memory: @escaping () -> String? = { nil },
                     askable: @escaping (Event, LogView, [Asks.Question], Choice) -> [Asks.Question] = { _, _, _, _ in [] },
@@ -137,11 +137,11 @@ extension Runtime {
                 guard !m.reactions.cutByTap.isEmpty, TranscriptView.stopsThePokes(e, transcript.view(before: e)) else { return }
                 m.reactions.pokesStopped()
             }
-            let react = ReactOutput(queue: m.queue, blocked: { core.reactionBlock }, replyBlocked: { core.replyBlock }, who: { [weak h] now in
+            let react = MomentOutput(queue: m.queue, blocked: { core.reactionBlock }, replyBlocked: { core.replyBlock }, who: { [weak h] now in
                 // Weak: the harness holds this output.
                 guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts),
                       let who = view.who(about: key, h.log.view(now: h.clock.now())) else { return nil }
-                return DeviceReaction.Who(agent: who.agent, thread: who.thread, opens: who.opens)
+                return Moment.Who(agent: who.agent, thread: who.thread, opens: who.opens)
             }, turnMs: { [weak h] now in
                 // The finished turn's length, from its line's facts.
                 guard let h, let now, case .int(let ms)? = h.line(now.seq)?.facts["length_ms"] else { return nil }
@@ -171,7 +171,7 @@ extension Runtime {
             }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
             today: m.company)
             h.output(mood)
-            h.output(react, openFor: ReactOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
+            h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
             if voice != nil { h.section { _, v in mine(v) ? Buddy.header(for: m.buddy, among: all) : nil } }
             // The only buddy goes by the name you gave it, which the pack's

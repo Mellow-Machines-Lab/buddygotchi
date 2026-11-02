@@ -90,14 +90,14 @@ final class AsksTests: XCTestCase {
     /// then its answer from the `ask` event; its tag follows.
     func testTheMemoryKeepsTheAnswer() throws {
         let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
-        memory.recordAsk(Event.did("Boop asks you: fav snack?", for: nil, action: ReactOutput.outputName, by: "brain",
+        memory.recordAsk(Event.did("Boop asks you: fav snack?", for: nil, action: MomentOutput.outputName, by: "brain",
                                    facts: ["ask": "snack", "keeps": true], at: noon))
         XCTAssertEqual(memory.askRecord("snack"), Asks.Record(asked: "2026-10-27", keeps: true))
         memory.recordAsk(Event(at: noon + 5000, source: .device, type: .ask, specificType: "a",
                                data: ["q": "snack", "question": "fav snack?", "answer": "cookie"]))
         XCTAssertEqual(memory.askRecord("snack")?.answer, "cookie")
         XCTAssertEqual(memory.answerTags(at: noon + 400 * 86_400_000), ["cookie"], "kept for good")
-        memory.recordAsk(Event.did("Boop asks you: tabs?", for: nil, action: ReactOutput.outputName, by: "brain",
+        memory.recordAsk(Event.did("Boop asks you: tabs?", for: nil, action: MomentOutput.outputName, by: "brain",
                                    facts: ["ask": "tabs", "keeps": false], at: noon))
         memory.recordAsk(Event(at: noon + 5000, source: .device, type: .ask, specificType: Asks.ignored,
                                data: ["q": "tabs", "question": "tabs or spaces?"]))

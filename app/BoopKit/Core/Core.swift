@@ -328,7 +328,7 @@ public final class Core {
     /// An agent's event folded into the session table, the timers due by
     /// its time run first: the reaction it plays, if any.
     /// `ref` is its `seq`, which a request it starts keeps.
-    private func fold(_ event: AgentEvent, ref: Int) -> DeviceReaction? {
+    private func fold(_ event: AgentEvent, ref: Int) -> Moment? {
         let key = event.key
         // The timers due by the event's time first, to hear what they did.
         advance(to: event.at, sparing: key)
@@ -338,14 +338,14 @@ public final class Core {
         case .sessionStarted(let source):
             // Only a card that shows counts (`play`'s rule).
             if !needsYouShowing, !showsListening(at: now) { startCards[key] = now }
-            return DeviceReaction(anim: Core.starting, ctx: Core.startCtx(source: source))
+            return Moment(anim: Core.starting, ctx: Core.startCtx(source: source))
         case .turnStarted:
             held[key] = nil
             // One card for a start: not the session's first prompt just
             // after its own, nor a follow-up in the same conversation.
             if let shown = startCards.removeValue(forKey: key), now - shown < Core.startCardMs { return nil }
             if let ended = sessions[key]?.turn.lastEndedAt, now - ended < Core.followUpMs { return nil }
-            return DeviceReaction(anim: Core.starting, ctx: "new_task")
+            return Moment(anim: Core.starting, ctx: "new_task")
         case .callEnded(let call, _):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
@@ -370,7 +370,7 @@ public final class Core {
     /// the event `seq` that played it, as the poke's answer is, so the
     /// brain hears that Boop already reacted: in the words `said`, or
     /// `played`'s.
-    func play(_ rule: DeviceReaction, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
+    func play(_ rule: Moment, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
         guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.reaction(rule))
         var did = Event.did(said ?? "", for: seq, action: anim, by: "rule",
@@ -382,7 +382,7 @@ public final class Core {
     /// Onboarding's greeting on the board, `reaction`: a rule's reaction
     /// for no event, played and recorded as the rules' others are.
     @discardableResult
-    public func greet(_ reaction: DeviceReaction, at now: Int64) -> [CoreEffect] {
+    public func greet(_ reaction: Moment, at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         play(reaction, for: nil, now, &fx)
         return fx
@@ -459,8 +459,8 @@ public final class Core {
 
     /// Growing a stage: the finish's confetti, as a finish held twice with
     /// no turn plays, and its sign.
-    static func celebration(sign: String) -> DeviceReaction {
-        DeviceReaction(anim: "task_complete", loops: 2, outcome: "success", sign: sign)
+    static func celebration(sign: String) -> Moment {
+        Moment(anim: "task_complete", loops: 2, outcome: "success", sign: sign)
     }
 
     /// Today's occasions at `now` (`Occasions.occasions`).
@@ -480,7 +480,7 @@ public final class Core {
         guard greetedDay != today, !needsYouShowing, !showsListening(at: now) else { return }
         greetedDay = today
         guard let sign = Occasions.greeting(occasions(at: now)) else { return }
-        play(DeviceReaction(anim: waking ? "wake_up" : "notice", sign: sign), for: nil, now, &fx,
+        play(Moment(anim: waking ? "wake_up" : "notice", sign: sign), for: nil, now, &fx,
              said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
     }
 

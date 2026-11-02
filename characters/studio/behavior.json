@@ -11,8 +11,8 @@
                 {"what": "an event is answered only within", "in": "mellowharness/Sources/MellowHarness/Harness.swift", "name": "maxWaitMs", "unit": "ms"},
                 {"what": "HISTORY reaches back", "in": "mellowharness/Sources/MellowHarness/Harness.swift", "name": "historyMs", "unit": "ms"},
                 {"what": "HISTORY holds at most", "in": "mellowharness/Sources/MellowHarness/Harness.swift", "name": "historyLimit", "unit": "count"},
-                {"what": "a reaction counts as playing for at most", "in": "app/BoopKit/Outputs/ReactOutput.swift", "name": "openForMs", "unit": "ms"},
-                {"what": "it speaks only when sure of the words to", "in": "app/BoopKit/Outputs/ReactOutput.swift", "name": "sayFloor", "unit": "share"},
+                {"what": "a reaction counts as playing for at most", "in": "app/BoopKit/Outputs/MomentOutput.swift", "name": "openForMs", "unit": "ms"},
+                {"what": "it speaks only when sure of the words to", "in": "app/BoopKit/Outputs/MomentOutput.swift", "name": "sayFloor", "unit": "share"},
                 {"what": "buddies answer each other at most", "in": "app/BoopKit/Buddies/Buddy.swift", "name": "maxRepliesInARow", "unit": "count"}]
   },
   "layers": [

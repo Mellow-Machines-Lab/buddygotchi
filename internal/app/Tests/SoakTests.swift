@@ -189,9 +189,9 @@ struct SoakWork {
             Answer(choice: pick, probabilities: Dictionary(uniqueKeysWithValues: names.map { ($0, $0 == pick ? 0.62 : 0.38 / Double(names.count - 1)) }))
         }
         let animations = ["none", "success", "failure", "wiggle", "nod", "shrug", "gasp", "cheer", "sulk", "yawn", "bounce", "spin"]
-        return ["mood": spread(moods, moods[n % moods.count]), ReactOutput.faceKey: spread(faces, "happy"),
-                ReactOutput.moveKey: spread(animations, "success"), ReactOutput.intensityKey: spread(["small", "medium", "big", "huge"], "small"),
-                ReactOutput.sayKey: spread(["none", "glad", "upset", "tickled"] + (0..<16).map { "topic\($0)" }, "topic3")]
+        return ["mood": spread(moods, moods[n % moods.count]), MomentOutput.emotionKey: spread(faces, "happy"),
+                MomentOutput.moveKey: spread(animations, "success"), MomentOutput.sizeKey: spread(["small", "medium", "big", "huge"], "small"),
+                MomentOutput.sayKey: spread(["none", "glad", "upset", "tickled"] + (0..<16).map { "topic\($0)" }, "topic3")]
     }
 
     /// Writes every event from the work's start until `end`, one file a
@@ -224,9 +224,9 @@ struct SoakWork {
                                       facts: ["from": .string(mood), "to": .string(to), "latency_ms": 0], at: t + 700))
                     mood = to
                 }
-                let d = log(Event.did("Boop cheered with a success animation, saying \"yay\".", for: s, action: ReactOutput.outputName,
+                let d = log(Event.did("Boop cheered with a success animation, saying \"yay\".", for: s, action: MomentOutput.outputName,
                                       by: "brain", open: true, facts: ["latency_ms": 0], at: t + 700))
-                _ = log(Event.ended(d, action: ReactOutput.outputName, by: "brain", at: t + 6700))
+                _ = log(Event.ended(d, action: MomentOutput.outputName, by: "brain", at: t + 6700))
             }
         }
         while at + Self.turnMs <= end {

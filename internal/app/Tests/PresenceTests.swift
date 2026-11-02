@@ -262,7 +262,7 @@ final class PresenceTests: XCTestCase {
     func testEveryFaceCanSayHello() throws {
         try requireVoice()
         let greetings: Set = ["Hello", "Hey", "Hi", "Howdy", "Salut", "Hello hello", "Oh, hello", "Hey hey"]
-        XCTAssertTrue(ReactOutput.topics.map(\.name).contains("hello"))
+        XCTAssertTrue(MomentOutput.topics.map(\.name).contains("hello"))
         let hello = Take.all.filter { $0.part == .about && $0.meaning == "hello" }
         XCTAssertEqual(Set(hello.map(\.text)), greetings)
         XCTAssertTrue(hello.allSatisfy { $0.finish == nil })

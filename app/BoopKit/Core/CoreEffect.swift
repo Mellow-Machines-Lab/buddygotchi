@@ -31,7 +31,7 @@ public enum CoreEffect: Equatable, Sendable {
     /// if nothing is playing on the device (`if_free`) and which no brain
     /// waits on; or push-to-talk's `listening` after the app's mic button, which
     /// plays at once (`BoopDevice.play`).
-    case reaction(DeviceReaction)
+    case reaction(Moment)
     /// A word of the work stream that comes forward (`WorkStream`): the
     /// `call` `do`'s `args`, sent to wait briefly in the device's queue.
     case call(JSONObject)

@@ -597,11 +597,11 @@ FACE, MOVE, INTENSITY, SAY = "react.face", "react.move", "react.intensity", "say
 # too, `proud-cheer`); the move `react.animation`, or to what you said
 # `react.reply`; the intensity `react.loops`, by how long it held.
 OLDER = {FACE: ("react.mood", "react"), MOVE: ("react.animation", "react.reply"), INTENSITY: ("react.loops",)}
-# The intensities, smallest first, and how long each held, as
+# The sizeOptions, smallest first, and how long each held, as
 # `react.loops` named them.
 INTENSITIES = ["small", "medium", "big", "huge"]
 HOLDS = ["once", "twice", "three times", "four times"]
-# The moves at an event (ReactOutput.animations); any other move is a
+# The moves at an event (MomentOutput.animations); any other move is a
 # reply to what you said.
 MOVES = ["success", "failure", "reply", "wake up", "notice"]
 

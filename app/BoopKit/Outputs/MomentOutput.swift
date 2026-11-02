@@ -18,15 +18,15 @@ import MellowHarness
 /// never guessed. It waits in the
 /// device's queue until whatever plays there has finished. It's started,
 /// not done, until whoever plays it ends its handle.
-public final class ReactOutput: Output {
+public final class MomentOutput: Output {
     public static let outputName = "react"
-    public let name = ReactOutput.outputName
+    public let name = MomentOutput.outputName
     /// Whose reactions: its character, and the buddy's voice when there
     /// are several.
     let pack: CharacterPack
     public let voice: String?
     /// The questions' keys.
-    public static let faceKey = "react.face", moveKey = "react.move", intensityKey = "react.intensity", sayKey = "say"
+    public static let emotionKey = "react.face", moveKey = "react.move", sizeKey = "react.intensity", sayKey = "say"
     /// Its questions, built once: none of them changes. What you said gets
     /// its own moves (`talkQuestions`).
     let asked: [Question]
@@ -34,7 +34,7 @@ public final class ReactOutput: Output {
     /// Sends a brain reaction, which waits in the device's queue behind
     /// whatever is playing, with the handle to end once the device says how
     /// it ended, or once it never will.
-    let queue: (DeviceReaction, Pending) -> Void
+    let queue: (Moment, Pending) -> Void
     /// Why a reaction can't play now (something needs you), or nil.
     let blocked: () -> String?
     /// Why a reply to what you said can't play now, or nil: it shows over
@@ -43,7 +43,7 @@ public final class ReactOutput: Output {
     /// The agent and thread the event the brain answers is about, or nil
     /// (a poke, an idle heartbeat): a finish, or a face for a finished
     /// turn, names it on the device.
-    let who: (Event?) -> DeviceReaction.Who?
+    let who: (Event?) -> Moment.Who?
     /// How long the turn that event finished ran, in ms, or nil when it
     /// finished none: a finish sends the tier it reached as its `turn`,
     /// which the device may size it by.
@@ -118,8 +118,8 @@ public final class ReactOutput: Output {
     var ouchAt: Int64?
     /// With a `voice`, a buddy's: its picks are its own, so two buddies
     /// don't say the same words.
-    public init(queue: @escaping (DeviceReaction, Pending) -> Void, blocked: @escaping () -> String?,
-                replyBlocked: (() -> String?)? = nil, who: @escaping (Event?) -> DeviceReaction.Who? = { _ in nil },
+    public init(queue: @escaping (Moment, Pending) -> Void, blocked: @escaping () -> String?,
+                replyBlocked: (() -> String?)? = nil, who: @escaping (Event?) -> Moment.Who? = { _ in nil },
                 turnMs: @escaping (Event?) -> Int64? = { _ in nil }, speaks: @escaping () -> Bool = { true },
                 pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
@@ -298,8 +298,8 @@ public final class ReactOutput: Output {
     }
 
     /// How big a moment is, the smallest first: how long the face holds,
-    /// a loop more each step, and how big what it says is (`Intensity`).
-    public static let intensities = [
+    /// a loop more each step, and how big what it says is (`Size`).
+    public static let sizeOptions = [
         Option("small", "A small moment: the usual. The face holds once, and what it says is a sound."),
         Option("medium", "A moment that stands out. It holds twice, and says a word.", notFor: "Routine work."),
         Option("big", "A big moment, such as a long turn's hard work done or the top of a streak. It holds three times, and says a phrase.",
@@ -310,20 +310,20 @@ public final class ReactOutput: Output {
 
     /// What an intensity sets: how many loops the face holds and the kind
     /// of take it says.
-    public struct Intensity: Equatable, Sendable {
+    public struct Size: Equatable, Sendable {
         public let name: String
         public let loops: Int
         public let kind: Take.Kind
     }
 
-    /// Each intensity, in `intensities`' order: once a sound, twice a
+    /// Each intensity, in `sizeOptions`' order: once a sound, twice a
     /// word, three and four times a phrase.
-    public static let sizes: [Intensity] = zip(intensities, [(1, Take.Kind.sound), (2, .word), (3, .phrase), (4, .phrase)])
-        .map { Intensity(name: $0.name, loops: $1.0, kind: $1.1) }
+    public static let sizes: [Size] = zip(sizeOptions, [(1, Take.Kind.sound), (2, .word), (3, .phrase), (4, .phrase)])
+        .map { Size(name: $0.name, loops: $1.0, kind: $1.1) }
 
     /// The intensity `react.intensity` picked, or small when it's missing.
-    public static func intensity(_ answers: Answers) -> Intensity {
-        sizes.first { $0.name == answers[intensityKey]?.choice } ?? sizes[0]
+    public static func size(_ answers: Answers) -> Size {
+        sizes.first { $0.name == answers[sizeKey]?.choice } ?? sizes[0]
     }
 
     /// What Boop says, `say`'s options: nothing, a feeling, a swear, or
@@ -453,7 +453,7 @@ public final class ReactOutput: Output {
         // something or says its name.
         let prompt = about.flatMap { $0.type == .prompt ? PromptReading(facts: $0.data) : nil }
         let asked = talk() == .chatty && prompt != nil ? speech.map { q in
-            q.key == Self.faceKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
+            q.key == Self.emotionKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
                                              options: q.options.filter { $0.name != "none" }) : q
         } : speech
         if talk() == .quiet, let prompt, prompt.named.isEmpty, prompt.tone == nil || prompt.tone == .calm { return asked }
@@ -564,7 +564,7 @@ public final class ReactOutput: Output {
         let name = pack.name
         return asked.map { q in
             switch q.key {
-            case faceKey:
+            case emotionKey:
                 return Question(key: q.key, text: "Which face does \(name) make at what you said? It always makes one.", about: q.about,
                                 judgeBy: q.judgeBy, options: q.options.filter { $0.name != "none" })
             case moveKey:
@@ -614,7 +614,7 @@ public final class ReactOutput: Output {
         // What it says is CONTEXT's Talk row's to steer first, when the setting isn't normal.
         let byTalk = "CONTEXT's Talk row first, when it's there, over everything else on how much \(name) says; then PERSONALITY's Examples, then MOOD"
         return [
-            Question(key: faceKey, text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.",
+            Question(key: emotionKey, text: "How should \(name) react to NOW, if at all? It makes this mood's face for a moment, with its move, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
                      options: [Option("none", "Stay quiet: nothing in NOW is worth a face, "
                                           + "or HISTORY shows \(name) still making the one it calls for, about the same thing (in progress).",
@@ -625,17 +625,17 @@ public final class ReactOutput: Output {
             Question(key: moveKey, text: "If \(name) reacts, does its body make a move: a turn that finished, and how it ended, you back after an hour or more away, or your prompt saying \(name)'s name?",
                      about: "the NOW section", judgeBy: "NOW's line, and what it says the agent's last message said",
                      options: [Option("none", "Just the face: NOW's line isn't a turn that finished done or failed, you back after an hour or more away, or a prompt that says \(name)'s name. A turn starting, a prompt that doesn't say its name, a check passing or failing (tests, a build, a deploy), a poke, a check-in, a short break and a stopped turn all get none.")]
-                         + ReactOutput.animations(of: name)),
-            Question(key: intensityKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds the face and the more it says.",
-                     about: "the NOW section", judgeBy: byBoth, options: ReactOutput.intensities),
+                         + MomentOutput.animations(of: name)),
+            Question(key: sizeKey, text: "If \(name) reacts, how big is the moment? The bigger, the longer it holds the face and the more it says.",
+                     about: "the NOW section", judgeBy: byBoth, options: MomentOutput.sizeOptions),
             Question(key: sayKey, text: "If \(name) reacts, what does it say, in its face's mood: nothing, as the routine often gets, how it feels, or what NOW is about?",
-                     about: "the NOW section", judgeBy: byTalk, options: ReactOutput.says(of: name)),
+                     about: "the NOW section", judgeBy: byTalk, options: MomentOutput.says(of: name)),
         ]
     }
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
         // 1. Does Jev want a reaction at all, and with which face?
-        guard let choice = answers[Self.faceKey]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
+        guard let choice = answers[Self.emotionKey]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
             return nil
         }
         // 2. This output's own rules: a reply to what you said shows over
@@ -647,7 +647,7 @@ public final class ReactOutput: Output {
         // big, and the `say`, if Voice has a take of what it says, as big,
         // in this face's mood. To what you said, the move is the reply.
         let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : nil
-        let size = Self.intensity(answers)
+        let size = Self.size(answers)
         let pick = talk ? nil : Self.animation(answers)
         let at = about?.at ?? 0
         // What it says: nothing while hushed, unless this is you letting it
@@ -684,7 +684,7 @@ public final class ReactOutput: Output {
             said.insert(lead, at: 0)
         }
         if !said.isEmpty { recentWords = Array((recentWords + [Set(said.map(\.text))]).suffix(Self.recentSays)) }
-        let say = DeviceReaction.Say(takes: said)
+        let say = Moment.Say(takes: said)
         let sign: String?
         var show: String?
         if let reply, let about {
@@ -696,7 +696,7 @@ public final class ReactOutput: Output {
             let picked = answers[Signs.questionKey]?.choice
             sign = picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
-        var reaction = DeviceReaction(say: say, mood: choice, loops: size.loops, sign: sign)
+        var reaction = Moment(say: say, mood: choice, loops: size.loops, sign: sign)
         // An ask: the question the brain held up, as the sign, its answers
         // as the lane's targets. It was offered when asked; the mood may
         // have moved since, so it isn't asked again.
@@ -716,7 +716,7 @@ public final class ReactOutput: Output {
             reaction.anim = anim
             reaction.outcome = outcome
             reaction.who = who(about)
-            if outcome != nil { reaction.turn = turnMs(about).map { DeviceReaction.turn(lengthMs: $0) } }
+            if outcome != nil { reaction.turn = turnMs(about).map { Moment.turn(lengthMs: $0) } }
         } else if turnMs(about) != nil {
             // A face for a finished turn names it too: the device marks
             // the turn it's about while it plays.

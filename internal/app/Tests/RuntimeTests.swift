@@ -70,8 +70,8 @@ final class RuntimeTests: XCTestCase {
             runtime.device(FakeTransport.hello)
             let pending = Pending()
             pending.bind { ends.append($0) }
-            runtime.queue(DeviceReaction(anim: "task_complete", mood: "happy", loops: 2, outcome: "success"), pending)
-            runtime.playRule(DeviceReaction(anim: "starting"))
+            runtime.queue(Moment(anim: "task_complete", mood: "happy", loops: 2, outcome: "success"), pending)
+            runtime.playRule(Moment(anim: "starting"))
             runtime.link.tick(now: runtime.options.clock() + DeviceLink.keepaliveMs)
             XCTAssertEqual(mirrored, Array(transport.sent.dropFirst(before)), "the board's lines, each as sent")
             XCTAssertEqual(transport.dos.count, 2)
@@ -1058,7 +1058,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         let thread = ThreadRef(agent: "claude", session: "s1", app: HostApp.claude, appSession: "local_7db5")
-        runtime.cheer(DeviceReaction.Who(agent: "claude", thread: "jetpack", opens: thread))
+        runtime.cheer(Moment.Who(agent: "claude", thread: "jetpack", opens: thread))
         eventually("the cheer") { transport.dos("task_complete").count == 1 }
         let cheer = transport.dos("task_complete")[0]
         XCTAssertTrue(cheer.contains(#""who":{"agent":"claude","thread":"jetpack"}"#), cheer)
@@ -1786,7 +1786,7 @@ final class RuntimeTests: XCTestCase {
     /// in HISTORY: wounded's 14.3 s of nodding off, held four times, is
     /// 57.2 s.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
-        let held = Int64(ReactOutput.sizes.map(\.loops).max() ?? 0)
+        let held = Int64(MomentOutput.sizes.map(\.loops).max() ?? 0)
         let assets = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .appendingPathComponent("../../../characters/pixel/firmware/include").standardizedFileURL
         func longest(_ file: String, _ start: String, _ pattern: String) throws -> Int64 {
@@ -1810,7 +1810,7 @@ final class RuntimeTests: XCTestCase {
         let longestPlay = max(held * longestLoop, latestVoice + longestLine + bubbleRead)
         XCTAssertGreaterThan(longestPlay, 30_000)
         XCTAssertLessThan(longestPlay, DeviceLink.answerGraceMs)
-        XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, ReactOutput.openForMs)
+        XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, MomentOutput.openForMs)
     }
 
     /// The rules' reaction goes to the device right
@@ -1906,7 +1906,7 @@ final class RuntimeTests: XCTestCase {
         var ends: [Pending.End] = []
         let pending = Pending()
         pending.bind { ends.append($0) }
-        runtime.home.sync { runtime.queue(DeviceReaction(say: .test(ms: 100), mood: "sad"), pending) }
+        runtime.home.sync { runtime.queue(Moment(say: .test(ms: 100), mood: "sad"), pending) }
         XCTAssertEqual(transport.dos("react").count, 1)
         clock.now += 70_000  // the clock jumps
         runtime.home.sync { runtime.tick() }
@@ -1944,7 +1944,7 @@ final class RuntimeTests: XCTestCase {
         let pending = Pending()
         pending.bind { ends.append($0) }
         runtime.home.sync {
-            runtime.queue(DeviceReaction(anim: "task_complete", say: .init(takes: []), mood: "proud",
+            runtime.queue(Moment(anim: "task_complete", say: .init(takes: []), mood: "proud",
                                        who: .init(agent: "claude", thread: "jetpack", opens: thread), outcome: "success"), pending)
         }
         let id = FakeTransport.id(try XCTUnwrap(transport.dos("task_complete").first))

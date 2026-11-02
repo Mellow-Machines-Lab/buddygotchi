@@ -73,9 +73,9 @@ final class ReasonTests: XCTestCase {
     /// strip names no finished turn, and logs the sentence with what it
     /// did; a finish keeps the strip's tick and cross, so it gets none.
     func testAReactionCarriesItsReason() throws {
-        var queued: [DeviceReaction] = []
+        var queued: [Moment] = []
         let stroke = event(.gesture, "stroke")
-        let react = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, speaks: { false },
+        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, speaks: { false },
                                 reason: { $0.flatMap { Reason.of($0, line: nil) } })
         let log = Transcript.log().view(now: 0)
         let result = try XCTUnwrap(react.run(["react.face": Answer(choice: "comfy", probabilities: ["comfy": 1])], now: stroke, log: log))
@@ -83,8 +83,8 @@ final class ReasonTests: XCTestCase {
         XCTAssertEqual(queued.last?.args["reason"], .string("stroked"))
         XCTAssertEqual(result.facts["reason"], .string("\(CharacterPack.active.name) is comfy. You stroked it."))
 
-        let finished = ReactOutput(queue: { r, _ in queued.append(r) }, blocked: { nil },
-                                   who: { _ in DeviceReaction.Who(agent: "claude", thread: "api") }, turnMs: { _ in 60_000 },
+        let finished = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil },
+                                   who: { _ in Moment.Who(agent: "claude", thread: "api") }, turnMs: { _ in 60_000 },
                                    speaks: { false }, reason: { _ in Reason(cause: "x", fact: "y") })
         _ = finished.run(["react.face": Answer(choice: "happy", probabilities: ["happy": 1]),
                           "react.move": Answer(choice: "success", probabilities: ["success": 1])], now: stroke, log: log)

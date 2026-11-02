@@ -197,7 +197,7 @@ final class CoreRig {
 
     /// Boop starts a reaction, as the harness records one.
     func react() {
-        pipeline.record(Event.action(at: now, phase: .start, name: ReactOutput.outputName,
+        pipeline.record(Event.action(at: now, phase: .start, name: MomentOutput.outputName,
                               data: ["for": .null, "by": "brain", "ok": true, "message": "Boop made a happy face."]))
     }
 
@@ -284,15 +284,15 @@ func states(_ fx: [CoreEffect]) -> [StateSnapshot] {
 }
 
 /// The rules' reactions sent.
-func deviceReactions(_ fx: Fx) -> [DeviceReaction] { deviceReactions(fx.effects) }
+func moments(_ fx: Fx) -> [Moment] { moments(fx.effects) }
 
-func deviceReactions(_ fx: [CoreEffect]) -> [DeviceReaction] {
+func moments(_ fx: [CoreEffect]) -> [Moment] {
     fx.compactMap { if case .reaction(let m) = $0 { return m } else { return nil } }
 }
 
 /// The rule reactions as `anim` or `anim ctx`, for short checks.
 func reactionNames(_ fx: Fx) -> [String] {
-    deviceReactions(fx).map { ([$0.anim ?? "-"] + [$0.ctx].compactMap { $0 }).joined(separator: " ") }
+    moments(fx).map { ([$0.anim ?? "-"] + [$0.ctx].compactMap { $0 }).joined(separator: " ") }
 }
 
 // MARK: - Agent work
@@ -648,7 +648,7 @@ final class CoreAgentWorkTests: XCTestCase {
         XCTAssertEqual(rig.state.base, "idle", "the helper is done")
         rig.wait(60_000)
         let notice = rig.send(.turnStopped, notice: true)
-        XCTAssertEqual(deviceReactions(notice), [], "nothing stopped")
+        XCTAssertEqual(moments(notice), [], "nothing stopped")
         XCTAssertEqual(finished(notice), [])
     }
 
@@ -1662,7 +1662,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.state.idle, 1, "the session stays, idle")
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
-        XCTAssertEqual(deviceReactions(fx), [], "nobody stopped it")
+        XCTAssertEqual(moments(fx), [], "nobody stopped it")
         XCTAssertEqual(woke(fx), [], "nothing for the brain")
         let thread = rig.pipeline.threads["claude/s1"]
         XCTAssertNotNil(thread, "the view keeps it")
@@ -1677,7 +1677,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         other.send(.turnStart)
         var heard = try XCTUnwrap(stop)
         heard.seq = 99
-        XCTAssertEqual(deviceReactions(other.core.handle(heard)), [])
+        XCTAssertEqual(moments(other.core.handle(heard)), [])
         XCTAssertEqual(other.state.working, 0)
     }
 
@@ -1718,7 +1718,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(records.filter { $0.specificType == Core.needsYou }.map { $0["why"]?.string }, ["its agent's process ended"])
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.sessions, [], "the session is gone")
-        XCTAssertEqual(deviceReactions(fx), [])
+        XCTAssertEqual(moments(fx), [])
         XCTAssertEqual(woke(fx), [], "nothing for the brain")
         XCTAssertNil(rig.pipeline.threads["claude/s1"], "the view ends it")
         XCTAssertNil(TranscriptView().sessions(rig.pipeline.transcript.view(now: rig.now))["claude/s1"], "and so does a fold later")
@@ -1921,9 +1921,9 @@ final class CoreYouAndBoopTests: XCTestCase {
 
         let app = rig.core.listen(true, at: rig.now)
         XCTAssertTrue(app.contains(.listen(true, by: .app)))
-        XCTAssertEqual(deviceReactions(app).map(\.name), ["listening"], "the device is told to show it")
-        XCTAssertEqual(BoopDevice.play(DeviceReaction(anim: BoopDevice.listening)), .now, "at once")
-        XCTAssertEqual(BoopDevice.play(DeviceReaction(anim: BoopDevice.stopListening)), .ifFree)
+        XCTAssertEqual(moments(app).map(\.name), ["listening"], "the device is told to show it")
+        XCTAssertEqual(BoopDevice.play(Moment(anim: BoopDevice.listening)), .now, "at once")
+        XCTAssertEqual(BoopDevice.play(Moment(anim: BoopDevice.stopListening)), .ifFree)
         XCTAssertFalse(rig.core.linkDown(at: rig.now).contains(.listen(false, by: .app)), "the app's button carries on")
         XCTAssertTrue(rig.core.listen(false, at: rig.now).contains(.listen(false, by: .app)))
         rig.talk(true)
@@ -1944,7 +1944,7 @@ final class CoreYouAndBoopTests: XCTestCase {
             }
         }
         func run(_ fx: [CoreEffect]) -> Fx { rig.note(Fx(rig.pipeline.effects(fx, at: rig.now))) }
-        func stops(_ fx: Fx) -> Bool { deviceReactions(fx).map(\.name) == [BoopDevice.stopListening] }
+        func stops(_ fx: Fx) -> Bool { moments(fx).map(\.name) == [BoopDevice.stopListening] }
 
         XCTAssertEqual(rig.talk(true).views, [], "no line")
         XCTAssertTrue(rig.pipeline.transcript.events.filter { $0.type == .listen }.allSatisfy { $0["by"] == "rule" })
@@ -2126,9 +2126,9 @@ final class CoreRulesTests: XCTestCase {
     /// something needs you.
     func testOnboardingsGreetingIsARulesReactionInTheTranscript() {
         let rig = CoreRig()
-        let wake = DeviceReaction(anim: "wake_up")
+        let wake = Moment(anim: "wake_up")
         let step = rig.pipeline.effects(rig.core.greet(wake, at: rig.now), at: rig.now)
-        XCTAssertEqual(deviceReactions(step.effects), [wake])
+        XCTAssertEqual(moments(step.effects), [wake])
         let did = step.recorded.filter { $0.kind == Event.did }
         XCTAssertEqual(did.map(\.action), ["wake_up"])
         XCTAssertEqual(did.map { [$0["by"], $0["for"], $0["ok"]] }, [[.string("rule"), .null, .bool(true)]])
@@ -2136,7 +2136,7 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(step.waking, [], "no brain wakes")
         rig.send(.turnStart)
         rig.send(.needsYou, tool: "Bash")
-        XCTAssertEqual(rig.core.greet(DeviceReaction(anim: "task_complete", outcome: "success"), at: rig.now), [])
+        XCTAssertEqual(rig.core.greet(Moment(anim: "task_complete", outcome: "success"), at: rig.now), [])
     }
 
     /// Asleep with no sessions, whatever the time; a session's start
@@ -2548,7 +2548,7 @@ final class CoreFuzzTests: XCTestCase {
                 if event.wakesBrain { XCTAssertFalse(showing, "\(event.line) woke the brain\n\(why)") }
             }
             finishes += finished(fx).count
-            for reaction in deviceReactions(fx) {
+            for reaction in moments(fx) {
                 shots += 1
                 XCTAssertFalse(showing, "\(reaction.name) \(reaction.args) while something needs you\n\(why)")
                 XCTAssertNil(reaction.mood, why)

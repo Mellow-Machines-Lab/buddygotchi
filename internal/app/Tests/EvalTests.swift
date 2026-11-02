@@ -365,7 +365,7 @@ final class EvalTests: XCTestCase {
         let expect = try XCTUnwrap(try Scenario(file: file).steps.first?.expect)
         XCTAssertEqual(expect.react, Set(CharacterPack.active.moods.map(\.id)))
         XCTAssertEqual(expect.mood, Set(MoodGraph.moods).subtracting(["lonely"]))
-        XCTAssertEqual(expect.say, Set(ReactOutput.says.map(\.name) + ["none"]).subtracting(["swear"]))
+        XCTAssertEqual(expect.say, Set(MomentOutput.says.map(\.name) + ["none"]).subtracting(["swear"]))
         for (json, why) in [(#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"move":"!none"}}]}"#, "expect.move can't take !"),
                             (#"{"name":"n","case":"c","why":"w","steps":[{"event":"pokes","at":"0s","expect":{"mood":"!sulky"}}]}"#, "expect.mood takes away sulky")] {
             let bad = FileManager.default.temporaryDirectory.appendingPathComponent("bad-\(UUID().uuidString).json")

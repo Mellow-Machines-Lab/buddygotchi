@@ -100,7 +100,7 @@ func sampleSnapshot(busy: Int = 0) -> StateSnapshot {
 
 /// Boop's vocabulary on LinkKit: its `state` and `do` lines,
 /// what its `hello` and taps mean, and the `--link` setting.
-extension DeviceReaction {
+extension Moment {
     /// The `do` line the link sends for it, with `id` and `play`: what the
     /// device reads.
     func line(id: Int, play: Wire.Play, ttl: Int = Wire.defaultTTL) -> String {
@@ -163,27 +163,27 @@ final class DeviceLinkTests: XCTestCase {
     /// push-to-talk's listening. The longest one fits in a line.
     func testDoLinesMatchTheProtocol() throws {
         try requireVoice()
-        XCTAssertEqual(DeviceReaction(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
+        XCTAssertEqual(Moment(say: .go, mood: "proud", loops: 1).line(id: 558386700, play: .next),
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
-        XCTAssertEqual(DeviceReaction(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
+        XCTAssertEqual(Moment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
+        XCTAssertEqual(Moment(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
                        #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
-        XCTAssertEqual(DeviceReaction(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
-        let finish = DeviceReaction(anim: "task_complete", say: .go, mood: "proud",
+        XCTAssertEqual(Moment(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
+        let finish = Moment(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
         XCTAssertEqual(finish.line(id: 558386703, play: .next),
                        #"{"t":"do","id":558386703,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","who":{"agent":"claude","thread":"api"},"say":{"take":"new.d02"},"mood":"proud"}}"#)
         // A finish names whose turn it was, the thread cut as names are and
         // escaped; the thread it opens isn't sent.
-        let quoted = DeviceReaction(anim: "reply_ready",
+        let quoted = Moment(anim: "reply_ready",
                                   who: .init(agent: "codex", thread: #"fix "nav"\"#, opens: ThreadRef(agent: "codex", session: "s")))
         XCTAssertEqual(quoted.args.json, #"{"who":{"agent":"codex","thread":"fix \"nav\"\\"}}"#)
-        XCTAssertEqual(DeviceReaction.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
+        XCTAssertEqual(Moment.Who(agent: "claude", thread: "claude/cheer-animation-thread-codex").thread, "claude/cheer-animatio..")
         let byLength = Take.all.sorted { $0.id.utf8.count > $1.id.utf8.count }
-        let longest = DeviceReaction.Say(takes: [byLength[0], byLength[1]])
-        let longestWho = DeviceReaction.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
-        XCTAssertLessThanOrEqual(DeviceReaction(anim: "task_complete", say: longest, mood: "determined", loops: DeviceReaction.maxLoops,
+        let longest = Moment.Say(takes: [byLength[0], byLength[1]])
+        let longestWho = Moment.Who(agent: "claude", thread: String(repeating: "\"", count: 23))
+        XCTAssertLessThanOrEqual(Moment(anim: "task_complete", say: longest, mood: "determined", loops: Moment.maxLoops,
                                               who: longestWho, outcome: "failure")
                                      .line(id: Wire.maxId, play: .next).utf8.count, Wire.maxLine)
     }
@@ -205,7 +205,7 @@ final class DeviceLinkTests: XCTestCase {
                        "sent into nothing, then the ask and the state on connect, then the state for the hello")
         XCTAssertEqual(transport.sent.last, sampleSnapshot(busy: 2).jsonLine)
         XCTAssertEqual(link.hello.map(DeviceInfo.init)?.id, "b00p-54fe")
-        XCTAssertNotNil(link.do("react", args: DeviceReaction(say: .go).args, now: 300) { _ in })
+        XCTAssertNotNil(link.do("react", args: Moment(say: .go).args, now: 300) { _ in })
 
         link.receive(#"{"t":"hello","app":"boop","id":"b00p-7f3a","fw":"0.3.1","does":["react"]}"#, now: 400)
         XCTAssertEqual(link.trouble, .tooOld)
@@ -236,7 +236,7 @@ final class DeviceLinkTests: XCTestCase {
             .map { String(body[Range($0.range(at: 1), in: body)!]) }
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(hello.does, firmware, "the fake device plays what the firmware does")
-        let sent = DeviceReaction.anims + [DeviceReaction.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
+        let sent = Moment.anims + [Moment.react, BoopDevice.listening, BoopDevice.stopListening, WorkStream.action]
         XCTAssertEqual(Set(sent).subtracting(firmware), [], "every name the Mac sends is one the firmware plays")
     }
 

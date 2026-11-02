@@ -151,7 +151,7 @@ public final class MemoryReader: TranscriptReader {
                 t.threads[p.map { $0.workspace ?? $0.project } ?? "work", default: 0] += 1
             }
         default:
-            if e.kind == Event.did, e.action == ReactOutput.outputName, let reply = e["reply"]?.string,
+            if e.kind == Event.did, e.action == MomentOutput.outputName, let reply = e["reply"]?.string,
                reply == "love" || reply == "thanks" { t.kind += 1 }
             if e.kind == Event.did, e.action == MoodOutput.outputName, e["ok"]?.bool != false, e["from"]?.string == "lonely",
                e["to"]?.string != "lonely" { t.lonelyEndedAt = e.at }

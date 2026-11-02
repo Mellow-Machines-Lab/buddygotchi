@@ -242,7 +242,7 @@ struct WhatIDoAct: View {
                 switch beat {
                 case .failing: model.feed.call(BoopDevice.call("FAIL", gag: "hail", slot: 0))
                 case .asking: OnboardingSound.play(.step)
-                case .finished: model.feed.reaction(DeviceReaction(anim: "task_complete", outcome: "success"))
+                case .finished: model.feed.reaction(Moment(anim: "task_complete", outcome: "success"))
                 default: break
                 }
                 // The beat's words, spread over it; the rest of it held.

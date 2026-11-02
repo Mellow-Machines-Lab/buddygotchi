@@ -9,12 +9,12 @@ extension Take {
     static func named(_ id: String) -> Take { Take.all.first { $0.id == id }! }
 }
 
-extension DeviceReaction.Say {
+extension Moment.Say {
     /// Excited's "Go" (new.d02): a real take for tests.
-    static let go = DeviceReaction.Say(takes: [.named("new.d02")])
+    static let go = Moment.Say(takes: [.named("new.d02")])
 
     /// A made-up take `ms` long, for tests that time a line.
-    static func test(ms: Int) -> DeviceReaction.Say {
+    static func test(ms: Int) -> Moment.Say {
         .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "start", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
     }
 }
@@ -30,13 +30,13 @@ final class VoiceTests: XCTestCase {
     /// question the react output asks (or only the rules say it), and has
     /// a length and text the bubble can show; ids are unique.
     func testEveryTakeIsUsable() {
-        let feelings = Set(ReactOutput.feelings.map(\.name)), topics = Set(ReactOutput.topics.map(\.name))
+        let feelings = Set(MomentOutput.feelings.map(\.name)), topics = Set(MomentOutput.topics.map(\.name))
         // The voice file's takes, each once as itself, and a feeling's or
         // topic's take again as each reply it's the words of.
         XCTAssertEqual(Set(Take.all.map(\.id)).count, 2995)
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
         let recorded = Dictionary(Take.all.filter { $0.part != .reply }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        let replies = Set(ReactOutput.replies.map(\.name) + ["dunno", "unhush"])
+        let replies = Set(MomentOutput.replies.map(\.name) + ["dunno", "unhush"])
         for t in Take.all {
             XCTAssertFalse(t.moods.isEmpty, t.id)
             XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")
@@ -71,7 +71,7 @@ final class VoiceTests: XCTestCase {
         let bad: Set = ["annoyed", "irritated", "grumpy", "whiny", "wounded", "sad"]
         XCTAssertEqual(Set(moods), Set(CharacterPack.universalMoods))
         func performedIn(_ face: String) -> String { Take.all.first { $0.moods.contains(face) }!.moods[0] }
-        for (part, answers) in [(Take.Part.feeling, ReactOutput.feelings), (.about, ReactOutput.topics)] {
+        for (part, answers) in [(Take.Part.feeling, MomentOutput.feelings), (.about, MomentOutput.topics)] {
             for a in answers.map(\.name) {
                 XCTAssertEqual(Set(Take.all.filter { $0.part == part && $0.meaning == a }.flatMap(\.moods)), Set(moods), "\(part) \(a)")
                 for face in moods where part == .feeling && !(a == "glad" && bad.contains(performedIn(face))) {
@@ -178,15 +178,15 @@ final class VoiceTests: XCTestCase {
     /// swear is an upset take sworn, at any size.
     func testWhatItSaysIsOneTakeAsBigAsTheMoment() {
         func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 0.9]) }
-        XCTAssertEqual(ReactOutput.sizes.map(\.loops), [1, 2, 3, 4], "small to huge hold once to four times")
-        XCTAssertEqual(ReactOutput.sizes.map(\.kind), [.sound, .word, .phrase, .phrase])
-        XCTAssertEqual(ReactOutput.intensity([:]).name, "small", "no answer is a small moment")
-        XCTAssertEqual(ReactOutput.intensity([ReactOutput.intensityKey: a("big")]).loops, 3)
-        XCTAssertTrue(ReactOutput.said([ReactOutput.sayKey: a("tests")])! == (.about, "tests", false))
-        XCTAssertTrue(ReactOutput.said([ReactOutput.sayKey: a("glad")])! == (.feeling, "glad", false))
-        XCTAssertTrue(ReactOutput.said([ReactOutput.sayKey: a("swear")])! == (.feeling, "upset", true))
-        XCTAssertNil(ReactOutput.said([ReactOutput.sayKey: a("none")]))
-        XCTAssertNil(ReactOutput.said([ReactOutput.sayKey: Answer(choice: "glad", probabilities: ["glad": 0.2])]), "below the floor: nothing")
+        XCTAssertEqual(MomentOutput.sizes.map(\.loops), [1, 2, 3, 4], "small to huge hold once to four times")
+        XCTAssertEqual(MomentOutput.sizes.map(\.kind), [.sound, .word, .phrase, .phrase])
+        XCTAssertEqual(MomentOutput.size([:]).name, "small", "no answer is a small moment")
+        XCTAssertEqual(MomentOutput.size([MomentOutput.sizeKey: a("big")]).loops, 3)
+        XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("tests")])! == (.about, "tests", false))
+        XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("glad")])! == (.feeling, "glad", false))
+        XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("swear")])! == (.feeling, "upset", true))
+        XCTAssertNil(MomentOutput.said([MomentOutput.sayKey: a("none")]))
+        XCTAssertNil(MomentOutput.said([MomentOutput.sayKey: Answer(choice: "glad", probabilities: ["glad": 0.2])]), "below the floor: nothing")
         var rng = SplitMix64(seed: 5)
         // A phrase asked for is a topic's too: "Fingers crossed".
         XCTAssertEqual(Voice.take(.about, meaning: "tests", kind: .phrase, face: "curious", finish: nil, rng: &rng)?.kind, .phrase)
@@ -242,7 +242,7 @@ final class VoiceTests: XCTestCase {
 
     /// Two takes on the wire, as the board still takes them.
     func testTwoTakesOnTheWire() {
-        let two = DeviceReaction.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
+        let two = Moment.Say(takes: [.named("previous.tsk"), .named("phase1.word.test.test__annoyed__contained")])
         XCTAssertEqual(two.json.json, #"{"take":"previous.tsk","then":"phase1.word.test.test__annoyed__contained"}"#)
         XCTAssertEqual(two.text, "Tsk... Test")
     }

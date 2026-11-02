@@ -176,9 +176,9 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
 
     /// Push-to-talk on the board's BOOT, which shows `listening` at once by
     /// itself: the mirror plays it as the `do` it is.
-    func listening() { play(DeviceReaction(anim: BoopDevice.listening), .now) }
+    func listening() { play(Moment(anim: BoopDevice.listening), .now) }
     /// One of onboarding's reactions, as the brain's are sent.
-    func reaction(_ reaction: DeviceReaction) { play(reaction, .next) }
+    func reaction(_ reaction: Moment) { play(reaction, .next) }
     /// One of onboarding's pretend agent's words come forward (a `call`'s
     /// `args`), as the work stream sends one.
     func call(_ args: JSONObject) {
@@ -186,7 +186,7 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     }
 
     /// A `do` no link sent, with no id, since nothing it says comes back.
-    private func play(_ reaction: DeviceReaction, _ play: Wire.Play) {
+    private func play(_ reaction: Moment, _ play: Wire.Play) {
         post(Wire.do(id: 0, name: reaction.name, play: play, ttl: BoopDevice.reactionTTL, args: reaction.args))
     }
 

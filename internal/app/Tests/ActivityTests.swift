@@ -314,13 +314,13 @@ final class CoreRuleReactionTests: XCTestCase {
             let rig = CoreRig()
             let fx = rig.send(.sessionStart, source: source)
             XCTAssertEqual(reactionNames(fx), ["starting \(ctx)"], source ?? "no source")
-            let reaction = deviceReactions(fx)[0]
+            let reaction = moments(fx)[0]
             XCTAssertNil(reaction.mood)
             XCTAssertEqual(reaction.ctx, ctx, "the device picks a variation for it")
         }
         let rig = CoreRig()
         let fx = rig.send(.turnStart)
-        let start = deviceReactions(fx)
+        let start = moments(fx)
         XCTAssertEqual(start.count, 1)
         XCTAssertEqual(start[0].line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")

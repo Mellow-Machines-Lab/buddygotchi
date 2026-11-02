@@ -568,7 +568,7 @@ class ControlsTests(unittest.TestCase):
     def test_a_preview_reaction_says_its_take(self):
         """As the react output sends it, played `now` so
         it replaces what the sim shows; what react.move picks is its
-        scene, with a finish's outcome (ReactOutput.scenes)."""
+        scene, with a finish's outcome (MomentOutput.scenes)."""
         line = controls.preview_reaction("grumpy", "new.d14", 3)
         self.assertEqual(line, {"t": "do", "name": "react", "play": "now",
                                 "args": {"mood": "grumpy", "loops": 3, "say": {"take": "new.d14"}}})

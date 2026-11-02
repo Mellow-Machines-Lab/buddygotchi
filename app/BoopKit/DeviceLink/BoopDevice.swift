@@ -3,7 +3,7 @@ import LinkKit
 
 /// Boop's vocabulary on LinkKit (linkkit/SPEC.md is the
 /// protocol under it): what Boop calls its device, the names it plays
-/// beside the reactions' own (`DeviceReaction`), and what its `hello` and taps
+/// beside the reactions' own (`Moment`), and what its `hello` and taps
 /// mean to the app. The link itself, with its ids, `ended`s and transports,
 /// is LinkKit's `DeviceLink`.
 public enum BoopDevice {
@@ -25,7 +25,7 @@ public enum BoopDevice {
     /// stage) next, waiting its turn for up to `reactionTTL`, as a sign is
     /// worth reading; and the rest only if nothing else plays: a late rule
     /// reaction is worse than none.
-    public static func play(_ reaction: DeviceReaction) -> Wire.Play {
+    public static func play(_ reaction: Moment) -> Wire.Play {
         reaction.name == listening ? .now : reaction.sign != nil ? .next : .ifFree
     }
     /// Why the device drops the reactions waiting when push-to-talk starts:

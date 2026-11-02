@@ -44,17 +44,17 @@ final class GoldenStateTests: XCTestCase {
             case "mood":
                 let i = failed || poked ? 1 : won ? 2 : 0
                 out[q.key] = pick(q, q.options[min(i, q.options.count - 1)].name)
-            case ReactOutput.faceKey:
+            case MomentOutput.emotionKey:
                 out[q.key] = pick(q, now.contains(" started turn ") ? "none" : failed ? "annoyed" : won ? "happy"
                                   : poked ? "curious" : said ? "proud" : "engaged")
-            case ReactOutput.moveKey:
+            case MomentOutput.moveKey:
                 out[q.key] = pick(q, !now.contains(" finished turn ") ? "none" : failed ? "failure" : "success")
             case Signs.questionKey:
                 // It asks whenever it may, so asks show in the states.
                 out[q.key] = pick(q, q.options.first { $0.what.hasPrefix("Ask:") }?.name ?? q.options[0].name)
-            case ReactOutput.intensityKey:
+            case MomentOutput.sizeKey:
                 out[q.key] = pick(q, failed ? "medium" : "small")
-            case ReactOutput.sayKey:
+            case MomentOutput.sayKey:
                 out[q.key] = pick(q, failed ? "upset" : won ? "glad" : poked ? "tickled" : now.contains("tests") ? "tests"
                                   : now.contains(" finished turn ") ? "done" : now.contains(" started turn ") ? "start" : "work")
             default:

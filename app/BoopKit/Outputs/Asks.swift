@@ -121,7 +121,7 @@ public enum Asks {
         guard !moment.isEmpty else { return [] }
         let now = about.at, time = core.config.time
         if core.needsYouBlock != nil || core.listening != nil || core.hushed(at: now) != nil { return [] }
-        let askedAt = log.events.filter { $0.kind == Event.did && $0.action == ReactOutput.outputName && $0["ask"] != nil }.map(\.at)
+        let askedAt = log.events.filter { $0.kind == Event.did && $0.action == MomentOutput.outputName && $0["ask"] != nil }.map(\.at)
         let today = time.boopDay(wall)
         guard allowed(talk: talk, askedAt: askedAt, now: now, sameDay: { time.boopDay($0) == time.boopDay(now) }) else { return [] }
         let tags = Set(moment + core.calendar(at: now) + memory.answerTags(at: wall))

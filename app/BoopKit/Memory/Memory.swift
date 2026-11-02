@@ -152,7 +152,7 @@ public final class Memory: @unchecked Sendable {
     /// end (the `ask` event), one row a question.
     func recordAsk(_ e: Event) {
         var record: Asks.Record?
-        if e.kind == Event.did, e.action == ReactOutput.outputName, let id = e["ask"]?.string {
+        if e.kind == Event.did, e.action == MomentOutput.outputName, let id = e["ask"]?.string {
             record = Asks.Record(asked: time.boopDay(e.at), keeps: e["keeps"]?.bool ?? false)
             save(record!, id)
         } else if e.type == .ask, let id = e["q"]?.string, var r = askRecord(id) {

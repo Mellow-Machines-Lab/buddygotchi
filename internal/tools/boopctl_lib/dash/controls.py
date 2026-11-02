@@ -85,7 +85,7 @@ def preview_state(latest: Line | None, look: str, mood: str | None = None) -> Li
 
 
 # What `react.move` picks at an event, as the device plays it: its
-# animation and a finish's outcome (ReactOutput.scenes).
+# animation and a finish's outcome (MomentOutput.scenes).
 SCENES = {"success": ("task_complete", "success"), "failure": ("task_complete", "failure"), "reply": ("reply_ready", None),
           "wake up": ("wake_up", None), "notice": ("notice", None)}
 

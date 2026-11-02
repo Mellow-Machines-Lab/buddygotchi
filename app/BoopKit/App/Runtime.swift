@@ -337,7 +337,7 @@ public final class Runtime: @unchecked Sendable {
         var memoryNow: () -> String? = { nil }
         var remembersNow: () -> Memory? = { nil }
         let wallNow = options.wallClock
-        var queued: (Rig, DeviceReaction, Pending) -> Void = { _, _, _ in }
+        var queued: (Rig, Moment, Pending) -> Void = { _, _, _ in }
         var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
         let rigs = self.rigs
         let made = pipeline
@@ -459,7 +459,7 @@ public final class Runtime: @unchecked Sendable {
     /// `reactions` reads, and `speaks` says whether the device plays
     /// Voice's takes.
     public static func harness(pipeline: Pipeline, steering: Steering,
-                               reactions: Reactions = Reactions(), queue: @escaping (DeviceReaction, Pending) -> Void,
+                               reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
                                memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
@@ -554,12 +554,12 @@ public final class Runtime: @unchecked Sendable {
     /// Pixel's trophy).
     public enum Greeting: Sendable {
         case beckon, wake, hello, finale
-        var reaction: DeviceReaction {
+        var reaction: Moment {
             switch self {
-            case .beckon: DeviceReaction(anim: "notice", loops: 2, sign: Self.tapMe)
-            case .wake: DeviceReaction(anim: "wake_up")
-            case .hello: DeviceReaction(anim: "task_complete", loops: 2, outcome: "success")
-            case .finale: DeviceReaction(anim: "task_complete", mood: "happy", loops: 3, outcome: "success", variant: 1)
+            case .beckon: Moment(anim: "notice", loops: 2, sign: Self.tapMe)
+            case .wake: Moment(anim: "wake_up")
+            case .hello: Moment(anim: "task_complete", loops: 2, outcome: "success")
+            case .finale: Moment(anim: "task_complete", mood: "happy", loops: 3, outcome: "success", variant: 1)
             }
         }
         /// The beckon's sign, which onboarding's window points at.
@@ -585,10 +585,10 @@ public final class Runtime: @unchecked Sendable {
     /// Onboarding's cheer for `who`'s finished turn: a finish that names
     /// it, sent as the brain's are, so a tap on it opens its thread
     /// (`Reactions.sent`), as it will after any finished turn.
-    public func cheer(_ who: DeviceReaction.Who) {
+    public func cheer(_ who: Moment.Who) {
         home.async { [self] in
             let rig = rigs[0], now = options.clock()
-            let reaction = DeviceReaction(anim: "task_complete", loops: 2, who: who, outcome: "success")
+            let reaction = Moment(anim: "task_complete", loops: 2, who: who, outcome: "success")
             options.log("onboarding: a cheer for \(who.agent)'s \(who.thread) on the board")
             let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
                                  now: now) { _ in }

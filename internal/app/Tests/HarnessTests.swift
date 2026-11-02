@@ -129,17 +129,17 @@ final class HarnessTests: XCTestCase {
     /// finish is at most medium below 2, at least big from 4 and biggest
     /// at 5.
     func testAFinishSaysHowLongItsTurnRan() {
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 0), 0)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 29_999), 0)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 30_000), 1)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 59_999), 1)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 60_000), 2)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 2 * 60_000), 3)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 5 * 60_000 - 1), 3)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 5 * 60_000), 4)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 10 * 60_000), 5)
-        XCTAssertEqual(DeviceReaction.turn(lengthMs: 60 * 60_000), 5)
-        XCTAssertEqual(DeviceReaction(anim: "task_complete", outcome: "success", turn: 5, variant: 1).args.json,
+        XCTAssertEqual(Moment.turn(lengthMs: 0), 0)
+        XCTAssertEqual(Moment.turn(lengthMs: 29_999), 0)
+        XCTAssertEqual(Moment.turn(lengthMs: 30_000), 1)
+        XCTAssertEqual(Moment.turn(lengthMs: 59_999), 1)
+        XCTAssertEqual(Moment.turn(lengthMs: 60_000), 2)
+        XCTAssertEqual(Moment.turn(lengthMs: 2 * 60_000), 3)
+        XCTAssertEqual(Moment.turn(lengthMs: 5 * 60_000 - 1), 3)
+        XCTAssertEqual(Moment.turn(lengthMs: 5 * 60_000), 4)
+        XCTAssertEqual(Moment.turn(lengthMs: 10 * 60_000), 5)
+        XCTAssertEqual(Moment.turn(lengthMs: 60 * 60_000), 5)
+        XCTAssertEqual(Moment(anim: "task_complete", outcome: "success", turn: 5, variant: 1).args.json,
                        #"{"outcome":"success","turn":5,"variant":1}"#)
     }
 
@@ -153,13 +153,13 @@ final class HarnessTests: XCTestCase {
 
     func testReact() throws {
         try requireVoice()
-        XCTAssertEqual(ReactOutput.sayFloor, 0.35)
-        var queued: [(reaction: DeviceReaction, pending: Pending)] = []
-        var sent: [DeviceReaction] { queued.map(\.reaction) }
+        XCTAssertEqual(MomentOutput.sayFloor, 0.35)
+        var queued: [(reaction: Moment, pending: Pending)] = []
+        var sent: [Moment] { queued.map(\.reaction) }
         var why: String?
         // NOW finished a turn of 9 minutes, or (nil) none.
         var turnMs: Int64? = 9 * 60_000
-        let react = ReactOutput(queue: { queued.append(($0, $1)) }, blocked: { why },
+        let react = MomentOutput(queue: { queued.append(($0, $1)) }, blocked: { why },
                                 who: { _ in .init(agent: "codex", thread: "fix-nav") }, turnMs: { _ in turnMs })
         /// Runs `answers`, and checks the result is started with `message`
         /// and the handle its reaction was queued with.
@@ -214,9 +214,9 @@ final class HarnessTests: XCTestCase {
         // variation. `none`, a missing answer or anything else is just the
         // face. The question and its `none` name every case, so neither
         // argues against one.
-        XCTAssertEqual(ReactOutput.animations.map(\.name), ["success", "failure", "reply", "wake up", "notice"])
-        XCTAssertEqual(Set(ReactOutput.scenes.keys), Set(ReactOutput.animations.map(\.name)), "each plays a scene")
-        let move = try! XCTUnwrap(ReactOutput.questions().first { $0.key == "react.move" })
+        XCTAssertEqual(MomentOutput.animations.map(\.name), ["success", "failure", "reply", "wake up", "notice"])
+        XCTAssertEqual(Set(MomentOutput.scenes.keys), Set(MomentOutput.animations.map(\.name)), "each plays a scene")
+        let move = try! XCTUnwrap(MomentOutput.questions().first { $0.key == "react.move" })
         XCTAssertTrue(move.text.contains("or your prompt saying \(creature)'s name?"), move.text)
         XCTAssertTrue(move.options[0].what.contains("or a prompt that says \(creature)'s name."), move.options[0].what)
         starts(["react.face": a("proud"), "react.move": a("success"), "react.intensity": a("big"), "say": a("glad")],
@@ -267,7 +267,7 @@ final class HarnessTests: XCTestCase {
         turnMs = 9 * 60_000
         XCTAssertNil(react.run(["react.face": a("proud-success")], now: nil, log: Self.log), "a face and a move are separate questions")
         why = "something needs you"
-        for expression in ReactOutput.expressions.map(\.name) {
+        for expression in MomentOutput.expressions.map(\.name) {
             XCTAssertEqual(react.run(["react.face": a(expression)], now: nil, log: Self.log), .failed("something needs you"))
         }
         XCTAssertEqual(sent.count, 3, "no face or take while something needs you")
@@ -288,21 +288,21 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big", "huge"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name),
-                       ["none", "swear", "upset", "glad", "tickled"] + ReactOutput.topics.map(\.name))
+                       ["none", "swear", "upset", "glad", "tickled"] + MomentOutput.topics.map(\.name))
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.count, 21, "none, 3 feelings, a swear and the 16 topics")
-        XCTAssertLessThanOrEqual(ReactOutput.sizes.map(\.loops).max() ?? 0, DeviceReaction.maxLoops, "the device plays them all")
-        XCTAssertEqual(Set(ReactOutput.feelings.map(\.name)), Voice.answers(.feeling), "a feeling for every take's, and none without one")
-        XCTAssertEqual(Set(ReactOutput.topics.map(\.name)), Voice.answers(.about), "a topic for every take's, and none without one")
+        XCTAssertLessThanOrEqual(MomentOutput.sizes.map(\.loops).max() ?? 0, Moment.maxLoops, "the device plays them all")
+        XCTAssertEqual(Set(MomentOutput.feelings.map(\.name)), Voice.answers(.feeling), "a feeling for every take's, and none without one")
+        XCTAssertEqual(Set(MomentOutput.topics.map(\.name)), Voice.answers(.about), "a topic for every take's, and none without one")
     }
 
     /// Only the brain's reactions carry an expression; a
     /// rule's reaction never does.
     func testRuleReactionsCarryNoExpression() throws {
         try requireVoice()
-        XCTAssertEqual(DeviceReaction(anim: "starting").line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free"}"#)
-        XCTAssertEqual(DeviceReaction(say: .go).line(id: 2, play: .next),
+        XCTAssertEqual(Moment(anim: "starting").line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free"}"#)
+        XCTAssertEqual(Moment(say: .go).line(id: 2, play: .next),
                        #"{"t":"do","id":2,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"}}}"#)
-        XCTAssertEqual(DeviceReaction(say: .go, mood: "grumpy").args.json, #"{"say":{"take":"new.d02"},"mood":"grumpy"}"#)
+        XCTAssertEqual(Moment(say: .go, mood: "grumpy").args.json, #"{"say":{"take":"new.d02"},"mood":"grumpy"}"#)
     }
 
     /// The pack's moods, in its order; a new Boop starts calm, the resting

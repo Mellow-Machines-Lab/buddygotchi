@@ -3,7 +3,7 @@ import MellowHarness
 
 // The hush: you told Boop to be quiet, and for a while it says nothing.
 // Its faces, moves and signs go on; only what it says stops, which
-// `ReactOutput` holds to. The core keeps when it ends, records it starting
+// `MomentOutput` holds to. The core keeps when it ends, records it starting
 // and ending in the transcript, and reads it back on launch.
 extension Core {
     /// While Boop is hushed: who hushed it, and until when.

@@ -15,10 +15,10 @@ extension ScriptedBrain {
         let finish = !now.contains(" finished turn ") ? "none"
             : now.contains(": done, a ") ? "success" : now.contains(": failed, a ") ? "failure" : "none"
         let answers: Answers = [
-            ReactOutput.faceKey: Answer(choice: "excited", probabilities: ["excited": 1]),
-            ReactOutput.moveKey: Answer(choice: finish, probabilities: [finish: 1]),
-            ReactOutput.intensityKey: Answer(choice: "small", probabilities: ["small": 1]),
-            ReactOutput.sayKey: Answer(choice: "start", probabilities: ["start": 1]),
+            MomentOutput.emotionKey: Answer(choice: "excited", probabilities: ["excited": 1]),
+            MomentOutput.moveKey: Answer(choice: finish, probabilities: [finish: 1]),
+            MomentOutput.sizeKey: Answer(choice: "small", probabilities: ["small": 1]),
+            MomentOutput.sayKey: Answer(choice: "start", probabilities: ["start": 1]),
         ]
         var out: Answers = [:]
         for q in questions {

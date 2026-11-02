@@ -23,5 +23,5 @@ func requireVoice() throws {
 /// The brain's questions, in order: a pack with no voice is never asked
 /// what to say.
 var askedKeys: [String] {
-    ["mood", ReactOutput.faceKey, ReactOutput.moveKey, ReactOutput.intensityKey] + (Take.all.isEmpty ? [] : [ReactOutput.sayKey])
+    ["mood", MomentOutput.emotionKey, MomentOutput.moveKey, MomentOutput.sizeKey] + (Take.all.isEmpty ? [] : [MomentOutput.sayKey])
 }

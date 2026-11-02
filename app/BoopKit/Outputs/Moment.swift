@@ -14,7 +14,7 @@ import LinkKit
 /// its design. The finish for a thread's turn, or a face for it, says
 /// `who`: the device names it in the strip, and marks it on the face, while
 /// it plays and for a moment after.
-public struct DeviceReaction: Equatable, Sendable {
+public struct Moment: Equatable, Sendable {
     /// The agent and thread the finish is for.
     public struct Who: Equatable, Sendable {
         /// `claude` or `codex`.
@@ -84,7 +84,7 @@ public struct DeviceReaction: Equatable, Sendable {
     /// for none.
     public var sign: String?
     /// With a brain reaction to what you said, its reply
-    /// (`ReactOutput.replies`): the board plays its pack's clip for it
+    /// (`MomentOutput.replies`): the board plays its pack's clip for it
     /// over the face. Nil sends none.
     public var reply: String?
     /// With a reply, one of the board's own screens that shows the rest of
