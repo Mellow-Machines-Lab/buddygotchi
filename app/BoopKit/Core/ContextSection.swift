@@ -59,7 +59,7 @@ public enum ContextSection {
         }
     }
 
-    /// The buddy's row: "Boop: a Pal, 40 days old."
+    /// The buddy's row: "Boop: a Sprout, 40 days old."
     static func buddy(_ b: Buddy?, name: String) -> String? {
         guard let b else { return nil }
         return "\(name): a \(b.stage)" + (b.daysOld.map { $0 == 0 ? ", hatched today" : ", \($0) day\($0 == 1 ? "" : "s") old" } ?? "") + "."

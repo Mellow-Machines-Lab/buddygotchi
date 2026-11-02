@@ -102,16 +102,17 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(runner.state?.careXP, 3)
     }
 
-    /// Six stages at 0, 200, 1,000, 4,000, 12,000 and 30,000 XP.
+    /// Four stages at 0, 200, 1,000 and 5,000 XP, and an XP past the table
+    /// a Chonk with the bar full.
     func testStagesStartAtTheirThresholds() {
-        XCTAssertEqual(Growth.stages.map(\.from), [0, 200, 1_000, 4_000, 12_000, 30_000])
-        XCTAssertEqual(Growth.stages.map(\.name), ["Hatchling", "Sprout", "Buddy", "Pal", "Chonk", "Legend"])
+        XCTAssertEqual(Growth.stages.map(\.from), [0, 200, 1_000, 5_000])
+        XCTAssertEqual(Growth.stages.map(\.name), ["Hatchling", "Sprout", "Buddy", "Chonk"])
         XCTAssertEqual(Growth.stage(for: 0), 1)
         XCTAssertEqual(Growth.stage(for: 199), 1)
         XCTAssertEqual(Growth.stage(for: 200), 2)
-        XCTAssertEqual(Growth.stage(for: 29_999), 5)
-        XCTAssertEqual(Growth.stage(for: 30_000), 6)
-        XCTAssertEqual(Growth.stage(for: 1_000_000), 6)
+        XCTAssertEqual(Growth.stage(for: 4_999), 3)
+        XCTAssertEqual(Growth.stage(for: 5_000), 4)
+        XCTAssertEqual(Growth.stage(for: 1_000_000), 4)
 
         let g = Growth(xp: 600)
         XCTAssertEqual(g.stage, 2)
@@ -122,10 +123,56 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth(xp: 40_000).progress, 1)
     }
 
-    /// A stage reached is kept, whatever the XP says.
-    func testAStageNeverGoesBack() {
-        XCTAssertEqual(Growth(xp: 10, stage: 3).stage, 3)
-        XCTAssertEqual(Growth(xp: 5_000, stage: 1).stage, 4)
+    /// The stage is the XP's: it can go back, and an old saved stage counts for nothing.
+    func testTheStageFollowsTheXP() throws {
+        let store = try KeyValueStore(directory: dir)
+        try store.set(["growth.xp": "10", "growth.stage": "6"])
+        XCTAssertEqual(GrowthStore(store).growth.stage, 1)
+    }
+
+    /// 3 days with no XP are free, then 5% a day, and it never reaches zero.
+    func testItGoesBackwardsAfterThreeDays() throws {
+        XCTAssertEqual(Growth.decayed(1_000, days: 1), 950)
+        XCTAssertEqual(Growth.decayed(1_000, days: 2), 903)
+        XCTAssertEqual(Growth.decayed(2, days: 400), 1)
+        XCTAssertEqual(Growth.decayed(0, days: 4), 0)
+
+        let store = try KeyValueStore(directory: dir)
+        try store.set(["growth.xp": "1020"])
+        let growth = GrowthStore(store)
+        XCTAssertFalse(growth.decay(today: "2026-11-01"), "the first day starts the clock")
+        XCTAssertFalse(growth.decay(today: "2026-11-04"), "the third day is free")
+        XCTAssertTrue(growth.decay(today: "2026-11-05"))
+        XCTAssertEqual(growth.growth.xp, 969)
+        XCTAssertEqual(growth.growth.name, "Sprout", "a stage goes with it")
+        XCTAssertFalse(growth.decay(today: "2026-11-05"), "once a day")
+        XCTAssertEqual(growth.shrankWords(today: "2026-11-05", name: "Pip"), "Pip shrank a little. You were gone 4 days.")
+        XCTAssertEqual(growth.shrankWords(today: "2026-11-06", name: "Pip"), "Pip shrank a little. You were gone 4 days.")
+        XCTAssertNil(growth.shrankWords(today: "2026-11-07", name: "Pip"))
+
+        let again = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(again.growth.xp, 969)
+        XCTAssertFalse(again.decay(today: "2026-11-05"), "kept across a launch")
+    }
+
+    /// Going backwards is settled before what's earned counts, and earning stops it.
+    func testEarningStopsGoingBackwards() throws {
+        let store = try KeyValueStore(directory: dir)
+        try store.set(["growth.xp": "1000", "growth.earned": "2026-11-01"])
+        let growth = GrowthStore(store)
+        XCTAssertTrue(growth.count(event(1, .tool, .end), earned: 1, day: "2026-11-06"))
+        XCTAssertEqual(growth.growth.xp, 904)
+        XCTAssertFalse(growth.decay(today: "2026-11-09"))
+        XCTAssertTrue(growth.decay(today: "2026-11-10"))
+    }
+
+    /// A met wish is worth 40, and only one a day counts.
+    func testAMetWishEarnsForty() {
+        let met = Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)
+        XCTAssertEqual(Growth.earning(for: met)?.xp, 40)
+        XCTAssertEqual(Growth.earning(for: met)?.pool, .wish)
+        XCTAssertEqual(Growth.cap(.wish), 40)
+        XCTAssertNil(Growth.earning(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)))
     }
 
     func testTheKeyValueStoreKeepsValuesAcrossOpens() throws {
@@ -183,7 +230,7 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(growth.growth.xp, 6)
 
         let again = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(again.growth, Growth(xp: 6, stage: 1))
+        XCTAssertEqual(again.growth, Growth(xp: 6))
         XCTAssertEqual(again.lastSeq, 3)
     }
 
@@ -193,7 +240,7 @@ final class GrowthTests: XCTestCase {
         for seq in 1...39 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
         XCTAssertEqual(growth.growth.stage, 1)
         count(growth, event(40, .turn, .end, ["outcome": .string("done")]))
-        XCTAssertEqual(growth.growth, Growth(xp: 200, stage: 2))
+        XCTAssertEqual(growth.growth, Growth(xp: 200))
         XCTAssertEqual(lines.all, ["growth: reached stage 2, Sprout, at 200 XP"])
     }
 

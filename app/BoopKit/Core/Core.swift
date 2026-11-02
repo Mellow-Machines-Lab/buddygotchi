@@ -495,6 +495,14 @@ public final class Core {
         return fx
     }
 
+    /// The stage changed with nothing to celebrate (it went backwards): a
+    /// `state` carries it at once.
+    public func stageChanged(at now: Int64) -> [CoreEffect] {
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
     /// Growing a stage: the finish's confetti, as a finish held twice with
     /// no turn plays, and its sign.
     static func celebration(sign: String) -> Moment {

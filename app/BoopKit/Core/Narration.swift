@@ -246,7 +246,7 @@ extension Narration {
     /// air, confetti at a party or New Year, snow in the winter holidays and
     /// hearts on Valentine's.
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night, morning, friday }
+        public enum Kind: Sendable { case specialDay, night, morning, friday, shrank }
 
         public var kind: Kind
         /// `Boop became a Sprout today`, `It's Friday`.

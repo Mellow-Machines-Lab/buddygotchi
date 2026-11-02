@@ -231,6 +231,8 @@ public final class Runtime: @unchecked Sendable {
     // Here and away. All on `home`.
     /// Decides whether you're at the Mac, from where the transcript left it.
     var presence = PresenceDetector()
+    /// The day `goBackwards` last looked.
+    var backwardsDay = ""
     /// The idle time `{"dev":"presence","idle_ms":N}` set, read in place of
     /// the Mac's when there's no `idleMs`.
     var devIdleMs: Int64 = 0
@@ -410,6 +412,7 @@ public final class Runtime: @unchecked Sendable {
             core(rig).stage = { [weak self] in self.map { $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
+        growth.decay(today: options.time.day(options.wallClock()))
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }
@@ -665,6 +668,7 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock(), wall = options.wallClock()
         for rig in rigs { core(rig).setWallClock(wall, at: now) }
         run(pipeline.tick(at: now))
+        goBackwards(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
         var troubled = false
@@ -849,4 +853,19 @@ public final class Runtime: @unchecked Sendable {
 extension Duration {
     /// In whole milliseconds.
     var ms: Int { Int(components.seconds * 1000 + components.attoseconds / 1_000_000_000_000_000) }
+}
+
+extension Runtime {
+
+    /// Once a day: Boop left alone goes backwards, and a stage it loses
+    /// shows on the board at once.
+    func goBackwards(at now: Int64) {
+        let today = options.time.day(options.wallClock())
+        guard today != backwardsDay else { return }
+        backwardsDay = today
+        let before = growth.growth.stage
+        guard growth.decay(today: today) else { return }
+        changed()
+        if growth.growth.stage < before { for rig in rigs { run(core(rig).stageChanged(at: now), on: rig) } }
+    }
 }
