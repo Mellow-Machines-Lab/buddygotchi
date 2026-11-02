@@ -95,7 +95,7 @@ final class FakeTransport: Transport, @unchecked Sendable {
 }
 
 func sampleSnapshot(busy: Int = 0) -> StateSnapshot {
-    StateSnapshot(base: busy > 0 ? "working" : "idle", mood: "happy", attn: nil, working: busy, vol: 6)
+    StateSnapshot(doing: busy > 0 ? "working" : "idle", mood: "happy", attn: nil, working: busy, vol: 6)
 }
 
 /// Boop's vocabulary on LinkKit: its `state` and `do` lines,
@@ -336,7 +336,7 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertNil(StateSnapshot.boardName("日本語のバグ"))
         XCTAssertNil(StateSnapshot.boardName("🐛🔥✨"), "nothing left")
         XCTAssertEqual(StateSnapshot.boardName("Ünïcödé café"), "Ünïcödé café")
-        let s = StateSnapshot(base: "working", mood: "determined",
+        let s = StateSnapshot(doing: "working", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
@@ -350,11 +350,11 @@ final class DeviceLinkTests: XCTestCase {
     /// either way, with every tag that can be on at once, fits.
     func testTheTiersStagesAndToDoCountFitTheLine() {
         let every = mostTags + ["tier5"] + Occasions.stageTags + [Occasions.hushed]
-        let needs = StateSnapshot(base: "working", mood: "determined",
+        let needs = StateSnapshot(doing: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   working: 999, idle: 999, helpers: 999, vol: 10, when: every)
         XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
-        let todo = StateSnapshot(base: "working", act: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
+        let todo = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
                                  vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
         XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
@@ -363,11 +363,11 @@ final class DeviceLinkTests: XCTestCase {
     /// `act` goes after `base`; the widest line that can
     /// carry it, with the longest names escaped, still fits in 512 bytes.
     func testTheActivityFitsTheLine() {
-        let working = StateSnapshot(base: "working", act: "delegating", mood: "happy", attn: nil, working: 2, vol: 6)
+        let working = StateSnapshot(doing: "working", activity: "delegating", mood: "happy", attn: nil, working: 2, vol: 6)
         XCTAssertEqual(working.jsonLine, #"{"t":"state","base":"working","act":"delegating","mood":"happy","busy":2,"vol":6}"#, "no idle, helpers or tags: none sent")
         XCTAssertEqual(working.visual, "delegating")
         XCTAssertEqual(working.look, "delegating")
-        let s = StateSnapshot(base: "working", act: "delegating", mood: "determined",
+        let s = StateSnapshot(doing: "working", activity: "delegating", mood: "determined",
                               attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                               working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)

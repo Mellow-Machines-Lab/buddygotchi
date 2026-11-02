@@ -548,7 +548,7 @@ public final class Core {
         let drawer = drawerOpen(at: now)
         let calls = config.workStream && base == "working" && attn == nil && !drawer
             ? stream.calls(Set(working.map(\.key))) : []
-        var snapshot = StateSnapshot(base: base, act: act, mood: mood(), attn: attn, working: working.count,
+        var snapshot = StateSnapshot(doing: base, activity: act, mood: mood(), attn: attn, working: working.count,
                                      idle: rests.count, helpers: helpers, vol: config.volume,
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)

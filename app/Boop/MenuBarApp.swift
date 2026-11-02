@@ -373,7 +373,7 @@ final class AppModel: ObservableObject {
         }
         if status?.listening == true { return "Listening…" }
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
-        switch s.base {
+        switch s.doing {
         // Short, as "2 sessions need you" is: beside the Talk button the
         // headline has room for about twenty letters.
         case "working": return s.working == 1 ? "1 session working" : "\(s.working) sessions working"

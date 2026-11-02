@@ -20,7 +20,7 @@ enum FaceMood: Hashable {
         if s.attn != nil {
             self = .needsYou
         } else {
-            switch s.base {
+            switch s.doing {
             case "working": self = .working
             case "idle": self = .idle
             default: self = .asleep

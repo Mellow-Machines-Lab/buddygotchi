@@ -104,12 +104,12 @@ struct WhatIDoAct: View {
         /// Boop's look, with `drops` words fallen so far.
         func look(drops: Int) -> StateSnapshot {
             var look: StateSnapshot = switch self {
-            case .typing: .onboarding(base: "working", act: "planning", mood: "curious")
-            case .reading: .onboarding(base: "working", act: "analyzing", mood: "engaged")
-            case .testing: .onboarding(base: "working", act: "testing", mood: "determined")
-            case .failing: .onboarding(base: "working", act: "testing", mood: "grumpy")
-            case .asking: .onboarding(base: "working", mood: "curious", waiting: "claude")
-            case .finished: .onboarding(base: "idle", mood: "proud")
+            case .typing: .onboarding(doing: "working", activity: "planning", mood: "curious")
+            case .reading: .onboarding(doing: "working", activity: "analyzing", mood: "engaged")
+            case .testing: .onboarding(doing: "working", activity: "testing", mood: "determined")
+            case .failing: .onboarding(doing: "working", activity: "testing", mood: "grumpy")
+            case .asking: .onboarding(doing: "working", mood: "curious", waiting: "claude")
+            case .finished: .onboarding(doing: "idle", mood: "proud")
             }
             if let word = words.last, drops > 0 { look.calls = [.init(slot: 0, count: drops, word: word)] }
             return look

@@ -272,7 +272,7 @@ final class ViewTests: XCTestCase {
         rig.send(.activity, subagent: "a1", tool: "Read", id: "r1")
         XCTAssertNotNil(rig.state.attn, "the subagent's call doesn't answer the request")
         rig.wait(SessionFold.safetyNetMs)
-        XCTAssertEqual(rig.state.base, "idle")
+        XCTAssertEqual(rig.state.doing, "idle")
         XCTAssertEqual(workBeats(rig.wait(20 * 60_000)), [], "no working heartbeat")
         XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
     }

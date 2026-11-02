@@ -93,7 +93,7 @@ final class RuntimeTests: XCTestCase {
     func testEveryHelloGetsTheMoodItself() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
-        let logical = StateSnapshot(base: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
+        let logical = StateSnapshot(doing: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
         let gelHello = FakeTransport.hello.dropLast() + #","face":"gel"}"#
         runtime.home.sync {
             runtime.show(logical)
@@ -1301,7 +1301,7 @@ final class RuntimeTests: XCTestCase {
     /// against its cap and the mood's reason, which the dashboard shows
     /// beside CONTEXT; a line only when something changed.
     func testTheStatusLineCarriesWhatContextLacks() throws {
-        var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(base: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
+        var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(doing: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
                                     sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234))
         status.moodReason = Reason(cause: "You came back after 26 hours away.")
         var today = MemoryReader.Tallies()
@@ -2337,7 +2337,7 @@ final class RuntimeTests: XCTestCase {
                 .map { "\($0.specificType) \($0["source"]?.string ?? "")" }
         }
         XCTAssertEqual(starts, ["SessionStart startup", agent == "claude" ? "SessionStart compact" : "PostCompact compact"], agent)
-        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).base }, "working",
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).doing }, "working",
                        "\(agent): the turn goes on")
     }
 

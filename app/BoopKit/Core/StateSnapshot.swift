@@ -118,12 +118,13 @@ public struct StateSnapshot: Equatable, Sendable {
         return word > 0 && 2 * word >= most ? word : solid
     }
 
-    /// `asleep`, `idle` or `working`.
-    public var base: String
-    /// What the agents are doing, one of `Act`'s names, only while `base`
-    /// is `working` and nothing needs you: the look shows it in working's
-    /// place. Nil sends none.
-    public var act: String?
+    /// What Boop is busy with, `asleep`, `idle` or `working`: the wire's
+    /// `base`.
+    public var doing: String
+    /// How the agents are working, one of `Act`'s names, only while
+    /// `doing` is `working` and nothing needs you: the look shows it in
+    /// working's place. Nil sends none. The wire's `act`.
+    public var activity: String?
     /// Boop's mood, one of the pack's moods, which
     /// picks the set of faces the device draws everything in.
     public var mood: String
@@ -222,11 +223,11 @@ public struct StateSnapshot: Equatable, Sendable {
     /// board's fields hold them.
     public static let maxTitleBytes = 30, maxProjectBytes = 22
 
-    public init(base: String, act: String? = nil, mood: String, attn: Attention?, working: Int, idle: Int = 0, helpers: Int = 0,
+    public init(doing: String, activity: String? = nil, mood: String, attn: Attention?, working: Int, idle: Int = 0, helpers: Int = 0,
                 vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
                 skip: Int = 0, unlisted: Int = 0) {
-        self.base = base
-        self.act = act
+        self.doing = doing
+        self.activity = activity
         self.mood = mood
         self.attn = attn
         self.working = working
@@ -242,8 +243,8 @@ public struct StateSnapshot: Equatable, Sendable {
     }
 
     /// The look the device shows when nothing needs you: what the agents
-    /// are doing, else the base.
-    public var look: String { act ?? base }
+    /// are doing, else what Boop is.
+    public var look: String { activity ?? doing }
 
     /// The visual the device shows for it: needs you's while something
     /// does, else the look.
@@ -256,8 +257,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The message's fields after its `t`, in the protocol's order: the
     /// app's part of LinkKit's `state` (linkkit/SPEC.md §3).
     public var fields: JSONObject {
-        var fields: JSONObject = ["base": .string(base)]
-        if let act { fields["act"] = .string(act) }
+        var fields: JSONObject = ["base": .string(doing)]
+        if let activity { fields["act"] = .string(activity) }
         fields["mood"] = .string(mood)
         if let attn {
             var a: JSONObject = ["agent": .string(attn.agent), "project": .string(attn.project)]

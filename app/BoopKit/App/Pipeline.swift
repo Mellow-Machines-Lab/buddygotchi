@@ -387,7 +387,7 @@ public final class Pipeline {
         // has somewhere to settle, its resting one not reached. The view's
         // caught up to it now.
         if e.type == .heartbeat, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
-            if core.snapshot(at: e.at).base == "asleep" { return "\(core.config.pack.name) is asleep" }
+            if core.snapshot(at: e.at).doing == "asleep" { return "\(core.config.pack.name) is asleep" }
             if view.away { return "you're away" }
         }
         return nil

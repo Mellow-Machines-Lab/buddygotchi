@@ -34,7 +34,7 @@ enum Snapshots {
             checkPulse()
 
             // The pack's mirror of the board, when it has one (Boop's).
-            let gelState = StateSnapshot(base: "working", act: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
+            let gelState = StateSnapshot(doing: "working", activity: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
             var gelImage: NSImage?, onboardingGel: NSImage?
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
@@ -51,7 +51,7 @@ enum Snapshots {
                 gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"),
                                                     size: NSSize(width: 92, height: 92), zoomed: true)
                 tileStill = gelImage
-                let gelAttention = StateSnapshot(base: "working", mood: "frightened",
+                let gelAttention = StateSnapshot(doing: "working", mood: "frightened",
                     attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), working: 1, vol: 6)
                 _ = try SlimeSnapshots.image(gelAttention, to: out.appendingPathComponent("slime-needs-you.png"))
                 try checkMoodStills()
@@ -505,7 +505,7 @@ enum Snapshots {
         }
         let wait = sessions.filter { $0.status == .waiting }
         let snapshot = StateSnapshot(
-            base: base, mood: mood,
+            doing: base, mood: mood,
             // Cut as the core cuts it for the device; the popover shows it whole.
             attn: wait.first.map {
                 StateSnapshot.Attention(agent: $0.agent, project: StateSnapshot.clip($0.project, marked: true),
