@@ -31,7 +31,7 @@ let usages: [(command: String, text: String)] = [
         the always scenarios, Boop's character. --timeline
         prints every pass of every run. --list prints each scenario at the level with its case, runs and
         requests, all three levels' totals and today's count, and runs nothing. --scripted runs each scenario once with the expect brain, which answers every pass as the
-        scenario expects, with no key and no budget: what it checks is everything but Jev (that each step
+        scenario expects, with no key and no Jev requests: what it checks is everything but Jev (that each step
         wakes the brain as it should, the screen, the whole-run checks it can meet). A scripted scenario,
         one that checks only the code's rules, runs only so. A scenario with a known
         gap is reported GAP when it fails, and doesn't fail the eval. Every event, view event and pass goes to the run's own file in
@@ -130,12 +130,8 @@ func eval(_ raw: [String]) async {
         list = list.filter { $0.name.localizedCaseInsensitiveContains(only) || $0.file.contains(only) }
     }
     if args.has("--always") { list = list.filter(\.always) }
-    let level: Eval.Level
-    switch args["--level"] {
-    case nil: level = .quick
-    case let given?:
-        guard let named = Eval.Level(rawValue: given) else { fail("boopdev eval: --level is quick, standard or full, not \(given)") }
-        level = named
+    guard let level = Eval.Level(rawValue: args["--level"] ?? "quick") else {
+        fail("boopdev eval: --level is quick, standard or full, not \(args["--level"] ?? "")")
     }
     let named = args["--only"] != nil
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
@@ -151,26 +147,32 @@ func eval(_ raw: [String]) async {
     do { steering = try Steering(directory: path("--steering", "steering")) } catch { fail("\(error)") }
     let given = args["--runs"].map { Int($0) }
     if let given, (given ?? 0) < 1 { fail("--runs is a count, 1 or more") }
+    func planOf(_ s: Scenario, _ level: Eval.Level) -> Eval.Plan? {
+        Eval.plan(s, level: level, named: named, given: given.flatMap { $0 })
+    }
+    let listing = args.has("--list")
     // What the eval will cost before it asks Jev anything (EVALS.md §2):
-    // each scenario's passes with the expect brain, times its runs.
+    // each scenario's passes with the expect brain, times its runs. Only
+    // what's used: nothing for --scripted, all for --list, else the level's.
     var priced: [(scenario: Scenario, price: Eval.Price)] = []
-    for scenario in list {
+    for scenario in list where !scripted && (listing || planOf(scenario, level) != nil) {
         do { priced.append((scenario, try await Eval.price(scenario, steering: steering))) } catch { fail("\(error)") }
     }
-    func runsOf(_ s: Scenario, _ level: Eval.Level) -> Int { given.flatMap { $0 } ?? Eval.runs(s, level: level) }
-    func requests(_ p: (scenario: Scenario, price: Eval.Price), _ level: Eval.Level) -> Int {
-        Eval.scriptsSetup(p.scenario, level: level) ? p.price.expected : p.price.all
-    }
+    func requests(_ price: Eval.Price, _ plan: Eval.Plan) -> Int { plan.scriptsSetup ? price.expected : price.all }
     func total(_ level: Eval.Level) -> (scenarios: Int, requests: Int) {
-        let those = priced.filter { Eval.runs($0.scenario, at: level, named: named) }
-        return (those.count, those.reduce(0) { $0 + runsOf($1.scenario, level) * requests($1, level) })
+        let those = priced.compactMap { p in planOf(p.scenario, level).map { (p.price, $0) } }
+        return (those.count, those.reduce(0) { $0 + $1.1.runs * requests($1.0, $1.1) })
     }
     let allowance = JevAllowance(overridden: JevAllowance.overriddenByEnvironment())
-    if args.has("--list") {
-        for p in priced where p.scenario.scripted || Eval.runs(p.scenario, at: level, named: named) {
+    if listing {
+        for p in priced where p.scenario.scripted || planOf(p.scenario, level) != nil {
             let s = p.scenario
             print("\(s.file)\(s.always ? "  [always]" : s.scripted ? "  [scripted]" : s.gap != nil ? "  [gap]" : "")\(s.talk == .default ? "" : "  [\(s.talk.rawValue)]")  \(s.name)")
-            print(s.scripted ? "    expect brain only, no Jev requests" : "    \(runsOf(s, level)) run\(runsOf(s, level) == 1 ? "" : "s") × about \(requests(p, level)) requests")
+            if let plan = planOf(s, level) {
+                print("    \(plan.runs) run\(plan.runs == 1 ? "" : "s") × about \(requests(p.price, plan)) requests")
+            } else {
+                print("    expect brain only, no Jev requests")
+            }
             print("    \(s.story)")
             if let gap = s.gap { print("    gap: \(gap)") }
         }
@@ -184,17 +186,16 @@ func eval(_ raw: [String]) async {
         } catch { print("today: \(error)") }
         exit(0)
     }
-    var plan: [(scenario: Scenario, runs: Int, setup: Bool)]
+    var plan: [(scenario: Scenario, plan: Eval.Plan)]
     let estimate: Int
     if scripted {
-        plan = list.map { ($0, 1, false) }
+        plan = list.map { ($0, Eval.Plan.scripted) }
         estimate = 0
     } else {
-        let those = priced.filter { Eval.runs($0.scenario, at: level, named: named) }
-        guard !those.isEmpty else { fail("boopdev eval: nothing to run at the \(level.rawValue) level") }
-        let left = list.count - those.count
+        plan = priced.compactMap { p in planOf(p.scenario, level).map { (p.scenario, $0) } }
+        guard !plan.isEmpty else { fail("boopdev eval: nothing to run at the \(level.rawValue) level") }
+        let left = list.count - plan.count
         if left > 0 { print("\(left) scenario\(left == 1 ? "" : "s") with whole-run checks left out: --level standard runs them") }
-        plan = those.map { ($0.scenario, runsOf($0.scenario, level), Eval.scriptsSetup($0.scenario, level: level)) }
         estimate = total(level).requests
         do {
             if let refusal = try allowance.refusal(estimate: estimate, wholeFullRun: level == .full && !named) { fail("boopdev eval: \(refusal)") }
@@ -232,46 +233,37 @@ func eval(_ raw: [String]) async {
     var stopped: String?
     let trajectories = log.deletingPathExtension().appendingPathExtension("trajectories.jsonl")
     var judged = 0
-    scenarios: for (scenario, runs, setup) in plan {
-        var rs: [Eval.Result] = []
-        runner.scriptsSetup = setup
-        for _ in 1...runs {
-            do {
-                let result = try await runner.run(scenario)
-                // A run the limit cut short says nothing about Jev: it's dropped.
-                if let why = counted?.stopped {
-                    stopped = why
-                    break scenarios
-                }
-                rs.append(result)
-                LineFile.append(JSONLine.encode(Eval.trajectory(result, scenario: scenario)), to: trajectories)
-            } catch {
-                if let why = counted?.stopped {
-                    stopped = why
-                    break scenarios
-                }
-                fail("\(error)")
+    // One run. Nil when the limit cut it short, which says nothing about Jev.
+    func play(_ scenario: Scenario) async -> Eval.Result? {
+        do {
+            let result = try await runner.run(scenario)
+            if let why = counted?.stopped {
+                stopped = why
+                return nil
             }
+            if !scripted { LineFile.append(JSONLine.encode(Eval.trajectory(result, scenario: scenario)), to: trajectories) }
+            return result
+        } catch {
+            if let why = counted?.stopped {
+                stopped = why
+                return nil
+            }
+            fail("\(error)")
+        }
+    }
+    scenarios: for (scenario, plan) in plan {
+        var rs: [Eval.Result] = []
+        runner.scriptsSetup = plan.scriptsSetup
+        for _ in 1...plan.runs {
+            guard let result = await play(scenario) else { break scenarios }
+            rs.append(result)
         }
         // A must's failure gets its one re-run, to confirm before it blocks.
-        if !scripted, rs.contains(where: { !$0.passed }), Eval.reruns(scenario, runs: runs) {
+        if plan.rerunsOnFailure, rs.contains(where: { !$0.passed }) {
             for line in Eval.report(rs, story: scenario.story) { print(line) }
-            do {
-                let again = try await runner.run(scenario)
-                if let why = counted?.stopped {
-                    stopped = why
-                    break scenarios
-                }
-                LineFile.append(JSONLine.encode(Eval.trajectory(again, scenario: scenario)), to: trajectories)
-                print("  re-run: \(again.passed ? "passed, so it doesn't block" : "failed again")")
-                rs = [again]
-            } catch {
-                if let why = counted?.stopped {
-                    stopped = why
-                    break scenarios
-                }
-                fail("\(error)")
-            }
+            guard let again = await play(scenario) else { break scenarios }
+            print("  re-run: \(again.passed ? "passed, so it doesn't block" : "failed again")")
+            rs = [again]
         }
         results.append(rs)
         if scenario.brief != nil, !scripted { judged += 1 }

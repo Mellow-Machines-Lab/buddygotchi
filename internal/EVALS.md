@@ -197,7 +197,7 @@ says so in that request. The limit replaced the old budget per command.
 | `--always` | Only the `always` scenarios |
 | `--timeline` | Prints every pass of every run: when, the line, what Boop did and the mood after |
 | `--list` | Prints each scenario at the level with its file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then all three levels' totals and today's count, and runs nothing |
-| `--scripted` | Runs each scenario once with the expect brain: no key, no budget |
+| `--scripted` | Runs each scenario once with the expect brain: no key, no Jev requests |
 | `--scenarios DIR`, `--steering DIR` | Other scenarios or steering files; by default the repo's, found from the working directory or from `boopdev`'s own place |
 
 The report gives each scenario's verdict (`pass`, `FAIL`, or `GAP` for a
