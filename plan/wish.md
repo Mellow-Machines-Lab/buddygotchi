@@ -40,7 +40,7 @@ to me?", "work with me?"); picking one makes the wish, as the brain's
 `hush` reply calls the core (`core.wish(.pet, at:)`). The sign plays as
 part of the reaction. Each is offered only when:
 
-- no wish is open, and none was made this day (`boopDay`);
+- no wish is open;
 - you're at the Mac and the buddy is awake;
 - nothing needs you, and it isn't listening or hushed;
 - `work` only while no agent is working (else your next prompt meets it
@@ -49,7 +49,7 @@ part of the reaction. Each is offered only when:
 Jev picks when and which, by mood, MEMORY and CONTEXT. The guide says
 about one a day, when it feels like it. CONTEXT's You row says "no wish
 yet today", and from midday "no wish yet today, and the day's half
-gone": a nudge, not a trigger. Code holds the cap: one a day, one open.
+gone": a nudge, not a trigger. Code holds only one open at a time; how many a day is Jev's, by the steering (the owner's call, 2026-11-01).
 
 On Quiet a wish is still made, as the icon and the sign, with no sound:
 unlike asks (`Asks.allowed`), the wish options are offered on Quiet.
@@ -99,7 +99,7 @@ A rule in the core meets it at once; the brain isn't on this path.
   the board "wish: 1 h".
 - Sad fades as it does now; while the wish is open a later check-in may
   make it sad again. A win may cheer it up; only you meet the wish.
-- After a miss, no new wish that day.
+- After a miss, how soon another comes is Jev's.
 
 ## Memory keeps the pattern
 
@@ -142,7 +142,7 @@ agent interaction meets every open `work` wish.
 | Pack (SlimeBuddy first, Pixel's lane text too) | `asks.md` lines `[wish pet] pet me?`, `[wish pet met] <3` and the same for chat and work, no new file; the pet ask removed; sad, lonely, calm and comfy steering lines |
 | Evals (`--only` the new ones, no full run) | made at a morning check-in; met by a stroke → happy or comfy; waited an hour at the Mac → sad; away all day → not sad; missed three days → MEMORY's lean; `work` not offered mid-turn |
 | Board's checks | goldens, the simulator, the mirror rebuilt, `make -C internal demos ALL=1` (the state changes what the board gets) |
-| Tests that pin the numbers | one a day, one open, 3 h give-up, 5:00 close, the pauses |
+| Tests that pin the numbers | one open, 3 h give-up, 5:00 close, the pauses |
 | Docs | CLAUDE.md Words (`wish`), `documentation/architecture.html`, `characters/CHARACTER.md`, `linkkit` docs only if the protocol changes, `internal/EVALS.md` |
 
 Order: the core, wire and pack lines with scripted tests; then the
@@ -160,7 +160,7 @@ The first build on `wish` differs from the above in three places:
   wouldn't, and let Jev's own judgment pick the moment. The owner prefers
   guidelines to Examples: Examples cost context. Keep them short, and
   measure: a wish on most days, not at the first idle check-in every
-  time. Code's one-a-day cap stays.
+  time. Code has no daily cap, so the guidelines carry how often: about one a day.
 - **Sad or lonely.** Keep the mood graph as it is. Comfy and lazy going
   lonely at an ignored wish is fine, as long as the mood does move, so
   evals check that it moves, not which. Lonely's "rare" wording must not

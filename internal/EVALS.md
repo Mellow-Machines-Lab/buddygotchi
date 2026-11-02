@@ -2,8 +2,8 @@
 
 Updated 2026-11-01. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
-the core and the view), MellowHarness's `Harness` and Boop's outputs,
-each pass checked against what it should come to.
+the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
+scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
 
 The mood question offers staying and every move from the mood on the
 pack's graph ([characters/CHARACTER.md](../characters/CHARACTER.md) §5),
@@ -113,9 +113,8 @@ and to be tightened once Boop meets it (`Eval.judge`):
 | `signs_seen` | None of the signs it names (`"fav snack?|hat or bow?"`) was held up at any pass: for what Jev does now and then, such as asking, not at a given step |
 | `moods_seen` | A mood it names (`"lonely"`, or several, each required, `"lonely|sad"`) was never the mood at any pass: one that came and faded between two steps still counts |
 
-**Always and gaps.** An `always` scenario is Boop's character, not a
-tuning target: it runs 3 times by default, and every steering change
-keeps it passing. A scenario with a `gap` is one Boop can't pass today,
+**Always and gaps.** An `always` scenario is a must that's Boop's character,
+not a tuning target: it runs 3 times at the full level. A scenario with a `gap` is one Boop can't pass today,
 with why and what would fix it: its failures are reported as `GAP` and
 don't fail the eval, and when it passes in every run the report says to
 take the gap out.
@@ -154,14 +153,15 @@ needs. `--list` gives each level's total for the suite as it stands.
 
 | Level | Runs | Jev answers |
 | --- | --- | --- |
-| `quick`, the default | The scenarios with no whole-run `checks`. `--only` also runs a named scenario that has them, in full, since its checks read every pass | Only the passes of steps whose `expect` is about a pass. The expect brain answers the setup in between, a step's own `brain` answers and the mood's path on the graph included |
-| `standard` | Quick's, and the scenarios with whole-run `checks` | Every pass |
-| `full` | The same scenarios as standard, `always` ones 3 times | Every pass |
+| `quick`, the default | The must scenarios (§4). `--only` also runs a named feel scenario, in full | Only the passes of steps whose `expect` is about a pass, unless whole-run `checks` read them all. The expect brain answers the setup in between, a step's own `brain` answers and the mood's path on the graph included |
+| `standard` | Every scenario, once | Every pass |
+| `full` | The same, `always` ones 3 times | Every pass |
 
 A scenario's own `runs` (§3) holds at every level, and `--runs N` overrides
 both. Each pass in the run's file says which brain answered it, and
 `--timeline` marks the expect brain's. A scripted setup hides what Jev would
-have done there: its moods and HISTORY are the scenario's, not Jev's.
+have done there: its moods and HISTORY are the scenario's, not Jev's. Quick
+judges nothing, so it says only that the musts hold.
 
 **Which to run.**
 
@@ -248,8 +248,9 @@ file-name order:
 | Field | Meaning |
 | --- | --- |
 | `name` | What it checks, in a line |
-| `case` | The situation and what Boop should do in it, in plain words and no harness terms, so the steps can be rewritten to fit it when the harness changes. Required |
-| `why` | The spec or steering file that says so |
+| `judge`, `reasonable`, `unreasonable` | A feel scenario's brief, in place of `case` and `why`: what matters, a range of fine answers, and what would be wrong (§4). Its steps check no choice of Jev's |
+| `case` | A must's situation and what Boop should do in it, in plain words and no harness terms, so the steps can be rewritten to fit it when the harness changes |
+| `why` | A must's reason: the spec or steering file that says so |
 | `always` | `true` for Boop's character (§1): 3 runs at the full level, and `--always` runs these |
 | `scripted` | `true` for a scenario that checks the code's rules rather than Jev's choices (the mood kept on the graph, the screen's counts, which agent BOOT opens): it runs only with the expect brain, in `--scripted` and the unit tests, and a Jev run leaves it out. Never `always` |
 | `runs` | How many runs it gets without `--runs`, at every level, when the default (§2) is too many or too few |
@@ -292,147 +293,41 @@ the file and step.
 
 ## 4. The scenarios
 
-Each scenario's file says what it checks, in its `case`, so the list
-lives there: `boopdev eval --list` prints them all. They come in four
-kinds, all with the `boop` personality unless the file says otherwise:
+`boopdev eval --list` prints them all. They come in three groups. Pixel's
+packs keep strict scenarios of their own, in their words: a scenario with no
+brief is a must.
 
-- **Always** (`03`–`06`, `08`, `09`, `13`, `16`, `17`, `23`, `27`–`29`,
-  `36`, `39`, `40`, `43`, `47`, `61`, `63`, `64`, `127`–`130`, `132`–`136`, `138`, `140`): Boop's character. It never swears
-  at a win, a poke or the person (`16`, `61`). A failed check puts it
-  out and the next makes it determined, the fix proud; a failed turn
-  puts it out, a very long one failed makes it sad; a very long turn
-  done is a success; poking it again and again makes it irritated or
-  grumpy and keeps it so while it goes on, with one face per barrage,
-  and it calms down a step at a time after; moods fade a step toward
-  calm once their minutes are up, at the first check-in (`06`) or at
-  whatever comes next, a win too (`13`, `47`); plain requests,
-  matter-of-fact finishes and a streak of quick wins leave the mood
-  alone, whatever faces they get (`28`);
-  no face ever contradicts what happened; talked to, it always answers
-  with a face and a reply (`36`, `39`, `40`),
-  and asked about the agents it holds up what they're really doing, how
-  long, a check's result, done, how many work and rest when asked about
-  them all, or all quiet, never a guessed yes or no (`127`), and a
-  reply's sign fits the moment: a nap after the work while claude works,
-  "that's ur job" when you'd have it answer claude for you, a huffy
-  "...fine" when you say sorry after an insult, and what claude is doing
-  or how long you've been at it when you ask (`128`); told to hush, it
-  says nothing for the half hour, still making faces, sulks a step, and
-  talks again when the time's up or you say so (`129`); talked to, it
-  mostly says something back, and its sign answers your words: "good,
-  u?" to how are you, "right here!" to where are you, your good night
-  played back (`130`); each
-  finish is judged by what it says, done and working a success,
-  couldn't finish or a failed turn a failure however upbeat its message
-  (`27`, `29`, `43`); and its mood only moves along
-  the graph, a step at a time (`05`, `47`); and coming back to the
-  Mac, after ten minutes or hours, a night's sleep included, it cheers,
-  glad to see you (`63`, `64`, `136`; a shorter break never reaches it),
-  and after a day away it missed you: lonely, until a stroke or a word
-  ends it at once (`135`).
-- **Tuning** (`10`–`12`, `15`, `18`, `19`, `21`, `22`, `24`–`26`,
-  `44`–`46`, `48`, `50`, `51`, `54`–`60`, `62`, `65`, `70`, `74`–`77`, `79`, `85`, `90`, `91`,
-  `94`–`97`, `99`–`114`, `118`–`126`, `131`, `137`, `139`, `141`–`148`, `150`): single decisions (a failure that really stings swears, `60`; and Boop picks a face
-  that can say what it means, at a failed check and at a finish, `62`),
-  at the Mac for hours with no touch or word to it, Boop grows lonely,
-  and a word ends it, `137`; with the memory of a long fight, its end is
-  big, `138`, and a memory never turns a failure into a success, `139`),
-  and the liveliness brief: Boop reacts often (every quick win, `19`;
-  most of a busy half hour, `21`), never goes over 6 minutes of work
-  with no Moment, even while another thread's quick turns keep waking
-  the brain (`18`, `21`, `22`), and its mood drifts (calm → engaged →
-  determined → excited), never flipping back within a minute; in a long
-  grind it may ease back and return (`18`, `51`). Runs are ladders, not
-  repeats: a streak of quick wins climbs from happy to excited to amused
-  to comfy and round again (`19`), a round of check-ins on a long turn
-  from engaged to hopeful to bored to determined (`85`), and a busy half hour never plays the same
-  Moment three times running (`21`, `22`). The
-  moods the words bring (`24`–`27`): a frustrated request annoyed, a
-  step toward determined, thanks excited, a long turn's hard work done
-  proud, an agent giving up sad. The finishes: a question back or an
-  answer is a reply (`44`, `45`), and a finish is judged by its words
-  whatever the mood (`46`). And the graph's moves: a small failure from
-  calm is a small step and a big one may jump (`48`), thanks bring a
-  sad or wounded Boop back (`50`), an
-  irritated Boop answers as irritated, not grumpy (`54`), and hours of
-  nothing fade excited through happy to calm (`55`). And talk moves
-  the mood at once: one apology
-  softens a fed-up Boop a step (`56`), a second is fair only after
-  poking it again (`57`), sad news makes it sad and keeps it so until
-  it's taken back, when it switches (`58`), and a plain question
-  softens nothing (`59`). And work that finished while you were away
-  from the Mac is celebrated as it ends, never replayed when you're
-  back, when Boop cheers to see you (`65`). And, scripted, the rarer
-  moods: quiet takes a surprised Boop at most an ordinary step (`68`), and
-  new work moves a comfy one only to a mood on offer (`69`). And
-  the ladder of failure: a failure after a fix is a bigger cuss than
-  the first, held longer and said aloud (`70`). And the moments the view now says: you answering a request
-  gets a small pleased face (`74`), a compacted context leaves Boop a
-  little lost (`75`), idle check-ins get a small face or nothing
-  (`76`), a poke while it sleeps startles it (`77`), and a barrage
-  again gets a louder grumble (`16`); quiet fades an excited Boop a
-  step at a time (`55`). And a Codex turn gets the same small
-  cheer as Claude's (`14`). On a special day CONTEXT's
-  When row names, Boop plays along when you come back: on
-  Halloween (`90`) and on its 50th day (`91`), a gladder, bigger hello,
-  and the screen has the day's tags; on April Fools' Day it may play a
-  good finish as a failure, for the joke (`98`). Its opinions: a please
-  warms it (`94`), capitals make it flinch (`95`), an agent's "You're
-  absolutely right!" gets an eye-roll (`96`). Once its day is over at
-  5:00, it tells its dream about it the first time you show up, never to
-  an agent's event while you're away, and only once (`97`). Touched like a
-  pet: a stroke calms a fed-up Boop, a shake startles it, and a
-  swipe, a quick stroke, is a stroke too (`99`); shakes in a row go
-  from a startled whoa to cross, as pokes do (`151`). And, scripted, the screen with no pass: BOOT
-  walks the line, who needs you first, then the newest idle (`92`), and
-  the helpers and idle agents are counted under the face (`93`); a
-  request still shows after a two-hour lunch, since its agent still
-  runs, and a finger held on the needs-you screen dismisses it
-  (`115`); a long turn and the quiet after it go through their tiers
-  (`116`); and the to-do count under the face climbs with the list
-  (`117`). And Boop meets the routine in silence: a plain prompt a
-  minute after it reacted, in another thread, gets a small face that
-  says nothing (`118`), though a frustrated one gets a face and its words
-  however recently it reacted (`119`), and a turn done in seconds is
-  back-and-forth, its finish played in silence, though one failed as
-  quickly still gets its failure (`120`); in a busy stretch of several
-  agents, plain prompts each a paragraph with a few of your words under
-  it get at most a small face, with nothing said and no sign, while the
-  polite and playful ones around them still get theirs (`121`). And
-  how much it says, chosen in Settings: on Quiet routine work and
-  finishes go by in silence and a bigger moment gets only a feeling,
-  which the engine holds to in code (`122`), on
-  Chatty almost every face comes with words and every prompt gets one
-  (`123`), and on Normal a routine moment gets one small thing said (`124`). A turn that finally worked after its tests failed
-  twice is a hard-won finish: a success, proud, held three or four times
-  (`125`), which the gel plays big. And what you say gets the reply that
-  answers what you meant: a hello, to a greeting that asks how it's
-  going too, yes to a question about Boop itself, thanks at praise and
-  at your own good news, love at affection and at a sorry, ouch at an
-  insult, comfort at bad news or tiredness, hehe at a joke, huh at what
-  it can't know or at nonsense, a nap or a dance when asked (or no, to a
-  trick it won't do), notme when asked to answer an agent for you, bye,
-  and status for a question about the agents, how many are running
-  included, each with a face, a second thing said while it still makes
-  its face for the first included (`126`).
+- **Code checks** (`53`, `68`, `69`, `92`, `93`, `115`–`117`): `scripted`, the
+  code's rules, which need no Jev: the mood kept on the graph and the screen.
+- **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `123`, `126`,
+  `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so
+  exact checks stay. A failed turn is never celebrated, and neither is an agent
+  giving up. No wrong face, and no swearing at the person. Talked to, Boop
+  answers, and rightly about agents. Hush, Quiet and Chatty hold. The moments
+  the owner loves stay. Never lonely after a night or while agents work, and
+  never sad about a wish you couldn't answer.
+- **Feel** (everything else): each has a brief, `judge`, `reasonable` and
+  `unreasonable`. It checks no choice of Jev's, and a step's `brain` answers
+  stand in for Jev where it isn't asked. What the code decides stays exact:
+  the screen, what's offered, a dream told, moves on the graph, the quiet
+  while working.
 
-Pixel has five scenarios of its own, in `characters/pixel/evals/`, in
-its words and with its steering: a failed turn, pokes, a long finish,
-back after a break and an idle check-in. PixelBuddy's `make eval` runs
-them (`boopdev eval` reads the pack in use's scenarios and steering), or
-from here `CHARACTER=pixel .build/debug/boopdev eval --level standard`,
-once each (`--list` prices it).
-- **Scripted** (`53`, `68`, `69`, `92`, `93`, `115`–`117`): the code's
-  rules, which need no Jev: the mood kept on the graph through a busy
-  day (`53`) and from the rarer moods (`68`, `69`), and the screen. They
-  run only with the expect brain (§3, `scripted`).
-- **Known gaps** (`14`, `20`, `98`, `149`): a few minutes' turn done is
-  sometimes played big, flipping tests don't flip the mood, April Fools'
-  Day gets no joke, and a cuddly Boop's lean to affectionate doesn't
-  show. Each `gap` says why the steering can't get there alone.
+## 5. The judge
 
-A new decision or a change to the steering files gets a scenario that
-shows it. Run the scenarios it touches with `--only` while you work, and
-`make eval` once, as the final pass, before it's committed (§2).
+A run writes each scenario's trajectory beside its file in `/tmp/boop-eval`,
+`….trajectories.jsonl`: per pass, the line Jev read, the mood, face, move, what
+it said, the sign, the narration and which brain answered. A fresh Claude
+session agent judges the feel ones against their briefs with
+[judge/JUDGE.md](judge/JUDGE.md): reasonable, odd or unreasonable, with one line
+why. It also looks across the runs for Boop going flat or passive, for sameness,
+and for wishes made too often or never. It isn't an API call, it needs no key,
+and nothing of it is in CI. It isn't whoever wrote the prompt, and it reads no
+steering.
 
-The wish's scenarios are 152 to 156, with 145: they make a wish by the `wish` step (`kind`), as the brain's pick of its sign does.
+Jev runs each scenario once. A must's failed run gets one re-run from the
+runner, and an unreasonable verdict gets one by `--only`, to confirm before it
+blocks.
+
+Test the judge before you trust it: `judge/test/runs.jsonl` is made-up runs,
+some plainly wrong (Boop celebrating a failed turn), and `expected.json` says
+which. If it passes a bad one, fix that first.

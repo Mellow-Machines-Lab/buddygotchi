@@ -17,10 +17,11 @@ let usages: [(command: String, text: String)] = [
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
         checks. Needs Jev's key in BOOP_JEV_KEY and fails without it. --level says how much asks Jev: quick (the
-        default) the scenarios with no whole-run checks, Jev answering only the passes of steps that expect
-        one and the expect brain the rest, and --only also runs a named scenario with whole-run checks, in
-        full; standard adds the scenarios with whole-run checks, in full; full is every pass, always
-        scenarios 3 times, and only when the owner asks (make eval). --runs runs each scenario N times (default
+        default) the must scenarios, Jev answering only the passes of steps that expect one and the expect
+        brain the rest unless whole-run checks read them all, and --only also runs a named feel scenario, in
+        full; standard is every scenario once, every pass to Jev; full is that with always scenarios 3 times,
+        only when the owner asks (make eval). A must's failed run gets one re-run. A feel scenario has no exact
+        checks on Jev: its trajectory goes beside the run's file, for the judge (EVALS.md §2). --runs runs each scenario N times (default
         the scenario's own runs, else 1, or 3 for an always scenario at full); it passes only if every run does.
         Before asking Jev anything it counts the requests (each run's passes with the expect brain), and refuses
         the run if that's more than what's left of the day's limit across every command and worktree, kept in
@@ -229,6 +230,8 @@ func eval(_ raw: [String]) async {
     var gapsFailed = 0
     var failed = false
     var stopped: String?
+    let trajectories = log.deletingPathExtension().appendingPathExtension("trajectories.jsonl")
+    var judged = 0
     scenarios: for (scenario, runs, setup) in plan {
         var rs: [Eval.Result] = []
         runner.scriptsSetup = setup
@@ -241,6 +244,27 @@ func eval(_ raw: [String]) async {
                     break scenarios
                 }
                 rs.append(result)
+                LineFile.append(JSONLine.encode(Eval.trajectory(result, scenario: scenario)), to: trajectories)
+            } catch {
+                if let why = counted?.stopped {
+                    stopped = why
+                    break scenarios
+                }
+                fail("\(error)")
+            }
+        }
+        // A must's failure gets its one re-run, to confirm before it blocks.
+        if !scripted, rs.contains(where: { !$0.passed }), Eval.reruns(scenario, runs: runs) {
+            for line in Eval.report(rs, story: scenario.story) { print(line) }
+            do {
+                let again = try await runner.run(scenario)
+                if let why = counted?.stopped {
+                    stopped = why
+                    break scenarios
+                }
+                LineFile.append(JSONLine.encode(Eval.trajectory(again, scenario: scenario)), to: trajectories)
+                print("  re-run: \(again.passed ? "passed, so it doesn't block" : "failed again")")
+                rs = [again]
             } catch {
                 if let why = counted?.stopped {
                     stopped = why
@@ -250,10 +274,11 @@ func eval(_ raw: [String]) async {
             }
         }
         results.append(rs)
+        if scenario.brief != nil, !scripted { judged += 1 }
         if !rs.allSatisfy(\.passed) {
             if scenario.gap != nil { gapsFailed += 1 } else { failed = true }
         }
-        for line in Eval.report(rs, story: scenario.story, gap: scenario.gap) { print(line) }
+        for line in Eval.report(rs, story: scenario.story, gap: scenario.gap, judged: scenario.brief != nil && !scripted) { print(line) }
         if args.has("--timeline") {
             for (i, r) in rs.enumerated() {
                 print("  run \(i + 1)\(r.passed ? "" : " (failed)"):")
@@ -270,6 +295,7 @@ func eval(_ raw: [String]) async {
         let today = (try? allowance.used()).map { "; today \($0) of \(allowance.limit)" } ?? ""
         print("requests: \(counted.requests) to Jev, about \(estimate) expected\(today)")
     }
+    if judged > 0 { print("feel: \(judged) for the judge; each run's trajectory: \(trajectories.path)") }
     if let stopped { print("stopped: \(stopped); \(results.count) of \(plan.count) scenarios finished, the rest didn't run") }
     print("every event and pass, with its state: \(log.path)")
     exit(failed || stopped != nil ? 1 : 0)

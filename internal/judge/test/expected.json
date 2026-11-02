@@ -1,0 +1,12 @@
+{
+ "bad-1.json": "bad",
+ "bad-2.json": "bad",
+ "bad-3.json": "bad",
+ "bad-4.json": "bad",
+ "bad-5.json": "bad",
+ "bad-6.json": "bad",
+ "good-1.json": "good",
+ "good-2.json": "good",
+ "good-3.json": "good",
+ "good-4.json": "good"
+}
