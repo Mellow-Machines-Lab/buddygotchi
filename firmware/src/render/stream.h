@@ -14,14 +14,11 @@ enum class CallStyle : uint8_t {
   kHelper,
   kBack,
   kShatter,
-  kCross,
   kStack,
-  kPass,
   kBuilt,
-  kHail,
   kBonk,
   kBonk2,
-  kHelmet,
+  kBonk3,
   kThrow,
   kShrug,
   kTimeout,
@@ -45,7 +42,6 @@ enum class CallMove : uint8_t {
   kHit,      // between the eyes: knocked back, dizzy, stars
   kShrug,    // beside the head, then an empty bubble: a shrug
   kShatter,  // above the crown, bursting into bits it swallows
-  kHail,     // a run of them raining on the crown, an umbrella too late
   kCheer,    // up over the head, with confetti: a hop
   kDesk,     // to the desk: the monitor's spinner, count, or a tower of bricks
   kTopple,   // the tower wobbles and falls on its head

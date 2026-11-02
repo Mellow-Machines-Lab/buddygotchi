@@ -45,7 +45,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | Step | Fed to the pipeline as (the transcript's raw events) |
 | --- | --- |
 | `turn started` | A `turn` start (`UserPromptSubmit`) |
-| `command` | A `tool` start of a `Bash` call with the step's `topic`, then its end at the same moment: `failed` as given (default false), with `error: exit_code` when it failed. `program` gives it a program (`git push`, a work act), and `half` plays only its `start` or `end`, for a command that runs a while |
+| `command` | A `tool` start of a `Bash` call with the step's `topic`, then its end at the same moment: `failed` as given (default false), with `error: exit_code` when it failed. `program` gives it a program (`git push`), and `half` plays only its `start` or `end`, for a command that runs a while: only then is it a work act, whose start is a pass of its own |
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |

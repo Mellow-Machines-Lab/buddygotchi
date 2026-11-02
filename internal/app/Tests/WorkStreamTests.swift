@@ -99,7 +99,7 @@ final class WorkStreamTests: XCTestCase {
     }
 
     /// A failure always comes forward. One session's failures within 2 minutes climb the ladder
-    /// (`ladderMs`): a bonk, a harder one, a helmet, then thrown back.
+    /// (`ladderMs`): a bonk, a harder one, a third with more stars, then thrown back.
     func testFailuresClimbTheLadder() {
         XCTAssertEqual(WorkStream.ladderMs, 120_000)
         let rig = CoreRig(workStream: true)
@@ -110,7 +110,7 @@ final class WorkStreamTests: XCTestCase {
         rig.now += 10_000
         XCTAssertEqual(run(rig, "3", program: "make", failed: true, error: "exit_code"), ["make bonk2"])
         rig.now += 10_000
-        XCTAssertEqual(run(rig, "4", program: "swift", failed: true, error: "exit_code"), ["swift helmet"])
+        XCTAssertEqual(run(rig, "4", program: "swift", failed: true, error: "exit_code"), ["swift bonk3"])
         rig.now += 10_000
         XCTAssertEqual(run(rig, "5", program: "swift", failed: true, error: "exit_code"), ["swift throw"])
         rig.now += 10_000
@@ -127,7 +127,7 @@ final class WorkStreamTests: XCTestCase {
         run(rig, "0", program: "ls")
         for (i, (topic, program, error, expected)) in [
             ("inspect", "grep", "exit_code", "grep shrug"), (nil, "curl", "timeout", "timeout timeout"),
-            (nil, "rm", "denied", "NO no"), ("tests", "pytest", "exit_code", "FAIL hail"),
+            (nil, "rm", "denied", "NO no"),
             ("build", "make", "exit_code", "FAIL topple"),
         ].enumerated() {
             rig.now += 3000
@@ -140,8 +140,6 @@ final class WorkStreamTests: XCTestCase {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
         run(rig, "0", program: "ls")
-        rig.now += 3000
-        XCTAssertEqual(run(rig, "1", ms: 4000, topic: "tests", program: "make test"), ["make test cross", "PASS pass"])
         rig.now += 3000
         XCTAssertEqual(run(rig, "2", ms: 4000, topic: "build", program: "make"), ["build stack", "built built"])
     }
@@ -281,7 +279,7 @@ final class WorkStreamTests: XCTestCase {
     }
 
     /// The third and fourth failures within the ladder's two minutes
-    /// (`TranscriptView.wakingRungs`, 3...4), the helmet and the throw,
+    /// (`TranscriptView.wakingRungs`, 3...4), the third bonk and the throw,
     /// are a line that wakes the brain while the turn goes on. The first
     /// two and any past the fourth are only bonks, and a denial or a
     /// timeout doesn't climb.
@@ -315,6 +313,7 @@ final class WorkStreamTests: XCTestCase {
             return WorkStream.actFor(e, program: program).map { "\($0.kind) \($0.words)" }
         }
         XCTAssertEqual(act(program: "git push"), "push git push")
+        XCTAssertEqual(act("tests", program: "make test"), "tests running tests")
         XCTAssertEqual(act("deploy", program: "vercel"), "push deploy")
         XCTAssertEqual(act(program: "gh pr", glimpse: "create landing"), "push pull request")
         XCTAssertEqual(act(program: "gh pr", glimpse: "merge"), "push pull request")
@@ -396,6 +395,21 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "and it comes back")
         rig.send(.turnEnd)
         XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "no end heard: it ends with the turn")
+    }
+
+    /// The small version's failure after a long run gets the full ending;
+    /// a short one's doesn't, and a push's never does.
+    func testALongRunsFailureEndsInFull() {
+        XCTAssertEqual(WorkStream.longRunMs, 60_000)
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        run(rig, "0", topic: "tests", program: "make test")
+        rig.now += 1000
+        run(rig, "1", ms: 1000, topic: "tests", program: "make test", failed: true, error: "exit_code")
+        XCTAssertEqual(rig.core.stream.act?.full, false)
+        rig.now += 10000
+        run(rig, "2", ms: 60_000, topic: "tests", program: "make test", failed: true, error: "exit_code")
+        XCTAssertEqual(rig.core.stream.act?.full, true)
     }
 
     /// A timeout or a request you denied isn't a result: the act stops, and

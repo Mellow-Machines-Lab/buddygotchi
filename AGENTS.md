@@ -178,7 +178,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | dressing | Outfits and decorations from tags: a hat, shades, the sun, the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
 | the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
-| work act | A command Boop plays out while it runs, with a low sign and Jev's voice: the push | act (that's the activity) | `wact` |
+| work act | A command Boop plays out while it runs, with a low sign and Jev's voice: the push, the tests | act (that's the activity) | `wact` |
 | the strip | The counts along the bottom | | |
 | the drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to open on the Mac (`render::Drawer`) | roll call, list view | `list`, `drawer` |
 | the needs-you screen | Amber, naming who's waiting, until you answer or dismiss it | sign (that's a Moment's) | |

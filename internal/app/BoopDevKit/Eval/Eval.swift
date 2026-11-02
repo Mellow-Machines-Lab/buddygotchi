@@ -1125,7 +1125,9 @@ public struct Eval {
             if let topic = step.topic { end["topic"] = .string(topic) }
             if step.failed == true { end["error"] = "exit_code" }
             var start: [String: JSONValue] = ["tool": "Bash"]
-            if let topic = step.topic { start["topic"] = .string(topic) }
+            // A whole command in one moment is no work act: its start would
+            // be a pass of its own. `half` plays one.
+            if let topic = step.topic, step.half != nil { start["topic"] = .string(topic) }
             if let program = step.program {
                 start["program"] = .string(program)
                 end["program"] = .string(program)

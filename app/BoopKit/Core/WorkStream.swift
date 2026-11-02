@@ -46,14 +46,14 @@ struct WorkStream {
 
     /// The styles the board knows for a word that comes forward.
     static let styles = [
-        "land", "helper", "back", "shatter", "cross", "stack", "pass", "built", "hail", "bonk", "bonk2", "helmet",
-        "throw", "shrug", "timeout", "no", "topple", "compact", "buried", "freeze", "drop", "gather",
+        "land", "helper", "back", "shatter", "stack", "built", "bonk", "bonk2", "bonk3", "throw",
+        "shrug", "timeout", "no", "topple", "compact", "buried", "freeze", "drop", "gather",
     ]
     /// The styles of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
-    static let hits: Set<String> = ["bonk", "bonk2", "helmet", "throw", "timeout", "no"]
+    static let hits: Set<String> = ["bonk", "bonk2", "bonk3", "throw", "timeout", "no"]
     /// The failure ladder's rungs: one agent's failures within `ladderMs`.
-    static let ladder = ["bonk", "bonk2", "helmet", "throw"]
+    static let ladder = ["bonk", "bonk2", "bonk3", "throw"]
 
     /// The `did`'s action for a word that came forward.
     static let action = BoopDevice.call
@@ -90,7 +90,7 @@ struct WorkStream {
     /// it from `state` and times nothing but its own beats; the result ends
     /// it. What Boop says over it is Jev's (`Event.Kind.act`).
     struct Act: Equatable {
-        /// `push`.
+        /// `push` or `tests`.
         var kind: String
         /// What its sign says now.
         var words: String
@@ -114,7 +114,10 @@ struct WorkStream {
     /// The longest sign's words, in bytes (`Stream::kActBytes`, less its end).
     static let maxActBytes = 23
     /// What each act's sign says at a pass; a failure's says `FAIL`.
-    static let passWords = ["push": "shipped!"]
+    static let passWords = ["push": "shipped!", "tests": "PASS"]
+    /// A failure after this long gets the full ending, whichever version
+    /// started: not a push's, whose crash needs its rocket's start.
+    static let longRunMs: Int64 = 60_000
 
     var act: Act?
     /// When each kind last played fully.
@@ -225,6 +228,7 @@ struct WorkStream {
     /// glimpse's first piece.
     static func actFor(_ e: AgentEvent, program: String?) -> (kind: String, words: String)? {
         guard e.toolKind == .shell else { return nil }
+        if e.topic == "tests" { return ("tests", "running tests") }
         if e.topic == "deploy" { return ("push", "deploy") }
         if program == "git push" { return ("push", "git push") }
         if program == "gh pr", let verb = e.glimpse?.split(separator: " ").first, verb == "create" || verb == "merge" {
@@ -263,6 +267,7 @@ struct WorkStream {
         let passed = e.failed == false
         running.passed = passed
         running.words = passed ? Self.passWords[running.kind] ?? "PASS" : "FAIL"
+        if !passed, running.kind != "push", now - running.startedAt >= Self.longRunMs { running.full = true }
         running.until = max(now, running.startedAt + Self.leadMs(running.kind, full: running.full))
             + Self.resultMs(full: running.full)
         act = running
@@ -301,9 +306,8 @@ struct WorkStream {
         if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
         called.insert(key)
         if let topic = e.topic, TranscriptView.checks.contains(topic) {
-            guard topic != "deploy" else { return nil }
-            let style = topic == "tests" ? "cross" : "stack"
-            return offer(Forward(slot: slot, word: word, style: style, priority: .notable), at: now)
+            guard topic == "build" else { return nil }
+            return offer(Forward(slot: slot, word: word, style: "stack", priority: .notable), at: now)
         }
         if e.toolKind == .subagent {
             return offer(Forward(slot: slot, word: word, style: "helper", priority: .notable), at: now)
@@ -333,16 +337,15 @@ struct WorkStream {
             case ToolError.denied:
                 return offer(Forward(slot: slot, word: "NO", style: "no", priority: .always), at: now)
             default:
-                // A failing build's tower falls on it; failing tests or a
-                // deploy rain on it.
-                return offer(Forward(slot: slot, word: "FAIL", style: check == "build" ? "topple" : "hail",
-                                     priority: .always), at: now)
+                // A failing build's tower falls on it; a check's act has its own
+                // ending, and another agent's act its word.
+                guard check == "build" else { return nil }
+                return offer(Forward(slot: slot, word: "FAIL", style: "topple", priority: .always), at: now)
             }
         }
         if let check, e.failed == false {
-            guard check != "deploy" else { return nil }
-            let (shown, style) = check == "tests" ? ("PASS", "pass") : ("built", "built")
-            return offer(Forward(slot: slot, word: shown, style: style, priority: .always), at: now)
+            guard check == "build" else { return nil }
+            return offer(Forward(slot: slot, word: "built", style: "built", priority: .always), at: now)
         }
         let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
         if e.toolKind == .edit, added + removed >= Self.bigEdit {

@@ -10,10 +10,9 @@ namespace render {
 
 namespace {
 
-constexpr const char* kCallStyleNames[] = {"land",   "helper", "back",    "shatter", "cross", "stack", "pass",
-                                           "built",  "hail",   "bonk",    "bonk2",   "helmet", "throw", "shrug",
-                                           "timeout", "no",    "topple",  "compact", "buried", "freeze", "drop",
-                                           "gather"};
+constexpr const char* kCallStyleNames[] = {"land",  "helper", "back",   "shatter", "stack",  "built",   "bonk",   "bonk2",
+                                           "bonk3", "throw",  "shrug",  "timeout", "no",     "topple",  "compact", "buried",
+                                           "freeze", "drop",  "gather"};
 static_assert(sizeof(kCallStyleNames) / sizeof(kCallStyleNames[0]) == int(CallStyle::kCount), "a name for every style");
 
 // The same few bits for the same word, slot and count on every board, so a
@@ -38,16 +37,13 @@ CallMove callMove(CallStyle style) {
   switch (style) {
     case CallStyle::kBonk:
     case CallStyle::kBonk2:
-    case CallStyle::kHelmet:
+    case CallStyle::kBonk3:
     case CallStyle::kThrow:
     case CallStyle::kNo:
     case CallStyle::kTimeout: return CallMove::kHit;
     case CallStyle::kShrug: return CallMove::kShrug;
     case CallStyle::kShatter: return CallMove::kShatter;
-    case CallStyle::kHail: return CallMove::kHail;
-    case CallStyle::kPass:
     case CallStyle::kBuilt: return CallMove::kCheer;
-    case CallStyle::kCross:
     case CallStyle::kStack: return CallMove::kDesk;
     case CallStyle::kTopple: return CallMove::kTopple;
     case CallStyle::kCompact: return CallMove::kCompact;
@@ -64,7 +60,6 @@ uint32_t callFlightMs(CallStyle style) {
   switch (callMove(style)) {
     case CallMove::kHit: return 380;
     case CallMove::kSink: return 520;
-    case CallMove::kHail:
     case CallMove::kCheer:
     case CallMove::kDrop: return 300;
     case CallMove::kGather: return 700;  // the words reach its mouth

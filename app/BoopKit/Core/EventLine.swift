@@ -50,14 +50,14 @@ public enum EventLine {
 
     /// The note on the work stream's moments that hit Boop, by their styles
     /// (`WorkStream.hits`): `Failed commands hit Boop in the face 3 times
-    /// (a helmet on by the last); a command timed out and landed on Boop's
+    /// (seeing more stars by the last); a command timed out and landed on Boop's
     /// head.`
     public static func hits(_ styles: [String], name: String = CharacterPack.active.name) -> String? {
         var parts: [String] = []
         let bonks = styles.filter(WorkStream.ladder.contains)
         if !bonks.isEmpty {
             let times = bonks.count == 1 ? "once" : bonks.count == 2 ? "twice" : "\(bonks.count) times"
-            let top = bonks.contains("throw") ? " (it threw the last one back)" : bonks.contains("helmet") ? " (a helmet on by the last)" : ""
+            let top = bonks.contains("throw") ? " (it threw the last one back)" : bonks.contains("bonk3") ? " (seeing more stars by the last)" : ""
             parts.append("failed commands hit \(name) in the face \(times)\(top)")
         }
         if styles.contains("timeout") { parts.append("a command timed out and landed on \(name)'s head") }
@@ -133,11 +133,15 @@ public enum EventLine {
     /// climbed on a rocket for it, by itself.`
     public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name) -> String {
         switch kind {
+        case "tests": "\(agent) is running tests on \(thread). \(name) has strapped itself to a sled facing a wall, by itself, and is holding its breath."
         default: "\(agent) is pushing on \(thread). \(name) has climbed on a rocket for it, by itself, and is blasting off."
         }
     }
     public static func actEnded(agent: String, kind: String, thread: String, passed: Bool, name: String = CharacterPack.active.name) -> String {
         switch kind {
+        case "tests":
+            passed ? "\(agent)'s tests passed on \(thread), and the turn goes on. \(name)'s sled has stopped just short of the wall, by itself."
+                : "\(agent)'s tests failed on \(thread). \(name) has hit the wall and slid down it, by itself."
         default:
             passed ? "\(agent)'s push went through on \(thread), and the turn goes on. \(name) is parachuting back down, by itself."
                 : "\(agent)'s push failed on \(thread). \(name) has crash-landed, by itself, its rocket in the ground."

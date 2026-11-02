@@ -216,7 +216,7 @@ public final class TranscriptView {
     static let checks: Set<String> = ["tests", "build", "deploy"]
 
     /// A failed call that takes the work stream's failure ladder to this
-    /// rung or the next (the helmet, then the throw) is a line that wakes
+    /// rung or the next (the third bonk, then the throw) is a line that wakes
     /// the brain: a stray failure is only a bonk, and past the top rung
     /// the bonks go quiet again.
     public static let wakingRungs = 3...4
