@@ -1874,6 +1874,69 @@ static void test_a_new_stage_fills_the_bar_past_its_end() {
   TEST_ASSERT_EQUAL(970, r.b.growthShow(r.t).fill);
 }
 
+// A stage reached wraps the bar once: a second state during the heart's flight
+// doesn't lose the wrap, and a wish's `do` once the bar's past its end doesn't
+// play it again.
+static void test_a_new_stages_wrap_plays_once() {
+  using G = render::GrowthShow;
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  {  // Lost: another state while the heart flies.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    r.b.wishPopped(true, r.t);
+    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
+    m.xp = 2, m.when = sprout;
+    r.state(m);
+    r.at(r.t + 300);
+    m.xp = 3;
+    r.state(m);
+    r.at(landed + G::kFillMs - 1);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 990);
+    TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+    r.at(landed + 2 * G::kFillMs);
+    TEST_ASSERT_EQUAL(30, r.b.growthShow(r.t).fill);
+    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+  }
+  {  // Lost: another state with new XP as the bar fills to its end, no heart.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.when = hatchling;
+    r.state(m);
+    r.at(1000);
+    m.xp = 2, m.when = sprout;
+    r.state(m);
+    r.at(1200);
+    m.xp = 4;
+    r.state(m);
+    r.at(1200 + G::kFillMs - 1);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 900);
+    TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+    r.at(1200 + 2 * G::kFillMs);
+    TEST_ASSERT_EQUAL(40, r.b.growthShow(r.t).fill);
+  }
+  {  // Replayed: the `do` a second after the state, the bar past its end.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+    r.state(m);
+    r.at(2000);
+    r.b.wishPopped(true, r.t);
+    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
+    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+    r.at(landed + G::kFillMs / 2);
+    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill <= 20);
+  }
+}
+
 // A new stage's body waits 300 ms for a wish's `do`, which follows its state;
 // then, for that wish's heart to land. Any other stage plays when the 300 ms are up.
 static void test_a_new_stage_waits_for_the_heart() {
@@ -4271,6 +4334,7 @@ int main() {
   RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
   RUN_TEST(test_a_met_wish_fills_the_bar_by_however_little);
   RUN_TEST(test_a_new_stage_fills_the_bar_past_its_end);
+  RUN_TEST(test_a_new_stages_wrap_plays_once);
   RUN_TEST(test_a_new_stage_waits_for_the_heart);
   RUN_TEST(test_alone_it_stays_its_stage);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);

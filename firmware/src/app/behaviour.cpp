@@ -797,10 +797,12 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
   wishPopAt_ = t;
   if (!met || bar_.to < 0) return;
   // The bar comes for the heart, and fills as it lands, whichever of this and
-  // the state with the XP it earned arrives first.
+  // the state with the XP it earned arrives first, with the two close together:
+  // a `do` that waited in the queue finds the bar and the body already moved,
+  // and its heart lands on them as they are.
   using G = render::GrowthShow;
-  if (int32_t(t - bar_.fillAt) >= int32_t(2 * G::kFillMs)) bar_.wrap = 0;  // that one's over
   bar_.from = barFill(t);
+  if (int32_t(t - bar_.fillAt) >= int32_t(G::kFillMs)) bar_.wrap = 0;  // past the bar's end: it isn't played again
   // A state with the XP that came first may have moved it too little to show.
   if (model_.xp >= 0) bar_.to = model_.xp;
   bar_.fillAt = t + G::kHeartWaitMs + G::kHeartFlyMs;
@@ -848,9 +850,11 @@ void Behaviour::barHeard(const Model& m, bool back, uint32_t t) {
     bar_.from = m.xp * 10, bar_.to = m.xp, bar_.fillAt = t;
     return;
   }
-  const int wrap = now > was ? 1 : now < was ? -1 : 0;
-  if (wrap > 0) bar_.grew = true, bar_.grewAt = t;
-  if (m.xp == bar_.to && !wrap) return;
+  const int fresh = now > was ? 1 : now < was ? -1 : 0;
+  if (fresh > 0) bar_.grew = true, bar_.grewAt = t;
+  if (m.xp == bar_.to && !fresh) return;
+  // One still on its way to the bar's end carries on there.
+  const int wrap = fresh ? fresh : int32_t(t - bar_.fillAt) < int32_t(G::kFillMs) ? bar_.wrap : 0;
   const bool coming = bar_.heart && int32_t(t - bar_.fillAt) < 0;
   if (coming) {  // it fills as the heart lands
     bar_.to = m.xp, bar_.wrap = wrap;
