@@ -42,8 +42,29 @@ The voice:
 
 - [ ] Record a "hey!" and point `remember_word` at it: the bank's "Hey" stands in.
 
-Growth, when it merges: `Core.play` sends no rule's moment while something needs
-you, so a ceremony reached then shows no sign, and only the day's party says so.
+Growth, merged into `day2` on 2026-11-03. Owed on the AMOLED, for the owner to look at:
+
+- [ ] Chonk's frames a second, unmeasured: a Chonk shades 21% more of the body than
+      Buddy (`boopctl perf --scenes` with a saved XP past Chonk's).
+- [ ] `boopctl perf` with the growth bar up: estimated at about 6,000 pixels of
+      205,820, for about 4 s at a time, not measured.
+- [ ] Whether a Hatchling's face reads at arm's length.
+- [ ] The old-Hatchling shrink: the old build drew every stage at full size, so an
+      existing Hatchling or Sprout looks smaller after the update. That's the plan's
+      look, not a lost stage. Judge it.
+- [ ] A Hatchling's Mega Boop doesn't fill the screen, and the reaction's sign is as
+      wide as ever, so it crosses a Hatchling's mouth. Both left as they are, to judge.
+
+Growth, not built:
+
+- [ ] Voice pitch by stage: a take plays at one speed (`voice::Player`), and the mouth,
+      the bubble and the Mac's `Take.ms` all time from it, so it isn't cheap. Sound
+      effects already take a pitch (`FxEvent::pitch`), a small change if wanted.
+- [ ] How it moves by stage: clumsy, bouncy or slow needs tuning by eye on the board.
+      The body settings are size, eyes and squash.
+- [ ] A pastime only a Chonk knows: a Buddy would deal differently, as a board with no
+      tag is a Buddy.
+- [ ] A demo with the bar: demos send no `xp`, so `make demo` doesn't show it.
 
 ## Morning report, the night of 2026-11-01
 
@@ -51,7 +72,7 @@ Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01
 
 **Landed:** the eval levels and daily limit; must and feel evals with a judge; the prompt cut to level A; the rest of the wish; every lock and unlock reaching Jev; idle check-ins with no agents; no plug on a Boop already asleep; any brief touch on a finish opens its thread; the finish's low sign; the falling word and three work acts; the memory pane; alive without the Mac.
 
-**Not landed:** growth. It's on branch `growth`, with its pack commits in the clones under `.claude/worktrees/growth`: keep that worktree. It's up to date with `day2`, and tested with no board. Look at `~/.boopdev/day2/growth/` and try it on the board first. `plan/growth.md` says what's left.
+**Not landed that night:** growth. It's merged into `day2` since, and tested with no board. Look at `~/.boopdev/day2/growth/` and try it on the board first. What's owed is under "Growth" above.
 
 **The prompt: level A, about 4,800 tokens, down from about 6,800.** Tags `prompt-level-A`, `-B` and `-C` keep the others.
 
@@ -63,7 +84,7 @@ Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01
 
 A is the only level that holds the musts, and it keeps moods fluid. B's judged feel is close to A's, so B's musts are the question if the prompt must go lower: they mostly failed on replies, hush and Talk. At C, pokes made Boop happier and strokes stopped lifting its mood. No must rule was moved into code.
 
-**Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) fails twice: the hush it picks is too small. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
+**Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) failed twice: the hush it picked was too small. It's been reworded since, to check that a hush holds, and tightened on 2026-11-03: not run on Jev since. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
 
 **Wishes:** no cap in code, as the owner said. Measured on simulated workdays (`173-a-workday`, other seeds in scratch, 2026-11-03). Normal, final words: one wish a day on 5 of 5 days, at 09:43 to 10:45, the first check-in on one day and the second or third on the others (2 of them full runs, 3 with only the quiet stretches sent to Jev). A busy day with quiet only after lunch got one on 2 of the 4 seeds tried, in the wording before; those two kept theirs. A wish left too long brought a second within the hour on 5 of 6 days, and on 4 of 4 with a guideline alone; the sign question's words stopped it on the 2 days measured since, with a thin margin over none (0.47 to 0.53 on Quiet). Chatty and Quiet: one partial run each, one wish each. Watch real days for that second wish, and for days with no quiet half hour.
 
@@ -101,7 +122,6 @@ From the plans that were finished and deleted, for the owner, after
 - [ ] The Pixel wish's text (`screens.h:48`, `sameModel`).
 - [ ] A `Measure` around `paintActFront`, for the board's frame rate check.
 - [ ] **For the owner:** `make eval` refuses without the override, so your bare command never runs.
-- [ ] Stale `ReactOutput` mentions in SlimeBuddy's asks' and replies' comments.
 - [ ] Remove the dead lost-link path.
 - [ ] Acts: wall caching and a frame cap.
 - [ ] Unify the acts' timing.

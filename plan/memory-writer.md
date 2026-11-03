@@ -172,8 +172,8 @@ What this says:
 - **Run it on your own days first.** Read `memory.md` after a week and judge. That's the test that counts.
 - **The digest holds a dream, not a day.** A span of several days counts as one day, and the journal's lines have no date.
 - **A habit that stops:** its note stays up to 30 days. A saga's note says the last thing it knew.
-- **"Forget" empties the journal since the last dream,** and digests already kept keep what you said. Decide whether forget clears `said` too.
-- **`memory.md` says "Written by Apple Intelligence".** That's now not quite right; I left the words alone.
+- **"Forget" clears more than the notes:** the span's journal and counts, the digests' words, hours, threads and tones, the quoted notes in `added`, the lines of notes gone and older copies of `memory.md`. Care's counts and how much you were here stay, and so does the transcript, for its two weeks.
+- **`memory.md` says "Written on this Mac as Boop dreams".** Code proposes, and Apple Intelligence answers small questions.
 - **Sections can jam.** You and Boop is lasting, so once it holds 4 notes nothing new gets in there, and the proposer doesn't replace them. It takes years of phrases, but it's the same today.
 - **Not tested:** on a real dream in the running app (the unit tests drive `Memory.ask` and `apply`; the `writer` approach runs the real model through the writer), the Mac with Apple Intelligence off for real, or the macOS 26 model. This Mac has macOS 27's, which may differ.
 
