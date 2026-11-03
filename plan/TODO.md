@@ -4,6 +4,28 @@ Updated 2026-11-03. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Owed from the Mac fixes (2026-11-03)
+
+No Jev requests went to these, as the day's limit was nearly spent:
+
+- [ ] Run evals `129` and `17`: tightened, either may now fail.
+- [ ] Run `137`, `141` and `167` with the judge: their briefs changed.
+- [ ] Run what `personality.md`'s words touch, coming back and a long wish:
+      `136` and the scenarios that name lonely.
+- [ ] A stage reached while something needs you: `grew` now waits for the answer, and
+      no Jev run has seen it.
+
+For the owner to decide or look at:
+
+- [ ] What you said to Boop now ends a project's story only with a shared word, so
+      `boopdev memory write`'s "A saga that ends" no longer updates the api note on
+      "we finally fixed it!" (it adds a You note instead). Its `accept` line is no
+      longer met. Keep this, or take it when that thread is the only one tonight?
+- [ ] `memory-days.json` as it stands: entries in `added` from updated notes still
+      count as deleted, and `signs` of "" from Apple Intelligence being off still
+      count as refused. Nothing tells them apart; deleting the file's `added` and those
+      rows would, at the cost of notes you did delete.
+
 ## Owed from mornings and polish (2026-11-03)
 
 Built: the morning, less repetition, memory you feel, transitions. The rule is in
