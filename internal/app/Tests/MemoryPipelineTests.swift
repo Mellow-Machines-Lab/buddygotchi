@@ -163,7 +163,8 @@ final class MemoryPipelineTests: XCTestCase {
     }
 
     /// What ends a project's story: words on its thread, or what you said to
-    /// Boop only if it shares a word with the note; never anything private.
+    /// Boop if it shares a word with the note, or that thread was the only one
+    /// so far tonight; never anything private.
     func testAStoryEndsOnlyOnItsOwnWords() async {
         let m = note("work · 2026-10-05 · \"game\" has been fighting you for two days.")
         let prompt = "You asked claude on \"game\" for a fix, in a sentence."
@@ -172,12 +173,20 @@ final class MemoryPipelineTests: XCTestCase {
             return out.contains("update 1: \"game\": you said")
         }
         let over = StubModel { instructions, _ in instructions.contains("Is it private") ? false : true }
-        var told = await story([prompt, "You said to Boop: \"the audio is done\"."], over)
-        XCTAssertFalse(told, "said to Boop, about something else")
-        told = await story([prompt, "You said to Boop: \"next the audio\"."], over)
+        let other = "You asked claude on \"blog\" for something new, in a sentence."
+        var told = await story([prompt, other, "You said to Boop: \"the audio is done\"."], over)
+        XCTAssertFalse(told, "said to Boop, about something else, with another thread on")
+        told = await story([other, prompt, "You said to Boop: \"next the audio\"."], over)
         XCTAssertFalse(told, "the model's yes doesn't make it this note's")
-        told = await story([prompt, "You said to Boop: \"the game works now\"."], over)
+        told = await story([prompt, other, "You said to Boop: \"the game works now\"."], over)
         XCTAssertTrue(told, "said to Boop, about the game")
+        told = await story([prompt, "You said to Boop: \"we finally fixed it!\"."], over)
+        XCTAssertTrue(told, "the only thread tonight: it needs no shared word")
+        told = await story([prompt, "You said to Boop: \"we finally fixed it!\".", other], over)
+        XCTAssertTrue(told, "the only thread when you said it: the next thread came later")
+        told = await story(["You said to Boop: \"we finally fixed it!\".", prompt], over)
+        XCTAssertFalse(told, "said before any work on it")
+        XCTAssertNil(MemoryEdits.subject("\"api\": you said \"we finally fixed it!\" on Tuesday.", of: "\"api\": the tests kept failing on Monday."), "its thread is its subject")
         told = await story([prompt + "\n  Your words: \"it's live\""], over)
         XCTAssertTrue(told, "on its own thread")
         let isPrivate = StubModel { _, _ in true }

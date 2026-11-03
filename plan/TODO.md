@@ -17,10 +17,6 @@ No Jev requests went to these, as the day's limit was nearly spent:
 
 For the owner to decide or look at:
 
-- [ ] What you said to Boop now ends a project's story only with a shared word, so
-      `boopdev memory write`'s "A saga that ends" no longer updates the api note on
-      "we finally fixed it!" (it adds a You note instead). Its `accept` line is no
-      longer met. Keep this, or take it when that thread is the only one tonight?
 - [ ] `memory-days.json` as it stands: entries in `added` from updated notes still
       count as deleted, and `signs` of "" from Apple Intelligence being off still
       count as refused. Nothing tells them apart; deleting the file's `added` and those

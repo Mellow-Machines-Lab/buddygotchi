@@ -154,22 +154,30 @@ public enum MemoryPipeline {
         for note in input.memory.notes(in: .work) where !note.pinned {
             guard let thread = MemoryEdits.quotes(in: note.text).first(where: { !$0.contains(" ") }), !skipping.contains(thread) else { continue }
             var words: [String] = []
+            var alone = Set<String>()  // said with this thread all there was
             var onThread = false
+            var threads = Set<String>()  // tonight's so far
             for entry in input.journal {
                 let mine = entry.line.contains("\"\(thread)\"")
                 if mine { onThread = true }
+                threads.formUnion(threadsNamed(in: entry.line))
                 guard mine || entry.line.hasPrefix("You said to") else { continue }
                 for part in entry.line.components(separatedBy: "\n") where part.contains("Your words") || part.hasPrefix("You said to") {
                     // What you said to Boop may be about anything: it counts
-                    // for this note only if it shares a word with it.
-                    let about = part.contains("Your words") || !MemoryEdits.meaning(part).isDisjoint(with: MemoryEdits.meaning(note.text))
-                    if about { words += MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords } }
+                    // for this note only if it shares a word with it, or this
+                    // thread is all you've worked on tonight when you say it.
+                    let only = onThread && threads == [thread]
+                    let about = part.contains("Your words") || !MemoryEdits.meaning(part).isDisjoint(with: MemoryEdits.meaning(note.text)) || only
+                    guard about else { continue }
+                    let said = MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords }
+                    words += said
+                    if only { alone.formUnion(said) }
                 }
             }
             guard onThread else { continue }
             var said: String?
             for phrase in words where !note.text.contains(phrase) {
-                let shared = !MemoryEdits.meaning(phrase).isDisjoint(with: MemoryEdits.meaning(note.text))
+                let shared = alone.contains(phrase) || !MemoryEdits.meaning(phrase).isDisjoint(with: MemoryEdits.meaning(note.text))
                 guard endsStory(phrase) && shared ? true : await model.yes(storyOver, "\"\(phrase)\"") == true else { continue }
                 guard await model.yes(isPrivate, "They said: \"\(phrase)\"") == false else { continue }
                 said = phrase
@@ -180,6 +188,14 @@ public enum MemoryPipeline {
                                        signature: [thread.lowercased()], evidence: "\(thread) \(said) \(input.weekday)", replaces: true))
         }
         return out
+    }
+
+    /// The threads a journal line says it's on (`on "api"`), not counting
+    /// what's quoted in your words.
+    static func threadsNamed(in line: String) -> [String] {
+        let head = line.components(separatedBy: "\n")[0]
+        guard !head.hasPrefix("You said to") else { return [] }
+        return head.components(separatedBy: " on \"").dropFirst().compactMap { $0.components(separatedBy: "\"").first }
     }
 
     /// Whether `words` say a story is over, by plain words: done, fixed,

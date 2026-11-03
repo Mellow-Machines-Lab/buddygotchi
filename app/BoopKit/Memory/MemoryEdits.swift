@@ -187,11 +187,13 @@ public enum MemoryEdits {
             .filter { $0.count >= 4 && $0.contains(where: \.isLetter) && !common.contains($0) }.map { String($0.prefix(5)) })
     }
 
-    /// Why an update isn't the same note's: it shares none of its words
-    /// with what it replaces (the model wrote a new note over an old one).
+    /// Why an update isn't the same note's: it shares none of its words, or
+    /// the thread it's on ("api" is too short for a word), with what it
+    /// replaces (the model wrote a new note over an old one).
     static func subject(_ text: String, of was: String) -> String? {
         let old = meaning(was)
-        return old.isEmpty || !meaning(text).isDisjoint(with: old) ? nil : "subject"
+        func threads(_ s: String) -> Set<String> { Set(quotes(in: s).filter { !$0.contains(" ") }.map { $0.lowercased() }) }
+        return old.isEmpty || !meaning(text).isDisjoint(with: old) || !threads(text).isDisjoint(with: threads(was)) ? nil : "subject"
     }
 
     /// Why a note is only yesterday's line, copied: a note says what a
