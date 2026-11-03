@@ -404,6 +404,10 @@ void Device::onDo(const Do& c, uint32_t t) {
     case kStopListening:
       kit().ended(c.key);
       break;
+    case kWishMet:  // its sign is read; with none up, nothing holds it
+      if (b_.signUp(t) || b_.signComing(t)) live_.restKey = c.key, live_.restAt = b_.signEnd();
+      else kit().rest(c.key);
+      break;
     case kStarting:
       // The compacted card is news to read: it holds, as a finish does,
       // until it has played. Any other start is over as it starts.
