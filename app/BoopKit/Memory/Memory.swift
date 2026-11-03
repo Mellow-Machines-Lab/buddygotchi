@@ -283,17 +283,18 @@ public final class Memory: @unchecked Sendable {
         }
     }
 
-    /// What Boop may bring up at `ms`: at most `feltOffered` lines, those
-    /// shown longest ago first, none shown in `feltAgainDays`; none at all
-    /// if one was shown today.
-    public func felt(at ms: Int64) -> [Felt] {
+    /// What Boop may bring up at `ms`: at most `feltOffered` lines that fit
+    /// `longest` characters (`MemoryPipeline.signRoom`), those shown longest
+    /// ago first, none shown in `feltAgainDays`; none at all if one was shown
+    /// today.
+    public func felt(at ms: Int64, longest: Int = MemoryPipeline.signMax) -> [Felt] {
         guard let files else { return [] }
         let shown = feltShown(), today = time.boopDay(ms)
         guard !shown.values.contains(today), let now = LocalTime.dayNumber(today) else { return [] }
         let signs = files.days().signs
         func age(_ line: String) -> Int { shown[line].flatMap(LocalTime.dayNumber).map { now - $0 } ?? .max }
         return files.written().notes.compactMap { n in
-            signs[n.text].flatMap { $0.isEmpty || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
+            signs[n.text].flatMap { $0.isEmpty || $0.count > longest || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
         }.sorted { age($0.line) > age($1.line) }.prefix(Self.feltOffered).map { $0 }
     }
 

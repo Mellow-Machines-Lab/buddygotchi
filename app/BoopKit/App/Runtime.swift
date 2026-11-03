@@ -363,7 +363,9 @@ public final class Runtime: @unchecked Sendable {
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
-            if rig === rigs[0] { mind.felt = { remembersNow()?.felt(at: $0) ?? [] } }
+            if rig === rigs[0] {
+                mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
+            }
             return mind
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }

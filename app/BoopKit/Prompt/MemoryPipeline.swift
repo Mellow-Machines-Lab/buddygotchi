@@ -257,6 +257,11 @@ public enum MemoryPipeline {
     /// What may go on a sign: at most `signMax` printable ASCII characters.
     public static let signMax = 40
 
+    /// How long a line may be on `face`: only a gel holds one low. Any other
+    /// face folds its sign to `Signs.maxLength`. With no board, as the status
+    /// takes it, a gel.
+    public static func signRoom(face: DeviceInfo.Face?) -> Int { face == .pixel ? Signs.maxLength : signMax }
+
     public static func signIsValid(_ sign: String) -> Bool {
         !sign.isEmpty && sign.count <= signMax && sign.allSatisfy { $0.isASCII && ($0.asciiValue ?? 0) >= 32 && ($0.asciiValue ?? 0) < 127 } && !MemoryProposer.isPrivate(sign)
             && sign.contains(where: \.isLetter) && !sign.contains("\"")
