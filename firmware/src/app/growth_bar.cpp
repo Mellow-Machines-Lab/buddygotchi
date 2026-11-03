@@ -76,7 +76,7 @@ render::GrowthShow GrowthBar::show(int stage, bool hidden, uint32_t t) const {
   const int fromPop = int32_t(t - heartAt_), flown = fromPop - int(G::kHeartWaitMs), landed = int32_t(t - fillAt_);
   const int out = sinceOff(t);
   if (out >= int(G::kOutMs) || hidden) return s;
-  s.opacity = std::min(255 * int32_t(t - onAt_) / int(G::kInMs), 255);
+  s.opacity = std::min<int>(255 * int32_t(t - onAt_) / int(G::kInMs), 255);
   if (out > 0) s.opacity = 255 - 255 * out / int(G::kOutMs);
   s.fill = fill(t);
   if (heart_ && flown >= 0 && landed < 0) s.flight = 1000 * flown / int(G::kHeartFlyMs);

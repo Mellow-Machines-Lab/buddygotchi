@@ -205,13 +205,15 @@ final class DaysTests: XCTestCase {
     /// morning, with a coffee while awake; confetti at a party or New Year.
     func testTheReasonsAreTheBoards() {
         func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, asleep: Bool = false,
-                     gel: Bool = true) -> [String] {
+                     gel: Bool = true, tag: String? = nil) -> [String] {
             let at = ms(y, mo, d, h), day = utc.day(at)
-            let when = Days.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc)
+            let when = Days.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc) + (tag.map { [$0] } ?? [])
             let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", stage: stage.map { ($0, day) }, time: utc)
             return Narration.Dressing.now(when: when, specialDays: specialDays, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
         XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout"), ["Pip became a Sprout today: a party hat and confetti"])
+        XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout", tag: "sprout"), ["Pip became a Sprout today: confetti"], "the gel's Sprout shows its leaves")
+        XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout", gel: false, tag: "sprout"), ["Pip became a Sprout today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 10, 31, stage: "Sprout"),
                        ["It's Halloween: a witch hat", "Pip became a Sprout today: confetti"], "the witch hat wins")

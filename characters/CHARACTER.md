@@ -595,7 +595,8 @@ Besides drawing each mood and state, a face:
   the Mac's popover (`Narration.Dressing`) agree: `render::outfitFor` (first
   that fits: Halloween's witch hat, a party hat, a nightcap at night, a
   bobble hat in winter), `render::eyewearFor` (shades on a Friday from noon
-  to night) and `render::airFor` (snow, confetti, hearts). The gel draws its
+  to night) and `render::airFor` (snow, confetti, hearts). The gel's Sprout
+  wears no party hat, so its leaves show (its `wornHat`). The gel draws its
   dressing at the anchors its pose gives (`rig::Anchors`, §15), so it moves
   with the body, and through the rig's layer stack (§15).
 - **Times them.** Each design's loop length (`loopMs`), which sets how long
@@ -627,7 +628,9 @@ Besides drawing each mood and state, a face:
   args), at most 18 glyphs of the fonts (accents folded, and past that cut
   at a word with `..`, `render::foldText`). A face gets them as `SignShow`
   (the words, how long they've shown, and their opacity) and draws them as
-  its own, sliding up by `render::signLift`. They stay up while any part of
+  its own, sliding up by `render::signLift`. The gel holds its card under the
+  mouth, and a body too small to clear it stands up on the card
+  (`SignLayer::kHopPx`). They stay up while any part of
   the Moment plays, and at least 2.5 s (`Behaviour::kSignMinMs`). A newer
   Moment's animation or voice, `listening` and needs you take them down; a
   poke doesn't. A reply with an emotion is the one Moment whose face and

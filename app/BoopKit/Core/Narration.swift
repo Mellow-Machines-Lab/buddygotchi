@@ -284,7 +284,9 @@ extension Narration {
         public static func now(when: [String], specialDays: [Days.SpecialDay], asleep: Bool, gel: Bool) -> [Narration.Dressing] {
             let on = Set(when)
             let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
-            let hat = on.contains("halloween") ? "halloween" : party ? "party" : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
+            // The gel's Sprout shows its leaves on a party day (its wornHat).
+            let leaves = gel && on.contains("sprout")
+            let hat = on.contains("halloween") ? "halloween" : party ? (leaves ? nil : "party") : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
             let shades = gel && !asleep && on.contains("friday") && !on.contains("night") && !on.contains("morning")
 
             var out: [Narration.Dressing] = specialDays.map { o in
