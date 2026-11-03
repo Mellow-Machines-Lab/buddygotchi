@@ -519,7 +519,6 @@ final class WriterGate: @unchecked Sendable {
 /// A writer that answers once the test lets it.
 struct GatedWriter: MemoryWriter {
     let gate: WriterGate, reply: String
-    var usesDigests: Bool { true }
     func write(_ request: MemoryRequest) async -> MemoryWriterReply {
         while !gate.opened { try? await Task.sleep(nanoseconds: 2_000_000) }
         return .reply(reply)

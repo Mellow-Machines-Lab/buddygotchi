@@ -158,9 +158,6 @@ public enum MemoryEdits {
         return days.isEmpty ? nil : (text, days)
     }
 
-    /// Why `days` can't be a change's: an edit is yesterday's, so it cites
-    /// the closed day `day`, and no other day the note didn't cite already
-    /// (`cited`).
     /// A day line without the reply's `end` written on the same line, after
     /// its sentence is over, and whether it had one. "we reached the end" is
     /// a day that ends in the word.
@@ -170,6 +167,9 @@ public enum MemoryEdits {
         return (String(text.dropLast(4)), true)
     }
 
+    /// Why `days` can't be a change's: an edit is yesterday's, so it cites
+    /// the closed day `day`, and no other day the note didn't cite already
+    /// (`cited`).
     static func check(_ days: [String], day: String, cited: [String]) -> String? {
         days.contains(day) && days.allSatisfy({ LocalTime.isDay($0) && ($0 == day || cited.contains($0)) }) ? nil : "days"
     }

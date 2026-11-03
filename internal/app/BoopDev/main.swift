@@ -521,12 +521,11 @@ func memory(_ raw: [String]) async {
         let journal = (night["yesterday"] as? [String] ?? []).map { line in
             (at: String(line.prefix(5)), line: String(line.dropFirst(6)))
         }
-        var request = MemoryRequest.make(memory: memory, certain: certain, journal: journal)
         // One night, so no habit: what you said and the day line.
         let weekday = LocalTime().weekday(of: day)
         let tonight = DayDigest.from(day: day, weekday: weekday, tallies: .init(), first: "", last: "", strokesAM: 0, journal: journal)
         let input = MemoryPipeline.Input(memory: memory, digests: [tonight], certain: certain, journal: journal, day: day, weekday: weekday)
-        request.pipeline = input
+        let request = MemoryRequest(input)
         let started = Date()
         let reply = await writer.write(request)
         let ms = Int(Date().timeIntervalSince(started) * 1000)

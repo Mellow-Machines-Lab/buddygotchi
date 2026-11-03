@@ -87,7 +87,7 @@ public struct DayDigest: Codable, Equatable, Sendable {
 }
 
 /// What code proposes the memory might say, from the digests and the span's
-/// lines. Every proposal is counted, so it is true; a model only words it.
+/// lines. Every proposal is counted, so it is true.
 public struct MemoryCandidate: Equatable, Sendable {
     public var key: String
     public var section: WrittenMemory.Section
@@ -97,8 +97,6 @@ public struct MemoryCandidate: Equatable, Sendable {
     /// The words a note about this holds, each lowercased: the note already
     /// there, if every one is in it (`isIn`).
     public var signature: [String]
-    /// What a rewording must keep: threads, quotes, days.
-    public var keep: [String]
     /// What the checks may tie it to, counted by code.
     public var evidence: String
     /// A note with the signature but other words is out of date: update it.
@@ -124,16 +122,16 @@ public struct MemoryCandidate: Equatable, Sendable {
         return false
     }
 
-    public init(key: String, section: WrittenMemory.Section, text: String, strength: Int, signature: [String], keep: [String] = [],
+    public init(key: String, section: WrittenMemory.Section, text: String, strength: Int, signature: [String],
                 evidence: String, replaces: Bool = false) {
         self.key = key; self.section = section; self.text = text; self.strength = strength; self.signature = signature
-        self.keep = keep; self.evidence = evidence; self.replaces = replaces
+        self.evidence = evidence; self.replaces = replaces
     }
 }
 
 public enum MemoryProposer {
-    /// The days looked back over, the most edits of each sort a night, and
-    /// how old a note's last day gets before a habit that holds renews it.
+    /// The days looked back over, and how old a note's last day gets before
+    /// a habit that holds renews it.
     public static let window = 28, renewDays = 7
 
     static func thread(in line: String) -> String? {
@@ -236,7 +234,7 @@ public enum MemoryProposer {
         guard hard(today), today.strokes > 0, bad.count >= 3, good.count >= 3 else { return [] }
         let onBad = Double(bad.map(\.strokes).reduce(0, +)) / Double(bad.count), onGood = Double(good.map(\.strokes).reduce(0, +)) / Double(good.count)
         guard onBad >= 2, onBad >= 2 * onGood else { return [] }
-        return [MemoryCandidate(key: "comfort", section: .boop, text: "When the work goes badly, you stroke Boop more.", strength: 82, signature: ["goes badly"], keep: ["stroke"],
+        return [MemoryCandidate(key: "comfort", section: .boop, text: "When the work goes badly, you stroke Boop more.", strength: 82, signature: ["goes badly"],
                                 evidence: "Hard days badly goes stroke work, \(bad.count) days counted.")]
     }
 
@@ -249,7 +247,7 @@ public enum MemoryProposer {
             guard on.count >= 2, late.count >= 2, Double(late.count) >= Double(on.count) * 0.66, off.count >= 3,
                   Double(offLate.count) <= Double(off.count) * 0.34 else { continue }
             out.append(MemoryCandidate(key: "late.\(weekday)", section: .you, text: "\(weekday)s are your late nights.", strength: 75,
-                                       signature: ["late", weekday.lowercased()], keep: [weekday, "late"],
+                                       signature: ["late", weekday.lowercased()],
                                        evidence: "Late nights on \(weekday)s, \(late.count) of \(on.count), \(weekday)s counted."))
         }
         return out
@@ -258,8 +256,7 @@ public enum MemoryProposer {
     static func lateMost(_ a: [DayDigest]) -> [MemoryCandidate] {
         let late = a.filter(\.isLate).count
         guard a.count >= 8, Double(late) >= Double(a.count) * 0.6 else { return [] }
-        return [MemoryCandidate(key: "late.most", section: .you, text: "You work late most nights.", strength: 50, signature: ["late", "most"],
-                                keep: ["late"], evidence: "Late on \(late) of \(a.count) days: work late most nights, counted.")]
+        return [MemoryCandidate(key: "late.most", section: .you, text: "You work late most nights.", strength: 50, signature: ["late", "most"], evidence: "Late on \(late) of \(a.count) days: work late most nights, counted.")]
     }
 
     /// Another project at the weekend.
@@ -269,7 +266,7 @@ public enum MemoryProposer {
         guard ends.count >= 3, weeks.count >= 3, let top = tally(ends.compactMap(\.topThread)), let work = tally(weeks.compactMap(\.topThread)),
               top.name != work.name, Double(top.count) >= Double(ends.count) * 0.66 else { return [] }
         return [MemoryCandidate(key: "weekend", section: .you, text: "Weekends are for \"\(top.name)\". Weekdays are for \"\(work.name)\".", strength: 78,
-                                signature: ["weekend", top.name.lowercased()], keep: ["\"\(top.name)\"", "\"\(work.name)\"", "eekend"],
+                                signature: ["weekend", top.name.lowercased()],
                                 evidence: "Weekends are for \(top.name), weekdays are for \(work.name), counted over \(ends.count) weekend days.")]
     }
 
@@ -283,16 +280,16 @@ public enum MemoryProposer {
         let days = a.suffix(10), prompts = days.map(\.prompts).reduce(0, +)
         guard days.count >= 6, prompts >= 15 else { return [] }
         func share(_ tone: String) -> Double { Double(days.map { $0.tones[tone] ?? 0 }.reduce(0, +)) / Double(prompts) }
-        func one(_ tone: String, _ at: Double, _ text: String, _ signature: [String], _ keep: [String]) -> MemoryCandidate? {
+        func one(_ tone: String, _ at: Double, _ text: String, _ signature: [String]) -> MemoryCandidate? {
             guard share(tone) >= at else { return nil }
-            return MemoryCandidate(key: "tone.\(tone)", section: .you, text: text, strength: 58, signature: signature, keep: keep,
+            return MemoryCandidate(key: "tone.\(tone)", section: .you, text: text, strength: 58, signature: signature,
                                    evidence: "\(text) \(tone), counted over \(prompts) prompts.")
         }
-        return [one("politely", 0.4, "You're polite to your agents, most of the time.", ["polite"], ["polite"]),
-                one("in a hurry", 0.4, "You're nearly always in a hurry with your agents.", ["hurry"], ["hurry"]),
-                one("playfully", 0.4, "You joke with your agents more than most people do.", ["joke"], ["joke"]),
-                one("frustrated", 0.35, "You've been short with your agents lately.", ["short", "agents"], ["short"]),
-                one("carefully", 0.4, "You choose your words with your agents.", ["words", "agents"], ["words"])].compactMap { $0 }
+        return [one("politely", 0.4, "You're polite to your agents, most of the time.", ["polite"]),
+                one("in a hurry", 0.4, "You're nearly always in a hurry with your agents.", ["hurry"]),
+                one("playfully", 0.4, "You joke with your agents more than most people do.", ["joke"]),
+                one("frustrated", 0.35, "You've been short with your agents lately.", ["short", "agents"]),
+                one("carefully", 0.4, "You choose your words with your agents.", ["words", "agents"])].compactMap { $0 }
     }
 
     static func lengths(_ a: [DayDigest]) -> [MemoryCandidate] {
@@ -301,12 +298,10 @@ public enum MemoryProposer {
         guard days.count >= 5, total >= 20 else { return [] }
         func share(_ l: String) -> Double { Double(days.map { $0.lengths[l] ?? 0 }.reduce(0, +)) / Double(total) }
         if share("in a few words") >= 0.7 {
-            return [MemoryCandidate(key: "length.short", section: .you, text: "You talk to your agents a few words at a time.", strength: 40, signature: ["few", "words"],
-                                    keep: ["few words"], evidence: "A few words at a time to your agents, counted over \(total) prompts.")]
+            return [MemoryCandidate(key: "length.short", section: .you, text: "You talk to your agents a few words at a time.", strength: 40, signature: ["few", "words"], evidence: "A few words at a time to your agents, counted over \(total) prompts.")]
         }
         if share("in a paragraph") + share("at length") >= 0.5 {
-            return [MemoryCandidate(key: "length.long", section: .you, text: "You write your agents whole paragraphs.", strength: 40, signature: ["paragraphs"],
-                                    keep: ["paragraphs"], evidence: "Whole paragraphs to your agents, counted over \(total) prompts.")]
+            return [MemoryCandidate(key: "length.long", section: .you, text: "You write your agents whole paragraphs.", strength: 40, signature: ["paragraphs"], evidence: "Whole paragraphs to your agents, counted over \(total) prompts.")]
         }
         return []
     }
@@ -324,8 +319,7 @@ public enum MemoryProposer {
         // Nine or ten is just a working day, nothing to remember you by.
         guard let start = steady(weeks.map(\.first)), start < 8 * 60 || start >= 10 * 60 + 45 else { return [] }
         let at = String(format: "%02d:%02d", (start + 15) / 60, 0)
-        return [MemoryCandidate(key: "hours", section: .you, text: "You sit down around \(hourWord(at)), most days.", strength: 30, signature: ["sit", "down"],
-                                keep: [hourWord(at)], evidence: "You sit down around \(hourWord(at)) most days, counted over \(weeks.count) days.")]
+        return [MemoryCandidate(key: "hours", section: .you, text: "You sit down around \(hourWord(at)), most days.", strength: 30, signature: ["sit", "down"], evidence: "You sit down around \(hourWord(at)) most days, counted over \(weeks.count) days.")]
     }
 
     /// A thread that fought you over days, and how it ended.
@@ -345,12 +339,12 @@ public enum MemoryProposer {
             if won, fight >= 1 {
                 let days = fight + 1
                 out.append(MemoryCandidate(key: "saga.\(thread)", section: .work, text: "\(name) fought you for \(word(days)) days, and you won on \(today.weekday).", strength: 92,
-                                           signature: [thread.lowercased()], keep: [name, today.weekday, "won"],
+                                           signature: [thread.lowercased()],
                                            evidence: "\(thread) fought you for \(days) \(word(days)) days, and you won on \(today.weekday), failed and passed counted.", replaces: true))
             } else if foughtToday, fight >= 1 {
                 let days = fight + 1
                 out.append(MemoryCandidate(key: "saga.\(thread)", section: .work, text: "\(name) has been fighting you for \(word(days)) days.", strength: 62,
-                                           signature: [thread.lowercased()], keep: [name, word(days)],
+                                           signature: [thread.lowercased()],
                                            evidence: "\(thread) has been fighting you for \(days) \(word(days)) days, failed counted.", replaces: true))
             }
         }
@@ -365,8 +359,7 @@ public enum MemoryProposer {
         for d in days { for (k, v) in d.threads { turns[k, default: 0] += v } }
         let total = turns.values.reduce(0, +)
         guard total >= 10, let top = turns.max(by: { ($0.value, $1.key) < ($1.value, $0.key) }), Double(top.value) >= Double(total) * 0.7 else { return [] }
-        return [MemoryCandidate(key: "main", section: .work, text: "\"\(top.key)\" is where your days have been going.", strength: 45, signature: [top.key.lowercased()],
-                                keep: ["\"\(top.key)\""], evidence: "\(top.key) is where your days have been going, \(top.value) of \(total) turns counted.")]
+        return [MemoryCandidate(key: "main", section: .work, text: "\"\(top.key)\" is where your days have been going.", strength: 45, signature: [top.key.lowercased()], evidence: "\(top.key) is where your days have been going, \(top.value) of \(total) turns counted.")]
     }
 
     /// Something you keep saying to Boop, said tonight too.
@@ -385,21 +378,17 @@ public enum MemoryProposer {
             if middle < 11 * 60 { text = "You say \"\(words)\" to Boop when you sit down." }
             else if middle >= 20 * 60 { text = "You tell Boop \"\(words)\" before you go." }
             else { text = "You keep telling Boop \"\(words)\"." }
-            out.append(MemoryCandidate(key: "said.\(words)", section: .boop, text: text, strength: 80, signature: [words],
-                                       keep: ["\"\(words)\""], evidence: "\(text) Said on \(days.count) days, counted, sit down before you go keep telling."))
+            out.append(MemoryCandidate(key: "said.\(words)", section: .boop, text: text, strength: 80, signature: [words], evidence: "\(text) Said on \(days.count) days, counted, sit down before you go keep telling."))
         }
         return out
     }
 
-    /// What to do with `candidates` tonight: edit lines in the checks'
-    /// grammar, the numbers as `memory`'s, and the texts each candidate
-    /// needs worded (new or changed, to be phrased). At most `adds` new notes
-    /// and two updates a night; a habit that holds renews its note after
-    /// `renewDays`, in the note's own words, so nothing ages out and nothing
-    /// is reworded.
-    public static func plan(_ candidates: [MemoryCandidate], memory: WrittenMemory, day: String, adds: Int = 1) -> [PlannedEdit] {
-        var numbered: [Int] = []
-        for s in WrittenMemory.Section.allCases { for n in memory.notes(in: s) { numbered.append(n.id) } }
+    /// What to do with `candidates` tonight, numbered as `memory`'s notes
+    /// are. At most one new note and two updates a night; a habit that holds
+    /// renews its note after `renewDays`, in the note's own words, so nothing
+    /// ages out and nothing is reworded.
+    public static func plan(_ candidates: [MemoryCandidate], memory: WrittenMemory, day: String) -> [PlannedEdit] {
+        let numbered = memory.numbered
         var out: [PlannedEdit] = []
         var added = 0, updates = 0, used: Set<Int> = []
         var free: [WrittenMemory.Section: Int] = [:]
@@ -417,7 +406,7 @@ public enum MemoryProposer {
                 }
                 continue
             }
-            guard added < adds else { continue }
+            guard added < 1 else { continue }
             if (free[c.section] ?? 0) > 0 {
                 free[c.section]! -= 1
                 added += 1
@@ -440,8 +429,9 @@ public enum MemoryProposer {
         public var was: String?
     }
 
-    /// The checks' lines for a planned edit whose final words are `text`.
-    public static func lines(_ e: PlannedEdit, text: String, day: String) -> [String] {
+    /// The checks' lines for a planned edit.
+    public static func lines(_ e: PlannedEdit, day: String) -> [String] {
+        let text = e.candidate.text
         switch e.kind {
         case .add: return ["add \(e.candidate.section.rawValue): \(text) | days: \(day)"]
         case .update: return ["update \(e.number): \(text) | days: \(day)"]

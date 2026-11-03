@@ -105,7 +105,7 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(MemoryProposer.plan([c], memory: m, day: "2026-10-11"), [])
         let plan = MemoryProposer.plan([c], memory: m, day: "2026-10-12")
         XCTAssertEqual(plan.count, 1)
-        XCTAssertEqual(MemoryProposer.lines(plan[0], text: c.text, day: "2026-10-12"), ["update 1: You are often up late on Fridays. | days: 2026-10-12"])
+        XCTAssertEqual(MemoryProposer.lines(plan[0], day: "2026-10-12"), ["update 1: You are often up late on Fridays. | days: 2026-10-12"])
     }
 
     /// At most one new note a night; a full You section gives up its oldest.
@@ -213,10 +213,8 @@ final class MemoryPipelineTests: XCTestCase {
 
     /// A writer on the real pipeline with no model: nothing here asks one.
     struct CodeWriter: MemoryWriter {
-        var usesDigests: Bool { true }
         func write(_ request: MemoryRequest) async -> MemoryWriterReply {
-            guard let input = request.pipeline else { return .none }
-            return .reply(await MemoryPipeline.write(input, model: nil))
+            .reply(await MemoryPipeline.write(request.pipeline, model: nil))
         }
     }
 
@@ -320,7 +318,7 @@ final class MemoryPipelineTests: XCTestCase {
         let asked = await memory.ask(dream, tallies: span.tallies, kept: true)
         let night = try XCTUnwrap(asked)
         XCTAssertEqual(night.day, "2026-10-30")
-        XCTAssertEqual(night.request.pipeline?.weekday, "Friday")
+        XCTAssertEqual(night.request.pipeline.weekday, "Friday")
         memory.apply(night)
         XCTAssertEqual(files.days().digests.map(\.weekday), ["Friday"])
         XCTAssertEqual(files.written().recently.first?.day, "2026-10-30")
@@ -427,8 +425,8 @@ final class MemoryPipelineTests: XCTestCase {
     func testASignNamesWhyItHasNoLine() async {
         struct Says: MemoryModel {
             let reply: String?
-            func text(_ instructions: String, _ prompt: String, tokens: Int, tag: String) async -> String? { reply }
-            func yes(_ instructions: String, _ prompt: String, tag: String) async -> Bool? { nil }
+            func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String? { reply }
+            func yes(_ instructions: String, _ prompt: String) async -> Bool? { nil }
         }
         let timedOut = await MemoryPipeline.sign(for: "A note.", model: Says(reply: nil))
         XCTAssertEqual(timedOut, .noAnswer)
@@ -497,13 +495,13 @@ final class MemoryPipelineTests: XCTestCase {
         let asked = await memory.ask(dream, tallies: t)
         let night = try XCTUnwrap(asked)
         XCTAssertEqual(files.days().digests.count, 0)
-        XCTAssertEqual(night.request.pipeline?.digests.count, 1)
+        XCTAssertEqual(night.request.pipeline.digests.count, 1)
     }
 }
 
 struct StubModel: MemoryModel {
     let answer: @Sendable (String, String) -> Bool?
     init(_ answer: @escaping @Sendable (String, String) -> Bool?) { self.answer = answer }
-    func text(_ instructions: String, _ prompt: String, tokens: Int, tag: String) async -> String? { nil }
-    func yes(_ instructions: String, _ prompt: String, tag: String) async -> Bool? { answer(instructions, prompt) }
+    func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String? { nil }
+    func yes(_ instructions: String, _ prompt: String) async -> Bool? { answer(instructions, prompt) }
 }

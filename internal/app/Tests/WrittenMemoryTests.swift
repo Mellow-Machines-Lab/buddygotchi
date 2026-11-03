@@ -193,13 +193,7 @@ final class WrittenMemoryTests: XCTestCase {
         XCTAssertEqual(MemoryRequest.certain(t, range: "Monday 2026-10-26 to Tuesday 2026-10-27").prefix(46),
                        "From Monday 2026-10-26 to Tuesday 2026-10-27. ")
         XCTAssertEqual(certain, "On Tuesday 2026-10-27. You were at the Mac 7 hours, stroked Boop 3 times and talked to it twice. Agents finished 9 turns, 1 failed, most on \"api\".")
-        let journal = (0..<400).map { (at: String(format: "%02d:00", $0 % 24), line: "You asked claude on \"api\" for a fix, in a sentence, line \($0).") }
-        let r = MemoryRequest.make(memory: m, certain: certain, journal: journal)
-        XCTAssertEqual(r.numbered, [3, 12, 15, 9, 11])
-        XCTAssertTrue(r.text.contains("4 [boop, pinned] You stroke Boop"))
-        XCTAssertLessThan(r.lines, 400)
-        XCTAssertTrue(r.text.contains("line 399."), "the newest lines stay")
-        XCTAssertFalse(r.text.contains("line 0."), "the oldest go")
+        XCTAssertEqual(m.numbered, [3, 12, 15, 9, 11])
     }
 
     /// A reply that ends on its day line's own line: `end` is no part of the
@@ -230,7 +224,7 @@ final class WrittenMemoryTests: XCTestCase {
         t.strokes = 3
         let asked = await memory.ask(Self.friday(t), tallies: t)
         let night = try XCTUnwrap(asked)
-        XCTAssertTrue(night.request.text.contains("stroked Boop 3 times"))
+        XCTAssertTrue(night.source.contains("stroked Boop 3 times"))
         let report = try XCTUnwrap(memory.apply(night))
         XCTAssertEqual(report.added, [1])
         let written = files.written()

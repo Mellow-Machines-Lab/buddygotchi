@@ -4,8 +4,8 @@ import Foundation
 /// session: a sentence, or yes or no. A protocol, so tests can stand in for
 /// it.
 public protocol MemoryModel: Sendable {
-    func text(_ instructions: String, _ prompt: String, tokens: Int, tag: String) async -> String?
-    func yes(_ instructions: String, _ prompt: String, tag: String) async -> Bool?
+    func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String?
+    func yes(_ instructions: String, _ prompt: String) async -> Bool?
 }
 
 /// The dream's write as code that proposes and a small model that only
@@ -77,9 +77,7 @@ public enum MemoryPipeline {
         }
         candidates.sort { ($0.strength, $0.key) > ($1.strength, $1.key) }
         candidates.removeAll { c in input.forgotten.contains(where: c.isIn) }
-        var lines = MemoryProposer.plan(candidates, memory: input.memory, day: input.day).flatMap { edit in
-            MemoryProposer.lines(edit, text: edit.candidate.text, day: input.day)
-        }
+        var lines = MemoryProposer.plan(candidates, memory: input.memory, day: input.day).flatMap { MemoryProposer.lines($0, day: input.day) }
         lines.append("day: " + dayLine(input))
         lines.append("end")
         return lines.joined(separator: "\n")
@@ -113,20 +111,20 @@ public enum MemoryPipeline {
             let lower = words.lowercased()
             if earlier.contains(where: { $0.said.contains { $0.words == lower } }) { continue }
             let prompt = "They said: \"\(words)\""
-            guard await model.yes(worth, prompt, tag: "worth") == true else { continue }
-            guard await model.yes(isPrivate, prompt, tag: "private") == false else { continue }
+            guard await model.yes(worth, prompt) == true else { continue }
+            guard await model.yes(isPrivate, prompt) == false else { continue }
             var text: String?
             let clause = String(words.prefix { !",.;".contains($0) })
             if clause.split(separator: " ").count <= MemoryEdits.maxQuoteWords, clause.count >= 6 {
                 let tail = clause.count == words.count ? words : clause
                 text = "You told Boop \"\(tail)\" on \(input.weekday)."
-            } else if let line = clean(await model.text(paraphrase, "They said: \"\(words)\"", tokens: 40, tag: "paraphrase")), line.hasPrefix("You told Boop"),
+            } else if let line = clean(await model.text(paraphrase, "They said: \"\(words)\"", tokens: 40)), line.hasPrefix("You told Boop"),
                       !line.contains("\""), line.count <= 110, MemoryEdits.meaning(line).subtracting(["told"]).isSubset(of: MemoryEdits.meaning(words)) {
                 text = line
             }
             guard let text else { continue }
             out.append(MemoryCandidate(key: "moment.\(lower)", section: .you, text: text, strength: 90, signature: [clause.lowercased()],
-                                       keep: text.contains("\"") ? ["\"", "Boop"] : ["Boop"], evidence: "You told Boop \(words) \(input.weekday)"))
+                                       evidence: "You told Boop \(words) \(input.weekday)"))
         }
         return out
     }
@@ -139,7 +137,7 @@ public enum MemoryPipeline {
             guard !answer.isEmpty, !MemoryProposer.isPrivate(answer) else { return nil }
             let question = q.trimmingCharacters(in: CharacterSet(charactersIn: "? "))
             return MemoryCandidate(key: "answer.\(q)", section: .you, text: "Boop asked your \(question), and you said \(answer).", strength: 88, signature: [answer.lowercased()],
-                                   keep: [answer], evidence: "Boop asked \(question) answered \(answer)")
+                                   evidence: "Boop asked \(question) answered \(answer)")
         }
     }
 
@@ -167,14 +165,14 @@ public enum MemoryPipeline {
             var said: String?
             for phrase in words where !note.text.contains(phrase) {
                 let shared = !MemoryEdits.meaning(phrase).isDisjoint(with: MemoryEdits.meaning(note.text))
-                guard endsStory(phrase) && shared ? true : await model.yes(storyOver, "\"\(phrase)\"", tag: "story") == true else { continue }
-                guard await model.yes(isPrivate, "They said: \"\(phrase)\"", tag: "private") == false else { continue }
+                guard endsStory(phrase) && shared ? true : await model.yes(storyOver, "\"\(phrase)\"") == true else { continue }
+                guard await model.yes(isPrivate, "They said: \"\(phrase)\"") == false else { continue }
                 said = phrase
                 break
             }
             guard let said else { continue }
             out.append(MemoryCandidate(key: "story.\(thread)", section: .work, text: "\"\(thread)\": you said \"\(said)\" on \(input.weekday).", strength: 95,
-                                       signature: [thread.lowercased()], keep: ["\"\(thread)\""], evidence: "\(thread) \(said) \(input.weekday)", replaces: true))
+                                       signature: [thread.lowercased()], evidence: "\(thread) \(said) \(input.weekday)", replaces: true))
         }
         return out
     }
@@ -271,7 +269,7 @@ public enum MemoryPipeline {
     /// the checks. Its truth is the model's: a yes-or-no check of it refused
     /// more good lines than bad.
     public static func sign(for note: String, model: MemoryModel) async -> MemoryWriterSign {
-        guard var t = clean(await model.text(signWrite, "Note: \(note)\nSign:", tokens: 24, tag: "sign")) else { return .noAnswer }
+        guard var t = clean(await model.text(signWrite, "Note: \(note)\nSign:", tokens: 24)) else { return .noAnswer }
         if t.lowercased().hasPrefix("sign:") { t = String(t.dropFirst(5)).trimmingCharacters(in: .whitespaces) }
         t = t.lowercased().replacingOccurrences(of: "\"", with: "")
         return signIsValid(t) ? .line(t) : .refused

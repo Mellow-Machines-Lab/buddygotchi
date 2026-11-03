@@ -75,6 +75,10 @@ public struct WrittenMemory: Equatable, Sendable {
 
     public func notes(in section: Section) -> [Note] { notes.filter { $0.section == section } }
 
+    /// The notes' ids, section by section: the numbers 1 to N a dream's
+    /// edits call them by.
+    public var numbered: [Int] { Section.allCases.flatMap { notes(in: $0).map(\.id) } }
+
     /// The next note's id.
     public var nextId: Int { (notes.map(\.id).max() ?? 0) + 1 }
 

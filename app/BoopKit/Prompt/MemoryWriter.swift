@@ -1,6 +1,5 @@
 import Foundation
 import FoundationModels
-import MellowHarness
 
 /// Writes the night's edits to the written memory: the request in, the
 /// reply's plain lines out (`MemoryEdits` reads them). Nil when it can't: then the memory stays as
@@ -8,15 +7,11 @@ import MellowHarness
 /// stand in later.
 public protocol MemoryWriter: Sendable {
     func write(_ request: MemoryRequest) async -> MemoryWriterReply
-    /// Whether it writes from the request's `pipeline`, so the dream gives it
-    /// the digests and the checks take code's counts as a source.
-    var usesDigests: Bool { get }
     /// A note as the pet's own short line (`MemoryPipeline.signIsValid`).
     func sign(for note: String) async -> MemoryWriterSign
 }
 
 public extension MemoryWriter {
-    var usesDigests: Bool { false }
     func sign(for note: String) async -> MemoryWriterSign { .noAnswer }
 }
 
@@ -29,44 +24,19 @@ public enum MemoryWriterSign: Equatable, Sendable {
 
 public enum MemoryWriterReply: Equatable, Sendable {
     case reply(String)
-    /// The request didn't fit the model's window: try again with less.
-    case tooLong
     case none
 }
 
-/// The dream's request: the notes now, numbered, what Boop counted since
-/// the last dream, and the notable lines since.
+/// The dream's request: what the writer works from, and the notes as its
+/// reply numbers them.
 public struct MemoryRequest: Equatable, Sendable {
-    public var text: String
     /// The ids of the notes numbered 1 to N, in order.
     public var numbered: [Int]
-    /// How many of the lines since the last dream it holds.
-    public var lines: Int
-    /// What the proposing writer works from (`MemoryPipelineWriter`).
-    public var pipeline: MemoryPipeline.Input?
+    public var pipeline: MemoryPipeline.Input
 
-    /// The most RECENT may take, in tokens, for a writer with a window of
-    /// 4,096.
-    public static let recentTokens = 1_900
-
-    /// The request for the day `weekday` `day`, from `memory`, `certain`
-    /// and `journal` (`HH:mm` and the line), its oldest lines left out
-    /// until RECENT fits `recentTokens`, or `lines` of them.
-    public static func make(memory: WrittenMemory, certain: String, journal: [(at: String, line: String)], lines: Int? = nil) -> MemoryRequest {
-        var numbered: [Int] = []
-        var out = ["MEMORY"]
-        for section in WrittenMemory.Section.allCases {
-            for n in memory.notes(in: section) {
-                numbered.append(n.id)
-                out.append("\(numbered.count) [\(section.rawValue)\(n.pinned ? ", pinned" : "")] \(n.text) (\(n.days.joined(separator: ", ")))")
-            }
-        }
-        if numbered.isEmpty { out.append("(none yet)") }
-        out += ["", "CERTAIN", certain, "", "RECENT"]
-        var kept = journal.suffix(lines ?? journal.count).map { "\($0.at) \($0.line)" }
-        while kept.count > 1, Steering.tokens(kept.joined(separator: "\n")) > recentTokens { kept.removeFirst() }
-        out += kept.isEmpty ? ["(nothing notable)"] : kept
-        return MemoryRequest(text: out.joined(separator: "\n"), numbered: numbered, lines: kept.count)
+    public init(_ pipeline: MemoryPipeline.Input) {
+        self.pipeline = pipeline
+        numbered = pipeline.memory.numbered
     }
 
     /// CERTAIN, from the span's tallies and its dates (`range`): "From
@@ -108,13 +78,10 @@ public struct MemoryRequest: Equatable, Sendable {
 /// `AppleIntelligenceMemoryModel.timeout`. With the model off, code writes alone:
 /// the habits and sagas still come, the moments and stories wait.
 public struct MemoryPipelineWriter: MemoryWriter {
-    public var usesDigests: Bool { true }
-
     public init() {}
 
     public func write(_ request: MemoryRequest) async -> MemoryWriterReply {
-        guard let input = request.pipeline else { return .none }
-        return .reply(await MemoryPipeline.write(input, model: Self.model))
+        .reply(await MemoryPipeline.write(request.pipeline, model: Self.model))
     }
 
     public func sign(for note: String) async -> MemoryWriterSign {
@@ -146,14 +113,14 @@ public struct AppleIntelligenceMemoryModel: MemoryModel {
         #endif
     }
 
-    public func text(_ instructions: String, _ prompt: String, tokens: Int, tag: String) async -> String? {
+    public func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String? {
         await AppleIntelligenceLabeler.within(Self.timeout) {
             let session = LanguageModelSession(model: AppleIntelligenceLabeler.OnDevice.model, instructions: instructions)
             return try? await session.respond(to: prompt, options: Self.options(tokens)).content
         }
     }
 
-    public func yes(_ instructions: String, _ prompt: String, tag: String) async -> Bool? {
+    public func yes(_ instructions: String, _ prompt: String) async -> Bool? {
         await AppleIntelligenceLabeler.within(Self.timeout) {
             guard let schema = try? GenerationSchema(root: DynamicGenerationSchema(name: "Answer", anyOf: ["yes", "no"]), dependencies: []) else { return nil }
             let session = LanguageModelSession(model: AppleIntelligenceLabeler.OnDevice.model, instructions: instructions)

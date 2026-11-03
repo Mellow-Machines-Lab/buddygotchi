@@ -88,9 +88,9 @@ public final class Memory: @unchecked Sendable {
         public var ms: Int
     }
 
-    /// The span's digest, for a writer that writes from them.
+    /// The span's digest, with a writer to read it.
     func digest(of dream: Dream, tallies: MemoryReader.Tallies) -> DayDigest? {
-        guard writer?.usesDigests == true else { return nil }
+        guard writer != nil else { return nil }
         let day = dream.covers ?? dream.day
         return DayDigest.from(day: day, weekday: time.weekday(of: day), tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
                               last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0,
@@ -104,34 +104,23 @@ public final class Memory: @unchecked Sendable {
     }
 
     /// Asks the writer to edit the written memory for `dream` from its
-    /// span's `tallies` and journal: once, and once more with a quarter of
-    /// RECENT left out if it didn't fit. `kept` when the span's digest is in
-    /// the file already, as a dream's is; a preview's isn't, and stays out.
-    /// Nil with no writer.
+    /// span's `tallies` and journal. `kept` when the span's digest is in the
+    /// file already, as a dream's is; a preview's isn't, and stays out. Nil
+    /// with no writer.
     public func ask(_ dream: Dream, tallies: MemoryReader.Tallies, kept: Bool = false) async -> Night? {
-        guard let writer, let files else { return nil }
-        let day = dream.covers ?? dream.day, weekday = time.weekday(of: day), range = dream.range ?? "\(dream.weekday) \(dream.day)"
+        guard let writer, let files, let tonight = digest(of: dream, tallies: tallies) else { return nil }
+        let range = dream.range ?? "\(dream.weekday) \(dream.day)"
         let journal = tallies.journal.map { (at: $0.at, line: $0.line) }
         let certain = MemoryRequest.certain(tallies, range: range)
         let started = Date()
-        var request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal)
-        var source = MemoryRequest.source(certain: certain, journal: journal)
-        if let tonight = digest(of: dream, tallies: tallies) {
-            let memory = files.written(), days = files.days()
-            let digests = kept ? days.digests : days.keeping(tonight, added: []).digests
-            var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: day, weekday: weekday)
-            input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
-            request.pipeline = input
-            source += "\n" + MemoryPipeline.evidence(input).joined(separator: "\n")
-        }
-        var reply = await writer.write(request)
-        if reply == .tooLong {
-            let pipeline = request.pipeline
-            request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal, lines: request.lines * 3 / 4)
-            request.pipeline = pipeline
-            reply = await writer.write(request)
-        }
-        return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal), source: source,
+        let memory = files.written(), days = files.days()
+        let digests = kept ? days.digests : days.keeping(tonight, added: []).digests
+        var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: tonight.day, weekday: tonight.weekday)
+        input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
+        let request = MemoryRequest(input)
+        let reply = await writer.write(request)
+        return Night(day: tonight.day, request: request, reply: reply, words: MemoryRequest.words(in: journal),
+                     source: MemoryRequest.source(certain: certain, journal: journal) + "\n" + MemoryPipeline.evidence(input).joined(separator: "\n"),
                      fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000))
     }
 

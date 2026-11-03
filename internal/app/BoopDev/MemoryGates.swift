@@ -15,7 +15,7 @@ func memoryGates(_ file: URL) async {
         var right = 0, unanswered = 0
         var wrong: [String] = []
         for item in items {
-            guard let yes = await model.yes(question, item.prompt, tag: name) else { unanswered += 1; continue }
+            guard let yes = await model.yes(question, item.prompt) else { unanswered += 1; continue }
             if yes == item.truth { right += 1 } else { wrong.append(item.prompt) }
         }
         print("\(name): \(right) of \(items.count) right, \(unanswered) unanswered")
