@@ -455,7 +455,7 @@ final class MemoryPipelineTests: XCTestCase {
         let memory = Memory(store: try KeyValueStore(directory: nil), time: time, files: files)
         func noon(_ day: Int) -> Int64 { Int64(LocalTime.dayNumber("2026-10-05")! + day) * 86_400_000 + 12 * 3_600_000 }
         XCTAssertEqual(memory.felt(at: noon(0)).map(\.line).sorted(), ["line 0", "line 1", "line 2"], "a note with no line isn't offered")
-        memory.recordFelt(Event.did("x", for: nil, action: MomentOutput.outputName, by: "brain", facts: ["felt": "line 0"], at: noon(0)))
+        memory.keepShown("line 0", at: noon(0))
         XCTAssertEqual(memory.felt(at: noon(0)), [], "about once a day")
         XCTAssertEqual(memory.felt(at: noon(1)).map(\.line).sorted(), ["line 1", "line 2"], "not that line again for a while")
         XCTAssertEqual(memory.felt(at: noon(14)).map(\.line).sorted(), ["line 0", "line 1", "line 2"])

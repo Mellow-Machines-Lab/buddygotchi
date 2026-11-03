@@ -302,11 +302,18 @@ public final class Memory: @unchecked Sendable {
         store.string("felt").flatMap { try? JSONDecoder().decode([String: String].self, from: Data($0.utf8)) } ?? [:]
     }
 
-    /// Keeps a line shown (the react output's `did` names it).
+    /// Keeps a line shown once its moment has played through, as a dream
+    /// is told: the react output's `did` names the line, and a moment cut
+    /// short leaves it to offer again.
     func recordFelt(_ e: Event) {
-        guard e.kind == Event.did, e.action == MomentOutput.outputName, let line = e["felt"]?.string else { return }
+        guard e.kind == Event.ended, e.action == MomentOutput.outputName, e["outcome"]?.string == "done",
+              let line = e.about.flatMap({ harness?.log.event($0) })?["felt"]?.string else { return }
+        keepShown(line, at: e.at)
+    }
+
+    func keepShown(_ line: String, at ms: Int64) {
         var shown = feltShown()
-        shown[line] = time.boopDay(e.at)
+        shown[line] = time.boopDay(ms)
         guard let data = try? JSONEncoder().encode(shown) else { return }
         do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
     }

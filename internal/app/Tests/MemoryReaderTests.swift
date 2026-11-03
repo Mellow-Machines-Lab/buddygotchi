@@ -397,6 +397,25 @@ final class MemoryReaderTests: XCTestCase {
         h.emit(Event.ended(did.seq, action: MomentOutput.outputName, by: "brain", failed: why, at: rig.now))
     }
 
+    /// A line counts as shown once its moment has played: one a needs-you cut
+    /// is offered again, as a dream that was cut is told again.
+    func testALineCountsAsShownOnceItsMomentHasPlayed() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        let h = rig.pipeline.harness
+        func started() -> Event {
+            h.emit(Event.did("Boop had a moment.", for: nil, action: MomentOutput.outputName, by: "brain", open: true, facts: ["felt": "u stay up late"], at: rig.now))
+        }
+        let cut = started()
+        XCTAssertEqual(memory.feltShown(), [:], "not yet played")
+        h.emit(Event.ended(cut.seq, action: MomentOutput.outputName, by: "brain", failed: "cut short: something needed you", at: rig.now))
+        XCTAssertEqual(memory.feltShown(), [:], "a needs-you cut it")
+        let played = started()
+        h.emit(Event.ended(played.seq, action: MomentOutput.outputName, by: "brain", failed: nil, at: rig.now))
+        XCTAssertEqual(memory.feltShown().keys.sorted(), ["u stay up late"])
+    }
+
     /// TranscriptView.played: a dream counts as told only once its moment
     /// has played. A needs-you that cuts it, or a brain that never answers,
     /// leaves it to tell at your next showing up; a second touch while the
