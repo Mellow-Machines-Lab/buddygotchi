@@ -1699,7 +1699,7 @@ static void test_the_wish_shows_and_pops() {
 // and 3 s, then 360 ms out. A Mac that sends none shows none.
 static void test_the_growth_bar_comes_when_the_xp_moves() {
   using G = render::GrowthShow;
-  TEST_ASSERT_EQUAL(5, Behaviour::kBarStep);
+  TEST_ASSERT_EQUAL(5, app::GrowthBar::kStep);
   TEST_ASSERT_EQUAL(240, G::kInMs);
   TEST_ASSERT_EQUAL(700, G::kFillMs);
   TEST_ASSERT_EQUAL(3000, G::kHoldMs);

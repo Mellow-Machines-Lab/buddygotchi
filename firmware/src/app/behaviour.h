@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdio>
 
+#include "app/growth_bar.h"
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
@@ -339,13 +340,8 @@ class Behaviour {
   // wish_met or wish_gone, how the last one went.
   render::WishShow wishShow(uint32_t t) const;
   void wishPopped(bool met, uint32_t t);
-  // The growth bar now. It comes when the XP has moved kBarStep points or more
-  // from where it last showed, or the stage changed: less isn't a change you
-  // could see, and a busy agent earns a point every few calls.
-  static constexpr int kBarStep = 5;
-  // The Mac sends a stage reached a moment ahead of the `do` of the wish that
-  // reached it, and the body mustn't start before the heart: at most this long.
-  static constexpr uint32_t kStageWaitMs = 300;
+  // The growth bar now (app/growth_bar.h).
+  static constexpr uint32_t kStageWaitMs = GrowthBar::kStageWaitMs;
   render::GrowthShow growthShow(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
@@ -607,15 +603,7 @@ class Behaviour {
   // -1 until heard) from fillAt, past the end of the bar by `wrap` when the
   // stage changed (1 up, -1 down), up from onAt to offAt, with a met wish's
   // heart leaving at heartAt.
-  struct Bar {
-    int from = 0, to = -1, wrap = 0;
-    uint32_t fillAt = 0, onAt = 0, offAt = 0, heartAt = 0, grewAt = 0;
-    bool on = false, heart = false, grew = false;
-  };
-  Bar bar_;
-  int barFill(uint32_t t) const;
-  int barOff(uint32_t t) const { return int32_t(t - bar_.offAt); }  // how long since it began to go
-  void barHeard(const Model& m, bool back, uint32_t t);
+  GrowthBar bar_;
   // Whether the screen is another's, or Boop's not looking: no bar then.
   bool barHidden(const Model& m, bool alone, uint32_t t) const;
   // The reaction's reason (caption()), timed as its sign would be.

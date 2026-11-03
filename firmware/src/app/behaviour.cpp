@@ -167,7 +167,7 @@ void Behaviour::resync(uint32_t t) {
   if (sign_.text[0] && !signDue(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
-  if (bar_.on && barOff(t) >= int(render::GrowthShow::kOutMs)) bar_.on = bar_.heart = false;
+  bar_.sweep(t);
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;
@@ -248,7 +248,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     const bool back = noApp(t);
     bool look = back || m.attn != model_.attn || m.look() != model_.look();
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
-    barHeard(m, back, t);
+    bar_.heard(m.xp, render::growthStage(model_.when), render::growthStage(m.when), barHidden(m, back, t), t);
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
@@ -639,7 +639,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   // stay up all the next day. Its growth stage isn't: a Hatchling stays one.
   c.when = alone && !sleptThrough() ? model_.when & render::kGrowthTags : model_.when;
   c.lookMs = t - lookAt_;
-  c.growthWaits = (bar_.heart && int32_t(t - bar_.fillAt) < 0) || (bar_.grew && within(t, bar_.grewAt, kStageWaitMs));
+  c.growthWaits = bar_.waits(t);
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
 }
@@ -782,7 +782,7 @@ render::WishShow Behaviour::wishShow(uint32_t t) const {
   if (noApp(t)) return show;  // nothing waits on a Mac that isn't there
   if (wishPop_ != render::WishShow::kWaiting && t - wishPopAt_ < render::WishShow::kPopMs) {
     show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
-    show.flies = wishPop_ == render::WishShow::kMet && bar_.heart;
+    show.flies = wishPop_ == render::WishShow::kMet && bar_.heart();
   } else {
     show.kind = model_.wish;
     show.how = model_.wishHow;
@@ -795,87 +795,16 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
   if (lastWish_ == render::WishShow::kNone) return;
   wishPop_ = met ? render::WishShow::kMet : render::WishShow::kGone;
   wishPopAt_ = t;
-  if (!met || bar_.to < 0) return;
-  // The bar comes for the heart, and fills as it lands, whichever of this and
-  // the state with the XP it earned arrives first, with the two close together:
-  // a `do` that waited in the queue finds the bar and the body already moved,
-  // and its heart lands on them as they are.
-  using G = render::GrowthShow;
-  bar_.from = barFill(t);
-  if (int32_t(t - bar_.fillAt) >= int32_t(G::kFillMs)) bar_.wrap = 0;  // past the bar's end: it isn't played again
-  // A state with the XP that came first may have moved it too little to show.
-  if (model_.xp >= 0) bar_.to = model_.xp;
-  bar_.fillAt = t + G::kHeartWaitMs + G::kHeartFlyMs;
-  if (!bar_.on) bar_.onAt = t;
-  bar_.on = bar_.heart = true;
-  bar_.heartAt = t;
-  bar_.offAt = bar_.fillAt + G::kFillMs * (bar_.wrap ? 2 : 1) + G::kHoldMs;
-}
-
-int Behaviour::barFill(uint32_t t) const {
-  using G = render::GrowthShow;
-  if (bar_.to < 0) return 0;
-  const int fill = int(G::kFillMs), to = bar_.to * 10;
-  int age = int32_t(t - bar_.fillAt);
-  if (!bar_.wrap) return bar_.from + (to - bar_.from) * render::ease1000(age, fill) / 1000;
-  // Up to the bar's end and on from its start; or down, for a stage lost.
-  const int end = bar_.wrap > 0 ? 1000 : 0;
-  if (age < fill) return bar_.from + (end - bar_.from) * render::ease1000(age, fill) / 1000;
-  return 1000 - end + (to - (1000 - end)) * render::ease1000(age - fill, fill) / 1000;
+  if (!met) return;
+  bar_.heartComes(model_.xp, t);
 }
 
 bool Behaviour::barHidden(const Model& m, bool alone, uint32_t t) const {
   return alone || m.attn || m.base == render::SceneState::kAsleep || faceDown_ || listening(t);
 }
 
-void Behaviour::barHeard(const Model& m, bool back, uint32_t t) {
-  using G = render::GrowthShow;
-  if (m.xp < 0) {
-    bar_ = Bar{};
-    return;
-  }
-  const int was = render::growthStage(model_.when), now = render::growthStage(m.when);
-  if (bar_.to < 0 || barHidden(m, back, t)) {  // what it is, not a change to show
-    bar_ = Bar{};
-    bar_.from = m.xp * 10, bar_.to = m.xp, bar_.fillAt = t;
-    return;
-  }
-  const int fresh = now > was ? 1 : now < was ? -1 : 0;
-  if (fresh > 0) bar_.grew = true, bar_.grewAt = t;
-  if (m.xp == bar_.to && !fresh) return;
-  // One still on its way to the bar's end carries on there.
-  const int wrap = fresh ? fresh : int32_t(t - bar_.fillAt) < int32_t(G::kFillMs) ? bar_.wrap : 0;
-  const bool coming = bar_.heart && int32_t(t - bar_.fillAt) < 0;
-  if (coming) {  // it fills as the heart lands
-    bar_.to = m.xp, bar_.wrap = wrap;
-    bar_.offAt = bar_.fillAt + G::kFillMs * (wrap ? 2 : 1) + G::kHoldMs;
-    return;
-  }
-  const bool up = bar_.on && barOff(t) < int(G::kOutMs);
-  if (!up && !wrap && std::abs(m.xp - bar_.to) < kBarStep) return;
-  bar_.from = barFill(t);
-  bar_.to = m.xp, bar_.wrap = wrap, bar_.fillAt = t;
-  if (!up) bar_.onAt = t;
-  bar_.on = true;
-  bar_.offAt = t + G::kFillMs * (wrap ? 2 : 1) + G::kHoldMs;
-}
-
 render::GrowthShow Behaviour::growthShow(uint32_t t) const {
-  using G = render::GrowthShow;
-  render::GrowthShow s;
-  s.stage = render::growthStage(model_.when);
-  if (!bar_.on) return s;
-  // The stage it's filling up for, till it's past the bar's end.
-  if (bar_.wrap && int32_t(t - bar_.fillAt) < int32_t(G::kFillMs)) s.stage -= bar_.wrap;
-  const int fromPop = int32_t(t - bar_.heartAt), flown = fromPop - int(G::kHeartWaitMs), landed = int32_t(t - bar_.fillAt);
-  const int out = barOff(t);
-  if (out >= int(G::kOutMs) || barHidden(model_, noApp(t), t)) return s;
-  s.opacity = std::min(255 * int32_t(t - bar_.onAt) / int(G::kInMs), 255);
-  if (out > 0) s.opacity = 255 - 255 * out / int(G::kOutMs);
-  s.fill = barFill(t);
-  if (bar_.heart && flown >= 0 && landed < 0) s.flight = 1000 * flown / int(G::kHeartFlyMs);
-  if (bar_.heart && landed >= 0 && landed < int(G::kGulpMs)) s.gulp = std::max(1, 1000 * landed / int(G::kGulpMs));
-  return s;
+  return bar_.show(render::growthStage(model_.when), barHidden(model_, noApp(t), t), t);
 }
 
 // With no app, no `say` shows: it outranks the reactions.
