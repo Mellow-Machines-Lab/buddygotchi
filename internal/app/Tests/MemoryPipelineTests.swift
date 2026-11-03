@@ -162,6 +162,29 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertFalse(order.contains("pizza"), order)
     }
 
+    /// What ends a project's story: words on its thread, or what you said to
+    /// Boop only if it shares a word with the note; never anything private.
+    func testAStoryEndsOnlyOnItsOwnWords() async {
+        let m = note("work · 2026-10-05 · \"game\" has been fighting you for two days.")
+        let prompt = "You asked claude on \"game\" for a fix, in a sentence."
+        func story(_ journal: [String], _ model: StubModel) async -> Bool {
+            let out = await MemoryPipeline.write(input(journal.map { (at: "10:00", line: $0) }, memory: m), model: model)
+            return out.contains("update 1: \"game\": you said")
+        }
+        let over = StubModel { instructions, _ in instructions.contains("Is it private") ? false : true }
+        var told = await story([prompt, "You said to Boop: \"the audio is done\"."], over)
+        XCTAssertFalse(told, "said to Boop, about something else")
+        told = await story([prompt, "You said to Boop: \"next the audio\"."], over)
+        XCTAssertFalse(told, "the model's yes doesn't make it this note's")
+        told = await story([prompt, "You said to Boop: \"the game works now\"."], over)
+        XCTAssertTrue(told, "said to Boop, about the game")
+        told = await story([prompt + "\n  Your words: \"it's live\""], over)
+        XCTAssertTrue(told, "on its own thread")
+        let isPrivate = StubModel { _, _ in true }
+        told = await story([prompt, "You said to Boop: \"the game works now\"."], isPrivate)
+        XCTAssertFalse(told, "the model says it's private")
+    }
+
     /// With no model the write still goes: code's day line, and nothing that needs one.
     func testWithNoModel() async {
         let out = await MemoryPipeline.write(input([]), model: nil)

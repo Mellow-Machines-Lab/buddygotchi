@@ -144,7 +144,8 @@ public enum MemoryPipeline {
     }
 
     /// A project's note, when what you said tonight ends or overturns its
-    /// story: the model only says which of your words do, and code quotes them.
+    /// story: the model only says which of your words do and that they aren't
+    /// private, and code quotes them.
     static func stories(_ input: Input, skipping: Set<String>, model: MemoryModel) async -> [MemoryCandidate] {
         var out: [MemoryCandidate] = []
         for note in input.memory.notes(in: .work) where !note.pinned {
@@ -156,15 +157,20 @@ public enum MemoryPipeline {
                 if mine { onThread = true }
                 guard mine || entry.line.hasPrefix("You said to") else { continue }
                 for part in entry.line.components(separatedBy: "\n") where part.contains("Your words") || part.hasPrefix("You said to") {
-                    words += MemoryProposer.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords }
+                    // What you said to Boop may be about anything: it counts
+                    // for this note only if it shares a word with it.
+                    let about = part.contains("Your words") || !MemoryEdits.meaning(part).isDisjoint(with: MemoryEdits.meaning(note.text))
+                    if about { words += MemoryProposer.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords } }
                 }
             }
             guard onThread else { continue }
             var said: String?
             for phrase in words where !note.text.contains(phrase) {
                 let shared = !MemoryEdits.meaning(phrase).isDisjoint(with: MemoryEdits.meaning(note.text))
-                if endsStory(phrase) && shared { said = phrase; break }
-                if await model.yes(storyOver, "\"\(phrase)\"", tag: "story") == true { said = phrase; break }
+                guard endsStory(phrase) && shared ? true : await model.yes(storyOver, "\"\(phrase)\"", tag: "story") == true else { continue }
+                guard await model.yes(isPrivate, "They said: \"\(phrase)\"", tag: "private") == false else { continue }
+                said = phrase
+                break
             }
             guard let said else { continue }
             out.append(MemoryCandidate(key: "story.\(thread)", section: .work, text: "\"\(thread)\": you said \"\(said)\" on \(input.weekday).", strength: 95,
