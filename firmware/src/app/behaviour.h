@@ -328,6 +328,9 @@ class Behaviour {
   // from where it last showed, or the stage changed: less isn't a change you
   // could see, and a busy agent earns a point every few calls.
   static constexpr int kBarStep = 5;
+  // The Mac sends a stage reached a moment ahead of the `do` of the wish that
+  // reached it, and the body mustn't start before the heart: at most this long.
+  static constexpr uint32_t kStageWaitMs = 300;
   render::GrowthShow growthShow(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
@@ -580,8 +583,8 @@ class Behaviour {
   // heart leaving at heartAt.
   struct Bar {
     int from = 0, to = -1, wrap = 0;
-    uint32_t fillAt = 0, onAt = 0, offAt = 0, heartAt = 0;
-    bool on = false, heart = false;
+    uint32_t fillAt = 0, onAt = 0, offAt = 0, heartAt = 0, grewAt = 0;
+    bool on = false, heart = false, grew = false;
   };
   Bar bar_;
   int barFill(uint32_t t) const;

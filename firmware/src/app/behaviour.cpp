@@ -605,6 +605,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   // stay up all the next day. Its growth stage isn't: a Hatchling stays one.
   c.when = alone && !sleptThrough() ? model_.when & render::kGrowthTags : model_.when;
   c.lookMs = t - lookAt_;
+  c.growthWaits = (bar_.heart && int32_t(t - bar_.fillAt) < 0) || (bar_.grew && within(t, bar_.grewAt, kStageWaitMs));
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
 }
@@ -811,6 +812,7 @@ void Behaviour::barHeard(const Model& m, bool back, uint32_t t) {
     return;
   }
   const int wrap = now > was ? 1 : now < was ? -1 : 0;
+  if (wrap > 0) bar_.grew = true, bar_.grewAt = t;
   if (m.xp == bar_.to && !wrap) return;
   const bool coming = bar_.heart && int32_t(t - bar_.fillAt) < 0;
   if (coming) {  // it fills as the heart lands
@@ -835,7 +837,6 @@ render::GrowthShow Behaviour::growthShow(uint32_t t) const {
   // The stage it's filling up for, till it's past the bar's end.
   if (bar_.wrap && int32_t(t - bar_.fillAt) < int32_t(G::kFillMs)) s.stage -= bar_.wrap;
   const int fromPop = int32_t(t - bar_.heartAt), flown = fromPop - int(G::kHeartWaitMs), landed = int32_t(t - bar_.fillAt);
-  s.heartComing = bar_.heart && landed < 0;
   const int out = int32_t(t - bar_.offAt);
   if (out >= int(G::kOutMs) || barHidden(model_, noApp(t), t)) return s;
   s.opacity = std::min(255 * int32_t(t - bar_.onAt) / int(G::kInMs), 255);

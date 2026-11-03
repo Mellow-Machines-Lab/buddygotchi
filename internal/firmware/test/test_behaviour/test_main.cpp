@@ -1786,7 +1786,6 @@ static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
     r.b.wishPopped(true, r.t);
     if (!stateFirst) m.xp = 40, r.state(m);
     TEST_ASSERT_TRUE(r.b.wishShow(r.t).flies);
-    TEST_ASSERT_TRUE(r.b.growthShow(r.t).heartComing);
     TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
     const uint32_t pop = r.t, landed = pop + G::kHeartWaitMs + G::kHeartFlyMs;
     r.at(pop + G::kInMs);
@@ -1796,10 +1795,8 @@ static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
     r.at(landed - 1);
     TEST_ASSERT_TRUE(r.b.growthShow(r.t).flight >= 995);
     TEST_ASSERT_EQUAL(200, r.b.growthShow(r.t).fill);
-    TEST_ASSERT_TRUE(r.b.growthShow(r.t).heartComing);
     r.at(landed);
     TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
-    TEST_ASSERT_FALSE(r.b.growthShow(r.t).heartComing);
     TEST_ASSERT_TRUE(r.b.growthShow(r.t).gulp > 0);
     r.at(landed + G::kGulpMs);
     TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).gulp);
@@ -1817,7 +1814,6 @@ static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
   r.state(m);
   r.b.wishPopped(true, r.t);
   TEST_ASSERT_FALSE(r.b.wishShow(r.t).flies);
-  TEST_ASSERT_FALSE(r.b.growthShow(r.t).heartComing);
   r.at(r.t + 500);
   TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
 }
@@ -1851,6 +1847,43 @@ static void test_a_new_stage_fills_the_bar_past_its_end() {
   TEST_ASSERT_EQUAL(1000, r.b.growthShow(r.t).fill);
   r.at(r.t + G::kFillMs);
   TEST_ASSERT_EQUAL(970, r.b.growthShow(r.t).fill);
+}
+
+// A new stage's body waits 300 ms for a wish's `do`, which follows its state;
+// then, for that wish's heart to land. Any other stage plays when the 300 ms are up.
+static void test_a_new_stage_waits_for_the_heart() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(300, Behaviour::kStageWaitMs);
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  auto face = std::make_unique<testface::WrappedFace>();
+  testface::WrappedFace& f = *face;
+  Behaviour b(std::move(face));
+  app::Rng rng;
+  b.reset(0, rng);
+  Model m = base("idle");
+  m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+  b.onState(m, 100);
+  b.advance(1000, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);
+  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  b.onState(m, 1000);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(1299, rng);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(1300, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);  // no wish came
+  m.when = hatchling, m.xp = 90, m.wish = render::WishShow::kPet;
+  b.onState(m, 6000);
+  b.advance(8000, rng);
+  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  b.onState(m, 8000);
+  b.advance(8100, rng);
+  b.wishPopped(true, 8100);
+  const uint32_t landed = 8100 + G::kHeartWaitMs + G::kHeartFlyMs;
+  b.advance(landed - 1, rng);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(landed, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);
 }
 
 // With no app the Mac's tags go, as they're stale, but not its growth stage:
@@ -4011,6 +4044,7 @@ int main() {
   RUN_TEST(test_the_growth_bar_keeps_off_what_it_shouldnt_cover);
   RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
   RUN_TEST(test_a_new_stage_fills_the_bar_past_its_end);
+  RUN_TEST(test_a_new_stage_waits_for_the_heart);
   RUN_TEST(test_alone_it_stays_its_stage);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);
   RUN_TEST(test_the_macs_return_gets_a_small_hello);

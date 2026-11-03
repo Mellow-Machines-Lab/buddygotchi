@@ -47,7 +47,6 @@ struct GrowthShow {
   int stage = 3;         // the growth stage it's for (growthStage)
   int flight = -1;       // how far the heart has flown, 0 … 1000, -1 for none
   int gulp = 0;          // how far the landing is through, 0 … 1000, 0 for none
-  bool heartComing = false;  // it hasn't landed: a new stage's body waits for it
 };
 
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,
@@ -113,6 +112,9 @@ inline int signLift(uint32_t ms, int rise, int bob) {
 }
 // What the Mac last said, as far as a face may use it.
 struct FaceContext {
+  // A new growth stage's body waits: a met wish's heart hasn't landed, or
+  // it's just come, and the `do` of a wish that reached it may yet follow.
+  bool growthWaits = false;
   Mood mood = kStartupMood;
   SceneState look = SceneState::kIdle;
   bool working = false;

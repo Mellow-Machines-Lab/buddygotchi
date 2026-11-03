@@ -111,8 +111,10 @@ full and gold.
 
 A met wish's heart stays in the bubble for 420 ms, flies 720 ms on a curve into
 the bar's tip, and the bar gulps as it lands and only then fills, whichever of
-the `do` and the state with the XP came first. A stage the wish reached waits for
-the landing: the bar fills to its end, then from its start, as the new body plays.
+the `do` and the state with the XP came first. The Mac sends the state a moment
+ahead of the `do`, so any new stage's body waits 300 ms for one, and a stage the
+wish reached waits for the landing: the bar fills to its end, then from its start,
+as the new body plays.
 
 **Estimated, not measured:** the bar and its two Boops are at most about 6,000
 pixels of 205,820, up for about 4 s at a time, against 21% more of the body for
