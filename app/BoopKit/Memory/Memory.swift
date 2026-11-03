@@ -86,14 +86,29 @@ public final class Memory: @unchecked Sendable {
         /// dream's own sentence, which is always true.
         public var fallback: String
         public var ms: Int
-        /// The span's digest, kept with the edits (`memory-days.json`).
-        public var digest: DayDigest?
+    }
+
+    /// The span's digest, for a writer that writes from them.
+    func digest(of dream: Dream, tallies: MemoryReader.Tallies) -> DayDigest? {
+        guard writer?.usesDigests == true else { return nil }
+        let day = dream.covers ?? dream.day
+        return DayDigest.from(day: day, weekday: time.weekday(of: day), tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
+                              last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0,
+                              journal: tallies.journal.map { (at: $0.at, line: $0.line) })
+    }
+
+    /// Keeps the span's digest (`memory-days.json`).
+    func keepDigest(of dream: Dream, tallies: MemoryReader.Tallies) {
+        guard let files, let digest = digest(of: dream, tallies: tallies) else { return }
+        do { try files.keep(files.days().keeping(digest, added: [])) } catch { note("memory: can't write the digests: \(error)") }
     }
 
     /// Asks the writer to edit the written memory for `dream` from its
     /// span's `tallies` and journal: once, and once more with a quarter of
-    /// RECENT left out if it didn't fit. Nil with no writer.
-    public func ask(_ dream: Dream, tallies: MemoryReader.Tallies) async -> Night? {
+    /// RECENT left out if it didn't fit. `kept` when the span's digest is in
+    /// the file already, as a dream's is; a preview's isn't, and stays out.
+    /// Nil with no writer.
+    public func ask(_ dream: Dream, tallies: MemoryReader.Tallies, kept: Bool = false) async -> Night? {
         guard let writer, let files else { return nil }
         let day = dream.covers ?? dream.day, weekday = time.weekday(of: day), range = dream.range ?? "\(dream.weekday) \(dream.day)"
         let journal = tallies.journal.map { (at: $0.at, line: $0.line) }
@@ -101,13 +116,9 @@ public final class Memory: @unchecked Sendable {
         let started = Date()
         var request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal)
         var source = MemoryRequest.source(certain: certain, journal: journal)
-        var digest: DayDigest?
-        if writer.usesDigests {
+        if let tonight = digest(of: dream, tallies: tallies) {
             let memory = files.written(), days = files.days()
-            let tonight = DayDigest.from(day: day, weekday: weekday, tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
-                                         last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0, journal: journal)
-            digest = tonight
-            let digests = days.keeping(tonight, added: []).digests
+            let digests = kept ? days.digests : days.keeping(tonight, added: []).digests
             var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: day, weekday: weekday)
             input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
             request.pipeline = input
@@ -121,7 +132,7 @@ public final class Memory: @unchecked Sendable {
             reply = await writer.write(request)
         }
         return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal), source: source,
-                     fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000), digest: digest)
+                     fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000))
     }
 
     /// A span's dates as Recently's line names them, its day said already:
@@ -156,9 +167,7 @@ public final class Memory: @unchecked Sendable {
             return nil
         }
         do { try files.keep(next, day: night.day) } catch { note("memory: can't write memory.md: \(error)") }
-        if let digest = night.digest {
-            do { try files.keep(files.days().keeping(digest, added: []).following(report, from: before, to: next)) } catch { note("memory: can't write the digests: \(error)") }
-        }
+        do { try files.keep(files.days().following(report, from: before, to: next)) } catch { note("memory: can't write the digests: \(error)") }
         if let h = harness {
             func ids(_ xs: [Int]) -> JSONValue { .array(xs.map { .string("m\($0)") }) }
             h.emit(Event(at: h.clock.now(), source: .boop, type: .memory, specificType: "night",
@@ -388,12 +397,13 @@ public final class Memory: @unchecked Sendable {
         dream(at: now, why: "asked")
     }
 
-    /// The dream of everything since the last: kept, to be logged and
-    /// told; the span started again (the checkpoint moved); then the
-    /// write, live, off the harness's queue. One at a time.
+    /// The dream of everything since the last: kept with its digest, to be
+    /// logged and told; the span started again (the checkpoint moved); then
+    /// the write, live, off the harness's queue. One at a time.
     func dream(at now: Int64, why: String) {
         guard let span, let dream = dreamReader.dream(span, now: now) else { return }
         save(dream)
+        keepDigest(of: dream, tallies: span.tallies)
         dreamtThisSleep = true
         dreams.update { $0 = DreamReader.Span(since: now) }
         note("memory: dreaming (\(why)) about \(dream.about ?? dream.weekday)")
@@ -401,7 +411,7 @@ public final class Memory: @unchecked Sendable {
         dreaming = true
         let asked = forgets
         Task { [weak self] in
-            let night = await self?.ask(dream, tallies: span.tallies)
+            let night = await self?.ask(dream, tallies: span.tallies, kept: true)
             queue.async {
                 guard let self else { return }
                 if let night {

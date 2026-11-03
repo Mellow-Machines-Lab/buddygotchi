@@ -196,7 +196,9 @@ final class MemoryPipelineTests: XCTestCase {
         t.journal = journal.map { .init(at: "10:00", line: $0, plain: false) }
         edit(&t)
         let d = day(i)
-        let asked = await memory.ask(Dream(day: d.day, weekday: d.weekday, tags: [], sentence: "a day", fact: "a day"), tallies: t)
+        let dream = Dream(day: d.day, weekday: d.weekday, tags: [], sentence: "a day", fact: "a day")
+        memory.keepDigest(of: dream, tallies: t)
+        let asked = await memory.ask(dream, tallies: t, kept: true)
         return memory.apply(try XCTUnwrap(asked))
     }
 
@@ -283,11 +285,11 @@ final class MemoryPipelineTests: XCTestCase {
         let dream = try XCTUnwrap(memory.dreamReader.dream(span, now: clock("2026-10-31", 1) + 1_800_000))
         XCTAssertEqual(dream.day, "2026-10-31", "the dream itself is dated when it's dreamed")
         XCTAssertEqual(dream.covers, "2026-10-30")
-        let asked = await memory.ask(dream, tallies: span.tallies)
+        memory.keepDigest(of: dream, tallies: span.tallies)
+        let asked = await memory.ask(dream, tallies: span.tallies, kept: true)
         let night = try XCTUnwrap(asked)
         XCTAssertEqual(night.day, "2026-10-30")
         XCTAssertEqual(night.request.pipeline?.weekday, "Friday")
-        XCTAssertEqual(night.digest?.weekday, "Friday")
         memory.apply(night)
         XCTAssertEqual(files.days().digests.map(\.weekday), ["Friday"])
         XCTAssertEqual(files.written().recently.first?.day, "2026-10-30")
@@ -428,9 +430,9 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(memory.felt(at: noon(14)).map(\.line).sorted(), ["line 0", "line 1", "line 2"])
     }
 
-    /// The dream gives the proposing writer its digests, and keeps tonight's
-    /// only when the edits land, so a preview commits nothing.
-    func testDreamKeepsDigests() async throws {
+    /// The dream gives the proposing writer its digests, tonight's among
+    /// them, with nothing kept for a preview, which only asks.
+    func testAPreviewKeepsNoDigest() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         let files = try MemoryStore(directory: dir)
@@ -443,8 +445,6 @@ final class MemoryPipelineTests: XCTestCase {
         let night = try XCTUnwrap(asked)
         XCTAssertEqual(files.days().digests.count, 0)
         XCTAssertEqual(night.request.pipeline?.digests.count, 1)
-        memory.apply(night)
-        XCTAssertEqual(files.days().digests.map(\.day), ["2026-10-05"])
     }
 }
 

@@ -315,6 +315,30 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(files.written().recently, [])
     }
 
+    /// A dream resets its span at once, so its digest is kept at once: a
+    /// quit before the writer answers loses no counts, and the reply adds
+    /// only its notes, counting nothing twice.
+    func testADreamKeepsItsDigestBeforeTheWriterAnswers() async throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("boop-memory-\(UUID().uuidString.prefix(8))")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir, today: "2026-10-31")
+        let queue = DispatchQueue(label: "memory-test")
+        let gate = WriterGate()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc,
+                            writer: GatedWriter(gate: gate, reply: "add boop: You stroke Boop most mornings. | days: 2026-10-31\nend"),
+                            files: files, queue: queue)
+        let t0 = at(2026, 10, 31, 9)
+        queue.sync {
+            memory.heard(stroke(1, t0), line: nil)
+            memory.dreamNow(at: t0 + hour)
+        }
+        XCTAssertEqual(files.days().digests.map(\.strokes), [1], "kept before any answer")
+        gate.open()
+        for _ in 0..<150 where queue.sync(execute: { memory.dreaming }) { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertEqual(files.days().digests.map(\.strokes), [1], "once")
+        XCTAssertEqual(files.days().added, ["You stroke Boop most mornings."])
+    }
+
     /// The telling offers `dreams.md`'s signs the dream's tags fit, the
     /// tagged ones first in the file's order (the person's first), then
     /// the plain ones; a line whose tags the day lacks never.
@@ -446,6 +470,7 @@ final class WriterGate: @unchecked Sendable {
 /// A writer that answers once the test lets it.
 struct GatedWriter: MemoryWriter {
     let gate: WriterGate, reply: String
+    var usesDigests: Bool { true }
     func write(_ request: MemoryRequest) async -> MemoryWriterReply {
         while !gate.opened { try? await Task.sleep(nanoseconds: 2_000_000) }
         return .reply(reply)
