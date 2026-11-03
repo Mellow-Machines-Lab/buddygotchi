@@ -62,14 +62,17 @@ public enum MemoryPipeline {
         Someone said this to the small pet on their desk, Boop. Write one short sentence that starts with "You told Boop" and says what they said, adding nothing. Reply with only the sentence.
         """
     public static let storyOver = """
-        Do these WORDS announce that something is finished, fixed, live, or cancelled? Answer yes or no.
+        Someone working on a software project said these WORDS. Do they announce that the work itself is finished, fixed, live, or cancelled? Their dinner or their day ending doesn't count. Answer yes or no.
 
         "save works now" yes
+        "we got it" yes
         "drop the port" yes
         "it's live" yes
         "still broken" no
         "next the audio" no
         "so close" no
+        "lunch is ready" no
+        "off for the night" no
         """
     // MARK: The write
 
@@ -154,7 +157,6 @@ public enum MemoryPipeline {
         for note in input.memory.notes(in: .work) where !note.pinned {
             guard let thread = MemoryEdits.quotes(in: note.text).first(where: { !$0.contains(" ") }), !skipping.contains(thread) else { continue }
             var words: [String] = []
-            var alone = Set<String>()  // said with this thread all there was
             var onThread = false
             var threads = Set<String>()  // tonight's so far
             for entry in input.journal {
@@ -169,15 +171,16 @@ public enum MemoryPipeline {
                     let only = onThread && threads == [thread]
                     let about = part.contains("Your words") || !MemoryEdits.meaning(part).isDisjoint(with: MemoryEdits.meaning(note.text)) || only
                     guard about else { continue }
-                    let said = MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords }
-                    words += said
-                    if only { alone.formUnion(said) }
+                    words += MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords }
                 }
             }
             guard onThread else { continue }
             var said: String?
             for phrase in words where !note.text.contains(phrase) {
-                let shared = alone.contains(phrase) || !MemoryEdits.meaning(phrase).isDisjoint(with: MemoryEdits.meaning(note.text))
+                guard !denies(phrase) else { continue }
+                // An end word with a word of the note's is plain. Alone on the
+                // thread it may be about anything ("dinner is done"): the model's.
+                let shared = !MemoryEdits.meaning(phrase).isDisjoint(with: MemoryEdits.meaning(note.text))
                 guard endsStory(phrase) && shared ? true : await model.yes(storyOver, "\"\(phrase)\"") == true else { continue }
                 guard await model.yes(isPrivate, "They said: \"\(phrase)\"") == false else { continue }
                 said = phrase
@@ -199,11 +202,20 @@ public enum MemoryPipeline {
     }
 
     /// Whether `words` say a story is over, by plain words: done, fixed,
-    /// live, or called off.
+    /// live, or called off. A question or a negation doesn't (`denies`).
     public static func endsStory(_ words: String) -> Bool {
         let lower = " " + MemoryProposer.lower(words) + " "
         let ends = ["done", "fixed", "works", "working", "finished", "published", "shipped", "live", "fast now", "after all", "forget", "scrap", "drop the", "cancel", "go back to", "gave up", "give up"]
-        return ends.contains { lower.contains(" \($0) ") } && !lower.contains(" not done ") && !lower.contains(" still ")
+        return ends.contains { lower.contains(" \($0) ") }
+    }
+
+    /// A question or a negation, or something not over yet: never the end of
+    /// a story, whoever says yes. Heard words often come with no question mark.
+    public static func denies(_ words: String) -> Bool {
+        let lower = " " + MemoryProposer.lower(words.replacingOccurrences(of: "\u{2019}", with: "'")) + " "
+        let not = [" not ", "n't ", " isnt ", " wasnt ", " arent ", " dont ", " doesnt ", " didnt ", " cant ", " wont ", " never ", " no longer ", " still ", " almost ", " nearly "]
+        let asks = [" is ", " are ", " was ", " were ", " did ", " does ", " do ", " has ", " have ", " can ", " could ", " will ", " should ", " why ", " how ", " what ", " when ", " where "]
+        return words.contains("?") || not.contains { lower.contains($0) } || asks.contains { lower.hasPrefix($0) }
     }
 
     /// Orders in what you said: never a note, whoever they were meant for.

@@ -276,6 +276,27 @@
     "login again"
    ],
    "label": "same"
+  },
+  {
+   "note": "\"game\" fought you for three days, and you won on Monday.",
+   "words": [
+    "we fixed it",
+    "it's done",
+    "shipped it",
+    "finally works"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"game\" fought you for three days, and you won on Monday.",
+   "words": [
+    "i'm done for today",
+    "dinner is done",
+    "done for the night",
+    "the laundry is done",
+    "i'm finished for the day"
+   ],
+   "label": "same"
   }
  ],
  "heldout": {

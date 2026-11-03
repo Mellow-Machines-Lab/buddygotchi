@@ -194,6 +194,42 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertFalse(told, "the model says it's private")
     }
 
+    /// The saga rule: words alone on a one-thread night are the model's to
+    /// judge, whatever end word they hold; and a question or a negation never
+    /// ends a story, whoever says yes. It replaces a note saying you won, and
+    /// Jev reads that for weeks.
+    func testAStorySurvivesWordsThatDontEndIt() async {
+        let won = note("work · 2026-10-05 · \"game\" fought you for three days, and you won on Monday.")
+        let prompt = "You asked claude on \"game\" for a fix, in a sentence."
+        func told(_ line: String, _ model: StubModel, memory: WrittenMemory? = nil) async -> Bool {
+            let out = await MemoryPipeline.write(input([prompt, line].map { (at: "10:00", line: $0) }, memory: memory ?? won), model: model)
+            return out.contains("\"game\": you said")
+        }
+        // As the real model should: only what announces an end of this work.
+        let judge = StubModel { instructions, prompt in
+            if instructions.contains("Is it private") { return false }
+            return instructions == MemoryPipeline.storyOver && prompt.contains("finally")
+        }
+        var ended = await told("You said to Boop: \"we finally shipped it\".", judge)
+        XCTAssertTrue(ended, "alone, and the model says it's over")
+        for words in ["i'm done for today", "dinner is done", "the audio is done"] {
+            ended = await told("You said to Boop: \"\(words)\".", judge)
+            XCTAssertFalse(ended, "\(words): alone it's the model's to judge, and it says no")
+        }
+        // A model that always says yes, so only the rule refuses these.
+        let yes = StubModel { instructions, _ in !instructions.contains("Is it private") }
+        for words in ["it isn't fixed", "it isn\u{2019}t fixed", "not working", "is it fixed", "is it fixed?", "did it ship", "game still broken", "game never worked", "almost done with game"] {
+            ended = await told("You said to Boop: \"\(words)\".", yes)
+            XCTAssertFalse(ended, "\(words): a negation or a question")
+        }
+        ended = await told("  Your words: \"is it live\"", yes)
+        XCTAssertFalse(ended, "on its own thread too")
+        ended = await told("You said to Boop: \"the game works now\".", StubModel { _, _ in true })
+        XCTAssertFalse(ended, "the model says it's private")
+        ended = await told("You said to Boop: \"the game works now\".", StubModel { _, _ in false })
+        XCTAssertTrue(ended, "an end word and a word of the note's: the rule's, with the model saying no")
+    }
+
     /// With no model the write still goes: code's day line, and nothing that needs one.
     func testWithNoModel() async {
         let out = await MemoryPipeline.write(input([]), model: nil)
