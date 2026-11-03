@@ -93,7 +93,7 @@ public final class Memory: @unchecked Sendable {
         guard writer != nil else { return nil }
         let day = dream.covers ?? dream.day
         return DayDigest.from(day: day, weekday: time.weekday(of: day), tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
-                              last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0,
+                              last: tallies.lastYours.map(time.clock) ?? "",
                               journal: tallies.journal.map { (at: $0.at, line: $0.line) })
     }
 
@@ -120,7 +120,7 @@ public final class Memory: @unchecked Sendable {
         let request = MemoryRequest(input)
         let reply = await writer.write(request)
         return Night(day: tonight.day, request: request, reply: reply, words: MemoryRequest.words(in: journal),
-                     source: MemoryRequest.source(certain: certain, journal: journal) + "\n" + MemoryPipeline.evidence(input).joined(separator: "\n"),
+                     source: input.source,
                      fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000))
     }
 

@@ -38,6 +38,12 @@ public enum MemoryPipeline {
             self.day = day
             self.weekday = weekday
         }
+
+        /// What every change must be tied to: CERTAIN, the lines since the
+        /// last dream, and what code counted tonight.
+        public var source: String {
+            ([certain] + journal.map(\.line) + MemoryPipeline.evidence(self)).joined(separator: "\n")
+        }
     }
 
     // MARK: The questions, one rule each
@@ -107,7 +113,7 @@ public enum MemoryPipeline {
         let earlier = input.digests.dropLast()
         var out: [MemoryCandidate] = []
         for entry in input.journal where entry.line.hasPrefix("You said to") {
-            guard let words = MemoryProposer.quotes(in: entry.line).first, !MemoryProposer.isPrivate(words), words.split(separator: " ").count >= 2, !isOrder(words) else { continue }
+            guard let words = MemoryEdits.quotes(in: entry.line).first, !MemoryProposer.isPrivate(words), words.split(separator: " ").count >= 2, !isOrder(words) else { continue }
             let lower = words.lowercased()
             if earlier.contains(where: { $0.said.contains { $0.words == lower } }) { continue }
             let prompt = "They said: \"\(words)\""
@@ -132,7 +138,7 @@ public enum MemoryPipeline {
     /// An ask you answered: code's own words.
     static func answers(_ input: Input) -> [MemoryCandidate] {
         input.journal.compactMap { entry -> MemoryCandidate? in
-            guard entry.line.hasPrefix("You answered"), let q = MemoryProposer.quotes(in: entry.line).first else { return nil }
+            guard entry.line.hasPrefix("You answered"), let q = MemoryEdits.quotes(in: entry.line).first else { return nil }
             let answer = entry.line.components(separatedBy: ": ").last?.trimmingCharacters(in: CharacterSet(charactersIn: ". ")) ?? ""
             guard !answer.isEmpty, !MemoryProposer.isPrivate(answer) else { return nil }
             let question = q.trimmingCharacters(in: CharacterSet(charactersIn: "? "))
@@ -147,7 +153,7 @@ public enum MemoryPipeline {
     static func stories(_ input: Input, skipping: Set<String>, model: MemoryModel) async -> [MemoryCandidate] {
         var out: [MemoryCandidate] = []
         for note in input.memory.notes(in: .work) where !note.pinned {
-            guard let thread = MemoryProposer.quotes(in: note.text).first(where: { !$0.contains(" ") }), !skipping.contains(thread) else { continue }
+            guard let thread = MemoryEdits.quotes(in: note.text).first(where: { !$0.contains(" ") }), !skipping.contains(thread) else { continue }
             var words: [String] = []
             var onThread = false
             for entry in input.journal {
@@ -158,7 +164,7 @@ public enum MemoryPipeline {
                     // What you said to Boop may be about anything: it counts
                     // for this note only if it shares a word with it.
                     let about = part.contains("Your words") || !MemoryEdits.meaning(part).isDisjoint(with: MemoryEdits.meaning(note.text))
-                    if about { words += MemoryProposer.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords } }
+                    if about { words += MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords } }
                 }
             }
             guard onThread else { continue }

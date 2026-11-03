@@ -523,7 +523,7 @@ func memory(_ raw: [String]) async {
         }
         // One night, so no habit: what you said and the day line.
         let weekday = LocalTime().weekday(of: day)
-        let tonight = DayDigest.from(day: day, weekday: weekday, tallies: .init(), first: "", last: "", strokesAM: 0, journal: journal)
+        let tonight = DayDigest.from(day: day, weekday: weekday, tallies: .init(), first: "", last: "", journal: journal)
         let input = MemoryPipeline.Input(memory: memory, digests: [tonight], certain: certain, journal: journal, day: day, weekday: weekday)
         let request = MemoryRequest(input)
         let started = Date()
@@ -535,7 +535,7 @@ func memory(_ raw: [String]) async {
         print("   reply:\n" + text.split(separator: "\n").map { "     " + $0 }.joined(separator: "\n"))
         let (after, report) = MemoryEdits.apply(text, to: memory, numbered: request.numbered, day: day,
                                                 words: MemoryRequest.words(in: journal),
-                                                source: MemoryRequest.source(certain: certain, journal: journal) + "\n" + MemoryPipeline.evidence(input).joined(separator: "\n"))
+                                                source: input.source)
         print("   updated \(report.updated), added \(report.added), dropped \(report.dropped), kept \(report.kept), aged \(report.aged)")
         for r in report.refused { print("   REFUSED \(r.why): \(r.line)") }
         print("   after:\n" + after.markdown.split(separator: "\n").filter { $0.hasPrefix("- ") }.map { "     " + $0 }.joined(separator: "\n"))

@@ -59,11 +59,6 @@ public struct MemoryRequest: Equatable, Sendable {
         return out
     }
 
-    /// What every change must be tied to: CERTAIN and the lines since the last dream.
-    public static func source(certain: String, journal: [(at: String, line: String)]) -> String {
-        ([certain] + journal.map(\.line)).joined(separator: "\n")
-    }
-
     /// The person's words in the lines since the last dream (`Your words: "…"`), which a
     /// note may quote.
     public static func words(in journal: [(at: String, line: String)]) -> [String] {

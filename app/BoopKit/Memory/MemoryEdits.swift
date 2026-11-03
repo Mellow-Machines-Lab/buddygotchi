@@ -137,6 +137,11 @@ public enum MemoryEdits {
         return (out, report)
     }
 
+    /// What's between the double quotes in `text`.
+    static func quotes(in text: String) -> [String] {
+        text.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
+    }
+
     /// `" 3: rest"` or `" 3"` as 3 and the rest.
     static func numberAndRest(_ s: Substring) -> (Int, String)? {
         let t = s.trimmingCharacters(in: .whitespaces)
@@ -218,8 +223,7 @@ public enum MemoryEdits {
         }
         guard section == .work else { return nil }
         func threads(_ s: String) -> Set<String> {
-            Set(s.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }
-                .map { String($0.element).lowercased() }.filter { !$0.contains(" ") })
+            Set(quotes(in: s).map { $0.lowercased() }.filter { !$0.contains(" ") })
         }
         let named = threads(text)
         return memory.notes(in: .work).contains { !threads($0.text).isDisjoint(with: named) } ? "duplicate" : nil
@@ -247,9 +251,8 @@ public enum MemoryEdits {
     /// link or code, or a sensitive topic.
     static func unsafe(_ text: String, words: [String], was: String?, longest: Int = maxLength) -> String? {
         guard !text.isEmpty, text.count <= longest else { return "length" }
-        let quotes = text.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
         let theirs = (words + [was ?? ""]).map { $0.lowercased() }
-        for q in quotes where !q.isEmpty {
+        for q in quotes(in: text) where !q.isEmpty {
             let isThread = q.split(separator: " ").count == 1 && q.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
             if isThread { continue }  // a thread's name, "api"
             guard q.split(separator: " ").count <= maxQuoteWords, theirs.contains(where: { $0.contains(q.lowercased()) }) else { return "quotes" }

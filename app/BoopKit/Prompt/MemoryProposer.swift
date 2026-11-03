@@ -56,10 +56,10 @@ public struct DayDigest: Codable, Equatable, Sendable {
     }
 
     /// The digest of a span, from its tallies and the journal's lines.
-    public static func from(day: String, weekday: String, tallies t: MemoryReader.Tallies, first: String, last: String, strokesAM: Int,
+    public static func from(day: String, weekday: String, tallies t: MemoryReader.Tallies, first: String, last: String,
                             journal: [(at: String, line: String)]) -> DayDigest {
         var d = DayDigest(day: day, weekday: weekday)
-        d.first = first; d.last = last; d.strokesAM = strokesAM
+        d.first = first; d.last = last; d.strokesAM = t.strokesAM ?? 0
         d.hereMinutes = t.hereMinutes; d.strokes = t.strokes; d.pokes = t.pokes; d.talks = t.talks; d.prompts = t.prompts
         d.late = t.late; d.turns = t.turns; d.failed = t.failed; d.threads = t.threads
         for (at, line) in journal {
@@ -73,7 +73,7 @@ public struct DayDigest: Codable, Equatable, Sendable {
                 for length in ["in a few words", "in a sentence", "in a paragraph", "at length"] where head.contains(length) {
                     d.lengths[length, default: 0] += 1
                 }
-            } else if head.hasPrefix("You said to"), let words = MemoryProposer.quotes(in: head).first {
+            } else if head.hasPrefix("You said to"), let words = MemoryEdits.quotes(in: head).first {
                 if !MemoryProposer.isPrivate(words) { d.said.append(.init(at: at, words: words.lowercased())) }
             } else if let thread {
                 if head.contains(" failed on ") || head.contains(" failed again on ") || head.contains(": failed,") {
@@ -135,12 +135,8 @@ public enum MemoryProposer {
     public static let window = 28, renewDays = 7
 
     static func thread(in line: String) -> String? {
-        let q = quotes(in: line)
+        let q = MemoryEdits.quotes(in: line)
         return line.hasPrefix("You said to") ? nil : q.first
-    }
-
-    static func quotes(in line: String) -> [String] {
-        line.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
     }
 
     /// Words a kept note must never stand on, wider than the checks' own

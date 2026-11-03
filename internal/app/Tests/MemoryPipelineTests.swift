@@ -121,7 +121,7 @@ final class MemoryPipelineTests: XCTestCase {
 
     /// The private list keeps what you said out of the digest.
     func testDigestKeepsNothingPrivate() {
-        let d = DayDigest.from(day: "2026-10-05", weekday: "Monday", tallies: .init(), first: "", last: "", strokesAM: 0, journal: [
+        let d = DayDigest.from(day: "2026-10-05", weekday: "Monday", tallies: .init(), first: "", last: "", journal: [
             (at: "09:00", line: "You said to Boop: \"my therapist says stop\"."),
             (at: "09:01", line: "You said to Boop: \"morning buddy\"."),
             (at: "09:02", line: "You asked claude on \"api\" for a fix, in a sentence, frustrated."),
@@ -144,7 +144,7 @@ final class MemoryPipelineTests: XCTestCase {
     func input(_ journal: [(at: String, line: String)], memory: WrittenMemory = WrittenMemory()) -> MemoryPipeline.Input {
         var t = MemoryReader.Tallies()
         t.threads = ["cli": 3]; t.turns = 3
-        let tonight = DayDigest.from(day: "2026-10-05", weekday: "Monday", tallies: t, first: "09:00", last: "18:00", strokesAM: 0, journal: journal)
+        let tonight = DayDigest.from(day: "2026-10-05", weekday: "Monday", tallies: t, first: "09:00", last: "18:00", journal: journal)
         return MemoryPipeline.Input(memory: memory, digests: [tonight], certain: "On Monday 2026-10-05.", journal: journal, day: "2026-10-05", weekday: "Monday")
     }
 
@@ -206,7 +206,7 @@ final class MemoryPipelineTests: XCTestCase {
         let i = MemoryPipeline.Input(memory: WrittenMemory(), digests: ds, certain: "On Friday 2026-10-09. You stroked Boop twice.", journal: [], day: "2026-10-09", weekday: "Friday")
         let out = await MemoryPipeline.write(i, model: nil)
         let (after, report) = MemoryEdits.apply(out, to: i.memory, numbered: [], day: i.day, words: [],
-                                                source: i.certain + "\n" + MemoryPipeline.evidence(i).joined(separator: "\n"))
+                                                source: i.source)
         XCTAssertEqual(report.refused.map(\.why), [], "\(report.refused)")
         XCTAssertEqual(after.notes.map(\.text), ["Boop has grown cuddly: you stroke it most mornings."])
     }
