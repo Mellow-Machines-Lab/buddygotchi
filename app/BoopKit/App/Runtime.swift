@@ -413,8 +413,8 @@ public final class Runtime: @unchecked Sendable {
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs {
-            core(rig).stage = { [weak self] in self.map { $0.options.fullSize || $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
-            core(rig).growthPercent = { [weak self] in self.flatMap { $0.options.fullSize || $0.playingDemo ? nil : $0.growth.growth.percent } }
+            core(rig).stage = { [weak self] in self.map { $0.showsGrowth ? $0.growth.growth.stage : 3 } ?? 3 }
+            core(rig).growthPercent = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growth.growth.percent : nil } }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
         growth.decay(today: options.time.day(options.wallClock()))
@@ -447,7 +447,7 @@ public final class Runtime: @unchecked Sendable {
         harness.on(Event.did) { [weak self] e in
             guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
             let rig = rig(e.buddy)
-            run(core(rig).moodChanged(at: options.clock()), on: rig)
+            run(core(rig).stateChanged(at: options.clock()), on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were
@@ -465,7 +465,7 @@ public final class Runtime: @unchecked Sendable {
             if growth.growth.stage > before {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
             } else if growth.growth.percent != percent {
-                for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
+                for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
             }
         }
         if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
@@ -866,12 +866,15 @@ extension Duration {
 }
 
 extension Runtime {
+    /// Whether the board shows Boop's real growth: a demo, or `fullSize`,
+    /// draws Boop full size, with no bar.
+    var showsGrowth: Bool { !options.fullSize && !playingDemo }
 
     /// Boop left alone goes backwards, once for each day past the grace,
     /// which shows on the board at once.
     func goBackwards(at now: Int64) {
         guard growth.decay(today: options.time.day(options.wallClock())) else { return }
         changed()
-        for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
+        for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
     }
 }

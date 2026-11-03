@@ -82,7 +82,7 @@ final class CoreRig {
     @discardableResult
     func setMood(_ mood: String) -> [CoreEffect] {
         core.mood = { mood }
-        return core.moodChanged(at: now)
+        return core.stateChanged(at: now)
     }
 
     /// The raw event a hook of `kind` makes, as the adapter would.

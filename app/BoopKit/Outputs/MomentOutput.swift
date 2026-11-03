@@ -188,7 +188,7 @@ public final class MomentOutput: Output {
         self.today = today
         self.felt = felt
         self.fixed = fixed
-        let own = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
+        let own = voice.map(SplitMix64.seed(of:)) ?? 0
         takes = SplitMix64(seed: seed ^ own)
         self.pack = pack
         self.voice = voice
@@ -836,10 +836,12 @@ public final class MomentOutput: Output {
         let reply = replied?.word
         let pick = talk ? nil : Self.animation(answers)
         let at = about?.at ?? 0
+        // What the brain held up, when it's for code to place.
+        let holding = talk ? nil : (answers[Signs.questionKey]?.choice).flatMap { $0 == "none" ? nil : $0 }
         // A wish the brain picked, its sign being the wish.
-        let wishing = talk ? nil : (answers[Signs.questionKey]?.choice).flatMap { c in wishOptions(about, log).first { $0.sign == c } }
+        let wishing = holding.flatMap { c in wishOptions(about, log).first { $0.sign == c } }
         // Something it remembers, its line being the sign.
-        let remembering = talk ? nil : (answers[Signs.questionKey]?.choice).flatMap { c in feltOptions(about).first { $0.line == c } }
+        let remembering = holding.flatMap { c in feltOptions(about).first { $0.line == c } }
         // What it says: nothing while hushed, unless this is you letting it
         // talk; on Quiet, nothing at a small moment or a finish, or with a
         // wish, which shows as its icon and sign.

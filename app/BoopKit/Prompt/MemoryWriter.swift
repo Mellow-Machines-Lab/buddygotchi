@@ -100,18 +100,10 @@ public struct AppleIntelligenceMemoryModel: MemoryModel {
     public static let timeout: Duration = .seconds(15)
     public init() {}
 
-    static func options(_ tokens: Int) -> GenerationOptions {
-        #if compiler(>=6.4)
-        GenerationOptions(samplingMode: .greedy, maximumResponseTokens: tokens)
-        #else
-        GenerationOptions(sampling: .greedy, maximumResponseTokens: tokens)
-        #endif
-    }
-
     public func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String? {
         await AppleIntelligenceLabeler.within(Self.timeout) {
             let session = LanguageModelSession(model: AppleIntelligenceLabeler.OnDevice.model, instructions: instructions)
-            return try? await session.respond(to: prompt, options: Self.options(tokens)).content
+            return try? await session.respond(to: prompt, options: AppleIntelligenceLabeler.OnDevice.greedy(tokens: tokens)).content
         }
     }
 
@@ -119,7 +111,7 @@ public struct AppleIntelligenceMemoryModel: MemoryModel {
         await AppleIntelligenceLabeler.within(Self.timeout) {
             guard let schema = try? GenerationSchema(root: DynamicGenerationSchema(name: "Answer", anyOf: ["yes", "no"]), dependencies: []) else { return nil }
             let session = LanguageModelSession(model: AppleIntelligenceLabeler.OnDevice.model, instructions: instructions)
-            guard let reply = try? await session.respond(to: prompt, schema: schema, includeSchemaInPrompt: false, options: Self.options(20)),
+            guard let reply = try? await session.respond(to: prompt, schema: schema, includeSchemaInPrompt: false, options: AppleIntelligenceLabeler.OnDevice.greedy(tokens: 20)),
                   let answer = try? reply.content.value(String.self) else { return nil }
             return answer == "yes"
         }

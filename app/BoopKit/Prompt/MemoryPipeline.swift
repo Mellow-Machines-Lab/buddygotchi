@@ -122,8 +122,7 @@ public enum MemoryPipeline {
             var text: String?
             let clause = String(words.prefix { !",.;".contains($0) })
             if clause.split(separator: " ").count <= MemoryEdits.maxQuoteWords, clause.count >= 6 {
-                let tail = clause.count == words.count ? words : clause
-                text = "You told Boop \"\(tail)\" on \(input.weekday)."
+                text = "You told Boop \"\(clause)\" on \(input.weekday)."
             } else if let line = clean(await model.text(paraphrase, "They said: \"\(words)\"", tokens: 40)), line.hasPrefix("You told Boop"),
                       !line.contains("\""), line.count <= 110, MemoryEdits.meaning(line).subtracting(["told"]).isSubset(of: MemoryEdits.meaning(words)) {
                 text = line

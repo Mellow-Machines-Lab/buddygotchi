@@ -160,11 +160,7 @@ public enum MemoryProposer {
     static let numberWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"]
     static func word(_ n: Int) -> String { n < numberWords.count ? numberWords[n] : String(n) }
 
-    static func hourWord(_ clock: String) -> String {
-        guard let h = Int(clock.prefix(2)) else { return "" }
-        let twelve = h % 12 == 0 ? 12 : h % 12
-        return word(twelve)
-    }
+    static func hourWord(_ hour: Int) -> String { word(hour % 12 == 0 ? 12 : hour % 12) }
 
     static func minutes(_ clock: String) -> Int? {
         let p = clock.split(separator: ":")
@@ -179,7 +175,7 @@ public enum MemoryProposer {
         let ds = Array(all.suffix(window))
         let active = ds.filter(\.active)
         var out: [MemoryCandidate] = []
-        out += care(active, today: today)
+        out += care(active)
         out += comfort(active, today: today)
         out += fridays(active, today: today)
         out += lateMost(active)
@@ -194,7 +190,7 @@ public enum MemoryProposer {
     }
 
     /// The one note on how you treat Boop: its word first.
-    static func care(_ a: [DayDigest], today: DayDigest) -> [MemoryCandidate] {
+    static func care(_ a: [DayDigest]) -> [MemoryCandidate] {
         guard a.count >= 5 else { return [] }
         let n = Double(a.count)
         let am = a.filter { $0.strokesAM > 0 }.count, stroked = a.filter { $0.strokes > 0 }.count, talked = a.filter { $0.talks > 0 }.count
@@ -236,17 +232,15 @@ public enum MemoryProposer {
 
     /// Late on one weekday and not on the others.
     static func fridays(_ a: [DayDigest], today: DayDigest) -> [MemoryCandidate] {
-        var out: [MemoryCandidate] = []
-        for weekday in LocalTime.weekdays where weekday == today.weekday && today.isLate {
-            let on = a.filter { $0.weekday == weekday }, off = a.filter { $0.weekday != weekday && !$0.weekend }
-            let late = on.filter(\.isLate), offLate = off.filter(\.isLate)
-            guard on.count >= 2, late.count >= 2, Double(late.count) >= Double(on.count) * 0.66, off.count >= 3,
-                  Double(offLate.count) <= Double(off.count) * 0.34 else { continue }
-            out.append(MemoryCandidate(key: "late.\(weekday)", section: .you, text: "\(weekday)s are your late nights.", strength: 75,
-                                       signature: ["late", weekday.lowercased()],
-                                       evidence: "Late nights on \(weekday)s, \(late.count) of \(on.count), \(weekday)s counted."))
-        }
-        return out
+        guard today.isLate else { return [] }
+        let weekday = today.weekday
+        let on = a.filter { $0.weekday == weekday }, off = a.filter { $0.weekday != weekday && !$0.weekend }
+        let late = on.filter(\.isLate), offLate = off.filter(\.isLate)
+        guard on.count >= 2, late.count >= 2, Double(late.count) >= Double(on.count) * 0.66, off.count >= 3,
+              Double(offLate.count) <= Double(off.count) * 0.34 else { return [] }
+        return [MemoryCandidate(key: "late.\(weekday)", section: .you, text: "\(weekday)s are your late nights.", strength: 75,
+                                signature: ["late", weekday.lowercased()],
+                                evidence: "Late nights on \(weekday)s, \(late.count) of \(on.count), \(weekday)s counted.")]
     }
 
     static func lateMost(_ a: [DayDigest]) -> [MemoryCandidate] {
@@ -314,7 +308,7 @@ public enum MemoryProposer {
         }
         // Nine or ten is just a working day, nothing to remember you by.
         guard let start = steady(weeks.map(\.first)), start < 8 * 60 || start >= 10 * 60 + 45 else { return [] }
-        let at = String(format: "%02d:%02d", (start + 15) / 60, 0)
+        let at = (start + 15) / 60
         return [MemoryCandidate(key: "hours", section: .you, text: "You sit down around \(hourWord(at)), most days.", strength: 30, signature: ["sit", "down"], evidence: "You sit down around \(hourWord(at)) most days, counted over \(weeks.count) days.")]
     }
 

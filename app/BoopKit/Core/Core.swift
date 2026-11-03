@@ -502,14 +502,6 @@ public final class Core {
         return fx
     }
 
-    /// The XP or the stage changed with nothing to celebrate (it earned, or
-    /// went backwards): a `state` carries it at once.
-    public func growthChanged(at now: Int64) -> [CoreEffect] {
-        var fx: [CoreEffect] = []
-        publish(now, &fx)
-        return fx
-    }
-
     /// Today's occasions at `now` (`Days.special`).
     func specialDays(at now: Int64) -> [Days.SpecialDay] {
         Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
@@ -549,10 +541,11 @@ public final class Core {
         return days > 0 ? days : nil
     }
 
-    /// The mood output saved a new mood (`mood` reads it): a `state`
-    /// carries it at once.
+    /// Something the state reads changed outside the core (the mood output
+    /// saved a new mood, or the XP or the stage changed with nothing to
+    /// celebrate): a `state` carries it at once.
     @discardableResult
-    public func moodChanged(at now: Int64) -> [CoreEffect] {
+    public func stateChanged(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         publish(now, &fx)
         return fx

@@ -100,7 +100,7 @@ public final class Memory: @unchecked Sendable {
     /// Keeps the span's digest (`memory-days.json`).
     func keepDigest(of dream: Dream, tallies: MemoryReader.Tallies) {
         guard let files, let digest = digest(of: dream, tallies: tallies) else { return }
-        do { try files.keep(files.days().keeping(digest, added: [])) } catch { note("memory: can't write the digests: \(error)") }
+        keep(files.days().keeping(digest, added: []))
     }
 
     /// Asks the writer to edit the written memory for `dream` from its
@@ -156,7 +156,7 @@ public final class Memory: @unchecked Sendable {
             return nil
         }
         do { try files.keep(next, day: night.day) } catch { note("memory: can't write memory.md: \(error)") }
-        do { try files.keep(files.days().following(report, from: before, to: next)) } catch { note("memory: can't write the digests: \(error)") }
+        keep(files.days().following(report, from: before, to: next))
         if let h = harness {
             func ids(_ xs: [Int]) -> JSONValue { .array(xs.map { .string("m\($0)") }) }
             h.emit(Event(at: h.clock.now(), source: .boop, type: .memory, specificType: "night",
@@ -237,16 +237,20 @@ public final class Memory: @unchecked Sendable {
         let kept = days.signs.filter { notes.contains($0.key) }
         if kept != days.signs {
             days.signs = kept
-            do { try files.keep(days) } catch { note("memory: can't write the digests: \(error)") }
+            keep(days)
         }
         return Array(notes.filter { kept[$0] == nil }.prefix(Self.signsADream))
+    }
+
+    func keep(_ days: MemoryStore.Days) {
+        do { try files?.keep(days) } catch { note("memory: can't write the digests: \(error)") }
     }
 
     func keep(signs: [String: String]) {
         guard let files, !signs.isEmpty else { return }
         var days = files.days()
         days.signs.merge(signs) { _, new in new }
-        do { try files.keep(days) } catch { note("memory: can't write the digests: \(error)") }
+        keep(days)
     }
 
     /// At the dream's write, each new note gets its line, off the queue:
@@ -278,9 +282,10 @@ public final class Memory: @unchecked Sendable {
     /// today.
     public func felt(at ms: Int64, longest: Int = MemoryPipeline.signMax) -> [Felt] {
         guard let files else { return [] }
+        let signs = files.days().signs
+        guard !signs.isEmpty else { return [] }
         let shown = feltShown(), today = time.boopDay(ms)
         guard !shown.values.contains(today), let now = LocalTime.dayNumber(today) else { return [] }
-        let signs = files.days().signs
         func age(_ line: String) -> Int { shown[line].flatMap(LocalTime.dayNumber).map { now - $0 } ?? .max }
         return files.written().notes.compactMap { n in
             signs[n.text].flatMap { $0.isEmpty || $0.count > longest || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }

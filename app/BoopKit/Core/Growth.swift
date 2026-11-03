@@ -108,7 +108,7 @@ public struct Growth: Equatable, Sendable {
     /// shows (`state.xp`). A full bar is only the last stage's.
     public var percent: Int { Int(progress * 100) }
 
-    public var name: String { Growth.stages[min(stage, Growth.stages.count) - 1].name }
+    public var name: String { Growth.stages[stage - 1].name }
     /// The XP the next stage starts at, or nil at the last.
     public var nextAt: Int? { stage < Growth.stages.count ? Growth.stages[stage].from : nil }
     /// How far through this stage, 0–1; 1 at the last.
