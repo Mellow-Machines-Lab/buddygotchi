@@ -170,7 +170,7 @@ public final class MemoryReader: TranscriptReader {
         switch e.type {
         case .prompt?: return (text, !line.notes.contains { $0.hasPrefix("Your words") })
         case .said?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
-        case .wish?: return (text, false)
+        case .wish?, .grew?: return (text, false)
         case .turn? where e.phase == .end:
             let long = (line.facts["length_ms"]?.int ?? 0) >= 5 * 60_000
             return long || e["outcome"]?.string != "done" ? (text, true) : nil

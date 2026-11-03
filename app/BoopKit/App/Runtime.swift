@@ -412,6 +412,7 @@ public final class Runtime: @unchecked Sendable {
         // Weak: the runtime holds the cores.
         for rig in rigs {
             core(rig).stage = { [weak self] in self.map { $0.options.fullSize || $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
+            core(rig).growthPercent = { [weak self] in self.flatMap { $0.options.fullSize || $0.playingDemo ? nil : $0.growth.growth.percent } }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
         growth.decay(today: options.time.day(options.wallClock()))
@@ -453,7 +454,7 @@ public final class Runtime: @unchecked Sendable {
         // what it earns, uncapped.
         let grow: (Event, Int) -> Void = { [weak self] e, earned in
             guard let self else { return }
-            let before = growth.growth.stage, now = options.clock()
+            let before = growth.growth.stage, percent = growth.growth.percent, now = options.clock()
             let wall = options.wallClock()
             guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
             grew = true
@@ -461,6 +462,8 @@ public final class Runtime: @unchecked Sendable {
             // celebrates it now, unless Boop hatched today.
             if growth.growth.stage > before {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
+            } else if growth.growth.percent != percent {
+                for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
             }
         }
         if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
@@ -859,15 +862,14 @@ extension Duration {
 
 extension Runtime {
 
-    /// Once a day: Boop left alone goes backwards, and a stage it loses
-    /// shows on the board at once.
+    /// Once a day: Boop left alone goes backwards, which shows on the board
+    /// at once.
     func goBackwards(at now: Int64) {
         let today = options.time.day(options.wallClock())
         guard today != backwardsDay else { return }
         backwardsDay = today
-        let before = growth.growth.stage
         guard growth.decay(today: today) else { return }
         changed()
-        if growth.growth.stage < before { for rig in rigs { run(core(rig).stageChanged(at: now), on: rig) } }
+        for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
     }
 }

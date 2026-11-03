@@ -516,6 +516,19 @@ public final class MomentOutput: Output {
                                          + captions.map { Option($0.text, "With \(Self.article($0.replies[0])) \($0.replies.joined(separator: " or ")) reply"
                                                                  + ($0.replies.contains("dunno") ? " (dunno, a huh to a question)." : ".")) })]
         }
+        // Growing always gets a moment, and what it holds up says what grew.
+        if let about, about.type == .grew {
+            let asked = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack).map { q in
+                q.key == Self.emotionKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
+                                                    options: q.options.filter { $0.name != "none" }) : q
+            }
+            let captions = offered(now, log)
+            guard !captions.isEmpty else { return asked }
+            return asked + [Question(key: Signs.questionKey,
+                                     text: "\(pack.name) has just grown, as NOW says. Which sign does it hold up? The one that says best, as \(pack.name) would, what grew.",
+                                     about: "what NOW says grew", judgeBy: "PERSONALITY and MOOD",
+                                     options: captions.map { Option($0, "A sign that says this.") })]
+        }
         if let about, about.type == .lock {
             let lock = about.phase == .start
             let asked = Self.speech(Self.lockQuestions(asked, lock: lock, mayNap: mayNap(about), in: pack), hushed: hushedNow, talk: talk(), in: pack)
@@ -589,6 +602,8 @@ public final class MomentOutput: Output {
         guard let about = Self.about(now, log) else { return [] }
         // The line that tells the dream: a sign the dream's tags fit.
         if let tags = told(about) { return Signs.dreams(dreams, tags: tags + calendar(about)) }
+        // Growing: the lines for the stage it reached, and for any.
+        if about.type == .grew { return Signs.grew(signs, stage: about.specificType) }
         // Your lock or unlock: the lines for its goodbye or hello, by the
         // moment: `bye working` while an agent works.
         if about.type == .lock {

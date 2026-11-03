@@ -1,6 +1,6 @@
 # Growth
 
-Updated 2026-11-02. Decided with the owner on 2026-11-01. Boop is whole from
+Updated 2026-11-03. Decided with the owner on 2026-11-01. Boop is whole from
 the first minute. Growth only adds delight.
 
 ## One bar, fed by XP
@@ -95,19 +95,63 @@ Still to look at on the board: whether a Hatchling's face reads at arm's length.
 
 Storyboard: `/tmp/boop-storyboard/stages.html`.
 
-## What's built, and what isn't (2026-11-02)
+## The growth bar on the board (2026-11-03)
 
-Built on the `growth` branches: the stages, the wish's +40, going backwards
-and the reason, the body by stage tags, the ceremony on the board, the
-sprout, a stage on each pastime row (Hatchling, Sprout or Buddy), the flop, the
-silhouette in the popover, and the studio's grouping.
+`state.xp` is the percent through the stage (`Growth.percent`), 100 only at
+Chonk. A demo sends none, so its recordings don't change, and with none the
+board shows no bar.
+
+The bar slides in along the top of the screen when the XP has moved 5 points
+from where it last showed, or the stage changed. It fills over 700 ms, stays
+3 s and goes. A busy agent earns a point every few calls, so a smaller move
+shows nothing. It stays off over the needs-you screen, while listening, asleep,
+face down and with no Mac, and a move then isn't saved up. This stage's little
+Boop stands at its left, the next stage's in shadow at its right. At Chonk it's
+full and gold.
+
+A met wish's heart stays in the bubble for 420 ms, flies 720 ms on a curve into
+the bar's tip, and the bar gulps as it lands and only then fills, whichever of
+the `do` and the state with the XP came first. A stage the wish reached waits for
+the landing: the bar fills to its end, then from its start, as the new body plays.
+
+**Estimated, not measured:** the bar and its two Boops are at most about 6,000
+pixels of 205,820, up for about 4 s at a time, against 21% more of the body for
+a Chonk; it allocates nothing, and adds a few ints to `Behaviour` and `GelFace`.
+`boopctl perf` with the bar up is owed on the AMOLED.
+
+## Saved stages, and the first launch (2026-11-03)
+
+The stage is the XP's now, and the old saved stage (`growth.stage`, six stages,
+and it never went back) is read once. By name: Hatchling, Sprout and Buddy stay,
+Pal becomes Buddy, and Chonk and Legend become Chonk. A store whose XP is under
+its stage's new threshold is raised to it, so nobody drops a stage by updating.
+XP above the threshold stays, so a Pal with 5,100 XP is a Chonk.
+
+The old build drew every stage at full size, so an existing Hatchling or Sprout
+looks smaller after the update than the day before. That's the plan's look, not
+a lost stage, and the owner may want to judge it.
+
+The 3-day clock starts at the first launch that has it, however long since the
+last XP, as nothing kept that day before (`growth.earned`). So that launch costs
+nothing, and the first 5% goes on the fourth day after it with no XP.
+
+## What's built, and what isn't (2026-11-03)
+
+Built on the `growth` branches: the stages, the wish's +40, going backwards and
+the reason, the body by stage tags, the ceremony on the board, the sprout, a
+stage on each pastime row (Hatchling, Sprout or Buddy), the flop, the silhouette
+in the popover, the studio's grouping, the board's growth bar and the wish's
+heart, and growing's voice: the `grew` event wakes Jev, whose face, words and
+sign (`signs.md`'s `[grew]` lines) say what grew, and there's no rule's sign and
+no rule's confetti. With no brain, the board still plays the new body.
 
 Not built:
 
-- The board's growth bar, and the wish's heart flying into it: it needs a
-  new field on `state`, for the XP's share. The bar is only in the popover.
-- A voice for growing through Jev: the sign is the rule's, "I'm a Sprout!".
-- Voice pitch and how it moves, by stage: the body settings are size, eyes and
-  squash.
+- Voice pitch by stage: a take plays at one speed (`voice::Player`), and the
+  mouth, the bubble and the Mac's `Take.ms` all time from it, so it isn't cheap.
+  Sound effects already take a pitch (`FxEvent::pitch`), a small change if wanted.
+- How it moves by stage: clumsy, bouncy or slow needs tuning by eye for each
+  stage, on the board. The body settings are size, eyes and squash.
 - A pastime only a Chonk knows: a Buddy would deal differently, as a board
   with no tag is a Buddy.
+- A demo with the bar: demos send no `xp`, so `make demo` doesn't show it.

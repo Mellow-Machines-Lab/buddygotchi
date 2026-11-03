@@ -245,6 +245,11 @@ public enum EventLine {
         count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
     }
 
+    /// Boop grew a stage: `Boop grew: it's a Sprout now.`
+    public static func grew(_ stage: String, name: String = CharacterPack.active.name) -> String {
+        "\(name) grew: it's a \(stage) now."
+    }
+
     /// Boop's wish: made, and how it ended.
     public static func wished(_ kind: Core.WishKind, name: String = CharacterPack.active.name) -> String {
         "\(name) wished for \(kind.words)."

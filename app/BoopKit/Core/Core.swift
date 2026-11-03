@@ -70,6 +70,10 @@ public final class Core {
     /// its tags (`Tags.stages`): the runtime reads it from the growth
     /// store. Buddy's, the full size, until it's set.
     var stage: () -> Int = { 3 }
+    /// How far through its stage, in percent, for the board's bar
+    /// (`state.xp`): the runtime reads it from the growth store. Nil sends none
+    /// and shows no bar: for a demo, and a core with no store.
+    var growthPercent: () -> Int? = { nil }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -479,34 +483,27 @@ public final class Core {
 
     /// Boop reached the growth stage `name` on `day` (today's at `now` by
     /// default): the rest of that day is a party, which a `state` carries
-    /// at once. Reached just now (`celebrate`), Boop celebrates it then,
-    /// with the confetti and a sign saying what it grew into, so the party
-    /// has a moment you can see. Not on the day Boop hatched, your first
-    /// with it: then it's no occasion (`Days.special`).
+    /// at once, and the board plays the new body from its tag. Reached just
+    /// now (`celebrate`), the `grew` event asks Jev for its sign and words.
+    /// Not on the day Boop hatched, your first with it: then it's no occasion
+    /// (`Days.special`).
     @discardableResult
     public func reachedStage(_ name: String, day: String? = nil, celebrate: Bool = false, at now: Int64) -> [CoreEffect] {
         config.stageReached = (name, day ?? self.day(now))
         var fx: [CoreEffect] = []
         publish(now, &fx)
-        if celebrate, let sign = Days.greeting(specialDays(at: now)) {
-            play(Core.celebration(sign: sign), for: nil, now, &fx,
-                 said: "\(config.pack.name) celebrated becoming a \(name), holding up a sign: \"\(sign)\".")
+        if celebrate, config.hatched != self.day(now) {
+            fx.append(.record(Event(at: now, source: .boop, type: .grew, specificType: name)))
         }
         return fx
     }
 
-    /// The stage changed with nothing to celebrate (it went backwards): a
-    /// `state` carries it at once.
-    public func stageChanged(at now: Int64) -> [CoreEffect] {
+    /// The XP or the stage changed with nothing to celebrate (it earned, or
+    /// went backwards): a `state` carries it at once.
+    public func growthChanged(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         publish(now, &fx)
         return fx
-    }
-
-    /// Growing a stage: the finish's confetti, as a finish held twice with
-    /// no turn plays, and its sign.
-    static func celebration(sign: String) -> Moment {
-        Moment(anim: "task_complete", loops: 2, outcome: "success", sign: sign)
     }
 
     /// Today's occasions at `now` (`Days.special`).
@@ -605,6 +602,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
+        snapshot.xp = growthPercent()
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
             snapshot.wishHow = !wishDone(kind)
