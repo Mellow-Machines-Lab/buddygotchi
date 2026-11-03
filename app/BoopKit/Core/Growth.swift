@@ -22,6 +22,10 @@ public struct Growth: Equatable, Sendable {
         ("Hatchling", 0), ("Sprout", 200), ("Buddy", 1_000), ("Chonk", 5_000),
     ]
 
+    /// The stage a stage saved when there were six comes to, by name: Pal,
+    /// the size of a Buddy, is a Buddy; Chonk and Legend are a Chonk.
+    public static func stage(fromSix old: Int) -> Int { [1, 2, 3, 3, 4, 4][max(1, min(old, 6)) - 1] }
+
     /// With no XP at all for this many days, it loses `decayPercent` of
     /// its XP each day after.
     public static let decayAfterDays = 3, decayPercent = 5
@@ -104,6 +108,10 @@ public struct Growth: Equatable, Sendable {
     public static func stage(for xp: Int) -> Int {
         (stages.lastIndex { xp >= $0.from } ?? 0) + 1
     }
+
+    /// How far through its stage, in whole percent: what the board's bar
+    /// shows (`state.xp`). A full bar is only the last stage's.
+    public var percent: Int { Int(progress * 100) }
 
     public var name: String { Growth.stages[min(stage, Growth.stages.count) - 1].name }
     /// The XP the next stage starts at, or nil at the last.

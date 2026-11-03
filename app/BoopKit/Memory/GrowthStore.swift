@@ -14,6 +14,9 @@ public final class GrowthStore {
     public static let earnedKey = "growth.earned"
     public static let decayedKey = "growth.decayed"
     public static let shrankKey = "growth.shrank"
+    /// The stage as it was saved when there were six and it never went back:
+    /// read once, by `init`, and gone from then on.
+    public static let oldStageKey = "growth.stage"
 
     let store: KeyValueStore
     let log: (String) -> Void
@@ -32,7 +35,19 @@ public final class GrowthStore {
     public init(_ store: KeyValueStore, log: @escaping (String) -> Void = { _ in }) {
         self.store = store
         self.log = log
-        growth = Growth(xp: store.int(Self.xpKey) ?? 0)
+        var xp = store.int(Self.xpKey) ?? 0
+        // From when a stage never went back, however little XP it had: it
+        // keeps its stage's size, in XP now, as the stage is the XP's.
+        if let old = store.int(Self.oldStageKey) {
+            xp = max(xp, Growth.stages[Growth.stage(fromSix: old) - 1].from)
+            do {
+                try store.set([Self.xpKey: String(xp)])
+                try store.remove([Self.oldStageKey])
+            } catch {
+                log("growth: can't save the stage it kept: \(error)")
+            }
+        }
+        growth = Growth(xp: xp)
         lastSeq = store.int(Self.lastSeqKey) ?? 0
         reachedDay = store.string(Self.reachedKey)
         earnedDay = store.string(Self.earnedKey)
@@ -43,8 +58,9 @@ public final class GrowthStore {
     }
 
     /// Goes backwards up to `today`, once for each day past the grace since
-    /// it last earned; the first day it's asked starts that clock. Returns
-    /// whether the XP changed.
+    /// it last earned; the first day it's asked starts that clock, so a
+    /// first launch on this, however long since the last, costs nothing.
+    /// Returns whether the XP changed.
     @discardableResult
     public func decay(today: String) -> Bool {
         guard let earnedDay else {
@@ -52,6 +68,7 @@ public final class GrowthStore {
             save()
             return false
         }
+        guard earnedDay != today else { return false }
         let gone = Growth.days(from: earnedDay, to: today)
         let due = max(0, gone - Growth.decayAfterDays) - decayedDays
         guard due > 0 else { return false }
