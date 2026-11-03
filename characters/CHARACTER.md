@@ -376,7 +376,8 @@ signs.
 
 Its `[grew]` lines, and `[grew sprout]`, `[grew buddy]` and `[grew chonk]`, the
 stage's first, are what it may hold up as it grows (`Signs.grew`): Jev picks the
-one that says what grew, at the `grew` event. A pack with none holds up nothing
+one that says what grew, at the `grew` event, which waits while something needs
+you (`Core.reachedStage`). A pack with none holds up nothing
 then, and the board still plays the new body.
 
 **The growth bar,** the gel's own (`render::GrowthShow`, `paintGrowthBar`), goes

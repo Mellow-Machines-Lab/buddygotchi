@@ -149,6 +149,24 @@ final class DaysTests: XCTestCase {
                       "the party hat is on")
     }
 
+    /// A stage reached while something needs you isn't lost to it: nothing
+    /// but your words wakes Jev then, so its `grew` waits for the answer and
+    /// then gets its moment. A stage reached with nothing waiting goes at once
+    /// (above).
+    func testAStageReachedWhileSomethingNeedsYouWaits() {
+        let rig = CoreRig()
+        rig.send(.needsYou, tool: "Bash")
+        XCTAssertNotNil(rig.pipeline.core.needsYouBlock)
+        func grew() -> [Event] { rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .grew } }
+        rig.pipeline.run(rig.pipeline.core.reachedStage("Sprout", celebrate: true, at: rig.now))
+        XCTAssertEqual(grew().count, 0, "it would never wake Jev")
+        rig.send(.activity, tool: "Bash")
+        XCTAssertNil(rig.pipeline.core.needsYouBlock)
+        XCTAssertEqual(grew().map(\.specificType), ["Sprout"], "once it's answered")
+        rig.send(.activity, tool: "Bash")
+        XCTAssertEqual(grew().count, 1, "once")
+    }
+
     /// On a day with an occasion, the first agent's event greets it once,
     /// with its sign after the event's own reaction, waking if it was
     /// asleep and noticing it if not; never over needs you, nor lost to

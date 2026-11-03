@@ -98,6 +98,8 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
+    /// A stage reached just now whose `grew` waits for nothing to need you.
+    var grewHeld: String?
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
     /// When the board last said its agents' drawer is open (`ev drawer`),
@@ -484,7 +486,8 @@ public final class Core {
     /// Boop reached the growth stage `name` on `day` (today's at `now` by
     /// default): the rest of that day is a party, which a `state` carries
     /// at once, and the board plays the new body from its tag. Reached just
-    /// now (`celebrate`), the `grew` event asks Jev for its sign and words.
+    /// now (`celebrate`), the `grew` event asks Jev for its sign and words,
+    /// once nothing needs you: until then nothing would wake it.
     /// Not on the day Boop hatched, your first with it: then it's no occasion
     /// (`Days.special`).
     @discardableResult
@@ -493,7 +496,8 @@ public final class Core {
         var fx: [CoreEffect] = []
         publish(now, &fx)
         if celebrate, config.hatched != self.day(now) {
-            fx.append(.record(Event(at: now, source: .boop, type: .grew, specificType: name)))
+            grewHeld = name
+            recordGrew(now, &fx)
         }
         return fx
     }
@@ -1093,6 +1097,13 @@ public final class Core {
         }
     }
 
+    /// The stage reached that's waiting for nothing to need you (`grewHeld`).
+    func recordGrew(_ now: Int64, _ fx: inout [CoreEffect]) {
+        guard let name = grewHeld, needsYouBlock == nil else { return }
+        grewHeld = nil
+        fx.append(.record(Event(at: now, source: .boop, type: .grew, specificType: name)))
+    }
+
     /// "Needs you" starting or clearing for a session, as a rule action:
     /// the view says who needs you from its start. One that cleared for
     /// anything but an answer says why.
@@ -1142,6 +1153,7 @@ public final class Core {
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
         recordGone(now, &fx)
         recordNeeds(now, &fx)
+        recordGrew(now, &fx)
         tidyNotes()
         updateActs(now)
         let (shown, dismissed, active, _) = groups(at: now)
