@@ -13,7 +13,8 @@ import MellowHarness
 /// and at once when it hasn't in `fallbackMs`; each only with something
 /// new, and one at a time. The dream is kept in the key-value store
 /// (`dream.last`) and logged as a `dream` event at the next tick, for the
-/// view to tell; the line that tells it marks it told. Attached where the
+/// view to tell; the moment that tells it, once it has played, marks it
+/// told. Attached where the
 /// pipeline is made, so the app, `--headless` and the evals all have it.
 /// Touched on the harness's queue, but for the write, which asks the
 /// writer off it and lands its edits back on it (`queue`).
@@ -174,7 +175,11 @@ public final class Memory: @unchecked Sendable {
     public var span: DreamReader.Span? { dreams.state }
 
     func heard(_ e: Event, line: Line?) {
-        if let day = line?.facts["dream_day"]?.string { told(day) }
+        // The moment that tells the dream played through.
+        if e.kind == Event.ended, e.action == MomentOutput.outputName, e["outcome"]?.string == "done", let h = harness,
+           let about = e.about.flatMap({ h.log.event($0) })?.about, let day = h.line(about)?.facts["dream_day"]?.string {
+            told(day)
+        }
         recordAsk(e)
         recordWish(e)
         runner.feed(e, line: line)

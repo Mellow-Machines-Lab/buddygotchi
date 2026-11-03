@@ -311,6 +311,46 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertTrue(sign.text.contains("dream"))
     }
 
+    /// The moment that tells the dream starting, for the event `seq`, as
+    /// the react output's would; and its end, `failed` why or done.
+    private func moment(_ rig: CoreRig, for seq: Int, failed why: String? = nil) {
+        let h = rig.pipeline.harness
+        let did = h.emit(Event.did("Boop had a happy moment.", for: seq, action: MomentOutput.outputName, by: "brain", open: true, at: rig.now))
+        h.emit(Event.ended(did.seq, action: MomentOutput.outputName, by: "brain", failed: why, at: rig.now))
+    }
+
+    /// TranscriptView.played: a dream counts as told only once its moment
+    /// has played. A needs-you that cuts it, or a brain that never answers,
+    /// leaves it to tell at your next showing up; a second touch while the
+    /// first's pass is out doesn't tell it twice.
+    func testADreamIsToldOnlyOnceItsMomentHasPlayed() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
+        rig.turn(60_000)
+        rig.wait(16 * hour, every: 60_000)
+        let dream = try XCTUnwrap(memory.dream)
+        let told = { (fx: Fx) in events(fx).filter { $0.facts["dream_day"] != nil } }
+        let stroke = { rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now))) }
+
+        let first = try XCTUnwrap(told(stroke()).first, "the first touch tells it")
+        XCTAssertEqual(told(stroke()).count, 0, "its pass is still out")
+        XCTAssertFalse(memory.dream?.told == true)
+        rig.wait(TranscriptView.tellingWaitMs, every: TranscriptView.tellingWaitMs)
+        let again = try XCTUnwrap(told(stroke()).first, "the brain never answered: the next touch tells it")
+        XCTAssertGreaterThan(again.seq, first.seq)
+
+        moment(rig, for: again.seq, failed: "cut short: something needed you")
+        XCTAssertFalse(memory.dream?.told == true, "a needs-you cut it")
+        let third = try XCTUnwrap(told(stroke()).first, "so the next touch tells it")
+
+        moment(rig, for: third.seq)
+        XCTAssertEqual(memory.dream?.day, dream.day)
+        XCTAssertTrue(memory.dream?.told == true, "it played through")
+        XCTAssertEqual(told(stroke()).count, 0, "told once")
+    }
+
     /// TranscriptView.told: the dream is told on your first coming back
     /// after it was dreamed: never an agent's event or while you're away,
     /// and once.
@@ -334,6 +374,7 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(line.notes.last, "\(rig.pipeline.buddies[0].name) dreamed about \(dream.about ?? ""): \(dream.sentence).")
         XCTAssertEqual(Narration.of(rig.pipeline.transcript.event(line.seq)!, line: Line(line.line, facts: line.facts))?.fact,
                        dream.fact, "the dream is the reason")
+        moment(rig, for: line.seq)
         XCTAssertTrue(memory.dream?.told == true)
         XCTAssertEqual(told(rig.poke()), [], "told once")
     }
