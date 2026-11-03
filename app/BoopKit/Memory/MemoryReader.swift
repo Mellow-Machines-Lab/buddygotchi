@@ -245,10 +245,10 @@ public final class MemoryReader: TranscriptReader {
 }
 
 /// Boop's dream: everything since the last one, as it dreamed it, made
-/// when it dreams (`Memory.dream`). The day it ended, its tags, a sentence
-/// and a few words for the board, how the telling says the span (`about`)
-/// and its dates (`range`), and whether it has been told and logged. The
-/// newest is kept as `dream.last` in the key-value store.
+/// when it dreams (`Memory.dream`). The day it ended, the day it covers, its
+/// tags, a sentence and a few words for the board, how the telling says the
+/// span (`about`) and its dates (`range`), and whether it has been told and
+/// logged. The newest is kept as `dream.last` in the key-value store.
 public struct Dream: Codable, Equatable, Sendable {
     public var day: String
     public var weekday: String
@@ -260,13 +260,18 @@ public struct Dream: Codable, Equatable, Sendable {
     public var about: String?
     /// "Thursday 2026-10-30 to Saturday 2026-11-01"; nil as `about`.
     public var range: String?
+    /// The Boop day of the last thing you did in it, or of the dream with
+    /// nothing of yours: what its digest and its notes are dated by, so a
+    /// Friday that ends at 01:00 is Friday's. Nil in a dream kept before it
+    /// was, for `day`.
+    public var covers: String?
     public var told = false
     public var logged = false
 
     public static let key = "dream.last"
 
     public init(day: String, weekday: String, tags: [String], sentence: String, fact: String, about: String? = nil,
-                range: String? = nil) {
+                range: String? = nil, covers: String? = nil) {
         self.day = day
         self.weekday = weekday
         self.tags = tags
@@ -274,6 +279,7 @@ public struct Dream: Codable, Equatable, Sendable {
         self.fact = fact
         self.about = about
         self.range = range
+        self.covers = covers
     }
 
     /// The newest dream kept, or nil.

@@ -92,7 +92,7 @@ public final class Memory: @unchecked Sendable {
     /// RECENT left out if it didn't fit. Nil with no writer.
     public func ask(_ dream: Dream, tallies: MemoryReader.Tallies) async -> Night? {
         guard let writer, let files else { return nil }
-        let day = dream.day, range = dream.range ?? "\(dream.weekday) \(day)"
+        let day = dream.covers ?? dream.day, weekday = time.weekday(of: day), range = dream.range ?? "\(dream.weekday) \(dream.day)"
         let journal = tallies.journal.map { (at: $0.at, line: $0.line) }
         let certain = MemoryRequest.certain(tallies, range: range)
         let started = Date()
@@ -101,11 +101,11 @@ public final class Memory: @unchecked Sendable {
         var digest: DayDigest?
         if writer.usesDigests {
             let memory = files.written(), days = files.days()
-            let tonight = DayDigest.from(day: day, weekday: dream.weekday, tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
+            let tonight = DayDigest.from(day: day, weekday: weekday, tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
                                          last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0, journal: journal)
             digest = tonight
             let digests = days.keeping(tonight, added: []).digests
-            var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: day, weekday: dream.weekday)
+            var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: day, weekday: weekday)
             input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
             request.pipeline = input
             source += "\n" + MemoryPipeline.evidence(input).joined(separator: "\n")

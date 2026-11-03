@@ -267,6 +267,38 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertTrue(out.contains("\"api\" has been fighting you"), out)
     }
 
+    /// A Friday session that ends at 01:00 is Friday's: its digest, its note
+    /// and its day line don't say Saturday, and no late Saturdays come of it.
+    func testADreamCoversTheDayItsEventsWereOn() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
+        let files = try MemoryStore(directory: dir)
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: time, writer: CodeWriter(), files: files)
+        func clock(_ day: String, _ hour: Int) -> Int64 { Int64(LocalTime.dayNumber(day)!) * 86_400_000 + Int64(hour) * 3_600_000 }
+        var span = DreamReader.Span(since: clock("2026-10-30", 20))
+        span.tallies.turns = 2; span.tallies.threads = ["cli": 2]; span.tallies.yours = 3
+        span.tallies.firstYours = clock("2026-10-30", 20)
+        span.tallies.lastYours = clock("2026-10-31", 1)
+        let dream = try XCTUnwrap(memory.dreamReader.dream(span, now: clock("2026-10-31", 1) + 1_800_000))
+        XCTAssertEqual(dream.day, "2026-10-31", "the dream itself is dated when it's dreamed")
+        XCTAssertEqual(dream.covers, "2026-10-30")
+        let asked = await memory.ask(dream, tallies: span.tallies)
+        let night = try XCTUnwrap(asked)
+        XCTAssertEqual(night.day, "2026-10-30")
+        XCTAssertEqual(night.request.pipeline?.weekday, "Friday")
+        XCTAssertEqual(night.digest?.weekday, "Friday")
+        memory.apply(night)
+        XCTAssertEqual(files.days().digests.map(\.weekday), ["Friday"])
+        XCTAssertEqual(files.written().recently.first?.day, "2026-10-30")
+        XCTAssertEqual(files.written().recently.first?.text.hasPrefix("Friday:"), true, files.written().markdown)
+
+        // With nothing of yours, the morning it was dreamed.
+        var agents = DreamReader.Span(since: clock("2026-10-31", 9))
+        agents.tallies.turns = 1
+        XCTAssertEqual(memory.dreamReader.dream(agents, now: clock("2026-10-31", 10))?.covers, "2026-10-31")
+    }
+
     /// "Forget" clears what you said from the digests kept; the counts stay.
     func testForgetClearsWhatYouSaid() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
