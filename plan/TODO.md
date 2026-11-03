@@ -23,7 +23,7 @@ On the board, none of it has been on one:
 With Jev, none asked yet (zero requests were spent on this):
 
 - [ ] `boopdev eval --only` each of: the faces' new guideline on 05, 10, 16, 18, 19,
-      21, 23, 85; bringing up a line on 174 (new), 76, 144, 152, 167; the special
+      21, 23, 85; bringing up a line on 178 (new), 76, 144, 152, 167; the special
       day on 90, 91; the morning on 63, 97, 135, 136, 140, 147. Read the faces:
       if a streak still repeats the same face at routine moments, build the
       other half of the plan, code dropping the last face there. Before the
