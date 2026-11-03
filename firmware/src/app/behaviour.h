@@ -87,7 +87,7 @@ render::SceneState actFromName(const char* name);
 // listening) or "needs you" starting. Each is the `why` of a `cut`. A
 // newer reaction and dbg.reset need none here: the kit has already ended
 // the one playing when it starts the next or resets its queue.
-enum class CutBy : uint8_t { kNone, kTap, kNeedsYou };
+enum class CutBy : uint8_t { kNone, kTap, kNeedsYou, kMicOn, kFaceDown };
 const char* cutByName(CutBy c);  // null for kNone
 
 // The reaction from the Mac that last played, once no part of it plays any
@@ -293,6 +293,7 @@ class Behaviour {
   // waits for the reply: a tap or another animation doesn't take the face
   // over, and a touch is a tap, never a gesture.
   bool held(uint32_t t) const;
+  void greetingSignCut(CutBy by, uint32_t t);
   // Whether `in`'s face and sign are held at t: as held, but a reply to
   // what you said shows over needs you.
   bool heldFrom(const ReactionIn& in, uint32_t t) const;

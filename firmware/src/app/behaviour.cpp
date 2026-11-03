@@ -25,6 +25,8 @@ const char* cutByName(CutBy c) {
   switch (c) {
     case CutBy::kTap: return "tap";
     case CutBy::kNeedsYou: return "needs_you";
+    case CutBy::kMicOn: return "mic_on";
+    case CutBy::kFaceDown: return "facedown";
     default: return nullptr;
   }
 }
@@ -202,6 +204,12 @@ void Behaviour::cut(uint32_t key, CutBy by) {
   if (playing_.key == key && playing_.by == CutBy::kNone) playing_.by = by;
 }
 
+// A greeting's sign is its point: one taken down before its time was cut, by
+// this, whatever a touch reported before it, and the Mac tells it again.
+void Behaviour::greetingSignCut(CutBy by, uint32_t t) {
+  if (greetKey_ && signDue(t) && sign_.key == greetKey_ && playing_.key == greetKey_) playing_.by = by;
+}
+
 void Behaviour::sweep(uint32_t t) {
   if (playing_.key && !holds(playing_.key, t)) playedOut_ = playing_, playing_ = PlayedOut{};
 }
@@ -256,8 +264,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
         cut(reaction_.key, CutBy::kNeedsYou), reaction_.anim = render::SceneState::kNone;
       done_ = Done{};  // its own screen takes the face at once
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
-      // A greeting's sign is its point: with that still up, it was cut.
-      if (greetKey_ && signDue(t) && sign_.key == greetKey_) cut(greetKey_, CutBy::kNeedsYou);
+      greetingSignCut(CutBy::kNeedsYou, t);
       greetKey_ = 0;
       say_ = Say{};  // no `say`, sign or ask while something needs you
       if (ask_.q[0]) endAsk("ignored", t);
@@ -556,6 +563,7 @@ void Behaviour::talkOn(uint32_t t, Rng& rng) {
     } else {
       uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
       if (ask_.q[0]) endAsk("ignored", t);
+      greetingSignCut(CutBy::kMicOn, t);
       endSay(t, CutBy::kTap);
       playAnim(render::SceneState::kListening, t, CutBy::kTap, 1, model_.mood, v);
     }
@@ -670,6 +678,7 @@ uint8_t Behaviour::backlight(uint32_t t) const {
 void Behaviour::setFaceDown(bool down, uint32_t t) {
   change(t, [&] {
     faceDown_ = down;
+    if (down) greetingSignCut(CutBy::kFaceDown, t);
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
     if (down && signOn(t)) signGoes(t);
     if (down && ask_.q[0]) endAsk("ignored", t);

@@ -3205,6 +3205,73 @@ static void test_a_finishs_say_waits_for_its_voice_window() {
   TEST_ASSERT_EQUAL_STRING("7 cut by tap", ended(r).c_str());
 }
 
+// The dream counts as told only if its sign was seen, so what takes the sign
+// down before its time reports a cut the Mac won't read as done: a needs-you
+// over an earlier stroke, the mic, face down. A stroke alone leaves the sign up.
+static void test_a_greeting_whose_sign_is_lost_is_not_told() {
+  const auto greet = [](Rig& r) {
+    r.at(1000);
+    r.state(base("idle"));
+    ReactionIn in;
+    in.greeting = true, in.key = 7;
+    in.anim = SceneState::kNotice;
+    in.expr = true, in.mood = render::Mood::kHappy;
+    std::snprintf(in.sign, sizeof(in.sign), "had a dream");
+    onReaction(r.b, in, r.t);
+  };
+  {  // A stroke, then a needs-you: the needs-you's report stands.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.b.gesture(render::Gesture::kStroke, r.t);
+    Model m = base("idle");
+    m.attn = true, m.attnId = 3;
+    r.at(1200);
+    r.state(m);
+    r.at(1300);
+    TEST_ASSERT_EQUAL_STRING("7 cut by needs_you", ended(r).c_str());
+  }
+  {  // A stroke, and the sign plays out: you were there, as for any tap.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.b.gesture(render::Gesture::kStroke, r.t);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+    r.at(1000 + Behaviour::kSignMinMs + 20000);
+    TEST_ASSERT_EQUAL_STRING("7 cut by tap", ended(r).c_str());
+  }
+  {  // BOOT.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.talkOn();
+    r.at(1200);
+    TEST_ASSERT_EQUAL_STRING("7 cut by mic_on", ended(r).c_str());
+  }
+  {  // Face down.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.b.setFaceDown(true, r.t);
+    r.at(1000 + 20000);
+    TEST_ASSERT_EQUAL_STRING("7 cut by facedown", ended(r).c_str());
+  }
+  {  // A sign alone, no animation to cut: still.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    ReactionIn in;
+    in.greeting = true, in.key = 8;
+    in.expr = true, in.mood = render::Mood::kHappy;
+    std::snprintf(in.sign, sizeof(in.sign), "had a dream");
+    onReaction(r.b, in, r.t);
+    r.at(1100);
+    r.talkOn();
+    r.at(1200);
+    TEST_ASSERT_EQUAL_STRING("8 cut by mic_on", ended(r).c_str());
+  }
+}
+
 // A new mood's flip-book blinks in a step
 // of its own, so the device gives it none of its blinks; a change of design
 // to or from one dissolves as any other does, its eyes open.
@@ -4123,6 +4190,7 @@ int main() {
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
   RUN_TEST(test_a_finishs_sign_lifts_as_its_words_end);
   RUN_TEST(test_a_greeting_plays_whole_then_the_work_stream);
+  RUN_TEST(test_a_greeting_whose_sign_is_lost_is_not_told);
   RUN_TEST(test_a_low_sign_waits_for_its_words_and_holds_a_long_line);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);

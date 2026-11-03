@@ -1727,6 +1727,8 @@ final class RuntimeTests: XCTestCase {
         XCTAssertNil(end(.cut, "tap"), "held")
         XCTAssertEqual(end(.cut, "now"), .failed("cut short: something newer played"))
         XCTAssertEqual(end(.cut, "needs_you"), .failed("cut short: something needed you"))
+        XCTAssertEqual(end(.cut, "mic_on"), .failed("cut short: the mic went on"))
+        XCTAssertEqual(end(.cut, "facedown"), .failed("cut short: it was put face down"))
         XCTAssertEqual(end(.cut, "reset"), .failed("cut short"))
         XCTAssertEqual(end(.cut, nil), .failed("cut short"))
         XCTAssertEqual(end(.skipped, "late"), .failed("waited too long"))
