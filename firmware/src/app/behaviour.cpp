@@ -313,8 +313,9 @@ void Behaviour::followStream(uint32_t t) {
 // until the reply: a reaction with a `say` is the reply, and ends it before
 // playing as it would have; so does stop_listening, which does nothing
 // else. Nothing else ends it or plays while it waits: not a rule's
-// reaction, a finish or a face without a `say`. A listening reaction while
-// listening carries on with the same design, its time starting over.
+// reaction, a finish or a face without a `say`; only a met wish's heart goes
+// on over it. A listening reaction while listening carries on with the same
+// design, its time starting over.
 // The reply to what you said (`reply`, with a face) shows over needs you
 // too, as listening did: its face, its clip and its sign, but no `say`;
 // then the needs-you screen is back.
@@ -337,7 +338,9 @@ const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   if (faceDown_ && !listen) return "facedown";  // do not disturb
   if (partsOf(in, t).any()) return nullptr;
   if (noApp(t)) return "no_app";
-  if (listening(t)) return "listening";
+  // Push-to-talk met it, with listening still waiting for the reply: its heart
+  // goes on, over the listening face.
+  if (listening(t)) return in.wishMet ? nullptr : "listening";
   if (model_.attn) return "needs_you";
   return in.wishMet ? nullptr : "nothing";
 }
@@ -800,7 +803,7 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
 }
 
 bool Behaviour::barHidden(const Model& m, bool alone, uint32_t t) const {
-  return alone || m.attn || m.base == render::SceneState::kAsleep || faceDown_ || listening(t);
+  return alone || m.attn || m.base == render::SceneState::kAsleep || faceDown_;
 }
 
 render::GrowthShow Behaviour::growthShow(uint32_t t) const {

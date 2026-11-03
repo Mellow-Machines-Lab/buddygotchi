@@ -509,7 +509,7 @@ then go.
 | `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 5 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
-| `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart, unless a touch's `gesture` plays, which stays; a wish left, which fades the bubble and plays the rig's silent `wish-gone` clip, a sigh and a slump of about a second; the feeling after it is Jev's | the Mac's rules |
+| `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart, unless a touch's `gesture` plays, which stays, or `listening` holds the face, when only the heart goes; a wish left, which fades the bubble and plays the rig's silent `wish-gone` clip, a sigh and a slump of about a second; the feeling after it is Jev's | the Mac's rules |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name | the Mac (the brain) |
 | `gesture` | The board's own Moment for a touch, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose` (a tap on the face's middle; on the brain's finish that names whose turn it was, a tap on that opens the thread), `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
 | `poked` | A poke | the board |
