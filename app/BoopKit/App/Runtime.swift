@@ -394,7 +394,7 @@ public final class Runtime: @unchecked Sendable {
         // read as the day they came, then a dream not yet told logged again
         // if its event has left the log. Its days close from the next input.
         if !fellBack {
-            let remembers = Memory(store: values, time: options.time, writer: AppleIntelligenceWriter.onThisMac, files: memory,
+            let remembers = Memory(store: values, time: options.time, writer: MemoryPipelineWriter(), files: memory,
                                    queue: home, note: log)
             remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)

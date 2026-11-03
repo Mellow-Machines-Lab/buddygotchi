@@ -72,6 +72,14 @@ let usages: [(command: String, text: String)] = [
         the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
         defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
         without it.
+    boopdev memory lab [--approach NAME[,NAME]|list] [--only TEXT[,TEXT]] [--fixture FILE] [--out DIR] [--verbose]
+        Runs ways of writing the memory over multi-night sequences (memory-lab.json, synthetic), through the same
+        checks, on this Mac's model, and prints what can be counted; each approach's notes go to
+        DIR/NAME.md (default ~/.boopdev/memory-lab/<time>), for a person to read. --verbose adds every model answer.
+    boopdev memory gates [--only story|heldout|chain] [--fixture FILE]
+        Scores each small yes-or-no question against labeled sentences (memory-lab-gates.json).
+    boopdev memory signs
+        Prints a note of each kind as the pet's sign, for several ways of asking.
     """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
@@ -490,7 +498,25 @@ func readCheck(_ raw: [String]) async {
 
 /// `boopdev memory write`: the dream's write over fixture nights.
 func memory(_ raw: [String]) async {
-    guard raw.first == "write" else { fail("boopdev memory: the command is write\n\(usage)") }
+    if raw.first == "lab" {
+        let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only", "--approach", "--out"], flags: ["--verbose"])
+        await memoryLab(args)
+        return
+    }
+    if raw.first == "gates" {
+        let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])
+        guard #available(macOS 26.0, *), AppleIntelligenceLabeler.isAvailable else { fail("boopdev memory gates: Apple Intelligence isn't available on this Mac") }
+        guard let file = args["--fixture"].map({ URL(fileURLWithPath: $0) })
+                ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-lab-gates.json") else { fail("boopdev memory gates: pass --fixture FILE") }
+        await LabGates.run(file, only: args["--only"] ?? "")
+        return
+    }
+    if raw.first == "signs" {
+        guard #available(macOS 26.0, *), AppleIntelligenceLabeler.isAvailable else { fail("boopdev memory signs: Apple Intelligence isn't available on this Mac") }
+        await LabSigns.run()
+        return
+    }
+    guard raw.first == "write" else { fail("boopdev memory: the command is write, lab, gates or signs\n\(usage)") }
     let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])
     guard let file = args["--fixture"].map({ URL(fileURLWithPath: $0) })
             ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-nights.json"),

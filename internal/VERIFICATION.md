@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-02. How we check that Boop works, including what's on its
+Updated 2026-11-03. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -112,7 +112,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   `internal/app/Tests/Fixtures/readings.json`, scored against floors),
   `memory write` (the dream's write with Apple Intelligence over the
   fixtures in `internal/app/Tests/Fixtures/memory-nights.json`, for a
-  person to judge the prompt by), `prompts` (what the brain reads in every
+  person to judge the prompt by), `memory lab`, `memory gates` and
+  `memory signs` (ways of writing it over synthetic nights, its small
+  questions scored against labels, and a note as the pet's sign, with
+  [plan/memory-writer.md](../plan/memory-writer.md)'s numbers; the fixtures
+  come from `internal/tools/memorylab/fixtures.py`), `prompts` (what the brain reads in every
   eval scenario, with no key, to `characters/studio/prompts.js` for the
   Character Studio's Brain view; `make dev` writes it) and `hooks` (Boop's
   hook installer, against any `--home`).
@@ -489,7 +493,9 @@ retried once and counted as a link glitch.
    requests. The levels, the limit and what a run reports are in
    [EVALS.md](EVALS.md) §2.
    After a change to the written memory's prompt or checks (`MemoryRequest`, `MemoryEdits`),
-   `boopdev memory write`, read case by case against each fixture's `accept`.
+   `boopdev memory write`, read case by case against each fixture's `accept`. After a change
+   to the proposing write (`MemoryProposer`, `MemoryPipeline`), `boopdev memory lab --approach code+gates`,
+   its notes read by a person, and `boopdev memory gates` for a changed question.
    After a change to how prompts or last messages are read (the scrubber, the cues or the
    labeler's instructions), `boopdev read-check`, which fails under its
    floors, and the scenarios with prompts or messages again with `--labeler apple`.

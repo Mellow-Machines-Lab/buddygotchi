@@ -9,6 +9,13 @@ import MellowHarness
 /// stand in later.
 public protocol MemoryWriter: Sendable {
     func write(_ request: MemoryRequest) async -> MemoryWriterReply
+    /// Whether it writes from the request's `pipeline`, so the dream gives it
+    /// the digests and the checks take code's counts as a source.
+    var usesDigests: Bool { get }
+}
+
+public extension MemoryWriter {
+    var usesDigests: Bool { false }
 }
 
 public enum MemoryWriterReply: Equatable, Sendable {
@@ -26,6 +33,8 @@ public struct MemoryRequest: Equatable, Sendable {
     public var numbered: [Int]
     /// How many of the lines since the last dream it holds.
     public var lines: Int
+    /// What the proposing writer works from (`MemoryPipelineWriter`).
+    public var pipeline: MemoryPipeline.Input?
 
     /// The instructions, a fresh session's: what the reply's lines are,
     /// and the rules the checks then hold to.
@@ -171,6 +180,59 @@ public struct AppleIntelligenceWriter: MemoryWriter {
             return .none
         } catch {
             return .none
+        }
+    }
+}
+
+/// The write as `MemoryPipeline` does it: code proposes, and Apple Intelligence
+/// on the Mac answers small questions, each in a fresh session, for at most
+/// `AppleIntelligenceMemoryModel.timeout`. With the model off, code writes alone:
+/// the habits and sagas still come, the moments and stories wait.
+public struct MemoryPipelineWriter: MemoryWriter {
+    public var usesDigests: Bool { true }
+    public var options: MemoryPipeline.Options
+
+    public init(options: MemoryPipeline.Options = .init(phrase: false, moments: true, stories: true, dayLine: false)) {
+        self.options = options
+    }
+
+    public func write(_ request: MemoryRequest) async -> MemoryWriterReply {
+        guard let input = request.pipeline else { return .none }
+        var model: MemoryModel?
+        if #available(macOS 26.0, *), AppleIntelligenceLabeler.isAvailable { model = AppleIntelligenceMemoryModel() }
+        return .reply(await MemoryPipeline.write(input, model: model, options: options).reply)
+    }
+}
+
+/// `MemoryModel` on the Mac's model. Yes or no is guided; a refusal or a timeout
+/// is nil, which every question takes as no to writing anything.
+@available(macOS 26.0, *)
+public struct AppleIntelligenceMemoryModel: MemoryModel {
+    public static let timeout: Duration = .seconds(15)
+    public init() {}
+
+    static func options(_ tokens: Int) -> GenerationOptions {
+        #if compiler(>=6.4)
+        GenerationOptions(samplingMode: .greedy, maximumResponseTokens: tokens)
+        #else
+        GenerationOptions(sampling: .greedy, maximumResponseTokens: tokens)
+        #endif
+    }
+
+    public func text(_ instructions: String, _ prompt: String, tokens: Int, tag: String) async -> String? {
+        await AppleIntelligenceLabeler.within(Self.timeout) {
+            let session = LanguageModelSession(model: AppleIntelligenceLabeler.OnDevice.model, instructions: instructions)
+            return try? await session.respond(to: prompt, options: Self.options(tokens)).content
+        }
+    }
+
+    public func yes(_ instructions: String, _ prompt: String, tag: String) async -> Bool? {
+        await AppleIntelligenceLabeler.within(Self.timeout) {
+            guard let schema = try? GenerationSchema(root: DynamicGenerationSchema(name: "Answer", anyOf: ["yes", "no"]), dependencies: []) else { return nil }
+            let session = LanguageModelSession(model: AppleIntelligenceLabeler.OnDevice.model, instructions: instructions)
+            guard let reply = try? await session.respond(to: prompt, schema: schema, includeSchemaInPrompt: false, options: Self.options(20)),
+                  let answer = try? reply.content.value(String.self) else { return nil }
+            return answer == "yes"
         }
     }
 }
