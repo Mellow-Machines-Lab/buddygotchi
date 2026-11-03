@@ -831,7 +831,9 @@ public struct Eval {
                     pending.finish(end)
                 }
             }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
-            remembers: remembers, wall: { clock.now })
+            // Its own words' order by its file, so a rerun says the same, and
+            // no two scenarios open on the same word.
+            remembers: remembers, seed: scenario.file.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) }, wall: { clock.now })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }

@@ -468,15 +468,16 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
-                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
+                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
         let core = pipeline.core
-        let mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
+        var mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
                         queue: queue, speaks: speaks, talk: talk, memory: memory,
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
                         company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
+        if let seed { mind.seed = seed }
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 

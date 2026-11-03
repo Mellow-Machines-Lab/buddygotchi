@@ -90,6 +90,10 @@ extension Runtime {
         /// Whether you've met a kind of wish once, kept with the memory:
         /// until then it shows how.
         public var wishDone: (Core.WishKind) -> Bool
+        /// What its picks of words start from: a launch's own, so no two
+        /// launches say the same order. Evals give theirs.
+        public var seed = Mind.launchSeed()
+        public static func launchSeed() -> UInt64 { .random(in: .min ... .max) }
 
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
                     queue: @escaping (Moment, Pending) -> Void, speaks: @escaping () -> Bool,
@@ -199,7 +203,10 @@ extension Runtime {
             }, makeWish: { kind, at in
                 carryOut(core.makeWish(kind, at: at), at)
             }, wishDone: m.wishDone,
-            today: m.company)
+            today: m.company, fixed: { [weak h] about in
+                // The turn it finished got past a failed check.
+                (h?.line(about.seq)?.facts["checks_failed"]?.int ?? 0) > 0
+            }, seed: m.seed)
             h.output(mood)
             h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }

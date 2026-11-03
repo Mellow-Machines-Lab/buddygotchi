@@ -150,14 +150,14 @@ final class VoiceTests: XCTestCase {
     func testTheLastTakesArentRepeated() {
         var rng = SplitMix64(seed: 4)
         let sounds = Take.all.filter { $0.part == .feeling && $0.meaning == "upset" && $0.moods.contains("annoyed") && $0.kind == .sound }
-        let avoiding = Set(sounds.dropLast().map(\.text))
+        let avoiding = sounds.dropLast().map(\.text)
         for _ in 0..<50 {
             XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .sound, face: "annoyed", finish: nil, avoiding: avoiding, rng: &rng)?.id,
                            sounds.last?.id)
         }
         // With every one avoided, one is said anyway.
         XCTAssertNotNil(Voice.take(.feeling, meaning: "upset", kind: .sound, face: "annoyed", finish: nil,
-                                   avoiding: Set(sounds.map(\.text)), rng: &rng))
+                                   avoiding: sounds.map(\.text), rng: &rng))
         // A word recorded twice (previous.basta and phase1.borrowed.basta__annoyed__contained)
         // isn't said again by its other recording.
         for _ in 0..<50 {
