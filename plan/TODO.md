@@ -87,33 +87,36 @@ Growth, not built:
       tag is a Buddy.
 - [ ] A demo with the bar: demos send no `xp`, so `make demo` doesn't show it.
 
-## Morning report, the night of 2026-11-01
+## Report, 2026-11-03
 
-Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01/`.
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/day2/` (growth, polish) and `~/.boopdev/night-2026-11-01/`. Nothing has run on a board.
 
-**Landed:** the eval levels and daily limit; must and feel evals with a judge; the prompt cut to level A; the rest of the wish; every lock and unlock reaching Jev; idle check-ins with no agents; no plug on a Boop already asleep; any brief touch on a finish opens its thread; the finish's low sign; the falling word and three work acts; the memory pane; alive without the Mac.
+**Landed:** wish frequency, the flatness fixes, growth with the bar and the heart, the morning and its collision rule, less repetition, the new memory writer and its line on the low sign, and transitions.
 
-**Not landed that night:** growth. It's merged into `day2` since, and tested with no board. Look at `~/.boopdev/day2/growth/` and try it on the board first. What's owed is under "Growth" above.
+**Not done: level B.** The day's Jev limit ran out, so which of its 8 failures are too-strict musts is still open. Stay near level A until it's tried. The prompt is about 5,000 tokens, with 6 Examples left of 24.
 
-**The prompt: level A, about 4,800 tokens, down from about 6,800.** Tags `prompt-level-A`, `-B` and `-C` keep the others.
+**Wishes.** Last night's zero came from scenarios too short to reach one. A simulated workday on the final words: 1 a day on all 5 days (2 full, 3 with only the quiet stretches sent to Jev), between 09:43 and 10:45. A busy day: 1 on the 2 seeds re-run; 2 of 4 seeds had none on the earlier words, and those weren't re-run. The real fault was a second wish after one gave up: a guideline alone gave one on 4 of 4 days, and one line in the sign question stopped it, on 2 days measured. No cap, no Examples, no code offering it more. The margin is thin on Quiet (0.47 to 0.51). Every workday wish came before 11:00, and chat is most of them.
 
-| Level | Tokens | Musts | Judge: reasonable, odd, unreasonable | Mood moves | Passes with a moment |
-| --- | --- | --- | --- | --- | --- |
-| A | 4,800 | 18/18 | 67, 15, 9 | 235 | 85% |
-| B | 3,140 | 10/18 | 64, 17, 10 | 149 | 84% |
-| C | 2,100 | 8/18 | 50, 26, 15 | 144 | 68% |
+**Flatness: guidelines mostly did it.**
 
-A is the only level that holds the musts, and it keeps moods fluid. B's judged feel is close to A's, so B's musts are the question if the prompt must go lower: they mostly failed on replies, hush and Talk. At C, pokes made Boop happier and strokes stopped lifting its mood. No must rule was moved into code.
+| | Musts | Judge: reasonable, odd, unreasonable | Mood moves |
+| --- | --- | --- | --- |
+| Before | 118/119 | 81, 11, 9 | 300 |
+| After | 119/119, with 03, 27 and 129 loosened | 83, 15, 3 | 279 |
 
-**Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) failed twice: the hush it picked was too small. It's been reworded since, to check that a hush holds, and tightened on 2026-11-03: not run on Jev since. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
+What worked was removing Examples: Jev was copying them. Guidelines giving a ladder or a direction work; naming what to avoid raises it; words matching the row Jev reads work best. Words couldn't fix: `11`, a finish just after its fix still goes big (the line would have to say the fix was just reacted to); Halloween and day 50 are still alike, as a return offers no sign; `98` April Fools. The code now gives a special day's sign at your first showing up, seen only in a scripted run. The 3 left, `137`, `141` and `167`, had briefs wrong against the wish rule, and those briefs are corrected, not re-judged.
 
-**Wishes:** no cap in code, as the owner said. Measured on simulated workdays (`173-a-workday`, other seeds in scratch, 2026-11-03). Normal, final words: one wish a day on 5 of 5 days, at 09:43 to 10:45, the first check-in on one day and the second or third on the others (2 of them full runs, 3 with only the quiet stretches sent to Jev). A busy day with quiet only after lunch got one on 2 of the 4 seeds tried, in the wording before; those two kept theirs. A wish left too long brought a second within the hour on 5 of 6 days, and on 4 of 4 with a guideline alone; the sign question's words stopped it on the 2 days measured since, with a thin margin over none (0.47 to 0.53 on Quiet). Chatty and Quiet: one partial run each, one wish each. Watch real days for that second wish, and for days with no quiet half hour.
+**Evals on the final tree:** not re-run as a whole: standard's about 700 requests didn't fit. The last standard predates growth, the polish plan and the review's fixes. Of the musts run on the final tree, `17`, `136`, `139`, `03`, `27` pass. **`129` fails twice:** hushed, Boop's mood stays calm instead of sulking a step, and it's a real miss now its check is tighter.
 
-**Jev requests:** 2,336 on Nov 1 and 283 on Nov 2 by the limit's count, which began partway through Nov 1 (before it, one full run of about 1,000 isn't counted).
+**Owed with Jev, first thing:** `--level standard` and the judge on this tree, with `129`. It covers the faces guideline (`05`, `10`, `16`, `18`, `19`, `21`, `23`, `85`), a remembered line (`178`, `76`, `144`, `152`, `167`), special days (`90`, `91`), the morning (`63`, `97`, `135`, `136`, `140`, `147`), growing (`174`-`177`) and the changed words. A `grew` while something needs you has no scenario. Then level B.
 
-**Flag for the owner:** `make eval` is refused without `BOOP_JEV_OVER_LIMIT=1`, so the bare command never runs. That's what was asked, but it's a surprise: `boopdev eval --level standard` is the merge check.
+**Memory writer:** no real week has been through it, and the sign pass hasn't run in a real dream. Its figures (false notes 33 of 56 to 0 of 43, refusals 526 to 1, notes that feel known 4 to 22) are hand-graded on made-up nights. Its gates on this Mac: worth 39/43, private 45/53, story 19/25. On a night with one thread, "the audio is done" can overwrite that thread's note if the model says yes: that's the cost of letting a saga end.
 
-**Choices to overrule if you disagree:** a ruffle also meets a pet wish. A wish may come while Boop is asleep only for having no agents. The plug no longer stays up after a touch: Boop sleeps again after 5 minutes. Chat is offered only once push-to-talk works. Jev rarely speaks over an act from a calm mood, and I didn't push it.
+**The tests:** the runner had been silently dropping every test after a local class in a test function, 9 in all. All run now. The board's firmware also stopped compiling at one point with `check` passing, as `check` doesn't build for the boards: run `make -C internal fw` too.
+
+**Choices to overrule:** saved stages keep at least their size (Pal to Buddy, Chonk and Legend to Chonk), but Hatchlings and Sprouts will look smaller, as every stage used to draw full size. The 3-day clock starts at the first launch. "Forget" clears the digest's words and history copies, keeps care counts, and leaves an untold dream's sentence and the transcript's two weeks. Every stage draws Buddy's Mega. The party hat goes on a Sprout. No voice pitch or moves by stage: not cheap.
+
+**Look at first:** `growth/sheet-wish-reaches-a-stage.png`, `growth/sheet-stages.png`, `growth/board-fixes/sheet-all.png`, `polish/remember-line.png`. `growth/sheet-bar-states.png` is the old look.
 
 ## Now: the simplify branch, on the board (2026-11-01)
 
