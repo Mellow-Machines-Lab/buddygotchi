@@ -196,6 +196,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
            : !std::strcmp(wish, "work") ? render::WishShow::kWork
                                         : render::WishShow::kNone;
   m.wishHow = doc["wish_how"] | false;
+  m.xp = heldTo(doc["xp"], -1, 100, -1);
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
@@ -986,6 +987,7 @@ void Device::render(uint32_t t) {
     makeDrawer(t);
     b_.face().drawer(&drawer_);
     b_.face().wish(b_.wishShow(t));
+    b_.face().growth(b_.growthShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;

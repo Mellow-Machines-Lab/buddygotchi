@@ -50,6 +50,9 @@ struct Model {
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
+  // How far through its growth stage Boop is, in percent (`xp`), -1 for a
+  // Mac that sends none, which shows no bar.
+  int xp = -1;
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;
@@ -321,6 +324,11 @@ class Behaviour {
   // wish_met or wish_gone, how the last one went.
   render::WishShow wishShow(uint32_t t) const;
   void wishPopped(bool met, uint32_t t);
+  // The growth bar now. It comes when the XP has moved kBarStep points or more
+  // from where it last showed, or the stage changed: less isn't a change you
+  // could see, and a busy agent earns a point every few calls.
+  static constexpr int kBarStep = 5;
+  render::GrowthShow growthShow(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
@@ -566,6 +574,20 @@ class Behaviour {
   render::WishShow::Kind lastWish_ = render::WishShow::kNone;
   uint32_t wishPopAt_ = 0;
   render::WishShow::Pop wishPop_ = render::WishShow::kWaiting;
+  // The growth bar: filling from `from` (0 … 1000) to `to` (the XP's percent,
+  // -1 until heard) from fillAt, past the end of the bar by `wrap` when the
+  // stage changed (1 up, -1 down), up from onAt to offAt, with a met wish's
+  // heart leaving at heartAt.
+  struct Bar {
+    int from = 0, to = -1, wrap = 0;
+    uint32_t fillAt = 0, onAt = 0, offAt = 0, heartAt = 0;
+    bool on = false, heart = false;
+  };
+  Bar bar_;
+  int barFill(uint32_t t) const;
+  void barHeard(const Model& m, bool back, uint32_t t);
+  // Whether the screen is another's, or Boop's not looking: no bar then.
+  bool barHidden(const Model& m, bool alone, uint32_t t) const;
   // The reaction's reason (caption()), timed as its sign would be.
   Sign reason_;
   // The ask up, from `at` for kAskMs, its reaction's key; `lane` is its
