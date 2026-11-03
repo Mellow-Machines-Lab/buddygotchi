@@ -389,9 +389,9 @@ public final class MomentOutput: Output {
     public static let sizeOptions = [
         Option("small", "A small moment: the usual. The face holds once, and what it says is a sound."),
         Option("medium", "A moment that stands out. It holds twice, and says a word."),
-        Option("big", "A big moment, such as a long turn's hard work done or the top of a streak. It holds three times, and says a phrase."),
+        Option("big", "A big moment, such as a long turn's hard-won work done or the top of a streak. It holds three times, and says a phrase."),
         Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish (a long turn done after failed checks), or a long turn that failed after failed checks or turns before it. It holds four times, and says a phrase.",
-               notFor: "A check failing mid-turn."),
+               notFor: "A check failing mid-turn, or a finish when HISTORY shows the reaction to its fix just now: that's small."),
     ]
 
     /// What an intensity sets: how many loops the face holds and the kind
@@ -433,10 +433,10 @@ public final class MomentOutput: Output {
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
         Option("success", "NOW's line says a turn finished, done, and doesn't say the agent couldn't finish, asks you something or only answers.",
-               notFor: "A check that passed while the turn goes on, a turn that finished failed, one saying it couldn't finish, or one asking you something or only answering."),
+               notFor: "A check that passed while the turn goes on, a turn that finished failed, one saying it couldn't finish, or one asking you something, only answering or only fawning with no tool calls."),
         Option("failure", "NOW's line says a turn finished, failed; or finished done, but saying it couldn't finish.",
                notFor: "A check that failed while the turn goes on, or a turn that finished done, saying it's done."),
-        Option("reply", "NOW's line says a turn finished, done, asking you something or only answering, often with no tool calls: no task finished.",
+        Option("reply", "NOW's line says a turn finished, done, asking you something, only answering or only fawning, often with no tool calls: no task finished.",
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
         Option("wake up", "NOW's line says you came back to the Mac after an hour or more away. \(name) stretches, yawns and wakes up for you."),
         Option("notice", "NOW's line says you said \(name)'s name in your prompt: it looks up at you, as if it heard."),
