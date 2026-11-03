@@ -83,6 +83,8 @@ public final class Memory: @unchecked Sendable {
         /// dream's own sentence, which is always true.
         public var fallback: String
         public var ms: Int
+        /// The span's digest, kept with the edits (`memory-days.json`).
+        public var digest: DayDigest?
     }
 
     /// Asks the writer to edit the written memory for `dream` from its
@@ -95,14 +97,28 @@ public final class Memory: @unchecked Sendable {
         let certain = MemoryRequest.certain(tallies, range: range)
         let started = Date()
         var request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal)
+        var source = MemoryRequest.source(certain: certain, journal: journal)
+        var digest: DayDigest?
+        if writer.usesDigests {
+            let memory = files.written(), days = files.days()
+            let tonight = DayDigest.from(day: day, weekday: dream.weekday, tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
+                                         last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0, journal: journal)
+            digest = tonight
+            let digests = days.keeping(tonight, added: []).digests
+            var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: day, weekday: dream.weekday)
+            input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
+            request.pipeline = input
+            source += "\n" + MemoryPipeline.evidence(input).joined(separator: "\n")
+        }
         var reply = await writer.write(request)
         if reply == .tooLong {
+            let pipeline = request.pipeline
             request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal, lines: request.lines * 3 / 4)
+            request.pipeline = pipeline
             reply = await writer.write(request)
         }
-        return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal),
-                     source: MemoryRequest.source(certain: certain, journal: journal),
-                     fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000))
+        return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal), source: source,
+                     fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000), digest: digest)
     }
 
     /// A span's dates as Recently's line names them, its day said already:
@@ -136,6 +152,10 @@ public final class Memory: @unchecked Sendable {
             return nil
         }
         do { try files.keep(next, day: night.day) } catch { note("memory: can't write memory.md: \(error)") }
+        if let digest = night.digest {
+            let added = report.added.compactMap { id in next.notes.first { $0.id == id }?.text }
+            do { try files.keep(files.days().keeping(digest, added: added)) } catch { note("memory: can't write the digests: \(error)") }
+        }
         if let h = harness {
             func ids(_ xs: [Int]) -> JSONValue { .array(xs.map { .string("m\($0)") }) }
             h.emit(Event(at: h.clock.now(), source: .boop, type: .memory, specificType: "night",

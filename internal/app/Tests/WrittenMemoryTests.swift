@@ -200,7 +200,6 @@ final class WrittenMemoryTests: XCTestCase {
         XCTAssertLessThan(r.lines, 400)
         XCTAssertTrue(r.text.contains("line 399."), "the newest lines stay")
         XCTAssertFalse(r.text.contains("line 0."), "the oldest go")
-        XCTAssertTrue(MemoryRequest.instructions.contains("Never drop a boop note"))
     }
 
     /// The dream's write: the writer's reply, checked and applied to

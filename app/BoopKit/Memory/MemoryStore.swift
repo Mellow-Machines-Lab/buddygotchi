@@ -57,6 +57,40 @@ public final class MemoryStore {
         try Data(memory.markdown.utf8).write(to: dir.appendingPathComponent(WrittenMemory.fileName), options: .atomic)
     }
 
+    /// `memory-days.json`: what the proposer counts habits from, a digest a
+    /// dream, and the notes it has added, so one you deleted stays gone.
+    public struct Days: Codable, Equatable, Sendable {
+        public var digests: [DayDigest] = []
+        public var added: [String] = []
+        public init() {}
+
+        /// The most digests kept: more than the proposer looks at.
+        public static let kept = 60, addedKept = 200
+
+        /// With `digest` in, joined to one for the same day, and `notes` added.
+        public func keeping(_ digest: DayDigest, added notes: [String]) -> Days {
+            var out = self
+            if let i = out.digests.lastIndex(where: { $0.day == digest.day }) {
+                out.digests[i] = out.digests[i].joined(with: digest)
+            } else {
+                out.digests.append(digest)
+            }
+            out.digests = Array(out.digests.suffix(Self.kept))
+            out.added = Array((out.added + notes).suffix(Self.addedKept))
+            return out
+        }
+    }
+
+    public static let daysFile = "memory-days.json"
+
+    public func days() -> Days {
+        (try? Data(contentsOf: url(Self.daysFile))).flatMap { try? JSONDecoder().decode(Days.self, from: $0) } ?? Days()
+    }
+
+    public func keep(_ days: Days) throws {
+        try write(String(decoding: try JSONEncoder().encode(days), as: UTF8.self), Self.daysFile)
+    }
+
     // MARK: Files
 
     func url(_ file: String) -> URL { directory.appendingPathComponent(file) }
