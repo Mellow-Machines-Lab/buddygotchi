@@ -83,6 +83,14 @@ public final class MemoryStore {
 
     public static let daysFile = "memory-days.json"
 
+    /// Forgets what you said in the digests kept. The counts stay: they say
+    /// nothing in your words.
+    public func forgetSaid() throws {
+        var days = days()
+        for i in days.digests.indices { days.digests[i].said = [] }
+        try keep(days)
+    }
+
     public func days() -> Days {
         (try? Data(contentsOf: url(Self.daysFile))).flatMap { try? JSONDecoder().decode(Days.self, from: $0) } ?? Days()
     }

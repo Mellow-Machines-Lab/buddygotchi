@@ -365,9 +365,13 @@ public final class Memory: @unchecked Sendable {
         save(dream)
     }
 
-    /// Empties the journal since the last dream: what the person asked
-    /// Boop to forget never reaches the dream's write.
-    public func forgetJournal() { dreams.update { $0.tallies.journal = [] } }
+    /// Empties the journal since the last dream, and what you said in the
+    /// digests kept: what the person asked Boop to forget never reaches the
+    /// dream's write.
+    public func forgetJournal() {
+        dreams.update { $0.tallies.journal = [] }
+        do { try files?.forgetSaid() } catch { note("memory: can't write the digests: \(error)") }
+    }
 
     func told(_ day: String) {
         guard var dream = dream, dream.day == day, !dream.told else { return }

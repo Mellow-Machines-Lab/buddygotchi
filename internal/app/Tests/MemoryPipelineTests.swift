@@ -179,6 +179,18 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(after.notes.map(\.text), ["Boop has grown cuddly: you stroke it most mornings."])
     }
 
+    /// "Forget" clears what you said from the digests kept; the counts stay.
+    func testForgetClearsWhatYouSaid() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir)
+        try files.keep(MemoryStore.Days().keeping(day(0) { $0.strokes = 2; $0.said = [.init(at: "09:00", words: "morning buddy")] }, added: []))
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), files: files)
+        memory.forgetJournal()
+        XCTAssertEqual(files.days().digests.first?.said, [])
+        XCTAssertEqual(files.days().digests.first?.strokes, 2)
+    }
+
     /// The dream gives the proposing writer its digests, and keeps tonight's
     /// only when the edits land, so a preview commits nothing.
     func testDreamKeepsDigests() async throws {

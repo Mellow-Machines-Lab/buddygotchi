@@ -150,6 +150,10 @@ counts them (how long, whether you said Boop's name, a "please", a
 what you say to Boop when you hold its button. Your files, commands and
 tool output never do.
 
+Boop's memory stays on your Mac. What you say to Boop is kept with its
+counts of each dream, for up to 60 dreams, in `memory-days.json` beside
+`memory.md`, and Forget clears it.
+
 ## Uninstall
 
 In Boop's Settings, under App, choose **Uninstall…**. Boop takes its
