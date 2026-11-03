@@ -4,6 +4,37 @@ Updated 2026-11-03. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Report, 2026-11-03
+
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/day2/` (growth, polish) and `~/.boopdev/night-2026-11-01/`. Nothing has run on a board.
+
+**Landed:** wish frequency, the flatness fixes, growth with the bar and the heart, the morning and its collision rule, less repetition, the new memory writer and its line on the low sign, and transitions.
+
+**Not done: level B.** The day's Jev limit ran out, so which of its 8 failures are too-strict musts is still open. Stay near level A until it's tried. The prompt is about 5,000 tokens, with 6 Examples left of 24.
+
+**Wishes.** Last night's zero came from scenarios too short to reach one. A simulated workday on the final words: 1 a day on all 5 days (2 full, 3 with only the quiet stretches sent to Jev), between 09:43 and 10:45. A busy day: 1 on the 2 seeds re-run; 2 of 4 seeds had none on the earlier words, and those weren't re-run. The real fault was a second wish after one gave up: a guideline alone gave one on 4 of 4 days, and one line in the sign question stopped it, on 2 days measured. No cap, no Examples, no code offering it more. The margin is thin on Quiet (0.47 to 0.51). Every workday wish came before 11:00, and chat is most of them.
+
+**Flatness: guidelines mostly did it.**
+
+| | Musts | Judge: reasonable, odd, unreasonable | Mood moves |
+| --- | --- | --- | --- |
+| Before | 118/119 | 81, 11, 9 | 300 |
+| After | 119/119, with 03, 27 and 129 loosened | 83, 15, 3 | 279 |
+
+What worked was removing Examples: Jev was copying them. Guidelines giving a ladder or a direction work; naming what to avoid raises it; words matching the row Jev reads work best. Words couldn't fix: `11`, a finish just after its fix still goes big (the line would have to say the fix was just reacted to); Halloween and day 50 are still alike, as a return offers no sign; `98` April Fools. The code now gives a special day's sign at your first showing up, seen only in a scripted run. The 3 left, `137`, `141` and `167`, had briefs wrong against the wish rule, and those briefs are corrected, not re-judged.
+
+**Evals on the final tree:** not re-run as a whole: standard's about 700 requests didn't fit. The last standard predates growth, the polish plan and the review's fixes. Of the musts run on the final tree, `17`, `136`, `139`, `03`, `27` pass. **`129` fails twice:** hushed, Boop's mood stays calm instead of sulking a step, and it's a real miss now its check is tighter.
+
+**Owed with Jev, first thing:** `--level standard` and the judge on this tree, with `129`. It covers the faces guideline (`05`, `10`, `16`, `18`, `19`, `21`, `23`, `85`), a remembered line (`178`, `76`, `144`, `152`, `167`), special days (`90`, `91`), the morning (`63`, `97`, `135`, `136`, `140`, `147`), growing (`174`-`177`) and the changed words. A `grew` while something needs you has no scenario. Then level B.
+
+**Memory writer:** no real week has been through it, and the sign pass hasn't run in a real dream. Its figures (false notes 33 of 56 to 0 of 43, refusals 526 to 1, notes that feel known 4 to 22) are hand-graded on made-up nights. Its gates on this Mac: worth 39/43, private 45/53, story 19/25. On a night with one thread, "the audio is done" can overwrite that thread's note if the model says yes: that's the cost of letting a saga end.
+
+**The tests:** the runner had been silently dropping every test after a local class in a test function, 9 in all. All run now. The board's firmware also stopped compiling at one point with `check` passing, as `check` doesn't build for the boards: run `make -C internal fw` too.
+
+**Choices to overrule:** saved stages keep at least their size (Pal to Buddy, Chonk and Legend to Chonk), but Hatchlings and Sprouts will look smaller, as every stage used to draw full size. The 3-day clock starts at the first launch. "Forget" clears the digest's words and history copies, keeps care counts, and leaves an untold dream's sentence and the transcript's two weeks. Every stage draws Buddy's Mega. The party hat goes on a Sprout. No voice pitch or moves by stage: not cheap.
+
+**Look at first:** `growth/sheet-wish-reaches-a-stage.png`, `growth/sheet-stages.png`, `growth/board-fixes/sheet-all.png`, `polish/remember-line.png`. `growth/sheet-bar-states.png` is the old look.
+
 ## Owed from the Mac fixes (2026-11-03)
 
 No Jev requests went to these, as the day's limit was nearly spent:
@@ -86,37 +117,6 @@ Growth, not built:
 - [ ] A pastime only a Chonk knows: a Buddy would deal differently, as a board with no
       tag is a Buddy.
 - [ ] A demo with the bar: demos send no `xp`, so `make demo` doesn't show it.
-
-## Report, 2026-11-03
-
-Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/day2/` (growth, polish) and `~/.boopdev/night-2026-11-01/`. Nothing has run on a board.
-
-**Landed:** wish frequency, the flatness fixes, growth with the bar and the heart, the morning and its collision rule, less repetition, the new memory writer and its line on the low sign, and transitions.
-
-**Not done: level B.** The day's Jev limit ran out, so which of its 8 failures are too-strict musts is still open. Stay near level A until it's tried. The prompt is about 5,000 tokens, with 6 Examples left of 24.
-
-**Wishes.** Last night's zero came from scenarios too short to reach one. A simulated workday on the final words: 1 a day on all 5 days (2 full, 3 with only the quiet stretches sent to Jev), between 09:43 and 10:45. A busy day: 1 on the 2 seeds re-run; 2 of 4 seeds had none on the earlier words, and those weren't re-run. The real fault was a second wish after one gave up: a guideline alone gave one on 4 of 4 days, and one line in the sign question stopped it, on 2 days measured. No cap, no Examples, no code offering it more. The margin is thin on Quiet (0.47 to 0.51). Every workday wish came before 11:00, and chat is most of them.
-
-**Flatness: guidelines mostly did it.**
-
-| | Musts | Judge: reasonable, odd, unreasonable | Mood moves |
-| --- | --- | --- | --- |
-| Before | 118/119 | 81, 11, 9 | 300 |
-| After | 119/119, with 03, 27 and 129 loosened | 83, 15, 3 | 279 |
-
-What worked was removing Examples: Jev was copying them. Guidelines giving a ladder or a direction work; naming what to avoid raises it; words matching the row Jev reads work best. Words couldn't fix: `11`, a finish just after its fix still goes big (the line would have to say the fix was just reacted to); Halloween and day 50 are still alike, as a return offers no sign; `98` April Fools. The code now gives a special day's sign at your first showing up, seen only in a scripted run. The 3 left, `137`, `141` and `167`, had briefs wrong against the wish rule, and those briefs are corrected, not re-judged.
-
-**Evals on the final tree:** not re-run as a whole: standard's about 700 requests didn't fit. The last standard predates growth, the polish plan and the review's fixes. Of the musts run on the final tree, `17`, `136`, `139`, `03`, `27` pass. **`129` fails twice:** hushed, Boop's mood stays calm instead of sulking a step, and it's a real miss now its check is tighter.
-
-**Owed with Jev, first thing:** `--level standard` and the judge on this tree, with `129`. It covers the faces guideline (`05`, `10`, `16`, `18`, `19`, `21`, `23`, `85`), a remembered line (`178`, `76`, `144`, `152`, `167`), special days (`90`, `91`), the morning (`63`, `97`, `135`, `136`, `140`, `147`), growing (`174`-`177`) and the changed words. A `grew` while something needs you has no scenario. Then level B.
-
-**Memory writer:** no real week has been through it, and the sign pass hasn't run in a real dream. Its figures (false notes 33 of 56 to 0 of 43, refusals 526 to 1, notes that feel known 4 to 22) are hand-graded on made-up nights. Its gates on this Mac: worth 39/43, private 45/53, story 19/25. On a night with one thread, "the audio is done" can overwrite that thread's note if the model says yes: that's the cost of letting a saga end.
-
-**The tests:** the runner had been silently dropping every test after a local class in a test function, 9 in all. All run now. The board's firmware also stopped compiling at one point with `check` passing, as `check` doesn't build for the boards: run `make -C internal fw` too.
-
-**Choices to overrule:** saved stages keep at least their size (Pal to Buddy, Chonk and Legend to Chonk), but Hatchlings and Sprouts will look smaller, as every stage used to draw full size. The 3-day clock starts at the first launch. "Forget" clears the digest's words and history copies, keeps care counts, and leaves an untold dream's sentence and the transcript's two weeks. Every stage draws Buddy's Mega. The party hat goes on a Sprout. No voice pitch or moves by stage: not cheap.
-
-**Look at first:** `growth/sheet-wish-reaches-a-stage.png`, `growth/sheet-stages.png`, `growth/board-fixes/sheet-all.png`, `polish/remember-line.png`. `growth/sheet-bar-states.png` is the old look.
 
 ## Now: the simplify branch, on the board (2026-11-01)
 
