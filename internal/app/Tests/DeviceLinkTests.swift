@@ -351,12 +351,15 @@ final class DeviceLinkTests: XCTestCase {
     /// either way, with every tag that can be on at once, fits.
     func testTheTiersStagesAndToDoCountFitTheLine() {
         let every = mostTags + ["tier5"] + Tags.stageTags + [Tags.hushed]
-        let needs = StateSnapshot(doing: "working", mood: "determined",
+        var needs = StateSnapshot(doing: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   working: 999, idle: 999, helpers: 999, vol: 10, when: every)
+        needs.xp = 100  // the growth bar's percent, at its widest
+        XCTAssertTrue(needs.jsonLine.contains(#""xp":100"#))
         XCTAssertLessThanOrEqual(needs.jsonLine.utf8.count, Wire.maxLine)
-        let todo = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
+        var todo = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 999, idle: 999, helpers: 999,
                                  vol: 10, when: every, todo: .init(done: Int(Int32.max), total: Int(Int32.max)))
+        todo.xp = 100
         XCTAssertLessThanOrEqual(todo.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertTrue(todo.jsonLine.hasSuffix(#""todo":{"done":2147483647,"total":2147483647}}"#), todo.jsonLine)
     }

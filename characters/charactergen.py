@@ -645,6 +645,16 @@ def firmware_states(source: Path = FIRMWARE_STATES) -> list[str]:
     return re.findall(r'"([a-z_]+)"', match.group(1))
 
 
+def pastimes_by_stage(pack: Path) -> list[dict]:
+    """The pack's pastimes, its table's rows' names, looks and stages, for
+    the studio; none for a pack with no such table."""
+    table = pack / "firmware" / "src" / "render" / "gel" / "pastimes.cpp"
+    if not table.is_file():
+        return []
+    row = re.compile(r'\{Pastime::k\w+, Body::k\w+, "([^"]+)", SceneState::k(\w+), \d+, \d+, (\d+)')
+    return [{"name": n, "look": look, "stage": int(stage)} for n, look, stage in row.findall(table.read_text())]
+
+
 def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
     """The states the board draws while working for what the agent does, a
     `state` message's `act`: those the firmware's actFromName keeps (any
@@ -1145,6 +1155,7 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
             "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves", "settles") if k in m} for m in character["moods"]],
             "studio": [entry for _, entry in entries] + boards(character),
             "references": references_data(pack, page),
+            "pastimes": pastimes_by_stage(pack),
             "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
                                              if isinstance(item.get(k), str)}} for item in queue], "notes": notes},
         }

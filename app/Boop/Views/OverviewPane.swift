@@ -314,8 +314,8 @@ struct OverviewPane: View {
 
     // MARK: Growth
 
-    /// Boop's stage and XP: the stage's name, how far
-    /// through it, and what's left to the next.
+    /// Boop's stage and XP: the stage's name, how far through it, what's
+    /// left to the next, and the next as a silhouette, to look forward to.
     private func growthCard(_ growth: Growth, daysOld: Int?) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
@@ -335,9 +335,15 @@ struct OverviewPane: View {
                 }
                 .frame(height: 6)
                 .animation(.boopSettle, value: growth.progress)
-                Text((growth.nextAt.map { "\(($0 - growth.xp).formatted()) XP to \(Growth.stages[growth.stage].name)" }
-                      ?? "Fully grown") + (daysOld.map { " · \($0 == 1 ? "1 day" : "\($0) days") old" } ?? ""))
-                    .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                HStack(alignment: .bottom, spacing: 6) {
+                    Text((growth.nextAt.map { "\(($0 - growth.xp).formatted()) XP to \(Growth.stages[growth.stage].name)" }
+                          ?? "Fully grown") + (daysOld.map { " · \($0 == 1 ? "1 day" : "\($0) days") old" } ?? ""))
+                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    Spacer(minLength: 0)
+                    if growth.nextAt != nil {
+                        GrowthSilhouette(stage: growth.stage + 1).accessibilityHidden(true)
+                    }
+                }
             }
         }
         .accessibilityElement(children: .combine)
@@ -373,6 +379,7 @@ struct OverviewPane: View {
         case .night: "moon.stars"
         case .morning: "sun.horizon"
         case .friday: "sunglasses"
+        case .shrank: "arrow.down.right.and.arrow.up.left"
         }
     }
 
@@ -810,5 +817,22 @@ struct SessionRow: View {
         }
         .overlay(RoundedRectangle(cornerRadius: Theme.wellRadius).strokeBorder(Theme.hairline, lineWidth: 1))
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// A stage's shape in one flat colour, at its size, standing on the card's line.
+private struct GrowthSilhouette: View {
+    let stage: Int
+    /// Each stage's width and height, in points: the body's on the board, by
+    /// the same proportions (`BodySettings`).
+    private static let sizes: [CGSize] = [
+        CGSize(width: 15, height: 12), CGSize(width: 19, height: 15), CGSize(width: 27, height: 22), CGSize(width: 32, height: 22),
+    ]
+    var body: some View {
+        let size = Self.sizes[min(max(stage, 1), Self.sizes.count) - 1]
+        UnevenRoundedRectangle(topLeadingRadius: size.width / 2, bottomLeadingRadius: size.height / 4,
+                               bottomTrailingRadius: size.height / 4, topTrailingRadius: size.width / 2)
+            .fill(Theme.inkSoft.opacity(0.35))
+            .frame(width: size.width, height: size.height)
     }
 }

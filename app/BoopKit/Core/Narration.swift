@@ -94,6 +94,8 @@ public struct Narration: Equatable, Sendable {
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
             return Narration(cause: "You said \"\(words)\".")
+        case .grew?:
+            return Narration(cause: "\(name) grew: it's a \(e.specificType) now.", fact: fit("now a \(e.specificType)"))
         case .wish?:
             guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }
             return how == .met ? Narration(cause: "You gave \(name) its wish: \(kind.words).", fact: fit("wish met!"))
@@ -260,7 +262,7 @@ extension Narration {
     /// air, confetti at a party or New Year, snow in the winter holidays and
     /// hearts on Valentine's.
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night, morning, friday }
+        public enum Kind: Sendable { case specialDay, night, morning, friday, shrank }
 
         public var kind: Kind
         /// `Boop became a Sprout today`, `It's Friday`.

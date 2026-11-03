@@ -1694,6 +1694,217 @@ static void test_the_wish_shows_and_pops() {
   TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
 }
 
+// The growth bar (GrowthShow): a first `xp` says what it is; a move of under
+// kBarStep (5) points shows nothing, one of 5 slides it in for its 700 ms fill
+// and 3 s, then 360 ms out. A Mac that sends none shows none.
+static void test_the_growth_bar_comes_when_the_xp_moves() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(5, Behaviour::kBarStep);
+  TEST_ASSERT_EQUAL(240, G::kInMs);
+  TEST_ASSERT_EQUAL(700, G::kFillMs);
+  TEST_ASSERT_EQUAL(3000, G::kHoldMs);
+  TEST_ASSERT_EQUAL(360, G::kOutMs);
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 40;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 44;
+  r.state(m);
+  r.at(r.t + 10);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 45;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  TEST_ASSERT_EQUAL(400, r.b.growthShow(r.t).fill);  // from where it last showed
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+  r.at(r.t + G::kFillMs - G::kInMs);
+  TEST_ASSERT_EQUAL(450, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kHoldMs);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+  r.at(r.t + G::kOutMs - 1);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t).opacity < 5);
+  r.at(r.t + 1);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  // Measured from where it last showed, not the last it heard: small moves add up.
+  m.xp = 49;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 50;
+  r.state(m);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+}
+
+// The screen's another's, or Boop's asleep: no bar, and the move isn't saved up for later.
+static void test_the_growth_bar_keeps_off_what_it_shouldnt_cover() {
+  using G = render::GrowthShow;
+  Rig r;
+  Model m = base("idle");
+  m.xp = 10;
+  r.state(m);
+  r.at(1000);
+  Model waiting = attn();
+  waiting.xp = 30;
+  r.state(waiting);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 30;
+  r.state(m);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  Model asleep = base("asleep");
+  asleep.xp = 60;
+  r.state(asleep);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+}
+
+// A met wish: the bar comes at the pop; the heart stays 420 ms, flies 720 ms,
+// and the bar holds its old fill until it lands, whichever of the `do` and the
+// state with the XP came first; it gulps 520 ms and fills 700 ms from then. With
+// no `xp` the heart stays in its bubble.
+static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(420, G::kHeartWaitMs);
+  TEST_ASSERT_EQUAL(720, G::kHeartFlyMs);
+  TEST_ASSERT_EQUAL(520, G::kGulpMs);
+  for (bool stateFirst : {true, false}) {
+    Rig r;
+    Model m = base("idle");
+    m.xp = 20;
+    m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    if (stateFirst) m.xp = 40, r.state(m);
+    r.b.wishPopped(true, r.t);
+    if (!stateFirst) m.xp = 40, r.state(m);
+    TEST_ASSERT_TRUE(r.b.wishShow(r.t).flies);
+    TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
+    const uint32_t pop = r.t, landed = pop + G::kHeartWaitMs + G::kHeartFlyMs;
+    r.at(pop + G::kInMs);
+    TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+    r.at(pop + G::kHeartWaitMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).flight);
+    r.at(landed - 1);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).flight >= 995);
+    TEST_ASSERT_EQUAL(200, r.b.growthShow(r.t).fill);
+    r.at(landed);
+    TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).gulp > 0);
+    r.at(landed + G::kGulpMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).gulp);
+    r.at(landed + G::kFillMs);
+    TEST_ASSERT_EQUAL(400, r.b.growthShow(r.t).fill);
+    r.at(landed + G::kFillMs + G::kHoldMs + G::kOutMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  }
+  Rig r;
+  Model m = base("idle");
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  r.at(1000);
+  m.wish = render::WishShow::kNone;
+  r.state(m);
+  r.b.wishPopped(true, r.t);
+  TEST_ASSERT_FALSE(r.b.wishShow(r.t).flies);
+  r.at(r.t + 500);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+}
+
+// A stage reached fills the bar to its end for the old stage, then from its
+// start for the new; a stage lost, down to its start, then from its end.
+static void test_a_new_stage_fills_the_bar_past_its_end() {
+  using G = render::GrowthShow;
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  Rig r;
+  Model m = base("idle");
+  m.xp = 90, m.when = hatchling;
+  r.state(m);
+  r.at(1000);
+  m.xp = 2, m.when = sprout;
+  r.state(m);
+  TEST_ASSERT_EQUAL(900, r.b.growthShow(r.t).fill);
+  TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+  r.at(r.t + G::kFillMs - 1);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 990);
+  TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+  r.at(r.t + 1);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).fill);
+  TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(20, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kHoldMs + G::kOutMs);
+  m.xp = 97, m.when = hatchling;
+  r.state(m);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(1000, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(970, r.b.growthShow(r.t).fill);
+}
+
+// A new stage's body waits 300 ms for a wish's `do`, which follows its state;
+// then, for that wish's heart to land. Any other stage plays when the 300 ms are up.
+static void test_a_new_stage_waits_for_the_heart() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(300, Behaviour::kStageWaitMs);
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  auto face = std::make_unique<testface::WrappedFace>();
+  testface::WrappedFace& f = *face;
+  Behaviour b(std::move(face));
+  app::Rng rng;
+  b.reset(0, rng);
+  Model m = base("idle");
+  m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+  b.onState(m, 100);
+  b.advance(1000, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);
+  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  b.onState(m, 1000);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(1299, rng);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(1300, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);  // no wish came
+  m.when = hatchling, m.xp = 90, m.wish = render::WishShow::kPet;
+  b.onState(m, 6000);
+  b.advance(8000, rng);
+  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  b.onState(m, 8000);
+  b.advance(8100, rng);
+  b.wishPopped(true, 8100);
+  const uint32_t landed = 8100 + G::kHeartWaitMs + G::kHeartFlyMs;
+  b.advance(landed - 1, rng);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(landed, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);
+}
+
+// With no app the Mac's tags go, as they're stale, but not its growth stage:
+// a Hatchling doesn't grow to full size, ceremony and all, when the Mac sleeps.
+static void test_alone_it_stays_its_stage() {
+  const uint32_t hatchling = render::tagBit("hatchling"), party = render::tagBit("party");
+  auto face = std::make_unique<testface::WrappedFace>();
+  testface::WrappedFace& f = *face;
+  Behaviour b(std::move(face));
+  app::Rng rng;
+  b.reset(0, rng);
+  Model m = base("idle");
+  m.when = hatchling | party;
+  b.onState(m, 100);
+  b.advance(100 + Behaviour::kNoAppMs, rng);
+  TEST_ASSERT_TRUE(b.noApp(100 + Behaviour::kNoAppMs));
+  TEST_ASSERT_EQUAL_HEX32(hatchling, f.context.when);
+  TEST_ASSERT_EQUAL(3, render::growthStage(0));
+  TEST_ASSERT_EQUAL(4, render::growthStage(render::tagBit("chonk")));
+}
+
 // With no app the wish's bubble goes: nothing waits on a Mac that isn't there,
 // and no touch could meet it. It comes back with the app, if it's still open.
 static void test_the_wish_goes_with_the_app() {
@@ -3962,6 +4173,12 @@ int main() {
   RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   RUN_TEST(test_alone_it_rests_then_sleeps_and_a_touch_wakes_it);
+  RUN_TEST(test_the_growth_bar_comes_when_the_xp_moves);
+  RUN_TEST(test_the_growth_bar_keeps_off_what_it_shouldnt_cover);
+  RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
+  RUN_TEST(test_a_new_stage_fills_the_bar_past_its_end);
+  RUN_TEST(test_a_new_stage_waits_for_the_heart);
+  RUN_TEST(test_alone_it_stays_its_stage);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);
   RUN_TEST(test_the_macs_return_gets_a_small_hello);
   return UNITY_END();

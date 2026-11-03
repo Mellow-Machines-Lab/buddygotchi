@@ -30,12 +30,11 @@ final class CollisionTests: XCTestCase {
 
     /// Pins the queue's three ways in: your own talking cuts in; a moment
     /// with something to read waits its turn (a greeting of the day, a wish
-    /// met, growing a stage); one with nothing to read is dropped when busy.
+    /// met); one with nothing to read is dropped when busy.
     func testHowEachRuleMomentAsksToPlay() {
         XCTAssertEqual(BoopDevice.play(Moment(anim: BoopDevice.listening)), .now)
         XCTAssertEqual(BoopDevice.play(Moment(anim: "notice", sign: "Day 50!")), .next, "a day's greeting")
         XCTAssertEqual(BoopDevice.play(Moment(anim: Core.wishMet, sign: "thanks")), .next, "a wish met")
-        XCTAssertEqual(BoopDevice.play(Core.celebration(sign: "I'm a Sprout!")), .next, "growing a stage")
         XCTAssertEqual(BoopDevice.play(Moment(anim: "starting")), .ifFree, "a late rule moment is worse than none")
     }
 

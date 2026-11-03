@@ -43,7 +43,7 @@ public final class MemoryReader: TranscriptReader {
         /// The XP each pool earned today, within its cap
         /// (`Growth.workPerDay`, `carePerDay`): growth's daily totals. Nil
         /// before the first, and in a checkpoint from before they were kept.
-        public var workXP: Int?, careXP: Int?
+        public var workXP: Int?, careXP: Int?, wishXP: Int?
         /// The notable lines Jev read, each with its time (`HH:mm`), for
         /// the dream's write; at most `journalMax`. A dream's span keeps it;
         /// a day's is empty.
@@ -95,9 +95,10 @@ public final class MemoryReader: TranscriptReader {
     public func read(_ e: Event, line: Line?, into t: inout Tallies) -> Bool {
         let before = t
         if let earning = Growth.earning(for: e) {
-            let had = (earning.pool == .work ? t.workXP : t.careXP) ?? 0
+            let pool: WritableKeyPath<Tallies, Int?> = earning.pool == .work ? \.workXP : earning.pool == .care ? \.careXP : \.wishXP
+            let had = t[keyPath: pool] ?? 0
             let xp = min(earning.xp, max(0, Growth.cap(earning.pool) - had))
-            if earning.pool == .work { t.workXP = had + xp } else { t.careXP = had + xp }
+            t[keyPath: pool] = had + xp
             if xp > 0 { earned(e, xp) }
         }
         Self.count(e, into: &t, time: time, place: place)
@@ -177,7 +178,7 @@ public final class MemoryReader: TranscriptReader {
         switch e.type {
         case .prompt?: return (text, !line.notes.contains { $0.hasPrefix("Your words") })
         case .said?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
-        case .wish?: return (text, false)
+        case .wish?, .grew?: return (text, false)
         case .turn? where e.phase == .end:
             let long = (line.facts["length_ms"]?.int ?? 0) >= 5 * 60_000
             return long || e["outcome"]?.string != "done" ? (text, true) : nil

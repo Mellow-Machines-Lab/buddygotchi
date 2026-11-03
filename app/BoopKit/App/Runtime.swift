@@ -65,6 +65,9 @@ public final class Runtime: @unchecked Sendable {
         /// Every message sent to the device, as it's sent, for whoever
         /// records them (`DemoRecorder`). On whichever thread sends it.
         public var onDeviceLine: (@Sendable (String) -> Void)?
+        /// Boop full size whatever its XP, for a demo: from before the
+        /// first `state`, which goes out before a demo's first step.
+        public var fullSize = false
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
@@ -231,6 +234,8 @@ public final class Runtime: @unchecked Sendable {
     // Here and away. All on `home`.
     /// Decides whether you're at the Mac, from where the transcript left it.
     var presence = PresenceDetector()
+    /// The day `goBackwards` last looked.
+    var backwardsDay = ""
     /// The idle time `{"dev":"presence","idle_ms":N}` set, read in place of
     /// the Mac's when there's no `idleMs`.
     var devIdleMs: Int64 = 0
@@ -408,9 +413,11 @@ public final class Runtime: @unchecked Sendable {
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs {
-            core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 }
+            core(rig).stage = { [weak self] in self.map { $0.options.fullSize || $0.playingDemo ? 3 : $0.growth.growth.stage } ?? 3 }
+            core(rig).growthPercent = { [weak self] in self.flatMap { $0.options.fullSize || $0.playingDemo ? nil : $0.growth.growth.percent } }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
+        growth.decay(today: options.time.day(options.wallClock()))
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }
@@ -449,7 +456,7 @@ public final class Runtime: @unchecked Sendable {
         // what it earns, uncapped.
         let grow: (Event, Int) -> Void = { [weak self] e, earned in
             guard let self else { return }
-            let before = growth.growth.stage, now = options.clock()
+            let before = growth.growth.stage, percent = growth.growth.percent, now = options.clock()
             let wall = options.wallClock()
             guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
             grew = true
@@ -457,6 +464,8 @@ public final class Runtime: @unchecked Sendable {
             // celebrates it now, unless Boop hatched today.
             if growth.growth.stage > before {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
+            } else if growth.growth.percent != percent {
+                for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
             }
         }
         if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
@@ -669,6 +678,7 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock(), wall = options.wallClock()
         for rig in rigs { core(rig).setWallClock(wall, at: now) }
         run(pipeline.tick(at: now))
+        goBackwards(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
         var troubled = false
@@ -853,4 +863,18 @@ public final class Runtime: @unchecked Sendable {
 extension Duration {
     /// In whole milliseconds.
     var ms: Int { Int(components.seconds * 1000 + components.attoseconds / 1_000_000_000_000_000) }
+}
+
+extension Runtime {
+
+    /// Once a day: Boop left alone goes backwards, which shows on the board
+    /// at once.
+    func goBackwards(at now: Int64) {
+        let today = options.time.day(options.wallClock())
+        guard today != backwardsDay else { return }
+        backwardsDay = today
+        guard growth.decay(today: today) else { return }
+        changed()
+        for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
+    }
 }

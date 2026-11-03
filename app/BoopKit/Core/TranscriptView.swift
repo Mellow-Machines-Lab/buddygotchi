@@ -280,7 +280,7 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "grew": 1, "act_start": 0, "act_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -536,6 +536,7 @@ public final class TranscriptView {
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name(e), why: e.specificType))
+        case .grew?: return Line(EventLine.grew(e.specificType, name: name(e)), facts: ["stage": .string(e.specificType)])
         case .wish?:
             if e.phase == .start { return Core.WishKind(rawValue: e.specificType).map { Line(EventLine.wished($0, name: name(e))) } }
             guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }

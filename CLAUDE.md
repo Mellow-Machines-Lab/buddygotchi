@@ -257,7 +257,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign at an idle check-in, about once a day (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Apple Intelligence editing the written memory as Boop dreams (`MemoryEdits`) | the night's write | |
-| growth | XP and stages, Hatchling to Legend | | |
+| growth | XP, which can go backwards, and stages, Hatchling to Chonk; a stage changes only the body and the pastimes. The growth bar shows it on the board, with a met wish's heart flying in (`GrowthShow`), and Jev's sign says what grew (`[grew]`) | | `xp`, `grew` |
 | special day | A holiday, a milestone day, Boop's birthday, a stage reached | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 

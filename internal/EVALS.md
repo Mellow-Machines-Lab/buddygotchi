@@ -65,6 +65,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
+| `grew` | Boop's XP reaches the stage the step's `kind` names (`Sprout` unless it says), as `Core.reachedStage` hears it: a `grew` event, `Boop grew: it's a Sprout now.`, a pass |
 | `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
 
 Every event is Claude's, in project `landing`, in session `s1` or the

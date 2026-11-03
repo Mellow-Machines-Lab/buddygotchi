@@ -67,7 +67,7 @@ final class ContextTests: XCTestCase {
         XCTAssertEqual(ContextSection.talk(.quiet, silentMs: 8 * minute - 1000, name: "Boop"),
                        "Talk: silent for 8 more min, then quiet again: Boop says nothing till then, but its faces and replies go on, each answering what you said.")
         XCTAssertEqual(ContextSection.talk(.normal, silentMs: 0, name: "Boop"), nil)
-        XCTAssertEqual(ContextSection.buddy(.init(stage: "Pal", daysOld: 40), name: "Boop"), "Boop: a Pal, 40 days old.")
+        XCTAssertEqual(ContextSection.buddy(.init(stage: "Sprout", daysOld: 40), name: "Boop"), "Boop: a Sprout, 40 days old.")
         XCTAssertEqual(ContextSection.buddy(.init(stage: "Hatchling", daysOld: 0), name: "Boop"), "Boop: a Hatchling, hatched today.")
     }
 

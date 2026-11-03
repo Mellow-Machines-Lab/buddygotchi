@@ -51,7 +51,7 @@ Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01
 
 **Landed:** the eval levels and daily limit; must and feel evals with a judge; the prompt cut to level A; the rest of the wish; every lock and unlock reaching Jev; idle check-ins with no agents; no plug on a Boop already asleep; any brief touch on a finish opens its thread; the finish's low sign; the falling word and three work acts; the memory pane; alive without the Mac.
 
-**Not landed:** growth. It's on branch `growth`, with its pack commits in the clones under `.claude/worktrees/growth`: keep that worktree. The core and body work are done and tested with no board. It predates the cleanup and review fixes, and it changes existing users' stages (Chonk starts at 5,000, and the old saved stage is ignored). Look at `frames-growth/` and try it on the board first.
+**Not landed:** growth. It's on branch `growth`, with its pack commits in the clones under `.claude/worktrees/growth`: keep that worktree. It's up to date with `day2`, and tested with no board. Look at `~/.boopdev/day2/growth/` and try it on the board first. `plan/growth.md` says what's left.
 
 **The prompt: level A, about 4,800 tokens, down from about 6,800.** Tags `prompt-level-A`, `-B` and `-C` keep the others.
 

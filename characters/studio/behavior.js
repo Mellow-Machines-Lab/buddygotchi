@@ -72,6 +72,17 @@
         r.also?.length ? h('p', {className: 'also'}, 'The same moment also sets off ',
           r.also.map((id, i) => [i ? (i === r.also.length - 1 ? ' and ' : ', ') : '', h('a', {href: `#behavior-${id}`, 'data-row-link': id}, names[id])]), '.') : null);
     }
+    // The pastimes a growth stage first knows: each stage knows these and those before.
+    function pastimesByStage(api) {
+      const rows = packOf(api)?.pastimes || [];
+      if (!rows.length) return null;
+      const names = {1: 'Hatchling', 2: 'Sprout', 3: 'Buddy', 4: 'Chonk'};
+      const stages = [...new Set(rows.map(r => r.stage))].sort();
+      return panel({'data-group': 'pastimes-by-stage'}, heading('Pastimes by stage', 'What each growth stage first knows. A stage changes only the body and these: nothing useful waits on one.'),
+        h('div', {className: 'behavior-rows'}, stages.map(stage => h('article', {className: 'behavior-row', 'data-stage': stage},
+          h('header', {}, h('strong', {}, names[stage] || stage)),
+          h('div', {className: 'chips'}, rows.filter(r => r.stage === stage).map(r => h('span', {className: 'pill', title: r.look}, r.name)))))));
+    }
     function render() {
       api.writeHash();
       if (!MAP) {
@@ -101,7 +112,8 @@
         ...MAP.groups.map(g => {
           const list = g.rows.filter(fits);
           return list.length ? panel({'data-group': g.id}, heading(g.label, g.about), h('div', {className: 'behavior-rows'}, list.map(r => row(api, r, names)))) : null;
-        }).filter(Boolean));
+        }).filter(Boolean),
+        pastimesByStage(api));
       if (s.row) root.querySelector(`[data-row="${s.row}"]`)?.scrollIntoView({block: 'center'});
     }
     root.addEventListener('click', e => {

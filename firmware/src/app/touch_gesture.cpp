@@ -38,7 +38,7 @@ int TouchGesture::spread() const { return std::max(maxX_ - minX_, maxY_ - minY_)
 
 TouchGesture::Path TouchGesture::path() const { return {x0_, y0_, last().x, last().y, last().t - t0_}; }
 
-TouchGesture::Kind TouchGesture::up(render::Gesture& g) const {
+TouchGesture::Kind TouchGesture::up(render::Gesture& g, int noseDrop) const {
   const int dx = last().x - x0_, dy = last().y - y0_, far = std::max(std::abs(dx), std::abs(dy));
   const bool spot = maxX_ - minX_ <= kTickleSpotPx && maxY_ - minY_ <= kTickleSpotPx;
   if (spot && path_ >= kTicklePathPx) {
@@ -50,7 +50,7 @@ TouchGesture::Kind TouchGesture::up(render::Gesture& g) const {
     if (int64_t(vx) * vx + int64_t(vy) * vy > int64_t(kSwipePxPerS) * kSwipePxPerS) return kSwipe;
   } else if (spread() >= kStrokePx || (!spot && path_ >= kTicklePathPx)) {
     g = render::Gesture::kStroke;  // a rub back and forth, ending near where it began
-  } else if (std::abs(x0_ - kNoseX) <= kNoseHalf && std::abs(y0_ - kNoseY) <= kNoseHalf) {
+  } else if (std::abs(x0_ - kNoseX) <= kNoseHalf && std::abs(y0_ - kNoseY - noseDrop) <= kNoseHalf) {
     g = render::Gesture::kNose;
   } else {
     return kTap;

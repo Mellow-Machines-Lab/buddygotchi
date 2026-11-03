@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-02. The contract a character pack meets, so that any
+Updated 2026-11-03. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -374,6 +374,14 @@ your prompt (`Signs`, the `react.sign` question, asked only when NOW is a
 prompt's reading, not a message's). A pack without the file holds up no
 signs.
 
+Its `[grew]` lines, and `[grew sprout]`, `[grew buddy]` and `[grew chonk]`, the
+stage's first, are what it may hold up as it grows (`Signs.grew`): Jev picks the
+one that says what grew, at the `grew` event. A pack with none holds up nothing
+then, and the board still plays the new body.
+
+**The growth bar,** the gel's own (`render::GrowthShow`, `paintGrowthBar`), goes
+by `state.xp`, the percent through the stage. A face with no bar ignores it.
+
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own
   name, and the calendar's.
@@ -558,8 +566,8 @@ Besides drawing each mood and state, a face:
   - Special days: `friday`, `newyear`, `valentines`, `halloween`, `winter`,
     `programmers`, `lunar`, and `party` (a milestone day since hatching, New
     Year's Day, the day a growth stage was reached, but never the day it
-    hatched). The Mac greets a special day with its sign, and celebrates a
-    stage the moment it's reached.
+    hatched). The Mac greets a special day with its sign. A stage reached has
+    none of its own: Jev picks one as it grows.
   - The tiers (`Tags.tiers`): `tier1` from 30 seconds, `tier2` from a
     minute, `tier3` from 2, `tier4` from 5, `tier5` from 10. They count how
     long the agents' working stretch has run, from its first turn, a rest of
@@ -567,13 +575,16 @@ Besides drawing each mood and state, a face:
     the latest session came to rest. The Mac sends the last reached and the
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
-  - `sprout` from the first growth stage reached on, and `hushed` while the
-    buddy is hushed (`Core.Hush`).
+  - The growth stage Boop is at, `hatchling`, `sprout` or `chonk`, none at
+    Buddy (`Tags.stages`), which can go back; and `hushed` while the buddy is
+    hushed (`Core.Hush`). The gel's body and its pastimes go by the stage;
+    nothing useful does. A board with no Mac keeps the stage's tag, and only
+    that, as the rest go stale.
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board
     adds from `state.busy`. The working looks also play at 125% and 160%
     then (`render::workPace`, `FaceContext::pace`).
-  - The Mac has more (`weekend`, `friday13`, `piday`, `aprilfools`, `may4`
-    and the later growth stages), for its signs and the brain, and sends the
+  - The Mac has more (`weekend`, `friday13`, `piday`, `aprilfools`, `may4`),
+    for its signs and the brain, and sends the
     board none of them (`Tags.macOnly`).
 
   A design that needs tags shows only while they're on. A look starts on one

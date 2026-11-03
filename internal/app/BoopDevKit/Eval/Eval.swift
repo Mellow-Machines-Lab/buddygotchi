@@ -255,7 +255,7 @@ public struct Scenario: Sendable {
     /// check-in (`signs`: note, line).
     public var felt: [Memory.Felt] = []
 
-    public static let events = ["wish", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
+    public static let events = ["wish", "grew", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "lock", "unlock", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
                                 "to-do list", "wait", "ask answered"]
 
@@ -1180,6 +1180,9 @@ public struct Eval {
             // A wish made, as the brain's pick of its sign makes it.
             let kind = Core.WishKind(rawValue: step.kind ?? "") ?? .pet
             return [{ $0.effects($0.core.makeWish(kind, at: now), at: now) }]
+        case "grew":
+            // Boop's XP reaches a stage, named by the step's `kind`.
+            return [{ $0.effects($0.core.reachedStage(step.kind ?? "Sprout", celebrate: true, at: now), at: now) }]
         case "gesture":
             return [{ $0.gesture(step.kind ?? "stroke", request: $0.core.snapshot(at: now).attn?.id, at: now) }]
         // What the presence detector would decide: you
