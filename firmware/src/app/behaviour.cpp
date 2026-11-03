@@ -792,6 +792,8 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
   using G = render::GrowthShow;
   if (int32_t(t - bar_.fillAt) >= int32_t(2 * G::kFillMs)) bar_.wrap = 0;  // that one's over
   bar_.from = barFill(t);
+  // A state with the XP that came first may have moved it too little to show.
+  if (model_.xp >= 0) bar_.to = model_.xp;
   bar_.fillAt = t + G::kHeartWaitMs + G::kHeartFlyMs;
   if (!bar_.on) bar_.onAt = t;
   bar_.on = bar_.heart = true;

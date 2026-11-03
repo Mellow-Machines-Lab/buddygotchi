@@ -1818,6 +1818,31 @@ static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
   TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
 }
 
+// At Buddy a met wish's +40 XP is about 1% of the stage, under kBarStep: the
+// heart still lands on a fill that moves, whichever of the `do` and the state
+// came first.
+static void test_a_met_wish_fills_the_bar_by_however_little() {
+  using G = render::GrowthShow;
+  for (bool stateFirst : {true, false}) {
+    Rig r;
+    Model m = base("idle");
+    m.xp = 20;
+    m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    if (stateFirst) m.xp = 21, r.state(m);
+    r.b.wishPopped(true, r.t);
+    if (!stateFirst) m.xp = 21, r.state(m);
+    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
+    r.at(landed - 1);
+    TEST_ASSERT_EQUAL(200, r.b.growthShow(r.t).fill);
+    r.at(landed + G::kFillMs);
+    TEST_ASSERT_EQUAL(210, r.b.growthShow(r.t).fill);
+  }
+}
+
 // A stage reached fills the bar to its end for the old stage, then from its
 // start for the new; a stage lost, down to its start, then from its end.
 static void test_a_new_stage_fills_the_bar_past_its_end() {
@@ -4176,6 +4201,7 @@ int main() {
   RUN_TEST(test_the_growth_bar_comes_when_the_xp_moves);
   RUN_TEST(test_the_growth_bar_keeps_off_what_it_shouldnt_cover);
   RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
+  RUN_TEST(test_a_met_wish_fills_the_bar_by_however_little);
   RUN_TEST(test_a_new_stage_fills_the_bar_past_its_end);
   RUN_TEST(test_a_new_stage_waits_for_the_heart);
   RUN_TEST(test_alone_it_stays_its_stage);
