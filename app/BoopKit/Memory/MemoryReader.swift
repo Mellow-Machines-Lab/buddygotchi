@@ -23,7 +23,7 @@ public final class MemoryReader: TranscriptReader {
         /// How many of the day's events were yours, and the last one's time.
         public var yours = 0
         public var lastYours: Int64?
-        /// The first event that was yours, and the strokes before 11:00: for
+        /// The first event that was yours, and the strokes from 5:00 to 11:00: for
         /// the digest the habits are counted from. Nil in a checkpoint from
         /// before they were kept.
         public var firstYours: Int64?, strokesAM: Int?
@@ -137,7 +137,8 @@ public final class MemoryReader: TranscriptReader {
             t.touches += 1
             if e.specificType == "stroke" {
                 t.strokes += 1
-                if time.components(e.at).hour < 11 { t.strokesAM = (t.strokesAM ?? 0) + 1 }
+                let hour = time.components(e.at).hour
+                if hour >= LocalTime.boopDayStartHour, hour < 11 { t.strokesAM = (t.strokesAM ?? 0) + 1 }
             }
         case .said?:
             t.talks += 1

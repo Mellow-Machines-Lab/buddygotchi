@@ -291,6 +291,19 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(files.written().markdown, preview.after, "d makes what D showed")
     }
 
+    /// A morning stroke is from 5:00 to 11:00: 02:00 is still your night.
+    func testAMorningStrokeIsAfterFive() throws {
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+        memory.heard(stroke(1, at(2026, 10, 31, 2)), line: nil)
+        XCTAssertNil(memory.span?.tallies.strokesAM, "02:00")
+        memory.heard(stroke(2, at(2026, 10, 31, 4, 59)), line: nil)
+        XCTAssertNil(memory.span?.tallies.strokesAM, "04:59")
+        memory.heard(stroke(3, at(2026, 10, 31, 5)), line: nil)
+        XCTAssertEqual(memory.span?.tallies.strokesAM, 1, "05:00")
+        memory.heard(stroke(4, at(2026, 10, 31, 11)), line: nil)
+        XCTAssertEqual(memory.span?.tallies.strokesAM, 1, "11:00")
+    }
+
     /// A dream's write still being made when you ask Boop to forget doesn't
     /// land: it was asked from what you've just forgotten.
     func testAForgetDuringADreamDropsItsWrite() async throws {

@@ -377,7 +377,9 @@ public enum MemoryProposer {
         for words in saidTonight {
             let days = a.filter { $0.said.contains { $0.words == words } }
             guard days.count >= 3, words.split(separator: " ").count <= 4 else { continue }
-            let clocks = days.flatMap { $0.said.filter { $0.words == words }.map(\.at) }.compactMap(minutes).sorted()
+            // Before 5:00 is still your night: after 24:00, for the middle.
+            let clocks = days.flatMap { $0.said.filter { $0.words == words }.map(\.at) }.compactMap(minutes)
+                .map { $0 < LocalTime.boopDayStartHour * 60 ? $0 + 24 * 60 : $0 }.sorted()
             let middle = clocks[clocks.count / 2]
             let text: String
             if middle < 11 * 60 { text = "You say \"\(words)\" to Boop when you sit down." }

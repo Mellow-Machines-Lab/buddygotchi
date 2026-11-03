@@ -85,6 +85,14 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertNil(MemoryProposer.propose(Array(ds.prefix(2))).first { $0.key.hasPrefix("said.") }, "twice is no habit")
     }
 
+    /// Said after midnight is the end of your night, not the start of your
+    /// morning: the middle of 23:50, 00:30 and 01:00 is half past midnight, late.
+    func testAPhraseAfterMidnightIsLate() {
+        let clocks = ["23:50", "00:30", "01:00"]
+        let ds = (0..<3).map { i in day(i) { $0.said = [.init(at: clocks[i], words: "night buddy")] } }
+        XCTAssertEqual(MemoryProposer.propose(ds).first { $0.key == "said.night buddy" }?.text, "You tell Boop \"night buddy\" before you go.")
+    }
+
     func note(_ line: String) -> WrittenMemory { WrittenMemory.from(notes: [line])! }
     func candidate(signature: [String], section: WrittenMemory.Section = .you, replaces: Bool = false) -> MemoryCandidate {
         MemoryCandidate(key: "k", section: section, text: "Fridays are your late nights.", strength: 1, signature: signature, evidence: "late", replaces: replaces)
