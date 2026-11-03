@@ -1291,7 +1291,7 @@ final class RuntimeTests: XCTestCase {
             self.debugLines().contains { (($0["view"] as? [String: Any])?["facts"] as? [String: Any])?["dream_day"] as? String == day }
         }
         XCTAssertEqual(dreams().count, 1, "nothing new since: no second dream")
-        XCTAssertTrue(runtime.home.sync { runtime.remembers?.dream?.told } == true)
+        XCTAssertFalse(runtime.home.sync { runtime.remembers?.dream?.told } == true, "no moment played it")
 
         let status = try XCTUnwrap(debugLines().compactMap { $0["status"] as? [String: Any] }.last)
         XCTAssertNotNil(status["xp"] as? Int)

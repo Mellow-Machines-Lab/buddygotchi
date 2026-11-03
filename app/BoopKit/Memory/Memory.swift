@@ -13,7 +13,8 @@ import MellowHarness
 /// and at once when it hasn't in `fallbackMs`; each only with something
 /// new, and one at a time. The dream is kept in the key-value store
 /// (`dream.last`) and logged as a `dream` event at the next tick, for the
-/// view to tell; the line that tells it marks it told. Attached where the
+/// view to tell; the moment that tells it, once it has played, marks it
+/// told. Attached where the
 /// pipeline is made, so the app, `--headless` and the evals all have it.
 /// Touched on the harness's queue, but for the write, which asks the
 /// writer off it and lands its edits back on it (`queue`).
@@ -82,6 +83,8 @@ public final class Memory: @unchecked Sendable {
         /// dream's own sentence, which is always true.
         public var fallback: String
         public var ms: Int
+        /// The span's digest, kept with the edits (`memory-days.json`).
+        public var digest: DayDigest?
     }
 
     /// Asks the writer to edit the written memory for `dream` from its
@@ -94,14 +97,28 @@ public final class Memory: @unchecked Sendable {
         let certain = MemoryRequest.certain(tallies, range: range)
         let started = Date()
         var request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal)
+        var source = MemoryRequest.source(certain: certain, journal: journal)
+        var digest: DayDigest?
+        if writer.usesDigests {
+            let memory = files.written(), days = files.days()
+            let tonight = DayDigest.from(day: day, weekday: dream.weekday, tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
+                                         last: tallies.lastYours.map(time.clock) ?? "", strokesAM: tallies.strokesAM ?? 0, journal: journal)
+            digest = tonight
+            let digests = days.keeping(tonight, added: []).digests
+            var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: day, weekday: dream.weekday)
+            input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
+            request.pipeline = input
+            source += "\n" + MemoryPipeline.evidence(input).joined(separator: "\n")
+        }
         var reply = await writer.write(request)
         if reply == .tooLong {
+            let pipeline = request.pipeline
             request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal, lines: request.lines * 3 / 4)
+            request.pipeline = pipeline
             reply = await writer.write(request)
         }
-        return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal),
-                     source: MemoryRequest.source(certain: certain, journal: journal),
-                     fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000))
+        return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal), source: source,
+                     fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000), digest: digest)
     }
 
     /// A span's dates as Recently's line names them, its day said already:
@@ -135,6 +152,10 @@ public final class Memory: @unchecked Sendable {
             return nil
         }
         do { try files.keep(next, day: night.day) } catch { note("memory: can't write memory.md: \(error)") }
+        if let digest = night.digest {
+            let added = report.added.compactMap { id in next.notes.first { $0.id == id }?.text }
+            do { try files.keep(files.days().keeping(digest, added: added)) } catch { note("memory: can't write the digests: \(error)") }
+        }
         if let h = harness {
             func ids(_ xs: [Int]) -> JSONValue { .array(xs.map { .string("m\($0)") }) }
             h.emit(Event(at: h.clock.now(), source: .boop, type: .memory, specificType: "night",
@@ -174,7 +195,11 @@ public final class Memory: @unchecked Sendable {
     public var span: DreamReader.Span? { dreams.state }
 
     func heard(_ e: Event, line: Line?) {
-        if let day = line?.facts["dream_day"]?.string { told(day) }
+        // The moment that tells the dream played through.
+        if e.kind == Event.ended, e.action == MomentOutput.outputName, e["outcome"]?.string == "done", let h = harness,
+           let about = e.about.flatMap({ h.log.event($0) })?.about, let day = h.line(about)?.facts["dream_day"]?.string {
+            told(day)
+        }
         recordAsk(e)
         recordWish(e)
         runner.feed(e, line: line)
@@ -340,9 +365,13 @@ public final class Memory: @unchecked Sendable {
         save(dream)
     }
 
-    /// Empties the journal since the last dream: what the person asked
-    /// Boop to forget never reaches the dream's write.
-    public func forgetJournal() { dreams.update { $0.tallies.journal = [] } }
+    /// Empties the journal since the last dream, and what you said in the
+    /// digests kept: what the person asked Boop to forget never reaches the
+    /// dream's write.
+    public func forgetJournal() {
+        dreams.update { $0.tallies.journal = [] }
+        do { try files?.forgetSaid() } catch { note("memory: can't write the digests: \(error)") }
+    }
 
     func told(_ day: String) {
         guard var dream = dream, dream.day == day, !dream.told else { return }

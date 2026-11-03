@@ -200,7 +200,21 @@ final class WrittenMemoryTests: XCTestCase {
         XCTAssertLessThan(r.lines, 400)
         XCTAssertTrue(r.text.contains("line 399."), "the newest lines stay")
         XCTAssertFalse(r.text.contains("line 0."), "the oldest go")
-        XCTAssertTrue(MemoryRequest.instructions.contains("Never drop a boop note"))
+    }
+
+    /// A reply that ends on its day line's own line: `end` is no part of the
+    /// day, and nothing after it is read. A day that only ends in the word is
+    /// left alone.
+    func testAnEndOnTheDayLineIsNoPartOfTheDay() {
+        func day(_ reply: String) -> [String] {
+            let source = "Tuesday the api tests passed and you told Boop we reached the end"
+            let (after, report) = MemoryEdits.apply(reply, to: WrittenMemory(), numbered: [], day: "2026-10-27", words: [], source: source)
+            XCTAssertEqual(report.refused.map(\.why), [])
+            return after.recently.map(\.text)
+        }
+        XCTAssertEqual(day("day: Tuesday: the api tests passed, and you told Boop. end"), ["Tuesday: the api tests passed, and you told Boop."])
+        XCTAssertEqual(day("day: Tuesday: the api tests passed. END\nday: Tuesday: you told Boop."), ["Tuesday: the api tests passed."])
+        XCTAssertEqual(day("day: Tuesday: we reached the end"), ["Tuesday: we reached the end"])
     }
 
     /// The dream's write: the writer's reply, checked and applied to

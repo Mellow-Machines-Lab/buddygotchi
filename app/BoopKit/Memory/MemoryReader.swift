@@ -23,6 +23,10 @@ public final class MemoryReader: TranscriptReader {
         /// How many of the day's events were yours, and the last one's time.
         public var yours = 0
         public var lastYours: Int64?
+        /// The first event that was yours, and the strokes before 11:00: for
+        /// the digest the habits are counted from. Nil in a checkpoint from
+        /// before they were kept.
+        public var firstYours: Int64?, strokesAM: Int?
         /// Since when you've been at the Mac (none while away, or before
         /// your first event), and since when you've been away: carried
         /// across 5:00.
@@ -108,6 +112,7 @@ public final class MemoryReader: TranscriptReader {
         if Yours.did(e) {
             t.yours += 1
             t.lastYours = e.at
+            if t.firstYours == nil { t.firstYours = e.at }
             if t.hereSince == nil, t.awaySince == nil { t.hereSince = e.at }
         }
         if Yours.touched(e) { t.touchedAt = e.at }
@@ -117,7 +122,10 @@ public final class MemoryReader: TranscriptReader {
             t.touches += 1
         case .gesture? where Touch(e)?.isCare == true:
             t.touches += 1
-            if e.specificType == "stroke" { t.strokes += 1 }
+            if e.specificType == "stroke" {
+                t.strokes += 1
+                if time.components(e.at).hour < 11 { t.strokesAM = (t.strokesAM ?? 0) + 1 }
+            }
         case .said?:
             t.talks += 1
         case .ask? where e.specificType != Asks.ignored:

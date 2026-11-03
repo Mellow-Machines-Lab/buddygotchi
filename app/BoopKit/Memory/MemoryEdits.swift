@@ -52,14 +52,15 @@ public enum MemoryEdits {
             let lower = line.lowercased()
             if lower == "end" { break }
             if lower.hasPrefix("day:") {
-                let text = String(line.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                let (text, ended) = Self.endless(String(line.dropFirst(4)).trimmingCharacters(in: .whitespaces))
                 if let why = unsafe(text, words: words, was: nil, longest: 200) ?? grounded(text, in: source) ?? numbers(text, in: source) {
                     refuse(raw, why)
-                    continue
+                } else {
+                    out.recently.removeAll { $0.day == day }
+                    out.recently.append(.init(day: day, text: text))
+                    report.day = true
                 }
-                out.recently.removeAll { $0.day == day }
-                out.recently.append(.init(day: day, text: text))
-                report.day = true
+                if ended { break }
                 continue
             }
             let verb = lower.split(separator: " ").first.map(String.init) ?? ""
@@ -160,6 +161,15 @@ public enum MemoryEdits {
     /// Why `days` can't be a change's: an edit is yesterday's, so it cites
     /// the closed day `day`, and no other day the note didn't cite already
     /// (`cited`).
+    /// A day line without the reply's `end` written on the same line, after
+    /// its sentence is over, and whether it had one. "we reached the end" is
+    /// a day that ends in the word.
+    static func endless(_ text: String) -> (text: String, ended: Bool) {
+        guard text.count > 4, text.suffix(4).lowercased() == " end",
+              let last = text.dropLast(4).last, ".!?\"".contains(last) else { return (text, false) }
+        return (String(text.dropLast(4)), true)
+    }
+
     static func check(_ days: [String], day: String, cited: [String]) -> String? {
         days.contains(day) && days.allSatisfy({ LocalTime.isDay($0) && ($0 == day || cited.contains($0)) }) ? nil : "days"
     }
