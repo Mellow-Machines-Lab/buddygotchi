@@ -67,12 +67,6 @@ public struct Scenario: Sendable {
         public var brain: [String: String]?
         /// Whether its passes are checked, so Jev answers them at every level.
         public var asksJev: Bool { expect?.wantsAPass ?? false }
-        /// Whether its `expect` checks one of Jev's own choices, which a
-        /// feel scenario leaves to the judge.
-        var checksAChoice: Bool {
-            guard let e = expect else { return false }
-            return e.react != nil || e.move != nil || e.intensity != nil || e.say != nil || e.said != nil || e.mood != nil || e.sign != nil
-        }
     }
 
     /// What a pass should come to: each a set of acceptable values, `none`
@@ -135,9 +129,11 @@ public struct Scenario: Sendable {
         /// Whether any of it is about the screen.
         public var wantsTheScreen: Bool { idle != nil || helpers != nil || when != nil || needs != nil || todo != nil || doing != nil }
         /// Whether any of it is about a pass.
-        public var wantsAPass: Bool {
-            react != nil || move != nil || intensity != nil || say != nil || said != nil
-                || mood != nil || offered != nil || dream != nil || sign != nil
+        public var wantsAPass: Bool { checksAChoice || offered != nil || dream != nil }
+        /// Whether it checks one of Jev's own choices, which a feel scenario
+        /// leaves to the judge.
+        var checksAChoice: Bool {
+            react != nil || move != nil || intensity != nil || say != nil || said != nil || mood != nil || sign != nil
         }
 
         public init(react: Set<String>? = nil, move: Set<String>? = nil, intensity: Set<String>? = nil, say: Set<String>? = nil,
@@ -236,6 +232,9 @@ public struct Scenario: Sendable {
     /// How much it says, chosen in Settings, told in CONTEXT's Talk row
     /// and held in code, as in the app: normal unless the file says.
     public var talk: Talk
+    /// The seed for when check-ins fall: 1 unless the file says, so a run
+    /// repeats. Another seed is another day's timing, as the app's differ.
+    public var seed: UInt64 = 1
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
     public var mood: String
@@ -283,7 +282,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = brief?.judge ?? (o["case"] as? String),
               let why = brief != nil ? "" : (o["why"] as? String), let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -367,6 +366,7 @@ public struct Scenario: Sendable {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
             return $0
         } ?? MoodOutput.initial
+        if let n = o["seed"] as? Int { seed = UInt64(max(0, n)) }
         steps = try raw.enumerated().map { i, s in
             func badStep(_ why: String) -> Error { bad("step \(i + 1): \(why)") }
             guard let event = s["event"] as? String, Scenario.events.contains(event) else {
@@ -494,7 +494,7 @@ public struct Scenario: Sendable {
             return step
         }
         if brief != nil {
-            if let i = steps.firstIndex(where: \.checksAChoice) { throw bad("step \(i + 1): a feel scenario checks no choice of Jev's; the judge reads them") }
+            if let i = steps.firstIndex(where: { $0.expect?.checksAChoice == true }) { throw bad("step \(i + 1): a feel scenario checks no choice of Jev's; the judge reads them") }
         } else {
             guard checks != nil || steps.contains(where: { $0.expect != nil }) else { throw bad("expects nothing") }
         }
@@ -717,29 +717,30 @@ public struct Eval {
         case full
     }
 
-    /// How many runs a scenario gets unless `--runs` says: its own `runs`,
-    /// else 3 at the full level for an `always` one, Boop's character, and 1
-    /// for the rest.
-    public static func runs(_ scenario: Scenario, level: Level) -> Int {
-        scenario.runs ?? (level == .full && scenario.always ? 3 : 1)
+    /// How `level` runs a scenario against Jev; nil when it leaves the
+    /// scenario out.
+    public struct Plan: Sendable, Equatable {
+        /// How many runs: `--runs`, else its own `runs`, else 3 at the full
+        /// level for an `always` one, Boop's character, and 1 for the rest.
+        public var runs: Int
+        /// Whether the expect brain answers its setup. Whole-run checks and
+        /// the judge read every pass, so those scenarios play in full.
+        public var scriptsSetup: Bool
+        /// Whether a failed run gets its one re-run: a must's does, to
+        /// confirm before it blocks, unless `--runs` or its own runs repeat it.
+        public var rerunsOnFailure: Bool
+        /// `--scripted`: each scenario once, with the expect brain.
+        public static let scripted = Plan(runs: 1, scriptsSetup: false, rerunsOnFailure: false)
     }
 
-    /// Whether `level` runs a scenario against Jev. Quick leaves out a feel
-    /// scenario unless `--only` named it.
-    public static func runs(_ scenario: Scenario, at level: Level, named: Bool) -> Bool {
-        !scenario.scripted && (level != .quick || scenario.brief == nil || named)
-    }
-
-    /// Whether `level` has the expect brain answer a scenario's setup. Whole-run
-    /// checks and the judge read every pass, so those scenarios play in full.
-    public static func scriptsSetup(_ scenario: Scenario, level: Level) -> Bool {
-        level == .quick && scenario.checks == nil && scenario.brief == nil
-    }
-
-    /// Whether a failed run of a scenario gets its one re-run: a must's does,
-    /// to confirm before it blocks, unless `--runs` or its own runs repeat it.
-    public static func reruns(_ scenario: Scenario, runs: Int) -> Bool {
-        scenario.brief == nil && scenario.gap == nil && !scenario.scripted && runs == 1
+    /// The plan for a scenario at `level`. Quick leaves out a feel scenario
+    /// unless `--only` named it, and a scripted scenario never goes to Jev.
+    public static func plan(_ scenario: Scenario, level: Level, named: Bool, given: Int? = nil) -> Plan? {
+        guard !scenario.scripted, level != .quick || scenario.brief == nil || named else { return nil }
+        let runs = given ?? scenario.runs ?? (level == .full && scenario.always ? 3 : 1)
+        return Plan(runs: runs,
+                    scriptsSetup: level == .quick && scenario.checks == nil && scenario.brief == nil,
+                    rerunsOnFailure: scenario.brief == nil && scenario.gap == nil && runs == 1)
     }
 
     /// One run as a line for the judge (internal/EVALS.md §2): the scenario,
@@ -800,7 +801,7 @@ public struct Eval {
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
                         isRunning: { _ in true }, archive: { _ in .open })
         core.setWallClock(start, at: start)
-        let view = TranscriptView(rules: rules, seed: 1)
+        let view = TranscriptView(rules: rules, seed: scenario.seed)
         let home = DispatchQueue(label: "boop.eval")
         // The brain is asked for each event straight through, not by the
         // loop (`respond`), on the virtual clock.

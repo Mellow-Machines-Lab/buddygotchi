@@ -8,7 +8,7 @@ private let t0: Int64 = 1_790_000_000_000
 private let minute: Int64 = 60_000
 
 /// Every lock and unlock of the Mac: the detector makes the events, the view
-/// their lines, and Jev picks a wave, a snub or the nap (`plan/lock-and-unlock.md`).
+/// their lines, and Jev picks a wave, a snub or the nap.
 final class LockTests: XCTestCase {
     static func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 1]) }
 
@@ -170,5 +170,12 @@ final class LockTests: XCTestCase {
         XCTAssertTrue(rig.pipeline.asleepAndIdle(at: rig.now), "the dream follows by itself")
         rig.pipeline.said("hey", by: .device, at: rig.now)
         XCTAssertEqual(doing(), "idle", "and your words")
+        // BOOT with someone in the line is you showing up too: once they're
+        // answered it stays awake, not back to its nap.
+        rig.send(.needsYou, tool: "Bash")
+        rig.core.nap(at: rig.now)
+        XCTAssertFalse(rig.core.line(at: rig.now).isEmpty)
+        rig.pipeline.press(at: rig.now)
+        XCTAssertFalse(rig.core.napping, "and BOOT")
     }
 }

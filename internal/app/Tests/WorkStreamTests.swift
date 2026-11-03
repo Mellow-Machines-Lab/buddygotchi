@@ -388,6 +388,51 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "no end heard: it ends with the turn")
     }
 
+    /// An act's own session asking for approval, a push asked for most of
+    /// all, doesn't end it: needs you holds the screen, then it comes back
+    /// where it got to and ends by its result. Dismissed, it goes on too. Its
+    /// session's turn ending is what ends an act with no end heard.
+    func testAnActComesBackAfterItsOwnNeedsYou() throws {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.send(call(rig, "1", program: "git push"))
+        let full = rig.core.stream.act?.full
+        XCTAssertEqual(full, true)
+        rig.send(.needsYou, tool: "Bash")
+        XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "needs you holds the screen")
+        XCTAssertNotNil(rig.core.stream.act, "and the act waits behind it")
+        XCTAssertEqual(rig.core.stream.act?.full, full)
+        rig.now += 1000
+        rig.send(call(rig, "1", program: "git push", failed: false))
+        XCTAssertEqual(rig.core.stream.act?.passed, true, "and has its end")
+        XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "it comes back")
+
+        let dismissed = CoreRig(workStream: true)
+        dismissed.send(.turnStart)
+        dismissed.send(call(dismissed, "1", program: "git push"))
+        dismissed.send(.needsYou, tool: "Bash")
+        let attn = try XCTUnwrap(dismissed.state.attn)
+        dismissed.note(Fx(dismissed.pipeline.gesture(Core.dismissGesture, request: attn.id, at: dismissed.now)))
+        XCTAssertNotNil(dismissed.core.snapshot(at: dismissed.now).fields["wact"], "dismissed, it shows again")
+        dismissed.send(.turnEnd)
+        XCTAssertNil(dismissed.core.stream.act, "and its turn ending ends it")
+    }
+
+    /// A new turn in an act's session means its end was lost: the act goes,
+    /// and it doesn't hold the screen or stop the next one starting. Another
+    /// session's new turn leaves it.
+    func testANewTurnClearsAnActWithALostEnd() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.send(call(rig, "1", program: "git push"))
+        rig.send(.turnStart, session: "other")
+        XCTAssertNotNil(rig.core.stream.act, "another session's turn")
+        rig.send(.turnStart)
+        XCTAssertNil(rig.core.stream.act, "its own")
+        rig.send(call(rig, "2", topic: "tests", program: "make test"))
+        XCTAssertEqual(rig.core.stream.act?.callID, "2")
+    }
+
     /// The small version's failure after a long run gets the full ending;
     /// a short one's doesn't, and a push's never does.
     func testALongRunsFailureEndsInFull() {
@@ -457,5 +502,15 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart)
         XCTAssertEqual(run(rig, "1", program: "grep"), [])
         XCTAssertEqual(rig.state.calls, [])
+    }
+
+    /// characters/CHARACTER.md §4: the scene is the pack's. Boop's says it, and
+    /// a pack that draws no acts, as Pixel, is told only what the agent did.
+    func testAnActsSceneIsThePacks() throws {
+        XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "build", thread: "\"api\"", name: "Mo", pack: .active),
+                       "claude is building on \"api\". Mo has put on a hard hat, by itself, and is hammering at a little house.")
+        let pixel = try CharacterPack.named(id: "pixel")
+        XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "push", thread: "\"api\"", pack: pixel), "claude is pushing on \"api\".")
+        XCTAssertEqual(EventLine.actEnded(agent: "claude", kind: "tests", thread: "\"api\"", passed: false, pack: pixel), "claude's tests failed on \"api\".")
     }
 }

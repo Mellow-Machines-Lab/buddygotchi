@@ -106,8 +106,10 @@ Boop is five public repositories; the steps for working across them are in
 - Only what's a character's own goes in its repository; anything another
   character could use stays here. Anything another app could use about
   hooks goes in AgentHooks, about a personality brain in MellowHarness.
-- A change that spans repositories lands package first, then here, then
-  the character. Never commit a pointer to a commit that isn't pushed.
+- A change that spans repositories lands in this order: a package; the
+  character's content (this repo's CI fetches the packs' main); here; then
+  each character's `engine/` pin, to the commit here (its CI fails on the
+  old pin until then). Never commit a pointer to a commit that isn't pushed.
 - Every repository squash-merges. **Only the owner pushes, tags or
   force-pushes, or says to.**
 

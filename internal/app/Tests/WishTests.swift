@@ -168,16 +168,65 @@ final class WishTests: XCTestCase {
         XCTAssertNil(core.wish)
         XCTAssertEqual(core.wishEnded?.how, .closed)
         XCTAssertFalse(fx.contains { if case .reaction = $0 { true } else { false } })
+        // It closed yesterday's wish: the new day's rows don't say both.
+        let morning = evening + 8 * 3_600_000
+        XCTAssertEqual(core.wishRow(at: morning, name: "Boop"), "no wish yet today")
+        XCTAssertNil(core.wishToday(at: morning, name: "Boop"), "nor that it closed today")
+        let read = Core(config: .init(time: LocalTime(timeZone: TimeZone(identifier: "UTC")!)))
+        read.setWallClock(morning, at: morning)
+        read.replay(Event(at: evening, source: .boop, type: .wish, phase: .start, specificType: "pet"))
+        read.replay(Event(at: morning, source: .boop, type: .wish, phase: .end, specificType: "closed", data: ["kind": "pet"]))
+        XCTAssertNil(read.wishToday(at: morning, name: "Boop"), "read back too")
     }
 
-    /// Kept like the hush: a launch reads an open wish back.
+    /// Kept like the hush: a launch reads an open wish back, and its wait:
+    /// the time between the events read while you were here, an away counting
+    /// only up to its `since`, and nothing for the time Boop wasn't running.
     func testALaunchReadsItBack() {
+        let minute: Int64 = 60_000
         let r = rig()
         let other = CoreRig()
-        other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .start, specificType: "chat"))
-        XCTAssertEqual(other.core.wish?.kind, .chat)
-        other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .end, specificType: "met", data: ["kind": "chat"]))
+        let t = other.now
+        other.core.replay(Event(at: t, source: .boop, type: .wish, phase: .start, specificType: "pet"))
+        XCTAssertEqual(other.core.wish?.kind, .pet)
+        other.core.replay(PresenceDetector.awayEvent(why: "idle", since: t + 30 * minute, at: t + 60 * minute))
+        XCTAssertEqual(other.core.wish?.waitedMs, 30 * minute, "up to the away's since")
+        other.core.replay(PresenceDetector.backEvent(why: "input", at: t + 210 * minute))
+        XCTAssertEqual(other.core.wish?.waitedMs, 30 * minute, "away doesn't count")
+        other.now = t + 300 * minute
+        _ = other.core.tick(at: other.now)
+        XCTAssertEqual(other.core.wish?.waitedMs, 30 * minute, "the launch's first tick adds nothing")
+        other.wait(60_000)
+        XCTAssertEqual(other.core.wish?.waitedMs, 31 * minute, "and it goes on from there")
+        other.core.replay(Event(at: r.now, source: .boop, type: .wish, phase: .end, specificType: "met", data: ["kind": "pet"]))
         XCTAssertNil(other.core.wish)
+    }
+
+    /// Pins `Core.wishTickGapMs`: a lid closed for three hours with a wish
+    /// open adds nothing, with or without an away after the wake, and an
+    /// away takes back only what was counted after its `since`.
+    func testTheMacsSleepIsntWaiting() {
+        XCTAssertEqual(Core.wishTickGapMs, 2 * 60_000)
+        let minute: Int64 = 60_000
+        // With no agent open, so nothing dozes off and the wait counts.
+        let r = CoreRig()
+        r.core.makeWish(.pet, at: r.now)
+        r.wait(10 * minute, every: minute)
+        XCTAssertEqual(r.core.wish?.waitedMs, 10 * minute)
+        let slept = r.now
+        r.now += 3 * 60 * minute
+        _ = r.core.tick(at: r.now)
+        XCTAssertNotNil(r.core.wish, "it doesn't give up on waking")
+        XCTAssertEqual(r.core.wish?.waitedMs, 10 * minute, "the steady clock ran on; the wait didn't")
+        r.pipeline.presence(PresenceDetector.awayEvent(why: "asleep", since: slept, at: r.now))
+        XCTAssertEqual(r.core.wish?.waitedMs, 10 * minute, "the away arrives after the wake and takes back nothing")
+        r.pipeline.presence(PresenceDetector.backEvent(why: "woke", at: r.now))
+
+        // Idle: ticks counted right up to the away being noticed.
+        r.wait(30 * minute, every: minute)
+        XCTAssertEqual(r.core.wish?.waitedMs, 40 * minute)
+        r.pipeline.presence(PresenceDetector.awayEvent(why: "idle", since: r.now - 20 * minute, at: r.now))
+        XCTAssertEqual(r.core.wish?.waitedMs, 20 * minute, "only up to its since")
     }
 
     /// CONTEXT's rows say the facts; the board's wire has the kind.

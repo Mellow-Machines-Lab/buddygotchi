@@ -250,19 +250,18 @@ public final class Core {
     /// Whether it ended one, as then its word comes forward no further.
     func streamAct(_ e: AgentEvent, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect]) -> Bool {
         guard config.workStream, e.kind == .tool, e.tool != nil else { return false }
-        var phase = Event.Phase.start
-        var changed: WorkStream.Act?
+        let changed: WorkStream.Act?
         switch e.phase {
-        case .start: changed = stream.startAct(e, program: e.program, at: now) { [time = config.time] in time.day($0) == time.day(now) }
-        case .end: changed = stream.endAct(e, at: now); phase = .end
-        default: break
+        case .start: changed = stream.startAct(e, program: e.program, at: now) { day($0) == day(now) }
+        case .end: changed = stream.endAct(e, at: now)
+        default: return false
         }
         guard let act = changed else { return false }
         var data: [String: JSONValue] = ["session": .string(act.session), "words": .string(act.words), "full": .bool(act.full)]
         if let passed = act.passed { data["passed"] = .bool(passed) }
         if let topic = e.topic { data["topic"] = .string(topic) }
-        fx.append(.record(Event(at: now, source: .boop, type: .act, phase: phase, specificType: act.kind, data: data)))
-        return phase == .end
+        fx.append(.record(Event(at: now, source: .boop, type: .act, phase: e.phase == .start ? .start : .end, specificType: act.kind, data: data)))
+        return e.phase == .end
     }
 
     /// What the work stream makes of an agent's event: a call joins its
@@ -341,6 +340,7 @@ public final class Core {
     public func replay(_ event: Event) {
         readingBack.on = true
         defer { readingBack.on = false }
+        replayWishWait(event)
         if let agentEvent = AgentEvent(event) {
             _ = fold(agentEvent, ref: event.seq)
             return
@@ -571,8 +571,8 @@ public final class Core {
         // Idle's tier counts from the latest a session came to rest, once
         // nothing works.
         let rests = resting(idle: idle, dismissed: dismissed)
-        let base = !working.isEmpty ? "working" : sessions.isEmpty || dozedOff(at: now, rests: rests, waiting: !shown.isEmpty || !dismissed.isEmpty)
-            ? "asleep" : "idle"
+        let dozed = working.isEmpty && dozedOff(at: now, rests: rests, waiting: !shown.isEmpty || !dismissed.isEmpty)
+        let base = !working.isEmpty ? "working" : sessions.isEmpty || dozed ? "asleep" : "idle"
         let attn = shown.first.map {
             StateSnapshot.Attention(
                 agent: $0.agent.rawValue, project: StateSnapshot.clip($0.project, marked: true, max: StateSnapshot.maxSignBytes),
@@ -605,11 +605,12 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
-        if drawer { list(into: &snapshot, at: now) }
-        if wishCounts(doing: base, attn: attn), let kind = wish?.kind {
+        if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
             snapshot.wishHow = !wishDone(kind)
         }
+        // Last: its rows are what gets cut to fit the board's line.
+        if drawer { list(into: &snapshot, at: now) }
         return snapshot
     }
 
@@ -1127,8 +1128,11 @@ public final class Core {
         recordNeeds(now, &fx)
         tidyNotes()
         updateActs(now)
-        stream.keep(Set(groups(at: now).working.map(\.key)))
-        stream.keepAct(working: Set(groups(at: now).working.map(\.key)), at: now)
+        let (shown, dismissed, active, _) = groups(at: now)
+        let working = Set(active.map(\.key))
+        stream.keep(working)
+        // A session waiting on you is still at its call: its act comes back.
+        stream.keepAct(alive: working.union((shown + dismissed).map(\.key)), at: now)
         keepStretch(at: now)
         numberRows()
         let snapshot = snapshot(at: now)

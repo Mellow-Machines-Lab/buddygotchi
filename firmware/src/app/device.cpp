@@ -268,9 +268,8 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
   JsonObjectConst args = c.args;
   mo.anim = c.what < kDoCount ? kDoAnims[c.what] : render::SceneState::kNone;
   // A touch's own answer stays when it meets a wish: the bigger one, the heart over it.
-  if (c.what == kWishMet && b_.gesturing(t)) mo.anim = render::SceneState::kNone;
-  // A touch's own answer stays when it meets a wish: the bigger one, the heart over it.
-  if (c.what == kWishMet && b_.gesturing(t)) mo.anim = render::SceneState::kNone;
+  mo.wishMet = c.what == kWishMet;
+  if (mo.wishMet && b_.gesturing(t)) mo.anim = render::SceneState::kNone;
   mo.expr = render::parseMood(args["mood"], mo.mood);  // unknown or missing: the state's mood
   mo.loops = heldTo(args["loops"], 1, Behaviour::kMaxLoops, 1);
   if (mo.anim != render::SceneState::kNone) {
@@ -324,8 +323,6 @@ const char* Device::refuse(const Do& c, uint32_t t) {
   if (c.what == kWishGone) return b_.faceDown() ? "facedown" : nullptr;
   live_.parsed = parse(c, t);
   const char* why = b_.admit(live_.parsed, t);
-  // A wish met pops its heart even with nothing else to show.
-  if (c.what == kWishMet && why && !std::strcmp(why, "nothing")) why = nullptr;
   if (!why) b_.dropAsk(t);  // it replaces the ask: its answer, `ignored`, before its `ended`
   drain();                  // a listening reaction the reply ended, or the ask's
   if (why) live_.parsed = ReactionIn{};
@@ -433,6 +430,11 @@ bool Device::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
 // A tap goes to the Mac as what the device did about it: the poke, or the
 // press dip while the face is held or a finish names whose turn it was,
 // with that finish's id, the thread the Mac opens.
+// With no app a touch is the board's alone: no Mac hears of it later.
+void Device::tell(const char* event, const char* did, const char* data, uint32_t t, bool injected) {
+  if (!b_.noApp(t)) kit().emit(event, did, data, injected);
+}
+
 void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
   uint32_t finish = b_.finishShown(t);
   const char* did = button ? b_.press(t, kit().rng()) : b_.tap(t, kit().rng());
@@ -442,8 +444,7 @@ void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
   if (finish) std::snprintf(on, sizeof(on), ",\"on\":%lu", (unsigned long)finish);
   if (was) std::snprintf(classed, sizeof(classed), ",\"was\":\"%s\"", was);
   std::snprintf(data, sizeof(data), "{\"src\":\"%s\"%s%s}", button ? "button" : "screen", on, classed);
-  // With no app the touch is the board's alone: no Mac hears of it later.
-  if (!b_.noApp(t)) kit().emit("tap", did, data, injected);
+  tell("tap", did, data, t, injected);
   drain();  // the poke cuts an animation
 }
 
@@ -851,7 +852,7 @@ void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) 
   const bool answers = !swipe && caring(g) && b_.askTakesTouch(t);
   if (!swipe || b_.face().playsSwipe()) b_.gesture(g, t);
   input("gesture", t);
-  if (!b_.noApp(t)) kit().emit("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, injected);
+  tell("gesture", swipe ? kSwipeGesture : render::gestureName(g), nullptr, t, injected);
   if (answers) b_.answer("touch", t, injected);
   drain();  // the gesture cuts an animation, as a poke does
 }
@@ -872,7 +873,7 @@ void Device::readMotion(uint32_t t) {
       b_.setFaceDown(true, t);
       hush();
       hal_.stopEffects();  // do not disturb: the face's sounds too
-      if (!b_.noApp(t)) kit().emit("gesture", "facedown", nullptr, live_.injMotion);
+      tell("gesture", "facedown", nullptr, t, live_.injMotion);
       dirty_ = true;
       break;
     case MotionGesture::kFaceUp:

@@ -41,7 +41,7 @@ public enum BoopDevice {
     /// The work stream's word that comes forward, as the board plays it.
     public static let call = "call"
     /// A `call`'s `args`: `word`, in the colour of lane `slot`, playing
-    /// `style` (one of `WorkStream.styles`).
+    /// `style` (one the board's `render::CallStyle` knows).
     public static func call(_ word: String, style: String, slot: Int) -> JSONObject {
         ["a": .int(slot), "w": .string(word), "as": .string(style)]
     }

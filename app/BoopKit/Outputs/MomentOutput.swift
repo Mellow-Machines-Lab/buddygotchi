@@ -341,13 +341,29 @@ public final class MomentOutput: Output {
     /// What a move at your lock or unlock is, as a reply's lines and words
     /// know it: `bye`, `hello` or `nap`; nil at any other event, or for no
     /// wave.
-    static func waved(_ answers: Answers, about: Event?) -> String? {
+    static func waved(_ answers: Answers, about: Event?, size: Size) -> Reply? {
         guard let about, about.type == .lock else { return nil }
         switch answers[moveKey]?.choice {
-        case wave?: return about.phase == .start ? "bye" : "hello"
-        case "nap"? where about.phase == .start: return "nap"
+        case wave?:
+            let word = about.phase == .start ? "bye" : "hello"
+            return Reply(word: word, played: size.name == "small" ? wave : word, did: ", waving")
+        case "nap"? where about.phase == .start:
+            return Reply(word: "nap", played: "nap", did: ", going to sleep", naps: true)
         default: return nil
         }
+    }
+
+    /// A move as a reply: to what you said, or at your lock or unlock.
+    struct Reply {
+        /// Its name, which picks its lines and words.
+        var word: String
+        /// What the board plays: a small wave is the slighter motion; the
+        /// nap and what you said are as they are.
+        var played: String
+        /// How HISTORY's line says it.
+        var did: String
+        /// Whether Boop goes for its nap.
+        var naps = false
     }
 
     /// How long after an `ouch` a reply is making up (`makeup`, a tag its
@@ -373,9 +389,9 @@ public final class MomentOutput: Output {
     public static let sizeOptions = [
         Option("small", "A small moment: the usual. The face holds once, and what it says is a sound."),
         Option("medium", "A moment that stands out. It holds twice, and says a word."),
-        Option("big", "A big moment, such as a long turn's hard work done or the top of a streak. It holds three times, and says a phrase."),
+        Option("big", "A big moment, such as a long turn's hard-won work done or the top of a streak. It holds three times, and says a phrase."),
         Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish (a long turn done after failed checks), or a long turn that failed after failed checks or turns before it. It holds four times, and says a phrase.",
-               notFor: "A check failing mid-turn."),
+               notFor: "A check failing mid-turn, or a finish when HISTORY shows the reaction to its fix just now: that's small."),
     ]
 
     /// What an intensity sets: how many loops the face holds and the kind
@@ -417,10 +433,10 @@ public final class MomentOutput: Output {
     public static var animations: [Option] { animations(of: CharacterPack.active.name) }
     static func animations(of name: String) -> [Option] { [
         Option("success", "NOW's line says a turn finished, done, and doesn't say the agent couldn't finish, asks you something or only answers.",
-               notFor: "A check that passed while the turn goes on, a turn that finished failed, one saying it couldn't finish, or one asking you something or only answering."),
+               notFor: "A check that passed while the turn goes on, a turn that finished failed, one saying it couldn't finish, or one asking you something, only answering or only fawning with no tool calls."),
         Option("failure", "NOW's line says a turn finished, failed; or finished done, but saying it couldn't finish.",
                notFor: "A check that failed while the turn goes on, or a turn that finished done, saying it's done."),
-        Option("reply", "NOW's line says a turn finished, done, asking you something or only answering, often with no tool calls: no task finished.",
+        Option("reply", "NOW's line says a turn finished, done, asking you something, only answering or only fawning, often with no tool calls: no task finished.",
                notFor: "Work done, a turn that finished failed, or anything but a turn that finished."),
         Option("wake up", "NOW's line says you came back to the Mac after an hour or more away. \(name) stretches, yawns and wakes up for you."),
         Option("notice", "NOW's line says you said \(name)'s name in your prompt: it looks up at you, as if it heard."),
@@ -519,7 +535,7 @@ public final class MomentOutput: Output {
         if !questions.isEmpty || !musings.isEmpty || !wishes.isEmpty {
             return speech + [Question(key: Signs.questionKey,
                                        text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, or a wish? PERSONALITY says when; now and then, not every time."
-                                           + (wishes.isEmpty ? "" : " With no wish yet today and half an hour or more of quiet, a wish fits best."),
+                                           + (wishes.isEmpty ? "" : " With no wish yet today and half an hour or more of quiet, a wish fits best. Once CONTEXT says how today's wish ended, another doesn't fit."),
                                        about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment",
                                        // The caps are a ceiling, not a schedule: "none" on every level.
                                        options: [Option("none", "Nothing: \(pack.name) doesn't ask, muse or wish now.")]
@@ -736,8 +752,15 @@ public final class MomentOutput: Output {
         // 3. The effect: the face, its move, held as long as the moment is
         // big, and the `say`, if Voice has a take of what it says, as big,
         // in this face's mood. To what you said, the move is the reply.
-        let reply = talk ? Self.played(Self.reply(answers), words: about?["words"]?.string ?? "") : Self.waved(answers, about: about)
         let size = Self.size(answers)
+        let replied: Reply?
+        if talk {
+            let word = Self.played(Self.reply(answers), words: about?["words"]?.string ?? "")
+            replied = Reply(word: word, played: word, did: ", replying \(word)")
+        } else {
+            replied = Self.waved(answers, about: about, size: size)
+        }
+        let reply = replied?.word
         let pick = talk ? nil : Self.animation(answers)
         let at = about?.at ?? 0
         // A wish the brain picked, its sign being the wish.
@@ -803,9 +826,7 @@ public final class MomentOutput: Output {
             reaction.sign = asking?.question
             reaction.ask = asking
         }
-        // A small wave is the slighter motion; the nap and what you said
-        // are as they are.
-        reaction.reply = !talk && reply != "nap" && reply != nil && size.name == "small" ? Self.wave : reply
+        reaction.reply = replied?.played
         reaction.show = show
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
@@ -837,13 +858,13 @@ public final class MomentOutput: Output {
         // Hushed for as long as the moment is big, or let talk again.
         if reply == "hush" { hush(Core.hushMsBySize[Self.sizes.firstIndex(of: size) ?? 1], at) }
         if reply == "unhush" { hush(nil, at) }
-        if reply == "nap", !talk { nap(at) }
+        if replied?.naps == true { nap(at) }
         if let wishing { makeWish(wishing.kind, at) }
         // 4. What it started, as its line in HISTORY: in progress until
         // the device says how the reaction ended.
         let did = "\(pack.name) had \(Self.article(choice)) \(choice) moment (\(size.name))"
             + (pick.map { ", playing \(Self.article($0)) \($0)" }
-                ?? reply.map { talk ? ", replying \($0)" : $0 == "nap" ? ", going to sleep" : ", waving" } ?? "")
+                ?? replied?.did ?? "")
         // The takes' ids in order, and the reply as it played, for the
         // tools to say what it did.
         let held: String = (asking.map { ", asking \"\($0.question)\": \($0.a) or \($0.b)" }

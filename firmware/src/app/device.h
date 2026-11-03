@@ -336,6 +336,7 @@ class Device : public linkkit::App {
   void drain();  // Behaviour's end of the reaction it played, to the kit
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
   // A tap, from BOOT or the panel; `was` is what else the path would have made it.
+  void tell(const char* event, const char* did, const char* data, uint32_t t, bool injected);
   void tapped(uint32_t t, bool injected, bool button, const char* was = nullptr);
   // A gesture the board reacts to itself, then tells the Mac (`ev gesture`,
   // `did` its name); `facedown` plays nothing. A quick swipe goes as

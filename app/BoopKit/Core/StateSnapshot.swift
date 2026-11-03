@@ -307,9 +307,9 @@ public struct StateSnapshot: Equatable, Sendable {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }
         if let workAct {
-            let full = workAct.full ? 1 : 0
-            fields["wact"] = workAct.result.map { .array([.string(workAct.kind), .string(workAct.words), .int(full), .string($0)]) }
-                ?? .array([.string(workAct.kind), .string(workAct.words), .int(full)])
+            var wact: [JSONObject.Value] = [.string(workAct.kind), .string(workAct.words), .int(workAct.full ? 1 : 0)]
+            if let result = workAct.result { wact.append(.string(result)) }
+            fields["wact"] = .array(wact)
         }
         if let list {
             fields["list"] = .array(list.map {

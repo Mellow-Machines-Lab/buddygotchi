@@ -127,6 +127,8 @@ constexpr size_t kThreadBytes = 52;
 // sign.
 struct ReactionIn {
   render::SceneState anim = render::SceneState::kNone;  // a reaction's (render::isMoment)
+  // A wish met pops its heart even with nothing else to show.
+  bool wishMet = false;
   // It had a `say` field: the reply `listening` waits for, even with no
   // take. `stop_listening` is empty: it ends `listening` and does nothing
   // else.
@@ -270,11 +272,10 @@ class Behaviour {
   bool faceDown() const { return faceDown_; }
   // Whether a touch's own answer (`gesture`) plays at t.
   bool gesturing(uint32_t t) const { return reactionOn(t) && reaction_.anim == render::SceneState::kGesture; }
-  // No app, something needs you, or `listening` waits for the reply: a
-  // tap or another animation doesn't take the face over, and a touch is a
-  // tap, never a gesture.
+  // Something needs you, with the Mac here to answer it, or `listening`
+  // waits for the reply: a tap or another animation doesn't take the face
+  // over, and a touch is a tap, never a gesture.
   bool held(uint32_t t) const;
-  bool heldFromMac(uint32_t t) const;
   // Whether `in`'s face and sign are held at t: as held, but a reply to
   // what you said shows over needs you.
   bool heldFrom(const ReactionIn& in, uint32_t t) const;
@@ -516,7 +517,12 @@ class Behaviour {
   // What the strip shows: what the Mac last said, with no app or not, and
   // the finished turn named (null for none), whole.
   static render::Strip stripOf(const Model& m, bool noApp, const Done* finish);
-  bool sleptThrough(uint32_t t) const;
+  bool sleptThrough() const;  // meaningful with no app
+  struct Parts {
+    bool anim = false, say = false, face = false, sign = false;
+    bool any() const { return anim || say || face || sign; }
+  };
+  Parts partsOf(const ReactionIn& in, uint32_t t) const;
   void touchAlone(uint32_t t);  // a touch wakes it, and starts kAloneSleepMs over
   void liftFinishSign(uint32_t t);
   const Done* stripFinish(uint32_t t) const;  // the finish the strip names

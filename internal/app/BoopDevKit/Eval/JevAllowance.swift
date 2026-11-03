@@ -20,7 +20,7 @@ public final class JevAllowance: @unchecked Sendable {
         ProcessInfo.processInfo.environment[overrideVariable] == "1"
     }
 
-    struct Count: Codable {
+    struct Count: Codable, Equatable {
         var day: String
         var used: Int
     }
@@ -66,7 +66,7 @@ public final class JevAllowance: @unchecked Sendable {
         }
     }
 
-    /// Runs `change` on today's count with the file locked, and saves it. A
+    /// Runs `change` on today's count with the file locked, and saves it if it changed. A
     /// file that can't be read or written throws: with no count, no requests.
     func locked<T>(_ change: (inout Count) -> T) throws -> T {
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -83,7 +83,9 @@ public final class JevAllowance: @unchecked Sendable {
             do { saved = try JSONDecoder().decode(Count.self, from: data) } catch { throw EvalError("\(file.path) doesn't read: \(error)") }
             if saved.day == day { count = saved }
         }
+        let before = count
         let out = change(&count)
+        guard count != before else { return out }
         try handle.truncate(atOffset: 0)
         try handle.write(contentsOf: JSONEncoder().encode(count))
         return out

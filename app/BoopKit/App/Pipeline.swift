@@ -211,11 +211,11 @@ public final class Pipeline {
     /// thread means "take me there", not a poke: the core records
     /// `open_thread` for it, which holds it back.
     @discardableResult
-    public func poke(at now: Int64, finish: ThreadRef? = nil, byButton: Bool = false, buddy: String? = nil) -> Step {
+    public func poke(at now: Int64, finish: ThreadRef? = nil, touch: Bool = true, buddy: String? = nil) -> Step {
         input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", buddy: buddy))
             endNaps(buddy, at: now)
-            run(core(buddy).poke(at: now, seq: e.seq, finish: finish, touch: !byButton), buddy: buddy)
+            run(core(buddy).poke(at: now, seq: e.seq, finish: finish, touch: touch), buddy: buddy)
         }
     }
 
@@ -225,9 +225,10 @@ public final class Pipeline {
     @discardableResult
     public func press(at now: Int64, finish: ThreadRef? = nil, buddy: String? = nil) -> Step {
         let core = core(buddy)
-        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, byButton: true, buddy: buddy) }
+        guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, touch: false, buddy: buddy) }
         return input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button", buddy: buddy))
+            endNaps(buddy, at: now)
             run(core.press(at: now, seq: e.seq), buddy: buddy)
         }
     }
@@ -332,7 +333,7 @@ public final class Pipeline {
     public func presence(_ event: Event) -> Step {
         input(at: event.at) {
             harness.emit(event)
-            for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, at: event.at), buddy: tag(b.id)) }
+            for b in buddies { run(cores[b.id]!.presence(away: event.phase == .start, since: event["since"]?.int, at: event.at), buddy: tag(b.id)) }
             if event.phase == .end { endNaps(nil, at: event.at) }
         }
     }

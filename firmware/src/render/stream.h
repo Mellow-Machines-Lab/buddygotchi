@@ -117,7 +117,7 @@ struct Stream {
     bool live = false;
   };
 
-  static constexpr int kActBytes = 24;  // WorkStream.maxActBytes and its end
+  static constexpr int kActBytes = 24;  // a sign's longest words and their end
   // The act running, as the Mac's `state` says it (`wact`), or its result.
   struct ActIn {
     ActKind kind = ActKind::kNone;
@@ -125,11 +125,8 @@ struct Stream {
     ActResult result = ActResult::kRunning;
     char text[kActBytes] = "";
   };
-  struct Act {
-    ActKind kind = ActKind::kNone;
-    bool full = false;
-    ActResult result = ActResult::kRunning;
-    char text[kActBytes] = "", resultText[kActBytes] = "";  // its sign's words, running and at its result
+  struct Act : ActIn {  // `text` is its sign's words running
+    char resultText[kActBytes] = "";  // and at its result
     uint32_t at = 0, resultAt = 0;  // when it began, and when its result's scene begins
     bool hidden = false;            // something else holds the screen: it runs on, unseen
   };

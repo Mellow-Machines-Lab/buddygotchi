@@ -1,8 +1,36 @@
 # TODO
 
-Updated 2026-11-01. What's next, one at a time, top first. Tick an item
+Updated 2026-11-03. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Morning report, the night of 2026-11-01
+
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01/`.
+
+**Landed:** the eval levels and daily limit; must and feel evals with a judge; the prompt cut to level A; the rest of the wish; every lock and unlock reaching Jev; idle check-ins with no agents; no plug on a Boop already asleep; any brief touch on a finish opens its thread; the finish's low sign; the falling word and three work acts; the memory pane; alive without the Mac.
+
+**Not landed:** growth. It's on branch `growth`, with its pack commits in the clones under `.claude/worktrees/growth`: keep that worktree. The core and body work are done and tested with no board. It predates the cleanup and review fixes, and it changes existing users' stages (Chonk starts at 5,000, and the old saved stage is ignored). Look at `frames-growth/` and try it on the board first.
+
+**The prompt: level A, about 4,800 tokens, down from about 6,800.** Tags `prompt-level-A`, `-B` and `-C` keep the others.
+
+| Level | Tokens | Musts | Judge: reasonable, odd, unreasonable | Mood moves | Passes with a moment |
+| --- | --- | --- | --- | --- | --- |
+| A | 4,800 | 18/18 | 67, 15, 9 | 235 | 85% |
+| B | 3,140 | 10/18 | 64, 17, 10 | 149 | 84% |
+| C | 2,100 | 8/18 | 50, 26, 15 | 144 | 68% |
+
+A is the only level that holds the musts, and it keeps moods fluid. B's judged feel is close to A's, so B's musts are the question if the prompt must go lower: they mostly failed on replies, hush and Talk. At C, pokes made Boop happier and strokes stopped lifting its mood. No must rule was moved into code.
+
+**Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) fails twice: the hush it picks is too small. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
+
+**Wishes:** no cap in code, as the owner said. Measured on simulated workdays (`173-a-workday`, other seeds in scratch, 2026-11-03). Normal, final words: one wish a day on 5 of 5 days, at 09:43 to 10:45, the first check-in on one day and the second or third on the others (2 of them full runs, 3 with only the quiet stretches sent to Jev). A busy day with quiet only after lunch got one on 2 of the 4 seeds tried, in the wording before; those two kept theirs. A wish left too long brought a second within the hour on 5 of 6 days, and on 4 of 4 with a guideline alone; the sign question's words stopped it on the 2 days measured since, with a thin margin over none (0.47 to 0.53 on Quiet). Chatty and Quiet: one partial run each, one wish each. Watch real days for that second wish, and for days with no quiet half hour.
+
+**Jev requests:** 2,336 on Nov 1 and 283 on Nov 2 by the limit's count, which began partway through Nov 1 (before it, one full run of about 1,000 isn't counted).
+
+**Flag for the owner:** `make eval` is refused without `BOOP_JEV_OVER_LIMIT=1`, so the bare command never runs. That's what was asked, but it's a surprise: `boopdev eval --level standard` is the merge check.
+
+**Choices to overrule if you disagree:** a ruffle also meets a pet wish. A wish may come while Boop is asleep only for having no agents. The plug no longer stays up after a touch: Boop sleeps again after 5 minutes. Chat is offered only once push-to-talk works. Jev rarely speaks over an act from a calm mood, and I didn't push it.
 
 ## Now: the simplify branch, on the board (2026-11-01)
 
@@ -13,6 +41,39 @@ at after `make flash` and a new voice on the card (the report of
 - [ ] Pastimes still come by tier; a yawn or sneeze from `tier1`; busy typing still speeds up.
 - [ ] Free heap at boot is about 76.8 KB higher than before.
 - [ ] The voice plays once the card has the new `voice.bin` (`353ddadc006b`).
+
+## Owed on the board, from the night of 2026-11-01
+
+From the plans that were finished and deleted, for the owner, after
+`make flash`:
+- [ ] Work acts: the look and the frame rate of the push, the tests and the build, full and small.
+- [ ] A finish's low sign: can you read the thread's name at arm's length, and does a cheer still read?
+- [ ] A tap on a finish: the face, the rim and the strip during a finish each open the thread.
+- [ ] A lock and an unlock: a wave, a snub or the nap; a Boop asleep when the Mac goes quiet stays asleep with no plug until you touch it.
+- [ ] Alive without the Mac: it breathes, sleeps, answers a poke or a stroke in its last mood, and gives a small hello when the Mac returns.
+- [ ] The wish's bubble: its place beside the head, its how, the heart popping; none during a full act or with no Mac.
+
+## Now: from the night's review (2026-11-02)
+
+- [ ] A dream's write can be lost if the writer fails (`Memory.swift`, `dream()`).
+- [ ] Several buddies don't replay an away (`Pipeline.readBack`).
+- [ ] The Pixel wish's text (`screens.h:48`, `sameModel`).
+- [ ] A `Measure` around `paintActFront`, for the board's frame rate check.
+- [ ] **For the owner:** `make eval` refuses without the override, so your bare command never runs.
+- [ ] Stale `ReactOutput` mentions in SlimeBuddy's asks' and replies' comments.
+- [ ] Remove the dead lost-link path.
+- [ ] Acts: wall caching and a frame cap.
+- [ ] Unify the acts' timing.
+- [ ] The idle `tower` pastime is hard to read.
+- [ ] The takes "We pushing!", "shipped!" and "built it!" aren't recorded: until then Jev has the voice's existing words.
+- [ ] Jev rarely speaks over an act from a calm mood.
+- [ ] The duplicated memory cards on the Overview ("What Boop remembers", "Recently") and the Memory pane: whether they move is the owner's call.
+- [ ] Eval Level A's 7 confirmed unreasonable runs: 11, 19, 47, 90, 91, 96, 140.
+- [ ] No standard eval run since items 2 to 10 of the night.
+- [ ] Pixel Bro's clone fails `boopdev check`: `personality.md` is missing.
+- [ ] A chat wish already open when you take back the mic's authorization still waits and can give up: nothing rechecks it.
+- [ ] A wish can give up while you're idle, before the away is noticed: the away takes back the wait, but not a give-up already played.
+- [ ] A wish's wait read back on launch counts time a needs-you or a doze held, and time Boop wasn't running between two events of the same day: the transcript has no launch marker, and the wait isn't recorded until its end.
 
 ## Now: left by the finished plans (2026-11-01)
 

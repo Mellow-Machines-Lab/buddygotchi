@@ -17,15 +17,17 @@ struct PopoverView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        // The height left under a pane's title row, and over the footer.
+        let paneHeight = (maxHeight ?? min(limit, 640)) - 96
+        return VStack(spacing: 0) {
             // Stacked, not in a column: while one pane fades into the
             // other, the column would hold both, and the popover grow to
             // their sum for a moment.
             ZStack(alignment: .top) {
                 switch model.pane {
                 case .overview: OverviewPane(model: model, maxHeight: limit - 44)
-                case .settings: SettingsPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
-                case .memory: MemoryPane(model: model, maxHeight: (maxHeight ?? min(limit, 640)) - 96)
+                case .settings: SettingsPane(model: model, maxHeight: paneHeight)
+                case .memory: MemoryPane(model: model, maxHeight: paneHeight)
                 }
             }
             .transition(.opacity)

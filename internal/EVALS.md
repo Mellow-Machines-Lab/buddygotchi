@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-02. How we check that Jev decides as Boop should: short
+Updated 2026-11-03. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -197,7 +197,7 @@ says so in that request. The limit replaced the old budget per command.
 | `--always` | Only the `always` scenarios |
 | `--timeline` | Prints every pass of every run: when, the line, what Boop did and the mood after |
 | `--list` | Prints each scenario at the level with its file, name, runs, about how many requests a run sends, case, and whether it's `always` or a known gap, then all three levels' totals and today's count, and runs nothing |
-| `--scripted` | Runs each scenario once with the expect brain: no key, no budget |
+| `--scripted` | Runs each scenario once with the expect brain: no key, no Jev requests |
 | `--scenarios DIR`, `--steering DIR` | Other scenarios or steering files; by default the repo's, found from the working directory or from `boopdev`'s own place |
 
 The report gives each scenario's verdict (`pass`, `FAIL`, or `GAP` for a
@@ -257,6 +257,7 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, at every level, when the default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
+| `seed` | When check-ins fall within their gaps, 1 unless the file says: the same seed repeats, and another is another day's timing with the same steps. Jev answers much the same at the same prompt, so runs of one seed are nearly one sample: to measure something across days, as `173`'s wishes, copy the file with other seeds into a directory for `--scenarios` |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`): none by default |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |

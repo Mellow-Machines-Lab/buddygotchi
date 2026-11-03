@@ -495,9 +495,10 @@ public final class TranscriptView {
         case .act?:
             guard let key = e["session"]?.string, let s = fold.sessions.sessions[key] else { return nil }
             let t = Thread(s), agent = t.agent.rawValue, thread = threadLine(t)
+            let pack = buddies.first { $0.id == e.buddy }?.pack ?? .active
             let text = e.phase == .start
-                ? EventLine.actStarted(agent: agent, kind: e.specificType, thread: thread, name: name(e))
-                : EventLine.actEnded(agent: agent, kind: e.specificType, thread: thread, passed: e["passed"]?.bool ?? true, name: name(e))
+                ? EventLine.actStarted(agent: agent, kind: e.specificType, thread: thread, name: name(e), pack: pack)
+                : EventLine.actEnded(agent: agent, kind: e.specificType, thread: thread, passed: e["passed"]?.bool ?? true, name: name(e), pack: pack)
             return Line(text, facts: ["act": .string(e.specificType), "thread": threadFacts(t)])
         case .listen?, .dream?, .memory?, nil: return nil
         }

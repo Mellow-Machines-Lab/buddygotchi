@@ -22,20 +22,18 @@ struct WorkStream {
     }
 
     /// How sure a call is to come forward.
-    enum Priority: Int, Comparable {
+    enum Priority {
         /// A failure: always.
         case always
         /// A big edit, a helper: when nothing else is forward.
         case notable
-
-        static func < (a: Self, b: Self) -> Bool { a.rawValue < b.rawValue }
     }
 
     /// A word that comes forward: the `call` the board plays.
     struct Forward: Equatable {
         var slot: Int
         var word: String
-        /// The style, one of `styles`.
+        /// The style, one the board's `render::CallStyle` knows.
         var style: String
         var priority: Priority
 
@@ -43,11 +41,6 @@ struct WorkStream {
         var args: JSONObject { BoopDevice.call(word, style: style, slot: slot) }
     }
 
-    /// The styles the board knows for a word that comes forward.
-    static let styles = [
-        "land", "helper", "back", "shatter", "bonk", "bonk2", "bonk3", "throw",
-        "shrug", "timeout", "no", "compact", "buried", "freeze", "drop", "gather",
-    ]
     /// The styles of a moment that hits Boop that the brain hears of: not a
     /// check's failure, which is a line of its own already.
     static let hits: Set<String> = ["bonk", "bonk2", "bonk3", "throw", "timeout", "no"]
@@ -110,8 +103,6 @@ struct WorkStream {
     /// how long its result shows: `actLeadMs` and `actResultMs` on the board.
     static func leadMs(_ kind: String, full: Bool) -> Int64 { !full ? 900 : kind == "push" ? 3400 : 1800 }
     static func resultMs(full: Bool) -> Int64 { full ? 6000 : 2600 }
-    /// The longest sign's words, in bytes (`Stream::kActBytes`, less its end).
-    static let maxActBytes = 23
     /// What each act's sign says at a pass; a failure's says `FAIL`.
     static let passWords = ["push": "shipped!", "tests": "PASS", "build": "BUILT"]
     /// A failure after this long gets the full ending, whichever version
@@ -275,12 +266,12 @@ struct WorkStream {
     }
 
     /// An act goes when its result has shown, or, with no end heard, when
-    /// its session has stopped working.
-    mutating func keepAct(working: Set<String>, at now: Int64) {
+    /// its session is no longer in `alive`: working, or waiting on you.
+    mutating func keepAct(alive: Set<String>, at now: Int64) {
         guard let running = act else { return }
         if let until = running.until {
             if now >= until { act = nil }
-        } else if !working.contains(running.session) {
+        } else if !alive.contains(running.session) {
             act = nil
         }
     }
@@ -383,9 +374,11 @@ struct WorkStream {
         return offer(Forward(slot: lane.slot, word: "context", style: "compact", priority: .always), at: now)
     }
 
-    /// A turn starting in `key`: its next call is its first.
+    /// A turn starting in `key`: it has called no tool yet, so `turnEnded`
+    /// waits for its first; and an act of its still running had its end lost.
     mutating func turnStarted(_ key: String) {
         called.remove(key)
+        if act?.session == key, act?.passed == nil { act = nil }
     }
 
     /// Keeps the lanes of the sessions in `working` only, freeing the
@@ -400,14 +393,10 @@ struct WorkStream {
     /// that waits plays when the board frees; the board times it.
     mutating func offer(_ f: Forward, at now: Int64) -> Forward? {
         var starts = now
-        if now < heldUntil {
-            if f.priority == .always, heldPriority != .always {
-                starts = now
-            } else if f.priority <= .notable, heldUntil - now <= Self.waitMs {
-                starts = heldUntil
-            } else {
-                return nil
-            }
+        let cuts = f.priority == .always && heldPriority != .always
+        if now < heldUntil, !cuts {
+            guard heldUntil - now <= Self.waitMs else { return nil }
+            starts = heldUntil
         }
         heldUntil = starts + Self.showMs
         heldPriority = f.priority

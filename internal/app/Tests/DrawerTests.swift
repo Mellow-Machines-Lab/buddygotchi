@@ -92,6 +92,21 @@ final class DrawerTests: XCTestCase {
         XCTAssertEqual(Core.rowCuts.first?.title, StateSnapshot.maxTitleBytes)
         XCTAssertEqual(Core.rowCuts.last?.project, 0)
 
+        // A wish's fields count too: every length of escaped name, however
+        // close the rows come to the line.
+        for extra in 0..<60 {
+            let wishing = CoreRig(workStream: true)
+            for i in 1...7 {
+                wishing.send(.turnStart, session: "w\(i)", project: String(repeating: "\"", count: extra) + "\(i)")
+                wishing.send(.turnEnd, session: "w\(i)", project: String(repeating: "\"", count: extra) + "\(i)")
+            }
+            wishing.core.makeWish(.chat, at: wishing.now)
+            wishing.pipeline.drawer(open: true, at: wishing.now)
+            let line = wishing.core.snapshot(at: wishing.now)
+            XCTAssertEqual(line.wish, "chat")
+            XCTAssertTrue(line.fits, "\(extra): \(line.jsonLine.utf8.count) \(line.jsonLine)")
+        }
+
         let rig = CoreRig(workStream: true)
         for i in 1...6 { rig.send(.turnStart, session: "s\(i)", project: "p\(i)") }
         rig.pipeline.drawer(open: true, at: rig.now)

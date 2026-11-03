@@ -1694,6 +1694,22 @@ static void test_the_wish_shows_and_pops() {
   TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
 }
 
+// With no app the wish's bubble goes: nothing waits on a Mac that isn't there,
+// and no touch could meet it. It comes back with the app, if it's still open.
+static void test_the_wish_goes_with_the_app() {
+  Rig r;
+  Model m = base("idle");
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+  r.at(r.t + Behaviour::kNoAppMs);
+  TEST_ASSERT_TRUE(r.b.noApp(r.t));
+  TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
+  r.state(m);
+  TEST_ASSERT_EQUAL(int(render::WishShow::kPet), int(r.b.wishShow(r.t).kind));
+}
+
 static void test_a_sign_shows_while_its_reaction_plays() {
   Rig r;
   r.state(base("idle"));
@@ -3272,6 +3288,32 @@ static void test_boot_hands_over_while_someone_waits() {
   TEST_ASSERT_EQUAL_STRING("peekaboo", render::gestureName(render::Gesture::kPeekaboo));
 }
 
+// An act hides while listening holds the screen, as while something needs
+// you, and comes back where it got to: the Mac's `state` leaves `wact` out then.
+static void test_listening_hides_an_act_and_it_resumes() {
+  Rig r;
+  r.at(1000);
+  Model m = base("working");
+  m.workAct.kind = render::ActKind::kPush, m.workAct.full = true;
+  r.state(m);
+  r.at(3000);
+  TEST_ASSERT_EQUAL_INT(2000, r.b.stream().actNow(r.t).ageMs);
+  r.talkOn();
+  Model gone = m;
+  gone.workAct = render::Stream::ActIn{};
+  r.state(gone);
+  TEST_ASSERT_FALSE(r.b.stream().actNow(r.t).shows());
+  r.at(4000);
+  r.state(m);
+  TEST_ASSERT_TRUE(r.b.stream().actNow(r.t).shows());
+  TEST_ASSERT_EQUAL_INT(3000, r.b.stream().actNow(r.t).ageMs);
+  // With nothing holding the screen, an act gone from the state is over.
+  r.stop();
+  r.state(gone);
+  r.state(m);
+  TEST_ASSERT_EQUAL_INT(0, r.b.stream().actNow(r.t).ageMs);
+}
+
 // The work stream's model (render/stream.h): a lane whose count moves drops
 // a word for each new call, at most kDropsPerState (one) a `state`, each
 // kWordGapPx behind its lane's newest and never faster, so they never
@@ -3470,7 +3512,7 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
 // for them all the next day; the next state brings them back.
-// plan/lock-and-unlock.md: a Boop asleep when the Mac goes quiet stays
+// A Boop asleep when the Mac goes quiet stays
 // asleep with no plug, until a touch shows the plug; awake, the plug shows
 // at the same 30 s as ever; the Mac's next state ends it.
 static void test_a_finishs_sign_lifts_as_its_words_end() {
@@ -3706,6 +3748,7 @@ static void test_no_app_is_silent_and_wears_no_tags() {
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
+  RUN_TEST(test_listening_hides_an_act_and_it_resumes);
   RUN_TEST(test_the_work_streams_words);
   RUN_TEST(test_falling_words_stay_on_screen_and_the_clock_runs_on);
   RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
@@ -3782,6 +3825,7 @@ int main() {
   RUN_TEST(test_a_long_touch_during_needs_you_sends_nothing);
   RUN_TEST(test_a_reason_is_the_lanes_caption);
   RUN_TEST(test_the_wish_shows_and_pops);
+  RUN_TEST(test_the_wish_goes_with_the_app);
   RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   RUN_TEST(test_alone_it_rests_then_sleeps_and_a_touch_wakes_it);
