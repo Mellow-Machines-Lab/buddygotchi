@@ -71,7 +71,8 @@ public struct MemoryRequest: Equatable, Sendable {
 /// The write as `MemoryPipeline` does it: code proposes, and Apple Intelligence
 /// on the Mac answers small questions, each in a fresh session, for at most
 /// `AppleIntelligenceMemoryModel.timeout`. With the model off, code writes alone:
-/// the habits and sagas still come, the moments and stories wait.
+/// the habits and sagas still come; the moments, the stories and anything
+/// else in your words wait.
 public struct MemoryPipelineWriter: MemoryWriter {
     public init() {}
 

@@ -308,13 +308,14 @@ public final class Pipeline {
 
     /// What you said to Boop on push-to-talk, heard by the Mac's mic
     /// after `by`'s button (`device` or `app`), cut to 2,000 characters as
-    /// a prompt is on the wire. It wakes the brain
+    /// a prompt is on the wire, and with any secret scrubbed before the
+    /// transcript keeps it. It wakes the brain
     /// even while something needs you.
     /// With several buddies, a board's own button says it to that `buddy`,
     /// and the app's to them all.
     @discardableResult
     public func said(_ words: String, by: Core.Talker, buddy: String? = nil, at now: Int64) -> Step {
-        let cut = words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words
+        let cut = Scrubber.scrub(words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words)
         return input(at: now) {
             harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, buddy: buddy, data: ["words": .string(cut)]))
             endNaps(buddy, at: now)

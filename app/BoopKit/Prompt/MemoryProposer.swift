@@ -3,7 +3,7 @@ import Foundation
 /// One dream's span in numbers and the few words that may be kept: what the
 /// proposer looks for habits in. It holds no code and none of your prompts
 /// beyond `said`, which holds only what you said to Boop that passed the
-/// private list.
+/// private list and holds no secret.
 public struct DayDigest: Codable, Equatable, Sendable {
     public var day: String, weekday: String
     /// Your first and last events, `HH:mm`.
@@ -74,7 +74,7 @@ public struct DayDigest: Codable, Equatable, Sendable {
                     d.lengths[length, default: 0] += 1
                 }
             } else if head.hasPrefix("You said to"), let words = MemoryEdits.quotes(in: head).first {
-                if !MemoryProposer.isPrivate(words) { d.said.append(.init(at: at, words: words.lowercased())) }
+                if !MemoryProposer.isPrivate(words), !MemoryPipeline.hasSecret(words) { d.said.append(.init(at: at, words: words.lowercased())) }
             } else if let thread {
                 if head.contains(" failed on ") || head.contains(" failed again on ") || head.contains(": failed,") {
                     d.failing[thread, default: 0] += 1
@@ -359,7 +359,7 @@ public enum MemoryProposer {
         for s in today.said where !saidTonight.contains(s.words) { saidTonight.append(s.words) }
         for words in saidTonight {
             let days = a.filter { $0.said.contains { $0.words == words } }
-            guard days.count >= 3, words.split(separator: " ").count <= 4 else { continue }
+            guard days.count >= 3, words.split(separator: " ").count <= 4, MemoryPipeline.mayKeep(words) else { continue }
             // Before 5:00 is still your night: after 24:00, for the middle.
             let clocks = days.flatMap { $0.said.filter { $0.words == words }.map(\.at) }.compactMap(minutes)
                 .map { $0 < LocalTime.boopDayStartHour * 60 ? $0 + 24 * 60 : $0 }.sorted()

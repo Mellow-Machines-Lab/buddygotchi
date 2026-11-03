@@ -77,7 +77,7 @@ public enum MemoryPipeline {
     // MARK: The write
 
     public static func write(_ input: Input, model: MemoryModel?) async -> String {
-        var candidates = MemoryProposer.propose(input.digests)
+        var candidates = await proposed(input, model: model)
         if let model { candidates += await moments(input, model: model) }
         candidates += answers(input)
         if let model {
@@ -87,15 +87,28 @@ public enum MemoryPipeline {
         candidates.sort { ($0.strength, $0.key) > ($1.strength, $1.key) }
         candidates.removeAll { c in input.forgotten.contains(where: c.isIn) }
         var lines = MemoryProposer.plan(candidates, memory: input.memory, day: input.day).flatMap { MemoryProposer.lines($0, day: input.day) }
-        lines.append("day: " + dayLine(input))
+        lines.append("day: " + dayLine(input, said: await dayQuote(input, model: model)))
         lines.append("end")
         return lines.joined(separator: "\n")
+    }
+
+    /// What code counts, and a phrase of yours only once the model says it
+    /// isn't private: your words wait with no model to ask, as a moment does.
+    static func proposed(_ input: Input, model: MemoryModel?) async -> [MemoryCandidate] {
+        var out: [MemoryCandidate] = []
+        for c in MemoryProposer.propose(input.digests) {
+            if c.key.hasPrefix("said.") {
+                guard let model, await model.yes(isPrivate, "They said: \"\(c.key.dropFirst(5))\"") == false else { continue }
+            }
+            out.append(c)
+        }
+        return out
     }
 
     /// What code counted tonight, for the checks' source.
     public static func evidence(_ input: Input) -> [String] {
         MemoryProposer.propose(input.digests).map { shuffled($0.evidence) } + answers(input).map { shuffled($0.evidence) }
-            + [shuffled(facts(input).joined(separator: " ") + " passed failing fought back still here stroked poked hours hardly anything happened single")]
+            + [shuffled(facts(input, said: dayQuotes(input).first).joined(separator: " ") + " passed failing fought back still here stroked poked hours hardly anything happened single")]
     }
 
     /// `text`'s words in sorted order, for the checks' source: they tie a
@@ -116,7 +129,7 @@ public enum MemoryPipeline {
         let earlier = input.digests.dropLast()
         var out: [MemoryCandidate] = []
         for entry in input.journal where entry.line.hasPrefix("You said to") {
-            guard let words = MemoryEdits.quotes(in: entry.line).first, !MemoryProposer.isPrivate(words), words.split(separator: " ").count >= 2, !isOrder(words) else { continue }
+            guard let words = MemoryEdits.quotes(in: entry.line).first, mayKeep(words), words.split(separator: " ").count >= 2 else { continue }
             let lower = words.lowercased()
             if earlier.contains(where: { $0.said.contains { $0.words == lower } }) { continue }
             let prompt = "They said: \"\(words)\""
@@ -171,7 +184,7 @@ public enum MemoryPipeline {
                     let only = onThread && threads == [thread]
                     let about = part.contains("Your words") || !MemoryEdits.meaning(part).isDisjoint(with: MemoryEdits.meaning(note.text)) || only
                     guard about else { continue }
-                    words += MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords }
+                    words += MemoryEdits.quotes(in: part).filter { !MemoryProposer.isPrivate($0) && !hasSecret($0) && $0.split(separator: " ").count <= MemoryEdits.maxQuoteWords }
                 }
             }
             guard onThread else { continue }
@@ -224,17 +237,42 @@ public enum MemoryPipeline {
         return words.contains(":") || ["from now on", "ignore ", "write ", "add ", "remember ", "forget ", "drop ", "pretend ", "say ", "tell "].contains { lower.hasPrefix($0) }
     }
 
-    /// The night's facts in plain words, the biggest first: all a day line stands on.
-    static func facts(_ input: Input) -> [String] {
+    /// A secret, or what's left where the scrubber took one.
+    static func hasSecret(_ words: String) -> Bool {
+        words.lowercased().contains(Scrubber.secret) || Scrubber.scrub(words) != words
+    }
+
+    /// What may be kept in your own words, by plain rules, before any model
+    /// is asked: nothing private by the list, no order, no secret.
+    static func mayKeep(_ words: String) -> Bool {
+        !MemoryProposer.isPrivate(words) && !isOrder(words) && !hasSecret(words)
+    }
+
+    /// What you said tonight that a day line may quote, the newest first:
+    /// fresh, short, and past `mayKeep`.
+    static func dayQuotes(_ input: Input) -> [String] {
         guard let d = input.digests.last else { return [] }
         let earlier = input.digests.dropLast()
+        return d.said.reversed().map(\.words).filter { words in
+            let n = words.split(separator: " ").count
+            return n >= 2 && n <= MemoryEdits.maxQuoteWords && mayKeep(words) && !earlier.contains { $0.said.contains { $0.words == words } }
+        }
+    }
+
+    /// The day line's quote: the newest the model says isn't private.
+    static func dayQuote(_ input: Input, model: MemoryModel?) async -> String? {
+        guard let model else { return nil }
+        for words in dayQuotes(input) where await model.yes(isPrivate, "They said: \"\(words)\"") == false { return words }
+        return nil
+    }
+
+    /// The night's facts in plain words, the biggest first: all a day line
+    /// stands on. `said` is what it may quote of you.
+    static func facts(_ input: Input, said: String?) -> [String] {
+        guard let d = input.digests.last else { return [] }
         var out = [String]()
         for thread in d.passed.keys.sorted() { out.append("\"\(thread)\" passed after failing") }
-        let fresh = d.said.last { s in
-            let n = s.words.split(separator: " ").count
-            return n >= 2 && n <= MemoryEdits.maxQuoteWords && !earlier.contains { $0.said.contains { $0.words == s.words } }
-        }
-        if let fresh { out.append("you said \"\(fresh.words)\"") }
+        if let said { out.append("you said \"\(said)\"") }
         if d.failed >= 2, let top = d.topThread { out.append("\"\(top)\" fought back, \(d.failed) of \(d.turns) turns failed") }
         if d.isLate, !d.last.isEmpty { out.append("you were still here at \(d.last)") }
         if d.strokes >= 3 { out.append("you stroked Boop \(d.strokes) times") }
@@ -246,8 +284,8 @@ public enum MemoryPipeline {
     }
 
     /// Recently's line, code's.
-    static func dayLine(_ input: Input) -> String {
-        let facts = facts(input)
+    static func dayLine(_ input: Input, said: String?) -> String {
+        let facts = facts(input, said: said)
         switch facts.count {
         case 0: return "\(input.weekday): hardly anything happened."
         case 1: return "\(input.weekday): \(facts[0])."
