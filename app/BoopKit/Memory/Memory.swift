@@ -202,8 +202,88 @@ public final class Memory: @unchecked Sendable {
         }
         recordAsk(e)
         recordWish(e)
+        recordFelt(e)
         runner.feed(e, line: line)
         dreams.feed(e, line: line)
+    }
+
+    // MARK: Memory you feel
+
+    /// A note Boop may bring up: its line in the pet's voice, and the note.
+    public struct Felt: Equatable, Sendable {
+        public var line: String, note: String
+        public init(line: String, note: String) {
+            self.line = line
+            self.note = note
+        }
+    }
+
+    /// The most notes given a line a dream: each is a call.
+    public static let signsADream = 4
+    /// The most offered at an idle check-in; a line shown isn't offered again
+    /// for this many days.
+    public static let feltOffered = 3, feltAgainDays = 14
+
+    /// The notes with no line yet, and the lines kept without those of notes
+    /// gone. Nothing asked here: a note the model has no line for is kept as "".
+    func missingSigns() -> [String] {
+        guard let files else { return [] }
+        var days = files.days()
+        let notes = files.written().notes.map(\.text)
+        let kept = days.signs.filter { notes.contains($0.key) }
+        if kept != days.signs {
+            days.signs = kept
+            do { try files.keep(days) } catch { note("memory: can't write the digests: \(error)") }
+        }
+        return Array(notes.filter { kept[$0] == nil }.prefix(Self.signsADream))
+    }
+
+    func keep(signs: [String: String]) {
+        guard let files, !signs.isEmpty else { return }
+        var days = files.days()
+        days.signs.merge(signs) { _, new in new }
+        do { try files.keep(days) } catch { note("memory: can't write the digests: \(error)") }
+    }
+
+    /// At the dream's write, each new note gets its line, off the queue:
+    /// one call a note, on this Mac.
+    func writeSigns(queue: DispatchQueue) {
+        guard let writer else { return }
+        let notes = missingSigns()
+        guard !notes.isEmpty else { return }
+        Task { [weak self] in
+            var signs: [String: String] = [:]
+            for text in notes { signs[text] = await writer.sign(for: text) ?? "" }
+            queue.async { self?.keep(signs: signs) }
+        }
+    }
+
+    /// What Boop may bring up at `ms`: at most `feltOffered` lines, those
+    /// shown longest ago first, none shown in `feltAgainDays`; none at all
+    /// if one was shown today.
+    public func felt(at ms: Int64) -> [Felt] {
+        guard let files else { return [] }
+        let shown = feltShown(), today = time.boopDay(ms)
+        guard !shown.values.contains(today), let now = LocalTime.dayNumber(today) else { return [] }
+        let signs = files.days().signs
+        func age(_ line: String) -> Int { shown[line].flatMap(LocalTime.dayNumber).map { now - $0 } ?? .max }
+        return files.written().notes.compactMap { n in
+            signs[n.text].flatMap { $0.isEmpty || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
+        }.sorted { age($0.line) > age($1.line) }.prefix(Self.feltOffered).map { $0 }
+    }
+
+    /// When each line was last shown (`felt`, in the key-value store).
+    func feltShown() -> [String: String] {
+        store.string("felt").flatMap { try? JSONDecoder().decode([String: String].self, from: Data($0.utf8)) } ?? [:]
+    }
+
+    /// Keeps a line shown (the react output's `did` names it).
+    func recordFelt(_ e: Event) {
+        guard e.kind == Event.did, e.action == MomentOutput.outputName, let line = e["felt"]?.string else { return }
+        var shown = feltShown()
+        shown[line] = time.boopDay(e.at)
+        guard let data = try? JSONEncoder().encode(shown) else { return }
+        do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
     }
 
     // MARK: The wish's "done once"
@@ -310,6 +390,7 @@ public final class Memory: @unchecked Sendable {
             queue.async {
                 if let night { self?.apply(night) }
                 self?.dreaming = false
+                self?.writeSigns(queue: queue)
             }
         }
     }

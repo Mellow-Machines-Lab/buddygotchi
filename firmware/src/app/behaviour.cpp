@@ -367,7 +367,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       expr_ = true;
       exprMood_ = in.mood;
       exprAt_ = t;
-      copyStr(exprReply_, sizeof(exprReply_), in.reply);
+      copyStr(exprReply_, sizeof(exprReply_), in.reply[0] ? in.reply : in.clip);
       exprMs_ = anim ? reaction_.ms : holdMs(in.mood, in.loops, t);
       if (say && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprKey_ = in.key;
@@ -375,17 +375,18 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
     if (sign) {  // as long as the rest of it plays, from now, and long enough to read
       copyStr(sign_.text, sizeof(sign_.text), in.sign);
       sign_.reply = in.expr && in.reply[0];
+      sign_.low = in.low;
       sign_.at = t;
-      sign_.ms = kSignMinMs;
+      sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
       if (anim && !listen) sign_.ms = std::max(sign_.ms, reaction_.ms);
       if (say) sign_.ms = std::max(sign_.ms, voice + say_.ms);
       if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
       sign_.key = in.key;
-      // A greeting's waits until its words end, as a finish's name does, and
-      // the face it came with holds while it's read.
-      if (in.greeting && say) {
+      // A greeting's or a low one's waits until its words end, as a finish's
+      // name does, and the face it came with holds while it's read.
+      if ((in.greeting || in.low) && say) {
         sign_.at = say_.at + say_.speakMs;
-        sign_.ms = kSignMinMs;
+        sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
         if (in.expr) exprMs_ = std::max(exprMs_, sign_.at + sign_.ms - exprAt_);
       }
     }
@@ -840,8 +841,9 @@ render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
   if (noApp(t) || (model_.attn && !(signOn(t) ? sign_ : gone_).reply)) return s;
   if (signOn(t)) {
-    s.text = sign_.text, s.ms = t - sign_.at;
-  } else if (gone_.text[0] && within(t, goneAt_, render::rig::kFadeMs)) {
+    s.text = sign_.text, s.ms = t - sign_.at, s.low = sign_.low;
+    if (sign_.low) s.leftMs = int32_t(sign_.at + sign_.ms - t);
+  } else if (gone_.text[0] && !gone_.low && within(t, goneAt_, render::rig::kFadeMs)) {  // a low one has fallen away
     s.text = gone_.text, s.ms = t - gone_.at;
     s.opacity = 1000 - render::ease1000(int(t - goneAt_), int(render::rig::kFadeMs));
   }

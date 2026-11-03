@@ -105,6 +105,12 @@ public struct Moment: Equatable, Sendable {
     /// plays whole. Its sign waits until its words end, and the work stream
     /// waits until it's over.
     public var greeting = false
+    /// Its sign goes low, in the lane, so the face stays clear: up to
+    /// `MemoryPipeline.signMax` characters, once its words end.
+    public var low = false
+    /// A clip of the pack's to play as its face starts, as a reply's does
+    /// (`reply-<name>`), with none of a reply's rights. Nil sends none.
+    public var clip: String?
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
@@ -158,6 +164,8 @@ public struct Moment: Equatable, Sendable {
         if let reply { args["reply"] = .string(reply) }
         if let show { args["show"] = .string(show) }
         if greeting { args["greeting"] = true }
+        if low { args["low"] = true }
+        if let clip { args["clip"] = .string(clip) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }
         if let mood { args["mood"] = .string(mood) }

@@ -80,6 +80,8 @@ public final class MomentOutput: Output {
     let makeWish: (Core.WishKind, Int64) -> Void
     /// Whether you've met a kind of wish once: until then its sign shows how.
     let wishDone: (Core.WishKind) -> Bool
+    /// What Boop may bring up about you at a time (`Memory.felt`).
+    let felt: (Int64) -> [Memory.Felt]
     /// The day so far, for the idle musings' blanks.
     let today: () -> MemoryReader.Tallies?
     /// Whether the turn an event finished got past a failed check: only
@@ -101,6 +103,13 @@ public final class MomentOutput: Output {
     func wishOptions(_ about: Event?, _ log: LogView) -> [(kind: Core.WishKind, sign: String)] {
         guard let about, !asks.isEmpty, told(about) == nil else { return [] }
         return wishable(about, log).compactMap { kind in Asks.wishSign(asks, kind, showsHow: !wishDone(kind)).map { (kind, $0) } }
+    }
+
+    /// The notes on offer at `about`: at an idle check-in, as the musings
+    /// are, never on Quiet.
+    func feltOptions(_ about: Event?) -> [Memory.Felt] {
+        guard let about, Self.isCheckIn(about), talk() != .quiet, !hushed(about.at) else { return [] }
+        return felt(about.at)
     }
 
     func askOptions(_ about: Event?, _ log: LogView) -> [Asks.Question] {
@@ -175,8 +184,9 @@ public final class MomentOutput: Output {
                 makeWish: @escaping (Core.WishKind, Int64) -> Void = { _, _ in },
                 wishDone: @escaping (Core.WishKind) -> Bool = { _ in false },
                 today: @escaping () -> MemoryReader.Tallies? = { nil }, fixed: @escaping (Event) -> Bool = { _ in false },
-                seed: UInt64 = 0x7A4E) {
+                felt: @escaping (Int64) -> [Memory.Felt] = { _ in [] }, seed: UInt64 = 0x7A4E) {
         self.today = today
+        self.felt = felt
         self.fixed = fixed
         let own = voice.map { $0.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } } ?? 0
         takes = SplitMix64(seed: seed ^ own)
@@ -331,6 +341,10 @@ public final class MomentOutput: Output {
     /// reply for one that's small: a slighter motion than `bye` or `hello`,
     /// the pack's `reply-wave` clip.
     public static let wave = "wave"
+
+    /// The clip it plays bringing up what it remembers: the pack's
+    /// `reply-remember`.
+    public static let rememberClip = "remember"
 
     /// The questions at your lock or unlock, from `asked`: a face always, as
     /// you did something it answers; the move is a wave or none, and at a
@@ -564,14 +578,16 @@ public final class MomentOutput: Output {
         let questions = askOptions(about, log)
         let musings = about.map(Self.isCheckIn) == true ? offered(now, log) : []
         let wishes = wishOptions(about, log)
-        if !questions.isEmpty || !musings.isEmpty || !wishes.isEmpty {
+        let notes = feltOptions(about)
+        if !questions.isEmpty || !musings.isEmpty || !wishes.isEmpty || !notes.isEmpty {
             return speech + [Question(key: Signs.questionKey,
-                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, or a wish? PERSONALITY says when; now and then, not every time."
+                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, something it remembers about you, or a wish? PERSONALITY says when; now and then, not every time."
                                            + (wishes.isEmpty ? "" : " With no wish yet today and half an hour or more of quiet, a wish fits best. Once CONTEXT says how today's wish ended, another doesn't fit."),
                                        about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment",
                                        // The caps are a ceiling, not a schedule: "none" on every level.
                                        options: [Option("none", "Nothing: \(pack.name) doesn't ask, muse or wish now.")]
                                            + musings.map { Option($0, "A musing to hold up, asking nothing.") }
+                                           + notes.map { Option($0.line, "Something it remembers, from MEMORY: \($0.note)") }
                                            + wishes.map { w in
                                                Option(w.sign, "A wish: \(pack.name) wants \(w.kind.words) from you, and shows it until you give it.")
                                            }
@@ -807,6 +823,8 @@ public final class MomentOutput: Output {
         let at = about?.at ?? 0
         // A wish the brain picked, its sign being the wish.
         let wishing = talk ? nil : (answers[Signs.questionKey]?.choice).flatMap { c in wishOptions(about, log).first { $0.sign == c } }
+        // Something it remembers, its line being the sign.
+        let remembering = talk ? nil : (answers[Signs.questionKey]?.choice).flatMap { c in feltOptions(about).first { $0.line == c } }
         // What it says: nothing while hushed, unless this is you letting it
         // talk; on Quiet, nothing at a small moment or a finish, or with a
         // wish, which shows as its icon and sign.
@@ -838,9 +856,13 @@ public final class MomentOutput: Output {
                 }.map { [$0] } ?? []
             }
         }
+        // Bringing up what it remembers, what it says is its own word.
+        if remembering != nil, !said.isEmpty {
+            said = pack.rememberWord.flatMap { Voice.word($0, face: choice, in: pack) }.map { [$0] } ?? []
+        }
         // A word may get a sound of the same before it, but not at a small
         // moment, nor on Quiet.
-        if let word = said.first, size.name != "small", self.talk() != .quiet,
+        if let word = said.first, size.name != "small", self.talk() != .quiet, remembering == nil,
            let lead = Voice.lead(before: word, face: choice, finish: pick, avoiding: lastWords, in: pack, rng: &takes) {
             said.insert(lead, at: 0)
         }
@@ -860,7 +882,7 @@ public final class MomentOutput: Output {
             sign = nil
         } else {
             let picked = answers[Signs.questionKey]?.choice
-            sign = wishing?.sign ?? picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
+            sign = wishing?.sign ?? remembering?.line ?? picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
         // A special day's sign is code's, over the brain's.
         if about.map(firstToday) == true, let day = occasion(at) { sign = day }
@@ -878,6 +900,10 @@ public final class MomentOutput: Output {
         reaction.reply = replied?.played
         reaction.show = show
         reaction.greeting = greeting
+        if remembering != nil {
+            reaction.low = true
+            reaction.clip = Self.rememberClip
+        }
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
             // Its scene and a finish's outcome, whose variation the device
@@ -901,7 +927,8 @@ public final class MomentOutput: Output {
         }
         // Why, for the person: the board shows the fact in its lane, unless
         // the strip already names the finished turn it's about.
-        let why = reason(about)
+        // Bringing up a note, the note is why, on the Mac: the board shows the line.
+        let why = remembering.map { Narration(cause: Narration.remembers($0.note, name: pack.name)) } ?? reason(about)
         if reaction.who == nil, asking == nil { reaction.reason = why?.fact }
         let pending = Pending()
         queue(reaction, pending)
@@ -925,7 +952,8 @@ public final class MomentOutput: Output {
         if let reply { facts["reply"] = .string(reply) }
         if let sign { facts["sign"] = .string(sign) }
         if let why { facts["reason"] = .string(why.reaction(face: choice, name: pack.name)) }
-        if asking == nil, wishing == nil, sign != nil, about.map(Self.isCheckIn) == true { facts["musing"] = true }
+        if asking == nil, wishing == nil, remembering == nil, sign != nil, about.map(Self.isCheckIn) == true { facts["musing"] = true }
+        if let remembering { facts["felt"] = .string(remembering.line) }
         if let wishing { facts["wish"] = .string(wishing.kind.rawValue) }
         if let asking {
             facts["ask"] = .string(asking.id)

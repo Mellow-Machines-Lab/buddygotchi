@@ -93,6 +93,8 @@ extension Runtime {
         /// What its picks of words start from: a launch's own, so no two
         /// launches say the same order. Evals give theirs.
         public var seed = Mind.launchSeed()
+        /// What it may bring up about you at a time (`Memory.felt`).
+        public var felt: (Int64) -> [Memory.Felt] = { _ in [] }
         public static func launchSeed() -> UInt64 { .random(in: .min ... .max) }
 
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
@@ -206,7 +208,7 @@ extension Runtime {
             today: m.company, fixed: { [weak h] about in
                 // The turn it finished got past a failed check.
                 (h?.line(about.seq)?.facts["checks_failed"]?.int ?? 0) > 0
-            }, seed: m.seed)
+            }, felt: m.felt, seed: m.seed)
             h.output(mood)
             h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }

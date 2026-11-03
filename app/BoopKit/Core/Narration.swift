@@ -33,6 +33,12 @@ public struct Narration: Equatable, Sendable {
         return Narration(cause: "Day \(count)." + (why.map { " " + $0.cause } ?? ""), fact: fact)
     }
 
+    /// Why it brings up `note`: "Boop remembers you stay up late on Fridays."
+    public static func remembers(_ note: String, name: String) -> String {
+        guard note.hasPrefix("You ") else { return "\(name) remembers: \(note)" }
+        return "\(name) remembers y" + note.dropFirst()
+    }
+
     /// The sentence for a reaction in `face`: "Boop is happy. You stroked it."
     public func reaction(face: String, name: String) -> String { "\(name) is \(face). \(cause)" }
 

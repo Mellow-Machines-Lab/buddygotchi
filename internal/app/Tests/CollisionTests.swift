@@ -81,6 +81,38 @@ final class CollisionTests: XCTestCase {
         XCTAssertEqual(Asks.moment(checkIn, log, mood: MoodOutput.choice(), untouchedMs: nil), ["idle"])
     }
 
+    /// Bringing up a note: at an idle check-in only, the line low on the
+    /// board, its word the pack's, its clip the look, the note the narration.
+    func testBringingUpANote() throws {
+        let felt = Memory.Felt(line: "u stay up late fridays", note: "You stay up late on Fridays.")
+        var sent: Moment?
+        var talk = Talk.normal
+        let react = MomentOutput(queue: { m, _ in sent = m }, blocked: { nil }, speaks: { true }, talk: { talk }, felt: { _ in [felt] })
+        let log = Transcript.log().view(now: 1000)
+        let checkIn = Event(at: 1000, source: .boop, type: .checkIn, specificType: "check_in")
+        let sign = try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey })
+        XCTAssertTrue(sign.options.contains { $0.name == felt.line })
+        XCTAssertNil(react.questions(now: back, log: log).first { $0.key == Signs.questionKey }?.options.first { $0.name == felt.line }, "at a check-in only")
+        let result = react.run(answers([MomentOutput.emotionKey: "amused", MomentOutput.sizeKey: "small", MomentOutput.sayKey: "quiet", Signs.questionKey: felt.line]),
+                               now: checkIn, log: log)
+        let moment = try XCTUnwrap(sent)
+        XCTAssertEqual(moment.sign, felt.line)
+        XCTAssertTrue(moment.low)
+        XCTAssertEqual(moment.clip, MomentOutput.rememberClip)
+        XCTAssertNil(moment.reason, "the board shows the line")
+        if let word = CharacterPack.active.rememberWord { XCTAssertEqual(moment.say?.text, word) }
+        XCTAssertEqual(result?.facts["felt"], .string(felt.line))
+        XCTAssertNil(result?.facts["musing"])
+        XCTAssertEqual(result?.facts["reason"]?.string, "\(CharacterPack.active.name) is amused. \(CharacterPack.active.name) remembers you stay up late on Fridays.")
+        talk = .quiet
+        XCTAssertTrue(react.feltOptions(checkIn).isEmpty, "never on Quiet")
+    }
+
+    /// Pins the board's room: a note's line fits a low sign.
+    func testALineFitsTheLowSign() {
+        XCTAssertEqual(MemoryPipeline.signMax, 40)
+    }
+
     /// Led by the day's count: with the dream, and with nothing to tell.
     func testTheNarrationLeadsWithTheDay() {
         XCTAssertEqual(Narration.day(41, leading: nil), Narration(cause: "Day 41.", fact: "day 41"))

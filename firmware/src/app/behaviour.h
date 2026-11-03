@@ -100,6 +100,10 @@ struct PlayedOut {
 // fonts, cut with ".." past them (render::foldText), in kSignBytes.
 constexpr int kSignGlyphs = 18;
 constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
+// A low sign's (`low`, render/gel/low_sign.h): the Mac sends at most this many,
+// plain ASCII. A face that holds none cuts it as any other sign.
+constexpr int kLowGlyphs = 40;
+constexpr size_t kSignTextBytes = kLowGlyphs + 1 > kSignBytes ? kLowGlyphs + 1 : kSignBytes;
 // An ask's answer (`ask`'s `a` and `b`): half the lane, cut the same way.
 constexpr int kAnswerGlyphs = 7;
 constexpr size_t kAnswerBytes = 2 * kAnswerGlyphs + 1;
@@ -159,7 +163,9 @@ struct ReactionIn {
   // The Mac's id for it, 0 for none: a tap on its finish names it.
   uint32_t id = 0;
   // The words the buddy holds up on a sign while it plays, "" for none.
-  char sign[kSignBytes] = "";
+  char sign[kSignTextBytes] = "";
+  // Held low (`low`): in the lane, the face clear, once its words end.
+  bool low = false;
   // A greeting (`greeting`): the first moment of your day. Its sign waits
   // until its words end, and the work stream waits until it's over.
   bool greeting = false;
@@ -169,6 +175,9 @@ struct ReactionIn {
   // With an expression, the Mac's reply to what you said (`reply`): the
   // face plays its pack's clip for it as the expression starts. "" for none.
   char reply[kReplyBytes] = "";
+  // Or a clip of the pack's by the same name (`clip`), with none of a
+  // reply's rights over needs you.
+  char clip[kReplyBytes] = "";
   // It asks for the agents' drawer (`show` "drawer"), the rest of its
   // answer: Device opens it once the sign has been read.
   bool showDrawer = false;
@@ -213,6 +222,8 @@ class Behaviour {
   // A reaction's sign shows from its start for as long as any part of it
   // plays, and at least this long, to be read.
   static constexpr uint32_t kSignMinMs = 2500;
+  // A low sign, twice as long a line, as long again.
+  static constexpr uint32_t kLowSignMinMs = 5000;
   // An ask waits this long for its answer, its question up and its
   // answers in the lane, then ends `ignored`: inside the host's wait for
   // a reaction's `ended`.
@@ -463,10 +474,11 @@ class Behaviour {
   };
   // A sign: its words from `at` for `ms`, for its reaction (`key`).
   struct Sign {
-    char text[kSignBytes] = "";
+    char text[kSignTextBytes] = "";
     uint32_t at = 0, ms = 0;
     uint32_t key = 0;
     bool reply = false;  // a reply's to what you said: it shows over needs you
+    bool low = false;    // held low, in the lane
   };
   using Source = render::FaceSource;
 

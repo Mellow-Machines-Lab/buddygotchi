@@ -3598,6 +3598,47 @@ static void test_a_greeting_plays_whole_then_the_work_stream() {
   }
 }
 
+// A low sign (ReactionIn::low): held in the lane for Behaviour::kLowSignMinMs,
+// once its words end, the whole line kept, and not a reply's: it doesn't show
+// over needs you.
+static void test_a_low_sign_waits_for_its_words_and_holds_a_long_line() {
+  TEST_ASSERT_EQUAL_size_t(41, app::kSignTextBytes);
+  const char* line = "you stay up very late on fridays, boss!!";
+  TEST_ASSERT_EQUAL_size_t(40, std::strlen(line));
+  if (!voicefile::open()) return;
+  Rig r;
+  r.at(1000);
+  r.state(base("idle"));
+  ReactionIn in;
+  in.low = true, in.key = 8;
+  in.expr = true, in.mood = render::Mood::kHappy;
+  std::snprintf(in.sign, sizeof(in.sign), "%s", line);
+  std::snprintf(in.clip, sizeof(in.clip), "remember");
+  in.said = true, in.take = voice::takeIndex(kGo);
+  onReaction(r.b, in, r.t);
+  TEST_ASSERT_FALSE(r.b.signUp(r.t));
+  r.at(1000 + kGoMs);
+  TEST_ASSERT_TRUE(r.b.sign(r.t).low);
+  TEST_ASSERT_EQUAL_STRING(line, r.b.sign(r.t).text);
+  TEST_ASSERT_EQUAL_INT32(Behaviour::kLowSignMinMs, r.b.sign(r.t).leftMs);
+  r.at(1000 + kGoMs + Behaviour::kLowSignMinMs - 1);
+  TEST_ASSERT_TRUE(r.b.signUp(r.t));
+  r.at(1000 + kGoMs + Behaviour::kLowSignMinMs);
+  TEST_ASSERT_FALSE(r.b.signUp(r.t));
+  TEST_ASSERT_NULL(r.b.sign(r.t).text);
+  // Over needs you it doesn't show, unlike a reply's.
+  Rig n;
+  n.at(1000);
+  Model m = base("idle");
+  m.attn = true;
+  n.state(m);
+  ReactionIn alone;
+  alone.low = true, alone.expr = true, alone.mood = render::Mood::kHappy;
+  std::snprintf(alone.sign, sizeof(alone.sign), "%s", line);
+  std::snprintf(alone.clip, sizeof(alone.clip), "remember");
+  TEST_ASSERT_NOT_NULL(n.b.admit(alone, n.t));
+}
+
 // Pins what the board starts with and what no app takes away: silent
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
@@ -3846,6 +3887,7 @@ int main() {
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
   RUN_TEST(test_a_finishs_sign_lifts_as_its_words_end);
   RUN_TEST(test_a_greeting_plays_whole_then_the_work_stream);
+  RUN_TEST(test_a_low_sign_waits_for_its_words_and_holds_a_long_line);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);

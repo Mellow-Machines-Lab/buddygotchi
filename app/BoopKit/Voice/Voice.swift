@@ -52,6 +52,11 @@ public enum Voice {
         return pool.filter { avoiding.firstIndex(of: $0.text) == oldest }
     }
 
+    /// The take of `word` that plays in the `face`'s mood, or nil.
+    public static func word(_ word: String, face: String, in pack: CharacterPack = .active) -> Take? {
+        Take.all(in: pack).first { $0.text == word && $0.part != .reply && $0.moods.contains(face) && $0.finish == nil }
+    }
+
     /// The pause between a `say`'s two takes, in milliseconds, as the board
     /// plays it (firmware `kJoinGapMs`), and the longest `say` of two, the
     /// gap included.
