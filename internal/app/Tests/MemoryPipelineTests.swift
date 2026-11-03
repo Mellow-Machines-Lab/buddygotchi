@@ -180,6 +180,93 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(after.notes.map(\.text), ["Boop has grown cuddly: you stroke it most mornings."])
     }
 
+    /// A writer on the real pipeline with no model: nothing here asks one.
+    struct CodeWriter: MemoryWriter {
+        var usesDigests: Bool { true }
+        func write(_ request: MemoryRequest) async -> MemoryWriterReply {
+            guard let input = request.pipeline else { return .none }
+            return .reply(await MemoryPipeline.write(input, model: nil))
+        }
+    }
+
+    /// One night through ask and apply, on a span with `journal`'s lines.
+    @discardableResult
+    func night(_ memory: Memory, _ i: Int, _ journal: [String] = [], edit: (inout MemoryReader.Tallies) -> Void = { _ in }) async throws -> MemoryEdits.Report? {
+        var t = MemoryReader.Tallies()
+        t.journal = journal.map { .init(at: "10:00", line: $0, plain: false) }
+        edit(&t)
+        let d = day(i)
+        let asked = await memory.ask(Dream(day: d.day, weekday: d.weekday, tags: [], sentence: "a day", fact: "a day"), tallies: t)
+        return memory.apply(try XCTUnwrap(asked))
+    }
+
+    /// A saga's note updated by the dream isn't a note you deleted: it goes
+    /// from two days to three, then to the win; the note on where your days go
+    /// and the story's stay possible. Only a real deletion stays gone.
+    func testANoteTheDreamUpdatedIsNotForgotten() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir)
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), writer: CodeWriter(), files: files)
+        let failed = "claude's check failed on \"game\"."
+        func saga() -> String? { files.written().notes(in: .work).first { $0.text.contains("\"game\"") }?.text }
+        try await night(memory, 0, [failed])
+        XCTAssertNil(saga(), "one bad day is no saga")
+        try await night(memory, 1, [failed])
+        XCTAssertEqual(saga(), "\"game\" has been fighting you for two days.")
+        try await night(memory, 2, [failed])
+        XCTAssertEqual(saga(), "\"game\" has been fighting you for three days.")
+        XCTAssertEqual(files.days().added, [saga()], "the old words go, the new ones stand in")
+        try await night(memory, 3, [failed])
+        XCTAssertEqual(saga(), "\"game\" has been fighting you for four days.", "an update didn't kill the saga")
+        try await night(memory, 4, ["claude's check passed on \"game\"."])
+        XCTAssertEqual(saga(), "\"game\" fought you for five days, and you won on Friday.")
+
+        // Now you delete it by hand: it's gone for good.
+        var m = files.written()
+        m.notes.removeAll { $0.section == .work }
+        try files.keep(m, day: day(4).day)
+        try await night(memory, 5, [failed])
+        try await night(memory, 6, [failed])
+        XCTAssertNil(saga(), "a note you deleted stays gone")
+    }
+
+    /// A note that aged out or gave up its place isn't one you deleted either.
+    func testANoteThatAgedIsNotForgotten() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir)
+        let old = "\"game\" has been fighting you for two days."
+        try files.keep(WrittenMemory.from(notes: ["work · 2026-08-01 · \(old)"])!, day: "2026-08-01")
+        var days = MemoryStore.Days()
+        days.added = [old, "Someone else's."]
+        try files.keep(days)
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), writer: CodeWriter(), files: files)
+        let report = try await night(memory, 0)
+        XCTAssertEqual(report?.aged.count, 1)
+        XCTAssertEqual(files.days().added, ["Someone else's."], "aged, so it may come back")
+    }
+
+    /// A signature matches whole words, a plural too: thread "api" isn't in "rapid".
+    func testSignatureMatchesWords() async {
+        func c(_ signature: [String]) -> MemoryCandidate { candidate(signature: signature) }
+        XCTAssertTrue(c(["late", "friday"]).isIn("You are often up late on Fridays."))
+        XCTAssertFalse(c(["api"]).isIn("You like rapid turns."))
+        XCTAssertFalse(c(["api"]).isIn("\"my-api\" is busy."))
+        XCTAssertTrue(c(["my-api"]).isIn("\"my-api\" is busy."))
+        XCTAssertTrue(c(["goes badly"]).isIn("When the work goes badly, you stroke Boop more."))
+        XCTAssertFalse(c(["goes badly"]).isIn("It forgoes badly."))
+        let rapid = note("work · 2026-10-05 · You like rapid turns.")
+        let saga = candidate(signature: ["api"], section: .work)
+        XCTAssertEqual(MemoryProposer.plan([saga], memory: rapid, day: "2026-10-20").first?.kind, .add, "not rapid's note")
+        var i = input([])
+        i.digests = [day(0) { $0.failing = ["api": 1] }, day(1) { $0.failing = ["api": 1] }]
+        i.forgotten = ["You like rapid turns."]
+        i.day = day(1).day; i.weekday = day(1).weekday
+        let out = await MemoryPipeline.write(i, model: nil)
+        XCTAssertTrue(out.contains("\"api\" has been fighting you"), out)
+    }
+
     /// "Forget" clears what you said from the digests kept; the counts stay.
     func testForgetClearsWhatYouSaid() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)

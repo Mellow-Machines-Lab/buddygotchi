@@ -147,14 +147,14 @@ public final class Memory: @unchecked Sendable {
     @discardableResult
     public func apply(_ night: Night) -> MemoryEdits.Report? {
         guard let files else { return nil }
-        guard let (next, report) = Self.edits(night, to: files.written()) else {
+        let before = files.written()
+        guard let (next, report) = Self.edits(night, to: before) else {
             note("memory: the dream's write for \(night.day) gave nothing (\(night.reply))")
             return nil
         }
         do { try files.keep(next, day: night.day) } catch { note("memory: can't write memory.md: \(error)") }
         if let digest = night.digest {
-            let added = report.added.compactMap { id in next.notes.first { $0.id == id }?.text }
-            do { try files.keep(files.days().keeping(digest, added: added)) } catch { note("memory: can't write the digests: \(error)") }
+            do { try files.keep(files.days().keeping(digest, added: []).following(report, from: before, to: next)) } catch { note("memory: can't write the digests: \(error)") }
         }
         if let h = harness {
             func ids(_ xs: [Int]) -> JSONValue { .array(xs.map { .string("m\($0)") }) }

@@ -61,6 +61,8 @@ public final class MemoryStore {
     /// dream, and the notes it has added, so one you deleted stays gone.
     public struct Days: Codable, Equatable, Sendable {
         public var digests: [DayDigest] = []
+        /// The notes the dream added, in the words they have now: one here
+        /// but not in `memory.md` is one you deleted.
         public var added: [String] = []
         /// Each note's short line in the pet's voice, by the note's text, ""
         /// for a note the model had none for.
@@ -80,6 +82,23 @@ public final class MemoryStore {
             }
             out.digests = Array(out.digests.suffix(Self.kept))
             out.added = Array((out.added + notes).suffix(Self.addedKept))
+            return out
+        }
+
+        /// `added` as a dream's edits leave it, from `before` to `next`: a
+        /// note it updated goes by its new words, and one it let go (dropped
+        /// to make room, or aged out) isn't one you deleted, so it may come
+        /// back. New notes join it.
+        public func following(_ report: MemoryEdits.Report, from before: WrittenMemory, to next: WrittenMemory) -> Days {
+            func text(_ id: Int, _ memory: WrittenMemory) -> String? { memory.notes.first { $0.id == id }?.text }
+            var out = self
+            for id in report.updated {
+                guard let old = text(id, before), let new = text(id, next), let i = out.added.firstIndex(of: old) else { continue }
+                out.added[i] = new
+            }
+            let gone = (report.dropped + report.aged).compactMap { text($0, before) }
+            out.added.removeAll(where: gone.contains)
+            out.added = Array((out.added + report.added.compactMap { text($0, next) }).suffix(Self.addedKept))
             return out
         }
     }

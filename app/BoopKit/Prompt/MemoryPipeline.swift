@@ -76,8 +76,7 @@ public enum MemoryPipeline {
             candidates += await stories(input, skipping: sagas, model: model)
         }
         candidates.sort { ($0.strength, $0.key) > ($1.strength, $1.key) }
-        let gone = input.forgotten.map { $0.lowercased() }
-        candidates.removeAll { c in gone.contains { text in c.signature.allSatisfy(text.contains) } }
+        candidates.removeAll { c in input.forgotten.contains(where: c.isIn) }
         var lines = MemoryProposer.plan(candidates, memory: input.memory, day: input.day).flatMap { edit in
             MemoryProposer.lines(edit, text: edit.candidate.text, day: input.day)
         }

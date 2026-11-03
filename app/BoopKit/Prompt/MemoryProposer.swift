@@ -84,7 +84,7 @@ public struct MemoryCandidate: Equatable, Sendable {
     public var text: String
     public var strength: Int
     /// The words a note about this holds, each lowercased: the note already
-    /// there, if every one is in it.
+    /// there, if every one is in it (`isIn`).
     public var signature: [String]
     /// What a rewording must keep: threads, quotes, days.
     public var keep: [String]
@@ -92,6 +92,26 @@ public struct MemoryCandidate: Equatable, Sendable {
     public var evidence: String
     /// A note with the signature but other words is out of date: update it.
     public var replaces = false
+
+    /// Whether `text` is about this: every part of the signature in it, as
+    /// whole words or their plural, so "api" isn't in "rapid".
+    public func isIn(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        return signature.allSatisfy { Self.says(lower, $0) }
+    }
+
+    static func says(_ text: String, _ words: String) -> Bool {
+        func isWord(_ c: Character?) -> Bool { c.map { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" } ?? false }
+        var from = text.startIndex
+        while let found = text.range(of: words, range: from..<text.endIndex) {
+            let before = found.lowerBound > text.startIndex ? text[text.index(before: found.lowerBound)] : nil
+            var end = found.upperBound
+            if end < text.endIndex, text[end] == "s" { end = text.index(after: end) }
+            if !isWord(before), !isWord(end < text.endIndex ? text[end] : nil) { return true }
+            from = text.index(after: found.lowerBound)
+        }
+        return false
+    }
 
     public init(key: String, section: WrittenMemory.Section, text: String, strength: Int, signature: [String], keep: [String] = [],
                 evidence: String, replaces: Bool = false) {
@@ -372,10 +392,7 @@ public enum MemoryProposer {
         var free: [WrittenMemory.Section: Int] = [:]
         for s in WrittenMemory.Section.allCases { free[s] = WrittenMemory.perSection - memory.notes(in: s).count }
         for c in candidates {
-            let matches = memory.notes.first { n in
-                let lower = n.text.lowercased()
-                return c.signature.allSatisfy { lower.contains($0) } && n.section == c.section
-            }
+            let matches = memory.notes.first { $0.section == c.section && c.isIn($0.text) }
             if let note = matches, let number = numbered.firstIndex(of: note.id).map({ $0 + 1 }) {
                 guard used.insert(note.id).inserted else { continue }
                 if note.text == c.text || !c.replaces {
