@@ -3,9 +3,10 @@
 Updated 2026-11-03. How far the written memory goes on Apple Intelligence
 alone. Every model call here ran on this Mac (macOS 27.0.1, `SystemLanguageModel`
 with the permissive guardrails). No cloud model and no Jev. The write is built
-(`MemoryPipelineWriter`). The lab that compared these ways of writing, its
-fixtures and its scorer stay on branch `memory-writer-lab` (7a19cfb0), and this
-file is here until a real week has been through the write.
+(`MemoryPipelineWriter`). The lab that compared these ways of writing, with its
+fixtures and its scorer, isn't in this repository, so its figures here are a
+record and can't be run again. This file stays until a real week has been through
+the write.
 
 ## The answer
 
@@ -184,4 +185,3 @@ What this says:
 .build/debug/boopdev memory gates
 ```
 
-For `boopdev memory lab`, check out branch `memory-writer-lab`.

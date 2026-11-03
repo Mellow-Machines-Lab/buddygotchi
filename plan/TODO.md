@@ -6,7 +6,9 @@ that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
 ## Report, 2026-11-03
 
-Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/day2/` (growth, polish) and `~/.boopdev/night-2026-11-01/`. Nothing has run on a board.
+**Read this first.** The standard run and the judge go first thing after midnight, as a follow-up. Until then, feel on most of this work is unjudged. `internal/EVALS.md` says standard runs before a branch merges: on this branch that was knowingly not met.
+
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/day2/` (growth, polish, listening-heart) and `~/.boopdev/night-2026-11-01/`. Nothing has run on a board.
 
 **Landed:** wish frequency, the flatness fixes, growth with the bar and the heart, the morning and its collision rule, less repetition, the new memory writer and its line on the low sign, and transitions.
 
@@ -21,13 +23,15 @@ Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/day2/` (growth, 
 | Before | 118/119 | 81, 11, 9 | 300 |
 | After | 119/119, with 03, 27 and 129 loosened | 83, 15, 3 | 279 |
 
+That 119/119 predates tightening `129` and `17`, so it isn't the score of this tree: see below.
+
 What worked was removing Examples: Jev was copying them. Guidelines giving a ladder or a direction work; naming what to avoid raises it; words matching the row Jev reads work best. Words couldn't fix: `11`, a finish just after its fix still goes big (the line would have to say the fix was just reacted to); Halloween and day 50 are still alike, as a return offers no sign; `98` April Fools. The code now gives a special day's sign at your first showing up, seen only in a scripted run. The 3 left, `137`, `141` and `167`, had briefs wrong against the wish rule, and those briefs are corrected, not re-judged.
 
-**Evals on the final tree:** not re-run as a whole: standard's about 700 requests didn't fit. The last standard predates growth, the polish plan and the review's fixes. Of the musts run on the final tree, `17`, `136`, `139`, `03`, `27` pass. **`129` fails twice:** hushed, Boop's mood stays calm instead of sulking a step, and it's a real miss now its check is tighter.
+**Evals on this tree:** not re-run as a whole: standard's about 700 requests didn't fit. The last standard predates growth, the polish plan and the review's fixes. Each must run alone after the review's fixes: `03` (now refusing the word `done` too), `17` and `136` pass. `139` and `27` passed before those fixes and weren't run again. **`129` fails, twice in its run:** the first hush now steps calm down to lazy, by a line in `calm.md`. Hushed from the Mac later, while curious, Jev picks calm (0.56, 0.61) over annoyed (0.27). It's a real miss, and its must stays as tight as it is.
 
-**Owed with Jev, first thing:** `--level standard` and the judge on this tree, with `129`. It covers the faces guideline (`05`, `10`, `16`, `18`, `19`, `21`, `23`, `85`), a remembered line (`178`, `76`, `144`, `152`, `167`), special days (`90`, `91`), the morning (`63`, `97`, `135`, `136`, `140`, `147`), growing (`174`-`177`) and the changed words. A `grew` while something needs you has no scenario. Then level B.
+**Owed with Jev, first thing after midnight:** `--level standard` and the judge on this tree, with `129`. It covers the faces guideline (`05`, `10`, `16`, `18`, `19`, `21`, `23`, `85`), a remembered line (`178`, `76`, `144`, `152`, `167`), special days (`90`, `91`), the morning (`63`, `97`, `135`, `136`, `140`, `147`), growing (`174`-`177`) and the changed words. A `grew` while something needs you has no scenario. Then level B.
 
-**Memory writer:** no real week has been through it, and the sign pass hasn't run in a real dream. Its figures (false notes 33 of 56 to 0 of 43, refusals 526 to 1, notes that feel known 4 to 22) are hand-graded on made-up nights. Its gates on this Mac: worth 39/43, private 45/53, story 19/25. On a night with one thread, "the audio is done" can overwrite that thread's note if the model says yes: that's the cost of letting a saga end.
+**Memory writer:** no real week has been through it, and the sign pass hasn't run in a real dream. Its figures (false notes 33 of 56 to 0 of 43, refusals 526 to 1, notes that feel known 4 to 22) are hand-graded on made-up nights. Its gates on this Mac: worth 39/43, private 45/53, story 28/34 and 13/16 held out, after a wording change and 9 new rows. Code refuses a question or a negation before the model is asked, so "not moving after all" no longer ends a story either. On a night with one thread, the real model still says yes to "the audio is done", and that overwrites the thread's note: that's the cost of letting a saga end.
 
 **The tests:** the runner had been silently dropping every test after a local class in a test function, 9 in all. All run now. The board's firmware also stopped compiling at one point with `check` passing, as `check` doesn't build for the boards: run `make -C internal fw` too.
 
@@ -39,10 +43,11 @@ What worked was removing Examples: Jev was copying them. Guidelines giving a lad
 
 No Jev requests went to these, as the day's limit was nearly spent:
 
-- [ ] Run evals `129` and `17`: tightened, either may now fail.
+- [x] Run `17`: passes on this tree.
+- [ ] `129` fails at its hush from the Mac, while curious (see the report).
 - [ ] Run `137`, `141` and `167` with the judge: their briefs changed.
-- [ ] Run what `personality.md`'s words touch, coming back and a long wish:
-      `136` and the scenarios that name lonely.
+- [ ] Run what `personality.md`'s words touch, coming back and a long wish: `136`
+      passes alone; the scenarios that name lonely aren't run.
 - [ ] A stage reached while something needs you: `grew` now waits for the answer, and
       no Jev run has seen it.
 
@@ -118,11 +123,39 @@ Growth, not built:
       tag is a Buddy.
 - [ ] A demo with the bar: demos send no `xp`, so `make demo` doesn't show it.
 
+## Found by the review, not fixed (2026-11-03)
+
+On the board:
+
+- [ ] For the owner: `to-work` rarely shows on a real turn, because `starting` cuts it
+      (the pack's `face.cpp:185`). It's the transition you'd look for first, so expect
+      to miss it.
+- [ ] The gulp replays (`growth_bar.cpp:64,83`).
+- [ ] The nose hit ignores the sign's hop, and a drag goes by Buddy's coordinates at
+      any stage (the pack's `lane.cpp:513`, `face.cpp:434`).
+- [ ] A Hatchling's sign sits over its open mouth.
+- [ ] The witch hat's tip.
+- [ ] A met wish while something needs you is still refused (`needs_you`), so its heart
+      doesn't show. Same shape as the chat wish's fix, but the screen is the agent's.
+- [ ] A chat wish's heart crosses the LISTENING word for a moment on its way up
+      (`~/.boopdev/day2/listening-heart/sheet-after.png`, `heart-1100`). Judge it.
+
+On the Mac:
+
+- [ ] A dream is told twice with several buddies (`TranscriptView.swift:445-448`).
+- [ ] A held `grew` lives only in memory, so a quit loses it (`Core.swift:102`).
+
+In the docs and tools:
+
+- [ ] A `digest` row in the Words table of `CLAUDE.md`.
+- [ ] A check on the test runner's count, as it has silently dropped tests before.
+- [ ] `make -C internal check` doesn't build for the boards: it passed while the
+      firmware didn't compile. Until it does, run `make -C internal fw` too.
+
 ## Now: the simplify branch, on the board (2026-11-01)
 
 What the `simplify` branches change on the board, for the owner to look
-at after `make flash` and a new voice on the card (the report of
-2026-11-01 has each step):
+at after `make flash` and a new voice on the card:
 - [ ] A stopped or failed turn shows no card; a helper coming back plays nothing.
 - [ ] Pastimes still come by tier; a yawn or sneeze from `tier1`; busy typing still speeds up.
 - [ ] Free heap at boot is about 76.8 KB higher than before.
