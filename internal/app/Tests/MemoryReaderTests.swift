@@ -304,6 +304,23 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(memory.span?.tallies.strokesAM, 1, "11:00")
     }
 
+    /// The event that tips Boop into a new stage stays in the dream's span:
+    /// its reader earns the XP, whose `grew` is logged and heard inside that
+    /// read, with a later seq.
+    func testTheEventThatGrewBoopIsDreamedOf() throws {
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+        let t0 = at(2026, 10, 31, 9)
+        memory.reader.earned = { [unowned memory] e, _ in
+            guard e.seq == 1 else { return }
+            var grew = Event(at: t0, source: .boop, type: .grew, specificType: "Sprout")
+            grew.seq = 2
+            memory.heard(grew, line: nil)
+        }
+        memory.heard(stroke(1, t0), line: nil)
+        XCTAssertEqual(memory.span?.tallies.strokes, 1)
+        XCTAssertEqual(memory.dreams.seq, 2)
+    }
+
     /// A dream's write still being made when you ask Boop to forget doesn't
     /// land: it was asked from what you've just forgotten.
     func testAForgetDuringADreamDropsItsWrite() async throws {

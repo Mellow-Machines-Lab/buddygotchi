@@ -215,8 +215,10 @@ public final class Memory: @unchecked Sendable {
         recordAsk(e)
         recordWish(e)
         recordFelt(e)
-        runner.feed(e, line: line)
+        // The dream's first: reading `e` can earn a stage, whose `grew` is
+        // logged and heard inside the day's read, with a later seq.
         dreams.feed(e, line: line)
+        runner.feed(e, line: line)
     }
 
     // MARK: Memory you feel
