@@ -4,6 +4,47 @@ Updated 2026-11-03. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Owed from mornings and polish (2026-11-03)
+
+Built: the morning, less repetition, memory you feel, transitions. The rule is in
+[architecture.html](../documentation/architecture.html#collisions).
+
+On the board, none of it has been on one:
+
+- [ ] Flash, and come back in the morning: the greeting, then the words, then the
+      sign; no words falling or act until it's over; a needs-you cutting it.
+- [ ] A special day's sign at your showing up (a `party` or `halloween` day).
+- [ ] The low sign's remembered line, and its look. Pictures: `sign/remember-*`.
+- [ ] Each transition's feel, above all `to-work` (no real sleeves: a tuck each
+      side and a sit) and `to-sleep` (the mouth has one size, so little yawn).
+      Frame rate and heap: they add no art, only channels, so no change is
+      expected; that's reasoned, not measured.
+
+With Jev, none asked yet (zero requests were spent on this):
+
+- [ ] `boopdev eval --only` each of: the faces' new guideline on 05, 10, 16, 18, 19,
+      21, 23, 85; bringing up a line on 174 (new), 76, 144, 152, 167; the special
+      day on 90, 91; the morning on 63, 97, 135, 136, 140, 147. Read the faces:
+      if a streak still repeats the same face at routine moments, build the
+      other half of the plan, code dropping the last face there. Before the
+      guideline, 168 of 581 faces in the last run matched the one before.
+
+The memory writer:
+
+- [ ] No real week has been through it. Run it on your own days, and read
+      `memory.md` after a week ([memory-writer.md](memory-writer.md)).
+- [ ] The sign pass in a real dream of the running app: only a stub has driven it.
+- [ ] Decisions to overrule if you like: forget clears the digest's `said`;
+      `memory.md` says it's written on this Mac; the stopped habit's 30 days and
+      You and Boop's 4 notes stay.
+
+The voice:
+
+- [ ] Record a "hey!" and point `remember_word` at it: the bank's "Hey" stands in.
+
+Growth, when it merges: `Core.play` sends no rule's moment while something needs
+you, so a ceremony reached then shows no sign, and only the day's party says so.
+
 ## Morning report, the night of 2026-11-01
 
 Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/night-2026-11-01/`.

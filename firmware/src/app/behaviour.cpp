@@ -612,6 +612,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.attention = model_.attn;
   c.borrowed = exprOn(t);
   const bool alone = noApp(t);
+  c.alone = alone;
   if (alone) {
     c.look = c.base = look(t);
     c.working = c.mayVary = c.attention = c.borrowed = false;

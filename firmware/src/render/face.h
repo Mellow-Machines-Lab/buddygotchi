@@ -98,6 +98,7 @@ inline int signLift(uint32_t ms, int rise, int bob) {
 }
 // What the Mac last said, as far as a face may use it.
 struct FaceContext {
+  bool alone = false;  // no Mac: the rest is the board's own, not what the Mac said
   Mood mood = kStartupMood;
   SceneState look = SceneState::kIdle;
   bool working = false;
