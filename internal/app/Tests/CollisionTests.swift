@@ -18,7 +18,11 @@ final class CollisionTests: XCTestCase {
         var sent: Moment?
         var left = occasion
         let react = MomentOutput(queue: { m, _ in sent = m }, blocked: { nil }, speaks: { false }, dreams: dreams,
-                                 told: { _ in told }, firstToday: { _ in firstToday },
+                                 line: { _ in
+                                     var facts: [String: JSONValue] = firstToday ? [TranscriptView.firstTodayFact: true] : [:]
+                                     if let told { facts["dream_tags"] = .array(told.map { .string($0) }) }
+                                     return Line("", facts: facts)
+                                 },
                                  occasion: { _ in defer { left = nil }; return left })
         var choices = [MomentOutput.emotionKey: "happy", MomentOutput.moveKey: "wake up", MomentOutput.sizeKey: "medium"]
         if let sign { choices[Signs.questionKey] = sign }
@@ -70,7 +74,7 @@ final class CollisionTests: XCTestCase {
     /// any showing up: their moment is an idle check-in.
     func testTheWishAndTheAskWaitForAnIdleCheckIn() {
         let asks = TaggedLine.parse("- [wish pet] pet me?\n- [hat idle keeps] hat or bow? | hat | bow")
-        let telling = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, told: { _ in ["fond"] }, asks: asks,
+        let telling = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, line: { _ in Line("", facts: ["dream_tags": .array([.string("fond")])]) }, asks: asks,
                                    askable: { _, _, questions in questions }, wishable: { _, _ in [.pet] })
         let log = Transcript.log().view(now: 0)
         XCTAssertTrue(telling.wishOptions(back, log).isEmpty)

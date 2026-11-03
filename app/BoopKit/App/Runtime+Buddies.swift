@@ -191,13 +191,8 @@ extension Runtime {
                                        name: pack.name)
                 guard line?.facts[TranscriptView.firstTodayFact] != nil, let days = core.dayCount(at: about.at) else { return why }
                 return Narration.day(days, leading: why)
-            }, dreams: m.steering.dreams, told: { [weak h] about in
-                // The dream the line tells, by its tags.
-                guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
-                return tags.compactMap(\.string)
-            }, firstToday: { [weak h] about in
-                h?.line(about.seq)?.facts[TranscriptView.firstTodayFact] != nil
-            }, occasion: { at in core.dayGreeting(at: at) }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
+            }, dreams: m.steering.dreams, line: { [weak h] about in h?.line(about.seq) },
+            occasion: { at in core.dayGreeting(at: at) }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
             wishable: { [mood] about, log in
                 // At an ask's moment, within the core's caps.
                 Asks.moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(m.company(), at: about.at)).isEmpty
@@ -205,10 +200,7 @@ extension Runtime {
             }, makeWish: { kind, at in
                 carryOut(core.makeWish(kind, at: at), at)
             }, wishDone: m.wishDone,
-            today: m.company, fixed: { [weak h] about in
-                // The turn it finished got past a failed check.
-                (h?.line(about.seq)?.facts["checks_failed"]?.int ?? 0) > 0
-            }, felt: m.felt, seed: m.seed)
+            today: m.company, felt: m.felt, seed: m.seed)
             h.output(mood)
             h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }

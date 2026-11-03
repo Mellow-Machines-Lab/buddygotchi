@@ -383,7 +383,7 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(Signs.dreams(lines, tags: ["fond", "failed"]), ["dreamt of u", "bad dream", "had a dream"])
         XCTAssertEqual(Signs.dreams(lines, tags: ["fond", "halloween"]), ["dreamt of u", "spooky dreams", "had a dream"])
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
-        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, dreams: lines, told: { _ in ["distant"] })
+        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, dreams: lines, line: { _ in Line("", facts: ["dream_tags": .array([.string("distant")])]) })
         let sign = try XCTUnwrap(react.questions(now: poke, log: Transcript.log().view(now: 0)).first { $0.key == Signs.questionKey })
         XCTAssertEqual(sign.options.map(\.name), ["none", "where were u?", "had a dream"])
         XCTAssertTrue(sign.text.contains("dream"))

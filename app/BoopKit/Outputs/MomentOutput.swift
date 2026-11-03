@@ -60,15 +60,21 @@ public final class MomentOutput: Output {
     /// (`Narration`), or nil: its fact goes to the board's lane, and its
     /// sentence to the transcript.
     let reason: (Event?) -> Narration?
+    /// The line Jev read for an event, whose facts say what it was to the
+    /// view (`told`, `firstToday`, `fixed`).
+    let line: (Event) -> Line?
     /// The pack's dream signs (`dreams.md`), and the tags of the dream an
     /// event's line tells, or nil when it tells none: the telling holds up
     /// one of the signs those tags fit.
     let dreams: [TaggedLine]
-    let told: (Event) -> [String]?
+    func told(_ e: Event) -> [String]? {
+        guard case .array(let tags)? = line(e)?.facts["dream_tags"] else { return nil }
+        return tags.compactMap(\.string)
+    }
     /// Whether an event is the first time you show up today, and the sign
     /// for today's occasion, once, if it hasn't been shown: code's, whatever
     /// the brain picks of feeling and words.
-    let firstToday: (Event) -> Bool
+    func firstToday(_ e: Event) -> Bool { line(e)?.facts[TranscriptView.firstTodayFact] != nil }
     let occasion: (Int64) -> String?
     /// The pack's asks (`asks.md`), and those of its questions it may ask
     /// at an event, by the moment and the caps (`Asks.askable`).
@@ -86,7 +92,7 @@ public final class MomentOutput: Output {
     let today: () -> MemoryReader.Tallies?
     /// Whether the turn an event finished got past a failed check: only
     /// then may Boop say a word that claims a fix (`CharacterPack.claimsAFix`).
-    let fixed: (Event) -> Bool
+    func fixed(_ e: Event) -> Bool { (line(e)?.facts["checks_failed"]?.int ?? 0) > 0 }
 
     /// Whether `e` is an idle check-in.
     static func isCheckIn(_ e: Event) -> Bool { e.type == .checkIn && e.specificType == "check_in" }
@@ -176,18 +182,17 @@ public final class MomentOutput: Output {
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
                 nap: @escaping (Int64) -> Void = { _ in },
                 talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Narration? = { _ in nil },
-                dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil },
-                firstToday: @escaping (Event) -> Bool = { _ in false }, occasion: @escaping (Int64) -> String? = { _ in nil },
+                dreams: [TaggedLine] = [], line: @escaping (Event) -> Line? = { _ in nil },
+                occasion: @escaping (Int64) -> String? = { _ in nil },
                 asks: [TaggedLine] = [],
                 askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] },
                 wishable: @escaping (Event, LogView) -> [Core.WishKind] = { _, _ in [] },
                 makeWish: @escaping (Core.WishKind, Int64) -> Void = { _, _ in },
                 wishDone: @escaping (Core.WishKind) -> Bool = { _ in false },
-                today: @escaping () -> MemoryReader.Tallies? = { nil }, fixed: @escaping (Event) -> Bool = { _ in false },
+                today: @escaping () -> MemoryReader.Tallies? = { nil },
                 felt: @escaping (Int64) -> [Memory.Felt] = { _ in [] }, seed: UInt64 = 0x7A4E) {
         self.today = today
         self.felt = felt
-        self.fixed = fixed
         let own = voice.map(SplitMix64.seed(of:)) ?? 0
         takes = SplitMix64(seed: seed ^ own)
         self.pack = pack
@@ -211,8 +216,7 @@ public final class MomentOutput: Output {
         self.talk = talk
         self.reason = reason
         self.dreams = dreams
-        self.told = told
-        self.firstToday = firstToday
+        self.line = line
         self.occasion = occasion
         self.asks = asks
         self.askable = askable
