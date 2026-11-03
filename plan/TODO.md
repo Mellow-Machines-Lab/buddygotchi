@@ -17,6 +17,9 @@ No Jev requests went to these, as the day's limit was nearly spent:
 
 For the owner to decide or look at:
 
+- [ ] A board power-cycled with no Mac draws a full Buddy until the first state, since
+      it doesn't save its stage. A Hatchling looks full-grown for those seconds. Left:
+      saving it means writing flash on every stage change, for a moment's look.
 - [ ] `memory-days.json` as it stands: entries in `added` from updated notes still
       count as deleted, and `signs` of "" from Apple Intelligence being off still
       count as refused. Nothing tells them apart; deleting the file's `added` and those
