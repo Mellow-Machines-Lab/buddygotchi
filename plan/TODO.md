@@ -1,6 +1,6 @@
 # TODO
 
-Updated 2026-11-02. What's next, one at a time, top first. Tick an item
+Updated 2026-11-03. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
@@ -24,7 +24,7 @@ A is the only level that holds the musts, and it keeps moods fluid. B's judged f
 
 **Evals on what landed:** the musts on the final tree are 17/18. `129` (hush) fails twice: the hush it picks is too small. Standard wasn't re-run after the prompt cut's run, so feel isn't judged on the final tree. On level A, the judge's re-run confirmed 7 unreasonable: `11`, `19`, `47`, `90`, `91`, `96`, `140`: special days are flat, and quick wins repeat. The judge passed its test, 10 of 10, on deliberately obvious made-up runs only. The feel briefs were written by an agent and not read one by one. `27` moved to must by my call.
 
-**Wishes:** no cap in code, as the owner said. A guideline alone gave no wish; one added line in the sign question gave one, in one Chatty run, at 39 min. Normal talk is unmeasured.
+**Wishes:** no cap in code, as the owner said. Measured on simulated workdays (`173-a-workday`, other seeds in scratch, 2026-11-03). Normal, final words: one wish a day on 5 of 5 days, at 09:43 to 10:45, the first check-in on one day and the second or third on the others (2 of them full runs, 3 with only the quiet stretches sent to Jev). A busy day with quiet only after lunch got one on 2 of the 4 seeds tried, in the wording before; those two kept theirs. A wish left too long brought a second within the hour on 5 of 6 days, and on 4 of 4 with a guideline alone; the sign question's words stopped it on the 2 days measured since, with a thin margin over none (0.47 to 0.53 on Quiet). Chatty and Quiet: one partial run each, one wish each. Watch real days for that second wish, and for days with no quiet half hour.
 
 **Jev requests:** 2,336 on Nov 1 and 283 on Nov 2 by the limit's count, which began partway through Nov 1 (before it, one full run of about 1,000 isn't counted).
 

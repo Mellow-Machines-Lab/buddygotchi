@@ -232,6 +232,9 @@ public struct Scenario: Sendable {
     /// How much it says, chosen in Settings, told in CONTEXT's Talk row
     /// and held in code, as in the app: normal unless the file says.
     public var talk: Talk
+    /// The seed for when check-ins fall: 1 unless the file says, so a run
+    /// repeats. Another seed is another day's timing, as the app's differ.
+    public var seed: UInt64 = 1
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
     public var mood: String
@@ -279,7 +282,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = brief?.judge ?? (o["case"] as? String),
               let why = brief != nil ? "" : (o["why"] as? String), let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
+        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -363,6 +366,7 @@ public struct Scenario: Sendable {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
             return $0
         } ?? MoodOutput.initial
+        if let n = o["seed"] as? Int { seed = UInt64(max(0, n)) }
         steps = try raw.enumerated().map { i, s in
             func badStep(_ why: String) -> Error { bad("step \(i + 1): \(why)") }
             guard let event = s["event"] as? String, Scenario.events.contains(event) else {
@@ -797,7 +801,7 @@ public struct Eval {
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
                         isRunning: { _ in true }, archive: { _ in .open })
         core.setWallClock(start, at: start)
-        let view = TranscriptView(rules: rules, seed: 1)
+        let view = TranscriptView(rules: rules, seed: scenario.seed)
         let home = DispatchQueue(label: "boop.eval")
         // The brain is asked for each event straight through, not by the
         // loop (`respond`), on the virtual clock.
