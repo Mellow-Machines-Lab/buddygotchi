@@ -90,7 +90,12 @@ public final class Reactions {
 
     /// What cut a reaction short, as its end says it; a tap's holds it
     /// until the pokes stop, and `reset` is a tool's.
-    static let cutBy = ["now": "something newer played", "needs_you": "something needed you"]
+    static let cutBy = [
+        "now": "something newer played",
+        "needs_you": "something needed you",
+        BoopDevice.micOn: "the mic went on",
+        "facedown": "it was put face down",
+    ]
 
     /// Why the board's behaviour refused a reaction, as its end says it:
     /// HISTORY tells the brain what really happened.

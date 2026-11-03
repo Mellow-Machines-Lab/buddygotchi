@@ -55,7 +55,8 @@ class TouchGesture {
   bool held(uint32_t t) const;
   // What it was, on release: a gesture names the board's own reaction to it
   // in g, and a swipe the stroke (or the ruffle) it would be, slower.
-  Kind up(render::Gesture& g) const;
+  // The nose is `noseDrop` under its usual place (render::Face::noseDrop).
+  Kind up(render::Gesture& g, int noseDrop = 0) const;
   // How fast the finger moved over its last kFlingMs, in px a second; none
   // for a finger that was still.
   void velocity(int& vx, int& vy) const;

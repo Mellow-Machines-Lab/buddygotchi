@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 
 #include "render/maths.h"
@@ -24,6 +25,8 @@ const char* cutByName(CutBy c) {
   switch (c) {
     case CutBy::kTap: return "tap";
     case CutBy::kNeedsYou: return "needs_you";
+    case CutBy::kMicOn: return "mic_on";
+    case CutBy::kFaceDown: return "facedown";
     default: return nullptr;
   }
 }
@@ -107,6 +110,8 @@ bool Behaviour::exprOn(uint32_t t) const { return expr_ && within(t, exprAt_, ex
 
 bool Behaviour::signOn(uint32_t t) const { return sign_.text[0] && within(t, sign_.at, sign_.ms); }
 
+bool Behaviour::signDue(uint32_t t) const { return sign_.text[0] && int32_t(t - sign_.at) < int32_t(sign_.ms); }
+
 bool Behaviour::askOn(uint32_t t) const { return ask_.q[0] && within(t, ask_.at, kAskMs); }
 
 bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
@@ -159,9 +164,10 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
 // change.
 void Behaviour::resync(uint32_t t) {
   if (say_.take >= 0 && !sayDue(t)) say_ = Say{};
-  if (sign_.text[0] && !signOn(t)) signGoes(signEnd());
+  if (sign_.text[0] && !signDue(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
+  bar_.sweep(t);
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;
@@ -173,6 +179,7 @@ void Behaviour::resync(uint32_t t) {
       done_.ending = true, done_.endAt = t, done_.endMs = kFinishLingerMs;
     liftFinishSign(t);
     if (done_.agent[0] && done_.ending && !within(t, done_.endAt, done_.endMs)) done_ = Done{};
+    if (greetKey_ && !holds(greetKey_, t)) greetKey_ = 0, followStream(t);
     if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true, aloneFrom_ = t, lookAt_ = t;
     if (stale_ && !aloneAsleep_ && !within(t, aloneFrom_, kAloneSleepMs)) aloneAsleep_ = true, lookAt_ = t;
   });
@@ -189,12 +196,18 @@ void Behaviour::resync(uint32_t t) {
 // playing, and the kit ended any before it when the queue started this one.
 bool Behaviour::holds(uint32_t key, uint32_t t) const {
   return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) || (exprOn(t) && exprKey_ == key) ||
-         (signOn(t) && sign_.key == key) || (askOn(t) && ask_.key == key);
+         (signDue(t) && sign_.key == key) || (askOn(t) && ask_.key == key);
 }
 
 // The first cut is the one reported.
 void Behaviour::cut(uint32_t key, CutBy by) {
   if (playing_.key == key && playing_.by == CutBy::kNone) playing_.by = by;
+}
+
+// A greeting's sign is its point: one taken down before its time was cut, by
+// this, whatever a touch reported before it, and the Mac tells it again.
+void Behaviour::greetingSignCut(CutBy by, uint32_t t) {
+  if (greetKey_ && signDue(t) && sign_.key == greetKey_ && playing_.key == greetKey_) playing_.by = by;
 }
 
 void Behaviour::sweep(uint32_t t) {
@@ -235,6 +248,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     const bool back = noApp(t);
     bool look = back || m.attn != model_.attn || m.look() != model_.look();
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
+    bar_.heard(m.xp, render::growthStage(model_.when), render::growthStage(m.when), barHidden(m, back, t), t);
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
@@ -250,6 +264,8 @@ void Behaviour::onState(const Model& m, uint32_t t) {
         cut(reaction_.key, CutBy::kNeedsYou), reaction_.anim = render::SceneState::kNone;
       done_ = Done{};  // its own screen takes the face at once
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
+      greetingSignCut(CutBy::kNeedsYou, t);
+      greetKey_ = 0;
       say_ = Say{};  // no `say`, sign or ask while something needs you
       if (ask_.q[0]) endAsk("ignored", t);
       sign_ = gone_ = reason_ = Sign{};
@@ -263,8 +279,17 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       playAnim(render::SceneState::kNotice, t, CutBy::kNone, 1, m.mood, 0);
     heard_ = true;
   });
-  stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
-  stream_.setAct(m.workAct, m.attn || listening(t), t);  // both hold the screen
+  followStream(t);
+}
+
+void Behaviour::followStream(uint32_t t) {
+  const Model& m = model_;
+  const bool greeting = greetingOn(t);
+  // A greeting clears the words at once, and they fall again after it, on
+  // the clock they'd have kept, as after a needs-you.
+  const bool held = m.attn || greeting;  // each holds the screen
+  stream_.setLanes(m.lanes, greeting ? 0 : m.laneCount, m.base == render::SceneState::kWorking && !held, held, t);
+  stream_.setAct(greeting ? render::Stream::ActIn{} : m.workAct, held || listening(t), t);
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;
@@ -288,8 +313,9 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 // until the reply: a reaction with a `say` is the reply, and ends it before
 // playing as it would have; so does stop_listening, which does nothing
 // else. Nothing else ends it or plays while it waits: not a rule's
-// reaction, a finish or a face without a `say`. A listening reaction while
-// listening carries on with the same design, its time starting over.
+// reaction, a finish or a face without a `say`; only a met wish's heart goes
+// on over it. A listening reaction while listening carries on with the same
+// design, its time starting over.
 // The reply to what you said (`reply`, with a face) shows over needs you
 // too, as listening did: its face, its clip and its sign, but no `say`;
 // then the needs-you screen is back.
@@ -312,7 +338,9 @@ const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   if (faceDown_ && !listen) return "facedown";  // do not disturb
   if (partsOf(in, t).any()) return nullptr;
   if (noApp(t)) return "no_app";
-  if (listening(t)) return "listening";
+  // Push-to-talk met it, with listening still waiting for the reply: its heart
+  // goes on, over the listening face.
+  if (listening(t)) return in.wishMet ? nullptr : "listening";
   if (model_.attn) return "needs_you";
   return in.wishMet ? nullptr : "nothing";
 }
@@ -352,7 +380,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       expr_ = true;
       exprMood_ = in.mood;
       exprAt_ = t;
-      copyStr(exprReply_, sizeof(exprReply_), in.reply);
+      copyStr(exprReply_, sizeof(exprReply_), in.reply[0] ? in.reply : in.clip);
       exprMs_ = anim ? reaction_.ms : holdMs(in.mood, in.loops, t);
       if (say && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprKey_ = in.key;
@@ -360,12 +388,20 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
     if (sign) {  // as long as the rest of it plays, from now, and long enough to read
       copyStr(sign_.text, sizeof(sign_.text), in.sign);
       sign_.reply = in.expr && in.reply[0];
+      sign_.low = in.low;
       sign_.at = t;
-      sign_.ms = kSignMinMs;
+      sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
       if (anim && !listen) sign_.ms = std::max(sign_.ms, reaction_.ms);
       if (say) sign_.ms = std::max(sign_.ms, voice + say_.ms);
       if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
       sign_.key = in.key;
+      // A greeting's or a low one's waits until its words end, as a finish's
+      // name does, and the face it came with holds while it's read.
+      if ((in.greeting || in.low) && say) {
+        sign_.at = say_.at + say_.speakMs;
+        sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
+        if (in.expr) exprMs_ = std::max(exprMs_, sign_.at + sign_.ms - exprAt_);
+      }
     }
     // Why it plays, in the lane, as long as its sign would show; a newer
     // reaction with none takes the old one down.
@@ -406,6 +442,8 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       liftFinishSign(t);
     }
     if (in.key) playing_ = PlayedOut{in.key, CutBy::kNone};
+    greetKey_ = in.greeting ? in.key : 0;
+    followStream(t);
   });
   return say;
 }
@@ -528,6 +566,7 @@ void Behaviour::talkOn(uint32_t t, Rng& rng) {
     } else {
       uint8_t v = pick(render::SceneState::kListening, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
       if (ask_.q[0]) endAsk("ignored", t);
+      greetingSignCut(CutBy::kMicOn, t);
       endSay(t, CutBy::kTap);
       playAnim(render::SceneState::kListening, t, CutBy::kTap, 1, model_.mood, v);
     }
@@ -587,6 +626,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.attention = model_.attn;
   c.borrowed = exprOn(t);
   const bool alone = noApp(t);
+  c.alone = alone;
   if (alone) {
     c.look = c.base = look(t);
     c.working = c.mayVary = c.attention = c.borrowed = false;
@@ -599,9 +639,10 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.thread = model_.name;
   c.more = model_.more;
   // With no app the Mac's tags are stale: a night's or a holiday's would
-  // stay up all the next day.
-  c.when = alone && !sleptThrough() ? 0 : model_.when;
+  // stay up all the next day. Its growth stage isn't: a Hatchling stays one.
+  c.when = alone && !sleptThrough() ? model_.when & render::kGrowthTags : model_.when;
   c.lookMs = t - lookAt_;
+  c.growthWaits = bar_.waits(t);
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
 }
@@ -640,6 +681,7 @@ uint8_t Behaviour::backlight(uint32_t t) const {
 void Behaviour::setFaceDown(bool down, uint32_t t) {
   change(t, [&] {
     faceDown_ = down;
+    if (down) greetingSignCut(CutBy::kFaceDown, t);
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
     if (down && signOn(t)) signGoes(t);
     if (down && ask_.q[0]) endAsk("ignored", t);
@@ -743,6 +785,7 @@ render::WishShow Behaviour::wishShow(uint32_t t) const {
   if (noApp(t)) return show;  // nothing waits on a Mac that isn't there
   if (wishPop_ != render::WishShow::kWaiting && t - wishPopAt_ < render::WishShow::kPopMs) {
     show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
+    show.flies = wishPop_ == render::WishShow::kMet && bar_.heart();
   } else {
     show.kind = model_.wish;
     show.how = model_.wishHow;
@@ -755,6 +798,16 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
   if (lastWish_ == render::WishShow::kNone) return;
   wishPop_ = met ? render::WishShow::kMet : render::WishShow::kGone;
   wishPopAt_ = t;
+  if (!met) return;
+  bar_.heartComes(model_.xp, t);
+}
+
+bool Behaviour::barHidden(const Model& m, bool alone, uint32_t t) const {
+  return alone || m.attn || m.base == render::SceneState::kAsleep || faceDown_;
+}
+
+render::GrowthShow Behaviour::growthShow(uint32_t t) const {
+  return bar_.show(render::growthStage(model_.when), barHidden(model_, noApp(t), t), t);
 }
 
 // With no app, no `say` shows: it outranks the reactions.
@@ -816,8 +869,9 @@ render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
   if (noApp(t) || (model_.attn && !(signOn(t) ? sign_ : gone_).reply)) return s;
   if (signOn(t)) {
-    s.text = sign_.text, s.ms = t - sign_.at;
-  } else if (gone_.text[0] && within(t, goneAt_, render::rig::kFadeMs)) {
+    s.text = sign_.text, s.ms = t - sign_.at, s.low = sign_.low;
+    if (sign_.low) s.leftMs = int32_t(sign_.at + sign_.ms - t);
+  } else if (gone_.text[0] && !gone_.low && within(t, goneAt_, render::rig::kFadeMs)) {  // a low one has fallen away
     s.text = gone_.text, s.ms = t - gone_.at;
     s.opacity = 1000 - render::ease1000(int(t - goneAt_), int(render::rig::kFadeMs));
   }

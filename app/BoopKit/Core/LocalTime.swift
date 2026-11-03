@@ -139,6 +139,9 @@ public struct LocalTime: Sendable {
 
 /// A small seeded generator, so rule timings are repeatable in tests.
 public struct SplitMix64: Sendable {
+    /// A seed from a name, the same one each launch.
+    public static func seed(of text: String) -> UInt64 { text.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) } }
+
     var state: UInt64
     public init(seed: UInt64) { state = seed }
 

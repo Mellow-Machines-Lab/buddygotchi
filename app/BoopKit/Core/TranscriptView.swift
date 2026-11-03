@@ -142,6 +142,12 @@ public final class TranscriptView {
         /// The newest dream not yet told (a `dream` event): the first line
         /// that's yours while you're at the Mac tells it.
         var untold: Event?
+        /// The line that's telling it, until the moment it brought has
+        /// played: its event, when it came, and the moment's `did`, once one
+        /// started.
+        var telling: (seq: Int, at: Int64, did: Int?)?
+        /// The Boop day you last showed up on.
+        var shownUp: String?
         /// The buddies lying face down (`""` for the only one), from their
         /// `facedown` until their `peekaboo`.
         var faceDown: Set<String> = []
@@ -274,7 +280,7 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "grew": 1, "act_start": 0, "act_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
@@ -372,6 +378,9 @@ public final class TranscriptView {
         return whose(take(e), e)
     }
 
+    /// The clock Boop's days go by: the pipeline's, before the first event.
+    var time = LocalTime()
+
     /// The buddies when there are several (`Buddy`), for whose lines are
     /// whose, else the only one's name: the pipeline sets them, before the
     /// first event.
@@ -395,23 +404,65 @@ public final class TranscriptView {
         if e.type == .dream {
             fold.at = max(fold.at, e.seq)
             fold.untold = e
+            fold.telling = nil
             return nil
         }
-        return told(foldLine(e), e)
+        played(e)
+        return told(firstToday(foldLine(e), e), e)
+    }
+
+    /// Marks the first time you show up on a Boop day: your coming back or,
+    /// with none, your first touch. What Boop does then is the day's
+    /// greeting (`Moment.greeting`), and the narration leads with the day's
+    /// count.
+    func firstToday(_ line: Line?, _ e: Event) -> Line? {
+        guard var line, Self.showsUp(e), fold.away.since == nil else { return line }
+        let today = time.boopDay(e.at)
+        guard fold.shownUp != today else { return line }
+        fold.shownUp = today
+        line.facts[Self.firstTodayFact] = true
+        return line
+    }
+
+    /// A line's fact: it's the first time you show up today.
+    public static let firstTodayFact = "first_today"
+
+    /// Whether `e` is you showing up: back at the Mac, or a touch.
+    static func showsUp(_ e: Event) -> Bool { (e.type == .presence && e.phase == .end) || Yours.touch(e) }
+
+    /// How long a line that tells the dream waits for its moment to start
+    /// before another may tell it: past a pass's deadline. A moment that
+    /// started ends by itself, within `MomentOutput.openForMs`.
+    static let tellingWaitMs: Int64 = 60_000
+
+    /// Follows the moment that tells the dream: played through, or until
+    /// your touch cut it (which `Reactions` reads as done, as you saw it
+    /// begin), the dream has been told; failed (cut by a needs-you, refused,
+    /// never sent), it's still to tell.
+    func played(_ e: Event) {
+        guard e.fromHarness, e.action == MomentOutput.outputName, let telling = fold.telling, let about = e.about else { return }
+        if e.kind == Event.did, about == telling.seq {
+            if e["ok"]?.bool == true { fold.telling?.did = e.seq } else { fold.telling = nil }
+        } else if e.kind == Event.ended, about == telling.did {
+            if e["outcome"]?.string == "done" { fold.untold = nil }
+            fold.telling = nil
+        }
     }
 
     /// Tells the dream not yet told the first time you show up after it
     /// was dreamed: your coming back or, with none, your first touch (a
     /// poke or a care gesture). Never a prompt (it has its own sign), a
     /// word to the buddy (its reply's sign), an agent's event or a
-    /// check-in, so it never plays to an empty room. Its facts say which
-    /// dream, for the memory to mark it told, the reason and the dream's
-    /// signs.
+    /// check-in, so it never plays to an empty room. It stays untold until
+    /// the moment has played (`played`): a brain that failed or a needs-you
+    /// doesn't lose it, and your next showing up tells it. Its facts say
+    /// which dream, for the memory to mark it told, the reason and the
+    /// dream's signs.
     func told(_ line: Line?, _ e: Event) -> Line? {
-        let showsUp = (e.type == .presence && e.phase == .end) || Yours.touch(e)
-        guard var line, let dream = fold.untold, showsUp, fold.away.since == nil,
+        guard var line, let dream = fold.untold, Self.showsUp(e), fold.away.since == nil,
               let about = (dream["about"] ?? dream["weekday"])?.string, let sentence = dream["sentence"]?.string else { return line }
-        fold.untold = nil
+        if let telling = fold.telling, telling.did != nil || e.at - telling.at < Self.tellingWaitMs { return line }
+        fold.telling = (e.seq, e.at, nil)
         let told = EventLine.dreamed(about: about, sentence: sentence, name: name(e))
         line.notes.append(told)
         line.facts["dream_day"] = dream["day"] ?? .null
@@ -485,6 +536,7 @@ public final class TranscriptView {
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name(e), why: e.specificType))
+        case .grew?: return Line(EventLine.grew(e.specificType, name: name(e)), facts: ["stage": .string(e.specificType)])
         case .wish?:
             if e.phase == .start { return Core.WishKind(rawValue: e.specificType).map { Line(EventLine.wished($0, name: name(e))) } }
             guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }

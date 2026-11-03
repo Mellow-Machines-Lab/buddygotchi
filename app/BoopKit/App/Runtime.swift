@@ -65,6 +65,9 @@ public final class Runtime: @unchecked Sendable {
         /// Every message sent to the device, as it's sent, for whoever
         /// records them (`DemoRecorder`). On whichever thread sends it.
         public var onDeviceLine: (@Sendable (String) -> Void)?
+        /// Boop full size whatever its XP, for a demo: from before the
+        /// first `state`, which goes out before a demo's first step.
+        public var fullSize = false
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
@@ -348,7 +351,7 @@ public final class Runtime: @unchecked Sendable {
             let link = rig.link, pack = rig.buddy.pack, rigCore = made.core(rig.buddy.id)
             // Each buddy speaks its own pack's personality. Only the first
             // is the one long-term.md set up.
-            return Mind(buddy: rig.buddy, steering: rig.steering,
+            var mind = Mind(buddy: rig.buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
                         talk: { talkNow() }, effects: { effected(rig, $0) },
@@ -358,6 +361,10 @@ public final class Runtime: @unchecked Sendable {
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
+            if rig === rigs[0] {
+                mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
+            }
+            return mind
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -394,7 +401,7 @@ public final class Runtime: @unchecked Sendable {
         // read as the day they came, then a dream not yet told logged again
         // if its event has left the log. Its days close from the next input.
         if !fellBack {
-            let remembers = Memory(store: values, time: options.time, writer: AppleIntelligenceWriter.onThisMac, files: memory,
+            let remembers = Memory(store: values, time: options.time, writer: MemoryPipelineWriter(), files: memory,
                                    queue: home, note: log)
             remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
@@ -406,9 +413,11 @@ public final class Runtime: @unchecked Sendable {
         // The cores read the growth stage where the growth store keeps it.
         // Weak: the runtime holds the cores.
         for rig in rigs {
-            core(rig).stage = { [weak self] in self?.growth.growth.stage ?? 1 }
+            core(rig).stage = { [weak self] in self.map { $0.showsGrowth ? $0.growth.growth.stage : 3 } ?? 3 }
+            core(rig).growthPercent = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growth.growth.percent : nil } }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
+        growth.decay(today: options.time.day(options.wallClock()))
         if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }
@@ -438,7 +447,7 @@ public final class Runtime: @unchecked Sendable {
         harness.on(Event.did) { [weak self] e in
             guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
             let rig = rig(e.buddy)
-            run(core(rig).moodChanged(at: options.clock()), on: rig)
+            run(core(rig).stateChanged(at: options.clock()), on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged, never the read-back's: those were
@@ -447,7 +456,7 @@ public final class Runtime: @unchecked Sendable {
         // what it earns, uncapped.
         let grow: (Event, Int) -> Void = { [weak self] e, earned in
             guard let self else { return }
-            let before = growth.growth.stage, now = options.clock()
+            let before = growth.growth.stage, percent = growth.growth.percent, now = options.clock()
             let wall = options.wallClock()
             guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
             grew = true
@@ -455,6 +464,8 @@ public final class Runtime: @unchecked Sendable {
             // celebrates it now, unless Boop hatched today.
             if growth.growth.stage > before {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
+            } else if growth.growth.percent != percent {
+                for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
             }
         }
         if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
@@ -468,15 +479,18 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
-                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
+                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
+                               felt: ((Int64) -> [Memory.Felt])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
         let core = pipeline.core
-        let mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
+        var mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
                         queue: queue, speaks: speaks, talk: talk, memory: memory,
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
                         company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
+        if let seed { mind.seed = seed }
+        mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -664,6 +678,7 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock(), wall = options.wallClock()
         for rig in rigs { core(rig).setWallClock(wall, at: now) }
         run(pipeline.tick(at: now))
+        goBackwards(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
         var troubled = false
@@ -848,4 +863,18 @@ public final class Runtime: @unchecked Sendable {
 extension Duration {
     /// In whole milliseconds.
     var ms: Int { Int(components.seconds * 1000 + components.attoseconds / 1_000_000_000_000_000) }
+}
+
+extension Runtime {
+    /// Whether the board shows Boop's real growth: a demo, or `fullSize`,
+    /// draws Boop full size, with no bar.
+    var showsGrowth: Bool { !options.fullSize && !playingDemo }
+
+    /// Boop left alone goes backwards, once for each day past the grace,
+    /// which shows on the board at once.
+    func goBackwards(at now: Int64) {
+        guard growth.decay(today: options.time.day(options.wallClock())) else { return }
+        changed()
+        for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
+    }
 }

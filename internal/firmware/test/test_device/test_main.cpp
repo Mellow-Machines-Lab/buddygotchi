@@ -2472,6 +2472,20 @@ static void test_a_stroke_keeps_its_answer_when_it_meets_a_wish() {
   TEST_ASSERT_TRUE(has(momentOf(s), "gesture"));
 }
 
+// A wish met plays whole: its sign is up for its time before anything else may
+// replace it, so Jev's reply waits.
+static void test_a_wish_mets_sign_is_read_before_the_next() {
+  Rig r;
+  clockAt(r, 1000);
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"wish\":\"pet\"}");
+  doLine(r, 1, "wish_met", "next", "{\"sign\":\"<3\"}");
+  doLine(r, 2, "react", "next", "{\"sign\":\"good\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":2500}");
+  TEST_ASSERT_FALSE(has(r.usb.text, endedLine(1, "done")));
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":3500}");
+  TEST_ASSERT_TRUE(has(r.usb.text, endedLine(1, "done")));
+}
+
 // A touch from (160, 60) straight down to (160, 200) over `ms`, on a frozen
 // clock from 1000 ms, a reading every `stepMs`, until `until`.
 static void strokeDown(Rig& r, uint32_t ms, uint32_t stepMs, uint32_t until) {
@@ -2942,6 +2956,7 @@ int main() {
   RUN_TEST(test_a_call_comes_forward_over_the_work);
   RUN_TEST(test_a_wish_left_plays_at_once);
   RUN_TEST(test_a_stroke_keeps_its_answer_when_it_meets_a_wish);
+  RUN_TEST(test_a_wish_mets_sign_is_read_before_the_next);
   RUN_TEST(test_boot_only_shuts_the_open_drawer);
   RUN_TEST(test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px);
   RUN_TEST(test_a_pick_is_the_row_the_finger_went_down_on);

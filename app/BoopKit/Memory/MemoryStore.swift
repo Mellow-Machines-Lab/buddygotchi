@@ -57,6 +57,101 @@ public final class MemoryStore {
         try Data(memory.markdown.utf8).write(to: dir.appendingPathComponent(WrittenMemory.fileName), options: .atomic)
     }
 
+    /// `memory-days.json`: what the proposer counts habits from, a digest a
+    /// dream, and the notes it has added, so one you deleted stays gone.
+    public struct Days: Codable, Equatable, Sendable {
+        public var digests: [DayDigest] = []
+        /// The notes the dream added, in the words they have now: one here
+        /// but not in `memory.md` is one you deleted.
+        public var added: [String] = []
+        /// Each note's short line in the pet's voice, by the note's text, ""
+        /// for a note whose line the checks refused.
+        public var signs: [String: String] = [:]
+        public init() {}
+
+        /// As `DayDigest`: a field the file doesn't have takes its default.
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            digests = try c.decodeIfPresent([DayDigest].self, forKey: .digests) ?? []
+            added = try c.decodeIfPresent([String].self, forKey: .added) ?? []
+            signs = try c.decodeIfPresent([String: String].self, forKey: .signs) ?? [:]
+        }
+
+        /// The most digests kept: more than the proposer looks at.
+        public static let kept = 60, addedKept = 200
+
+        /// With `digest` in, joined to one for the same day, and `notes` added.
+        public func keeping(_ digest: DayDigest, added notes: [String]) -> Days {
+            var out = self
+            if let i = out.digests.lastIndex(where: { $0.day == digest.day }) {
+                out.digests[i] = out.digests[i].joined(with: digest)
+            } else {
+                out.digests.append(digest)
+            }
+            out.digests = Array(out.digests.suffix(Self.kept))
+            out.added = Array((out.added + notes).suffix(Self.addedKept))
+            return out
+        }
+
+        /// `added` as a dream's edits leave it, from `before` to `next`: a
+        /// note it updated goes by its new words, and one it let go (dropped
+        /// to make room, or aged out) isn't one you deleted, so it may come
+        /// back. New notes join it.
+        public func following(_ report: MemoryEdits.Report, from before: WrittenMemory, to next: WrittenMemory) -> Days {
+            func text(_ id: Int, _ memory: WrittenMemory) -> String? { memory.notes.first { $0.id == id }?.text }
+            var out = self
+            for id in report.updated {
+                guard let old = text(id, before), let new = text(id, next), let i = out.added.firstIndex(of: old) else { continue }
+                out.added[i] = new
+            }
+            let gone = (report.dropped + report.aged).compactMap { text($0, before) }
+            out.added.removeAll(where: gone.contains)
+            out.added = Array((out.added + report.added.compactMap { text($0, next) }).suffix(Self.addedKept))
+            return out
+        }
+    }
+
+    public static let daysFile = "memory-days.json"
+
+    /// Forgets what the kept files hold about you, with `memory.md` as you
+    /// left it: the digests but for their care counts (`DayDigest.forgotten`),
+    /// a note in `added` that quotes anything and is gone (the rest stay
+    /// there, so those stay gone), the lines of notes gone, a bad file moved
+    /// aside, and every older copy of `memory.md` in `history/`.
+    public func forgetLearned() throws {
+        let memory = written()
+        let notes = Set(memory.notes.map(\.text))
+        var days = days()
+        days.digests = days.digests.map(\.forgotten)
+        days.added.removeAll { $0.contains("\"") && !notes.contains($0) }
+        days.signs = days.signs.filter { notes.contains($0.key) }
+        try keep(days)
+        try? FileManager.default.removeItem(at: url(Self.daysFile + ".broken"))
+        let history = directory.appendingPathComponent(Self.historyDir).path
+        for day in (try? FileManager.default.contentsOfDirectory(atPath: history)) ?? [] {
+            let copy = historyURL(day).appendingPathComponent(WrittenMemory.fileName)
+            if let text = try? String(contentsOf: copy, encoding: .utf8), text != memory.markdown { try FileManager.default.removeItem(at: copy) }
+        }
+    }
+
+    /// The kept days. A file that won't read moves aside, as
+    /// `memory-days.json.broken`, so the next write doesn't take it with it.
+    public func days() -> Days {
+        guard let data = try? Data(contentsOf: url(Self.daysFile)) else { return Days() }
+        do {
+            return try JSONDecoder().decode(Days.self, from: data)
+        } catch {
+            keepBroken(Self.daysFile)
+            try? FileManager.default.removeItem(at: url(Self.daysFile))
+            log("memory: \(Self.daysFile) didn't read (\(error)); moved it to \(Self.daysFile).broken, and the days start again")
+            return Days()
+        }
+    }
+
+    public func keep(_ days: Days) throws {
+        try write(String(decoding: try JSONEncoder().encode(days), as: UTF8.self), Self.daysFile)
+    }
+
     // MARK: Files
 
     func url(_ file: String) -> URL { directory.appendingPathComponent(file) }

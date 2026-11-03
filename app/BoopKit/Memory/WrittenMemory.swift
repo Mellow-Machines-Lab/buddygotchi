@@ -2,7 +2,7 @@ import Foundation
 import MellowHarness
 
 /// The written memory, `memory.md`: short notes in three sections (You,
-/// Your work, You and Boop) that Apple Intelligence edits as Boop dreams
+/// Your work, You and Boop) that the dream edits as Boop dreams
 /// (`MemoryEdits`), and a line a day for the last week (Recently). Jev
 /// reads it as MEMORY. Plain Markdown the person may read and edit: a
 /// deleted line is gone for good, "pinned" keeps a note from aging and
@@ -75,12 +75,16 @@ public struct WrittenMemory: Equatable, Sendable {
 
     public func notes(in section: Section) -> [Note] { notes.filter { $0.section == section } }
 
+    /// The notes' ids, section by section: the numbers 1 to N a dream's
+    /// edits call them by.
+    public var numbered: [Int] { Section.allCases.flatMap { notes(in: $0).map(\.id) } }
+
     /// The next note's id.
     public var nextId: Int { (notes.map(\.id).max() ?? 0) + 1 }
 
     static let recentlyHeading = "Recently"
     static let intro = """
-        Written by Apple Intelligence on this Mac as Boop dreams. Delete a line to
+        Written on this Mac as Boop dreams. Delete a line to
         make Boop forget it, or add "pinned" to keep it.
         """
 

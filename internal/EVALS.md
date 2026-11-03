@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-02. How we check that Jev decides as Boop should: short
+Updated 2026-11-03. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -65,6 +65,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
+| `grew` | Boop's XP reaches the stage the step's `kind` names (`Sprout` unless it says), as `Core.reachedStage` hears it: a `grew` event, `Boop grew: it's a Sprout now.`, a pass |
 | `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
@@ -257,6 +258,8 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, at every level, when the default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
+| `signs` | The remembered lines the run may offer, each note's text and its line (`"You stay up late on Fridays.": "u stay up late fridays"`): what `Memory.felt` would offer, for an idle check-in's sign question |
+| `seed` | When check-ins fall within their gaps, 1 unless the file says: the same seed repeats, and another is another day's timing with the same steps. Jev answers much the same at the same prompt, so runs of one seed are nearly one sample: to measure something across days, as `173`'s wishes, copy the file with other seeds into a directory for `--scenarios` |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`): none by default |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |

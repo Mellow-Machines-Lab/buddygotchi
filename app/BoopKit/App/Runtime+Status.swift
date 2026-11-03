@@ -147,6 +147,9 @@ extension Runtime {
                                        specialDays: Days.special(at: wall, hatched: config.hatched, name: name,
                                                                       stage: config.stageReached, time: options.time),
                                        asleep: status.snapshot.doing == "asleep", gel: status.device?.face != .pixel)
+        if let words = growth.shrankWords(today: options.time.day(wall), name: name) {
+            status.dressing.insert(Narration.Dressing(kind: .shrank, why: words, what: nil), at: 0)
+        }
         status.talk = talk
         status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: Double(wall + $0.until - now) / 1000) }
         status.uncleanExit = uncleanExit

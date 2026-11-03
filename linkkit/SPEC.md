@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-11-01. The contract between a host (a Mac app) and a small
+Updated 2026-11-03. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: four messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -170,7 +170,7 @@ it then ends `done`).
 | `done` | — | It played through, or it was resting and something replaced it |
 | `cut` | `now` | A `now` `do` replaced it |
 | `cut` | `reset` | A tool sent `dbg.reset` |
-| `cut` | the app's | The app cut it: `tap`, `needs_you` |
+| `cut` | the app's | The app cut it: `tap`, `needs_you`, `mic_on`, `facedown` |
 | `skipped` | `late` | It waited longer than its `ttl` |
 | `skipped` | `busy` | It was `if_free` and a busy one was playing |
 | `skipped` | `full` | Too many `do`s were waiting, or there was no room to keep its `args` while it waited |

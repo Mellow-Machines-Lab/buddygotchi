@@ -40,7 +40,11 @@ def parse(path: str):
             cm = CLASS_RE.match(line)
             if cm:
                 name, conforms = cm.group(1), cm.group(2)
-                current = name if re.search(r"\bXCTestCase\b", conforms) else None
+                if re.search(r"\bXCTestCase\b", conforms):
+                    current = name
+                elif not line[0].isspace():
+                    current = None
+                # An indented one is local to a test: the tests after it are still this case's.
                 continue
             if current is None:
                 continue

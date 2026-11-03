@@ -232,6 +232,9 @@ public struct Scenario: Sendable {
     /// How much it says, chosen in Settings, told in CONTEXT's Talk row
     /// and held in code, as in the app: normal unless the file says.
     public var talk: Talk
+    /// The seed for when check-ins fall: 1 unless the file says, so a run
+    /// repeats. Another seed is another day's timing, as the app's differ.
+    public var seed: UInt64 = 1
     /// The mood the run starts in, as the dashboard would set it just
     /// before: calm, the resting mood, unless the file says.
     public var mood: String
@@ -248,8 +251,11 @@ public struct Scenario: Sendable {
     /// `memory.md` writes them without the id (`work · 2026-10-25 · "api"
     /// kept failing`), and Recently's lines (`2026-10-25 · a long day`).
     public var memory = WrittenMemory()
+    /// The notes' lines in the pet's voice it may bring up at an idle
+    /// check-in (`signs`: note, line).
+    public var felt: [Memory.Felt] = []
 
-    public static let events = ["wish", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
+    public static let events = ["wish", "grew", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "lock", "unlock", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
                                 "to-do list", "wait", "ask answered"]
 
@@ -279,7 +285,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = brief?.judge ?? (o["case"] as? String),
               let why = brief != nil ? "" : (o["why"] as? String), let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory"])
+        let unknownKeys = Set(o.keys).subtracting(["signs", "name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -291,6 +297,7 @@ public struct Scenario: Sendable {
             guard let text = t as? String, let ms = Scenario.date(text) else { throw bad("start is a UTC date and time, like 2026-10-31T09:00") }
             start = ms
         }
+        felt = (o["signs"] as? [String: String] ?? [:]).sorted { $0.key < $1.key }.map { Memory.Felt(line: $0.value, note: $0.key) }
         if let m = o["memory"] {
             guard let m = m as? [String: Any], Set(m.keys).isSubset(of: ["notes", "recently"]),
                   let notes = (m["notes"] ?? []) as? [String], let recently = (m["recently"] ?? []) as? [String] else {
@@ -363,6 +370,7 @@ public struct Scenario: Sendable {
             guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
             return $0
         } ?? MoodOutput.initial
+        if let n = o["seed"] as? Int { seed = UInt64(max(0, n)) }
         steps = try raw.enumerated().map { i, s in
             func badStep(_ why: String) -> Error { bad("step \(i + 1): \(why)") }
             guard let event = s["event"] as? String, Scenario.events.contains(event) else {
@@ -797,7 +805,7 @@ public struct Eval {
         let core = Core(config: .init(time: time, hatched: scenario.hatched), lastActiveDay: time.day(start),
                         isRunning: { _ in true }, archive: { _ in .open })
         core.setWallClock(start, at: start)
-        let view = TranscriptView(rules: rules, seed: 1)
+        let view = TranscriptView(rules: rules, seed: scenario.seed)
         let home = DispatchQueue(label: "boop.eval")
         // The brain is asked for each event straight through, not by the
         // loop (`respond`), on the virtual clock.
@@ -827,7 +835,9 @@ public struct Eval {
                     pending.finish(end)
                 }
             }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
-            remembers: remembers, wall: { clock.now })
+            // Its own words' order by its file, so a rerun says the same, and
+            // no two scenarios open on the same word.
+            remembers: remembers, seed: SplitMix64.seed(of: scenario.file), felt: { _ in scenario.felt }, wall: { clock.now })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
@@ -1170,6 +1180,9 @@ public struct Eval {
             // A wish made, as the brain's pick of its sign makes it.
             let kind = Core.WishKind(rawValue: step.kind ?? "") ?? .pet
             return [{ $0.effects($0.core.makeWish(kind, at: now), at: now) }]
+        case "grew":
+            // Boop's XP reaches a stage, named by the step's `kind`.
+            return [{ $0.effects($0.core.reachedStage(step.kind ?? "Sprout", celebrate: true, at: now), at: now) }]
         case "gesture":
             return [{ $0.gesture(step.kind ?? "stroke", request: $0.core.snapshot(at: now).attn?.id, at: now) }]
         // What the presence detector would decide: you

@@ -1,6 +1,6 @@
 # Character Studio
 
-Updated 2026-11-01. One page for everything a character pack makes its
+Updated 2026-11-02. One page for everything a character pack makes its
 character: who it is, how it feels, what it does and why, how it looks,
 what it says, and the tests that hold it to all that. Pick a pack, and its
 tabs show what's its own: its personality, its moods and what moves them,
@@ -97,6 +97,8 @@ nothing for (Stills, for a pack with no golden frames):
   as Jev read it, in its sections, and every question asked with its
   options, the answer the expect brain gave marked. An eval in Tests
   links to its passes.
+  Under them, for a pack with the table, its pastimes grouped by the growth
+  stage that first knows each.
 - **Animations**: **Scene**, **Matrix**, **Transitions** and
   **Stills**, below, with the pack's previews' cards over them: each
   preview the pack declares (Boop's pack shows its gel board,

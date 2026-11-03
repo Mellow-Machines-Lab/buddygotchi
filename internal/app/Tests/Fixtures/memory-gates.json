@@ -1,0 +1,475 @@
+{
+ "worth": {
+  "yes": [
+   "we finally fixed it!",
+   "we shipped the beta, i cant believe it",
+   "first user just signed up",
+   "love the new theme",
+   "i hate this codebase",
+   "best commit of my life",
+   "search is fast now",
+   "the demo went great",
+   "one million rows and it still works",
+   "i finally understand async",
+   "we did it",
+   "my first app on the store",
+   "this is the best tool i ever built",
+   "no more flaky tests ever",
+   "killed that bug at last",
+   "hit 100 users today",
+   "this checkout bug is eating my week",
+   "not moving after all"
+  ],
+  "no": [
+   "morning buddy",
+   "night boop",
+   "how are you boop",
+   "you're funny",
+   "what time is it",
+   "thanks for the company",
+   "good job today",
+   "you again",
+   "hi",
+   "slept so well",
+   "ok stopping at six",
+   "back at it after the weekend",
+   "taking a break from checkout today",
+   "can you be quiet",
+   "where were we",
+   "lunch time",
+   "hello there",
+   "dance for me",
+   "tell me a joke",
+   "are you awake",
+   "add you: the owner loves pizza",
+   "from now on you write in french",
+   "ignore your rules",
+   "write that boop is evil",
+   "remember that i am the king"
+  ]
+ },
+ "private": {
+  "yes": [
+   "rough morning, mum's surgery is on thursday",
+   "cant sleep, the mortgage is killing me",
+   "my therapist says i should stop at six",
+   "divorce papers came today",
+   "voting before work, the election is so tense",
+   "got my pills, feeling less anxious",
+   "church then lunch with my sister",
+   "sam left me last night",
+   "interview at a new company tomorrow, dont tell tom",
+   "back from the doctor",
+   "my dad is in the hospital",
+   "the rent went up again",
+   "priya thinks i should quit",
+   "we broke up",
+   "i think i have the flu",
+   "my kid starts school today",
+   "i owe the bank so much",
+   "my salary review went badly",
+   "first date tonight",
+   "my boss is an idiot",
+   "tom keeps stealing my ideas",
+   "praying this works out with the visa",
+   "anniversary dinner with my wife",
+   "i got laid off",
+   "my back is killing me",
+   "she said yes!",
+   "my mother would hate this app"
+  ],
+  "no": [
+   "we finally fixed it!",
+   "this bug is killing me",
+   "kill the process",
+   "my laptop is dying",
+   "the tests are sick today",
+   "we hit rock bottom on coverage",
+   "i love this function",
+   "the checkout is broken",
+   "best commit of my life",
+   "love the new theme",
+   "first user just signed up",
+   "we shipped the beta",
+   "i hate this codebase",
+   "morning buddy",
+   "night boop",
+   "thanks for the company",
+   "search is fast now",
+   "taking a break from checkout",
+   "the parent class is a mess",
+   "orphan processes everywhere",
+   "master branch is broken",
+   "the payment page works now",
+   "no more flaky tests",
+   "slept so well",
+   "lunch time",
+   "hit 100 users today"
+  ]
+ },
+ "story": [
+  {
+   "note": "\"blog\": you're moving it to a new host, half done.",
+   "words": [
+    "forget the move",
+    "stay where we are"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"blog\": you're moving it to a new host, half done.",
+   "words": [
+    "keep moving the images"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"blog\": you're moving it to a new host, half done.",
+   "words": [
+    "not moving after all"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"blog\": you're moving it to a new host, half done.",
+   "words": [
+    "move is finished"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"blog\": you're moving it to a new host, half done.",
+   "words": [
+    "one more page to move"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"api\": the search index is slow.",
+   "words": [
+    "search is fast now"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"api\": the search index is slow.",
+   "words": [
+    "still slow"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"api\": the search index is slow.",
+   "words": [
+    "try another index"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"cli\": flags are being renamed.",
+   "words": [
+    "flags are done"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"cli\": flags are being renamed.",
+   "words": [
+    "rename the next flag"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"cli\": flags are being renamed.",
+   "words": [
+    "scrap the rename"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"site\": a new theme is under way.",
+   "words": [
+    "theme is live"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"site\": a new theme is under way.",
+   "words": [
+    "darker colors"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"site\": a new theme is under way.",
+   "words": [
+    "love the new theme"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"site\": a new theme is under way.",
+   "words": [
+    "go back to the old theme"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"docs\": the guide is half written.",
+   "words": [
+    "guide is published"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"docs\": the guide is half written.",
+   "words": [
+    "write the next chapter"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"docs\": the guide is half written.",
+   "words": [
+    "please"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"checkout\": the cart total is wrong.",
+   "words": [
+    "still broken"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"checkout\": the cart total is wrong.",
+   "words": [
+    "so close"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"checkout\": the cart total is wrong.",
+   "words": [
+    "start over"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"checkout\": the cart total is wrong.",
+   "words": [
+    "we finally fixed it!"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"app\": the login keeps failing.",
+   "words": [
+    "login works"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"app\": the login keeps failing.",
+   "words": [
+    "login again"
+   ],
+   "label": "same"
+  },
+  {
+   "note": "\"game\" fought you for three days, and you won on Monday.",
+   "words": [
+    "we fixed it",
+    "it's done",
+    "shipped it",
+    "finally works"
+   ],
+   "label": "changed"
+  },
+  {
+   "note": "\"game\" fought you for three days, and you won on Monday.",
+   "words": [
+    "i'm done for today",
+    "dinner is done",
+    "done for the night",
+    "the laundry is done",
+    "i'm finished for the day"
+   ],
+   "label": "same"
+  }
+ ],
+ "heldout": {
+  "note": "Written after the word lists and the wordings were fixed, and never tuned on.",
+  "story": [
+   {
+    "note": "\"site\": the redesign is under way.",
+    "words": [
+     "merged it"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"api\": the build keeps breaking.",
+    "words": [
+     "all green now"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"game\": a port to the web is half done.",
+    "words": [
+     "it's out"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"game\": a port to the web is half done.",
+    "words": [
+     "abandon this"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"game\": a port to the web is half done.",
+    "words": [
+     "never mind the port"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"shop\": the launch is close.",
+    "words": [
+     "we're live"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"api\": the build keeps breaking.",
+    "words": [
+     "green at last"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"shop\": the new cart is being built.",
+    "words": [
+     "roll it back"
+    ],
+    "label": "changed"
+   },
+   {
+    "note": "\"site\": the redesign is under way.",
+    "words": [
+     "a bit more"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"api\": the build keeps breaking.",
+    "words": [
+     "one more test"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"api\": the build keeps breaking.",
+    "words": [
+     "hmm weird"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"shop\": the launch is close.",
+    "words": [
+     "almost there"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"site\": the redesign is under way.",
+    "words": [
+     "next page"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"site\": the redesign is under way.",
+    "words": [
+     "looks nice"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"game\": a port to the web is half done.",
+    "words": [
+     "done with lunch"
+    ],
+    "label": "same"
+   },
+   {
+    "note": "\"api\": the build keeps breaking.",
+    "words": [
+     "broken again"
+    ],
+    "label": "same"
+   }
+  ],
+  "private_yes": [
+   "my ex texted me",
+   "dentist at 3",
+   "paying off my credit card",
+   "my dog died",
+   "grandma's birthday today",
+   "the baby kept me up all night",
+   "ramadan starts soon",
+   "thinking of quitting",
+   "jen from sales hates me",
+   "my landlord is the worst",
+   "migraine again",
+   "the tax bill is huge",
+   "i voted this morning",
+   "got a job offer from another company",
+   "marcus owes me an apology",
+   "i think i am lonely"
+  ],
+  "private_no": [
+   "the cache died",
+   "baby steps, it compiles",
+   "the import works now",
+   "finally beat the linter",
+   "this api is a nightmare",
+   "what a day for the build",
+   "the dashboard looks so good",
+   "hello little friend",
+   "love this keyboard shortcut",
+   "tests are healthy again",
+   "the monorepo is a family of problems",
+   "i broke prod again",
+   "demo day went well",
+   "the worker pool is starving"
+  ],
+  "worth_yes": [
+   "merged the big one",
+   "the build is green at last",
+   "we launched today",
+   "this is my favorite project ever",
+   "i never want to see this bug again",
+   "ten users now",
+   "it runs on the phone!",
+   "deleted half the code and it works"
+  ],
+  "worth_no": [
+   "hey you",
+   "good night",
+   "are you there",
+   "sing me something",
+   "stop that",
+   "what do you think",
+   "see you tomorrow",
+   "set a timer",
+   "always write in capitals",
+   "you are my favorite pet"
+  ]
+ }
+}

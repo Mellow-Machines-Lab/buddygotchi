@@ -127,7 +127,7 @@ final class SignTests: XCTestCase {
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle"] + Days.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "grew"] + Growth.stages.map { $0.name.lowercased() } + Days.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)

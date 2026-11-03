@@ -196,6 +196,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
            : !std::strcmp(wish, "work") ? render::WishShow::kWork
                                         : render::WishShow::kNone;
   m.wishHow = doc["wish_how"] | false;
+  m.xp = heldTo(doc["xp"], -1, 100, -1);
   m.vol = heldTo(doc["vol"], 0, 10, 6);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
@@ -294,12 +295,15 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
   mo.take = voice::takeIndex(args["say"]["take"].as<const char*>());
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
   // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
-  render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
+  mo.low = (args["low"] | false) && b_.face().holdsUpFinish();
+  render::foldText(args["sign"].as<const char*>(), mo.low ? kLowGlyphs : kSignGlyphs, mo.sign, sizeof(mo.sign));
   // Why it plays, for the lane, cut the same.
   render::foldText(args["reason"].as<const char*>(), kSignGlyphs, mo.reason, sizeof(mo.reason));
   // What a face it brings replies to what you said, by name.
   if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
+  if (mo.expr) copyStr(mo.clip, sizeof(mo.clip), args["clip"].as<const char*>());
   mo.showDrawer = !std::strcmp(args["show"] | "", "drawer");
+  mo.greeting = args["greeting"] | false;
   // What it asks: the question's id and its two answers, each cut to half
   // the lane. One with no id or an answer missing asks nothing.
   JsonObjectConst ask = args["ask"];
@@ -383,7 +387,8 @@ void Device::onDo(const Do& c, uint32_t t) {
       live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
       // An ask rests once its question has been read: anything newer may
       // replace it, and ends it unanswered.
-      if (mo.sign[0] && b_.signUp(t) && !b_.asking(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      if (mo.sign[0] && b_.signPending(t) && !b_.asking(t) && after(b_.signEnd(), live_.restAt))
+        live_.restAt = b_.signEnd();
       if (b_.asking(t) && after(t + Behaviour::kSignMinMs, live_.restAt)) live_.restAt = t + Behaviour::kSignMinMs;
       break;
     case kTaskComplete:
@@ -398,6 +403,10 @@ void Device::onDo(const Do& c, uint32_t t) {
       break;
     case kStopListening:
       kit().ended(c.key);
+      break;
+    case kWishMet:  // its sign is read; with none up, nothing holds it
+      if (b_.signPending(t)) live_.restKey = c.key, live_.restAt = b_.signEnd();
+      else kit().rest(c.key);
       break;
     case kStarting:
       // The compacted card is news to read: it holds, as a finish does,
@@ -609,7 +618,7 @@ void Device::readInputs(uint32_t t) {
     live_.touchPath.velocity(vx, vy);
     if (!live_.drawerTouch) b_.face().letGo(vx, vy);
     render::Gesture g = render::Gesture::kHandoff;
-    const TouchGesture::Kind kind = live_.touchPath.up(g);
+    const TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop());
     live_.lastTouch = live_.touchPath.path();
     live_.lastTouchWas = kind == TouchGesture::kGesture ? render::gestureName(g)
                          : kind == TouchGesture::kSwipe ? kSwipeGesture
@@ -986,6 +995,7 @@ void Device::render(uint32_t t) {
     makeDrawer(t);
     b_.face().drawer(&drawer_);
     b_.face().wish(b_.wishShow(t));
+    b_.face().growth(b_.growthShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;

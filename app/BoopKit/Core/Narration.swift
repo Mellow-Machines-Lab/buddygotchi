@@ -25,6 +25,20 @@ public struct Narration: Equatable, Sendable {
         self.fact = fact.flatMap { $0.count <= Self.maxFact ? $0 : nil }
     }
 
+    /// Led by Boop's age, on the first time you show up today: "Day 41. Boop
+    /// dreamed about Tuesday: …", and with nothing else to say, "Day 41."
+    public static func day(_ count: Int, leading why: Narration?) -> Narration {
+        let day = "day \(count)"
+        let fact = why?.fact.map { "\(day): \($0)" }.flatMap { $0.count <= maxFact ? $0 : nil } ?? day
+        return Narration(cause: "Day \(count)." + (why.map { " " + $0.cause } ?? ""), fact: fact)
+    }
+
+    /// Why it brings up `note`: "Boop remembers you stay up late on Fridays."
+    public static func remembers(_ note: String, name: String) -> String {
+        guard note.hasPrefix("You ") else { return "\(name) remembers: \(note)" }
+        return "\(name) remembers y" + note.dropFirst()
+    }
+
     /// The sentence for a reaction in `face`: "Boop is happy. You stroked it."
     public func reaction(face: String, name: String) -> String { "\(name) is \(face). \(cause)" }
 
@@ -80,6 +94,8 @@ public struct Narration: Equatable, Sendable {
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
             return Narration(cause: "You said \"\(words)\".")
+        case .grew?:
+            return Narration(cause: "\(name) grew: it's a \(e.specificType) now.", fact: fit("now a \(e.specificType)"))
         case .wish?:
             guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }
             return how == .met ? Narration(cause: "You gave \(name) its wish: \(kind.words).", fact: fit("wish met!"))
@@ -246,7 +262,7 @@ extension Narration {
     /// air, confetti at a party or New Year, snow in the winter holidays and
     /// hearts on Valentine's.
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night, morning, friday }
+        public enum Kind: Sendable { case specialDay, night, morning, friday, shrank }
 
         public var kind: Kind
         /// `Boop became a Sprout today`, `It's Friday`.
@@ -268,7 +284,9 @@ extension Narration {
         public static func now(when: [String], specialDays: [Days.SpecialDay], asleep: Bool, gel: Bool) -> [Narration.Dressing] {
             let on = Set(when)
             let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
-            let hat = on.contains("halloween") ? "halloween" : party ? "party" : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
+            // The gel's Sprout shows its leaves on a party day (its wornHat).
+            let leaves = gel && on.contains("sprout")
+            let hat = on.contains("halloween") ? "halloween" : party ? (leaves ? nil : "party") : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
             let shades = gel && !asleep && on.contains("friday") && !on.contains("night") && !on.contains("morning")
 
             var out: [Narration.Dressing] = specialDays.map { o in

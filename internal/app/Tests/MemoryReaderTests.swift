@@ -291,6 +291,84 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(files.written().markdown, preview.after, "d makes what D showed")
     }
 
+    /// A morning stroke is from 5:00 to 11:00: 02:00 is still your night.
+    func testAMorningStrokeIsAfterFive() throws {
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+        memory.heard(stroke(1, at(2026, 10, 31, 2)), line: nil)
+        XCTAssertNil(memory.span?.tallies.strokesAM, "02:00")
+        memory.heard(stroke(2, at(2026, 10, 31, 4, 59)), line: nil)
+        XCTAssertNil(memory.span?.tallies.strokesAM, "04:59")
+        memory.heard(stroke(3, at(2026, 10, 31, 5)), line: nil)
+        XCTAssertEqual(memory.span?.tallies.strokesAM, 1, "05:00")
+        memory.heard(stroke(4, at(2026, 10, 31, 11)), line: nil)
+        XCTAssertEqual(memory.span?.tallies.strokesAM, 1, "11:00")
+    }
+
+    /// The event that tips Boop into a new stage stays in the dream's span:
+    /// its reader earns the XP, whose `grew` is logged and heard inside that
+    /// read, with a later seq.
+    func testTheEventThatGrewBoopIsDreamedOf() throws {
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+        let t0 = at(2026, 10, 31, 9)
+        memory.reader.earned = { [unowned memory] e, _ in
+            guard e.seq == 1 else { return }
+            var grew = Event(at: t0, source: .boop, type: .grew, specificType: "Sprout")
+            grew.seq = 2
+            memory.heard(grew, line: nil)
+        }
+        memory.heard(stroke(1, t0), line: nil)
+        XCTAssertEqual(memory.span?.tallies.strokes, 1)
+        XCTAssertEqual(memory.dreams.seq, 2)
+    }
+
+    /// A dream's write still being made when you ask Boop to forget doesn't
+    /// land: it was asked from what you've just forgotten.
+    func testAForgetDuringADreamDropsItsWrite() async throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("boop-memory-\(UUID().uuidString.prefix(8))")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir, today: "2026-10-31")
+        let queue = DispatchQueue(label: "memory-test")
+        let gate = WriterGate()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc,
+                            writer: GatedWriter(gate: gate, reply: "add boop: You stroke Boop most mornings. | days: 2026-10-31\nday: you stroked Boop.\nend"),
+                            files: files, queue: queue)
+        let t0 = at(2026, 10, 31, 9)
+        queue.sync {
+            memory.heard(stroke(1, t0), line: nil)
+            memory.dreamNow(at: t0 + hour)
+        }
+        queue.sync { memory.forgetAboutYou() }
+        gate.open()
+        for _ in 0..<150 where queue.sync(execute: { memory.dreaming }) { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertFalse(queue.sync { memory.dreaming })
+        XCTAssertEqual(files.written().notes, [], "the night is dropped")
+        XCTAssertEqual(files.written().recently, [])
+    }
+
+    /// A dream resets its span at once, so its digest is kept at once: a
+    /// quit before the writer answers loses no counts, and the reply adds
+    /// only its notes, counting nothing twice.
+    func testADreamKeepsItsDigestBeforeTheWriterAnswers() async throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("boop-memory-\(UUID().uuidString.prefix(8))")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir, today: "2026-10-31")
+        let queue = DispatchQueue(label: "memory-test")
+        let gate = WriterGate()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc,
+                            writer: GatedWriter(gate: gate, reply: "add boop: You stroke Boop most mornings. | days: 2026-10-31\nend"),
+                            files: files, queue: queue)
+        let t0 = at(2026, 10, 31, 9)
+        queue.sync {
+            memory.heard(stroke(1, t0), line: nil)
+            memory.dreamNow(at: t0 + hour)
+        }
+        XCTAssertEqual(files.days().digests.map(\.strokes), [1], "kept before any answer")
+        gate.open()
+        for _ in 0..<150 where queue.sync(execute: { memory.dreaming }) { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertEqual(files.days().digests.map(\.strokes), [1], "once")
+        XCTAssertEqual(files.days().added, ["You stroke Boop most mornings."])
+    }
+
     /// The telling offers `dreams.md`'s signs the dream's tags fit, the
     /// tagged ones first in the file's order (the person's first), then
     /// the plain ones; a line whose tags the day lacks never.
@@ -305,10 +383,69 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(Signs.dreams(lines, tags: ["fond", "failed"]), ["dreamt of u", "bad dream", "had a dream"])
         XCTAssertEqual(Signs.dreams(lines, tags: ["fond", "halloween"]), ["dreamt of u", "spooky dreams", "had a dream"])
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
-        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, dreams: lines, told: { _ in ["distant"] })
+        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, dreams: lines, line: { _ in Line("", facts: ["dream_tags": .array([.string("distant")])]) })
         let sign = try XCTUnwrap(react.questions(now: poke, log: Transcript.log().view(now: 0)).first { $0.key == Signs.questionKey })
         XCTAssertEqual(sign.options.map(\.name), ["none", "where were u?", "had a dream"])
         XCTAssertTrue(sign.text.contains("dream"))
+    }
+
+    /// The moment that tells the dream starting, for the event `seq`, as
+    /// the react output's would; and its end, `failed` why or done.
+    private func moment(_ rig: CoreRig, for seq: Int, failed why: String? = nil) {
+        let h = rig.pipeline.harness
+        let did = h.emit(Event.did("Boop had a happy moment.", for: seq, action: MomentOutput.outputName, by: "brain", open: true, at: rig.now))
+        h.emit(Event.ended(did.seq, action: MomentOutput.outputName, by: "brain", failed: why, at: rig.now))
+    }
+
+    /// A line counts as shown once its moment has played: one a needs-you cut
+    /// is offered again, as a dream that was cut is told again.
+    func testALineCountsAsShownOnceItsMomentHasPlayed() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        let h = rig.pipeline.harness
+        func started() -> Event {
+            h.emit(Event.did("Boop had a moment.", for: nil, action: MomentOutput.outputName, by: "brain", open: true, facts: ["felt": "u stay up late"], at: rig.now))
+        }
+        let cut = started()
+        XCTAssertEqual(memory.feltShown(), [:], "not yet played")
+        h.emit(Event.ended(cut.seq, action: MomentOutput.outputName, by: "brain", failed: "cut short: something needed you", at: rig.now))
+        XCTAssertEqual(memory.feltShown(), [:], "a needs-you cut it")
+        let played = started()
+        h.emit(Event.ended(played.seq, action: MomentOutput.outputName, by: "brain", failed: nil, at: rig.now))
+        XCTAssertEqual(memory.feltShown().keys.sorted(), ["u stay up late"])
+    }
+
+    /// TranscriptView.played: a dream counts as told only once its moment
+    /// has played. A needs-you that cuts it, or a brain that never answers,
+    /// leaves it to tell at your next showing up; a second touch while the
+    /// first's pass is out doesn't tell it twice.
+    func testADreamIsToldOnlyOnceItsMomentHasPlayed() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
+        rig.turn(60_000)
+        rig.wait(16 * hour, every: 60_000)
+        let dream = try XCTUnwrap(memory.dream)
+        let told = { (fx: Fx) in events(fx).filter { $0.facts["dream_day"] != nil } }
+        let stroke = { rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now))) }
+
+        let first = try XCTUnwrap(told(stroke()).first, "the first touch tells it")
+        XCTAssertEqual(told(stroke()).count, 0, "its pass is still out")
+        XCTAssertFalse(memory.dream?.told == true)
+        rig.wait(TranscriptView.tellingWaitMs, every: TranscriptView.tellingWaitMs)
+        let again = try XCTUnwrap(told(stroke()).first, "the brain never answered: the next touch tells it")
+        XCTAssertGreaterThan(again.seq, first.seq)
+
+        moment(rig, for: again.seq, failed: "cut short: something needed you")
+        XCTAssertFalse(memory.dream?.told == true, "a needs-you cut it")
+        let third = try XCTUnwrap(told(stroke()).first, "so the next touch tells it")
+
+        moment(rig, for: third.seq)
+        XCTAssertEqual(memory.dream?.day, dream.day)
+        XCTAssertTrue(memory.dream?.told == true, "it played through")
+        XCTAssertEqual(told(stroke()).count, 0, "told once")
     }
 
     /// TranscriptView.told: the dream is told on your first coming back
@@ -334,6 +471,7 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(line.notes.last, "\(rig.pipeline.buddies[0].name) dreamed about \(dream.about ?? ""): \(dream.sentence).")
         XCTAssertEqual(Narration.of(rig.pipeline.transcript.event(line.seq)!, line: Line(line.line, facts: line.facts))?.fact,
                        dream.fact, "the dream is the reason")
+        moment(rig, for: line.seq)
         XCTAssertTrue(memory.dream?.told == true)
         XCTAssertEqual(told(rig.poke()), [], "told once")
     }
@@ -369,4 +507,20 @@ final class CountingReader: TranscriptReader {
         return true
     }
     func close(day: String, state: Int, live: Bool) { closed.append("\(day) \(state) \(live ? "live" : "catching up")") }
+}
+
+final class WriterGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var isOpen = false
+    func open() { lock.withLock { isOpen = true } }
+    var opened: Bool { lock.withLock { isOpen } }
+}
+
+/// A writer that answers once the test lets it.
+struct GatedWriter: MemoryWriter {
+    let gate: WriterGate, reply: String
+    func write(_ request: MemoryRequest) async -> MemoryWriterReply {
+        while !gate.opened { try? await Task.sleep(nanoseconds: 2_000_000) }
+        return .reply(reply)
+    }
 }

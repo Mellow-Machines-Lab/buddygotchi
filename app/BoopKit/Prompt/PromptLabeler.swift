@@ -47,11 +47,13 @@ public struct AppleIntelligenceLabeler: PromptLabeler {
         static let ready = Ready()
         // The same answer for the same text. The macOS 27 SDK (Swift 6.4)
         // renamed `sampling:` to `samplingMode:`; CI's is the macOS 26 SDK's.
-        #if compiler(>=6.4)
-        static let greedy = GenerationOptions(samplingMode: .greedy)
-        #else
-        static let greedy = GenerationOptions(sampling: .greedy)
-        #endif
+        static func greedy(tokens: Int? = nil) -> GenerationOptions {
+            #if compiler(>=6.4)
+            GenerationOptions(samplingMode: .greedy, maximumResponseTokens: tokens)
+            #else
+            GenerationOptions(sampling: .greedy, maximumResponseTokens: tokens)
+            #endif
+        }
 
         /// Its answer for `text`, quoted after `quoting` as the examples
         /// in `instructions` are; nil while Apple Intelligence is off.
@@ -60,7 +62,7 @@ public struct AppleIntelligenceLabeler: PromptLabeler {
         static func respond(_ text: String, _ instructions: String, quoting: String) async -> String? {
             guard let session = ready.take(instructions)
                     ?? (model.availability == .available ? LanguageModelSession(model: model, instructions: instructions) : nil),
-                  let reply = try? await session.respond(to: "\(quoting): \"\(text)\"", options: greedy)
+                  let reply = try? await session.respond(to: "\(quoting): \"\(text)\"", options: greedy())
             else { return nil }
             let next = LanguageModelSession(model: model, instructions: instructions)
             next.prewarm()

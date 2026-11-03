@@ -15,7 +15,7 @@ public enum Tags {
 
     /// The tags no board reads: the signs and the brain have them, and the
     /// `state` message leaves them out.
-    public static let macOnly: Set<String> = ["weekend", "friday13", "piday", "aprilfools", "may4", "buddy", "pal", "chonk", "legend"]
+    public static let macOnly: Set<String> = ["weekend", "friday13", "piday", "aprilfools", "may4"]
 
     /// The tags the board reads, in its order: every tag but `macOnly`.
     public static let board = all.filter { !macOnly.contains($0) }
@@ -45,11 +45,16 @@ public enum Tags {
     /// a quick reply between turns keeps the working tiers climbing.
     public static let stretchRestMs = tiers[0].fromMs
 
-    /// The growth stages' tags from the second on, in `Growth.stages`'
-    /// order. Every stage reached is on, so a design that needs `pal` shows
-    /// at Pal and every stage after it.
-    public static let stageTags = Growth.stages.dropFirst().map { $0.name.lowercased() }
+    /// The growth stages the board draws differently (`BodySettings` in the
+    /// gel's painter). Only the stage it's at is on, not those it has passed,
+    /// since it can go back; Buddy, the size the art is laid out at, has none,
+    /// so a board nothing has told draws it whole.
+    public static let stageTags = ["hatchling", "sprout", "chonk"]
 
-    /// The tags on at growth stage `stage` (from 1, a Hatchling's: none).
-    public static func stages(_ stage: Int) -> [String] { Array(stageTags.prefix(max(0, stage - 1))) }
+    /// The tag on at growth stage `stage` (from 1), if it has one.
+    public static func stages(_ stage: Int) -> [String] {
+        guard stage >= 1, stage <= Growth.stages.count else { return [] }
+        let tag = Growth.stages[stage - 1].name.lowercased()
+        return stageTags.contains(tag) ? [tag] : []
+    }
 }

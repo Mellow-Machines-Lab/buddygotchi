@@ -68,8 +68,12 @@ public final class Core {
     public var moodNow: String { mood() }
     /// The growth stage Boop is at, from 1, which every `state` carries as
     /// its tags (`Tags.stages`): the runtime reads it from the growth
-    /// store. A Hatchling's until it's set.
-    var stage: () -> Int = { 1 }
+    /// store. Buddy's, the full size, until it's set.
+    var stage: () -> Int = { 3 }
+    /// How far through its stage, in percent, for the board's bar
+    /// (`state.xp`): the runtime reads it from the growth store. Nil sends none
+    /// and shows no bar: for a demo, and a core with no store.
+    var growthPercent: () -> Int? = { nil }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -94,6 +98,8 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
+    /// A stage reached just now whose `grew` waits for nothing to need you.
+    var grewHeld: String?
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
     /// When the board last said its agents' drawer is open (`ev drawer`),
@@ -479,26 +485,21 @@ public final class Core {
 
     /// Boop reached the growth stage `name` on `day` (today's at `now` by
     /// default): the rest of that day is a party, which a `state` carries
-    /// at once. Reached just now (`celebrate`), Boop celebrates it then,
-    /// with the confetti and a sign saying what it grew into, so the party
-    /// has a moment you can see. Not on the day Boop hatched, your first
-    /// with it: then it's no occasion (`Days.special`).
+    /// at once, and the board plays the new body from its tag. Reached just
+    /// now (`celebrate`), the `grew` event asks Jev for its sign and words,
+    /// once nothing needs you: until then nothing would wake it.
+    /// Not on the day Boop hatched, your first with it: then it's no occasion
+    /// (`Days.special`).
     @discardableResult
     public func reachedStage(_ name: String, day: String? = nil, celebrate: Bool = false, at now: Int64) -> [CoreEffect] {
         config.stageReached = (name, day ?? self.day(now))
         var fx: [CoreEffect] = []
         publish(now, &fx)
-        if celebrate, let sign = Days.greeting(specialDays(at: now)) {
-            play(Core.celebration(sign: sign), for: nil, now, &fx,
-                 said: "\(config.pack.name) celebrated becoming a \(name), holding up a sign: \"\(sign)\".")
+        if celebrate, config.hatched != self.day(now) {
+            grewHeld = name
+            recordGrew(now, &fx)
         }
         return fx
-    }
-
-    /// Growing a stage: the finish's confetti, as a finish held twice with
-    /// no turn plays, and its sign.
-    static func celebration(sign: String) -> Moment {
-        Moment(anim: "task_complete", loops: 2, outcome: "success", sign: sign)
     }
 
     /// Today's occasions at `now` (`Days.special`).
@@ -506,7 +507,8 @@ public final class Core {
         Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
     }
 
-    /// On a day with an occasion, the first agent's event Boop sees greets
+    /// On a day with an occasion, your first showing up holds up its sign
+    /// (`dayGreeting`), or else the first agent's event Boop sees greets
     /// it, once a launch: Boop holds up its sign (`Happy Halloween!`,
     /// `Day 50!`), so what it wears all day has a reason you saw, waking
     /// up with it if it was asleep (`waking`), else noticing the day. It
@@ -522,10 +524,28 @@ public final class Core {
              said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
     }
 
-    /// The mood output saved a new mood (`mood` reads it): a `state`
-    /// carries it at once.
+    /// Today's occasion's sign, for the moment of your first showing up to
+    /// hold up, if `greetDay` hasn't: then it has greeted the day.
+    public func dayGreeting(at now: Int64) -> String? {
+        let today = day(now)
+        guard greetedDay != today else { return nil }
+        greetedDay = today
+        return Days.greeting(specialDays(at: now))
+    }
+
+    /// How many days Boop is old at `now`, for the narration, or nil on the
+    /// day it hatched, or with no hatching known.
+    public func dayCount(at now: Int64) -> Int? {
+        guard let hatched = config.hatched else { return nil }
+        let days = config.time.days(from: hatched, to: wall(now))
+        return days > 0 ? days : nil
+    }
+
+    /// Something the state reads changed outside the core (the mood output
+    /// saved a new mood, or the XP or the stage changed with nothing to
+    /// celebrate): a `state` carries it at once.
     @discardableResult
-    public func moodChanged(at now: Int64) -> [CoreEffect] {
+    public func stateChanged(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         publish(now, &fx)
         return fx
@@ -597,6 +617,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
+        snapshot.xp = growthPercent()
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
             snapshot.wishHow = !wishDone(kind)
@@ -1069,6 +1090,13 @@ public final class Core {
         }
     }
 
+    /// The stage reached that's waiting for nothing to need you (`grewHeld`).
+    func recordGrew(_ now: Int64, _ fx: inout [CoreEffect]) {
+        guard let name = grewHeld, needsYouBlock == nil else { return }
+        grewHeld = nil
+        fx.append(.record(Event(at: now, source: .boop, type: .grew, specificType: name)))
+    }
+
     /// "Needs you" starting or clearing for a session, as a rule action:
     /// the view says who needs you from its start. One that cleared for
     /// anything but an answer says why.
@@ -1118,6 +1146,7 @@ public final class Core {
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
         recordGone(now, &fx)
         recordNeeds(now, &fx)
+        recordGrew(now, &fx)
         tidyNotes()
         updateActs(now)
         let (shown, dismissed, active, _) = groups(at: now)

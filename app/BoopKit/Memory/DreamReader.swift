@@ -56,7 +56,7 @@ public final class DreamReader: TranscriptReader {
         let since = span.since ?? now, day = time.day(now)
         return Dream(day: day, weekday: time.weekday(of: day), tags: MemoryReader.tags(t), sentence: MemoryReader.sentence(t),
                      fact: MemoryReader.fact(t), about: Self.about(since: since, until: now, time: time),
-                     range: Self.range(since: since, until: now, time: time))
+                     range: Self.range(since: since, until: now, time: time), covers: time.boopDay(t.lastYours ?? now))
     }
 
     /// The span as the telling says it, after "dreamed about", in words

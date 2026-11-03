@@ -36,7 +36,9 @@ public enum Days {
     public struct SpecialDay: Equatable, Sendable {
         public var tag: String? = nil
         public var words: String
-        public var sign: String
+        /// What it holds up to greet the day; nil for a stage reached,
+        /// which Jev holds up for as it grows.
+        public var sign: String?
 
         /// Why it's on, as the popover says it: `It's Halloween`, `Boop is
         /// 50 days old today`.
@@ -99,7 +101,7 @@ public enum Days {
                 out.append(SpecialDay(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
             }
         }
-        if let stage, stage.day == today, hatched != today { out.append(SpecialDay(words: "\(name) became a \(stage.name)", sign: "I'm a \(stage.name)!")) }
+        if let stage, stage.day == today, hatched != today { out.append(SpecialDay(words: "\(name) became a \(stage.name)")) }
         return out
     }
 
@@ -112,7 +114,6 @@ public enum Days {
     }
 
     /// The sign Boop greets a day of `days` with: the one most its
-    /// own, the last (a stage reached before a milestone before the
-    /// calendar's).
-    public static func greeting(_ days: [SpecialDay]) -> String? { days.last?.sign }
+    /// own, the last with one (a milestone before the calendar's).
+    public static func greeting(_ days: [SpecialDay]) -> String? { days.last { $0.sign != nil }?.sign }
 }

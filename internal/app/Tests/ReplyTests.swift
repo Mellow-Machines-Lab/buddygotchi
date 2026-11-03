@@ -182,7 +182,7 @@ final class ReplyTests: XCTestCase {
         guard !Take.all.isEmpty else { return }
         var queued: [Moment] = []
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
-        let fits = Set(Take.all.filter { $0.part == .feeling && $0.meaning == "glad" && $0.moods.contains("happy") && $0.finish == nil }
+        let fits = Set(Take.all.filter { $0.part == .feeling && $0.meaning == "glad" && $0.moods.contains("happy") && $0.finish == nil && $0.kind == .sound }
             .map(\.text))
         let window = Swift.min(MomentOutput.recentSays, fits.count - 1)
         XCTAssertGreaterThan(window, 1)
@@ -194,6 +194,61 @@ final class ReplyTests: XCTestCase {
         for i in window..<said.count {
             XCTAssertFalse(said[(i - window)..<i].contains(said[i]), "\(said)")
         }
+    }
+
+    /// Pins the fix for "Measure" every first failed test: a launch doesn't
+    /// replay the last one's order. Each mind has its own seed, and the same
+    /// order comes only from the same seed, which only evals and tests give.
+    func testALaunchDoesntReplayTheLastOnesWords() throws {
+        guard !Take.all.isEmpty else { return }
+        func words(seed: UInt64) -> [String] {
+            var queued: [Moment] = []
+            let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, seed: seed)
+            for _ in 0..<8 {
+                _ = react.run(["react.face": a("happy"), "react.intensity": a("medium"), "say": a("tests")], now: poke, log: Self.log)
+            }
+            return queued.compactMap { $0.say?.takes.last?.text }
+        }
+        XCTAssertEqual(words(seed: 7), words(seed: 7))
+        XCTAssertNotEqual(words(seed: 7), words(seed: 8))
+        let minds = (0..<8).map { _ in Runtime.Mind.launchSeed() }
+        XCTAssertGreaterThan(Set(minds).count, 1, "a launch's seed is its own")
+    }
+
+    /// What it said and held up before a launch is read back from the log.
+    func testALaunchRemembersWhatItSaid() throws {
+        guard let take = Take.all.first(where: { $0.part == .feeling && $0.meaning == "glad" && $0.moods.contains("happy") && $0.kind == .word }) else { return }
+        let log = Transcript.log()
+        _ = log.append(Event.did("Boop had a happy moment.", for: nil, action: MomentOutput.outputName, by: "brain",
+                                 facts: ["takes": .array([.string(take.id)]), "sign": "had a dream"], at: 10), now: 10)
+        var queued: [Moment] = []
+        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
+        _ = react.run(["react.face": a("happy"), "react.intensity": a("medium"), "say": a("glad")], now: poke, log: log.view(now: 20))
+        XCTAssertEqual(react.lastSign, "had a dream")
+        XCTAssertEqual(react.lastWords.last, take.text)
+        XCTAssertNotEqual(queued.last?.say?.takes.last?.text, take.text)
+        XCTAssertEqual(MomentOutput.unrepeated(["a", "b"], last: "a"), ["b"], "not the last sign while another fits")
+        XCTAssertEqual(MomentOutput.unrepeated(["a"], last: "a"), ["a"])
+    }
+
+    /// With every word of a meaning said lately, the one said longest ago.
+    func testAllSaidLatelyTheOldestComesBack() throws {
+        let pool = Take.all.filter { $0.part == .about && $0.meaning == "quiet" && $0.moods.contains("calm") && $0.kind == .word }
+        guard pool.count > 1 else { return }
+        let texts = Array(Set(pool.map(\.text))).sorted()
+        var rng = SplitMix64(seed: 1)
+        XCTAssertEqual(Voice.take(.about, meaning: "quiet", kind: .word, face: "calm", finish: nil, avoiding: texts, rng: &rng)?.text, texts.last)
+    }
+
+    /// A word that claims a fix only after a failed check: "Fixed" on a turn
+    /// that fixed nothing rang false.
+    func testAWordThatClaimsAFixNeedsOne() throws {
+        var rng = SplitMix64(seed: 3)
+        for _ in 0..<60 {
+            XCTAssertNotEqual(Voice.take(.about, meaning: "done", kind: .word, face: "happy", finish: "success", never: ["Fixed"], rng: &rng)?.text, "Fixed")
+        }
+        guard CharacterPack.active.id == "boop" else { return }
+        XCTAssertEqual(CharacterPack.active.claimsAFix, ["Fixed"])
     }
 
     /// A reply to what you said plays while something needs you (the

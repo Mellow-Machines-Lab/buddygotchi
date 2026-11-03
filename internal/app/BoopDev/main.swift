@@ -72,6 +72,9 @@ let usages: [(command: String, text: String)] = [
         the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
         defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
         without it.
+    boopdev memory gates
+        Scores each small yes-or-no question the write asks against labeled sentences (memory-gates.json). Needs
+        Apple Intelligence.
     """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
@@ -490,7 +493,13 @@ func readCheck(_ raw: [String]) async {
 
 /// `boopdev memory write`: the dream's write over fixture nights.
 func memory(_ raw: [String]) async {
-    guard raw.first == "write" else { fail("boopdev memory: the command is write\n\(usage)") }
+    if raw.first == "gates" {
+        guard #available(macOS 26.0, *), AppleIntelligenceLabeler.isAvailable else { fail("boopdev memory gates: Apple Intelligence isn't available on this Mac") }
+        guard let file = findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-gates.json") else { fail("boopdev memory gates: no repo here") }
+        await memoryGates(file)
+        return
+    }
+    guard raw.first == "write" else { fail("boopdev memory: the command is write or gates\n\(usage)") }
     let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])
     guard let file = args["--fixture"].map({ URL(fileURLWithPath: $0) })
             ?? findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-nights.json"),
@@ -498,9 +507,10 @@ func memory(_ raw: [String]) async {
           let nights = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
         fail("boopdev memory write: can't read the fixture; pass --fixture FILE")
     }
-    guard let writer = AppleIntelligenceWriter.onThisMac, AppleIntelligenceLabeler.isAvailable else {
+    guard AppleIntelligenceLabeler.isAvailable else {
         fail("boopdev memory write: Apple Intelligence isn't available on this Mac")
     }
+    let writer = MemoryPipelineWriter()
     for night in nights {
         let name = night["name"] as? String ?? "?"
         if let only = args["--only"], !name.localizedCaseInsensitiveContains(only) { continue }
@@ -511,7 +521,11 @@ func memory(_ raw: [String]) async {
         let journal = (night["yesterday"] as? [String] ?? []).map { line in
             (at: String(line.prefix(5)), line: String(line.dropFirst(6)))
         }
-        let request = MemoryRequest.make(memory: memory, certain: certain, journal: journal)
+        // One night, so no habit: what you said and the day line.
+        let weekday = LocalTime().weekday(of: day)
+        let tonight = DayDigest.from(day: day, weekday: weekday, tallies: .init(), first: "", last: "", journal: journal)
+        let input = MemoryPipeline.Input(memory: memory, digests: [tonight], certain: certain, journal: journal, day: day, weekday: weekday)
+        let request = MemoryRequest(input)
         let started = Date()
         let reply = await writer.write(request)
         let ms = Int(Date().timeIntervalSince(started) * 1000)
@@ -521,7 +535,7 @@ func memory(_ raw: [String]) async {
         print("   reply:\n" + text.split(separator: "\n").map { "     " + $0 }.joined(separator: "\n"))
         let (after, report) = MemoryEdits.apply(text, to: memory, numbered: request.numbered, day: day,
                                                 words: MemoryRequest.words(in: journal),
-                                                source: MemoryRequest.source(certain: certain, journal: journal))
+                                                source: input.source)
         print("   updated \(report.updated), added \(report.added), dropped \(report.dropped), kept \(report.kept), aged \(report.aged)")
         for r in report.refused { print("   REFUSED \(r.why): \(r.line)") }
         print("   after:\n" + after.markdown.split(separator: "\n").filter { $0.hasPrefix("- ") }.map { "     " + $0 }.joined(separator: "\n"))

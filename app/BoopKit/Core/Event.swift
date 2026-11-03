@@ -82,6 +82,9 @@ extension Event {
         /// how long it waited, `waited_ms`). The core's: it reads them back
         /// on launch.
         case wish
+        /// Boop reached a growth stage just now (`specific_type` its name), by
+        /// its XP. It wakes a pass, for what it holds up and says as it grows.
+        case grew
         /// An ask's end, which the board decides: you picked an answer
         /// (`specific_type` `a` or `b`), a touch answered it (`touch`), or
         /// nobody did (`ignored`), with the question's `q`, its words

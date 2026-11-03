@@ -13,7 +13,8 @@ import MellowHarness
 /// and at once when it hasn't in `fallbackMs`; each only with something
 /// new, and one at a time. The dream is kept in the key-value store
 /// (`dream.last`) and logged as a `dream` event at the next tick, for the
-/// view to tell; the line that tells it marks it told. Attached where the
+/// view to tell; the moment that tells it, once it has played, marks it
+/// told. Attached where the
 /// pipeline is made, so the app, `--headless` and the evals all have it.
 /// Touched on the harness's queue, but for the write, which asks the
 /// writer off it and lands its edits back on it (`queue`).
@@ -38,6 +39,9 @@ public final class Memory: @unchecked Sendable {
     /// asleep and idle, nil while it isn't.
     var dreamtThisSleep = false
     var sleepingSince: Int64?
+    /// How many times you've asked Boop to forget: a write or a line asked
+    /// for before the last one doesn't land.
+    private var forgets = 0
     /// How long Boop is asleep and idle before it dreams by itself: a
     /// coffee break isn't a sleep.
     public static let settleMs: Int64 = 20 * 60_000
@@ -84,23 +88,39 @@ public final class Memory: @unchecked Sendable {
         public var ms: Int
     }
 
+    /// The span's digest, with a writer to read it.
+    func digest(of dream: Dream, tallies: MemoryReader.Tallies) -> DayDigest? {
+        guard writer != nil else { return nil }
+        let day = dream.covers ?? dream.day
+        return DayDigest.from(day: day, weekday: time.weekday(of: day), tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
+                              last: tallies.lastYours.map(time.clock) ?? "",
+                              journal: tallies.journal.map { (at: $0.at, line: $0.line) })
+    }
+
+    /// Keeps the span's digest (`memory-days.json`).
+    func keepDigest(of dream: Dream, tallies: MemoryReader.Tallies) {
+        guard let files, let digest = digest(of: dream, tallies: tallies) else { return }
+        keep(files.days().keeping(digest, added: []))
+    }
+
     /// Asks the writer to edit the written memory for `dream` from its
-    /// span's `tallies` and journal: once, and once more with a quarter of
-    /// RECENT left out if it didn't fit. Nil with no writer.
-    public func ask(_ dream: Dream, tallies: MemoryReader.Tallies) async -> Night? {
-        guard let writer, let files else { return nil }
-        let day = dream.day, range = dream.range ?? "\(dream.weekday) \(day)"
+    /// span's `tallies` and journal. `kept` when the span's digest is in the
+    /// file already, as a dream's is; a preview's isn't, and stays out. Nil
+    /// with no writer.
+    public func ask(_ dream: Dream, tallies: MemoryReader.Tallies, kept: Bool = false) async -> Night? {
+        guard let writer, let files, let tonight = digest(of: dream, tallies: tallies) else { return nil }
+        let range = dream.range ?? "\(dream.weekday) \(dream.day)"
         let journal = tallies.journal.map { (at: $0.at, line: $0.line) }
         let certain = MemoryRequest.certain(tallies, range: range)
         let started = Date()
-        var request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal)
-        var reply = await writer.write(request)
-        if reply == .tooLong {
-            request = MemoryRequest.make(memory: files.written(), certain: certain, journal: journal, lines: request.lines * 3 / 4)
-            reply = await writer.write(request)
-        }
-        return Night(day: day, request: request, reply: reply, words: MemoryRequest.words(in: journal),
-                     source: MemoryRequest.source(certain: certain, journal: journal),
+        let memory = files.written(), days = files.days()
+        let digests = kept ? days.digests : days.keeping(tonight, added: []).digests
+        var input = MemoryPipeline.Input(memory: memory, digests: digests, certain: certain, journal: journal, day: tonight.day, weekday: tonight.weekday)
+        input.forgotten = days.added.filter { text in !memory.notes.contains { $0.text == text } }
+        let request = MemoryRequest(input)
+        let reply = await writer.write(request)
+        return Night(day: tonight.day, request: request, reply: reply, words: MemoryRequest.words(in: journal),
+                     source: input.source,
                      fallback: "\(Self.weekdays(range)): \(dream.sentence).", ms: Int(Date().timeIntervalSince(started) * 1000))
     }
 
@@ -130,11 +150,13 @@ public final class Memory: @unchecked Sendable {
     @discardableResult
     public func apply(_ night: Night) -> MemoryEdits.Report? {
         guard let files else { return nil }
-        guard let (next, report) = Self.edits(night, to: files.written()) else {
+        let before = files.written()
+        guard let (next, report) = Self.edits(night, to: before) else {
             note("memory: the dream's write for \(night.day) gave nothing (\(night.reply))")
             return nil
         }
         do { try files.keep(next, day: night.day) } catch { note("memory: can't write memory.md: \(error)") }
+        keep(files.days().following(report, from: before, to: next))
         if let h = harness {
             func ids(_ xs: [Int]) -> JSONValue { .array(xs.map { .string("m\($0)") }) }
             h.emit(Event(at: h.clock.now(), source: .boop, type: .memory, specificType: "night",
@@ -174,11 +196,121 @@ public final class Memory: @unchecked Sendable {
     public var span: DreamReader.Span? { dreams.state }
 
     func heard(_ e: Event, line: Line?) {
-        if let day = line?.facts["dream_day"]?.string { told(day) }
+        // The moment that tells the dream played through.
+        if e.kind == Event.ended, e.action == MomentOutput.outputName, e["outcome"]?.string == "done", let h = harness,
+           let about = e.about.flatMap({ h.log.event($0) })?.about, let day = h.line(about)?.facts["dream_day"]?.string {
+            told(day)
+        }
         recordAsk(e)
         recordWish(e)
-        runner.feed(e, line: line)
+        recordFelt(e)
+        // The dream's first: reading `e` can earn a stage, whose `grew` is
+        // logged and heard inside the day's read, with a later seq.
         dreams.feed(e, line: line)
+        runner.feed(e, line: line)
+    }
+
+    // MARK: Memory you feel
+
+    /// A note Boop may bring up: its line in the pet's voice, and the note.
+    public struct Felt: Equatable, Sendable {
+        public var line: String, note: String
+        public init(line: String, note: String) {
+            self.line = line
+            self.note = note
+        }
+    }
+
+    /// The most notes given a line a dream: each is a call.
+    public static let signsADream = 4
+    /// The most offered at an idle check-in; a line shown isn't offered again
+    /// for this many days.
+    public static let feltOffered = 3, feltAgainDays = 14
+
+    /// The notes with no line yet, and the lines kept without those of notes
+    /// gone. Nothing asked here: a note whose line the checks refused is kept
+    /// as "", and one the model didn't answer for isn't kept at all.
+    func missingSigns() -> [String] {
+        guard let files else { return [] }
+        var days = files.days()
+        let notes = files.written().notes.map(\.text)
+        let kept = days.signs.filter { notes.contains($0.key) }
+        if kept != days.signs {
+            days.signs = kept
+            keep(days)
+        }
+        return Array(notes.filter { kept[$0] == nil }.prefix(Self.signsADream))
+    }
+
+    func keep(_ days: MemoryStore.Days) {
+        do { try files?.keep(days) } catch { note("memory: can't write the digests: \(error)") }
+    }
+
+    func keep(signs: [String: String]) {
+        guard let files, !signs.isEmpty else { return }
+        var days = files.days()
+        days.signs.merge(signs) { _, new in new }
+        keep(days)
+    }
+
+    /// At the dream's write, each new note gets its line, off the queue:
+    /// one call a note, on this Mac.
+    func writeSigns(queue: DispatchQueue) {
+        guard let writer else { return }
+        let notes = missingSigns()
+        guard !notes.isEmpty else { return }
+        let asked = forgets
+        Task { [weak self] in
+            var signs: [String: String] = [:]
+            for text in notes {
+                switch await writer.sign(for: text) {
+                case .line(let line): signs[text] = line
+                case .refused: signs[text] = ""
+                case .noAnswer: break
+                }
+            }
+            queue.async {
+                guard let self, asked == self.forgets else { return }
+                self.keep(signs: signs)
+            }
+        }
+    }
+
+    /// What Boop may bring up at `ms`: at most `feltOffered` lines that fit
+    /// `longest` characters (`MemoryPipeline.signRoom`), those shown longest
+    /// ago first, none shown in `feltAgainDays`; none at all if one was shown
+    /// today.
+    public func felt(at ms: Int64, longest: Int = MemoryPipeline.signMax) -> [Felt] {
+        guard let files else { return [] }
+        let signs = files.days().signs
+        guard !signs.isEmpty else { return [] }
+        let shown = feltShown(), today = time.boopDay(ms)
+        guard !shown.values.contains(today), let now = LocalTime.dayNumber(today) else { return [] }
+        func age(_ line: String) -> Int { shown[line].flatMap(LocalTime.dayNumber).map { now - $0 } ?? .max }
+        return files.written().notes.compactMap { n in
+            signs[n.text].flatMap { $0.isEmpty || $0.count > longest || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
+        }.sorted { age($0.line) > age($1.line) }.prefix(Self.feltOffered).map { $0 }
+    }
+
+    /// When each line was last shown (`felt`, in the key-value store).
+    func feltShown() -> [String: String] {
+        store.string("felt").flatMap { try? JSONDecoder().decode([String: String].self, from: Data($0.utf8)) } ?? [:]
+    }
+
+    /// Keeps a line shown once its moment has played through, as a dream
+    /// is told: the react output's `did` names the line, and a moment cut
+    /// short leaves it to offer again.
+    func recordFelt(_ e: Event) {
+        guard e.kind == Event.ended, e.action == MomentOutput.outputName, e["outcome"]?.string == "done",
+              let line = e.about.flatMap({ harness?.log.event($0) })?["felt"]?.string else { return }
+        keepShown(line, at: e.at)
+    }
+
+    func keepShown(_ line: String, at ms: Int64) {
+        var shown = feltShown()
+        shown[line] = time.boopDay(ms)
+        guard let data = try? JSONEncoder().encode(shown) else { return }
+        do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
     }
 
     // MARK: The wish's "done once"
@@ -269,22 +401,28 @@ public final class Memory: @unchecked Sendable {
         dream(at: now, why: "asked")
     }
 
-    /// The dream of everything since the last: kept, to be logged and
-    /// told; the span started again (the checkpoint moved); then the
-    /// write, live, off the harness's queue. One at a time.
+    /// The dream of everything since the last: kept with its digest, to be
+    /// logged and told; the span started again (the checkpoint moved); then
+    /// the write, live, off the harness's queue. One at a time.
     func dream(at now: Int64, why: String) {
         guard let span, let dream = dreamReader.dream(span, now: now) else { return }
         save(dream)
+        keepDigest(of: dream, tallies: span.tallies)
         dreamtThisSleep = true
         dreams.update { $0 = DreamReader.Span(since: now) }
         note("memory: dreaming (\(why)) about \(dream.about ?? dream.weekday)")
         guard let queue else { return }
         dreaming = true
+        let asked = forgets
         Task { [weak self] in
-            let night = await self?.ask(dream, tallies: span.tallies)
+            let night = await self?.ask(dream, tallies: span.tallies, kept: true)
             queue.async {
-                if let night { self?.apply(night) }
-                self?.dreaming = false
+                guard let self else { return }
+                if let night {
+                    if asked == self.forgets { self.apply(night) } else { self.note("memory: you asked Boop to forget, so the dream's write for \(night.day) is dropped") }
+                }
+                self.dreaming = false
+                self.writeSigns(queue: queue)
             }
         }
     }
@@ -340,9 +478,22 @@ public final class Memory: @unchecked Sendable {
         save(dream)
     }
 
-    /// Empties the journal since the last dream: what the person asked
-    /// Boop to forget never reaches the dream's write.
-    public func forgetJournal() { dreams.update { $0.tallies.journal = [] } }
+    /// Forgets what's behind the notes you asked Boop to forget, so the next
+    /// dream's write can't make them again: the span's journal and counts,
+    /// the digests', and the line shown for each note gone. What it counts
+    /// of its care stays (`MemoryReader.Tallies.forgotten`). Call it with
+    /// `memory.md` already as you left it.
+    public func forgetAboutYou() {
+        forgets += 1
+        dreams.update { $0.tallies = $0.tallies.forgotten }
+        guard let files else { return }
+        do { try files.forgetLearned() } catch { note("memory: can't write the digests: \(error)") }
+        let lines = Set(files.days().signs.values)
+        let shown = feltShown().filter { lines.contains($0.key) }
+        if let data = try? JSONEncoder().encode(shown) {
+            do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
+        }
+    }
 
     func told(_ day: String) {
         guard var dream = dream, dream.day == day, !dream.told else { return }

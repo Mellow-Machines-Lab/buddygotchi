@@ -1694,6 +1694,305 @@ static void test_the_wish_shows_and_pops() {
   TEST_ASSERT_EQUAL(int(render::WishShow::kNone), int(r.b.wishShow(r.t).kind));
 }
 
+// The growth bar (GrowthShow): a first `xp` says what it is; a move of under
+// kBarStep (5) points shows nothing, one of 5 slides it in for its 700 ms fill
+// and 3 s, then 360 ms out. A Mac that sends none shows none.
+static void test_the_growth_bar_comes_when_the_xp_moves() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(5, app::GrowthBar::kStep);
+  TEST_ASSERT_EQUAL(240, G::kInMs);
+  TEST_ASSERT_EQUAL(700, G::kFillMs);
+  TEST_ASSERT_EQUAL(3000, G::kHoldMs);
+  TEST_ASSERT_EQUAL(360, G::kOutMs);
+  Rig r;
+  Model m = base("idle");
+  r.state(m);
+  r.at(1000);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 40;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 44;
+  r.state(m);
+  r.at(r.t + 10);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 45;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  TEST_ASSERT_EQUAL(400, r.b.growthShow(r.t).fill);  // from where it last showed
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+  r.at(r.t + G::kFillMs - G::kInMs);
+  TEST_ASSERT_EQUAL(450, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kHoldMs);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+  r.at(r.t + G::kOutMs - 1);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t).opacity < 5);
+  r.at(r.t + 1);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  // Measured from where it last showed, not the last it heard: small moves add up.
+  m.xp = 49;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 50;
+  r.state(m);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+}
+
+// The screen's another's, or Boop's asleep: no bar, and the move isn't saved up for later.
+static void test_the_growth_bar_keeps_off_what_it_shouldnt_cover() {
+  using G = render::GrowthShow;
+  Rig r;
+  Model m = base("idle");
+  m.xp = 10;
+  r.state(m);
+  r.at(1000);
+  Model waiting = attn();
+  waiting.xp = 30;
+  r.state(waiting);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 30;
+  r.state(m);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  Model asleep = base("asleep");
+  asleep.xp = 60;
+  r.state(asleep);
+  r.at(r.t + G::kInMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+}
+
+// A met wish: the bar comes at the pop; the heart stays 420 ms, flies 720 ms,
+// and the bar holds its old fill until it lands, whichever of the `do` and the
+// state with the XP came first; it gulps 520 ms and fills 700 ms from then. With
+// no `xp` the heart stays in its bubble.
+static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(420, G::kHeartWaitMs);
+  TEST_ASSERT_EQUAL(720, G::kHeartFlyMs);
+  TEST_ASSERT_EQUAL(520, G::kGulpMs);
+  for (bool stateFirst : {true, false}) {
+    Rig r;
+    Model m = base("idle");
+    m.xp = 20;
+    m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    if (stateFirst) m.xp = 40, r.state(m);
+    r.b.wishPopped(true, r.t);
+    if (!stateFirst) m.xp = 40, r.state(m);
+    TEST_ASSERT_TRUE(r.b.wishShow(r.t).flies);
+    TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
+    const uint32_t pop = r.t, landed = pop + G::kHeartWaitMs + G::kHeartFlyMs;
+    r.at(pop + G::kInMs);
+    TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+    r.at(pop + G::kHeartWaitMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).flight);
+    r.at(landed - 1);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).flight >= 995);
+    TEST_ASSERT_EQUAL(200, r.b.growthShow(r.t).fill);
+    r.at(landed);
+    TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).gulp > 0);
+    r.at(landed + G::kGulpMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).gulp);
+    r.at(landed + G::kFillMs);
+    TEST_ASSERT_EQUAL(400, r.b.growthShow(r.t).fill);
+    r.at(landed + G::kFillMs + G::kHoldMs + G::kOutMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  }
+  Rig r;
+  Model m = base("idle");
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  r.at(1000);
+  m.wish = render::WishShow::kNone;
+  r.state(m);
+  r.b.wishPopped(true, r.t);
+  TEST_ASSERT_FALSE(r.b.wishShow(r.t).flies);
+  r.at(r.t + 500);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+}
+
+// At Buddy a met wish's +40 XP is about 1% of the stage, under kBarStep: the
+// heart still lands on a fill that moves, whichever of the `do` and the state
+// came first.
+static void test_a_met_wish_fills_the_bar_by_however_little() {
+  using G = render::GrowthShow;
+  for (bool stateFirst : {true, false}) {
+    Rig r;
+    Model m = base("idle");
+    m.xp = 20;
+    m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    if (stateFirst) m.xp = 21, r.state(m);
+    r.b.wishPopped(true, r.t);
+    if (!stateFirst) m.xp = 21, r.state(m);
+    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
+    r.at(landed - 1);
+    TEST_ASSERT_EQUAL(200, r.b.growthShow(r.t).fill);
+    r.at(landed + G::kFillMs);
+    TEST_ASSERT_EQUAL(210, r.b.growthShow(r.t).fill);
+  }
+}
+
+// A stage reached fills the bar to its end for the old stage, then from its
+// start for the new; a stage lost, down to its start, then from its end.
+static void test_a_new_stage_fills_the_bar_past_its_end() {
+  using G = render::GrowthShow;
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  Rig r;
+  Model m = base("idle");
+  m.xp = 90, m.when = hatchling;
+  r.state(m);
+  r.at(1000);
+  m.xp = 2, m.when = sprout;
+  r.state(m);
+  TEST_ASSERT_EQUAL(900, r.b.growthShow(r.t).fill);
+  TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+  r.at(r.t + G::kFillMs - 1);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 990);
+  TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+  r.at(r.t + 1);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).fill);
+  TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(20, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kHoldMs + G::kOutMs);
+  m.xp = 97, m.when = hatchling;
+  r.state(m);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(1000, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(970, r.b.growthShow(r.t).fill);
+}
+
+// A stage reached wraps the bar once: a second state during the heart's flight
+// doesn't lose the wrap, and a wish's `do` once the bar's past its end doesn't
+// play it again.
+static void test_a_new_stages_wrap_plays_once() {
+  using G = render::GrowthShow;
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  {  // Lost: another state while the heart flies.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    r.b.wishPopped(true, r.t);
+    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
+    m.xp = 2, m.when = sprout;
+    r.state(m);
+    r.at(r.t + 300);
+    m.xp = 3;
+    r.state(m);
+    r.at(landed + G::kFillMs - 1);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 990);
+    TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+    r.at(landed + 2 * G::kFillMs);
+    TEST_ASSERT_EQUAL(30, r.b.growthShow(r.t).fill);
+    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+  }
+  {  // Lost: another state with new XP as the bar fills to its end, no heart.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.when = hatchling;
+    r.state(m);
+    r.at(1000);
+    m.xp = 2, m.when = sprout;
+    r.state(m);
+    r.at(1200);
+    m.xp = 4;
+    r.state(m);
+    r.at(1200 + G::kFillMs - 1);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 900);
+    TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
+    r.at(1200 + 2 * G::kFillMs);
+    TEST_ASSERT_EQUAL(40, r.b.growthShow(r.t).fill);
+  }
+  {  // Replayed: the `do` a second after the state, the bar past its end.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+    r.state(m);
+    r.at(2000);
+    r.b.wishPopped(true, r.t);
+    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
+    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+    r.at(landed + G::kFillMs / 2);
+    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
+    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill <= 20);
+  }
+}
+
+// A new stage's body waits 300 ms for a wish's `do`, which follows its state;
+// then, for that wish's heart to land. Any other stage plays when the 300 ms are up.
+static void test_a_new_stage_waits_for_the_heart() {
+  using G = render::GrowthShow;
+  TEST_ASSERT_EQUAL(300, Behaviour::kStageWaitMs);
+  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+  auto face = std::make_unique<testface::WrappedFace>();
+  testface::WrappedFace& f = *face;
+  Behaviour b(std::move(face));
+  app::Rng rng;
+  b.reset(0, rng);
+  Model m = base("idle");
+  m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+  b.onState(m, 100);
+  b.advance(1000, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);
+  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  b.onState(m, 1000);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(1299, rng);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(1300, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);  // no wish came
+  m.when = hatchling, m.xp = 90, m.wish = render::WishShow::kPet;
+  b.onState(m, 6000);
+  b.advance(8000, rng);
+  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  b.onState(m, 8000);
+  b.advance(8100, rng);
+  b.wishPopped(true, 8100);
+  const uint32_t landed = 8100 + G::kHeartWaitMs + G::kHeartFlyMs;
+  b.advance(landed - 1, rng);
+  TEST_ASSERT_TRUE(f.context.growthWaits);
+  b.advance(landed, rng);
+  TEST_ASSERT_FALSE(f.context.growthWaits);
+}
+
+// With no app the Mac's tags go, as they're stale, but not its growth stage:
+// a Hatchling doesn't grow to full size, ceremony and all, when the Mac sleeps.
+static void test_alone_it_stays_its_stage() {
+  const uint32_t hatchling = render::tagBit("hatchling"), party = render::tagBit("party");
+  auto face = std::make_unique<testface::WrappedFace>();
+  testface::WrappedFace& f = *face;
+  Behaviour b(std::move(face));
+  app::Rng rng;
+  b.reset(0, rng);
+  Model m = base("idle");
+  m.when = hatchling | party;
+  b.onState(m, 100);
+  b.advance(100 + Behaviour::kNoAppMs, rng);
+  TEST_ASSERT_TRUE(b.noApp(100 + Behaviour::kNoAppMs));
+  TEST_ASSERT_EQUAL_HEX32(hatchling, f.context.when);
+  TEST_ASSERT_EQUAL(3, render::growthStage(0));
+  TEST_ASSERT_EQUAL(4, render::growthStage(render::tagBit("chonk")));
+}
+
 // With no app the wish's bubble goes: nothing waits on a Mac that isn't there,
 // and no touch could meet it. It comes back with the app, if it's still open.
 static void test_the_wish_goes_with_the_app() {
@@ -2969,6 +3268,73 @@ static void test_a_finishs_say_waits_for_its_voice_window() {
   TEST_ASSERT_EQUAL_STRING("7 cut by tap", ended(r).c_str());
 }
 
+// The dream counts as told only if its sign was seen, so what takes the sign
+// down before its time reports a cut the Mac won't read as done: a needs-you
+// over an earlier stroke, the mic, face down. A stroke alone leaves the sign up.
+static void test_a_greeting_whose_sign_is_lost_is_not_told() {
+  const auto greet = [](Rig& r) {
+    r.at(1000);
+    r.state(base("idle"));
+    ReactionIn in;
+    in.greeting = true, in.key = 7;
+    in.anim = SceneState::kNotice;
+    in.expr = true, in.mood = render::Mood::kHappy;
+    std::snprintf(in.sign, sizeof(in.sign), "had a dream");
+    onReaction(r.b, in, r.t);
+  };
+  {  // A stroke, then a needs-you: the needs-you's report stands.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.b.gesture(render::Gesture::kStroke, r.t);
+    Model m = base("idle");
+    m.attn = true, m.attnId = 3;
+    r.at(1200);
+    r.state(m);
+    r.at(1300);
+    TEST_ASSERT_EQUAL_STRING("7 cut by needs_you", ended(r).c_str());
+  }
+  {  // A stroke, and the sign plays out: you were there, as for any tap.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.b.gesture(render::Gesture::kStroke, r.t);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+    r.at(1000 + Behaviour::kSignMinMs + 20000);
+    TEST_ASSERT_EQUAL_STRING("7 cut by tap", ended(r).c_str());
+  }
+  {  // BOOT.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.talkOn();
+    r.at(1200);
+    TEST_ASSERT_EQUAL_STRING("7 cut by mic_on", ended(r).c_str());
+  }
+  {  // Face down.
+    Rig r;
+    greet(r);
+    r.at(1100);
+    r.b.setFaceDown(true, r.t);
+    r.at(1000 + 20000);
+    TEST_ASSERT_EQUAL_STRING("7 cut by facedown", ended(r).c_str());
+  }
+  {  // A sign alone, no animation to cut: still.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    ReactionIn in;
+    in.greeting = true, in.key = 8;
+    in.expr = true, in.mood = render::Mood::kHappy;
+    std::snprintf(in.sign, sizeof(in.sign), "had a dream");
+    onReaction(r.b, in, r.t);
+    r.at(1100);
+    r.talkOn();
+    r.at(1200);
+    TEST_ASSERT_EQUAL_STRING("8 cut by mic_on", ended(r).c_str());
+  }
+}
+
 // A new mood's flip-book blinks in a step
 // of its own, so the device gives it none of its blinks; a change of design
 // to or from one dissolves as any other does, its eyes open.
@@ -3508,6 +3874,137 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
   TEST_ASSERT_EQUAL(SceneState::kGesture, r.anim());
 }
 
+// The first moment of your day (ReactionIn::greeting), which plays whole:
+// its sign waits until its words end, or shows at once with none; the work
+// stream waits until it's over, an act where it would have got to; and a
+// needs-you cuts it, its sign still to come or up, as cut.
+static void test_a_greeting_plays_whole_then_the_work_stream() {
+  const auto greet = [](Rig& r, bool words) {
+    ReactionIn in;
+    in.greeting = true, in.key = 7;
+    in.expr = true, in.mood = render::Mood::kHappy;
+    std::snprintf(in.sign, sizeof(in.sign), "had a dream");
+    if (words) in.said = true, in.take = voice::takeIndex(kGo);
+    onReaction(r.b, in, r.t);
+  };
+  {  // No words: at once.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    greet(r, false);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+  }
+  if (voicefile::open()) {  // Words: as they end, for as long as a sign is read, the face held.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    greet(r, true);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    TEST_ASSERT_TRUE(r.b.signPending(r.t));
+    r.at(1000 + kGoMs - 1);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    r.at(1000 + kGoMs);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+    TEST_ASSERT_EQUAL_STRING("had a dream", r.b.sign(r.t).text);
+    render::Mood mood;
+    r.at(1000 + kGoMs + Behaviour::kSignMinMs - 1);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+    TEST_ASSERT_TRUE(r.b.expression(r.t, mood));
+    TEST_ASSERT_TRUE(r.b.greetingOn(r.t));
+    r.at(1000 + kGoMs + Behaviour::kSignMinMs);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    TEST_ASSERT_FALSE(r.b.greetingOn(r.t));
+    app::PlayedOut out;
+    TEST_ASSERT_TRUE(r.b.takePlayedOut(out));
+    TEST_ASSERT_EQUAL_UINT32(7, out.key);
+    TEST_ASSERT_EQUAL(app::CutBy::kNone, out.by);
+  }
+  {  // The stream waits: no words, no word forward, no act; then they come.
+    Rig r;
+    r.at(1000);
+    Model m = base("working");
+    m.laneCount = 1;
+    m.lanes[0].slot = 0, m.lanes[0].count = 1;
+    std::snprintf(m.lanes[0].word, sizeof(m.lanes[0].word), "edit");
+    m.workAct.kind = render::ActKind::kBuild, m.workAct.full = true;
+    std::snprintf(m.workAct.text, sizeof(m.workAct.text), "building");
+    r.state(m);
+    TEST_ASSERT_TRUE(r.b.stream().on);
+    TEST_ASSERT_TRUE(r.b.stream().actNow(r.t).shows());
+    const uint32_t began = r.b.stream().act.at;
+    TEST_ASSERT_TRUE(r.b.callShows(r.t));
+    greet(r, false);
+    TEST_ASSERT_FALSE(r.b.stream().on);
+    TEST_ASSERT_FALSE(r.b.stream().actNow(r.t).shows());
+    TEST_ASSERT_FALSE(r.b.callShows(r.t));
+    r.state(m);  // a state changes nothing while it plays
+    TEST_ASSERT_FALSE(r.b.stream().on);
+    TEST_ASSERT_FALSE(r.b.stream().actNow(r.t).shows());
+    r.at(1000 + Behaviour::kSignMinMs + 5000);
+    TEST_ASSERT_TRUE(r.b.stream().on);
+    TEST_ASSERT_TRUE(r.b.callShows(r.t));
+    TEST_ASSERT_TRUE(r.b.stream().actNow(r.t).shows());
+    TEST_ASSERT_EQUAL_UINT32(began, r.b.stream().act.at);
+  }
+  {  // A needs-you cuts it, its sign up.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    greet(r, false);
+    Model m = base("idle");
+    m.attn = true, m.attnId = 3;
+    r.at(1500);
+    r.state(m);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    TEST_ASSERT_FALSE(r.b.greetingOn(r.t));
+    r.at(1600);
+    app::PlayedOut out;
+    TEST_ASSERT_TRUE(r.b.takePlayedOut(out));
+    TEST_ASSERT_EQUAL(app::CutBy::kNeedsYou, out.by);
+  }
+}
+
+// A low sign (ReactionIn::low): held in the lane for Behaviour::kLowSignMinMs,
+// once its words end, the whole line kept, and not a reply's: it doesn't show
+// over needs you.
+static void test_a_low_sign_waits_for_its_words_and_holds_a_long_line() {
+  TEST_ASSERT_EQUAL_size_t(41, app::kSignTextBytes);
+  const char* line = "you stay up very late on fridays, boss!!";
+  TEST_ASSERT_EQUAL_size_t(40, std::strlen(line));
+  if (!voicefile::open()) return;
+  Rig r;
+  r.at(1000);
+  r.state(base("idle"));
+  ReactionIn in;
+  in.low = true, in.key = 8;
+  in.expr = true, in.mood = render::Mood::kHappy;
+  std::snprintf(in.sign, sizeof(in.sign), "%s", line);
+  std::snprintf(in.clip, sizeof(in.clip), "remember");
+  in.said = true, in.take = voice::takeIndex(kGo);
+  onReaction(r.b, in, r.t);
+  TEST_ASSERT_FALSE(r.b.signUp(r.t));
+  r.at(1000 + kGoMs);
+  TEST_ASSERT_TRUE(r.b.sign(r.t).low);
+  TEST_ASSERT_EQUAL_STRING(line, r.b.sign(r.t).text);
+  TEST_ASSERT_EQUAL_INT32(Behaviour::kLowSignMinMs, r.b.sign(r.t).leftMs);
+  r.at(1000 + kGoMs + Behaviour::kLowSignMinMs - 1);
+  TEST_ASSERT_TRUE(r.b.signUp(r.t));
+  r.at(1000 + kGoMs + Behaviour::kLowSignMinMs);
+  TEST_ASSERT_FALSE(r.b.signUp(r.t));
+  TEST_ASSERT_NULL(r.b.sign(r.t).text);
+  // Over needs you it doesn't show, unlike a reply's.
+  Rig n;
+  n.at(1000);
+  Model m = base("idle");
+  m.attn = true;
+  n.state(m);
+  ReactionIn alone;
+  alone.low = true, alone.expr = true, alone.mood = render::Mood::kHappy;
+  std::snprintf(alone.sign, sizeof(alone.sign), "%s", line);
+  std::snprintf(alone.clip, sizeof(alone.clip), "remember");
+  TEST_ASSERT_NOT_NULL(n.b.admit(alone, n.t));
+}
+
 // Pins what the board starts with and what no app takes away: silent
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
@@ -3755,6 +4252,9 @@ int main() {
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
   RUN_TEST(test_a_finishs_sign_lifts_as_its_words_end);
+  RUN_TEST(test_a_greeting_plays_whole_then_the_work_stream);
+  RUN_TEST(test_a_greeting_whose_sign_is_lost_is_not_told);
+  RUN_TEST(test_a_low_sign_waits_for_its_words_and_holds_a_long_line);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);
@@ -3829,6 +4329,14 @@ int main() {
   RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   RUN_TEST(test_alone_it_rests_then_sleeps_and_a_touch_wakes_it);
+  RUN_TEST(test_the_growth_bar_comes_when_the_xp_moves);
+  RUN_TEST(test_the_growth_bar_keeps_off_what_it_shouldnt_cover);
+  RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
+  RUN_TEST(test_a_met_wish_fills_the_bar_by_however_little);
+  RUN_TEST(test_a_new_stage_fills_the_bar_past_its_end);
+  RUN_TEST(test_a_new_stages_wrap_plays_once);
+  RUN_TEST(test_a_new_stage_waits_for_the_heart);
+  RUN_TEST(test_alone_it_stays_its_stage);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);
   RUN_TEST(test_the_macs_return_gets_a_small_hello);
   return UNITY_END();

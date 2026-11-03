@@ -79,6 +79,7 @@ enum Headless {
         // how things stood when the demo began (DemoRecorder.begin).
         let recorder = args["--record"].map { _ in DemoRecorder() }
         if let recorder { options.onDeviceLine = { recorder.sent($0) } }
+        options.fullSize = script != nil
         // The clock can be moved forward with `{"dev":"advance","ms":N}`, so
         // the pipeline check can finish a 6-minute turn without waiting it out.
         // A demo with a `start` begins at that date and time.

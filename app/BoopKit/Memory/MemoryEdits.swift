@@ -52,14 +52,15 @@ public enum MemoryEdits {
             let lower = line.lowercased()
             if lower == "end" { break }
             if lower.hasPrefix("day:") {
-                let text = String(line.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+                let (text, ended) = Self.endless(String(line.dropFirst(4)).trimmingCharacters(in: .whitespaces))
                 if let why = unsafe(text, words: words, was: nil, longest: 200) ?? grounded(text, in: source) ?? numbers(text, in: source) {
                     refuse(raw, why)
-                    continue
+                } else {
+                    out.recently.removeAll { $0.day == day }
+                    out.recently.append(.init(day: day, text: text))
+                    report.day = true
                 }
-                out.recently.removeAll { $0.day == day }
-                out.recently.append(.init(day: day, text: text))
-                report.day = true
+                if ended { break }
                 continue
             }
             let verb = lower.split(separator: " ").first.map(String.init) ?? ""
@@ -136,6 +137,11 @@ public enum MemoryEdits {
         return (out, report)
     }
 
+    /// What's between the double quotes in `text`.
+    static func quotes(in text: String) -> [String] {
+        text.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
+    }
+
     /// `" 3: rest"` or `" 3"` as 3 and the rest.
     static func numberAndRest(_ s: Substring) -> (Int, String)? {
         let t = s.trimmingCharacters(in: .whitespaces)
@@ -157,6 +163,15 @@ public enum MemoryEdits {
         return days.isEmpty ? nil : (text, days)
     }
 
+    /// A day line without the reply's `end` written on the same line, after
+    /// its sentence is over, and whether it had one. "we reached the end" is
+    /// a day that ends in the word.
+    static func endless(_ text: String) -> (text: String, ended: Bool) {
+        guard text.count > 4, text.suffix(4).lowercased() == " end",
+              let last = text.dropLast(4).last, ".!?\"".contains(last) else { return (text, false) }
+        return (String(text.dropLast(4)), true)
+    }
+
     /// Why `days` can't be a change's: an edit is yesterday's, so it cites
     /// the closed day `day`, and no other day the note didn't cite already
     /// (`cited`).
@@ -172,11 +187,13 @@ public enum MemoryEdits {
             .filter { $0.count >= 4 && $0.contains(where: \.isLetter) && !common.contains($0) }.map { String($0.prefix(5)) })
     }
 
-    /// Why an update isn't the same note's: it shares none of its words
-    /// with what it replaces (the model wrote a new note over an old one).
+    /// Why an update isn't the same note's: it shares none of its words, or
+    /// the thread it's on ("api" is too short for a word), with what it
+    /// replaces (the model wrote a new note over an old one).
     static func subject(_ text: String, of was: String) -> String? {
         let old = meaning(was)
-        return old.isEmpty || !meaning(text).isDisjoint(with: old) ? nil : "subject"
+        func threads(_ s: String) -> Set<String> { Set(quotes(in: s).filter { !$0.contains(" ") }.map { $0.lowercased() }) }
+        return old.isEmpty || !meaning(text).isDisjoint(with: old) || !threads(text).isDisjoint(with: threads(was)) ? nil : "subject"
     }
 
     /// Why a note is only yesterday's line, copied: a note says what a
@@ -208,8 +225,7 @@ public enum MemoryEdits {
         }
         guard section == .work else { return nil }
         func threads(_ s: String) -> Set<String> {
-            Set(s.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }
-                .map { String($0.element).lowercased() }.filter { !$0.contains(" ") })
+            Set(quotes(in: s).map { $0.lowercased() }.filter { !$0.contains(" ") })
         }
         let named = threads(text)
         return memory.notes(in: .work).contains { !threads($0.text).isDisjoint(with: named) } ? "duplicate" : nil
@@ -237,9 +253,8 @@ public enum MemoryEdits {
     /// link or code, or a sensitive topic.
     static func unsafe(_ text: String, words: [String], was: String?, longest: Int = maxLength) -> String? {
         guard !text.isEmpty, text.count <= longest else { return "length" }
-        let quotes = text.split(separator: "\"", omittingEmptySubsequences: false).enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
         let theirs = (words + [was ?? ""]).map { $0.lowercased() }
-        for q in quotes where !q.isEmpty {
+        for q in quotes(in: text) where !q.isEmpty {
             let isThread = q.split(separator: " ").count == 1 && q.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }
             if isThread { continue }  // a thread's name, "api"
             guard q.split(separator: " ").count <= maxQuoteWords, theirs.contains(where: { $0.contains(q.lowercased()) }) else { return "quotes" }

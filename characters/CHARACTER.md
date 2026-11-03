@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-02. The contract a character pack meets, so that any
+Updated 2026-11-03. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -216,6 +216,8 @@ one:
 | `version` | yes | The pack's version, at most 16 characters. A Mac and a board with different versions of the same pack fall back safely (§10) |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood` |
+| `remember_word` | no | The word of its voice it says as it brings up something it remembers, with `rig/clips/reply-remember.json` as its look. For now the bank's `Hey`, standing in until a "hey!" is recorded |
+| `claims_a_fix` | no | The words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check |
 | `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
@@ -372,6 +374,15 @@ your prompt (`Signs`, the `react.sign` question, asked only when NOW is a
 prompt's reading, not a message's). A pack without the file holds up no
 signs.
 
+Its `[grew]` lines, and `[grew sprout]`, `[grew buddy]` and `[grew chonk]`, the
+stage's first, are what it may hold up as it grows (`Signs.grew`): Jev picks the
+one that says what grew, at the `grew` event, which waits while something needs
+you (`Core.reachedStage`). A pack with none holds up nothing
+then, and the board still plays the new body.
+
+**The growth bar,** the gel's own (`render::GrowthShow`, `paintGrowthBar`), goes
+by `state.xp`, the percent through the stage. A face with no bar ignores it.
+
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own
   name, and the calendar's.
@@ -498,7 +509,7 @@ then go.
 | `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 5 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
-| `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart, unless a touch's `gesture` plays, which stays; a wish left, which fades the bubble and plays the rig's silent `wish-gone` clip, a sigh and a slump of about a second; the feeling after it is Jev's | the Mac's rules |
+| `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart, unless a touch's `gesture` plays, which stays, or `listening` holds the face, when only the heart goes; a wish left, which fades the bubble and plays the rig's silent `wish-gone` clip, a sigh and a slump of about a second; the feeling after it is Jev's | the Mac's rules |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name | the Mac (the brain) |
 | `gesture` | The board's own Moment for a touch, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose` (a tap on the face's middle; on the brain's finish that names whose turn it was, a tap on that opens the thread), `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
 | `poked` | A poke | the board |
@@ -556,8 +567,8 @@ Besides drawing each mood and state, a face:
   - Special days: `friday`, `newyear`, `valentines`, `halloween`, `winter`,
     `programmers`, `lunar`, and `party` (a milestone day since hatching, New
     Year's Day, the day a growth stage was reached, but never the day it
-    hatched). The Mac greets a special day with its sign, and celebrates a
-    stage the moment it's reached.
+    hatched). The Mac greets a special day with its sign. A stage reached has
+    none of its own: Jev picks one as it grows.
   - The tiers (`Tags.tiers`): `tier1` from 30 seconds, `tier2` from a
     minute, `tier3` from 2, `tier4` from 5, `tier5` from 10. They count how
     long the agents' working stretch has run, from its first turn, a rest of
@@ -565,13 +576,16 @@ Besides drawing each mood and state, a face:
     the latest session came to rest. The Mac sends the last reached and the
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
-  - `sprout` from the first growth stage reached on, and `hushed` while the
-    buddy is hushed (`Core.Hush`).
+  - The growth stage Boop is at, `hatchling`, `sprout` or `chonk`, none at
+    Buddy (`Tags.stages`), which can go back; and `hushed` while the buddy is
+    hushed (`Core.Hush`). The gel's body and its pastimes go by the stage;
+    nothing useful does. A board with no Mac keeps the stage's tag, and only
+    that, as the rest go stale.
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board
     adds from `state.busy`. The working looks also play at 125% and 160%
     then (`render::workPace`, `FaceContext::pace`).
-  - The Mac has more (`weekend`, `friday13`, `piday`, `aprilfools`, `may4`
-    and the later growth stages), for its signs and the brain, and sends the
+  - The Mac has more (`weekend`, `friday13`, `piday`, `aprilfools`, `may4`),
+    for its signs and the brain, and sends the
     board none of them (`Tags.macOnly`).
 
   A design that needs tags shows only while they're on. A look starts on one
@@ -581,7 +595,8 @@ Besides drawing each mood and state, a face:
   the Mac's popover (`Narration.Dressing`) agree: `render::outfitFor` (first
   that fits: Halloween's witch hat, a party hat, a nightcap at night, a
   bobble hat in winter), `render::eyewearFor` (shades on a Friday from noon
-  to night) and `render::airFor` (snow, confetti, hearts). The gel draws its
+  to night) and `render::airFor` (snow, confetti, hearts). The gel's Sprout
+  wears no party hat, so its leaves show (its `wornHat`). The gel draws its
   dressing at the anchors its pose gives (`rig::Anchors`, §15), so it moves
   with the body, and through the rig's layer stack (§15).
 - **Times them.** Each design's loop length (`loopMs`), which sets how long
@@ -613,7 +628,9 @@ Besides drawing each mood and state, a face:
   args), at most 18 glyphs of the fonts (accents folded, and past that cut
   at a word with `..`, `render::foldText`). A face gets them as `SignShow`
   (the words, how long they've shown, and their opacity) and draws them as
-  its own, sliding up by `render::signLift`. They stay up while any part of
+  its own, sliding up by `render::signLift`. The gel holds its card under the
+  mouth, and a body too small to clear it stands up on the card
+  (`SignLayer::kHopPx`). They stay up while any part of
   the Moment plays, and at least 2.5 s (`Behaviour::kSignMinMs`). A newer
   Moment's animation or voice, `listening` and needs you take them down; a
   poke doesn't. A reply with an emotion is the one Moment whose face and

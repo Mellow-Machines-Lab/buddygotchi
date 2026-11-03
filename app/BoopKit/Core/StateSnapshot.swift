@@ -168,6 +168,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The to-do list of the longest turn working that has one, while
     /// nothing needs you; nil sends none.
     public var todo: Todo?
+    /// How far through its growth stage, in whole percent (`Growth.percent`):
+    /// the board's growth bar, which comes when it moves. Nil sends none.
+    public var xp: Int?
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
     public var wish: String?
@@ -300,6 +303,7 @@ public struct StateSnapshot: Equatable, Sendable {
         fields["vol"] = .int(vol)
         let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
+        if let xp { fields["xp"] = .int(xp) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if let wish { fields["wish"] = .string(wish) }
         if wishHow { fields["wish_how"] = true }

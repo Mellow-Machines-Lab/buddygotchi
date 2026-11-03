@@ -136,7 +136,8 @@ evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Nothing, unless you add a Jev key. With one, each time Boop thinks, it
 sends TypeSafe a short text: what's been happening, in lines like
-`claude started turn 1 on "landing".`, and Boop's personality and mood.
+`claude started turn 1 on "landing".`, and Boop's personality, mood and
+memory (MEMORY).
 Your prompts don't: Boop reads each one on your Mac, after taking out
 anything that looks like a key or a password, and sends only what it
 made of it (a fix, frustrated, in a sentence) and up to three short
@@ -149,6 +150,20 @@ counts them (how long, whether you said Boop's name, a "please", a
 "sorry"). One thing in your own words goes, cut to 300 characters:
 what you say to Boop when you hold its button. Your files, commands and
 tool output never do.
+
+The notes and day lines in `memory.md` go to Jev as MEMORY with each
+request, with any words of yours and project names they quote, and a note's
+short line may go as an option for a sign. The digest of each dream
+stays on your Mac: `memory-days.json`, beside `memory.md`, holds the counts
+of each dream and what you said to Boop, up to 60 dreams, with the notes the
+dreams wrote and their short lines.
+
+Forget clears You, Your work and Recently, and what they came from: what you
+said, your hours, threads and tones in the digests, the lines of notes gone,
+any note it quoted you in, and older copies of `memory.md`. You and Boop stays,
+as do the counts of your care (strokes, pokes, talks) and of how much you were
+here (minutes, prompts, turns), which name nothing. The transcript isn't
+memory, and stays for its two weeks.
 
 ## Uninstall
 

@@ -212,6 +212,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | wish | Boop's want, about one a day by its steering, kind pet, chat or work, its sign picked by Jev like an ask's; a rule meets it at once by a touch on its face, push-to-talk or working with an agent; until you've met a kind once it shows how; left too long it sighs and slumps (`Core.Wish`, `[wish …]` in `asks.md`, `state.wish`, `wish_how`, `wish_met`, `wish_gone`) | need, request | `wish` |
 | musing | Boop's own beat with a sign and no question, a `[idle]` line of `signs.md` | thought, quip | |
 | the telling | The Moment at your first showing up after 5:00 that tells the dream | | |
+| the day's greeting | The Moment of your first showing up of Boop's day, or the one that tells the dream: it plays whole, its sign after its words, the work stream after it (`Moment.greeting`) | | `greeting` |
 | variation | Which version of a design plays; the board picks | | `variant` |
 | the queue | LinkKit's rule for what plays when (linkkit/SPEC.md §4) | the turn | |
 
@@ -254,8 +255,9 @@ things on three channels, **voice**, **sign** and **narration**.
 | Boop's day | 5:00 to 5:00, today for CONTEXT's Today row and the XP caps; it triggers nothing | | |
 | dream | Everything since the last dream as tags and a sentence, and the memory's update from it: on `d`, once a sleep, or after two days (`DreamReader`, `Memory.dream`, `dreams.md`) | diary, journal, closing the day | |
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
-| the dream's write | Apple Intelligence editing the written memory as Boop dreams (`MemoryEdits`) | the night's write | |
-| growth | XP and stages, Hatchling to Legend | | |
+| remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign at an idle check-in, about once a day (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
+| the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
+| growth | XP, which can go backwards, and stages, Hatchling to Chonk; a stage changes only the body and the pastimes. The growth bar shows it on the board, with a met wish's heart flying in (`GrowthShow`), and Jev's sign says what grew (`[grew]`) | | `xp`, `grew` |
 | special day | A holiday, a milestone day, Boop's birthday, a stage reached | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 

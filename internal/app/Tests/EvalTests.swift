@@ -285,6 +285,23 @@ final class EvalTests: XCTestCase {
         XCTAssertTrue(full.allSatisfy { $0.brain == "stand-in" })
     }
 
+    /// A scenario's `seed` is another day's timing: the same steps, the
+    /// check-ins at other times.
+    func testASeedMovesTheCheckIns() async throws {
+        func checkIns(_ seed: Int) async throws -> [Int64] {
+            let file = FileManager.default.temporaryDirectory.appendingPathComponent("seed-\(UUID().uuidString).json")
+            defer { try? FileManager.default.removeItem(at: file) }
+            let json = #"{"name": "A quiet hour", "judge": "j", "reasonable": "r", "unreasonable": "u", "seed": \#(seed), "steps": [{"event": "session started", "at": "0s"}, {"event": "turn started", "at": "1m"}, {"event": "turn finished", "at": "2m"}, {"event": "wait", "at": "1h"}]}"#
+            try json.write(to: file, atomically: true, encoding: .utf8)
+            let result = try await Eval(brain: ExpectBrain(), steering: RuntimeTests.steering).run(try Scenario(file: file))
+            return result.timeline.filter { $0.line.hasPrefix("Nothing has happened") }.map(\.atMs)
+        }
+        let one = try await checkIns(1), again = try await checkIns(1), other = try await checkIns(2)
+        XCTAssertFalse(one.isEmpty)
+        XCTAssertEqual(one, again, "the same seed repeats")
+        XCTAssertNotEqual(one, other, "another seed is another day's timing")
+    }
+
     /// EVALS.md §1: a feel scenario has a brief, checks none of Jev's choices,
     /// and its run goes to the judge as a trajectory that says who answered.
     func testAFeelScenarioIsForTheJudge() async throws {

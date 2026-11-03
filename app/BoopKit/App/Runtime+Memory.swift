@@ -20,14 +20,15 @@ extension Runtime {
     }
 
     /// Forgets what Boop learned about you: You, Your work and Recently,
-    /// and today's journal. You and Boop stays.
+    /// and what the dreams count them from (`Memory.forgetAboutYou`). You
+    /// and Boop stays.
     public func forgetAboutYou() {
         home.async { [self] in
             editMemory { m in
                 m.notes.removeAll { !$0.section.lasting }
                 m.recently = []
             }
-            remembers?.forgetJournal()
+            remembers?.forgetAboutYou()
             options.log("memory: forgot what Boop learned about you")
         }
     }

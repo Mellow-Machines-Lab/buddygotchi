@@ -23,6 +23,10 @@ public final class MemoryReader: TranscriptReader {
         /// How many of the day's events were yours, and the last one's time.
         public var yours = 0
         public var lastYours: Int64?
+        /// The first event that was yours, and the strokes from 5:00 to 11:00: for
+        /// the digest the habits are counted from. Nil in a checkpoint from
+        /// before they were kept.
+        public var firstYours: Int64?, strokesAM: Int?
         /// Since when you've been at the Mac (none while away, or before
         /// your first event), and since when you've been away: carried
         /// across 5:00.
@@ -39,7 +43,7 @@ public final class MemoryReader: TranscriptReader {
         /// The XP each pool earned today, within its cap
         /// (`Growth.workPerDay`, `carePerDay`): growth's daily totals. Nil
         /// before the first, and in a checkpoint from before they were kept.
-        public var workXP: Int?, careXP: Int?
+        public var workXP: Int?, careXP: Int?, wishXP: Int?
         /// The notable lines Jev read, each with its time (`HH:mm`), for
         /// the dream's write; at most `journalMax`. A dream's span keeps it;
         /// a day's is empty.
@@ -57,6 +61,19 @@ public final class MemoryReader: TranscriptReader {
         public var thread: String { threads.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key ?? "" }
 
         public init() {}
+
+        /// A span's counts when you ask Boop to forget what it learned about
+        /// you: its care stays, as do your company and what carries, and the
+        /// journal, the threads, your hours and the turns go.
+        public var forgotten: Tallies {
+            var t = self
+            t.journal = []
+            t.threads = [:]
+            t.turns = 0; t.failed = 0; t.longestMinutes = 0; t.prompts = 0; t.late = 0
+            t.firstYours = nil; t.lastYours = nil
+            t.yours = touches + talks
+            return t
+        }
     }
     public typealias State = Tallies
 
@@ -91,9 +108,10 @@ public final class MemoryReader: TranscriptReader {
     public func read(_ e: Event, line: Line?, into t: inout Tallies) -> Bool {
         let before = t
         if let earning = Growth.earning(for: e) {
-            let had = (earning.pool == .work ? t.workXP : t.careXP) ?? 0
+            let pool: WritableKeyPath<Tallies, Int?> = earning.pool == .work ? \.workXP : earning.pool == .care ? \.careXP : \.wishXP
+            let had = t[keyPath: pool] ?? 0
             let xp = min(earning.xp, max(0, Growth.cap(earning.pool) - had))
-            if earning.pool == .work { t.workXP = had + xp } else { t.careXP = had + xp }
+            t[keyPath: pool] = had + xp
             if xp > 0 { earned(e, xp) }
         }
         Self.count(e, into: &t, time: time, place: place)
@@ -107,6 +125,7 @@ public final class MemoryReader: TranscriptReader {
         if Yours.did(e) {
             t.yours += 1
             t.lastYours = e.at
+            if t.firstYours == nil { t.firstYours = e.at }
             if t.hereSince == nil, t.awaySince == nil { t.hereSince = e.at }
         }
         if Yours.touched(e) { t.touchedAt = e.at }
@@ -116,7 +135,11 @@ public final class MemoryReader: TranscriptReader {
             t.touches += 1
         case .gesture? where Touch(e)?.isCare == true:
             t.touches += 1
-            if e.specificType == "stroke" { t.strokes += 1 }
+            if e.specificType == "stroke" {
+                t.strokes += 1
+                let hour = time.components(e.at).hour
+                if hour >= LocalTime.boopDayStartHour, hour < 11 { t.strokesAM = (t.strokesAM ?? 0) + 1 }
+            }
         case .said?:
             t.talks += 1
         case .ask? where e.specificType != Asks.ignored:
@@ -169,7 +192,7 @@ public final class MemoryReader: TranscriptReader {
         switch e.type {
         case .prompt?: return (text, !line.notes.contains { $0.hasPrefix("Your words") })
         case .said?, .ask?: return e.specificType == Asks.ignored ? nil : (text, false)
-        case .wish?: return (text, false)
+        case .wish?, .grew?: return (text, false)
         case .turn? where e.phase == .end:
             let long = (line.facts["length_ms"]?.int ?? 0) >= 5 * 60_000
             return long || e["outcome"]?.string != "done" ? (text, true) : nil
@@ -236,10 +259,10 @@ public final class MemoryReader: TranscriptReader {
 }
 
 /// Boop's dream: everything since the last one, as it dreamed it, made
-/// when it dreams (`Memory.dream`). The day it ended, its tags, a sentence
-/// and a few words for the board, how the telling says the span (`about`)
-/// and its dates (`range`), and whether it has been told and logged. The
-/// newest is kept as `dream.last` in the key-value store.
+/// when it dreams (`Memory.dream`). The day it ended, the day it covers, its
+/// tags, a sentence and a few words for the board, how the telling says the
+/// span (`about`) and its dates (`range`), and whether it has been told and
+/// logged. The newest is kept as `dream.last` in the key-value store.
 public struct Dream: Codable, Equatable, Sendable {
     public var day: String
     public var weekday: String
@@ -251,13 +274,18 @@ public struct Dream: Codable, Equatable, Sendable {
     public var about: String?
     /// "Thursday 2026-10-30 to Saturday 2026-11-01"; nil as `about`.
     public var range: String?
+    /// The Boop day of the last thing you did in it, or of the dream with
+    /// nothing of yours: what its digest and its notes are dated by, so a
+    /// Friday that ends at 01:00 is Friday's. Nil in a dream kept before it
+    /// was, for `day`.
+    public var covers: String?
     public var told = false
     public var logged = false
 
     public static let key = "dream.last"
 
     public init(day: String, weekday: String, tags: [String], sentence: String, fact: String, about: String? = nil,
-                range: String? = nil) {
+                range: String? = nil, covers: String? = nil) {
         self.day = day
         self.weekday = weekday
         self.tags = tags
@@ -265,6 +293,7 @@ public struct Dream: Codable, Equatable, Sendable {
         self.fact = fact
         self.about = about
         self.range = range
+        self.covers = covers
     }
 
     /// The newest dream kept, or nil.
