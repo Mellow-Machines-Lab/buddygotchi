@@ -65,6 +65,11 @@ public final class MomentOutput: Output {
     /// one of the signs those tags fit.
     let dreams: [TaggedLine]
     let told: (Event) -> [String]?
+    /// Whether an event is the first time you show up today, and the sign
+    /// for today's occasion, once, if it hasn't been shown: code's, whatever
+    /// the brain picks of feeling and words.
+    let firstToday: (Event) -> Bool
+    let occasion: (Int64) -> String?
     /// The pack's asks (`asks.md`), and those of its questions it may ask
     /// at an event, by the moment and the caps (`Asks.askable`).
     let asks: [TaggedLine]
@@ -141,7 +146,9 @@ public final class MomentOutput: Output {
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
                 nap: @escaping (Int64) -> Void = { _ in },
                 talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Narration? = { _ in nil },
-                dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil }, asks: [TaggedLine] = [],
+                dreams: [TaggedLine] = [], told: @escaping (Event) -> [String]? = { _ in nil },
+                firstToday: @escaping (Event) -> Bool = { _ in false }, occasion: @escaping (Int64) -> String? = { _ in nil },
+                asks: [TaggedLine] = [],
                 askable: @escaping (Event, LogView, [Asks.Question]) -> [Asks.Question] = { _, _, _ in [] },
                 wishable: @escaping (Event, LogView) -> [Core.WishKind] = { _, _ in [] },
                 makeWish: @escaping (Core.WishKind, Int64) -> Void = { _, _ in },
@@ -172,6 +179,8 @@ public final class MomentOutput: Output {
         self.reason = reason
         self.dreams = dreams
         self.told = told
+        self.firstToday = firstToday
+        self.occasion = occasion
         self.asks = asks
         self.askable = askable
         self.wishable = wishable
@@ -802,8 +811,10 @@ public final class MomentOutput: Output {
         }
         if !said.isEmpty { recentWords = Array((recentWords + [Set(said.map(\.text))]).suffix(Self.recentSays)) }
         let say = Moment.Say(takes: said)
-        let sign: String?
+        var sign: String?
         var show: String?
+        // Your first showing up today, or the telling: the day's greeting.
+        let greeting = about.map { firstToday($0) || told($0) != nil } == true
         if talk, let reply, let about {
             (sign, show) = replySign(reply, about, answers)
             // The board opens no drawer over the needs-you screen: the
@@ -816,6 +827,8 @@ public final class MomentOutput: Output {
             let picked = answers[Signs.questionKey]?.choice
             sign = wishing?.sign ?? picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
+        // A special day's sign is code's, over the brain's.
+        if about.map(firstToday) == true, let day = occasion(at) { sign = day }
         var reaction = Moment(say: say, mood: choice, loops: size.loops, sign: sign)
         // An ask: the question the brain held up, as the sign, its answers
         // as the lane's targets. It was offered when asked; the mood may
@@ -828,6 +841,7 @@ public final class MomentOutput: Output {
         }
         reaction.reply = replied?.played
         reaction.show = show
+        reaction.greeting = greeting
         if let pick, let scene = Self.scenes[pick] {
             let (anim, outcome) = scene
             // Its scene and a finish's outcome, whose variation the device

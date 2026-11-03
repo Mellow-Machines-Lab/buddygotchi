@@ -101,6 +101,10 @@ public struct Moment: Equatable, Sendable {
     /// shows as two targets in the lane while the question is the sign;
     /// `touch` when a stroke answers it too. Nil sends none.
     public var ask: Asks.Question?
+    /// The first moment of your day, or the one that tells the dream: it
+    /// plays whole. Its sign waits until its words end, and the work stream
+    /// waits until it's over.
+    public var greeting = false
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
@@ -153,6 +157,7 @@ public struct Moment: Equatable, Sendable {
         }
         if let reply { args["reply"] = .string(reply) }
         if let show { args["show"] = .string(show) }
+        if greeting { args["greeting"] = true }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }
         if let mood { args["mood"] = .string(mood) }

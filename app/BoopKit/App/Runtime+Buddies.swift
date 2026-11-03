@@ -180,13 +180,18 @@ extension Runtime {
                     let span = ContextSection.span(w.waitedMs)
                     return Narration(cause: "\(pack.name) wished for \(w.kind.words) \(span) ago.", fact: "wish: \(span)")
                 }
-                return Narration.of(about, line: h.line(about.seq), untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()),
-                                    name: pack.name)
+                let line = h.line(about.seq)
+                let why = Narration.of(about, line: line, untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()),
+                                       name: pack.name)
+                guard line?.facts[TranscriptView.firstTodayFact] != nil, let days = core.dayCount(at: about.at) else { return why }
+                return Narration.day(days, leading: why)
             }, dreams: m.steering.dreams, told: { [weak h] about in
                 // The dream the line tells, by its tags.
                 guard case .array(let tags)? = h?.line(about.seq)?.facts["dream_tags"] else { return nil }
                 return tags.compactMap(\.string)
-            }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
+            }, firstToday: { [weak h] about in
+                h?.line(about.seq)?.facts[TranscriptView.firstTodayFact] != nil
+            }, occasion: { at in core.dayGreeting(at: at) }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
             wishable: { [mood] about, log in
                 // At an ask's moment, within the core's caps.
                 Asks.moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(m.company(), at: about.at)).isEmpty

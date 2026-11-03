@@ -160,6 +160,9 @@ struct ReactionIn {
   uint32_t id = 0;
   // The words the buddy holds up on a sign while it plays, "" for none.
   char sign[kSignBytes] = "";
+  // A greeting (`greeting`): the first moment of your day. Its sign waits
+  // until its words end, and the work stream waits until it's over.
+  bool greeting = false;
   // Why it plays, in a few words (`reason`: "away 12 h", "stroked"): the
   // lane shows it while it plays and no `say` fills the lane. "" for none.
   char reason[kSignBytes] = "";
@@ -358,6 +361,10 @@ class Behaviour {
   render::DoneShow done(uint32_t t) const;
   // Whether a sign is up, not fading.
   bool signUp(uint32_t t) const { return signOn(t) && !noApp(t) && !model_.attn; }
+  // A greeting's sign that waits for its words to end.
+  bool signComing(uint32_t t) const { return sign_.text[0] && int32_t(t - sign_.at) < 0 && !noApp(t) && !model_.attn; }
+  // A greeting plays: the work stream waits for it.
+  bool greetingOn(uint32_t t) const { return greetKey_ && holds(greetKey_, t); }
   // When the sign shown last goes.
   uint32_t signEnd() const { return sign_.at + sign_.ms; }
   // A `say` has arrived that waits for its animation's voice window:
@@ -401,7 +408,7 @@ class Behaviour {
   // the word a `call` brings forward, which plays at once while the
   // agents work and nothing needs you.
   const render::Stream& stream() const { return stream_; }
-  bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t); }
+  bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t) && !greetingOn(t); }
   void call(const char* word, uint8_t slot, render::CallStyle style, uint32_t t) {
     stream_.startCall(word, slot, style, t);
   }
@@ -513,6 +520,7 @@ class Behaviour {
   bool sayDue(uint32_t t) const;       // the `say` plays, or waits to
   bool exprOn(uint32_t t) const;
   bool signOn(uint32_t t) const;
+  bool signDue(uint32_t t) const;  // the sign shows, or waits to
   Source sourceAt(uint32_t t) const;
   // What the strip shows: what the Mac last said, with no app or not, and
   // the finished turn named (null for none), whole.
@@ -523,6 +531,9 @@ class Behaviour {
     bool any() const { return anim || say || face || sign; }
   };
   Parts partsOf(const ReactionIn& in, uint32_t t) const;
+  // The work stream as the Mac last said it, but held back while a greeting
+  // plays or something else holds the screen.
+  void followStream(uint32_t t);
   void touchAlone(uint32_t t);  // a touch wakes it, and starts kAloneSleepMs over
   void liftFinishSign(uint32_t t);
   const Done* stripFinish(uint32_t t) const;  // the finish the strip names
@@ -562,6 +573,8 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
+  // The greeting playing, by its key; 0 for none.
+  uint32_t greetKey_ = 0;
   // The last wish shown, and when one last popped and how.
   render::WishShow::Kind lastWish_ = render::WishShow::kNone;
   uint32_t wishPopAt_ = 0;
