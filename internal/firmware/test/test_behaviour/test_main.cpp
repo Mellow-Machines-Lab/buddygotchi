@@ -3900,7 +3900,7 @@ static void test_a_greeting_plays_whole_then_the_work_stream() {
     r.state(base("idle"));
     greet(r, true);
     TEST_ASSERT_FALSE(r.b.signUp(r.t));
-    TEST_ASSERT_TRUE(r.b.signComing(r.t));
+    TEST_ASSERT_TRUE(r.b.signPending(r.t));
     r.at(1000 + kGoMs - 1);
     TEST_ASSERT_FALSE(r.b.signUp(r.t));
     r.at(1000 + kGoMs);

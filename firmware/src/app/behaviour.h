@@ -384,8 +384,8 @@ class Behaviour {
   render::DoneShow done(uint32_t t) const;
   // Whether a sign is up, not fading.
   bool signUp(uint32_t t) const { return signOn(t) && !noApp(t) && !model_.attn; }
-  // A greeting's sign that waits for its words to end.
-  bool signComing(uint32_t t) const { return sign_.text[0] && int32_t(t - sign_.at) < 0 && !noApp(t) && !model_.attn; }
+  // Whether a sign is up, or waits for a greeting's words to end.
+  bool signPending(uint32_t t) const { return signDue(t) && !noApp(t) && !model_.attn; }
   // A greeting plays: the work stream waits for it.
   bool greetingOn(uint32_t t) const { return greetKey_ && holds(greetKey_, t); }
   // When the sign shown last goes.
@@ -614,6 +614,7 @@ class Behaviour {
   };
   Bar bar_;
   int barFill(uint32_t t) const;
+  int barOff(uint32_t t) const { return int32_t(t - bar_.offAt); }  // how long since it began to go
   void barHeard(const Model& m, bool back, uint32_t t);
   // Whether the screen is another's, or Boop's not looking: no bar then.
   bool barHidden(const Model& m, bool alone, uint32_t t) const;

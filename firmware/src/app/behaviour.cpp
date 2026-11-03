@@ -167,7 +167,7 @@ void Behaviour::resync(uint32_t t) {
   if (sign_.text[0] && !signDue(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
-  if (bar_.on && int32_t(t - bar_.offAt) >= int32_t(render::GrowthShow::kOutMs)) bar_.on = bar_.heart = false;
+  if (bar_.on && barOff(t) >= int(render::GrowthShow::kOutMs)) bar_.on = bar_.heart = false;
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;
@@ -287,9 +287,9 @@ void Behaviour::followStream(uint32_t t) {
   const bool greeting = greetingOn(t);
   // A greeting clears the words at once, and they fall again after it, on
   // the clock they'd have kept, as after a needs-you.
-  stream_.setLanes(m.lanes, greeting ? 0 : m.laneCount, m.base == render::SceneState::kWorking && !m.attn && !greeting,
-                   m.attn || greeting, t);
-  stream_.setAct(greeting ? render::Stream::ActIn{} : m.workAct, m.attn || listening(t) || greeting, t);  // each holds the screen
+  const bool held = m.attn || greeting;  // each holds the screen
+  stream_.setLanes(m.lanes, greeting ? 0 : m.laneCount, m.base == render::SceneState::kWorking && !held, held, t);
+  stream_.setAct(greeting ? render::Stream::ActIn{} : m.workAct, held || listening(t), t);
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;
@@ -812,26 +812,16 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
   bar_.offAt = bar_.fillAt + G::kFillMs * (bar_.wrap ? 2 : 1) + G::kHoldMs;
 }
 
-namespace {
-// A smooth step from 0 to 1000 as `age` goes to `ms`.
-int smooth(int age, int ms) {
-  if (age >= ms) return 1000;
-  if (age <= 0) return 0;
-  const int k = 1000 * age / ms;
-  return k * k / 1000 * (3000 - 2 * k) / 1000;
-}
-}  // namespace
-
 int Behaviour::barFill(uint32_t t) const {
   using G = render::GrowthShow;
   if (bar_.to < 0) return 0;
   const int fill = int(G::kFillMs), to = bar_.to * 10;
   int age = int32_t(t - bar_.fillAt);
-  if (!bar_.wrap) return bar_.from + (to - bar_.from) * smooth(age, fill) / 1000;
+  if (!bar_.wrap) return bar_.from + (to - bar_.from) * render::ease1000(age, fill) / 1000;
   // Up to the bar's end and on from its start; or down, for a stage lost.
   const int end = bar_.wrap > 0 ? 1000 : 0;
-  if (age < fill) return bar_.from + (end - bar_.from) * smooth(age, fill) / 1000;
-  return 1000 - end + (to - (1000 - end)) * smooth(age - fill, fill) / 1000;
+  if (age < fill) return bar_.from + (end - bar_.from) * render::ease1000(age, fill) / 1000;
+  return 1000 - end + (to - (1000 - end)) * render::ease1000(age - fill, fill) / 1000;
 }
 
 bool Behaviour::barHidden(const Model& m, bool alone, uint32_t t) const {
@@ -861,7 +851,7 @@ void Behaviour::barHeard(const Model& m, bool back, uint32_t t) {
     bar_.offAt = bar_.fillAt + G::kFillMs * (wrap ? 2 : 1) + G::kHoldMs;
     return;
   }
-  const bool up = bar_.on && int32_t(t - bar_.offAt) < int32_t(G::kOutMs);
+  const bool up = bar_.on && barOff(t) < int(G::kOutMs);
   if (!up && !wrap && std::abs(m.xp - bar_.to) < kBarStep) return;
   bar_.from = barFill(t);
   bar_.to = m.xp, bar_.wrap = wrap, bar_.fillAt = t;
@@ -878,7 +868,7 @@ render::GrowthShow Behaviour::growthShow(uint32_t t) const {
   // The stage it's filling up for, till it's past the bar's end.
   if (bar_.wrap && int32_t(t - bar_.fillAt) < int32_t(G::kFillMs)) s.stage -= bar_.wrap;
   const int fromPop = int32_t(t - bar_.heartAt), flown = fromPop - int(G::kHeartWaitMs), landed = int32_t(t - bar_.fillAt);
-  const int out = int32_t(t - bar_.offAt);
+  const int out = barOff(t);
   if (out >= int(G::kOutMs) || barHidden(model_, noApp(t), t)) return s;
   s.opacity = std::min(255 * int32_t(t - bar_.onAt) / int(G::kInMs), 255);
   if (out > 0) s.opacity = 255 - 255 * out / int(G::kOutMs);

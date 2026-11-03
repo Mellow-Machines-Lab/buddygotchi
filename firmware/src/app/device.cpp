@@ -387,7 +387,7 @@ void Device::onDo(const Do& c, uint32_t t) {
       live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
       // An ask rests once its question has been read: anything newer may
       // replace it, and ends it unanswered.
-      if (mo.sign[0] && (b_.signUp(t) || b_.signComing(t)) && !b_.asking(t) && after(b_.signEnd(), live_.restAt))
+      if (mo.sign[0] && b_.signPending(t) && !b_.asking(t) && after(b_.signEnd(), live_.restAt))
         live_.restAt = b_.signEnd();
       if (b_.asking(t) && after(t + Behaviour::kSignMinMs, live_.restAt)) live_.restAt = t + Behaviour::kSignMinMs;
       break;
@@ -405,7 +405,7 @@ void Device::onDo(const Do& c, uint32_t t) {
       kit().ended(c.key);
       break;
     case kWishMet:  // its sign is read; with none up, nothing holds it
-      if (b_.signUp(t) || b_.signComing(t)) live_.restKey = c.key, live_.restAt = b_.signEnd();
+      if (b_.signPending(t)) live_.restKey = c.key, live_.restAt = b_.signEnd();
       else kit().rest(c.key);
       break;
     case kStarting:
