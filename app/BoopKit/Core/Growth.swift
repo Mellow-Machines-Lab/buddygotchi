@@ -40,13 +40,8 @@ public struct Growth: Equatable, Sendable {
 
     /// The days from one `yyyy-MM-dd` to another, 0 if either isn't one.
     public static func days(from: String, to: String) -> Int {
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.timeZone = TimeZone(identifier: "UTC")
-        f.dateFormat = "yyyy-MM-dd"
-        guard let a = f.date(from: from), let b = f.date(from: to) else { return 0 }
-        return Int(b.timeIntervalSince(a) / 86_400)
+        guard let a = LocalTime.dayNumber(from), let b = LocalTime.dayNumber(to) else { return 0 }
+        return b - a
     }
 
     /// The reason it shrank, in the person's words.

@@ -234,8 +234,6 @@ public final class Runtime: @unchecked Sendable {
     // Here and away. All on `home`.
     /// Decides whether you're at the Mac, from where the transcript left it.
     var presence = PresenceDetector()
-    /// The day `goBackwards` last looked.
-    var backwardsDay = ""
     /// The idle time `{"dev":"presence","idle_ms":N}` set, read in place of
     /// the Mac's when there's no `idleMs`.
     var devIdleMs: Int64 = 0
@@ -869,13 +867,10 @@ extension Duration {
 
 extension Runtime {
 
-    /// Once a day: Boop left alone goes backwards, which shows on the board
-    /// at once.
+    /// Boop left alone goes backwards, once for each day past the grace,
+    /// which shows on the board at once.
     func goBackwards(at now: Int64) {
-        let today = options.time.day(options.wallClock())
-        guard today != backwardsDay else { return }
-        backwardsDay = today
-        guard growth.decay(today: today) else { return }
+        guard growth.decay(today: options.time.day(options.wallClock())) else { return }
         changed()
         for rig in rigs { run(core(rig).growthChanged(at: now), on: rig) }
     }
