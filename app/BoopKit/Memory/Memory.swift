@@ -39,6 +39,9 @@ public final class Memory: @unchecked Sendable {
     /// asleep and idle, nil while it isn't.
     var dreamtThisSleep = false
     var sleepingSince: Int64?
+    /// How many times you've asked Boop to forget: a write or a line asked
+    /// for before the last one doesn't land.
+    private var forgets = 0
     /// How long Boop is asleep and idle before it dreams by itself: a
     /// coffee break isn't a sleep.
     public static let settleMs: Int64 = 20 * 60_000
@@ -251,10 +254,14 @@ public final class Memory: @unchecked Sendable {
         guard let writer else { return }
         let notes = missingSigns()
         guard !notes.isEmpty else { return }
+        let asked = forgets
         Task { [weak self] in
             var signs: [String: String] = [:]
             for text in notes { signs[text] = await writer.sign(for: text) ?? "" }
-            queue.async { self?.keep(signs: signs) }
+            queue.async {
+                guard let self, asked == self.forgets else { return }
+                self.keep(signs: signs)
+            }
         }
     }
 
@@ -385,12 +392,16 @@ public final class Memory: @unchecked Sendable {
         note("memory: dreaming (\(why)) about \(dream.about ?? dream.weekday)")
         guard let queue else { return }
         dreaming = true
+        let asked = forgets
         Task { [weak self] in
             let night = await self?.ask(dream, tallies: span.tallies)
             queue.async {
-                if let night { self?.apply(night) }
-                self?.dreaming = false
-                self?.writeSigns(queue: queue)
+                guard let self else { return }
+                if let night {
+                    if asked == self.forgets { self.apply(night) } else { self.note("memory: you asked Boop to forget, so the dream's write for \(night.day) is dropped") }
+                }
+                self.dreaming = false
+                self.writeSigns(queue: queue)
             }
         }
     }
@@ -452,6 +463,7 @@ public final class Memory: @unchecked Sendable {
     /// of its care stays (`MemoryReader.Tallies.forgotten`). Call it with
     /// `memory.md` already as you left it.
     public func forgetAboutYou() {
+        forgets += 1
         dreams.update { $0.tallies = $0.tallies.forgotten }
         guard let files else { return }
         do { try files.forgetLearned() } catch { note("memory: can't write the digests: \(error)") }

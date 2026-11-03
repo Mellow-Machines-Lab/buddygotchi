@@ -291,6 +291,30 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(files.written().markdown, preview.after, "d makes what D showed")
     }
 
+    /// A dream's write still being made when you ask Boop to forget doesn't
+    /// land: it was asked from what you've just forgotten.
+    func testAForgetDuringADreamDropsItsWrite() async throws {
+        let dir = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("boop-memory-\(UUID().uuidString.prefix(8))")
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir, today: "2026-10-31")
+        let queue = DispatchQueue(label: "memory-test")
+        let gate = WriterGate()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc,
+                            writer: GatedWriter(gate: gate, reply: "add boop: You stroke Boop most mornings. | days: 2026-10-31\nday: you stroked Boop.\nend"),
+                            files: files, queue: queue)
+        let t0 = at(2026, 10, 31, 9)
+        queue.sync {
+            memory.heard(stroke(1, t0), line: nil)
+            memory.dreamNow(at: t0 + hour)
+        }
+        queue.sync { memory.forgetAboutYou() }
+        gate.open()
+        for _ in 0..<150 where queue.sync(execute: { memory.dreaming }) { try await Task.sleep(nanoseconds: 20_000_000) }
+        XCTAssertFalse(queue.sync { memory.dreaming })
+        XCTAssertEqual(files.written().notes, [], "the night is dropped")
+        XCTAssertEqual(files.written().recently, [])
+    }
+
     /// The telling offers `dreams.md`'s signs the dream's tags fit, the
     /// tagged ones first in the file's order (the person's first), then
     /// the plain ones; a line whose tags the day lacks never.
@@ -410,4 +434,20 @@ final class CountingReader: TranscriptReader {
         return true
     }
     func close(day: String, state: Int, live: Bool) { closed.append("\(day) \(state) \(live ? "live" : "catching up")") }
+}
+
+final class WriterGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var isOpen = false
+    func open() { lock.withLock { isOpen = true } }
+    var opened: Bool { lock.withLock { isOpen } }
+}
+
+/// A writer that answers once the test lets it.
+struct GatedWriter: MemoryWriter {
+    let gate: WriterGate, reply: String
+    func write(_ request: MemoryRequest) async -> MemoryWriterReply {
+        while !gate.opened { try? await Task.sleep(nanoseconds: 2_000_000) }
+        return .reply(reply)
+    }
 }
