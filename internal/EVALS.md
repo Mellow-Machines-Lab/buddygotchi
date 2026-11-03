@@ -258,6 +258,7 @@ file-name order:
 | `runs` | How many runs it gets without `--runs`, at every level, when the default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
+| `signs` | The remembered lines the run may offer, each note's text and its line (`"You stay up late on Fridays.": "u stay up late fridays"`): what `Memory.felt` would offer, for an idle check-in's sign question |
 | `seed` | When check-ins fall within their gaps, 1 unless the file says: the same seed repeats, and another is another day's timing with the same steps. Jev answers much the same at the same prompt, so runs of one seed are nearly one sample: to measure something across days, as `173`'s wishes, copy the file with other seeds into a directory for `--scenarios` |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`): none by default |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
