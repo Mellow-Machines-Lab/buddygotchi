@@ -3719,6 +3719,137 @@ static void test_a_gesture_leaves_a_named_finish_alone() {
   TEST_ASSERT_EQUAL(SceneState::kGesture, r.anim());
 }
 
+// The first moment of your day (ReactionIn::greeting), which plays whole:
+// its sign waits until its words end, or shows at once with none; the work
+// stream waits until it's over, an act where it would have got to; and a
+// needs-you cuts it, its sign still to come or up, as cut.
+static void test_a_greeting_plays_whole_then_the_work_stream() {
+  const auto greet = [](Rig& r, bool words) {
+    ReactionIn in;
+    in.greeting = true, in.key = 7;
+    in.expr = true, in.mood = render::Mood::kHappy;
+    std::snprintf(in.sign, sizeof(in.sign), "had a dream");
+    if (words) in.said = true, in.take = voice::takeIndex(kGo);
+    onReaction(r.b, in, r.t);
+  };
+  {  // No words: at once.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    greet(r, false);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+  }
+  if (voicefile::open()) {  // Words: as they end, for as long as a sign is read, the face held.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    greet(r, true);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    TEST_ASSERT_TRUE(r.b.signComing(r.t));
+    r.at(1000 + kGoMs - 1);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    r.at(1000 + kGoMs);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+    TEST_ASSERT_EQUAL_STRING("had a dream", r.b.sign(r.t).text);
+    render::Mood mood;
+    r.at(1000 + kGoMs + Behaviour::kSignMinMs - 1);
+    TEST_ASSERT_TRUE(r.b.signUp(r.t));
+    TEST_ASSERT_TRUE(r.b.expression(r.t, mood));
+    TEST_ASSERT_TRUE(r.b.greetingOn(r.t));
+    r.at(1000 + kGoMs + Behaviour::kSignMinMs);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    TEST_ASSERT_FALSE(r.b.greetingOn(r.t));
+    app::PlayedOut out;
+    TEST_ASSERT_TRUE(r.b.takePlayedOut(out));
+    TEST_ASSERT_EQUAL_UINT32(7, out.key);
+    TEST_ASSERT_EQUAL(app::CutBy::kNone, out.by);
+  }
+  {  // The stream waits: no words, no word forward, no act; then they come.
+    Rig r;
+    r.at(1000);
+    Model m = base("working");
+    m.laneCount = 1;
+    m.lanes[0].slot = 0, m.lanes[0].count = 1;
+    std::snprintf(m.lanes[0].word, sizeof(m.lanes[0].word), "edit");
+    m.workAct.kind = render::ActKind::kBuild, m.workAct.full = true;
+    std::snprintf(m.workAct.text, sizeof(m.workAct.text), "building");
+    r.state(m);
+    TEST_ASSERT_TRUE(r.b.stream().on);
+    TEST_ASSERT_TRUE(r.b.stream().actNow(r.t).shows());
+    const uint32_t began = r.b.stream().act.at;
+    TEST_ASSERT_TRUE(r.b.callShows(r.t));
+    greet(r, false);
+    TEST_ASSERT_FALSE(r.b.stream().on);
+    TEST_ASSERT_FALSE(r.b.stream().actNow(r.t).shows());
+    TEST_ASSERT_FALSE(r.b.callShows(r.t));
+    r.state(m);  // a state changes nothing while it plays
+    TEST_ASSERT_FALSE(r.b.stream().on);
+    TEST_ASSERT_FALSE(r.b.stream().actNow(r.t).shows());
+    r.at(1000 + Behaviour::kSignMinMs + 5000);
+    TEST_ASSERT_TRUE(r.b.stream().on);
+    TEST_ASSERT_TRUE(r.b.callShows(r.t));
+    TEST_ASSERT_TRUE(r.b.stream().actNow(r.t).shows());
+    TEST_ASSERT_EQUAL_UINT32(began, r.b.stream().act.at);
+  }
+  {  // A needs-you cuts it, its sign up.
+    Rig r;
+    r.at(1000);
+    r.state(base("idle"));
+    greet(r, false);
+    Model m = base("idle");
+    m.attn = true, m.attnId = 3;
+    r.at(1500);
+    r.state(m);
+    TEST_ASSERT_FALSE(r.b.signUp(r.t));
+    TEST_ASSERT_FALSE(r.b.greetingOn(r.t));
+    r.at(1600);
+    app::PlayedOut out;
+    TEST_ASSERT_TRUE(r.b.takePlayedOut(out));
+    TEST_ASSERT_EQUAL(app::CutBy::kNeedsYou, out.by);
+  }
+}
+
+// A low sign (ReactionIn::low): held in the lane for Behaviour::kLowSignMinMs,
+// once its words end, the whole line kept, and not a reply's: it doesn't show
+// over needs you.
+static void test_a_low_sign_waits_for_its_words_and_holds_a_long_line() {
+  TEST_ASSERT_EQUAL_size_t(41, app::kSignTextBytes);
+  const char* line = "you stay up very late on fridays, boss!!";
+  TEST_ASSERT_EQUAL_size_t(40, std::strlen(line));
+  if (!voicefile::open()) return;
+  Rig r;
+  r.at(1000);
+  r.state(base("idle"));
+  ReactionIn in;
+  in.low = true, in.key = 8;
+  in.expr = true, in.mood = render::Mood::kHappy;
+  std::snprintf(in.sign, sizeof(in.sign), "%s", line);
+  std::snprintf(in.clip, sizeof(in.clip), "remember");
+  in.said = true, in.take = voice::takeIndex(kGo);
+  onReaction(r.b, in, r.t);
+  TEST_ASSERT_FALSE(r.b.signUp(r.t));
+  r.at(1000 + kGoMs);
+  TEST_ASSERT_TRUE(r.b.sign(r.t).low);
+  TEST_ASSERT_EQUAL_STRING(line, r.b.sign(r.t).text);
+  TEST_ASSERT_EQUAL_INT32(Behaviour::kLowSignMinMs, r.b.sign(r.t).leftMs);
+  r.at(1000 + kGoMs + Behaviour::kLowSignMinMs - 1);
+  TEST_ASSERT_TRUE(r.b.signUp(r.t));
+  r.at(1000 + kGoMs + Behaviour::kLowSignMinMs);
+  TEST_ASSERT_FALSE(r.b.signUp(r.t));
+  TEST_ASSERT_NULL(r.b.sign(r.t).text);
+  // Over needs you it doesn't show, unlike a reply's.
+  Rig n;
+  n.at(1000);
+  Model m = base("idle");
+  m.attn = true;
+  n.state(m);
+  ReactionIn alone;
+  alone.low = true, alone.expr = true, alone.mood = render::Mood::kHappy;
+  std::snprintf(alone.sign, sizeof(alone.sign), "%s", line);
+  std::snprintf(alone.clip, sizeof(alone.clip), "remember");
+  TEST_ASSERT_NOT_NULL(n.b.admit(alone, n.t));
+}
+
 // Pins what the board starts with and what no app takes away: silent
 // (volume 0) until the Mac's first state, and with no app none of the
 // Mac's tags (a night's, a holiday's) reach the face, which would dress
@@ -3966,6 +4097,8 @@ int main() {
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
   RUN_TEST(test_a_finishs_sign_lifts_as_its_words_end);
+  RUN_TEST(test_a_greeting_plays_whole_then_the_work_stream);
+  RUN_TEST(test_a_low_sign_waits_for_its_words_and_holds_a_long_line);
   RUN_TEST(test_needs_you_alerts_once_and_stays_amber);
   RUN_TEST(test_a_different_needs_you_with_the_same_names_alerts);
   RUN_TEST(test_tap_during_needs_you_is_only_the_dip_and_stays_amber);

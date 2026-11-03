@@ -39,6 +39,12 @@ public struct CharacterPack: Sendable {
     /// The resting mood: a new state folder starts in it, every mood fades
     /// toward it, and a word that isn't a mood reads as it.
     public let defaultMood: String
+    /// The words of its voice that say a fix: never where no failed check
+    /// came first (`claims_a_fix`).
+    public let claimsAFix: Set<String>
+    /// What it says as it brings up something it remembers: the word of its
+    /// voice (`remember_word`), or nil for none.
+    public let rememberWord: String?
     /// What the board shows before the Mac sends a mood (CHARACTER.md §4):
     /// the pack's `startup_mood`, else its default mood.
     public let startupMood: String
@@ -109,6 +115,8 @@ extension CharacterPack {
         version = try string("version")
         defaultMood = try string("default_mood")
         startupMood = json["startup_mood"] as? String ?? defaultMood
+        claimsAFix = Set(json["claims_a_fix"] as? [String] ?? [])
+        rememberWord = json["remember_word"] as? String
         moods = try (json["moods"] as? [[String: Any]] ?? []).map { try CharacterPack.mood($0, in: source) }
         acts = json["acts"] as? [String: [String: String]] ?? [:]
         // The board reports the id, and the firmware names each mood in code.

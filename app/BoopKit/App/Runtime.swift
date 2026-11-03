@@ -353,7 +353,7 @@ public final class Runtime: @unchecked Sendable {
             let link = rig.link, pack = rig.buddy.pack, rigCore = made.core(rig.buddy.id)
             // Each buddy speaks its own pack's personality. Only the first
             // is the one long-term.md set up.
-            return Mind(buddy: rig.buddy, steering: rig.steering,
+            var mind = Mind(buddy: rig.buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued(rig, $0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
                         talk: { talkNow() }, effects: { effected(rig, $0) },
@@ -363,6 +363,8 @@ public final class Runtime: @unchecked Sendable {
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
+            if rig === rigs[0] { mind.felt = { remembersNow()?.felt(at: $0) ?? [] } }
+            return mind
         })
         for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
         // The questions line is debug.jsonl's first, before the read-back's
@@ -477,15 +479,18 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
-                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil,
+                               memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
+                               felt: ((Int64) -> [Memory.Felt])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
         let core = pipeline.core
-        let mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
+        var mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
                         queue: queue, speaks: speaks, talk: talk, memory: memory,
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
                         company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
+        if let seed { mind.seed = seed }
+        mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 

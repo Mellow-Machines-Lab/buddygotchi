@@ -11,10 +11,14 @@ public protocol MemoryWriter: Sendable {
     /// Whether it writes from the request's `pipeline`, so the dream gives it
     /// the digests and the checks take code's counts as a source.
     var usesDigests: Bool { get }
+    /// A note as the pet's own short line, or nil when there's none that
+    /// passes (`MemoryPipeline.signIsValid`).
+    func sign(for note: String) async -> String?
 }
 
 public extension MemoryWriter {
     var usesDigests: Bool { false }
+    func sign(for note: String) async -> String? { nil }
 }
 
 public enum MemoryWriterReply: Equatable, Sendable {
@@ -105,6 +109,11 @@ public struct MemoryPipelineWriter: MemoryWriter {
     public func write(_ request: MemoryRequest) async -> MemoryWriterReply {
         guard let input = request.pipeline else { return .none }
         return .reply(await MemoryPipeline.write(input, model: Self.model))
+    }
+
+    public func sign(for note: String) async -> String? {
+        guard let model = Self.model else { return nil }
+        return await MemoryPipeline.sign(for: note, model: model)
     }
 }
 

@@ -62,6 +62,9 @@ public final class MemoryStore {
     public struct Days: Codable, Equatable, Sendable {
         public var digests: [DayDigest] = []
         public var added: [String] = []
+        /// Each note's short line in the pet's voice, by the note's text, ""
+        /// for a note the model had none for.
+        public var signs: [String: String] = [:]
         public init() {}
 
         /// The most digests kept: more than the proposer looks at.

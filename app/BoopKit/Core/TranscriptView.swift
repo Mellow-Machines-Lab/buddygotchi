@@ -146,6 +146,8 @@ public final class TranscriptView {
         /// played: its event, when it came, and the moment's `did`, once one
         /// started.
         var telling: (seq: Int, at: Int64, did: Int?)?
+        /// The Boop day you last showed up on.
+        var shownUp: String?
         /// The buddies lying face down (`""` for the only one), from their
         /// `facedown` until their `peekaboo`.
         var faceDown: Set<String> = []
@@ -376,6 +378,9 @@ public final class TranscriptView {
         return whose(take(e), e)
     }
 
+    /// The clock Boop's days go by: the pipeline's, before the first event.
+    var time = LocalTime()
+
     /// The buddies when there are several (`Buddy`), for whose lines are
     /// whose, else the only one's name: the pipeline sets them, before the
     /// first event.
@@ -403,8 +408,27 @@ public final class TranscriptView {
             return nil
         }
         played(e)
-        return told(foldLine(e), e)
+        return told(firstToday(foldLine(e), e), e)
     }
+
+    /// Marks the first time you show up on a Boop day: your coming back or,
+    /// with none, your first touch. What Boop does then is the day's
+    /// greeting (`Moment.greeting`), and the narration leads with the day's
+    /// count.
+    func firstToday(_ line: Line?, _ e: Event) -> Line? {
+        guard var line, Self.showsUp(e), fold.away.since == nil else { return line }
+        let today = time.boopDay(e.at)
+        guard fold.shownUp != today else { return line }
+        fold.shownUp = today
+        line.facts[Self.firstTodayFact] = true
+        return line
+    }
+
+    /// A line's fact: it's the first time you show up today.
+    public static let firstTodayFact = "first_today"
+
+    /// Whether `e` is you showing up: back at the Mac, or a touch.
+    static func showsUp(_ e: Event) -> Bool { (e.type == .presence && e.phase == .end) || Yours.touch(e) }
 
     /// How long a line that tells the dream waits for its moment to start
     /// before another may tell it: past a pass's deadline. A moment that
@@ -435,8 +459,7 @@ public final class TranscriptView {
     /// which dream, for the memory to mark it told, the reason and the
     /// dream's signs.
     func told(_ line: Line?, _ e: Event) -> Line? {
-        let showsUp = (e.type == .presence && e.phase == .end) || Yours.touch(e)
-        guard var line, let dream = fold.untold, showsUp, fold.away.since == nil,
+        guard var line, let dream = fold.untold, Self.showsUp(e), fold.away.since == nil,
               let about = (dream["about"] ?? dream["weekday"])?.string, let sentence = dream["sentence"]?.string else { return line }
         if let telling = fold.telling, telling.did != nil || e.at - telling.at < Self.tellingWaitMs { return line }
         fold.telling = (e.seq, e.at, nil)

@@ -80,6 +80,7 @@ public final class Pipeline {
         self.buddies = buddies.map(\.buddy)
         cores = Dictionary(uniqueKeysWithValues: buddies.map { ($0.buddy.id, $0.core) })
         self.view = view
+        view.time = time
         if buddies.count > 1 { view.buddies = buddies.map(\.buddy) } else { view.onlyName = buddies[0].buddy.name }
         var options = Harness.Options()
         // Boop's own words on how to read HISTORY and NOW are in its guide's

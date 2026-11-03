@@ -26,20 +26,35 @@ public enum Voice {
     /// that plays in the `face`'s mood, fit for the turn's `finish` (a
     /// success take only on a success, a swear only on a failure), of the
     /// nearest kind to `kind` that has one, at random, and not one whose
-    /// text is in `avoiding` (the last `say`'s) when another fits: the bank
-    /// has some words recorded twice in one mood, and most in several.
-    /// Nil when none does.
+    /// text is in `avoiding` (the last says', the newest first) when another
+    /// fits: the bank has some words recorded twice in one mood, and most in
+    /// several. With every one said lately, the one said longest ago. None
+    /// in `never`, whatever else fits. Nil when none does.
     public static func take(_ part: Take.Part, meaning: String, kind: Take.Kind, face: String, finish: String?,
-                            avoiding: Set<String> = [], in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
+                            avoiding: [String] = [], never: Set<String> = [], in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
         let fit = Take.all(in: pack).filter {
             $0.part == part && $0.meaning == meaning && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish)
+                && !never.contains($0.text)
         }
         for k in Self.order(kind) {
-            var pool = fit.filter { $0.kind == k }
-            if pool.contains(where: { !avoiding.contains($0.text) }) { pool.removeAll { avoiding.contains($0.text) } }
+            let pool = fresh(fit.filter { $0.kind == k }, avoiding: avoiding)
             if !pool.isEmpty { return pool[rng.int(in: 0...(pool.count - 1))] }
         }
         return nil
+    }
+
+    /// Those of `pool` not said lately (`avoiding`, the newest first), or
+    /// with all of them said lately, those said longest ago.
+    static func fresh(_ pool: [Take], avoiding: [String]) -> [Take] {
+        let unsaid = pool.filter { !avoiding.contains($0.text) }
+        if !unsaid.isEmpty { return unsaid }
+        let oldest = pool.compactMap { avoiding.firstIndex(of: $0.text) }.max()
+        return pool.filter { avoiding.firstIndex(of: $0.text) == oldest }
+    }
+
+    /// The take of `word` that plays in the `face`'s mood, or nil.
+    public static func word(_ word: String, face: String, in pack: CharacterPack = .active) -> Take? {
+        Take.all(in: pack).first { $0.text == word && $0.part != .reply && $0.moods.contains(face) && $0.finish == nil }
     }
 
     /// The pause between a `say`'s two takes, in milliseconds, as the board
@@ -55,15 +70,15 @@ public enum Voice {
     /// feeling said twice over, never two things. Not one whose text is in
     /// `avoiding` while another fits, nor one that makes the `say` longer
     /// than `maxSayMs`. Nil for any other take, or none that fits.
-    public static func lead(before word: Take, face: String, finish: String?, avoiding: Set<String> = [],
+    public static func lead(before word: Take, face: String, finish: String?, avoiding: [String] = [],
                             in pack: CharacterPack = .active, rng: inout SplitMix64) -> Take? {
         guard word.kind == .word || word.kind == .swear else { return nil }
-        var pool = Take.all(in: pack).filter {
+        let pool = Take.all(in: pack).filter {
             $0.kind == .sound && $0.part == word.part && $0.meaning == word.meaning && $0.moods.first == word.moods.first
                 && $0.moods.contains(face) && ($0.finish == nil || $0.finish == finish) && $0.ms + joinGapMs + word.ms <= maxSayMs
         }
         guard !pool.isEmpty, rng.chance(leadChance) else { return nil }
-        if pool.contains(where: { !avoiding.contains($0.text) }) { pool.removeAll { avoiding.contains($0.text) } }
-        return pool[rng.int(in: 0...(pool.count - 1))]
+        let fresh = fresh(pool, avoiding: avoiding)
+        return fresh[rng.int(in: 0...(fresh.count - 1))]
     }
 }

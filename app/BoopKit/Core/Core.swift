@@ -511,7 +511,8 @@ public final class Core {
         Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
     }
 
-    /// On a day with an occasion, the first agent's event Boop sees greets
+    /// On a day with an occasion, your first showing up holds up its sign
+    /// (`dayGreeting`), or else the first agent's event Boop sees greets
     /// it, once a launch: Boop holds up its sign (`Happy Halloween!`,
     /// `Day 50!`), so what it wears all day has a reason you saw, waking
     /// up with it if it was asleep (`waking`), else noticing the day. It
@@ -525,6 +526,23 @@ public final class Core {
         guard let sign = Days.greeting(specialDays(at: now)) else { return }
         play(Moment(anim: waking ? "wake_up" : "notice", sign: sign), for: nil, now, &fx,
              said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
+    }
+
+    /// Today's occasion's sign, for the moment of your first showing up to
+    /// hold up, if `greetDay` hasn't: then it has greeted the day.
+    public func dayGreeting(at now: Int64) -> String? {
+        let today = day(now)
+        guard greetedDay != today else { return nil }
+        greetedDay = today
+        return Days.greeting(specialDays(at: now))
+    }
+
+    /// How many days Boop is old at `now`, for the narration, or nil on the
+    /// day it hatched, or with no hatching known.
+    public func dayCount(at now: Int64) -> Int? {
+        guard let hatched = config.hatched else { return nil }
+        let days = config.time.days(from: hatched, to: wall(now))
+        return days > 0 ? days : nil
     }
 
     /// The mood output saved a new mood (`mood` reads it): a `state`

@@ -251,6 +251,9 @@ public struct Scenario: Sendable {
     /// `memory.md` writes them without the id (`work · 2026-10-25 · "api"
     /// kept failing`), and Recently's lines (`2026-10-25 · a long day`).
     public var memory = WrittenMemory()
+    /// The notes' lines in the pet's voice it may bring up at an idle
+    /// check-in (`signs`: note, line).
+    public var felt: [Memory.Felt] = []
 
     public static let events = ["wish", "grew", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "lock", "unlock", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
@@ -282,7 +285,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = brief?.judge ?? (o["case"] as? String),
               let why = brief != nil ? "" : (o["why"] as? String), let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed"])
+        let unknownKeys = Set(o.keys).subtracting(["signs", "name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -294,6 +297,7 @@ public struct Scenario: Sendable {
             guard let text = t as? String, let ms = Scenario.date(text) else { throw bad("start is a UTC date and time, like 2026-10-31T09:00") }
             start = ms
         }
+        felt = (o["signs"] as? [String: String] ?? [:]).sorted { $0.key < $1.key }.map { Memory.Felt(line: $0.value, note: $0.key) }
         if let m = o["memory"] {
             guard let m = m as? [String: Any], Set(m.keys).isSubset(of: ["notes", "recently"]),
                   let notes = (m["notes"] ?? []) as? [String], let recently = (m["recently"] ?? []) as? [String] else {
@@ -831,7 +835,9 @@ public struct Eval {
                     pending.finish(end)
                 }
             }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
-            remembers: remembers, wall: { clock.now })
+            // Its own words' order by its file, so a rerun says the same, and
+            // no two scenarios open on the same word.
+            remembers: remembers, seed: scenario.file.utf8.reduce(UInt64(0)) { $0 &* 31 &+ UInt64($1) }, felt: { _ in scenario.felt }, wall: { clock.now })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }

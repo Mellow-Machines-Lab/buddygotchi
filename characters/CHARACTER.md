@@ -216,6 +216,8 @@ one:
 | `version` | yes | The pack's version, at most 16 characters. A Mac and a board with different versions of the same pack fall back safely (§10) |
 | `default_mood` | yes | The resting mood: a new state folder starts in it, every mood fades toward it, and an unknown mood reads as it |
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood` |
+| `remember_word` | Optional: the word of its voice it says as it brings up something it remembers, with `rig/clips/reply-remember.json` as its look. For now the bank's `Hey`, standing in until a "hey!" is recorded |
+| `claims_a_fix` | Optional: the words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check |
 | `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |

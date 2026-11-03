@@ -1,4 +1,5 @@
 import Foundation
+import MellowHarness
 import XCTest
 @testable import BoopKit
 
@@ -189,6 +190,55 @@ final class MemoryPipelineTests: XCTestCase {
         memory.forgetJournal()
         XCTAssertEqual(files.days().digests.first?.said, [])
         XCTAssertEqual(files.days().digests.first?.strokes, 2)
+    }
+
+    private struct SignWriter: MemoryWriter {
+        func write(_ request: MemoryRequest) async -> MemoryWriterReply { .none }
+        func sign(for note: String) async -> String? { note.contains("late") ? "u stay up late fridays" : nil }
+    }
+
+    /// At the dream's write each note gets its line, one call a note, "" when
+    /// the model has none, and a note gone takes its line with it.
+    func testEachNoteGetsItsLine() async throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir)
+        var m = WrittenMemory.from(notes: ["you · 2026-10-05 · You stay up late on Fridays.", "work · 2026-10-05 · \"cli\" is busy."])!
+        try files.keep(m, day: "2026-10-05")
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), writer: SignWriter(), files: files)
+        let queue = DispatchQueue(label: "t")
+        memory.writeSigns(queue: queue)
+        for _ in 0..<100 where files.days().signs.isEmpty { try await Task.sleep(nanoseconds: 10_000_000) }
+        queue.sync {}
+        XCTAssertEqual(files.days().signs, ["You stay up late on Fridays.": "u stay up late fridays", "\"cli\" is busy.": ""])
+        XCTAssertEqual(memory.missingSigns(), [], "not asked again")
+        m.notes.removeAll { $0.section == .you }
+        try files.keep(m, day: "2026-10-05")
+        XCTAssertEqual(memory.missingSigns(), [])
+        XCTAssertEqual(files.days().signs, ["\"cli\" is busy.": ""], "a note gone takes its line")
+    }
+
+    /// Pins Memory.feltOffered and feltAgainDays: at most 3 offered, none on
+    /// a day one showed, and the same line not again for 14 days.
+    func testWhatBoopMayBringUp() throws {
+        XCTAssertEqual(Memory.feltOffered, 3)
+        XCTAssertEqual(Memory.feltAgainDays, 14)
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir)
+        let texts = (1...4).map { "Note \($0)." }
+        try files.keep(WrittenMemory.from(notes: texts.map { "you · 2026-10-05 · \($0)" })!, day: "2026-10-05")
+        var days = MemoryStore.Days()
+        for (i, t) in texts.enumerated() { days.signs[t] = i == 3 ? "" : "line \(i)" }
+        try files.keep(days)
+        let time = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: time, files: files)
+        func noon(_ day: Int) -> Int64 { Int64(LocalTime.dayNumber("2026-10-05")! + day) * 86_400_000 + 12 * 3_600_000 }
+        XCTAssertEqual(memory.felt(at: noon(0)).map(\.line).sorted(), ["line 0", "line 1", "line 2"], "a note with no line isn't offered")
+        memory.recordFelt(Event.did("x", for: nil, action: MomentOutput.outputName, by: "brain", facts: ["felt": "line 0"], at: noon(0)))
+        XCTAssertEqual(memory.felt(at: noon(0)), [], "about once a day")
+        XCTAssertEqual(memory.felt(at: noon(1)).map(\.line).sorted(), ["line 1", "line 2"], "not that line again for a while")
+        XCTAssertEqual(memory.felt(at: noon(14)).map(\.line).sorted(), ["line 0", "line 1", "line 2"])
     }
 
     /// The dream gives the proposing writer its digests, and keeps tonight's

@@ -161,7 +161,7 @@ What this says:
 4. **The model marks a story's end:** whether your words on a project end it. Code writes `"blog": you said "not moving after all" on Tuesday.`
 5. **Code plans:** the strongest first, one new note a night, the oldest out of a full You or Your work. A habit that holds renews its note's date after 7 days, in the note's own words, so it doesn't age out and isn't reworded. A note you deleted stays gone.
 6. **`MemoryEdits` checks everything,** as now, with code's counts added as a source. Recently's line is code's.
-7. **A sign,** when wanted: one call with 8 examples, then the checks (at most 40 printable ASCII). 27 of 27 passed the checks; I'd keep 24; three were off (`please be nice` for "you're polite" says the opposite). `MemoryPipeline.sign(for:model:)`, the note's pet-voice line.
+7. **A sign,** when wanted: one call with 8 examples, then the checks (at most 40 printable ASCII). 27 of 27 passed the checks; I'd keep 24; three were off (`please be nice` for "you're polite" says the opposite). `MemoryPipeline.sign(for:model:)`, the note's pet-voice line (`Memory.writeSigns`).
 
 **Cost: at most 1.4 s a dream** in the final run, usually none. Another session was using this Mac during some of the runs, so these are not clean timings. Add about 0.7 s per sign. The model's first load wasn't separated out.
 

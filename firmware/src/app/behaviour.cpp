@@ -108,6 +108,8 @@ bool Behaviour::exprOn(uint32_t t) const { return expr_ && within(t, exprAt_, ex
 
 bool Behaviour::signOn(uint32_t t) const { return sign_.text[0] && within(t, sign_.at, sign_.ms); }
 
+bool Behaviour::signDue(uint32_t t) const { return sign_.text[0] && int32_t(t - sign_.at) < int32_t(sign_.ms); }
+
 bool Behaviour::askOn(uint32_t t) const { return ask_.q[0] && within(t, ask_.at, kAskMs); }
 
 bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
@@ -160,7 +162,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
 // change.
 void Behaviour::resync(uint32_t t) {
   if (say_.take >= 0 && !sayDue(t)) say_ = Say{};
-  if (sign_.text[0] && !signOn(t)) signGoes(signEnd());
+  if (sign_.text[0] && !signDue(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
   if (bar_.on && int32_t(t - bar_.offAt) >= int32_t(render::GrowthShow::kOutMs)) bar_.on = bar_.heart = false;
@@ -175,6 +177,7 @@ void Behaviour::resync(uint32_t t) {
       done_.ending = true, done_.endAt = t, done_.endMs = kFinishLingerMs;
     liftFinishSign(t);
     if (done_.agent[0] && done_.ending && !within(t, done_.endAt, done_.endMs)) done_ = Done{};
+    if (greetKey_ && !holds(greetKey_, t)) greetKey_ = 0, followStream(t);
     if (!stale_ && int32_t(t - lastState_) >= int32_t(kNoAppMs)) stale_ = true, aloneFrom_ = t, lookAt_ = t;
     if (stale_ && !aloneAsleep_ && !within(t, aloneFrom_, kAloneSleepMs)) aloneAsleep_ = true, lookAt_ = t;
   });
@@ -191,7 +194,7 @@ void Behaviour::resync(uint32_t t) {
 // playing, and the kit ended any before it when the queue started this one.
 bool Behaviour::holds(uint32_t key, uint32_t t) const {
   return (reactionOn(t) && reaction_.key == key) || (sayDue(t) && say_.key == key) || (exprOn(t) && exprKey_ == key) ||
-         (signOn(t) && sign_.key == key) || (askOn(t) && ask_.key == key);
+         (signDue(t) && sign_.key == key) || (askOn(t) && ask_.key == key);
 }
 
 // The first cut is the one reported.
@@ -253,6 +256,9 @@ void Behaviour::onState(const Model& m, uint32_t t) {
         cut(reaction_.key, CutBy::kNeedsYou), reaction_.anim = render::SceneState::kNone;
       done_ = Done{};  // its own screen takes the face at once
       if (sayDue(t)) cut(say_.key, CutBy::kNeedsYou);
+      // A greeting's sign is its point: with that still up, it was cut.
+      if (greetKey_ && signDue(t) && sign_.key == greetKey_) cut(greetKey_, CutBy::kNeedsYou);
+      greetKey_ = 0;
       say_ = Say{};  // no `say`, sign or ask while something needs you
       if (ask_.q[0]) endAsk("ignored", t);
       sign_ = gone_ = reason_ = Sign{};
@@ -266,8 +272,17 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       playAnim(render::SceneState::kNotice, t, CutBy::kNone, 1, m.mood, 0);
     heard_ = true;
   });
-  stream_.setLanes(m.lanes, m.laneCount, m.base == render::SceneState::kWorking && !m.attn, m.attn, t);
-  stream_.setAct(m.workAct, m.attn || listening(t), t);  // both hold the screen
+  followStream(t);
+}
+
+void Behaviour::followStream(uint32_t t) {
+  const Model& m = model_;
+  const bool greeting = greetingOn(t);
+  // A greeting clears the words at once, and they fall again after it, on
+  // the clock they'd have kept, as after a needs-you.
+  stream_.setLanes(m.lanes, greeting ? 0 : m.laneCount, m.base == render::SceneState::kWorking && !m.attn && !greeting,
+                   m.attn || greeting, t);
+  stream_.setAct(greeting ? render::Stream::ActIn{} : m.workAct, m.attn || listening(t) || greeting, t);  // each holds the screen
 }
 
 // A reaction with an animation replaces the one playing, and its `say` too;
@@ -355,7 +370,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       expr_ = true;
       exprMood_ = in.mood;
       exprAt_ = t;
-      copyStr(exprReply_, sizeof(exprReply_), in.reply);
+      copyStr(exprReply_, sizeof(exprReply_), in.reply[0] ? in.reply : in.clip);
       exprMs_ = anim ? reaction_.ms : holdMs(in.mood, in.loops, t);
       if (say && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprKey_ = in.key;
@@ -363,12 +378,20 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
     if (sign) {  // as long as the rest of it plays, from now, and long enough to read
       copyStr(sign_.text, sizeof(sign_.text), in.sign);
       sign_.reply = in.expr && in.reply[0];
+      sign_.low = in.low;
       sign_.at = t;
-      sign_.ms = kSignMinMs;
+      sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
       if (anim && !listen) sign_.ms = std::max(sign_.ms, reaction_.ms);
       if (say) sign_.ms = std::max(sign_.ms, voice + say_.ms);
       if (in.expr) sign_.ms = std::max(sign_.ms, exprMs_);
       sign_.key = in.key;
+      // A greeting's or a low one's waits until its words end, as a finish's
+      // name does, and the face it came with holds while it's read.
+      if ((in.greeting || in.low) && say) {
+        sign_.at = say_.at + say_.speakMs;
+        sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
+        if (in.expr) exprMs_ = std::max(exprMs_, sign_.at + sign_.ms - exprAt_);
+      }
     }
     // Why it plays, in the lane, as long as its sign would show; a newer
     // reaction with none takes the old one down.
@@ -409,6 +432,8 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       liftFinishSign(t);
     }
     if (in.key) playing_ = PlayedOut{in.key, CutBy::kNone};
+    greetKey_ = in.greeting ? in.key : 0;
+    followStream(t);
   });
   return say;
 }
@@ -906,8 +931,9 @@ render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
   if (noApp(t) || (model_.attn && !(signOn(t) ? sign_ : gone_).reply)) return s;
   if (signOn(t)) {
-    s.text = sign_.text, s.ms = t - sign_.at;
-  } else if (gone_.text[0] && within(t, goneAt_, render::rig::kFadeMs)) {
+    s.text = sign_.text, s.ms = t - sign_.at, s.low = sign_.low;
+    if (sign_.low) s.leftMs = int32_t(sign_.at + sign_.ms - t);
+  } else if (gone_.text[0] && !gone_.low && within(t, goneAt_, render::rig::kFadeMs)) {  // a low one has fallen away
     s.text = gone_.text, s.ms = t - gone_.at;
     s.opacity = 1000 - render::ease1000(int(t - goneAt_), int(render::rig::kFadeMs));
   }

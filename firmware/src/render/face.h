@@ -79,6 +79,10 @@ struct SignShow {
   const char* text = nullptr;
   uint32_t ms = 0;
   int opacity = 1000;
+  // Held low, in the lane, the face clear (a face that holdsUpFinish does),
+  // and how long until it has gone.
+  bool low = false;
+  int32_t leftMs = -1;
 };
 // The finished turn the brain's reaction is about (its `who`), while the
 // reaction plays and lingers after (app/behaviour.h): whose turn, how it

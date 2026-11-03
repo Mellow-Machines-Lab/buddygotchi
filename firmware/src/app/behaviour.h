@@ -103,6 +103,10 @@ struct PlayedOut {
 // fonts, cut with ".." past them (render::foldText), in kSignBytes.
 constexpr int kSignGlyphs = 18;
 constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
+// A low sign's (`low`, render/gel/low_sign.h): the Mac sends at most this many,
+// plain ASCII. A face that holds none cuts it as any other sign.
+constexpr int kLowGlyphs = 40;
+constexpr size_t kSignTextBytes = kLowGlyphs + 1 > kSignBytes ? kLowGlyphs + 1 : kSignBytes;
 // An ask's answer (`ask`'s `a` and `b`): half the lane, cut the same way.
 constexpr int kAnswerGlyphs = 7;
 constexpr size_t kAnswerBytes = 2 * kAnswerGlyphs + 1;
@@ -162,13 +166,21 @@ struct ReactionIn {
   // The Mac's id for it, 0 for none: a tap on its finish names it.
   uint32_t id = 0;
   // The words the buddy holds up on a sign while it plays, "" for none.
-  char sign[kSignBytes] = "";
+  char sign[kSignTextBytes] = "";
+  // Held low (`low`): in the lane, the face clear, once its words end.
+  bool low = false;
+  // A greeting (`greeting`): the first moment of your day. Its sign waits
+  // until its words end, and the work stream waits until it's over.
+  bool greeting = false;
   // Why it plays, in a few words (`reason`: "away 12 h", "stroked"): the
   // lane shows it while it plays and no `say` fills the lane. "" for none.
   char reason[kSignBytes] = "";
   // With an expression, the Mac's reply to what you said (`reply`): the
   // face plays its pack's clip for it as the expression starts. "" for none.
   char reply[kReplyBytes] = "";
+  // Or a clip of the pack's by the same name (`clip`), with none of a
+  // reply's rights over needs you.
+  char clip[kReplyBytes] = "";
   // It asks for the agents' drawer (`show` "drawer"), the rest of its
   // answer: Device opens it once the sign has been read.
   bool showDrawer = false;
@@ -213,6 +225,8 @@ class Behaviour {
   // A reaction's sign shows from its start for as long as any part of it
   // plays, and at least this long, to be read.
   static constexpr uint32_t kSignMinMs = 2500;
+  // A low sign, twice as long a line, as long again.
+  static constexpr uint32_t kLowSignMinMs = 5000;
   // An ask waits this long for its answer, its question up and its
   // answers in the lane, then ends `ignored`: inside the host's wait for
   // a reaction's `ended`.
@@ -369,6 +383,10 @@ class Behaviour {
   render::DoneShow done(uint32_t t) const;
   // Whether a sign is up, not fading.
   bool signUp(uint32_t t) const { return signOn(t) && !noApp(t) && !model_.attn; }
+  // A greeting's sign that waits for its words to end.
+  bool signComing(uint32_t t) const { return sign_.text[0] && int32_t(t - sign_.at) < 0 && !noApp(t) && !model_.attn; }
+  // A greeting plays: the work stream waits for it.
+  bool greetingOn(uint32_t t) const { return greetKey_ && holds(greetKey_, t); }
   // When the sign shown last goes.
   uint32_t signEnd() const { return sign_.at + sign_.ms; }
   // A `say` has arrived that waits for its animation's voice window:
@@ -412,7 +430,7 @@ class Behaviour {
   // the word a `call` brings forward, which plays at once while the
   // agents work and nothing needs you.
   const render::Stream& stream() const { return stream_; }
-  bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t); }
+  bool callShows(uint32_t t) const { return stream_.accepts(t) && !model_.attn && !noApp(t) && !greetingOn(t); }
   void call(const char* word, uint8_t slot, render::CallStyle style, uint32_t t) {
     stream_.startCall(word, slot, style, t);
   }
@@ -467,10 +485,11 @@ class Behaviour {
   };
   // A sign: its words from `at` for `ms`, for its reaction (`key`).
   struct Sign {
-    char text[kSignBytes] = "";
+    char text[kSignTextBytes] = "";
     uint32_t at = 0, ms = 0;
     uint32_t key = 0;
     bool reply = false;  // a reply's to what you said: it shows over needs you
+    bool low = false;    // held low, in the lane
   };
   using Source = render::FaceSource;
 
@@ -524,6 +543,7 @@ class Behaviour {
   bool sayDue(uint32_t t) const;       // the `say` plays, or waits to
   bool exprOn(uint32_t t) const;
   bool signOn(uint32_t t) const;
+  bool signDue(uint32_t t) const;  // the sign shows, or waits to
   Source sourceAt(uint32_t t) const;
   // What the strip shows: what the Mac last said, with no app or not, and
   // the finished turn named (null for none), whole.
@@ -534,6 +554,9 @@ class Behaviour {
     bool any() const { return anim || say || face || sign; }
   };
   Parts partsOf(const ReactionIn& in, uint32_t t) const;
+  // The work stream as the Mac last said it, but held back while a greeting
+  // plays or something else holds the screen.
+  void followStream(uint32_t t);
   void touchAlone(uint32_t t);  // a touch wakes it, and starts kAloneSleepMs over
   void liftFinishSign(uint32_t t);
   const Done* stripFinish(uint32_t t) const;  // the finish the strip names
@@ -573,6 +596,8 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
+  // The greeting playing, by its key; 0 for none.
+  uint32_t greetKey_ = 0;
   // The last wish shown, and when one last popped and how.
   render::WishShow::Kind lastWish_ = render::WishShow::kNone;
   uint32_t wishPopAt_ = 0;

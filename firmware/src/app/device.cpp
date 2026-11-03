@@ -295,12 +295,15 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
   mo.take = voice::takeIndex(args["say"]["take"].as<const char*>());
   mo.then = mo.take >= 0 ? voice::takeIndex(args["say"]["then"].as<const char*>()) : -1;
   // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
-  render::foldText(args["sign"].as<const char*>(), kSignGlyphs, mo.sign, sizeof(mo.sign));
+  mo.low = (args["low"] | false) && b_.face().holdsUpFinish();
+  render::foldText(args["sign"].as<const char*>(), mo.low ? kLowGlyphs : kSignGlyphs, mo.sign, sizeof(mo.sign));
   // Why it plays, for the lane, cut the same.
   render::foldText(args["reason"].as<const char*>(), kSignGlyphs, mo.reason, sizeof(mo.reason));
   // What a face it brings replies to what you said, by name.
   if (mo.expr) copyStr(mo.reply, sizeof(mo.reply), args["reply"].as<const char*>());
+  if (mo.expr) copyStr(mo.clip, sizeof(mo.clip), args["clip"].as<const char*>());
   mo.showDrawer = !std::strcmp(args["show"] | "", "drawer");
+  mo.greeting = args["greeting"] | false;
   // What it asks: the question's id and its two answers, each cut to half
   // the lane. One with no id or an answer missing asks nothing.
   JsonObjectConst ask = args["ask"];
@@ -384,7 +387,8 @@ void Device::onDo(const Do& c, uint32_t t) {
       live_.restAt = (say ? b_.sayEnd() : t + Behaviour::kBubbleReadMs) + kReactGapMs;
       // An ask rests once its question has been read: anything newer may
       // replace it, and ends it unanswered.
-      if (mo.sign[0] && b_.signUp(t) && !b_.asking(t) && after(b_.signEnd(), live_.restAt)) live_.restAt = b_.signEnd();
+      if (mo.sign[0] && (b_.signUp(t) || b_.signComing(t)) && !b_.asking(t) && after(b_.signEnd(), live_.restAt))
+        live_.restAt = b_.signEnd();
       if (b_.asking(t) && after(t + Behaviour::kSignMinMs, live_.restAt)) live_.restAt = t + Behaviour::kSignMinMs;
       break;
     case kTaskComplete:

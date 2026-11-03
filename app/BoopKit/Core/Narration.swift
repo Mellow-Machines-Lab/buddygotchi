@@ -25,6 +25,20 @@ public struct Narration: Equatable, Sendable {
         self.fact = fact.flatMap { $0.count <= Self.maxFact ? $0 : nil }
     }
 
+    /// Led by Boop's age, on the first time you show up today: "Day 41. Boop
+    /// dreamed about Tuesday: …", and with nothing else to say, "Day 41."
+    public static func day(_ count: Int, leading why: Narration?) -> Narration {
+        let day = "day \(count)"
+        let fact = why?.fact.map { "\(day): \($0)" }.flatMap { $0.count <= maxFact ? $0 : nil } ?? day
+        return Narration(cause: "Day \(count)." + (why.map { " " + $0.cause } ?? ""), fact: fact)
+    }
+
+    /// Why it brings up `note`: "Boop remembers you stay up late on Fridays."
+    public static func remembers(_ note: String, name: String) -> String {
+        guard note.hasPrefix("You ") else { return "\(name) remembers: \(note)" }
+        return "\(name) remembers y" + note.dropFirst()
+    }
+
     /// The sentence for a reaction in `face`: "Boop is happy. You stroked it."
     public func reaction(face: String, name: String) -> String { "\(name) is \(face). \(cause)" }
 
