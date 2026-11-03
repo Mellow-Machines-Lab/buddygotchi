@@ -11,14 +11,20 @@ public protocol MemoryWriter: Sendable {
     /// Whether it writes from the request's `pipeline`, so the dream gives it
     /// the digests and the checks take code's counts as a source.
     var usesDigests: Bool { get }
-    /// A note as the pet's own short line, or nil when there's none that
-    /// passes (`MemoryPipeline.signIsValid`).
-    func sign(for note: String) async -> String?
+    /// A note as the pet's own short line (`MemoryPipeline.signIsValid`).
+    func sign(for note: String) async -> MemoryWriterSign
 }
 
 public extension MemoryWriter {
     var usesDigests: Bool { false }
-    func sign(for note: String) async -> String? { nil }
+    func sign(for note: String) async -> MemoryWriterSign { .noAnswer }
+}
+
+/// What the writer made of a note, for a line. With no answer it's asked again
+/// at the next dream: Apple Intelligence may be off for now, or have timed out.
+/// A line the checks refuse is final for that note.
+public enum MemoryWriterSign: Equatable, Sendable {
+    case line(String), refused, noAnswer
 }
 
 public enum MemoryWriterReply: Equatable, Sendable {
@@ -111,8 +117,8 @@ public struct MemoryPipelineWriter: MemoryWriter {
         return .reply(await MemoryPipeline.write(input, model: Self.model))
     }
 
-    public func sign(for note: String) async -> String? {
-        guard let model = Self.model else { return nil }
+    public func sign(for note: String) async -> MemoryWriterSign {
+        guard let model = Self.model else { return .noAnswer }
         return await MemoryPipeline.sign(for: note, model: model)
     }
 }

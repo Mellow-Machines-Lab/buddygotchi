@@ -228,7 +228,8 @@ public final class Memory: @unchecked Sendable {
     public static let feltOffered = 3, feltAgainDays = 14
 
     /// The notes with no line yet, and the lines kept without those of notes
-    /// gone. Nothing asked here: a note the model has no line for is kept as "".
+    /// gone. Nothing asked here: a note whose line the checks refused is kept
+    /// as "", and one the model didn't answer for isn't kept at all.
     func missingSigns() -> [String] {
         guard let files else { return [] }
         var days = files.days()
@@ -257,7 +258,13 @@ public final class Memory: @unchecked Sendable {
         let asked = forgets
         Task { [weak self] in
             var signs: [String: String] = [:]
-            for text in notes { signs[text] = await writer.sign(for: text) ?? "" }
+            for text in notes {
+                switch await writer.sign(for: text) {
+                case .line(let line): signs[text] = line
+                case .refused: signs[text] = ""
+                case .noAnswer: break
+                }
+            }
             queue.async {
                 guard let self, asked == self.forgets else { return }
                 self.keep(signs: signs)

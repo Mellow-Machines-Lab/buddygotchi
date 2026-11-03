@@ -362,16 +362,20 @@ final class MemoryPipelineTests: XCTestCase {
 
     private struct SignWriter: MemoryWriter {
         func write(_ request: MemoryRequest) async -> MemoryWriterReply { .none }
-        func sign(for note: String) async -> String? { note.contains("late") ? "u stay up late fridays" : nil }
+        func sign(for note: String) async -> MemoryWriterSign {
+            note.contains("late") ? .line("u stay up late fridays") : note.contains("cli") ? .refused : .noAnswer
+        }
     }
 
-    /// At the dream's write each note gets its line, one call a note, "" when
-    /// the model has none, and a note gone takes its line with it.
+    /// At the dream's write each note gets its line, one call a note. "" is
+    /// kept only when the model answered and the checks refused: with no
+    /// answer (Apple Intelligence off, or a timeout) it's asked again at the
+    /// next dream. A note gone takes its line with it.
     func testEachNoteGetsItsLine() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         let files = try MemoryStore(directory: dir)
-        var m = WrittenMemory.from(notes: ["you · 2026-10-05 · You stay up late on Fridays.", "work · 2026-10-05 · \"cli\" is busy."])!
+        var m = WrittenMemory.from(notes: ["you · 2026-10-05 · You stay up late on Fridays.", "work · 2026-10-05 · \"cli\" is busy.", "work · 2026-10-05 · \"web\" is busy."])!
         try files.keep(m, day: "2026-10-05")
         let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), writer: SignWriter(), files: files)
         let queue = DispatchQueue(label: "t")
@@ -379,11 +383,26 @@ final class MemoryPipelineTests: XCTestCase {
         for _ in 0..<100 where files.days().signs.isEmpty { try await Task.sleep(nanoseconds: 10_000_000) }
         queue.sync {}
         XCTAssertEqual(files.days().signs, ["You stay up late on Fridays.": "u stay up late fridays", "\"cli\" is busy.": ""])
-        XCTAssertEqual(memory.missingSigns(), [], "not asked again")
+        XCTAssertEqual(memory.missingSigns(), ["\"web\" is busy."], "no answer: asked again; a refusal isn't")
         m.notes.removeAll { $0.section == .you }
         try files.keep(m, day: "2026-10-05")
-        XCTAssertEqual(memory.missingSigns(), [])
+        XCTAssertEqual(memory.missingSigns(), ["\"web\" is busy."])
         XCTAssertEqual(files.days().signs, ["\"cli\" is busy.": ""], "a note gone takes its line")
+    }
+
+    /// The model's answer says which: no answer, a line, or refused by the checks.
+    func testASignNamesWhyItHasNoLine() async {
+        struct Says: MemoryModel {
+            let reply: String?
+            func text(_ instructions: String, _ prompt: String, tokens: Int, tag: String) async -> String? { reply }
+            func yes(_ instructions: String, _ prompt: String, tag: String) async -> Bool? { nil }
+        }
+        let timedOut = await MemoryPipeline.sign(for: "A note.", model: Says(reply: nil))
+        XCTAssertEqual(timedOut, .noAnswer)
+        let good = await MemoryPipeline.sign(for: "A note.", model: Says(reply: "Sign: more pets pls"))
+        XCTAssertEqual(good, .line("more pets pls"))
+        let tooLong = await MemoryPipeline.sign(for: "A note.", model: Says(reply: String(repeating: "x", count: 41)))
+        XCTAssertEqual(tooLong, .refused)
     }
 
     /// Pins Memory.feltOffered and feltAgainDays: at most 3 offered, none on

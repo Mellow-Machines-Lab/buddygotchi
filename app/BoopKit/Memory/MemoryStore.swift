@@ -65,7 +65,7 @@ public final class MemoryStore {
         /// but not in `memory.md` is one you deleted.
         public var added: [String] = []
         /// Each note's short line in the pet's voice, by the note's text, ""
-        /// for a note the model had none for.
+        /// for a note whose line the checks refused.
         public var signs: [String: String] = [:]
         public init() {}
 

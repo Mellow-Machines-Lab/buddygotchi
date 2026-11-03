@@ -256,13 +256,13 @@ public enum MemoryPipeline {
             && sign.contains(where: \.isLetter) && !sign.contains("\"")
     }
 
-    /// A short pet-voice line for `note`, or nil if the model's doesn't pass
+    /// A short pet-voice line for `note`, refused if the model's doesn't pass
     /// the checks. Its truth is the model's: a yes-or-no check of it refused
     /// more good lines than bad.
-    public static func sign(for note: String, model: MemoryModel) async -> String? {
-        guard var t = clean(await model.text(signWrite, "Note: \(note)\nSign:", tokens: 24, tag: "sign")) else { return nil }
+    public static func sign(for note: String, model: MemoryModel) async -> MemoryWriterSign {
+        guard var t = clean(await model.text(signWrite, "Note: \(note)\nSign:", tokens: 24, tag: "sign")) else { return .noAnswer }
         if t.lowercased().hasPrefix("sign:") { t = String(t.dropFirst(5)).trimmingCharacters(in: .whitespaces) }
         t = t.lowercased().replacingOccurrences(of: "\"", with: "")
-        return signIsValid(t) ? t : nil
+        return signIsValid(t) ? .line(t) : .refused
     }
 }
