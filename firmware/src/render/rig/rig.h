@@ -213,7 +213,7 @@ struct Point {
 // start (lap) and the bottom of the body's outline (hem).
 struct Anchors {
   static constexpr int kRingPoints = 17;
-  Point crown{}, brimL{}, brimF{}, brimR{}, handF{}, eyeL{}, eyeR{};
+  Point crown{}, brimL{}, brimF{}, brimR{}, handF{}, eyeL{}, eyeR{}, mouth{};
   Point lap[kRingPoints]{}, hem[kRingPoints]{};
 };
 
