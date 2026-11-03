@@ -299,16 +299,65 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(memory.dreamReader.dream(agents, now: clock("2026-10-31", 10))?.covers, "2026-10-31")
     }
 
-    /// "Forget" clears what you said from the digests kept; the counts stay.
-    func testForgetClearsWhatYouSaid() throws {
+    /// "Forget" clears what could rewrite "You work late most nights" or
+    /// quote you: from the digests all but the care counts and how much you
+    /// were here, the quoted notes gone from `added`, the lines of notes gone,
+    /// the old copies of `memory.md` and the span's own counts. You and Boop
+    /// and its care stay.
+    func testForgetClearsWhatItLearned() throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
         let files = try MemoryStore(directory: dir)
-        try files.keep(MemoryStore.Days().keeping(day(0) { $0.strokes = 2; $0.said = [.init(at: "09:00", words: "morning buddy")] }, added: []))
-        let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), files: files)
-        memory.forgetJournal()
-        XCTAssertEqual(files.days().digests.first?.said, [])
-        XCTAssertEqual(files.days().digests.first?.strokes, 2)
+        var days = MemoryStore.Days()
+        for i in 0..<8 {
+            days = days.keeping(day(i) {
+                $0.last = "23:40"; $0.late = 2; $0.strokes = 2; $0.strokesAM = 1; $0.pokes = 1; $0.talks = 1
+                $0.failing = ["cli": 1]; $0.tones = ["frustrated": 2]; $0.lengths = ["at length": 1]
+                $0.said = [.init(at: "09:00", words: "morning buddy")]
+            }, added: [])
+        }
+        XCTAssertTrue(keys(days.digests).contains("late.most"))
+        let lasting = "You say \"morning buddy\" to Boop when you sit down."
+        days.added = ["You told Boop \"my secret plan\" on Monday.", "You work late most nights.", lasting]
+        days.signs = ["You told Boop \"my secret plan\" on Monday.": "secret plan!!", lasting: "morning, you"]
+        try files.keep(days)
+        let store = try KeyValueStore(directory: nil)
+        try store.set(["felt": #"{"secret plan!!":"2026-10-05","morning, you":"2026-10-05"}"#])
+        let memory = Memory(store: store, time: LocalTime(), files: files)
+        // Copies from before, and memory.md as Forget leaves it.
+        try files.keep(WrittenMemory.from(notes: ["you · 2026-10-05 · You told Boop \"my secret plan\" on Monday."])!, day: "2026-10-05")
+        try files.keep(WrittenMemory.from(notes: ["boop · 2026-10-05 · \(lasting)"])!, day: "2026-10-06")
+        memory.dreams.begin(at: 0, day: "2026-10-06", state: {
+            var span = DreamReader.Span(since: 1)
+            span.tallies.journal = [.init(at: "09:00", line: "You said to Boop: \"my secret plan\".", plain: false)]
+            span.tallies.threads = ["cli": 2]; span.tallies.turns = 2; span.tallies.prompts = 2; span.tallies.late = 2
+            span.tallies.lastYours = 5; span.tallies.firstYours = 1; span.tallies.yours = 4; span.tallies.touches = 1; span.tallies.strokes = 1
+            return span
+        }())
+
+        memory.forgetAboutYou()
+
+        let d = try XCTUnwrap(files.days().digests.first)
+        XCTAssertEqual(d.said, [])
+        XCTAssertEqual([d.first, d.last], ["", ""])
+        XCTAssertEqual(d.late + d.failed, 0)
+        XCTAssertEqual([d.threads, d.failing, d.frustrated, d.passed, d.tones, d.lengths], [[:], [:], [:], [:], [:], [:]])
+        XCTAssertEqual([d.strokes, d.strokesAM, d.pokes, d.talks], [2, 1, 1, 1], "its care stays")
+        XCTAssertTrue(d.active, "the care counts still count their days")
+        let left = keys(files.days().digests)
+        XCTAssertFalse(left.contains("late.most"), "\(left)")
+        XCTAssertTrue(left.contains("care"), "\(left)")
+        XCTAssertEqual(files.days().added, ["You work late most nights.", lasting], "no quote of what's gone, and still gone")
+        XCTAssertEqual(files.days().signs, [lasting: "morning, you"])
+        XCTAssertEqual(memory.feltShown(), ["morning, you": "2026-10-05"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent("history/2026-10-05/memory.md").path), "an old copy quotes you")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: dir.appendingPathComponent("history/2026-10-06/memory.md").path))
+        let t = try XCTUnwrap(memory.span?.tallies)
+        XCTAssertEqual(t.journal, [])
+        XCTAssertEqual(t.threads, [:])
+        XCTAssertEqual([t.turns, t.prompts, t.late], [0, 0, 0])
+        XCTAssertNil(t.lastYours)
+        XCTAssertEqual(t.strokes, 1, "a stroke is care")
     }
 
     private struct SignWriter: MemoryWriter {

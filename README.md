@@ -155,8 +155,15 @@ The notes and day lines in `memory.md` go to Jev as MEMORY with each
 request, with any words of yours and project names they quote, and a note's
 short line may go as an option for a sign. The digest of each dream
 stays on your Mac: `memory-days.json`, beside `memory.md`, holds the counts
-of each dream and what you said to Boop, for up to 60 dreams. Forget clears
-what you said from it.
+of each dream and what you said to Boop, up to 60 dreams, with the notes the
+dreams wrote and their short lines.
+
+Forget clears You, Your work and Recently, and what they came from: what you
+said, your hours, threads and tones in the digests, the lines of notes gone,
+any note it quoted you in, and older copies of `memory.md`. You and Boop stays,
+as do the counts of your care (strokes, pokes, talks) and of how much you were
+here (minutes, prompts, turns), which name nothing. The transcript isn't
+memory, and stays for its two weeks.
 
 ## Uninstall
 

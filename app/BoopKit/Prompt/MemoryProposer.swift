@@ -30,6 +30,17 @@ public struct DayDigest: Codable, Equatable, Sendable {
     public var weekend: Bool { weekday == "Saturday" || weekday == "Sunday" }
     public var topThread: String? { threads.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key }
 
+    /// What's left when you ask Boop to forget what it learned about you:
+    /// the care counts, which are Boop's, and how much you were here, in bare
+    /// numbers, so those days still count for the care note (`active`). Your
+    /// hours, your threads, your tones and your words go.
+    public var forgotten: DayDigest {
+        var d = DayDigest(day: day, weekday: weekday)
+        d.hereMinutes = hereMinutes; d.prompts = prompts; d.turns = turns
+        d.strokes = strokes; d.strokesAM = strokesAM; d.pokes = pokes; d.talks = talks
+        return d
+    }
+
     /// Two dreams on one day, as one.
     public func joined(with o: DayDigest) -> DayDigest {
         var d = self

@@ -446,12 +446,20 @@ public final class Memory: @unchecked Sendable {
         save(dream)
     }
 
-    /// Empties the journal since the last dream, and what you said in the
-    /// digests kept: what the person asked Boop to forget never reaches the
-    /// dream's write.
-    public func forgetJournal() {
-        dreams.update { $0.tallies.journal = [] }
-        do { try files?.forgetSaid() } catch { note("memory: can't write the digests: \(error)") }
+    /// Forgets what's behind the notes you asked Boop to forget, so the next
+    /// dream's write can't make them again: the span's journal and counts,
+    /// the digests', and the line shown for each note gone. What it counts
+    /// of its care stays (`MemoryReader.Tallies.forgotten`). Call it with
+    /// `memory.md` already as you left it.
+    public func forgetAboutYou() {
+        dreams.update { $0.tallies = $0.tallies.forgotten }
+        guard let files else { return }
+        do { try files.forgetLearned() } catch { note("memory: can't write the digests: \(error)") }
+        let lines = Set(files.days().signs.values)
+        let shown = feltShown().filter { lines.contains($0.key) }
+        if let data = try? JSONEncoder().encode(shown) {
+            do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
+        }
     }
 
     func told(_ day: String) {

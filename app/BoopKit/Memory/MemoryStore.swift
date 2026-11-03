@@ -105,12 +105,24 @@ public final class MemoryStore {
 
     public static let daysFile = "memory-days.json"
 
-    /// Forgets what you said in the digests kept. The counts stay: they say
-    /// nothing in your words.
-    public func forgetSaid() throws {
+    /// Forgets what the kept files hold about you, with `memory.md` as you
+    /// left it: the digests but for their care counts (`DayDigest.forgotten`),
+    /// a note in `added` that quotes anything and is gone (the rest stay
+    /// there, so those stay gone), the lines of notes gone, and every older
+    /// copy of `memory.md` in `history/`.
+    public func forgetLearned() throws {
+        let memory = written()
+        let notes = Set(memory.notes.map(\.text))
         var days = days()
-        for i in days.digests.indices { days.digests[i].said = [] }
+        days.digests = days.digests.map(\.forgotten)
+        days.added.removeAll { $0.contains("\"") && !notes.contains($0) }
+        days.signs = days.signs.filter { notes.contains($0.key) }
         try keep(days)
+        let history = directory.appendingPathComponent(Self.historyDir).path
+        for day in (try? FileManager.default.contentsOfDirectory(atPath: history)) ?? [] {
+            let copy = historyURL(day).appendingPathComponent(WrittenMemory.fileName)
+            if let text = try? String(contentsOf: copy, encoding: .utf8), text != memory.markdown { try FileManager.default.removeItem(at: copy) }
+        }
     }
 
     public func days() -> Days {

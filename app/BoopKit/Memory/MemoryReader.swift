@@ -61,6 +61,19 @@ public final class MemoryReader: TranscriptReader {
         public var thread: String { threads.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key ?? "" }
 
         public init() {}
+
+        /// A span's counts when you ask Boop to forget what it learned about
+        /// you: its care stays, as do your company and what carries, and the
+        /// journal, the threads, your hours and the turns go.
+        public var forgotten: Tallies {
+            var t = self
+            t.journal = []
+            t.threads = [:]
+            t.turns = 0; t.failed = 0; t.longestMinutes = 0; t.prompts = 0; t.late = 0
+            t.firstYours = nil; t.lastYours = nil
+            t.yours = touches + talks
+            return t
+        }
     }
     public typealias State = Tallies
 
