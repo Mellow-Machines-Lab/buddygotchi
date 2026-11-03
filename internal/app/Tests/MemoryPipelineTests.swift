@@ -284,6 +284,59 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(rig.pipeline.transcript.event(seq)?["words"]?.string, "the key is [secret]", "the transcript keeps no secret you said")
     }
 
+    /// `memory-days.json` lasts: a field a digest doesn't have takes its
+    /// default, whichever it is, and every field comes back as it went in.
+    func testADigestReadsWithAnyFieldMissing() throws {
+        var full = day(0) { $0.strokes = 2; $0.strokesAM = 1; $0.pokes = 3; $0.talks = 4; $0.late = 1; $0.failed = 1 }
+        full.failing = ["a": 1]; full.frustrated = ["b": 2]; full.passed = ["c": 3]; full.tones = ["d": 4]; full.lengths = ["e": 5]
+        full.said = [.init(at: "09:00", words: "morning buddy")]
+        let bare = DayDigest(day: full.day, weekday: full.weekday)
+        for (mine, none) in zip(Mirror(reflecting: full).children, Mirror(reflecting: bare).children) where mine.label != "day" && mine.label != "weekday" {
+            XCTAssertNotEqual(String(describing: mine.value), String(describing: none.value), "\(mine.label ?? ""): set it here, and read it in init(from:)")
+        }
+        let data = try JSONEncoder().encode(full)
+        let back = try JSONDecoder().decode(DayDigest.self, from: data)
+        XCTAssertEqual(back, full)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        for key in object.keys {
+            var less = object
+            less[key] = nil
+            let without = try JSONSerialization.data(withJSONObject: less)
+            let read = try? JSONDecoder().decode(DayDigest.self, from: without)
+            if key == "day" || key == "weekday" {
+                XCTAssertNil(read, "\(key) says which day it is")
+            } else {
+                XCTAssertEqual(read?.day, full.day, "without \(key)")
+            }
+        }
+        var days = try XCTUnwrap(try? JSONDecoder().decode(MemoryStore.Days.self, from: Data("{}".utf8)))
+        XCTAssertEqual(days, MemoryStore.Days(), "a file with none of its fields")
+        days = try JSONDecoder().decode(MemoryStore.Days.self, from: Data(#"{"added":["a note"],"next":1}"#.utf8))
+        XCTAssertEqual(days.added, ["a note"], "a field it doesn't know, and two it doesn't have")
+    }
+
+    /// A file that won't read isn't overwritten: it's moved aside, and the
+    /// days start again. Forget takes the copy too: it holds your words.
+    func testABadDaysFileMovesAside() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let files = try MemoryStore(directory: dir)
+        let path = dir.appendingPathComponent(MemoryStore.daysFile), aside = dir.appendingPathComponent(MemoryStore.daysFile + ".broken")
+        let bad = Data(#"{"digests":[{"nope"#.utf8)
+        try bad.write(to: path)
+        XCTAssertEqual(files.days(), MemoryStore.Days())
+        XCTAssertEqual(try? Data(contentsOf: aside), bad, "moved aside")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: path.path))
+        var days = MemoryStore.Days()
+        days.added = ["a note"]
+        try files.keep(days)
+        XCTAssertEqual(files.days().added, ["a note"])
+        XCTAssertEqual(try? Data(contentsOf: aside), bad, "the next write leaves it")
+        try files.forgetLearned()
+        XCTAssertFalse(FileManager.default.fileExists(atPath: aside.path), "forget takes it")
+    }
+
     /// With no model the write still goes: code's day line, and nothing that needs one.
     func testWithNoModel() async {
         let out = await MemoryPipeline.write(input([]), model: nil)

@@ -69,6 +69,14 @@ public final class MemoryStore {
         public var signs: [String: String] = [:]
         public init() {}
 
+        /// As `DayDigest`: a field the file doesn't have takes its default.
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            digests = try c.decodeIfPresent([DayDigest].self, forKey: .digests) ?? []
+            added = try c.decodeIfPresent([String].self, forKey: .added) ?? []
+            signs = try c.decodeIfPresent([String: String].self, forKey: .signs) ?? [:]
+        }
+
         /// The most digests kept: more than the proposer looks at.
         public static let kept = 60, addedKept = 200
 
@@ -108,8 +116,8 @@ public final class MemoryStore {
     /// Forgets what the kept files hold about you, with `memory.md` as you
     /// left it: the digests but for their care counts (`DayDigest.forgotten`),
     /// a note in `added` that quotes anything and is gone (the rest stay
-    /// there, so those stay gone), the lines of notes gone, and every older
-    /// copy of `memory.md` in `history/`.
+    /// there, so those stay gone), the lines of notes gone, a bad file moved
+    /// aside, and every older copy of `memory.md` in `history/`.
     public func forgetLearned() throws {
         let memory = written()
         let notes = Set(memory.notes.map(\.text))
@@ -118,6 +126,7 @@ public final class MemoryStore {
         days.added.removeAll { $0.contains("\"") && !notes.contains($0) }
         days.signs = days.signs.filter { notes.contains($0.key) }
         try keep(days)
+        try? FileManager.default.removeItem(at: url(Self.daysFile + ".broken"))
         let history = directory.appendingPathComponent(Self.historyDir).path
         for day in (try? FileManager.default.contentsOfDirectory(atPath: history)) ?? [] {
             let copy = historyURL(day).appendingPathComponent(WrittenMemory.fileName)
@@ -125,8 +134,18 @@ public final class MemoryStore {
         }
     }
 
+    /// The kept days. A file that won't read moves aside, as
+    /// `memory-days.json.broken`, so the next write doesn't take it with it.
     public func days() -> Days {
-        (try? Data(contentsOf: url(Self.daysFile))).flatMap { try? JSONDecoder().decode(Days.self, from: $0) } ?? Days()
+        guard let data = try? Data(contentsOf: url(Self.daysFile)) else { return Days() }
+        do {
+            return try JSONDecoder().decode(Days.self, from: data)
+        } catch {
+            keepBroken(Self.daysFile)
+            try? FileManager.default.removeItem(at: url(Self.daysFile))
+            log("memory: \(Self.daysFile) didn't read (\(error)); moved it to \(Self.daysFile).broken, and the days start again")
+            return Days()
+        }
     }
 
     public func keep(_ days: Days) throws {

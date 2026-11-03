@@ -24,6 +24,23 @@ public struct DayDigest: Codable, Equatable, Sendable {
 
     public init(day: String, weekday: String) { self.day = day; self.weekday = weekday }
 
+    /// A field the file doesn't have takes its default, so a new field never
+    /// costs the digests already kept. A new field goes here too.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        day = try c.decode(String.self, forKey: .day)
+        weekday = try c.decode(String.self, forKey: .weekday)
+        func read<T: Decodable>(_ key: CodingKeys, _ into: inout T) throws {
+            if let value = try c.decodeIfPresent(T.self, forKey: key) { into = value }
+        }
+        try read(.first, &first); try read(.last, &last)
+        try read(.hereMinutes, &hereMinutes); try read(.strokes, &strokes); try read(.strokesAM, &strokesAM)
+        try read(.pokes, &pokes); try read(.talks, &talks); try read(.prompts, &prompts)
+        try read(.late, &late); try read(.turns, &turns); try read(.failed, &failed)
+        try read(.threads, &threads); try read(.failing, &failing); try read(.frustrated, &frustrated); try read(.passed, &passed)
+        try read(.tones, &tones); try read(.lengths, &lengths); try read(.said, &said)
+    }
+
     /// Whether you were really here that day.
     public var active: Bool { prompts > 0 || turns > 0 || hereMinutes >= 30 }
     public var isLate: Bool { late > 0 || last >= "22:00" || (!last.isEmpty && last < "05:00") }
