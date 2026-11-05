@@ -298,7 +298,8 @@ struct MakeMeYoursAct: View {
                 .textFieldStyle(.plain)
                 .padding(.vertical, 11)
                 .fieldBox(Theme.raised, radius: 12, focus: $nameFocused)
-                .frame(maxWidth: 360)
+                // Room for the widest name: 23 letters, each as wide as a W.
+                .frame(maxWidth: 460)
                 .focused($nameFocused)
                 .onAppear { nameFocused = true }
                 .onSubmit { model.saveName() }

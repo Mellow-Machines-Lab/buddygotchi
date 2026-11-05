@@ -67,6 +67,16 @@ struct Surface {
   static constexpr int kMaxCards = 3;
   Box cardBoxes[kMaxCards];
   int cardBoxCount = 0;
+  // A box of opaque pixels a face drew first in the frame before and needs
+  // again the same: `stillKey` names them (never 0). Anything drawn over
+  // them since (Surface::touch) means they're not those pixels any more, and
+  // any clear forgets them, so a face that wants them kept says so again
+  // (drewStill) each frame, and keeps them only if keeps() says.
+  uint32_t stillKey = 0;
+  Box stillBox;
+  bool stillTouched = false;
+  bool keeps(uint32_t key) const { return !invalid && height <= kTrackedRows && key == stillKey && !stillTouched; }
+  void drewStill(uint32_t key, const Box& box) { stillKey = key, stillBox = box, stillTouched = false; }
   void invalidate() { invalid = true; }
   void touch(int x0, int y0, int x1, int y1) {
     if (height > kTrackedRows) {
@@ -86,6 +96,7 @@ struct Surface {
       const Box& b = cardBoxes[i];
       if (x0 < b.x1 && x1 > b.x0 && y0 < b.y1 && y1 > b.y0) cardKeyTo = std::min(cardKeyTo, std::max(y0, b.y0));
     }
+    if (stillKey && x0 < stillBox.x1 && x1 > stillBox.x0 && y0 < stillBox.y1 && y1 > stillBox.y0) stillTouched = true;
   }
   // The most boxes a clear keeps (render/gel/props.cpp's cards, three each).
   static constexpr int kMaxKeep = 9;
@@ -114,6 +125,7 @@ struct Surface {
     if (!pixels) return e;
     if (invalid || height > kTrackedRows || keepCount <= 0) cardKey = 0;
     cardBoxCount = 0;
+    stillKey = 0;
     const bool laneKept = !invalid && height <= kTrackedRows && keepLane && keepLane == laneKey && laneKeyFrom >= 0 &&
                           laneKeyFrom <= height;
     e.whole = invalid || height > kTrackedRows;

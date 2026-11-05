@@ -27,11 +27,16 @@ public final class MemoryReader: TranscriptReader {
         /// the digest the habits are counted from. Nil in a checkpoint from
         /// before they were kept.
         public var firstYours: Int64?, strokesAM: Int?
-        /// Since when you've been at the Mac (none while away, or before
-        /// your first event), and since when you've been away: carried
-        /// across 5:00.
+        /// The morning's first stroke, for your usual time.
+        public var strokedAM: Int64?
+        /// Since when you've been at the Mac: none while away, before your
+        /// first event of the Boop day, or after a launch or a long gap
+        /// (`breakGapMs`), as the day's hours are the day's own. And since
+        /// when you've been away, which is carried across 5:00.
         public var hereSince: Int64?
         public var awaySince: Int64?
+        /// The last event read, whoever's.
+        public var lastEvent: Int64?
         /// The turns still working, by session, since when: carried.
         public var working: [String: Int64] = [:]
         /// Your company, carried across 5:00: when you last touched or
@@ -57,6 +62,12 @@ public final class MemoryReader: TranscriptReader {
             public var plain: Bool
         }
 
+        /// Your time at the Mac ends at the last event read.
+        mutating func leftTheMac() {
+            if let hereSince, let lastEvent { hereMinutes += Int(max(0, lastEvent - hereSince) / 60_000) }
+            hereSince = nil
+        }
+
         /// The busiest thread: the one that finished the most turns.
         public var thread: String { threads.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key ?? "" }
 
@@ -70,7 +81,7 @@ public final class MemoryReader: TranscriptReader {
             t.journal = []
             t.threads = [:]
             t.turns = 0; t.failed = 0; t.longestMinutes = 0; t.prompts = 0; t.late = 0
-            t.firstYours = nil; t.lastYours = nil
+            t.firstYours = nil; t.lastYours = nil; t.strokedAM = nil
             t.yours = touches + talks
             return t
         }
@@ -82,6 +93,11 @@ public final class MemoryReader: TranscriptReader {
     /// A day with this many touches or talks is fond; this many pokes,
     /// poked; this long at the Mac, here; a turn this long, long.
     public static let fondCount = 3, pokedCount = 5, hereMinutes = 240, longMinutes = 30
+    /// No event at all for this long is a break, whatever explains it: a
+    /// running app hears something, a check-in if nothing else, within it. A
+    /// gap as long as a stretch can't be part of one. A presence event says
+    /// for itself when you left.
+    public static let breakGapMs = Notices.stretchMs
 
     let store: KeyValueStore
     let time: LocalTime
@@ -115,13 +131,16 @@ public final class MemoryReader: TranscriptReader {
             if xp > 0 { earned(e, xp) }
         }
         Self.count(e, into: &t, time: time, place: place)
-        return t != before
+        let changed = t != before
+        t.lastEvent = e.at
+        return changed
     }
 
     /// Counts `e` into `t`: what's yours, your company, the touches,
     /// talks, prompts, presence and turns. The day's reader and the dream's
     /// both count so.
     static func count(_ e: Event, into t: inout Tallies, time: LocalTime, place: (String) -> Place) {
+        if e.type != .presence, let last = t.lastEvent, e.at - last >= breakGapMs { t.leftTheMac() }
         if Yours.did(e) {
             t.yours += 1
             t.lastYours = e.at
@@ -138,7 +157,10 @@ public final class MemoryReader: TranscriptReader {
             if e.specificType == "stroke" {
                 t.strokes += 1
                 let hour = time.components(e.at).hour
-                if hour >= LocalTime.boopDayStartHour, hour < 11 { t.strokesAM = (t.strokesAM ?? 0) + 1 }
+                if hour >= LocalTime.boopDayStartHour, hour < 11 {
+                    t.strokesAM = (t.strokesAM ?? 0) + 1
+                    if t.strokedAM == nil { t.strokedAM = e.at }
+                }
             }
         case .said?:
             t.talks += 1

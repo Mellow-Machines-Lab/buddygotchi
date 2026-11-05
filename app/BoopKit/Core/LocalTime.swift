@@ -25,12 +25,6 @@ public struct LocalTime: Sendable {
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
 
-    /// The day at `ms`, from its first millisecond to the next day's.
-    public func dayRange(_ ms: Int64) -> Range<Int64> {
-        guard let i = calendar.dateInterval(of: .day, for: date(ms)) else { return ms..<ms + 1 }
-        return Int64(i.start.timeIntervalSince1970 * 1000)..<Int64(i.end.timeIntervalSince1970 * 1000)
-    }
-
     /// Whether `s` is a `yyyy-MM-dd` that names a real day.
     public static func isDay(_ s: String) -> Bool {
         let p = s.split(separator: "-", omittingEmptySubsequences: false).map { Int($0) }
@@ -64,6 +58,12 @@ public struct LocalTime: Sendable {
     static func dayNumber(_ day: String) -> Int? {
         let p = day.split(separator: "-").compactMap { Int($0) }
         return p.count == 3 ? dayNumber(p[0], p[1], p[2]) : nil
+    }
+
+    /// Minutes since midnight of a `HH:mm`.
+    static func minutes(of clock: String) -> Int? {
+        let p = clock.split(separator: ":").compactMap { Int($0) }
+        return p.count == 2 ? p[0] * 60 + p[1] : nil
     }
 
     /// `day` as a person says it on `today` (both `yyyy-MM-dd`): Today,

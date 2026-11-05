@@ -139,6 +139,9 @@ class Device : public linkkit::App {
   // A quick stroke (TouchGesture::kSwipe), sent as the gesture it is
   // whatever the face plays for it (Face::playsSwipe).
   static constexpr const char* kSwipeGesture = "swipe";
+  // The gesture a finger the face leaned into sends as it lets go: care, like
+  // a stroke, and it opens or dismisses nothing.
+  static constexpr const char* kLeanGesture = "lean";
   // The agents' drawer (render/drawer.h), on a face that has one: a finger
   // that starts on the strip and goes up pulls it open, and the board
   // tells the Mac (`ev drawer`, `did` "open"), which sends the rows in its
@@ -206,6 +209,10 @@ class Device : public linkkit::App {
   bool ready() const { return !b_.face().drawsNative() || (native_ && native_->ready()); }
   // BOOP_GEL_PROFILE builds: the face's stage timings as a line of text.
   int profile(char* out, size_t n, uint32_t frames) { return b_.face().profile(out, n, frames); }
+  // What the face is doing to pass the time now (Face::passing), or null.
+  const char* passing() { return b_.face().passing(kit().now()); }
+  // The face, for tests and tools that read what it's drawing.
+  render::Face& face() { return b_.face(); }
   // The same builds: each latency's p95 and max as ` press_ms=P/M …`
   // fields for the board's own line.
   int latencyFields(char* out, size_t n) const;
@@ -282,6 +289,7 @@ class Device : public linkkit::App {
     ButtonGesture boot;
     TouchGesture touchPath;
     MotionGesture motion;
+    Tilt tilt;
     uint32_t motionAt = 0;
     bool bootInjected = false;  // the BOOT press in progress is dbg.press's
     // The touch in progress, last in contact at real time touchSeenReal.
@@ -294,6 +302,8 @@ class Device : public linkkit::App {
     // It sends nothing as it lets go: the drawer it was on shut under it.
     bool touchSpent = false;
     uint32_t touchSeenReal = 0;
+    bool touchLeant = false;  // this touch's finger had the face lean into it
+    render::Face::Lean lean = render::Face::Lean::kNone;  // how far, this pass (dbg.state)
     // The last touch to let go: its path on the canvas and what it was
     // (`dbg.state`'s touch.last, to check the panel's axes and speeds by).
     TouchGesture::Path lastTouch;
@@ -342,6 +352,10 @@ class Device : public linkkit::App {
   // `did` its name); `facedown` plays nothing. A quick swipe goes as
   // kSwipeGesture, and plays the stroke g if the face plays one for it.
   void gestured(render::Gesture g, uint32_t t, bool injected, bool swipe = false);
+  // A finger at rest: how far the face leans into it this pass, and the touch
+  // it leaned into, let go.
+  void followLean(bool touching, uint32_t t);
+  void leaned(uint32_t t, bool injected);
   void readMotion(uint32_t t);
   // Whether the needs-you screen shows: something needs you, and the
   // app is there to say so.

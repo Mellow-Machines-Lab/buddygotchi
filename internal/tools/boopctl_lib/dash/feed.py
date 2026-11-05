@@ -80,12 +80,7 @@ def kind(line: Line) -> str:
 def sent_by(line: Line) -> str:
     """Who a `sent` line's message is from: `brain` for the brain's
     reactions, `rule` for everything the rules send."""
-    if "by" in line:
-        return line["by"]
-    # Logs from before `by` (and before `do`): a reaction's moment has its
-    # face; a reflex's doesn't.
-    msg = line.get("sent") or {}
-    return "brain" if msg.get("t") == "moment" and msg.get("mood") else "rule"
+    return line.get("by", "rule")
 
 
 def view_name(view: Line) -> str:
@@ -96,8 +91,7 @@ def view_name(view: Line) -> str:
 def _as_action(event: Line) -> tuple[str, str | None, Line] | None:
     """An action as (name, phase, data): the harness's `did` (its start
     while `open`) and `ended`, and "needs you"
-    (`needs_you_start`, `needs_you_end`); or, in logs from before
-    MellowHarness, an event of type `action`. None for any other event."""
+    (`needs_you_start`, `needs_you_end`). None for any other event."""
     data = event.get("data", {})
     k = event.get("kind")
     if k == "did":
@@ -106,8 +100,6 @@ def _as_action(event: Line) -> tuple[str, str | None, Line] | None:
         return data.get("action"), "end", data
     if k in ("needs_you_start", "needs_you_end"):
         return "needs_you", k.removeprefix("needs_you_"), {**data, "session": data.get("session")}
-    if event.get("type") == "action":
-        return event.get("specific_type"), event.get("phase"), {**data, "session": event.get("session")}
     return None
 
 
@@ -151,8 +143,7 @@ def _takes(ids: list[str]) -> list[Take | None] | None:
 
 
 def said(ids: list[str] | None) -> str | None:
-    """What a reaction said: its takes' texts in order (an older log's
-    feeling's then topic's), or their ids with no voice file here; None
+    """What a reaction said: its takes' texts in order, or their ids with no voice file here; None
     for no line."""
     if not ids:
         return None
@@ -185,7 +176,7 @@ class Board:
         self.decided: list[Line] = []
         self._pass_for: dict[int | None, Line] = {}  # the latest decided row by its event (None: forced)
         self._decided_by_action: dict[int, Line] = {}  # a decided row by its react output's seq
-        self._reflex: tuple[int, str] | None = None  # the latest rule reaction, poke or chatter: (time, what)
+        self._reflex: tuple[int, str] | None = None  # the latest rule reaction or poke: (time, what)
         # The brain's latest reaction sent to the device, until its react
         # output's `did` comes: the app sends it while the outputs run,
         # before the pass's line.
@@ -325,15 +316,8 @@ class Board:
                 elif c["anim"]:
                     what = c["anim"] + (f", loops {c['loops']}" if c.get("loops") else "")
                     self.reflexes.append({"at": at, "what": what, "anim": True, "trigger": None, "id": c.get("id")})
-                elif c.get("say"):
-                    # Older logs: the rules' chatter while an agent worked.
-                    what = "working chatter " + say_text(c["say"])
-                    self.reflexes.append({"at": at, "what": what, "trigger": "an agent is working"})
                 if what:  # not the end of push-to-talk, which shows nothing
                     self._reflex = (at, what)
-            if msg.get("t") == "moment":  # logs from before `do`
-                parts = ([c["anim"]] if c["anim"] else []) + (["say " + say_text(c["say"])] if c.get("say") else [])
-                return "sent", "→ moment " + " + ".join(parts)
             return "sent", f"→ do {c['name']}" + (f" + say {say_text(c['say'])}" if c.get("say") else "")
         return "sent", "→ " + json.dumps(msg)
 
@@ -359,14 +343,14 @@ class Board:
         ident = lambda a: (a.get("id", 0), a.get("agent"), a.get("project"))  # noqa: E731
         if new and (not old or ident(old) != ident(new)):
             more = f" (+{new['more']})" if new.get("more") else ""
-            what = ("needs you: " if not old else "needs you now: ") + f"{new['agent']} · {new['project']}{more} · alert"
+            what = ("needs you: " if not old else "needs you now: ") + f"{new['agent']} · {new['project']}{more}"
             self.reflexes.append({"at": at, "what": what, "attn": True, "trigger": None})
         elif old and not new:
             self.reflexes.append({"at": at, "what": "needs you cleared", "attn": True, "trigger": None})
 
     def _event(self, view: Line, at: int) -> None:
         """A view event of a request that waits on you names the needs-you
-        strip just sent before it; any view event names a rule's reaction
+        screen just sent before it; any view event names a rule's reaction
         just sent before it."""
         waiting = [r for r in self.reflexes[-3:] if r["trigger"] is None and at - r["at"] <= TRIGGER_MS]
         match = next((r for r in waiting if r.get("rule")), None)
@@ -387,8 +371,10 @@ class Board:
         if match:
             match["trigger"] = trigger
             return
-        self.reflexes.append({"at": at, "what": a["message"], "trigger": trigger})
-        self._reflex = (at, a["message"])
+        # A `starting` with no board to send it to says nothing: its name does.
+        what = a["message"] or a["name"]
+        self.reflexes.append({"at": at, "what": what, "trigger": trigger})
+        self._reflex = (at, what)
 
     def _pass(self, body: Line, seq: int, at: int) -> None:
         mood_keys = {q["key"] for q in self.questions if q["action"] == "mood"}
@@ -443,12 +429,12 @@ class Board:
         s, st = self.state or {}, self.status
         attn = s.get("attn")
         count = lambda status: sum(x["status"] == status for x in st.get("sessions", []))  # noqa: E731
-        look = s.get("base", "?") + (" with the needs-you strip" if attn else "")
+        doing = s.get("base", "?") + (" with the needs-you screen" if attn else "")
         live = not self.stale(now_ms)
         return [
-            ("look", look),
+            ("doing", doing),
             ("mood", s.get("mood", "?")),
-            ("why", st.get("mood_reason") or "nothing in the log says"),
+            ("why", st.get("mood_reason") or "nothing has moved it yet"),
             ("talk", talk_level(self.context)),
             ("growth", growth_text(st)),
             ("showing", self.showing(now_ms)),
@@ -473,7 +459,7 @@ class Board:
             return self._reflex[1]
         s = self.state or {}
         look = s.get("act") if s.get("base") == "working" and s.get("act") and not s.get("attn") else s.get("base", "?")
-        return f"its {look} look" + (" with the needs-you strip" if s.get("attn") else "")
+        return f"its {look} look" + (" with the needs-you screen" if s.get("attn") else "")
 
     def mood_column(self) -> list[tuple[str, str]]:
         """The mood now, then its changes and memory's rows (a day closing
@@ -592,31 +578,13 @@ def fate(row: Line) -> tuple[str, str]:
 # a notice, or to what you said the reply), how big the moment is (how
 # long the face held and how big what it said) and what it says.
 FACE, MOVE, INTENSITY, SAY = "react.face", "react.move", "react.intensity", "say"
-# What older logs name them, which `answer` reads after today's: the face
-# `react.mood`, and before that `react` (for a while carrying the cheer
-# too, `proud-cheer`); the move `react.animation`, or to what you said
-# `react.reply`; the intensity `react.loops`, by how long it held.
-OLDER = {FACE: ("react.mood", "react"), MOVE: ("react.animation", "react.reply"), INTENSITY: ("react.loops",)}
-# The sizeOptions, smallest first, and how long each held, as
-# `react.loops` named them.
-INTENSITIES = ["small", "medium", "big", "huge"]
-HOLDS = ["once", "twice", "three times", "four times"]
 # The moves at an event (MomentOutput.animations); any other move is a
 # reply to what you said.
 MOVES = ["success", "failure", "reply", "wake up", "notice"]
 
 
 def answer(p: Line, key: str) -> Line:
-    """A question's answer, under its key or an older one: the first that
-    picked something, else the first there; `react.loops`' as the
-    intensity of its hold."""
-    answers = p.get("answers") or {}
-    found = [(k, answers[k]) for k in (key, *OLDER.get(key, ())) if k in answers]
-    k, a = next(((k, a) for k, a in found if a.get("choice") not in (None, "none")), found[0] if found else (key, {}))
-    if k == "react.loops":
-        size = lambda c: INTENSITIES[HOLDS.index(c)] if c in HOLDS else c  # noqa: E731
-        a = {"choice": size(a.get("choice")), "p": {size(c): v for c, v in a.get("p", {}).items()}}
-    return a
+    return (p.get("answers") or {}).get(key, {})
 
 
 def choice(p: Line, key: str) -> str | None:
@@ -636,17 +604,8 @@ def move(p: Line) -> str | None:
     return None if pick in (None, "none") else pick
 
 
-def say_keys(p: Line) -> list[str]:
-    """A pass's questions of what it says: `say`; older logs asked a
-    feeling and a topic, `say.feeling` and `say.about`, and before that
-    for words, `word.feeling` and `word.about`."""
-    return [k for k in p.get("questions") or p.get("answers", {})
-            if k == SAY or k.startswith(("word.", "say.")) and k != "say.kind"]
-
-
 def picks_text(p: Line) -> str:
-    """The face, its move, how big and what it says (an older log's words
-    in quotes), each with its probability: `proud 0.82 · success 0.90 ·
+    """The face, its move, how big and what it says, each with its probability: `proud 0.82 · success 0.90 ·
     big 0.64 · glad 0.71`. What it said is the reaction's takes (`said`):
     Voice picks a take of that meaning."""
     parts = [f"{choice(p, FACE)} {prob(p, FACE):.2f}"]
@@ -654,8 +613,8 @@ def picks_text(p: Line) -> str:
         parts.append(f"{move(p)} {prob(p, MOVE):.2f}")
     if choice(p, INTENSITY):
         parts.append(f"{choice(p, INTENSITY)} {prob(p, INTENSITY):.2f}")
-    words = [(k, choice(p, k), prob(p, k)) for k in say_keys(p) if choice(p, k) not in (None, "none")]
-    parts += [(f"“{w}”" if k.startswith("word.") else w) + f" {v:.2f}" for k, w, v in words] or ["says nothing"]
+    says = choice(p, SAY)
+    parts.append(f"{says} {prob(p, SAY):.2f}" if says not in (None, "none") else "says nothing")
     return " · ".join(parts)
 
 

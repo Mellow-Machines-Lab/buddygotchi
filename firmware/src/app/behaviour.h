@@ -28,6 +28,8 @@ using linkkit::Rng;
 // Copies `src` into a buffer of `n` bytes, cut to fit; null copies as "".
 inline void copyStr(char* dst, size_t n, const char* src) { std::snprintf(dst, n, "%s", src ? src : ""); }
 
+// What you call the buddy, in bytes (`buddy`): names past a caption's width give way to "it".
+constexpr size_t kBuddyBytes = 24;
 // What the Mac last said, as the device parsed it.
 struct Model {
   render::SceneState base = render::SceneState::kIdle;  // idle, working or asleep
@@ -40,6 +42,7 @@ struct Model {
   // Both show on the needs-you screen, three lines of 16.
   char project[48] = "";
   char name[48] = "";  // the thread's name; "" when the Mac sends none
+  char buddy[kBuddyBytes] = "";  // what you call it, when that isn't the pack's name (`buddy`)
   int more = 0;
   uint32_t attnId = 0;  // the needs-you shown's number; 0 when the Mac sends none
   int busy = 0;     // sessions working
@@ -355,6 +358,16 @@ class Behaviour {
   // it's a reply to what you said), and none while an ask's answers fill
   // the lane. It shows with the bubble or alone, never as one.
   const char* caption(uint32_t t) const;
+  // A `do` that is only a reason: nothing plays and nothing already up is
+  // taken down (a falling asleep's, a mood's that moved). It waits for no one.
+  static bool noteOnly(const ReactionIn& in);
+  void note(const char* text, uint32_t t);
+  // A touch the board answered itself says why itself, on a face that does
+  // (Face::captionsTouches), as no Mac or Jev has heard of it yet. A reason in
+  // the same words from the Mac within kOwnReasonMs doesn't show twice: it
+  // carries on the one still up, and with that gone it shows nothing.
+  static constexpr uint32_t kOwnReasonMs = 10000;
+  void touchCaption(const char* gesture, uint32_t t);
   // An ask is up: its answers in the lane, waiting for a tap. Not with no
   // app or while something needs you.
   bool asking(uint32_t t) const;
@@ -608,6 +621,13 @@ class Behaviour {
   bool barHidden(const Model& m, bool alone, uint32_t t) const;
   // The reaction's reason (caption()), timed as its sign would be.
   Sign reason_;
+  // The board's own last reason (touchCaption), and when.
+  char ownReason_[kSignBytes] = "";
+  uint32_t ownReasonAt_ = 0;
+  void showOwn(const char* text, uint32_t t);
+  // The reason shown from now, for a sign's shortest time.
+  void setReason(const char* text, uint32_t t);
+  const char* buddyName() const;
   // The ask up, from `at` for kAskMs, its reaction's key; `lane` is its
   // answers as the lane shows them. q "" for none.
   struct Ask {

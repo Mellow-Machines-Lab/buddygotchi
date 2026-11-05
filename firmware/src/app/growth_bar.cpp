@@ -73,7 +73,8 @@ render::GrowthShow GrowthBar::show(int stage, bool hidden, uint32_t t) const {
   if (!on_) return s;
   // The stage it's filling up for, till it's past the bar's end.
   if (wrap_ && int32_t(t - fillAt_) < int32_t(G::kFillMs)) s.stage -= wrap_;
-  const int fromPop = int32_t(t - heartAt_), flown = fromPop - int(G::kHeartWaitMs), landed = int32_t(t - fillAt_);
+  // By when it lands, not by the fill, which a later state moves on.
+  const int fromPop = int32_t(t - heartAt_), flown = fromPop - int(G::kHeartWaitMs), landed = flown - int(G::kHeartFlyMs);
   const int out = sinceOff(t);
   if (out >= int(G::kOutMs) || hidden) return s;
   s.opacity = std::min<int>(255 * int32_t(t - onAt_) / int(G::kInMs), 255);

@@ -1722,7 +1722,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(records.filter { $0.specificType == Core.needsYou }.map { $0["why"]?.string }, ["its agent's process ended"])
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.sessions, [], "the session is gone")
-        XCTAssertEqual(moments(fx), [])
+        XCTAssertEqual(moments(fx).filter { $0.anim != nil }, [], "a caption says why it sleeps, and nothing plays")
         XCTAssertEqual(woke(fx), [], "nothing for the brain")
         XCTAssertNil(rig.pipeline.threads["claude/s1"], "the view ends it")
         XCTAssertNil(TranscriptView().sessions(rig.pipeline.transcript.view(now: rig.now))["claude/s1"], "and so does a fold later")
@@ -2154,6 +2154,36 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(rig.state.doing, "working")
     }
 
+    /// Falling asleep and waking say why on the board, a caption with nothing
+    /// played, with no line for the brain: a `react` of only a reason. Every card
+    /// a rule starts carries its own.
+    func testSleepingAndWakingSayWhy() {
+        func notes(_ fx: Fx) -> [String] { moments(fx).filter { $0.anim == nil }.compactMap(\.reason) }
+        func dids(_ fx: Fx) -> Int {
+            fx.effects.filter { if case .record(let e) = $0 { e.type == nil } else { false } }.count
+        }
+        let day = CoreRig()
+        let started = day.send(.turnStart)
+        XCTAssertEqual(moments(started).compactMap(\.reason), ["claude started"])
+        day.send(.turnEnd)
+        let dozed = day.wait(Core.dozeOffMs, every: 60_000)
+        XCTAssertEqual(day.state.doing, "asleep")
+        XCTAssertEqual(notes(dozed), ["quiet for 1 h"])
+        XCTAssertEqual(dids(dozed), 0, "the brain hears nothing new")
+        XCTAssertEqual(day.core.doingReason(at: day.now)?.cause, "Nothing's happened for an hour, so Boop dozed off.")
+        XCTAssertEqual(notes(day.send(.turnStart)), [], "the start's card says why")
+
+        let night = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)
+        night.send(.turnStart)
+        night.send(.turnEnd)
+        XCTAssertEqual(notes(night.wait(Core.dozeOffNightMs, every: 60_000)), ["quiet for 10 min"])
+
+        let closed = CoreRig()
+        closed.send(.sessionStart)
+        XCTAssertEqual(notes(closed.send(.sessionEnd)), ["no agents open"])
+        XCTAssertEqual(closed.core.doingReason(at: closed.now)?.fact, "no agents open")
+    }
+
     /// With sessions left open and resting, nothing waiting on you, Boop
     /// dozes off: at night after the last tier (`Core.dozeOffNightMs`, 10
     /// minutes), by day after an hour (`Core.dozeOffMs`). Work wakes it.
@@ -2556,7 +2586,8 @@ final class CoreFuzzTests: XCTestCase {
                 shots += 1
                 XCTAssertFalse(showing, "\(reaction.name) \(reaction.args) while something needs you\n\(why)")
                 XCTAssertNil(reaction.mood, why)
-                XCTAssertEqual(reaction.anim, "starting", why)
+                // A start's card, or a caption saying why Boop slept or woke.
+                XCTAssertTrue(reaction.anim == "starting" || (reaction.anim == nil && reaction.reason != nil), why)
                 XCTAssertEqual(reaction.ctx != nil, reaction.anim == "starting", why)
             }
             for sent in states(fx) {

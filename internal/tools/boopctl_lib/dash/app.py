@@ -1,9 +1,9 @@
 """`boopctl dash`: Boop's live dashboard. Boop now, with
 the face, its Talk, growth and the CONTEXT Jev last read, and three columns
-side by side: the mood and memory, the automatic reactions (reflexes) and
+side by side: the mood and memory, the automatic Moments (reflexes) and
 the decided ones (Jev's, with their signs, asks and reasons), all from
 debug.jsonl, with the raw timeline a key away; and keys that force a mood or
-a reaction (its face, move, intensity and what it says), close Boop's day
+a Moment (its emotion, move, size and what it says), make Boop dream
 now, or preview any look on the dashboard's own sim. A bug report the
 app saves (its ladybug, or `b` here) gets the device's screen, screen.png,
 when the app reaches its device through a socket: the simulator's, or a
@@ -76,8 +76,8 @@ class Picker(ModalScreen[str | None]):
     BINDINGS = [Binding("escape", "dismiss(None)", "cancel")]
     DEFAULT_CSS = """
     Picker { align: center middle; }
-    Picker > Label { width: 70; background: $panel; padding: 0 1; }
-    Picker > OptionList { width: 70; height: auto; max-height: 16; }
+    Picker > Label { width: 100%; max-width: 70; background: $panel; padding: 0 1; }
+    Picker > OptionList { width: 100%; max-width: 70; height: auto; max-height: 16; }
     """
 
     def __init__(self, title: str, choices: list[str]) -> None:
@@ -94,9 +94,9 @@ class Picker(ModalScreen[str | None]):
 
 class StateView(ModalScreen[None]):
     """A page of text over the dashboard: the whole prompt the brain read
-    last, or a dream's preview."""
+    last, a dream's preview, or this week's counts."""
 
-    BINDINGS = [Binding("escape,s,q,D", "dismiss(None)", "close")]
+    BINDINGS = [Binding("escape,s,q,D,w", "dismiss(None)", "close")]
     DEFAULT_CSS = "StateView { background: $background 90%; } StateView > VerticalScroll { border: round $accent; }"
 
     def __init__(self, state: str, title: str = "the prompt Jev read (s or Escape closes)") -> None:
@@ -131,13 +131,14 @@ class Dash(App[None]):
     """
     BINDINGS = [
         Binding("m", "mood", "mood"),
-        Binding("r", "react", "react"),
+        Binding("r", "react", "moment"),
         Binding("p", "preview", "preview"),
-        Binding("t", "timeline", "toggle timeline"),
-        Binding("d", "dream_now", "dream now"),
-        Binding("D", "dream_preview", "preview a dream"),
-        Binding("s", "state", "the prompt Jev read"),
-        Binding("b", "report", "bug report"),
+        Binding("t", "timeline", "timeline"),
+        Binding("d", "dream_now", "dream"),
+        Binding("D", "dream_preview", "try dream"),
+        Binding("s", "state", "prompt"),
+        Binding("w", "week", "week"),
+        Binding("b", "report", "report"),
         Binding("q", "quit", "quit"),
     ]
 
@@ -376,10 +377,10 @@ class Dash(App[None]):
         if not asked:
             return
         if self.look:
-            # Preview: any reaction, its face, its move, how big it is (how
+            # Preview: any Moment, its emotion, its move, how big it is (how
             # long it holds) and the take it says, straight to the
             # dashboard's sim.
-            face = await self.pick("Preview a reaction: the face", [o for o in controls.options(asked[0]) if o != "none"])
+            face = await self.pick("Preview a Moment: its emotion", [o for o in controls.options(asked[0]) if o != "none"])
             moves = [o for q in asked if q["key"] == MOVE for o in controls.options(q)]
             move = face and (await self.pick("…its move", moves) if moves else "none")
             sizes = [o for q in asked if q["key"] == INTENSITY for o in controls.options(q)]
@@ -437,6 +438,10 @@ class Dash(App[None]):
             self.push_screen(StateView(self.board.jev_state))
         else:
             self.notify("no brain pass yet, so no prompt to show")
+
+    def action_week(self) -> None:
+        """This week's daily counts, on this Mac only."""
+        self.push_screen(StateView(controls.week_text(self.follower.path.parent), "this week: daily counts (w or Escape closes)"))
 
     def action_timeline(self) -> None:
         self.timeline.set_class(not self.timeline.has_class("shown"), "shown")

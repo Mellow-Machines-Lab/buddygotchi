@@ -216,11 +216,6 @@ class WireTests(unittest.TestCase):
         self.assertEqual({k: call({"t": "do", "name": k})["anim"] for k in ("react", "stop_listening", "listening")},
                          {"react": None, "stop_listening": None, "listening": "listening"})
         self.assertEqual(call({"t": "do", "name": "starting"})["play"], "next", "the kit's default")
-        # Older logs: a moment played at once; the empty one ended push-to-talk.
-        cheer = call({"t": "moment", "anim": "cheer", "loops": 1})
-        self.assertEqual((cheer["name"], cheer["anim"], cheer["play"], cheer["loops"]), ("cheer", "cheer", "now", 1))
-        self.assertEqual(call({"t": "moment", "say": {}, "mood": "calm", "id": 3})["name"], "react")
-        self.assertEqual(call({"t": "moment"})["name"], "stop_listening")
         self.assertIsNone(call({"t": "state", "base": "idle"}))
 
     def test_what_says_a_request_ended(self):
@@ -287,6 +282,19 @@ class PerfScenesTests(unittest.TestCase):
         result = json.loads(out.getvalue())
         self.assertEqual(code, 0 if result["ok"] else 1)
         return result
+
+    def test_a_macs_message_takes_its_second_and_the_next_three(self):
+        samples = [{"at": i, "mac": i == 3} for i in range(10)]
+        self.assertEqual([x["at"] for x in cli.clean_seconds(samples)], [1, 2, 7, 8, 9])  # and the reset's first
+
+    def test_every_play_is_sent_muted_and_named_once(self):
+        names = [play[0] for play in cli.PERF_PLAYS]
+        self.assertEqual(len(names), len(set(names)))
+        for _, state, steps, seconds in cli.PERF_PLAYS:
+            self.assertNotIn("say", state)
+            for at, message in steps:
+                self.assertLess(at, seconds)
+                self.assertNotIn("say", message.get("args", {}))
 
     def test_each_scene_against_its_budget(self):
         result = self.scenes({"working": 31, "stream": 25, "attention": 28, "pokes": 20, "frightened": 29,

@@ -372,6 +372,163 @@ def perf_scenes(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+# perf --plays: what plays once rather than holds, or holds on another stage:
+# the name, the state (sent again every second), what comes when, in seconds
+# from its start (a `state` takes the place of the one sent again), and how
+# long it runs. Nothing but the heap has a budget here: internal/VERIFICATION.md
+# L2 gives frames a second only to working, needs you and a frightened face.
+def _at(when: list[str], base: str = "idle", mood: str = "calm", **more) -> dict:
+    fields = {"idle": 1} if base == "idle" else {"act": "terminal", "busy": 1}
+    return {"t": "state", "base": base, "mood": mood, "when": when, **fields, **more}
+
+
+DAY = ["day"]
+CHONK = ["day", "chonk"]
+ON_THE_DESK = _at(DAY, "working", "engaged", calls=[[0, 1, "edit"]])
+
+
+def _finish(state_mood: str = "happy", when: list[str] = DAY, **args) -> tuple[dict, list]:
+    return (_at(when, "working", state_mood),
+            [(1, do("task_complete", outcome="success", mood=state_mood, **args))])
+
+
+PERF_PLAYS: list[tuple[str, dict, list[tuple[float, dict]], int]] = [
+    ("idle", _at(DAY), [], 15),
+    # PERF_SCENES's, here too for a board a Mac is talking to.
+    *[(name, state, [], 15) for name, state, repeat, _ in PERF_SCENES if repeat is None],
+    ("stream", {k: v for k, v in STREAM.items() if k != "calls"}, [(2 * i, STREAM_CALLS[i % 3]) for i in range(8)], 16),
+    # The push's lift-off, then its long time away, then its landing.
+    ("push", {**ON_THE_DESK, "wact": ["push", "git push", 1]},
+     [(26, {**ON_THE_DESK, "wact": ["push", "shipped!", 1, "p"]})], 32),
+    ("tests", {**ON_THE_DESK, "wact": ["tests", "running tests", 1]},
+     [(16, {**ON_THE_DESK, "wact": ["tests", "PASS", 1, "p"]})], 22),
+    ("build", {**ON_THE_DESK, "wact": ["build", "building", 1]},
+     [(74, {**ON_THE_DESK, "wact": ["build", "BUILT", 1, "p"]})], 80),
+    ("night-working", _at(["night", "tier1", "tier2", "tier3", "tier4", "tier5"], "working", "happy"), [], 15),
+    ("chonk-idle", _at(CHONK), [], 12),
+    ("chonk-working", _at(CHONK, "working", "happy"), [], 12),
+    ("chonk-finish", *_finish(when=CHONK, loops=3), 12),
+    ("bar", _at(["day", "sprout"], xp=40), [(2, _at(["day", "sprout"], xp=50))], 8),
+    ("heart", _at(["day", "sprout"], xp=20, wish="pet"),
+     [(2, do("wish_met", sign="<3")), (2.4, _at(["day", "sprout"], xp=30))], 8),
+    ("grow-sprout", _at(["day", "hatchling"], "idle", "happy"),
+     [(2, _at(["day", "sprout"], "idle", "happy")), (2.1, do("react", mood="excited", sign="look, a sprout!"))], 10),
+    ("grow-chonk", _at(["day", "buddy"], "idle", "happy"), [(2, _at(CHONK, "idle", "happy"))], 10),
+    # Driven by dbg.imu and dbg.touch: this board can't be tilted by a tool.
+    ("tilt", _at(DAY),
+     [(1, {"t": "dbg.imu", "ax": -300, "ay": 0, "az": 954}), (5, {"t": "dbg.imu", "ax": 300, "ay": 0, "az": 954}),
+      (9, {"t": "dbg.imu", "ax": 0, "ay": 0, "az": 1000}), (11, {"t": "dbg.imu", "off": True})], 12),
+    ("lean", _at(DAY), [(1, {"t": "dbg.touch", "x": 160, "y": 120, "ms": 12000})], 14),
+    ("finish-little", *_finish(loops=1), 8),
+    ("finish-confetti", *_finish(loops=2), 8),
+    ("finish-gold", *_finish(loops=3), 10),
+    ("finish-fireworks", *_finish("excited", loops=3), 10),
+    ("finish-spotlight", *_finish("proud", loops=3), 10),
+    ("finish-parade", *_finish("amused", loops=3), 10),
+    ("finish-mega", *_finish(loops=4), 14),
+]
+
+
+def clean_seconds(samples: list[dict]) -> list[dict]:
+    """The samples a Mac's own message didn't touch: its state takes the
+    face for the moment until the tool's next, and a change of stage, mood
+    and Doing together costs the next seconds too, so a sample that heard
+    one goes, and the three after it, and the first, a reset's."""
+    return [x for i, x in enumerate(samples)
+            if i and not any(y.get("mac") for y in samples[max(0, i - 3):i + 1])]
+
+
+def await_mac_state(dev: "Device", patience: float = 12.0) -> None:
+    """Waits for a Mac on Bluetooth to send its keepalive, if one is there,
+    so what starts next has about 10 s clear of it."""
+    if dev.request({"t": "dbg.ping"}).get("ble") != "conn":
+        return
+    seen = dev.request({"t": "dbg.state"})["rx"]["state"]
+    end = time.monotonic() + patience
+    while time.monotonic() < end and dev.request({"t": "dbg.state"})["rx"]["state"] == seen:
+        dev.listen(0.25)
+
+
+def perf_plays(args: argparse.Namespace) -> int:
+    """Plays each of PERF_PLAYS as it comes on a board, on the profiling
+    build (amoled206_profile), muted, and reports every second: frames a
+    second, the longest stages and the least internal heap, with no second
+    left out, as the second a thing starts is what's asked. A Mac on
+    Bluetooth can't be told to wait, so each play starts just after its
+    keepalive, and `fps_min_clean` leaves out the seconds it spoke in
+    (clean_seconds); `mac_states` counts them."""
+    report: dict = {"plays": {}}
+    ok = True
+    plays = [play for play in PERF_PLAYS if not args.only or play[0] in args.only]
+    with Device(args.port) as dev:
+        for name, state, steps, seconds in plays:
+            await_mac_state(dev)
+            dev.request({"t": "dbg.reset"})
+            dev.request({"t": "dbg.clock", "run": True})
+            before = dev.request({"t": "dbg.state"})["rx"]
+            samples: list[dict[str, float]] = []
+            sent_states = sent_dos = last_heard = 0
+            start = time.monotonic()
+            next_state, todo, holding = 0.0, list(steps), {**state, "vol": 0}
+            while (elapsed := time.monotonic() - start) < seconds:
+                while todo and elapsed >= todo[0][0]:
+                    _, message = todo.pop(0)
+                    if message["t"] == "state":
+                        holding, next_state = {**message, "vol": 0}, elapsed
+                    elif message["t"] == "do":
+                        dev.send(message)
+                        sent_dos += 1
+                    else:
+                        dev.request(message)
+                if elapsed >= next_state:
+                    dev.send(holding)
+                    sent_states += 1
+                    next_state += 1
+                line = dev.read_line(time.monotonic() + 0.05)
+                fields = profile_fields(line) if line else None
+                if fields is None:
+                    continue
+                if line.startswith(b"gel_profile"):
+                    samples.append(fields)
+                elif samples:
+                    samples[-1].update(fields)
+                    rx = dev.request({"t": "dbg.state"})["rx"]
+                    heard = rx["state"] - before["state"] - sent_states
+                    samples[-1]["mac"] = heard > last_heard
+                    last_heard = heard
+            after = dev.request({"t": "dbg.state"})["rx"]
+            if not samples:
+                raise DeviceError("no gel_profile lines: flash the amoled206_profile build")
+
+            clean = clean_seconds(samples)
+
+            def most(key: str) -> int:
+                # Over the worst second that's its own: a mean of a second's frames.
+                return round(max(x.get(key, 0) for x in clean or samples))
+
+            scene = {"fps_by_second": [round(x["fps_milli"] / 1000, 1) for x in samples],
+                     "fps_min": round(min(x["fps_milli"] for x in samples) / 1000, 1),
+                     "fps_min_clean": min((round(x["fps_milli"] / 1000, 1) for x in clean), default=None),
+                     "seconds_clean": len(clean),
+                     "fps_mean": round(sum(x["fps_milli"] for x in samples) / len(samples) / 1000, 1),
+                     **{k: most(k) for k in ("draw_us", "push_us", "wait_us", "push_px", "engine_us", "body_us", "art_us", "layers_us",
+                                             "props_us", "clear_us", "lane_us", "stream_us", "behind_us", "front_us")},
+                     "internal_min": min(x["internal_min"] for x in samples),
+                     "audio_write_errors": most("audio_write_errors"),
+                     "mac_states": after["state"] - before["state"] - sent_states,
+                     "mac_dos": after["do"] - before["do"] - sent_dos}
+            budget = next((row[3] for row in PERF_SCENES if row[0] == name), None)
+            scene["ok"] = (scene["internal_min"] >= PERF_HEAP_MIN and scene["audio_write_errors"] == 0
+                           and (not budget or scene["fps_min_clean"] is None or scene["fps_min_clean"] >= budget))
+            ok = ok and scene["ok"]
+            report["plays"][name] = scene
+        dev.request({"t": "dbg.imu", "off": True})
+        dev.send({**WORKING, "base": "idle", "vol": 0})
+    report["ok"] = ok
+    emit(report)
+    return 0 if ok else 1
+
+
 def cmd_perf(args: argparse.Namespace) -> int:
     """Samples fps, frame time and heap once a second with the clock
     running. With --motion, it plays every animation in turn, one a second
@@ -386,6 +543,8 @@ def cmd_perf(args: argparse.Namespace) -> int:
     once. With --scenes, perf_scenes instead."""
     if args.scenes:
         return perf_scenes(args)
+    if args.plays:
+        return perf_plays(args)
     samples = []
     working = {"t": "state", "base": "working", "busy": 1, "vol": 0}  # muted: a missing vol is 6
     with Device(args.port) as dev:
@@ -1118,6 +1277,9 @@ def build_parser() -> argparse.ArgumentParser:
     how.add_argument("--motion", action="store_true")
     how.add_argument("--scenes", action="store_true",
                      help="the amoled206_profile build's timings, scene by scene, against their budgets")
+    how.add_argument("--plays", action="store_true",
+                     help="the amoled206_profile build's timings, second by second, through what plays once")
+    p.add_argument("--only", nargs="*", help="with --plays: these, not all")
     p.add_argument("--sound", action="store_true", help="with --scenes: a `say` every 3 s, for the DAC under load")
     p.set_defaults(func=cmd_perf)
     p = sub.add_parser("latency", help="time inputs and Mac messages to the frame that shows them, against "

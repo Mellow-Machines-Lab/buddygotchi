@@ -51,10 +51,12 @@ the owner's. For agents:
 ```sh
 git submodule update --init && make -C internal packs  # first, in every new worktree
 make -C internal build                                # everything Swift
-make -C internal check                                # every check that needs no board, camera or Jev key
+make -C internal check                                # the tests that need no board, camera or Jev key; not the boards' builds
+make -C internal boards                               # both boards' firmware, as CI builds them
 make -C internal test                                 # the Swift tests
 .build/debug/Boop --headless --state-dir DIR --debug  # the whole runtime with no UI or Bluetooth
 .build/debug/Boop --snapshots DIR                     # the popover and onboarding as PNGs, then exits
+.build/debug/Boop --counts --state-dir DIR            # the daily counts' summary, numbers only, then exits
 make -C internal demos                                # records each new or changed demo script
 ```
 
@@ -155,7 +157,7 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| touch | Anything you do to the board with a finger or a hand: a poke, a stroke, a ruffle, a nose boop, a tickle, a swipe, a shake, a pick-up, a put-down, a thump, peekaboo | tap, gesture (as two kinds) | `tap`, `gesture` |
+| touch | Anything you do to the board with a finger or a hand: a poke, a stroke, a lean (a finger kept still), a ruffle, a nose boop, a tickle, a swipe, a shake, a pick-up, a put-down, a thump, peekaboo | tap, gesture (as two kinds) | `tap`, `gesture` |
 | poke | One tap on the face; a run is several in a row | tap | `tap` |
 | care | The touches and words that count as caring (strokes, kind words, talking, coming back) | | |
 | words | What you say to Boop on push-to-talk | talk (for the event), said | `talk` |
@@ -179,6 +181,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | kit | Props shown while true: mugs, headphones, the zone, the plant | | |
 | dressing | Outfits and decorations from tags: a hat, shades, the sun, the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
+| tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | lean (that's a finger's) | |
 | the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
 | work act | A command Boop plays out while it runs, with a low sign and Jev's voice: the tests, the push, the build | act (that's the activity) | `wact` |
 | the strip | The counts along the bottom | | |
@@ -210,6 +213,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
 | ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`; never needs an answer | quiz, prompt | `ask` |
 | wish | Boop's want, about one a day by its steering, kind pet, chat or work, its sign picked by Jev like an ask's; a rule meets it at once by a touch on its face, push-to-talk or working with an agent; until you've met a kind once it shows how; left too long it sighs and slumps (`Core.Wish`, `[wish …]` in `asks.md`, `state.wish`, `wish_how`, `wish_met`, `wish_gone`) | need, request | `wish` |
+| notice | Something true about your day that Boop may care about: a fact on a moment that exists (`Noticed` in CONTEXT), or at an idle check-in, a line of its own, `waiting`, `stretch`, `rough` or `late`, a wish first (`Notices`, `[notice …]` in `signs.md`). The animation called `notice` on the wire is the greeting's, which a played notice borrows to look up at you | nag, reminder | `notice_key` |
 | musing | Boop's own beat with a sign and no question, a `[idle]` line of `signs.md` | thought, quip | |
 | the telling | The Moment at your first showing up after 5:00 that tells the dream | | |
 | the day's greeting | The Moment of your first showing up of Boop's day, or the one that tells the dream: it plays whole, its sign after its words, the work stream after it (`Moment.greeting`) | | `greeting` |
@@ -227,13 +231,14 @@ things on three channels, **voice**, **sign** and **narration**.
 | low sign | A card Boop holds up in the strip's place, two lines at most: a finish's thread (`gel::LowSign`) | ticket | |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet, normal, chatty, or silent for a while (a hush) (`Talk`, `Core.Hush`) | chattiness, mute (that's the volume) | `talk`, `hush`, `hushed` |
-| narration | The Mac's plain words for why, never Jev's or Boop's voice (`Narration`) | explanation, caption | `reason` |
+| narration | The plain words for why, the Mac's and the gel's board's own for a touch, never Jev's or Boop's voice (`Narration`, `app/touch_reason.h`); on the board, the caption | explanation | `reason` |
 
 **The mind**
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | transcript | Every event, one file a day (`Transcript`) | the log | |
+| daily counts | A row a day of numbers on the Mac, `daily-counts.jsonl`, for "This week" and a summary you may send; no words, threads or notes (`DayCounts`, `Boop --counts`) | stats, telemetry | |
 | line | One event as a sentence Jev reads (MellowHarness's `Line`) | | |
 | message | One JSON line on the wire: `hello`, `state`, `do`, `ev` | line | |
 | the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD, CONTEXT, HISTORY, NOW | the state | |
@@ -253,7 +258,8 @@ things on three channels, **voice**, **sign** and **narration**.
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | Boop's day | 5:00 to 5:00, today for CONTEXT's Today row and the XP caps; it triggers nothing | | |
-| dream | Everything since the last dream as tags and a sentence, and the memory's update from it: on `d`, once a sleep, or after two days (`DreamReader`, `Memory.dream`, `dreams.md`) | diary, journal, closing the day | |
+| dream | Everything since the last dream as tags and a sentence, and the memory's update from it: on `d`, once a night's sleep or one of 5 h, or after two days (`DreamReader`, `Memory.dream`, `dreams.md`) | diary, journal, closing the day | |
+| digest | One dream's span in numbers and the few words that may be kept, in `memory-days.json`: what habits and notices are read from (`DayDigest`) | summary, day file | |
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign at an idle check-in, about once a day (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |

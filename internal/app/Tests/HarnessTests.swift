@@ -267,7 +267,7 @@ final class HarnessTests: XCTestCase {
         turnMs = 9 * 60_000
         XCTAssertNil(react.run(["react.face": a("proud-success")], now: nil, log: Self.log), "a face and a move are separate questions")
         why = "something needs you"
-        for expression in MomentOutput.expressions.map(\.name) {
+        for expression in CharacterPack.active.faces.map(\.name) {
             XCTAssertEqual(react.run(["react.face": a(expression)], now: nil, log: Self.log), .failed("something needs you"))
         }
         XCTAssertEqual(sent.count, 3, "no face or take while something needs you")

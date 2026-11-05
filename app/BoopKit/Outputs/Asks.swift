@@ -55,10 +55,12 @@ public enum Asks {
     /// A wish's words from the pack's lines: `[wish pet] pet me?`, the sign
     /// that makes it; `[wish pet how] stroke my face?`, that sign while it
     /// shows how, if the pack has one; and `[wish pet met] <3`, the sign as
-    /// it's met.
-    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind, showsHow: Bool = false) -> String? {
-        (showsHow ? lines.first { $0.tags == ["wish", kind.rawValue, "how"] }?.text : nil)
-            ?? lines.first { $0.tags == ["wish", kind.rawValue] }?.text
+    /// it's met. A kind's plain lines take turns by `day`, the Boop day's
+    /// number, so a day's sign stays put and the next day's differs.
+    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind, showsHow: Bool = false, day: Int = 0) -> String? {
+        if showsHow, let how = lines.first(where: { $0.tags == ["wish", kind.rawValue, "how"] }) { return how.text }
+        let plain = lines.filter { $0.tags == ["wish", kind.rawValue] }
+        return plain.isEmpty ? nil : plain[((day % plain.count) + plain.count) % plain.count].text
     }
     public static func wishMetSign(_ lines: [TaggedLine], _ kind: Core.WishKind) -> String? {
         lines.first { $0.tags == ["wish", kind.rawValue, "met"] }?.text

@@ -70,7 +70,7 @@ struct PopoverView: View {
                     }
                     .keyboardShortcut("b", modifiers: .command)
                     .disabled(model.status == nil)  // Boop isn't running (or not yet)
-                    .help("Save a bug report: what Boop saw and did this launch, to hand to an agent")
+                    .help("Save a bug report: what \(model.name) saw and did this launch, to hand to an agent")
                     .accessibilityLabel("Save a bug report")
                 } else if model.pane == .settings {
                     // The versions, where Settings would be.

@@ -376,6 +376,22 @@ final class PresenceRuntimeTests: XCTestCase {
         runtime.stop()
     }
 
+    /// A quit logs no away: the next launch ends your time at the Mac, so
+    /// what the checkpoint kept can't make a stretch of the hours between.
+    func testALaunchEndsYourTimeAtTheMac() throws {
+        let clock = VirtualClock(presenceT0)
+        do {
+            let first = try makeRuntime(clock: clock)
+            dev(first, #"{"dev":"said","words":"hello"}"#)
+            XCTAssertNotNil(first.home.sync { first.remembers?.today?.hereSince })
+            first.stop()
+        }
+        clock.now += 4 * 60 * 60_000
+        let runtime = try makeRuntime(clock: clock)
+        XCTAssertNil(runtime.home.sync { runtime.remembers?.today?.hereSince })
+        runtime.stop()
+    }
+
     /// A demo's `back` is a break of its length at once: the away the
     /// detector would have made that long before, and the back, both the
     /// demo's. The view hears the break's band, as from a real one.

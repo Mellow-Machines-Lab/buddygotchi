@@ -38,7 +38,8 @@ make dev                   # the debug app, with the simulator, the studio and t
 make bundle                # Boop.app as it ships, in .build/Boop.app
 make bundle INTERNAL=1     # the internal build, with the simulator in a window of its own, in .build/internal/Boop.app
 make -C internal build     # the Mac app, the dev tools and the hook client
-make -C internal check     # every check that needs no board: the Swift, firmware and tools' tests, the goldens, the mirror
+make -C internal check     # the tests that need no board: the Swift, firmware and tools' tests, the goldens, the mirror
+make -C internal boards    # both boards' firmware, as CI builds them
 make -C internal test      # Boop's Swift tests, then each package's
 make -C internal sim-test  # the simulator: its core on the Mac, and in a browser's WebAssembly
 ```

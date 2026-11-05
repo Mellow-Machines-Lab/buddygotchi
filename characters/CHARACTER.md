@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-03. The contract a character pack meets, so that any
+Updated 2026-11-04. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -20,6 +20,7 @@ What a pack holds, and what it must have:
 | `rig/` | no | Its expressions, clips and looks on the rig (§15) |
 | `mac/faces.json` | with the pixel face | The pixel face's moods and the popover's still faces (§9) |
 | `mac/mirror/` | no | The board's firmware in a web page, the face the popover and onboarding show (§9) |
+| `mac/passing.tsv` | no | The popover's words for what the face does to pass the time and between Doings, by the name `Face::passing` says: `pastime` or `doing`, the name, the words after "Boop's" |
 | `mac/takes.tsv` and `voice/voice.bin` | no, both or neither | Its recorded voice (§8) |
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
 | `demo/recordings/<name>.json` | one for each demo of one buddy | What the board was sent as the demo played, which the simulator's page plays (§13) |
@@ -321,7 +322,7 @@ what moves it, and when it fades. A missing file reads as `default_mood`'s.
 
 **`dreams.md`** (optional): the signs it may hold up as it tells its dream.
 A dream is everything since the last one, in tags and a sentence
-(`DreamReader`), made once a sleep or after two days. You coming back after
+(`DreamReader`), made once a sleep, 2 h into one begun at night or 5 h into one begun by day, or after two days. You coming back after
 it, or with none your first touch (a poke or a stroke), tells it; never a
 prompt or your words, which have signs of their own.
 
@@ -334,7 +335,7 @@ prompt or your words, which have signs of their own.
 - A pack without the file tells its dreams with no sign.
 
 A line tagged `wish` in `asks.md` is its one want a day, not a question:
-`[wish pet] pet me?` is the sign that makes it, `[wish pet met] <3` what it
+`[wish pet] pet me?` is the sign that makes it, a kind's lines taking turns by the day, `[wish pet met] <3` what it
 holds up as it's met, for the kinds `pet`, `chat` and `work`; code says what
 meets each. `[wish pet how] stroke my face?`, optional, is the sign that makes
 it until you've met that kind once: it says what to do. A pack with no such
@@ -399,10 +400,14 @@ by `state.xp`, the percent through the stage. A face with no bar ignores it.
   today's turns and `{thread}` the busiest session's thread name (a line
   that needs one is left out without it). A line may need a kept answer's
   tag (`[idle cookie] snack time?`).
+- Lines tagged `[notice waiting]`, `[notice stretch]`, `[notice rough]` or
+  `[notice late]` are what it may hold up for a notice (`Notices`): only at
+  an idle check-in, by name. `{agent}` is the agent's name. A pack with no
+  lines for a notice never has it.
 
 **`replies.md`** (optional): what it holds up replying to your words
 (`Signs.replies`). A pack without the file holds up nothing for a reply but
-the facts.
+the facts. A line's `{turns}` is today's turns (left out under 2).
 
 - The brain picks a reply (`react.move`'s options for your words): yes, no,
   huh, hello, bye, thanks, love, ouch, comfort, hehe, status, nap, hush,
@@ -524,7 +529,17 @@ or ruffle it would be, unless the face only feels it go by (`playsSwipe`),
 and goes to the Mac as `swipe`. A finger that starts on the strip and goes
 up pulls out the drawer, if the face has one. A finger held still a second
 on the needs-you screen dismisses it: the board tells the Mac (`dismiss`,
-with the request's number, `data.attn`) and plays nothing.
+with the request's number, `data.attn`) and plays nothing. Anywhere else, on a
+face that can (`leans`, `lean`), a finger at rest for a second leans the face
+into it, and past 5 s dozes it (`app/touch_gesture.h`'s `kLeanMs`, `kDozeMs`);
+as it lifts, the board tells the Mac `lean`, care like a stroke, and no animation
+plays. On a face that can't, it stays the tap it was.
+
+**A board tilted.** On a board with a motion sensor, a face may follow its steady
+tilt (`tilt`, in milli-g across the screen, `app/motion_gesture.h`'s `Tilt`): how
+far it's tipped against how it's been resting, so one set down at an angle comes
+back to none. It sends nothing to the Mac and counts as no touch. The gel's body
+sloshes that way while nothing else moves it; a face that doesn't override it does nothing.
 
 **A Moment with no animation** (`react`) is no state of its own: the face
 draws the look in another emotion for a while, and the voice may speak.
@@ -612,6 +627,9 @@ Besides drawing each mood and state, a face:
     characters (the `do`'s `reason`: "you picked Boop up"). It is not
     speech. Pixel shows it in the bubble when nothing is said; the gel small
     and grey on the lane's last line.
+  - A face that says `captionsTouches` gets a caption for its board's own
+    touches too, as they play ("you poked Boop", `app/touch_reason.h`). Its
+    name is the pack's, or `state`'s `buddy` for one you gave it. Pixel's doesn't.
   - The strip fades over the rig's 200 ms and the face gets its opacity
     (`Strip::opacity`): `drawLane` dithers it on the canvas, and a face that
     draws its own lane draws it at that opacity.

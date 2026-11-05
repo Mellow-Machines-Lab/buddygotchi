@@ -18,7 +18,7 @@ import WebKit
 /// mirror holds it: a new view takes it from the one before, so the slime
 /// carries on from act to act in onboarding, with no page to load again.
 @MainActor
-final class SlimeFeed: NSObject, WKNavigationDelegate {
+final class SlimeFeed: NSObject, WKNavigationDelegate, ObservableObject {
     /// It mirrors a board's link (the popover's), not its views' snapshots.
     let mirrorsBoard: Bool
     /// The page, made when it's first shown or preloaded.
@@ -38,6 +38,9 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     private var heardBoard = false
     /// With no board behind it, the latest `state` again, as a link's keepalive.
     private var keepalive: Timer?
+    /// What the face is doing to pass the time, by the name it says.
+    @Published private(set) var passing: String?
+    private var passingTimer: Timer?
     /// A fixed frame for SwiftUI's synchronous snapshot path. WKWebView's
     /// remote layers cannot be captured by NSView.cacheDisplay.
     var stillImage: NSImage?
@@ -46,7 +49,10 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
 
     init(mirrorsBoard: Bool = false) { self.mirrorsBoard = mirrorsBoard }
 
-    isolated deinit { keepalive?.invalidate() }
+    isolated deinit {
+        keepalive?.invalidate()
+        passingTimer?.invalidate()
+    }
 
     /// The character pack's mirror. Nil for a pack with none, which the
     /// popover then draws as its still face. The pack doesn't change while
@@ -109,6 +115,8 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
     func close() {
         keepalive?.invalidate()
         keepalive = nil
+        passingTimer?.invalidate()
+        passingTimer = nil
         webView?.stopLoading()
         webView?.navigationDelegate = nil
         webView?.removeFromSuperview()
@@ -166,6 +174,27 @@ final class SlimeFeed: NSObject, WKNavigationDelegate {
         guard visible != on else { return }
         visible = on
         call("window.BoopMirror.shown(visible)", ["visible": on])
+        if mirrorsBoard { followPassing() }
+    }
+
+    /// Asks the page what its face is doing to pass the time, about once a second
+    /// while it's on screen: nil for nothing.
+    private func followPassing() {
+        passingTimer?.invalidate()
+        passingTimer = nil
+        guard visible else { passing = nil; return }
+        passingTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated { self?.askPassing() }
+        }
+    }
+
+    private func askPassing() {
+        guard ready, let target = webView else { return }
+        target.callAsyncJavaScript("return window.BoopMirror.passing()", arguments: [:], in: nil, in: .page) { [weak self] result in
+            guard let self, target === self.webView else { return }
+            let id = (try? result.get()) as? String
+            if id != self.passing { self.passing = id }
+        }
     }
 
     /// A tap on the board, which the mirror takes as its own, as the board

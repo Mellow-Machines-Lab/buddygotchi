@@ -152,6 +152,30 @@ public final class MemoryStore {
         try write(String(decoding: try JSONEncoder().encode(days), as: UTF8.self), Self.daysFile)
     }
 
+    // MARK: The daily counts
+
+    public static let countsFile = "daily-counts.jsonl"
+    /// The most rows kept: more than a year.
+    public static let countsKept = 400
+
+    /// The rows in `directory`, oldest first. Read with no store opened, so
+    /// asking for them changes nothing. A line that won't read is skipped.
+    public static func counts(in directory: URL) -> [DayCounts] {
+        guard let text = try? String(contentsOf: directory.appendingPathComponent(countsFile), encoding: .utf8) else { return [] }
+        return text.split(separator: "\n").compactMap { try? JSONDecoder().decode(DayCounts.self, from: Data($0.utf8)) }
+    }
+
+    /// Writes `row`, replacing its day's.
+    public func keep(_ row: DayCounts) throws {
+        var rows = Self.counts(in: directory).filter { $0.day != row.day }
+        rows.append(row)
+        rows.sort { $0.day < $1.day }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .sortedKeys
+        let lines = try rows.suffix(Self.countsKept).map { String(decoding: try encoder.encode($0), as: UTF8.self) }
+        try write(lines.joined(separator: "\n") + "\n", Self.countsFile)
+    }
+
     // MARK: Files
 
     func url(_ file: String) -> URL { directory.appendingPathComponent(file) }

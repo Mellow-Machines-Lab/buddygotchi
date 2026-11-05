@@ -125,6 +125,45 @@ final class ViewTests: XCTestCase {
                        #"claude finished turn 1 on "x": stopped, a very short turn, 2 tool calls."#, "a stopped one doesn't")
     }
 
+    /// Pins `TranscriptView.fixJustNowMs`: a finish within the minute of a
+    /// fix says the fix was reacted to, as that win was the reaction's. A
+    /// reaction that never played, no reaction, a minute gone, or a failed
+    /// finish says nothing: then the finish carries the win or the failure.
+    func testAFinishJustAfterAFixItReactedToSaysSo() throws {
+        func fixed(_ turn: Int, reaction: (Int) -> Void) throws {
+            hook(.turnStart)
+            tests(failed: true, id: "t\(turn)a")
+            let fix = try XCTUnwrap(tests(failed: false, id: "t\(turn)b").first)
+            reaction(fix.seq)
+        }
+        let harness = rig.pipeline.harness
+        func react(_ seq: Int) -> Event {
+            harness.emit(Event.did("Boop had a proud moment.", for: seq, action: MomentOutput.outputName, by: "brain", open: true, at: rig.now))
+        }
+
+        try fixed(1) { _ = react($0) }
+        rig.wait(20_000)
+        let just = try XCTUnwrap(hook(.turnEnd).first)
+        XCTAssertTrue(just.line.hasSuffix(#"after a failed check, just after the fix Boop already reacted to."#), just.line)
+        XCTAssertEqual(just.facts["reacted_to_fix"], .bool(true))
+
+        try fixed(2) { _ = react($0) }
+        rig.wait(60_000)
+        try XCTAssertFalse(XCTUnwrap(hook(.turnEnd).first).line.contains("just after"), "a minute on, it's the finish's own win")
+
+        try fixed(3) { harness.emit(Event.ended(react($0).seq, action: MomentOutput.outputName, by: "brain", failed: "waited too long", at: rig.now)) }
+        rig.wait(20_000)
+        try XCTAssertFalse(XCTUnwrap(hook(.turnEnd).first).line.contains("just after"), "a reaction that never played is no reaction")
+
+        try fixed(4) { _ in }
+        rig.wait(20_000)
+        try XCTAssertFalse(XCTUnwrap(hook(.turnEnd).first).line.contains("just after"), "nor is none")
+
+        try fixed(5) { _ = react($0) }
+        rig.wait(20_000)
+        try XCTAssertFalse(XCTUnwrap(hook(.turnFailed, error: "api_error").first).line.contains("just after"), "a failed finish is news")
+    }
+
     /// Pins `EventLine.bigDeletion`: a turn whose edits removed 500 lines
     /// or more, net, says how many are gone; fewer, or as many added back,
     /// says nothing.

@@ -244,6 +244,43 @@ final class GrowthTests: XCTestCase {
         XCTAssertFalse(shown.when.contains("sprout"), "a demo's full size")
     }
 
+    /// A stage reached earlier today with no `grew` in the log, as a quit
+    /// while something needed you leaves it: the next launch tells Jev, once.
+    func testAGrewAQuitLostComesAtTheNextLaunch() throws {
+        try requirePack("boop")
+        let dir = URL(fileURLWithPath: "/tmp/boop-grew-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try Runtime.setUp(stateDir: dir, name: "Pip")
+        let clock = VirtualClock(1_793_000_000_000)
+        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
+                                      steering: RuntimeTests.steering)
+        options.devLines = true
+        options.clock = { clock.now }
+        options.wallClock = { clock.now }
+        options.readJevKey = { _ in nil }
+        do {
+            let store = try KeyValueStore(directory: dir)
+            try store.set(["growth.xp": "200", GrowthStore.reachedKey: options.time.day(clock.now)])
+        }
+        func launch() throws -> Int {
+            let runtime = try Runtime(options)
+            let grew = runtime.home.sync { () -> Int in
+                let now = clock.now
+                runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+                return runtime.harness.log.view(now: now).events.filter { $0.type == .grew && $0.specificType == "Sprout" }.count
+            }
+            runtime.stop()
+            runtime.home.sync {}
+            return grew
+        }
+        var grew = try launch()
+        XCTAssertEqual(grew, 1)
+        clock.now += 60_000
+        grew = try launch()
+        XCTAssertEqual(grew, 1, "and only once")
+    }
+
     /// `offered` for a `grew`: the stage's lines first, then any stage's.
     func testWhatItMayHoldUpGrowing() {
         let lines = [TaggedLine(tags: ["idle"], text: "quiet day..."),

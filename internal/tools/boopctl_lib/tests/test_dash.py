@@ -31,7 +31,6 @@ from boopctl_lib.dash.face import CROP, NATIVE_BLOCK, SCALE, blocks, native_rows
 from boopctl_lib.dash import feed  # noqa: E402
 from boopctl_lib.dash.feed import STALE_S, Board, Follower, clock, kind  # noqa: E402
 from boopctl_lib.scenario import GOLDEN  # noqa: E402
-from old_logs import as_do, with_old_keys  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "headless-debug.jsonl"
@@ -45,9 +44,7 @@ def fixture_lines(path: Path = FIXTURE) -> list[dict]:
 
 
 def dashboard_action(line: dict) -> dict:
-    """An action's start, if the dashboard forced it: the fixture is a
-    launch from before MellowHarness, so it also checks that older logs'
-    actions still read."""
+    """An action's start, if the dashboard forced it."""
     a = feed.action(line["event"]) if "event" in line else None
     return a if a and a["by"] == "dashboard" else {}
 
@@ -68,6 +65,35 @@ def board_after(lines: list[dict]) -> tuple[Board, list[tuple[str, str]]]:
     board = Board()
     rows = [row for row in map(board.apply, lines) if row]
     return board, rows
+
+
+class WeekTests(unittest.TestCase):
+    """`w`: what `Boop --counts` prints, whose text DailyCountsTests pins. A
+    bad line in the file costs that line, in the app's own reading."""
+
+    ROW = {"day": "2026-11-04", "touches": 5, "touchesNoWish": 2, "wishesMade": 1, "wishesMet": 1, "wishesGaveUp": 0,
+           "wishWaitMs": 1_200_000, "threadsOpened": 3, "needsYou": 4, "answered": 2, "answerMs": 240_000, "spoken": 9,
+           "hereMinutes": 180, "hushes": 1, "faceDown": 0, "unpluggedMinutes": 7, "disconnects": 2, "failures": 3,
+           "quiet": False, "volume": 6, "stage": 2}
+
+    @unittest.skipUnless(controls.BOOP.exists(), "needs Boop built (make -C internal app)")
+    def test_a_week_from_the_app_with_bad_lines(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            state = Path(folder)
+            old = {**self.ROW, "day": "2026-10-20", "touches": 100}
+            rows = [old] + [{**self.ROW, "day": f"2026-11-0{i}"} for i in range(1, 8)]
+            bad = ["not json", "5", "null", '{"day":"2026-11-08","touches":"lots"}', '{"touches":1}']
+            (state / "daily-counts.jsonl").write_text("\n".join([json.dumps(r) for r in rows] + bad) + "\n")
+            text = controls.week_text(state)
+        self.assertNotIn("2026-10-20", text, "the last 7 days")
+        self.assertIn("days touched: 7 of 7", text)
+        self.assertIn("touches: 35, 14 with no wish open", text)
+        self.assertIn("2026-11-07        5        2", text)
+
+    def test_no_app_says_so(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            text = controls.week_text(Path(folder), boop=Path(folder) / "no-boop")
+        self.assertIn("Can't read the daily counts", text)
 
 
 class FeedTests(unittest.TestCase):
@@ -91,20 +117,10 @@ class FeedTests(unittest.TestCase):
         self.assertIn(("fail", "  ✗ react (by dashboard): something needs you"), rows)
         self.assertIn(("ok", "  ✓ mood (by dashboard): Boop's mood changed: happy → grumpy."), rows)
         self.assertIn(("pass", "  pass forced by dashboard: react.face grumpy · say retry"), rows)
-        self.assertIn(("sent", "→ moment wiggle"), rows)
+        self.assertIn(("sent", "→ do wiggle"), rows)
         self.assertIn(("sent", "→ state idle grumpy · busy 0 · vol 6"), rows, "a state carries the mood")
         self.assertIn(("sent", "→ state idle happy · busy 0 · needs you: claude jetpack · vol 6"), rows)
         self.assertIn(("status", "status: sessions claude jetpack waiting"), rows, "a status row shows what changed")
-
-    def test_the_timeline_of_do_lines(self):
-        """The Mac sends a `do` where it sent a `moment` (old_logs.as_do):
-        the timeline names it, and every other row is the same."""
-        _, old = board_after(fixture_lines())
-        _, now = board_after([as_do(line) for line in fixture_lines()])
-        self.assertIn(("sent", "→ do wiggle"), now)
-        self.assertIn(("sent", "→ do react + say no take"), now, "an old log's line, which had no take")
-        self.assertEqual([row for row in now if not row[1].startswith("→ do")],
-                         [row for row in old if not row[1].startswith("→ moment")])
 
     def test_the_state_joins_its_head(self):
         """A pass line carries HISTORY and NOW, and a `head` line before it
@@ -133,7 +149,7 @@ class FeedTests(unittest.TestCase):
         board, _ = board_after(fixture_lines())
         newest = board.newest_ms
         facts = dict(board.facts(newest + 10_000))
-        self.assertEqual(facts["look"], "idle")
+        self.assertEqual(facts["doing"], "idle")
         self.assertEqual(facts["mood"], "happy", "from the state line, never the transcript")
         self.assertEqual(facts["needs you"], "no")
         self.assertEqual(facts["sessions"], "0 working, 1 idle, 0 waiting", "from the status")
@@ -143,7 +159,7 @@ class FeedTests(unittest.TestCase):
         board, _ = board_after(fixture_lines()[: needs + 1])
         facts = dict(board.facts(board.newest_ms))
         self.assertEqual(facts["needs you"], "claude · jetpack")
-        self.assertEqual(facts["look"], "idle with the needs-you strip")
+        self.assertEqual(facts["doing"], "idle with the needs-you screen")
         self.assertEqual(facts["sessions"], "1 working, 0 idle, 0 waiting", "the status comes after the event")
 
     def test_the_counts_come_from_attn_and_the_sessions(self):
@@ -166,8 +182,8 @@ class FeedTests(unittest.TestCase):
         board = Board()
         board.apply(next(line for line in fixture_lines() if kind(line) == "questions"))
         lines = [
-            '{"pass":{"answers":{"react":{"choice":"grumpy","p":{"grumpy":1}}},"by":"dashboard","dropped":null,"for":null,'
-            '"latency_ms":0,"questions":["react"]},"received_at_ms":1}',
+            '{"pass":{"answers":{"react.face":{"choice":"grumpy","p":{"grumpy":1}}},"by":"dashboard","dropped":null,"for":null,'
+            '"latency_ms":0,"questions":["react.face"]},"received_at_ms":1}',
             '{"event":{"seq":2,"at":2,"source":"self","kind":"did","data":{"action":"react","by":"dashboard","for":null,'
             '"latency_ms":0,"message":"Boop made a grumpy face and mumbled.","ok":true,"open":true}},"received_at_ms":2}',
         ]
@@ -224,7 +240,7 @@ class ColumnsTests(unittest.TestCase):
     def test_the_automatic_reactions(self):
         """Each reflex with what set it off: the cheer and its turn end, the
         needs you and the request, the taps' wiggles the board plays itself, the
-        working chatter, and a cheer the dashboard played, with no event."""
+        and a cheer the dashboard played, with no event."""
         rows = self.board.reflex_column()
         reflex = self.texts(rows)
         self.assertEqual(reflex[:2], [f"{clock(self.at[31])} Boop wiggled on its own.", "  ▸ You poked Boop 4 times in 3 s."])
@@ -234,18 +250,21 @@ class ColumnsTests(unittest.TestCase):
                          ["  no event: played from the dashboard",
                           '  ▸ claude finished turn 1 on "jetpack": done after 6 min, a very long turn, 3 tools. '
                           "Tests passing."])
-        chatter = next(line["sent"]["say"] for line in fixture_lines(COLUMNS)
-                       if line.get("sent", {}).get("say") and not line["sent"].get("mood"))
-        at = reflex.index(next(t for t in reflex if t.endswith(f"working chatter {feed.say_text(chatter)}")))
-        self.assertEqual(reflex[at + 1], "  an agent is working")
         self.assertTrue(reflex[-3].endswith(" needs you cleared"))
-        self.assertTrue(reflex[-2].endswith(" needs you: claude · jetpack · alert"))
+        self.assertTrue(reflex[-2].endswith(" needs you: claude · jetpack"))
         self.assertEqual(reflex[-1], '  ▸ claude needs you on "jetpack".')
         self.assertEqual(rows[-2][0], "attn")
 
+    def test_a_rules_action_with_no_board_is_named(self):
+        """With no board nothing was sent ahead of a rule's `starting`, whose
+        `did` has no message: the column names it rather than an empty row."""
+        board = feed.Board()
+        board.apply({"event": {"seq": 2, "at": 2, "source": "self", "kind": "did",
+                               "data": {"action": "starting", "by": "rule", "for": 1, "ok": True}}, "received_at_ms": 2})
+        self.assertEqual(board.reflexes[-1]["what"], "starting")
+
     def test_a_rules_reaction_and_the_activity(self):
-        """A rule's reaction, in an older log's `moment` (test_what_the_mac_sends
-        has today's `do`), is named by the view event recorded right after
+        """A rule's reaction is named by the view event recorded right after
         it, never "played from the dashboard", and the working look shows
         its activity (`act`)."""
         t = 1_790_550_800_000
@@ -254,7 +273,8 @@ class ColumnsTests(unittest.TestCase):
                 "wakes_brain": True, "facts": {}, "phase": "start"}
         board, rows = board_after([
             {"sent": state, "received_at_ms": t},
-            {"sent": {"t": "moment", "anim": "starting", "ctx": "new_task"}, "received_at_ms": t + 10},
+            {"sent": {"t": "do", "name": "starting", "play": "if_free", "args": {"ctx": "new_task"}}, "by": "rule",
+             "received_at_ms": t + 10},
             {"view": view, "received_at_ms": t + 20},
         ])
         reflex = self.texts(board.reflex_column())
@@ -321,23 +341,11 @@ class ColumnsTests(unittest.TestCase):
         self.assertEqual(dict(board.facts(2))["brain"], "? · 700 ms · dropped 0")
         self.assertEqual(rows[-1], ("dim", "  pass jev:jev-latest for 2: held: something needs you"))
 
-    def test_who_sent_a_moment(self):
-        """A `sent` line's `by` says whose it is:
-        a brain's moment is no reflex, face or not, and a rule's is one. A
-        log from before `by` (and before `do`) guesses from the face."""
-        t = 1_790_550_800_000
-        brain = {"t": "moment", "anim": "cheer", "mood": "proud", "say": {"take": "new.d15"}}
-        rule = {"t": "moment", "anim": "wiggle"}
+    def test_who_sent_a_do(self):
+        """A `sent` line's `by` says whose it is."""
         now = {"t": "do", "id": 3, "name": "task_complete", "play": "next", "args": {"mood": "proud"}}
-        self.assertEqual(feed.sent_by({"sent": now, "by": "rule"}), "rule", "today's lines always say")
-        lines = [{"sent": brain, "by": "brain", "received_at_ms": t}, {"sent": rule, "by": "rule", "received_at_ms": t}]
-        self.assertEqual([(kind(line), feed.sent_by(line)) for line in lines], [("sent", "brain"), ("sent", "rule")])
-        self.assertEqual(feed.sent_by({"sent": {"t": "moment", "anim": "wiggle"}, "by": "brain"}), "brain")
-        self.assertEqual(feed.sent_by({"sent": {**rule, "mood": "calm"}, "by": "rule"}), "rule")
-        self.assertEqual([feed.sent_by({"sent": m}) for m in (brain, rule)], ["brain", "rule"])
-        board, _ = board_after([{**line, "received_at_ms": t + i} for i, line in enumerate(lines)])
-        self.assertEqual(self.texts(board.reflex_column())[0], f"{clock(t + 1)} wiggle")
-        self.assertFalse([r for r in self.texts(board.reflex_column()) if "cheer" in r])
+        self.assertEqual(feed.sent_by({"sent": now, "by": "rule"}), "rule")
+        self.assertEqual(feed.sent_by({"sent": now, "by": "brain"}), "brain")
 
     def test_takes_with_no_voice_pack(self):
         """With no voice file here, what a `say` said reads as its takes' ids."""
@@ -398,30 +406,6 @@ class ColumnsTests(unittest.TestCase):
         board = self.board
         self.assertEqual(dict(board.facts(self.at[31] + 1000))["showing"], "Boop wiggled on its own.")
         self.assertEqual(dict(board.facts(self.at[31] + 60_000))["showing"], "its idle look")
-
-    def test_the_same_columns_from_do_lines(self):
-        """The Mac sends a `do` where it sent a `moment` (old_logs.as_do):
-        Boop now and the three columns read the same from either."""
-        lines = [as_do(line) for line in fixture_lines(COLUMNS)]
-        self.assertTrue([line for line in lines if line.get("sent", {}).get("t") == "do"])
-        board, _ = board_after(lines)
-        for column in ("mood_column", "reflex_column", "decided_column"):
-            self.assertEqual(getattr(board, column)(), getattr(self.board, column)(), column)
-        for at in (self.board.newest_ms, self.at[31] + 1000):
-            self.assertEqual(board.facts(at), self.board.facts(at))
-
-    def test_the_same_columns_from_older_keys(self):
-        """Logs from before the reaction's questions were regrouped
-        (old_logs.with_old_keys) ask `react.mood`, `react.animation`,
-        `react.loops`, `say.feeling` and `say.about`: Boop now and the three
-        columns read the same from them."""
-        lines = [with_old_keys(line) for line in fixture_lines(COLUMNS)]
-        self.assertTrue([line for line in lines if "react.loops" in line.get("pass", {}).get("answers", {})])
-        board, _ = board_after(lines)
-        for column in ("mood_column", "reflex_column", "decided_column"):
-            self.assertEqual(getattr(board, column)(), getattr(self.board, column)(), column)
-        for at in (self.board.newest_ms, self.at[31] + 1000):
-            self.assertEqual(board.facts(at), self.board.facts(at))
 
     def test_the_stale_log_banner(self):
         """A debug-mode app writes a `sent` line at least
@@ -628,7 +612,7 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(facts["talk"], "normal")
         self.assertEqual(facts["growth"], "stage 1 · 16 XP · today: work 0/60, care 0/60",
                          "the day closed, so today's pools start again")
-        self.assertEqual(facts["why"], "nothing in the log says", "the mood never moved")
+        self.assertEqual(facts["why"], "nothing has moved it yet", "the mood never moved")
         self.assertEqual(facts["CONTEXT"].splitlines()[1:], ["Pip: a Hatchling, hatched today.",
                                                              'Agents: claude idle on "jetpack" for 1 min.',
                                                              "Today: you touched Pip once."])
@@ -951,7 +935,17 @@ class AppTests(unittest.TestCase):
                 self.assertNotIn("dream_now", [name for _, name, _ in app.pending.waiting])
                 self.assertIn("☾ dreamed about Sunday (2026-09-27)", plain(app.query_one("#mood")))
 
-                self.assertEqual({b.key: b.description for b in Dash.BINDINGS}["s"], "the prompt Jev read")
+                # This week's counts, from `Boop --counts` on the folder of the log.
+                self.assertEqual({b.key: b.description for b in Dash.BINDINGS}["w"], "week")
+                await pilot.press("w")
+                await pilot.pause()
+                self.assertIsInstance(app.screen, StateView)
+                self.assertRegex(app.screen.state, "days touched: 0 of 0|Can't read the daily counts")
+                await pilot.press("w")
+                await pilot.pause()
+                self.assertNotIsInstance(app.screen, StateView)
+
+                self.assertEqual({b.key: b.description for b in Dash.BINDINGS}["s"], "prompt")
                 await pilot.press("s")
                 await pilot.pause()
                 self.assertIsInstance(app.screen, StateView)
@@ -981,7 +975,7 @@ if __name__ == "__main__":
 
 class ReactionKeysTests(unittest.TestCase):
     """A reaction is `react.face`, `react.move`, `react.intensity` and
-    `say`; older logs name them otherwise, and read the same."""
+    `say`."""
 
     @needs_voice
     def test_the_face_and_its_move(self) -> None:
@@ -1004,24 +998,3 @@ class ReactionKeysTests(unittest.TestCase):
         shrug = {"answers": {**talk["answers"], "react.move": a("huh")}, "questions": talk["questions"]}
         self.assertEqual(reaction_text({"pass": shrug, "react": {"reply": "dunno"}}),
                          "a happy reaction face (small), replying dunno", "the reply as it played, a huh at a question")
-
-    def test_older_keys(self) -> None:
-        """`react.mood`, `react.animation` or `react.reply`, `react.loops`
-        (its hold as the intensity it is now), `say.feeling` and
-        `say.about`; and before them `react` and the words, `word.*`."""
-        from boopctl_lib.dash.feed import FACE, INTENSITY, choice, move, picks_text, reaction_text
-        a = lambda c, p=1.0: {"choice": c, "p": {c: p}}  # noqa: E731
-        before = {"answers": {"react.mood": a("proud", 0.82), "react.animation": a("success", 0.9),
-                              "react.loops": {"choice": "twice", "p": {"twice": 0.6, "once": 0.4}},
-                              "say.feeling": a("glad", 0.7), "say.about": a("none"), "say.kind": a("sound")},
-                  "questions": ["react.mood", "react.animation", "react.loops", "say.feeling", "say.about", "say.kind"]}
-        self.assertEqual(picks_text(before), "proud 0.82 · success 0.90 · medium 0.60 · glad 0.70")
-        self.assertEqual(reaction_text({"pass": before}), "a success in a proud face (medium)")
-        talked = {"answers": {"react.mood": a("happy"), "react.animation": a("none"), "react.reply": a("love")}}
-        self.assertEqual(move(talked), "love", "an older log's reply to what you said")
-        self.assertEqual(reaction_text({"pass": talked}), "a happy reaction face, replying love")
-        oldest = {"answers": {"react": a("grumpy"), "react.loops": a("once"), "word.feeling": a("again")},
-                  "questions": ["react", "react.loops", "word.feeling"]}
-        self.assertEqual((choice(oldest, FACE), choice(oldest, INTENSITY)), ("grumpy", "small"))
-        self.assertEqual(picks_text(oldest), "grumpy 1.00 · small 1.00 · “again” 1.00")
-        self.assertEqual(reaction_text({"pass": oldest}), "a grumpy reaction face (small)")

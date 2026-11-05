@@ -48,6 +48,17 @@ public enum Signs {
         return (fit.filter { $0.tags.count > 1 } + fit.filter { $0.tags.count == 1 }).map(\.text).prefix(maxOffered).map { $0 }
     }
 
+    /// What it may hold up for the notice `kind`: `signs.md`'s `[notice
+    /// waiting]` lines, `{agent}` filled in, each at most `maxLength`, without
+    /// the last one held up while another fits.
+    public static func notice(_ lines: [TaggedLine], _ kind: String, agent: String? = nil, avoiding: String? = nil) -> [String] {
+        let pool = lines.filter { $0.tags == ["notice", kind] }.compactMap { line -> String? in
+            if line.text.contains("{agent}"), agent == nil { return nil }
+            return drawn(line.text.replacingOccurrences(of: "{agent}", with: agent ?? "")).flatMap { $0.count <= maxLength ? $0 : nil }
+        }
+        return pool.count > 1 ? pool.filter { $0 != avoiding } : pool
+    }
+
     /// The idle musings: `signs.md`'s `[idle]` lines whose other tags the
     /// calendar and the kept answers (`tags`) all have, their blanks filled
     /// from the day so far, `{turns}` with its turns (a line that needs
@@ -96,16 +107,19 @@ public enum Signs {
     /// plain one), the calendar's joining the plain ones (a night `bye`
     /// among the rest, so it's not the only one all night), a line with
     /// `{words}` once for each of `phrases`, and not `avoiding` (the last
-    /// reply's) while another fits.
+    /// reply's) while another fits. `{turns}` is today's turns: a line that
+    /// needs them is left out under 2.
     public static func replies(_ lines: [TaggedLine], _ reply: String, calendar: [String], phrases: [String] = [],
-                               avoiding: String? = nil) -> [String] {
+                               avoiding: String? = nil, turns: Int = 0) -> [String] {
         let on = Set([reply] + calendar)
         let fit = lines.filter { $0.tags.first == reply && $0.fits(on) }
         func moment(_ line: TaggedLine) -> Int { line.tags.filter(MomentOutput.momentTags.contains).count }
         guard let most = fit.map(moment).max() else { return [] }
         var pool: [String] = []
         for line in fit where moment(line) == most {
-            let texts = line.hasWords ? phrases.map { line.text.replacingOccurrences(of: "{words}", with: $0) } : [line.text]
+            if line.text.contains("{turns}"), turns < 2 { continue }
+            let plain = line.text.replacingOccurrences(of: "{turns}", with: String(turns))
+            let texts = line.hasWords ? phrases.map { plain.replacingOccurrences(of: "{words}", with: $0) } : [plain]
             for text in texts.compactMap(drawn) where text.count <= maxLength && !pool.contains(text) { pool.append(text) }
         }
         if pool.count > 1 { pool.removeAll { $0 == avoiding } }

@@ -1,5 +1,5 @@
 // Boop's BOOT button: a tap, and a hold for push-to-talk; a touch's path:
-// a tap, a swipe, a stroke, a ruffle, a tickle, a boop on the nose, a hold,
+// a tap, a swipe, a stroke, a ruffle, a tickle, a boop on the nose, a hold, a lean,
 // and the finger's speed as it lets go; and the motion
 // sensor's readings: picked up, put down, shaken, a thump, face down and up.
 #include <unity.h>
@@ -16,6 +16,7 @@
 
 using app::ButtonGesture;
 using app::MotionGesture;
+using app::Tilt;
 using app::TouchGesture;
 
 void setUp() {}
@@ -203,6 +204,86 @@ static void test_how_fast_a_finger_lets_go() {
 // spot 40 px wide each way, a stroke's travel, so a hold that drifts is
 // still a hold. Wandering past it (a stroke on its way) is no hold, however
 // long the finger stays down.
+// Pins the lean: a finger at rest 1 s (kLeanMs) leans, at rest 5 s (kDozeMs)
+// dozes. Rest is staying inside a spot 16 px each way of where it stopped; a
+// stroke, however slow, keeps leaving it, and a wiggle inside it is a tickle on
+// its way, so neither comes to rest until it stops.
+static void test_a_finger_comes_to_rest() {
+  TEST_ASSERT_EQUAL_UINT32(1000, TouchGesture::kLeanMs);
+  TEST_ASSERT_EQUAL_UINT32(5000, TouchGesture::kDozeMs);
+  TEST_ASSERT_EQUAL_INT(16, TouchGesture::kLeanSpotPx);
+  TEST_ASSERT_EQUAL_INT(45, TouchGesture::kLeanWigglePx);
+  TouchGesture g;
+  g.down(100, 100, 5000);
+  TEST_ASSERT_EQUAL_UINT32(999, g.restMs(5999));
+  g.move(112, 92, 5500);  // drifting, inside the spot
+  TEST_ASSERT_EQUAL_UINT32(1000, g.restMs(6000));
+  TEST_ASSERT_EQUAL_UINT32(5000, g.restMs(10000));
+  // A panel's jitter, of no more than kJitterPx, adds no way.
+  g.down(100, 100, 0);
+  for (uint32_t t = 20; t < 3000; t += 20) g.move(100 + int(t / 20 % 3), 100, t);
+  TEST_ASSERT_EQUAL_UINT32(3000, g.restMs(3000));
+  // A slow stroke, 30 px a second, never rests; stopped, it does.
+  g.down(40, 120, 0);
+  uint32_t t = 0;
+  for (; t <= 4000; t += 20) {
+    g.move(40 + int(t) * 30 / 1000, 120, t);
+    TEST_ASSERT_LESS_THAN_UINT32(TouchGesture::kLeanMs, g.restMs(t));
+  }
+  const uint32_t stopped = t;
+  for (; t <= stopped + 1000; t += 20) g.move(40 + 4000 * 30 / 1000, 120, t);
+  TEST_ASSERT_GREATER_OR_EQUAL_UINT32(TouchGesture::kLeanMs - 700, g.restMs(t - 20));
+  // A wiggle inside the spot, past kLeanWigglePx at a time, doesn't rest.
+  g.down(100, 100, 0);
+  for (t = 20; t <= 3000; t += 20) {
+    g.move(100 + (t / 20 % 2 ? 10 : 0), 100, t);
+    TEST_ASSERT_LESS_THAN_UINT32(TouchGesture::kLeanMs, g.restMs(t));
+  }
+  // At rest, a shake that adds up over a long doze doesn't wake it; leaving does.
+  g.down(100, 100, 0);
+  g.move(100, 100, 1000);
+  for (t = 1020; t <= 9000; t += 20) g.move(100 + (t / 20 % 2 ? 6 : 0), 100, t);
+  TEST_ASSERT_EQUAL_UINT32(9000, g.restMs(9000));
+  g.move(120, 100, 9020);
+  TEST_ASSERT_EQUAL_UINT32(0, g.restMs(9020));
+  // The clock wraps.
+  g.down(10, 10, 0xFFFFFF00u);
+  TEST_ASSERT_EQUAL_UINT32(1000, g.restMs(0xFFFFFF00u + 1000));
+}
+
+// A touch the face leaned into is a lean, wherever it was and however its
+// finger shook; one it didn't is what it always was; one that travelled a
+// stroke's way stays the stroke.
+static void test_a_lean_on_release() {
+  render::Gesture g = render::Gesture::kHandoff;
+  TouchGesture t;
+  t.down(60, 60, 0);
+  t.move(60, 60, 1500);
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kTap, t.up(g));
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kLean, t.up(g, 0, true));
+  t.down(TouchGesture::kNoseX, TouchGesture::kNoseY, 0);  // on the nose: not a boop
+  t.move(TouchGesture::kNoseX, TouchGesture::kNoseY, 1500);
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kGesture, t.up(g));
+  TEST_ASSERT_EQUAL_INT(int(render::Gesture::kNose), int(g));
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kLean, t.up(g, 0, true));
+  t.down(100, 100, 0);  // a shaky finger's way adds up to a tickle's
+  for (uint32_t ms = 20; ms < 3000; ms += 20) t.move(100 + (ms / 20 % 2 ? 4 : 0), 100, ms);
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kGesture, t.up(g));
+  TEST_ASSERT_EQUAL_INT(int(render::Gesture::kTickle), int(g));
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kLean, t.up(g, 0, true));
+  t.down(60, 120, 0);  // on to a stroke, after it leaned
+  t.move(60, 120, 1500);
+  t.move(150, 120, 2500);
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kGesture, t.up(g, 0, true));
+  TEST_ASSERT_EQUAL_INT(int(render::Gesture::kStroke), int(g));
+  t.down(60, 120, 0);  // a rub, ending where it began
+  t.move(120, 120, 600);
+  t.move(60, 120, 1200);
+  t.move(60, 120, 2400);
+  TEST_ASSERT_EQUAL_INT(TouchGesture::kGesture, t.up(g, 0, true));
+  TEST_ASSERT_EQUAL_INT(int(render::Gesture::kStroke), int(g));
+}
+
 static void test_a_hold() {
   TEST_ASSERT_EQUAL_UINT32(1000, TouchGesture::kHoldMs);
   TEST_ASSERT_EQUAL_INT(40, TouchGesture::kHoldSpotPx);
@@ -349,6 +430,76 @@ static void test_a_press_isnt_a_thump() {
   TEST_ASSERT_EQUAL(MotionGesture::kThump, e[0]);
 }
 
+// The tilt reads against how it's been resting, and only reads: pins kDeadMg
+// (35), kMostMg (500), kRestMs (6000), kCalmMg (150) and that a board set down
+// at an angle settles back to none within 3.5 kRestMs.
+static void test_a_tilt_against_how_it_rests() {
+  TEST_ASSERT_EQUAL_INT(35, Tilt::kDeadMg);
+  TEST_ASSERT_EQUAL_INT(500, Tilt::kMostMg);
+  TEST_ASSERT_EQUAL_INT(150, Tilt::kCalmMg);
+  TEST_ASSERT_EQUAL_UINT32(6000, Tilt::kRestMs);
+  Tilt m;
+  uint32_t t = 0;
+  auto feed = [&](int ax, int az, uint32_t ms) {
+    for (uint32_t end = t + ms; t < end; t += 20) m.update(ax, 0, az, t);
+  };
+  // Started at an angle, that's how it rests: none.
+  feed(300, 954, 1000);
+  TEST_ASSERT_EQUAL_INT(0, m.mg());
+  Tilt level;
+  t = 0;
+  for (; t < 2000; t += 20) level.update(0, 0, 1000, t);
+  // Under the dead band, none; a right side down reads negative on x, and
+  // is positive across the screen.
+  for (const uint32_t end = t + 300; t < end; t += 20) level.update(-30, 0, 1000, t);
+  TEST_ASSERT_EQUAL_INT(0, level.mg());
+  for (const uint32_t end = t + 300; t < end; t += 20) level.update(-260, 0, 966, t);
+  TEST_ASSERT_GREATER_THAN_INT(150, level.mg());
+  TEST_ASSERT_LESS_OR_EQUAL_INT(260, level.mg());
+  // Left where it is, it settles back.
+  for (const uint32_t end = t + 3 * Tilt::kRestMs + Tilt::kRestMs / 2; t < end; t += 20) level.update(-260, 0, 966, t);
+  TEST_ASSERT_EQUAL_INT(0, level.mg());
+  // The other way, and no further than kMostMg.
+  for (const uint32_t end = t + 300; t < end; t += 20) level.update(600, 0, 800, t);
+  TEST_ASSERT_LESS_THAN_INT(-300, level.mg());
+  TEST_ASSERT_GREATER_OR_EQUAL_INT(-Tilt::kMostMg, level.mg());
+}
+
+// Only gravity counts: a shake or a jolt says none, and turned face down it
+// says none and rests where it lies, so it comes back up with no lean.
+static void test_a_tilt_is_only_gravity() {
+  Tilt m;
+  uint32_t t = 0;
+  for (; t < 1000; t += 20) m.update(0, 0, 1000, t);
+  for (const uint32_t end = t + 300; t < end; t += 20) m.update(-300, 0, 954, t);
+  TEST_ASSERT_NOT_EQUAL_INT(0, m.mg());
+  m.update(-300, 0, 1400, t += 20);  // a jolt
+  TEST_ASSERT_EQUAL_INT(0, m.mg());
+  for (const uint32_t end = t + 1000; t < end; t += 20) m.update(0, 0, -1000, t);
+  TEST_ASSERT_EQUAL_INT(0, m.mg());
+  for (const uint32_t end = t + 200; t < end; t += 20) m.update(0, 0, 1000, t);
+  TEST_ASSERT_EQUAL_INT(0, m.mg());
+}
+
+// What the sensor feels is the same with a tilt read beside it: the tilt only
+// reads. A slow tilt in a still hand is no event at all.
+static void test_a_tilt_is_no_gesture() {
+  MotionGesture m;
+  Tilt tilt;
+  uint32_t t = 0;
+  int events = 0;
+  auto feed = [&](int ax, int az, uint32_t ms) {
+    for (uint32_t end = t + ms; t < end; t += 20) {
+      tilt.update(ax, 0, az, t);
+      events += m.update(ax, 0, az, t) != MotionGesture::kNone;
+    }
+  };
+  feed(0, 1000, 3000);
+  for (int a = 0; a <= 260; a += 4) feed(-a, 1000 - a * a / 2000, 20);
+  feed(-260, 966, 2000);
+  TEST_ASSERT_EQUAL_INT(0, events);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_short_press_is_a_tap);
@@ -360,8 +511,13 @@ int main() {
   RUN_TEST(test_a_quick_stroke_is_a_swipe);
   RUN_TEST(test_how_fast_a_finger_lets_go);
   RUN_TEST(test_a_hold);
+  RUN_TEST(test_a_finger_comes_to_rest);
+  RUN_TEST(test_a_lean_on_release);
   RUN_TEST(test_what_the_motion_sensor_feels);
   RUN_TEST(test_a_steady_hand_isnt_a_desk);
   RUN_TEST(test_a_press_isnt_a_thump);
+  RUN_TEST(test_a_tilt_against_how_it_rests);
+  RUN_TEST(test_a_tilt_is_only_gravity);
+  RUN_TEST(test_a_tilt_is_no_gesture);
   return UNITY_END();
 }

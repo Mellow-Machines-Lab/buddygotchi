@@ -2,7 +2,7 @@
 // travels and lets go quickly), a stroke (a slower one, or a rub back and
 // forth; one the wrong way, upward, ruffles), a tickle (a finger wiggling
 // in one spot), a boop on the nose (a tap on the face's middle), or a hold
-// (a finger kept still). Pure
+// (a finger kept still), or a lean (the same, on a face that takes it). Pure
 // C++, fed the touch's canvas positions as they come; the canvas is
 // 320 × 240 on both boards (the AMOLED's panel is mapped onto it).
 #pragma once
@@ -35,12 +35,18 @@ class TouchGesture {
   // drifts, and a hold that drifts is still a hold.
   static constexpr uint32_t kHoldMs = 1000;
   static constexpr int kHoldSpotPx = 40;
+  // A lean is a finger at rest: kLeanMs without leaving a spot kLeanSpotPx
+  // each way of where it stopped, nor wiggling kLeanWigglePx inside it, which
+  // is on its way to a tickle. Past kDozeMs at rest, Boop dozes on it. The
+  // spot is narrower than a hold's, so a slow stroke never leans.
+  static constexpr uint32_t kLeanMs = 1000, kDozeMs = 5000;
+  static constexpr int kLeanSpotPx = 16, kLeanWigglePx = 45;
   // The finger's velocity as it lets go is over its last readings this
   // long (at least the last two).
   static constexpr uint32_t kFlingMs = 80;
 
   // What a touch was, on release.
-  enum Kind : uint8_t { kTap, kSwipe, kGesture };
+  enum Kind : uint8_t { kTap, kSwipe, kGesture, kLean };
 
   // Where it went down and where it was last, and how long that took.
   struct Path {
@@ -53,10 +59,14 @@ class TouchGesture {
   // Whether the touch, still down at t, is a hold: kHoldMs since it went
   // down and never outside its spot.
   bool held(uint32_t t) const;
+  // How long the finger, still down at t, has been at rest.
+  uint32_t restMs(uint32_t t) const { return t - restAt_; }
   // What it was, on release: a gesture names the board's own reaction to it
   // in g, and a swipe the stroke (or the ruffle) it would be, slower.
   // The nose is `noseDrop` under its usual place (render::Face::noseDrop).
-  Kind up(render::Gesture& g, int noseDrop = 0) const;
+  // One the face leaned into (`leant`) is a lean, however its finger shook,
+  // unless it travelled a stroke's way: that stays the stroke it was.
+  Kind up(render::Gesture& g, int noseDrop = 0, bool leant = false) const;
   // How fast the finger moved over its last kFlingMs, in px a second; none
   // for a finger that was still.
   void velocity(int& vx, int& vy) const;
@@ -75,6 +85,8 @@ class TouchGesture {
   int path_ = 0;
   int wayX_ = 0, wayY_ = 0;  // where path_ last counted a step from
   uint32_t t0_ = 0;
+  int restX_ = 0, restY_ = 0, restPath_ = 0;  // where it came to rest, and path_ then
+  uint32_t restAt_ = 0;
   Sample samples_[kSamples] = {};
   int count_ = 0;  // readings so far; the newest is at (count_ - 1) % kSamples
   const Sample& last() const { return samples_[(count_ + kSamples - 1) % kSamples]; }

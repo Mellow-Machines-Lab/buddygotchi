@@ -287,7 +287,7 @@ final class MemoryPipelineTests: XCTestCase {
     /// `memory-days.json` lasts: a field a digest doesn't have takes its
     /// default, whichever it is, and every field comes back as it went in.
     func testADigestReadsWithAnyFieldMissing() throws {
-        var full = day(0) { $0.strokes = 2; $0.strokesAM = 1; $0.pokes = 3; $0.talks = 4; $0.late = 1; $0.failed = 1 }
+        var full = day(0) { $0.strokes = 2; $0.strokesAM = 1; $0.strokedAt = "09:05"; $0.pokes = 3; $0.talks = 4; $0.late = 1; $0.failed = 1 }
         full.failing = ["a": 1]; full.frustrated = ["b": 2]; full.passed = ["c": 3]; full.tones = ["d": 4]; full.lengths = ["e": 5]
         full.said = [.init(at: "09:00", words: "morning buddy")]
         let bare = DayDigest(day: full.day, weekday: full.weekday)
@@ -313,6 +313,19 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(days, MemoryStore.Days(), "a file with none of its fields")
         days = try JSONDecoder().decode(MemoryStore.Days.self, from: Data(#"{"added":["a note"],"next":1}"#.utf8))
         XCTAssertEqual(days.added, ["a note"], "a field it doesn't know, and two it doesn't have")
+    }
+
+    /// The digests are kept as read, and every write here reads them afresh.
+    func testTheDigestsFollowEveryWrite() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("digests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let files = try MemoryStore(directory: dir, today: "2026-10-05")
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(), files: files)
+        XCTAssertEqual(memory.digests.count, 0)
+        memory.keep(files.days().keeping(day(1), added: []))
+        XCTAssertEqual(memory.digests.map(\.day), [day(1).day])
+        memory.keep(files.days().keeping(day(2), added: []))
+        XCTAssertEqual(memory.digests.map(\.day), [day(1).day, day(2).day])
     }
 
     /// A file that won't read isn't overwritten: it's moved aside, and the
@@ -518,7 +531,9 @@ final class MemoryPipelineTests: XCTestCase {
             return span
         }())
 
+        try memory.store.set(["notices": #"{"waiting:claude:cli":1}"#])
         memory.forgetAboutYou()
+        XCTAssertEqual(memory.noticesShown(), [:], "a notice's rest names its thread")
 
         let d = try XCTUnwrap(files.days().digests.first)
         XCTAssertEqual(d.said, [])

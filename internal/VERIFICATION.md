@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-03. How we check that Boop works, including what's on its
+Updated 2026-11-04. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -77,8 +77,9 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal simulator` | The board in a browser at `http://127.0.0.1:8206/`, alone, its USB on `/tmp/boop-sim-usb.sock` ([simulator/README.md](../simulator/README.md); several boards side by side with `serve.py --cable NAME=SOCKET`), and beside it the Character Studio at `/characters/studio/`. No Bluetooth, so agents may run it |
 | `make -C internal packs` | The character packs the engine is tested with (`characters/packs.json`), each fetched from its repository if it's missing: a clone in `characters/.repos/`, and `characters/<id>` a link to its pack (`internal/tools/packs.py`; `--update` pulls them, `ID=PATH` links a pack of yours in its place) |
 | `make -C internal new-character ID=… NAME=…` | A new character from Pixel's pack (`internal/tools/new_character.py`; `TO=DIR`, by default `../ID`): its id and name set, linked as `characters/ID` and checked with `boopdev check`. [characters/new-character-playbook.md](../characters/new-character-playbook.md) says what to make its own |
-| `make -C internal check` | Every check that needs no board, camera or Jev key, one after another: `packs`, `test`, `fw-test`, `tools-test`, `sim` and `mirror`, then the chosen pack staged again, as some stage another |
-| `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim, with Boop's pack (`CHARACTER=boop .build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder, so the target retries that failure alone, up to eight tries in all |
+| `make -C internal check` | The tests that need no board, camera or Jev key, one after another: `packs`, `test`, `fw-test`, `tools-test`, `sim` and `mirror`, then the chosen pack staged again, as some stage another. It's narrower than CI: it builds no board's firmware, which CI does and `boards` does. Run both to cover CI |
+| `make -C internal boards` | Both boards' firmware, as CI builds them: the CYD's with Pixel, the AMOLED's with Boop |
+| `make -C internal test` | `make -C internal build`, then Boop's Swift tests through the XCTest shim, with Boop's pack (`CHARACTER=boop .build/debug/BoopTests`; `BOOP_TEST_FILTER=Golden` runs only the tests whose `Class.method` contains `Golden`; the runner's generator fails on a `func test…()` outside a test case, and on finding fewer than its floor of tests, so a test file gone missing fails the build; a failing test stops the runner at once), then each package's own, one test at a time: `swift test --no-parallel --scratch-path .build/tests` in `agent-hooks/`, `mellowharness/` and `linkkit/`. That build now and then fails with "plugin for module 'TestingMacros' not found", a toolchain flake, even from a clean build folder, so the target retries that failure alone, up to eight tries in all |
 | `make -C internal fw` | The firmware for every board the chosen pack has a face for (`charactergen.py --boards`) |
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): the chosen pack's `tests/firmware/`, then the engine's suites in `internal/firmware/test/` with Pixel's pack, then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build` |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the pixel face's, with Pixel's pack, then the gel face's, with Boop's |
@@ -87,7 +88,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`) and each pack's `tests/tools/` |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`), each pack's `tests/tools/` and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
 
 **Tools.**
 
@@ -99,10 +100,11 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   (`e2e`), the webcam (`cam`), the debug logs (`dash`, `day`), and a reference a person gave
   (`reference`, [CHARACTER.md](../characters/CHARACTER.md) §16). `--port` picks the
   serial port; without it, while a bridge runs (below), commands go
-  through the bridge. `dash` reads only the app's `debug.jsonl`, and its
+  through the bridge. `dash` reads only the app's `debug.jsonl` and what `Boop --counts` prints, and its
   keys are in its footer: `m` sets a lasting mood, `r` forces a pass, `p`
   previews on its own sim, `d` dreams now, `D` previews a dream and keeps
-  nothing, `s` shows the prompt Jev read, `t` the timeline of every line,
+  nothing, `s` shows the prompt Jev read, `w` this week's daily counts
+  (what `Boop --counts` prints), `t` the timeline of every line,
   and `b` asks for a bug report and copies its path. A report gets the
   device's screen as `screen.png` when the app reaches its device through
   a socket (`about.json`'s `link` is `usb:SOCKET`).
@@ -348,8 +350,10 @@ Each suite says what it pins.
   nothing clipped, no debug data, text readable, the Warm Terminal
   look, and nothing blurred or seamed: the panes and acts are drawn at
   2 pixels a point, as a Retina Mac shows them. The run fails by itself on
-  low contrast. It includes Unicode names, invalid names, every onboarding
-  act (`onboarding-*`) and a crowded Overview at a bounded height.
+  low contrast. The run also fails if text twice as long leaves the
+  Overview no taller: a value that's cut off, and long reasons that move the needs-you card from the top of the pane. It includes Unicode names,
+  invalid names, every onboarding act (`onboarding-*`), a crowded Overview at
+  a bounded height, and each pane at its longest values (`*-long*`).
   There are no goldens.
 
 **Pass:** everything green. New code comes with tests.
@@ -397,8 +401,13 @@ accepted; the mirror's shots are the simulator's.
    `internal/tools/boopctl perf --scenes` (and again with `--sound`): each
    scene's slowest second reaches its frames a second, working draws no
    frame over 50 ms, at least 50 KB of internal heap stays free and the
-   DAC has no write errors. Flash the everyday build (`make flash`)
-   afterwards.
+   DAC has no write errors. `perf --plays` (`--only NAME…`) goes second by
+   second through what plays once: the acts, a Chonk, the bar and the heart,
+   the grow ceremony, a tilt and a lean (driven by `dbg.imu` and `dbg.touch`)
+   and the big finishes. A Mac on Bluetooth keeps sending its own `state`,
+   so it starts each just after one, and `fps_min_clean` leaves out the
+   seconds one came in; it has a budget only for the scenes `--scenes` has.
+   Flash the everyday build (`make flash`) afterwards.
 5. When a change could leak memory or wedge the board:
    `internal/tools/boopctl soak` (20 minutes by default, with one 35 s
    silence halfway) ends with no reset, the minimum heap within 2 KB of

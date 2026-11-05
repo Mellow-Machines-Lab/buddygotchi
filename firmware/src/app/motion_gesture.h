@@ -59,4 +59,33 @@ class MotionGesture {
   void calmFrom(uint32_t t) { calmSince_ = t, calmX_ = fx_, calmY_ = fy_, calmZ_ = fz_; }
 };
 
+// How far the board is tilted now against how it's been resting, across the
+// screen, for a face to slosh by. Pure C++, fed the same readings; it only
+// reads them, so it can't touch what MotionGesture makes of them. Where it
+// rests follows the reading over kRestMs, so a board set down at an angle
+// settles back to none in about 3 kRestMs, and it counts only gravity: moving
+// (off 1 g by over kCalmMg, a shake, a jolt) or face down it says none, and
+// face down it rests where it lies. Under kDeadMg (about 2 degrees) is none:
+// a desk's typing, a hand's tremble.
+class Tilt {
+ public:
+  static constexpr int kCalmMg = 150, kDeadMg = 35, kMostMg = 500, kFaceDownMg = -MotionGesture::kFlatMg;
+  static constexpr uint32_t kRestMs = 6000;
+  // Which way the sensor's x runs across the screen: with the board's right
+  // side down, gravity's share of a sensor x pointing right reads negative.
+  // x's direction on the AMOLED is a first guess (board/amoled206/imu.cpp).
+  static constexpr int kAcross = -1;
+
+  void update(int ax, int ay, int az, uint32_t t);
+  // Milli-g across the screen, right side down positive, at most kMostMg.
+  int mg() const { return mg_; }
+
+ private:
+  bool started_ = false;
+  uint32_t at_ = 0;
+  int x_ = 0;      // the reading, smoothed, in 1/256 mg
+  int rest_ = 0;   // where it rests, in 1/256 mg
+  int mg_ = 0;
+};
+
 }  // namespace app

@@ -104,7 +104,7 @@ final class ContextTests: XCTestCase {
     }
 
     /// Pins ContextSection.maxTokens: every row, three agents with long
-    /// names and "and 2 more" stay within 160 tokens.
+    /// names and "and 2 more" stay within 190 tokens.
     func testTheSectionHasACeiling() {
         var c = company(here: t0, lonelyEnded: t0 + 10 * hour)
         c.turns = 23
@@ -114,10 +114,11 @@ final class ContextTests: XCTestCase {
         let long = String(repeating: "w", count: 80)
         let agents = (0..<5).map { StatusReply.Agent(agent: "codex", places: [long + "\($0)"], workingSince: t0) }
         let section = ContextSection.section(talk: .chatty, silentMs: 119 * minute, buddy: .init(stage: "Hatchling", daysOld: 400),
-                                             company: c, agents: agents, at: t0 + 11 * hour, name: "Boop")!
-        XCTAssertEqual(section.components(separatedBy: "\n").count, 6)
+                                             company: c, agents: agents, noticed: Notices.whileAway([("claude", "\"wwwwwwwwwwwwwwww\"", false), ("codex", "\"wwwwwwwwwwwwwwww\"", true), ("codex", "\"w\"", true)]),
+                                             at: t0 + 11 * hour, name: "Boop")!
+        XCTAssertEqual(section.components(separatedBy: "\n").count, 7)
         XCTAssertLessThanOrEqual(Steering.tokens(section), ContextSection.maxTokens, section)
-        XCTAssertEqual(ContextSection.maxTokens, 160)
+        XCTAssertEqual(ContextSection.maxTokens, 190)
     }
 
     /// The prompt's order: PERSONALITY, MEMORY, MOOD, CONTEXT, then HISTORY

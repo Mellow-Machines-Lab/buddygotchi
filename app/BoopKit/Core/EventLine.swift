@@ -22,15 +22,20 @@ public enum EventLine {
     /// reads as more than the first, and a finish that finally worked as
     /// hard-won: the brain can't count them back in HISTORY.
     /// A turn whose edits removed `bigDeletion` lines or more, net, says
-    /// how many are gone (`, 1,200 lines gone`).
+    /// how many are gone (`, 1,200 lines gone`). A turn done just after a
+    /// fix its buddy reacted to says so (`, just after the fix Boop already
+    /// reacted to`, with `reactedToFix` that buddy's name), as that win was
+    /// the reaction's: the finish is no new one.
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0, linesGone: Int = 0) -> String {
+                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0, linesGone: Int = 0,
+                               reactedToFix: String? = nil) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
         let after = outcome == "stopped" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
             : ", after \(failedChecks) failed checks"
         let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
         let gone = linesGone < bigDeletion ? "" : ", \(linesGone.formatted(.number.locale(Locale(identifier: "en_US")))) lines gone"
-        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(gone)\(after)\(run)."
+        let fix = reactedToFix.map { ", just after the fix \($0) already reacted to" } ?? ""
+        return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(gone)\(after)\(run)\(fix)."
     }
 
     /// The lines a turn must remove, net of those it added, for its finish

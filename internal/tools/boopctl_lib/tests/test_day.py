@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from boopctl_lib import cli, day  # noqa: E402
 from boopctl_lib.common import FINISHES  # noqa: E402
-from old_logs import as_do  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "day"
 TZ = os.environ.get("TZ")
@@ -85,8 +84,8 @@ class FixtureTests(unittest.TestCase):
 
     def test_what_boop_did_by_the_hour(self):
         t = self.day.total()
-        self.assertEqual((t.finishes, t.chatter, t.reactions, t.alerts, t.moods, t.passes, t.dropped, t.missed, t.pokes),
-                         (3, 17, 15, 4, 6, 15, 0, 2, 5))
+        self.assertEqual((t.finishes, t.reactions, t.alerts, t.moods, t.passes, t.dropped, t.missed, t.pokes),
+                         (3, 15, 4, 6, 15, 0, 2, 5))
         self.assertEqual(sorted(self.day.hours), [1, 2, 3, 4, 5, 6])
         self.assertEqual([self.day.hours[h].reactions for h in range(1, 7)], [5, 5, 1, 3, 1, 0])
         self.assertEqual(dict(t.faces), {"excited": 15}, "the scripted brain always answers excited")
@@ -96,16 +95,15 @@ class FixtureTests(unittest.TestCase):
         """20 moments with a face were sent (counted by hand): 14 of the
         brain's 15 reactions (02:11's never reached the device) and 6 of the
         8 forced (01:48's was refused and 04:48's excited one waited too
-        long). Chatter and finishes are the sent moments."""
+        long). Finishes are the sent moments."""
         sent = [json.loads(line)["sent"] for f in ("debug.1.jsonl", "debug.jsonl")
-                for line in (FIXTURE / f).read_text().splitlines() if line.startswith('{"sent":{"t":"moment"')]
+                for line in (FIXTURE / f).read_text().splitlines() if line.startswith('{"sent":{"t":"do"')]
         t = self.day.total()
-        faces = [s["mood"] for s in sent if s.get("say") and s.get("mood")]
+        faces = [s["args"]["mood"] for s in sent if s.get("args", {}).get("say") and s["args"].get("mood")]
         self.assertEqual(len(faces), (t.reactions - 1) + (self.day.forced_reacts - 2))
         self.assertEqual(sorted(f for f in faces if f != "excited"), ["curious", "curious", "determined", "happy",
                                                                       "proud", "sad"], "the forced ones")
-        self.assertEqual(t.chatter, sum(1 for s in sent if s.get("say") and not s.get("mood")))
-        self.assertEqual(t.finishes, sum(1 for s in sent if s.get("anim") in FINISHES))
+        self.assertEqual(t.finishes, sum(1 for s in sent if s.get("name") in FINISHES))
 
     def test_needs_you_from_attn_appearing_to_clearing(self):
         needs = [(day.clock(n.start), n.end - n.start, n.who, n.alerts, n.open) for n in self.day.needs]
@@ -145,24 +143,12 @@ class FixtureTests(unittest.TestCase):
         self.assertEqual(self.day.launches[0][0], "debug.1.jsonl")
         self.assertEqual(self.day.running_ms, sum(b - a for _, a, b, _ in self.day.launches))
 
-    def test_the_same_day_from_do_lines(self):
-        """The Mac sends a `do` where it sent a `moment` (old_logs.as_do):
-        the day reads the same from either."""
-        with tempfile.TemporaryDirectory() as d:
-            for f in ("debug.1.jsonl", "debug.jsonl"):
-                lines = [as_do(json.loads(line)) for line in (FIXTURE / f).read_text().splitlines()]
-                self.assertTrue(any(line.get("sent", {}).get("t") == "do" for line in lines))
-                (Path(d) / f).write_text("".join(json.dumps(line) + "\n" for line in lines))
-            now = day.summarise(day.read_launches(day.launch_files(Path(d))), "2026-09-28")
-        self.assertEqual(day.render(now), day.render(self.day))
-        self.assertEqual((now.total().finishes, now.total().chatter), (3, 17))
-
     def test_the_table(self):
         text = day.render(self.day)
         lines = text.splitlines()
         self.assertEqual(lines[0], "Boop's day: Monday 2026-09-28, 01:34–06:01, 2 launches")
         head = next(i for i, x in enumerate(lines) if x.startswith("hour"))
-        self.assertEqual(lines[head].split(), ["hour", "finishes", "chatter", "reacts", "said", "alerts", "moods", "passes",
+        self.assertEqual(lines[head].split(), ["hour", "finishes", "reacts", "said", "alerts", "moods", "passes",
                                                "dropped", "missed", "pokes", "needs", "you", "faces"])
         self.assertEqual([x.split()[0] for x in lines[head + 1:head + 8]], ["01", "02", "03", "04", "05", "06", "all"])
         self.assertIn("  01:47  codex · landing → claude · jetpack  6 min 4 s, 2 alerts", lines)
@@ -243,7 +229,7 @@ class SmallDayTests(unittest.TestCase):
             state(at("10:15:00"), ("claude", "a"), mood="excited"),  # an alert again: 10:00's state had no attn
             state(at("10:20:00"), mood="excited"),
             event(at("10:30:00"), 1, "tool end"),
-            a_pass(at("10:30:01"), 2, 1, **{"react.mood": "curious"}),  # an older log's face
+            a_pass(at("10:30:01"), 2, 1, **{"react.face": "curious"}),
             action(at("10:30:01"), 3, 1, "react", pending=True),
             settle(at("10:30:07"), 4, 3, "failed", "waited too long"),
             state(at("10:45:00"), mood="excited"),
@@ -298,8 +284,7 @@ class SmallDayTests(unittest.TestCase):
 class RuleTests(unittest.TestCase):
     def test_finishes_are_the_brains_task_complete_and_reply_ready(self):
         """A finish is task_complete or reply_ready; a reaction with no
-        animation and a rule's reaction aren't. The rules' requests aren't
-        chatter."""
+        animation and a rule's reaction aren't."""
         do = lambda t, by, name, play="next", **args: {  # noqa: E731
             "sent": {"t": "do", "id": t % 1000, "name": name, "play": play, "args": args}, "by": by, "received_at_ms": t}
         d = day.summarise([launch(
@@ -311,7 +296,7 @@ class RuleTests(unittest.TestCase):
             do(at("09:05:00"), "rule", "listening", "now"),
             do(at("09:05:05"), "rule", "stop_listening", "if_free"),
         )], "2026-09-28")
-        self.assertEqual((d.total().finishes, d.total().chatter), (2, 0))
+        self.assertEqual(d.total().finishes, 2)
 
     def test_a_finish_the_device_didnt_play_isnt_one(self):
         """linkkit/SPEC.md §4: the device decides what plays, and says how
@@ -335,20 +320,6 @@ class RuleTests(unittest.TestCase):
         )], "2026-09-28")
         self.assertEqual(d.total().finishes, 3)
         self.assertEqual((d.hours[9].finishes, d.hours[10].finishes), (2, 1), "a finish counts in the hour it was sent")
-
-    def test_finishes_in_logs_from_before_do(self):
-        """Older logs sent a `moment`: a finish is task_complete or
-        reply_ready, and a cheer in logs from before them; a rule's
-        rule reaction isn't one."""
-        moment = lambda t, **m: {"sent": {"t": "moment", **m}, "received_at_ms": t}
-        d = day.summarise([launch(
-            state(at("09:00:00")),
-            moment(at("09:01:00"), anim="task_complete", outcome="success", mood="calm", loops=1, id=1),
-            moment(at("09:02:00"), anim="reply_ready", mood="curious", loops=1, id=2),
-            moment(at("09:03:00"), anim="cheer", loops=1),
-            moment(at("09:04:00"), anim="starting", variant=1, ctx="new_task"),
-        )], "2026-09-28")
-        self.assertEqual(d.total().finishes, 3)
 
     def test_a_alert_is_a_new_needs_you_or_a_different_one(self):
         """A new attn, or a different agent or project, alerts once; the
@@ -399,7 +370,7 @@ class RuleTests(unittest.TestCase):
             {"pass": {"brain": "jev:jev-latest", "for": 1, "dropped": "timed out after 8000 ms", "answers": {},
                       "latency_ms": 8000}, "received_at_ms": t + 8000},
             {"pass": {"brain": "jev:jev-latest", "for": 3, "dropped": None, "latency_ms": 900,
-                      "answers": {"react": {"choice": "none", "p": {"none": 0.9}}}}, "received_at_ms": t + 9000},
+                      "answers": {"react.face": {"choice": "none", "p": {"none": 0.9}}}}, "received_at_ms": t + 9000},
         )], "2026-09-28")
         self.assertEqual((d.total().passes, d.total().dropped, d.quiet, d.skipped), (2, 1, 1, 1))
         text = day.render(d)
@@ -445,7 +416,6 @@ if __name__ == "__main__":
 
 
 class FaceKeyTests(unittest.TestCase):
-    def test_either_key(self) -> None:  # react.mood, or react in older logs
-        self.assertEqual(day.face({"answers": {"react.mood": {"choice": "proud"}}}), "proud")
-        self.assertEqual(day.face({"answers": {"react": {"choice": "grumpy"}}}), "grumpy")
+    def test_its_key(self) -> None:
+        self.assertEqual(day.face({"answers": {"react.face": {"choice": "proud"}}}), "proud")
         self.assertIsNone(day.face({"answers": {}}))

@@ -95,6 +95,21 @@ extension Runtime {
         public var seed = Mind.launchSeed()
         /// What it may bring up about you at a time (`Memory.felt`).
         public var felt: (Int64) -> [Memory.Felt] = { _ in [] }
+        /// What it notices from, or nil for a buddy that doesn't: the days
+        /// kept, when each notice last played, and whether a thread had a
+        /// turn since the last dream (`Memory`).
+        public var noticing: Noticing?
+        public struct Noticing {
+            public var digests: () -> [DayDigest]
+            public var shown: () -> [String: Int64]
+            public var onLately: (String) -> Bool
+
+            public init(digests: @escaping () -> [DayDigest], shown: @escaping () -> [String: Int64], onLately: @escaping (String) -> Bool) {
+                self.digests = digests
+                self.shown = shown
+                self.onLately = onLately
+            }
+        }
         public static func launchSeed() -> UInt64 { .random(in: .min ... .max) }
 
         public init(buddy: Buddy, steering: Steering, reactions: Reactions,
@@ -141,6 +156,37 @@ extension Runtime {
             for kind in Core.WishKind.allCases { core.wishMetSigns[kind] = Asks.wishMetSign(m.steering.asks, kind) }
             core.wishDone = m.wishDone
             let mood = MoodOutput.choice(voice: voice, pack: pack)
+            // What it notices, read by the output and CONTEXT alike: none on
+            // Quiet, none when it couldn't start anything of its own, and none
+            // with no lines for it. An open wish holds up all but `waiting`.
+            let noticeAt = { (about: Event, log: LogView) -> Notices.Notice? in
+                guard let noticing = m.noticing, MomentOutput.isCheckIn(about), m.talk() != .quiet, core.mayBeOwnBeat(at: about.at) else { return nil }
+                var moment = Notices.Moment(at: about.at, wall: core.wall(about.at), time: core.config.time)
+                moment.agents = core.status(at: about.at, results: [:])
+                moment.hereSince = m.company()?.hereSince
+                moment.dozing = core.dozes(at: about.at)
+                moment.wishOpen = core.wish != nil
+                (moment.failures, moment.sharpAt) = view.rough(log)
+                moment.digests = noticing.digests()
+                moment.shown = noticing.shown()
+                return Notices.due(moment).flatMap { n in
+                    Signs.notice(m.steering.signs, n.kind.rawValue, agent: n.agent).isEmpty ? nil : n
+                }
+            }
+            // What's noticed at NOW's own moment: your coming back's, in its
+            // line; your first prompt today on a thread you'd left.
+            let noticedAt = { (about: Event, line: Line?) -> String? in
+                if let said = line?.facts[TranscriptView.noticedFact]?.string { return said }
+                guard let noticing = m.noticing, about.type == .prompt, line?.facts[TranscriptView.firstHereTodayFact] != nil,
+                      let thread = line?.facts["thread"]?.object else { return nil }
+                guard let key = thread["workspace"]?.string ?? thread["project"]?.string else { return nil }
+                return Notices.backOn(key, digests: noticing.digests(), known: noticing.onLately(key), at: core.wall(about.at), time: core.config.time)
+            }
+            let wishWhy = { (at: Int64) -> String? in
+                guard let noticing = m.noticing else { return nil }
+                return Notices.wishReason(today: m.company(), digests: noticing.digests(),
+                                          daysOld: core.dayCount(at: at), at: core.wall(at), time: core.config.time)
+            }
             // A reaction your tap cut short is in progress while the pokes
             // go on, and done once anything else happens. A reaction's end,
             // MellowHarness's own event, never stops the pokes. The rule
@@ -189,8 +235,19 @@ extension Runtime {
                 let line = h.line(about.seq)
                 let why = Narration.of(about, line: line, untouchedMs: ContextSection.untouchedMs(m.company(), at: h.clock.now()),
                                        name: pack.name)
-                guard line?.facts[TranscriptView.firstTodayFact] != nil, let days = core.dayCount(at: about.at) else { return why }
-                return Narration.day(days, leading: why)
+                // Your goodnight says the day's turns, on the board too.
+                if about.type == .lock, about.phase == .start, core.calendar(at: about.at).contains("night"),
+                   let turns = Notices.goodnight(turns: m.company()?.turns ?? 0), let why {
+                    return Narration(cause: why.cause + " " + turns, fact: String(turns.dropLast()))
+                }
+                let noted = why?.noting(noticedAt(about, line))
+                // The morning's caption keeps to the day and the dream.
+                guard line?.facts[TranscriptView.firstTodayFact] != nil, let days = core.dayCount(at: about.at) else { return noted }
+                return Narration.day(days, leading: noted)
+            }, moodMoved: { [mood] now, log in
+                MoodOutput.boardFact(mood, log, now: now, pack: pack)
+            }, note: { fact, at in
+                carryOut([.reaction(Moment(reason: fact))], at)
             }, dreams: m.steering.dreams, line: { [weak h] about in h?.line(about.seq) },
             occasion: { at in core.dayGreeting(at: at) }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
             wishable: { [mood] about, log in
@@ -200,7 +257,9 @@ extension Runtime {
             }, makeWish: { kind, at in
                 carryOut(core.makeWish(kind, at: at), at)
             }, wishDone: m.wishDone,
-            today: m.company, felt: m.felt, seed: m.seed)
+            dayNumber: { LocalTime.dayNumber(core.config.time.boopDay(core.wall($0))) ?? 0 },
+            moodFace: { [mood] log in MoodOutput.value(mood, log) },
+            today: m.company, felt: m.felt, notice: noticeAt, wishWhy: wishWhy, seed: m.seed)
             h.output(mood)
             h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
             let mine = { (asked: Harness.Voice?) in asked?.id == voice }
@@ -222,7 +281,8 @@ extension Runtime {
                 guard mine(v), let h else { return nil }
                 let now = h.clock.now()
                 // NOW is an idle check-in when one is the newest thing to happen.
-                let idle = log.events.last { !$0.fromHarness }.map(MomentOutput.isCheckIn) == true
+                let newest = log.events.last { !$0.fromHarness }
+                let idle = newest.map(MomentOutput.isCheckIn) == true
                 let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let wall = core.wall(now), time = core.config.time
                 let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
@@ -231,8 +291,11 @@ extension Runtime {
                                                time: time)
                 return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),
-                                              agents: core.status(at: now, results: [:]), wish: core.wishRow(at: now, name: pack.name, idle: idle),
-                                              wishToday: core.wishToday(at: now, name: pack.name), at: now, name: pack.name)
+                                              agents: core.status(at: now, results: [:]),
+                                              wish: core.wishRow(at: now, name: pack.name, idle: idle, because: idle ? wishWhy(now) : nil),
+                                              wishToday: core.wishToday(at: now, name: pack.name),
+                                              noticed: newest.flatMap { e in noticedAt(e, h.line(e.seq)) ?? noticeAt(e, log).map { $0.fact + "." } },
+                                              at: now, name: pack.name)
             }
             return mood
         }

@@ -53,6 +53,9 @@ let usage = """
                "dream_preview" (what dreaming now would do, to debug.jsonl, nothing kept);
                and for push-to-talk with no mic, "listen" (the app's button,
                {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"}).
+           Boop --counts [--state-dir DIR] [--days N]
+               Prints a summary of the last N days (7) from DIR/daily-counts.jsonl, then exits: numbers and dates only,
+               no words, threads or notes, for you to send or not. Nothing leaves the Mac by itself. Starts nothing.
            Boop --snapshots DIR
                Renders the popover's panes and the menu-bar icons to PNGs from fixtures, then exits.
                No runtime, no Bluetooth.
@@ -188,14 +191,21 @@ final class LogFile: @unchecked Sendable {
 // usage: a mistyped flag would otherwise start the menu-bar app, which uses
 // Bluetooth and repairs the real hooks.
 let raw = Array(CommandLine.arguments.dropFirst())
-let (launchHeadless, launchSnapshots) = (raw.contains("--headless"), raw.contains("--snapshots"))
+let (launchHeadless, launchSnapshots, launchCounts) = (raw.contains("--headless"), raw.contains("--snapshots"), raw.contains("--counts"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
     launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record",
                        "--buddies", "--links"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
+    : launchCounts ? (["--state-dir", "--days"], ["--counts"])
     : (["--state-dir", "--link"], ["--debug"])
 let args = Arguments.parse(raw, options: launchOptions, flags: launchFlags, command: "boop", usage: usage)
+if launchCounts {
+    let dir = args["--state-dir"].map { URL(fileURLWithPath: $0) } ?? AppSettings.defaultStateDir()
+    guard let days = Int(args["--days"] ?? "7"), days > 0 else { fail("--days is a count, 1 or more") }
+    print(DayCounts.summary(MemoryStore.counts(in: dir), days: days))
+    exit(0)
+}
 CharacterPack.use(bundledCharacter())
 if launchHeadless { Headless.run(args) }
 if launchSnapshots { MainActor.assumeIsolated { Snapshots.run(args) } }

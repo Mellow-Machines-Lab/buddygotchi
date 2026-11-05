@@ -1,5 +1,6 @@
 #include "app/motion_gesture.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 
@@ -9,10 +10,16 @@ namespace app {
 
 using render::after;
 
-MotionGesture::Event MotionGesture::update(int ax, int ay, int az, uint32_t t) {
-  // In float: the ESP32-S3's FPU has no double.
+namespace {
+// How far the reading is from 1 g. In float: the ESP32-S3's FPU has no double.
+int offOneG(int ax, int ay, int az) {
   const float x = float(ax), y = float(ay), z = float(az);
-  const int off = int(std::lroundf(std::sqrt(x * x + y * y + z * z))) - 1000;
+  return int(std::lroundf(std::sqrt(x * x + y * y + z * z))) - 1000;
+}
+}  // namespace
+
+MotionGesture::Event MotionGesture::update(int ax, int ay, int az, uint32_t t) {
+  const int off = offOneG(ax, ay, az);
   const bool calm = std::abs(off) <= kStillMg;
   if (!started_) started_ = true, fx_ = ax, fy_ = ay, fz_ = az, flatSince_ = t, calmFrom(t);
   fx_ += (ax - fx_) / 4, fy_ += (ay - fy_) / 4, fz_ += (az - fz_) / 4;
@@ -67,6 +74,28 @@ MotionGesture::Event MotionGesture::update(int ax, int ay, int az, uint32_t t) {
   }
   if (moving && !lifting_) still_ = false;
   return kNone;
+}
+
+void Tilt::update(int ax, int ay, int az, uint32_t t) {
+  const int reading = ax * 256;
+  if (!started_) started_ = true, x_ = rest_ = reading, at_ = t;
+  const uint32_t dt = std::min<uint32_t>(t - at_, 200);
+  at_ = t;
+  x_ += (reading - x_) / 4;
+  const int off = offOneG(ax, ay, az);
+  if (az < kFaceDownMg) rest_ = x_;
+  if (std::abs(off) > kCalmMg || az < kFaceDownMg) {
+    mg_ = 0;
+    return;
+  }
+  // Toward the reading, by dt of kRestMs, rounded away from nothing, so it
+  // gets there.
+  const int gap = x_ - rest_;
+  int step = int(int64_t(gap) * int64_t(dt) / int64_t(kRestMs));
+  if (!step && gap) step = gap > 0 ? 1 : -1;
+  rest_ += step;
+  const int across = kAcross * (x_ - rest_) / 256, away = std::abs(across) - kDeadMg;
+  mg_ = away <= 0 ? 0 : (across > 0 ? 1 : -1) * std::min(away, kMostMg);
 }
 
 }  // namespace app

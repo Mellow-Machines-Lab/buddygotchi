@@ -23,7 +23,7 @@ final class CharacterPackTests: XCTestCase {
     /// mac/faces.json names the moods its faces.h does), and every lasting
     /// one an option for the mood question.
     func testEveryMoodHasAFaceAndDesigns() throws {
-        XCTAssertEqual(MomentOutput.expressions.map(\.name), CharacterPack.active.moods.map(\.id))
+        XCTAssertEqual(CharacterPack.active.faces.map(\.name), CharacterPack.active.moods.map(\.id))
         XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
         let data = try Data(contentsOf: Self.repo.appendingPathComponent("characters/pixel/mac/faces.json"))
         let faces = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])

@@ -49,7 +49,7 @@ struct SettingsPane: View {
     /// and forgetting it.
     private var memorySetting: some View {
         SettingRow(icon: "brain", title: "What \(model.name) remembers",
-                   detail: "Written on this Mac as Boop dreams. Its notes go to the brain with each request.") {
+                   detail: "Written on this Mac as \(model.name) dreams. Its notes go to the brain with each request.") {
             Button("Forget about me") { model.runtime?.forgetAboutYou() }.buttonStyle(.row).fixedSize()
                 .help("Forget the notes about you and your work, and your recent days")
         }

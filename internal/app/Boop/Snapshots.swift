@@ -3,6 +3,7 @@ import AppKit
 import BoopKit
 import CoreBluetooth
 import LinkKit
+import MellowHarness
 import SwiftUI
 
 /// `Boop --snapshots DIR`: renders the popover's panes and the menu-bar
@@ -32,6 +33,8 @@ enum Snapshots {
             let unbuilt = HookInstaller.boop(home: home, hookPath: home.appendingPathComponent("bin/missing").path)
             checkStatusPublishing(installer)
             checkPulse()
+            checkNothingCut(installer)
+            checkNeedsYouComesFirst(installer)
 
             // The pack's mirror of the board, when it has one (Boop's).
             let gelState = StateSnapshot(doing: "working", activity: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
@@ -80,6 +83,9 @@ enum Snapshots {
                 var unknown = status()
                 (unknown.notes, unknown.recently) = ([], [])
                 shot("memory-empty", model(installer, status: unknown), pane: .memory)
+                var longMemory = status(name: Long.name)
+                (longMemory.notes, longMemory.recently) = (longNotes, longDays)
+                shot("memory-long", model(installer, status: longMemory), pane: .memory)
                 shot("memory-not-running", model(installer, status: nil), pane: .memory)
                 let settings = model(installer, status: status(sessions: [["codex", "landing", "work"]]))
                 try? installer.install(.claude)
@@ -138,6 +144,15 @@ enum Snapshots {
                 shot("settings-old-firmware", model(installer, status: status(deviceTrouble: "the device's firmware is too old for this app: flash it")),
                      pane: .settings)
 
+                // The longest name, and the longest words in each row.
+                let longSettings = model(installer, status: status(connected: true, name: Long.name, deviceTrouble: Long.detail), ownsHooks: false)
+                longSettings.status?.board = "b00p-01dd"
+                longSettings.hookErrors[.claude] = Long.detail
+                longSettings.loginItemError = Long.detail
+                longSettings.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
+                longSettings.firmwareWrite = .failed(Long.detail)
+                shot("settings-long", longSettings, pane: .settings)
+
                 for (name, onboarding) in onboardings(installer, gel: onboardingGel) {
                     render(OnboardingView(model: onboarding), "onboarding-\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
                 }
@@ -146,6 +161,14 @@ enum Snapshots {
                     crowded.status?.talk = .quiet
                     render(PopoverView(model: crowded, maxHeight: 560),
                            "overview-bounded-\(dark ? "dark" : "light")", dark: dark, to: out, heightLimit: 560)
+                }
+                // At the height the popover really has: the footer stays, and the long
+                // values scroll.
+                for name in ["long", "long-words", "long-notices", "needs-you-said"] {
+                    if let long = overviews(installer).first(where: { $0.0 == name })?.1 {
+                        render(PopoverView(model: long, maxHeight: 560),
+                               "overview-\(name)-bounded-\(dark ? "dark" : "light")", dark: dark, to: out, heightLimit: 560)
+                    }
                 }
                 renderIcons(dark: dark, to: out)
             }
@@ -279,6 +302,36 @@ enum Snapshots {
                 $0.app.loginItem = .unavailable
                 $0.app.refreshLoginItem()
             }),
+            // The longest name wherever an act says it, and the longest words heard.
+            ("3-name-long", at(.makeMeYours) { $0.app.setup.editName(Long.name) }),
+            ("3-name-unbroken", at(.makeMeYours) { $0.app.setup.editName(Long.unbroken) }),
+            ("4-body-long", at(.body, status: status(connected: false, name: Long.name)) { $0.app.setup.name = Long.name }),
+            ("4-body-long-unbroken", at(.body, status: status(connected: false, name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
+            ("4-body-long-no-voice", at(.body, status: status(name: Long.name, voice: "none")) {
+                $0.app.setup.name = Long.name
+                $0.body = .joined
+            }),
+            ("5-how-to-long", at(.howTo, status: status(name: Long.name, brain: "none")) {
+                $0.app.setup.name = Long.name
+                $0.body = .joined
+                $0.progress.lessons = [.tap, .button]
+                $0.talk = .heard(Long.thread + " " + Long.thread)
+            }),
+            ("5-how-to-long-unbroken", at(.howTo, status: status(name: Long.unbroken)) {
+                $0.app.setup.name = Long.unbroken
+                $0.body = .joined
+                $0.progress.lessons = [.tap, .button]
+            }),
+            ("6-agents-long", at(.agents, status: status(name: Long.name)) {
+                $0.app.setup.name = Long.name
+                $0.connected = true
+                $0.progress.heard = "claude"
+            }),
+            ("7-small-things-long", at(.smallThings, status: status(name: Long.name)) {
+                $0.app.setup.name = Long.name
+            }),
+            ("8-finale-long", at(.finale, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
+            ("8-finale-unbroken", at(.finale, status: status(connected: false, name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
             ("8-finale", at(.finale, status: status())),
             // A gel board: the drawer's tip in the poke's place.
             ("8-finale-gel", at(.finale, status: status(face: .gel))),
@@ -528,14 +581,15 @@ enum Snapshots {
                               listening: listening, micTrouble: micTrouble, growth: growth)
         // Its age and its memory's recent days, read the day after.
         status.talk = talk
+        if snapshot.doing == "asleep" { status.doingReason = Narration.sleeping(noAgents: false, napping: false, dozeMs: 3_600_000, name: name) }
         status.daysOld = 47
-        status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked Boop 4 times.",
+        status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked \(name) 4 times.",
                                  today: "2026-10-22"),
                            .init(day: "2026-10-20", line: "Three turns broke on \"api\". You said \"still broken\".", today: "2026-10-22")]
         status.notes = [.init(id: 3, section: .you, days: ["2026-10-20"], text: "You work late most nights, and you say please to claude."),
                         .init(id: 12, section: .work, days: ["2026-10-21"], text: "\"api\": you and claude fixed the failing tests on Tuesday."),
                         .init(id: 9, section: .boop, days: ["2026-10-14", "2026-10-21"], pinned: true,
-                              text: "You stroke Boop when you sit down in the morning.")]
+                              text: "You stroke \(name) when you sit down in the morning.")]
         return status
     }
 
@@ -566,7 +620,7 @@ enum Snapshots {
                 ["codex", "landing-page-redesign-v2", "wait", "Fix the hero image on mobile", "fix-nav"], ["claude", "jetpack", "wait"],
                 ["codex", "buddygotchi", "work"], ["claude", "notes", "idle"],
             ]))),
-            // A long project and a long branch: the branch is cut first.
+            // A long project and a long branch: under one another, in full.
             ("needs-you-long", model(installer, status: status(sessions: [
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
@@ -624,6 +678,40 @@ enum Snapshots {
                 m.status?.hushedUntil = Date().addingTimeInterval(23 * 60 + 10)
                 return m
             }()),
+            // Every value at its longest (Long).
+            ("long", longOverview(installer)),
+            // What you said to it as the mood's reason, as far as a reason
+            // quotes it: the pane scrolls it, under a header that stays.
+            ("long-words", {
+                var s = status(sessions: [["claude", "jetpack", "work"]])
+                s.moodReason = Long.said
+                return model(installer, status: s)
+            }()),
+            // An agent waiting while what you said is the reason: the card comes first.
+            ("needs-you-said", {
+                var s = status(sessions: [["claude", "jetpack", "wait"]])
+                s.moodReason = Long.said
+                return model(installer, status: s)
+            }()),
+            // Several buddies with the longest names, and the longest feeling.
+            ("long-buddies", {
+                var s = status(sessions: [["claude", "jetpack", "work"]], name: Long.name, mood: Long.mood)
+                s.buddies = [.init(id: "left", name: Long.name, snapshot: s.snapshot, connected: true, device: nil),
+                             .init(id: "right", name: "Sir Reginald Fluffy III", snapshot: s.snapshot, connected: false, device: nil)]
+                return model(installer, status: s)
+            }()),
+            // Every notice, each with its longest words, Details open.
+            ("long-notices", {
+                var s = status(sessions: [["claude", "jetpack", "idle"]], name: Long.name,
+                               brainTrouble: BrainTrouble(kind: .failing, why: Long.detail, inARow: 3),
+                               micTrouble: Long.detail, deviceTrouble: Long.detail)
+                s.uncleanExit = true
+                let m = model(installer, status: s)
+                m.hookErrors[.codex] = Long.detail
+                m.restartAgents = true
+                OpenDetails.shared.show(Long.detail)
+                return m
+            }()),
             // Many sessions, a long project, two in one project told apart
             // by their threads' names, and one needing you from no folder.
             ("crowded", model(installer, status: status(sessions: [
@@ -635,6 +723,176 @@ enum Snapshots {
             ]))),
         ]
     }
+
+    // MARK: Long values
+
+    /// The longest each value gets, or longer than it's likely to, so a
+    /// snapshot shows the worst case. The reasons are `Narration`'s own, made
+    /// from the events that bring them.
+    enum Long {
+        /// A name's limit, `SetupDraft`'s 23 characters.
+        static let name = "Wobblebottom McSnugs Jr"
+        /// No spaces to wrap at.
+        static let unbroken = String(repeating: "W", count: 23)
+        static let thread = "Fix the flaky login test that only fails on the second run after a cold start on CI"
+        static let project = "buddygotchi-landing-page-redesign-v2"
+        static let workspace = "claude/very-long-branch-name-for-the-hero-section"
+        /// No mood of a pack is longer.
+        static let mood = "uncomfortable"
+        /// A note at `MemoryEdits.maxLength`, 140 characters.
+        static let note = String(repeating: "You keep the tests green before lunch, and you say please to claude. ", count: 2).prefix(140).description
+        /// A path and an error, as macOS and the hooks say them.
+        static let detail = "The file ~/Library/Application Support/Boop/some-rather-long-folder-name/settings.json couldn't be read: "
+            + "The operation couldn't be completed. (NSCocoaErrorDomain error 257: permission denied.)"
+        /// A line a day of the written memory.
+        static let day = "A long day on \"\(project)\"; the tests finally passed after three broken turns. You stroked \(name) 4 times and said \"still broken\" twice."
+
+        private static let thread_: [String: JSONValue] = ["agent": .string("claude"), "workspace": .string(workspace)]
+        private static func event(_ type: Event.Kind, _ specific: String = "", phase: Event.Phase? = nil, data: [String: JSONValue] = [:]) -> Event {
+            Event(at: 0, source: .device, type: type, phase: phase, specificType: specific, data: data)
+        }
+
+        /// The first time you show up today: its age, the dream told, and
+        /// what it noticed.
+        static var told: Narration {
+            let dream = EventLine.dreamed(about: "the last 2 days", sentence: "you stroked it 4 times; 7 turns on \"\(project)\", 3 failed; you said \"still broken\"", name: name)
+            let told = Narration.of(event(.gesture, "stroke"), line: Line("", facts: ["dream_told": .string(dream)]), name: name)
+            return Narration.day(1_041, leading: told).noting(Narration.noticed("a rough hour: 3 failures"))
+        }
+
+        /// An agent's calls failing, on its branch.
+        static var failing: Narration? {
+            Narration.of(event(.tool), line: Line("", facts: ["failing": .int(4), "thread": .object(thread_)]), name: name)
+        }
+
+        /// A work act, on its branch.
+        static var act: Narration? {
+            Narration.of(event(.act, "tests", phase: .start), line: Line("", facts: ["thread": .object(thread_)]), name: name)
+        }
+
+        /// What you said, at its limit (`HookLine.maxMessage`), as a reason keeps it.
+        static var said: Narration? {
+            let words = String(repeating: "can you hear me from all the way over here on my desk ", count: 40).prefix(2_000).description
+            return Narration.of(event(.said, "mic"), line: Line("", facts: ["words": .string(words)]), name: name)
+        }
+    }
+
+    static func longOverview(_ installer: HookInstaller) -> AppModel {
+        var s = status(sessions: [
+            ["claude", Long.project, "wait", Long.thread, Long.workspace],
+            ["codex", Long.project, "wait", "", Long.workspace],
+            ["claude", Long.project, "work", Long.thread, Long.workspace],
+            ["claude", "unknown", "work", Long.thread],
+            ["codex", Long.project, "idle", "", Long.workspace],
+        ], vol: 0, talk: .chatty, name: Long.name, mood: Long.mood)
+        s.hushedUntil = Date().addingTimeInterval(29 * 60)
+        s.wishing = "\(Long.name) wishes for \(Core.WishKind.work.words) (3 h 20 min)."
+        s.moodReason = Long.told
+        s.doingReason = Long.act
+        s.dressing = [Narration.Dressing(kind: .specialDay, why: "\(Long.name) became a Buddy today, and it's its birthday", what: "a witch hat, a party hat, confetti, snow and hearts"),
+                      Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap and pyjamas")]
+        s.growth = Growth(xp: 123_456)
+        s.daysOld = 1_041
+        s.notes = longNotes
+        s.recently = longDays
+        return model(installer, status: s)
+    }
+
+    /// Text twice as long makes the Overview taller, for every value that can
+    /// run long: a line limit or a cut would leave its height where it was.
+    /// With Details and the like shut, and no other value of any length.
+    static func checkNothingCut(_ installer: HookInstaller) {
+        func words(_ count: Int) -> String { String(repeating: "several words ", count: count).trimmingCharacters(in: .whitespaces) }
+        func height(_ status: Runtime.Status) -> CGFloat {
+            let host = NSHostingView(rootView: PopoverView(model: model(installer, status: status), maxHeight: 8000)
+                .environment(\.stillMotion, true))
+            window.contentView = host
+            for _ in 0..<3 {
+                host.layoutSubtreeIfNeeded()
+                host.frame = CGRect(origin: .zero, size: host.fittingSize)
+                RunLoop.main.run(until: Date().addingTimeInterval(0.005))
+            }
+            return host.fittingSize.height
+        }
+        func bare(_ sessions: [[String]] = [["claude", "jetpack", "work"]], name: String = "Mochi") -> Runtime.Status {
+            var s = status(sessions: sessions, name: name, growth: nil)
+            (s.notes, s.recently, s.daysOld) = ([], [], nil)
+            return s
+        }
+        let values: [(String, (Int) -> Runtime.Status)] = [
+            ("its name", { bare(name: words($0)) }),
+            ("the mood's reason", { n in var s = bare(); s.moodReason = Narration(cause: words(n)); return s }),
+            ("the wish", { n in var s = bare(); s.wishing = words(n); return s }),
+            ("the doing's reason", { n in var s = bare(); s.doingReason = Narration(cause: words(n)); return s }),
+            ("a buddy's name", { n in
+                var s = bare()
+                s.buddies = [.init(id: "left", name: words(n), snapshot: s.snapshot, connected: true, device: nil),
+                             .init(id: "right", name: words(n), snapshot: s.snapshot, connected: false, device: nil)]
+                return s
+            }),
+            ("a thread's name", { bare([["claude", "jetpack", "work", words($0)]]) }),
+            ("a project", { bare([["claude", words($0), "work", "A thread"]]) }),
+            ("a workspace", { bare([["claude", "jetpack", "work", "", words($0)]]) }),
+            ("a notice", { n in var s = bare(); s.micTrouble = words(n); return s }),
+            ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(kind: .friday, why: words(n), what: nil)]; return s }),
+            ("a note", { n in var s = bare(); s.notes = [.init(id: 1, section: .you, days: [], text: words(n))]; return s }),
+            ("a day's line", { n in var s = bare(); s.recently = [.init(day: "2026-10-21", line: words(n), today: "2026-10-22")]; return s }),
+        ]
+        for (what, status) in values where height(status(20)) >= height(status(40)) {
+            fail("snapshots: \(what) is cut off: twice the words leave the Overview no taller")
+        }
+        // The needs-you card, apart from its session's row, which grows too.
+        let grown = { (kind: String) in
+            height(bare([["claude", "jetpack", kind, words(40)]])) - height(bare([["claude", "jetpack", kind, words(20)]]))
+        }
+        guard grown("wait") > grown("work") + 1 else { fail("snapshots: the needs-you card's thread name is cut off") }
+        print("long values: \(values.count + 1) grow the Overview, none cut off")
+    }
+
+    /// However long the reasons run, the needs-you card stays where it is:
+    /// the top of the pane, on the first screen.
+    static func checkNeedsYouComesFirst(_ installer: HookInstaller) {
+        /// How far down the card's amber edge first shows, at the pane's middle.
+        func cardTop(why: String?) -> Int? {
+            var s = status(sessions: [["claude", "jetpack", "wait"]])
+            s.moodReason = why.map { Narration(cause: $0) }
+            s.wishing = why
+            let host = NSHostingView(rootView: PopoverView(model: model(installer, status: s), maxHeight: 560)
+                .environment(\.stillMotion, true).environment(\.colorScheme, .light))
+            host.appearance = NSAppearance(named: .aqua)
+            window.appearance = host.appearance
+            window.contentView = host
+            for _ in 0..<3 {
+                host.layoutSubtreeIfNeeded()
+                host.frame = CGRect(origin: .zero, size: host.fittingSize)
+                window.setContentSize(host.frame.size)
+                RunLoop.main.run(until: Date().addingTimeInterval(0.005))
+            }
+            host.layoutSubtreeIfNeeded()
+            window.displayIfNeeded()
+            let rep = bitmap(host.bounds.size, scale: 1)
+            host.cacheDisplay(in: host.bounds, to: rep)
+            return (0..<rep.pixelsHigh).first { y in
+                guard let c = rep.colorAt(x: rep.pixelsWide / 2, y: y)?.usingColorSpace(.sRGB) else { return false }
+                return c.redComponent - c.blueComponent > 0.15
+            }
+        }
+        let words = String(repeating: "several words ", count: 150)
+        guard let plain = cardTop(why: nil), let long = cardTop(why: words) else { fail("snapshots: no needs-you card to find") }
+        guard plain == long else { fail("snapshots: long reasons push the needs-you card down, from \(plain) to \(long) pt") }
+        print("needs you: first, at \(plain) pt, however long the reasons")
+    }
+
+    static let longNotes: [WrittenMemory.Note] = [
+        .init(id: 3, section: .you, days: ["2026-10-20"], text: Long.note),
+        .init(id: 12, section: .work, days: ["2026-10-21"], text: "\"\(Long.project)/\(Long.workspace)\": " + Long.note.prefix(50)),
+        .init(id: 9, section: .boop, days: ["2026-10-14"], pinned: true, text: Long.note),
+    ]
+
+    static let longDays: [Runtime.Status.DayLine] = [
+        .init(day: "2026-10-21", line: Long.day, today: "2026-10-22"),
+        .init(day: "2026-10-20", line: Long.day, today: "2026-10-22"),
+    ]
 
     // MARK: Contrast
 

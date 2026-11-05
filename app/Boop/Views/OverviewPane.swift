@@ -14,6 +14,17 @@ struct OverviewPane: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             FittedScroll(maxHeight: maxHeight - 76) {
+                VStack(alignment: .leading, spacing: 0) {
+                // Someone waiting comes before why Boop is as it is.
+                if let attn = model.status?.snapshot.attn {
+                    needsYou(attn, model.status?.sessions ?? [])
+                        .padding(.top, Theme.gapLoose - Self.headerGap)
+                        .padding(.bottom, Theme.gapSnug)
+                }
+                // In the scroll, not the header: they wrap, and the buttons stay put.
+                ReasonLines(feed: model.slime, name: model.name, wish: model.status?.wishing,
+                            why: moodWhy, doing: model.status?.doingReason?.cause)
+                    .padding(.leading, faceSize + Theme.gap)
                 VStack(alignment: .leading, spacing: Theme.gapSection) {
                     if let error = model.startError {
                         notice("exclamationmark.triangle.fill", Theme.clayInk, "Boop couldn't start", error,
@@ -57,7 +68,6 @@ struct OverviewPane: View {
                         }
                     }
                     if let status = model.status {
-                        if let attn = status.snapshot.attn { needsYou(attn, status.sessions) }
                         PaneSection(status.sessions.isEmpty ? "Sessions" : "Sessions · \(status.sessions.count)") {
                             sessions(status)
                         }
@@ -75,6 +85,8 @@ struct OverviewPane: View {
                         }
                     }
                 }
+                .padding(.top, Theme.gapLoose - Self.headerGap)
+                }
                 .padding(.horizontal, Theme.gutter)
                 .padding(.bottom, Theme.gapLoose)
             }
@@ -86,61 +98,53 @@ struct OverviewPane: View {
 
     // MARK: Header
 
+    /// Under the header, over what the scroll holds first.
+    private static let headerGap: CGFloat = 4
+
+    /// The name and the headline get the column's whole width, and wrap
+    /// when even that isn't enough; the device line and the buttons sit at
+    /// the end of the lines beside them, so they take room from nothing else.
     private var header: some View {
         VStack(alignment: .leading, spacing: Theme.gapSnug) {
-            HStack(spacing: Theme.gap) {
-                HStack(spacing: Theme.gap) {
+            HStack(alignment: .top, spacing: Theme.gap) {
+                Group {
                     if showsSlime {
                         SlimeFace(feed: model.slime, snapshot: model.status?.snapshot ?? Self.waking, live: model.shown, size: faceSize)
                     } else {
                         BoopFace(mood: model.startError == nil ? FaceMood(model.status) : .stopped, design: model.status?.snapshot.mood ?? MoodOutput.initial,
                                  size: faceSize)
                     }
-                    VStack(alignment: .leading, spacing: 3) {
-                        // A long name shrinks a little before it's cut.
-                        Text(model.name).font(.boop(18)).lineLimit(1).minimumScaleFactor(0.8).help(model.name)
-                        HStack(spacing: 6) {
-                            StateDot(tone: tone, pulsing: live)
-                            Text(model.headline).font(.system(size: 12)).foregroundStyle(Theme.inkSoft).lineLimit(1)
-                        }
-                        .animation(.boopSettle, value: model.headline)
-                        // On a line of its own: beside the name or the
-                        // headline, the buttons on the right leave it no room.
-                        if let mood = model.status?.snapshot.mood { moodLabel(mood) }
-                        // Why it feels so, in plain words, so a face never
-                        // needs decoding.
-                        if let wish = model.status?.wishing {
-                            Text(wish).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                        if let why = model.status?.moodReason?.cause {
-                            Text(why).font(.system(size: 10)).foregroundStyle(Theme.inkFaint).lineLimit(2)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .animation(.boopSettle, value: why)
-                        }
-                    }
                 }
-                .accessibilityElement(children: .combine)
-                // First to the room the buttons leave, not halves with the spacer.
-                .layoutPriority(1)
-                Spacer(minLength: 0)
-                if model.status != nil {
-                    VStack(alignment: .trailing, spacing: 6) {
-                        deviceLine
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.gap) {
+                        Text(model.name).font(.boop(18)).fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        if model.status != nil, !severalBuddies { oneDevice }
+                    }
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        StateDot(tone: tone, pulsing: live)
+                        Text(model.headline).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .animation(.boopSettle, value: model.headline)
+                    if severalBuddies { buddies }
+                    if model.status != nil {
                         HStack(spacing: 4) {
+                            if let mood = model.status?.snapshot.mood { moodLabel(mood) }
+                            Spacer(minLength: 0)
                             hushButton
                             talkButton
                         }
                     }
                 }
             }
-            // Under the name, the full width of the popover, so the chips
-            // never squeeze each other or the device line.
+            // Under the name, so the chips never squeeze each other or the
+            // device line.
             chips.padding(.leading, faceSize + Theme.gap)
         }
         .padding(.horizontal, Theme.gutter)
         .padding(.top, Theme.gutter)
-        .padding(.bottom, Theme.gapLoose)
+        .padding(.bottom, Self.headerGap)
     }
 
     private let faceSize: CGFloat = 46
@@ -152,6 +156,13 @@ struct OverviewPane: View {
     private var showsSlime: Bool {
         guard SlimeFeed.folder != nil, model.startError == nil else { return false }
         return !(model.status?.connected == true && model.status?.device?.hasTheCharacter == false)
+    }
+
+    /// Why Boop feels as it does. Under "Feeling" the cause says enough; below
+    /// a needs-you card, far from that, the sentence names the mood it explains.
+    private var moodWhy: String? {
+        guard let status = model.status, let reason = status.moodReason else { return nil }
+        return status.snapshot.attn == nil ? reason.cause : reason.mood(status.snapshot.mood, name: model.name)
     }
 
     /// The slime while the runtime starts, before its first status.
@@ -166,7 +177,6 @@ struct OverviewPane: View {
                 .contentTransition(.opacity)
         }
         .font(.system(size: 11))
-        .lineLimit(1)
         .fixedSize()
         .animation(.boopSettle, value: mood)
         .accessibilityElement(children: .combine)
@@ -192,7 +202,6 @@ struct OverviewPane: View {
                         }
                         .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(Theme.inkSoft)
-                        .lineLimit(1)
                         .fixedSize()
                         .padding(.horizontal, 7).padding(.vertical, 3)
                         .background(Theme.well, in: Capsule())
@@ -203,27 +212,29 @@ struct OverviewPane: View {
         }
     }
 
-    /// Whether Boop's body is connected, as plain words, so it doesn't look
-    /// like a button. Which board it is stays out of sight. With several
-    /// buddies, each one's name, its dot saying whether its board is there.
-    @ViewBuilder private var deviceLine: some View {
-        if let buddies = model.status?.buddies, !buddies.isEmpty {
-            HStack(spacing: 8) {
-                ForEach(buddies, id: \.id) { b in
-                    HStack(spacing: 4) {
-                        Circle().fill(b.connected ? Theme.sage : Theme.inkFaint).frame(width: 6, height: 6)
-                        Text(b.name).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
-                    }
-                    .help("\(b.name), on the \(b.id): \(b.connected ? "connected" : "not connected"), \(b.snapshot.mood)")
+    private var severalBuddies: Bool { model.status?.buddies.isEmpty == false }
+
+    /// With several buddies, each one's name, its dot saying whether its
+    /// board is there: on a line while they fit, a line each when they don't.
+    @ViewBuilder private var buddies: some View {
+        if let buddies = model.status?.buddies {
+            let row = { (b: Runtime.Status.BuddyStatus) in
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Circle().fill(b.connected ? Theme.sage : Theme.inkFaint).frame(width: 6, height: 6)
+                    Text(b.name).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .help("\(b.name), on the \(b.id): \(b.connected ? "connected" : "not connected"), \(b.snapshot.mood)")
             }
-            .fixedSize()
-            .padding(.trailing, 2)
-        } else {
-            oneDevice
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { ForEach(buddies, id: \.id, content: row) }
+                VStack(alignment: .leading, spacing: 2) { ForEach(buddies, id: \.id, content: row) }
+            }
         }
     }
 
+    /// Whether Boop's body is connected, as plain words, so it doesn't look
+    /// like a button. Which board it is stays out of sight.
     private var oneDevice: some View {
         let device = model.device
         return HStack(spacing: 5) {
@@ -253,7 +264,6 @@ struct OverviewPane: View {
             }
             .font(.system(size: 10, weight: .medium))
             .foregroundStyle(Theme.inkSoft)
-            .lineLimit(1)
             .fixedSize()
             .padding(.horizontal, 7).padding(.vertical, 3)
             .background(Theme.well, in: Capsule())
@@ -269,7 +279,7 @@ struct OverviewPane: View {
         if model.status?.hushedUntil == nil {
             // A word, not the mouth alone, which reads as nothing in particular.
             Button { model.runtime?.hush() } label: {
-                Text("Hush").lineLimit(1)
+                Text("Hush")
             }
             .buttonStyle(RowButtonStyle(filled: false))
             .fixedSize()
@@ -286,7 +296,7 @@ struct OverviewPane: View {
             // One width for both words, so the button doesn't jump.
             Label(on ? "Send" : "Talk", systemImage: on ? "arrow.up" : "mic.fill")
                 .labelStyle(.titleAndIcon)
-                .lineLimit(1)
+                .fixedSize()
                 .frame(width: 50)
         }
         .buttonStyle(RowButtonStyle(filled: on))
@@ -326,7 +336,6 @@ struct OverviewPane: View {
                     Spacer(minLength: 0)
                     Text("\(growth.xp.formatted()) XP").font(.system(size: 11, weight: .medium)).monospacedDigit()
                 }
-                .lineLimit(1)
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Theme.well)
@@ -461,16 +470,15 @@ struct OverviewPane: View {
                     .buttonStyle(.plain)
                     .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.amberInk)
                     .padding(Theme.gapSnug + 2)
-                    .help("Stop showing this on \(model.status?.name ?? "Boop"). \(agent) still waits.")
+                    .help("Stop showing this on \(model.name). \(agent) still waits.")
             }
         }
         .transition(.scale(scale: 0.96, anchor: .top).combined(with: .opacity))
         .animation(.boopPop, value: project)
     }
 
-    /// The project and its workspace on the first line, so the workspace is
-    /// cut before the project, and the thread's name under them; which
-    /// agent it is, in the hint.
+    /// The project and its workspace, on a line while they fit, and the
+    /// thread's name under them, all in full; which agent it is, in the hint.
     private func needsYouCard(_ attn: StateSnapshot.Attention, project: String, name: String,
                               workspace: String?, hint: String) -> some View {
         let (title, name) = sessionTitle(project: project, name: name)
@@ -481,22 +489,23 @@ struct OverviewPane: View {
                     .foregroundStyle(Theme.amberInk)
                     .frame(width: 18)
                 VStack(alignment: .leading, spacing: 2) {
-                    HStack(alignment: .firstTextBaseline, spacing: 5) {
-                        Text(title)
-                            .font(.system(size: 12, weight: .semibold)).lineLimit(1).truncationMode(.middle)
-                            .layoutPriority(1)
+                    BesideOrUnder {
+                        Text(title).font(.system(size: 12, weight: .semibold))
+                    } second: {
                         if let workspace { WorkspaceName(workspace) }
                     }
                     if let name {
-                        Text(name).font(.system(size: 11, weight: .medium)).lineLimit(1).truncationMode(.tail)
+                        Text(name).font(.system(size: 11, weight: .medium))
                     }
                     Text(hint)
                         .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
                 }
-                Spacer(minLength: 0)
-                if attn.more > 0 {
-                    Text("+\(attn.more) more").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.amberInk)
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // The room for Dismiss, drawn over the card's corner, so
+                // the words never run under it.
+                Text("+\(attn.more) more").font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.amberInk)
+                    .opacity(attn.more > 0 ? 1 : 0)
+                    .fixedSize()
             }
         }
     }
@@ -711,7 +720,26 @@ struct WorkspaceName: View {
     var body: some View {
         Text(name)
             .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.inkSoft)
-            .lineLimit(1).truncationMode(.tail)
+    }
+}
+
+/// A name and what goes with it, side by side while both fit on the line,
+/// else one under the other, each wrapping: neither is ever cut.
+struct BesideOrUnder<First: View, Second: View>: View {
+    @ViewBuilder var first: First
+    @ViewBuilder var second: Second
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                first
+                second
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                first.fixedSize(horizontal: false, vertical: true)
+                second.fixedSize(horizontal: false, vertical: true)
+            }
+        }
     }
 }
 
@@ -787,13 +815,11 @@ struct SessionRow: View {
         let (title, project) = rowTitle(project: session.project, name: session.name)
         HStack(spacing: Theme.gapSnug) {
             VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(title)
-                        .font(.system(size: 12, weight: .medium))
-                        .lineLimit(1).truncationMode(.tail)
-                        .layoutPriority(1)
+                BesideOrUnder {
+                    Text(title).font(.system(size: 12, weight: .medium))
+                } second: {
                     if let project {
-                        Text(project).font(.system(size: 11)).foregroundStyle(Theme.inkSoft).lineLimit(1).truncationMode(.middle)
+                        Text(project).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
                     } else if let workspace = session.workspace {
                         WorkspaceName(workspace)
                     }
@@ -803,11 +829,11 @@ struct SessionRow: View {
                     TimelineView(.periodic(from: .now, by: 30)) { context in
                         Text(doing(at: context.date))
                             .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.inkSoft)
-                            .lineLimit(1).truncationMode(.tail)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
-            Spacer(minLength: Theme.gapTight)
+            .frame(maxWidth: .infinity, alignment: .leading)
             StatusChip(text: label, tone: tone)
         }
         .padding(.leading, 13).padding(.trailing, 8).padding(.vertical, 7)
@@ -834,5 +860,34 @@ private struct GrowthSilhouette: View {
                                bottomTrailingRadius: size.height / 4, topTrailingRadius: size.width / 2)
             .fill(Theme.inkSoft.opacity(0.35))
             .frame(width: size.width, height: size.height)
+    }
+}
+
+/// Why Boop is as it is, in plain words, so a face never needs decoding, each
+/// in full: its wish, why it feels so, and what it's up to, which the board
+/// doesn't caption: what its face is doing to pass the time, else why it's
+/// doing what it's doing.
+private struct ReasonLines: View {
+    @ObservedObject var feed: SlimeFeed
+    let name: String
+    let wish: String?
+    let why: String?
+    let doing: String?
+
+    private var lines: [String] {
+        [wish, why, feed.passing.flatMap { Narration.passing($0, in: CharacterPack.active.named(name)) } ?? doing].compactMap { $0 }
+    }
+
+    var body: some View {
+        if !lines.isEmpty {
+            VStack(alignment: .leading, spacing: 3) {
+                ForEach(lines, id: \.self) { line in
+                    Text(line).font(.system(size: 10)).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .animation(.boopSettle, value: lines)
+        }
     }
 }

@@ -99,6 +99,7 @@ public final class Core {
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
     /// A stage reached just now whose `grew` waits for nothing to need you.
+    /// Not kept: the log without its `grew` says so at launch (`grewLost`).
     var grewHeld: String?
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
@@ -116,6 +117,8 @@ public final class Core {
     /// The activity the working look shows (`updateActs`), and each
     /// working session's, held.
     var shownAct: Timed?
+    /// What last woke Boop, and when, for the popover.
+    var woke: (why: Narration, at: Int64)?
     var held: [String: Timed] = [:]
     /// When each session's start showed its `starting` card, so a prompt
     /// right after it doesn't show another.
@@ -382,14 +385,15 @@ public final class Core {
         case .sessionStarted(let source):
             // Only a card that shows counts (`play`'s rule).
             if !needsYouShowing, !showsListening(at: now) { startCards[key] = now }
-            return Moment(anim: Core.starting, ctx: Core.startCtx(source: source))
+            let ctx = Core.startCtx(source: source)
+            return Moment(anim: Core.starting, ctx: ctx, reason: Narration.started(ctx, agent: event.agent.rawValue, name: config.pack.name))
         case .turnStarted:
             held[key] = nil
             // One card for a start: not the session's first prompt just
             // after its own, nor a follow-up in the same conversation.
             if let shown = startCards.removeValue(forKey: key), now - shown < Core.startCardMs { return nil }
             if let ended = sessions[key]?.turn.lastEndedAt, now - ended < Core.followUpMs { return nil }
-            return Moment(anim: Core.starting, ctx: "new_task")
+            return Moment(anim: Core.starting, ctx: "new_task", reason: Narration.started("new_task", agent: event.agent.rawValue, name: config.pack.name))
         case .callEnded(let call, _):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
@@ -500,6 +504,12 @@ public final class Core {
             recordGrew(now, &fx)
         }
         return fx
+    }
+
+    /// A stage reached earlier today whose `grew` the log doesn't have: a
+    /// quit lost it while something needed you. It waits as it did then.
+    public func grewLost(_ name: String, at now: Int64) {
+        if config.hatched != day(now) { grewHeld = name }
     }
 
     /// Today's occasions at `now` (`Days.special`).
@@ -618,6 +628,7 @@ public final class Core {
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
         snapshot.xp = growthPercent()
+        if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
             snapshot.wishHow = !wishDone(kind)
@@ -657,6 +668,50 @@ public final class Core {
         return fx
     }
 
+    /// How long a quiet sends Boop to sleep at `now`.
+    func dozeMs(at now: Int64) -> Int64 { calendar(at: now).contains("night") ? Self.dozeOffNightMs : Self.dozeOffMs }
+
+    /// Why Boop is doing what it's doing at `now`, for the popover, where the
+    /// board has no room or no call to say: asleep, just woken, or at a work act.
+    public func doingReason(at now: Int64) -> Narration? {
+        let name = config.pack.name
+        if let w = woke, now - w.at < Self.wokeShownMs { return w.why }
+        let s = snapshot(at: now)
+        if s.doing == "asleep" {
+            return sleepingWhy(at: now)
+        }
+        if let act = stream.act, act.passed == nil, let session = sessions[act.session] {
+            return Narration.act(act.kind, agent: session.agent.rawValue, on: Self.on(session), name: name)
+        }
+        return nil
+    }
+    private func sleepingWhy(at now: Int64) -> Narration {
+        Narration.sleeping(noAgents: sessions.isEmpty, napping: napping, dozeMs: dozeMs(at: now), name: config.pack.name)
+    }
+    /// How long the popover says what woke Boop.
+    static let wokeShownMs: Int64 = 60_000
+
+    /// " on api", where a session works, as the narration says it.
+    static func on(_ s: Session) -> String {
+        var thread: [String: JSONValue] = ["project": .string(s.project)]
+        if let w = s.workspace { thread["workspace"] = .string(w) }
+        return Narration.place(thread).map { " on \($0)" } ?? ""
+    }
+
+    /// The caption for Doing going from `before` to `after` at `now`, with no
+    /// card or Moment to say so: falling asleep and waking. A nap's is the
+    /// Moment's that took it.
+    func doingFact(from before: String, to after: String, at now: Int64) -> String? {
+        let name = config.pack.name
+        if after == "asleep" {
+            return sleepingWhy(at: now).fact
+        }
+        guard before == "asleep", after == "working", let s = groups(at: now).working.first else { return nil }
+        let why = Narration.woken(by: s.agent.rawValue, on: Self.on(s), name: name)
+        woke = (why, now)
+        return why.fact
+    }
+
     /// Whether Boop has dozed off at `now` though sessions are open: it
     /// went for a nap, or they all rest, the latest since `rests.max()`;
     /// and nothing waits on you.
@@ -664,7 +719,7 @@ public final class Core {
         guard !waiting else { return false }
         if napping { return true }
         guard let since = rests.max() else { return false }
-        return now - since >= (calendar(at: now).contains("night") ? Self.dozeOffNightMs : Self.dozeOffMs)
+        return now - since >= dozeMs(at: now)
     }
 
     /// The sessions as a `status` reply reads them at `now`, with each
@@ -1167,6 +1222,13 @@ public final class Core {
             wordsOnly = before == snapshot
         }
         if snapshot != lastPublished, !wordsOnly {
+            // A Doing that changed with no reason on anything playing: a
+            // caption alone, which no line records, so the brain hears nothing new.
+            if let before = lastPublished?.doing, before != snapshot.doing, !needsYouShowing, !showsListening(at: now),
+               !fx.contains(where: { if case .reaction(let m) = $0 { m.reason != nil } else { false } }),
+               let fact = doingFact(from: before, to: snapshot.doing, at: now) {
+                fx.append(.reaction(Moment(reason: fact)))
+            }
             lastPublished = snapshot
             lastPublishedAt = now
             // The picture changes before any reaction plays on top of it.

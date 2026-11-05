@@ -177,6 +177,10 @@ public struct StateSnapshot: Equatable, Sendable {
     /// Whether the wish shows how, its icon moving: until you've met one of its kind.
     public var wishHow = false
 
+    /// What you call the buddy, when that isn't the pack's own name, which the
+    /// board knows: its own captions say it. Nil sends none.
+    public var buddy: String?
+
     /// A working session's lane in the work stream (`WorkStream`): its
     /// slot, which picks its column and colour on the board, how many
     /// calls it has made (the board drops a word for each new one), and
@@ -305,6 +309,7 @@ public struct StateSnapshot: Equatable, Sendable {
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let xp { fields["xp"] = .int(xp) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
+        if let buddy { fields["buddy"] = .string(buddy) }
         if let wish { fields["wish"] = .string(wish) }
         if wishHow { fields["wish_how"] = true }
         if !calls.isEmpty {

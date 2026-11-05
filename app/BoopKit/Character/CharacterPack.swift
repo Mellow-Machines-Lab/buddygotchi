@@ -35,6 +35,18 @@ public struct CharacterPack: Sendable {
     /// What the creature is called: the pack's name, or a buddy's own
     /// (`named(_:)`).
     public internal(set) var name: String
+    /// The name the pack itself gives it, which the firmware it's built into
+    /// knows: `name` differs when you've given it one of your own.
+    public let ownName: String
+    /// What its face does to pass the time and between Doings, by the name
+    /// the face says (`Face::passing`), from its `mac/passing.tsv`, for the
+    /// popover alone. `ofDoing` for a change of Doing, with no "to pass the
+    /// time" after it. Empty for a pack with none.
+    public let passing: [String: Passing]
+    public struct Passing: Equatable, Sendable {
+        public var words: String
+        public var ofDoing: Bool
+    }
     public let version: String
     /// The resting mood: a new state folder starts in it, every mood fades
     /// toward it, and a word that isn't a mood reads as it.
@@ -112,6 +124,15 @@ extension CharacterPack {
         }
         id = try string("id")
         name = try string("name")
+        ownName = name
+        var passing: [String: Passing] = [:]
+        if let rows = try? String(contentsOf: directory.appendingPathComponent("mac/passing.tsv"), encoding: .utf8) {
+            for row in rows.split(separator: "\n") where !row.hasPrefix("#") {
+                let cols = row.split(separator: "\t")
+                if cols.count == 3 { passing[String(cols[1])] = Passing(words: String(cols[2]), ofDoing: cols[0] == "doing") }
+            }
+        }
+        self.passing = passing
         version = try string("version")
         defaultMood = try string("default_mood")
         startupMood = json["startup_mood"] as? String ?? defaultMood

@@ -1,7 +1,7 @@
 """`boopctl day` (internal/VERIFICATION.md §2): what Boop did in a day, and why,
 from debug mode's logs. It reads the state dir's debug.jsonl and the
 earlier launches' debug.<n>.jsonl, oldest first, and sums up one local day
-by the hour: finishes, working chatter, the brain's reactions and their
+by the hour: finishes, the brain's reactions and their
 faces, alerts, mood changes, passes, and the brain's reactions that didn't
 happen; then each mood change with its cause, each time something needed
 you and how long it took to clear, and why reactions didn't happen. What
@@ -90,7 +90,6 @@ def next_hour(ms: int) -> int:
 @dataclass
 class Hour:
     finishes: int = 0
-    chatter: int = 0
     reactions: int = 0
     said: int = 0  # the reactions that said something
     faces: Counter = field(default_factory=Counter)
@@ -219,15 +218,11 @@ def summarise(launches: list[Launch], date: str) -> Day:
                         day.moods.append(changed)
                 mood, seen_state = now, True
             elif k == "sent" and (c := call(body)) and h:
-                # A `do`, or an older log's `moment`. The brain's is a
-                # reaction, counted from its react output below; an older
-                # log's rules' moment with a line is chatter.
+                # The brain's is a reaction, counted from its react output below.
                 if c["anim"] in FINISHES:
                     h.finishes += 1
                     if c.get("id"):
                         finish_hour[c["id"]] = h
-                if c.get("say") and sent_by(line) == "rule":
-                    h.chatter += 1
             elif k == "ended" and (fh := finish_hour.pop(body.get("id"), None)):
                 # The device decides what plays: a finish it skipped, or one
                 # something other than your tap cut, didn't play.
@@ -340,8 +335,7 @@ def span(ms: int) -> str:
 
 
 def face(p: dict) -> str | None:
-    """A pass's reaction face: `react.face`, as the dashboard reads it, or
-    an older log's `react.mood` or `react`."""
+    """A pass's reaction face: `react.face`, as the dashboard reads it."""
     return choice(p, FACE)
 
 
@@ -353,7 +347,7 @@ def faces(c: Counter) -> str:
     return ", ".join(f"{name} {n}" for name, n in sorted(c.items(), key=lambda kv: (-kv[1], kv[0])))
 
 
-COLUMNS = [("finishes", "finishes"), ("chatter", "chatter"), ("reactions", "reacts"), ("said", "said"), ("alerts", "alerts"),
+COLUMNS = [("finishes", "finishes"), ("reactions", "reacts"), ("said", "said"), ("alerts", "alerts"),
            ("moods", "moods"), ("passes", "passes"), ("dropped", "dropped"), ("missed", "missed"), ("pokes", "pokes")]
 
 
@@ -388,9 +382,7 @@ def render(day: Day) -> str:
     out.append("reacts are the reactions the brain asked for, with their faces, and missed the ones of them that "
                "didn't happen (below);")
     out.append("finishes are every finish played, task_complete or reply_ready (the brain's), not one the device "
-               "skipped or cut short but by your tap, and cheers in logs from "
-               "before 2026-09-29; chatter is the rules' working chatter, "
-               "which only logs from before then have;")
+               "skipped or cut short but by your tap;")
     out.append("alerts are states bringing a new needs-you or a different one.")
 
     out.append("")

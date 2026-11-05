@@ -40,6 +40,7 @@ def scenario_dir() -> Path:
 
 
 TAP_MS = 100  # a tap's press or touch, unless the line gives "ms"
+CLOCK_STRIDE_MS = 30_000  # the longest jump of the frozen clock at once: 30 s passes a board's watchdog, 60 s does not, and 20 s moves a picture
 
 
 def resolve(name: str) -> Path:
@@ -77,18 +78,27 @@ def play(link: Link, path: Path, out_dir: Path, log=print) -> list[str]:
     failures: list[str] = []
     out_dir.mkdir(parents=True, exist_ok=True)
     link.request({"t": "dbg.reset"})  # same start on the board and in the simulator
+    clock = 0
     for number, raw in enumerate(path.read_text().splitlines(), 1):
         if not raw.strip() or raw.lstrip().startswith("//"):
             continue
         step = json.loads(raw)
         where = f"{path.name}:{number}"
         if "t" in step:
+            if step["t"] == "dbg.reset":
+                clock = 0
             if step["t"].startswith("dbg."):
                 link.request(step)
             else:
                 link.send(step)
         elif "clock" in step:
-            link.request({"t": "dbg.clock", "freeze": step["clock"]})
+            # A long jump in strides: the face steps through all of it in one
+            # frame, and on a board minutes of that outlast the loop's watchdog.
+            while step["clock"] - clock > CLOCK_STRIDE_MS:
+                clock += CLOCK_STRIDE_MS
+                link.request({"t": "dbg.clock", "freeze": clock})
+            clock = step["clock"]
+            link.request({"t": "dbg.clock", "freeze": clock})
         elif "input" in step:
             link.request(input_message(step["input"]))
         elif "shot" in step:

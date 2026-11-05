@@ -15,6 +15,7 @@ extension Runtime {
         let rig = rig ?? rigs[0]
         let now = options.clock()
         rig.link.connection(up, now: now)
+        pipeline.harness.emit(Event(at: now, source: .device, type: .link, phase: up ? .start : .end, specificType: "board", buddy: rig.tag))
         if !up { run(core(rig).linkDown(at: now), on: rig) }
         changed()
     }

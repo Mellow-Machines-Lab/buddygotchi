@@ -7,7 +7,7 @@ import MellowHarness
 /// `facedown` and `dismiss`). One table for each touch: whether it's
 /// care, the line the brain reads and the narration.
 public enum Touch: String, CaseIterable, Sendable {
-    case poke, stroke, ruffle, swipe, nose, tickle, dizzy, pickup, putdown, startle, facedown, peekaboo, dismiss
+    case poke, stroke, lean, ruffle, swipe, nose, tickle, dizzy, pickup, putdown, startle, facedown, peekaboo, dismiss
 
     /// The touch `e` is, or nil for an event that isn't one.
     public init?(_ e: Event) {
@@ -23,7 +23,7 @@ public enum Touch: String, CaseIterable, Sendable {
     /// a thump on the desk or turning it over.
     public var isCare: Bool {
         switch self {
-        case .poke, .stroke, .nose, .tickle, .pickup, .ruffle, .dizzy: true
+        case .poke, .stroke, .lean, .nose, .tickle, .pickup, .ruffle, .dizzy: true
         case .swipe, .putdown, .startle, .facedown, .peekaboo, .dismiss: false
         }
     }
@@ -33,7 +33,7 @@ public enum Touch: String, CaseIterable, Sendable {
     /// or turning it over, nor the drawer's swipe.
     public var meetsPetWish: Bool {
         switch self {
-        case .poke, .stroke, .ruffle, .nose, .tickle: true
+        case .poke, .stroke, .lean, .ruffle, .nose, .tickle: true
         case .swipe, .dizzy, .pickup, .putdown, .startle, .facedown, .peekaboo, .dismiss: false
         }
     }
@@ -44,6 +44,7 @@ public enum Touch: String, CaseIterable, Sendable {
         switch self {
         case .poke: nil
         case .stroke: "You stroked \(name)."
+        case .lean: "You held a finger still on \(name), and it leaned into it."
         case .ruffle: "You stroked \(name) the wrong way."
         case .swipe: "You swiped \(name), a quick stroke."
         case .nose: "You booped \(name)'s nose."
@@ -59,12 +60,15 @@ public enum Touch: String, CaseIterable, Sendable {
     }
 
     /// The narration's cause and the board's caption, `{name}` where the
-    /// buddy's name goes (`Narration.fit`); nil for a touch that isn't the
-    /// person's doing to the buddy itself, and for a poke, whose narration
-    /// counts the run (`Narration.of`).
-    public var narration: (cause: String, fact: String)? {
+    /// buddy's name goes (`Narration.fit`), or none where the screen says it
+    /// already; nil for a poke, whose narration counts the run
+    /// (`Narration.of`). The board says the same words itself as it plays a
+    /// touch, before the Mac has heard of it: firmware's
+    /// `app/touch_reason.h`, which a test holds to these.
+    public var narration: (cause: String, fact: String?)? {
         switch self {
         case .stroke: ("You stroked it.", "you stroked {name}")
+        case .lean: ("You held a finger on it.", "you held {name}")
         case .ruffle: ("You stroked it the wrong way.", "you ruffled {name}")
         case .nose: ("You booped its nose.", "you booped {name}")
         case .tickle: ("You tickled it.", "you tickled {name}")
@@ -73,7 +77,10 @@ public enum Touch: String, CaseIterable, Sendable {
         case .startle: ("You thumped the desk.", "a thump nearby")
         case .facedown: ("You turned it face down.", "you turned {name} over")
         case .peekaboo: ("You turned it back up.", "you flipped {name} up")
-        case .poke, .swipe, .putdown, .dismiss: nil
+        case .putdown: ("You put it down.", "you put {name} down")
+        case .swipe: ("You swiped it.", nil)
+        case .dismiss: ("You held a finger on the needs-you screen, to stop it showing.", nil)
+        case .poke: nil
         }
     }
 }

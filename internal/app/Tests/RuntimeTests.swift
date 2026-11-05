@@ -52,6 +52,20 @@ final class RuntimeTests: XCTestCase {
         try Runtime(options(transport, brain: brain, readJevKey: readJevKey))
     }
 
+    /// A demo's `done` runs on `home` and stops the runtime there, as a
+    /// `--demo` run's last act. Stopping on `home` must not wait on `home`.
+    func testStopsFromItsOwnQueue() throws {
+        let runtime = try makeRuntime(FakeTransport())
+        try runtime.start()
+        let finished = DispatchSemaphore(value: 0)
+        runtime.home.async {
+            runtime.stop()
+            finished.signal()
+        }
+        XCTAssertEqual(finished.wait(timeout: .now() + 5), .success)
+        runtime.stop()  // and from anywhere else, twice
+    }
+
     /// The Mac's mirror of the first board hears exactly what the board is
     /// sent, the link's keepalive included, and the board's taps and
     /// push-to-talk as what it did by itself. It never finishes a
@@ -251,6 +265,24 @@ final class RuntimeTests: XCTestCase {
         defer { again.stop() }
         eventually("a status") { again.home.sync { !after.isEmpty } }
         XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6))
+    }
+
+    /// A hook that earns XP and changes what the board shows is one `state`,
+    /// with both: the XP doesn't go out alone a moment ahead of the rest.
+    func testXPAndTheChangeItCameWithAreOneState() throws {
+        let transport = FakeTransport()
+        let runtime = try makeRuntime(transport)
+        try runtime.start()
+        defer { runtime.stop() }
+        func states() -> [String] { transport.sent.filter { $0.hasPrefix(#"{"t":"state""#) } }
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        eventually("working") { states().last?.contains(#""base":"working""#) == true }
+        let before = states().count, xp = states().last ?? ""
+        XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
+        eventually("idle") { states().last?.contains(#""base":"idle""#) == true }
+        runtime.home.sync {}
+        let after = states().dropFirst(before)
+        XCTAssertTrue(after.allSatisfy { $0.contains(#""base":"idle""#) }, "\(xp) then \(after)")
     }
 
     /// From the popover: a note forgotten is gone for good, a pinned one
@@ -635,7 +667,7 @@ final class RuntimeTests: XCTestCase {
         connect(transport, runtime)
         eventually("the brain") { runtime.home.sync { statuses.last?.brain == "scripted" } }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
-        eventually("a mumble") { transport.dos("react").contains { $0.contains(#""args":{"say":"#) } }
+        eventually("a mumble") { transport.dos("react").contains { $0.contains(#""say":"#) } }
         eventually("engaged") { runtime.home.sync { runtime.moodNow == "engaged" } }
         eventually("the device hears it") { transport.sent.contains { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""mood":"engaged""#) } }
         XCTAssertTrue(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodOutput.outputName && $0["to"] == "engaged" } },
@@ -677,7 +709,7 @@ final class RuntimeTests: XCTestCase {
         connect(transport, runtime)
         eventually("the brain") { runtime.home.sync { statuses.last?.brain == "scripted" } }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
-        eventually("a mumble") { transport.dos("react").contains { $0.contains(#""args":{"say":"#) } }
+        eventually("a mumble") { transport.dos("react").contains { $0.contains(#""say":"#) } }
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(DebugLog.fileName).path),
                        "no debug.jsonl outside debug mode")
         let saved = Lines()
@@ -1107,7 +1139,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.")
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
-        XCTAssertEqual(none["what"] as? String, "Stay quiet: nothing in NOW is worth a moment, "
+        XCTAssertEqual(none["what"] as? String, "Stay quiet: most check-ins where nothing has happened; nothing in NOW is worth a moment, "
                        + "or HISTORY shows \(Self.name) still having the one it calls for, about the same thing (in progress).")
         XCTAssertEqual(none["not_for"] as? String, "Something new said to \(Self.name), which always gets a moment of its own, even while one plays; "
                        + "a turn that finished done or failed, which always gets a moment and its finish; "
@@ -1217,7 +1249,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
 
         dev(#"{"dev":"answer","answers":{"react.face":"grumpy","say":"work"}}"#)
-        eventually("a take with no brain") { transport.dos("react").contains { $0.contains(#""args":{"say":{"take":"#) && $0.contains(#""mood":"grumpy""#) } }
+        eventually("a take with no brain") { transport.dos("react").contains { $0.contains(#""say":{"take":"#) && $0.contains(#""mood":"grumpy""#) } }
         dev(#"{"dev":"mood","mood":"grumpy"}"#)
         eventually("grumpy") { runtime.home.sync { runtime.moodNow == "grumpy" } }
         dev(#"{"dev":"mood","mood":"happy"}"#)
@@ -1839,7 +1871,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(sent[start - 1].hasPrefix(#"{"t":"state""#) && sent[start - 1].contains(#""base":"working""#),
                       "\(sent)")
         XCTAssertTrue(sent[start].contains(#","name":"starting","play":"if_free","args":{"ctx":"#)
-                      && sent[start].hasSuffix(#"{"ctx":"new_task"}}"#), sent[start])
+                      && sent[start].hasSuffix(#"{"ctx":"new_task","reason":"claude started"}}"#), sent[start])
         let id = FakeTransport.id(sent[start])
         transport.endDos("skipped", why: "busy")
         eventually("its end logged") { lines.all.contains("device: do \(id) ended skipped (busy)") }

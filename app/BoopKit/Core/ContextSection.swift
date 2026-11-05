@@ -16,7 +16,7 @@ public enum ContextSection {
     /// The most agents named; the rest are "and N more".
     public static let maxAgents = 3
     /// The section's ceiling, in tokens (`Steering.tokens`).
-    public static let maxTokens = 160
+    public static let maxTokens = 190
 
     /// The buddy as CONTEXT's Boop row tells it: its stage and how old it is.
     public struct Buddy: Equatable, Sendable {
@@ -111,9 +111,9 @@ public enum ContextSection {
     /// The section, or nil when no row has anything to say.
     public static func section(when: String? = nil, talk t: Talk = .normal, silentMs: Int64? = nil, buddy b: Buddy? = nil,
                                company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], wish: String? = nil,
-                               wishToday: String? = nil, at now: Int64, name: String) -> String? {
+                               wishToday: String? = nil, noticed: String? = nil, at now: Int64, name: String) -> String? {
         let rows = [when, talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, wish: wish, at: now, name: name),
-                    agents(list, at: now), today(company, name: name), wishToday].compactMap { $0 }
+                    agents(list, at: now), today(company, name: name), wishToday, noticed.map { "Noticed: \($0)" }].compactMap { $0 }
         return rows.isEmpty ? nil : ([heading] + rows).joined(separator: "\n")
     }
 

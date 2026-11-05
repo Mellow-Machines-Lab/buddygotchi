@@ -374,8 +374,6 @@ final class AppModel: ObservableObject {
         if status?.listening == true { return "Listening…" }
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.doing {
-        // Short, as "2 sessions need you" is: beside the Talk button the
-        // headline has room for about twenty letters.
         case "working": return s.working == 1 ? "1 session working" : "\(s.working) sessions working"
         case "idle": return "Hanging out"
         default: return "Napping"
@@ -508,7 +506,7 @@ final class AppModel: ObservableObject {
             return DeviceState(connected: true, trouble: "\(name)'s body has the wrong firmware", short: "Wrong firmware",
                                detail: update == nil ? "Connected \(over), but \(why)."
                                    : "Connected \(over), but its firmware doesn't fit this app, so \(name) shows how things are "
-                                   + "and doesn't react. Update it in Settings.",
+                                   + "and doesn't react. Update its firmware.",
                                more: update == nil ? nil : why, fix: update)
         }
         // Its firmware has another character pack's faces: it works, but
@@ -517,7 +515,7 @@ final class AppModel: ObservableObject {
             return DeviceState(connected: true, trouble: "\(name)'s body has another character's faces", short: "Other character",
                                detail: "Connected \(over), but the board was built with the \(pack) character pack, "
                                    + "and the app runs \(DeviceInfo.appPack), so some faces won't match. "
-                                   + (update == nil ? "Flash the board with the app's character pack." : "Update it in Settings."),
+                                   + (update == nil ? "Flash the board with the app's character pack." : "Update its firmware."),
                                fix: update)
         }
         // Its card's voice isn't the app's, so it gets no takes.

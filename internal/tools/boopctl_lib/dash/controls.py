@@ -4,13 +4,18 @@ line, and Preview's own `state` and `do` lines for its sim. The socket never rep
 command counts as landed when its entry shows up in debug.jsonl."""
 from __future__ import annotations
 
+import json
+import subprocess
 import time
+from pathlib import Path
 from typing import Any, Callable
 
-from boopctl_lib.common import do, takes
+from boopctl_lib.common import REPO, do, takes
 from boopctl_lib.dash.feed import Line, action, kind
 
 CONFIRM_S = 2.0
+COUNTS_S = 10.0
+BOOP = REPO / ".build" / "debug" / "Boop"
 # Preview's looks: the device's bases, and something needing you.
 LOOKS = ["idle", "working", "asleep", "needs you"]
 
@@ -126,3 +131,15 @@ def preview_text(p: Line) -> str:
     diff = difflib.unified_diff((p.get("before") or "").splitlines(), (p.get("after") or "").splitlines(),
                                 "before", "after", lineterm="")
     return "\n".join(out + (list(diff) or ["  no change"]))
+
+
+def week_text(state_dir: Path, boop: Path = BOOP) -> str:
+    """"This week" (`w`): what `Boop --counts` prints, a person's to send or
+    not. The app reads the counts file: only its memory store touches it."""
+    try:
+        done = subprocess.run([str(boop), "--counts", "--state-dir", str(state_dir)], capture_output=True, text=True, timeout=COUNTS_S)
+    except (OSError, subprocess.SubprocessError) as error:
+        return f"Can't read the daily counts: {boop} didn't run ({error}). make -C internal app builds it."
+    if done.returncode:
+        return f"Can't read the daily counts: Boop --counts exited {done.returncode}.\n{done.stderr}"
+    return done.stdout

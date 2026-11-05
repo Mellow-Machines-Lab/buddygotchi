@@ -1,8 +1,68 @@
 # TODO
 
-Updated 2026-11-03. What's next, one at a time, top first. Tick an item
+Updated 2026-11-04. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-04
+
+**Read this first.** The board ran its USB tests with the owner's `make dev` app connected over Bluetooth all night, so frame-rate budgets, scenarios and latency need a rerun with the Mac off. Nobody has seen any of this on the panel: no eyes, no webcam.
+
+Frames, verdicts and logs are on the owner's Mac in `~/.boopdev/tonight/`.
+
+**Landed:** eyes following a finger, leaning into a held finger, tilt, the listening nod, a reason for every reaction with a test that keeps it so, "it noticed" with four notices, daily counts (`w` in the dashboard, `Boop --counts`), and the board's measurements with their fixes.
+
+**Not done, stage two:** the Mac and dashboard pass by running them, and the leftovers below.
+
+**Evals, on the final tree:** standard 132/132, with no re-runs, and the judge at **99 reasonable, 11 odd, 0 unreasonable**, so `internal/EVALS.md`'s rule is met this time. On main at the start: 123/124 and 85, 13, 4. Odd: `121`, `144`, `173`, `180`, `181`, `186`, `28`, `54`, `57`, `85`, `94`. 129 passes, after adding `shaken` to what its pokes may say.
+
+**What guidelines did:** a cross Boop now says "Stop" and "Enough"; lonely holds its hour; a lock while cross snubs; days away is a big hello. What they can't do: a lonely face can still say "Cozy" on a calm mood, because `say` doesn't know the face. The full fix is a take table that lends `quiet` and `tickled` only to fitting moods.
+
+**Idle may now be too quiet.** Across the final run, 36 of 83 idle check-ins have a moment, 8 of them a real face, and 5 a word, all on Chatty. On one workday, moments went from 13 of 13 to 4 of 13. It's what was asked: worth a look.
+
+**Notices.** 17 in the final run, and none nags. A played notice looks at you and shows a short reason on the board. But "claude sits idle" is 13 of them, and reads as a flat report, not care. `stretch` and `rough` chose no sign and no face in `173`, `180`, `181`: in the eval's record only the narration shows them, and whether the look reads on the panel is unchecked. "still up?" is the one warm one. An open wish holds up `stretch`, `rough` and `late`, never `waiting`. On a no-wish day `waiting` can beat the wish (`186`).
+
+**Lunch no longer reads as night:** a dream made by itself takes 2 h of sleep begun at night (22:00 to 5:00), or 5 h begun by day; `d` and the two-day fallback stay. Night signs were already gated by tags; the voice's words weren't audited.
+
+**What the real board measured** (AMOLED, volume 0, USB, a profile build, Mac connected). **The fps budgets are unproven.** `perf --scenes`, the real check, reported `ok: false`, with the Mac's state in every window: working mean 30.5, min 15.4 (budget 30); needs you 26.1, 12.8 (budget 28); frightened 25.0, 11.1 (budget 28). The table's clean fps is the slowest second, leaving out seconds with a Mac state and the 3 after, so it shows the frames between states and can't pass a budget by itself. Each state costs about 2 s at 12 to 15 fps here because it flips everything back against the test's own state, which a real state wouldn't always do. Only a rerun of `perf --scenes` with the Mac off settles it.
+
+| Scene | Clean fps | Steady | Budget |
+| --- | --- | --- | --- |
+| Working | 33.8 | 34 | 30: unproven |
+| Needs you | 29.1 | 29.6 | 28: unproven |
+| Frightened | 29.8 | 30 | 28: unproven |
+| Idle | 40.8 | 41 | none |
+| Working at night | 17.9 | 21 | none, well under working's |
+| Asleep at night | 21.3 | 25 | none |
+| Push: lift-off, away | 19.2 (1 s), not a minimum | 26-29, 59 | none |
+| Tests' hold (was 22) | 25.2 | 27 | none |
+| Build | 25.0 | 30 | none |
+| Chonk idle, working, big finish | 37.2, 31.0, 20.2 (3 s) | 37, 31.5, 31 | none |
+| Bar, heart | 44.6, 34.4 | 45-50, 37-48 | none |
+| Grow to Sprout, to Chonk | 17.9 (1 s), 11.5 (1 s) | 47, 35 | none |
+| Tilt, lean (driven by debug commands) | 41.1, 37.0 | 41, 37-41 | none |
+| Parade, Gold Rush | 17.1 (2 s), 20.8 (3 s) | 33, 34 | none |
+
+Heap: at least 141,044 bytes free in every scene, against 50,000. No audio write errors. `factory --auto` 6 of 6; card and voice right. `boopctl run`: 6 expect failures and 155 of 563 pictures differ on the last run; the failures show the Mac's state, and the smallest picture differences aren't explained. Latency at the host over budget (press 133 against 80), the board's own press 75. `perf --motion` 86 ms against 40. Not run: sound, soak, e2e.
+
+These measurements predate the five calls and the last cleanup. **The board tests flashed `tonight` and restarted the board by watchdog three times**, from a tool's clock jump, since fixed: the owner may see that in `Boop-dev`'s log.
+
+**Fixed from the leftovers:** `to-work` waits for a turn's start; the heart flies over LISTENING; nose and drag go by stage; the gulp plays once; a Hatchling's sign hops clear of its mouth; the witch hat's height is capped. `check` now has `make -C internal boards` beside it, slimegen's check, and a test count. Two real bugs from cleanup: Quiet saved on every input all day, and counts lost at 5:00.
+
+**Choices to overrule:** a long hold on the face or nose is now a lean on the gel, not a tap. The purr is the snore's `breath` clip, as the bank has no purr. A touch shows its own caption for 2.5 s, hiding the strip: it may nag. `state.buddy` is new, for a name you gave. Pixel's bubble shows the Mac's new reasons.
+
+**Feel on the board, in order:**
+1. A finger at rest: does the lean start, on a real panel's jitter (`kLeanSpotPx`, `kLeanWigglePx`)?
+2. Tilt's direction: the IMU's axis is a guess (`Tilt::kAcross`).
+3. Is `breath` content or a snore?
+4. A caption on every poke.
+5. The higher Hatchling hop, the heart's path, the capped hat.
+
+**The Mac and dashboard pass:** done by running them (`Boop --headless`, `--snapshots`, the dashboard in a real terminal, two buddies on two simulators). Fixed: an input's XP went out as its own state, just before the real change; 17 places where text was cut off in the popover and onboarding (the mood's reason among them; lists of them in `~/.boopdev/tonight/ui/`); a long quote hiding the needs-you card, which now comes first, with a quote kept to 160 characters; a telling that named Boop whatever the buddy's name; stale words and cut-off text in the dashboard; a `grew` lost to a quit now comes at the next launch that day. `dash` and `day` no longer read old log formats. A reason that quotes you still stops at 160 characters, with a "…".
+
+**What the Mac measured for frame cost** (the firmware's own `Measure`, at -O2 on the Mac, a scratch bench; no board, so no frame rate is known). Every frame of 29 scenes hashes the same before and after, and the sim's goldens don't change. Working at night: its layers 84 to 78 us a frame, the whole frame 245 to 239 (-2%). Night asleep: layers 68 to 61. The grow pop's worst second: to Chonk 452 to 381 (-16%), to Sprout 340 to 306. Gold Rush's rays divide in 32 bits rather than through `__divdi3`, which the Mac can't show: reasoned from the Xtensa compiler's output. The parade, a Chonk's finish and the lift-off have no easy win. So working at night is still short: expect little there. The real cost is the body under its outfit and the outfit's 9,400 blended and 35,000 filled pixels a frame, on one core. Sharing the outfit's replay with the helper core (as the body's rows are shared) is the next thing to try, with the board.
+
+**Still to do:** rerun `perf --scenes`, `boopctl run`, latency and `perf --motion` with the Mac off (the owner's app stays on Bluetooth until they say); working at night's fps (nightcap and pyjamas cost 15 to 18 ms a frame).
 
 ## Report, 2026-11-03
 
@@ -38,6 +98,28 @@ What worked was removing Examples: Jev was copying them. Guidelines giving a lad
 **Choices to overrule:** saved stages keep at least their size (Pal to Buddy, Chonk and Legend to Chonk), but Hatchlings and Sprouts will look smaller, as every stage used to draw full size. The 3-day clock starts at the first launch. "Forget" clears the digest's words and history copies, keeps care counts, and leaves an untold dream's sentence and the transcript's two weeks. Every stage draws Buddy's Mega. The party hat goes on a Sprout. No voice pitch or moves by stage: not cheap.
 
 **Look at first:** `growth/sheet-wish-reaches-a-stage.png`, `growth/sheet-stages.png`, `growth/board-fixes/sheet-all.png`, `polish/remember-line.png`. `growth/sheet-bar-states.png` is the old look.
+
+## Stage two: the full pass (2026-11-04)
+
+What it is: [alive-and-noticing.md](alive-and-noticing.md). Its order is in the
+report above.
+
+Left by the Mac and dashboard part of it:
+
+- [ ] `boopctl dash` narrower than about 180 columns stacks its panes and opens scrolled to
+      the columns, as the first column takes the focus: the face and "Boop now" are a
+      scroll up. It's readable; whether it should open at the top is a judgement.
+- [ ] `w`'s table wraps under about 130 columns, and its counts run up to a minute behind,
+      as the counts file is saved once a minute.
+
+## Left by the review of `tonight` (2026-11-04)
+
+- [ ] Evals 179 to 186 pass even if a notice's sign never shows. `checks` are
+  judged per run and a notice's sign is only now and then, so `signs_seen` on one
+  run would fail by chance. It wants a check across `--runs`, which the harness
+  doesn't have, and Jev requests to set its bar.
+- [ ] One sharp prompt alone makes `rough`: it may be too eager, with no failure
+  behind it (`Notices.rough`). The owner's call: `testRough` pins it as it is.
 
 ## Owed from the Mac fixes (2026-11-03)
 
@@ -109,8 +191,7 @@ Growth, merged into `day2` on 2026-11-03. Owed on the AMOLED, for the owner to l
 - [ ] The old-Hatchling shrink: the old build drew every stage at full size, so an
       existing Hatchling or Sprout looks smaller after the update. That's the plan's
       look, not a lost stage. Judge it.
-- [ ] A Hatchling's Mega Boop doesn't fill the screen, and the reaction's sign is as
-      wide as ever, so it crosses a Hatchling's mouth. Both left as they are, to judge.
+- [ ] A Hatchling's Mega Boop doesn't fill the screen. Left as it is, to judge.
 
 Growth, not built:
 
@@ -123,34 +204,43 @@ Growth, not built:
       tag is a Buddy.
 - [ ] A demo with the bar: demos send no `xp`, so `make demo` doesn't show it.
 
+## Measured on the AMOLED, still short (2026-11-04)
+
+With the Mac on Bluetooth all through, as `make dev` was running; each second's numbers
+come from `boopctl perf --plays` (`~/.boopdev/tonight/board/`).
+
+- [ ] Working at night draws about 21 fps (asleep at night 25): the nightcap and pyjamas
+      cost 15 to 18 ms a frame. By day working is 34.
+- [ ] Short dips with no budget: the parade 17 fps for 2 s, Gold Rush and a Chonk's 21 for
+      3 s, the rocket's lift-off 19 for 1 s, the grow ceremony's pop 12 to 18 for 1 s.
+- [ ] `boopctl latency` was over budget at the host (press p95 133 ms against 80, tap 85
+      against 80, state 111 against 100) and `perf --motion` over its 40 ms frame (86 ms).
+      Measure both with the Mac off before believing them.
+- [ ] `boopctl run` with the Mac off. With it on, 6 expects failed and 155 of 563 pictures on the last run
+      differed; the ones opened show the Mac's own state or eyelids a little apart.
+
 ## Found by the review, not fixed (2026-11-03)
 
 On the board:
 
-- [ ] For the owner: `to-work` rarely shows on a real turn, because `starting` cuts it
-      (the pack's `face.cpp:185`). It's the transition you'd look for first, so expect
-      to miss it.
-- [ ] The gulp replays (`growth_bar.cpp:64,83`).
-- [ ] The nose hit ignores the sign's hop, and a drag goes by Buddy's coordinates at
-      any stage (the pack's `lane.cpp:513`, `face.cpp:434`).
-- [ ] A Hatchling's sign sits over its open mouth.
-- [ ] The witch hat's tip.
 - [ ] A met wish while something needs you is still refused (`needs_you`), so its heart
       doesn't show. Same shape as the chat wish's fix, but the screen is the agent's.
-- [ ] A chat wish's heart crosses the LISTENING word for a moment on its way up
-      (`~/.boopdev/day2/listening-heart/sheet-after.png`, `heart-1100`). Judge it.
 
 On the Mac:
 
-- [ ] A dream is told twice with several buddies (`TranscriptView.swift:445-448`).
-- [ ] A held `grew` lives only in memory, so a quit loses it (`Core.swift:102`).
+- [x] A dream told twice with several buddies: it didn't happen on two simulator boards,
+      by taps or by coming back, unless the first telling was refused, when telling it
+      again is the rule. Pinned (`testSeveralBuddiesTellOneDreamOnce`). What was wrong:
+      your coming back told it as "Boop dreamed", whatever their names.
+- [x] A held `grew` a quit lost now comes at the next launch that day, from the log
+      not having it (`Core.grewLost`).
 
 In the docs and tools:
 
-- [ ] A `digest` row in the Words table of `CLAUDE.md`.
-- [ ] A check on the test runner's count, as it has silently dropped tests before.
-- [ ] `make -C internal check` doesn't build for the boards: it passed while the
-      firmware didn't compile. Until it does, run `make -C internal fw` too.
+- [x] A `digest` row in the Words table of `CLAUDE.md`.
+- [x] A check on the test runner's count: `gen-test-runner.py`'s floor.
+- [x] `make -C internal check` doesn't build for the boards: by choice, as it takes
+      minutes. `make -C internal boards` does, and CI.
 
 ## Now: the simplify branch, on the board (2026-11-01)
 
@@ -176,8 +266,8 @@ From the plans that were finished and deleted, for the owner, after
 
 - [ ] A dream's write can be lost if the writer fails (`Memory.swift`, `dream()`).
 - [ ] Several buddies don't replay an away (`Pipeline.readBack`).
-- [ ] The Pixel wish's text (`screens.h:48`, `sameModel`).
-- [ ] A `Measure` around `paintActFront`, for the board's frame rate check.
+- [x] The Pixel wish's text (`screens.h:48`, `sameModel`): a wish coming or going now redraws (`test_a_wish_redraws_the_picture`).
+- [x] A `Measure` around `paintActFront`, for the board's frame rate check: `profile.front`, `front_us` on the profile line.
 - [ ] **For the owner:** `make eval` refuses without the override, so your bare command never runs.
 - [ ] Remove the dead lost-link path.
 - [ ] Acts: wall caching and a frame cap.

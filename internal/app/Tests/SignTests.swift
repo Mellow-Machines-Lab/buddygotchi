@@ -127,13 +127,14 @@ final class SignTests: XCTestCase {
             let answers = Asks.questions(TaggedLine.parse((try? String(contentsOf: asks, encoding: .utf8)) ?? ""))
                 .flatMap { [$0.a.lowercased(), $0.b.lowercased()] }
             let known = Set(PromptReading.Kind.allCases.map(\.rawValue) + PromptReading.Tone.allCases.map(\.rawValue)
-                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "grew"] + Growth.stages.map { $0.name.lowercased() } + Days.calendarTags + answers)
+                + PromptReading.Length.allCases.map(\.rawValue) + ["named", "idle", "grew", "notice"] + Notices.Kind.allCases.map(\.rawValue) + Growth.stages.map { $0.name.lowercased() } + Days.calendarTags + answers)
             let file = CharacterPackTests.repo.appendingPathComponent("characters/\(pack)/steering/signs.md")
             let signs = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
             XCTAssertGreaterThan(signs.count, 10, pack)
             for line in signs {
                 let filled = line.text.replacingOccurrences(of: "{words}", with: "ok").replacingOccurrences(of: "{WORDS}", with: "OK")
                     .replacingOccurrences(of: "{turns}", with: "12").replacingOccurrences(of: "{thread}", with: "api")
+                    .replacingOccurrences(of: "{agent}", with: "claude")
                 XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, "\(pack): \(line.text)")
                 XCTAssertTrue(filled.unicodeScalars.allSatisfy { (32...126).contains($0.value) }, "\(pack): \(line.text)")
                 XCTAssertTrue(Set(line.tags).isSubset(of: known), "\(pack): \(line.tags)")
@@ -154,10 +155,10 @@ final class SignTests: XCTestCase {
         XCTAssertEqual(Signs.maxPhrase, 12)
         let longest = String(repeating: "x", count: Signs.maxPhrase)
         for line in lines {
-            let filled = line.text.replacingOccurrences(of: "{words}", with: longest)
+            let filled = line.text.replacingOccurrences(of: "{words}", with: longest).replacingOccurrences(of: "{turns}", with: "123")
             XCTAssertLessThanOrEqual(filled.count, Signs.maxLength, line.text)
             XCTAssertNotNil(Signs.drawn(filled), line.text)
-            XCTAssertFalse(filled.contains("{"), "only {words}: \(line.text)")
+            XCTAssertFalse(filled.contains("{"), "only {words} and {turns}: \(line.text)")
             XCTAssertTrue(Set(line.tags.dropFirst()).isSubset(of: Days.calendarTags + MomentOutput.momentTags), "\(line.tags)")
         }
     }

@@ -254,6 +254,11 @@ public struct Scenario: Sendable {
     /// The notes' lines in the pet's voice it may bring up at an idle
     /// check-in (`signs`: note, line).
     public var felt: [Memory.Felt] = []
+    /// The digests kept, what Boop notices from (`Notices`): none by default.
+    public var days: [DayDigest] = []
+    /// Whether today's wish has been made and met before the first step, as
+    /// a notice needs.
+    public var wishToday = false
 
     public static let events = ["wish", "grew", "turn started", "command", "turn finished", "turn failed", "poke", "hush", "pokes", "said",
                                 "away", "back", "lock", "unlock", "session started", "compact", "needs you", "answered", "press", "helper started", "helper returned", "gesture", "edit",
@@ -285,7 +290,7 @@ public struct Scenario: Sendable {
         guard let name = o["name"] as? String, let story = brief?.judge ?? (o["case"] as? String),
               let why = brief != nil ? "" : (o["why"] as? String), let raw = o["steps"] as? [[String: Any]]
         else { throw bad("needs name, case, why and steps") }
-        let unknownKeys = Set(o.keys).subtracting(["signs", "name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed"])
+        let unknownKeys = Set(o.keys).subtracting(["signs", "name", "judge", "reasonable", "unreasonable", "case", "why", "always", "scripted", "runs", "gap", "talk", "mood", "checks", "steps", "start", "hatched", "memory", "seed", "days", "wish_today"])
         guard unknownKeys.isEmpty else { throw bad("unknown key \(unknownKeys.sorted().joined(separator: ", "))") }
         self.name = name
         self.story = story
@@ -307,6 +312,17 @@ public struct Scenario: Sendable {
                 throw bad("memory's lines are like work · 2026-10-25 · the note, and 2026-10-25 · the day")
             }
             memory = read
+        }
+        if let d = o["days"] {
+            guard JSONSerialization.isValidJSONObject(d), let data = try? JSONSerialization.data(withJSONObject: d),
+                  let read = try? JSONDecoder().decode([DayDigest].self, from: data) else {
+                throw bad("days are the digests kept, each with its day and weekday")
+            }
+            days = read
+        }
+        if let w = o["wish_today"] {
+            guard let met = w as? String, met == "met" else { throw bad("wish_today is met") }
+            wishToday = true
         }
         if let h = o["hatched"] {
             guard let day = h as? String, LocalTime.isDay(day) else { throw bad("hatched is a day, like 2026-09-01") }
@@ -667,6 +683,8 @@ public struct Eval {
         public var step = 0
         /// The narration its reaction carried, if any.
         public var narration: String?
+        /// The reply its reaction played, if any.
+        public var reply: String?
     }
 
     /// A whole-run check's outcome.
@@ -828,6 +846,7 @@ public struct Eval {
                 ending.takes = reaction.say?.takes.map(\.text) ?? []
                 ending.sign = reaction.sign
                 ending.narration = reaction.reason
+                ending.reply = reaction.reply
                 guard let end = ending.end else { return ending.open.append(pending) }
                 if let ended = Eval.ended(end) {
                     reactions.read(.ended(ended), pending).map(pending.finish)
@@ -837,7 +856,7 @@ public struct Eval {
             }, talk: { scenario.talk }, memory: { scenario.memory.section(today: time.boopDay(clock.now)) },
             // Its own words' order by its file, so a rerun says the same, and
             // no two scenarios open on the same word.
-            remembers: remembers, seed: SplitMix64.seed(of: scenario.file), felt: { _ in scenario.felt }, wall: { clock.now })
+            remembers: remembers, seed: SplitMix64.seed(of: scenario.file), felt: { _ in scenario.felt }, digests: { scenario.days }, wall: { clock.now })
         if let url = debugLog {
             let writer = Runtime.debugLines(pipeline: pipeline, emit: { LineFile.append($0, to: url) })
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
@@ -853,6 +872,12 @@ public struct Eval {
             }
         }
 
+        if scenario.wishToday {
+            home.sync {
+                _ = pipeline.effects(core.makeWish(.pet, at: start), at: start)
+                _ = pipeline.effects(core.meetWish(.pet, at: start), at: start)
+            }
+        }
         var checks: [Check] = []
         var timeline: [Pass] = []
         // When any of the scenario's turns works, from the steps: [start, end].
@@ -874,6 +899,7 @@ public struct Eval {
                     ending.takes = []
                     ending.sign = nil
                     ending.narration = nil
+                    ending.reply = nil
                     guard let e = home.sync(execute: { harness.log.event(view.seq) }),
                           let record = await harness.respond(to: e) else { continue }
                     lastSaid = ending.said
@@ -892,7 +918,7 @@ public struct Eval {
                         intensity: ran ? MomentOutput.size(answers).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
-                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil, brain: record.brain, step: i + 1, narration: ran ? ending.narration : nil))
+                        answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil, brain: record.brain, step: i + 1, narration: ran ? ending.narration : nil, reply: ran ? ending.reply : nil))
                 }
             }
             ending.end = step.reaction.flatMap(Scenario.end) ?? .done
@@ -1101,8 +1127,9 @@ public struct Eval {
         /// What the last pass's reaction said, if any, and its takes'
         /// texts.
         var said: String?
-        /// And the narration it carried.
+        /// And the narration it carried, and the reply it played.
         var narration: String?
+        var reply: String?
         var takes: [String] = []
         var sign: String?
     }

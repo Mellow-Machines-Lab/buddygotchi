@@ -99,19 +99,13 @@ def call(msg: dict[str, Any]) -> dict[str, Any] | None:
     """What a message to the device asks it to play, in one shape for the
     tools that read the messages the Mac sent: its `name`, its `anim` (None for
     a face or a `say` alone), `id`, `play`, and Boop's fields (`say`, `mood`,
-    `loops`, `variant`, `outcome`, `ctx`, `who`) as they are. A `do`, or in
-    logs from before the device kept a queue a `moment`, which played at
-    once; None for anything else."""
+    `loops`, `variant`, `outcome`, `ctx`, `who`) as they are. A `do`; None
+    for anything else."""
     if msg.get("t") == "do":
         args = msg.get("args") if isinstance(msg.get("args"), dict) else {}
         name = msg.get("name")
         return {**args, "name": name, "anim": None if name in NO_ANIM else name, "id": msg.get("id"),
                 "play": msg.get("play") or "next"}
-    if msg.get("t") == "moment":
-        fields = {k: v for k, v in msg.items() if k != "t"}
-        anim = msg.get("anim")
-        name = anim or ("react" if msg.get("say") is not None or msg.get("mood") else "stop_listening")
-        return {**fields, "name": name, "anim": anim, "id": msg.get("id"), "play": "now"}
     return None
 
 

@@ -1,16 +1,17 @@
 import Foundation
 import MellowHarness
 
-/// Boop's memory, run on the pipeline: two readers of the transcript, fed
+/// Boop's memory, run on the pipeline: readers of the transcript, fed
 /// every event as it's logged with the line Jev read for it, the day's
-/// (`MemoryReader`: CONTEXT's Today row and the XP caps) and the dream's
-/// (`DreamReader`: everything since the last dream). A dream updates the
+/// (`MemoryReader`: CONTEXT's Today row and the XP caps), the dream's
+/// (`DreamReader`: everything since the last dream) and the daily counts'
+/// (`CountsReader`). A dream updates the
 /// memory from everything since its checkpoint: it makes the dream (tags
 /// and a sentence, for the telling), runs the dream's write to
 /// `memory.md`, and starts the span again. It dreams when you press `d`
 /// on the dashboard, once a sleep when Boop has been asleep with no agent
-/// working for `settleMs`,
-/// and at once when it hasn't in `fallbackMs`; each only with something
+/// working for `nightSleepMs` if that began at night or `daySleepMs` if it
+/// began by day, and at once when it hasn't in `fallbackMs`; each only with something
 /// new, and one at a time. The dream is kept in the key-value store
 /// (`dream.last`) and logged as a `dream` event at the next tick, for the
 /// view to tell; the moment that tells it, once it has played, marks it
@@ -26,6 +27,17 @@ public final class Memory: @unchecked Sendable {
     public let runner: Checkpointed<MemoryReader>
     public let dreamReader: DreamReader
     public let dreams: Checkpointed<DreamReader>
+    /// The day's counts (`daily-counts.jsonl`), and the settings and growth
+    /// they keep as they stand, the runtime's; nil where there are none.
+    public let counts: Checkpointed<CountsReader>
+    public var countsSample: (() -> (quiet: Bool, volume: Int, stage: Int))?
+    private var countsWrittenAt: Int64?
+    private var countsWritten: DayCounts?
+    /// The digests as read, so a check-in doesn't decode the file each time
+    /// it asks. Every write here clears it.
+    private var digestsKept: [DayDigest]?
+    /// Today's row goes to the file this often.
+    public static let countsEveryMs: Int64 = 60_000
     /// Whether Boop is asleep and no agent works: the pipeline's, once
     /// attached (`Pipeline.asleepAndIdle`).
     var asleep: () -> Bool = { false }
@@ -42,9 +54,14 @@ public final class Memory: @unchecked Sendable {
     /// How many times you've asked Boop to forget: a write or a line asked
     /// for before the last one doesn't land.
     private var forgets = 0
-    /// How long Boop is asleep and idle before it dreams by itself: a
-    /// coffee break isn't a sleep.
-    public static let settleMs: Int64 = 20 * 60_000
+    /// How long Boop is asleep and idle, from a start at night, before it
+    /// dreams by itself: a coffee break at 22:05 is no sleep, whatever the
+    /// clock says. It's the start that counts, not the hour of the check: a
+    /// night that ends at 8:00 is a night, and an evening past 22:00 isn't.
+    public static let nightSleepMs: Int64 = 2 * 3_600_000
+    /// From a start by day, a sleep this long is a real one. A shorter one, your lunch,
+    /// dreams nothing, so a dream is never told at a lunch hello.
+    public static let daySleepMs: Int64 = 5 * 3_600_000
     /// A span this long with something new dreams at once, whatever Boop
     /// is doing: two days.
     public static let fallbackMs: Int64 = 48 * 3_600_000
@@ -69,9 +86,14 @@ public final class Memory: @unchecked Sendable {
         runner = Checkpointed(reader, store: store, time: time, note: note)
         dreamReader = DreamReader(time: time)
         dreams = Checkpointed(dreamReader, store: store, time: time, note: note)
+        counts = Checkpointed(CountsReader { row in
+            do { try files?.keep(row) } catch { note("memory: can't write the daily counts: \(error)") }
+        }, store: store, time: time, note: note)
         // A memory from before dreams had spans starts its span where the
         // day's reader is, so the first dream covers what comes after.
         if dreams.state == nil, let day = runner.day { dreams.begin(at: runner.seq, day: day, state: DreamReader.Span()) }
+        // So do the counts: they start where the day's reader is.
+        if counts.state == nil, let day = runner.day { counts.begin(at: runner.seq, day: day, state: counts.reader.open(day: day, carry: nil)) }
     }
 
     /// What the dream's writer was asked, and its reply.
@@ -94,6 +116,7 @@ public final class Memory: @unchecked Sendable {
         let day = dream.covers ?? dream.day
         return DayDigest.from(day: day, weekday: time.weekday(of: day), tallies: tallies, first: tallies.firstYours.map(time.clock) ?? "",
                               last: tallies.lastYours.map(time.clock) ?? "",
+                              strokedAt: tallies.strokedAM.map(time.clock) ?? "",
                               journal: tallies.journal.map { (at: $0.at, line: $0.line) })
     }
 
@@ -204,10 +227,12 @@ public final class Memory: @unchecked Sendable {
         recordAsk(e)
         recordWish(e)
         recordFelt(e)
+        recordNotice(e)
         // The dream's first: reading `e` can earn a stage, whose `grew` is
         // logged and heard inside the day's read, with a later seq.
         dreams.feed(e, line: line)
         runner.feed(e, line: line)
+        counts.feed(e, line: line)
     }
 
     // MARK: Memory you feel
@@ -243,6 +268,7 @@ public final class Memory: @unchecked Sendable {
     }
 
     func keep(_ days: MemoryStore.Days) {
+        digestsKept = nil
         do { try files?.keep(days) } catch { note("memory: can't write the digests: \(error)") }
     }
 
@@ -309,8 +335,39 @@ public final class Memory: @unchecked Sendable {
     func keepShown(_ line: String, at ms: Int64) {
         var shown = feltShown()
         shown[line] = time.boopDay(ms)
-        guard let data = try? JSONEncoder().encode(shown) else { return }
-        do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
+        keepJSON(shown, as: "felt", "the line shown")
+    }
+
+    // MARK: What it noticed
+
+    /// The days kept, for what's noticed from them.
+    public var digests: [DayDigest] {
+        if let digestsKept { return digestsKept }
+        let kept = files?.days().digests ?? []
+        digestsKept = kept
+        return kept
+    }
+
+    /// When each notice last played, by its key (`Notices.Notice.key`), in
+    /// the key-value store.
+    public func noticesShown() -> [String: Int64] {
+        store.string("notices").flatMap { try? JSONDecoder().decode([String: Int64].self, from: Data($0.utf8)) } ?? [:]
+    }
+
+    /// Whether `thread` finished a turn since the last dream, which the
+    /// digests can't say yet.
+    public func onLately(_ thread: String) -> Bool { (span?.tallies.threads[thread] ?? 0) > 0 }
+
+    /// Keeps a notice played once its moment has played through, as a dream
+    /// is told: a moment cut short leaves it to offer again. Those past the
+    /// longest rest go.
+    func recordNotice(_ e: Event) {
+        guard e.kind == Event.ended, e.action == MomentOutput.outputName, e["outcome"]?.string == "done",
+              let key = e.about.flatMap({ harness?.log.event($0) })?["notice_key"]?.string else { return }
+        let longest = Int64(Notices.Kind.allCases.map(\.restDays).max() ?? 1) * 86_400_000 * 2
+        var shown = noticesShown().filter { e.at - $0.value < longest }
+        shown[key] = e.at
+        keepJSON(shown, as: "notices", "the notice")
     }
 
     // MARK: The wish's "done once"
@@ -364,8 +421,13 @@ public final class Memory: @unchecked Sendable {
     }
 
     func save(_ record: Asks.Record, _ id: String) {
-        guard let data = try? JSONEncoder().encode(record) else { return }
-        do { try store.set(["ask.\(id)": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the ask: \(error)") }
+        keepJSON(record, as: "ask.\(id)", "the ask")
+    }
+
+    /// A value in the key-value store, as JSON.
+    private func keepJSON(_ value: some Encodable, as key: String, _ what: String) {
+        guard let data = try? JSONEncoder().encode(value) else { return }
+        do { try store.set([key: String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep \(what): \(error)") }
     }
 
     /// Opens the next day once the last is over; dreams when it should;
@@ -373,6 +435,8 @@ public final class Memory: @unchecked Sendable {
     public func tick(wall: Int64) {
         runner.tick(wall: wall)
         dreams.tick(wall: wall)
+        counts.tick(wall: wall)
+        keepCounts(wall: wall)
         let now = harness?.clock.now() ?? wall
         let sleeping = asleep()
         if !sleeping, !away() { dreamtThisSleep = false }
@@ -380,7 +444,8 @@ public final class Memory: @unchecked Sendable {
         if let span, span.new, !dreaming {
             if now - (span.since ?? now) >= Self.fallbackMs {
                 dream(at: now, why: "it hasn't dreamed in two days")
-            } else if let since = sleepingSince, now - since >= Self.settleMs, !dreamtThisSleep {
+            } else if let since = sleepingSince, !dreamtThisSleep,
+                      now - since >= (Days.dayPart(at: wall - (now - since), time: time) == "night" ? Self.nightSleepMs : Self.daySleepMs) {
                 dream(at: now, why: "asleep, and no agent works")
             }
         }
@@ -389,6 +454,29 @@ public final class Memory: @unchecked Sendable {
         save(dream)
         h.emit(dream.event(at: h.clock.now()))
         note("memory: dreamed about \(dream.about ?? dream.weekday) (\(dream.day)): \(dream.sentence)")
+    }
+
+    /// Today's row in the file, at most every `countsEveryMs`, with the
+    /// settings and growth as they stand.
+    func keepCounts(wall: Int64, now: Bool = false) {
+        guard let files, let sample = countsSample?(), let state = counts.state else { return }
+        // Quiet stays on for the day once it has been on.
+        let quiet = sample.quiet || state.row.quiet == true
+        if state.row.quiet != quiet || state.row.volume != sample.volume || state.row.stage != sample.stage {
+            counts.update {
+                $0.row.quiet = quiet
+                $0.row.volume = sample.volume
+                $0.row.stage = sample.stage
+            }
+        }
+        if !now, let at = countsWrittenAt, wall - at < Self.countsEveryMs, wall >= at { return }
+        countsWrittenAt = wall
+        let row = (counts.state ?? state).counted
+        guard row != countsWritten else { return }
+        do {
+            try files.keep(row)
+            countsWritten = row
+        } catch { note("memory: can't write the daily counts: \(error)") }
     }
 
     /// Dreams now, debug mode's `dream_now` (the dashboard's `d`): as Boop
@@ -455,18 +543,29 @@ public final class Memory: @unchecked Sendable {
             recordWish(e)
             if e.seq > runner.seq { runner.feed(e, line: nil, live: false) }
             if e.seq > dreams.seq { dreams.feed(e, line: nil, live: false) }
+            if e.seq > counts.seq { counts.feed(e, line: nil, live: false) }
         }
     }
 
-    /// Where the readers read from, the earlier of the two checkpoints.
-    public var seq: Int { min(runner.seq, dreams.seq) }
-    public var from: String { [runner.day, dreams.day].compactMap { $0 }.min() ?? "" }
+    /// At launch, once caught up: your time at the Mac stops at the last
+    /// event read. A quit or a restart logs no away, and it may have been
+    /// hours; your next event starts it again.
+    public func launched() {
+        runner.update { $0.leftTheMac() }
+        dreams.update { $0.tallies.leftTheMac() }
+        counts.update { $0.leftTheMac() }
+    }
 
-    /// The transcript starting again, its files gone: both checkpoints
+    /// Where the readers read from, the earlier of the two checkpoints.
+    public var seq: Int { min(runner.seq, dreams.seq, counts.seq) }
+    public var from: String { [runner.day, dreams.day, counts.day].compactMap { $0 }.min() ?? "" }
+
+    /// The transcript starting again, its files gone: all its checkpoints
     /// follow it back.
     public func follow(transcriptAt seq: Int) {
         runner.follow(transcriptAt: seq)
         dreams.follow(transcriptAt: seq)
+        counts.follow(transcriptAt: seq)
     }
 
     /// At launch: a dream not yet told whose event has left the log is
@@ -486,13 +585,14 @@ public final class Memory: @unchecked Sendable {
     public func forgetAboutYou() {
         forgets += 1
         dreams.update { $0.tallies = $0.tallies.forgotten }
+        // The notices' rests name threads: they go, and may come again.
+        do { try store.set(["notices": "{}"]) } catch { note("memory: can't forget the notices: \(error)") }
         guard let files else { return }
+        digestsKept = nil
         do { try files.forgetLearned() } catch { note("memory: can't write the digests: \(error)") }
         let lines = Set(files.days().signs.values)
         let shown = feltShown().filter { lines.contains($0.key) }
-        if let data = try? JSONEncoder().encode(shown) {
-            do { try store.set(["felt": String(decoding: data, as: UTF8.self)]) } catch { note("memory: can't keep the line shown: \(error)") }
-        }
+        keepJSON(shown, as: "felt", "the line shown")
     }
 
     func told(_ day: String) {

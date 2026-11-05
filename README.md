@@ -156,7 +156,10 @@ request, with any words of yours and project names they quote, and a note's
 short line may go as an option for a sign. The digest of each dream
 stays on your Mac: `memory-days.json`, beside `memory.md`, holds the counts
 of each dream and what you said to Boop, up to 60 dreams, with the notes the
-dreams wrote and their short lines.
+dreams wrote and their short lines. `daily-counts.jsonl`, beside it, holds a
+row a day of numbers only (touches, wishes, needs-you times…). Nothing sends
+it: `Boop --counts` prints a summary with no words, threads or notes, which
+you may choose to send.
 
 Forget clears You, Your work and Recently, and what they came from: what you
 said, your hours, threads and tones in the digests, the lines of notes gone,

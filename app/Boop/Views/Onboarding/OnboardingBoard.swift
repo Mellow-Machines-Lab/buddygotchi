@@ -324,19 +324,30 @@ struct HowToAct: View {
         return set.isEmpty ? app.name : set
     }
 
-    /// The examples, as chips under the talk lesson.
+    /// The examples, as chips under the talk lesson. A name too long for them
+    /// all on a line leaves out the middle one: the window has no room for a
+    /// second line, and nothing's cut.
     private var trySaying: some View {
-        HStack(spacing: Theme.gapSnug) {
-            Text("TRY").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint)
-            ForEach(Self.examples(name: name), id: \.self) { words in
-                Text("“\(words)”").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Capsule().strokeBorder(Theme.hairlineStrong))
+        let examples = Self.examples(name: name)
+        let chips = { (words: [String]) in
+            HStack(spacing: Theme.gapSnug) {
+                Text("TRY").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint)
+                ForEach(words, id: \.self, content: exampleChip)
             }
-            Spacer(minLength: 0)
         }
+        return ViewThatFits(in: .horizontal) {
+            chips(examples)
+            chips([examples[0], examples[2]])
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.leading, 56)
         .accessibilityElement(children: .combine)
+    }
+
+    private func exampleChip(_ words: String) -> some View {
+        Text("“\(words)”").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+            .padding(.horizontal, 8).padding(.vertical, 3)
+            .background(Capsule().strokeBorder(Theme.hairlineStrong))
     }
 
     /// The talk lesson's words: what it's for, what the Mac heard, or why
@@ -353,8 +364,9 @@ struct HowToAct: View {
         }
     }
 
-    /// What was heard, cut short at a word.
-    static func quoted(_ words: String, most: Int = 48) -> String {
+    /// What was heard, as much as the act's fixed window has room for (three
+    /// lines with what follows it), cut short at a word.
+    static func quoted(_ words: String, most: Int = 120) -> String {
         guard words.count > most else { return words }
         let cut = words.prefix(most)
         return (cut.lastIndex(of: " ").map { String(cut[..<$0]) } ?? String(cut)) + "…"

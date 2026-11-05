@@ -1805,6 +1805,23 @@ static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
     r.at(landed + G::kFillMs + G::kHoldMs + G::kOutMs);
     TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
   }
+  {
+    // A state that moves the bar on after the heart landed doesn't gulp again.
+    Rig r;
+    Model m = base("idle");
+    m.xp = 20, m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.wish = render::WishShow::kNone, m.xp = 40;
+    r.state(m);
+    r.b.wishPopped(true, r.t);
+    r.at(r.t + G::kHeartWaitMs + G::kHeartFlyMs + G::kGulpMs);
+    m.xp = 50;
+    r.state(m);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).gulp);
+    r.at(r.t + 100);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).gulp);
+  }
   Rig r;
   Model m = base("idle");
   m.wish = render::WishShow::kPet;

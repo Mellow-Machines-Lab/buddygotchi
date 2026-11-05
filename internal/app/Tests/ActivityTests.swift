@@ -322,7 +322,7 @@ final class CoreRuleReactionTests: XCTestCase {
         let fx = rig.send(.turnStart)
         let start = moments(fx)
         XCTAssertEqual(start.count, 1)
-        XCTAssertEqual(start[0].line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
+        XCTAssertEqual(start[0].line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"ctx":"new_task","reason":"claude started"}}"#)
         XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")
         XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
         XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])

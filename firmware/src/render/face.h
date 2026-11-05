@@ -208,6 +208,21 @@ class Face {
   // The finger let go moving at vx, vy (canvas px a second, y down): a face
   // may carry the motion on, as the gel's dome does after a swipe.
   virtual void letGo(int vx, int vy) { (void)vx, (void)vy, finger(false, 0, 0); }
+  // A finger kept still (app::TouchGesture): a face that can lean into it
+  // at t says so, and hears how far along it is on every pass; one that
+  // doesn't lean leaves the touch what it was, a tap on release.
+  enum class Lean : uint8_t { kNone, kIn, kDoze };
+  virtual bool leans(uint32_t t) const { return (void)t, false; }
+  virtual void lean(Lean level, uint32_t t) { (void)level, (void)t; }
+  // Whether the board's own touches say why themselves, in the caption, before
+  // the Mac has heard of them (Behaviour::touchCaption).
+  virtual bool captionsTouches() const { return false; }
+  // What it's doing to pass the time at t, by its name in the pack's
+  // mac/passing.tsv, for the popover alone; null for nothing.
+  virtual const char* passing(uint32_t t) const { return (void)t, nullptr; }
+  // The board's steady tilt, in milli-g across the screen (app::Tilt), on
+  // every reading of a board with a motion sensor: a face may slosh that way.
+  virtual void tilt(int mg, uint32_t t) { (void)mg, (void)t; }
   // Whether a quick swipe plays the stroke (or the ruffle) it would be,
   // slower, as it does on a face that doesn't follow the finger; one that
   // carries it on as it lets go may only feel it go by.

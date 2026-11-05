@@ -35,6 +35,17 @@ public enum MoodOutput {
         return Narration.of(cause, line: line(seq))
     }
 
+    /// The board's caption when the pass answering `now` really moved the mood:
+    /// nil for no move, a move this pass didn't make, or a fade, a check-in
+    /// taking it back to rest with nothing having happened, which only the
+    /// popover says.
+    public static func boardFact(_ mood: Choice, _ log: LogView, now: Event?, pack: CharacterPack) -> String? {
+        guard let now, let latest = mood.latest(log), latest.about == now.seq, let to = latest["to"]?.string,
+              let settled = pack.settled(to) else { return nil }
+        if now.type == .checkIn, settled == pack.defaultMood { return nil }
+        return Narration.moodMoved(settled, name: pack.name)
+    }
+
     /// Each lasting mood and its meaning, the `mood` question's criterion,
     /// in the pack's order (`MoodGraph.moods`), from the character pack's
     /// `moods` (characters/CHARACTER.md §5). Each also has a file in the

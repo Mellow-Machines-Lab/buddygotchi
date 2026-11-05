@@ -1,5 +1,7 @@
 #include "app/behaviour.h"
 
+#include "app/touch_reason.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -142,6 +144,7 @@ void Behaviour::advance(uint32_t t, Rng& rng) {
     if (say_.take >= 0) consider(say_.at + say_.ms);
     if (expr_) consider(exprAt_ + exprMs_);
     if (sign_.text[0]) consider(sign_.at + sign_.ms);
+  if (reason_.text[0]) consider(reason_.at + reason_.ms);
     if (ask_.q[0]) consider(ask_.at + kAskMs);
     consider(lastState_ + kNoAppMs);
     if (stale_ && !aloneAsleep_) consider(aloneFrom_ + kAloneSleepMs);
@@ -338,6 +341,7 @@ const char* Behaviour::admit(const ReactionIn& in, uint32_t t) {
   if (faceDown_ && !listen) return "facedown";  // do not disturb
   if (partsOf(in, t).any()) return nullptr;
   if (noApp(t)) return "no_app";
+  if (noteOnly(in)) return listening(t) ? "listening" : model_.attn ? "needs_you" : nullptr;
   // Push-to-talk met it, with listening still waiting for the reply: its heart
   // goes on, over the listening face.
   if (listening(t)) return in.wishMet ? nullptr : "listening";
@@ -350,6 +354,10 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
   const Parts parts = partsOf(in, t);
   const bool anim = parts.anim, say = parts.say, face = parts.face, sign = parts.sign;
   if (!parts.any()) return false;  // stop_listening: admit did it all
+  // The Mac's words for the touch the board already said why of.
+  const bool own = in.reason[0] && ownReason_[0] && within(t, ownReasonAt_, kOwnReasonMs) &&
+                   !std::strcmp(in.reason, ownReason_);
+  const Sign ownUp = own && within(t, reason_.at, reason_.ms) ? reason_ : Sign{};
   change(t, [&] {
     // A newer reaction ends the ask that's up, unanswered.
     if (ask_.q[0]) endAsk("ignored", t);
@@ -415,6 +423,12 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       if (say) reason_.ms = std::max(reason_.ms, voice + say_.ms);
       if (in.expr) reason_.ms = std::max(reason_.ms, exprMs_);
       reason_.key = in.key;
+      if (own) {
+        // One caption, on through this too; with it gone, not again.
+        const uint32_t ms = reason_.ms;
+        reason_ = ownUp;
+        if (reason_.text[0]) reason_.ms = std::max(reason_.ms, (t - reason_.at) + ms);
+      }
     }
     // An ask: its question stays up, and its answers fill the lane, until
     // a tap on one, a touch when it takes one, a newer reaction, or kAskMs.
@@ -536,6 +550,11 @@ const char* Behaviour::tap(uint32_t t, Rng& rng) {
   const render::SceneState a = taps_ >= kTapSpamFrom ? render::SceneState::kTapSpam : render::SceneState::kPoked;
   const uint8_t v = pick(a, model_.mood, 0, render::Outcome::kNone, render::StartCtx::kNone, rng);
   change(t, [&] { playAnim(a, t, CutBy::kTap, 1, model_.mood, v); });
+  if (face_->captionsTouches()) {
+    char text[kSignBytes];
+    pokeReason(taps_, model_.base == render::SceneState::kAsleep, buddyName(), kSignGlyphs, text, sizeof(text));
+    showOwn(text, t);
+  }
   return render::stateName(a);
 }
 
@@ -553,6 +572,42 @@ void Behaviour::gesture(render::Gesture g, uint32_t t) {
   const int n = face_->variants(model_.mood, render::SceneState::kGesture);
   const uint8_t v = uint8_t(int(g) < n ? int(g) : 0);
   change(t, [&] { playAnim(render::SceneState::kGesture, t, CutBy::kTap, 1, model_.mood, v); });
+  touchCaption(render::gestureName(g), t);
+}
+
+const char* Behaviour::buddyName() const { return model_.buddy[0] ? model_.buddy : render::kBuddyName; }
+
+void Behaviour::touchCaption(const char* gesture, uint32_t t) {
+  char text[kSignBytes];
+  if (face_->captionsTouches() && touchReason(gesture, buddyName(), kSignGlyphs, text, sizeof(text))) showOwn(text, t);
+}
+
+// Long enough to read, and no more, since it has the strip's place in the lane;
+// a say's bubble goes on above it.
+void Behaviour::showOwn(const char* text, uint32_t t) {
+  change(t, [&] {
+    copyStr(ownReason_, sizeof(ownReason_), text);
+    ownReasonAt_ = t;
+    setReason(text, t);
+  });
+}
+
+void Behaviour::setReason(const char* text, uint32_t t) {
+  reason_ = Sign{};
+  copyStr(reason_.text, sizeof(reason_.text), text);
+  reason_.at = t;
+  reason_.ms = kSignMinMs;
+}
+
+bool Behaviour::noteOnly(const ReactionIn& in) {
+  return in.reason[0] && in.anim == render::SceneState::kNone && !in.expr && !in.said && !in.empty && !in.sign[0] &&
+         !in.askQ[0] && !in.wishMet;
+}
+
+void Behaviour::note(const char* text, uint32_t t) {
+  change(t, [&] {
+    if (!(reason_.text[0] && within(t, reason_.at, reason_.ms))) setReason(text, t);
+  });
 }
 
 // BOOT held: listening at once, even while something needs you, cutting
@@ -821,6 +876,8 @@ const char* Behaviour::laneBubble(uint32_t t) const {
 const char* Behaviour::caption(uint32_t t) const {
   if (asking(t) || !reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
   if (model_.attn && !reason_.reply) return nullptr;
+  // A low sign and a finish's ticket have the lane's foot.
+  if ((sign_.low && signOn(t)) || finishShown(t)) return nullptr;
   return reason_.text;
 }
 

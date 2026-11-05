@@ -6,8 +6,9 @@ import Foundation
 /// private list and holds no secret.
 public struct DayDigest: Codable, Equatable, Sendable {
     public var day: String, weekday: String
-    /// Your first and last events, `HH:mm`.
-    public var first = "", last = ""
+    /// Your first and last events, `HH:mm`; your first stroke of the
+    /// morning (empty with none, or in a digest from before it was kept).
+    public var first = "", last = "", strokedAt = ""
     public var hereMinutes = 0, strokes = 0, strokesAM = 0, pokes = 0, talks = 0, prompts = 0, late = 0, turns = 0, failed = 0
     public var threads: [String: Int] = [:]
     /// By thread: checks and turns that failed, prompts frustrated, checks passed after failing.
@@ -33,7 +34,7 @@ public struct DayDigest: Codable, Equatable, Sendable {
         func read<T: Decodable>(_ key: CodingKeys, _ into: inout T) throws {
             if let value = try c.decodeIfPresent(T.self, forKey: key) { into = value }
         }
-        try read(.first, &first); try read(.last, &last)
+        try read(.first, &first); try read(.last, &last); try read(.strokedAt, &strokedAt)
         try read(.hereMinutes, &hereMinutes); try read(.strokes, &strokes); try read(.strokesAM, &strokesAM)
         try read(.pokes, &pokes); try read(.talks, &talks); try read(.prompts, &prompts)
         try read(.late, &late); try read(.turns, &turns); try read(.failed, &failed)
@@ -45,6 +46,8 @@ public struct DayDigest: Codable, Equatable, Sendable {
     public var active: Bool { prompts > 0 || turns > 0 || hereMinutes >= 30 }
     public var isLate: Bool { late > 0 || last >= "22:00" || (!last.isEmpty && last < "05:00") }
     public var weekend: Bool { weekday == "Saturday" || weekday == "Sunday" }
+    /// Whether you were still here past 1:00, the next morning.
+    public var pastOne: Bool { last >= "01:00" && last < "05:00" }
     public var topThread: String? { threads.max { ($0.value, $1.key) < ($1.value, $0.key) }?.key }
 
     /// What's left when you ask Boop to forget what it learned about you:
@@ -63,7 +66,10 @@ public struct DayDigest: Codable, Equatable, Sendable {
         var d = self
         func add(_ a: [String: Int], _ b: [String: Int]) -> [String: Int] { a.merging(b, uniquingKeysWith: +) }
         if d.first.isEmpty || (!o.first.isEmpty && o.first < d.first) { d.first = o.first }
-        if o.last > d.last { d.last = o.last }
+        // The day runs from 5:00, so 01:30 is later than 23:50.
+        func later(_ a: String, _ b: String) -> Bool { (a < "05:00" ? "1" : "0") + a > (b < "05:00" ? "1" : "0") + b }
+        if !o.last.isEmpty, d.last.isEmpty || later(o.last, d.last) { d.last = o.last }
+        if d.strokedAt.isEmpty || (!o.strokedAt.isEmpty && o.strokedAt < d.strokedAt) { d.strokedAt = o.strokedAt }
         d.hereMinutes += o.hereMinutes; d.strokes += o.strokes; d.strokesAM += o.strokesAM; d.pokes += o.pokes; d.talks += o.talks
         d.prompts += o.prompts; d.late += o.late; d.turns += o.turns; d.failed += o.failed
         d.threads = add(d.threads, o.threads); d.failing = add(d.failing, o.failing); d.frustrated = add(d.frustrated, o.frustrated)
@@ -74,9 +80,9 @@ public struct DayDigest: Codable, Equatable, Sendable {
 
     /// The digest of a span, from its tallies and the journal's lines.
     public static func from(day: String, weekday: String, tallies t: MemoryReader.Tallies, first: String, last: String,
-                            journal: [(at: String, line: String)]) -> DayDigest {
+                            strokedAt: String = "", journal: [(at: String, line: String)]) -> DayDigest {
         var d = DayDigest(day: day, weekday: weekday)
-        d.first = first; d.last = last; d.strokesAM = t.strokesAM ?? 0
+        d.first = first; d.last = last; d.strokedAt = strokedAt; d.strokesAM = t.strokesAM ?? 0
         d.hereMinutes = t.hereMinutes; d.strokes = t.strokes; d.pokes = t.pokes; d.talks = t.talks; d.prompts = t.prompts
         d.late = t.late; d.turns = t.turns; d.failed = t.failed; d.threads = t.threads
         for (at, line) in journal {
@@ -178,12 +184,6 @@ public enum MemoryProposer {
     static func word(_ n: Int) -> String { n < numberWords.count ? numberWords[n] : String(n) }
 
     static func hourWord(_ hour: Int) -> String { word(hour % 12 == 0 ? 12 : hour % 12) }
-
-    static func minutes(_ clock: String) -> Int? {
-        let p = clock.split(separator: ":")
-        guard p.count == 2, let h = Int(p[0]), let m = Int(p[1]) else { return nil }
-        return h * 60 + m
-    }
 
     /// Everything the digests support tonight, the strongest first. `ds` is
     /// oldest first and ends with tonight's.
@@ -318,7 +318,7 @@ public enum MemoryProposer {
         let weeks = a.filter { !$0.weekend && !$0.first.isEmpty }
         guard weeks.count >= 6 else { return [] }
         func steady(_ clocks: [String]) -> (Int)? {
-            let m = clocks.compactMap(minutes).sorted()
+            let m = clocks.compactMap(LocalTime.minutes(of:)).sorted()
             guard m.count >= 6 else { return nil }
             let low = m[m.count / 5], high = m[m.count * 4 / 5]
             return high - low <= 60 ? m[m.count / 2] : nil
@@ -378,7 +378,7 @@ public enum MemoryProposer {
             let days = a.filter { $0.said.contains { $0.words == words } }
             guard days.count >= 3, words.split(separator: " ").count <= 4, MemoryPipeline.mayKeep(words) else { continue }
             // Before 5:00 is still your night: after 24:00, for the middle.
-            let clocks = days.flatMap { $0.said.filter { $0.words == words }.map(\.at) }.compactMap(minutes)
+            let clocks = days.flatMap { $0.said.filter { $0.words == words }.map(\.at) }.compactMap(LocalTime.minutes(of:))
                 .map { $0 < LocalTime.boopDayStartHour * 60 ? $0 + 24 * 60 : $0 }.sorted()
             let middle = clocks[clocks.count / 2]
             let text: String

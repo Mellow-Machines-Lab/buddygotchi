@@ -120,7 +120,7 @@ final class MemoryReaderTests: XCTestCase {
         read(event(.prompt, "reading", at: at(2026, 10, 26, 23)))
         XCTAssertEqual(t.strokes, 2)
         XCTAssertEqual(t.touches, 3, "two strokes and a poke; the hand-off isn't care")
-        XCTAssertEqual(t.hereMinutes, 120, "from the first stroke to when the away began")
+        XCTAssertEqual(t.hereMinutes, 160, "from the first stroke to when the away began, then from the back to the last event before the long gap")
         XCTAssertEqual(t.back, 1)
         XCTAssertEqual([t.turns, t.failed, t.longestMinutes], [1, 1, 40])
         XCTAssertEqual(t.thread, "api")
@@ -178,38 +178,40 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(about(at(2026, 10, 20, 9), at(2026, 10, 31, 9)), "the 12 days to Saturday")
     }
 
-    /// Pins Memory's trigger asleep and idle: after `settleMs` of it, once
-    /// a sleep, only with something new, and again only after waking; while you're away it's
-    /// one sleep, an agent's turn waking Boop in it or not.
+    /// Pins Memory's trigger asleep and idle: after `nightSleepMs` of it at
+    /// night, once a sleep, only with something new, and again only after
+    /// waking; while you're away it's one sleep, an agent's turn waking Boop
+    /// in it or not.
     func testAsleepAndIdleDreamsOnceASleep() throws {
         let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
-        var sleeping = false, away = false, t = at(2026, 10, 31, 12), seq = 0
+        var sleeping = false, away = false, t = at(2026, 10, 31, 22), seq = 0
         memory.asleep = { sleeping }
         memory.away = { away }
+        let sleep = Int(Memory.nightSleepMs / 60_000)
         // Ticks a minute at a time for `minutes`.
         func pass(_ minutes: Int) { for _ in 0..<minutes { t += 60_000; memory.tick(wall: t) } }
         func stroke() { seq += 1; memory.heard(self.stroke(seq, t), line: nil) }
         sleeping = true
-        pass(30)
+        pass(5)
         XCTAssertNil(memory.dream, "asleep with nothing new")
         sleeping = false
         stroke()
-        pass(30)
+        pass(5)
         XCTAssertNil(memory.dream, "awake")
         sleeping = true
-        pass(Int(Memory.settleMs / 60_000))  // from the first tick asleep: 19 min
+        pass(sleep)  // from the first tick asleep: a minute short
         XCTAssertNil(memory.dream, "asleep, not yet settled")
         pass(1)
         let first = try XCTUnwrap(memory.dream)
         XCTAssertEqual(first.sentence, "you stroked it once")
         stroke()
-        pass(30)
+        pass(5)
         XCTAssertEqual(memory.dream, first, "once a sleep")
         stroke()
         sleeping = false
         pass(1)
         sleeping = true
-        pass(30)
+        pass(sleep + 1)
         XCTAssertEqual(memory.dream?.sentence, "you stroked it 2 times", "the next sleep: the strokes since")
         // Away, an agent's turn wakes Boop: still the same sleep.
         sleeping = false
@@ -217,15 +219,74 @@ final class MemoryReaderTests: XCTestCase {
         stroke()
         away = true
         sleeping = true
-        pass(30)
+        pass(sleep + 1)
         let kept = try XCTUnwrap(memory.dream)
         sleeping = false
         pass(5)
         stroke()
         sleeping = true
-        pass(30)
+        pass(5)
         XCTAssertEqual(memory.dream, kept, "away: an agent woke Boop, but it's the same sleep")
-        XCTAssertEqual(Memory.settleMs, 20 * 60_000)
+    }
+
+    /// Pins Memory.daySleepMs: by day, a sleep over your lunch dreams nothing,
+    /// so a dream is never told at a lunch hello; a long one does, and so
+    /// does the night.
+    func testALunchDreamsNothing() throws {
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+        var sleeping = false, t = at(2026, 10, 31, 12), seq = 0
+        memory.asleep = { sleeping }
+        func pass(_ minutes: Int) { for _ in 0..<minutes { t += 60_000; memory.tick(wall: t) } }
+        seq += 1
+        memory.heard(stroke(seq, t), line: nil)
+        sleeping = true
+        pass(55)
+        XCTAssertNil(memory.dream, "55 min at lunch")
+        sleeping = false
+        pass(1)
+        sleeping = true
+        pass(Int(Memory.daySleepMs / 60_000) - 1)
+        XCTAssertNil(memory.dream, "not yet a real sleep")
+        pass(2)
+        XCTAssertNotNil(memory.dream, "a long sleep by day")
+        XCTAssertEqual(Memory.daySleepMs, 5 * 3_600_000)
+        XCTAssertEqual(Days.dayPart(at: at(2026, 10, 31, 22), time: utc), "night")
+    }
+
+    /// Pins Memory.nightSleepMs: a coffee break at 22:05 is night by the
+    /// clock, not a sleep, so no dream comes of it to be told at your return.
+    func testACoffeeBreakAtNightDreamsNothing() throws {
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+        var sleeping = false, t = at(2026, 10, 31, 22) + 5 * 60_000
+        memory.asleep = { sleeping }
+        func pass(_ minutes: Int) { for _ in 0..<minutes { t += 60_000; memory.tick(wall: t) } }
+        memory.heard(stroke(1, t), line: nil)
+        sleeping = true
+        pass(25)
+        XCTAssertNil(memory.dream, "a coffee break")
+        pass(115)
+        XCTAssertNotNil(memory.dream, "two hours at night is a sleep")
+        XCTAssertEqual(Memory.nightSleepMs, 2 * hour)
+    }
+
+    /// Pins the part of the day a dream's gate reads: when the sleep began,
+    /// not the hour of the check. A night that ends by day still dreams, and
+    /// an evening that runs past 22:00 isn't a night.
+    func testTheGateReadsWhenTheSleepBegan() throws {
+        func dreams(asleepAt start: Int64, checkAt end: Int64) throws -> Bool {
+            let memory = Memory(store: try KeyValueStore(directory: nil), time: utc)
+            memory.asleep = { true }
+            memory.heard(stroke(1, start), line: nil)
+            memory.tick(wall: start)
+            memory.tick(wall: end)
+            return memory.dream != nil
+        }
+        func clock(_ hour: Int, _ minute: Int) -> Int64 { at(2026, 10, 31, hour, minute) }
+        try XCTAssertTrue(dreams(asleepAt: clock(3, 30), checkAt: clock(8, 0)), "to bed at 3:30, up at 8:00")
+        try XCTAssertTrue(dreams(asleepAt: clock(2, 0), checkAt: clock(6, 50)), "the lid shut 2:00 to 6:50: one tick each side")
+        try XCTAssertFalse(dreams(asleepAt: clock(20, 0), checkAt: clock(22, 10)), "away 20:00 to 22:10")
+        try XCTAssertFalse(dreams(asleepAt: clock(12, 0), checkAt: clock(14, 30)), "a long lunch")
+        try XCTAssertTrue(dreams(asleepAt: clock(20, 0), checkAt: at(2026, 11, 1, 1)), "5 h from the evening is a real sleep")
     }
 
     /// Pins Memory.fallbackMs: two days since the last dream with
@@ -446,6 +507,46 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(memory.dream?.day, dream.day)
         XCTAssertTrue(memory.dream?.told == true, "it played through")
         XCTAssertEqual(told(stroke()).count, 0, "told once")
+    }
+
+    /// With several buddies one dream is told once: by the first you touch,
+    /// and on your coming back by the first of them, who answers it.
+    func testSeveralBuddiesTellOneDreamOnce() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
+        rig.turn(60_000)
+        rig.wait(16 * hour, every: 60_000)
+        XCTAssertNotNil(memory.dream)
+        rig.pipeline.view.buddies = [Buddy(id: "left", pack: CharacterPack.active.named("Mochi")),
+                                     Buddy(id: "right", pack: CharacterPack.active.named("Pix"))]
+        let h = rig.pipeline.harness
+        func poke(_ buddy: String) -> (seq: Int, told: String?) {
+            let e = h.emit(Event(at: rig.now, source: .device, type: .poke, specificType: "input", buddy: buddy))
+            return (e.seq, h.line(e.seq)?.facts["dream_told"]?.string)
+        }
+        let first = poke("right")
+        XCTAssertTrue(first.told?.hasPrefix("Pix dreamed") == true, "\(first)")
+        XCTAssertNil(poke("left").told, "its moment is still out")
+        moment(rig, for: first.seq)
+        XCTAssertTrue(memory.dream?.told == true)
+        XCTAssertNil(poke("left").told, "the other buddy doesn't tell it again")
+    }
+
+    func testYourComingBackTellsTheDreamInTheFirstBuddysName() throws {
+        let rig = CoreRig()
+        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
+        memory.attach(to: rig.pipeline)
+        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
+        rig.turn(60_000)
+        rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .start, specificType: "locked",
+                                    data: ["since": .int(rig.now)]))
+        rig.wait(16 * hour, every: 60_000)
+        rig.pipeline.view.buddies = [Buddy(id: "left", pack: CharacterPack.active.named("Mochi")),
+                                     Buddy(id: "right", pack: CharacterPack.active.named("Pix"))]
+        let back = rig.note(Fx(rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .end, specificType: "unlocked"))))
+        XCTAssertTrue(events(back).first?.facts["dream_told"]?.string?.hasPrefix("Mochi dreamed") == true)
     }
 
     /// TranscriptView.told: the dream is told on your first coming back

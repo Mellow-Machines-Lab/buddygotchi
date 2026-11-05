@@ -114,7 +114,8 @@ public struct Moment: Equatable, Sendable {
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
-                ctx: String? = nil, sign: String? = nil) {
+                ctx: String? = nil, sign: String? = nil, reason: String? = nil) {
+        self.reason = reason
         self.anim = anim
         self.say = say
         self.mood = mood

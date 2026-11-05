@@ -11,6 +11,7 @@ void TouchGesture::down(int x, int y, uint32_t t) {
   path_ = 0;
   wayX_ = x, wayY_ = y;
   t0_ = t;
+  restX_ = x, restY_ = y, restPath_ = 0, restAt_ = t;
   count_ = 0;
   sample(x, y, t);
 }
@@ -18,6 +19,11 @@ void TouchGesture::down(int x, int y, uint32_t t) {
 void TouchGesture::move(int x, int y, uint32_t t) {
   if (std::max(std::abs(x - wayX_), std::abs(y - wayY_)) > kJitterPx)
     path_ += std::abs(x - wayX_) + std::abs(y - wayY_), wayX_ = x, wayY_ = y;
+  // Once at rest, only leaving the spot ends it: a held finger's jitter adds
+  // up over a long doze.
+  if (std::max(std::abs(x - restX_), std::abs(y - restY_)) > kLeanSpotPx ||
+      (t - restAt_ < kLeanMs && path_ - restPath_ > kLeanWigglePx))
+    restX_ = x, restY_ = y, restPath_ = path_, restAt_ = t;
   minX_ = std::min(minX_, x), maxX_ = std::max(maxX_, x);
   minY_ = std::min(minY_, y), maxY_ = std::max(maxY_, y);
   sample(x, y, t);
@@ -38,8 +44,9 @@ int TouchGesture::spread() const { return std::max(maxX_ - minX_, maxY_ - minY_)
 
 TouchGesture::Path TouchGesture::path() const { return {x0_, y0_, last().x, last().y, last().t - t0_}; }
 
-TouchGesture::Kind TouchGesture::up(render::Gesture& g, int noseDrop) const {
+TouchGesture::Kind TouchGesture::up(render::Gesture& g, int noseDrop, bool leant) const {
   const int dx = last().x - x0_, dy = last().y - y0_, far = std::max(std::abs(dx), std::abs(dy));
+  if (leant && far < kStrokePx && spread() < kStrokePx) return kLean;
   const bool spot = maxX_ - minX_ <= kTickleSpotPx && maxY_ - minY_ <= kTickleSpotPx;
   if (spot && path_ >= kTicklePathPx) {
     g = render::Gesture::kTickle;

@@ -7,7 +7,8 @@ import MellowHarness
 /// says only what the brain saw. Two lengths: the sentence, for the Mac
 /// (the popover, the debug log), and the fact, short enough for the
 /// board's lane, or none when the board shows the cause already (a
-/// finish's strip) or a sentence is all it has.
+/// finish's strip) or a sentence is all it has. Every kind of event has a
+/// reason or is listed in `silent`, which a test holds to.
 public struct Narration: Equatable, Sendable {
     /// What happened, as a sentence: "You stroked it.", "You came back
     /// after 12 hours away."
@@ -71,7 +72,7 @@ public struct Narration: Equatable, Sendable {
             let span = Self.span(ms: ms)
             return Narration(cause: "You came back after \(span.words) away.", fact: fit("you were away \(span.short)", "away \(span.short)"))
         case .presence?:
-            return Narration(cause: "You stepped away.")
+            return Narration(cause: "You stepped away.", fact: fit("you stepped away"))
         case .lock?:
             return e.phase == .start ? Narration(cause: "You locked the Mac.", fact: fit("you locked the Mac", "Mac locked"))
                 : Narration(cause: "You unlocked the Mac.", fact: fit("you unlocked it", "Mac unlocked"))
@@ -84,7 +85,7 @@ public struct Narration: Equatable, Sendable {
             if let count = facts["in_a_row"]?.int, count > 1 {
                 return Narration(cause: "You shook it \(count) times in a row.", fact: fit("you shook {name} x\(count)"))
             }
-            return Touch(e)?.narration.map { Narration(cause: $0.cause, fact: fit($0.fact)) }
+            return Touch(e)?.narration.map { n in Narration(cause: n.cause, fact: n.fact.flatMap { fit($0) }) }
         case .ask?:
             guard e.specificType != Asks.ignored else { return Narration(cause: "Nobody answered its question.") }
             guard let answer = facts["answer"]?.string else { return nil }
@@ -93,9 +94,11 @@ public struct Narration: Equatable, Sendable {
         case .said?:
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
-            return Narration(cause: "You said \"\(words)\".")
+            return Narration(cause: "You said \"\(Self.keep(words))\".")
         case .grew?:
             return Narration(cause: "\(name) grew: it's a \(e.specificType) now.", fact: fit("now a \(e.specificType)"))
+        case .wish? where e.phase == .start:
+            return (Core.WishKind(rawValue: e.specificType)).map { wish($0, name: name) }
         case .wish?:
             guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }
             return how == .met ? Narration(cause: "You gave \(name) its wish: \(kind.words).", fact: fit("wish met!"))
@@ -104,18 +107,29 @@ public struct Narration: Equatable, Sendable {
         case .press?:
             return Narration(cause: e.specificType == Core.drawerPick ? "You opened a thread from its drawer." : "You pressed its button.")
         case .hush?:
-            guard e.phase == .start else { return Narration(cause: "It may talk again.") }
+            guard e.phase == .start else { return Narration(cause: "It may talk again.", fact: fit("{name} may talk")) }
             let minutes = e["minutes"]?.int ?? 0
-            return Narration(cause: minutes > 0 ? "You told it to be quiet for \(minutes) minutes." : "You told it to be quiet.")
+            return Narration(cause: minutes > 0 ? "You told it to be quiet for \(minutes) minutes." : "You told it to be quiet.",
+                             fact: fit("you hushed {name}"))
         case .prompt?:
             guard let reading = PromptReading(facts: e.data) else { return nil }
-            return Narration(cause: asked(reading, agent: agent, on: on))
+            return Narration(cause: asked(reading, agent: agent, on: on),
+                             fact: fit(reading.kind == .carryOn ? "you told \(agent) go" : "you asked \(agent)", "you asked"))
         case .needsYou?:
             return e.phase == .start ? Narration(cause: "\(agent) needs you\(on).") : Narration(cause: "You answered \(agent)\(on).")
         case .turn? where e.phase == .start:
-            return Narration(cause: "\(agent) started work\(on).")
+            return Narration(cause: "\(agent) started work\(on).", fact: started("new_task", agent: agent, name: name))
         case .session? where e.phase == .start:
-            return Narration(cause: "\(agent)'s memory\(on) was compacted.")
+            return Narration(cause: "\(agent)'s memory\(on) was compacted.", fact: started("compacted", agent: agent, name: name))
+        case .session?:
+            return Narration(cause: "\(agent)'s thread\(on) ended.")
+        case .subagent?:
+            return e.phase == .start ? Narration(cause: "\(agent) started a helper\(on).") : Narration(cause: "A helper of \(agent)'s finished\(on).")
+        case .reacted?:
+            return Narration(cause: "The other buddy reacted.", fact: fit("the other reacted"))
+        case .act?:
+            return e.phase == .start ? act(e.specificType, agent: agent, on: on, name: name)
+                : actEnded(e.specificType, passed: e["passed"]?.bool ?? true, on: on, name: name)
         case .tool?:
             return check(facts, agent: agent, on: on, name: name)
         case .checkIn?:
@@ -140,6 +154,97 @@ public struct Narration: Equatable, Sendable {
         default:
             return nil
         }
+    }
+
+    /// The events no reason is ever given for, each named as `Event.name`
+    /// says it, and why: a new reaction with no reason fails its test unless
+    /// it says here why it has none.
+    public static let silent: [String: String] = [
+        "listen start": "log-only: its own LISTENING shows", "listen wait": "log-only", "listen end": "log-only",
+        "link start": "log-only: the board's own screen shows it", "link end": "log-only",
+        "dream": "Boop's own, and wakes no pass: the telling has its reason",
+        "memory": "Boop's own, and wakes no pass",
+        "last_message": "its finish says how the turn went (`outcome`)",
+        "tool start": "the work stream: a word falling, never a Moment",
+        "tool wait": "the needs-you screen says it",
+    ]
+
+    /// Why it holds up something it noticed: "It noticed a rough hour: 3
+    /// failures."
+    public static func noticed(_ fact: String) -> String { "It noticed \(fact)." }
+
+    /// With what's noticed at its moment after the cause, on the Mac; the
+    /// board's words stay as they were.
+    public func noting(_ noticed: String?) -> Narration {
+        guard let noticed else { return self }
+        return Narration(cause: cause + " " + noticed, fact: fact)
+    }
+
+    /// A wish being made: "Boop wants a pet.", or "Boop wants a pet: you
+    /// haven't said hi today."
+    public static func wish(_ kind: Core.WishKind, name: String, because: String? = nil) -> Narration {
+        Narration(cause: "\(name) wants \(kind.words)" + (because.map { ": \($0)." } ?? "."),
+                  fact: fit(["{name} wants \(kind.words)", "wants \(kind.words)", "a wish"], name: name))
+    }
+
+    /// The board's caption as a rule starts its card for `ctx`: a new task,
+    /// a new thread, one taken up again, or compacted.
+    static func started(_ ctx: String, agent: String, name: String) -> String? {
+        switch ctx {
+        case "session": fit(["new \(agent) thread", "\(agent) started"], name: name)
+        case "continuation": fit(["\(agent) carries on", "\(agent) is back"], name: name)
+        case "compacted": fit(["\(agent) compacted", "memory compacted"], name: name)
+        default: fit(["\(agent) started", "new task"], name: name)
+        }
+    }
+
+    /// A work act starting: "claude is running the tests on api."
+    static func act(_ kind: String, agent: String, on: String, name: String) -> Narration {
+        switch kind {
+        case "tests": Narration(cause: "\(agent) is running the tests\(on).", fact: fit(["\(agent) runs tests", "tests running"], name: name))
+        case "build": Narration(cause: "\(agent) is building\(on).", fact: fit(["\(agent) builds", "building"], name: name))
+        default: Narration(cause: "\(agent) is pushing\(on).", fact: fit(["\(agent) pushes", "pushing"], name: name))
+        }
+    }
+
+    /// A work act's result.
+    static func actEnded(_ kind: String, passed: Bool, on: String, name: String) -> Narration {
+        switch (kind, passed) {
+        case ("tests", true): Narration(cause: "The tests\(on) pass.", fact: fit(["tests pass"], name: name))
+        case ("tests", false): Narration(cause: "The tests\(on) failed.", fact: fit(["tests failed"], name: name))
+        case ("build", true): Narration(cause: "The build\(on) passes.", fact: fit(["build passes"], name: name))
+        case ("build", false): Narration(cause: "The build\(on) failed.", fact: fit(["build failed"], name: name))
+        case (_, true): Narration(cause: "The push\(on) went out.", fact: fit(["push went out", "pushed"], name: name))
+        default: Narration(cause: "The push\(on) failed.", fact: fit(["push failed"], name: name))
+        }
+    }
+
+    /// The board's caption for a mood that really moved, with no other reason
+    /// to show: "Boop's grumpy now".
+    static func moodMoved(_ mood: String, name: String) -> String? {
+        fit(["{name}'s \(mood) now", "\(mood) now"], name: name)
+    }
+
+    /// Why Boop went to sleep, by what's true at that moment: no agent open,
+    /// the nap, or a quiet that lasted `dozeMs`.
+    public static func sleeping(noAgents: Bool, napping: Bool, dozeMs: Int64, name: String) -> Narration {
+        if noAgents { return Narration(cause: "No agents are open, so \(name) went to sleep.", fact: fit(["no agents open"], name: name)) }
+        if napping { return Narration(cause: "\(name) went for a nap, and you haven't been back.") }
+        let long = span(ms: dozeMs)
+        let words = dozeMs == 3_600_000 ? "an hour" : long.words
+        return Narration(cause: "Nothing's happened for \(words), so \(name) dozed off.", fact: fit(["quiet for \(long.short)"], name: name))
+    }
+
+    /// Why Boop woke: an agent got to work.
+    static func woken(by agent: String, on: String, name: String) -> Narration {
+        Narration(cause: "\(agent) got to work\(on), so \(name) woke up.", fact: fit(["\(agent) woke {name}", "\(agent) woke it"], name: name))
+    }
+
+    /// What it's doing to pass the time, for the popover alone, from the pack's
+    /// words for what the face says (`CharacterPack.passing`):
+    /// "Boop's blowing bubbles to pass the time."
+    public static func passing(_ id: String, in pack: CharacterPack) -> String? {
+        pack.passing[id].map { $0.ofDoing ? "\(pack.name)'s \($0.words)." : "\(pack.name)'s \($0.words) to pass the time." }
     }
 
     /// A turn's end: how it went, by its outcome and what its last
@@ -179,6 +284,8 @@ public struct Narration: Equatable, Sendable {
                 : Narration(cause: "\(subject) failed.", fact: fit("\(topic) failed"))
         case "ok"? where before > 0:
             return Narration(cause: "\(subject) \(topic == "tests" ? "pass" : "passes") again.", fact: fit(topic == "tests" ? "tests pass again" : "\(topic) passes again", "\(topic) passes"))
+        case "ok"?:
+            return Narration(cause: "\(subject) \(topic == "tests" ? "pass" : "passes").", fact: fit(topic == "tests" ? "tests pass" : "\(topic) passes"))
         default:
             return nil
         }
@@ -219,6 +326,18 @@ public struct Narration: Equatable, Sendable {
     static func looksLikeAnID(_ name: String) -> Bool {
         name.split(whereSeparator: { "-_./".contains($0) })
             .contains { $0.count >= 8 && $0.contains(where: \.isNumber) }
+    }
+
+    /// The most of what you said that a reason quotes, in characters: a
+    /// reason says why, so a few lines of your words make the point.
+    public static let maxQuote = 160
+
+    /// `words` on one line, at most `maxQuote` characters and a "…", ending
+    /// at a word (the board's rule for its own text, `StateSnapshot.cutAt`).
+    static func keep(_ words: String) -> String {
+        let flat = Array(words.split(whereSeparator: \.isWhitespace).joined(separator: " "))
+        guard flat.count > maxQuote else { return String(flat) }
+        return String(flat[..<StateSnapshot.cutAt(flat, maxQuote)]) + "…"
     }
 
     /// The board's caption: the first of `options`, longest first, that

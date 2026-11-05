@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-11-01. A board with no board: the firmware's own code in a
+Updated 2026-11-04. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -93,7 +93,7 @@ board, and with the pixel face, the CYD. Where they differ is below:
 | Part | In the simulator |
 | --- | --- |
 | Screen | The pixel face's 320×240 canvas, or a native face's panel: 502×410 (the AMOLED's) unless told otherwise (`native="400x300"`, `BOOP_SIM_NATIVE`), its corners rounded as the AMOLED's are (in proportion to its height) and transparent, since the panel shows nothing there. Every pixel is the firmware's; the page draws nothing on it |
-| Touch | The pointer on the screen: a touch is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it. On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
+| Touch | The pointer on the screen: a touch is a poke, as on the boards, and letting go is a lift, which ends the touch at once, as the AMOLED's touch chip reports one, and a drag or a wiggle another touch (a stroke, a quick one a swipe, a tickle, a boop on the nose). Held still a second on the needs-you screen, it dismisses it; held on the gel's face, it leans in, and dozes past 5 s. On the gel, dragged up from the strip, it pulls out the agents' drawer, a drag on its rows scrolls them, and a click on a row picks it. The board sees a press however soon it's let go, since a click is over sooner than it looks |
 | BOOT | The button under the screen, or Space; hold it to talk |
 | Motion | The AMOLED's motion sensor, lying flat on the desk from power-on; with `motion`, buttons that move the board as it feels it: Shake, Pick up and Put down, Thump, Face down and Face up. The CYD's board has no sensor until something tilts it |
 | Sound | The firmware's own samples (`app/sound.h`, the code the boards' sound task runs), at the pace a DAC plays them. A browser plays nothing until a click, so the first touch of the board, its screen or BOOT, turns it on, as Sound on does; once Sound on or off is clicked, that's the choice |

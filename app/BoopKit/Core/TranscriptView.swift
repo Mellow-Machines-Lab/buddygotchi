@@ -80,6 +80,9 @@ public final class TranscriptView {
         var topicStates: [(topic: String, state: String)] = []
         /// A topic that passed after failing this turn.
         var comeback: String?
+        /// The latest such pass: its event, when, and the Moment that
+        /// answered it, while that Moment hasn't failed to play.
+        var fix: (seq: Int, at: Int64, did: Int?)?
         /// This turn's latest topic, and its last check and whether it failed.
         var topic: String?
         var check: (topic: String, failed: Bool)?
@@ -169,6 +172,14 @@ public final class TranscriptView {
         /// then, so the request's clearing brings it back.
         var showing: Set<String> = []
         var missed: (key: String, line: Line)?
+        /// The turns that finished while you were away, for your coming back
+        /// (`Notices.whileAway`).
+        var whileAway: [(agent: String, thread: String, failed: Bool)] = []
+        /// When things failed lately (a check, a turn), your last sharp
+        /// prompt, and the day each thread last had a prompt: for `Notices`.
+        var failures: [Int64] = []
+        var sharpAt: Int64?
+        var promptedDay: [String: String] = [:]
         /// When each session's calls that climb the work stream's failure
         /// ladder failed, within `WorkStream.ladderMs`.
         var ladder: [String: [Int64]] = [:]
@@ -408,6 +419,7 @@ public final class TranscriptView {
             return nil
         }
         played(e)
+        reactedToFix(e)
         return told(firstToday(foldLine(e), e), e)
     }
 
@@ -449,6 +461,25 @@ public final class TranscriptView {
         }
     }
 
+    /// How soon after a fix a finish is still the same win: the Moment that
+    /// answered the fix is on the face, or only just gone.
+    static let fixJustNowMs: Int64 = 60_000
+
+    /// Follows the Moment that answers a check passing after failing, as
+    /// `played` follows the telling's: made, it stands for that win, unless
+    /// it failed to play (cut by a needs-you, refused, never sent).
+    func reactedToFix(_ e: Event) {
+        guard e.fromHarness, e.action == MomentOutput.outputName, let about = e.about else { return }
+        for (key, c) in fold.counts {
+            guard let fix = c.fix else { continue }
+            if e.kind == Event.did, about == fix.seq {
+                fold.counts[key]?.fix?.did = e["ok"]?.bool == true ? e.seq : nil
+            } else if e.kind == Event.ended, about == fix.did, e["outcome"]?.string != "done" {
+                fold.counts[key]?.fix?.did = nil
+            }
+        }
+    }
+
     /// Tells the dream not yet told the first time you show up after it
     /// was dreamed: your coming back or, with none, your first touch (a
     /// poke or a care gesture). Never a prompt (it has its own sign), a
@@ -463,7 +494,9 @@ public final class TranscriptView {
               let about = (dream["about"] ?? dream["weekday"])?.string, let sentence = dream["sentence"]?.string else { return line }
         if let telling = fold.telling, telling.did != nil || e.at - telling.at < Self.tellingWaitMs { return line }
         fold.telling = (e.seq, e.at, nil)
-        let told = EventLine.dreamed(about: about, sentence: sentence, name: name(e))
+        // Your coming back, with several buddies, is for the first of them,
+        // who answers it (`Buddy`).
+        let told = EventLine.dreamed(about: about, sentence: sentence, name: e.buddy == nil ? buddies.first?.name ?? onlyName : name(e))
         line.notes.append(told)
         line.facts["dream_day"] = dream["day"] ?? .null
         line.facts["dream_tags"] = dream["tags"] ?? .array([])
@@ -552,7 +585,7 @@ public final class TranscriptView {
                 ? EventLine.actStarted(agent: agent, kind: e.specificType, thread: thread, name: name(e), pack: pack)
                 : EventLine.actEnded(agent: agent, kind: e.specificType, thread: thread, passed: e["passed"]?.bool ?? true, name: name(e), pack: pack)
             return Line(text, facts: ["act": .string(e.specificType), "thread": threadFacts(t)])
-        case .listen?, .dream?, .memory?, nil: return nil
+        case .listen?, .dream?, .memory?, .link?, nil: return nil
         }
     }
 
@@ -646,9 +679,11 @@ public final class TranscriptView {
             default: outcome = check?.failed == true ? "failed" : "done"
             }
             fold.results[key] = StatusReply.Result(topic: nil, outcome: outcome, at: now)
+            if outcome == "failed" { noteFailure(now) }
+            if fold.away.since != nil { fold.whileAway.append((t.agent.rawValue, threadLine(t), outcome == "failed")) }
             let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
             c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
-            var line = turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started))
+            var line = turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started), at: now)
             if let hits = newHits(&c, name: onlyName) { line.notes.append(hits) }
             return line
         case .sessionStart:
@@ -671,6 +706,7 @@ public final class TranscriptView {
         c.linesRemoved = 0
         c.topicStates = []
         c.comeback = nil
+        c.fix = nil
         c.check = nil
         c.checksFailed = 0
         c.checkIns = 0
@@ -708,6 +744,7 @@ public final class TranscriptView {
                     if failedBefore > 0 {
                         notable = true
                         c.comeback = topic
+                        c.fix = (fold.at, a.at, nil)
                     }
                 }
                 setTopic(&c, topic, failed ? "failing" : "passing")
@@ -755,19 +792,20 @@ public final class TranscriptView {
 
     /// A finish: what the turn did, never the agent's words, which only
     /// its message's reading tells (`messageRead`).
-    func turnEnded(_ t: Thread, _ c: Counts, outcome: String, error: String?, lengthMs: Int64) -> Line {
+    func turnEnded(_ t: Thread, _ c: Counts, outcome: String, error: String?, lengthMs: Int64, at now: Int64) -> Line {
         var topicFacts: [String: JSONValue] = [:]
         for (topic, state) in c.topicStates { topicFacts[topic] = .string(state) }
+        let reactedToFix = outcome == "done" && c.fix?.did != nil && now - (c.fix?.at ?? now) < Self.fixJustNowMs
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
                                      lengthMs: lengthMs, tools: c.tools, failedChecks: c.checksFailed,
                                      ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak),
-                                     linesGone: c.linesRemoved - c.linesAdded)
+                                     linesGone: c.linesRemoved - c.linesAdded, reactedToFix: reactedToFix ? onlyName : nil)
         return Line(text, facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
                             "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
                             "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins?.run ?? 0)),
-                            "topics": .object(topicFacts), "comeback": .of(c.comeback)])
+                            "topics": .object(topicFacts), "comeback": .of(c.comeback), "reacted_to_fix": .bool(reactedToFix)])
     }
 
     /// The thread's facts.
@@ -787,6 +825,19 @@ public final class TranscriptView {
 
     // MARK: Your prompt
 
+    /// A prompt's fact: your first on its thread today.
+    public static let firstHereTodayFact = "first_here_today"
+
+    func noteFailure(_ at: Int64) {
+        fold.failures = fold.failures.filter { at - $0 < Notices.roughWithinMs } + [at]
+    }
+
+    /// What's been failing lately and your last sharp prompt, for `Notices`.
+    public func rough(_ log: LogView) -> (failures: [Int64], sharpAt: Int64?) {
+        catchUp(log)
+        return (fold.failures, fold.sharpAt)
+    }
+
     /// Your prompt's reading, under its turn's thread: what you asked for,
     /// how long and how you sound, and your words for a sign as a note.
     func promptRead(_ e: Event) -> Line? {
@@ -795,9 +846,15 @@ public final class TranscriptView {
         let key = Self.about(e, facts: nil)
         if let key { fold.asked[key] = reading.kind }
         let t = key.flatMap { fold.sessions.sessions[$0] }.map(Thread.init)
+        if reading.tone == .frustrated || reading.tone == .shouting { fold.sharpAt = e.at }
+        var facts = e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a }
+        if let t {
+            let thread = t.workspace ?? t.project, today = time.boopDay(e.at)
+            if fold.promptedDay[thread] != today { facts[Self.firstHereTodayFact] = true }
+            fold.promptedDay[thread] = today
+        }
         return Line(EventLine.asked(reading, agent: e.agent?.rawValue ?? "the agent", thread: t.map(threadLine)),
-                    notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [],
-                    facts: e.data.merging(["thread": t.map(threadFacts) ?? .null]) { a, _ in a })
+                    notes: EventLine.yourWords(reading.phrases).map { [$0] } ?? [], facts: facts)
     }
 
     // MARK: The agent's last message
@@ -890,8 +947,8 @@ public final class TranscriptView {
         return log.last(Event.kind(.poke, nil)).map { e.at - $0.at >= inARowMs } ?? true
     }
 
-    /// The core's records that a run of pokes goes on through.
-    static let passesThePokes: Set<Event.Kind> = [.needsYou, .listen, .reacted]
+    /// The records that a run of pokes goes on through.
+    static let passesThePokes: Set<Event.Kind> = [.needsYou, .listen, .reacted, .link]
 
     /// Whether the reaction `did` is one your tap cut short that the pokes
     /// still hold: a poke came after it, and no
@@ -938,10 +995,14 @@ public final class TranscriptView {
     func presence(_ e: Event) -> Line? {
         switch fold.away.fold(e) {
         case .away(let since)?:
+            fold.whileAway = []
             return Line(EventLine.away, facts: ["why": .string(e.specificType), "since": .int(since)])
         case .back(let ms?)?:
             noteActivity(e.at)
-            return Line(EventLine.back(ms: ms), facts: ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)])
+            var facts: [String: JSONValue] = ["away": .string(Band.away(ms: ms)), "away_ms": .int(ms)]
+            if let noticed = Notices.whileAway(fold.whileAway) { facts[Self.noticedFact] = .string(noticed) }
+            fold.whileAway = []
+            return Line(EventLine.back(ms: ms), facts: facts)
         default:
             return nil
         }
@@ -1127,6 +1188,9 @@ public final class TranscriptView {
               let id = t["session"]?.string else { return nil }
         return SessionFold.key(agent, id)
     }
+
+    /// A line's fact: what's noticed at its moment (CONTEXT's Noticed row).
+    public static let noticedFact = "noticed"
 
     /// The fact on a finish brought back once nothing needs you.
     static let missedFact = "while_needed"

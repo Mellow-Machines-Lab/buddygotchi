@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-03. How we check that Jev decides as Boop should: short
+Updated 2026-11-04. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -52,7 +52,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
 | `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b`, `touch` (a stroke, its first answer) or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
-| `gesture` | A touch on the board, its `kind` (`stroke`, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
+| `gesture` | A touch on the board, its `kind` (`stroke`, `lean`, a finger kept still, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
 | `helper started`, `helper returned` | The agent sends a helper off (`SubagentStart`), and it comes back (`SubagentStop`), the step's `helper` (`h1` unless it says) |
@@ -260,7 +260,9 @@ file-name order:
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
 | `signs` | The remembered lines the run may offer, each note's text and its line (`"You stay up late on Fridays.": "u stay up late fridays"`): what `Memory.felt` would offer, for an idle check-in's sign question |
 | `seed` | When check-ins fall within their gaps, 1 unless the file says: the same seed repeats, and another is another day's timing with the same steps. Jev answers much the same at the same prompt, so runs of one seed are nearly one sample: to measure something across days, as `173`'s wishes, copy the file with other seeds into a directory for `--scenarios` |
-| `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`): none by default |
+| `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`) and how old it is: none by default |
+| `days` | The digests kept (`DayDigest`, each with its `day` and `weekday`), what Boop notices from (`Notices`): none by default |
+| `wish_today` | `met`: today's wish was made and met before the first step, so no wish is on offer |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moves_on_graph` (`true`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |

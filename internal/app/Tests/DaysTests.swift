@@ -48,7 +48,7 @@ final class DaysTests: XCTestCase {
         XCTAssertFalse(tags(2026, 2, 18).contains("lunar"))
     }
 
-    /// Pins `Days.isMilestone`: a party on the 10th and 50th days
+    /// Pins `Days.isMilestone`: a party on the 10th, 30th and 50th days
     /// since hatching, every 100th, and each anniversary; and the heading's
     /// words for each.
     func testMilestoneDaysAreAParty() {
@@ -57,6 +57,8 @@ final class DaysTests: XCTestCase {
         XCTAssertFalse(party(2026, 9, 1), "the day it hatched")
         XCTAssertTrue(party(2026, 9, 11), "10 days")
         XCTAssertFalse(party(2026, 9, 12))
+        XCTAssertTrue(party(2026, 10, 1), "a month")
+        XCTAssertEqual(Days.words(at: ms(2026, 10, 1), hatched: hatched, name: "Boop", time: utc), ["Boop is a month old"])
         XCTAssertTrue(party(2026, 10, 21), "50 days")
         XCTAssertTrue(party(2026, 12, 10), "100 days")
         XCTAssertTrue(party(2027, 3, 20), "200 days")

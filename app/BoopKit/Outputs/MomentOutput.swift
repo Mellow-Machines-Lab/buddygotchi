@@ -60,6 +60,11 @@ public final class MomentOutput: Output {
     /// (`Narration`), or nil: its fact goes to the board's lane, and its
     /// sentence to the transcript.
     let reason: (Event?) -> Narration?
+    /// The board's caption for a mood this pass really moved, or nil
+    /// (`MoodOutput.boardFact`): used when the reason has no fact of its own.
+    let moodMoved: (Event?, LogView) -> String?
+    /// A caption with no Moment, for that mood when the pass plays nothing.
+    let note: (String, Int64) -> Void
     /// The line Jev read for an event, whose facts say what it was to the
     /// view (`told`, `firstToday`, `fixed`).
     let line: (Event) -> Line?
@@ -86,8 +91,17 @@ public final class MomentOutput: Output {
     let makeWish: (Core.WishKind, Int64) -> Void
     /// Whether you've met a kind of wish once: until then its sign shows how.
     let wishDone: (Core.WishKind) -> Bool
+    /// The face of its mood now, for something held up with no face.
+    let moodFace: (LogView) -> String?
+    /// The Boop day's number at a time, which picks among a wish's signs.
+    let dayNumber: (Int64) -> Int
     /// What Boop may bring up about you at a time (`Memory.felt`).
     let felt: (Int64) -> [Memory.Felt]
+    /// What it noticed that's due at an event (`Notices.due`), if it may
+    /// make a Moment of it there: only ever at an idle check-in.
+    let notice: (Event, LogView) -> Notices.Notice?
+    /// Why a wish made at a time fits (`Notices.wishReason`).
+    let wishWhy: (Int64) -> String?
     /// The day so far, for the idle musings' blanks.
     let today: () -> MemoryReader.Tallies?
     /// Whether the turn an event finished got past a failed check: only
@@ -108,7 +122,7 @@ public final class MomentOutput: Output {
     /// The wishes on offer at `about`, each with the pack's sign for it.
     func wishOptions(_ about: Event?, _ log: LogView) -> [(kind: Core.WishKind, sign: String)] {
         guard let about, !asks.isEmpty, told(about) == nil else { return [] }
-        return wishable(about, log).compactMap { kind in Asks.wishSign(asks, kind, showsHow: !wishDone(kind)).map { (kind, $0) } }
+        return wishable(about, log).compactMap { kind in Asks.wishSign(asks, kind, showsHow: !wishDone(kind), day: dayNumber(about.at)).map { (kind, $0) } }
     }
 
     /// The notes on offer at `about`: at an idle check-in, as the musings
@@ -116,6 +130,26 @@ public final class MomentOutput: Output {
     func feltOptions(_ about: Event?) -> [Memory.Felt] {
         guard let about, Self.isCheckIn(about), talk() != .quiet, !hushed(about.at) else { return [] }
         return felt(about.at)
+    }
+
+    /// The sign question's answer for a notice with no sign: only its look
+    /// and its reason. `waiting` has none.
+    public static let noticeLook = "a look"
+
+    /// A notice's options: `waiting`, being of use to you, its sign alone,
+    /// and any other mostly the look, its sign now and then.
+    static func noticeOptions(_ noticing: (notice: Notices.Notice, lines: [String])?) -> [Option] {
+        guard let noticing else { return [] }
+        if noticing.notice.kind == .waiting { return noticing.lines.map { Option($0, "CONTEXT's Noticed, said on a sign: usually this.") } }
+        return noticing.lines.map { Option($0, "CONTEXT's Noticed, said on a sign, now and then.") }
+            + [Option(noticeLook, "CONTEXT's Noticed, no sign: it looks up at you. Usually this.")]
+    }
+
+    /// What it may hold up for a notice at `about`: only at an idle check-in.
+    func noticeOptions(_ about: Event?, _ log: LogView) -> (notice: Notices.Notice, lines: [String])? {
+        guard let about, Self.isCheckIn(about), let n = notice(about, log) else { return nil }
+        let lines = Signs.notice(signs, n.kind.rawValue, agent: n.agent, avoiding: lastSign)
+        return lines.isEmpty ? nil : (n, lines)
     }
 
     func askOptions(_ about: Event?, _ log: LogView) -> [Asks.Question] {
@@ -182,6 +216,7 @@ public final class MomentOutput: Output {
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
                 nap: @escaping (Int64) -> Void = { _ in },
                 talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Narration? = { _ in nil },
+                moodMoved: @escaping (Event?, LogView) -> String? = { _, _ in nil }, note: @escaping (String, Int64) -> Void = { _, _ in },
                 dreams: [TaggedLine] = [], line: @escaping (Event) -> Line? = { _ in nil },
                 occasion: @escaping (Int64) -> String? = { _ in nil },
                 asks: [TaggedLine] = [],
@@ -189,10 +224,18 @@ public final class MomentOutput: Output {
                 wishable: @escaping (Event, LogView) -> [Core.WishKind] = { _, _ in [] },
                 makeWish: @escaping (Core.WishKind, Int64) -> Void = { _, _ in },
                 wishDone: @escaping (Core.WishKind) -> Bool = { _ in false },
+                dayNumber: @escaping (Int64) -> Int = { _ in 0 },
+                moodFace: @escaping (LogView) -> String? = { _ in nil },
                 today: @escaping () -> MemoryReader.Tallies? = { nil },
-                felt: @escaping (Int64) -> [Memory.Felt] = { _ in [] }, seed: UInt64 = 0x7A4E) {
+                felt: @escaping (Int64) -> [Memory.Felt] = { _ in [] },
+                notice: @escaping (Event, LogView) -> Notices.Notice? = { _, _ in nil },
+                wishWhy: @escaping (Int64) -> String? = { _ in nil }, seed: UInt64 = 0x7A4E) {
         self.today = today
         self.felt = felt
+        self.notice = notice
+        self.dayNumber = dayNumber
+        self.moodFace = moodFace
+        self.wishWhy = wishWhy
         let own = voice.map(SplitMix64.seed(of:)) ?? 0
         takes = SplitMix64(seed: seed ^ own)
         self.pack = pack
@@ -215,6 +258,8 @@ public final class MomentOutput: Output {
         self.nap = nap
         self.talk = talk
         self.reason = reason
+        self.moodMoved = moodMoved
+        self.note = note
         self.dreams = dreams
         self.line = line
         self.occasion = occasion
@@ -226,13 +271,6 @@ public final class MomentOutput: Output {
     }
 
     static func article(_ word: String) -> String { "aeiou".contains(word.first ?? "x") ? "an" : "a" }
-
-    /// Each expression: a mood's name, every mood's in the pack's order,
-    /// lasting or face-only, and what the face means for this reaction,
-    /// from the pack's moods' `face` (characters/CHARACTER.md §5). It's the
-    /// reaction's face only, never the lasting mood. What it says is a take
-    /// performed in that mood (`Voice`).
-    public static var expressions: [Option] { CharacterPack.active.faces }
 
     /// How Boop can feel about NOW, the first of what `say` offers. Every
     /// feeling take has one, and every face has takes of each: tests check
@@ -246,8 +284,8 @@ public final class MomentOutput: Output {
     static func feelings(of name: String) -> [Option] { [
         Option("upset", "Something went wrong or let \(name) down: a check or a turn failing, the agent stuck or giving up, a rude prompt."),
         Option("glad", "Something went right: a turn done and working, a check passing, a big win, a kind prompt.", notFor: "A failure."),
-        Option("tickled", "Poked or teased: a poke, a tap, or a playful prompt."),
-        Option("shaken", "Moved roughly: shaken, again and again, or the desk thumped."),
+        Option("tickled", "Playful words: poked or teased with MOOD at ease, a poke, a tap, or a playful prompt."),
+        Option("shaken", "Had enough: shaken, again and again, the desk thumped, or poked with MOOD annoyed, irritated or grumpy."),
     ] }
 
     /// What NOW can be about, the rest of what `say` offers: each a topic
@@ -269,7 +307,7 @@ public final class MomentOutput: Output {
         Option("answer", "A turn that only answered something or asked something back."),
         Option("stopped", "A turn stopped: interrupted, or the agent giving up."),
         Option("waiting", "Waiting: a long command, or the agent waiting on something slow."),
-        Option("quiet", "Nothing going on: a quiet check-in."),
+        Option("quiet", "Content words, rarely: a long quiet at a check-in with MOOD calm, comfy or lazy."),
         Option("hello", "The person back at the Mac after a break, or greeting \(name): a hello."),
     ] }
 
@@ -346,6 +384,12 @@ public final class MomentOutput: Output {
     /// the pack's `reply-wave` clip.
     public static let wave = "wave"
 
+    /// What it plays at any other notice: it looks up at you.
+    public static let noticeScene = "notice"
+
+    /// What it plays at a rough hour's notice: it leans in close.
+    public static let roughReply = "comfort"
+
     /// The clip it plays bringing up what it remembers: the pack's
     /// `reply-remember`.
     public static let rememberClip = "remember"
@@ -363,8 +407,8 @@ public final class MomentOutput: Output {
             case moveKey:
                 return Question(key: q.key, text: "Does \(name) wave as you \(lock ? "lock" : "unlock") the Mac? The wave is as big as the moment.",
                                 about: "the NOW section", judgeBy: "PERSONALITY and MOOD",
-                                options: [Option("none", "No wave: \(name) is cross with you, and turns away or huffs."),
-                                          Option(wave, lock ? "It waves you off: slight when the moment is small." : "It waves hello: slight when the moment is small.")]
+                                options: [Option("none", "No wave: MOOD is grumpy, irritated or annoyed, so \(name) is cross with you, and turns away or huffs."),
+                                          Option(wave, lock ? "MOOD isn't cross: it waves you off, slight when the moment is small." : "MOOD isn't cross: it waves hello, slight when the moment is small.")]
                                     + (mayNap ? [Option("nap", "It says good night and falls asleep at once, until you're back.")] : []))
             case sayKey:
                 // Any answer but none says the wave's own word; these say so.
@@ -372,8 +416,8 @@ public final class MomentOutput: Output {
                                 about: q.about, judgeBy: q.judgeBy,
                                 options: q.options.map { o in
                                     switch o.name {
-                                    case "none": Option("none", "Nothing: a routine lock or unlock, the wave in silence, or wherever CONTEXT's Talk row asks for silence.")
-                                    case "hello": Option("hello", lock ? "A word for your going: goodbye, or good night." : "A word for your being back: hello.")
+                                    case "none": Option("none", "Nothing: a routine lock or unlock, the wave in silence, MOOD grumpy, irritated or annoyed, or wherever CONTEXT's Talk row asks for silence.")
+                                    case "hello": Option("hello", lock ? "MOOD isn't cross: a word for your going, goodbye or good night." : "MOOD isn't cross: a word for your being back, hello.")
                                     default: o
                                     }
                                 })
@@ -468,7 +512,7 @@ public final class MomentOutput: Output {
     static func says(in pack: CharacterPack) -> [Option] {
         let name = pack.name
         return
-        [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish), a prompt soon after another reaction, and wherever CONTEXT's Talk row asks for silence."),
+        [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish, a check-in where nothing has happened), a prompt soon after another reaction, its wish \"waiting 1 h\" or more, and wherever CONTEXT's Talk row asks for silence."),
          Option("swear", "A swear, upset: a failed turn that really stings, in an irritated or grumpy face.",
                 notFor: "A win, a poke, words to \(name), or anything about the person.")]
             + feelings(in: pack)
@@ -587,7 +631,7 @@ public final class MomentOutput: Output {
             return asked + [Question(key: Signs.questionKey,
                                      text: "If \(pack.name) waves, does it hold up a sign as you \(lock ? "go" : "come back")? PERSONALITY says when.",
                                      about: "NOW and CONTEXT", judgeBy: "PERSONALITY and MOOD",
-                                     options: [Option("none", "No sign: the wave alone.")] + captions.map { Option($0, "A sign that says this.") })]
+                                     options: [Option("none", "No sign: the wave alone, or no wave, with MOOD grumpy, irritated or annoyed.")] + captions.map { Option($0, "MOOD isn't cross: a sign that says this.") })]
         }
         let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
         // A question it may ask, the sign being the ask; at an idle
@@ -596,9 +640,10 @@ public final class MomentOutput: Output {
         let musings = about.map(Self.isCheckIn) == true ? offered(now, log) : []
         let wishes = wishOptions(about, log)
         let notes = feltOptions(about)
-        if !questions.isEmpty || !musings.isEmpty || !wishes.isEmpty || !notes.isEmpty {
+        let noticing = noticeOptions(about, log)
+        if !questions.isEmpty || !musings.isEmpty || !wishes.isEmpty || !notes.isEmpty || noticing != nil {
             return speech + [Question(key: Signs.questionKey,
-                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, something it remembers about you, or a wish? PERSONALITY says when; now and then, not every time."
+                                       text: "Does \(pack.name) hold up something: a question for you to answer with a tap (picking one asks it), a musing, something it remembers about you, \(noticing == nil ? "" : "something it noticed, ")or a wish? PERSONALITY says when; now and then, not every time."
                                            + (wishes.isEmpty ? "" : " With no wish yet today and half an hour or more of quiet, a wish fits best. Once CONTEXT says how today's wish ended, another doesn't fit."),
                                        about: "NOW, CONTEXT and HISTORY", judgeBy: "PERSONALITY and what fits the moment",
                                        // The caps are a ceiling, not a schedule: "none" on every level.
@@ -608,6 +653,7 @@ public final class MomentOutput: Output {
                                            + wishes.map { w in
                                                Option(w.sign, "A wish: \(pack.name) wants \(w.kind.words) from you, and shows it until you give it.")
                                            }
+                                           + Self.noticeOptions(noticing)
                                            + questions.map { q in
                                                Option(q.question, "Ask: \"\(q.question)\", \(q.a) or \(q.b)."
                                                    + (q.tags.isEmpty ? "" : " For a moment that's \(q.tags.joined(separator: ", ")).")
@@ -669,7 +715,7 @@ public final class MomentOutput: Output {
         // Your lock or unlock: the lines for its goodbye or hello, by the
         // moment: `bye working` while an agent works.
         if about.type == .lock {
-            return Signs.replies(replies, about.phase == .start ? "bye" : "hello", calendar: replyTags(about))
+            return Signs.replies(replies, about.phase == .start ? "bye" : "hello", calendar: replyTags(about), turns: today()?.turns ?? 0)
         }
         // An ask answered: what it holds up after that answer.
         if about.type == .ask, let q = about["q"]?.string, let answer = about["answer"]?.string {
@@ -697,7 +743,7 @@ public final class MomentOutput: Output {
             + (hushed(said.at) ? ["unhush"] : [])
         var out: [(text: String, replies: [String])] = []
         for reply in names where reply != "status" {
-            for text in Signs.replies(replies, reply, calendar: tags, phrases: phrases, avoiding: lastSign) {
+            for text in Signs.replies(replies, reply, calendar: tags, phrases: phrases, avoiding: lastSign, turns: today()?.turns ?? 0) {
                 if let i = out.firstIndex(where: { $0.text == text }) { out[i].replies.append(reply) } else { out.append((text, [reply])) }
             }
         }
@@ -799,7 +845,7 @@ public final class MomentOutput: Output {
         return [
             Question(key: emotionKey, text: "How should \(name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.",
                      about: "the NOW section", judgeBy: byBoth,
-                     options: [Option("none", "Stay quiet: nothing in NOW is worth a moment, "
+                     options: [Option("none", "Stay quiet: most check-ins where nothing has happened; nothing in NOW is worth a moment, "
                                           + "or HISTORY shows \(name) still having the one it calls for, about the same thing (in progress).",
                                       notFor: "Something new said to \(name), which always gets a moment of its own, even while one plays; "
                                           + "a turn that finished done or failed, which always gets a moment and its finish; "
@@ -817,8 +863,17 @@ public final class MomentOutput: Output {
     }
 
     public func run(_ answers: Answers, now: Event?, log: LogView) -> OutputResult? {
-        // 1. Does Jev want a reaction at all, and with which face?
+        // 1. Does Jev want a reaction at all, and with which face? Something
+        // held up at an idle check-in with no face takes the mood's, small.
+        var answers = answers
+        if answers[Self.emotionKey]?.choice == "none", let about = Self.about(now, log), Self.isCheckIn(about),
+           let held = answers[Signs.questionKey]?.choice, held != "none", let face = moodFace(log) {
+            answers[Self.emotionKey] = Answer(choice: face)
+            answers[Self.sizeKey] = Answer(choice: Self.sizes[0].name)
+        }
         guard let choice = answers[Self.emotionKey]?.choice, pack.faces.contains(where: { $0.name == choice }) else {
+            // No Moment, but a mood that moved still says so.
+            if let now, let moved = moodMoved(now, log) { note(moved, now.at) }
             return nil
         }
         // 2. This output's own rules: a reply to what you said shows over
@@ -838,7 +893,7 @@ public final class MomentOutput: Output {
             replied = Self.waved(answers, about: about, size: size)
         }
         let reply = replied?.word
-        let pick = talk ? nil : Self.animation(answers)
+        let moved = talk ? nil : Self.animation(answers)
         let at = about?.at ?? 0
         // What the brain held up, when it's for code to place.
         let holding = talk ? nil : (answers[Signs.questionKey]?.choice).flatMap { $0 == "none" ? nil : $0 }
@@ -846,11 +901,22 @@ public final class MomentOutput: Output {
         let wishing = holding.flatMap { c in wishOptions(about, log).first { $0.sign == c } }
         // Something it remembers, its line being the sign.
         let remembering = holding.flatMap { c in feltOptions(about).first { $0.line == c } }
+        // Something it noticed, its line being the sign, or the look alone.
+        // Late at night it stays gentle: no word with it.
+        let noticing = holding.flatMap { c in
+            noticeOptions(about, log).flatMap { o -> (notice: Notices.Notice, line: String?)? in
+                c == Self.noticeLook && o.notice.kind != .waiting ? (o.notice, nil) : o.lines.contains(c) ? (o.notice, c) : nil
+            }
+        }
+        // It looks up at you first, so it's no quiet face; a rough hour's
+        // lean is its own look.
+        let pick = noticing.map { $0.notice.kind == .rough ? nil : Self.noticeScene } ?? moved
         // What it says: nothing while hushed, unless this is you letting it
         // talk; on Quiet, nothing at a small moment or a finish, or with a
         // wish, which shows as its icon and sign.
         let silent = (hushed(at) && reply != "unhush")
             || (self.talk() == .quiet && (size.name == "small" || pick != nil || wishing != nil))
+            || noticing?.notice.kind == .late
         // To what you said, with no words of the reply's own in this face, a
         // feeling `say` picked, else the one the reply borrows; never a
         // topic, but a comfort's "again": rooting for the retry when you
@@ -903,7 +969,7 @@ public final class MomentOutput: Output {
             sign = nil
         } else {
             let picked = answers[Signs.questionKey]?.choice
-            sign = wishing?.sign ?? remembering?.line ?? picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
+            sign = wishing?.sign ?? remembering?.line ?? noticing?.line ?? picked.flatMap { offered(now, log).contains($0) ? $0 : nil }
         }
         // A special day's sign is code's, over the brain's.
         if about.map(firstToday) == true, let day = occasion(at) { sign = day }
@@ -918,7 +984,8 @@ public final class MomentOutput: Output {
             reaction.sign = asking?.question
             reaction.ask = asking
         }
-        reaction.reply = replied?.played
+        // A rough hour: it scoots close and leans.
+        reaction.reply = replied?.played ?? (noticing?.notice.kind == .rough ? Self.roughReply : nil)
         reaction.show = show
         reaction.greeting = greeting
         if remembering != nil {
@@ -932,7 +999,8 @@ public final class MomentOutput: Output {
             // long it ran.
             reaction.anim = anim
             reaction.outcome = outcome
-            reaction.who = who(about)
+            // A notice isn't a turn's: it keeps its sign and reason.
+            if noticing == nil { reaction.who = who(about) }
             if outcome != nil { reaction.turn = turnMs(about).map { Moment.turn(lengthMs: $0) } }
         } else if turnMs(about) != nil {
             // A face for a finished turn names it too: the device marks
@@ -949,8 +1017,10 @@ public final class MomentOutput: Output {
         // Why, for the person: the board shows the fact in its lane, unless
         // the strip already names the finished turn it's about.
         // Bringing up a note, the note is why, on the Mac: the board shows the line.
-        let why = remembering.map { Narration(cause: Narration.remembers($0.note, name: pack.name)) } ?? reason(about)
-        if reaction.who == nil, asking == nil { reaction.reason = why?.fact }
+        let why = remembering.map { Narration(cause: Narration.remembers($0.note, name: pack.name)) }
+            ?? noticing.map { Narration(cause: Narration.noticed($0.notice.fact), fact: $0.notice.short) }
+            ?? wishing.map { Narration.wish($0.kind, name: pack.name, because: wishWhy(at)) } ?? reason(about)
+        if reaction.who == nil, asking == nil, remembering == nil { reaction.reason = why?.fact ?? moodMoved(now, log) }
         let pending = Pending()
         queue(reaction, pending)
         // Hushed for as long as the moment is big, or let talk again.
@@ -973,7 +1043,11 @@ public final class MomentOutput: Output {
         if let reply { facts["reply"] = .string(reply) }
         if let sign { facts["sign"] = .string(sign) }
         if let why { facts["reason"] = .string(why.reaction(face: choice, name: pack.name)) }
-        if asking == nil, wishing == nil, remembering == nil, sign != nil, about.map(Self.isCheckIn) == true { facts["musing"] = true }
+        if asking == nil, wishing == nil, remembering == nil, noticing == nil, sign != nil, about.map(Self.isCheckIn) == true { facts["musing"] = true }
+        if let noticing {
+            facts["notice"] = .string(noticing.notice.kind.rawValue)
+            facts["notice_key"] = .string(noticing.notice.key)
+        }
         if let remembering { facts["felt"] = .string(remembering.line) }
         if let wishing { facts["wish"] = .string(wishing.kind.rawValue) }
         if let asking {

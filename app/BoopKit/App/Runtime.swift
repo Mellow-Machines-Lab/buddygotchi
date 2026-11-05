@@ -108,6 +108,8 @@ public final class Runtime: @unchecked Sendable {
     /// busy, and what Foundation leaves autoreleased would pile up until
     /// it went idle.
     public let home = DispatchQueue(label: "boop.home", qos: .userInitiated, autoreleaseFrequency: .workItem)
+    /// Set on `home`, so `stop` can tell it's already there: a demo's end is.
+    private let onHome = DispatchSpecificKey<Bool>()
     public let options: Options
     /// Each buddy's board as it runs, the first first.
     var rigs: [Rig] = []
@@ -185,6 +187,8 @@ public final class Runtime: @unchecked Sendable {
     /// and whether the XP changed since the last status.
     let growth: GrowthStore
     var grew = false
+    /// The XP moved during an input, which its step still has to carry out.
+    var xpMoved = false
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
     /// This launch's debug lines outside debug mode, for `saveReport`: in
@@ -262,6 +266,7 @@ public final class Runtime: @unchecked Sendable {
     }
 
     public init(_ options: Options) throws {
+        home.setSpecific(key: onHome, value: true)
         self.options = options
         debugLogURL = options.stateDir.appendingPathComponent(DebugLog.fileName)
         guard let lock = InstanceLock(directory: options.stateDir) else { throw OpenError.locked(options.stateDir.path) }
@@ -363,6 +368,8 @@ public final class Runtime: @unchecked Sendable {
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
             if rig === rigs[0] {
                 mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
+                mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
+                                              onLately: { remembersNow()?.onLately($0) ?? false })
             }
             return mind
         })
@@ -406,8 +413,12 @@ public final class Runtime: @unchecked Sendable {
             remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
             remembers.catchUp(Transcript.events(in: folder, after: remembers.seq, from: remembers.from))
+            remembers.launched()
             remembers.relog(unlessIn: logNow)
             home.sync { remembers.attach(to: pipeline) }
+            remembers.countsSample = { [weak self] in
+                self.map { ($0.talk == .quiet, $0.settings.volume, $0.growth.growth.stage) } ?? (false, 0, 0)
+            }
             self.remembers = remembers
         }
         // The cores read the growth stage where the growth store keeps it.
@@ -418,7 +429,15 @@ public final class Runtime: @unchecked Sendable {
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
         growth.decay(today: options.time.day(options.wallClock()))
-        if let day = growth.reachedDay { for rig in rigs { core(rig).reachedStage(growth.growth.name, day: day, at: now) } }
+        if let day = growth.reachedDay {
+            let grown = growth.growth.name, told = logNow.events.filter { $0.type == .grew && $0.specificType == grown }
+            for rig in rigs {
+                core(rig).reachedStage(grown, day: day, at: now)
+                if day == options.time.day(options.wallClock()), !told.contains(where: { $0.buddy == rig.tag }) {
+                    core(rig).grewLost(grown, at: now)
+                }
+            }
+        }
         talkNow = { [weak self] in self?.talk ?? .default }
         memoryNow = { [weak self] in self?.memorySection() }
         remembersNow = { [weak self] in self?.remembers }
@@ -465,7 +484,9 @@ public final class Runtime: @unchecked Sendable {
             if growth.growth.stage > before {
                 for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
             } else if growth.growth.percent != percent {
-                for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
+                // An input's own `state` carries it, when it makes one: once
+                // it's carried out (`run`), so the board gets one line for one hook.
+                if pipeline.step != nil { xpMoved = true } else { publishXP(at: now) }
             }
         }
         if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
@@ -480,7 +501,7 @@ public final class Runtime: @unchecked Sendable {
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
                                memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
-                               felt: ((Int64) -> [Memory.Felt])? = nil,
+                               felt: ((Int64) -> [Memory.Felt])? = nil, digests: (() -> [DayDigest])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
         let core = pipeline.core
         var mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
@@ -491,6 +512,9 @@ public final class Runtime: @unchecked Sendable {
                         company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
         if let seed { mind.seed = seed }
         mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
+        if let remembers {
+            mind.noticing = Mind.Noticing(digests: digests ?? { remembers.digests }, shown: { remembers.noticesShown() }, onLately: { remembers.onLately($0) })
+        }
         return (pipeline.harness, brain(pipeline, [mind])[0])
     }
 
@@ -546,12 +570,13 @@ public final class Runtime: @unchecked Sendable {
             options.log("boop: running on \(options.stateDir.path), socket \(options.socketPath), "
                         + "link \(rigs.map { ($0.tag.map { "\($0) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
                         + "talk \(talk.rawValue), "
-                        + "mood \(moodNow), brain \(harness.brain?.id ?? "none (reading Jev's key)")"
+                        + "mood \(moodNow), brain \(harness.brain?.id ?? "still to come")"
                         + (options.debug ? ", debug log \(debugLogURL.path)" : ""))
         }
     }
 
-    /// Stops listening for hooks and the device. Safe to call twice.
+    /// Stops listening for hooks and the device. Safe to call twice, and
+    /// from any queue, `home` included.
     public func stop() {
         timer?.cancel()
         timer = nil
@@ -560,6 +585,9 @@ public final class Runtime: @unchecked Sendable {
         server?.stop()
         server = nil
         for rig in rigs { rig.transport?.stop() }
+        // Today's counts as they stand: the next launch reads the rest back.
+        let keep = { [self] in remembers?.keepCounts(wall: options.wallClock(), now: true) }
+        if DispatchQueue.getSpecific(key: onHome) == true { keep() } else { home.sync(execute: keep) }
         try? FileManager.default.removeItem(at: options.stateDir.appendingPathComponent(Self.runningFile))
     }
 
@@ -760,7 +788,15 @@ public final class Runtime: @unchecked Sendable {
                 open(thread, by: "tap")
             }
         }
+        if xpMoved {
+            xpMoved = false
+            publishXP(at: options.clock())
+        }
         if stateChanged || grew { changed() }
+    }
+
+    private func publishXP(at now: Int64) {
+        for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
     }
 
     /// Changes the settings here and in `settings.json`, keeping what

@@ -211,6 +211,7 @@ void Device::state(JsonObject d, uint32_t t) {
   } else {
     d["imu"] = nullptr;
   }
+  d["tilt"] = live_.tilt.mg();
   d["face_down"] = b_.faceDown();
   // The agents' drawer: how far open, and the rows the Mac sent.
   d["drawer"]["open"] = drawerOpen(t);
@@ -322,6 +323,7 @@ void Device::state(JsonObject d, uint32_t t) {
   touch["down"] = live_.touchDown;
   touch["irq"] = irq;
   touch["lifts"] = hal_.touchLifts();
+  touch["lean"] = int(live_.lean);
   JsonArray raw = touch["raw"].to<JsonArray>();
   raw.add(rx), raw.add(ry), raw.add(rz);
   if (live_.lastTouchWas) {

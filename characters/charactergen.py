@@ -155,6 +155,8 @@ constexpr const char* kMoodNames[kMoodCount] = {{{names}}};
 // The pack the board's hello names, for the Mac to tell its own from another.
 constexpr const char* kPackId = {json.dumps(character["id"])};
 constexpr const char* kPackVersion = {json.dumps(character["version"])};
+// The name it goes by until the Mac says otherwise (`state`'s `buddy`).
+constexpr const char* kBuddyName = {json.dumps(character["name"])};
 
 }}  // namespace render
 """

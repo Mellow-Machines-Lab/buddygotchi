@@ -1027,6 +1027,23 @@ static void test_needs_you_shows_and_alerts_once() {
 // At power-on no Mac has spoken, so the board shows no
 // app from the start, not a face for the first 30 s; the first state ends
 // it. dbg.reset, which every scenario starts with, still starts on the face.
+// A wish coming or going is a change of the picture: the Pixel's strip draws
+// it, and its face draws nothing new unless the state says so.
+static void test_a_wish_redraws_the_picture() {
+  const char* plain = "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"idle\":1}";
+  const char* wishing = "{\"t\":\"state\",\"base\":\"idle\",\"mood\":\"happy\",\"idle\":1,\"wish\":\"pet\"}";
+  Rig r;
+  r.usbLine(plain);
+  r.usbLine("{\"t\":\"dbg.clock\",\"freeze\":1000}");
+  const std::vector<uint8_t> before = r.px;
+  r.dev.takeFrame();
+  r.usbLine(wishing);
+  TEST_ASSERT_TRUE_MESSAGE(r.dev.takeFrame(), "a wish came");
+  r.usbLine(plain);
+  TEST_ASSERT_TRUE_MESSAGE(r.dev.takeFrame(), "a wish went");
+  TEST_ASSERT_TRUE(r.px == before);
+}
+
 static void test_power_on_shows_no_app_until_a_state() {
   Rig r;
   TEST_ASSERT_EQUAL_STRING("no_app", r.screen().c_str());
@@ -3048,6 +3065,7 @@ int main() {
   RUN_TEST(test_a_tools_press_drops_only_usbs_waiting_reactions);
   RUN_TEST(test_a_tap_cuts_the_holders_animation);
   RUN_TEST(test_a_new_launchs_reaction_is_its_own);
+  RUN_TEST(test_a_wish_redraws_the_picture);
   RUN_TEST(test_latency_follows_each_event_to_its_frame);
   RUN_TEST(test_dbg_latency_times_inputs_and_messages);
   return UNITY_END();

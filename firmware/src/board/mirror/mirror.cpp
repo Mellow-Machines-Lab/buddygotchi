@@ -62,6 +62,9 @@ EMSCRIPTEN_KEEPALIVE const uint8_t* mirror_frame() { return picture().rgba; }
 EMSCRIPTEN_KEEPALIVE int mirror_width() { return picture().width; }
 EMSCRIPTEN_KEEPALIVE int mirror_height() { return picture().height; }
 
+// What its face is doing to pass the time, or null: the popover's words for it.
+EMSCRIPTEN_KEEPALIVE const char* mirror_passing() { return board ? board->device().passing() : nullptr; }
+
 // What the board said during the last call, or null for nothing.
 EMSCRIPTEN_KEEPALIVE const char* mirror_said() { return said.take(); }
 

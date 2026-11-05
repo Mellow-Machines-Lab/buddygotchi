@@ -52,6 +52,9 @@ extension Runtime {
         /// ("You came back after 26 hours away."). Nil when nothing in the
         /// log says.
         public var moodReason: Narration?
+        /// Why it's doing what it's doing: "Nothing's happened for an hour,
+        /// so Boop dozed off.", "claude is running the tests on api."
+        public var doingReason: Narration?
         /// The wish waiting, for the popover: "Boop wishes for a pet (40 min)."
         public var wishing: String?
         /// Why the board looks as it does: what Boop celebrates today, and
@@ -96,6 +99,14 @@ extension Runtime {
             public var snapshot: StateSnapshot
             public var connected: Bool
             public var device: DeviceInfo?
+
+            public init(id: String, name: String, snapshot: StateSnapshot, connected: Bool, device: DeviceInfo?) {
+                self.id = id
+                self.name = name
+                self.snapshot = snapshot
+                self.connected = connected
+                self.device = device
+            }
         }
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
@@ -142,6 +153,7 @@ extension Runtime {
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
         status.wishing = core.wish.map { "\(name) wishes for \($0.kind.words) (\(ContextSection.span($0.waitedMs)))." }
         status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
+        status.doingReason = core.doingReason(at: now)
         let config = core.config
         status.dressing = Narration.Dressing.now(when: status.snapshot.when,
                                        specialDays: Days.special(at: wall, hatched: config.hatched, name: name,

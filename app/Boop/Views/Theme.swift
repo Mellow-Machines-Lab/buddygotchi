@@ -178,7 +178,7 @@ struct PaneTitle: View {
             .buttonStyle(.quiet)
             .keyboardShortcut("[", modifiers: .command)
             .accessibilityLabel("Back")
-            Text(title).font(.boop(16)).lineLimit(1).minimumScaleFactor(0.8)
+            Text(title).font(.boop(16)).fixedSize(horizontal: false, vertical: true)
             Spacer()
         }
         .padding(.horizontal, Theme.gutter - 8)
@@ -257,6 +257,8 @@ struct MoreDetails: View {
 final class OpenDetails: ObservableObject {
     static let shared = OpenDetails()
     @Published private(set) var texts: Set<String> = []
+    /// Opens it, for a snapshot to show.
+    func show(_ text: String) { texts.insert(text) }
     func toggle(_ text: String) {
         if texts.remove(text) == nil { texts.insert(text) }
     }

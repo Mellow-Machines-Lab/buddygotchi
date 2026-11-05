@@ -45,12 +45,15 @@ public enum Days {
         public var why: String { tag == nil ? words + " today" : "It's " + words }
     }
 
-    /// The days since hatching that are a party: the 10th and 50th, then
-    /// every 100th, and each anniversary.
+    /// The days since hatching that are a party: the 10th, a month (the
+    /// 30th) and the 50th, then every 100th, and each anniversary.
     public static func isMilestone(days: Int, hatched: String, today: String) -> Bool {
-        if days == 10 || days == 50 || (days > 0 && days % 100 == 0) { return true }
+        if days == 10 || days == monthDays || days == 50 || (days > 0 && days % 100 == 0) { return true }
         return days > 0 && hatched.dropFirst(5) == today.dropFirst(5)
     }
+
+    /// Boop's first month, in days.
+    public static let monthDays = 30
 
     /// The calendar's own special days at `ms`: Friday the 13th, the
     /// holidays, Programmers' Day and Lunar New Year.
@@ -98,7 +101,8 @@ public enum Days {
                 out.append(SpecialDay(words: "\(name)'s \(years == 1 ? "first" : "\(years)-year") anniversary",
                                     sign: years == 1 ? "1 year old!" : "\(years) years old!"))
             } else if isMilestone(days: days, hatched: hatched, today: today) {
-                out.append(SpecialDay(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
+                out.append(days == monthDays ? SpecialDay(words: "\(name) is a month old", sign: "1 month old!")
+                    : SpecialDay(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
             }
         }
         if let stage, stage.day == today, hatched != today { out.append(SpecialDay(words: "\(name) became a \(stage.name)")) }

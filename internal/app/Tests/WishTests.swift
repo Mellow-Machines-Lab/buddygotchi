@@ -73,7 +73,7 @@ final class WishTests: XCTestCase {
     /// and the wrong-way stroke; not a shake, a pick-up or face down, nor
     /// anything else that isn't a hand on its face.
     func testWhichTouchesMeetAPetWish() {
-        XCTAssertEqual(Set(Touch.allCases.filter(\.meetsPetWish)), [.poke, .stroke, .ruffle, .nose, .tickle])
+        XCTAssertEqual(Set(Touch.allCases.filter(\.meetsPetWish)), [.poke, .stroke, .lean, .ruffle, .nose, .tickle])
         for touch in Touch.allCases where touch != .poke {
             let r = rig()
             r.core.makeWish(.pet, at: r.now)
@@ -167,7 +167,7 @@ final class WishTests: XCTestCase {
         let fx = core.tick(at: evening + 8 * 3_600_000)
         XCTAssertNil(core.wish)
         XCTAssertEqual(core.wishEnded?.how, .closed)
-        XCTAssertFalse(fx.contains { if case .reaction = $0 { true } else { false } })
+        XCTAssertFalse(fx.contains { if case .reaction(let m) = $0 { m.anim != nil } else { false } }, "at most a caption, of its dozing off")
         // It closed yesterday's wish: the new day's rows don't say both.
         let morning = evening + 8 * 3_600_000
         XCTAssertEqual(core.wishRow(at: morning, name: "Boop"), "no wish yet today")
@@ -268,6 +268,17 @@ final class WishTests: XCTestCase {
         XCTAssertEqual(Asks.wishSign(lines, .pet), "pet me?")
         XCTAssertEqual(Asks.wishSign(lines, .chat, showsHow: true), "talk to me?", "a pack with no such line")
 
+        // A kind's plain lines take turns by the day, the how-sign first.
+        let many = TaggedLine.parse("""
+            - [wish pet] pet me?
+            - [wish pet how] stroke my face?
+            - [wish pet] scritches?
+            - [wish pet] pat pat?
+            """)
+        XCTAssertEqual((0..<4).map { Asks.wishSign(many, .pet, day: $0) }, ["pet me?", "scritches?", "pat pat?", "pet me?"])
+        XCTAssertEqual(Asks.wishSign(many, .pet, day: 2), Asks.wishSign(many, .pet, day: 2), "the same day, the same sign")
+        XCTAssertEqual(Asks.wishSign(many, .pet, showsHow: true, day: 2), "stroke my face?", "until you've met it once")
+
         let r = rig()
         let memory = Memory(store: try KeyValueStore(directory: nil), time: r.time)
         memory.attach(to: r.pipeline)
@@ -333,5 +344,6 @@ final class WishTests: XCTestCase {
                        Signs.questionKey: Answer(choice: "pet me?", probabilities: ["pet me?": 1])], now: checkIn, log: log)
         XCTAssertEqual(made, [.pet])
         XCTAssertEqual(queued.last?.sign, "pet me?")
+        XCTAssertEqual(queued.last?.reason, Narration.wish(.pet, name: CharacterPack.active.name).fact, "a wish being made says so")
     }
 }

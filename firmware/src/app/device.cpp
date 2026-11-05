@@ -44,8 +44,8 @@ bool sameModel(const Model& a, const Model& b) {
   return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
-         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && a.workAct.kind == b.workAct.kind &&
-         a.workAct.result == b.workAct.result;
+         !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && !std::strcmp(a.buddy, b.buddy) && a.workAct.kind == b.workAct.kind &&
+         a.workAct.result == b.workAct.result && a.wish == b.wish && a.wishHow == b.wishHow;
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -175,6 +175,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   m.base = baseFromName(doc["base"]);          // idle if missing or unknown
   m.act = actFromName(doc["act"]);             // working's design if missing or unknown
   m.mood = render::moodFromName(doc["mood"]);  // the startup mood if missing or unknown
+  render::foldText(doc["buddy"].as<const char*>(), kBuddyBytes - 1, m.buddy, sizeof(m.buddy));
   JsonObjectConst attn = doc["attn"];
   if (attn) {
     m.attn = true;
@@ -369,6 +370,13 @@ void Device::onDo(const Do& c, uint32_t t) {
   if (c.what == kWishMet) b_.wishPopped(true, t);
   const ReactionIn mo = live_.parsed.key == c.key ? live_.parsed : parse(c, t);
   live_.parsed = ReactionIn{};
+  if (Behaviour::noteOnly(mo)) {
+    // Only why: it plays nothing and holds nothing up.
+    b_.note(mo.reason, t);
+    dirty_ = true;
+    kit().ended(c.key);
+    return;
+  }
   uint32_t seq = b_.reactionSeq();
   // A `say`'s sound goes with its bubble: now, or at its animation's voice
   // window. Any other reaction drops one still waiting.
@@ -508,7 +516,7 @@ void Device::readInputs(uint32_t t) {
   }
 
   // A touch anywhere is a tap, sent on release however long it was held,
-  // but on the needs-you screen, where only a quick one is (kNeedsYouTapMs)
+  // unless the face leaned into it (followLean), but on the needs-you screen, where only a quick one is (kNeedsYouTapMs)
   // and a finger held still (TouchGesture::held)
   // is the gesture `dismiss`, sent as the hold completes with the
   // number of the request the screen showed as the finger went down, so the
@@ -563,7 +571,7 @@ void Device::readInputs(uint32_t t) {
     // up under a finger already down isn't dismissed by it.
     live_.touchOnNeedsYou = faced && needsYouShows(t) && open <= 0;
     live_.touchAttnId = live_.touchOnNeedsYou ? b_.model().attnId : 0;
-    live_.touchDismissed = false;
+    live_.touchDismissed = live_.touchLeant = false;
     if (faced) {
       b_.pressDown(t);
       if (!live_.drawerTouch) b_.face().finger(true, x, y);
@@ -618,10 +626,11 @@ void Device::readInputs(uint32_t t) {
     live_.touchPath.velocity(vx, vy);
     if (!live_.drawerTouch) b_.face().letGo(vx, vy);
     render::Gesture g = render::Gesture::kHandoff;
-    const TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop());
+    const TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop(), live_.touchLeant);
     live_.lastTouch = live_.touchPath.path();
     live_.lastTouchWas = kind == TouchGesture::kGesture ? render::gestureName(g)
                          : kind == TouchGesture::kSwipe ? kSwipeGesture
+                         : kind == TouchGesture::kLean  ? kLeanGesture
                                                         : "tap";
     if (faced) {
       // The panel's touch let go when it was last in contact, so its tap
@@ -641,6 +650,8 @@ void Device::readInputs(uint32_t t) {
       // went) sends nothing. On the needs-you screen only a quick, still
       // touch is a tap, opening the thread: one held kNeedsYouTapMs or
       // more, or that strayed past kHoldSpotPx, was a hold let go early.
+      // A touch the face leaned into is only that: it says so, and a finish
+      // or a needs-you that came up under it hears no tap.
       const bool brief = live_.lastTouch.ms < kNeedsYouTapMs && live_.touchPath.spread() <= TouchGesture::kHoldSpotPx;
       if (live_.touchSpent) {
         if (live_.drawerTouch) live_.lastTouchWas = "drawer";
@@ -656,6 +667,8 @@ void Device::readInputs(uint32_t t) {
           tapDrawer(live_.lastTouch.x0, live_.lastTouch.y0, t);
         else
           live_.drawerTouchedAt = t;  // a drag across it: it lets go, picking nothing
+      } else if (kind == TouchGesture::kLean) {
+        leaned(t, live_.touchInjected);
       } else if (!(live_.touchOnNeedsYou && (live_.touchDismissed || !needsYouShows(t) || !brief))) {
         latency_.mark(Latency::kTap, live_.touchInjected ? touchGone : live_.touchSeenReal);
         const bool nose = kind == TouchGesture::kGesture && g == render::Gesture::kNose;
@@ -675,11 +688,33 @@ void Device::readInputs(uint32_t t) {
       }
     }
   }
+  // After letGo, which wakes a doze with a start: it has to see the lean.
+  followLean(touching, t);
   if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = live_.scrolling = false;
   if (touching != live_.touchDown) dirty_ = true;
   live_.touchDown = touching;
   // A finger or BOOT jolts the board: the motion sensor's thump isn't one.
   if (touching || live_.boot.down()) live_.motion.hands(t);
+}
+
+// A finger at rest on the face: it leans in, then dozes, wherever nothing else
+// has this touch or the screen. Never on the needs-you screen, whose hold
+// dismisses; never on the drawer's, a finish's or an ask's lane, whose touches
+// mean something else; never with BOOT's listening or a Moment. Whatever comes
+// up over it ends the lean at once, and its touch goes on.
+void Device::followLean(bool touching, uint32_t t) {
+  using Lean = render::Face::Lean;
+  Lean lean = Lean::kNone;
+  const uint32_t rest = live_.touchPath.restMs(t);
+  const bool free = touching && rest >= TouchGesture::kLeanMs && !live_.pattern && !live_.drawerTouch && !live_.touchOnNeedsYou &&
+                    !b_.held(t) && !b_.finishShown(t) && !b_.faceDown() && drawerOpen(t) <= 0 &&
+                    !(b_.asking(t) && live_.touchPath.path().y0 >= render::kLaneTop) && b_.face().leans(t);
+  if (free) {
+    lean = rest >= TouchGesture::kDozeMs ? Lean::kDoze : Lean::kIn;
+    live_.touchLeant = true;
+  }
+  live_.lean = lean;
+  b_.face().lean(lean, t);
 }
 
 bool Device::hasSessions() const {
@@ -866,6 +901,18 @@ void Device::gestured(render::Gesture g, uint32_t t, bool injected, bool swipe) 
   drain();  // the gesture cuts an animation, as a poke does
 }
 
+// A touch the face leaned into, let go. It tells the Mac as a stroke does: care,
+// which meets a pet wish, and it answers an ask that takes a touch. Nothing
+// plays: the face is already waking.
+void Device::leaned(uint32_t t, bool injected) {
+  const bool answers = b_.askTakesTouch(t);
+  input("gesture", t);
+  b_.touchCaption(kLeanGesture, t);
+  tell("gesture", kLeanGesture, nullptr, t, injected);
+  if (answers) b_.answer("touch", t, injected);
+  drain();
+}
+
 // The motion sensor, every kMotionMs: picked up, put down, shaken, a thump
 // on the desk, laid face down (do not disturb) and turned back up.
 void Device::readMotion(uint32_t t) {
@@ -873,6 +920,8 @@ void Device::readMotion(uint32_t t) {
   live_.motionAt = t;
   int ax = live_.injAx, ay = live_.injAy, az = live_.injAz;
   if (!live_.injMotion && !hal_.motion(ax, ay, az)) return;
+  live_.tilt.update(ax, ay, az, t);
+  b_.face().tilt(b_.faceDown() ? 0 : live_.tilt.mg(), t);
   switch (live_.motion.update(ax, ay, az, t)) {
     case MotionGesture::kPickup: gestured(render::Gesture::kPickup, t, live_.injMotion); break;
     case MotionGesture::kPutdown: gestured(render::Gesture::kPutdown, t, live_.injMotion); break;

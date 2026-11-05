@@ -3,7 +3,7 @@
 # them as `make -C internal <target>` from the repo root. Every recipe runs
 # from the repo root, so the paths below are the same as in the root
 # Makefile. See internal/VERIFICATION.md §2.
-.PHONY: build app simulator check test tools packs new-character fw fw-test sim sim-test mirror demos e2e tools-test
+.PHONY: build app simulator check boards test tools packs new-character fw fw-test sim sim-test mirror demos e2e tools-test
 
 ROOT := $(abspath ..)
 PIO := firmware/tools/pio.sh
@@ -51,6 +51,13 @@ simulator:
 # against the goldens and the Mac's mirror of the board. Some stage another
 # pack than the chosen one, so it's staged again at the end.
 check: packs test fw-test tools-test sim mirror
+	cd $(ROOT) && python3 characters/charactergen.py --stage
+
+# Both boards' firmware, as CI builds them, each with its own pack: apart
+# from `check`, as it takes minutes, and then the chosen pack staged again.
+boards:
+	cd $(ROOT) && CHARACTER=pixel $(PIO) run -e cyd24
+	cd $(ROOT) && CHARACTER=boop $(PIO) run -e amoled206
 	cd $(ROOT) && python3 characters/charactergen.py --stage
 
 # The character packs the engine is tested with, each in a repository of
@@ -172,7 +179,8 @@ e2e:
 # with ffmpeg), the webcam recorder on synthetic video, charactergen's
 # staging and studio rules (internal/characters/), the studio's own logic
 # and server (with Node), that every demo's recording is up to date, and
-# each character pack's own (its tests/tools/).
+# each character pack's own (its tests/tools/), and that the gel slime's
+# generated tables are fresh.
 tools-test: tools
 	cd $(ROOT) && internal/tools/.venv/bin/python -m unittest discover -s internal/tools/boopctl_lib/tests
 	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
@@ -183,3 +191,4 @@ tools-test: tools
 	cd $(ROOT) && for tests in characters/*/tests/tools; do \
 	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \
 	done
+	cd $(ROOT)/characters/boop && node tools/slimegen/slimegen.mjs --check
