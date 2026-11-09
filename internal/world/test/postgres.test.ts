@@ -38,7 +38,7 @@ async function call(method: string, path: string, key?: string, body?: unknown) 
 }
 
 test("migrations apply through the driver, once", async () => {
-  assert.deepEqual(await migrate(db), ["001_world.sql", "002_utc_offset.sql"]);
+  assert.deepEqual(await migrate(db), ["001_world.sql", "002_utc_offset.sql", "003_joins.sql"]);
   assert.deepEqual(await migrate(db), []);
 });
 
@@ -73,7 +73,7 @@ test("every route through the driver, with numbers as numbers", async () => {
   const got = (await call("GET", "/v1/gestures", a.key)).body.gestures;
   assert.deepEqual(got.map((g: any) => [g.kind, g.from_region]), [["boop", "asia_oceania"]]);
   assert.deepEqual((await call("POST", "/v1/reports", b.key, { buddy: a.id })).body, { ok: true, hidden: false });
-  assert.deepEqual((await call("GET", "/api/cron/expire", CRON)).body, { ok: true, buddies: 0, days: 0, gestures: 0 });
+  assert.deepEqual((await call("GET", "/api/cron/expire", CRON)).body, { ok: true, buddies: 0, days: 0, gestures: 0, joins: 0 });
   assert.equal((await call("DELETE", "/v1/buddies/me", a.key)).status, 200);
   assert.equal((await call("GET", "/v1/world")).body.total, 1);
 });

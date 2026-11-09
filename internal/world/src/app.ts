@@ -6,7 +6,7 @@
 
 import { Hono, type Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
-import { bearer, buddyFor, keyHash, matchesSecret, newKey } from "./auth.js";
+import { bearer, buddyFor, clientIp, ipHash, keyHash, matchesSecret, newKey } from "./auth.js";
 import { defaultDb, type Db } from "./db.js";
 import * as L from "./limits.js";
 import { checkName, shownName } from "./names.js";
@@ -26,6 +26,8 @@ export interface Options {
   /** Read on each request, so tests can set them. Default: the environment. */
   adminToken?: () => string | undefined;
   cronSecret?: () => string | undefined;
+  /** The salt for IP addresses' hashes. Unset: a random one for this instance. */
+  ipSalt?: () => string | undefined;
 }
 
 type Env = { Variables: { db: Db; buddy: string } };
@@ -67,6 +69,7 @@ const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n
 export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options = {}) {
   const adminToken = options.adminToken ?? (() => process.env.ADMIN_TOKEN);
   const cronSecret = options.cronSecret ?? (() => process.env.CRON_SECRET);
+  const ipSalt = options.ipSalt ?? (() => process.env.IP_SALT);
   const app = new Hono<Env>();
 
   app.onError((err, c) => {
@@ -108,6 +111,27 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     const body = await json(c);
     const name = checkName(body.name);
     const utcOffset = offset(body.utc_offset);
+
+    // At most JOINS_PER_IP_PER_HOUR from one address, which is kept only as
+    // its keyed hash, and only for the hour.
+    const hash = ipHash(clientIp((h) => c.req.header(h)), ipSalt());
+    const retryAfter = await c.var.db.transaction(async (tx) => {
+      await tx.query("select pg_advisory_xact_lock(hashtextextended($1, 0))", [hash]);
+      await tx.query("delete from joins where at <= now() - interval '1 hour'");
+      const [n] = await tx.query<{ n: number; wait: number | null }>(
+        `select count(*)::int as n, extract(epoch from min(at) + interval '1 hour' - now())::float8 as wait
+           from joins where ip_hash = decode($1, 'hex')`,
+        [hash],
+      );
+      if (n.n >= L.JOINS_PER_IP_PER_HOUR) return Math.max(1, Math.ceil(n.wait ?? 3600));
+      await tx.query("insert into joins (ip_hash) values (decode($1, 'hex'))", [hash]);
+      return undefined;
+    });
+    if (retryAfter !== undefined) {
+      c.header("Retry-After", String(retryAfter));
+      return c.json({ error: "too_many", retry_after: retryAfter }, 429);
+    }
+
     const id = crypto.randomUUID();
     const key = newKey();
     await c.var.db.query(
@@ -368,7 +392,8 @@ export async function expire(db: Db) {
         returning id`,
       [L.GESTURE_DELIVERED_KEPT_DAYS, L.GESTURE_UNREAD_KEPT_DAYS],
     );
-    return { buddies: buddies.length, days: days.length, gestures: gestures.length };
+    const joins = await tx.query("delete from joins where at <= now() - interval '1 hour' returning at");
+    return { buddies: buddies.length, days: days.length, gestures: gestures.length, joins: joins.length };
   });
 }
 

@@ -9,6 +9,7 @@ import { SEND_EVERY_MS } from "../src/limits.js";
 
 export const ADMIN = "admin-token-for-tests";
 export const CRON = "cron-secret-for-tests";
+export const IP_SALT = "ip-salt-for-tests";
 
 export function fixture<T = Record<string, unknown>>(name: string): T {
   return JSON.parse(readFileSync(new URL(`../fixtures/${name}`, import.meta.url), "utf8")) as T;
@@ -26,10 +27,10 @@ export interface World {
   db: Db;
   app: ReturnType<typeof createApp>;
   /** A request with a JSON body and, when given, a bearer token. */
-  call(method: string, path: string, opts?: { key?: string; body?: unknown }): Promise<Response>;
+  call(method: string, path: string, opts?: { key?: string; body?: unknown; ip?: string }): Promise<Response>;
   /** The same, returning the status and the parsed body. */
-  json<T = any>(method: string, path: string, opts?: { key?: string; body?: unknown }): Promise<{ status: number; body: T }>;
-  /** Joins with a name and a UTC offset in minutes (null: none sent). */
+  json<T = any>(method: string, path: string, opts?: { key?: string; body?: unknown; ip?: string }): Promise<{ status: number; body: T }>;
+  /** Joins with a name and a UTC offset in minutes (null: none sent), each from its own address. */
   join(name?: string, utcOffset?: number | null): Promise<Buddy>;
   /** A state send as the fixture's, with changes. */
   send(b: Buddy, state: Record<string, unknown>): Promise<{ status: number; body: any }>;
@@ -40,14 +41,16 @@ export interface World {
 /** Call once at the top of a test file. */
 export function world(): World {
   const dbReady = memoryDb();
-  const app = createApp(() => dbReady, { adminToken: () => ADMIN, cronSecret: () => CRON });
+  const app = createApp(() => dbReady, { adminToken: () => ADMIN, cronSecret: () => CRON, ipSalt: () => IP_SALT });
+  let joins = 0;
   const w: World = {
     db: undefined as unknown as Db,
     app,
-    call(method, path, { key, body } = {}) {
+    call(method, path, { key, body, ip } = {}) {
       if (method === "GET" || method === "HEAD") body = undefined;
       const headers: Record<string, string> = {};
       if (key) headers.authorization = `Bearer ${key}`;
+      if (ip) headers["x-forwarded-for"] = ip;
       if (body !== undefined) headers["content-type"] = "application/json";
       return Promise.resolve(app.request(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }));
     },
@@ -56,7 +59,7 @@ export function world(): World {
       return { status: res.status, body: (await res.json()) as any };
     },
     async join(name = "Mochi", utcOffset = 0) {
-      const { status, body } = await w.json("POST", "/v1/buddies", { body: { name, utc_offset: utcOffset } });
+      const { status, body } = await w.json("POST", "/v1/buddies", { body: { name, utc_offset: utcOffset }, ip: `10.0.${joins >> 8 & 255}.${joins++ & 255}` });
       if (status !== 201) throw new Error(`join: ${status}`);
       return body as Buddy;
     },
@@ -69,7 +72,7 @@ export function world(): World {
   };
   beforeEach(async () => {
     w.db = await dbReady;
-    await w.db.query("truncate buddies, buddy_days, totals_by_day, goals, gestures, name_reports restart identity cascade");
+    await w.db.query("truncate buddies, buddy_days, totals_by_day, goals, gestures, name_reports, joins restart identity cascade");
   });
   after(async () => (await dbReady).close());
   return w;

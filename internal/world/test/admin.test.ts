@@ -59,7 +59,7 @@ test("the cron needs CRON_SECRET", async () => {
   assert.equal((await w.json("GET", "/api/cron/expire", { key: CRON })).status, 200);
 });
 
-test("expiry: old buddies, old days into totals_by_day, and gestures", async () => {
+test("expiry: old buddies, old days into totals_by_day, gestures, and joins past the hour", async () => {
   const old = await w.join("Old");
   const kept = await w.join("Kept");
   const other = await w.join("Other");
@@ -82,8 +82,11 @@ test("expiry: old buddies, old days into totals_by_day, and gestures", async () 
     [kept.id, other.id],
   );
 
+  await w.db.query("insert into joins (ip_hash, at) values ('\\x01', now() - interval '61 minutes'), ('\\x02', now() - interval '2 hours')");
+
   const r = await w.json("GET", "/api/cron/expire", { key: CRON });
-  assert.deepEqual(r.body, { ok: true, buddies: 1, days: 2, gestures: 2 });
+  assert.deepEqual(r.body, { ok: true, buddies: 1, days: 2, gestures: 2, joins: 2 });
+  assert.equal((await w.db.query("select 1 from joins")).length, 3, "this hour's joins stay");
   assert.equal((await w.db.query("select 1 from buddies where id = $1", [old.id])).length, 0);
   assert.equal((await w.db.query("select 1 from buddies where id = $1", [kept.id])).length, 1);
   const totals = await w.db.query("select xp::int, turns::int, ships::int from totals_by_day");
@@ -92,12 +95,12 @@ test("expiry: old buddies, old days into totals_by_day, and gestures", async () 
   assert.deepEqual((await w.db.query<{ kind: string }>("select kind from gestures order by kind")).map((g) => g.kind), ["cheer", "heart"]);
 
   const again = await w.json("GET", "/api/cron/expire", { key: CRON });
-  assert.deepEqual(again.body, { ok: true, buddies: 0, days: 0, gestures: 0 });
+  assert.deepEqual(again.body, { ok: true, buddies: 0, days: 0, gestures: 0, joins: 0 });
   assert.deepEqual(await w.db.query("select xp::int, turns::int, ships::int from totals_by_day"), [{ xp: 70, turns: 10, ships: 1 }], "nothing summed twice");
 });
 
 test("migrations run once", async () => {
   assert.deepEqual(await migrate(w.db), [], "already applied");
   const rows = await w.db.query<{ name: string }>("select name from schema_migrations");
-  assert.deepEqual(rows.map((r) => r.name), ["001_world.sql", "002_utc_offset.sql"]);
+  assert.deepEqual(rows.map((r) => r.name), ["001_world.sql", "002_utc_offset.sql", "003_joins.sql"]);
 });

@@ -7,6 +7,9 @@ export const XP_PER_DAY = 100;
 /** The shortest time between two sends of a buddy's state: it sends on change. */
 export const SEND_EVERY_MS = 10_000;
 
+/** New buddies from one IP address in an hour. */
+export const JOINS_PER_IP_PER_HOUR = 5;
+
 /** The most each count can grow in a minute; past it a send is clamped. */
 export const ADDED_PER_MINUTE = {
   turns: 20,

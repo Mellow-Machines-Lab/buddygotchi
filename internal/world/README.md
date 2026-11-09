@@ -21,7 +21,7 @@ the Mac client's wire format, which `fixtures/` pins.
 | `src/names.ts` | The name filter |
 | `src/world.ts` | The snapshot, and the goal: its progress, reached once, its reward |
 | `src/regions.ts` | The UTC offsets a buddy may send, and the regions they fall in: their boundaries, in one place |
-| `src/auth.ts` | Buddy keys: 32 random bytes, base64url; the server keeps only their sha256 |
+| `src/auth.ts` | Buddy keys: 32 random bytes, base64url; the server keeps only their sha256. IP addresses' salted hashes, for the limit on joining |
 | `db/migrations/` | Plain SQL, applied in name order, each once |
 | `scripts/migrate.ts`, `scripts/dev.ts` | `npm run migrate` and `npm run dev` |
 | `test/` | `node:test` against PGlite; `postgres.test.ts` goes through the `postgres` driver too, with PGlite over a socket |
@@ -37,7 +37,8 @@ npm run dev        # http://localhost:8787, on PGlite in memory; PORT changes th
 ```
 
 The local server starts empty each time. Its admin token and cron secret
-are `dev`, unless `ADMIN_TOKEN` or `CRON_SECRET` is set. To point the Mac
+are `dev`, unless `ADMIN_TOKEN` or `CRON_SECRET` is set. Locally no caller
+has an address, so they share one: 5 joins an hour. To point the Mac
 app at it, set `BOOP_WORLD_URL=http://localhost:8787`.
 
 ## Test it
@@ -56,7 +57,7 @@ All JSON. A buddy sends `Authorization: Bearer <key>`.
 
 | Route | Who | Does |
 | --- | --- | --- |
-| `POST /v1/buddies` | Anyone | `{name, utc_offset}` → `{id, key, name, name_ok}`. The key is in this response only |
+| `POST /v1/buddies` | Anyone | `{name, utc_offset}` → `{id, key, name, name_ok}`. The key is in this response only. At most 5 from one IP address in an hour; past it, 429 with `Retry-After` |
 | `PUT /v1/buddies/me` | A buddy | Its state and what it added since its last send (`fixtures/buddy-state.json`). The reply (`fixtures/buddy-reply.json`) carries the gestures waiting for it and the current `rewards` |
 | `DELETE /v1/buddies/me` | A buddy | Leaves the world: its row, days, reports and gestures go |
 | `GET /v1/world` | Anyone | The snapshot (`fixtures/world.json`), cached 30 s at Vercel's edge |
@@ -106,6 +107,7 @@ server's days are UTC. The numbers here are in `src/limits.ts`.
 | --- | --- | --- |
 | A buddy: a random id, its key's hash, name, level, stage, UTC offset, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
 | What a buddy added each UTC day: XP, turns, tests passed, ships, lines changed | 400 days | Then summed with every other buddy's into one row a day (`totals_by_day`), with no buddy in it |
+| Who joined lately: each join's IP address as an HMAC-SHA256 with `IP_SALT`, never the address | An hour | At the next join, or by the cron |
 | Gestures, with the sender's region | Until delivered | A day after delivery, or after two days unread |
 | Name reports: who reported whom | While both buddies exist | When the name changes, or either buddy goes |
 | Goals | Always | |
@@ -125,9 +127,10 @@ The owner's steps, once (plan/world.md §5).
    `npx vercel login`, then `npx vercel --cwd internal/world`.
 2. In the project's **Storage** tab, add **Neon Postgres** from the
    Marketplace, on the free plan. It sets `DATABASE_URL` in the project.
-3. In **Settings → Environment Variables**, add `ADMIN_TOKEN` and
-   `CRON_SECRET`, each a long random string, for example from
-   `openssl rand -base64 32`. Keep `ADMIN_TOKEN` somewhere safe: you need
+3. In **Settings → Environment Variables**, add `ADMIN_TOKEN`,
+   `CRON_SECRET` and `IP_SALT`, each a long random string, for example from
+   `openssl rand -base64 32`. With `IP_SALT` unset, each instance makes its
+   own salt, and counts joins only on its own. Keep `ADMIN_TOKEN` somewhere safe: you need
    it to set a goal.
 4. On the Mac, create the tables:
 

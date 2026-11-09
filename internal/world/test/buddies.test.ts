@@ -3,9 +3,11 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { ADDED_PER_MINUTE, SEND_EVERY_MS, XP_PER_DAY } from "../src/limits.js";
+import { createHmac } from "node:crypto";
+import { ipHash } from "../src/auth.js";
+import { ADDED_PER_MINUTE, JOINS_PER_IP_PER_HOUR, SEND_EVERY_MS, XP_PER_DAY } from "../src/limits.js";
 import { UTC_OFFSET_MAX, UTC_OFFSET_MIN } from "../src/regions.js";
-import { state, world } from "./helpers.js";
+import { IP_SALT, state, world } from "./helpers.js";
 
 const w = world();
 
@@ -47,7 +49,7 @@ test("a refused name is kept but shown as a buddy, and the offset may be left ou
 
 test(`utc_offset: minutes from ${UTC_OFFSET_MIN} to ${UTC_OFFSET_MAX}, in quarter hours`, async () => {
   for (const ok of [UTC_OFFSET_MIN, -480, 0, 60, 330, 345, 765, UTC_OFFSET_MAX]) {
-    const r = await w.json("POST", "/v1/buddies", { body: { name: "Mochi", utc_offset: ok } });
+    const r = await w.json("POST", "/v1/buddies", { body: { name: "Mochi", utc_offset: ok }, ip: `192.0.2.${ok & 255}` });
     assert.equal(r.status, 201, `${ok}`);
   }
   for (const bad of [UTC_OFFSET_MIN - 15, UTC_OFFSET_MAX + 15, 61, 1.5, "60", "Europe/Lisbon", true]) {
@@ -221,4 +223,37 @@ test("a key is never logged", async () => {
   } finally {
     Object.assign(console, saved);
   }
+});
+
+test(`at most ${JOINS_PER_IP_PER_HOUR} new buddies from one address in an hour, kept only as a salted hash`, async () => {
+  const join = (ip: string) => w.call("POST", "/v1/buddies", { body: { name: "Mochi", utc_offset: 0 }, ip });
+  for (let i = 0; i < JOINS_PER_IP_PER_HOUR; i++) assert.equal((await join("203.0.113.7")).status, 201, `join ${i + 1}`);
+  const refused = await join("203.0.113.7, 10.0.0.1");
+  assert.equal(refused.status, 429, "the first address in x-forwarded-for is the caller's");
+  const retry = Number(refused.headers.get("retry-after"));
+  assert.ok(retry > 3500 && retry <= 3600, `Retry-After ${retry}`);
+  assert.equal((await w.db.query("select 1 from buddies")).length, JOINS_PER_IP_PER_HOUR, "no buddy made");
+  assert.equal((await join("198.51.100.2")).status, 201, "another address");
+
+  // The table holds the address's HMAC with the salt, never the address.
+  const rows = await w.db.query<{ h: string }>("select encode(ip_hash, 'hex') as h from joins");
+  assert.equal(rows.length, JOINS_PER_IP_PER_HOUR + 1);
+  const salted = createHmac("sha256", IP_SALT).update("203.0.113.7").digest("hex");
+  assert.equal(rows.filter((r) => r.h === salted).length, JOINS_PER_IP_PER_HOUR);
+  assert.ok(rows.every((r) => !Buffer.from(r.h, "hex").toString("latin1").includes("203.0.113")), "no address in plain text");
+  assert.notEqual(ipHash("203.0.113.7", undefined), salted, "with IP_SALT unset, a random salt");
+  assert.equal(ipHash("203.0.113.7", undefined), ipHash("203.0.113.7", ""), "the same one each time");
+
+  // An hour on, the address may join again, and the old hashes go.
+  await w.db.query("update joins set at = at - interval '1 hour'");
+  assert.equal((await join("203.0.113.7")).status, 201, "an hour later");
+  assert.equal((await w.db.query("select 1 from joins")).length, 1, "only this hour's hashes are kept");
+});
+
+test("a refused join doesn't count against the address", async () => {
+  for (let i = 0; i < JOINS_PER_IP_PER_HOUR + 2; i++) {
+    const r = await w.call("POST", "/v1/buddies", { body: { name: "Mochi", utc_offset: 1000 }, ip: "203.0.113.9" });
+    assert.equal(r.status, 400);
+  }
+  assert.equal((await w.call("POST", "/v1/buddies", { body: { name: "Mochi" }, ip: "203.0.113.9" })).status, 201);
 });

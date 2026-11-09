@@ -1,7 +1,7 @@
 // Buddy keys: 32 random bytes, base64url, shown to the Mac once. The server
 // keeps only their sha256, so a leaked database gives no keys. Never log one.
 
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Db } from "./db.js";
 
 export function newKey(): string {
@@ -34,4 +34,24 @@ export function matchesSecret(token: string | undefined, secret: string | undefi
   const a = createHash("sha256").update(token).digest();
   const b = createHash("sha256").update(secret).digest();
   return timingSafeEqual(a, b);
+}
+
+/** Used when IP_SALT is unset: random, so each instance counts joins on its own. */
+const instanceSalt = randomBytes(32).toString("base64url");
+
+/**
+ * An IP address's keyed hash, in hex, for the limit on joining: HMAC-SHA256
+ * with the server's salt, so a leaked table gives no addresses.
+ */
+export function ipHash(ip: string, salt: string | undefined): string {
+  return createHmac("sha256", salt || instanceSalt).update(ip).digest("hex");
+}
+
+/**
+ * The caller's address. Vercel sets x-real-ip and x-forwarded-for itself;
+ * with neither (a local run), every caller shares one address.
+ */
+export function clientIp(header: (name: string) => string | undefined): string {
+  const ip = header("x-real-ip") ?? header("x-forwarded-for")?.split(",")[0];
+  return ip?.trim().slice(0, 64) || "unknown";
 }
