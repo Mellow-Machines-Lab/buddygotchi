@@ -51,12 +51,17 @@ public final class WorldLink {
     }
 
     /// The buddy's id and key, kept in the state folder, readable only by
-    /// you, with the last `seq` sent.
+    /// you, with the last `seq` sent. Leaving, it's kept until the server
+    /// says the buddy is gone, so a failed leave is tried again, never lost.
     struct Identity: Codable {
         var id: String
         var key: String
         var seq = 0
+        var leaving: Bool? = nil
     }
+
+    /// The buddy in the world: joined, and not leaving.
+    var member: Identity? { identity?.leaving == true ? nil : identity }
 
     /// What the popover shows of the world.
     public struct Status: Equatable, Sendable {
@@ -144,7 +149,7 @@ public final class WorldLink {
         file = stateDir.appendingPathComponent(Self.fileName)
         self.log = log
         identity = (try? Data(contentsOf: file)).flatMap { try? JSONDecoder().decode(Identity.self, from: $0) }
-        status.joined = identity != nil
+        status.joined = member != nil
     }
 
     func save() {
@@ -174,7 +179,7 @@ public final class WorldLink {
             if e.specificType == "tests" { add.testsPassed = 1 }
             if e.specificType == "push" { add.ships = 1 }
         }
-        guard !add.isEmpty, identity != nil else { return }
+        guard !add.isEmpty, member != nil else { return }
         pending = pending + add
         if pendingSince == nil { pendingSince = now }
     }
@@ -190,7 +195,9 @@ public final class WorldLink {
         }
         if !quiet { record(gestures.release(at: now)) }
         fetchIfDue(at: now)
-        guard on, !busy, retryAt.map({ now >= $0 }) ?? true else { return }
+        guard !busy, retryAt.map({ now >= $0 }) ?? true else { return }
+        if let leaving = identity, leaving.leaving == true { return goodbye(leaving, at: now) }
+        guard on else { return }
         let me = me()
         guard let identity else {
             join(me, at: now)
@@ -209,8 +216,8 @@ public final class WorldLink {
 
     /// You came back or unlocked: what's waiting is asked for now.
     public func checkGestures(quiet: Bool, at now: Int64) {
-        guard let identity, !busy else { return }
-        ask(identity, quiet: quiet, at: now)
+        guard let member, !busy else { return }
+        ask(member, quiet: quiet, at: now)
     }
 
     func join(_ me: Now, at now: Int64) {
@@ -299,7 +306,7 @@ public final class WorldLink {
         case .status(429, let after?):
             retryAt = now + Int64(after) * 1000
             return
-        case .status(401, _), .status(404, _):
+        case .status(401, _), .status(404, _) where identity?.leaving != true:
             // The world forgot this buddy (30 days unseen, or left
             // elsewhere): it joins again as new.
             log("world: the server doesn't know this buddy; joining again")
@@ -348,14 +355,14 @@ public final class WorldLink {
 
     /// A boop, wave, heart or cheer for another buddy. `done` says whether it went.
     public func gesture(_ kind: World.GestureKind, to buddy: String, _ done: @escaping (Bool) -> Void) {
-        guard let identity else { return done(false) }
-        client.gesture(kind, to: buddy, key: identity.key) { done((try? $0.get()) != nil) }
+        guard let member else { return done(false) }
+        client.gesture(kind, to: buddy, key: member.key) { done((try? $0.get()) != nil) }
     }
 
     /// "Asleep", at once: the screen locked, or the app quits. Sent even
     /// within `minGapMs` of the last; a 429 drops it.
     public func sleep(_ me: Now, on: Bool, at now: Int64) {
-        guard on, let identity, last?.activity != .asleep, !busy else { return }
+        guard on, let identity = member, last?.activity != .asleep, !busy else { return }
         var asleep = me
         asleep.activity = .asleep
         send(asleep, identity: identity, quiet: true, at: now)
@@ -363,21 +370,37 @@ public final class WorldLink {
 
     /// Leaves the world: the buddy is deleted on the server, and its key
     /// here. Nothing more is sent until the world is switched on again.
-    public func leave(_ done: @escaping () -> Void = {}) {
-        guard let identity else {
-            status.joined = false
-            return done()
-        }
-        self.identity = nil
+    public func leave(at now: Int64) {
+        guard var leaving = identity, leaving.leaving != true else { return }
+        leaving.leaving = true
+        identity = leaving
         save()
         status = Status(snapshot: status.snapshot)
         last = nil
         pending = World.Counts()
         pendingSince = nil
+        retryAt = nil
         onChange()
-        client.leave(key: identity.key) { [weak self] result in
-            if case .failure(let failure) = result { self?.log("world: leaving: \(failure); the server forgets it in 30 days") }
-            done()
+        if !busy { goodbye(leaving, at: now) }
+    }
+
+    /// Deletes the buddy on the server, and its key here once the server
+    /// says it's gone (or never knew it); a failure tries again later.
+    func goodbye(_ leaving: Identity, at now: Int64) {
+        busy = true
+        client.leave(key: leaving.key) { [weak self] result in
+            guard let self else { return }
+            busy = false
+            switch result {
+            case .success, .failure(.status(401, _)), .failure(.status(404, _)):
+                if identity?.key == leaving.key { identity = nil }
+                save()
+                log("world: left")
+            case .failure(let failure):
+                backoff = min(Self.maxBackoffMs, max(Self.backoffMs, backoff * 2))
+                retryAt = now + backoff
+                log("world: leaving: \(failure); trying again in \(backoff / 1000) s")
+            }
         }
     }
 }

@@ -273,11 +273,34 @@ final class WorldTests: XCTestCase {
         queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 100_000) }
         settle()
         XCTAssertEqual(Stub.seen.filter { $0.path == "/v1/world" }.count, fetched, "closed: no fetch")
-        queue.sync { world.leave() }
+        queue.sync { world.leave(at: 200_000) }
         settle()
         XCTAssertEqual(Stub.seen.last.map { "\($0.method) \($0.path)" }, "DELETE /v1/buddies/me")
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(WorldLink.fileName).path))
         XCTAssertFalse(world.status.joined)
+    }
+
+    /// A leave the server doesn't take keeps the key, sends nothing more,
+    /// and is tried again until the buddy is gone: none is left behind.
+    func testAFailedLeaveIsTriedAgain() throws {
+        let world = link()
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 0) }
+        settle()
+        Stub.answer = { method, _ in method == "DELETE" ? (500, #"{"error":"server_error"}"#) : (200, "{}") }
+        queue.sync { world.leave(at: 1_000) }
+        settle()
+        let file = dir.appendingPathComponent(WorldLink.fileName).path
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file), "the key stays")
+        XCTAssertFalse(world.status.joined)
+        Stub.answer = { _, _ in (200, #"{"ok":true}"#) }
+        queue.sync { world.tick(Self.me, on: false, quiet: false, today: "2026-11-08", at: 2_000) }
+        settle()
+        XCTAssertNotEqual(Stub.seen.last?.method, "PUT")
+        queue.sync { world.tick(Self.me, on: false, quiet: false, today: "2026-11-08", at: 1_000 + WorldLink.backoffMs) }
+        settle()
+        XCTAssertEqual(Stub.seen.last.map { "\($0.method) \($0.path)" }, "DELETE /v1/buddies/me")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file), "gone once the server says so")
+        XCTAssertFalse(Stub.seen.contains { $0.method == "PUT" }, "nothing sent while leaving")
     }
 
     /// A 429 waits as long as it says and keeps the counts; a server that

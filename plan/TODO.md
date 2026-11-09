@@ -18,7 +18,7 @@ Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `sna
   - Boop: the ring, the level, the last 7 days, a peek at what Boop knows.
   - World: live numbers; the time-zone band, night shaded, you marked; a buddy's card with Wave, Boop and Heart (and Cheer for one shipping); today's arrivals; the regions.
   - Settings has the world's switch, how the buddy shows, what's shared, and Leave the world. Onboarding has its world screen, which tells and doesn't ask, with "Keep Mochi private".
-- **The world client** (`app/BoopKit/World/`):
+- **The world client** (`app/BoopKit/World/`). The live server allows 5 joins an hour from one address, and each e2e run joins 2.
   - It joins after onboarding's world screen and sends `World.State` only (`WorldTests` fails on any other field).
   - It sends on a change, batches the counts for 3 min, heartbeats every 10, and says asleep at once on a lock or quit.
   - Gestures come back in the reply, or from a check every 10 min and on an unlock. The world is fetched only while the World tab is open, every 30 s.
@@ -30,10 +30,11 @@ Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `sna
 - **The words rule** is in CLAUDE.md and applied to the new strings.
 
 **Checked:**
-- The Swift tests: 718 pass.
+- The Swift tests: 719 pass.
 - The firmware's native tests, the simulator's gel scenarios (new goldens for the bar and a `v1` scenario), and Pixel's, with no change.
 - Both boards' firmware builds, and the mirror is rebuilt.
-- `internal/tools/world_e2e.py`: two headless Boops join, see each other, boop and wave, and leave. It passed against `npm run dev` and against the live server (see the orchestrator's note for the run).
+- `internal/tools/world_e2e.py`: two headless Boops join, see each other, boop and wave, and leave. It passes against `npm run dev`, and passed against the live server on 2026-11-09 at 07:57 UTC, which then had no buddies.
+- Getting there took three live runs, and it found a client bug. A leave the server didn't take was lost, because the key went before the DELETE succeeded, so a buddy stayed in the world. Now the key stays, marked as leaving, and the DELETE is tried again until the server confirms (`WorldTests`). The test buddies left on the live server by the earlier runs were deleted by hand.
 - No server change was needed.
 
 **Evals:**

@@ -113,7 +113,7 @@ extension Runtime {
         home.async { [self] in
             saveSettings { $0.world = on }
             options.log("world \(on ? "on" : "off")")
-            if !on { world?.leave() }
+            if !on { world?.leave(at: options.clock()) }
             changed()
         }
     }
