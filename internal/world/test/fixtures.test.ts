@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GESTURES, STAGES, STATE_KEYS } from "../src/app.js";
+import { REGIONS, validOffset } from "../src/regions.js";
 import { ACTIVITIES, COUNTS, METRICS } from "../src/world.js";
 import { ADMIN, fixture, world } from "./helpers.js";
 
@@ -31,15 +32,15 @@ function shape(v: unknown): unknown {
 
 test("world.json has the shape of a real snapshot", async () => {
   const example = fixture<any>("world.json");
-  const a = await w.join("Bean", "JP", "Asia/Tokyo");
+  const a = await w.join("Bean", 540);
   await w.send(a, { seq: 1, activity: "coding", level: 7, stage: "buddy", added: { tests_passed: 4 } });
   await w.json("POST", "/v1/buddies", { body: { name: "boop.com" } });
   await w.json("PUT", "/v1/admin/goal", { key: ADMIN, body: { title: "Four tests", metric: "tests_passed", target: 4, ends: "2099-12-31", reward_tag: "worldparty" } });
   const real = (await w.json("GET", "/v1/world")).body;
 
-  // A buddy with no stage, country or time zone has nulls there.
+  // A buddy with no stage or offset has nulls there.
   const nullable = example.buddies[1];
-  assert.deepEqual([nullable.stage, nullable.country, nullable.tz], [null, null, null]);
+  assert.deepEqual([nullable.stage, nullable.utc_offset], [null, null]);
   const realNoStage = real.buddies.find((b: any) => b.stage === null);
   assert.ok(realNoStage);
   assert.deepEqual(shape(realNoStage), shape(nullable));
@@ -51,6 +52,8 @@ test("world.json has the shape of a real snapshot", async () => {
   assert.deepEqual(Object.keys(example.doing).sort(), [...ACTIVITIES].sort());
   assert.deepEqual(Object.keys(example.today).sort(), [...COUNTS].sort());
   assert.ok(METRICS.includes(example.goal.metric));
+  assert.deepEqual(example.regions.map((r: any) => r.region), REGIONS.map((r) => r.region), "every region, in order");
+  assert.ok(validOffset(example.buddies[0].utc_offset));
   assert.ok(ACTIVITIES.includes(example.buddies[0].activity));
   assert.equal(example.awake, example.total - example.doing.asleep);
   assert.ok(GESTURES.length === 4);

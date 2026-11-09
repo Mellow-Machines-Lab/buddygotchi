@@ -9,15 +9,15 @@ import { world } from "./helpers.js";
 const w = world();
 
 test("a gesture is delivered once, with where it came from", async () => {
-  const lisbon = await w.join("Ann", "PT", "Europe/Lisbon");
-  const tokyo = await w.join("Bob", "JP", "Asia/Tokyo");
+  const lisbon = await w.join("Ann", 0);
+  const tokyo = await w.join("Bob", 540);
   for (const kind of ["boop", "heart"]) {
     const r = await w.json("POST", "/v1/gestures", { key: lisbon.key, body: { to: tokyo.id, kind } });
     assert.equal(r.status, 201);
   }
   const first = await w.json("GET", "/v1/gestures", { key: tokyo.key });
   assert.equal(first.status, 200);
-  assert.deepEqual(first.body.gestures.map((g: any) => [g.kind, g.from_country]), [["boop", "PT"], ["heart", "PT"]]);
+  assert.deepEqual(first.body.gestures.map((g: any) => [g.kind, g.from_region]), [["boop", "europe_africa"], ["heart", "europe_africa"]]);
   assert.match(first.body.gestures[0].at, /Z$/);
   assert.deepEqual((await w.json("GET", "/v1/gestures", { key: tokyo.key })).body.gestures, [], "not again");
   assert.deepEqual((await w.json("GET", "/v1/gestures", { key: lisbon.key })).body.gestures, [], "only the receiver's");

@@ -28,7 +28,8 @@ export interface World {
   call(method: string, path: string, opts?: { key?: string; body?: unknown }): Promise<Response>;
   /** The same, returning the status and the parsed body. */
   json<T = any>(method: string, path: string, opts?: { key?: string; body?: unknown }): Promise<{ status: number; body: T }>;
-  join(name?: string, country?: string, tz?: string): Promise<Buddy>;
+  /** Joins with a name and a UTC offset in minutes (null: none sent). */
+  join(name?: string, utcOffset?: number | null): Promise<Buddy>;
   /** A state send as the fixture's, with changes. */
   send(b: Buddy, state: Record<string, unknown>): Promise<{ status: number; body: any }>;
   /** Moves a buddy's last send back, past the 30 s limit. */
@@ -53,8 +54,8 @@ export function world(): World {
       const res = await w.call(method, path, opts);
       return { status: res.status, body: (await res.json()) as any };
     },
-    async join(name = "Mochi", country = "PT", tz = "Europe/Lisbon") {
-      const { status, body } = await w.json("POST", "/v1/buddies", { body: { name, country, tz } });
+    async join(name = "Mochi", utcOffset = 0) {
+      const { status, body } = await w.json("POST", "/v1/buddies", { body: { name, utc_offset: utcOffset } });
       if (status !== 201) throw new Error(`join: ${status}`);
       return body as Buddy;
     },

@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { AWAKE_WITHIN_MS, SNAPSHOT_BUDDIES, SNAPSHOT_CACHE_SECONDS } from "../src/limits.js";
+import { REGIONS, UTC_OFFSET_MAX, UTC_OFFSET_MIN, regionOf } from "../src/regions.js";
 import { ADMIN, state, world } from "./helpers.js";
 
 const w = world();
@@ -27,15 +28,17 @@ test("an empty world", async () => {
   assert.equal(body.awake, 0);
   assert.deepEqual(body.doing, { coding: 0, testing: 0, shipping: 0, waiting: 0, idle: 0, asleep: 0 });
   assert.deepEqual(body.today, { turns: 0, tests_passed: 0, ships: 0, lines_changed: 0 });
-  assert.deepEqual([body.countries, body.goal, body.rewards, body.buddies], [[], null, [], []]);
+  assert.deepEqual([body.goal, body.rewards, body.buddies], [null, [], []]);
+  assert.deepEqual(body.regions, REGIONS.map(({ region }) => ({ region, awake: 0, today_turns: 0 })), "every region, with zeros");
   assert.match(body.at, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
 });
 
-test("numbers, countries and the buddies, the awake first", async () => {
-  const pt = await w.join("Mochi", "PT", "Europe/Lisbon");
-  const br = await w.join("Bean", "BR", "America/Sao_Paulo");
-  const br2 = await w.join("Pip", "BR", "America/Sao_Paulo");
-  const gone = await w.join("Old", "JP", "Asia/Tokyo");
+test("numbers, regions and the buddies, the awake first", async () => {
+  const pt = await w.join("Mochi", 0);
+  const br = await w.join("Bean", -180);
+  const br2 = await w.join("Pip", -180);
+  const gone = await w.join("Old", 540);
+  await w.join("Nowhere", null);
   await w.send(pt, state({ activity: "testing", level: 12, stage: "buddy", added: { turns: 3, tests_passed: 2, lines_changed: 140 } }));
   await w.send(br, state({ activity: "coding", added: { turns: 5 } }));
   await w.send(br2, state({ activity: "asleep" }));
@@ -44,20 +47,34 @@ test("numbers, countries and the buddies, the awake first", async () => {
   await w.db.query("update buddies set seen_at = now() - make_interval(secs => $2) where id = $1", [gone.id, AWAKE_WITHIN_MS / 1000 + 1]);
 
   const { body } = await snapshot();
-  assert.equal(body.total, 4);
-  assert.equal(body.awake, 2);
-  assert.deepEqual(body.doing, { coding: 1, testing: 1, shipping: 0, waiting: 0, idle: 0, asleep: 2 });
+  assert.equal(body.total, 5);
+  assert.equal(body.awake, 3);
+  assert.deepEqual(body.doing, { coding: 1, testing: 1, shipping: 0, waiting: 0, idle: 1, asleep: 2 });
   assert.deepEqual(body.today, { turns: 9, tests_passed: 2, ships: 0, lines_changed: 140 });
   assert.deepEqual(body.year, body.today);
-  assert.deepEqual(body.countries, [
-    { country: "BR", awake: 1, today_turns: 5 },
-    { country: "PT", awake: 1, today_turns: 3 },
-    { country: "JP", awake: 0, today_turns: 1 },
-  ]);
-  assert.deepEqual(body.buddies.slice(0, 2).map((b: any) => b.activity).sort(), ["coding", "testing"], "the awake first");
+  assert.deepEqual(body.regions, [
+    { region: "americas", awake: 1, today_turns: 5 },
+    { region: "europe_africa", awake: 1, today_turns: 3 },
+    { region: "asia_oceania", awake: 0, today_turns: 1 },
+  ], "a buddy with no offset is in no region");
+  assert.deepEqual(body.buddies.slice(0, 3).map((b: any) => b.activity).sort(), ["coding", "idle", "testing"], "the awake first");
   const mochi = body.buddies.find((b: any) => b.id === pt.id);
-  assert.deepEqual(mochi, { id: pt.id, name: "Mochi", level: 12, stage: "buddy", country: "PT", tz: "Europe/Lisbon", activity: "testing" });
+  assert.deepEqual(mochi, { id: pt.id, name: "Mochi", level: 12, stage: "buddy", utc_offset: 0, activity: "testing" });
   assert.equal(body.buddies.find((b: any) => b.id === gone.id).activity, "asleep");
+});
+
+test("the regions cover every offset, with no gap and no overlap", () => {
+  for (let o = UTC_OFFSET_MIN; o <= UTC_OFFSET_MAX; o += 15) {
+    const inside = REGIONS.filter((r) => o >= r.from && o <= r.to);
+    assert.equal(inside.length, 1, `offset ${o}`);
+  }
+  const cases: [number, string][] = [
+    [-600, "americas"], [-480, "americas"], [-180, "americas"], [-120, "americas"],
+    [-60, "europe_africa"], [0, "europe_africa"], [60, "europe_africa"], [180, "europe_africa"],
+    [210, "asia_oceania"], [330, "asia_oceania"], [540, "asia_oceania"], [840, "asia_oceania"],
+  ];
+  for (const [o, region] of cases) assert.equal(regionOf(o), region, `offset ${o}`);
+  assert.equal(regionOf(null), null);
 });
 
 test("the year adds the days summed into totals_by_day", async () => {

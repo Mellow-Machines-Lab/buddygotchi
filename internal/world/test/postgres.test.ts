@@ -38,14 +38,14 @@ async function call(method: string, path: string, key?: string, body?: unknown) 
 }
 
 test("migrations apply through the driver, once", async () => {
-  assert.deepEqual(await migrate(db), ["001_world.sql"]);
+  assert.deepEqual(await migrate(db), ["001_world.sql", "002_utc_offset.sql"]);
   assert.deepEqual(await migrate(db), []);
 });
 
 test("every route through the driver, with numbers as numbers", async () => {
   assert.deepEqual((await call("GET", "/v1/health")).body, { ok: true, db: true });
-  const a = (await call("POST", "/v1/buddies", undefined, { name: "Mochi", country: "PT", tz: "Europe/Lisbon" })).body;
-  const b = (await call("POST", "/v1/buddies", undefined, { name: "Bean", country: "JP", tz: "Asia/Tokyo" })).body;
+  const a = (await call("POST", "/v1/buddies", undefined, { name: "Mochi", utc_offset: 60 })).body;
+  const b = (await call("POST", "/v1/buddies", undefined, { name: "Bean", utc_offset: 540 })).body;
   assert.equal((await call("PUT", "/v1/admin/goal", ADMIN, { title: "Two tests", metric: "tests_passed", target: 2, ends: "2099-12-31", reward_tag: "worldparty" })).status, 200);
 
   const sent = await call("PUT", "/v1/buddies/me", a.key, fixture("buddy-state.json"));
@@ -61,12 +61,17 @@ test("every route through the driver, with numbers as numbers", async () => {
   assert.equal(world.goal.progress, 2);
   assert.equal(world.goal.reached, true);
   assert.equal(world.rewards[0].tag, "worldparty");
-  assert.deepEqual(world.countries, [{ country: "PT", awake: 1, today_turns: 3 }, { country: "JP", awake: 1, today_turns: 0 }]);
+  assert.deepEqual(world.regions, [
+    { region: "americas", awake: 0, today_turns: 0 },
+    { region: "europe_africa", awake: 1, today_turns: 3 },
+    { region: "asia_oceania", awake: 1, today_turns: 0 },
+  ]);
+  assert.equal(world.buddies.find((x: any) => x.id === b.id).utc_offset, 540);
   assert.equal(world.buddies.find((x: any) => x.id === a.id).level, 12);
 
   assert.equal((await call("POST", "/v1/gestures", b.key, { to: a.id, kind: "boop" })).status, 201);
   const got = (await call("GET", "/v1/gestures", a.key)).body.gestures;
-  assert.deepEqual(got.map((g: any) => [g.kind, g.from_country]), [["boop", "JP"]]);
+  assert.deepEqual(got.map((g: any) => [g.kind, g.from_region]), [["boop", "asia_oceania"]]);
   assert.deepEqual((await call("POST", "/v1/reports", b.key, { buddy: a.id })).body, { ok: true, hidden: false });
   assert.deepEqual((await call("GET", "/api/cron/expire", CRON)).body, { ok: true, buddies: 0, days: 0, gestures: 0 });
   assert.equal((await call("DELETE", "/v1/buddies/me", a.key)).status, 200);

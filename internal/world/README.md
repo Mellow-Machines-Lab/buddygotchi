@@ -20,6 +20,7 @@ the Mac client's wire format, which `fixtures/` pins.
 | `src/limits.ts` | Every cap and rate limit, in one place |
 | `src/names.ts` | The name filter |
 | `src/world.ts` | The snapshot, and the goal: its progress, reached once, its reward |
+| `src/regions.ts` | The UTC offsets a buddy may send, and the regions they fall in: their boundaries, in one place |
 | `src/auth.ts` | Buddy keys: 32 random bytes, base64url; the server keeps only their sha256 |
 | `db/migrations/` | Plain SQL, applied in name order, each once |
 | `scripts/migrate.ts`, `scripts/dev.ts` | `npm run migrate` and `npm run dev` |
@@ -55,12 +56,12 @@ All JSON. A buddy sends `Authorization: Bearer <key>`.
 
 | Route | Who | Does |
 | --- | --- | --- |
-| `POST /v1/buddies` | Anyone | `{name, country, tz}` → `{id, key, name, name_ok}`. The key is in this response only |
+| `POST /v1/buddies` | Anyone | `{name, utc_offset}` → `{id, key, name, name_ok}`. The key is in this response only |
 | `PUT /v1/buddies/me` | A buddy | Its state and what it added since its last send (`fixtures/buddy-state.json`) |
 | `DELETE /v1/buddies/me` | A buddy | Leaves the world: its row, days, reports and gestures go |
 | `GET /v1/world` | Anyone | The snapshot (`fixtures/world.json`), cached 30 s at Vercel's edge |
 | `POST /v1/gestures` | A buddy | `{to, kind}`, with `kind` one of `boop`, `wave`, `heart`, `cheer` |
-| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_country, at}]}`, each handed out once |
+| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, at}]}`, each handed out once |
 | `POST /v1/reports` | A buddy | `{buddy}`: reports a name. Three buddies' reports hide it |
 | `PUT /v1/admin/goal` | The owner, with `ADMIN_TOKEN` | Sets the goal. The newest goal is the current one |
 | `GET /v1/health` | Anyone | `{ok, db}` |
@@ -70,6 +71,10 @@ What the Mac must know about `PUT /v1/buddies/me`:
 
 - **Only the keys in `fixtures/buddy-state.json` are taken.** Any other
   key is refused with 400.
+- **`utc_offset` is the Mac's offset from UTC, in minutes** (60, -480,
+  330), from -720 to 840 and a multiple of 15; any other is refused with
+  400. Left out, the last one stays; `null` clears it. The server keeps no
+  country and no time zone name.
 - **`seq` must grow.** A send whose `seq` isn't above the last one counted
   gets `{ok: true, duplicate: true}` and counts nothing. So a resend after
   a timeout is safe.
@@ -84,16 +89,19 @@ What the Mac must know about `PUT /v1/buddies/me`:
   (`clamped`), how the name shows (`name`, `name_ok`, `name_reason`,
   `name_hidden`), and the buddy's part of the goal (`goal_added`).
 
-A buddy not seen for 10 minutes counts as asleep in the snapshot. The
+A buddy not seen for 10 minutes counts as asleep in the snapshot.
+The snapshot's `regions` are always the three, in this order, from each
+buddy's offset: `americas` (UTC-12 to -2), `europe_africa` (-1h45 to +3)
+and `asia_oceania` (+3h15 to +14). A buddy with no offset is in none. The
 server's days are UTC. The numbers here are in `src/limits.ts`.
 
 ## What it keeps, and for how long
 
 | What | Kept | Gone |
 | --- | --- | --- |
-| A buddy: a random id, its key's hash, name, level, stage, country, time zone, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
+| A buddy: a random id, its key's hash, name, level, stage, UTC offset, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
 | What a buddy added each UTC day: XP, turns, tests passed, ships, lines changed | 400 days | Then summed with every other buddy's into one row a day (`totals_by_day`), with no buddy in it |
-| Gestures | Until delivered | A day after delivery, or after two days unread |
+| Gestures, with the sender's region | Until delivered | A day after delivery, or after two days unread |
 | Name reports: who reported whom | While both buddies exist | When the name changes, or either buddy goes |
 | Goals | Always | |
 

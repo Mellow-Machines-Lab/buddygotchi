@@ -7,6 +7,7 @@
 import type { Db } from "./db.js";
 import { AWAKE_WITHIN_MS, SNAPSHOT_BUDDIES } from "./limits.js";
 import { shownName } from "./names.js";
+import { REGIONS, regionSql, type Region } from "./regions.js";
 
 export const ACTIVITIES = ["coding", "testing", "shipping", "waiting", "idle", "asleep"] as const;
 export type Activity = (typeof ACTIVITIES)[number];
@@ -41,7 +42,7 @@ export interface Snapshot {
   doing: Record<Activity, number>;
   today: Totals;
   year: Totals;
-  countries: { country: string; awake: number; today_turns: number }[];
+  regions: { region: Region; awake: number; today_turns: number }[];
   goal: Goal | null;
   rewards: { tag: string; until: string }[];
   buddies: {
@@ -49,8 +50,7 @@ export interface Snapshot {
     name: string;
     level: number;
     stage: string | null;
-    country: string | null;
-    tz: string | null;
+    utc_offset: number | null;
     activity: Activity;
   }[];
 }
@@ -150,15 +150,16 @@ export async function snapshot(db: Db): Promise<Snapshot> {
   const today = await totalsSince(db, TODAY, TODAY);
   const year = await totalsSince(db, `date_trunc('year', ${TODAY})::date`, TODAY);
 
-  const countries = await db.query<Snapshot["countries"][number]>(
-    `select b.country, (count(*) filter (where ${SEEN_ACTIVITY} <> 'asleep'))::int as awake,
+  // Every region, in REGIONS' order, with zeros where no buddy is.
+  const byRegion = await db.query<Snapshot["regions"][number]>(
+    `select ${regionSql("b.utc_offset")} as region, (count(*) filter (where ${SEEN_ACTIVITY} <> 'asleep'))::int as awake,
             coalesce(sum(d.turns), 0)::int as today_turns
        from buddies b left join buddy_days d on d.buddy = b.id and d.day = ${TODAY}
-      where b.country is not null
-      group by b.country
-      order by awake desc, today_turns desc, b.country`,
+      where b.utc_offset is not null
+      group by 1`,
     [awakeSecs],
   );
+  const regions = REGIONS.map(({ region }) => byRegion.find((r) => r.region === region) ?? { region, awake: 0, today_turns: 0 });
 
   const { goal } = await checkGoal(db);
 
@@ -170,7 +171,7 @@ export async function snapshot(db: Db): Promise<Snapshot> {
   );
 
   const rows = await db.query<Snapshot["buddies"][number] & { name_ok: boolean; reports: number }>(
-    `select id::text as id, name, name_ok, reports, level, stage, country, tz, ${SEEN_ACTIVITY} as activity
+    `select id::text as id, name, name_ok, reports, level, stage, utc_offset, ${SEEN_ACTIVITY} as activity
        from buddies
       order by (${SEEN_ACTIVITY} <> 'asleep') desc, seen_at desc
       limit $2`,
@@ -178,5 +179,5 @@ export async function snapshot(db: Db): Promise<Snapshot> {
   );
   const buddies = rows.map(({ name_ok, reports, ...b }) => ({ ...b, name: shownName({ name: b.name, name_ok, reports }) }));
 
-  return { at, awake: total - doing.asleep, total, doing, today, year, countries, goal, rewards, buddies };
+  return { at, awake: total - doing.asleep, total, doing, today, year, regions, goal, rewards, buddies };
 }

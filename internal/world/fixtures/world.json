@@ -5,9 +5,10 @@
   "doing": { "coding": 38, "testing": 12, "shipping": 2, "waiting": 9, "idle": 153, "asleep": 1088 },
   "today": { "turns": 9120, "tests_passed": 12400, "ships": 310, "lines_changed": 812000 },
   "year": { "turns": 1200000, "tests_passed": 2100000, "ships": 41000, "lines_changed": 120000000 },
-  "countries": [
-    { "country": "BR", "awake": 31, "today_turns": 1200 },
-    { "country": "PT", "awake": 12, "today_turns": 640 }
+  "regions": [
+    { "region": "americas", "awake": 81, "today_turns": 3900 },
+    { "region": "europe_africa", "awake": 96, "today_turns": 3820 },
+    { "region": "asia_oceania", "awake": 37, "today_turns": 1400 }
   ],
   "goal": {
     "title": "A million tests this month",
@@ -25,8 +26,7 @@
       "name": "Bean",
       "level": 7,
       "stage": "buddy",
-      "country": "JP",
-      "tz": "Asia/Tokyo",
+      "utc_offset": 540,
       "activity": "asleep"
     },
     {
@@ -34,8 +34,7 @@
       "name": "a buddy",
       "level": 1,
       "stage": null,
-      "country": null,
-      "tz": null,
+      "utc_offset": null,
       "activity": "idle"
     }
   ]

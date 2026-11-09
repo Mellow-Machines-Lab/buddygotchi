@@ -10,13 +10,14 @@ import { bearer, buddyFor, keyHash, matchesSecret, newKey } from "./auth.js";
 import { defaultDb, type Db } from "./db.js";
 import * as L from "./limits.js";
 import { checkName, shownName } from "./names.js";
+import { UTC_OFFSET_MAX, UTC_OFFSET_MIN, regionOf, validOffset } from "./regions.js";
 import { ACTIVITIES, COUNTS, METRICS, TODAY, checkGoal, goalAdded, snapshot, type Count } from "./world.js";
 
 export const STAGES = ["hatchling", "sprout", "buddy", "chonk"] as const;
 export const GESTURES = ["boop", "wave", "heart", "cheer"] as const;
 /** Every key a buddy may send in PUT /v1/buddies/me. Any other is refused. */
 export const STATE_KEYS = [
-  "seq", "name", "level", "stage", "country", "tz", "activity", "day", "xp_today", "added",
+  "seq", "name", "level", "stage", "utc_offset", "activity", "day", "xp_today", "added",
 ] as const;
 
 export interface Options {
@@ -35,19 +36,13 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TAG = /^[a-z][a-z0-9]{0,23}$/;
 
-function country(v: unknown): string | null {
-  const c = typeof v === "string" ? v.trim().toUpperCase() : "";
-  return /^[A-Z]{2}$/.test(c) ? c : null;
-}
-
-function timeZone(v: unknown): string | null {
-  if (typeof v !== "string" || v.length > 64) return null;
-  try {
-    new Intl.DateTimeFormat("en", { timeZone: v });
-    return v;
-  } catch {
-    return null;
+/** A buddy's UTC offset, when it sent one: null clears it, a bad one is refused. */
+function offset(v: unknown): number | null {
+  if (v === undefined || v === null) return null;
+  if (!validOffset(v)) {
+    throw new BadRequest(`utc_offset must be minutes from ${UTC_OFFSET_MIN} to ${UTC_OFFSET_MAX}, a multiple of 15`);
   }
+  return v;
 }
 
 function validDate(v: unknown): v is string {
@@ -110,12 +105,13 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
   app.post("/v1/buddies", async (c) => {
     const body = await json(c);
     const name = checkName(body.name);
+    const utcOffset = offset(body.utc_offset);
     const id = crypto.randomUUID();
     const key = newKey();
     await c.var.db.query(
-      `insert into buddies (id, key_hash, name, name_ok, country, tz, activity, seen_at, created_at)
-       values ($1, decode($2, 'hex'), $3, $4, $5, $6, 'idle', now(), now())`,
-      [id, keyHash(key), name.name, name.ok, country(body.country), timeZone(body.tz)],
+      `insert into buddies (id, key_hash, name, name_ok, utc_offset, activity, seen_at, created_at)
+       values ($1, decode($2, 'hex'), $3, $4, $5, 'idle', now(), now())`,
+      [id, keyHash(key), name.name, name.ok, utcOffset],
     );
     const shown = shownName({ name: name.name, name_ok: name.ok, reports: 0 });
     return c.json({ id, key, name: shown, name_ok: name.ok, ...(name.reason && { name_reason: name.reason }) }, 201);
@@ -133,6 +129,7 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     if (body.stage !== undefined && body.stage !== null && !(STAGES as readonly unknown[]).includes(body.stage)) throw new BadRequest(`stage must be one of ${STAGES.join(", ")}`);
     if (body.day !== undefined && !validDate(body.day)) throw new BadRequest("day must be YYYY-MM-DD");
     if (body.xp_today !== undefined && (!isInt(body.xp_today) || body.day === undefined)) throw new BadRequest("xp_today must be an integer, with day");
+    const utcOffset = offset(body.utc_offset);
     const added = body.added ?? {};
     if (!isObject(added)) throw new BadRequest("added must be an object");
     for (const [k, v] of Object.entries(added)) {
@@ -206,16 +203,14 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       await tx.query(
         `update buddies set last_seq = $2, sent_at = now(), seen_at = now(), activity = $3,
                 level = coalesce($4, level), stage = case when $5::boolean then $6 else stage end,
-                country = case when $7::boolean then $8 else country end,
-                tz = case when $9::boolean then $10 else tz end,
-                xp_day = $11::date, xp_today = $12
+                utc_offset = case when $7::boolean then $8::int else utc_offset end,
+                xp_day = $9::date, xp_today = $10
           where id = $1`,
         [
           id, seq, activity,
           body.level === undefined ? null : Math.min(body.level as number, L.LEVEL_MAX),
           "stage" in body, body.stage ?? null,
-          "country" in body, country(body.country),
-          "tz" in body, timeZone(body.tz),
+          "utc_offset" in body, utcOffset,
           xpDay, xpToday,
         ],
       );
@@ -266,7 +261,7 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     const from = c.var.buddy;
     if (to.toLowerCase() === from) throw new BadRequest("a buddy can't gesture to itself");
     const sent = await c.var.db.transaction(async (tx) => {
-      const [me] = await tx.query<{ country: string | null }>("select country from buddies where id = $1 for update", [from]);
+      const [me] = await tx.query<{ utc_offset: number | null }>("select utc_offset from buddies where id = $1 for update", [from]);
       const target = await tx.query("select 1 from buddies where id = $1", [to]);
       if (!target.length) return "not_found" as const;
       const [n] = await tx.query<{ total: number; one: number }>(
@@ -275,7 +270,7 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
         [from, to],
       );
       if (n.total >= L.GESTURES_SENT_PER_HOUR || n.one >= L.GESTURES_TO_ONE_PER_HOUR) return "too_many" as const;
-      await tx.query("insert into gestures (to_buddy, from_buddy, kind, from_country) values ($1, $2, $3, $4)", [to, from, kind, me.country]);
+      await tx.query("insert into gestures (to_buddy, from_buddy, kind, from_region) values ($1, $2, $3, $4)", [to, from, kind, regionOf(me.utc_offset)]);
       return "sent" as const;
     });
     if (sent === "not_found") return c.json({ error: "not_found" }, 404);
@@ -285,12 +280,12 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
 
   // What's waiting for this buddy. Each gesture is handed out once.
   app.get("/v1/gestures", buddy, async (c) => {
-    const gestures = await c.var.db.query<{ kind: string; from_country: string | null; at: string }>(
+    const gestures = await c.var.db.query<{ kind: string; from_region: string | null; at: string }>(
       `with handed as (
          update gestures set delivered_at = now()
           where id in (select id from gestures where to_buddy = $1 and delivered_at is null order by id limit $2 for update)
-         returning id, kind, from_country, created_at)
-       select kind, from_country, to_char(created_at at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
+         returning id, kind, from_region, created_at)
+       select kind, from_region, to_char(created_at at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
          from handed order by id`,
       [c.var.buddy, L.GESTURES_PER_READ],
     );

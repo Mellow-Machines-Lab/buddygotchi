@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ADDED_PER_MINUTE, SEND_EVERY_MS, XP_PER_DAY } from "../src/limits.js";
+import { UTC_OFFSET_MAX, UTC_OFFSET_MIN } from "../src/regions.js";
 import { state, world } from "./helpers.js";
 
 const w = world();
@@ -17,32 +18,55 @@ async function today(id: string) {
 }
 
 test("joining gives an id and a key, and the server keeps only the key's hash", async () => {
-  const b = await w.join("Mochi", "pt", "Europe/Lisbon");
+  const b = await w.join("Mochi", 330);
   assert.match(b.id, /^[0-9a-f-]{36}$/);
   assert.match(b.key, /^[A-Za-z0-9_-]{43}$/, "32 random bytes, base64url");
   assert.equal(b.name, "Mochi");
   assert.equal(b.name_ok, true);
-  const [row] = await w.db.query<{ hash: string; country: string; tz: string }>(
-    "select encode(key_hash, 'hex') as hash, country, tz from buddies where id = $1",
+  const [row] = await w.db.query<{ hash: string; utc_offset: number }>(
+    "select encode(key_hash, 'hex') as hash, utc_offset from buddies where id = $1",
     [b.id],
   );
   assert.equal(row.hash.length, 64, "a sha256");
-  assert.equal(row.country, "PT");
-  assert.equal(row.tz, "Europe/Lisbon");
+  assert.equal(row.utc_offset, 330);
   const anywhere = await w.db.query("select 1 from buddies where name = $1 or encode(key_hash, 'escape') like $2", [b.key, `%${b.key}%`]);
   assert.equal(anywhere.length, 0, "the key itself is stored nowhere");
 });
 
-test("a bad country or time zone is dropped, and a refused name is kept but shown as a buddy", async () => {
-  const b = await w.join("boop.com", "Portugal", "Mars/Olympus");
+test("a refused name is kept but shown as a buddy, and the offset may be left out", async () => {
+  const b = await w.join("boop.com", null);
   assert.equal(b.name, "a buddy");
   assert.equal(b.name_ok, false);
   assert.equal(b.name_reason, "link");
-  const [row] = await w.db.query<{ name: string; country: string | null; tz: string | null }>(
-    "select name, country, tz from buddies where id = $1",
+  const [row] = await w.db.query<{ name: string; utc_offset: number | null }>(
+    "select name, utc_offset from buddies where id = $1",
     [b.id],
   );
-  assert.deepEqual(row, { name: "boop.com", country: null, tz: null });
+  assert.deepEqual(row, { name: "boop.com", utc_offset: null });
+});
+
+test(`utc_offset: minutes from ${UTC_OFFSET_MIN} to ${UTC_OFFSET_MAX}, in quarter hours`, async () => {
+  for (const ok of [UTC_OFFSET_MIN, -480, 0, 60, 330, 345, 765, UTC_OFFSET_MAX]) {
+    const r = await w.json("POST", "/v1/buddies", { body: { name: "Mochi", utc_offset: ok } });
+    assert.equal(r.status, 201, `${ok}`);
+  }
+  for (const bad of [UTC_OFFSET_MIN - 15, UTC_OFFSET_MAX + 15, 61, 1.5, "60", "Europe/Lisbon", true]) {
+    const r = await w.json("POST", "/v1/buddies", { body: { name: "Mochi", utc_offset: bad } });
+    assert.equal(r.status, 400, `join with ${JSON.stringify(bad)}`);
+  }
+  const b = await w.join("Mochi", 0);
+  assert.equal((await w.send(b, state({ seq: 1, utc_offset: 900 }))).status, 400);
+  assert.equal((await w.send(b, state({ seq: 1, country: "PT" }))).status, 400, "no country any more");
+  assert.equal((await w.send(b, state({ seq: 1, tz: "Europe/Lisbon" }))).status, 400, "no time zone any more");
+  const offsetOf = async () => (await w.db.query<{ o: number | null }>("select utc_offset as o from buddies where id = $1", [b.id]))[0].o;
+  assert.equal((await w.send(b, state({ seq: 1, utc_offset: -480 }))).status, 200);
+  assert.equal(await offsetOf(), -480);
+  await w.rewind(b);
+  await w.send(b, state({ seq: 2 }));
+  assert.equal(await offsetOf(), -480, "left out: kept");
+  await w.rewind(b);
+  await w.send(b, state({ seq: 3, utc_offset: null }));
+  assert.equal(await offsetOf(), null, "null: cleared");
 });
 
 test("joining needs a JSON object", async () => {
@@ -62,7 +86,7 @@ test("a buddy's routes need its key", async () => {
 test("a send updates the buddy and adds its counts to today", async () => {
   const b = await w.join();
   const { status, body } = await w.send(b, state({
-    name: "Mochi", level: 12, stage: "buddy", country: "PT", tz: "Europe/Lisbon", activity: "testing",
+    name: "Mochi", level: 12, stage: "buddy", utc_offset: 60, activity: "testing",
     xp_today: 82, added: { turns: 3, tests_passed: 2, ships: 0, lines_changed: 140 },
   }));
   assert.equal(status, 200);
