@@ -257,7 +257,7 @@ struct MoreDetails: View {
             .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.inkSoft)
             .padding(.top, 2)
             if shown {
-                Text(text).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                Text(text).caption()
                     .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
@@ -280,6 +280,20 @@ final class OpenDetails: ObservableObject {
 struct Hairline: View {
     var body: some View {
         Rectangle().fill(Theme.hairline).frame(height: 1)
+    }
+}
+
+/// The hairline between a card's setting rows, from under their icons.
+struct RowDivider: View {
+    var body: some View {
+        Hairline().padding(.leading, 40).padding(.trailing, 12)
+    }
+}
+
+extension View {
+    /// Small soft text: a caption under or beside what it explains.
+    func caption() -> some View {
+        font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
     }
 }
 

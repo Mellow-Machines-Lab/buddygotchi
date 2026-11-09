@@ -68,11 +68,16 @@ struct PopoverView: View {
                 } else if model.pane == .settings {
                     // The versions, where Settings would be.
                     Text("Boop \(BoopVersion.current)" + (model.status?.device.map { " · firmware \($0.fw)" } ?? ""))
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                        .caption()
                         .padding(.leading, 8)
                         .textSelection(.enabled)
                 }
                 Spacer()
+                // What Boop knows, from anywhere in the popover.
+                Button("What \(model.name) knows") { model.pane = .memory }
+                    .keyboardShortcut("m", modifiers: [.command, .shift])
+                    .opacity(0).frame(width: 0, height: 0)
+                    .accessibilityHidden(true)
                 Button("Quit") { NSApp.terminate(nil) }
                     .keyboardShortcut("q", modifiers: .command)
             }

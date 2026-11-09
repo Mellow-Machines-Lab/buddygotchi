@@ -89,8 +89,38 @@ enum Snapshots {
                 let card = model(installer, status: status())
                 card.worldPick = "b-bean"
                 shot("world-card", card, pane: .overview, tab: .world)
-                card.worldSent["b-bean"] = .sent
+                card.worldSent["b-bean"] = .init(sent: [.wave])
                 shot("world-card-sent", card, pane: .overview, tab: .world)
+                // A wave on its way: every button waits. Then a boop that failed.
+                card.worldSent["b-bean"] = .init(sent: [.wave], sending: .boop)
+                shot("world-card-sending", card, pane: .overview, tab: .world)
+                card.worldSent["b-bean"] = .init(sent: [.wave], failed: .boop)
+                shot("world-card-failed", card, pane: .overview, tab: .world)
+                // Your own dot: marked, its card with nothing to send.
+                let mine = model(installer, status: status())
+                mine.worldPick = "b-me"
+                shot("world-card-you", mine, pane: .overview, tab: .world)
+                // What other buddies did: one held, one that didn't play, and many.
+                var held = status()
+                held.world?.link.today.insert(.init(counts: [.init(kind: .heart, n: 1)], region: .americas, held: true,
+                                                    at: Calendar.current.startOfDay(for: Date()).addingTimeInterval(11 * 3600)), at: 0)
+                shot("world-arrivals-held", model(installer, status: held), pane: .overview, tab: .world)
+                var many = status()
+                let start = Calendar.current.startOfDay(for: Date())
+                many.world?.link.today = (0..<9).map { i in
+                    .init(counts: [.init(kind: [.boop, .wave, .heart][i % 3], n: 1 + i % 2)], region: World.Region.allCases[i % 3],
+                          at: start.addingTimeInterval(Double(12 * 3600 - i * 1800)))
+                } + [.init(counts: [.init(kind: .boop, n: 4)], region: nil, plays: false, at: start.addingTimeInterval(3600))]
+                shot("world-arrivals-many", model(installer, status: many), pane: .overview, tab: .world)
+                // The world from before, and it isn't answering now.
+                var stale = status()
+                stale.world?.link.trouble = "the world didn't answer"
+                shot("world-stale", model(installer, status: stale), pane: .overview, tab: .world)
+                // On, and not in it yet.
+                var joining = status()
+                joining.world?.inWorld = false
+                joining.world?.link.joined = false
+                shot("world-joining", model(installer, status: joining), pane: .overview, tab: .world)
                 let shipping = model(installer, status: status())
                 shipping.worldPick = "b-pip"
                 shot("world-card-shipping", shipping, pane: .overview, tab: .world)
@@ -108,6 +138,7 @@ enum Snapshots {
                 let offCard = model(installer, status: away)
                 offCard.worldPick = "b-bean"
                 shot("world-off", offCard, pane: .overview, tab: .world)
+                shot("world-off-no-card", model(installer, status: away), pane: .overview, tab: .world)
                 var loading = status()
                 loading.world?.link.snapshot = nil
                 loading.world?.link.today = []
@@ -663,6 +694,9 @@ enum Snapshots {
         }
         buddies.append(World.Buddy(id: "b-bean", name: "Bean", level: 7, utcOffset: 540, activity: .asleep))
         buddies.append(World.Buddy(id: "b-pip", name: "Pip", level: 23, utcOffset: -300, activity: .shipping))
+        // Boop itself, as the world sees it, and one with no time zone, off the band.
+        buddies.append(World.Buddy(id: "b-me", name: name, level: 12, utcOffset: 60, activity: .idle))
+        buddies.append(World.Buddy(id: "b-nowhere", name: "Moss", level: 3, utcOffset: nil, activity: .coding))
         // As the server sends them: they're only ever read.
         let regions = try! JSONDecoder().decode([World.RegionCount].self, from: Data(#"""
             [{"region": "americas", "awake": 88, "today_turns": 2100},
@@ -682,6 +716,7 @@ enum Snapshots {
                   at: today.addingTimeInterval(8 * 3600)),
         ])
         link.nameHidden = false
+        link.id = "b-me"
         return Runtime.WorldStatus(on: true, inWorld: true, utcOffset: 60, link: link)
     }
 

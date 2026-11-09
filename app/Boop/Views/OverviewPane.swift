@@ -335,7 +335,7 @@ struct OverviewPane: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(reason.why).font(.system(size: 12, weight: .semibold))
                             if let what = reason.what {
-                                Text(what.prefix(1).uppercased() + what.dropFirst()).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                                Text(what.prefix(1).uppercased() + what.dropFirst()).caption()
                             }
                         }
                         .fixedSize(horizontal: false, vertical: true)
@@ -412,7 +412,7 @@ struct OverviewPane: View {
                         Text(name).font(.system(size: 11, weight: .medium))
                     }
                     Text(hint)
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                        .caption()
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 // The room for Dismiss, drawn over the card's corner, so
@@ -440,7 +440,7 @@ struct OverviewPane: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("No agents awake").font(.system(size: 12, weight: .medium))
                         Text("Start \(heard.map(\.displayName).joined(separator: " or ")) and \(status.name) will notice.")
-                            .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                            .caption()
                     }
                     Spacer(minLength: 0)
                 }
@@ -522,7 +522,7 @@ struct OverviewPane: View {
                 Image(systemName: icon).font(.system(size: 13)).foregroundStyle(tone).frame(width: 18)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.system(size: 12, weight: .semibold))
-                    Text(detail).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    Text(detail).caption()
                         .fixedSize(horizontal: false, vertical: true)
                     if let more { MoreDetails(more) }
                     if let action {
@@ -733,7 +733,7 @@ struct SessionRow: View {
                     Text(title).font(.system(size: 12, weight: .medium))
                 } second: {
                     if let project {
-                        Text(project).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                        Text(project).caption()
                     } else if let workspace = session.workspace {
                         WorkspaceName(workspace)
                     }

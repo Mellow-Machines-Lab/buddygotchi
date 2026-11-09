@@ -31,7 +31,7 @@ struct BoopPane: View {
                 .overlay {
                     VStack(spacing: 0) {
                         Text("\(growth.today)").font(.boop(28, .bold)).monospacedDigit()
-                        Text("today").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                        Text("today").caption()
                     }
                 }
             VStack(alignment: .leading, spacing: 3) {
@@ -79,10 +79,7 @@ struct BoopPane: View {
     private func knows(_ notes: [WrittenMemory.Note]) -> some View {
         VStack(alignment: .leading, spacing: Theme.gapSnug) {
             if notes.isEmpty {
-                Card {
-                    Text("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
-                        .font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
-                }
+                NoteCard("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
             }
             ForEach(notes.prefix(Self.peek), id: \.id) { note in
                 Card(padding: 10) {
@@ -95,7 +92,7 @@ struct BoopPane: View {
             .buttonStyle(.plain)
             .foregroundStyle(Theme.sageInk)
             .padding(.leading, 2)
-            .keyboardShortcut("m", modifiers: [.command, .shift])
+            .help("See everything \(model.name) knows (⇧⌘M)")
         }
     }
 

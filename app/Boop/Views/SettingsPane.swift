@@ -63,13 +63,20 @@ struct SettingsPane: View {
                     Toggle("\(name) lives in the world", isOn: Binding(get: { world.on }, set: { model.runtime?.setWorld($0) }))
                         .toggleStyle(.boop).labelsHidden()
                 }
-                Hairline().padding(.leading, 40).padding(.trailing, 12)
-                SettingRow(icon: "person.crop.circle", title: "Shown as \(([shown] + [region].compactMap { $0 }).joined(separator: " · "))",
-                           detail: world.link.nameHidden ? "The world didn't take this name, so others see “a buddy”."
-                                                         : "Others see this name and level.") {
-                    EmptyView()
+                RowDivider()
+                if world.on {
+                    SettingRow(icon: "person.crop.circle", title: "Shown as \(([shown] + [region].compactMap { $0 }).joined(separator: " · "))",
+                               detail: world.link.nameHidden ? "The world didn't take this name, so others see “a buddy”."
+                                                             : "Others see this name and level.") {
+                        EmptyView()
+                    }
+                } else {
+                    SettingRow(icon: "person.crop.circle", title: "Nobody sees \(name) now",
+                               detail: "Turn on the world, and others see its name and level.") {
+                        EmptyView()
+                    }
                 }
-                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                RowDivider()
                 SettingRow(icon: "eye", title: "What \(name) shares",
                            detail: "Its name, level, rough time zone, what it's doing, and counts like tests passed. Nothing about you or your code.") {
                     EmptyView()
@@ -106,9 +113,9 @@ struct SettingsPane: View {
                             .frame(width: 22, alignment: .trailing)
                     }
                 }
-                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                RowDivider()
                 SettingRow(icon: "text.line.first.and.arrowtriangle.forward", title: "Work stream",
-                           detail: "Your agents' tool calls fall past \(model.name), and failures hit it.") {
+                           detail: "Your agents' work falls past \(model.name), and failures hit it.") {
                     Toggle("Work stream", isOn: Binding(get: { model.status?.workStream ?? true }, set: { model.setWorkStream($0) }))
                         .toggleStyle(.boop).labelsHidden()
                 }
@@ -124,14 +131,14 @@ struct SettingsPane: View {
             Card(padding: 0) {
                 VStack(spacing: 0) {
                     ForEach(Array(Agent.allCases.enumerated()), id: \.element) { index, agent in
-                        if index > 0 { Hairline().padding(.leading, 40).padding(.trailing, 12) }
+                        if index > 0 { RowDivider() }
                         agentRow(agent)
                     }
                 }
             }
             if model.restartAgents {
                 Label("Restart open agent sessions to pick up the change.", systemImage: "arrow.clockwise")
-                    .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    .caption()
                     .padding(.leading, 2)
             }
         }
@@ -195,12 +202,12 @@ struct SettingsPane: View {
                 }
                 // Newer firmware for the board, which the app writes over USB.
                 if model.firmwareOffer != nil || model.firmwareWrite != .idle {
-                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    RowDivider()
                     firmwareRow
                 }
                 // The one board Boop takes over Bluetooth, once it has met one.
                 if model.link == .bluetooth, let board = model.status?.board {
-                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    RowDivider()
                     SettingRow(icon: "pin.fill", title: BoopDevice.advertised(board) ?? board,
                                detail: "\(model.name) talks only to this board over Bluetooth.") {
                         Button("Forget") { model.runtime?.forgetBoard() }.buttonStyle(.row).fixedSize()
@@ -210,7 +217,7 @@ struct SettingsPane: View {
                 // The simulator's window is a body to choose, on or off,
                 // in the builds that have it.
                 if AppModel.offersSimulator {
-                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    RowDivider()
                     SettingRow(icon: "macwindow", title: "Simulator", detail: simulatorDetail) {
                         HStack(spacing: 6) {
                             if model.usingSimulator {
@@ -258,7 +265,7 @@ struct SettingsPane: View {
         Card(padding: 0) {
             VStack(spacing: 0) {
                 loginRow
-                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                RowDivider()
                 // Only the everyday Boop uninstalls; a copy on another
                 // folder says so rather than ask and then do nothing.
                 SettingRow(icon: "trash", title: "Uninstall",
@@ -417,7 +424,7 @@ struct RowPicker<Value: Hashable>: View {
                                 .font(.system(size: 12, weight: on ? .semibold : .medium))
                                 .foregroundStyle(on ? Theme.ink : Theme.inkSoft)
                             if let about = p.about {
-                                Text(about).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                                Text(about).caption()
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
