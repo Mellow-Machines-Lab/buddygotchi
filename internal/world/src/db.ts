@@ -15,6 +15,26 @@ export interface Db {
 
 const migrationsDir = new URL("../db/migrations/", import.meta.url);
 
+/** Postgres's codes for a transaction it gave up on and that may simply be
+ * run again: a deadlock, or a serialization failure. Two buddies leaving at
+ * once can deadlock on each other's gestures. */
+const retryable = new Set(["40P01", "40001"]);
+export const transactionTries = 4;
+
+/** Runs `fn`, again with a short, growing pause when Postgres gave up on it
+ * for a reason that running it again fixes, at most `transactionTries` times. */
+export async function retrying<T>(fn: () => Promise<T>, pause = (ms: number) => new Promise((r) => setTimeout(r, ms))): Promise<T> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      const code = (error as { code?: string }).code;
+      if (!code || !retryable.has(code) || attempt >= transactionTries) throw error;
+      await pause(20 * 2 ** attempt + Math.floor(Math.random() * 20));
+    }
+  }
+}
+
 /** A Postgres pool, from a connection string such as Neon's. */
 export async function connectPostgres(url: string, { max = 5 } = {}): Promise<Db> {
   const { default: postgres } = await import("postgres");
@@ -28,10 +48,10 @@ export async function connectPostgres(url: string, { max = 5 } = {}): Promise<Db
   const db: Db = {
     ...wrap(sql),
     async transaction<T>(fn: (tx: Db) => Promise<T>) {
-      return (await sql.begin(async (tx) => {
+      return retrying(async () => (await sql.begin(async (tx) => {
         const inner: Db = { ...wrap(tx), transaction: (f) => f(inner), close: async () => {} };
         return fn(inner);
-      })) as T;
+      })) as T);
     },
     async close() {
       await sql.end({ timeout: 5 });
