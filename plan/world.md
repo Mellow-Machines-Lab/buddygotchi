@@ -345,3 +345,41 @@ Steps 1, 3 and 4 can run side by side. 5 needs 1. 7 needs 2.
 - A sample of 500 buddies in the snapshot, awake first.
 - Gestures by polling every minute, not websockets.
 - Days on the server are UTC; Boop's own 5:00 day stays on the Mac for the ring.
+
+## 9. Decided on 2026-11-08, after the sketches
+
+These override anything above that differs.
+
+- **Joining is on by default.** Onboarding shows one screen that tells, not asks:
+  what others see, and a plain "Keep Mochi private" link. Nothing is sent before
+  that screen has been shown. The naming screen says the name is public.
+- **No country, no time zone name.** A buddy sends its UTC offset in minutes.
+  The World tab groups by region of offset ("Americas", "Europe and Africa",
+  "Asia and Oceania"), not countries. The world is a time-zone band, with night
+  shaded, not a map.
+- **Shared, all of it:** the buddy's name and level, its UTC offset, one of six
+  activities, and counts (turns, tests passed, ships, lines changed, today's XP).
+- **Sending on change, not every minute:** on a change of activity, a level-up or
+  the ring closing; counts batched and sent with the next change or after a few
+  minutes; a heartbeat about every 10 minutes; "asleep" at once on lock or quit.
+  A buddy counts as awake for 15 minutes after its last send. Waiting gestures come
+  back in the reply to a send. With nothing sent for a while, gestures are checked
+  about every 10 minutes and on unlock. The world itself is fetched only while the
+  World tab is open, about every 30 s.
+- **No world goals for now.** The server's goal routes stay unused; the Mac shows
+  no goal and no reward. World goals come later.
+- **Boops and cheers on the board:** at most 3 boops an hour play; the rest are
+  counted on the World tab. Cheers for one ship are one moment. At night they wait
+  for the morning.
+- **The world switched off:** you can still see it, but aren't in it and can't be
+  booped.
+- **The UI's words: short and warm, no numbers that aren't needed.** Talk like a
+  friend, not a manual. For example "82 today. Fill the ring and you're done for
+  the day," not "A full ring is 100. More doesn't count." The sketches:
+  `~/.boopdev/v1-ui/v1-ui.html`.
+- **The popover has three tabs,** Now, Boop and World, with Settings below. Most
+  of the time people stay on Now.
+
+**Not shipped, so nothing old is kept:** XP starts from zero. No migration, no
+compatibility path, for XP or anything else this changes: break what needs
+breaking, and delete what it replaces.

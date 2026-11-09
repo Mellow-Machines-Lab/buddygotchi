@@ -146,7 +146,7 @@ never down.
 The four stages (Hatchling, Sprout, Buddy, Chonk) and their art are built.
 Two options:
 
-- **A. Keep them as bigger level-ups** at levels 5, 15 and 30: Boop grows,
+- **A. Keep them as bigger level-ups** at levels 5, 15 and 30 (decided, 2026-11-08): Boop grows,
   with the existing ceremony. Not a concept to learn: just some level-ups that
   are bigger. *Recommended*: it's built, and it's a nice surprise.
 - **B. Drop them.** One size of Boop. Simplest, and deletes the scaling code.
@@ -181,8 +181,7 @@ Two options:
 | CONTEXT's Boop row: stage, age | "Boop: level 12, 40 days old; today's ring 82 of 100" |
 | Narration: grew | Level-ups, the ring closing |
 
-**Migration:** today's XP becomes lifetime XP. The level follows from it. No one
-drops. Decayed XP isn't given back (it's small, and only the owner has run it).
+**No migration:** Boop hasn't shipped, so XP starts from zero, and nothing old is kept (decided 2026-11-08).
 
 ## 6. Tenet 4: the world
 
@@ -461,3 +460,7 @@ Phases 1 and 2 can start now. Phase 3 needs the decisions in §12 first.
   board's limits, night holding, status first.
 - **The ring could feel like a chore** if Boop guilts you. Mitigation: no streaks,
   no sad Boop for an unfilled ring, only a happy one for a full one.
+
+The owner's decisions of 2026-11-08 after the sketches are in
+[world.md](world.md) §9: they override this file where they differ (no country, joining
+on by default, no world goals yet, XP from zero, the UI's words).
