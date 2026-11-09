@@ -805,7 +805,7 @@ struct TabBar: View {
             ForEach(Array(Tab.allCases.enumerated()), id: \.element) { i, each in
                 let on = each == tab
                 Button { withAnimation(.boopSettle) { tab = each } } label: {
-                    Text(each.title(name: name))
+                    Text(each.title)
                         .font(.system(size: 12, weight: on ? .semibold : .medium))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)

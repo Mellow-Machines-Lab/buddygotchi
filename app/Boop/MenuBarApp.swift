@@ -42,11 +42,12 @@ enum Pane: Equatable {
 enum Tab: String, CaseIterable, Equatable {
     case now, boop, world
 
-    /// Its label: Boop's own tab goes by Boop's name.
-    func title(name: String) -> String {
+    /// Its label: Now, Boop and World, the product's three, whatever the
+    /// buddy is called.
+    var title: String {
         switch self {
         case .now: "Now"
-        case .boop: name
+        case .boop: "Boop"
         case .world: "World"
         }
     }
