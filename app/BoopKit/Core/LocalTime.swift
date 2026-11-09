@@ -60,19 +60,6 @@ public struct LocalTime: Sendable {
         return p.count == 3 ? dayNumber(p[0], p[1], p[2]) : nil
     }
 
-    /// `day`'s weekday (`yyyy-MM-dd`), empty if it isn't a day.
-    public static func spokenWeekday(of day: String) -> String { weekday(of: day) ?? "" }
-
-    /// The `yyyy-MM-dd` of a day number, `dayNumber`'s other way.
-    static func day(number n: Int) -> String? {
-        let z = n + 719_468, era = (z >= 0 ? z : z - 146_096) / 146_097, doe = z - era * 146_097
-        let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365
-        let doy = doe - (365 * yoe + yoe / 4 - yoe / 100), mp = (5 * doy + 2) / 153
-        let d = doy - (153 * mp + 2) / 5 + 1, m = mp < 10 ? mp + 3 : mp - 9
-        let y = yoe + era * 400 + (m <= 2 ? 1 : 0)
-        return String(format: "%04d-%02d-%02d", y, m, d)
-    }
-
     /// Minutes since midnight of a `HH:mm`.
     static func minutes(of clock: String) -> Int? {
         let p = clock.split(separator: ":").compactMap { Int($0) }

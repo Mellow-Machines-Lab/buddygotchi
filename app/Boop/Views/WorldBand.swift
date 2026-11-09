@@ -64,16 +64,11 @@ struct WorldBand: View {
         return CGPoint(x: x(hours: hours, in: size), y: Self.inset + 6 + height * Self.spread(buddy.id))
     }
 
-    /// 0 to 1 from an id, steady from launch to launch (FNV-1a), which
-    /// Swift's own hash isn't.
-    static func spread(_ id: String) -> Double {
-        var hash: UInt64 = 0xcbf2_9ce4_8422_2325
-        for byte in id.utf8 {
-            hash ^= UInt64(byte)
-            hash = hash &* 0x100_0000_01b3
-        }
-        return Double(hash % 10_000) / 10_000
-    }
+    /// 0 to 1 from an id, steady from launch to launch, which Swift's own
+    /// hash isn't.
+    static func spread(_ id: String) -> Double { Double(SplitMix64.seed(of: id) % 10_000) / 10_000 }
+
+    static let utc = { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }()
 
     private func nearest(to point: CGPoint, in size: CGSize) -> String? {
         let near = buddies.map { b -> (String, CGFloat) in
@@ -94,7 +89,7 @@ struct WorldBand: View {
     }
 
     private func shadeNight(_ context: GraphicsContext, _ size: CGSize) {
-        let utc = Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: now)
+        let utc = Self.utc.dateComponents([.hour, .minute, .second], from: now)
         let hour = Double(utc.hour ?? 0) + Double(utc.minute ?? 0) / 60
         let night = scheme == .dark ? Color.black.opacity(0.45) : Color(hex: "#3B3328").opacity(0.2)
         // One gradient across the band, a stop every few points: strips

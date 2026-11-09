@@ -12,7 +12,7 @@ struct WorldPane: View {
             if let world = model.status?.world {
                 content(world)
             } else {
-                line("The world isn't reachable from here.")
+                NoteCard("The world isn't reachable from here.")
             }
         }
     }
@@ -32,20 +32,13 @@ struct WorldPane: View {
                 }
             }
         } else if world.link.trouble != nil {
-            line("The world can't be reached just now. \(model.name) will keep trying.")
+            NoteCard("The world can't be reached just now. \(model.name) will keep trying.")
         } else {
-            line("Looking around the world…")
+            NoteCard("Looking around the world…")
         }
         PaneSection("For \(model.name) today") { arrivals(world.link.today) }
         if let snapshot = world.link.snapshot {
             PaneSection("Around the world") { regions(snapshot.regions) }
-        }
-    }
-
-    private func line(_ text: String) -> some View {
-        Card {
-            Text(text).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -137,14 +130,7 @@ struct WorldPane: View {
         }
     }
 
-    static func label(_ kind: World.GestureKind) -> String {
-        switch kind {
-        case .wave: "Wave"
-        case .boop: "Boop"
-        case .heart: "Heart"
-        case .cheer: "Cheer"
-        }
-    }
+    static func label(_ kind: World.GestureKind) -> String { kind.rawValue.capitalized }
 
     static func symbol(_ kind: World.GestureKind) -> String {
         switch kind {
@@ -164,7 +150,7 @@ struct WorldPane: View {
         let more = today.filter { !$0.plays }.reduce(0) { $0 + $1.counts.reduce(0) { $0 + $1.n } }
         return VStack(alignment: .leading, spacing: Theme.gapSnug) {
             if today.isEmpty {
-                line("Nothing yet today.")
+                NoteCard("Nothing yet today.")
             }
             ForEach(played) { arrival in
                 Card(padding: 10) {

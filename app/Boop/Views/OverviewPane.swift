@@ -15,7 +15,7 @@ struct OverviewPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            TabBar(tab: $model.tab, name: model.name)
+            TabBar(tab: $model.tab)
                 .padding(.horizontal, Theme.gutter)
                 .padding(.top, Theme.gapSnug)
             FittedScroll(maxHeight: maxHeight - 76 - TabBar.height) {
@@ -796,7 +796,6 @@ private struct ReasonLines: View {
 /// the well. ⌘1, ⌘2 and ⌘3 open them too.
 struct TabBar: View {
     @Binding var tab: Tab
-    let name: String
     /// Its height, with the gap over it.
     static let height: CGFloat = 36
 

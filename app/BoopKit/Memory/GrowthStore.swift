@@ -14,6 +14,8 @@ public final class GrowthStore {
     public static let celebratedKey = "growth.celebrated"
     /// How many days' rings it keeps, today's included: the Boop tab's week.
     public static let keptDays = 7
+    /// Days by their number, as a day is in UTC.
+    static let utc = LocalTime(timeZone: TimeZone(identifier: "UTC")!)
 
     let store: KeyValueStore
     let log: (String) -> Void
@@ -55,8 +57,9 @@ public final class GrowthStore {
     public func week(to today: String) -> [(day: String, xp: Int)] {
         let known = Dictionary(([(day ?? "", growth.today)] + past).map { ($0.day, $0.xp) }, uniquingKeysWith: { a, _ in a })
         guard let n = LocalTime.dayNumber(today) else { return [] }
-        return (0..<Self.keptDays).reversed().compactMap { back in
-            LocalTime.day(number: n - back).map { ($0, known[$0] ?? 0) }
+        return (0..<Self.keptDays).reversed().map { back in
+            let day = Self.utc.day(Int64(n - back) * 86_400_000)
+            return (day, known[day] ?? 0)
         }
     }
 
@@ -71,21 +74,26 @@ public final class GrowthStore {
     }
 
     /// Counts `e`, which earns `xp` before the day's cap, on Boop day
-    /// `today`, and returns the XP it added: none past the day's ring.
+    /// `today`, and returns the XP it added: none past the day's ring, which
+    /// writes nothing, as counting it again would add nothing either.
     @discardableResult
     public func count(_ e: Event, xp: Int, today: String) -> Int {
         guard e.seq > lastSeq, xp > 0 else { return 0 }
         lastSeq = e.seq
-        if day != today, let day {
-            past = Array(([(day, growth.today)] + past).prefix(Self.keptDays - 1))
+        if day != today {
+            if let day { past = Array(([(day, growth.today)] + past).prefix(Self.keptDays - 1)) }
+            day = today
+            growth.today = 0
         }
-        if day != today { growth.today = 0 }
-        day = today
         let added = Growth.capped(xp, today: growth.today)
+        guard added > 0 else { return 0 }
         growth = Growth(xp: growth.xp + added, today: growth.today + added)
         save()
         return added
     }
+
+    /// A level reached and not yet celebrated, or nil.
+    public var levelDue: Int? { growth.level > celebrated ? growth.level : nil }
 
     /// Marks the level now celebrated, so it isn't again.
     public func celebrate() {

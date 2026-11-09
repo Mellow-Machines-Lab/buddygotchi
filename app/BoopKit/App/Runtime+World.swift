@@ -8,24 +8,18 @@ extension Runtime {
     public struct WorldStatus: Equatable, Sendable {
         /// The switch in Settings: Boop lives in the world.
         public var on: Bool
-        /// Onboarding's world screen was shown: before it, nothing is sent.
-        public var shown: Bool
+        /// In the world now: on, told of in onboarding, and joined.
+        public var inWorld: Bool
         /// Your UTC offset now, in minutes: "you" on the band.
         public var utcOffset: Int
-        /// What the world sees the buddy doing.
-        public var activity: World.Activity
         public var link: WorldLink.Status
 
-        public init(on: Bool, shown: Bool, utcOffset: Int, activity: World.Activity, link: WorldLink.Status = .init()) {
+        public init(on: Bool, inWorld: Bool, utcOffset: Int, link: WorldLink.Status = .init()) {
             self.on = on
-            self.shown = shown
+            self.inWorld = inWorld
             self.utcOffset = utcOffset
-            self.activity = activity
             self.link = link
         }
-
-        /// In the world now: on, shown, and joined.
-        public var inWorld: Bool { on && shown && link.joined }
     }
 
     func startWorld() {
@@ -41,7 +35,7 @@ extension Runtime {
     }
 
     /// The UTC offset now, in minutes, rounded to the quarter hour the server takes.
-    var utcOffset: Int { (options.time.timeZone.secondsFromGMT(for: Date(timeIntervalSince1970: Double(options.wallClock()) / 1000)) / 60 / 15) * 15 }
+    var utcOffset: Int { (options.time.timeZone.secondsFromGMT(for: options.time.date(options.wallClock())) / 60 / 15) * 15 }
 
     /// What the world sees the buddy doing, one of six, from the first
     /// buddy's board: asleep or away, waiting on you, a push or a test run
@@ -58,11 +52,13 @@ extension Runtime {
         return snapshot.doing == "working" ? .coding : .idle
     }
 
-    func worldNow(at now: Int64) -> WorldLink.Now {
-        let g = growth.growth(on: options.time.boopDay(options.wallClock()))
+    func worldNow(at now: Int64, day: String) -> WorldLink.Now {
+        let g = growth.growth(on: day)
         return WorldLink.Now(name: name, level: g.level, stage: g.stageName, utcOffset: utcOffset,
-                             activity: worldActivity(at: now), day: options.time.boopDay(options.wallClock()), xpToday: g.today)
+                             activity: worldActivity(at: now), day: day, xpToday: g.today)
     }
+
+    func worldNow(at now: Int64) -> WorldLink.Now { worldNow(at: now, day: options.time.boopDay(options.wallClock())) }
 
     /// Whether the world may hear from this Mac: switched on, and told of
     /// in onboarding.
@@ -72,7 +68,9 @@ extension Runtime {
     func worldQuiet(at now: Int64) -> Bool { core.calendar(at: now).contains("night") || core.awayFromMac }
 
     func worldTick(at now: Int64) {
-        world?.tick(worldNow(at: now), on: worldOn, quiet: worldQuiet(at: now), today: options.time.boopDay(options.wallClock()), at: now)
+        guard let world else { return }
+        let day = options.time.boopDay(options.wallClock())
+        world.tick(worldNow(at: now, day: day), on: worldOn, quiet: worldQuiet(at: now), today: day, at: now)
     }
 
     /// An event as it's logged: its counts, and the screen locking (asleep
@@ -93,10 +91,9 @@ extension Runtime {
         world?.sleep(worldNow(at: now), on: worldOn, at: now)
     }
 
-    func worldStatus(at now: Int64) -> WorldStatus? {
+    func worldStatus() -> WorldStatus? {
         guard let world else { return nil }
-        return WorldStatus(on: settings.world, shown: settings.worldShown, utcOffset: utcOffset,
-                           activity: worldActivity(at: now), link: world.status)
+        return WorldStatus(on: settings.world, inWorld: worldOn && world.status.joined, utcOffset: utcOffset, link: world.status)
     }
 
     // MARK: From the popover and onboarding (any thread)

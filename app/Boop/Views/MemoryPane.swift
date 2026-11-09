@@ -43,11 +43,7 @@ struct MemoryPane: View {
                 PaneSection("Recently") { days(status.recently) }
             }
         } else {
-            Card {
-                Text("\(model.name) isn't running, so its memory can't be read now.")
-                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            NoteCard("\(model.name) isn't running, so its memory can't be read now.")
         }
     }
 

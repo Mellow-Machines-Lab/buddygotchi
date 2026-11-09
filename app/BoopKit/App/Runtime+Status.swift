@@ -66,17 +66,20 @@ extension Runtime {
         public var dressing: [Narration.Dressing] = []
 
         /// A day's line, as the popover shows it.
-        /// One day's ring: its XP, and its short name, `Today` or `Mon`.
+        /// One day's ring: its XP, whether it's today, and its short name,
+        /// `Today` or `Mon`.
         public struct DayRing: Sendable, Equatable, Identifiable {
             public var day: String
             public var xp: Int
+            public var isToday: Bool
             public var name: String
             public var id: String { day }
 
             public init(day: String, xp: Int, today: String) {
                 self.day = day
                 self.xp = xp
-                name = day == today ? "Today" : String(LocalTime.spokenWeekday(of: day).prefix(3))
+                isToday = day == today
+                name = isToday ? "Today" : String((LocalTime.weekday(of: day) ?? "").prefix(3))
             }
         }
 
@@ -168,7 +171,7 @@ extension Runtime {
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         let written = memory.written(), today = options.time.boopDay(wall)
         status.week = growth.week(to: today).map { Status.DayRing(day: $0.day, xp: $0.xp, today: today) }
-        status.world = worldStatus(at: now)
+        status.world = worldStatus()
         status.notes = written.notes
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
         status.wishing = core.wish.map { "\(name) wishes for \($0.kind.words) (\(ContextSection.span($0.waitedMs)))." }

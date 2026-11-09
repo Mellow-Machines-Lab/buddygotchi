@@ -75,6 +75,11 @@ public enum World {
                    linesChanged: a.linesChanged + b.linesChanged)
         }
 
+        public static func - (a: Counts, b: Counts) -> Counts {
+            Counts(turns: a.turns - b.turns, testsPassed: a.testsPassed - b.testsPassed, ships: a.ships - b.ships,
+                   linesChanged: a.linesChanged - b.linesChanged)
+        }
+
         enum CodingKeys: String, CodingKey {
             case turns, testsPassed = "tests_passed", ships, linesChanged = "lines_changed"
         }
@@ -115,16 +120,11 @@ public enum World {
 
     /// The reply to a send: how the name shows, and the gestures waiting.
     public struct Reply: Decodable, Sendable {
-        public var ok: Bool
-        public var duplicate: Bool?
         public var name: String?
-        public var nameOK: Bool?
         public var nameHidden: Bool?
         public var gestures: [Gesture]?
 
-        enum CodingKeys: String, CodingKey {
-            case ok, duplicate, name, nameOK = "name_ok", nameHidden = "name_hidden", gestures
-        }
+        enum CodingKeys: String, CodingKey { case name, nameHidden = "name_hidden", gestures }
     }
 
     /// The reply to joining: the buddy's id and its key, shown only here.
@@ -132,9 +132,6 @@ public enum World {
         public var id: String
         public var key: String
         public var name: String
-        public var nameOK: Bool
-
-        enum CodingKeys: String, CodingKey { case id, key, name, nameOK = "name_ok" }
     }
 
     /// One buddy in the world's snapshot.
@@ -162,9 +159,6 @@ public enum World {
     public struct RegionCount: Codable, Equatable, Sendable {
         public var region: Region
         public var awake: Int
-        public var todayTurns: Int
-
-        enum CodingKeys: String, CodingKey { case region, awake, todayTurns = "today_turns" }
     }
 
     /// The world now (`GET /v1/world`). Its goal and rewards aren't read:

@@ -129,7 +129,8 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(moments(core.grew([.level(15, grewTo: "Buddy")], at: now)).map(\.mood), ["excited"], "a size grown")
         let ring = moments(core.grew([.ringClosed], at: now))
         XCTAssertEqual(ring.map(\.reason), [Core.ringReason])
-        XCTAssertEqual(Core.ringReason, "Today's done. Nice work.")
+        XCTAssertEqual(Core.ringReason, "Today's done!")
+        XCTAssertLessThanOrEqual(Core.ringReason.count, Narration.maxFact, "it fits the lane")
     }
 
     /// A level reached while something needs you isn't lost to it, nor does

@@ -507,31 +507,32 @@ public final class Core {
         guard !growthHeld.isEmpty, needsYouBlock == nil, !showsListening(at: now) else { return }
         let beats = growthHeld
         growthHeld = []
+        var level: (Int, String?)?
         for beat in beats {
             switch beat {
-            case .level(let level, let size):
-                fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(level),
+            case .level(let n, let size):
+                level = (n, size)
+                fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(n),
                                         data: size.map { ["stage": .string($0)] } ?? [:])))
             case .ringClosed:
                 fx.append(.record(Event(at: now, source: .boop, type: .ring, specificType: "closed")))
             }
         }
-        let name = config.pack.name
-        if case .level(let level, let size)? = beats.last(where: { if case .level = $0 { true } else { false } }) {
-            var m = Moment(mood: size == nil ? Self.levelFace : Self.grewFace, loops: size == nil ? 2 : 3,
-                           sign: Self.levelSign(level),
-                           reason: Narration.fit([size.map { "now a \($0)" } ?? "level \(level)!"], name: name))
-            m.low = true
-            play(m, for: nil, now, &fx)
-        } else {
-            play(Moment(mood: Self.ringFace, loops: 2, reason: Self.ringReason), for: nil, now, &fx)
+        // One moment for them all: the last level's, else the ring's.
+        guard let (n, size) = level else {
+            return play(Moment(mood: Self.ringFace, loops: 2, reason: Self.ringReason), for: nil, now, &fx)
         }
+        var m = Moment(mood: size == nil ? Self.levelFace : Self.grewFace, loops: size == nil ? 2 : 3, sign: Self.levelSign(n),
+                       reason: Narration.fit([size.map { "now a \($0)" } ?? "level \(n)!"], name: config.pack.name))
+        m.low = true
+        play(m, for: nil, now, &fx)
     }
 
     /// The level-up's sign, on the low sign: `Level 12!`.
     public static func levelSign(_ level: Int) -> String { "Level \(level)!" }
-    /// The ring closing's reason, in the lane.
-    public static let ringReason = "Today's done. Nice work."
+    /// The ring closing's reason, in the lane's few characters
+    /// (`Narration.maxFact`); the Mac's narration says the rest.
+    public static let ringReason = "Today's done!"
     /// The faces the growth moments play: a level, a size grown, the ring.
     static let levelFace = "proud", grewFace = "excited", ringFace = "happy"
 

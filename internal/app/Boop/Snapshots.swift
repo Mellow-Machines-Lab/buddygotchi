@@ -89,7 +89,7 @@ enum Snapshots {
                 let card = model(installer, status: status())
                 card.worldPick = "b-bean"
                 shot("world-card", card, pane: .overview, tab: .world)
-                card.worldSent["b-bean"] = .sent(.wave)
+                card.worldSent["b-bean"] = .sent
                 shot("world-card-sent", card, pane: .overview, tab: .world)
                 let shipping = model(installer, status: status())
                 shipping.worldPick = "b-pip"
@@ -97,6 +97,7 @@ enum Snapshots {
                 var away = status()
                 away.world?.on = false
                 away.world?.link.joined = false
+                away.world?.inWorld = false
                 let offCard = model(installer, status: away)
                 offCard.worldPick = "b-bean"
                 shot("world-off", offCard, pane: .overview, tab: .world)
@@ -130,6 +131,7 @@ enum Snapshots {
                 // Out of the world, and shown as "a buddy".
                 var privately = status()
                 privately.world?.on = false
+                privately.world?.inWorld = false
                 shot("settings-world-off", model(installer, status: privately), pane: .settings)
                 var hidden = status()
                 hidden.world?.link.nameHidden = true
@@ -666,14 +668,14 @@ enum Snapshots {
                                       regions: regions,
                                       buddies: buddies)
         let today = Calendar.current.startOfDay(for: Date())
-        var link = WorldLink.Status(joined: true, shownName: name, snapshot: snapshot, fetchedAt: Date(), today: [
+        var link = WorldLink.Status(joined: true, shownName: name, snapshot: snapshot, today: [
             .init(counts: [.init(kind: .boop, n: 1)], region: .europeAfrica, at: today.addingTimeInterval(10 * 3600 + 42 * 60)),
             .init(counts: [.init(kind: .cheer, n: 3)], region: nil, at: today.addingTimeInterval(9 * 3600 + 15 * 60)),
             .init(counts: [.init(kind: .boop, n: 3), .init(kind: .wave, n: 1)], region: nil, plays: false,
                   at: today.addingTimeInterval(8 * 3600)),
         ])
         link.nameHidden = false
-        return Runtime.WorldStatus(on: true, shown: true, utcOffset: 60, activity: .coding, link: link)
+        return Runtime.WorldStatus(on: true, inWorld: true, utcOffset: 60, link: link)
     }
 
     static func overviews(_ installer: HookInstaller) -> [(String, AppModel)] {

@@ -34,9 +34,14 @@ def get(url: str) -> dict:
         return json.load(r)
 
 
+RUNNING: list[subprocess.Popen] = []
+
+
 def wait(what: str, check, seconds: float = 60) -> object:
     deadline = time.time() + seconds
     while time.time() < deadline:
+        if any(p.poll() is not None for p in RUNNING):
+            raise SystemExit(f"world e2e: FAIL, a Boop quit while waiting for: {what}")
         got = check()
         if got:
             return got
@@ -60,12 +65,17 @@ class Buddy:
         self.proc = subprocess.Popen([str(BOOP), "--headless", "--state-dir", str(self.dir), "--name", name, "--link", "none",
                                       "--brain", "scripted", "--no-open", "--debug"],
                                      env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        RUNNING.append(self.proc)
         wait(f"{name}'s socket", self.sock.exists, 30)
 
-    def dev(self, line: dict) -> None:
+    def send(self, line: dict) -> None:
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
+            s.settimeout(1)
             s.connect(str(self.sock))
-            s.sendall((json.dumps({"dev": "world", **line}) + "\n").encode())
+            s.sendall((json.dumps(line) + "\n").encode())
+
+    def dev(self, line: dict) -> None:
+        self.send({"dev": "world", **line})
 
     def identity(self) -> dict | None:
         f = self.dir / "world.json"
@@ -88,6 +98,7 @@ class Buddy:
         return f.read_text() if f.exists() else ""
 
     def stop(self) -> None:
+        RUNNING.remove(self.proc)
         self.proc.terminate()
         try:
             self.proc.wait(10)
@@ -128,9 +139,7 @@ def main(argv: list[str]) -> int:
         wait("Bean's wave went", lambda: "the wave went" in b.log(), 30)
         # Each asks for what's waiting on its next send or check: an unlock asks at once.
         for x in (a, b):
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-                s.connect(str(x.sock))
-                s.sendall(b'{"dev":"presence","signal":"unlocked"}\n')
+            x.send({"dev": "presence", "signal": "unlocked"})
         got_b = wait("Bean gets the boop", lambda: [e for e in b.world_events() if e["data"]["specific_type"] == "boop"], 90)
         got_a = wait("Mochi gets the wave", lambda: [e for e in a.world_events() if e["data"]["specific_type"] == "wave"], 90)
         print(f"world e2e: Bean got {got_b[0]['data']}, Mochi got {got_a[0]['data']}")

@@ -113,7 +113,7 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(again.week(to: "2026-10-23").map(\.xp), [0, 0, 0, 5, 0, 2, 0])
         XCTAssertEqual(again.week(to: "2026-10-23").map(\.day).last, "2026-10-23")
         XCTAssertEqual(again.week(to: "2026-10-23").map(\.day).first, "2026-10-17")
-        XCTAssertEqual(LocalTime.day(number: LocalTime.dayNumber("2024-02-29")!), "2024-02-29")
+        XCTAssertEqual(again.week(to: "2024-03-01").map(\.day).suffix(2), ["2024-02-29", "2024-03-01"], "a leap day")
     }
 
     /// What growing sends through the runtime: a `state` with today's ring

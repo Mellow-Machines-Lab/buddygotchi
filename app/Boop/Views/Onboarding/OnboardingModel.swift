@@ -398,27 +398,24 @@ final class OnboardingModel: ObservableObject {
     /// the runtime reads it when it does.
     func worldShown() {
         startRuntime()
-        if let runtime = app.runtime {
-            runtime.worldScreenShown()
-        } else {
-            do { try AppSettings.update(in: stateDir) { $0.worldShown = true } } catch {
-                log("onboarding: can't save that the world was shown: \(error)")
-            }
-        }
-        log("onboarding: the world's screen was shown")
+        world({ $0.worldScreenShown() }, else: { $0.worldShown = true }, "the world's screen was shown")
     }
 
     /// "Keep Boop private": the world off, and on to the finale.
     func keepPrivate() {
-        if let runtime = app.runtime {
-            runtime.setWorld(false)
-        } else {
-            do { try AppSettings.update(in: stateDir) { $0.world = false } } catch {
-                log("onboarding: can't keep the world off: \(error)")
-            }
-        }
-        log("onboarding: kept private, out of the world")
+        world({ $0.setWorld(false) }, else: { $0.world = false }, "kept private, out of the world")
         next()
+    }
+
+    /// A world setting through the runtime, or, if it couldn't start,
+    /// straight into `settings.json`, which it reads when it does.
+    private func world(_ runtime: (Runtime) -> Void, else change: (inout AppSettings) -> Void, _ what: String) {
+        if let started = app.runtime {
+            runtime(started)
+        } else {
+            do { try AppSettings.update(in: stateDir, change) } catch { log("onboarding: can't save that it \(what): \(error)") }
+        }
+        log("onboarding: \(what)")
     }
 
     // MARK: Act 9

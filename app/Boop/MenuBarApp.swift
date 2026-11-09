@@ -42,15 +42,8 @@ enum Pane: Equatable {
 enum Tab: String, CaseIterable, Equatable {
     case now, boop, world
 
-    /// Its label: Now, Boop and World, the product's three, whatever the
-    /// buddy is called.
-    var title: String {
-        switch self {
-        case .now: "Now"
-        case .boop: "Boop"
-        case .world: "World"
-        }
-    }
+    /// Its label: Now, Boop and World, whatever the buddy is called.
+    var title: String { rawValue.capitalized }
 }
 
 /// What the person has chosen so far in onboarding: a name, and which
@@ -92,7 +85,7 @@ final class AppModel: ObservableObject {
     @Published var worldPick: String?
     @Published var worldSent: [String: WorldSend] = [:]
     enum WorldSend: Equatable {
-        case sending(World.GestureKind), sent(World.GestureKind), failed
+        case sending(World.GestureKind), sent, failed
     }
     /// The popover is open. Its views live on while it's closed, so they
     /// hold their loops still until it opens again.
@@ -118,7 +111,7 @@ final class AppModel: ObservableObject {
     func sendGesture(_ kind: World.GestureKind, to id: String) {
         worldSent[id] = .sending(kind)
         runtime?.sendGesture(kind, to: id) { [weak self] ok in
-            MainActor.assumeIsolated { self?.worldSent[id] = ok ? .sent(kind) : .failed }
+            MainActor.assumeIsolated { self?.worldSent[id] = ok ? .sent : .failed }
         }
     }
     /// Onboarding's window is open: its acts show the status too.

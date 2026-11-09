@@ -15,11 +15,7 @@ struct BoopPane: View {
                 }
                 PaneSection("What \(model.name) knows") { knows(status.notes) }
             } else {
-                Card {
-                    Text("\(model.name) isn't running, so there's nothing to show yet.")
-                        .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                NoteCard("\(model.name) isn't running, so there's nothing to show yet.")
             }
         }
     }
@@ -30,7 +26,7 @@ struct BoopPane: View {
     /// XP of every day together, how far the next level is, and a line.
     private func today(_ growth: Growth) -> some View {
         HStack(alignment: .center, spacing: Theme.gapLoose) {
-            Ring(fill: Double(growth.today) / Double(Growth.perDay), full: growth.ringClosed, width: 9)
+            Ring(fill: Double(growth.today) / Double(Growth.perDay), width: 9)
                 .frame(width: 96, height: 96)
                 .overlay {
                     VStack(spacing: 0) {
@@ -65,10 +61,10 @@ struct BoopPane: View {
         HStack(spacing: 0) {
             ForEach(days) { day in
                 VStack(spacing: 4) {
-                    Ring(fill: Double(day.xp) / Double(Growth.perDay), full: day.xp >= Growth.perDay, width: 4)
+                    Ring(fill: Double(day.xp) / Double(Growth.perDay), width: 4)
                         .frame(width: 26, height: 26)
-                    Text(day.name).font(.system(size: 10, weight: day.name == "Today" ? .semibold : .regular))
-                        .foregroundStyle(day.name == "Today" ? Theme.ink : Theme.inkSoft)
+                    Text(day.name).font(.system(size: 10, weight: day.isToday ? .semibold : .regular))
+                        .foregroundStyle(day.isToday ? Theme.ink : Theme.inkSoft)
                 }
                 .frame(maxWidth: .infinity)
                 .accessibilityElement(children: .ignore)
@@ -112,8 +108,8 @@ struct BoopPane: View {
 struct Ring: View {
     /// 0 to 1.
     let fill: Double
-    var full = false
     let width: CGFloat
+    var full: Bool { fill >= 1 }
 
     var body: some View {
         ZStack {

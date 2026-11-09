@@ -30,6 +30,7 @@ public final class WorldLink {
         public var activity: World.Activity
         public var day: String
         public var xpToday: Int
+        public var ringClosed: Bool { xpToday >= Growth.perDay }
 
         public init(name: String, level: Int, stage: String, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int) {
             self.name = name
@@ -45,7 +46,7 @@ public final class WorldLink {
         /// what it's doing, a level, the ring closing, its name.
         func changes(from last: Now) -> Bool {
             activity != last.activity || level != last.level || name != last.name || utcOffset != last.utcOffset
-                || (xpToday >= Growth.perDay && last.xpToday < Growth.perDay)
+                || (ringClosed && !last.ringClosed)
         }
     }
 
@@ -64,20 +65,17 @@ public final class WorldLink {
         /// How the world shows the buddy's name, and whether it hid it.
         public var shownName: String?
         public var nameHidden = false
-        /// The world, while the World tab is open, and when it was fetched.
+        /// The world, as the World tab last fetched it.
         public var snapshot: World.Snapshot?
-        public var fetchedAt: Date?
         /// Why the world can't be reached now, in plain words.
         public var trouble: String?
         /// What other buddies did today, newest first.
         public var today: [Arrival] = []
 
-        public init(joined: Bool = false, shownName: String? = nil, snapshot: World.Snapshot? = nil, fetchedAt: Date? = nil,
-                    today: [Arrival] = []) {
+        public init(joined: Bool = false, shownName: String? = nil, snapshot: World.Snapshot? = nil, today: [Arrival] = []) {
             self.joined = joined
             self.shownName = shownName
             self.snapshot = snapshot
-            self.fetchedAt = fetchedAt
             self.today = today
         }
     }
@@ -127,7 +125,6 @@ public final class WorldLink {
     var lastSentAt: Int64?
     var lastAskedAt: Int64?
     var busy = false
-    var joining = false
     var retryAt: Int64?
     var backoff: Int64 = 0
     var tabOpen = false
@@ -182,17 +179,19 @@ public final class WorldLink {
         if pendingSince == nil { pendingSince = now }
     }
 
-    /// Every tick: what to send, ask for or fetch at `now`. `on`: the world's
-    /// switch, and onboarding's world screen shown. `quiet`: night, or you're
-    /// away, so gestures wait.
-    public func tick(_ me: Now, on: Bool, quiet: Bool, today: String, at now: Int64) {
+    /// Every tick: what to send, ask for or fetch at `now`, on Boop day
+    /// `today`. `on`: the world's switch, and onboarding's world screen
+    /// shown. `quiet`: night, or you're away, so gestures wait. `me` is
+    /// worked out only when something may be sent.
+    public func tick(_ me: @autoclosure () -> Now, on: Bool, quiet: Bool, today: String, at now: Int64) {
         if todayDay != today {
             todayDay = today
             status.today = []
         }
-        if !quiet { record(gestures.release(at: now), at: now) }
-        if tabOpen, !fetching, lastFetchAt.map({ now - $0 >= Self.fetchEveryMs }) ?? true { fetch(at: now) }
+        if !quiet { record(gestures.release(at: now)) }
+        fetchIfDue(at: now)
         guard on, !busy, retryAt.map({ now >= $0 }) ?? true else { return }
+        let me = me()
         guard let identity else {
             join(me, at: now)
             return
@@ -215,13 +214,10 @@ public final class WorldLink {
     }
 
     func join(_ me: Now, at now: Int64) {
-        guard !joining else { return }
-        joining = true
         busy = true
         client.join(name: me.name, utcOffset: me.utcOffset) { [weak self] result in
             guard let self else { return }
             busy = false
-            joining = false
             switch result {
             case .success(let joined):
                 identity = Identity(id: joined.id, key: joined.key)
@@ -256,8 +252,7 @@ public final class WorldLink {
                 lastSentAt = now
                 lastAskedAt = now
                 // What arrived since the send was made stays for the next.
-                pending = World.Counts(turns: pending.turns - added.turns, testsPassed: pending.testsPassed - added.testsPassed,
-                                       ships: pending.ships - added.ships, linesChanged: pending.linesChanged - added.linesChanged)
+                pending = pending - added
                 pendingSince = pending.isEmpty ? nil : now
                 backoff = 0
                 let shown = reply.name ?? status.shownName
@@ -267,7 +262,7 @@ public final class WorldLink {
                     status.trouble = nil
                     onChange()
                 }
-                arrived(reply.gestures ?? [], quiet: quiet, at: now)
+                record(gestures.arrived(reply.gestures ?? [], quiet: quiet, at: now))
             case .failure(let failure):
                 failed(failure, at: now)
             }
@@ -281,18 +276,13 @@ public final class WorldLink {
             guard let self else { return }
             busy = false
             switch result {
-            case .success(let came): arrived(came, quiet: quiet, at: now)
+            case .success(let came): record(gestures.arrived(came, quiet: quiet, at: now))
             case .failure(let failure): failed(failure, at: now)
             }
         }
     }
 
-    func arrived(_ came: [World.Gesture], quiet: Bool, at now: Int64) {
-        guard !came.isEmpty else { return }
-        record(gestures.arrived(came, quiet: quiet, at: now), at: now)
-    }
-
-    func record(_ events: [Event], at now: Int64) {
+    func record(_ events: [Event]) {
         guard !events.isEmpty else { return }
         for e in events {
             status.today.insert(Arrival(counts: WorldGestures.counts(of: e).map { Arrival.Count(kind: $0.0, n: $0.1) },
@@ -322,9 +312,8 @@ public final class WorldLink {
         }
         backoff = min(Self.maxBackoffMs, max(Self.backoffMs, backoff * 2))
         retryAt = now + backoff
-        let trouble = "Can't reach the world right now."
-        if status.trouble != trouble {
-            status.trouble = trouble
+        if status.trouble != Self.troubleWords {
+            status.trouble = Self.troubleWords
             log("world: \(failure); trying again in \(backoff / 1000) s")
             onChange()
         }
@@ -333,10 +322,14 @@ public final class WorldLink {
     /// The World tab opened or closed: the world is fetched only while it's open.
     public func tab(open: Bool, at now: Int64) {
         tabOpen = open
-        if open, !fetching, lastFetchAt.map({ now - $0 >= Self.fetchEveryMs }) ?? true { fetch(at: now) }
+        fetchIfDue(at: now)
     }
 
-    func fetch(at now: Int64) {
+    /// Why the world can't be reached, as the World tab says it.
+    static let troubleWords = "Can't reach the world right now."
+
+    func fetchIfDue(at now: Int64) {
+        guard tabOpen, !fetching, lastFetchAt.map({ now - $0 >= Self.fetchEveryMs }) ?? true else { return }
         fetching = true
         lastFetchAt = now
         client.world { [weak self] result in
@@ -345,10 +338,9 @@ public final class WorldLink {
             switch result {
             case .success(let snapshot):
                 status.snapshot = snapshot
-                status.fetchedAt = Date()
                 if identity == nil || !busy { status.trouble = nil }
             case .failure:
-                status.trouble = "Can't reach the world right now."
+                status.trouble = Self.troubleWords
             }
             onChange()
         }
@@ -378,7 +370,7 @@ public final class WorldLink {
         }
         self.identity = nil
         save()
-        status = Status(snapshot: status.snapshot, fetchedAt: status.fetchedAt)
+        status = Status(snapshot: status.snapshot)
         last = nil
         pending = World.Counts()
         pendingSince = nil
