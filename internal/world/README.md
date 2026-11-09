@@ -155,3 +155,17 @@ The cron runs once a day on production deployments only. Vercel sends
 To unhide a reported name after you look at it, there's no route yet: in
 Neon's SQL editor, `update buddies set reports = 0 where id = '…'` and
 `delete from name_reports where buddy = '…'`.
+
+### The deployment, as it is (2026-11-08)
+
+- Project `boop-world` on the owner's Vercel account, production at
+  `https://boop-world-michaeljxzhu.vercel.app`, Neon's free plan for Postgres.
+  Deployed from a Mac with `npx vercel deploy --prod`, not from GitHub yet.
+- Deployment Protection is off for this project: buddies' Macs can't log in, and
+  every route that changes anything needs a buddy's key or the admin token.
+- `vercel.json` names the framework (`"framework": "hono"`): a project made
+  from the command line has none, and then nothing is built.
+- TypeScript stays at 5.x: Vercel's build used TypeScript 7 from this package
+  and then couldn't find Node's types.
+- The admin token is in Vercel (sensitive, so it can't be read back) and in
+  `~/.boopdev/world-admin-token` on the owner's Mac, readable only by them.
