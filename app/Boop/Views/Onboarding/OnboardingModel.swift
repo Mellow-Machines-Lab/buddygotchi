@@ -125,6 +125,8 @@ final class OnboardingModel: ObservableObject {
             askMic = !SpeechListener.allowed
             // On by default: Boop only watches while it's open.
             if !loginTouched, app.ownsHooks, app.loginItemState == .off { app.setOpenAtLogin(true) }
+        case .world:
+            worldShown()
         case .finale:
             celebrate()
         default:
@@ -389,6 +391,37 @@ final class OnboardingModel: ObservableObject {
     }
 
     // MARK: Act 8
+
+    /// The world's act is on screen: from now on the buddy may join. The
+    /// runtime runs past the name, but a launch that comes back here starts
+    /// it first; one that couldn't start tells the settings itself, where
+    /// the runtime reads it when it does.
+    func worldShown() {
+        startRuntime()
+        if let runtime = app.runtime {
+            runtime.worldScreenShown()
+        } else {
+            do { try AppSettings.update(in: stateDir) { $0.worldShown = true } } catch {
+                log("onboarding: can't save that the world was shown: \(error)")
+            }
+        }
+        log("onboarding: the world's screen was shown")
+    }
+
+    /// "Keep Boop private": the world off, and on to the finale.
+    func keepPrivate() {
+        if let runtime = app.runtime {
+            runtime.setWorld(false)
+        } else {
+            do { try AppSettings.update(in: stateDir) { $0.world = false } } catch {
+                log("onboarding: can't keep the world off: \(error)")
+            }
+        }
+        log("onboarding: kept private, out of the world")
+        next()
+    }
+
+    // MARK: Act 9
 
     /// A click on the on-screen Boop: it pokes back, as the board does.
     func pokeOnScreen() {

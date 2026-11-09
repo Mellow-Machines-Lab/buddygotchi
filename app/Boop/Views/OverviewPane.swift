@@ -3,9 +3,11 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// Overview, top to bottom: Boop and how things are, who needs you, and
-/// every session by agent. Controls live in Settings; the one exception is
-/// the mic button.
+/// The overview: Boop at the top, the same on every tab, then its three
+/// tabs. Now, top to bottom: who needs you, every session by agent, how
+/// Boop feels and why, and what it celebrates today. The Boop and World
+/// tabs are their own views. Controls live in Settings; the one exception
+/// is the mic button.
 struct OverviewPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
@@ -13,80 +15,18 @@ struct OverviewPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            FittedScroll(maxHeight: maxHeight - 76) {
-                VStack(alignment: .leading, spacing: 0) {
-                // Someone waiting comes before why Boop is as it is.
-                if let attn = model.status?.snapshot.attn {
-                    needsYou(attn, model.status?.sessions ?? [])
-                        .padding(.top, Theme.gapLoose - Self.headerGap)
-                        .padding(.bottom, Theme.gapSnug)
-                }
-                // In the scroll, not the header: they wrap, and the buttons stay put.
-                ReasonLines(feed: model.slime, name: model.name, wish: model.status?.wishing,
-                            why: moodWhy, doing: model.status?.doingReason?.cause)
-                    .padding(.leading, faceSize + Theme.gap)
-                VStack(alignment: .leading, spacing: Theme.gapSection) {
-                    if let error = model.startError {
-                        notice("exclamationmark.triangle.fill", Theme.clayInk, "Boop couldn't start", error,
-                               action: ("Try again", model.start))
-                    }
-                    if model.status?.uncleanExit == true {
-                        notice("exclamationmark.triangle.fill", Theme.clayInk, "\(model.name) stopped unexpectedly",
-                               "It didn't close properly last time. A bug report keeps what it knew, with macOS's crash report if there is one.",
-                               action: ("Save a bug report", model.saveReport)) {
-                            model.runtime?.dismissUncleanExit()
-                        }
-                    }
-                    deviceNotice(model.device)
-                    if model.noKey, !model.noKeyDismissed {
-                        notice("key.fill", Theme.inkSoft, "\(model.name) has no brain yet",
-                               "It shows what your agents do and when one needs you. Add a Jev API key in Settings, and \(model.name) reacts to it, and answers when you talk.",
-                               action: openSettings) {
-                            model.noKeyDismissed = true
-                        }
-                    }
-                    if let trouble = model.status?.brainTrouble { brainNotice(trouble) }
-                    if let why = model.status?.micTrouble {
-                        notice("mic.slash.fill", Theme.clayInk, "\(model.name) can't hear you", why) {
-                            model.dismissMicTrouble()
-                        }
-                    }
-                    if model.restartAgents {
-                        notice("arrow.clockwise", Theme.inkSoft, "Restart your agent sessions",
-                               "Open sessions pick up Boop's hooks when they restart.") {
-                            model.restartAgents = false
-                        }
-                    }
-                    // A change that failed, at setup or in Settings, until it's dismissed
-                    // or the hooks change.
-                    ForEach(Agent.allCases.filter { model.hookErrors[$0] != nil && !model.hookErrorsDismissed.contains($0) },
-                            id: \.self) { agent in
-                        notice("exclamationmark.triangle.fill", Theme.clayInk, "Couldn't change \(agent.displayName)'s hooks",
-                               "\(agent.displayName)'s settings were left as they were.", action: openSettings,
-                               more: model.hookErrors[agent]) {
-                            model.dismissHookError(agent)
-                        }
-                    }
-                    if let status = model.status {
-                        PaneSection(status.sessions.isEmpty ? "Sessions" : "Sessions · \(status.sessions.count)") {
-                            sessions(status)
-                        }
-                        if !status.dressing.isEmpty {
-                            PaneSection("Why \(model.name) looks like this") { dressingCard(status.dressing) }
-                        }
-                        if let growth = status.growth {
-                            PaneSection("Growth") { growthCard(growth, daysOld: status.daysOld) }
-                        }
-                        if !status.notes.isEmpty {
-                            PaneSection("What \(model.name) remembers") { notesCard(status.notes) }
-                        }
-                        if !status.recently.isEmpty {
-                            PaneSection("Recently") { recentlyCard(status.recently) }
-                        }
+            TabBar(tab: $model.tab, name: model.name)
+                .padding(.horizontal, Theme.gutter)
+                .padding(.top, Theme.gapSnug)
+            FittedScroll(maxHeight: maxHeight - 76 - TabBar.height) {
+                Group {
+                    switch model.tab {
+                    case .now: now
+                    case .boop: BoopPane(model: model)
+                    case .world: WorldPane(model: model)
                     }
                 }
-                .padding(.top, Theme.gapLoose - Self.headerGap)
-                }
+                .padding(.top, Theme.gap)
                 .padding(.horizontal, Theme.gutter)
                 .padding(.bottom, Theme.gapLoose)
             }
@@ -96,9 +36,72 @@ struct OverviewPane: View {
         .frame(maxHeight: maxHeight)
     }
 
+    // MARK: Now
+
+    private var now: some View {
+        VStack(alignment: .leading, spacing: Theme.gapSection) {
+            // Someone waiting comes first, before anything else.
+            if let attn = model.status?.snapshot.attn {
+                needsYou(attn, model.status?.sessions ?? [])
+            }
+            if let error = model.startError {
+                notice("exclamationmark.triangle.fill", Theme.clayInk, "Boop couldn't start", error,
+                       action: ("Try again", model.start))
+            }
+            if model.status?.uncleanExit == true {
+                notice("exclamationmark.triangle.fill", Theme.clayInk, "\(model.name) stopped unexpectedly",
+                       "It didn't close properly last time. A bug report keeps what it knew, with macOS's crash report if there is one.",
+                       action: ("Save a bug report", model.saveReport)) {
+                    model.runtime?.dismissUncleanExit()
+                }
+            }
+            deviceNotice(model.device)
+            if model.noKey, !model.noKeyDismissed {
+                notice("key.fill", Theme.inkSoft, "\(model.name) has no brain yet",
+                       "It shows what your agents do and when one needs you. Add a Jev API key in Settings, and \(model.name) reacts to it, and answers when you talk.",
+                       action: openSettings) {
+                    model.noKeyDismissed = true
+                }
+            }
+            if let trouble = model.status?.brainTrouble { brainNotice(trouble) }
+            if let why = model.status?.micTrouble {
+                notice("mic.slash.fill", Theme.clayInk, "\(model.name) can't hear you", why) {
+                    model.dismissMicTrouble()
+                }
+            }
+            if model.restartAgents {
+                notice("arrow.clockwise", Theme.inkSoft, "Restart your agent sessions",
+                       "Open sessions pick up Boop's hooks when they restart.") {
+                    model.restartAgents = false
+                }
+            }
+            // A change that failed, at setup or in Settings, until it's dismissed
+            // or the hooks change.
+            ForEach(Agent.allCases.filter { model.hookErrors[$0] != nil && !model.hookErrorsDismissed.contains($0) },
+                    id: \.self) { agent in
+                notice("exclamationmark.triangle.fill", Theme.clayInk, "Couldn't change \(agent.displayName)'s hooks",
+                       "\(agent.displayName)'s settings were left as they were.", action: openSettings,
+                       more: model.hookErrors[agent]) {
+                    model.dismissHookError(agent)
+                }
+            }
+            if let status = model.status {
+                PaneSection(status.sessions.isEmpty ? "Sessions" : "Sessions · \(status.sessions.count)") {
+                    sessions(status)
+                }
+                // In words, so a face never needs decoding.
+                ReasonLines(feed: model.slime, name: model.name, mood: status.snapshot.mood, wish: status.wishing,
+                            why: moodWhy, doing: status.doingReason?.cause)
+                if !status.dressing.isEmpty {
+                    PaneSection("Why \(model.name) looks like this") { dressingCard(status.dressing) }
+                }
+            }
+        }
+    }
+
     // MARK: Header
 
-    /// Under the header, over what the scroll holds first.
+    /// Under the header, over the tabs.
     private static let headerGap: CGFloat = 4
 
     /// The name and the headline get the column's whole width, and wrap
@@ -130,7 +133,7 @@ struct OverviewPane: View {
                     if severalBuddies { buddies }
                     if model.status != nil {
                         HStack(spacing: 4) {
-                            if let mood = model.status?.snapshot.mood { moodLabel(mood) }
+                            if let mood = model.status?.snapshot.mood { moodLabel(mood, level: model.status?.growth?.level) }
                             Spacer(minLength: 0)
                             hushButton
                             talkButton
@@ -158,23 +161,20 @@ struct OverviewPane: View {
         return !(model.status?.connected == true && model.status?.device?.hasTheCharacter == false)
     }
 
-    /// Why Boop feels as it does. Under "Feeling" the cause says enough; below
-    /// a needs-you card, far from that, the sentence names the mood it explains.
-    private var moodWhy: String? {
-        guard let status = model.status, let reason = status.moodReason else { return nil }
-        return status.snapshot.attn == nil ? reason.cause : reason.mood(status.snapshot.mood, name: model.name)
-    }
+    /// Why Boop feels as it does, after the line that names the mood.
+    private var moodWhy: String? { model.status?.moodReason?.cause }
 
     /// The slime while the runtime starts, before its first status.
     private static let waking = StateSnapshot(doing: "asleep", mood: CharacterPack.active.startupMood, attn: nil, working: 0, vol: 0)
 
     /// Boop's mood in words, labelled, so it doesn't rest on telling the
-    /// faces apart. The face already draws in the mood's designs.
-    private func moodLabel(_ mood: String) -> some View {
+    /// faces apart, and its level. The face already draws in the mood's designs.
+    private func moodLabel(_ mood: String, level: Int?) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
             Text("Feeling").foregroundStyle(Theme.inkFaint)
             Text(mood).fontWeight(.semibold).foregroundStyle(Theme.inkSoft)
                 .contentTransition(.opacity)
+            if let level { Text("· Level \(level)").foregroundStyle(Theme.inkFaint) }
         }
         .font(.system(size: 11))
         .fixedSize()
@@ -322,26 +322,6 @@ struct OverviewPane: View {
         return model.listening || mood == .working || mood == .needsYou
     }
 
-    // MARK: Growth
-
-    /// Boop's level and today's ring.
-    private func growthCard(_ growth: Growth, daysOld: Int?) -> some View {
-        Card {
-            VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                Text("Level \(growth.level)").font(.system(size: 12, weight: .semibold))
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Theme.well)
-                        Capsule().fill(Theme.ink).frame(width: max(6, geo.size.width * Double(growth.percent) / 100))
-                    }
-                }
-                .frame(height: 6)
-                Text("\(growth.today) today").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
     // MARK: Why it looks like this
 
     /// What Boop is celebrating today, and the night, your prompt or the
@@ -373,55 +353,6 @@ struct OverviewPane: View {
         case .morning: "sun.horizon"
         case .friday: "sunglasses"
         }
-    }
-
-    // MARK: Memory
-
-    /// The written memory's notes, a section each, each with a pin, which
-    /// keeps it from aging and from the night's edits, and a cross, which
-    /// forgets it for good.
-    private func notesCard(_ notes: [WrittenMemory.Note]) -> some View {
-        Card {
-            VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                ForEach(WrittenMemory.Section.allCases, id: \.self) { section in
-                    let these = notes.filter { $0.section == section }
-                    if !these.isEmpty {
-                        Text(section.heading.replacingOccurrences(of: "Boop", with: model.name))
-                            .font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
-                        ForEach(these, id: \.id) { note in
-                            HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                Text(note.text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
-                                Spacer(minLength: 0)
-                                Button { model.runtime?.pinNote(note.id, !note.pinned) } label: {
-                                    Image(systemName: note.pinned ? "pin.fill" : "pin").font(.system(size: 10))
-                                }
-                                .buttonStyle(.quiet)
-                                .help(note.pinned ? "Let it age as the others do" : "Keep it for good, as it is")
-                                Button { model.runtime?.forgetNote(note.id) } label: {
-                                    Image(systemName: "xmark").font(.system(size: 10))
-                                }
-                                .buttonStyle(.quiet)
-                                .help("Forget it")
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // MARK: Recently
-
-    /// The memory's recent days: a line a day, newest first.
-    private func recentlyCard(_ lines: [Runtime.Status.DayLine]) -> some View {
-        Card {
-            VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                ForEach(lines) { entry in
-                    DayRow(entry: entry)
-                }
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 
     // MARK: Needs you
@@ -829,30 +760,14 @@ struct SessionRow: View {
     }
 }
 
-/// A stage's shape in one flat colour, at its size, standing on the card's line.
-private struct GrowthSilhouette: View {
-    let stage: Int
-    /// Each stage's width and height, in points: the body's on the board, by
-    /// the same proportions (`BodySettings`).
-    private static let sizes: [CGSize] = [
-        CGSize(width: 15, height: 12), CGSize(width: 19, height: 15), CGSize(width: 27, height: 22), CGSize(width: 32, height: 22),
-    ]
-    var body: some View {
-        let size = Self.sizes[min(max(stage, 1), Self.sizes.count) - 1]
-        UnevenRoundedRectangle(topLeadingRadius: size.width / 2, bottomLeadingRadius: size.height / 4,
-                               bottomTrailingRadius: size.height / 4, topTrailingRadius: size.width / 2)
-            .fill(Theme.inkSoft.opacity(0.35))
-            .frame(width: size.width, height: size.height)
-    }
-}
-
-/// Why Boop is as it is, in plain words, so a face never needs decoding, each
-/// in full: its wish, why it feels so, and what it's up to, which the board
-/// doesn't caption: what its face is doing to pass the time, else why it's
-/// doing what it's doing.
+/// How Boop feels and why, in plain words, so a face never needs decoding,
+/// each in full: the mood, its wish, why it feels so, and what it's up to,
+/// which the board doesn't caption: what its face is doing to pass the
+/// time, else why it's doing what it's doing.
 private struct ReasonLines: View {
     @ObservedObject var feed: SlimeFeed
     let name: String
+    let mood: String
     let wish: String?
     let why: String?
     let doing: String?
@@ -862,15 +777,57 @@ private struct ReasonLines: View {
     }
 
     var body: some View {
-        if !lines.isEmpty {
+        Card {
             VStack(alignment: .leading, spacing: 3) {
+                Text("\(name) is \(mood).").font(.system(size: 12, weight: .semibold))
+                    .fixedSize(horizontal: false, vertical: true)
                 ForEach(lines, id: \.self) { line in
-                    Text(line).font(.system(size: 10)).foregroundStyle(Theme.inkSoft)
+                    Text(line).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
             .animation(.boopSettle, value: lines)
         }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+/// The overview's tabs, as a segmented control: the one open raised on
+/// the well. ⌘1, ⌘2 and ⌘3 open them too.
+struct TabBar: View {
+    @Binding var tab: Tab
+    let name: String
+    /// Its height, with the gap over it.
+    static let height: CGFloat = 36
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(Array(Tab.allCases.enumerated()), id: \.element) { i, each in
+                let on = each == tab
+                Button { withAnimation(.boopSettle) { tab = each } } label: {
+                    Text(each.title(name: name))
+                        .font(.system(size: 12, weight: on ? .semibold : .medium))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .foregroundStyle(on ? Theme.ink : Theme.inkSoft)
+                        .padding(.horizontal, 4).padding(.vertical, 5)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background {
+                            if on {
+                                RoundedRectangle(cornerRadius: Theme.chipRadius).fill(Theme.paper)
+                                    .overlay(RoundedRectangle(cornerRadius: Theme.chipRadius).strokeBorder(Theme.hairline, lineWidth: 1))
+                                    .shadow(color: .black.opacity(0.06), radius: 1, y: 1)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(KeyEquivalent(Character("\(i + 1)")), modifiers: .command)
+                .accessibilityAddTraits(on ? .isSelected : [])
+            }
+        }
+        .padding(2)
+        .fixedSize(horizontal: false, vertical: true)
+        .background(Theme.well, in: RoundedRectangle(cornerRadius: Theme.wellRadius))
     }
 }

@@ -37,6 +37,21 @@ enum Pane: Equatable {
     case overview, settings, memory
 }
 
+/// The overview's three tabs: how things are now, Boop itself, and the
+/// world of buddies. Now is where the popover opens.
+enum Tab: String, CaseIterable, Equatable {
+    case now, boop, world
+
+    /// Its label: Boop's own tab goes by Boop's name.
+    func title(name: String) -> String {
+        switch self {
+        case .now: "Now"
+        case .boop: name
+        case .world: "World"
+        }
+    }
+}
+
 /// What the person has chosen so far in onboarding: a name, and which
 /// agents to watch. It lives in the app's model, so moving between
 /// acts loses nothing.
@@ -63,11 +78,47 @@ struct SetupDraft {
 /// What the views show. Updated on the main thread only.
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var pane = Pane.overview
+    @Published var pane = Pane.overview {
+        didSet { worldInSight() }
+    }
+    @Published var tab = Tab.now {
+        didSet {
+            worldInSight()
+            if tab != .world { worldPick = nil }
+        }
+    }
+    /// The buddy whose card is open on the World tab, and what was sent it.
+    @Published var worldPick: String?
+    @Published var worldSent: [String: WorldSend] = [:]
+    enum WorldSend: Equatable {
+        case sending(World.GestureKind), sent(World.GestureKind), failed
+    }
     /// The popover is open. Its views live on while it's closed, so they
     /// hold their loops still until it opens again.
     @Published var shown = false {
-        didSet { if shown { catchUp() } }
+        didSet {
+            if shown { catchUp() }
+            worldInSight()
+        }
+    }
+    /// Whether the runtime was last told the World tab is open.
+    private var worldTabOpen = false
+
+    /// The world is fetched only while its tab is in sight: the popover
+    /// open, on the overview, at the World tab.
+    private func worldInSight() {
+        let open = shown && pane == .overview && tab == .world
+        guard open != worldTabOpen else { return }
+        worldTabOpen = open
+        runtime?.worldTab(open: open)
+    }
+
+    /// Sends `kind` to the buddy `id`, and keeps how it went for its card.
+    func sendGesture(_ kind: World.GestureKind, to id: String) {
+        worldSent[id] = .sending(kind)
+        runtime?.sendGesture(kind, to: id) { [weak self] ok in
+            MainActor.assumeIsolated { self?.worldSent[id] = ok ? .sent(kind) : .failed }
+        }
     }
     /// Onboarding's window is open: its acts show the status too.
     var onboardingShown = false {
@@ -998,6 +1049,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // A finished update's word has been seen; one going on keeps going.
         if case .done = model.firmwareWrite { model.firmwareWrite = .idle }
         if model.pane != .overview { model.pane = .overview }
+        // It opens on Now each time: most of the time, that's what's wanted.
+        model.tab = .now
+        model.worldSent = [:]
     }
 
     /// Settings' Uninstall: asks first, then takes out the hooks, the

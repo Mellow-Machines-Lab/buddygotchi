@@ -3,7 +3,8 @@ import BoopKit
 import SwiftUI
 
 /// Settings, inside the popover: sound, agents and hooks, the
-/// device, the personality and Jev's key, and the app itself.
+/// device, the personality and Jev's key, the memory, the world of
+/// buddies, and the app itself.
 struct SettingsPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
@@ -28,6 +29,9 @@ struct SettingsPane: View {
                     PaneSection("Talk") { talkSetting }
                     PaneSection("Brain") { Card(padding: 0) { key } }
                     PaneSection("Memory") { Card(padding: 0) { memorySetting } }
+                    if let world = model.status?.world {
+                        PaneSection("World") { worldSetting(world) }
+                    }
                     PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -40,6 +44,49 @@ struct SettingsPane: View {
             let key = await Task.detached { read() }.value ?? ""
             if !keyEdited { apiKey = key }
             savedKey = key
+        }
+    }
+
+    // MARK: World
+
+    /// The switch, how the world shows Boop, what it shares, and leaving.
+    /// Off, Boop leaves the world: it's deleted there, and you can still look.
+    private func worldSetting(_ world: Runtime.WorldStatus) -> some View {
+        let name = model.name
+        let region = World.Region(offset: world.utcOffset)?.name
+        let shown = world.link.nameHidden ? "a buddy" : world.link.shownName ?? name
+        return Card(padding: 0) {
+            VStack(spacing: 0) {
+                SettingRow(icon: "globe.europe.africa.fill", title: "\(name) lives in the world",
+                           detail: world.on ? "Other buddies can see \(name) and say hi." : "\(name) is private. You can still look around.") {
+                    Toggle("\(name) lives in the world", isOn: Binding(get: { world.on }, set: { model.runtime?.setWorld($0) }))
+                        .toggleStyle(.boop).labelsHidden()
+                }
+                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                SettingRow(icon: "person.crop.circle", title: "Shown as \(([shown] + [region].compactMap { $0 }).joined(separator: " · "))",
+                           detail: world.link.nameHidden ? "Others see \(name) as “a buddy”, since the world keeps names friendly."
+                                                         : "Others see this name and level.") {
+                    EmptyView()
+                }
+                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                SettingRow(icon: "eye", title: "What \(name) shares",
+                           detail: "Its name and level, its rough time zone, what it's doing in one word, and counts like tests passed. "
+                               + "Never your name, your projects, your code, what you say, or what \(name) remembers.") {
+                    EmptyView()
+                }
+                if world.on {
+                    Hairline().padding(.leading, 40).padding(.trailing, 12)
+                    HStack {
+                        Button("Leave the world") { model.runtime?.setWorld(false) }
+                            .buttonStyle(.plain)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundStyle(Theme.clayInk)
+                        Spacer()
+                        Text("removes \(name) from it").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                    }
+                    .padding(.leading, 40).padding(.trailing, 12).padding(.vertical, 9)
+                }
+            }
         }
     }
 
