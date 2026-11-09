@@ -1,0 +1,42 @@
+{
+  "at": "2026-11-08T17:02:00Z",
+  "awake": 214,
+  "total": 1302,
+  "doing": { "coding": 38, "testing": 12, "shipping": 2, "waiting": 9, "idle": 153, "asleep": 1088 },
+  "today": { "turns": 9120, "tests_passed": 12400, "ships": 310, "lines_changed": 812000 },
+  "year": { "turns": 1200000, "tests_passed": 2100000, "ships": 41000, "lines_changed": 120000000 },
+  "countries": [
+    { "country": "BR", "awake": 31, "today_turns": 1200 },
+    { "country": "PT", "awake": 12, "today_turns": 640 }
+  ],
+  "goal": {
+    "title": "A million tests this month",
+    "metric": "tests_passed",
+    "target": 1000000,
+    "progress": 742000,
+    "starts": "2026-11-01",
+    "ends": "2026-11-30",
+    "reached": false
+  },
+  "rewards": [{ "tag": "worldparty", "until": "2026-11-11" }],
+  "buddies": [
+    {
+      "id": "6f1c2a9e-3b4d-4e5f-8a7b-9c0d1e2f3a4b",
+      "name": "Bean",
+      "level": 7,
+      "stage": "buddy",
+      "country": "JP",
+      "tz": "Asia/Tokyo",
+      "activity": "asleep"
+    },
+    {
+      "id": "0a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
+      "name": "a buddy",
+      "level": 1,
+      "stage": null,
+      "country": null,
+      "tz": null,
+      "activity": "idle"
+    }
+  ]
+}

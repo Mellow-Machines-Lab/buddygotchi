@@ -16,10 +16,10 @@ export interface Db {
 const migrationsDir = new URL("../db/migrations/", import.meta.url);
 
 /** A Postgres pool, from a connection string such as Neon's. */
-export async function connectPostgres(url: string): Promise<Db> {
+export async function connectPostgres(url: string, { max = 5 } = {}): Promise<Db> {
   const { default: postgres } = await import("postgres");
   // prepare: false works behind any pooler, Neon's included.
-  const sql = postgres(url, { max: 5, idle_timeout: 20, prepare: false, onnotice: () => {} });
+  const sql = postgres(url, { max, idle_timeout: 20, prepare: false, onnotice: () => {} });
   const wrap = (q: { unsafe: typeof sql.unsafe }): Omit<Db, "transaction" | "close"> => ({
     async query<T>(text: string, params: unknown[] = []) {
       return (await q.unsafe(text, params as never[])) as unknown as T[];

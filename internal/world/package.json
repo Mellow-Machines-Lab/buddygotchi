@@ -19,6 +19,7 @@
     "postgres": "3.4.9"
   },
   "devDependencies": {
+    "@electric-sql/pglite-socket": "0.2.18",
     "@hono/node-server": "2.1.6",
     "@types/node": "24.19.2",
     "tsx": "4.23.15",
