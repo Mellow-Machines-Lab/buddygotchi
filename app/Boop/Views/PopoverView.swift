@@ -2,8 +2,9 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// The popover. One 360 pt column on warm paper; Overview, Settings and
-/// What Boop knows open inside it. Setup is onboarding's, in its own window.
+/// The popover. One 360 pt column on warm paper; the overview's three tabs
+/// (Now, Boop and World), Settings and What Boop knows open inside it.
+/// Setup is onboarding's, in its own window.
 struct PopoverView: View {
     @ObservedObject var model: AppModel
     var onClose: () -> Void = {}
@@ -55,14 +56,6 @@ struct PopoverView: View {
                         Label("Settings", systemImage: "gearshape")
                     }
                     .keyboardShortcut(",", modifiers: .command)
-                    Button {
-                        model.pane = .memory
-                    } label: {
-                        Image(systemName: "brain")
-                    }
-                    .keyboardShortcut("m", modifiers: [.command, .shift])
-                    .help("What \(model.name) knows about you")
-                    .accessibilityLabel("What \(model.name) knows about you")
                     Button {
                         model.saveReport()
                     } label: {
