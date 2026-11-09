@@ -612,10 +612,7 @@ class Behaviour {
   render::WishShow::Kind lastWish_ = render::WishShow::kNone;
   uint32_t wishPopAt_ = 0;
   render::WishShow::Pop wishPop_ = render::WishShow::kWaiting;
-  // The growth bar: filling from `from` (0 … 1000) to `to` (the XP's percent,
-  // -1 until heard) from fillAt, past the end of the bar by `wrap` when the
-  // stage changed (1 up, -1 down), up from onAt to offAt, with a met wish's
-  // heart leaving at heartAt.
+  // Today's ring's bar, and a met wish's heart flying into it.
   GrowthBar bar_;
   // Whether the screen is another's, or Boop's not looking: no bar then.
   bool barHidden(const Model& m, bool alone, uint32_t t) const;

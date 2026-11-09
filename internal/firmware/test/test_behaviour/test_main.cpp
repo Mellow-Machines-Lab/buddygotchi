@@ -1902,6 +1902,109 @@ static void test_the_ring_empties_quietly_and_sparkles_full() {
   TEST_ASSERT_EQUAL(60, r.b.growthShow(r.t).fill);
 }
 
+// Today's ring filled while the bar couldn't show (needs you, asleep): it
+// shows once it can, filling from where it was, and sparkles.
+static void test_a_ring_filled_unseen_shows_once_it_can() {
+  using G = render::GrowthShow;
+  for (bool asleep : {false, true}) {
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90;
+    r.state(m);
+    r.at(1000);
+    Model hidden = asleep ? base("asleep") : attn();
+    hidden.xp = 100;
+    r.state(hidden);
+    for (uint32_t d = 0; d <= G::kFillMs + G::kSparkleMs; d += 100) {
+      r.at(r.t + 100);
+      TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+    }
+    m.xp = 100;
+    r.state(m);
+    r.at(r.t);
+    const uint32_t shown = r.t;
+    TEST_ASSERT_EQUAL(900, r.b.growthShow(shown).fill);
+    TEST_ASSERT_EQUAL(255, r.b.growthShow(shown + G::kInMs).opacity);
+    TEST_ASSERT_EQUAL(1000, r.b.growthShow(shown + G::kFillMs).fill);
+    TEST_ASSERT_TRUE(r.b.growthShow(shown + G::kFillMs + G::kSparkleMs / 2).sparkle > 0);
+    // And only the once: a state after it, the same, doesn't bring it back.
+    r.at(shown + G::kFillMs + G::kHoldMs + G::kSparkleMs + G::kOutMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+    r.state(m);
+    r.at(r.t + G::kInMs);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  }
+}
+
+// The wish that fills today's ring: its `do` follows its state soon, while
+// the bar's up, or after it's gone; whichever, its heart flies in, and the
+// ring sparkles once. A wish met with the ring full before its state takes no heart.
+static void test_the_wish_that_fills_the_ring_keeps_its_heart_and_sparkles_once() {
+  using G = render::GrowthShow;
+  const uint32_t shows = G::kFillMs + G::kHoldMs + G::kSparkleMs + G::kOutMs;
+  for (uint32_t after : {uint32_t(100), G::kFillMs + G::kSparkleMs + 100, shows + 100}) {
+    Rig r;
+    Model m = base("idle");
+    m.xp = 90, m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(1000);
+    m.xp = 100, m.wish = render::WishShow::kNone;
+    r.state(m);
+    const uint32_t from = r.t;
+    int sparkles = 0, last = 0;
+    bool flew = false, popped = false;
+    for (uint32_t t = from; t <= from + after + G::kHeartWaitMs + G::kHeartFlyMs + shows; t += 20) {
+      if (!popped && t >= from + after) r.at(from + after), r.b.wishPopped(true, r.t), popped = true;
+      r.at(t);
+      const G g = r.b.growthShow(t);
+      if (g.sparkle && !last) ++sparkles;
+      last = g.sparkle;
+      flew |= g.flight >= 0 && g.opacity > 0;
+    }
+    TEST_ASSERT_TRUE_MESSAGE(flew, "the heart flies");
+    TEST_ASSERT_EQUAL_MESSAGE(1, sparkles, "it sparkles once");
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+    // Another wish, the ring full before: no bar, no heart.
+    m.wish = render::WishShow::kPet;
+    r.state(m);
+    r.at(r.t + 100);
+    m.wish = render::WishShow::kNone;
+    r.state(m);
+    r.b.wishPopped(true, r.t);
+    r.at(r.t + G::kHeartWaitMs + G::kHeartFlyMs / 2);
+    TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  }
+}
+
+// 5:00 while the bar's up: it slides out as it was, and is empty after.
+static void test_a_new_day_slides_the_bar_out_first() {
+  using G = render::GrowthShow;
+  Rig r;
+  Model m = base("idle");
+  m.xp = 90;
+  r.state(m);
+  r.at(1000);
+  m.xp = 100;
+  r.state(m);
+  r.at(r.t + G::kFillMs + G::kSparkleMs / 2);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t).sparkle > 0);
+  m.xp = 0;
+  r.state(m);
+  TEST_ASSERT_EQUAL(255, r.b.growthShow(r.t).opacity);
+  r.at(r.t + G::kOutMs / 2);
+  const G half = r.b.growthShow(r.t);
+  TEST_ASSERT_TRUE(half.opacity > 0 && half.opacity < 255);
+  TEST_ASSERT_EQUAL(1000, half.fill);
+  TEST_ASSERT_EQUAL(0, half.sparkle);
+  r.at(r.t + G::kOutMs / 2);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 6;
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).fill);
+  r.at(r.t + G::kFillMs);
+  TEST_ASSERT_EQUAL(60, r.b.growthShow(r.t).fill);
+}
+
 // A new stage's body waits 300 ms for a wish's `do`, which follows its state;
 // then, for that wish's heart to land. Any other stage plays when the 300 ms are up.
 static void test_a_new_stage_waits_for_the_heart() {
@@ -4299,6 +4402,9 @@ int main() {
   RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
   RUN_TEST(test_a_met_wish_fills_the_bar_by_however_little);
   RUN_TEST(test_the_ring_empties_quietly_and_sparkles_full);
+  RUN_TEST(test_a_ring_filled_unseen_shows_once_it_can);
+  RUN_TEST(test_the_wish_that_fills_the_ring_keeps_its_heart_and_sparkles_once);
+  RUN_TEST(test_a_new_day_slides_the_bar_out_first);
   RUN_TEST(test_a_new_stage_waits_for_the_heart);
   RUN_TEST(test_alone_it_stays_its_stage);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);

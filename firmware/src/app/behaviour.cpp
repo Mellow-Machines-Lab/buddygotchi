@@ -170,7 +170,7 @@ void Behaviour::resync(uint32_t t) {
   if (sign_.text[0] && !signDue(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
-  bar_.sweep(t);
+  bar_.sweep(barHidden(model_, noApp(t), t), t);
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;

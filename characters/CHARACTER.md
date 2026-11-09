@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-08. The contract a character pack meets, so that any
+Updated 2026-11-09. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -383,7 +383,9 @@ low sign, the rules' own, and needs nothing of the pack's.
 
 **Today's ring,** the gel's own bar (`render::GrowthShow`, `paintGrowthBar`),
 goes by `state.xp`, today's XP in percent: it shows when XP comes in, with a
-label under it, and sparkles when it's full. A face with no bar ignores it.
+label beside it, inside the panel's rounded corners, and sparkles once when
+it's full, or, filled while it couldn't show, the next time it can. A face
+with no bar ignores it.
 
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own
