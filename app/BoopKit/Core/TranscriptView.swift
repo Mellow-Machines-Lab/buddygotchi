@@ -291,13 +291,13 @@ public final class TranscriptView {
     /// (`hold`).
     public static let wakes: [String: Int] = [
         "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
-        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "grew": 1, "act_start": 0, "act_end": 0,
+        "heartbeat": 0, "reacted": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "world": 0, "act_start": 0, "act_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a BOOT press that
     /// opens an agent is the board's own reaction, as a tap that opens a
     /// thread is.
-    public static let quiet = ["presence_start", "needs_you_start", "press", "hush_end", "wish_start"]
+    public static let quiet = ["presence_start", "needs_you_start", "press", "hush_end", "wish_start", "level", "ring"]
 
     /// Registers Boop's lines, wakes, holds and check-ins on `h`. Weakly:
     /// a harness its runtime let go of may still tick once, and does nothing.
@@ -336,6 +336,7 @@ public final class TranscriptView {
             return "the check's failure is its own line"
         }
         if e.type == .ask, e.specificType == Asks.ignored { return "nobody answered \(name(e))'s question" }
+        if e.type == .world, e["plays"]?.bool == false { return "past the hour's world moments: the World tab counts it" }
         if e.type == .wish, e.specificType == Core.WishEnd.closed.rawValue { return "the day ended: \(name(e))'s wish closes quietly" }
         if e[PromptIntake.readingFollows]?.bool == true { return "its reading wakes the brain" }
         // Folded up to `e` at most: `e` itself, if folded, is neither of
@@ -569,7 +570,16 @@ public final class TranscriptView {
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name(e), minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name(e), why: e.specificType))
-        case .grew?: return Line(EventLine.grew(e.specificType, name: name(e)), facts: ["stage": .string(e.specificType)])
+        case .level?:
+            return Line(EventLine.level(Int(e.specificType) ?? 1, grewTo: e["stage"]?.string, name: name(e)),
+                        facts: ["level": .int(Int64(e.specificType) ?? 1)])
+        case .ring?: return Line(EventLine.ringClosed(name: name(e)))
+        case .world?:
+            let counts = WorldGestures.counts(of: e)
+            guard let (kind, count) = counts.first else { return nil }
+            return Line(World.sentence(counts, from: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
+                                       held: e["held"]?.bool == true, name: name(e)),
+                        facts: ["world": .string(kind.rawValue), "count": .int(Int64(count))])
         case .wish?:
             if e.phase == .start { return Core.WishKind(rawValue: e.specificType).map { Line(EventLine.wished($0, name: name(e))) } }
             guard let how = Core.WishEnd(rawValue: e.specificType), let kind = (e["kind"]?.string).flatMap(Core.WishKind.init(rawValue:)) else { return nil }

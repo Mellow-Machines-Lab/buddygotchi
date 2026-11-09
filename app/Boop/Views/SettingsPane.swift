@@ -3,7 +3,8 @@ import BoopKit
 import SwiftUI
 
 /// Settings, inside the popover: sound, agents and hooks, the
-/// device, the personality and Jev's key, and the app itself.
+/// device, the personality and Jev's key, the memory, the world of
+/// buddies, and the app itself.
 struct SettingsPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
@@ -28,6 +29,9 @@ struct SettingsPane: View {
                     PaneSection("Talk") { talkSetting }
                     PaneSection("Brain") { Card(padding: 0) { key } }
                     PaneSection("Memory") { Card(padding: 0) { memorySetting } }
+                    if let world = model.status?.world {
+                        PaneSection("World") { worldSetting(world) }
+                    }
                     PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
@@ -40,6 +44,37 @@ struct SettingsPane: View {
             let key = await Task.detached { read() }.value ?? ""
             if !keyEdited { apiKey = key }
             savedKey = key
+        }
+    }
+
+    // MARK: World
+
+    /// The switch, how the world shows Boop, and what it shares. Off, Boop
+    /// leaves the world: it's deleted there, and you can still look.
+    private func worldSetting(_ world: Runtime.WorldStatus) -> some View {
+        let name = model.name
+        let region = World.Region(offset: world.utcOffset)?.name
+        let shown = world.link.nameHidden ? "a buddy" : world.link.shownName ?? name
+        return Card(padding: 0) {
+            VStack(spacing: 0) {
+                SettingRow(icon: "globe.europe.africa.fill", title: "\(name) lives in the world",
+                           detail: world.on ? "Other buddies can see \(name) and say hi. Off, \(name) leaves the world."
+                                    : "\(name) is private. You can still look around.") {
+                    Toggle("\(name) lives in the world", isOn: Binding(get: { world.on }, set: { model.runtime?.setWorld($0) }))
+                        .toggleStyle(.boop).labelsHidden()
+                }
+                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                SettingRow(icon: "person.crop.circle", title: "Shown as \(([shown] + [region].compactMap { $0 }).joined(separator: " · "))",
+                           detail: world.link.nameHidden ? "The world didn't take this name, so others see “a buddy”."
+                                                         : "Others see this name and level.") {
+                    EmptyView()
+                }
+                Hairline().padding(.leading, 40).padding(.trailing, 12)
+                SettingRow(icon: "eye", title: "What \(name) shares",
+                           detail: "Its name, level, rough time zone, what it's doing, and counts like tests passed. Nothing about you or your code.") {
+                    EmptyView()
+                }
+            }
         }
     }
 
@@ -337,7 +372,7 @@ struct SettingsPane: View {
                     }
                 }
                 Text(keyFailed ? "Couldn't save the key in your Keychain. Try again, or check Keychain Access."
-                     : "Kept in your Keychain. With Jev, what happens and \(model.name)'s personality and mood go to TypeSafe with each call.")
+                     : "This is how \(model.name) thinks. It stays in your Keychain. What \(model.name) notices goes to TypeSafe, never your code.")
                     .font(.system(size: 10)).foregroundStyle(keyFailed ? Theme.clayInk : Theme.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
                 if let note = brainNote {

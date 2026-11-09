@@ -139,6 +139,19 @@ extension EnvironmentValues {
 
 // MARK: - Building blocks
 
+/// A card with one soft line: what's not there yet, or why.
+struct NoteCard: View {
+    let text: String
+    init(_ text: String) { self.text = text }
+
+    var body: some View {
+        Card {
+            Text(text).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
 /// A raised card on the paper: one hairline, one radius, one padding, so the
 /// column reads as a stack of the same object.
 struct Card<Content: View>: View {

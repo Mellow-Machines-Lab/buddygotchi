@@ -95,8 +95,17 @@ public struct Narration: Equatable, Sendable {
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
             return Narration(cause: "You said \"\(Self.keep(words))\".")
-        case .grew?:
-            return Narration(cause: "\(name) grew: it's a \(e.specificType) now.", fact: fit("now a \(e.specificType)"))
+        case .level?:
+            let level = Int(e.specificType) ?? 1
+            return Narration(cause: EventLine.level(level, grewTo: e["stage"]?.string, name: name), fact: fit("level \(level)!"))
+        case .ring?:
+            return Narration(cause: "Today's ring is full. Nice work.", fact: fit("today's done!"))
+        case .world?:
+            let counts = WorldGestures.counts(of: e)
+            guard let (kind, count) = counts.first else { return nil }
+            return Narration(cause: World.sentence(counts, from: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
+                                                   held: e["held"]?.bool == true, name: name),
+                             fact: Self.fit(World.facts(kind, count: count), name: name))
         case .wish? where e.phase == .start:
             return (Core.WishKind(rawValue: e.specificType)).map { wish($0, name: name) }
         case .wish?:
@@ -381,7 +390,7 @@ extension Narration {
     /// air, confetti at a party or New Year, snow in the winter holidays and
     /// hearts on Valentine's.
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night, morning, friday, shrank }
+        public enum Kind: Sendable { case specialDay, night, morning, friday }
 
         public var kind: Kind
         /// `Boop became a Sprout today`, `It's Friday`.

@@ -1,120 +1,79 @@
 import Foundation
 import MellowHarness
 
-/// How Boop grows: XP from what its agents get done, from your care and from
-/// a met wish, by plain rules, each capped a day, and a stage for the XP.
-/// Left alone it goes backwards (`decayed`), so its stage goes with it. The
-/// Mac app shows them, and the board gets the stage as a tag (`Tags.stages`).
-/// A stage changes only how Boop looks and what it does to pass the time:
-/// nothing useful is ever locked behind one.
+/// How Boop grows, kept simple: a fixed XP for each thing its agents get
+/// done and each bit of your care, at most `perDay` in one Boop day (the
+/// day's ring), and a level for every `perLevel` XP it ever earned. It
+/// never goes down. Some level-ups are bigger: at the levels in `stages`,
+/// Boop grows a size, which the board draws from its tag (`Tags.stages`).
+/// Nothing useful is ever locked behind a level.
 public struct Growth: Equatable, Sendable {
-    /// The XP now: what it's earned, less what it's lost.
+    /// Every XP it's ever earned.
     public var xp: Int
-    /// The stage the XP reaches, from 1. A saved XP past the table is Chonk.
-    public var stage: Int { Growth.stage(for: xp) }
+    /// Today's XP, the ring: 0 to `perDay`.
+    public var today: Int
 
-    public init(xp: Int = 0) {
+    public init(xp: Int = 0, today: Int = 0) {
         self.xp = max(0, xp)
+        self.today = max(0, min(today, Growth.perDay))
     }
 
-    /// Each stage's name and the XP it starts at, in order.
-    public static let stages: [(name: String, from: Int)] = [
-        ("Hatchling", 0), ("Sprout", 200), ("Buddy", 1_000), ("Chonk", 5_000),
+    /// The day's ring: what a day can earn at most.
+    public static let perDay = 100
+    /// The XP a level takes: a full ring is a level.
+    public static let perLevel = 100
+
+    /// The level, from 1: 1 + XP / 100, with no maximum.
+    public var level: Int { Growth.level(for: xp) }
+    public static func level(for xp: Int) -> Int { 1 + max(0, xp) / perLevel }
+    /// The XP still to earn for the next level.
+    public var toNextLevel: Int { Growth.perLevel - xp % Growth.perLevel }
+    /// Whether today's ring is full.
+    public var ringClosed: Bool { today >= Growth.perDay }
+    /// Today's ring in whole percent: what the board's bar shows (`state.xp`).
+    public var percent: Int { today * 100 / Growth.perDay }
+
+    /// Each size's name and the level it's reached at, in order. Reaching
+    /// one is a bigger level-up.
+    public static let stages: [(name: String, level: Int)] = [
+        ("Hatchling", 1), ("Sprout", 5), ("Buddy", 15), ("Chonk", 30),
     ]
-
-    /// The stage a stage saved when there were six comes to, by name: Pal,
-    /// the size of a Buddy, is a Buddy; Chonk and Legend are a Chonk.
-    public static func stage(fromSix old: Int) -> Int { [1, 2, 3, 3, 4, 4][max(1, min(old, 6)) - 1] }
-
-    /// With no XP at all for this many days, it loses `decayPercent` of
-    /// its XP each day after.
-    public static let decayAfterDays = 3, decayPercent = 5
-
-    /// `xp` after `days` days of going backwards. It never reaches zero.
-    public static func decayed(_ xp: Int, days: Int) -> Int {
-        guard xp > 1, days > 0 else { return xp }
-        var left = xp
-        for _ in 0..<days { left = max(1, left - max(1, left * decayPercent / 100)) }
-        return left
+    /// The size it's at, from 1.
+    public var stage: Int { Growth.stage(forLevel: level) }
+    public var stageName: String { Growth.stages[stage - 1].name }
+    public static func stage(forLevel level: Int) -> Int {
+        (stages.lastIndex { level >= $0.level } ?? 0) + 1
     }
+    /// Whether reaching `level` grows Boop a size.
+    public static func grows(at level: Int) -> Bool { level > 1 && stages.contains { $0.level == level } }
 
-    /// The days from one `yyyy-MM-dd` to another, 0 if either isn't one.
-    public static func days(from: String, to: String) -> Int {
-        guard let a = LocalTime.dayNumber(from), let b = LocalTime.dayNumber(to) else { return 0 }
-        return b - a
-    }
+    /// XP for a turn that ends done, a tool call that ends without failing
+    /// and a helper coming back: the agents' work.
+    public static let turnXP = 5, toolXP = 1, helperXP = 2
+    /// XP for a care touch (`Touch.isCare`), a word to Boop, an answered
+    /// ask, a met wish and you coming back to the Mac.
+    public static let careXP = 3, talkXP = 3, answerXP = 5, wishXP = 20, backXP = 2
 
-    /// The reason it shrank, in the person's words.
-    public static func shrankWords(name: String, days: Int) -> String {
-        let gone = days >= 14 ? "\(days / 7) weeks" : days >= 7 ? "a week" : "\(days) days"
-        return "\(name) shrank a little. You were gone \(gone)."
-    }
-
-    /// XP for a tool call that ends without failing.
-    public static let toolXP = 1
-    /// XP for a helper coming back.
-    public static let helperXP = 2
-    /// XP for a turn that ends done.
-    public static let turnXP = 5
-
-    /// XP for a care gesture (`Touch.isCare`), a word to Boop, an
-    /// answered ask and you coming back to the Mac.
-    public static let careXP = 3, talkXP = 3, answerXP = 5, backXP = 2
-    /// The most each pool earns in one Boop day (from 5:00).
-    public static let workPerDay = 60, carePerDay = 60
-    /// XP for a met wish, its own pool, so at most one a day counts.
-    public static let wishXP = 40
-    public static func cap(_ pool: Pool) -> Int {
-        switch pool {
-        case .work: return workPerDay
-        case .care: return carePerDay
-        case .wish: return wishXP
-        }
-    }
-
-    /// Where XP comes from: the agents' work, your care, or a met wish.
-    public enum Pool: String, Sendable { case work, care, wish }
-
-    /// What an event earns and from which pool: an agent's work that went
-    /// somewhere, or your care for Boop; nil for nothing.
-    public static func earning(for e: Event) -> (xp: Int, pool: Pool)? {
+    /// What an event earns, before the day's cap: 0 for nothing.
+    public static func xp(for e: Event) -> Int {
         if e.from == .claude || e.from == .codex {
             switch e.kind {
-            case Event.kind(.tool, .end): return e["failed"]?.bool == true ? nil : (toolXP, .work)
-            case Event.kind(.subagent, .end): return (helperXP, .work)
-            case Event.kind(.turn, .end): return e["outcome"]?.string == "done" ? (turnXP, .work) : nil
-            default: return nil
+            case Event.kind(.tool, .end): return e["failed"]?.bool == true ? 0 : toolXP
+            case Event.kind(.subagent, .end): return helperXP
+            case Event.kind(.turn, .end): return e["outcome"]?.string == "done" ? turnXP : 0
+            default: return 0
             }
         }
         switch e.type {
-        case .gesture? where Touch(e)?.isCare == true: return (careXP, .care)
-        case .said?: return (talkXP, .care)
-        case .ask? where e.specificType != Asks.ignored: return (answerXP, .care)
-        case .presence? where e.phase == .end: return (backXP, .care)
-        case .wish? where e.phase == .end && e.specificType == Core.WishEnd.met.rawValue: return (wishXP, .wish)
-        default: return nil
+        case .gesture? where Touch(e)?.isCare == true: return careXP
+        case .said?: return talkXP
+        case .ask? where e.specificType != Asks.ignored: return answerXP
+        case .presence? where e.phase == .end: return backXP
+        case .wish? where e.phase == .end && e.specificType == Core.WishEnd.met.rawValue: return wishXP
+        default: return 0
         }
     }
 
-    /// What an event earns, before the day's caps.
-    public static func xp(for e: Event) -> Int { earning(for: e)?.xp ?? 0 }
-
-    /// The stage `xp` reaches by the thresholds, from 1.
-    public static func stage(for xp: Int) -> Int {
-        (stages.lastIndex { xp >= $0.from } ?? 0) + 1
-    }
-
-    /// How far through its stage, in whole percent: what the board's bar
-    /// shows (`state.xp`). A full bar is only the last stage's.
-    public var percent: Int { Int(progress * 100) }
-
-    public var name: String { Growth.stages[stage - 1].name }
-    /// The XP the next stage starts at, or nil at the last.
-    public var nextAt: Int? { stage < Growth.stages.count ? Growth.stages[stage].from : nil }
-    /// How far through this stage, 0–1; 1 at the last.
-    public var progress: Double {
-        guard let next = nextAt else { return 1 }
-        let from = Growth.stages[stage - 1].from
-        return min(1, max(0, Double(xp - from) / Double(next - from)))
-    }
+    /// What `xp` more adds to a day that has `today` already: none past the ring.
+    public static func capped(_ xp: Int, today: Int) -> Int { max(0, min(xp, perDay - today)) }
 }

@@ -862,7 +862,7 @@ bool Behaviour::barHidden(const Model& m, bool alone, uint32_t t) const {
 }
 
 render::GrowthShow Behaviour::growthShow(uint32_t t) const {
-  return bar_.show(render::growthStage(model_.when), barHidden(model_, noApp(t), t), t);
+  return bar_.show(barHidden(model_, noApp(t), t), t);
 }
 
 // With no app, no `say` shows: it outranks the reactions.

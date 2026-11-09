@@ -40,11 +40,11 @@ public enum Signs {
     /// A musing is held up at most this often.
     public static let musingEveryMs: Int64 = 60 * 60_000
 
-    /// What it may hold up growing into `stage`: `signs.md`'s `[grew]` lines
-    /// and those for the stage, `[grew sprout]`, the stage's first.
-    public static func grew(_ lines: [TaggedLine], stage: String) -> [String] {
-        let on = Set(["grew", stage.lowercased()])
-        let fit = lines.filter { $0.tags.first == "grew" && $0.fits(on) && $0.text.count <= maxLength }
+    /// What it may hold up for another buddy's gesture `kind`: `signs.md`'s
+    /// `[world]` lines and those for the kind, `[world cheer]`, the kind's first.
+    public static func world(_ lines: [TaggedLine], kind: String) -> [String] {
+        let on = Set(["world", kind])
+        let fit = lines.filter { $0.tags.first == "world" && $0.fits(on) && $0.text.count <= maxLength }
         return (fit.filter { $0.tags.count > 1 } + fit.filter { $0.tags.count == 1 }).map(\.text).prefix(maxOffered).map { $0 }
     }
 

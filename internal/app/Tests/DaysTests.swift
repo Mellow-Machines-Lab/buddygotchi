@@ -63,8 +63,6 @@ final class DaysTests: XCTestCase {
         XCTAssertTrue(party(2026, 12, 10), "100 days")
         XCTAssertTrue(party(2027, 3, 20), "200 days")
         XCTAssertTrue(party(2027, 9, 1), "a year")
-        XCTAssertTrue(Days.tags(at: ms(2026, 10, 22), hatched: hatched, party: true, time: utc).contains("party"),
-                      "a stage reached")
         func words(_ y: Int, _ mo: Int, _ d: Int) -> [String] {
             Days.words(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc)
         }
@@ -86,23 +84,9 @@ final class DaysTests: XCTestCase {
         XCTAssertLessThanOrEqual(Tags.board.count, 32, "a set of tags is 32 bits on the board")
     }
 
-    /// A growth stage reached makes the rest of its day a party, on the
-    /// board (`state.when`) and in the heading's words.
-    func testAStageReachedIsAParty() {
-        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
-        let now = ms(2026, 10, 22, 10)
-        core.setWallClock(now, at: now)
-        XCTAssertFalse(core.snapshot(at: now).when.contains("party"))
-        core.reachedStage("Sprout", at: now)
-        XCTAssertTrue(core.snapshot(at: now).when.contains("party"))
-        XCTAssertFalse(core.snapshot(at: now + 24 * 3_600_000).when.contains("party"), "the next day isn't")
-        XCTAssertEqual(Days.words(at: now, hatched: nil, name: "Pip", stage: core.config.stageReached, time: utc), ["Pip became a Sprout"])
-    }
-
     /// Every occasion has a sign that fits the board's (`Signs.maxLength`
     /// characters of printable ASCII), and the day's greeting holds up the
-    /// one most Boop's own: a milestone, then the calendar's. A stage reached
-    /// holds up nothing of the rule's: Jev's sign says what grew.
+    /// one most Boop's own: a milestone, then the calendar's.
     func testEachOccasionHasASignThatFits() {
         let hatched = "2026-09-01"
         var signs: [String] = Days.holidays.map(\.sign) + ["Friday the 13th!", "Programmers' Day!", "Lunar New Year!"]
@@ -113,14 +97,11 @@ final class DaysTests: XCTestCase {
             XCTAssertLessThanOrEqual(sign.count, Signs.maxLength, sign)
             XCTAssertTrue(sign.unicodeScalars.allSatisfy { (0x20...0x7E).contains($0.value) }, sign)
         }
-        func greeting(_ y: Int, _ mo: Int, _ d: Int, stage: String? = nil) -> String? {
-            Days.greeting(Days.special(at: ms(y, mo, d), hatched: hatched, name: "Pip",
-                                                   stage: stage.map { ($0, utc.day(ms(y, mo, d))) }, time: utc))
+        func greeting(_ y: Int, _ mo: Int, _ d: Int) -> String? {
+            Days.greeting(Days.special(at: ms(y, mo, d), hatched: hatched, name: "Pip", time: utc))
         }
         XCTAssertEqual(greeting(2026, 9, 11), "Day 10!")
         XCTAssertEqual(greeting(2026, 10, 31), "Happy Halloween!")
-        XCTAssertEqual(greeting(2026, 10, 31, stage: "Sprout"), "Happy Halloween!", "a stage reached has no sign of its own")
-        XCTAssertNil(greeting(2026, 10, 22, stage: "Sprout"))
         XCTAssertEqual(greeting(2027, 9, 1), "1 year old!")
         XCTAssertEqual(greeting(2028, 9, 1), "2 years old!")
         XCTAssertNil(greeting(2026, 10, 22), "an ordinary day")
@@ -129,44 +110,43 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(Days.special(at: ms(2026, 10, 31), hatched: nil, name: "Pip", time: utc).map(\.why), ["It's Halloween"])
     }
 
-    /// Growing a stage just now holds up no sign of the rule's: the `grew`
-    /// event wakes Jev, whose sign and words say what grew, and the party hat
-    /// is on by then. Read back at launch, it doesn't.
-    func testGrowingAStageAsksJev() {
-        func core() -> Core {
-            let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
-            core.setWallClock(now, at: now)
-            return core
-        }
-        func grew(_ fx: [CoreEffect]) -> [Event] {
-            fx.compactMap { if case .record(let e) = $0, e.type == .grew { return e } else { return nil } }
-        }
+    /// A level-up is the rules' moment, not Jev's: its event, logged after
+    /// the `state` with the new size, and a face with `Level 12!` on the low
+    /// sign. A size grown is a bigger one. The ring closing says the day's done.
+    func testALevelUpIsTheRulesMoment() {
+        let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
-        XCTAssertTrue(grew(core().reachedStage("Sprout", at: now)).isEmpty, "at launch")
-        let fx = core().reachedStage("Sprout", celebrate: true, at: now)
-        XCTAssertEqual(moments(fx), [], "nothing of the rule's")
-        XCTAssertEqual(grew(fx).map(\.specificType), ["Sprout"])
-        XCTAssertEqual(TranscriptView.wakes["grew"], 1, "it wakes a pass, ahead of the routine")
-        XCTAssertTrue(fx.contains { if case .state(let s) = $0 { return s.when.contains("party") } else { return false } },
-                      "the party hat is on")
+        core.setWallClock(now, at: now)
+        core.growth = { Growth(xp: 1_150, today: 50) }
+        let fx = core.grew([.level(12, grewTo: nil)], at: now)
+        let records = fx.compactMap { if case .record(let e) = $0, e.type == .level { return e } else { return nil } }
+        XCTAssertEqual(records.map(\.specificType), ["12"])
+        XCTAssertEqual(moments(fx).map(\.sign), ["Level 12!"])
+        XCTAssertEqual(moments(fx).map(\.low), [true], "on the low sign")
+        XCTAssertEqual(moments(fx).map(\.mood), ["proud"])
+        XCTAssertNotNil(moments(fx).first?.reason)
+        XCTAssertNil(TranscriptView.wakes["level"], "the rules play it: no pass")
+        XCTAssertEqual(moments(core.grew([.level(15, grewTo: "Buddy")], at: now)).map(\.mood), ["excited"], "a size grown")
+        let ring = moments(core.grew([.ringClosed], at: now))
+        XCTAssertEqual(ring.map(\.reason), [Core.ringReason])
+        XCTAssertEqual(Core.ringReason, "Today's done!")
+        XCTAssertLessThanOrEqual(Core.ringReason.count, Narration.maxFact, "it fits the lane")
     }
 
-    /// A stage reached while something needs you isn't lost to it: nothing
-    /// but your words wakes Jev then, so its `grew` waits for the answer and
-    /// then gets its moment. A stage reached with nothing waiting goes at once
-    /// (above).
-    func testAStageReachedWhileSomethingNeedsYouWaits() {
+    /// A level reached while something needs you isn't lost to it, nor does
+    /// it cover the request: it waits for the answer, then plays, once.
+    func testALevelReachedWhileSomethingNeedsYouWaits() {
         let rig = CoreRig()
         rig.send(.needsYou, tool: "Bash")
         XCTAssertNotNil(rig.pipeline.core.needsYouBlock)
-        func grew() -> [Event] { rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .grew } }
-        rig.pipeline.run(rig.pipeline.core.reachedStage("Sprout", celebrate: true, at: rig.now))
-        XCTAssertEqual(grew().count, 0, "it would never wake Jev")
+        func levels() -> [Event] { rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .level } }
+        rig.pipeline.run(rig.pipeline.core.grew([.level(2, grewTo: nil)], at: rig.now))
+        XCTAssertEqual(levels().count, 0, "not over needs you")
         rig.send(.activity, tool: "Bash")
         XCTAssertNil(rig.pipeline.core.needsYouBlock)
-        XCTAssertEqual(grew().map(\.specificType), ["Sprout"], "once it's answered")
+        XCTAssertEqual(levels().map(\.specificType), ["2"], "once it's answered")
         rig.send(.activity, tool: "Bash")
-        XCTAssertEqual(grew().count, 1, "once")
+        XCTAssertEqual(levels().count, 1, "once")
     }
 
     /// On a day with an occasion, the first agent's event greets it once,
@@ -206,19 +186,16 @@ final class DaysTests: XCTestCase {
     /// the gel, Friday's shades, not asleep, and pyjamas with the nightcap only bare-eyed; the sun in the
     /// morning, with a coffee while awake; confetti at a party or New Year.
     func testTheReasonsAreTheBoards() {
-        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, stage: String? = nil, asleep: Bool = false,
+        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, asleep: Bool = false,
                      gel: Bool = true, tag: String? = nil) -> [String] {
-            let at = ms(y, mo, d, h), day = utc.day(at)
-            let when = Days.tags(at: at, hatched: "2026-09-01", party: stage != nil, time: utc) + (tag.map { [$0] } ?? [])
-            let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", stage: stage.map { ($0, day) }, time: utc)
+            let at = ms(y, mo, d, h)
+            let when = Days.tags(at: at, hatched: "2026-09-01", time: utc) + (tag.map { [$0] } ?? [])
+            let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", time: utc)
             return Narration.Dressing.now(when: when, specialDays: specialDays, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
-        XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout"), ["Pip became a Sprout today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout", tag: "sprout"), ["Pip became a Sprout today: confetti"], "the gel's Sprout shows its leaves")
-        XCTAssertEqual(reasons(2026, 10, 22, stage: "Sprout", gel: false, tag: "sprout"), ["Pip became a Sprout today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 10, 31, stage: "Sprout"),
-                       ["It's Halloween: a witch hat", "Pip became a Sprout today: confetti"], "the witch hat wins")
+        XCTAssertEqual(reasons(2026, 10, 21, tag: "sprout"), ["Pip is 50 days old today: confetti"], "the gel's Sprout shows its leaves")
+        XCTAssertEqual(reasons(2026, 10, 21, gel: false, tag: "sprout"), ["Pip is 50 days old today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: snow", "It's night: a nightcap and pyjamas"])
         XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
         XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: a bobble hat and snow"])
@@ -233,20 +210,17 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(reasons(2026, 10, 22, 8, gel: false), [], "the sun and the coffee are the gel's")
     }
 
-    /// The day Boop hatched is your first with it, so a stage reached that
-    /// day is no occasion: no party hat or confetti, no cheer, no greeting
-    /// and nothing in the popover. New Year's Day is still a party.
+    /// The day Boop hatched is your first with it, so it's no occasion: no
+    /// party hat or confetti, no greeting and nothing in the popover. New
+    /// Year's Day is still a party.
     func testTheDayItHatchedIsNoParty() {
         let core = Core(config: .init(time: utc, hatched: "2026-10-22"), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
-        XCTAssertFalse(core.reachedStage("Sprout", celebrate: true, at: now).contains { if case .record(let e) = $0 { return e.type == .grew } else { return false } }, "no cheer")
-        XCTAssertFalse(core.snapshot(at: now).when.contains("party"), "a Sprout on the day it hatched")
+        XCTAssertFalse(core.snapshot(at: now).when.contains("party"))
         XCTAssertEqual(core.specialDays(at: now), [], "no greeting, and nothing for the popover")
-        XCTAssertTrue(Days.tags(at: ms(2027, 1, 1), hatched: "2027-01-01", party: true, time: utc).contains("party"),
+        XCTAssertTrue(Days.tags(at: ms(2027, 1, 1), hatched: "2027-01-01", time: utc).contains("party"),
                       "hatched on New Year's Day")
-        XCTAssertTrue(Days.tags(at: ms(2026, 10, 23), hatched: "2026-10-22", party: true, time: utc).contains("party"),
-                      "a stage reached the day after")
     }
 
     /// Pins `Tags.tiers`: `tier1` from 30 seconds, `tier2` from a
@@ -311,16 +285,16 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(tiers(), [], "a new stretch")
     }
 
-    /// The stage Boop is at is a tag, not those it has passed, as it can
-    /// go back; Buddy, the full size, has none.
+    /// The stage Boop is at is a tag, not those it has passed; Buddy, the
+    /// full size, has none.
     func testOnlyTheStageItIsAtIsOn() {
         XCTAssertEqual(Tags.stageTags, ["hatchling", "sprout", "chonk"])
         XCTAssertEqual(Tags.stages(1), ["hatchling"])
         XCTAssertEqual(Tags.stages(2), ["sprout"])
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
-        core.stage = { 2 }
+        core.growth = { Growth(xp: 500) }
         XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(1), ["sprout"])
-        core.stage = { 3 }
+        core.growth = { Growth(xp: 1_400) }
         XCTAssertFalse(core.snapshot(at: ms(2026, 10, 22)).when.contains { Tags.stageTags.contains($0) }, "Buddy's none")
     }
 

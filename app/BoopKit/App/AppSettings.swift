@@ -24,6 +24,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// debug and internal builds), rather than its board: chosen in onboarding or Settings, and
     /// kept from launch to launch. Off, the board, unless chosen.
     public var simulator = false
+    /// Boop lives in the world of buddies: on unless you keep it private.
+    public var world = true
+    /// Onboarding's world screen has been shown: nothing goes to the world
+    /// before it, even with `world` on.
+    public var worldShown = false
 
     public init() {}
 
@@ -46,9 +51,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
         workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
         simulator = (try? c.decodeIfPresent(Bool.self, forKey: .simulator)) ?? false
+        world = (try? c.decodeIfPresent(Bool.self, forKey: .world)) ?? true
+        worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, volume, buddies, board, onboarding, workStream, simulator }
+    enum CodingKeys: String, CodingKey { case personality, talk, volume, buddies, board, onboarding, workStream, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -59,6 +66,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
         if !workStream { try c.encode(workStream, forKey: .workStream) }
         if simulator { try c.encode(simulator, forKey: .simulator) }
+        if !world { try c.encode(world, forKey: .world) }
+        if worldShown { try c.encode(worldShown, forKey: .worldShown) }
     }
 
     public static let file = "settings.json"

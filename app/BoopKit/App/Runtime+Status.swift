@@ -34,8 +34,12 @@ extension Runtime {
         public var listening: Bool
         /// Why push-to-talk couldn't hear you, until the next try.
         public var micTrouble: String?
-        /// Boop's XP and stage.
+        /// Boop's XP, level and today's ring.
         public var growth: Growth?
+        /// The last days' rings, oldest first, today's last: the Boop tab's week.
+        public var week: [DayRing] = []
+        /// The world of buddies; nil with no world server (tests).
+        public var world: WorldStatus?
         /// How many days since Boop hatched, and its memory's recent days,
         /// a line each, newest first (`memory.md`'s Recently).
         public var daysOld: Int?
@@ -62,6 +66,23 @@ extension Runtime {
         public var dressing: [Narration.Dressing] = []
 
         /// A day's line, as the popover shows it.
+        /// One day's ring: its XP, whether it's today, and its short name,
+        /// `Today` or `Mon`.
+        public struct DayRing: Sendable, Equatable, Identifiable {
+            public var day: String
+            public var xp: Int
+            public var isToday: Bool
+            public var name: String
+            public var id: String { day }
+
+            public init(day: String, xp: Int, today: String) {
+                self.day = day
+                self.xp = xp
+                isToday = day == today
+                name = isToday ? "Today" : String((LocalTime.weekday(of: day) ?? "").prefix(3))
+            }
+        }
+
         public struct DayLine: Sendable, Equatable, Identifiable {
             /// `2026-10-21`.
             public var day: String
@@ -145,10 +166,12 @@ extension Runtime {
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble.map(Self.words), brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
-                            micTrouble: core.pushToTalk.trouble, growth: growth.growth)
+                            micTrouble: core.pushToTalk.trouble, growth: growthNow)
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         let written = memory.written(), today = options.time.boopDay(wall)
+        status.week = growth.week(to: today).map { Status.DayRing(day: $0.day, xp: $0.xp, today: today) }
+        status.world = worldStatus()
         status.notes = written.notes
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
         status.wishing = core.wish.map { "\(name) wishes for \($0.kind.words) (\(ContextSection.span($0.waitedMs)))." }
@@ -156,12 +179,8 @@ extension Runtime {
         status.doingReason = core.doingReason(at: now)
         let config = core.config
         status.dressing = Narration.Dressing.now(when: status.snapshot.when,
-                                       specialDays: Days.special(at: wall, hatched: config.hatched, name: name,
-                                                                      stage: config.stageReached, time: options.time),
+                                       specialDays: Days.special(at: wall, hatched: config.hatched, name: name, time: options.time),
                                        asleep: status.snapshot.doing == "asleep", gel: status.device?.face != .pixel)
-        if let words = growth.shrankWords(today: options.time.day(wall), name: name) {
-            status.dressing.insert(Narration.Dressing(kind: .shrank, why: words, what: nil), at: 0)
-        }
         status.talk = talk
         status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: Double(wall + $0.until - now) / 1000) }
         status.uncleanExit = uncleanExit
@@ -175,7 +194,7 @@ extension Runtime {
             }
         }
         grew = false
-        if let line = DebugLog.status(status, today: remembers?.today, at: now, last: &lastStatus) { emit(line) }
+        if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)
     }
 }

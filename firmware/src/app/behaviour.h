@@ -54,8 +54,8 @@ struct Model {
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
-  // How far through its growth stage Boop is, in percent (`xp`), -1 for a
-  // Mac that sends none, which shows no bar.
+  // Today's ring, the day's XP in percent (`xp`), -1 for a Mac that sends
+  // none, which shows no bar.
   int xp = -1;
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.

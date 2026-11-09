@@ -283,11 +283,12 @@ extension Runtime {
                 // NOW is an idle check-in when one is the newest thing to happen.
                 let newest = log.events.last { !$0.fromHarness }
                 let idle = newest.map(MomentOutput.isCheckIn) == true
-                let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let wall = core.wall(now), time = core.config.time
-                let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
-                let when = ContextSection.when(at: wall, specialDays: Days.words(at: wall, hatched: core.config.hatched, name: pack.name,
-                                                                                    stage: core.config.stageReached, time: time),
+                // With no growth store (a demo, an eval), a level 1 with an empty ring.
+                let growth = core.growth() ?? Growth()
+                let buddy = ContextSection.Buddy(level: growth.level, today: growth.today,
+                                                 daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
+                let when = ContextSection.when(at: wall, specialDays: Days.words(at: wall, hatched: core.config.hatched, name: pack.name, time: time),
                                                time: time)
                 return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),

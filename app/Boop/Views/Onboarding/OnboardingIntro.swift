@@ -307,9 +307,14 @@ struct MakeMeYoursAct: View {
                     withAnimation(.spring(response: 0.18, dampingFraction: 0.5)) { hop = true }
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.12)) { hop = false }
                 }
-            Text(model.nameError ?? draft.nameIssue ?? "My name is for keeps, so pick one you love.")
-                .font(.system(size: 12))
-                .foregroundStyle(model.nameError != nil || draft.nameIssue != nil ? Theme.clayInk : Theme.inkSoft)
+            VStack(spacing: 3) {
+                Text(model.nameError ?? draft.nameIssue ?? "My name is for keeps, so pick one you love.")
+                    .foregroundStyle(model.nameError != nil || draft.nameIssue != nil ? Theme.clayInk : Theme.inkSoft)
+                // It's public: the world of buddies shows it.
+                Text("Other buddies in the world will see it too.")
+                    .foregroundStyle(Theme.inkSoft)
+            }
+            .font(.system(size: 12))
             Spacer(minLength: 0)
             ActNav(model: model, next: "That's me", enabled: draft.canContinueName) { model.saveName() }
         }

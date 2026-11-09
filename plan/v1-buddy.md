@@ -158,7 +158,7 @@ Two options:
   (A bar is clearer on this screen than a ring; "ring" is the idea's name.)
 - **The heart** from a met wish still flies into it.
 - **Closing the ring:** the bar fills, sparkles and goes; Boop's happy wiggle; the
-  reason "Today's done. Nice work." Then, for the rest of the day, XP shows
+  reason "Today's done!" Then, for the rest of the day, XP shows
   nothing on the board.
 - **A level-up:** a short ceremony and a sign. At 5, 15 and 30 (option A), the
   growing ceremony.

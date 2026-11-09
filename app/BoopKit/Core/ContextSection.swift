@@ -18,13 +18,16 @@ public enum ContextSection {
     /// The section's ceiling, in tokens (`Steering.tokens`).
     public static let maxTokens = 190
 
-    /// The buddy as CONTEXT's Boop row tells it: its stage and how old it is.
+    /// The buddy as CONTEXT's Boop row tells it: its level, today's ring
+    /// and how old it is.
     public struct Buddy: Equatable, Sendable {
-        public var stage: String
+        public var level: Int
+        public var today: Int
         public var daysOld: Int?
 
-        public init(stage: String, daysOld: Int? = nil) {
-            self.stage = stage
+        public init(level: Int, today: Int, daysOld: Int? = nil) {
+            self.level = level
+            self.today = today
             self.daysOld = daysOld
         }
     }
@@ -59,10 +62,11 @@ public enum ContextSection {
         }
     }
 
-    /// The buddy's row: "Boop: a Sprout, 40 days old."
+    /// The buddy's row: "Boop: level 12, 40 days old; today's ring 82 of 100."
     static func buddy(_ b: Buddy?, name: String) -> String? {
         guard let b else { return nil }
-        return "\(name): a \(b.stage)" + (b.daysOld.map { $0 == 0 ? ", hatched today" : ", \($0) day\($0 == 1 ? "" : "s") old" } ?? "") + "."
+        return "\(name): level \(b.level)" + (b.daysOld.map { $0 == 0 ? ", hatched today" : ", \($0) day\($0 == 1 ? "" : "s") old" } ?? "")
+            + "; today's ring \(b.today) of \(Growth.perDay)."
     }
 
     /// The You row: "You: at the Mac for 3 h; you haven't touched or talked

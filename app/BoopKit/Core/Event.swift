@@ -19,6 +19,9 @@ extension Event {
         /// The Mac itself: you stepping away and coming back, as the
         /// presence detector decides.
         case mac
+        /// The world of buddies: a boop, wave, heart or cheer from another
+        /// buddy (`WorldClient`).
+        case world
 
         /// An agent's events' source: its own name.
         public init(_ agent: Agent) { self.init(rawValue: agent.rawValue)! }
@@ -82,9 +85,19 @@ extension Event {
         /// how long it waited, `waited_ms`). The core's: it reads them back
         /// on launch.
         case wish
-        /// Boop reached a growth stage just now (`specific_type` its name), by
-        /// its XP. It wakes a pass, for what it holds up and says as it grows.
-        case grew
+        /// Boop reached a level just now (`specific_type` the level), by its
+        /// XP, with the size it grew to (`stage`) when the level is one of
+        /// `Growth.stages`'. The rules play its ceremony; it wakes no pass.
+        case level
+        /// Today's ring closed (`specific_type` `closed`): the day's XP is
+        /// full. The rules play its moment; it wakes no pass.
+        case ring
+        /// Another buddy's gesture from the world (`specific_type` `boop`,
+        /// `wave`, `heart` or `cheer`), with how many came together
+        /// (`count`), the region of the first (`from_region`), and whether
+        /// they waited for the morning (`held`). It wakes a pass, so Boop
+        /// may answer it.
+        case world
         /// The board's link coming up (`start`) and dropping (`end`):
         /// log-only, for the daily counts.
         case link

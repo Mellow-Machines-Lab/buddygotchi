@@ -2,9 +2,10 @@ import BoopKit
 import SwiftUI
 
 /// What Boop knows, inside the popover: the written memory as it is, a
-/// section each, read-only. It reads what `Runtime.Status` read through the
-/// memory store, so it follows a dream's write as the status does. The pin
-/// and the cross stay on the Overview's card.
+/// section each, each note with a pin, which keeps it from aging and from
+/// the dream's edits, and a cross, which forgets it for good. It reads
+/// what `Runtime.Status` read through the memory store, so it follows a
+/// dream's write as the status does. The Boop tab's peek opens it.
 struct MemoryPane: View {
     @ObservedObject var model: AppModel
     var maxHeight: CGFloat
@@ -42,11 +43,7 @@ struct MemoryPane: View {
                 PaneSection("Recently") { days(status.recently) }
             }
         } else {
-            Card {
-                Text("\(model.name) isn't running, so its memory can't be read now.")
-                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            NoteCard("\(model.name) isn't running, so its memory can't be read now.")
         }
     }
 
@@ -55,8 +52,21 @@ struct MemoryPane: View {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 if notes.isEmpty { nothingYet }
                 ForEach(notes, id: \.id) { note in
-                    Text(note.text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        Text(note.text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                            .textSelection(.enabled)
+                        Spacer(minLength: 0)
+                        Button { model.runtime?.pinNote(note.id, !note.pinned) } label: {
+                            Image(systemName: note.pinned ? "pin.fill" : "pin").font(.system(size: 10))
+                        }
+                        .buttonStyle(.quiet)
+                        .help(note.pinned ? "Let it age as the others do" : "Keep it for good, as it is")
+                        Button { model.runtime?.forgetNote(note.id) } label: {
+                            Image(systemName: "xmark").font(.system(size: 10))
+                        }
+                        .buttonStyle(.quiet)
+                        .help("Forget it")
+                    }
                 }
             }
         }

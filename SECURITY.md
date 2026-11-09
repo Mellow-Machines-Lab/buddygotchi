@@ -26,6 +26,13 @@ policies: [agent-hooks](agent-hooks/SECURITY.md) and
   instead.
 - **What goes to TypeSafe** with each brain call, when there's a key
   (the README's "What leaves your Mac").
+- **The world's server** (`internal/world/`), unless you keep Boop
+  private: the buddy's name, level and size, UTC offset, one of six
+  activities and counts (`World.State`, which a test pins), sent with a
+  random key kept in `world.json` in the state folder, readable only by
+  you, never in the Keychain. Anyone with that key can change or delete
+  your buddy in the world, nothing more. Names are public, filtered by
+  the server, and can be reported.
 - **The board's links.** Over Bluetooth the link isn't paired or
   encrypted yet: anything in range running Boop can connect to a board
   and send it what the Mac sends (`state`, `do`). The debug commands

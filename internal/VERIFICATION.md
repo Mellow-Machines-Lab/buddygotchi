@@ -147,7 +147,13 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   ([CHARACTER.md](../characters/CHARACTER.md) §2).
 - `internal/tools/packs.py`: the character packs in `characters/`,
   fetched from their repositories (what `make -C internal packs` runs;
-  `--help`).
+  `--help`). `characters/packs.json` names each as `Owner/Repo`, or
+  `Owner/Repo@branch` to fetch a branch.
+- `internal/tools/world_e2e.py URL`: two headless Boops, each with its own
+  state folder and `HOME`, join the world at URL, see each other, boop
+  each other and leave (L4). `npm run dev` in `internal/world/` serves a
+  fake world on PGlite; the live one only when the owner asks. The Swift
+  side's own tests, `WorldTests`, stub the network and never reach one.
 - The generators, each in its pack and writing into it, which its
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;
@@ -355,7 +361,9 @@ Each suite says what it pins.
   low contrast. The run also fails if text twice as long leaves the
   Overview no taller: a value that's cut off, and long reasons that move the needs-you card from the top of the pane. It includes Unicode names,
   invalid names, every onboarding act (`onboarding-*`), a crowded Overview at
-  a bounded height, and each pane at its longest values (`*-long*`).
+  a bounded height, the Boop tab (`boop-*`), the World tab with a buddy's
+  card open, sent, off, loading and out of reach (`world-*`), and each pane
+  at its longest values (`*-long*`).
   There are no goldens.
 
 **Pass:** everything green. New code comes with tests.

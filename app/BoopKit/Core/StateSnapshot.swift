@@ -168,8 +168,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The to-do list of the longest turn working that has one, while
     /// nothing needs you; nil sends none.
     public var todo: Todo?
-    /// How far through its growth stage, in whole percent (`Growth.percent`):
-    /// the board's growth bar, which comes when it moves. Nil sends none.
+    /// Today's ring, the day's XP in whole percent (`Growth.percent`): the
+    /// board's bar, which comes when it moves. Nil sends none.
     public var xp: Int?
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.

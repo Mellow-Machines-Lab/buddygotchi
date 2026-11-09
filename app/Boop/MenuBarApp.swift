@@ -37,6 +37,15 @@ enum Pane: Equatable {
     case overview, settings, memory
 }
 
+/// The overview's three tabs: how things are now, Boop itself, and the
+/// world of buddies. Now is where the popover opens.
+enum Tab: String, CaseIterable, Equatable {
+    case now, boop, world
+
+    /// Its label: Now, Boop and World, whatever the buddy is called.
+    var title: String { rawValue.capitalized }
+}
+
 /// What the person has chosen so far in onboarding: a name, and which
 /// agents to watch. It lives in the app's model, so moving between
 /// acts loses nothing.
@@ -63,11 +72,47 @@ struct SetupDraft {
 /// What the views show. Updated on the main thread only.
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var pane = Pane.overview
+    @Published var pane = Pane.overview {
+        didSet { worldInSight() }
+    }
+    @Published var tab = Tab.now {
+        didSet {
+            worldInSight()
+            if tab != .world { worldPick = nil }
+        }
+    }
+    /// The buddy whose card is open on the World tab, and what was sent it.
+    @Published var worldPick: String?
+    @Published var worldSent: [String: WorldSend] = [:]
+    enum WorldSend: Equatable {
+        case sending(World.GestureKind), sent, failed
+    }
     /// The popover is open. Its views live on while it's closed, so they
     /// hold their loops still until it opens again.
     @Published var shown = false {
-        didSet { if shown { catchUp() } }
+        didSet {
+            if shown { catchUp() }
+            worldInSight()
+        }
+    }
+    /// Whether the runtime was last told the World tab is open.
+    private var worldTabOpen = false
+
+    /// The world is fetched only while its tab is in sight: the popover
+    /// open, on the overview, at the World tab.
+    private func worldInSight() {
+        let open = shown && pane == .overview && tab == .world
+        guard open != worldTabOpen else { return }
+        worldTabOpen = open
+        runtime?.worldTab(open: open)
+    }
+
+    /// Sends `kind` to the buddy `id`, and keeps how it went for its card.
+    func sendGesture(_ kind: World.GestureKind, to id: String) {
+        worldSent[id] = .sending(kind)
+        runtime?.sendGesture(kind, to: id) { [weak self] ok in
+            MainActor.assumeIsolated { self?.worldSent[id] = ok ? .sent : .failed }
+        }
     }
     /// Onboarding's window is open: its acts show the status too.
     var onboardingShown = false {
@@ -374,8 +419,8 @@ final class AppModel: ObservableObject {
         if status?.listening == true { return "Listening…" }
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.doing {
-        case "working": return s.working == 1 ? "1 session working" : "\(s.working) sessions working"
-        case "idle": return "Hanging out"
+        case "working": return "Working"
+        case "idle": return "Idle"
         default: return "Napping"
         }
     }
@@ -890,6 +935,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Your prompts, read on this Mac on macOS 26 whenever Apple
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac
+        // The world of buddies: the live server, or BOOP_WORLD_URL's.
+        options.worldURL = WorldClient.url()
         model.devices = options.link as? DeviceChooser
         if model.startOnSimulator { model.devices?.choose(.simulator) }
         do {
@@ -996,6 +1043,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // A finished update's word has been seen; one going on keeps going.
         if case .done = model.firmwareWrite { model.firmwareWrite = .idle }
         if model.pane != .overview { model.pane = .overview }
+        // It opens on Now each time: most of the time, that's what's wanted.
+        model.tab = .now
+        model.worldSent = [:]
     }
 
     /// Settings' Uninstall: asks first, then takes out the hooks, the
