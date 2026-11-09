@@ -355,7 +355,9 @@ Each suite says what it pins.
   low contrast. The run also fails if text twice as long leaves the
   Overview no taller: a value that's cut off, and long reasons that move the needs-you card from the top of the pane. It includes Unicode names,
   invalid names, every onboarding act (`onboarding-*`), a crowded Overview at
-  a bounded height, and each pane at its longest values (`*-long*`).
+  a bounded height, the Boop tab (`boop-*`), the World tab with a buddy's
+  card open, sent, off, loading and out of reach (`world-*`), and each pane
+  at its longest values (`*-long*`).
   There are no goldens.
 
 **Pass:** everything green. New code comes with tests.
