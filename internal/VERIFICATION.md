@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-04. How we check that Boop works, including what's on its
+Updated 2026-11-08. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -43,6 +43,8 @@ where it says:
   page's tests and `boopctl mirror` (the part of `make -C internal mirror`
   without Emscripten, which the runners don't have; they test the board.js
   checked in).
+- `npm ci`, `npm run typecheck` and `npm test` in `internal/world/`, the
+  world's server, on PGlite, on Linux.
 - Both boards' firmware: the CYD's with Pixel
   (`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`) and the AMOLED's
   with Boop's gel face (`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`).

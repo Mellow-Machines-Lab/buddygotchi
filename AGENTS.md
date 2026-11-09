@@ -35,6 +35,7 @@ cheap ESP32 board with a screen is the body.
 | `characters/` | The pack contract, `charactergen.py`, the Studio; the packs are fetched into `characters/.repos/` (`boop`, `pixel`) |
 | `simulator/` | The board with no board, for development, tests and demos |
 | `internal/` | Everything that doesn't ship: tests, evals, `boopdev`, tools (`boopctl`), skills ([README](internal/README.md)) |
+| `internal/world/` | The world's server: Hono on Vercel, Postgres, PGlite in its tests (`npm test` there; [README](internal/world/README.md)) |
 | `plan/`, `documentation/`, `landing/` | What's not built yet; the architecture and media; the landing page, a repository of its own that this one ignores |
 
 What ships never depends on `internal/`, and `make -C internal build` fails
@@ -303,6 +304,7 @@ updates it in the same commit. In a worktree, first check that
 | `simulator/` | `simulator/README.md`, `internal/VERIFICATION.md` |
 | A make target, tool, test level or budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |
 | Evals | `internal/EVALS.md` |
+| `internal/world/`, its routes, limits or wire fixtures | `internal/world/README.md` |
 | The Studio | `characters/studio/README.md`, `characters/CHARACTER.md` §12 |
 | The gel slime, in SlimeBuddy | Its `CONTINUITY.md`, `VALIDATION.md`, slimegen's `README.md` |
 

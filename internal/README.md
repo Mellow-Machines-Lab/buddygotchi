@@ -32,6 +32,7 @@ tests, evals, dev tools and skills.
 | `sessions/` | The projects a pack's demo scripts run in when a real agent plays them, for videos (`make demo IN=…`, [sessions/README.md](sessions/README.md)) |
 | `characters/` | The tests of `characters/charactergen.py` (`make -C internal tools-test`, and CI): the studio lists the board's states, each once; every pack here passes the studio's rules; those rules on small made-up packs (a studio entry is optional, states match the board's, declared files exist, a preview wears only the pack's moods, and the data's paths are from the page); a pack's rig/ (every pack here clean, a bad edit failing with its file and key, the tables written as its files say); a pack's references and review queue (every key, value and file, what each status says is there, what it became on the rig) and the studio's data from them, a board for each face among it, which a pack's own entry for it adds to; and `--stage` takes the chosen pack's own files only, with the two headers it makes |
 | `skills/` | `doctor` and `webcam-verify`, linked from `.claude/skills/` and `.codex/skills/` |
+| `world/` | The world's server, which every buddy that joins the world talks to: a Hono app for Vercel Functions on Postgres, with its tests on PGlite and the wire's fixtures, which the Mac's tests share ([world/README.md](world/README.md)). It's TypeScript, with its own `npm test`, and nothing else here depends on it |
 
 ## How it's wired
 

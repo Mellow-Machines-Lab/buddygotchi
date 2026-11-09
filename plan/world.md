@@ -1,6 +1,6 @@
 # The world: architecture and build plan
 
-Updated 2026-11-08. Agreed with the owner on 2026-11-08, from
+Updated 2026-11-08. Built as `internal/world/` (§2); agreed with the owner on 2026-11-08, from
 [v1-buddy.md](v1-buddy.md) §6 (what the world is) and §5 (XP, kept simple).
 Work happens on branch `main-v2`, in feature branches off it; `main` stays as it
 is for now.
@@ -52,10 +52,9 @@ internal/world/
   package.json         scripts: dev, test, migrate, typecheck
   tsconfig.json
   vercel.json          the cron, the function's settings
-  .env.example         DATABASE_URL=, ADMIN_TOKEN=  (no values)
-  api/index.ts         Vercel's entry: exports the Hono app
+  .env.example         DATABASE_URL=, ADMIN_TOKEN=, CRON_SECRET=  (no values)
   src/
-    app.ts             the routes
+    app.ts             the routes; Vercel's entry, by its default export (no api/, no rewrites)
     db.ts              the pool, from DATABASE_URL; PGlite when it's unset
     names.ts           the name filter
     limits.ts          the caps and rate limits, in one place
