@@ -162,6 +162,10 @@ final class WorldTests: XCTestCase {
         dir = FileManager.default.temporaryDirectory.appendingPathComponent("boop-world-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         Stub.seen = []
+        setUpStubs()
+    }
+
+    func setUpStubs() {
         Stub.answer = { method, path in
             switch (method, path) {
             case ("POST", "/v1/buddies"): (201, #"{"id":"b1","key":"k1","name":"Mochi","name_ok":true}"#)
@@ -273,11 +277,46 @@ final class WorldTests: XCTestCase {
         queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 100_000) }
         settle()
         XCTAssertEqual(Stub.seen.filter { $0.path == "/v1/world" }.count, fetched, "closed: no fetch")
+        XCTAssertNil(world.status.snapshot, "closed: nothing stale kept")
+        XCTAssertEqual(Stub.seen.filter { $0.method == "PUT" }.last?.body?["activity"] as? String, "asleep",
+                       "still asleep while locked: a tick doesn't wake it")
+        queue.sync { world.checkGestures(on: true, quiet: false, at: 110_000) }
+        settle()
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 120_000) }
+        settle()
+        XCTAssertEqual(Stub.seen.filter { $0.method == "PUT" }.last?.body?["activity"] as? String, "coding", "awake once you're back")
         queue.sync { world.leave(at: 200_000) }
         settle()
         XCTAssertEqual(Stub.seen.last.map { "\($0.method) \($0.path)" }, "DELETE /v1/buddies/me")
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(WorldLink.fileName).path))
         XCTAssertFalse(world.status.joined)
+    }
+
+    /// A retry the server already counted kept the first try's body, so
+    /// the state goes again with the next seq.
+    func testADuplicateSendsTheStateAgain() throws {
+        let world = link()
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 0) }
+        settle()
+        Stub.answer = { method, _ in method == "PUT" ? (200, #"{"ok":true,"duplicate":true,"gestures":[]}"#) : (200, "{}") }
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 1_000) }
+        settle()
+        setUpStubs()
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 12_000) }
+        settle()
+        let seqs = Stub.seen.filter { $0.method == "PUT" }.compactMap { $0.body?["seq"] as? Int }
+        XCTAssertEqual(seqs, [1, 2])
+    }
+
+    /// One ship's cheers are one moment, but steady cheers can't keep a
+    /// later ship's from playing: the window starts at the one that played.
+    func testCheersDontSlideTheirWindow() {
+        var g = WorldGestures()
+        let cheer = World.Gesture(kind: .cheer, fromRegion: .americas, at: "x")
+        let plays = stride(from: Int64(0), through: 40 * 60_000, by: 10 * 60_000).map {
+            g.arrived([cheer], quiet: false, at: $0).first?["plays"]?.bool != false
+        }
+        XCTAssertEqual(plays, [true, false, false, true, false])
     }
 
     /// A leave the server doesn't take keeps the key, sends nothing more,

@@ -106,13 +106,14 @@ public final class GrowthStore {
 
     /// A level reached and not yet celebrated, or nil.
     public var levelDue: Int? { growth.level > celebrated ? growth.level : nil }
-    /// Whether today's ring has closed and its moment hasn't played.
-    public var ringDue: Bool { growth.ringClosed && day != nil && ringCelebrated != day }
+    /// Whether the ring of Boop day `today` has closed and its moment
+    /// hasn't played: one held past 5:00 is yesterday's, and isn't.
+    public func ringDue(today: String) -> Bool { growth.ringClosed && day == today && ringCelebrated != day }
 
-    /// What's due to play: a level-up, and the ring closing.
-    public var due: [Core.GrowthBeat] {
+    /// What's due to play on Boop day `today`: a level-up, and the ring closing.
+    public func due(today: String) -> [Core.GrowthBeat] {
         (levelDue.map { [.level($0, grewTo: Growth.grows(at: $0) ? Growth.stages[Growth.stage(forLevel: $0) - 1].name : nil)] } ?? [])
-            + (ringDue ? [.ringClosed] : [])
+            + (ringDue(today: today) ? [.ringClosed] : [])
     }
 
     /// `e`, logged, played a growth moment: its level, or the ring's closing,

@@ -147,7 +147,8 @@ public final class WorldLink {
     var backoff: Int64 = 0
     /// Left while a join was on its way: the buddy it makes leaves at once.
     var leaveWanted = false
-    /// The screen locked: "asleep" goes as soon as nothing else is on its way.
+    /// The screen locked: the buddy is asleep in the world until you unlock
+    /// or come back, and "asleep" goes as soon as nothing else is on its way.
     var asleepDue = false
     var tabOpen = false
     var fetching = false
@@ -227,13 +228,10 @@ public final class WorldLink {
         guard !busy, retryAt.map({ now >= $0 }) ?? true else { return }
         if let leaving = identity, leaving.leaving == true { return goodbye(leaving, at: now) }
         guard on else { return }
-        let me = me()
+        var me = me()
+        if asleepDue { me.activity = .asleep }
         guard let identity else { return join(me, at: now) }
-        if asleepDue, last?.activity != .asleep {
-            var asleep = me
-            asleep.activity = .asleep
-            return send(asleep, identity: identity, quiet: true, at: now)
-        }
+        if asleepDue, last?.activity != .asleep { return send(me, identity: identity, quiet: true, at: now) }
         let gap = lastSentAt.map { now - $0 } ?? .max
         let due = identity.unanswered != nil || last.map { me.changes(from: $0) } ?? true
             || pendingSince.map { now - $0 >= Self.countsWaitMs } == true
@@ -298,13 +296,14 @@ public final class WorldLink {
             case .success(let reply):
                 self.identity?.unanswered = nil
                 save()
-                last = me
+                // A retry the server had counted kept the first try's body:
+                // this one's state goes again with the next seq.
+                last = reply.duplicate == true ? nil : me
                 lastSentAt = now
                 // What arrived since the send was made stays for the next.
                 pending = pending - sending.added
                 pendingSince = pending.isEmpty ? nil : now
                 backoff = 0
-                if me.activity == .asleep { asleepDue = false }
                 let shown = reply.name ?? status.shownName
                 if shown != status.shownName || (reply.nameHidden ?? false) != status.nameHidden || status.trouble != nil {
                     status.shownName = shown
@@ -345,6 +344,7 @@ public final class WorldLink {
                                         held: e["held"]?.bool == true, plays: e["plays"]?.bool != false,
                                         at: Date()), at: 0)
         }
+        if status.today.count > Self.arrivalsKept { status.today.removeLast(status.today.count - Self.arrivalsKept) }
         if events.contains(where: { $0["held"]?.bool == true }) { saveWaiting() }
         onEvents(events)
         onChange()
@@ -380,8 +380,20 @@ public final class WorldLink {
     /// The World tab opened or closed: the world is fetched only while it's open.
     public func tab(open: Bool, at now: Int64) {
         tabOpen = open
+        guard open else {
+            // Fetched afresh next time: nothing stale shows, or is kept.
+            lastFetchAt = nil
+            if status.snapshot != nil {
+                status.snapshot = nil
+                onChange()
+            }
+            return
+        }
         fetchIfDue(at: now)
     }
+
+    /// The day's arrivals the World tab keeps, newest first.
+    static let arrivalsKept = 50
 
     /// Why the world can't be reached, as the World tab says it.
     static let troubleWords = "Can't reach the world right now."
@@ -393,6 +405,7 @@ public final class WorldLink {
         client.world { [weak self] result in
             guard let self else { return }
             fetching = false
+            guard tabOpen else { return }
             switch result {
             case .success(let snapshot):
                 status.snapshot = snapshot
@@ -422,16 +435,18 @@ public final class WorldLink {
     }
 
     /// The app quits: "asleep", waiting at most `quitWait` for it to go, so
-    /// the world needn't wait 15 minutes to see it. A new seq, with nothing
-    /// added: whatever's pending goes at the next launch.
+    /// the world needn't wait 15 minutes to see it. A new seq, with the
+    /// counts not yet sent; a send with no answer's are given up rather
+    /// than counted twice. Counts aren't kept across a quit.
     public func quit(_ me: Now, on: Bool) {
-        guard on, var identity = member, last?.activity != .asleep else { return }
+        guard on, var identity = member, last?.activity != .asleep || !pending.isEmpty else { return }
+        let added = identity.unanswered.map { pending - $0.added } ?? pending
         identity.seq = max(identity.seq, identity.unanswered?.seq ?? 0) + 1
         identity.unanswered = nil
         self.identity = identity
         save()
         let state = World.State(seq: identity.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
-                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: World.Counts())
+                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added)
         if !client.sendNow(state, key: identity.key, timeout: Self.quitWait) { log("world: asleep didn't go before the quit") }
     }
 

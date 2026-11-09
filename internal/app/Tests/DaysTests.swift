@@ -149,6 +149,17 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(levels().count, 1, "once")
     }
 
+    /// A size reached while held keeps its bigger moment when the next
+    /// level comes before it plays.
+    func testAHeldSizeKeepsItsCeremony() {
+        let rig = CoreRig()
+        rig.send(.needsYou, tool: "Bash")
+        rig.pipeline.run(rig.pipeline.core.grew([.level(5, grewTo: "Sprout")], at: rig.now))
+        rig.pipeline.run(rig.pipeline.core.grew([.level(6, grewTo: nil)], at: rig.now))
+        let fx = rig.send(.activity, tool: "Bash")
+        XCTAssertEqual(moments(fx).filter { $0.sign == Core.levelSign(6) }.map(\.mood), [Core.grewFace])
+    }
+
     /// On a day with an occasion, the first agent's event greets it once,
     /// with its sign after the event's own reaction, waking if it was
     /// asleep and noticing it if not; never over needs you, nor lost to

@@ -64,8 +64,11 @@ extension Runtime {
     /// in onboarding.
     var worldOn: Bool { settings.world && settings.worldShown }
 
-    /// Night, or you're away: gestures wait for you in the day.
-    func worldQuiet(at now: Int64) -> Bool { core.calendar(at: now).contains("night") || core.awayFromMac }
+    /// Night, you're away, or something needs you (whose events are held
+    /// from Jev): gestures wait for you to be free in the day.
+    func worldQuiet(at now: Int64) -> Bool {
+        core.calendar(at: now).contains("night") || core.awayFromMac || core.needsYouBlock != nil
+    }
 
     func worldTick(at now: Int64) {
         guard let world else { return }

@@ -123,8 +123,10 @@ public enum World {
         public var name: String?
         public var nameHidden: Bool?
         public var gestures: [Gesture]?
+        /// The seq was counted before: the server kept that send's body, not this one's.
+        public var duplicate: Bool?
 
-        enum CodingKeys: String, CodingKey { case name, nameHidden = "name_hidden", gestures }
+        enum CodingKeys: String, CodingKey { case name, nameHidden = "name_hidden", gestures, duplicate }
     }
 
     /// The reply to joining: the buddy's id and its key, shown only here.

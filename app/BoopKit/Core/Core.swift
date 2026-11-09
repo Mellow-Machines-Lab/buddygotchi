@@ -511,7 +511,9 @@ public final class Core {
         for beat in beats {
             switch beat {
             case .level(let n, let size):
-                level = (n, size)
+                // The last level, and the biggest's size: a level held past
+                // the next keeps its ceremony.
+                level = (n, size ?? level?.1)
                 fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(n),
                                         data: size.map { ["stage": .string($0)] } ?? [:])))
             case .ringClosed:

@@ -6,8 +6,9 @@ import MellowHarness
 /// limits. At most `perHour` boops, waves and hearts play in an hour; the
 /// rest are logged as not playing, and the World tab counts them. Cheers
 /// that come within `cheerWindowMs` of the last are one moment. At night or
-/// while you're away they wait, and come back as one line when you're here
-/// in the day. Kept in memory: a gesture waiting is lost at a quit.
+/// while you're away, or while something needs you, they wait, and come
+/// back as one line when you're free. The waiting ones are kept across a
+/// quit (`WorldLink.saveWaiting`); the hour's count isn't.
 public struct WorldGestures: Sendable {
     /// The boops, waves and hearts that play in an hour.
     public static let perHour = 3
@@ -37,8 +38,10 @@ public struct WorldGestures: Sendable {
         var out: [Event] = []
         let cheers = gestures.filter { $0.kind == .cheer }
         if let first = cheers.first {
+            // The window starts at the cheer that played, so steady cheers
+            // can't keep a later ship's from playing.
             let plays = lastCheerAt.map { now - $0 >= Self.cheerWindowMs } ?? true
-            lastCheerAt = now
+            if plays { lastCheerAt = now }
             out.append(Self.event([(.cheer, cheers.count)], from: first.fromRegion, plays: plays, at: now))
         }
         for g in gestures where g.kind != .cheer {

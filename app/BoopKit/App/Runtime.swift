@@ -454,6 +454,7 @@ public final class Runtime: @unchecked Sendable {
             rig.link.onHello = { [weak self] hello in
                 DeviceInfo(hello).logLines.forEach { log(whose + $0) }
                 if let self, let latest = rig.latest { self.show(latest, on: rig) }
+                self?.playGrowthDue(at: clock())
             }
         }
         // A pass can change a mood, which its device and the menu bar show.
@@ -791,19 +792,24 @@ public final class Runtime: @unchecked Sendable {
     /// for one hook.
     func grow(_ e: Event) {
         growth.played(e)
-        let xp = Growth.xp(for: e)
-        guard xp > 0, e.seq > growth.lastSeq else { return }
         let now = options.clock()
-        guard growth.count(e, xp: xp, today: options.time.boopDay(options.wallClock())) > 0 else { return }
+        guard growth.count(e, xp: Growth.xp(for: e), today: options.time.boopDay(options.wallClock())) > 0 else { return }
         grew = true
-        // What's due plays on every board, and is celebrated as it does
-        // (`played`): a demo shows none, and plays it after.
-        let beats = growth.due
-        guard showsGrowth, !beats.isEmpty else {
+        guard playGrowthDue(at: now) else {
             if pipeline.step != nil { xpMoved = true } else { publishXP(at: now) }
             return
         }
+    }
+
+    /// What's due plays on every board, and is celebrated as it does
+    /// (`played`): after XP that reached it, at a board's hello (so one held
+    /// over a quit isn't lost), and after a demo, which shows none.
+    @discardableResult
+    func playGrowthDue(at now: Int64) -> Bool {
+        let beats = growth.due(today: options.time.boopDay(options.wallClock()))
+        guard showsGrowth, !beats.isEmpty else { return false }
         for rig in rigs { run(core(rig).grew(beats, at: now), on: rig) }
+        return true
     }
 
     /// Changes the settings here and in `settings.json`, keeping what
