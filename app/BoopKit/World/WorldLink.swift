@@ -78,6 +78,8 @@ public final class WorldLink {
     public struct Status: Equatable, Sendable {
         /// In the world: joined, and the world on.
         public var joined = false
+        /// The buddy's own id in the world, so its own dot isn't sent to.
+        public var id: String?
         /// How the world shows the buddy's name, and whether it hid it.
         public var shownName: String?
         public var nameHidden = false
@@ -103,7 +105,7 @@ public final class WorldLink {
         public var held: Bool
         public var plays: Bool
         public var at: Date
-        public var id: String { "\(at.timeIntervalSince1970)-\(counts.map(\.kind.rawValue).joined())" }
+        public let id = UUID()
 
         public struct Count: Equatable, Sendable {
             public var kind: World.GestureKind
@@ -167,6 +169,7 @@ public final class WorldLink {
         identity = (try? Data(contentsOf: file)).flatMap { try? JSONDecoder().decode(Identity.self, from: $0) }
         gestures = WorldGestures(waiting: (try? Data(contentsOf: waitingFile)).flatMap { try? JSONDecoder().decode([World.Gesture].self, from: $0) } ?? [])
         status.joined = member != nil
+        status.id = member?.id
     }
 
     /// The key, readable only by you from the moment it's written; gone
@@ -265,6 +268,7 @@ public final class WorldLink {
                 }
                 save()
                 status.joined = true
+                status.id = joined.id
                 status.shownName = joined.name
                 log("world: joined as \(joined.name)")
                 onChange()
@@ -362,6 +366,7 @@ public final class WorldLink {
             save()
             last = nil
             status.joined = false
+            status.id = nil
             onChange()
             return
         }
