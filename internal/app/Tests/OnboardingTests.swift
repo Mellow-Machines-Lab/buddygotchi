@@ -20,14 +20,18 @@ final class OnboardingTests: XCTestCase {
     /// Back never goes past the board: the name is for keeps once given.
     func testActsGoForwardAndBackButNotBehindTheName() {
         XCTAssertEqual(Onboarding.Act.allCases.map(\.rawValue),
-                       ["hello", "whatIDo", "makeMeYours", "body", "howTo", "agents", "smallThings", "finale"])
+                       ["hello", "whatIDo", "makeMeYours", "body", "howTo", "agents", "smallThings", "world", "finale"])
         XCTAssertEqual(Onboarding.Act.hello.next, .whatIDo)
         XCTAssertNil(Onboarding.Act.finale.next)
         XCTAssertNil(Onboarding.Act.hello.back)
         XCTAssertEqual(Onboarding.Act.makeMeYours.back, .whatIDo)
         XCTAssertNil(Onboarding.Act.body.back)
         XCTAssertEqual(Onboarding.Act.agents.back, .howTo)
-        XCTAssertEqual(Onboarding.Act.allCases.filter(\.afterNaming), [.body, .howTo, .agents, .smallThings, .finale])
+        // The world's screen comes after the small things, and before the finale.
+        XCTAssertEqual(Onboarding.Act.smallThings.next, .world)
+        XCTAssertEqual(Onboarding.Act.world.next, .finale)
+        XCTAssertEqual(Onboarding.Act.finale.back, .world)
+        XCTAssertEqual(Onboarding.Act.allCases.filter(\.afterNaming), [.body, .howTo, .agents, .smallThings, .world, .finale])
     }
 
     func testTheSavedActRoundTripsAndOlderSettingsHaveNone() throws {

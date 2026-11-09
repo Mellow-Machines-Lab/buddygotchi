@@ -54,6 +54,7 @@ struct OnboardingView: View {
         case .howTo: HowToAct(model: model)
         case .agents: AgentsAct(model: model)
         case .smallThings: SmallThingsAct(model: model)
+        case .world: WorldAct(model: model)
         case .finale: FinaleAct(model: model)
         }
     }
