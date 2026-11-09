@@ -33,7 +33,7 @@ Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `sna
 - The Swift tests: 719 pass.
 - The firmware's native tests, the simulator's gel scenarios (new goldens for the bar and a `v1` scenario), and Pixel's, with no change.
 - Both boards' firmware builds, and the mirror is rebuilt.
-- `internal/tools/world_e2e.py`: two headless Boops join, see each other, boop and wave, and leave. It passes against `npm run dev`, and passed against the live server on 2026-11-09 at 07:57 UTC, which then had no buddies.
+- `internal/tools/world_e2e.py`: two headless Boops join, see each other, boop and wave, and leave. It passes against `npm run dev`, and passed against the live server on 2026-11-09 at 07:57 UTC, and again at 08:54 on the reviewed code with main-v2's server retry: the live world had 0 buddies after each.
 - Getting there took three live runs, and it found a client bug. A leave the server didn't take was lost, because the key went before the DELETE succeeded, so a buddy stayed in the world. Now the key stays, marked as leaving, and the DELETE is tried again until the server confirms (`WorldTests`). The test buddies left on the live server by the earlier runs were deleted by hand.
 - No server change was needed.
 
