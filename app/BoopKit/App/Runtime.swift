@@ -68,6 +68,9 @@ public final class Runtime: @unchecked Sendable {
         /// Boop full size whatever its XP, for a demo: from before the
         /// first `state`, which goes out before a demo's first step.
         public var fullSize = false
+        /// The world's server (`WorldClient.url()`); nil for no world at all,
+        /// as in tests, which never reach the live one.
+        public var worldURL: URL?
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
@@ -131,6 +134,8 @@ public final class Runtime: @unchecked Sendable {
     /// The key-value store growth and memory keep their rows in; it keeps
     /// an away's start too (`PresenceDetector.awayKey`).
     var keyValues: KeyValueStore?
+    /// Boop's buddy in the world, with a world server to talk to.
+    var world: WorldLink?
     public private(set) var settings: AppSettings
     /// How much it says now (`Talk`), touched only on `home`.
     public private(set) var talk: Talk
@@ -459,8 +464,12 @@ public final class Runtime: @unchecked Sendable {
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged: the growth store counts each once, and
-        // caps the day at its ring.
-        harness.on("*") { [weak self] e in self?.grow(e) }
+        // caps the day at its ring; the world adds its counts.
+        harness.on("*") { [weak self] e in
+            self?.grow(e)
+            self?.worldHeard(e)
+        }
+        startWorld()
     }
 
     /// Boop's brain for one buddy, the process's character (`brain`): the
@@ -556,6 +565,8 @@ public final class Runtime: @unchecked Sendable {
         server?.stop()
         server = nil
         for rig in rigs { rig.transport?.stop() }
+        let sleep = { [self] in worldSleep() }
+        if DispatchQueue.getSpecific(key: onHome) == true { sleep() } else { home.sync(execute: sleep) }
         // Today's counts as they stand: the next launch reads the rest back.
         let keep = { [self] in remembers?.keepCounts(wall: options.wallClock(), now: true) }
         if DispatchQueue.getSpecific(key: onHome) == true { keep() } else { home.sync(execute: keep) }
@@ -677,6 +688,7 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock(), wall = options.wallClock()
         for rig in rigs { core(rig).setWallClock(wall, at: now) }
         run(pipeline.tick(at: now))
+        worldTick(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
         var troubled = false

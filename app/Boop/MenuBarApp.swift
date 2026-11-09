@@ -890,6 +890,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Your prompts, read on this Mac on macOS 26 whenever Apple
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac
+        // The world of buddies: the live server, or BOOP_WORLD_URL's.
+        options.worldURL = WorldClient.url()
         model.devices = options.link as? DeviceChooser
         if model.startOnSimulator { model.devices?.choose(.simulator) }
         do {

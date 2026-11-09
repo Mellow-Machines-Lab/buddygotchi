@@ -23,6 +23,8 @@ let usage = """
                 [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
+               The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
+               fake one on http://localhost:8787.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
                reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
                every pass the same way without a network: an excited "Go", for pipeline checks. --brain none

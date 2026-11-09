@@ -38,6 +38,8 @@ extension Runtime {
         public var growth: Growth?
         /// The last days' rings, oldest first, today's last: the Boop tab's week.
         public var week: [DayRing] = []
+        /// The world of buddies; nil with no world server (tests).
+        public var world: WorldStatus?
         /// How many days since Boop hatched, and its memory's recent days,
         /// a line each, newest first (`memory.md`'s Recently).
         public var daysOld: Int?
@@ -166,6 +168,7 @@ extension Runtime {
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         let written = memory.written(), today = options.time.boopDay(wall)
         status.week = growth.week(to: today).map { Status.DayRing(day: $0.day, xp: $0.xp, today: today) }
+        status.world = worldStatus(at: now)
         status.notes = written.notes
         status.recently = written.recently.map { Status.DayLine(day: $0.day, line: $0.text, today: today) }
         status.wishing = core.wish.map { "\(name) wishes for \($0.kind.words) (\(ContextSection.span($0.waitedMs)))." }
