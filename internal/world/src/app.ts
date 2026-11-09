@@ -11,7 +11,9 @@ import { defaultDb, type Db } from "./db.js";
 import * as L from "./limits.js";
 import { checkName, shownName } from "./names.js";
 import { UTC_OFFSET_MAX, UTC_OFFSET_MIN, regionOf, validOffset } from "./regions.js";
-import { ACTIVITIES, COUNTS, METRICS, TODAY, checkGoal, goalAdded, snapshot, type Count } from "./world.js";
+import {
+  ACTIVITIES, COUNTS, METRICS, TODAY, checkGoal, currentRewards, deliverGestures, goalAdded, snapshot, type Count,
+} from "./world.js";
 
 export const STAGES = ["hatchling", "sprout", "buddy", "chonk"] as const;
 export const GESTURES = ["boop", "wave", "heart", "cheer"] as const;
@@ -236,6 +238,9 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       ...(name.reason && { name_reason: name.reason }),
       name_hidden: me.reports >= L.REPORTS_TO_HIDE,
       goal_added: await goalAdded(c.var.db, id),
+      // So a Mac that sends on change rarely needs to poll.
+      rewards: await currentRewards(c.var.db),
+      gestures: await deliverGestures(c.var.db, id),
     });
   });
 
@@ -278,18 +283,10 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     return c.json({ ok: true }, 201);
   });
 
-  // What's waiting for this buddy. Each gesture is handed out once.
+  // What's waiting for this buddy, for a Mac that hasn't sent in a while.
+  // Each gesture is handed out once, here or in the PUT's reply.
   app.get("/v1/gestures", buddy, async (c) => {
-    const gestures = await c.var.db.query<{ kind: string; from_region: string | null; at: string }>(
-      `with handed as (
-         update gestures set delivered_at = now()
-          where id in (select id from gestures where to_buddy = $1 and delivered_at is null order by id limit $2 for update)
-         returning id, kind, from_region, created_at)
-       select kind, from_region, to_char(created_at at time zone 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') as at
-         from handed order by id`,
-      [c.var.buddy, L.GESTURES_PER_READ],
-    );
-    return c.json({ gestures });
+    return c.json({ gestures: await deliverGestures(c.var.db, c.var.buddy) });
   });
 
   // Reports a name. Each buddy counts once; at REPORTS_TO_HIDE the name is hidden.

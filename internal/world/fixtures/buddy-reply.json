@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "counted": { "xp": 82, "turns": 3, "tests_passed": 2, "ships": 0, "lines_changed": 140 },
+  "clamped": [],
+  "name": "Mochi",
+  "name_ok": true,
+  "name_hidden": false,
+  "goal_added": 2,
+  "rewards": [{ "tag": "worldparty", "until": "2026-11-11" }],
+  "gestures": [{ "kind": "boop", "from_region": "asia_oceania", "at": "2026-11-08T16:58:12Z" }]
+}

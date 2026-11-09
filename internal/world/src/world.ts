@@ -5,7 +5,7 @@
 // asleep, whatever it last said, since its Mac has gone quiet.
 
 import type { Db } from "./db.js";
-import { AWAKE_WITHIN_MS, SNAPSHOT_BUDDIES } from "./limits.js";
+import { AWAKE_WITHIN_MS, GESTURES_PER_READ, SNAPSHOT_BUDDIES } from "./limits.js";
 import { shownName } from "./names.js";
 import { REGIONS, regionSql, type Region } from "./regions.js";
 
@@ -135,6 +135,39 @@ export async function goalAdded(db: Db, buddy: string): Promise<number | null> {
   return row?.showing ? progress(db, row, buddy) : null;
 }
 
+/** The rewards every board wears now: each reached goal's tag, for its days. */
+export async function currentRewards(db: Db): Promise<Snapshot["rewards"]> {
+  return db.query<Snapshot["rewards"][number]>(
+    `select reward_tag as tag, ${date("(reached_at at time zone 'utc')::date + reward_days")} as until
+       from goals
+      where reached_at is not null and (reached_at at time zone 'utc')::date + reward_days > ${TODAY}
+      order by id`,
+  );
+}
+
+export interface Gesture {
+  kind: string;
+  from_region: string | null;
+  at: string;
+}
+
+/**
+ * Hands out what's waiting for a buddy, oldest first, at most
+ * GESTURES_PER_READ. Each gesture is handed out once, by whichever of
+ * GET /v1/gestures and PUT /v1/buddies/me comes first.
+ */
+export async function deliverGestures(db: Db, buddy: string): Promise<Gesture[]> {
+  return db.query<Gesture>(
+    `with handed as (
+       update gestures set delivered_at = now()
+        where id in (select id from gestures where to_buddy = $1 and delivered_at is null order by id limit $2 for update)
+       returning id, kind, from_region, created_at)
+     select kind, from_region, ${iso("created_at")} as at
+       from handed order by id`,
+    [buddy, GESTURES_PER_READ],
+  );
+}
+
 export async function snapshot(db: Db): Promise<Snapshot> {
   const awakeSecs = AWAKE_WITHIN_MS / 1000;
   const [{ at }] = await db.query<{ at: string }>(`select ${iso("now()")} as at`);
@@ -163,12 +196,7 @@ export async function snapshot(db: Db): Promise<Snapshot> {
 
   const { goal } = await checkGoal(db);
 
-  const rewards = await db.query<Snapshot["rewards"][number]>(
-    `select reward_tag as tag, ${date("(reached_at at time zone 'utc')::date + reward_days")} as until
-       from goals
-      where reached_at is not null and (reached_at at time zone 'utc')::date + reward_days > ${TODAY}
-      order by id`,
-  );
+  const rewards = await currentRewards(db);
 
   const rows = await db.query<Snapshot["buddies"][number] & { name_ok: boolean; reports: number }>(
     `select id::text as id, name, name_ok, reports, level, stage, utc_offset, ${SEEN_ACTIVITY} as activity

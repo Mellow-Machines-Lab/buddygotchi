@@ -127,6 +127,7 @@ test("the goal's progress, and your part of it", async () => {
   await w.send(a, state({ added: { tests_passed: 3 } }));
   const sent = await w.send(b, state({ added: { tests_passed: 4 } }));
   assert.equal(sent.body.goal_added, 4, "you added 4");
+  assert.deepEqual(sent.body.rewards, [], "none until it's reached");
   const { body } = await snapshot();
   assert.equal(body.goal.progress, 7);
   assert.equal(body.goal.reached, false);
@@ -153,6 +154,9 @@ test("the goal is reached exactly once, and its reward is in rewards", async () 
   assert.equal(body.goal.reached, true);
   assert.equal(body.goal.progress, 18);
   assert.deepEqual(body.rewards, [{ tag: "worldparty", until: addDays(utcToday(), 3) }]);
+  await w.rewind(b);
+  const sent = await w.send(b, state({ seq: 2 }));
+  assert.deepEqual(sent.body.rewards, body.rewards, "a send's reply carries the rewards too");
 });
 
 test("a reward lasts its days, and a goal past its end isn't reached", async () => {

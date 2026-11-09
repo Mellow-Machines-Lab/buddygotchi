@@ -23,6 +23,19 @@ test("buddy-state.json is every key a buddy may send, and the server takes it", 
   assert.deepEqual(r.body.counted, { xp: 82, turns: 3, tests_passed: 2, ships: 0, lines_changed: 140 });
 });
 
+test("buddy-reply.json has the shape of a real send's reply", async () => {
+  const example = fixture<any>("buddy-reply.json");
+  const a = await w.join("Mochi", 60);
+  const b = await w.join("Bean", 540);
+  await w.json("PUT", "/v1/admin/goal", { key: ADMIN, body: { title: "Two tests", metric: "tests_passed", target: 2, ends: "2099-12-31", reward_tag: "worldparty" } });
+  await w.json("POST", "/v1/gestures", { key: b.key, body: { to: a.id, kind: "boop" } });
+  const real = (await w.send(a, fixture("buddy-state.json"))).body;
+  assert.deepEqual(shape(real), shape(example));
+  assert.deepEqual(real.counted, example.counted);
+  assert.equal(real.gestures[0].from_region, example.gestures[0].from_region);
+  assert.ok(GESTURES.includes(example.gestures[0].kind));
+});
+
 /** A value's shape: its keys and their types, arrays by their first item. */
 function shape(v: unknown): unknown {
   if (Array.isArray(v)) return [v.length ? shape(v[0]) : "empty"];

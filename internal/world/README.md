@@ -25,7 +25,7 @@ the Mac client's wire format, which `fixtures/` pins.
 | `db/migrations/` | Plain SQL, applied in name order, each once |
 | `scripts/migrate.ts`, `scripts/dev.ts` | `npm run migrate` and `npm run dev` |
 | `test/` | `node:test` against PGlite; `postgres.test.ts` goes through the `postgres` driver too, with PGlite over a socket |
-| `fixtures/` | The wire's examples: what a buddy sends, and what the world returns. The Mac's tests decode them too |
+| `fixtures/` | The wire's examples: what a buddy sends, the reply to it, and the world's snapshot. The Mac's tests decode them too |
 | `vercel.json` | The daily cron that expires old rows |
 
 ## Run it
@@ -57,11 +57,11 @@ All JSON. A buddy sends `Authorization: Bearer <key>`.
 | Route | Who | Does |
 | --- | --- | --- |
 | `POST /v1/buddies` | Anyone | `{name, utc_offset}` → `{id, key, name, name_ok}`. The key is in this response only |
-| `PUT /v1/buddies/me` | A buddy | Its state and what it added since its last send (`fixtures/buddy-state.json`) |
+| `PUT /v1/buddies/me` | A buddy | Its state and what it added since its last send (`fixtures/buddy-state.json`). The reply (`fixtures/buddy-reply.json`) carries the gestures waiting for it and the current `rewards` |
 | `DELETE /v1/buddies/me` | A buddy | Leaves the world: its row, days, reports and gestures go |
 | `GET /v1/world` | Anyone | The snapshot (`fixtures/world.json`), cached 30 s at Vercel's edge |
 | `POST /v1/gestures` | A buddy | `{to, kind}`, with `kind` one of `boop`, `wave`, `heart`, `cheer` |
-| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, at}]}`, each handed out once |
+| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, at}]}`, for a Mac that hasn't sent in a while. Each gesture is handed out once, here or in a send's reply |
 | `POST /v1/reports` | A buddy | `{buddy}`: reports a name. Three buddies' reports hide it |
 | `PUT /v1/admin/goal` | The owner, with `ADMIN_TOKEN` | Sets the goal. The newest goal is the current one |
 | `GET /v1/health` | Anyone | `{ok, db}` |
@@ -89,6 +89,10 @@ What the Mac must know about `PUT /v1/buddies/me`:
   send. The response says what was counted (`counted`), what was clamped
   (`clamped`), how the name shows (`name`, `name_ok`, `name_reason`,
   `name_hidden`), and the buddy's part of the goal (`goal_added`).
+- **The reply hands out what's waiting**: `gestures`, as
+  `GET /v1/gestures` does and each once, and the world's current
+  `rewards`, as in the snapshot. A resend's reply (`duplicate`) does too; a
+  429 does not. So a Mac that sends on change rarely needs to poll.
 
 A buddy not seen for 15 minutes counts as asleep in the snapshot.
 The snapshot's `regions` are always the three, in this order, from each

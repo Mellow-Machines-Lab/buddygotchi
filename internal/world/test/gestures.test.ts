@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GESTURES_SENT_PER_HOUR, GESTURES_TO_ONE_PER_HOUR, REPORTS_TO_HIDE } from "../src/limits.js";
-import { world } from "./helpers.js";
+import { state, world } from "./helpers.js";
 
 const w = world();
 
@@ -21,6 +21,34 @@ test("a gesture is delivered once, with where it came from", async () => {
   assert.match(first.body.gestures[0].at, /Z$/);
   assert.deepEqual((await w.json("GET", "/v1/gestures", { key: tokyo.key })).body.gestures, [], "not again");
   assert.deepEqual((await w.json("GET", "/v1/gestures", { key: lisbon.key })).body.gestures, [], "only the receiver's");
+});
+
+test("a send's reply hands out what's waiting, once, as GET /v1/gestures does", async () => {
+  const tokyo = await w.join("Bob", 540);
+  const lisbon = await w.join("Ann", 0);
+  const gesture = (kind: string) => w.json("POST", "/v1/gestures", { key: tokyo.key, body: { to: lisbon.id, kind } });
+  assert.equal((await gesture("wave")).status, 201);
+  assert.equal((await gesture("cheer")).status, 201);
+  let r = await w.send(lisbon, state({ seq: 1 }));
+  assert.deepEqual(r.body.gestures.map((g: any) => [g.kind, g.from_region]), [["wave", "asia_oceania"], ["cheer", "asia_oceania"]]);
+  assert.match(r.body.gestures[0].at, /Z$/);
+  assert.deepEqual((await w.json("GET", "/v1/gestures", { key: lisbon.key })).body.gestures, [], "not again by GET");
+  await w.rewind(lisbon);
+  r = await w.send(lisbon, state({ seq: 2 }));
+  assert.deepEqual(r.body.gestures, [], "not again by a send");
+
+  // A resend still gets what's new; a send that's too soon hands out nothing.
+  await gesture("heart");
+  r = await w.send(lisbon, state({ seq: 2 }));
+  assert.equal(r.body.duplicate, true);
+  assert.deepEqual(r.body.gestures.map((g: any) => g.kind), ["heart"]);
+  // Bob has sent Ann his three for the hour, so Cy sends this one.
+  const cy = await w.join("Cy", -480);
+  assert.equal((await w.json("POST", "/v1/gestures", { key: cy.key, body: { to: lisbon.id, kind: "boop" } })).status, 201);
+  const soon = await w.send(lisbon, state({ seq: 3 }));
+  assert.equal(soon.status, 429);
+  assert.equal(soon.body.gestures, undefined);
+  assert.deepEqual((await w.json("GET", "/v1/gestures", { key: lisbon.key })).body.gestures.map((g: any) => g.kind), ["boop"], "it waited for the GET");
 });
 
 test("a gesture needs a real buddy, not itself, and a known kind", async () => {
