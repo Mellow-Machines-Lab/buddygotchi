@@ -44,6 +44,15 @@ extension Runtime {
             dreamNow()
         case "dream_preview":
             previewDream()
+        case "world":
+            // The popover's world doors, headless: onboarding's screen shown,
+            // the switch, the World tab, and a gesture for another buddy.
+            if object["shown"] as? Bool == true { worldScreenShown() }
+            if let on = object["on"] as? Bool { setWorld(on) }
+            if let open = object["tab"] as? Bool { worldTab(open: open) }
+            if let to = object["to"] as? String, let kind = (object["gesture"] as? String).flatMap(World.GestureKind.init(rawValue:)) {
+                sendGesture(kind, to: to) { [log = options.log] ok in log("dev: the \(kind.rawValue) \(ok ? "went" : "didn't go")") }
+            }
         default:
             break  // a dev line it doesn't know
         }

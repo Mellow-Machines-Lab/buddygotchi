@@ -17,10 +17,12 @@ public final class WorldClient: @unchecked Sendable {
     let session: URLSession
     let queue: DispatchQueue
 
-    public init(base: URL, queue: DispatchQueue) {
+    /// `protocols` stand in for the network in tests.
+    public init(base: URL, queue: DispatchQueue, protocols: [AnyClass] = []) {
         self.base = base
         self.queue = queue
         let config = URLSessionConfiguration.ephemeral
+        if !protocols.isEmpty { config.protocolClasses = protocols }
         config.timeoutIntervalForRequest = Self.timeout
         config.httpAdditionalHeaders = ["User-Agent": "Boop/\(BoopVersion.current)"]
         session = URLSession(configuration: config)
