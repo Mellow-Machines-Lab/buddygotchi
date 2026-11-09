@@ -4,8 +4,8 @@
 /** A buddy's XP in one day, the daily ring. */
 export const XP_PER_DAY = 100;
 
-/** The shortest time between two sends of a buddy's state. */
-export const SEND_EVERY_MS = 30_000;
+/** The shortest time between two sends of a buddy's state: it sends on change. */
+export const SEND_EVERY_MS = 10_000;
 
 /** The most each count can grow in a minute; past it a send is clamped. */
 export const ADDED_PER_MINUTE = {
@@ -18,8 +18,12 @@ export const ADDED_PER_MINUTE = {
 /** A send covers at most this many minutes since the last, for the caps above. */
 export const ADDED_MAX_MINUTES = 60;
 
-/** A buddy not seen for this long counts as asleep in the world. */
-export const AWAKE_WITHIN_MS = 10 * 60_000;
+/**
+ * A buddy not seen for this long counts as asleep in the world. It sends on
+ * change, and at least about every 10 minutes, so this leaves room for one
+ * late heartbeat.
+ */
+export const AWAKE_WITHIN_MS = 15 * 60_000;
 
 /** The snapshot's sample of buddies, the awake first. */
 export const SNAPSHOT_BUDDIES = 500;

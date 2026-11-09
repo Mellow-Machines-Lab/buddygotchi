@@ -78,7 +78,8 @@ What the Mac must know about `PUT /v1/buddies/me`:
 - **`seq` must grow.** A send whose `seq` isn't above the last one counted
   gets `{ok: true, duplicate: true}` and counts nothing. So a resend after
   a timeout is safe.
-- **At most one send each 30 s.** A send that is too soon gets 429 with
+- **At most one send each 10 s.** The Mac sends on change, and at least
+  about every 10 minutes. A send that is too soon gets 429 with
   `Retry-After`, and counts nothing. Keep adding to `added` until a send
   gets 200.
 - **`xp_today` is the Mac's day's total, with `day`.** The server counts
@@ -89,7 +90,7 @@ What the Mac must know about `PUT /v1/buddies/me`:
   (`clamped`), how the name shows (`name`, `name_ok`, `name_reason`,
   `name_hidden`), and the buddy's part of the goal (`goal_added`).
 
-A buddy not seen for 10 minutes counts as asleep in the snapshot.
+A buddy not seen for 15 minutes counts as asleep in the snapshot.
 The snapshot's `regions` are always the three, in this order, from each
 buddy's offset: `americas` (UTC-12 to -2), `europe_africa` (-1h45 to +3)
 and `asia_oceania` (+3h15 to +14). A buddy with no offset is in none. The

@@ -63,6 +63,19 @@ test("numbers, regions and the buddies, the awake first", async () => {
   assert.equal(body.buddies.find((b: any) => b.id === gone.id).activity, "asleep");
 });
 
+test(`a buddy is awake for ${AWAKE_WITHIN_MS / 60_000} minutes after it was seen, then asleep`, async () => {
+  assert.equal(AWAKE_WITHIN_MS, 15 * 60_000, "a heartbeat about every 10 minutes, and room for one late");
+  const b = await w.join();
+  await w.send(b, state({ activity: "coding" }));
+  const seenAgo = (secs: number) => w.db.query("update buddies set seen_at = now() - make_interval(secs => $2) where id = $1", [b.id, secs]);
+  await seenAgo(AWAKE_WITHIN_MS / 1000 - 5);
+  let { body } = await snapshot();
+  assert.deepEqual([body.awake, body.buddies[0].activity, body.regions[1].awake], [1, "coding", 1], "just under: awake");
+  await seenAgo(AWAKE_WITHIN_MS / 1000 + 5);
+  ({ body } = await snapshot());
+  assert.deepEqual([body.awake, body.buddies[0].activity, body.regions[1].awake], [0, "asleep", 0], "just over: asleep");
+});
+
 test("the regions cover every offset, with no gap and no overlap", () => {
   for (let o = UTC_OFFSET_MIN; o <= UTC_OFFSET_MAX; o += 15) {
     const inside = REGIONS.filter((r) => o >= r.from && o <= r.to);

@@ -136,12 +136,12 @@ test(`a buddy sends at most once every ${SEND_EVERY_MS / 1000} s`, async () => {
   const res = await w.call("PUT", "/v1/buddies/me", { key: b.key, body: state({ seq: 2, added: { turns: 1 } }) });
   assert.equal(res.status, 429);
   const retry = Number(res.headers.get("retry-after"));
-  assert.ok(retry > 0 && retry <= 30, `Retry-After ${retry}`);
+  assert.ok(retry > 0 && retry <= SEND_EVERY_MS / 1000, `Retry-After ${retry}`);
   assert.equal((await today(b.id)), undefined, "nothing counted");
-  await w.rewind(b, 29);
-  assert.equal((await w.send(b, state({ seq: 2 }))).status, 429, "29 s is too soon");
+  await w.rewind(b, SEND_EVERY_MS / 1000 - 1);
+  assert.equal((await w.send(b, state({ seq: 2 }))).status, 429, "a second short is too soon");
   await w.rewind(b, 2);
-  assert.equal((await w.send(b, state({ seq: 2, added: { turns: 1 } }))).status, 200, "31 s is fine");
+  assert.equal((await w.send(b, state({ seq: 2, added: { turns: 1 } }))).status, 200, "a second past is fine");
 });
 
 test(`XP counts at most ${XP_PER_DAY} a day`, async () => {

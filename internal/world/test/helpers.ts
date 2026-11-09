@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { after, beforeEach } from "node:test";
 import { createApp } from "../src/app.js";
 import { memoryDb, type Db } from "../src/db.js";
+import { SEND_EVERY_MS } from "../src/limits.js";
 
 export const ADMIN = "admin-token-for-tests";
 export const CRON = "cron-secret-for-tests";
@@ -32,7 +33,7 @@ export interface World {
   join(name?: string, utcOffset?: number | null): Promise<Buddy>;
   /** A state send as the fixture's, with changes. */
   send(b: Buddy, state: Record<string, unknown>): Promise<{ status: number; body: any }>;
-  /** Moves a buddy's last send back, past the 30 s limit. */
+  /** Moves a buddy's last send back, past the send limit. */
   rewind(b: Buddy, seconds?: number): Promise<void>;
 }
 
@@ -62,7 +63,7 @@ export function world(): World {
     send(b, state) {
       return w.json("PUT", "/v1/buddies/me", { key: b.key, body: state });
     },
-    async rewind(b, seconds = 31) {
+    async rewind(b, seconds = SEND_EVERY_MS / 1000 + 1) {
       await w.db.query("update buddies set sent_at = sent_at - make_interval(secs => $2) where id = $1", [b.id, seconds]);
     },
   };
