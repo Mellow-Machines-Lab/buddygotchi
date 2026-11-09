@@ -94,6 +94,13 @@ enum Snapshots {
                 let shipping = model(installer, status: status())
                 shipping.worldPick = "b-pip"
                 shot("world-card-shipping", shipping, pane: .overview, tab: .world)
+                // At its longest: the longest names, Boop's and another buddy's, its card open.
+                var longWorld = status(name: Long.name)
+                longWorld.world?.link.snapshot?.buddies.append(World.Buddy(id: "b-long", name: Long.name, level: 1234,
+                                                                           utcOffset: 330, activity: .waiting))
+                let long = model(installer, status: longWorld)
+                long.worldPick = "b-long"
+                shot("world-long", long, pane: .overview, tab: .world)
                 var away = status()
                 away.world?.on = false
                 away.world?.link.joined = false
@@ -710,11 +717,10 @@ enum Snapshots {
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
             ]))),
-            // The day it grew a stage, a Friday: why it wears a party hat and
-            // shades.
+            // Its 50th day, a Friday: why it wears a party hat and shades.
             ("celebrating", {
                 var s = status(sessions: [["claude", "jetpack", "work"]])
-                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi became a Buddy today", what: "a party hat and confetti"),
+                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi is 50 days old today", what: "a party hat and confetti"),
                               Narration.Dressing(kind: .friday, why: "It's Friday", what: "shades")]
                 return model(installer, status: s)
             }()),

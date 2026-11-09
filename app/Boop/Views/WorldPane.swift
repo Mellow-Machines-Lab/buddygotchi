@@ -21,7 +21,7 @@ struct WorldPane: View {
         if let snapshot = world.link.snapshot {
             tiles(snapshot)
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                WorldBand(buddies: snapshot.buddies, you: world.utcOffset,
+                WorldBand(buddies: snapshot.buddies, you: world.utcOffset, youIn: world.inWorld,
                           pick: Binding(get: { model.worldPick }, set: { pick in withAnimation(.boopSettle) { model.worldPick = pick } }))
                 Text("Buddies around the world, by time zone. Tap one.")
                     .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
@@ -120,7 +120,7 @@ struct WorldPane: View {
 
     /// Under the buttons: why they can't be pressed, or how the last one went.
     private func sentWords(_ sent: AppModel.WorldSend?, buddy: World.Buddy, world: Runtime.WorldStatus) -> String? {
-        if !world.on { return "\(model.name) is keeping to itself, so it can't say hi. Switch the world on in Settings." }
+        if !world.on { return "\(model.name) is private, so it can't say hi. Turn on the world in Settings." }
         if !world.inWorld { return "\(model.name) is still finding its way into the world. Try again in a moment." }
         switch sent {
         case .sent?: return buddy.activity == .asleep ? "Sent. \(buddy.name) will see it when it wakes."

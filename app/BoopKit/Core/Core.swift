@@ -495,7 +495,7 @@ public final class Core {
     /// and ring.
     @discardableResult
     public func grew(_ beats: [GrowthBeat], at now: Int64) -> [CoreEffect] {
-        growthHeld += beats
+        growthHeld += beats.filter { !growthHeld.contains($0) }
         var fx: [CoreEffect] = []
         publish(now, &fx)
         return fx

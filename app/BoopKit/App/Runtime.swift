@@ -790,20 +790,19 @@ public final class Runtime: @unchecked Sendable {
     /// makes one, once it's carried out (`run`), so the board gets one line
     /// for one hook.
     func grow(_ e: Event) {
+        growth.played(e)
         let xp = Growth.xp(for: e)
         guard xp > 0, e.seq > growth.lastSeq else { return }
         let now = options.clock()
         guard growth.count(e, xp: xp, today: options.time.boopDay(options.wallClock())) > 0 else { return }
         grew = true
-        // XP added that fills the ring closes it: it was short of full before.
-        var beats: [Core.GrowthBeat] = growth.levelDue.map { [.level($0, grewTo: Growth.grows(at: $0) ? growth.growth.stageName : nil)] } ?? []
-        if growth.growth.ringClosed { beats.append(.ringClosed) }
-        // A demo celebrates nothing: what it reached plays at the next XP after.
+        // What's due plays on every board, and is celebrated as it does
+        // (`played`): a demo shows none, and plays it after.
+        let beats = growth.due
         guard showsGrowth, !beats.isEmpty else {
             if pipeline.step != nil { xpMoved = true } else { publishXP(at: now) }
             return
         }
-        growth.celebrate()
         for rig in rigs { run(core(rig).grew(beats, at: now), on: rig) }
     }
 

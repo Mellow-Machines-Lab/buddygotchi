@@ -29,16 +29,33 @@ public final class WorldClient: @unchecked Sendable {
     }
 
     public enum Failure: Error, Equatable {
-        /// The server answered with an error: its status, and for a 429 how
-        /// many seconds to wait.
-        case status(Int, retryAfter: Int?)
+        /// The server answered with an error: its status, for a 429 how many
+        /// seconds to wait, and the world server's own error code from its
+        /// JSON (`unauthorized`), nil from anything else in the way.
+        case status(Int, retryAfter: Int?, error: String? = nil)
+
+        /// The world server says it doesn't know this buddy's key: it was
+        /// forgotten (30 days unseen) or left elsewhere. Only its own 401,
+        /// never a proxy's or a missing deployment's.
+        public var forgotten: Bool {
+            if case .status(401, _, "unauthorized") = self { true } else { false }
+        }
         /// No answer: offline, a timeout, a name that won't resolve.
         case network(String)
         case unreadable
     }
 
+    struct ServerError: Decodable { var error: String }
+
     func call<T: Decodable>(_ method: String, _ path: String, key: String? = nil, body: Encodable? = nil, as: T.Type,
                             _ done: @escaping (Result<T, Failure>) -> Void) {
+        session.dataTask(with: request(method, path, key: key, body: body)) { [queue] data, response, error in
+            let result = Self.result(T.self, data, response, error)
+            queue.async { done(result) }
+        }.resume()
+    }
+
+    func request(_ method: String, _ path: String, key: String?, body: Encodable?) -> URLRequest {
         var request = URLRequest(url: base.appendingPathComponent(path))
         request.httpMethod = method
         if let key { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
@@ -46,19 +63,17 @@ public final class WorldClient: @unchecked Sendable {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try? JSONEncoder().encode(body)
         }
-        session.dataTask(with: request) { [queue] data, response, error in
-            let result: Result<T, Failure>
-            if let error {
-                result = .failure(.network(error.localizedDescription))
-            } else if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-                result = .failure(.status(http.statusCode, retryAfter: (http.value(forHTTPHeaderField: "Retry-After")).flatMap { Int($0) }))
-            } else if let data, let value = try? JSONDecoder().decode(T.self, from: data) {
-                result = .success(value)
-            } else {
-                result = .failure(.unreadable)
-            }
-            queue.async { done(result) }
-        }.resume()
+        return request
+    }
+
+    static func result<T: Decodable>(_: T.Type, _ data: Data?, _ response: URLResponse?, _ error: Error?) -> Result<T, Failure> {
+        if let error { return .failure(.network(error.localizedDescription)) }
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            return .failure(.status(http.statusCode, retryAfter: http.value(forHTTPHeaderField: "Retry-After").flatMap { Int($0) },
+                                    error: data.flatMap { try? JSONDecoder().decode(ServerError.self, from: $0) }?.error))
+        }
+        guard let data, let value = try? JSONDecoder().decode(T.self, from: data) else { return .failure(.unreadable) }
+        return .success(value)
     }
 
     struct Join: Encodable {
@@ -83,6 +98,19 @@ public final class WorldClient: @unchecked Sendable {
     /// carries the gestures waiting.
     public func send(_ state: World.State, key: String, _ done: @escaping (Result<World.Reply, Failure>) -> Void) {
         call("PUT", "v1/buddies/me", key: key, body: state, as: World.Reply.self, done)
+    }
+
+    /// The same, waiting at most `timeout` seconds on this thread, for the
+    /// app's quit: whether it went.
+    public func sendNow(_ state: World.State, key: String, timeout: TimeInterval) -> Bool {
+        // The semaphore orders the answer's write before the read here.
+        final class Went: @unchecked Sendable { var value = false }
+        let done = DispatchSemaphore(value: 0), went = Went()
+        session.dataTask(with: request("PUT", "v1/buddies/me", key: key, body: state)) { data, response, error in
+            if case .success = Self.result(World.Reply.self, data, response, error) { went.value = true }
+            done.signal()
+        }.resume()
+        return done.wait(timeout: .now() + timeout) == .success && went.value
     }
 
     /// Leaves the world: the buddy's row, days and gestures go.

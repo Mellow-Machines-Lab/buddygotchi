@@ -2,16 +2,22 @@ import Foundation
 import MellowHarness
 
 /// Boop's growth as it's kept: every XP it's earned, today's ring and its
-/// day (Boop's, from 5:00), the last days' rings, the last event counted and
-/// the level last celebrated, as `growth.` keys in the key-value store. It
-/// counts each event as it's logged, once: an event at or before the last
-/// one counted is left alone. Touched only on `home`.
+/// day (Boop's, from 5:00), the last days' rings, the last event counted,
+/// the level last celebrated and the day the ring last closed, as `xp.` keys
+/// in the key-value store. It counts each event as it's logged, once: an
+/// event at or before the last one counted is left alone. Touched only on
+/// `home`.
 public final class GrowthStore {
-    public static let xpKey = "growth.xp"
-    public static let todayKey = "growth.today"
-    public static let daysKey = "growth.days"
-    public static let lastSeqKey = "growth.last_seq"
-    public static let celebratedKey = "growth.celebrated"
+    public static let xpKey = "xp.total"
+    public static let todayKey = "xp.today"
+    public static let daysKey = "xp.days"
+    public static let lastSeqKey = "xp.last_seq"
+    public static let celebratedKey = "xp.celebrated"
+    public static let ringKey = "xp.ring_closed"
+    /// What growth kept before XP was kept simple: gone at the first launch,
+    /// so XP starts from zero.
+    public static let oldKeys = ["growth.xp", "growth.stage", "growth.last_seq", "growth.reached", "growth.earned",
+                                 "growth.decayed", "growth.shrank"]
     /// How many days' rings it keeps, today's included: the Boop tab's week.
     public static let keptDays = 7
     /// Days by their number, as a day is in UTC.
@@ -30,10 +36,15 @@ public final class GrowthStore {
     public private(set) var lastSeq: Int
     /// The level last celebrated: a level past it is a level-up to play.
     public private(set) var celebrated: Int
+    /// The Boop day whose ring closing was last celebrated.
+    public private(set) var ringCelebrated: String?
 
     public init(_ store: KeyValueStore, log: @escaping (String) -> Void = { _ in }) {
         self.store = store
         self.log = log
+        if Self.oldKeys.contains(where: { store.string($0) != nil }) {
+            do { try store.remove(Self.oldKeys) } catch { log("growth: can't forget the old XP: \(error)") }
+        }
         let today = store.string(Self.todayKey)?.split(separator: " ")
         day = today?.first.map(String.init)
         growth = Growth(xp: store.int(Self.xpKey) ?? 0, today: today?.dropFirst().first.flatMap { Int($0) } ?? 0)
@@ -44,6 +55,7 @@ public final class GrowthStore {
         }
         lastSeq = store.int(Self.lastSeqKey) ?? 0
         celebrated = store.int(Self.celebratedKey) ?? growth.level
+        ringCelebrated = store.string(Self.ringKey)
     }
 
     /// The growth as it stands on Boop day `today`: a ring of a day before
@@ -94,12 +106,29 @@ public final class GrowthStore {
 
     /// A level reached and not yet celebrated, or nil.
     public var levelDue: Int? { growth.level > celebrated ? growth.level : nil }
+    /// Whether today's ring has closed and its moment hasn't played.
+    public var ringDue: Bool { growth.ringClosed && day != nil && ringCelebrated != day }
 
-    /// Marks the level now celebrated, so it isn't again.
-    public func celebrate() {
-        guard celebrated != growth.level else { return }
-        celebrated = growth.level
-        log("growth: level \(celebrated), at \(growth.xp) XP")
+    /// What's due to play: a level-up, and the ring closing.
+    public var due: [Core.GrowthBeat] {
+        (levelDue.map { [.level($0, grewTo: Growth.grows(at: $0) ? Growth.stages[Growth.stage(forLevel: $0) - 1].name : nil)] } ?? [])
+            + (ringDue ? [.ringClosed] : [])
+    }
+
+    /// `e`, logged, played a growth moment: its level, or the ring's closing,
+    /// is celebrated, and isn't again. Marked only as it plays, so a quit
+    /// before then, or a demo, loses nothing.
+    public func played(_ e: Event) {
+        switch e.type {
+        case .level?:
+            guard let level = Int(e.specificType), level > celebrated else { return }
+            celebrated = level
+            log("growth: level \(level), at \(growth.xp) XP")
+        case .ring?:
+            guard ringCelebrated != day else { return }
+            ringCelebrated = day
+        default: return
+        }
         save()
     }
 
@@ -108,6 +137,7 @@ public final class GrowthStore {
             var values = [Self.xpKey: String(growth.xp), Self.lastSeqKey: String(lastSeq), Self.celebratedKey: String(celebrated),
                           Self.daysKey: past.map { "\($0.day) \($0.xp)" }.joined(separator: ",")]
             if let day { values[Self.todayKey] = "\(day) \(growth.today)" }
+            if let ringCelebrated { values[Self.ringKey] = ringCelebrated }
             try store.set(values)
         } catch {
             log("growth: can't save: \(error)")

@@ -17,7 +17,7 @@ Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `sna
   - Now: status first.
   - Boop: the ring, the level, the last 7 days, a peek at what Boop knows.
   - World: live numbers; the time-zone band, night shaded, you marked; a buddy's card with Wave, Boop and Heart (and Cheer for one shipping); today's arrivals; the regions.
-  - Settings has the world's switch, how the buddy shows, what's shared, and Leave the world. Onboarding has its world screen, which tells and doesn't ask, with "Keep Mochi private".
+  - Settings has the world's switch, which leaves the world when off, how the buddy shows, and what's shared. Onboarding has its world screen, which tells and doesn't ask, with "Keep Mochi private". Nothing is sent until you leave that screen forward.
 - **The world client** (`app/BoopKit/World/`). The live server allows 5 joins an hour from one address, and each e2e run joins 2.
   - It joins after onboarding's world screen and sends `World.State` only (`WorldTests` fails on any other field).
   - It sends on a change, batches the counts for 3 min, heartbeats every 10, and says asleep at once on a lock or quit.
@@ -37,6 +37,15 @@ Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `sna
 - Getting there took three live runs, and it found a client bug. A leave the server didn't take was lost, because the key went before the DELETE succeeded, so a buddy stayed in the world. Now the key stays, marked as leaving, and the DELETE is tried again until the server confirms (`WorldTests`). The test buddies left on the live server by the earlier runs were deleted by hand.
 - No server change was needed.
 
+**After the orchestrator's review** (fixed, each with a test where one could fail first):
+- No rejoin storm: only the world server's own 401 forgets the key, and a rejoin or a failed join waits its backoff.
+- Keeping private is safe: "Keep Mochi private" wins over a join on its way, and a leave keeps the key until the server confirms.
+- XP starts from zero: the old `growth.*` rows are deleted, and the new keys are `xp.*`. A level-up and the ring closing are marked done only as they play, so a quit or a demo loses neither.
+- Sends: a send with no answer goes again with the same seq and counts. "Asleep" at a lock waits for a send on its way, and at a quit waits up to 2 s.
+- Gestures: held ones are kept across a quit, and ones that arrive after you left are dropped. The unlock check follows the switch and the backoff. The key file is 0600 from the start.
+- On the board: a met wish after a full ring shows no bar.
+- The UI's words were reviewed, and the header says "Working" or "Idle". The band shades night better in dark mode, and "you" is dim when you're not in the world. A `world-long` snapshot was added.
+
 **Evals:**
 - The standard suite passed 130/131, with 748 Jev requests.
 - The new world musts `187` and `188` pass, and `06` is Pixel's. `189`, a boop when cross, moved from grumpy to curious after its guideline was made plainer.
@@ -48,7 +57,7 @@ Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `sna
 - Full rings are green on the Mac and gold on the board.
 - A stage reached no longer makes the day a party: it's a bigger level-up.
 - With no growth store (demos, evals), CONTEXT says level 1 with an empty ring.
-- The world switched off deletes the buddy on the server, so Leave the world and the switch do the same thing.
+- The world switched off deletes the buddy on the server: one control, the switch.
 - The pack's `[grew]` signs and the four growing evals are deleted.
 
 **Owed:**

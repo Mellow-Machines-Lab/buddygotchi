@@ -134,7 +134,7 @@ final class GrowthTests: XCTestCase {
         options.readJevKey = { _ in nil }
         do {
             let store = try KeyValueStore(directory: dir)
-            try store.set(["growth.xp": "90", "growth.today": "\(options.time.boopDay(clock.now)) 90"])
+            try store.set([GrowthStore.xpKey: "90", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 90"])
         }
         let runtime = try Runtime(options)
         let core = runtime.core(runtime.rigs[0])
@@ -160,6 +160,19 @@ final class GrowthTests: XCTestCase {
         XCTAssertTrue(runtime.harness.log.view(now: now).events.contains { $0.action == "react" && $0["by"]?.string == "rule" })
         turn()
         XCTAssertEqual(events(.ring).count, 1, "once a day")
+        XCTAssertEqual(runtime.growth.growth.xp, 100, "nothing past the ring")
+
+        // Across 5:00, by the runtime's own clock: a new Boop day, an empty
+        // ring, and yesterday's full one in the week.
+        let yesterday = options.time.boopDay(clock.now)
+        while options.time.boopDay(clock.now) == yesterday { clock.now += 10 * 60_000 }
+        XCTAssertEqual(core.snapshot(at: now).xp, 0, "the new day's ring")
+        turn()
+        XCTAssertEqual(runtime.growth.growth, Growth(xp: 105, today: 5))
+        XCTAssertEqual(core.snapshot(at: now).xp, 5)
+        let week = runtime.growth.week(to: options.time.boopDay(clock.now))
+        XCTAssertEqual(week.suffix(2).map(\.xp), [100, 5])
+        XCTAssertEqual(week.suffix(2).first?.day, yesterday)
 
         runtime.playingDemo = true
         XCTAssertNil(core.snapshot(at: now).xp, "a demo sends none")
@@ -224,17 +237,37 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(again.lastSeq, 3)
     }
 
-    /// The level last celebrated is kept, so a relaunch doesn't celebrate
-    /// it again; a fresh store has nothing to celebrate.
-    func testTheLevelCelebratedIsKept() throws {
+    /// A level and the ring closing are celebrated only as their events
+    /// are logged, which is when they play: until then they stay due, so a
+    /// quit while something needs you, or a demo, loses neither. Kept across
+    /// opens.
+    func testALevelIsCelebratedAsItPlays() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(growth.celebrated, 1)
         for seq in 1...20 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
-        XCTAssertEqual(growth.growth.level, 2)
-        XCTAssertEqual(growth.celebrated, 1)
-        growth.celebrate()
+        XCTAssertEqual(growth.due, [.level(2, grewTo: nil), .ringClosed])
+        XCTAssertEqual(GrowthStore(try KeyValueStore(directory: dir)).due, [.level(2, grewTo: nil), .ringClosed], "still due after a quit")
+        growth.played(Event(at: 0, source: .boop, type: .level, specificType: "2"))
+        growth.played(Event(at: 0, source: .boop, type: .ring, specificType: "closed"))
+        XCTAssertEqual(growth.due, [])
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.celebrated, 2)
+        XCTAssertEqual(reopened.due, [], "and not again")
+        XCTAssertEqual(Growth(xp: 1_400).level, 15)
+        XCTAssertTrue(Growth.grows(at: 15))
+    }
+
+    /// XP starts from zero: what growth kept before is deleted at the first open.
+    func testTheOldXPIsForgotten() throws {
+        do {
+            let store = try KeyValueStore(directory: dir)
+            try store.set(["growth.xp": "3000", "growth.stage": "4", "growth.reached": "2026-10-01", "growth.decayed": "2"])
+        }
+        let growth = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(growth.growth, Growth())
+        let store = try KeyValueStore(directory: dir)
+        XCTAssertNil(store.string("growth.xp"))
+        XCTAssertNil(store.string("growth.reached"))
     }
 
     /// A transcript whose files are all gone numbers from 1 again: counting

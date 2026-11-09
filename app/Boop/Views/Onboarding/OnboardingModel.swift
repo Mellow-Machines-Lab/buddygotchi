@@ -110,6 +110,10 @@ final class OnboardingModel: ObservableObject {
     }
 
     func next() {
+        // Leaving the world's screen forward answers it: "Sounds good", or
+        // "Keep private", which has switched the world off first. Nothing
+        // goes to the world before.
+        if act == .world { worldShown() }
         if let next = act.next { go(next) } else { finish() }
     }
 
@@ -126,7 +130,7 @@ final class OnboardingModel: ObservableObject {
             // On by default: Boop only watches while it's open.
             if !loginTouched, app.ownsHooks, app.loginItemState == .off { app.setOpenAtLogin(true) }
         case .world:
-            worldShown()
+            startRuntime()
         case .finale:
             celebrate()
         default:
@@ -392,12 +396,11 @@ final class OnboardingModel: ObservableObject {
 
     // MARK: Act 8
 
-    /// The world's act is on screen: from now on the buddy may join. The
-    /// runtime runs past the name, but a launch that comes back here starts
-    /// it first; one that couldn't start tells the settings itself, where
-    /// the runtime reads it when it does.
+    /// The world's act was answered: from now on the buddy may join, if the
+    /// world is on. The runtime runs past the name, and a launch that comes
+    /// back to the act starts it as it opens; one that couldn't start tells
+    /// the settings itself, where the runtime reads it when it does.
     func worldShown() {
-        startRuntime()
         world({ $0.worldScreenShown() }, else: { $0.worldShown = true }, "the world's screen was shown")
     }
 

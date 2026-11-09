@@ -22,7 +22,8 @@ public struct WorldGestures: Sendable {
     /// What waits for you to be here in the day, in order.
     public private(set) var waiting: [World.Gesture] = []
 
-    public init() {}
+    /// `waiting`: what waited when the app last quit.
+    public init(waiting: [World.Gesture] = []) { self.waiting = waiting }
 
     /// `gestures` arrived at `now`. `quiet`: it's night, or you're away, so
     /// they wait. Returns the events to log now.

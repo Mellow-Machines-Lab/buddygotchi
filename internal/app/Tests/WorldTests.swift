@@ -303,24 +303,137 @@ final class WorldTests: XCTestCase {
         XCTAssertFalse(Stub.seen.contains { $0.method == "PUT" }, "nothing sent while leaving")
     }
 
-    /// A 429 waits as long as it says and keeps the counts; a server that
-    /// forgot the buddy has it join again.
-    func testTooSoonWaitsAndAForgottenBuddyJoinsAgain() throws {
+    func tick(_ world: WorldLink, _ at: Int64, on: Bool = true, quiet: Bool = false, me: WorldLink.Now = WorldTests.me) {
+        queue.sync { world.tick(me, on: on, quiet: quiet, today: "2026-11-08", at: at) }
+        settle()
+    }
+
+    func calls() -> [String] { Stub.seen.map { "\($0.method) \($0.path)" } }
+
+    /// A 429 waits as long as it says, and the same send goes again then,
+    /// its seq and counts as they were. A buddy the world forgot, by the
+    /// server's own 401, joins again, after a wait.
+    func testTooSoonWaitsAndAForgottenBuddyJoinsAgainLater() throws {
         let world = link()
-        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 0) }
-        settle()
+        tick(world, 0)
+        world.heard(Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s"), at: 0)
         Stub.answer = { method, _ in method == "PUT" ? (429, #"{"error":"too_soon"}"#) : (200, "{}") }
-        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 1_000) }
-        settle()
+        tick(world, 1_000)
+        let first = try XCTUnwrap(Stub.seen.last?.body)
         let tries = Stub.seen.count
-        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 15_000) }
-        settle()
+        tick(world, 15_000)
         XCTAssertEqual(Stub.seen.count, tries, "Retry-After: 20")
-        Stub.answer = { method, _ in method == "PUT" ? (401, #"{"error":"unauthorized"}"#) : (201, #"{"id":"b2","key":"k2","name":"Mochi","name_ok":true}"#) }
-        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 22_000) }
+        Stub.answer = { _, _ in (200, #"{"ok":true}"#) }
+        tick(world, 22_000)
+        let again = try XCTUnwrap(Stub.seen.last?.body)
+        XCTAssertEqual(again["seq"] as? Int, first["seq"] as? Int, "the same seq")
+        XCTAssertEqual((again["added"] as? [String: Int])?["turns"], 1)
+        Stub.answer = { method, _ in method == "PUT" ? (401, #"{"error":"unauthorized"}"#) : (201, #"{"id":"b2","key":"k2","name":"Mochi"}"#) }
+        tick(world, 22_000 + WorldLink.heartbeatMs)
+        tick(world, 23_000 + WorldLink.heartbeatMs)
+        XCTAssertNotEqual(calls().last, "POST /v1/buddies", "not at once")
+        tick(world, 22_000 + WorldLink.heartbeatMs + WorldLink.backoffMs)
+        XCTAssertEqual(calls().last, "POST /v1/buddies")
+    }
+
+    /// No rejoin storm: a 404, or a 401 that isn't the world server's own
+    /// (a wrong URL, a deployment gone or protected), keeps the key and
+    /// backs off; a join that fails backs off too.
+    func testOnlyTheServersOwn401ForgetsTheKey() throws {
+        let world = link()
+        tick(world, 0)
+        let key = dir.appendingPathComponent(WorldLink.fileName).path
+        for (i, (status, body)) in [(404, #"{"error":"not_found"}"#), (401, "<html>Authentication Required</html>")].enumerated() {
+            Stub.seen = []
+            Stub.answer = { _, _ in (status, body) }
+            let at = Int64(i + 1) * 100_000_000
+            tick(world, at)
+            tick(world, at + 1_000)
+            XCTAssertEqual(calls(), ["PUT /v1/buddies/me"], "\(status): once, then it waits: \(calls())")
+            XCTAssertTrue(FileManager.default.fileExists(atPath: key), "\(status): the key stays")
+        }
+        let fresh = WorldLink(client: WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self]),
+                              stateDir: try newDir())
+        Stub.seen = []
+        Stub.answer = { _, _ in (404, "not here") }
+        tick(fresh, 0)
+        tick(fresh, 1_000)
+        tick(fresh, 2_000)
+        XCTAssertEqual(calls(), ["POST /v1/buddies"], "a failed join waits too")
+    }
+
+    func newDir() throws -> URL {
+        let d = dir.appendingPathComponent(UUID().uuidString.prefix(6).description)
+        try FileManager.default.createDirectory(at: d, withIntermediateDirectories: true)
+        return d
+    }
+
+    /// "Keep private" while the join is on its way: the buddy it makes
+    /// leaves at once, and no state is ever sent.
+    func testKeepingPrivateWinsOverAJoinOnItsWay() throws {
+        let world = link()
+        queue.sync {
+            world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 0)
+            world.leave(at: 0)
+        }
         settle()
-        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 23_000) }
+        tick(world, 1_000, on: false)
+        XCTAssertEqual(calls(), ["POST /v1/buddies", "DELETE /v1/buddies/me"])
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(WorldLink.fileName).path))
+    }
+
+    /// The key file is the owner's only from the start, never more open.
+    func testTheKeyIsReadableOnlyByYou() throws {
+        let world = link()
+        tick(world, 0)
+        let attributes = try FileManager.default.attributesOfItem(atPath: dir.appendingPathComponent(WorldLink.fileName).path)
+        XCTAssertEqual((attributes[.posixPermissions] as? NSNumber)?.intValue, 0o600)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(WorldLink.fileName + ".new").path))
+    }
+
+    /// Gestures in a reply that comes after you left don't play.
+    func testGesturesAfterLeavingAreDropped() throws {
+        let world = link()
+        var events: [Event] = []
+        world.onEvents = { events += $0 }
+        tick(world, 0)
+        queue.sync {
+            world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 1_000)
+            world.leave(at: 1_000)
+        }
         settle()
-        XCTAssertEqual(Stub.seen.last.map { "\($0.method) \($0.path)" }, "POST /v1/buddies")
+        XCTAssertEqual(events, [], "the reply's boop, after the leave")
+    }
+
+    /// Gestures held for the morning outlive a quit.
+    func testHeldGesturesOutliveAQuit() throws {
+        let world = link()
+        tick(world, 0)
+        tick(world, 1_000, quiet: true)
+        XCTAssertEqual(world.gestures.waiting.count, 1)
+        let next = link()
+        var events: [Event] = []
+        next.onEvents = { events += $0 }
+        tick(next, 2_000)
+        XCTAssertEqual(events.first?["held"]?.bool, true)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(WorldLink.waitingFileName).path))
+    }
+
+    /// The screen locking sends "asleep" even with a send on its way: as
+    /// soon as that one's answered. An unlock with the world off asks nothing.
+    func testAsleepIsntDroppedAndTheUnlockFollowsTheSwitch() throws {
+        let world = link()
+        tick(world, 0)
+        queue.sync {
+            world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 1_000)
+            world.sleep(Self.me, on: true, at: 1_000)
+        }
+        settle()
+        tick(world, 2_000)
+        XCTAssertEqual(Stub.seen.last?.body?["activity"] as? String, "asleep")
+        Stub.seen = []
+        queue.sync { world.checkGestures(on: false, quiet: false, at: 3_000) }
+        settle()
+        XCTAssertEqual(calls(), [])
     }
 }

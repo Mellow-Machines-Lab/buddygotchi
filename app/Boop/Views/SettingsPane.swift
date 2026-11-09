@@ -49,8 +49,8 @@ struct SettingsPane: View {
 
     // MARK: World
 
-    /// The switch, how the world shows Boop, what it shares, and leaving.
-    /// Off, Boop leaves the world: it's deleted there, and you can still look.
+    /// The switch, how the world shows Boop, and what it shares. Off, Boop
+    /// leaves the world: it's deleted there, and you can still look.
     private func worldSetting(_ world: Runtime.WorldStatus) -> some View {
         let name = model.name
         let region = World.Region(offset: world.utcOffset)?.name
@@ -58,33 +58,21 @@ struct SettingsPane: View {
         return Card(padding: 0) {
             VStack(spacing: 0) {
                 SettingRow(icon: "globe.europe.africa.fill", title: "\(name) lives in the world",
-                           detail: world.on ? "Other buddies can see \(name) and say hi." : "\(name) is private. You can still look around.") {
+                           detail: world.on ? "Other buddies can see \(name) and say hi. Off, \(name) leaves the world."
+                                    : "\(name) is private. You can still look around.") {
                     Toggle("\(name) lives in the world", isOn: Binding(get: { world.on }, set: { model.runtime?.setWorld($0) }))
                         .toggleStyle(.boop).labelsHidden()
                 }
                 Hairline().padding(.leading, 40).padding(.trailing, 12)
                 SettingRow(icon: "person.crop.circle", title: "Shown as \(([shown] + [region].compactMap { $0 }).joined(separator: " · "))",
-                           detail: world.link.nameHidden ? "Others see \(name) as “a buddy”, since the world keeps names friendly."
+                           detail: world.link.nameHidden ? "The world didn't take this name, so others see “a buddy”."
                                                          : "Others see this name and level.") {
                     EmptyView()
                 }
                 Hairline().padding(.leading, 40).padding(.trailing, 12)
                 SettingRow(icon: "eye", title: "What \(name) shares",
-                           detail: "Its name and level, its rough time zone, what it's doing in one word, and counts like tests passed. "
-                               + "Never your name, your projects, your code, what you say, or what \(name) remembers.") {
+                           detail: "Its name, level, rough time zone, what it's doing, and counts like tests passed. Nothing about you or your code.") {
                     EmptyView()
-                }
-                if world.on {
-                    Hairline().padding(.leading, 40).padding(.trailing, 12)
-                    HStack {
-                        Button("Leave the world") { model.runtime?.setWorld(false) }
-                            .buttonStyle(.plain)
-                            .font(.system(size: 12, weight: .medium))
-                            .foregroundStyle(Theme.clayInk)
-                        Spacer()
-                        Text("removes \(name) from it").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                    }
-                    .padding(.leading, 40).padding(.trailing, 12).padding(.vertical, 9)
                 }
             }
         }
@@ -384,7 +372,7 @@ struct SettingsPane: View {
                     }
                 }
                 Text(keyFailed ? "Couldn't save the key in your Keychain. Try again, or check Keychain Access."
-                     : "Kept in your Keychain. With Jev, what happens and \(model.name)'s personality and mood go to TypeSafe with each call.")
+                     : "This is how \(model.name) thinks. It stays in your Keychain. What \(model.name) notices goes to TypeSafe, never your code.")
                     .font(.system(size: 10)).foregroundStyle(keyFailed ? Theme.clayInk : Theme.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
                 if let note = brainNote {

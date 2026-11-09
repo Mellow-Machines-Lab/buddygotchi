@@ -81,14 +81,14 @@ extension Runtime {
         world.heard(e, at: now)
         if e.kind == Event.kind(.lock, .start) { world.sleep(worldNow(at: now), on: worldOn, at: now) }
         if e.kind == Event.kind(.lock, .end) || e.kind == Event.kind(.presence, .end) {
-            world.checkGestures(quiet: worldQuiet(at: now), at: now)
+            world.checkGestures(on: worldOn, quiet: worldQuiet(at: now), at: now)
         }
     }
 
-    /// The app quits: the buddy goes to sleep in the world.
+    /// The app quits: the buddy goes to sleep in the world, waiting a
+    /// moment for it to go.
     func worldSleep() {
-        let now = options.clock()
-        world?.sleep(worldNow(at: now), on: worldOn, at: now)
+        world?.quit(worldNow(at: options.clock()), on: worldOn)
     }
 
     func worldStatus() -> WorldStatus? {

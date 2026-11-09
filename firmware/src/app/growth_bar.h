@@ -23,7 +23,8 @@ class GrowthBar {
   // A state's XP, today's percent (-1 for a Mac that sends none: no bar), and
   // the stage it was and is. `hidden`: what it says now isn't a change to show.
   void heard(int xp, int wasStage, int nowStage, bool hidden, uint32_t t);
-  // A wish met: the bar comes for its heart, and fills as it lands, whichever of
+  // A wish met: the bar comes for its heart, unless today's ring was already
+  // full, and fills as it lands, whichever of
   // this and the state with the XP (`xp`, as last heard) it earned arrives
   // first, with the two close together: a `do` that waited in the queue finds the
   // bar and the body already moved, and its heart lands on them as they are.

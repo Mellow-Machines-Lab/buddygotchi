@@ -6,16 +6,19 @@ import MellowHarness
 /// turns the gestures that come back into `world` events
 /// (`WorldGestures`), and fetches the world while the World tab is open.
 /// Nothing is sent while the world is off, or before onboarding's world
-/// screen was shown. What's sent is `World.State`, and only that.
+/// screen was answered. What's sent is `World.State`, and only that. The
+/// gestures waiting come back in every send's reply, the heartbeat's
+/// included, and are asked for when you unlock.
 public final class WorldLink {
     /// A send at most this often: the server's own limit.
     public static let minGapMs: Int64 = 10_000
     /// Counts wait at most this long for a change to go with.
     public static let countsWaitMs: Int64 = 3 * 60_000
-    /// With nothing else to send, a heartbeat this often keeps the buddy awake.
+    /// With nothing else to send, a heartbeat this often keeps the buddy
+    /// awake and brings the gestures waiting.
     public static let heartbeatMs: Int64 = 10 * 60_000
-    /// With nothing sent for this long, the gestures waiting are asked for.
-    public static let gesturesEveryMs: Int64 = 10 * 60_000
+    /// The most the app's quit waits for "asleep" to go, in seconds.
+    public static let quitWait: TimeInterval = 2
     /// The world is fetched this often while the World tab is open.
     public static let fetchEveryMs: Int64 = 30_000
     /// After a failure, the next try waits this long, doubling to `maxBackoffMs`.
@@ -51,13 +54,21 @@ public final class WorldLink {
     }
 
     /// The buddy's id and key, kept in the state folder, readable only by
-    /// you, with the last `seq` sent. Leaving, it's kept until the server
-    /// says the buddy is gone, so a failed leave is tried again, never lost.
+    /// you, with the last `seq` sent, and a send that got no answer, sent
+    /// again as it was, its `seq` and counts, so the server counts it once.
+    /// Leaving, it's kept until the server says the buddy is gone, so a
+    /// failed leave is tried again, never lost.
     struct Identity: Codable {
         var id: String
         var key: String
         var seq = 0
         var leaving: Bool? = nil
+        var unanswered: Unanswered? = nil
+
+        struct Unanswered: Codable {
+            var seq: Int
+            var added: World.Counts
+        }
     }
 
     /// The buddy in the world: joined, and not leaving.
@@ -120,6 +131,7 @@ public final class WorldLink {
 
     let client: WorldClient
     let file: URL
+    let waitingFile: URL
     let log: (String) -> Void
     var identity: Identity?
     public private(set) var status = Status()
@@ -128,41 +140,55 @@ public final class WorldLink {
     var pendingSince: Int64?
     var last: Now?
     var lastSentAt: Int64?
-    var lastAskedAt: Int64?
     var busy = false
     var retryAt: Int64?
     var backoff: Int64 = 0
+    /// Left while a join was on its way: the buddy it makes leaves at once.
+    var leaveWanted = false
+    /// The screen locked: "asleep" goes as soon as nothing else is on its way.
+    var asleepDue = false
     var tabOpen = false
     var fetching = false
     var lastFetchAt: Int64?
-    var gestures = WorldGestures()
+    var gestures: WorldGestures
     var todayDay: String?
     /// Events to log, from gestures that came (`Pipeline.world`).
     public var onEvents: ([Event]) -> Void = { _ in }
     /// Something the popover shows changed.
     public var onChange: () -> Void = {}
 
-    public static let fileName = "world.json"
+    public static let fileName = "world.json", waitingFileName = "world-waiting.json"
 
     public init(client: WorldClient, stateDir: URL, log: @escaping (String) -> Void = { _ in }) {
         self.client = client
         file = stateDir.appendingPathComponent(Self.fileName)
+        waitingFile = stateDir.appendingPathComponent(Self.waitingFileName)
         self.log = log
         identity = (try? Data(contentsOf: file)).flatMap { try? JSONDecoder().decode(Identity.self, from: $0) }
+        gestures = WorldGestures(waiting: (try? Data(contentsOf: waitingFile)).flatMap { try? JSONDecoder().decode([World.Gesture].self, from: $0) } ?? [])
         status.joined = member != nil
     }
 
+    /// The key, readable only by you from the moment it's written; gone
+    /// with the identity.
     func save() {
         guard let identity else {
             try? FileManager.default.removeItem(at: file)
             return
         }
-        do {
-            try JSONEncoder().encode(identity).write(to: file, options: .atomic)
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
-        } catch {
-            log("world: can't keep the buddy's key: \(error)")
+        guard let data = try? JSONEncoder().encode(identity) else { return }
+        let next = file.appendingPathExtension("new")
+        try? FileManager.default.removeItem(at: next)
+        guard FileManager.default.createFile(atPath: next.path, contents: data, attributes: [.posixPermissions: 0o600]),
+              rename(next.path, file.path) == 0 else {
+            return log("world: can't keep the buddy's key")
         }
+    }
+
+    /// The gestures waiting for you, kept so a quit doesn't lose them.
+    func saveWaiting() {
+        if gestures.waiting.isEmpty { try? FileManager.default.removeItem(at: waitingFile); return }
+        try? JSONEncoder().encode(gestures.waiting).write(to: waitingFile, options: .atomic)
     }
 
     /// An event as it's logged: an agent's turn, a check that passed, a
@@ -184,10 +210,10 @@ public final class WorldLink {
         if pendingSince == nil { pendingSince = now }
     }
 
-    /// Every tick: what to send, ask for or fetch at `now`, on Boop day
-    /// `today`. `on`: the world's switch, and onboarding's world screen
-    /// shown. `quiet`: night, or you're away, so gestures wait. `me` is
-    /// worked out only when something may be sent.
+    /// Every tick: what to send or fetch at `now`, on Boop day `today`.
+    /// `on`: the world's switch, and onboarding's world screen answered.
+    /// `quiet`: night, or you're away, so gestures wait. `me` is worked out
+    /// only when something may be sent.
     public func tick(_ me: @autoclosure () -> Now, on: Bool, quiet: Bool, today: String, at now: Int64) {
         if todayDay != today {
             todayDay = today
@@ -199,24 +225,24 @@ public final class WorldLink {
         if let leaving = identity, leaving.leaving == true { return goodbye(leaving, at: now) }
         guard on else { return }
         let me = me()
-        guard let identity else {
-            join(me, at: now)
-            return
+        guard let identity else { return join(me, at: now) }
+        if asleepDue, last?.activity != .asleep {
+            var asleep = me
+            asleep.activity = .asleep
+            return send(asleep, identity: identity, quiet: true, at: now)
         }
         let gap = lastSentAt.map { now - $0 } ?? .max
-        let due = last.map { me.changes(from: $0) } ?? true
+        let due = identity.unanswered != nil || last.map { me.changes(from: $0) } ?? true
             || pendingSince.map { now - $0 >= Self.countsWaitMs } == true
             || gap >= Self.heartbeatMs
-        if due, gap >= Self.minGapMs {
-            send(me, identity: identity, quiet: quiet, at: now)
-        } else if (lastAskedAt.map { now - $0 >= Self.gesturesEveryMs } ?? true), gap >= Self.gesturesEveryMs {
-            ask(identity, quiet: quiet, at: now)
-        }
+        if due, gap >= Self.minGapMs { send(me, identity: identity, quiet: quiet, at: now) }
     }
 
-    /// You came back or unlocked: what's waiting is asked for now.
-    public func checkGestures(quiet: Bool, at now: Int64) {
-        guard let member, !busy else { return }
+    /// You came back or unlocked: you're awake, and what's waiting is asked
+    /// for now, with the world on and nothing to wait for.
+    public func checkGestures(on: Bool, quiet: Bool, at now: Int64) {
+        asleepDue = false
+        guard on, let member, !busy, retryAt.map({ now >= $0 }) ?? true else { return }
         ask(member, quiet: quiet, at: now)
     }
 
@@ -228,14 +254,22 @@ public final class WorldLink {
             switch result {
             case .success(let joined):
                 identity = Identity(id: joined.id, key: joined.key)
+                backoff = 0
+                retryAt = nil
+                status.trouble = nil
+                if leaveWanted {
+                    // Kept private while it joined: it leaves straight away.
+                    leaveWanted = false
+                    log("world: joined as you left; leaving")
+                    return leave(at: now)
+                }
                 save()
                 status.joined = true
                 status.shownName = joined.name
-                status.trouble = nil
-                backoff = 0
                 log("world: joined as \(joined.name)")
                 onChange()
             case .failure(let failure):
+                leaveWanted = false
                 failed(failure, at: now)
             }
         }
@@ -243,25 +277,30 @@ public final class WorldLink {
 
     func send(_ me: Now, identity: Identity, quiet: Bool, at now: Int64) {
         var identity = identity
-        identity.seq += 1
+        // One the server may have counted goes again as it was; else a new seq.
+        let sending = identity.unanswered ?? Identity.Unanswered(seq: identity.seq + 1, added: pending)
+        identity.seq = sending.seq
+        identity.unanswered = sending
         self.identity = identity
         save()
-        let added = pending
-        let state = World.State(seq: identity.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
-                                utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: added)
+        let state = World.State(seq: sending.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
+                                utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: sending.added)
         busy = true
         client.send(state, key: identity.key) { [weak self] result in
             guard let self else { return }
             busy = false
+            guard self.identity?.key == identity.key, self.identity?.leaving != true else { return }  // left meanwhile
             switch result {
             case .success(let reply):
+                self.identity?.unanswered = nil
+                save()
                 last = me
                 lastSentAt = now
-                lastAskedAt = now
                 // What arrived since the send was made stays for the next.
-                pending = pending - added
+                pending = pending - sending.added
                 pendingSince = pending.isEmpty ? nil : now
                 backoff = 0
+                if me.activity == .asleep { asleepDue = false }
                 let shown = reply.name ?? status.shownName
                 if shown != status.shownName || (reply.nameHidden ?? false) != status.nameHidden || status.trouble != nil {
                     status.shownName = shown
@@ -269,7 +308,7 @@ public final class WorldLink {
                     status.trouble = nil
                     onChange()
                 }
-                record(gestures.arrived(reply.gestures ?? [], quiet: quiet, at: now))
+                arrived(reply.gestures ?? [], quiet: quiet, at: now)
             case .failure(let failure):
                 failed(failure, at: now)
             }
@@ -278,15 +317,20 @@ public final class WorldLink {
 
     func ask(_ identity: Identity, quiet: Bool, at now: Int64) {
         busy = true
-        lastAskedAt = now
         client.gestures(key: identity.key) { [weak self] result in
             guard let self else { return }
             busy = false
+            guard member?.key == identity.key else { return }  // left meanwhile: they're dropped
             switch result {
-            case .success(let came): record(gestures.arrived(came, quiet: quiet, at: now))
+            case .success(let came): arrived(came, quiet: quiet, at: now)
             case .failure(let failure): failed(failure, at: now)
             }
         }
+    }
+
+    func arrived(_ came: [World.Gesture], quiet: Bool, at now: Int64) {
+        record(gestures.arrived(came, quiet: quiet, at: now))
+        if !came.isEmpty { saveWaiting() }
     }
 
     func record(_ events: [Event]) {
@@ -297,28 +341,30 @@ public final class WorldLink {
                                         held: e["held"]?.bool == true, plays: e["plays"]?.bool != false,
                                         at: Date()), at: 0)
         }
+        if events.contains(where: { $0["held"]?.bool == true }) { saveWaiting() }
         onEvents(events)
         onChange()
     }
 
     func failed(_ failure: WorldClient.Failure, at now: Int64) {
-        switch failure {
-        case .status(429, let after?):
+        if case .status(429, let after?, _) = failure {
+            // Too soon: the same send goes again then, as it was.
             retryAt = now + Int64(after) * 1000
             return
-        case .status(401, _), .status(404, _) where identity?.leaving != true:
-            // The world forgot this buddy (30 days unseen, or left
-            // elsewhere): it joins again as new.
-            log("world: the server doesn't know this buddy; joining again")
-            identity = nil
-            save()
-            last = nil
-            retryAt = nil
-            return
-        default: break
         }
         backoff = min(Self.maxBackoffMs, max(Self.backoffMs, backoff * 2))
         retryAt = now + backoff
+        if failure.forgotten, identity?.leaving != true {
+            // The world forgot this buddy (30 days unseen, or left
+            // elsewhere): it joins again as new, after the backoff.
+            log("world: the server doesn't know this buddy; joining again in \(backoff / 1000) s")
+            identity = nil
+            save()
+            last = nil
+            status.joined = false
+            onChange()
+            return
+        }
         if status.trouble != Self.troubleWords {
             status.trouble = Self.troubleWords
             log("world: \(failure); trying again in \(backoff / 1000) s")
@@ -359,19 +405,40 @@ public final class WorldLink {
         client.gesture(kind, to: buddy, key: member.key) { done((try? $0.get()) != nil) }
     }
 
-    /// "Asleep", at once: the screen locked, or the app quits. Sent even
-    /// within `minGapMs` of the last; a 429 drops it.
+    /// The screen locked: "asleep", at once, even within `minGapMs` of the
+    /// last send, or as soon as one on its way has its answer.
     public func sleep(_ me: Now, on: Bool, at now: Int64) {
-        guard on, let identity = member, last?.activity != .asleep, !busy else { return }
+        guard on, let identity = member, last?.activity != .asleep else { return }
+        asleepDue = true
+        guard !busy else { return }
         var asleep = me
         asleep.activity = .asleep
         send(asleep, identity: identity, quiet: true, at: now)
     }
 
+    /// The app quits: "asleep", waiting at most `quitWait` for it to go, so
+    /// the world needn't wait 15 minutes to see it. A new seq, with nothing
+    /// added: whatever's pending goes at the next launch.
+    public func quit(_ me: Now, on: Bool) {
+        guard on, var identity = member, last?.activity != .asleep else { return }
+        identity.seq = max(identity.seq, identity.unanswered?.seq ?? 0) + 1
+        identity.unanswered = nil
+        self.identity = identity
+        save()
+        let state = World.State(seq: identity.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
+                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: World.Counts())
+        if !client.sendNow(state, key: identity.key, timeout: Self.quitWait) { log("world: asleep didn't go before the quit") }
+    }
+
     /// Leaves the world: the buddy is deleted on the server, and its key
-    /// here. Nothing more is sent until the world is switched on again.
+    /// here once it's gone. Nothing more is sent until the world is
+    /// switched on again; gestures still on their way are dropped. Left
+    /// while it was joining, it leaves as the join comes back.
     public func leave(at now: Int64) {
-        guard var leaving = identity, leaving.leaving != true else { return }
+        guard var leaving = identity, leaving.leaving != true else {
+            if identity == nil, busy { leaveWanted = true }
+            return
+        }
         leaving.leaving = true
         identity = leaving
         save()
@@ -379,6 +446,7 @@ public final class WorldLink {
         last = nil
         pending = World.Counts()
         pendingSince = nil
+        asleepDue = false
         retryAt = nil
         onChange()
         if !busy { goodbye(leaving, at: now) }
@@ -392,9 +460,10 @@ public final class WorldLink {
             guard let self else { return }
             busy = false
             switch result {
-            case .success, .failure(.status(401, _)), .failure(.status(404, _)):
+            case .success, .failure(.status(401, _, "unauthorized")):
                 if identity?.key == leaving.key { identity = nil }
                 save()
+                backoff = 0
                 log("world: left")
             case .failure(let failure):
                 backoff = min(Self.maxBackoffMs, max(Self.backoffMs, backoff * 2))

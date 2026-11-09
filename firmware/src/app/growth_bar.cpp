@@ -13,7 +13,10 @@ void GrowthBar::sweep(uint32_t t) {
 }
 
 void GrowthBar::heartComes(int xp, uint32_t t) {
-  if (to_ < 0) return;
+  // With the ring full before this wish, the bar doesn't come back today: the
+  // heart stays in the bubble. A wish that fills it finds the bar up.
+  const bool up = on_ && sinceOff(t) < int(G::kOutMs);
+  if (to_ < 0 || (to_ >= 100 && !up)) return;
   from_ = fill(t);
   // A state with the XP that came first may have moved it too little to show.
   if (xp >= 0) to_ = xp;

@@ -1878,6 +1878,17 @@ static void test_the_ring_empties_quietly_and_sparkles_full() {
   TEST_ASSERT_TRUE(r.b.growthShow(r.t + G::kFillMs + G::kHoldMs + G::kSparkleMs - 1).opacity > 0);
   r.at(r.t + G::kFillMs + G::kHoldMs + G::kSparkleMs + G::kOutMs);
   TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  // A wish met with the ring full: no bar, and its heart doesn't fly.
+  m.wish = render::WishShow::kPet;
+  r.state(m);
+  r.at(r.t + 100);
+  m.wish = render::WishShow::kNone;
+  r.state(m);
+  r.b.wishPopped(true, r.t);
+  r.at(r.t + G::kHeartWaitMs + G::kHeartFlyMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  TEST_ASSERT_EQUAL(-1, r.b.growthShow(r.t).flight);
+  r.at(r.t + G::kFillMs + G::kHoldMs + G::kOutMs);
   m.xp = 0;  // 5:00, a new day
   r.state(m);
   TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t + G::kInMs).opacity);

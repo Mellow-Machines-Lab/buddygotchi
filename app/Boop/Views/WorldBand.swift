@@ -7,8 +7,10 @@ import SwiftUI
 /// and you marked. A click picks the nearest buddy.
 struct WorldBand: View {
     let buddies: [World.Buddy]
-    /// Your UTC offset, in minutes.
+    /// Your UTC offset, in minutes, and whether you're in the world: out of
+    /// it, "you" is dim.
     let you: Int
+    var youIn = true
     @Binding var pick: String?
     var now = Date()
     @Environment(\.colorScheme) private var scheme
@@ -66,7 +68,10 @@ struct WorldBand: View {
 
     /// 0 to 1 from an id, steady from launch to launch, which Swift's own
     /// hash isn't.
-    static func spread(_ id: String) -> Double { Double(SplitMix64.seed(of: id) % 10_000) / 10_000 }
+    static func spread(_ id: String) -> Double {
+        var mix = SplitMix64(seed: SplitMix64.seed(of: id))
+        return Double(mix.next() % 10_000) / 10_000
+    }
 
     static let utc = { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }()
 
@@ -91,7 +96,7 @@ struct WorldBand: View {
     private func shadeNight(_ context: GraphicsContext, _ size: CGSize) {
         let utc = Self.utc.dateComponents([.hour, .minute, .second], from: now)
         let hour = Double(utc.hour ?? 0) + Double(utc.minute ?? 0) / 60
-        let night = scheme == .dark ? Color.black.opacity(0.45) : Color(hex: "#3B3328").opacity(0.2)
+        let night = scheme == .dark ? Color(hex: "#05070D").opacity(0.8) : Color(hex: "#3B3328").opacity(0.2)
         // One gradient across the band, a stop every few points: strips
         // side by side would show their seams.
         let stops = stride(from: 0.0, through: 1.0, by: 1.0 / 120).map { at -> Gradient.Stop in
@@ -126,8 +131,9 @@ struct WorldBand: View {
     /// You: a line down the band at your offset, and the word.
     private func youMark(_ context: GraphicsContext, _ size: CGSize) {
         let x = x(hours: Double(you) / 60, in: size)
-        context.fill(Path(CGRect(x: x - 0.5, y: 14, width: 1, height: size.height - 18)), with: .color(Theme.ink.opacity(0.35)))
-        context.draw(Text("you").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.ink), at: CGPoint(x: x, y: 7))
+        let ink = youIn ? Theme.ink : Theme.inkFaint
+        context.fill(Path(CGRect(x: x - 0.5, y: 14, width: 1, height: size.height - 18)), with: .color(ink.opacity(youIn ? 0.35 : 0.25)))
+        context.draw(Text("you").font(.system(size: 9, weight: .semibold)).foregroundStyle(ink), at: CGPoint(x: x, y: 7))
     }
 
     /// The three regions' names under the band, each under its middle.
