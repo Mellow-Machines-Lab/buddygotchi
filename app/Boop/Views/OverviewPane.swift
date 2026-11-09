@@ -324,35 +324,19 @@ struct OverviewPane: View {
 
     // MARK: Growth
 
-    /// Boop's stage and XP: the stage's name, how far through it, what's
-    /// left to the next, and the next as a silhouette, to look forward to.
+    /// Boop's level and today's ring.
     private func growthCard(_ growth: Growth, daysOld: Int?) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(growth.name).font(.system(size: 12, weight: .semibold))
-                    Text("Stage \(growth.stage) of \(Growth.stages.count)")
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                    Spacer(minLength: 0)
-                    Text("\(growth.xp.formatted()) XP").font(.system(size: 11, weight: .medium)).monospacedDigit()
-                }
+                Text("Level \(growth.level)").font(.system(size: 12, weight: .semibold))
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Theme.well)
-                        Capsule().fill(Theme.ink).frame(width: max(6, geo.size.width * growth.progress))
+                        Capsule().fill(Theme.ink).frame(width: max(6, geo.size.width * Double(growth.percent) / 100))
                     }
                 }
                 .frame(height: 6)
-                .animation(.boopSettle, value: growth.progress)
-                HStack(alignment: .bottom, spacing: 6) {
-                    Text((growth.nextAt.map { "\(($0 - growth.xp).formatted()) XP to \(Growth.stages[growth.stage].name)" }
-                          ?? "Fully grown") + (daysOld.map { " · \($0 == 1 ? "1 day" : "\($0) days") old" } ?? ""))
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                    Spacer(minLength: 0)
-                    if growth.nextAt != nil {
-                        GrowthSilhouette(stage: growth.stage + 1).accessibilityHidden(true)
-                    }
-                }
+                Text("\(growth.today) today").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
             }
         }
         .accessibilityElement(children: .combine)
@@ -388,7 +372,6 @@ struct OverviewPane: View {
         case .night: "moon.stars"
         case .morning: "sun.horizon"
         case .friday: "sunglasses"
-        case .shrank: "arrow.down.right.and.arrow.up.left"
         }
     }
 

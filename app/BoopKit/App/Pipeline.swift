@@ -351,6 +351,13 @@ public final class Pipeline {
         }
     }
 
+    /// Another buddy's gestures from the world (`WorldGestures`): logged,
+    /// and each that plays wakes the brain, which answers it.
+    @discardableResult
+    public func world(_ events: [Event], at now: Int64) -> Step {
+        input(at: now) { for e in events { harness.emit(e) } }
+    }
+
     /// You showed up: `buddy`'s nap ends, or every buddy's (`Core.nap`).
     func endNaps(_ buddy: String?, at now: Int64) {
         for b in buddies where buddy == nil || b.id == buddy { run(cores[b.id]!.endNap(at: now), buddy: tag(b.id)) }

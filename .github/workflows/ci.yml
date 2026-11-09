@@ -7,7 +7,7 @@
 # all as Boop, the default pack, and the boards' firmware: the CYD's with
 # Pixel and the AMOLED's with Boop's gel face, so each pack builds. Each
 # pack is in a repository of its own (characters/packs.json), and every
-# job that needs one fetches them first, at their main. The world's
+# job that needs one fetches them first, at the branch packs.json names. The world's
 # server (internal/world/) runs its own tests, on PGlite.
 #
 # Package.swift needs Swift 6.2 or later. Boop is developed with Swift 6.4,
@@ -18,7 +18,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, main-v2]
   pull_request:
 
 permissions:

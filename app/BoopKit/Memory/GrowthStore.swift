@@ -1,92 +1,63 @@
 import Foundation
 import MellowHarness
 
-/// Boop's growth as it's kept: XP, the day a stage was reached, the last
-/// event counted, the last day it earned and how it's gone backwards since,
-/// as `growth.` keys in the key-value store. It counts each event as it's logged, once: an event at or before
-/// the last one counted is left alone. What an event earns within the
-/// day's caps is the memory reader's to say (`MemoryReader.earned`), which
-/// keeps the day's totals. Touched only on `home`.
+/// Boop's growth as it's kept: every XP it's earned, today's ring and its
+/// day (Boop's, from 5:00), the last days' rings, the last event counted and
+/// the level last celebrated, as `growth.` keys in the key-value store. It
+/// counts each event as it's logged, once: an event at or before the last
+/// one counted is left alone. Touched only on `home`.
 public final class GrowthStore {
     public static let xpKey = "growth.xp"
+    public static let todayKey = "growth.today"
+    public static let daysKey = "growth.days"
     public static let lastSeqKey = "growth.last_seq"
-    public static let reachedKey = "growth.reached"
-    public static let earnedKey = "growth.earned"
-    public static let decayedKey = "growth.decayed"
-    public static let shrankKey = "growth.shrank"
-    /// The stage as it was saved when there were six and it never went back:
-    /// read once, by `init`, and gone from then on.
-    public static let oldStageKey = "growth.stage"
+    public static let celebratedKey = "growth.celebrated"
+    /// How many days' rings it keeps, today's included: the Boop tab's week.
+    public static let keptDays = 7
 
     let store: KeyValueStore
     let log: (String) -> Void
+    /// The XP and today's ring, as of the day last counted: `growth(on:)`
+    /// gives the ring for another day.
     public private(set) var growth: Growth
+    /// The Boop day today's ring is for, nil before the first XP.
+    public private(set) var day: String?
+    /// The rings of the days before `day`, newest first: `(day, xp)`.
+    public private(set) var past: [(day: String, xp: Int)]
     /// The `seq` of the last event counted.
     public private(set) var lastSeq: Int
-    /// The day (`yyyy-MM-dd`) the stage was reached, nil for the first.
-    public private(set) var reachedDay: String?
-    /// The last day it earned XP, and the days it's gone backwards since.
-    public private(set) var earnedDay: String?
-    public private(set) var decayedDays: Int
-    /// The last time going backwards cost it a stage: the day, and how long
-    /// you'd been gone.
-    public private(set) var shrank: (day: String, gone: Int)?
+    /// The level last celebrated: a level past it is a level-up to play.
+    public private(set) var celebrated: Int
 
     public init(_ store: KeyValueStore, log: @escaping (String) -> Void = { _ in }) {
         self.store = store
         self.log = log
-        var xp = store.int(Self.xpKey) ?? 0
-        // From when a stage never went back, however little XP it had: it
-        // keeps its stage's size, in XP now, as the stage is the XP's.
-        if let old = store.int(Self.oldStageKey) {
-            xp = max(xp, Growth.stages[Growth.stage(fromSix: old) - 1].from)
-            do {
-                try store.set([Self.xpKey: String(xp)])
-                try store.remove([Self.oldStageKey])
-            } catch {
-                log("growth: can't save the stage it kept: \(error)")
-            }
+        let today = store.string(Self.todayKey)?.split(separator: " ")
+        day = today?.first.map(String.init)
+        growth = Growth(xp: store.int(Self.xpKey) ?? 0, today: today?.dropFirst().first.flatMap { Int($0) } ?? 0)
+        past = (store.string(Self.daysKey) ?? "").split(separator: ",").compactMap {
+            let p = $0.split(separator: " ")
+            guard p.count == 2, let xp = Int(p[1]) else { return nil }
+            return (String(p[0]), xp)
         }
-        growth = Growth(xp: xp)
         lastSeq = store.int(Self.lastSeqKey) ?? 0
-        reachedDay = store.string(Self.reachedKey)
-        earnedDay = store.string(Self.earnedKey)
-        decayedDays = store.int(Self.decayedKey) ?? 0
-        if let saved = store.string(Self.shrankKey)?.split(separator: " "), saved.count == 2, let gone = Int(saved[1]) {
-            shrank = (String(saved[0]), gone)
-        }
+        celebrated = store.int(Self.celebratedKey) ?? growth.level
     }
 
-    /// Goes backwards up to `today`, once for each day past the grace since
-    /// it last earned; the first day it's asked starts that clock, so a
-    /// first launch on this, however long since the last, costs nothing.
-    /// Returns whether the XP changed.
-    @discardableResult
-    public func decay(today: String) -> Bool {
-        guard let earnedDay else {
-            self.earnedDay = today
-            save()
-            return false
-        }
-        guard earnedDay != today else { return false }
-        let gone = Growth.days(from: earnedDay, to: today)
-        let due = max(0, gone - Growth.decayAfterDays) - decayedDays
-        guard due > 0 else { return false }
-        let before = growth.stage
-        growth = Growth(xp: Growth.decayed(growth.xp, days: due))
-        decayedDays += due
-        if growth.stage < before {
-            shrank = (today, gone)
-            log("growth: shrank to stage \(growth.stage), \(growth.name), at \(growth.xp) XP")
-        }
-        save()
-        return true
+    /// The growth as it stands on Boop day `today`: a ring of a day before
+    /// it is empty now.
+    public func growth(on today: String) -> Growth {
+        day == today ? growth : Growth(xp: growth.xp)
     }
 
-    /// Why it's smaller, for the day it shrank and the day after, or nil.
-    public func shrankWords(today: String, name: String) -> String? {
-        guard let shrank, Growth.days(from: shrank.day, to: today) <= 1 else { return nil }
-        return Growth.shrankWords(name: name, days: shrank.gone)
+    /// The last `keptDays` days' rings up to `today`, oldest first, a day
+    /// with none 0.
+    public func week(to today: String) -> [(day: String, xp: Int)] {
+        let known = Dictionary(([(day ?? "", growth.today)] + past).map { ($0.day, $0.xp) }, uniquingKeysWith: { a, _ in a })
+        guard let n = LocalTime.dayNumber(today) else { return [] }
+        return (0..<Self.keptDays).reversed().compactMap { back in
+            LocalTime.day(number: n - back).map { ($0, known[$0] ?? 0) }
+        }
     }
 
     /// The transcript's numbering starts again when every file of it is
@@ -99,32 +70,36 @@ public final class GrowthStore {
         save()
     }
 
-    /// Counts `e`, which earned `earned` XP within its pool's cap for the
-    /// day, on `day` (the calendar's, for the day a stage was reached),
-    /// and returns whether the XP changed.
+    /// Counts `e`, which earns `xp` before the day's cap, on Boop day
+    /// `today`, and returns the XP it added: none past the day's ring.
     @discardableResult
-    public func count(_ e: Event, earned: Int,
-                      day: @autoclosure () -> String = LocalTime().day(Int64(Date().timeIntervalSince1970 * 1000))) -> Bool {
-        guard e.seq > lastSeq, earned > 0 else { return false }
-        let today = day()
-        decay(today: today)
-        let before = growth.stage
-        growth = Growth(xp: growth.xp + earned)
+    public func count(_ e: Event, xp: Int, today: String) -> Int {
+        guard e.seq > lastSeq, xp > 0 else { return 0 }
         lastSeq = e.seq
-        earnedDay = today
-        decayedDays = 0
-        if growth.stage > before { reachedDay = today }
+        if day != today, let day {
+            past = Array(([(day, growth.today)] + past).prefix(Self.keptDays - 1))
+        }
+        if day != today { growth.today = 0 }
+        day = today
+        let added = Growth.capped(xp, today: growth.today)
+        growth = Growth(xp: growth.xp + added, today: growth.today + added)
         save()
-        if growth.stage > before { log("growth: reached stage \(growth.stage), \(growth.name), at \(growth.xp) XP") }
-        return true
+        return added
+    }
+
+    /// Marks the level now celebrated, so it isn't again.
+    public func celebrate() {
+        guard celebrated != growth.level else { return }
+        celebrated = growth.level
+        log("growth: level \(celebrated), at \(growth.xp) XP")
+        save()
     }
 
     func save() {
         do {
-            var values = [Self.xpKey: String(growth.xp), Self.lastSeqKey: String(lastSeq), Self.decayedKey: String(decayedDays)]
-            if let reachedDay { values[Self.reachedKey] = reachedDay }
-            if let earnedDay { values[Self.earnedKey] = earnedDay }
-            if let shrank { values[Self.shrankKey] = "\(shrank.day) \(shrank.gone)" }
+            var values = [Self.xpKey: String(growth.xp), Self.lastSeqKey: String(lastSeq), Self.celebratedKey: String(celebrated),
+                          Self.daysKey: past.map { "\($0.day) \($0.xp)" }.joined(separator: ",")]
+            if let day { values[Self.todayKey] = "\(day) \(growth.today)" }
             try store.set(values)
         } catch {
             log("growth: can't save: \(error)")

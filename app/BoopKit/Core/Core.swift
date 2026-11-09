@@ -40,9 +40,6 @@ public final class Core {
         /// The day Boop hatched (`yyyy-MM-dd`), for its milestone days; nil
         /// for none.
         public var hatched: String?
-        /// The growth stage Boop reached last and the day it did: that day
-        /// is a party, unless it's the day Boop hatched (`Days`).
-        public var stageReached: (name: String, day: String)?
         /// Whether the board shows the work stream (`WorkStream`): the
         /// setting's, on unless you turn it off.
         public var workStream = true
@@ -66,14 +63,14 @@ public final class Core {
     var mood: () -> String
     /// The mood now, as the mood output keeps it.
     public var moodNow: String { mood() }
-    /// The growth stage Boop is at, from 1, which every `state` carries as
-    /// its tags (`Tags.stages`): the runtime reads it from the growth
-    /// store. Buddy's, the full size, until it's set.
-    var stage: () -> Int = { 3 }
-    /// How far through its stage, in percent, for the board's bar
-    /// (`state.xp`): the runtime reads it from the growth store. Nil sends none
-    /// and shows no bar: for a demo, and a core with no store.
-    var growthPercent: () -> Int? = { nil }
+    /// Boop's growth now, which the runtime reads from the growth store:
+    /// every `state` carries its stage as tags (`Tags.stages`) and today's
+    /// ring for the board's bar (`state.xp`), and CONTEXT its level. Nil
+    /// for a demo and a core with no store: Buddy's size, the full one, and
+    /// no bar.
+    var growth: () -> Growth? = { nil }
+    /// The growth stage Boop is at, from 1.
+    var stage: Int { growth()?.stage ?? 3 }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -98,9 +95,8 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
-    /// A stage reached just now whose `grew` waits for nothing to need you.
-    /// Not kept: the log without its `grew` says so at launch (`grewLost`).
-    var grewHeld: String?
+    /// Level-ups and the ring closing, waiting for nothing to need you.
+    var growthHeld: [GrowthBeat] = []
     /// The session a BOOT press opened last, and when.
     var lastHanded: (key: String, at: Int64)?
     /// When the board last said its agents' drawer is open (`ev drawer`),
@@ -126,7 +122,7 @@ public final class Core {
     /// The calendar's tags, worked out once a quarter of an hour: every
     /// time zone's hours start on one, so the part of the day and the date
     /// can't change within it.
-    var whenCache: (slot: Int64, hatched: String?, stage: String?, tags: [String])?
+    var whenCache: (slot: Int64, hatched: String?, tags: [String])?
     /// The agents' working stretch, which the working tiers count from:
     /// when its first turn started, and once they all rest, when they came
     /// to rest (`keepStretch`).
@@ -419,9 +415,9 @@ public final class Core {
     /// brain hears that Boop already reacted: in the words `said`, or
     /// `played`'s.
     func play(_ rule: Moment, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
-        guard let anim = rule.anim, !needsYouShowing, !showsListening(at: now) else { return }
+        guard rule.anim != nil || rule.mood != nil, !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.reaction(rule))
-        var did = Event.did(said ?? "", for: seq, action: anim, by: "rule",
+        var did = Event.did(said ?? "", for: seq, action: rule.name, by: "rule",
                             facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
         if said == nil { did.data["message"] = nil }
         fx.append(.record(did))
@@ -487,34 +483,61 @@ public final class Core {
         return fx
     }
 
-    /// Boop reached the growth stage `name` on `day` (today's at `now` by
-    /// default): the rest of that day is a party, which a `state` carries
-    /// at once, and the board plays the new body from its tag. Reached just
-    /// now (`celebrate`), the `grew` event asks Jev for its sign and words,
-    /// once nothing needs you: until then nothing would wake it.
-    /// Not on the day Boop hatched, your first with it: then it's no occasion
-    /// (`Days.special`).
+    /// A moment of growth: a level reached (and the size it grew to, at
+    /// one of `Growth.stages`' levels), or today's ring closing.
+    public enum GrowthBeat: Equatable, Sendable {
+        case level(Int, grewTo: String?)
+        case ringClosed
+    }
+
+    /// Boop grew: each beat is logged and its rule moment plays once nothing
+    /// needs you or listens, after the `state` that carries the new size
+    /// and ring.
     @discardableResult
-    public func reachedStage(_ name: String, day: String? = nil, celebrate: Bool = false, at now: Int64) -> [CoreEffect] {
-        config.stageReached = (name, day ?? self.day(now))
+    public func grew(_ beats: [GrowthBeat], at now: Int64) -> [CoreEffect] {
+        growthHeld += beats
         var fx: [CoreEffect] = []
         publish(now, &fx)
-        if celebrate, config.hatched != self.day(now) {
-            grewHeld = name
-            recordGrew(now, &fx)
-        }
         return fx
     }
 
-    /// A stage reached earlier today whose `grew` the log doesn't have: a
-    /// quit lost it while something needed you. It waits as it did then.
-    public func grewLost(_ name: String, at now: Int64) {
-        if config.hatched != day(now) { grewHeld = name }
+    /// The growth waiting for nothing to need you (`growthHeld`): its events,
+    /// and one moment for them all, the biggest's.
+    func recordGrowth(_ now: Int64, _ fx: inout [CoreEffect]) {
+        guard !growthHeld.isEmpty, needsYouBlock == nil, !showsListening(at: now) else { return }
+        let beats = growthHeld
+        growthHeld = []
+        for beat in beats {
+            switch beat {
+            case .level(let level, let size):
+                fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(level),
+                                        data: size.map { ["stage": .string($0)] } ?? [:])))
+            case .ringClosed:
+                fx.append(.record(Event(at: now, source: .boop, type: .ring, specificType: "closed")))
+            }
+        }
+        let name = config.pack.name
+        if case .level(let level, let size)? = beats.last(where: { if case .level = $0 { true } else { false } }) {
+            var m = Moment(mood: size == nil ? Self.levelFace : Self.grewFace, loops: size == nil ? 2 : 3,
+                           sign: Self.levelSign(level),
+                           reason: Narration.fit([size.map { "now a \($0)" } ?? "level \(level)!"], name: name))
+            m.low = true
+            play(m, for: nil, now, &fx)
+        } else {
+            play(Moment(mood: Self.ringFace, loops: 2, reason: Self.ringReason), for: nil, now, &fx)
+        }
     }
+
+    /// The level-up's sign, on the low sign: `Level 12!`.
+    public static func levelSign(_ level: Int) -> String { "Level \(level)!" }
+    /// The ring closing's reason, in the lane.
+    public static let ringReason = "Today's done. Nice work."
+    /// The faces the growth moments play: a level, a size grown, the ring.
+    static let levelFace = "proud", grewFace = "excited", ringFace = "happy"
 
     /// Today's occasions at `now` (`Days.special`).
     func specialDays(at now: Int64) -> [Days.SpecialDay] {
-        Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, stage: config.stageReached, time: config.time)
+        Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, time: config.time)
     }
 
     /// On a day with an occasion, your first showing up holds up its sign
@@ -627,7 +650,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
-        snapshot.xp = growthPercent()
+        snapshot.xp = growth()?.percent
         if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
@@ -841,17 +864,17 @@ public final class Core {
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
-        on += Tags.stages(stage())
+        on += Tags.stages(stage)
         if hushed(at: now) != nil { on.append(Tags.hushed) }
         return Tags.all.filter(on.contains)
     }
 
     /// The calendar's tags, worked out once a quarter of an hour.
     func calendar(at now: Int64) -> [String] {
-        let wall = wall(now), slot = wall / 900_000, stage = config.stageReached?.day
-        if let c = whenCache, c.slot == slot, c.hatched == config.hatched, c.stage == stage { return c.tags }
-        let tags = Days.tags(at: wall, hatched: config.hatched, party: stage == config.time.day(wall), time: config.time)
-        whenCache = (slot, config.hatched, stage, tags)
+        let wall = wall(now), slot = wall / 900_000
+        if let c = whenCache, c.slot == slot, c.hatched == config.hatched { return c.tags }
+        let tags = Days.tags(at: wall, hatched: config.hatched, time: config.time)
+        whenCache = (slot, config.hatched, tags)
         return tags
     }
 
@@ -1145,13 +1168,6 @@ public final class Core {
         }
     }
 
-    /// The stage reached that's waiting for nothing to need you (`grewHeld`).
-    func recordGrew(_ now: Int64, _ fx: inout [CoreEffect]) {
-        guard let name = grewHeld, needsYouBlock == nil else { return }
-        grewHeld = nil
-        fx.append(.record(Event(at: now, source: .boop, type: .grew, specificType: name)))
-    }
-
     /// "Needs you" starting or clearing for a session, as a rule action:
     /// the view says who needs you from its start. One that cleared for
     /// anything but an answer says why.
@@ -1201,7 +1217,7 @@ public final class Core {
     func publish(_ now: Int64, _ fx: inout [CoreEffect]) {
         recordGone(now, &fx)
         recordNeeds(now, &fx)
-        recordGrew(now, &fx)
+        recordGrowth(now, &fx)
         tidyNotes()
         updateActs(now)
         let (shown, dismissed, active, _) = groups(at: now)

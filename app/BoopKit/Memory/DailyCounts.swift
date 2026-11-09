@@ -25,7 +25,7 @@ public struct DayCounts: Codable, Equatable, Sendable {
     public var failures = 0
     /// Settings and growth as they last stood that day; nil on a day only
     /// read back from the transcript.
-    public var quiet: Bool?, volume: Int?, stage: Int?
+    public var quiet: Bool?, volume: Int?, level: Int?
 
     public init(day: String) { self.day = day }
 
@@ -44,7 +44,7 @@ public struct DayCounts: Codable, Equatable, Sendable {
         try read(.disconnects, &disconnects); try read(.unpluggedMinutes, &unpluggedMinutes); try read(.failures, &failures)
         quiet = try c.decodeIfPresent(Bool.self, forKey: .quiet)
         volume = try c.decodeIfPresent(Int.self, forKey: .volume)
-        stage = try c.decodeIfPresent(Int.self, forKey: .stage)
+        level = try c.decodeIfPresent(Int.self, forKey: .level)
     }
 
     /// `rows`' last `days` in plain numbers, for a person to read and choose
@@ -68,7 +68,7 @@ public struct DayCounts: Codable, Equatable, Sendable {
             "face down: \(sum(\.faceDown))",
             "unplugged: \(sum(\.unpluggedMinutes)) min, on \(week.filter { $0.unpluggedMinutes > 0 }.count) day(s); disconnects: \(sum(\.disconnects))",
             "failures: \(sum(\.failures))",
-            "stage: \(week.last?.stage.map(String.init) ?? "-")",
+            "level: \(week.last?.level.map(String.init) ?? "-")",
             "",
             "day         touches  no-wish  made  met  gaveup  opened  needs  answered  spoken  here-min  hushes  facedown  unplugged  drops  failed",
         ]
@@ -131,7 +131,7 @@ public final class CountsReader: TranscriptReader {
         s.hereSince = carry?.hereSince == nil ? nil : carry?.lastAt
         s.downSince = carry?.downSince == nil ? nil : carry?.lastAt
         s.row.volume = carry?.row.volume
-        s.row.stage = carry?.row.stage
+        s.row.level = carry?.row.level
         return s
     }
 
@@ -179,8 +179,7 @@ public final class CountsReader: TranscriptReader {
         case .gesture? where e.specificType == "facedown": s.row.faceDown += 1
         case .turn? where e.phase == .end && e["outcome"]?.string == "failed": s.row.failures += 1
         case .act? where e.phase == .end && e["passed"]?.bool == false: s.row.failures += 1
-        case .grew?:
-            if let stage = Growth.stages.firstIndex(where: { $0.name == e.specificType }) { s.row.stage = stage + 1 }
+        case .level?: s.row.level = Int(e.specificType) ?? s.row.level
         case .presence?:
             var away = AwayAndBack(since: s.away)
             switch away.fold(e) {

@@ -136,19 +136,16 @@ public enum DebugLog {
     }
 
     /// What the device messages and the prompt's CONTEXT don't carry: the
-    /// brain, the sessions, whether the device is connected, Boop's stage
-    /// and XP, today's XP from each pool against its cap (`today`, the
-    /// memory reader's tallies) and the mood's reason (a `state` carries
-    /// the mood). Nil when it's the same as `last`; the runtime writes only
-    /// changes, so one comes with every tool call that earns XP.
-    public static func status(_ status: Runtime.Status, today: MemoryReader.Tallies? = nil, at ms: Int64,
-                              last: inout String?) -> String? {
+    /// brain, the sessions, whether the device is connected, Boop's level,
+    /// XP and today's ring against its cap, and the mood's reason (a `state`
+    /// carries the mood). Nil when it's the same as `last`; the runtime
+    /// writes only changes, so one comes with every tool call that earns XP.
+    public static func status(_ status: Runtime.Status, at ms: Int64, last: inout String?) -> String? {
         var fields: [String: Any] = ["brain": status.brain,
                                      "connected": status.connected,
-                                     "stage": status.growth?.stage ?? 1,
+                                     "level": status.growth?.level ?? 1,
                                      "xp": status.growth?.xp ?? 0,
-                                     "today_xp": ["work": today?.workXP ?? 0, "work_cap": Growth.cap(.work),
-                                                  "care": today?.careXP ?? 0, "care_cap": Growth.cap(.care)],
+                                     "today_xp": status.growth?.today ?? 0, "today_cap": Growth.perDay,
                                      "sessions": status.sessions.map { ["agent": $0.agent, "project": $0.project, "status": $0.status.rawValue] }]
         if let reason = status.moodReason { fields["mood_reason"] = reason.mood(status.snapshot.mood, name: status.name) }
         let value = Event.json(fields)

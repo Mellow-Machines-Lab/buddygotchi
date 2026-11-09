@@ -250,9 +250,15 @@ public enum EventLine {
         count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
     }
 
-    /// Boop grew a stage: `Boop grew: it's a Sprout now.`
-    public static func grew(_ stage: String, name: String = CharacterPack.active.name) -> String {
-        "\(name) grew: it's a \(stage) now."
+    /// Boop reached a level: `Boop reached level 12.`, or with the size it
+    /// grew to, `Boop reached level 5 and grew: it's a Sprout now.`
+    public static func level(_ level: Int, grewTo stage: String?, name: String = CharacterPack.active.name) -> String {
+        "\(name) reached level \(level)" + (stage.map { " and grew: it's a \($0) now." } ?? ".")
+    }
+
+    /// Today's ring closed: `Today's ring is full: Boop's done for the day.`
+    public static func ringClosed(name: String = CharacterPack.active.name) -> String {
+        "Today's ring is full: \(name)'s done for the day."
     }
 
     /// Boop's wish: made, and how it ended.
