@@ -28,7 +28,7 @@ cheap ESP32 board with a screen is the body.
 
 | Path | What it is |
 | --- | --- |
-| `app/` | What ships on the Mac: the menu-bar app (`Boop`) and `BoopKit` |
+| `app/` | What ships on the Mac: the menu-bar app (`Boop`) and `BoopKit`, with the world's client in `app/BoopKit/World/` |
 | `firmware/` | PlatformIO firmware for the two boards |
 | `linkkit/` | The device link, a package of its own: protocol, host library, device library ([SPEC](linkkit/SPEC.md)) |
 | `agent-hooks/`, `mellowharness/` | Submodules: reading agents' hooks, and the brain's harness. Each depends on nothing else here |
@@ -258,15 +258,26 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| Boop's day | 5:00 to 5:00, today for CONTEXT's Today row and the XP caps; it triggers nothing | | |
+| Boop's day | 5:00 to 5:00, today for CONTEXT's Today row and the ring; it triggers nothing | | |
 | dream | Everything since the last dream as tags and a sentence, and the memory's update from it: on `d`, once a night's sleep or one of 5 h, or after two days (`DreamReader`, `Memory.dream`, `dreams.md`) | diary, journal, closing the day | |
 | digest | One dream's span in numbers and the few words that may be kept, in `memory-days.json`: what habits and notices are read from (`DayDigest`) | summary, day file | |
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign at an idle check-in, about once a day (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
-| growth | XP, which can go backwards, and stages, Hatchling to Chonk; a stage changes only the body and the pastimes. The growth bar shows it on the board, with a met wish's heart flying in (`GrowthShow`), and Jev's sign says what grew (`[grew]`) | | `xp`, `grew` |
-| special day | A holiday, a milestone day, Boop's birthday, a stage reached | occasion (for a day) | |
+| XP | What Boop earns, a fixed amount for each thing the agents get done and each bit of your care, never lost (`Growth`, plan/v1-buddy.md §5) | points | |
+| the ring | Today's XP, up to 100 a Boop day: full, nothing more counts that day. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is a moment | daily goal, progress bar | `xp` (today's percent), `ring` |
+| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign | | `level` |
+| stage | Boop's size, Hatchling to Chonk, reached at levels 5, 15 and 30: a bigger level-up, changing only the body and the pastimes | | `hatchling`, `sprout`, `chonk` |
+| special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
+
+**The world**
+
+| Word | Means | Not | On the wire |
+| --- | --- | --- | --- |
+| the world | Everyone's buddies together on one server (`internal/world/`), which Boop joins unless you keep it private; the Mac's client is `WorldLink` | map, network | |
+| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship; a `world` event, which Jev answers. At most 3 an hour play; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
+| region | Where a buddy is, from its UTC offset only: the Americas, Europe and Africa, Asia and Oceania | country, location | `from_region` |
 
 ## Architecture rules
 
@@ -282,11 +293,21 @@ The rules that are easy to break, in full in
 - The steering files are read-only at runtime.
 - No code, commands, tool output, file contents or agent transcripts go
   to the brain: only readings, and your words to Boop.
+- The world gets only `World.State`'s fields (`WorldTests` pins them): the
+  buddy's name, level and stage, its UTC offset, one of six activities and
+  counts. Nothing before onboarding's world screen, nothing with it off.
 - "Needs you" and the screen priority are plain rules in the core.
 - The device renders, reports and decides when a Moment plays, never what
   Boop does.
 - The Mac's face is the board's firmware: a change to what the gel draws
   rebuilds the mirror (`firmware/tools/mirror.sh`).
+
+## The UI's words
+
+Every string a person reads, on the Mac or the board: short and warm, with
+no numbers that aren't needed. Talk like a friend, not a manual: "82
+today. Fill the ring and you're done for the day," not "A full ring is
+100. More doesn't count." No game jargon, no exclamation spam.
 
 ## Docs stay in sync
 
@@ -304,7 +325,7 @@ updates it in the same commit. In a worktree, first check that
 | `simulator/` | `simulator/README.md`, `internal/VERIFICATION.md` |
 | A make target, tool, test level or budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |
 | Evals | `internal/EVALS.md` |
-| `internal/world/`, its routes, limits or wire fixtures | `internal/world/README.md` |
+| `internal/world/`, its routes, limits or wire fixtures | `internal/world/README.md`; the Mac's `app/BoopKit/World/` with them |
 | The Studio | `characters/studio/README.md`, `characters/CHARACTER.md` §12 |
 | The gel slime, in SlimeBuddy | Its `CONTINUITY.md`, `VALIDATION.md`, slimegen's `README.md` |
 

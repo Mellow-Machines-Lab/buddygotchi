@@ -32,21 +32,22 @@ struct WishShow {
   uint32_t ms = 0;  // the board's clock, for the icon's motion
 };
 
-// The growth bar over the screen, as it should show now (Behaviour::growthShow):
-// it comes when the XP moves, and a met wish's heart flies into it. Off, and
-// with no heart, for a Mac that sends no `xp`.
+// Today's ring, as a bar over the screen, as it should show now
+// (Behaviour::growthShow): it comes when the day's XP moves, and a met wish's
+// heart flies into it; full, it sparkles. Off, and with no heart, for a Mac
+// that sends no `xp`.
 struct GrowthShow {
   // Sliding in, how long it stays once it's filled, and out; how long it
   // fills. A met wish's heart stays in the bubble kHeartWaitMs from the pop,
   // flies for kHeartFlyMs, and the bar gulps for kGulpMs as it lands, and
-  // fills from then.
+  // fills from then. Filled to the end, it sparkles for kSparkleMs.
   static constexpr uint32_t kInMs = 240, kHoldMs = 3000, kOutMs = 360, kFillMs = 700;
-  static constexpr uint32_t kHeartWaitMs = 420, kHeartFlyMs = 720, kGulpMs = 520;
+  static constexpr uint32_t kHeartWaitMs = 420, kHeartFlyMs = 720, kGulpMs = 520, kSparkleMs = 1200;
   int opacity = 0;       // how far it's in, 0 … 255
   int fill = 0;          // how far along it's filled, 0 … 1000
-  int stage = 3;         // the growth stage it's for (growthStage)
   int flight = -1;       // how far the heart has flown, 0 … 1000, -1 for none
   int gulp = 0;          // how far the landing is through, 0 … 1000, 0 for none
+  int sparkle = 0;       // how far the full ring's sparkle is through, 0 … 1000, 0 for none
 };
 
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,

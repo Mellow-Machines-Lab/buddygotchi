@@ -1860,98 +1860,35 @@ static void test_a_met_wish_fills_the_bar_by_however_little() {
   }
 }
 
-// A stage reached fills the bar to its end for the old stage, then from its
-// start for the new; a stage lost, down to its start, then from its end.
-static void test_a_new_stage_fills_the_bar_past_its_end() {
+// Today's ring: a new day's lower XP empties it without showing; filled to
+// 100, it sparkles once it gets there, and stays a little longer for it.
+static void test_the_ring_empties_quietly_and_sparkles_full() {
   using G = render::GrowthShow;
-  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
   Rig r;
   Model m = base("idle");
-  m.xp = 90, m.when = hatchling;
+  m.xp = 90;
   r.state(m);
   r.at(1000);
-  m.xp = 2, m.when = sprout;
+  m.xp = 100;
   r.state(m);
-  TEST_ASSERT_EQUAL(900, r.b.growthShow(r.t).fill);
-  TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
-  r.at(r.t + G::kFillMs - 1);
-  TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 990);
-  TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
-  r.at(r.t + 1);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t).opacity > 0 || r.b.growthShow(r.t + G::kInMs).opacity > 0);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t + G::kFillMs - 1).sparkle);
+  TEST_ASSERT_EQUAL(1000, r.b.growthShow(r.t + G::kFillMs).fill);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t + G::kFillMs + G::kSparkleMs / 2).sparkle > 0);
+  TEST_ASSERT_TRUE(r.b.growthShow(r.t + G::kFillMs + G::kHoldMs + G::kSparkleMs - 1).opacity > 0);
+  r.at(r.t + G::kFillMs + G::kHoldMs + G::kSparkleMs + G::kOutMs);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
+  m.xp = 0;  // 5:00, a new day
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t + G::kInMs).opacity);
   TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).fill);
-  TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
-  r.at(r.t + G::kFillMs);
-  TEST_ASSERT_EQUAL(20, r.b.growthShow(r.t).fill);
-  r.at(r.t + G::kHoldMs + G::kOutMs);
-  m.xp = 97, m.when = hatchling;
+  m.xp = 4;  // too little to show
+  r.state(m);
+  TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t + G::kInMs).opacity);
+  m.xp = 6;
   r.state(m);
   r.at(r.t + G::kFillMs);
-  TEST_ASSERT_EQUAL(1000, r.b.growthShow(r.t).fill);
-  r.at(r.t + G::kFillMs);
-  TEST_ASSERT_EQUAL(970, r.b.growthShow(r.t).fill);
-}
-
-// A stage reached wraps the bar once: a second state during the heart's flight
-// doesn't lose the wrap, and a wish's `do` once the bar's past its end doesn't
-// play it again.
-static void test_a_new_stages_wrap_plays_once() {
-  using G = render::GrowthShow;
-  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
-  {  // Lost: another state while the heart flies.
-    Rig r;
-    Model m = base("idle");
-    m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
-    r.state(m);
-    r.at(1000);
-    m.wish = render::WishShow::kNone;
-    r.state(m);
-    r.b.wishPopped(true, r.t);
-    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
-    m.xp = 2, m.when = sprout;
-    r.state(m);
-    r.at(r.t + 300);
-    m.xp = 3;
-    r.state(m);
-    r.at(landed + G::kFillMs - 1);
-    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 990);
-    TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
-    r.at(landed + 2 * G::kFillMs);
-    TEST_ASSERT_EQUAL(30, r.b.growthShow(r.t).fill);
-    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
-  }
-  {  // Lost: another state with new XP as the bar fills to its end, no heart.
-    Rig r;
-    Model m = base("idle");
-    m.xp = 90, m.when = hatchling;
-    r.state(m);
-    r.at(1000);
-    m.xp = 2, m.when = sprout;
-    r.state(m);
-    r.at(1200);
-    m.xp = 4;
-    r.state(m);
-    r.at(1200 + G::kFillMs - 1);
-    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill > 900);
-    TEST_ASSERT_EQUAL(1, r.b.growthShow(r.t).stage);
-    r.at(1200 + 2 * G::kFillMs);
-    TEST_ASSERT_EQUAL(40, r.b.growthShow(r.t).fill);
-  }
-  {  // Replayed: the `do` a second after the state, the bar past its end.
-    Rig r;
-    Model m = base("idle");
-    m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
-    r.state(m);
-    r.at(1000);
-    m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
-    r.state(m);
-    r.at(2000);
-    r.b.wishPopped(true, r.t);
-    const uint32_t landed = r.t + G::kHeartWaitMs + G::kHeartFlyMs;
-    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
-    r.at(landed + G::kFillMs / 2);
-    TEST_ASSERT_EQUAL(2, r.b.growthShow(r.t).stage);
-    TEST_ASSERT_TRUE(r.b.growthShow(r.t).fill <= 20);
-  }
+  TEST_ASSERT_EQUAL(60, r.b.growthShow(r.t).fill);
 }
 
 // A new stage's body waits 300 ms for a wish's `do`, which follows its state;
@@ -1970,7 +1907,7 @@ static void test_a_new_stage_waits_for_the_heart() {
   b.onState(m, 100);
   b.advance(1000, rng);
   TEST_ASSERT_FALSE(f.context.growthWaits);
-  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  m.xp = 95, m.when = sprout, m.wish = render::WishShow::kNone;
   b.onState(m, 1000);
   TEST_ASSERT_TRUE(f.context.growthWaits);
   b.advance(1299, rng);
@@ -1980,7 +1917,7 @@ static void test_a_new_stage_waits_for_the_heart() {
   m.when = hatchling, m.xp = 90, m.wish = render::WishShow::kPet;
   b.onState(m, 6000);
   b.advance(8000, rng);
-  m.xp = 2, m.when = sprout, m.wish = render::WishShow::kNone;
+  m.xp = 95, m.when = sprout, m.wish = render::WishShow::kNone;
   b.onState(m, 8000);
   b.advance(8100, rng);
   b.wishPopped(true, 8100);
@@ -4350,8 +4287,7 @@ int main() {
   RUN_TEST(test_the_growth_bar_keeps_off_what_it_shouldnt_cover);
   RUN_TEST(test_a_met_wishs_heart_flies_into_the_growth_bar);
   RUN_TEST(test_a_met_wish_fills_the_bar_by_however_little);
-  RUN_TEST(test_a_new_stage_fills_the_bar_past_its_end);
-  RUN_TEST(test_a_new_stages_wrap_plays_once);
+  RUN_TEST(test_the_ring_empties_quietly_and_sparkles_full);
   RUN_TEST(test_a_new_stage_waits_for_the_heart);
   RUN_TEST(test_alone_it_stays_its_stage);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);

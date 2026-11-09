@@ -134,7 +134,19 @@ evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## What leaves your Mac
 
-Nothing, unless you add a Jev key. With one, each time Boop thinks, it
+To the world of buddies, unless you keep Boop private: your buddy's name,
+its level and size, your offset from UTC (not your country or time zone),
+what it's doing in one word (coding, testing, shipping, waiting, idle,
+asleep), and counts: turns, tests passed, ships, lines changed, and today's
+XP. A random id and key, made when it joins, tell your buddy apart; nothing
+about you does. The world server keeps it while your buddy sends, and
+forgets it 30 days after the last, or at once when you leave the world
+(internal/world/README.md). Nothing goes before onboarding's world screen,
+and nothing with the world off: then you can still look at the world, but
+you aren't in it and nobody can boop you. Your name, projects, code, what
+you say and Boop's memory never go.
+
+To Jev, nothing unless you add a Jev key. With one, each time Boop thinks, it
 sends TypeSafe a short text: what's been happening, in lines like
 `claude started turn 1 on "landing".`, and Boop's personality, mood and
 memory (MEMORY).

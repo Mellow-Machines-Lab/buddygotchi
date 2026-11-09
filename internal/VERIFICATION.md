@@ -147,7 +147,13 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   ([CHARACTER.md](../characters/CHARACTER.md) §2).
 - `internal/tools/packs.py`: the character packs in `characters/`,
   fetched from their repositories (what `make -C internal packs` runs;
-  `--help`).
+  `--help`). `characters/packs.json` names each as `Owner/Repo`, or
+  `Owner/Repo@branch` to fetch a branch.
+- `internal/tools/world_e2e.py URL`: two headless Boops, each with its own
+  state folder and `HOME`, join the world at URL, see each other, boop
+  each other and leave (L4). `npm run dev` in `internal/world/` serves a
+  fake world on PGlite; the live one only when the owner asks. The Swift
+  side's own tests, `WorldTests`, stub the network and never reach one.
 - The generators, each in its pack and writing into it, which its
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;
