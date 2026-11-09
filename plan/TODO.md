@@ -1,8 +1,61 @@
 # TODO
 
-Updated 2026-11-04. What's next, one at a time, top first. Tick an item
+Updated 2026-11-08. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-08: Boop v1 on `main-v2`
+
+**Read this first.** v1's four tenets are built on `main-v2` (plan/world.md §9, plan/v1-buddy.md §5): XP kept simple, the popover's three tabs, and the world of buddies, client and board. Nothing was flashed and nobody has seen it on the panel; the frames are the simulator's.
+
+Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `snapshots/`).
+
+**Landed:**
+- **XP, kept simple.** A fixed XP per thing, one ring of 100 a Boop day, a level per 100 XP, never down, and the sizes as bigger level-ups at levels 5, 15 and 30. XP starts from zero, with no migration. `Growth` and `GrowthStore` are rewritten; the pools, the decay, the stage's party day and the `grew` event are gone.
+- **On the board, today's ring.** The growth bar is today's ring: it shows when XP comes in, with "54 today" beside it, and turns gold and sparkles when it's full. A level-up is the rules' moment, proud, with `Level 12!` on the low sign. The ring closing is a happy one, "Today's done!". Both wait while something needs you.
+- **The popover's three tabs**, as sketched:
+  - Now: status first.
+  - Boop: the ring, the level, the last 7 days, a peek at what Boop knows.
+  - World: live numbers; the time-zone band, night shaded, you marked; a buddy's card with Wave, Boop and Heart (and Cheer for one shipping); today's arrivals; the regions.
+  - Settings has the world's switch, how the buddy shows, what's shared, and Leave the world. Onboarding has its world screen, which tells and doesn't ask, with "Keep Mochi private".
+- **The world client** (`app/BoopKit/World/`):
+  - It joins after onboarding's world screen and sends `World.State` only (`WorldTests` fails on any other field).
+  - It sends on a change, batches the counts for 3 min, heartbeats every 10, and says asleep at once on a lock or quit.
+  - Gestures come back in the reply, or from a check every 10 min and on an unlock. The world is fetched only while the World tab is open, every 30 s.
+  - The world off leaves it: the buddy is deleted on the server.
+- **Boops on the board.**
+  - A gesture is a `world` event that Jev answers: always a face, and a sign from the pack's `[world]` lines.
+  - The reason says who, by region.
+  - At most 3 boops, waves and hearts an hour play, and the rest are counted on the World tab. Cheers for one ship are one moment. At night or while you're away they wait, and come back as one line.
+- **The words rule** is in CLAUDE.md and applied to the new strings.
+
+**Checked:**
+- The Swift tests: 718 pass.
+- The firmware's native tests, the simulator's gel scenarios (new goldens for the bar and a `v1` scenario), and Pixel's, with no change.
+- Both boards' firmware builds, and the mirror is rebuilt.
+- `internal/tools/world_e2e.py`: two headless Boops join, see each other, boop and wave, and leave. It passed against `npm run dev` and against the live server (see the orchestrator's note for the run).
+- No server change was needed.
+
+**Evals:**
+- The standard suite passed 130/131, with 748 Jev requests.
+- The new world musts `187` and `188` pass, and `06` is Pixel's. `189`, a boop when cross, moved from grumpy to curious after its guideline was made plainer.
+- The one miss, `18-long-grind` (20 quiet minutes of work, against 7), fails the same way on `main-v2` before this work: it isn't v1's, and it's still to fix.
+- The feel scenarios (110) went to no judge: run the judge on `/tmp/boop-eval/20261108-220953-81575.trajectories.jsonl` if it's still there, or on the next standard run.
+
+**Decisions taken, say if wrong:**
+- The middle tab says "Boop", whatever the buddy is called.
+- Full rings are green on the Mac and gold on the board.
+- A stage reached no longer makes the day a party: it's a bigger level-up.
+- With no growth store (demos, evals), CONTEXT says level 1 with an empty ring.
+- The world switched off deletes the buddy on the server, so Leave the world and the switch do the same thing.
+- The pack's `[grew]` signs and the four growing evals are deleted.
+
+**Owed:**
+- The panel: the ring's bar and label at arm's length, the sparkle, the level-up's low sign, and a boop's bounce. No fps was measured.
+- The judge for the standard run.
+- `18-long-grind`.
+- The world snapshot stays in the popover's status after the World tab closes, and the day's arrivals aren't capped. Both are fine at today's sizes (the /simplify pass's notes).
+- The packs' `engine/` pins move to this commit once it lands.
 
 ## Report, 2026-11-04
 

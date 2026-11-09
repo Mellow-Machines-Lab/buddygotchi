@@ -53,7 +53,8 @@ class Buddy:
     def __init__(self, name: str, url: str) -> None:
         self.name = name
         self.dir = Path(tempfile.mkdtemp(prefix=f"w{name[:3].lower()}", dir="/tmp"))
-        self.home = Path(tempfile.mkdtemp(prefix="home", dir="/tmp"))
+        self.home = self.dir / "home"
+        self.home.mkdir()
         self.sock = self.dir / "boop.sock"
         # A time zone where it's midday now: at night, gestures wait for the morning.
         hour = time.gmtime().tm_hour
@@ -97,6 +98,18 @@ class Buddy:
         f = self.dir / "boop.log"
         return f.read_text() if f.exists() else ""
 
+    def leave(self, url: str) -> None:
+        """Whatever happened, the buddy leaves the world, so nothing stays."""
+        me = self.identity()
+        if not me:
+            return
+        req = urllib.request.Request(url + "/v1/buddies/me", method="DELETE", headers={"Authorization": f"Bearer {me['key']}"})
+        try:
+            urllib.request.urlopen(req, timeout=15).close()
+            print(f"world e2e: {self.name} left")
+        except OSError as exc:
+            print(f"world e2e: {self.name} couldn't leave ({exc}); the server forgets it in 30 days")
+
     def stop(self) -> None:
         RUNNING.remove(self.proc)
         self.proc.terminate()
@@ -107,7 +120,6 @@ class Buddy:
 
     def clean(self) -> None:
         shutil.rmtree(self.dir, ignore_errors=True)
-        shutil.rmtree(self.home, ignore_errors=True)
 
 
 def main(argv: list[str]) -> int:
@@ -137,7 +149,11 @@ def main(argv: list[str]) -> int:
         b.dev({"to": ida, "gesture": "wave"})
         wait("Mochi's boop went", lambda: "the boop went" in a.log(), 30)
         wait("Bean's wave went", lambda: "the wave went" in b.log(), 30)
-        # Each asks for what's waiting on its next send or check: an unlock asks at once.
+        # Each asks for what's waiting on its next send or check: the screen
+        # locked and unlocked asks at once.
+        for x in (a, b):
+            x.send({"dev": "presence", "signal": "locked"})
+        time.sleep(2)
         for x in (a, b):
             x.send({"dev": "presence", "signal": "unlocked"})
         got_b = wait("Bean gets the boop", lambda: [e for e in b.world_events() if e["data"]["specific_type"] == "boop"], 90)
@@ -156,6 +172,7 @@ def main(argv: list[str]) -> int:
     finally:
         for x in (a, b):
             x.stop()
+            x.leave(url)
         if os.environ.get("KEEP") != "1":
             for x in (a, b):
                 x.clean()
