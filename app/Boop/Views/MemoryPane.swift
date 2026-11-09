@@ -17,7 +17,7 @@ struct MemoryPane: View {
                 VStack(alignment: .leading, spacing: Theme.gapSection) {
                     content
                     Text("Written on this Mac as \(model.name) dreams. Its notes go to the brain with each request, and nowhere else.")
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
+                        .caption()
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.leading, 2)
                 }
@@ -30,10 +30,7 @@ struct MemoryPane: View {
     @ViewBuilder private var content: some View {
         if let status = model.status {
             if status.notes.isEmpty, status.recently.isEmpty {
-                Card {
-                    Text("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
-                        .font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
-                }
+                NoteCard("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
             } else {
                 ForEach(WrittenMemory.Section.allCases, id: \.self) { section in
                     PaneSection(section.heading.replacingOccurrences(of: "Boop", with: model.name)) {
@@ -61,11 +58,13 @@ struct MemoryPane: View {
                         }
                         .buttonStyle(.quiet)
                         .help(note.pinned ? "Let it age as the others do" : "Keep it for good, as it is")
+                        .accessibilityLabel(note.pinned ? "Unpin" : "Pin")
                         Button { model.runtime?.forgetNote(note.id) } label: {
                             Image(systemName: "xmark").font(.system(size: 10))
                         }
                         .buttonStyle(.quiet)
                         .help("Forget it")
+                        .accessibilityLabel("Forget")
                     }
                 }
             }

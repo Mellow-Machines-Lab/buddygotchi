@@ -84,9 +84,16 @@ final class AppModel: ObservableObject {
     /// The buddy whose card is open on the World tab, and what was sent it.
     @Published var worldPick: String?
     @Published var worldSent: [String: WorldSend] = [:]
-    enum WorldSend: Equatable {
-        case sending(World.GestureKind), sent, failed
+    /// What was sent one buddy this launch: the kinds that went through,
+    /// which stay sent (the world takes 3 gestures to a buddy an hour),
+    /// the one on its way, and the last one that didn't go.
+    struct WorldSend: Equatable {
+        var sent: Set<World.GestureKind> = []
+        var sending: World.GestureKind?
+        var failed: World.GestureKind?
     }
+    /// A gesture is on its way to some buddy: every button waits for it.
+    var worldSending: Bool { worldSent.values.contains { $0.sending != nil } }
     /// The popover is open. Its views live on while it's closed, so they
     /// hold their loops still until it opens again.
     @Published var shown = false {
@@ -109,9 +116,15 @@ final class AppModel: ObservableObject {
 
     /// Sends `kind` to the buddy `id`, and keeps how it went for its card.
     func sendGesture(_ kind: World.GestureKind, to id: String) {
-        worldSent[id] = .sending(kind)
+        guard !worldSending, worldSent[id]?.sent.contains(kind) != true else { return }
+        worldSent[id, default: .init()].sending = kind
+        worldSent[id]?.failed = nil
         runtime?.sendGesture(kind, to: id) { [weak self] ok in
-            MainActor.assumeIsolated { self?.worldSent[id] = ok ? .sent : .failed }
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.worldSent[id]?.sending = nil
+                if ok { self.worldSent[id]?.sent.insert(kind) } else { self.worldSent[id]?.failed = kind }
+            }
         }
     }
     /// Onboarding's window is open: its acts show the status too.
@@ -420,7 +433,7 @@ final class AppModel: ObservableObject {
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.doing {
         case "working": return "Working"
-        case "idle": return "Idle"
+        case "idle": return "Resting"
         default: return "Napping"
         }
     }

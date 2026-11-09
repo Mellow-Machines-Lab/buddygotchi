@@ -4,9 +4,14 @@ import SwiftUI
 /// The world as a band of time zones, UTC−12 at the left to UTC+14 at the
 /// right: the night side shaded from the time now, every buddy a dot at
 /// its offset, spread up and down so they don't stack, awake ones bright,
-/// and you marked. A click picks the nearest buddy.
+/// and you marked. A click picks the nearest buddy. A buddy with no
+/// offset has no place on it.
 struct WorldBand: View {
     let buddies: [World.Buddy]
+    /// How many are awake, as the world counts them: more than the dots.
+    var awake: Int
+    /// Your own buddy's id in the world: its dot is ringed.
+    var me: String?
     /// Your UTC offset, in minutes, and whether you're in the world: out of
     /// it, "you" is dim.
     let you: Int
@@ -26,8 +31,13 @@ struct WorldBand: View {
                 let size = geo.size
                 Canvas { context, size in
                     shadeNight(context, size)
-                    for buddy in buddies { dot(context, buddy, at: place(buddy, in: size)) }
-                    if let pick, let buddy = buddies.first(where: { $0.id == pick }) {
+                    for buddy in placed { dot(context, buddy, at: place(buddy, in: size)) }
+                    if let me, let buddy = placed.first(where: { $0.id == me }) {
+                        let p = place(buddy, in: size)
+                        context.stroke(Path(ellipseIn: CGRect(x: p.x - 5, y: p.y - 5, width: 10, height: 10)),
+                                       with: .color(Theme.ink.opacity(0.6)), lineWidth: 1)
+                    }
+                    if let pick, let buddy = placed.first(where: { $0.id == pick }) {
                         let p = place(buddy, in: size)
                         context.stroke(Path(ellipseIn: CGRect(x: p.x - 7, y: p.y - 7, width: 14, height: 14)),
                                        with: .color(Theme.ink), lineWidth: 1.5)
@@ -45,9 +55,18 @@ struct WorldBand: View {
             .overlay(RoundedRectangle(cornerRadius: Theme.wellRadius).strokeBorder(Theme.hairline, lineWidth: 1))
             regions
         }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(buddies.filter { $0.activity != .asleep }.count) buddies awake around the world")
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(awake.formatted()) buddies awake around the world")
+        // VoiceOver can't click a dot: the first awake buddies as buttons.
+        .accessibilityChildren {
+            ForEach(placed.filter { $0.activity != .asleep }.prefix(20)) { buddy in
+                Button(buddy.id == me ? "\(buddy.name), you" : buddy.name) { pick = buddy.id }
+            }
+        }
     }
+
+    /// The buddies with a place on the band.
+    private var placed: [World.Buddy] { buddies.filter { $0.utcOffset != nil } }
 
     // MARK: Where things go
 
@@ -76,7 +95,7 @@ struct WorldBand: View {
     static let utc = { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }()
 
     private func nearest(to point: CGPoint, in size: CGSize) -> String? {
-        let near = buddies.map { b -> (String, CGFloat) in
+        let near = placed.map { b -> (String, CGFloat) in
             let p = place(b, in: size)
             return (b.id, hypot(p.x - point.x, p.y - point.y))
         }.min { $0.1 < $1.1 }
@@ -112,7 +131,8 @@ struct WorldBand: View {
     private func dot(_ context: GraphicsContext, _ buddy: World.Buddy, at p: CGPoint) {
         let awake = buddy.activity != .asleep
         let r: CGFloat = awake ? 3 : 2.5
-        let colour = awake ? Self.colour(buddy.activity) : Theme.inkFaint.opacity(0.7)
+        // Asleep, a dim dot that still shows on the night side, dark or light.
+        let colour = awake ? Self.colour(buddy.activity) : scheme == .dark ? Theme.inkSoft.opacity(0.55) : Theme.inkFaint.opacity(0.7)
         context.fill(Path(ellipseIn: CGRect(x: p.x - r, y: p.y - r, width: 2 * r, height: 2 * r)), with: .color(colour))
     }
 
