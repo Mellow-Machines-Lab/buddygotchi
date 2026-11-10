@@ -17,7 +17,7 @@ that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
 **Checked:** `make -C internal check` and `boards`; `world_e2e.py` against `npm run dev`; the board flashed and `boopctl run growbar growth v1 wish`. No Jev run: no prompt changed.
 
-**The board said it was face down** (`dbg.state`: `face_down`, imu z −964). Face down refuses Moments and hides the bar, which is why the board's shots of the bar and the signs differed from the simulator's. Either it lay screen down, or `kFlipZ` is wrong for this unit. Stand it screen up and run `boopctl run growbar growth v1` again.
+**On the board:** it had been lying screen down (`dbg.state`'s `face_down`), which refuses Moments and hides the bar, so 69 shots differed. Screen up, `boopctl run growbar growbar-listening growth v1 wish` gives 0 expect failures and 9 of its shots differ, each a few pixels of the body's motion (the heart's flight, `gone`, the wish's `slump`): the bar, its label, the heart and the signs draw as the simulator's.
 
 **Owed:** the panel by eye (the label in the corner, the sparkle, gold at arm's length, a level's body change before its held Moment); `18-long-grind`; the judge for the standard run; the packs' `engine/` pins once this lands.
 
