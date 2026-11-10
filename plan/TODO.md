@@ -1,8 +1,25 @@
 # TODO
 
-Updated 2026-11-08. What's next, one at a time, top first. Tick an item
+Updated 2026-11-09. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-09: a check and polish of v1, on `v1-polish`
+
+**Read this first.** v1 was reviewed against its plans, the bugs found are fixed with a test each, and the AMOLED runs this branch's firmware. Nothing is pushed; `v1-polish` sits on `main-v2`, and SlimeBuddy's `main-v2` has one new local commit (the label).
+
+**Fixed:**
+- World: a lock keeps the buddy asleep in the world until you're back (it woke again 10 s later); a retry the server had counted sends the state again; cheers' window no longer slides; a gesture while something needs you waits instead of being lost; a quit sends the counts not yet sent; the snapshot goes when the World tab closes; at most 50 arrivals a day are kept.
+- XP: a level-up or the ring held over a quit plays at the board's next hello, and after a demo; a ring held past 5:00 doesn't play the next morning; a size held while the next level comes keeps its bigger moment.
+- The popover: the World tab says when it's private, joining or out of date; your own dot is marked and has no gesture buttons; one gesture at a time, a sent one ticked, a failed one said; "Resting", "Click one", "1 hello"; VoiceOver can reach the band's buddies; asleep dots show in dark mode; ⇧⌘M works on every tab.
+- The board: the "N today" label sits inside the panel's rounded corner (the bar is 232 wide); a ring filled while the bar was hidden shows and sparkles next time it can; one sparkle per fill; the wish that closes the ring keeps its heart; at 5:00 the bar slides out.
+- `boopctl run` stops when the board says it's face down.
+
+**Checked:** `make -C internal check` and `boards`; `world_e2e.py` against `npm run dev`; the board flashed and `boopctl run growbar growth v1 wish`. No Jev run: no prompt changed.
+
+**The board said it was face down** (`dbg.state`: `face_down`, imu z −964). Face down refuses Moments and hides the bar, which is why the board's shots of the bar and the signs differed from the simulator's. Either it lay screen down, or `kFlipZ` is wrong for this unit. Stand it screen up and run `boopctl run growbar growth v1` again.
+
+**Owed:** the panel by eye (the label in the corner, the sparkle, gold at arm's length, a level's body change before its held Moment); `18-long-grind`; the judge for the standard run; the packs' `engine/` pins once this lands.
 
 ## Report, 2026-11-08: Boop v1 on `main-v2`
 
