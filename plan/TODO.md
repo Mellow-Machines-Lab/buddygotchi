@@ -4,6 +4,131 @@ Updated 2026-11-09. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Plan, 2026-11-09: after the product review
+
+**Read this first.** The owner's answers to [product-review.md](product-review.md)
+§13, and the work in order. Bug numbers (#) and section numbers (§) are the review's.
+The brain in the box and the voice come last ([TODOs.md](TODOs.md)): Jev stays the
+brain until the behaviour is right, and every phase below shapes that behaviour.
+
+### Decided
+
+- **Boop is a coworker and a pet, about equally.** Not a mirror: notices and memory
+  stay small and correctable. Say it at the top of `personality.md` (Phase 2).
+- **Status:** a finish waits longer in the queue, not folded (keeps it simple). A
+  failed check wakes the brain on the ladder: the first failure, the third in a
+  row, and a pass after failures. Ring and level make one moment. Rough touches
+  (shake, wrong-way stroke) earn no XP. No hourly check-ins while you're away.
+  Prompt reactions stay; only a turn start with no prompt stops asking the brain.
+- **Growth:** XP amounts may change, set from a measured week. Stage names leave the
+  UI; the bigger body at 5, 15 and 30 stays. Marks at levels 50, 100 and 365; the
+  shelf only if the Boop tab gets opened. Most pastimes unlock from day one, 6 stay
+  as stage rewards.
+- **The model:** 7 moods and 18 emotions, by an alias table first and deletion after
+  a week. Fades as numbers in code, and no mood graph. Code picks the move and the
+  size. Activities 8 to 4, touches 14 to 7; tiers 5 to 3 last.
+- **Friend:** the signs' register is settled now (lowercase, teasing); the spoken
+  words wait for the voice. An idle floor. Awake while you're at the Mac. No swearing
+  by default, with a switch. The memory writer is frozen until two real weeks are read.
+- **World:** a goal a month, no XP reward. The public list shows no names. A rename
+  once a week. A poke boops back. A product domain before any buyer.
+- **Scope:** stop several buddies; stop the CYD and Pixel in the engine after v1's
+  panel checks; the Studio becomes one contact sheet; onboarding goes to 5 acts once
+  the board teaches touches itself, keeping the brain card until the end.
+- **Measure:** the counts below, and evals that cover act events, stacked finishes
+  and batched gestures.
+
+**Still open:** how care counts in the ring (below); a Mac-only test with 10 people
+(review §9.4).
+
+### Phase 0: fix and measure
+
+- [ ] Finishes wait longer in the queue (`BoopDevice.swift:36`, `reactionTTL`; #1).
+      Test: three agents end within 2 s, and three names show.
+- [ ] Failed checks reach the brain on the ladder (`Harness.swift:604`,
+      `TranscriptView.swift:334-336`; #2). Eval `04` gets act events so it can fail.
+- [ ] One moment for ring and level (`Core.swift:523-537`; #3): the sign
+      `today's done!` and the low sign `Level N!`.
+- [ ] A level-up cut by needs you comes back (`GrowthStore.swift:118-131`; #4), and
+      is sent once (`Runtime.swift:792-811`; #5).
+- [ ] Rough touches earn no XP (`Touch.swift:24-28`, `Growth.swift:68`; #6). A poke
+      stays at 0, as now.
+- [ ] Batched world gestures play (`WorldGestures.swift:47-51`; #7); a cheer needs a
+      ship (`internal/world/src/app.ts`; #8); "while you were away" only after an
+      away (#10); the data race at `Runtime+World.swift:135` (#11).
+- [ ] The dream's sentence names its threads and its real days; the morning caption
+      leads with turns (`MemoryReader.swift:254, 262-267`; #13 to #15).
+- [ ] No brain pass for hourly check-ins while away, or a turn start with no prompt
+      (#17, #18); fix the `(no pass)` debug label.
+- [ ] Quick wins 1 to 5, 11, 12, 15, 17 to 22 and 26 (review §11.1): strings, asks,
+      `[bye working]`, Login Items, the narrations that scold.
+- [ ] Trust: the world screen and Settings name all five counts; the brain's
+      line says what goes to Jev (#24, #25).
+- [ ] Daily counts: the hour the ring closed, XP by source and past the cap,
+      finishes played and dropped, needs-you answer time in seconds, push-to-talk
+      uses, asks shown and answered, touches by kind, world gestures in, played,
+      held and sent, Boop and World tab opens (`DailyCounts.swift`).
+- [ ] Owed panel checks with the Mac off (the reports below): `perf --scenes`,
+      latency, the ring's label and sparkle at arm's length.
+
+Jev: `--only` on the scenarios each fix touches, then one standard run at the end.
+
+### Phase 1: growth
+
+- [ ] Run Phase 0's counts on the owner's own desk for a week.
+- [ ] Decide how care counts (open, below), then set the amounts in `Growth.swift`
+      from the week, and pin them in `GrowthTests`.
+- [ ] Part-full rings blue, not red; no "XP" in the UI (`BoopPane.swift`).
+- [ ] Stage names out of the UI and the world; marks at 50, 100 and 365.
+- [ ] Unlock pastimes but 6 (`pastimes.cpp`'s stage column).
+- [ ] A demo that sends `xp`, and scripted evals for the ring and a level-up.
+
+### Phase 2: the model
+
+- [ ] "A coworker and a pet" at the top of `personality.md`.
+- [ ] The alias table: 42 emotions onto 18, 16 moods onto 7 (`character.json`),
+      with cross as one mood with a level counted by code. A week on the owner's desk.
+- [ ] Then delete: the 24 emotions' art, 9 mood files, the graph and its bridge
+      tests; fades as numbers in code.
+- [ ] Code picks the move and the size; Jev's questions drop to mood, emotion, say
+      and sometimes a sign (`MomentOutput.swift`).
+- [ ] Activities to 4 on the board, each with a body-size prop; touches to 7, each
+      with its own clear answer; tiers to 3.
+- [ ] Stop several buddies; then, after the panel checks, the CYD and Pixel in the
+      engine; the Studio as one contact sheet.
+
+Jev: `--only` while building; one standard run and the judge to re-baseline.
+
+### Phase 3: the pet and the content
+
+- [ ] The signs' register: one page in the pack (`VOICE.md`), and the code's signs
+      (`Level N!`, `Today's done!`, the special days) moved into the pack.
+- [ ] About 170 sign lines where they fire most (review `words.md` §I).
+- [ ] Asks that come back: 20, some daily, some monthly (`asks.md`, `Asks.swift`).
+- [ ] Notices that read as care, each with its own pose and a sign (review idea 2.4).
+- [ ] The pet side: wishes with more variety, first-time hints for each touch on
+      the board (idea 1.13), care that shows on the ring.
+
+### Phase 4: the day and the world
+
+- [ ] Awake while you're at the Mac with no agent, on the board and in the world (#9).
+- [ ] The idle floor; the evening card.
+- [ ] The swear switch, off by default.
+- [ ] World: a monthly goal, "Mochi added 82", the honest small world, boop back,
+      no names in the public list, rename, the product domain, the abuse limits (#12).
+- [ ] Onboarding in 5 acts, the brain card kept.
+
+### Open
+
+- [ ] **How care counts in the ring.** With the pet equal, care must move the ring
+      on a busy day too, and new amounts alone can't promise that. Options: (a) new
+      amounts only, measured; (b) work can fill at most part of the ring (say 70),
+      so the rest is care; (c) two halves, work and care, and the ring closes when
+      both are full. (b) and (c) bend "no limits by source". Recommended: (b), set
+      from the week of counts, and never a sad Boop for a ring that isn't full.
+- [ ] A Mac-only Boop for 10 testers (review §9.4): it bends "built for buyers of a
+      board", and is the only way to get real counts before hardware ships.
+
 ## Report, 2026-11-09: a check and polish of v1, on `v1-polish`
 
 **Read this first.** v1 was reviewed against its plans, the bugs found are fixed with a test each, and the AMOLED runs this branch's firmware. Nothing is pushed; `v1-polish` sits on `main-v2`, and SlimeBuddy's `main-v2` has one new local commit (the label).

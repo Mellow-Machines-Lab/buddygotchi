@@ -12,6 +12,8 @@ What's next before them stays in [TODO.md](TODO.md).
 - **XP amounts may change.**
 - **Any earlier call may be reopened**, the calls of 2026-11-01 included
   (fades, the move, several buddies, the CYD, onboarding's acts).
+- **Boop is a coworker and a pet, about equally.** The rest of the owner's
+  answers, and the phases before these two pieces, are in [TODO.md](TODO.md).
 
 ## At the end
 
