@@ -225,6 +225,12 @@ def cmd_run(args: argparse.Namespace) -> int:
     with Device(args.port) as dev:
         hello = dev.request({"t": "hello"})
         os.environ["BOOP_SIM_FACE"] = "gel" if hello.get("face") == "gel" else "pixel"
+        if dev.request({"t": "dbg.state"}).get("face_down"):
+            # Face down is do not disturb: no Moments, no bar, so every shot
+            # with one would differ from the simulator's for no fault of the code.
+            print("boopctl: the board says it's face down (dbg.state's imu); stand it screen up and run again",
+                  file=sys.stderr)
+            return 2
         paths = pick(args.scenario)
         _, sim_dirs = sim_all(paths)
         try:

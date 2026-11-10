@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-08. How we check that Boop works, including what's on its
+Updated 2026-11-09. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -395,7 +395,8 @@ accepted; the mirror's shots are the simulator's.
    Mac app connected over Bluetooth keeps sending its own `state`, which
    silently replaces the test's.
 2. `internal/tools/boopctl run`: every `expect` passes, and every
-   screenshot is identical to the simulator's.
+   screenshot is identical to the simulator's. It stops at once if the
+   board says it's face down, which refuses Moments and hides the bar.
 3. `internal/tools/boopctl perf --motion`: a frame drawn in every second
    while moving, no sampled frame taking over 40 ms to draw and push (on a
    board whose `hello` says `gel`, the longer of the two), at
