@@ -1,0 +1,1 @@
+const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const c=await b.newContext({viewport:{width:360,height:400},deviceScaleFactor:2});const p=await c.newPage();for(const n of ['now','boop','world','settings']){await p.goto('file:///tmp/ui/mock/'+n+'.html');await p.screenshot({path:'/tmp/ui/mock/'+n+'-after.png',fullPage:true});}await b.close()})()
