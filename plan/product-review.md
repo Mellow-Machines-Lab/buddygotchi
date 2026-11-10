@@ -293,7 +293,7 @@ Only `level` is counted today.
 
 ### 4.1 Clarity at a glance
 
-Judged on the simulator's frames at 320 × 240 (`/tmp/boop-review/sheets/`). The real panel was not used (§14).
+Judged on the simulator's frames at 320 × 240 (`~/.boopdev/product-review-2026-11-09/sheets/`). The real panel was not used (§14).
 
 | What | One second, arm's length? | Evidence |
 | --- | --- | --- |
@@ -340,7 +340,7 @@ The Mac's words are mostly warm and short. Onboarding's first-person voice is th
 | Silence | Hush, Hushed, Quiet, Muted, Off |
 | Growth | XP (which the UI's own rule calls game jargon), level, ring, today |
 
-The full table of strings, with 25 rewrites by file and line, is in `/tmp/boop-review/words.md` (§A and §H). The best of them are in the quick wins (§11).
+The full table of strings, with 25 rewrites by file and line, is in `evidence/2026-11-09-product-review/words.md` (§A and §H). The best of them are in the quick wins (§11).
 
 ### 4.5 Trust
 
@@ -377,7 +377,7 @@ Each idea has the same fields. **Size:** S is under a day, M is a few days, L is
 
 **1.2 An activity you can read from your chair** · M · conf. medium
 - **The moment:** always, while Doing is working.
-- **Sees and hears:** today the eight activities differ only by a 30-pixel picture on the small monitor (`/tmp/boop-review/sheets/gel-states.png`). Merge them to four on the board (§8.3) and give each a prop at body size: typing (keys only), testing (the crash helmet from the tests act, worn small), looking (a magnifier held up), waiting (chin on the desk). No words.
+- **Sees and hears:** today the eight activities differ only by a 30-pixel picture on the small monitor (`~/.boopdev/product-review-2026-11-09/sheets/gel-states.png`). Merge them to four on the board (§8.3) and give each a prop at body size: typing (keys only), testing (the crash helmet from the tests act, worn small), looking (a magnifier held up), waiting (chin on the desk). No words.
 - **Why:** "at a glance" is the promise of pillar 1. Today a glance says "working", not how.
 - **Principles:** the small screen stays clear (props replace, they do not add).
 - **Where:** `firmware/src/render/types.h`, `render/gel/pastimes.cpp` (kit), `rig/looks.json`, `app/BoopKit/Core/Activity.swift`.
@@ -844,7 +844,7 @@ The owner asked this question on 2026-11-01 and asks it again. The first audit r
 
 ### 8.1 The inventory
 
-Lines are `wc -l`, comments included. "Est." marks an estimate. The full tables and the commands are in `/tmp/boop-review/inventory.md`.
+Lines are `wc -l`, comments included. "Est." marks an estimate. The full tables and the commands are in `evidence/2026-11-09-product-review/inventory.md`.
 
 | Concept | Values today | Defined in | Cost |
 | --- | --- | --- | --- |
@@ -878,7 +878,7 @@ Hand-written product code is about 57,600 lines. Tests and tools are about 66,00
 
 ### 8.2 What each concept is worth
 
-The data is nine standard Jev runs: 6,363 passes and 5,138 Moments (`/tmp/boop-review/frequency.md`). Its limit: the scenarios choose the events, so a share means "what Jev picks when this happens", not "what a buyer sees in a day". The frames are the simulator's (`/tmp/boop-review/sheets/`).
+The data is nine standard Jev runs: 6,363 passes and 5,138 Moments (`evidence/2026-11-09-product-review/frequency.md`). Its limit: the scenarios choose the events, so a share means "what Jev picks when this happens", not "what a buyer sees in a day". The frames are the simulator's (`~/.boopdev/product-review-2026-11-09/sheets/`).
 
 **Moods: five do the work of sixteen.**
 
@@ -1020,7 +1020,7 @@ Surprised becomes an emotion only. It was a mood for 1 minute.
 
 ### 8.4 The Character Studio
 
-**What it is today.** 8 tabs and 16 views in 2,990 hand-written lines, plus 563 lines of `charactergen.py` that exist only to feed it. The full audit is in `/tmp/boop-review/studio.md`, with a screenshot of every view in `/tmp/boop-review/studio/`.
+**What it is today.** 8 tabs and 16 views in 2,990 hand-written lines, plus 563 lines of `charactergen.py` that exist only to feed it. The full audit is in `evidence/2026-11-09-product-review/studio.md`, with a screenshot of every view in `~/.boopdev/product-review-2026-11-09/studio/`.
 
 **Who uses it.** The owner, to look at every mood against every state. No one else: the playbook's 7 steps for a new character never use it, `CHARACTER.md` §14 calls the Studio entry optional, and the worker that made Pixel Bro wrote its own contact sheet.
 
@@ -1045,7 +1045,7 @@ Surprised becomes an emotion only. It was a mood for 1 minute.
 1. One page, the contact sheet: Matrix, with Scene as a cell's detail. About 1,050 lines.
 2. `charactergen.py --check` prints the gap list.
 3. `packs.js` is made on demand by the server or a `--studio` flag, not as a side effect of `--check`. Without the pretty-printed voice tables it is about 1,500 lines.
-4. Better still, a static sheet: `boopctl sheet` writes one PNG per pack from the simulator, as `/tmp/boop-review/sheets/gel-moods.png` was made for this review with 20 lines of Python. Then the Studio needs no server and no JavaScript.
+4. Better still, a static sheet: `boopctl sheet` writes one PNG per pack from the simulator, as `~/.boopdev/product-review-2026-11-09/sheets/gel-moods.png` was made for this review with 20 lines of Python. Then the Studio needs no server and no JavaScript.
 
 **It deletes** about 2,500 hand-written lines, 14 views, `behavior.json`, and the README's 387 lines of upkeep (changed in 21 of 33 Studio commits). **It risks** the in-browser playback of takes, the transitions scrubber, and the behaviour map's two code checks.
 
@@ -1256,7 +1256,7 @@ Each is under a day. Strings first, then numbers, then small rules.
 
 ### 11.2 Bugs found, not fixed
 
-Nothing was changed in this session. Each bug has its log in `/tmp/boop-review/runtime.md`.
+Nothing was changed in this session. Each bug has its log in `evidence/2026-11-09-product-review/runtime.md`.
 
 | # | Bug | Where | How it fails |
 | --- | --- | --- | --- |
@@ -1340,11 +1340,11 @@ No Jev request was made in this session (`boopdev eval --list`: "today: 0 of 250
 | --- | --- |
 | `git status`, `git log --oneline -12`, `git log --oneline main-v2..v1-polish` | Clean; HEAD `270ee70c` |
 | `make -C internal build` | Passed |
-| `.build/debug/Boop --snapshots /tmp/boop-review/snaps` | 286 PNGs |
+| `.build/debug/Boop --snapshots ~/.boopdev/product-review-2026-11-09/snaps` | 286 PNGs |
 | `make -C internal sim` | 23 scenarios, 0 expect failures, 0 changed pictures; frames in `/tmp/boop-sim/v1-polish-d3b1e3/` |
 | `internal/tools/boopctl board`, `ping`, `state` | Free; `ble: conn`; `face_down: true`; `fps: 34` |
 | `.build/debug/Boop --headless --state-dir /tmp/br1 --link usb:/tmp/brb.sock --brain scripted --no-open --debug` | Scenes a to g, on the native simulator through `linkkit-bridge` |
-| `.build/debug/Boop --counts --state-dir /tmp/br1` | `/tmp/boop-review/runtime/counts-live.txt` |
+| `.build/debug/Boop --counts --state-dir /tmp/br1` | `evidence/2026-11-09-product-review/runtime/counts-live.txt` |
 | `npm run dev` in `internal/world`, then `internal/tools/world_e2e.py http://localhost:8787` | PASS |
 | `.build/debug/boopdev eval --list`, `--level standard --list`, `--scripted --timeline` | 142 scenarios; scripted 142 of 142 |
 | `git show plan-simplify:plan/simplify-behavior.md` | The earlier audit, 571 lines |
@@ -1353,15 +1353,15 @@ No Jev request was made in this session (`boopdev eval --list`: "today: 0 of 250
 
 | File | Holds |
 | --- | --- |
-| `/tmp/boop-review/inventory.md` | Every concept: values, where defined, lines, tests (§8.1) |
-| `/tmp/boop-review/frequency.md` and its `*-tables.md` | Nine Jev runs tallied: moods, emotions, sizes, voice, signs, the graph, pastimes (§8.2) |
-| `/tmp/boop-review/studio.md`, `/tmp/boop-review/studio/*.png` | The Studio, view by view, with 32 screenshots (§8.4) |
-| `/tmp/boop-review/runtime.md`, `/tmp/boop-review/runtime/` | The headless day: `headless.log`, `world-*.log`, `care-live.log`, `ring.log`, `world_e2e.txt` (§2, §3, §11.2) |
-| `/tmp/boop-review/words.md` | Every string, sign, ask, reply and narration, with 25 rewrites and 35 inconsistencies (§4.4, §11.1) |
+| `evidence/2026-11-09-product-review/inventory.md` | Every concept: values, where defined, lines, tests (§8.1) |
+| `evidence/2026-11-09-product-review/frequency.md` and its `*-tables.md` | Nine Jev runs tallied: moods, emotions, sizes, voice, signs, the graph, pastimes (§8.2) |
+| `evidence/2026-11-09-product-review/studio.md`, `~/.boopdev/product-review-2026-11-09/studio/*.png` | The Studio, view by view, with 32 screenshots (§8.4) |
+| `evidence/2026-11-09-product-review/runtime.md`, `evidence/2026-11-09-product-review/runtime/` | The headless day: `headless.log`, `world-*.log`, `care-live.log`, `ring.log`, `world_e2e.txt` (§2, §3, §11.2) |
+| `evidence/2026-11-09-product-review/words.md` | Every string, sign, ask, reply and narration, with 25 rewrites and 35 inconsistencies (§4.4, §11.1) |
 
-`/tmp` is cleared in time. The Jev trajectories the frequency report read are on the owner's Mac in `~/.boopdev/night-2026-11-01/`, `~/.boopdev/day2/`, `~/.boopdev/tonight/` and `/tmp/boop-eval/20261108-220953-81575.*` (the last is the only one with every option's probability, and `/tmp/boop-eval` is cleared after a day).
+**Where it's kept.** The text (reports, tallies, logs and the scripts that made them) is in [evidence/2026-11-09-product-review/](evidence/2026-11-09-product-review/). The pictures and a full copy (snapshots, contact sheets, Studio screenshots, eval outputs) are on the owner's Mac in `~/.boopdev/product-review-2026-11-09/`. The Jev trajectories the frequency report read are on the owner's Mac in `~/.boopdev/night-2026-11-01/`, `~/.boopdev/day2/`, `~/.boopdev/tonight/` and `/tmp/boop-eval/20261108-220953-81575.*` (the last is the only one with every option's probability, and `/tmp/boop-eval` is cleared after a day).
 
-**Pictures looked at** (contact sheets made from the snapshots and the simulator's frames, in `/tmp/boop-review/sheets/`).
+**Pictures looked at** (contact sheets made from the snapshots and the simulator's frames, in `~/.boopdev/product-review-2026-11-09/sheets/`).
 
 | Sheet | From |
 | --- | --- |

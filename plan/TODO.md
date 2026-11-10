@@ -10,6 +10,9 @@ that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 §13, and the work in order. Bug numbers (#) and section numbers (§) are the review's.
 The brain in the box and the voice come last ([TODOs.md](TODOs.md)): Jev stays the
 brain until the behaviour is right, and every phase below shapes that behaviour.
+The review's evidence (reports, logs, the bugs' log lines) is in
+[evidence/2026-11-09-product-review/](evidence/2026-11-09-product-review/); its
+pictures are in `~/.boopdev/product-review-2026-11-09/`.
 
 ### Decided
 

@@ -1,0 +1,5 @@
+world e2e: http://localhost:8787, {'ok': True, 'db': True}
+world e2e: joined, Mochi 14d981b0…, Bean f3e011d6…
+world e2e: each sees the other in the world
+world e2e: Bean got {'count': 1, 'from_region': 'asia_oceania', 'held': True, 'specific_type': 'boop'}, Mochi got {'count': 1, 'from_region': 'asia_oceania', 'specific_type': 'wave'}
+world e2e: PASS, both left and nothing stays
