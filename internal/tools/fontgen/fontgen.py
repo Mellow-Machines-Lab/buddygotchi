@@ -21,8 +21,9 @@ OUT_GEL = REPO / "characters" / "boop" / "firmware" / "include" / "fonts_gel.h"
 # The two weights it draws, from the geist npm package 1.7.2, with their
 # licence beside them.
 TTF_DIR = Path(__file__).resolve().parent / "geist-mono"
-# Drawn after '~' (0x7E), in this order; the renderer maps UTF-8 to them.
-EXTRAS = ["·"]
+# Drawn after "~" (0x7E), in this order; the renderer maps UTF-8 to them: the
+# middle dot, and the ellipsis a cut ends in on the gel (one cell, not "..").
+EXTRAS = ["·", "…"]
 # name, weight file, pixel size
 FONTS = [("kFontSmall", "GeistMono-Medium.ttf", 13), ("kFontLarge", "GeistMono-SemiBold.ttf", 22),
          ("kFontSign", "GeistMono-SemiBold.ttf", 28)]

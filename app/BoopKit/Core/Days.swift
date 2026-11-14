@@ -22,12 +22,12 @@ public enum Days {
     }
 
     /// The fixed holidays, by month and day, each with its words and its
-    /// sign.
+    /// sign, in lower case as everything Boop holds is.
     static let holidays: [(tag: String, month: Int, days: ClosedRange<Int>, words: String, sign: String)] = [
-        ("newyear", 1, 1...1, "New Year's Day", "Happy New Year!"), ("valentines", 2, 14...14, "Valentine's Day", "Happy Valentine's"),
-        ("piday", 3, 14...14, "Pi Day", "Happy Pi Day!"), ("aprilfools", 4, 1...1, "April Fools' Day", "April Fools'!"),
-        ("may4", 5, 4...4, "May the 4th", "May the 4th!"), ("halloween", 10, 31...31, "Halloween", "Happy Halloween!"),
-        ("winter", 12, 24...26, "the winter holidays", "Happy holidays!"),
+        ("newyear", 1, 1...1, "New Year's Day", "happy new year!"), ("valentines", 2, 14...14, "Valentine's Day", "happy valentine's"),
+        ("piday", 3, 14...14, "Pi Day", "happy pi day!"), ("aprilfools", 4, 1...1, "April Fools' Day", "april fools'!"),
+        ("may4", 5, 4...4, "May the 4th", "may the 4th!"), ("halloween", 10, 31...31, "Halloween", "happy halloween!"),
+        ("winter", 12, 24...26, "the winter holidays", "happy holidays!"),
     ]
 
     /// One special day today: its calendar tag (nil for one of Boop's own
@@ -58,12 +58,12 @@ public enum Days {
     /// holidays, Programmers' Day and Lunar New Year.
     static func calendar(_ c: LocalTime.Parts, at ms: Int64, time: LocalTime) -> [SpecialDay] {
         var on: [SpecialDay] = []
-        if c.weekday == 6, c.day == 13 { on.append(SpecialDay(tag: "friday13", words: "Friday the 13th", sign: "Friday the 13th!")) }
+        if c.weekday == 6, c.day == 13 { on.append(SpecialDay(tag: "friday13", words: "Friday the 13th", sign: "friday the 13th!")) }
         for h in holidays where h.month == c.month && h.days.contains(c.day) {
             on.append(SpecialDay(tag: h.tag, words: h.words, sign: h.sign))
         }
-        if c.dayOfYear == 256 { on.append(SpecialDay(tag: "programmers", words: "Programmers' Day", sign: "Programmers' Day!")) }
-        if time.isLunarNewYear(ms) { on.append(SpecialDay(tag: "lunar", words: "Lunar New Year", sign: "Lunar New Year!")) }
+        if c.dayOfYear == 256 { on.append(SpecialDay(tag: "programmers", words: "Programmers' Day", sign: "programmers' day!")) }
+        if time.isLunarNewYear(ms) { on.append(SpecialDay(tag: "lunar", words: "Lunar New Year", sign: "lunar new year!")) }
         return on
     }
 
@@ -96,7 +96,7 @@ public enum Days {
                                     sign: years == 1 ? "1 year old!" : "\(years) years old!"))
             } else if isMilestone(days: days, hatched: hatched, today: today) {
                 out.append(days == monthDays ? SpecialDay(words: "\(name) is a month old", sign: "1 month old!")
-                    : SpecialDay(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
+                    : SpecialDay(words: "\(name) is \(days) days old", sign: "day \(days)!"))
             }
         }
         return out

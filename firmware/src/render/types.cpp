@@ -71,6 +71,19 @@ Outcome outcomeFromName(const char* name) {
   return Outcome::kNone;
 }
 
+namespace {
+constexpr const char* kAttnKinds[] = {nullptr, "approve", "question", "plan"};
+}
+
+AttnKind attnKindFromName(const char* name) {
+  for (int i = 1; name && i < int(sizeof(kAttnKinds) / sizeof(kAttnKinds[0])); ++i) {
+    if (!std::strcmp(name, kAttnKinds[i])) return AttnKind(i);
+  }
+  return AttnKind::kNone;
+}
+
+const char* attnKindName(AttnKind k) { return kAttnKinds[int(k) < 4 ? int(k) : 0]; }
+
 StartCtx ctxFromName(const char* name) {
   for (int i = 1; name && i < int(sizeof(kCtxs) / sizeof(kCtxs[0])); ++i) {
     if (!std::strcmp(name, kCtxs[i])) return StartCtx(i);

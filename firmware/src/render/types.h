@@ -89,6 +89,12 @@ enum class Outcome : uint8_t { kNone, kSuccess, kFailure };
 enum class StartCtx : uint8_t { kNone, kNewTask, kSession, kContinuation, kCompacted };
 Outcome outcomeFromName(const char* name);  // "success" or "failure"; kNone otherwise
 StartCtx ctxFromName(const char* name);     // "new_task", "session", "continuation" or "compacted"; kNone otherwise
+// What the needs-you request asks of you (`attn.kind`): a yes or no to a
+// call, a question to answer, or a plan to read; kNone when the Mac doesn't
+// say (an older app, or practice).
+enum class AttnKind : uint8_t { kNone, kApprove, kQuestion, kPlan };
+AttnKind attnKindFromName(const char* name);  // "approve", "question" or "plan"; kNone otherwise
+const char* attnKindName(AttnKind k);         // the wire's name; null for kNone
 // The tier the turn a finish is for reached (its `turn`), as the tags count
 // them (render/tags.h): 0 short of the first, then 1 to kTurnTiers for tier1
 // to tier5; kNoTurn when the Mac doesn't say.

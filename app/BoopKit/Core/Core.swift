@@ -520,21 +520,25 @@ public final class Core {
                 fx.append(.record(Event(at: now, source: .boop, type: .ring, specificType: "closed")))
             }
         }
-        // One moment for them all: the last level's, else the ring's.
+        // One moment for them all. The ring closing: Boop holds up that
+        // today's done. A level: its words held low in gold, the rim
+        // glowing gold, with the ring's sign when both come at once.
+        let ring = beats.contains(.ringClosed)
         guard let (n, size) = level else {
-            return play(Moment(mood: Self.ringFace, loops: 2, reason: Self.ringReason), for: nil, now, &fx)
+            return play(Moment(mood: Self.ringFace, loops: 2, sign: Self.ringSign), for: nil, now, &fx)
         }
-        var m = Moment(mood: size == nil ? Self.levelFace : Self.grewFace, loops: size == nil ? 2 : 3, sign: Self.levelSign(n),
+        var m = Moment(mood: size == nil ? Self.levelFace : Self.grewFace, loops: size == nil ? 2 : 3,
+                       sign: ring ? Self.ringSign : nil,
                        reason: Narration.fit([size.map { "now a \($0)" } ?? "level \(n)!"], name: config.pack.name))
-        m.low = true
+        m.gold = Self.levelSign(n)
         play(m, for: nil, now, &fx)
     }
 
-    /// The level-up's sign, on the low sign: `Level 12!`.
-    public static func levelSign(_ level: Int) -> String { "Level \(level)!" }
-    /// The ring closing's reason, in the lane's few characters
-    /// (`Narration.maxFact`); the Mac's narration says the rest.
-    public static let ringReason = "Today's done!"
+    /// The level-up's words, held low in gold: `level 12!`, lower case, as
+    /// everything Boop holds is.
+    public static func levelSign(_ level: Int) -> String { "level \(level)!" }
+    /// What Boop holds up as today's ring closes.
+    public static let ringSign = "today's done!"
     /// The faces the growth moments play: a level, a size grown, the ring.
     static let levelFace = "proud", grewFace = "excited", ringFace = "happy"
 

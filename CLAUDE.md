@@ -229,7 +229,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
-| low sign | A card Boop holds up in the strip's place, two lines at most: a finish's thread (`gel::LowSign`) | ticket | |
+| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a remembered line, a level in gold (`gel::LowSign`) | ticket | `low`, `gold` |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet, normal, chatty, or silent for a while (a hush) (`Talk`, `Core.Hush`) | chattiness, mute (that's the volume) | `talk`, `hush`, `hushed` |
 | narration | The plain words for why, the Mac's and the gel's board's own for a touch, never Jev's or Boop's voice (`Narration`, `app/touch_reason.h`); on the board, the caption | explanation | `reason` |

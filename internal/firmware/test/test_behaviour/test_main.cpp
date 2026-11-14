@@ -1665,6 +1665,69 @@ static void test_a_spoken_reaction_shows_its_words_and_its_caption() {
   TEST_ASSERT_EQUAL_STRING("you picked Boop up", r.b.caption(r.t));
 }
 
+// After the bubble the caption stays to be read: a spoken reaction's reason
+// lasts kSignMinMs past its words, as a face with one row for both shows the
+// bubble first.
+static void test_a_spoken_reactions_caption_outlasts_its_words() {
+  NEEDS_VOICE_PACK();
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  ReactionIn picked = expressive(render::Mood::kHappy);
+  std::snprintf(picked.reason, sizeof picked.reason, "%s", "you picked Boop up");
+  picked.key = 1;
+  onReaction(r.b, picked, r.t);
+  for (int i = 0; i < 100 && !r.b.bubble(r.t); ++i) r.at(r.t + 20);
+  for (int i = 0; i < 1000 && r.b.bubble(r.t); ++i) r.at(r.t + 20);
+  TEST_ASSERT_NULL(r.b.bubble(r.t));
+  TEST_ASSERT_EQUAL_STRING("you picked Boop up", r.b.caption(r.t));
+  r.at(r.t + Behaviour::kSignMinMs);
+  TEST_ASSERT_NULL(r.b.caption(r.t));
+}
+
+// A celebration's gold (`gold`, "level 13!") shows beside the sign, from
+// the reaction's start, at least a low sign's time; a gold alone plays too.
+// It takes the caption's row, a newer reaction takes it down, and while
+// something needs you it doesn't show.
+static void test_a_gold_shows_beside_the_sign() {
+  Rig r;
+  r.state(base("idle"));
+  r.at(1000);
+  ReactionIn both = expressive(render::Mood::kProud, nullptr);
+  std::snprintf(both.sign, sizeof both.sign, "%s", "today's done!");
+  std::snprintf(both.gold, sizeof both.gold, "%s", "level 13!");
+  std::snprintf(both.reason, sizeof both.reason, "%s", "level 13!");
+  both.key = 1;
+  onReaction(r.b, both, r.t);
+  render::SignShow s = r.b.sign(r.t);
+  TEST_ASSERT_EQUAL_STRING("today's done!", s.text);
+  TEST_ASSERT_EQUAL_STRING("level 13!", s.gold);
+  TEST_ASSERT_EQUAL_UINT32(0, s.goldMs);
+  TEST_ASSERT_NULL(r.b.caption(r.t));
+  r.at(1000 + Behaviour::kLowSignMinMs - 1);
+  TEST_ASSERT_EQUAL_STRING("level 13!", r.b.sign(r.t).gold);
+  r.at(1000 + Behaviour::kLowSignMinMs);
+  TEST_ASSERT_NULL(r.b.sign(r.t).gold);
+  // Alone.
+  r.at(10000);
+  ReactionIn alone = expressive(render::Mood::kProud, nullptr);
+  std::snprintf(alone.gold, sizeof alone.gold, "%s", "level 14!");
+  alone.key = 2;
+  TEST_ASSERT_NULL(r.b.admit(alone, r.t));
+  onReaction(r.b, alone, r.t);
+  TEST_ASSERT_EQUAL_STRING("level 14!", r.b.sign(r.t).gold);
+  TEST_ASSERT_NULL(r.b.sign(r.t).text);
+  // A newer reaction takes it down.
+  ReactionIn plain = expressive(render::Mood::kHappy, nullptr);
+  plain.key = 3;
+  onReaction(r.b, plain, r.t);
+  TEST_ASSERT_NULL(r.b.sign(r.t).gold);
+  // Needs you hides it.
+  onReaction(r.b, alone, r.t);
+  r.state(attn());
+  TEST_ASSERT_NULL(r.b.sign(r.t).gold);
+}
+
 // The wish on the board: the kind while the Mac says it waits; met or left,
 // how it went for WishShow::kPopMs, whatever state comes under it; no pop
 // with no wish shown before.
@@ -4395,6 +4458,8 @@ int main() {
   RUN_TEST(test_the_wish_shows_and_pops);
   RUN_TEST(test_the_wish_goes_with_the_app);
   RUN_TEST(test_a_spoken_reaction_shows_its_words_and_its_caption);
+  RUN_TEST(test_a_spoken_reactions_caption_outlasts_its_words);
+  RUN_TEST(test_a_gold_shows_beside_the_sign);
   RUN_TEST(test_a_sign_shows_while_its_reaction_plays);
   RUN_TEST(test_alone_it_rests_then_sleeps_and_a_touch_wakes_it);
   RUN_TEST(test_the_growth_bar_comes_when_the_xp_moves);
