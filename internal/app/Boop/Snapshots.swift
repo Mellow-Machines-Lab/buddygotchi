@@ -80,9 +80,14 @@ enum Snapshots {
                 shot("boop", model(installer, status: status()), pane: .overview, tab: .boop)
                 shot("boop-ring-full", model(installer, status: status(growth: Growth(xp: 1_200, today: 100))), pane: .overview, tab: .boop)
                 var newborn = status(growth: Growth())
-                (newborn.notes, newborn.week) = ([], [.init(day: "2026-11-08", xp: 0, today: "2026-11-08")])
+                (newborn.notes, newborn.week, newborn.daysOld) = ([], [.init(day: "2026-11-08", xp: 0, today: "2026-11-08")], 0)
                 shot("boop-first-day", model(installer, status: newborn), pane: .overview, tab: .boop)
                 shot("boop-long", model(installer, status: longOverview(installer).status), pane: .overview, tab: .boop)
+                // The third day: four dashed days before the first ring, the first one full.
+                var young = status(growth: Growth(xp: 160, today: 12))
+                young.daysOld = 2
+                young.week = [("2026-11-06", 100), ("2026-11-07", 48), ("2026-11-08", 12)].map { .init(day: $0, xp: $1, today: "2026-11-08") }
+                shot("boop-third-day", model(installer, status: young), pane: .overview, tab: .boop)
                 // The World tab: the world, a buddy's card open, sent, and off;
                 // still loading, out of reach, and with no world at all.
                 shot("world", model(installer, status: status()), pane: .overview, tab: .world)
