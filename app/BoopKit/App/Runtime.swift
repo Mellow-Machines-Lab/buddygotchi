@@ -580,6 +580,8 @@ public final class Runtime: @unchecked Sendable {
         let keep = { [self] in remembers?.keepCounts(wall: options.wallClock(), now: true) }
         if DispatchQueue.getSpecific(key: onHome) == true { keep() } else { home.sync(execute: keep) }
         try? FileManager.default.removeItem(at: options.stateDir.appendingPathComponent(Self.runningFile))
+        // The folder is free for the next runtime, as a rename starts one.
+        lock.release()
     }
 
     /// Onboarding's greetings on the board, which it plays as a rule's

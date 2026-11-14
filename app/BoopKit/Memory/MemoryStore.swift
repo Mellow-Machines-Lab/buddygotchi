@@ -5,8 +5,8 @@ import Foundation
 /// writes atomically, keeps copies in `history/`, and restores a file that
 /// won't parse.
 ///
-/// Hand edits are welcome: the app never writes `long-term.md` after setup,
-/// and reads it at launch.
+/// Hand edits are welcome: the app writes `long-term.md` only at setup and
+/// at a rename, and reads it at launch.
 public final class MemoryStore {
     public static let longTermFile = "long-term.md"
     public static let historyDir = "history"
@@ -33,13 +33,28 @@ public final class MemoryStore {
     /// `history/<today>/`. Refuses if one exists.
     public func setUp(name: String, seed: UInt64, today: String) throws {
         guard longTerm == nil else { throw Refusal("already set up") }
-        let clean = name.trimmingCharacters(in: .whitespaces)
-        guard !clean.isEmpty, clean.count <= 23, !clean.contains("·"), !clean.contains(":"), !clean.contains("\n")
-        else { throw Refusal("a name is 1–23 characters, without · or :") }
-        let lt = LongTerm(name: clean, hatched: today, seed: seed)
+        let lt = LongTerm(name: try Self.checked(name), hatched: today, seed: seed)
         try write(lt.markdown, Self.longTermFile)
         longTerm = lt
         try keepCopy(lt.markdown, day: today)
+    }
+
+    /// Gives Boop a new name in `long-term.md`, keeping the day it hatched
+    /// and its seed, and its copy in `history/<today>/`, so the next launch
+    /// doesn't take it for a hand edit. The runtime reads it at its next
+    /// start. Refuses before setup, or a name `BuddyName` refuses.
+    public func rename(to name: String, today: String) throws {
+        guard var lt = longTerm else { throw Refusal("not set up") }
+        lt.name = try Self.checked(name)
+        try write(lt.markdown, Self.longTermFile)
+        longTerm = lt
+        try keepCopy(lt.markdown, day: today)
+    }
+
+    /// The name as it's kept, or a refusal saying what a name is.
+    static func checked(_ name: String) throws -> String {
+        guard BuddyName.valid(name) else { throw Refusal("a name is 1–\(BuddyName.maxLength) characters, on one line, without · or :") }
+        return BuddyName.trimmed(name)
     }
 
     // MARK: The written memory

@@ -10,6 +10,9 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// it on. Off, the brain is never offered a swear and no swear take
     /// plays (`MomentOutput.speech`).
     public var swearing = false
+    /// When Boop was last renamed in Settings, in ms since 1970: a rename
+    /// waits a week after it (`BuddyName.nextRename`). Nil for never.
+    public var renamed: Int64?
     public var volume = 6
     /// Several buddies side by side, each its own board and pack: empty, or
     /// one, for the one Boop.
@@ -50,6 +53,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // the chatty one.
         talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? (saved == "chatter" ? .chatty : .default)
         swearing = (try? c.decodeIfPresent(Bool.self, forKey: .swearing)) ?? false
+        renamed = try? c.decodeIfPresent(Int64.self, forKey: .renamed)
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
         buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
         board = try? c.decodeIfPresent(String.self, forKey: .board)
@@ -60,12 +64,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, swearing, volume, buddies, board, onboarding, workStream, simulator, world, worldShown }
+    enum CodingKeys: String, CodingKey { case personality, talk, swearing, renamed, volume, buddies, board, onboarding, workStream, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(talk, forKey: .talk)
         if swearing { try c.encode(swearing, forKey: .swearing) }
+        try c.encodeIfPresent(renamed, forKey: .renamed)
         try c.encode(volume, forKey: .volume)
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
         try c.encodeIfPresent(board, forKey: .board)
@@ -135,6 +140,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
 /// files and the hook socket. The lock goes away with the process.
 public final class InstanceLock {
     let fd: Int32
+    private var released = false
+    private let releasing = NSLock()
 
     public init?(directory: URL) {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -147,8 +154,17 @@ public final class InstanceLock {
         self.fd = fd
     }
 
-    deinit {
-        flock(fd, LOCK_UN)
-        close(fd)
+    /// Lets the folder go before this lock goes away: a runtime that
+    /// stopped hands the folder to the next one at once, as a rename's
+    /// restart needs. Safe to call twice.
+    public func release() {
+        releasing.withLock {
+            guard !released else { return }
+            released = true
+            flock(fd, LOCK_UN)
+            close(fd)
+        }
     }
+
+    deinit { release() }
 }
