@@ -632,7 +632,7 @@ enum Snapshots {
         // before; those working are each at a call of their own, in their
         // lanes, and the first has a to-do list.
         let words = ["swift test", "edit +18 \u{2212}2", "grep", "pytest", "build", "read"]
-        var working = 0
+        var working = 0, sessionsWaiting = 0
         let sessions = rows.enumerated().map { i, row in
             var s = SessionSummary(agent: row[0], project: row[1], name: row.count > 3 && !row[3].isEmpty ? row[3] : nil,
                                    workspace: row.count > 4 ? row[4] : nil, status: statuses[row[2]]!,
@@ -640,6 +640,11 @@ enum Snapshots {
                                                      app: row[0] == "claude" ? "com.anthropic.claudefordesktop" : "com.openai.codex",
                                                      appSession: "local_\(i)"),
                                    since: Date().addingTimeInterval(-Double(60 * (2 + 5 * i))))
+            // Waiting on a yes or no, then a question, then a plan.
+            if s.status == .waiting {
+                s.asks = [.approve, .question, .plan][sessionsWaiting % 3]
+                sessionsWaiting += 1
+            }
             if s.status == .working {
                 s.word = words[working % words.count]
                 s.slot = working < 4 ? working : nil
@@ -654,7 +659,8 @@ enum Snapshots {
             // Cut as the core cuts it for the device; the popover shows it whole.
             attn: wait.first.map {
                 StateSnapshot.Attention(agent: $0.agent, project: StateSnapshot.clip($0.project, marked: true),
-                                        name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1)
+                                        name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1,
+                                        kind: $0.asks)
             },
             working: sessions.filter { $0.status == .working }.count, vol: vol)
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,

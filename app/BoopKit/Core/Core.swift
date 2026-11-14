@@ -614,6 +614,11 @@ public final class Core {
 
     // MARK: - Reading
 
+    /// What a waiting session's request asks of you.
+    static func kind(of s: Session) -> StateSnapshot.Attention.Kind {
+        .of(asking: s.asking?.rawValue, tools: Array(s.askers.values))
+    }
+
     public func snapshot(at now: Int64) -> StateSnapshot {
         let (shown, dismissed, working, idle) = groups(at: now)
         // Idle's tier counts from the latest a session came to rest, once
@@ -625,7 +630,7 @@ public final class Core {
             StateSnapshot.Attention(
                 agent: $0.agent.rawValue, project: StateSnapshot.clip($0.project, marked: true, max: StateSnapshot.maxSignBytes),
                 name: StateSnapshot.boardName($0.name).map { StateSnapshot.clip($0, marked: true, max: StateSnapshot.maxSignBytes) } ?? "",
-                more: shown.count - 1, id: $0.request)
+                more: shown.count - 1, id: $0.request, kind: Self.kind(of: $0))
         } ?? practice
         // What the agents are doing shows only in the working look, and
         // not while something needs you.
@@ -1283,6 +1288,8 @@ public struct SessionSummary: Equatable, Sendable {
     public var todo: StateSnapshot.Todo?
     /// Waiting, with its request dismissed: it no longer shows on Boop.
     public var dismissed = false
+    /// While it waits on you, what it asks.
+    public var asks: StateSnapshot.Attention.Kind?
 
     public init(agent: String, project: String, name: String? = nil, workspace: String? = nil, status: Status,
                 thread: ThreadRef? = nil, since: Date? = nil, word: String? = nil, slot: Int? = nil,
@@ -1302,5 +1309,6 @@ public struct SessionSummary: Equatable, Sendable {
     init(_ s: Core.Session, _ status: Status) {
         self.init(agent: s.agent.rawValue, project: s.project, name: s.name, workspace: s.workspace, status: status,
                   thread: s.thread, todo: s.todos.map { StateSnapshot.Todo(done: $0.done, total: $0.total) })
+        if status == .waiting { asks = Core.kind(of: s) }
     }
 }
