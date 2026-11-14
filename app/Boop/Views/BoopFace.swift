@@ -7,13 +7,16 @@ import SwiftUI
 /// bar read as the same creature.
 enum FaceMood: Hashable {
     case asleep, idle, working, needsYou, happy
+    /// Boop is starting, before its first status: eyes open, faint, so it
+    /// never passes for napping.
+    case waking
     /// Boop couldn't start: the menu bar's crossed eyes, so it never passes
     /// for napping.
     case stopped
 
     init(_ status: Runtime.Status?) {
         guard let status else {
-            self = .asleep
+            self = .waking
             return
         }
         let s = status.snapshot
@@ -58,7 +61,7 @@ struct BoopFace: View {
         case .idle: "\(design)/idle"
         case .working: "\(design)/working"
         case .needsYou: "\(design)/needs_you"
-        case .happy: "\(startup)/idle"
+        case .happy, .waking: "\(startup)/idle"
         }
     }
 
@@ -75,11 +78,8 @@ struct BoopFace: View {
         let face = Self.face(key)
         let rects = blink ? face.shut : face.open
         ZStack {
-            RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                .fill(Theme.glass)
-            RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
-                .strokeBorder(mood == .needsYou ? Theme.amber : Theme.hairlineStrong.opacity(0.6),
-                              lineWidth: mood == .needsYou ? max(1.5, size * 0.04) : 1)
+            TileShape(side: size).fill(Theme.glass)
+            TileEdge(side: size, needsYou: mood == .needsYou)
             // The old face and the new one add, as the board's dither mixes
             // them: a pixel both light stays lit through the fade.
             ZStack {
@@ -166,7 +166,8 @@ struct BoopFace: View {
                 cross.addLine(to: CGPoint(x: x, y: top + 5 * u))
                 return (cross, true)
             }
-            let eye = mood == .asleep || shut ? CGRect(x: x - u, y: top + 4 * u, width: 6 * u, height: 2 * u)
+            // Shut, a bar at the eyes' middle.
+            let eye = mood == .asleep || shut ? CGRect(x: x - u, y: top + 2 * u, width: 6 * u, height: 2 * u)
                                               : CGRect(x: x, y: top, width: 4 * u, height: 6 * u)
             return (Path(roundedRect: eye, cornerRadius: min(eye.width, eye.height) / 2), false)
         }
@@ -196,7 +197,7 @@ struct BoopFace: View {
 
     /// Blinks every few seconds.
     private func live() async {
-        guard !reduceMotion, !still, mood != .asleep, mood != .stopped else {
+        guard !reduceMotion, !still, mood != .asleep, mood != .stopped, mood != .waking else {
             blink = false
             return
         }
@@ -211,9 +212,10 @@ struct BoopFace: View {
 }
 
 /// The menu-bar icon: two rounded eyes, nothing else, so it reads at 18 pt.
-/// Closed while asleep, open while agents idle, with a small dot while they
-/// work, amber when something needs you, and crosses when Boop isn't
-/// running.
+/// Closed while asleep, open while agents idle, looking down at the work
+/// with a dot beside them while they work, amber with the dot when
+/// something needs you, faint while Boop wakes up, and crosses when it
+/// isn't running.
 enum MenuBarIcon {
     /// Where the eyes go across the 20 pt canvas: the left one's left
     /// edge, and the right one's, 8 pt on. The dot goes beside the right
@@ -262,17 +264,31 @@ enum MenuBarIcon {
                 }
                 return true
             }
-            // Two tall eyes, or two short bars while asleep.
+            // Two tall eyes; two short bars at their middle while asleep;
+            // shorter, lower eyes while it works, looking down at the work.
             // Whole points, so they stay crisp at 1×.
+            let ink = mood == .waking ? colour.withAlphaComponent(0.45) : colour
+            ink.setFill()
             for x in eyes {
-                let eye = mood == .asleep ? NSRect(x: x - 1, y: 10, width: 6, height: 2)
-                                          : NSRect(x: x, y: 6, width: 4, height: 6)
-                NSBezierPath(roundedRect: eye, xRadius: eye.height == 2 ? 1 : 2, yRadius: eye.height == 2 ? 1 : 2).fill()
+                let eye = switch mood {
+                case .asleep: NSRect(x: x - 1, y: 8, width: 6, height: 2)
+                case .working: NSRect(x: x, y: 8, width: 4, height: 5)
+                default: NSRect(x: x, y: 6, width: 4, height: 6)
+                }
+                let r = min(eye.width, eye.height) / 2
+                NSBezierPath(roundedRect: eye, xRadius: r, yRadius: r).fill()
             }
-            // The dot sits up and to the right, clear of the eyes.
+            // The dot sits up and to the right, clear of the eyes: 4 pt, so
+            // it reads at 1× as more than a speck.
             if mood == .working || mood == .needsYou {
-                let dot = NSRect(x: eyes[1] + 5, y: 1, width: 3, height: 3)
-                if pixels { dot.fill(using: .sourceOver) } else { NSBezierPath(ovalIn: dot).fill() }
+                let dot = NSRect(x: eyes[1] + 5, y: 0, width: 4, height: 4)
+                if pixels {
+                    // A pixel circle: the square without its corners.
+                    NSRect(x: dot.minX + 1, y: dot.minY, width: 2, height: 4).fill(using: .sourceOver)
+                    NSRect(x: dot.minX, y: dot.minY + 1, width: 4, height: 2).fill(using: .sourceOver)
+                } else {
+                    NSBezierPath(ovalIn: dot).fill()
+                }
             }
             return true
         }

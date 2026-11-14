@@ -34,6 +34,7 @@ enum Snapshots {
             checkStatusPublishing(installer)
             checkPulse()
             checkNothingCut(installer)
+            checkFaceAtGutter(installer)
             checkNeedsYouComesFirst(installer)
 
             // The pack's mirror of the board, when it has one (Boop's).
@@ -832,18 +833,19 @@ enum Snapshots {
                              .init(id: "right", name: "Sir Reginald Fluffy III", snapshot: s.snapshot, connected: false, device: nil)]
                 return model(installer, status: s)
             }()),
-            // Every notice, each with its longest words, Details open.
-            ("long-notices", {
-                var s = status(sessions: [["claude", "jetpack", "idle"]], name: Long.name,
-                               brainTrouble: BrainTrouble(kind: .failing, why: Long.detail, inARow: 3),
-                               micTrouble: Long.detail, deviceTrouble: Long.detail)
-                s.uncleanExit = true
-                let m = model(installer, status: s)
-                m.hookErrors[.codex] = Long.detail
-                m.restartAgents = true
-                OpenDetails.shared.show(Long.detail)
+            // The longest feeling, a level over a thousand and the longest
+            // name: the header's status line is cut, never the popover.
+            ("long-mood", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], name: Long.name,
+                                                          mood: Long.mood, growth: Growth(xp: 123_400)))),
+            // Every notice, each with its longest words, Details open, and
+            // the rest unfolded.
+            ("long-notices-open", {
+                let m = longNotices(installer)
+                OpenDetails.shared.show(NoticeStrip.foldKey(m))
                 return m
             }()),
+            // Every notice, each with its longest words, Details open.
+            ("long-notices", longNotices(installer)),
             // Many sessions, a long project, two in one project told apart
             // by their threads' names, and one needing you from no folder.
             ("crowded", model(installer, status: status(sessions: [
@@ -909,6 +911,19 @@ enum Snapshots {
         }
     }
 
+    /// Every notice, each with its longest words, Details open: two show, and the rest fold.
+    static func longNotices(_ installer: HookInstaller) -> AppModel {
+        var s = status(sessions: [["claude", "jetpack", "idle"]], name: Long.name,
+                       brainTrouble: BrainTrouble(kind: .failing, why: Long.detail, inARow: 3),
+                       micTrouble: Long.detail, deviceTrouble: Long.detail)
+        s.uncleanExit = true
+        let m = model(installer, status: s)
+        m.hookErrors[.codex] = Long.detail
+        m.restartAgents = true
+        OpenDetails.shared.show(Long.detail)
+        return m
+    }
+
     static func longOverview(_ installer: HookInstaller) -> AppModel {
         var s = status(sessions: [
             ["claude", Long.project, "wait", Long.thread, Long.workspace],
@@ -964,10 +979,17 @@ enum Snapshots {
                              .init(id: "right", name: words(n), snapshot: s.snapshot, connected: false, device: nil)]
                 return s
             }),
-            ("a thread's name", { bare([["claude", "jetpack", "work", words($0)]]) }),
-            ("a project", { bare([["claude", words($0), "work", "A thread"]]) }),
-            ("a workspace", { bare([["claude", "jetpack", "work", "", words($0)]]) }),
-            ("a notice", { n in var s = bare(); s.micTrouble = words(n); return s }),
+            // A row cuts its title at 2 lines and its place at 1, the whole
+            // in its help; the needs-you card shows them in full.
+            ("a thread's name", { bare([["claude", "jetpack", "wait", words($0)]]) }),
+            ("a project", { bare([["claude", words($0), "wait", "A thread"]]) }),
+            ("a workspace", { bare([["claude", "jetpack", "wait", "", words($0)]]) }),
+            ("a notice", { n in
+                var s = bare()
+                s.micTrouble = words(n)
+                OpenDetails.shared.show(words(n))  // its words are behind Details
+                return s
+            }),
             ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(kind: .friday, why: words(n), what: nil)]; return s }),
         ]
         for (what, status) in values where height(status(20)) >= height(status(40)) {
@@ -983,7 +1005,44 @@ enum Snapshots {
             height(bare([["claude", "jetpack", kind, words(40)]])) - height(bare([["claude", "jetpack", kind, words(20)]]))
         }
         guard grown("wait") > grown("work") + 1 else { fail("snapshots: the needs-you card's thread name is cut off") }
+        // A row's title stops at two lines.
+        guard grown("work") < 1 else { fail("snapshots: a row's title isn't cut at two lines") }
         print("long values: \(values.count + 2) grow the Overview, none cut off")
+    }
+
+    /// The face sits on the left gutter in every Overview, however long
+    /// the name, the mood or the level: a line that can't shrink would
+    /// widen the column past the popover, which centres it (NOW-1).
+    static func checkFaceAtGutter(_ installer: HookInstaller) {
+        for (name, shown) in overviews(installer) {
+            let host = NSHostingView(rootView: PopoverView(model: shown, maxHeight: 2600)
+                .environment(\.stillMotion, true).environment(\.colorScheme, .light))
+            host.appearance = NSAppearance(named: .aqua)
+            window.appearance = host.appearance
+            window.contentView = host
+            for _ in 0..<3 {
+                host.layoutSubtreeIfNeeded()
+                host.frame = CGRect(origin: .zero, size: host.fittingSize)
+                window.setContentSize(host.frame.size)
+                RunLoop.main.run(until: Date().addingTimeInterval(0.005))
+            }
+            host.layoutSubtreeIfNeeded()
+            window.displayIfNeeded()
+            let rep = bitmap(host.bounds.size, scale: 1)
+            host.cacheDisplay(in: host.bounds, to: rep)
+            let paper = NSColor(hex: Palette.paperLight)
+            // Across the face's middle, the first point that isn't paper.
+            let y = Int(Theme.gutter) + 23
+            let edge = (0..<rep.pixelsWide).first { x in
+                guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+                return abs(c.redComponent - paper.redComponent) + abs(c.greenComponent - paper.greenComponent)
+                    + abs(c.blueComponent - paper.blueComponent) > 0.1
+            }
+            guard host.bounds.width == Theme.width, let edge, abs(CGFloat(edge) - Theme.gutter) <= 1 else {
+                fail("snapshots: overview-\(name)'s face starts at \(edge.map(String.init) ?? "none") pt, not the \(Int(Theme.gutter)) pt gutter, in \(Int(host.bounds.width)) pt")
+            }
+        }
+        print("face: on the gutter in every Overview")
     }
 
     /// However long the reasons run, the needs-you card stays where it is:
@@ -1061,7 +1120,7 @@ enum Snapshots {
                           ("\(name) on a \(look) card", tone, card, 4.5),
                           ("\(name) on the \(look) well", tone, well, 4.5),
                           ("\(name) on its \(look) chip", tone, mix(tone, Theme.chipTint, over: card), 4.5),
-                          ("\(name) on the \(look) needs-you card", tone, mix(Palette.amber, Theme.cardTint, over: card), 4.5)]
+                          ("\(name) on the \(look) needs-you card", tone, mix(Palette.amber, Theme.needsYouTint, over: card), 4.5)]
             }
             pairs += [("a button's label on its \(look) fill", label, fill, 4.5),
                       ("a button's label on its \(look) pressed fill", label, pressed, 4.5),
@@ -1162,7 +1221,7 @@ enum Snapshots {
     /// top row at 1× and the bottom at 2×, each pixel blown up to 4×4 or 2×2
     /// so the grid can be judged.
     static func renderIcons(dark: Bool, to dir: URL) {
-        let moods: [FaceMood] = [.asleep, .idle, .working, .needsYou, .stopped]
+        let moods: [FaceMood] = [.asleep, .waking, .idle, .working, .needsYou, .stopped]
         let icon = MenuBarIcon.image(.idle).size
         let pad: CGFloat = 10, gap: CGFloat = 14, row: CGFloat = 24, zoom: CGFloat = 4
         let size = NSSize(width: 2 * pad + CGFloat(moods.count) * icon.width + CGFloat(moods.count - 1) * gap,
