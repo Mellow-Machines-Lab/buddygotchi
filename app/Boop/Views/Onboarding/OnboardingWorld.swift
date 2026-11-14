@@ -9,37 +9,38 @@ struct WorldAct: View {
     @ObservedObject var model: OnboardingModel
 
     var body: some View {
-        VStack(spacing: 14) {
-            OnboardingBuddy(model: model, snapshot: .onboarding(mood: "excited"), size: 96, face: .happy)
-            ActTitle(title: "I live in a world of buddies",
-                     detail: "Everyone's buddies are in it together. We can wave at each other, and send a boop or a heart.")
-            HStack(alignment: .top, spacing: 12) {
-                side("Others see", icon: "eye", lines: [
-                    "My name and level", "Roughly where I am, by time zone", "What I'm doing, in one word",
-                    "Counts, like tests passed",
-                ])
-                side("Nobody sees", icon: "lock", lines: [
-                    "Your name", "Your projects and code", "What you say", "What I remember about you",
-                ])
+        ActFrame(kind: .hero, title: "I live in a world of buddies",
+                 lead: "Everyone's buddies are in it together. We can wave at each other, and send a boop or a heart.",
+                 bar: ActBar(model: model, next: "Sounds good", quiet: ("Keep \(model.name) private", { model.keepPrivate() }))) {
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .happy)
+        } content: {
+            VStack(spacing: Theme.gap) {
+                HStack(alignment: .top, spacing: Theme.gap) {
+                    side("Others see", icon: "eye", lines: [
+                        "My name and level", "Roughly where I am, by time zone", "What I'm doing, in one word",
+                        "Counts, like tests passed",
+                    ])
+                    side("Nobody sees", icon: "lock", lines: [
+                        "Your name", "Your projects and code", "What you say", "What I remember about you",
+                    ])
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                Text("You can change this in Settings any time.")
+                    .font(.note).foregroundStyle(Theme.inkSoft)
             }
-            .frame(maxWidth: 520)
-            Text("You can change this in Settings any time.")
-                .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-            Spacer(minLength: 0)
-            ActNav(model: model, next: "Sounds good",
-                   quiet: ("Keep \(model.name) private", { model.keepPrivate() }))
         }
     }
 
     private func side(_ title: String, icon: String, lines: [String]) -> some View {
-        Card(padding: 14) {
-            VStack(alignment: .leading, spacing: 6) {
-                Label(title, systemImage: icon).font(.boop(15, .bold))
+        Card {
+            VStack(alignment: .leading, spacing: Theme.gapTight) {
+                Label(title, systemImage: icon).font(.boopHeading)
                 ForEach(lines, id: \.self) { line in
-                    Text(line).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                    Text(line).font(.body).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            .frame(maxHeight: .infinity, alignment: .top)
         }
         .accessibilityElement(children: .combine)
     }

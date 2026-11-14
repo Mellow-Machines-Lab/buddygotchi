@@ -4,6 +4,9 @@ import XCTest
 /// Text in the Mac app's views wraps, and its pane makes room or scrolls:
 /// nothing is cut. `Boop --snapshots` checks the Overview by laying it out
 /// with long values, which these tests can't, as `Boop` isn't a library.
+/// The one exception is onboarding's fixed window, whose frame
+/// `--snapshots` checks: its bar cuts a long name in the middle, on one
+/// line, and a title takes two lines, then shrinks.
 final class PopoverTextTests: XCTestCase {
     static let views = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         .appendingPathComponent("../../../app/Boop/Views").standardizedFileURL
@@ -11,7 +14,7 @@ final class PopoverTextTests: XCTestCase {
     func testNoViewCutsItsText() throws {
         let walker = try XCTUnwrap(FileManager.default.enumerator(at: Self.views, includingPropertiesForKeys: nil))
         var read = 0
-        for case let file as URL in walker where file.pathExtension == "swift" {
+        for case let file as URL in walker where file.pathExtension == "swift" && !file.path.contains("/Onboarding/") {
             read += 1
             let source = try String(contentsOf: file, encoding: .utf8)
             for limit in [".lineLimit(", ".truncationMode(", ".minimumScaleFactor("] {
