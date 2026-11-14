@@ -94,13 +94,30 @@ enum Snapshots {
                 let card = model(installer, status: status())
                 card.worldPick = "b-bean"
                 shot("world-card", card, pane: .overview, tab: .world)
-                card.worldSent["b-bean"] = .init(sent: [.wave])
+                card.worldSent["b-bean"] = .init(sent: [.boop])
                 shot("world-card-sent", card, pane: .overview, tab: .world)
-                // A wave on its way: every button waits. Then a boop that failed.
-                card.worldSent["b-bean"] = .init(sent: [.wave], sending: .boop)
+                // Say hi on its way: only its button dims. Then one that failed.
+                card.worldSent["b-bean"] = .init(sending: .boop)
                 shot("world-card-sending", card, pane: .overview, tab: .world)
-                card.worldSent["b-bean"] = .init(sent: [.wave], failed: .boop)
+                card.worldSent["b-bean"] = .init(failed: .boop)
                 shot("world-card-failed", card, pane: .overview, tab: .world)
+                // A small world: the numbers as a sentence, names on the band, Bean's card open.
+                var small = status()
+                small.world?.link.snapshot = World.Snapshot(
+                    at: "2026-11-08T13:20:00Z", awake: 3, total: 5, doing: ["coding": 1, "testing": 1, "idle": 1],
+                    today: World.Counts(turns: 40, testsPassed: 12, ships: 0, linesChanged: 900),
+                    regions: try! JSONDecoder().decode([World.RegionCount].self, from: Data(#"""
+                        [{"region": "americas", "awake": 1}, {"region": "europe_africa", "awake": 2}, {"region": "asia_oceania", "awake": 0}]
+                        """#.utf8)),
+                    buddies: [World.Buddy(id: "b-pip", name: "Pip", level: 4, utcOffset: -300, activity: .coding),
+                              World.Buddy(id: "b-me", name: "Mochi", level: 12, utcOffset: 60, activity: .idle),
+                              World.Buddy(id: "b-nori", name: "Nori", level: 2, utcOffset: 120, activity: .testing),
+                              World.Buddy(id: "b-bean", name: "Bean", level: 7, utcOffset: 540, activity: .asleep),
+                              World.Buddy(id: "b-dot", name: "Dot", level: 1, utcOffset: 600, activity: .asleep)])
+                let smallWorld = model(installer, status: small)
+                shot("world-small", smallWorld, pane: .overview, tab: .world)
+                smallWorld.worldPick = "b-bean"
+                shot("world-small-card", smallWorld, pane: .overview, tab: .world)
                 // Your own dot: marked, its card with nothing to send.
                 let mine = model(installer, status: status())
                 mine.worldPick = "b-me"
