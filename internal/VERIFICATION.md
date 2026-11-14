@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-09. How we check that Boop works, including what's on its
+Updated 2026-11-14. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -359,7 +359,11 @@ Each suite says what it pins.
   look, and nothing blurred or seamed: the panes and acts are drawn at
   2 pixels a point, as a Retina Mac shows them. The run fails by itself on
   low contrast. The run also fails if text twice as long leaves the
-  Overview no taller: a value that's cut off, and long reasons that move the needs-you card from the top of the pane. It includes Unicode names,
+  Overview no taller: a value that's cut off, and long reasons that move the needs-you card from the top of the pane,
+  and if any onboarding picture has its footprints or its main button at
+  another height than the rest: onboarding's frame never moves. Each
+  onboarding picture's face is a still in the look its act and state give
+  it (napping, curious, sad when stuck, excited). It includes Unicode names,
   invalid names, every onboarding act (`onboarding-*`), a crowded Overview at
   a bounded height, the Boop tab (`boop-*`), the World tab with a buddy's
   card open, sent, off, loading and out of reach (`world-*`), and each pane
