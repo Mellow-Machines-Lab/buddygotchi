@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-09. The contract a character pack meets, so that any
+Updated 2026-11-14. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -378,14 +378,16 @@ signs.
 Its `[world]` lines, and `[world boop]`, `[world wave]`, `[world heart]` and
 `[world cheer]`, the kind's first, are what it may hold up when another buddy
 reaches out from the world (`Signs.world`): Jev picks one at the `world` event.
-A pack with none holds up nothing then. A level-up holds up `Level 12!` on the
-low sign, the rules' own, and needs nothing of the pack's.
+A pack with none holds up nothing then. A level-up holds `level 12!` low in
+gold (the `do`'s `gold`; a face that holds nothing low holds it up as its
+sign), and today's ring closing holds up `today's done!`, one moment when
+both come at once: the rules' own, needing nothing of the pack's.
 
 **Today's ring,** the gel's own bar (`render::GrowthShow`, `paintGrowthBar`),
-goes by `state.xp`, today's XP in percent: it shows when XP comes in, with a
-label beside it, inside the panel's rounded corners, and sparkles once when
-it's full, or, filled while it couldn't show, the next time it can. A face
-with no bar ignores it.
+goes by `state.xp`, today's XP in percent: it shows when XP comes in, with the
+number after it, inside the panel's rounded corners, and sparkles once when
+it's full, or, filled while it couldn't show, the next time it can; while
+LISTENING has the top band it gives way. A face with no bar ignores it.
 
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own
