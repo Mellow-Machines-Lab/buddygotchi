@@ -108,6 +108,12 @@ public struct Moment: Equatable, Sendable {
     /// Its sign goes low, in the lane, so the face stays clear: up to
     /// `MemoryPipeline.signMax` characters, once its words end.
     public var low = false
+    /// A celebration's words, held low in gold with the rim glowing gold
+    /// (`level 13!`), beside its `sign` or alone, so one moment shows two
+    /// things: today's ring closing on the sign, the level on the gold.
+    /// At most `Signs.maxLength` characters. A face that holds nothing low
+    /// shows it as its sign. Nil sends none.
+    public var gold: String?
     /// A clip of the pack's to play as its face starts, as a reply's does
     /// (`reply-<name>`), with none of a reply's rights. Nil sends none.
     public var clip: String?
@@ -166,6 +172,7 @@ public struct Moment: Equatable, Sendable {
         if let show { args["show"] = .string(show) }
         if greeting { args["greeting"] = true }
         if low { args["low"] = true }
+        if let gold { args["gold"] = .string(gold) }
         if let clip { args["clip"] = .string(clip) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }

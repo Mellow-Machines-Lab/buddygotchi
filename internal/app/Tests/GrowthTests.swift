@@ -118,7 +118,8 @@ final class GrowthTests: XCTestCase {
 
     /// What growing sends through the runtime: a `state` with today's ring
     /// as a turn's XP moves it; at a level, a `level` event and its moment,
-    /// `Level 2!` on the low sign; at 100 today, the ring's. A demo sends no ring.
+    /// `level 2!` held low in gold; at 100 today, the ring's, the same
+    /// moment holding up `today's done!`. A demo sends no ring.
     func testALevelUpAndTheRingThroughTheRuntime() throws {
         try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-grow-\(UUID().uuidString.prefix(8))")
