@@ -25,7 +25,7 @@ struct BoopPane: View {
     /// Today's ring, its number in the middle, and beside it the level, the
     /// XP of every day together, how far the next level is, and a line.
     private func today(_ growth: Growth) -> some View {
-        HStack(alignment: .center, spacing: Theme.gapLoose) {
+        HStack(alignment: .center, spacing: Theme.gutter) {
             Ring(fill: Double(growth.today) / Double(Growth.perDay), width: 9)
                 .frame(width: 96, height: 96)
                 .overlay {

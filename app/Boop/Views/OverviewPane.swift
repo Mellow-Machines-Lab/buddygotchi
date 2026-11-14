@@ -28,7 +28,7 @@ struct OverviewPane: View {
                 }
                 .padding(.top, Theme.gap)
                 .padding(.horizontal, Theme.gutter)
-                .padding(.bottom, Theme.gapLoose)
+                .padding(.bottom, Theme.gutter)
             }
         }
         // The header grows when reminder chips appear. Bound the whole

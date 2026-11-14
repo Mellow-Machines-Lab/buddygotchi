@@ -35,7 +35,7 @@ struct SettingsPane: View {
                     PaneSection("App") { app }
                 }
                 .padding(.horizontal, Theme.gutter)
-                .padding(.bottom, Theme.gapLoose)
+                .padding(.bottom, Theme.gutter)
             }
         }
         .task {

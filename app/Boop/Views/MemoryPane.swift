@@ -22,7 +22,7 @@ struct MemoryPane: View {
                         .padding(.leading, 2)
                 }
                 .padding(.horizontal, Theme.gutter)
-                .padding(.bottom, Theme.gapLoose)
+                .padding(.bottom, Theme.gutter)
             }
         }
     }

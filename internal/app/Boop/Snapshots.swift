@@ -205,7 +205,7 @@ enum Snapshots {
                 shot("settings-login-unavailable", bare, pane: .settings)
                 // The board runs older firmware than the app carries, and then it's being written.
                 let behind = model(installer, status: status())
-                behind.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                behind.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
                 shot("settings-firmware-offer", behind, pane: .settings)
                 behind.firmwareWrite = .writing(0.42)
                 shot("settings-firmware-writing", behind, pane: .settings)
@@ -230,7 +230,7 @@ enum Snapshots {
                 longSettings.status?.board = "b00p-01dd"
                 longSettings.hookErrors[.claude] = Long.detail
                 longSettings.loginItemError = Long.detail
-                longSettings.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
+                longSettings.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
                 longSettings.firmwareWrite = .failed(Long.detail)
                 shot("settings-long", longSettings, pane: .settings)
 
@@ -272,7 +272,7 @@ enum Snapshots {
         }
         let behind = at(.body, status: status()) {
             $0.body = .joined
-            $0.app.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+            $0.app.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
         }
         return [
             ("1-hello", at(.hello)),
@@ -1025,6 +1025,10 @@ enum Snapshots {
         .init(day: "2026-10-20", line: Long.day, today: "2026-10-22"),
     ]
 
+    /// The board the fixtures' device is, so firmware offered for it is
+    /// offered: the gel's face is the AMOLED's (`BoardFirmware.board(of:)`).
+    static var fixtureBoard: String { SlimeFeed.folder != nil ? "amoled206" : "cyd24" }
+
     // MARK: Contrast
 
     /// The popover's contrast rules, checked on every run, in both
@@ -1059,6 +1063,22 @@ enum Snapshots {
         }
         pairs += [("needs you on a light menu bar", Palette.menuAmberLight, "#F5F5F5", 3),
                   ("needs you on a dark menu bar", Palette.amber, "#2A2A2A", 3)]
+        // Shapes that carry meaning, 3:1 on each surface they're drawn on
+        // (WCAG 1.4.11): needs you's dot and bar, the lanes' bars, the
+        // ring and a full one, a switch on and off, a slider's groove.
+        let shapes = [("needs you's dot", Palette.menuAmberLight, Palette.amber),
+                      ("the ring", Palette.ringLight, Palette.ringDark),
+                      ("a full ring or a switch that's on", Palette.sageSignalLight, Palette.sage),
+                      ("a switch that's off", Palette.controlOffLight, Palette.controlOffDark)]
+            + Palette.lanes.indices.map { ("lane \($0)'s bar", Palette.lanesLight[$0], Palette.lanes[$0]) }
+        for (i, (look, paper, card, _, _, _, _)) in looks.enumerated() {
+            for (name, light, dark) in shapes {
+                let shape = i == 0 ? light : dark
+                pairs += [("\(name) on \(look) paper", shape, paper, 3), ("\(name) on a \(look) card", shape, card, 3)]
+            }
+        }
+        pairs += [("a switch's knob on it, on", "#FFFFFF", Palette.sageSignalLight, 3),
+                  ("a switch's knob on it, off", "#FFFFFF", Palette.controlOffLight, 3)]
         let low = pairs.compactMap { what, fg, bg, least -> String? in
             let ratio = contrast(fg, bg)
             return ratio < least ? "\(what) is \(String(format: "%.2f", ratio)):1, under \(least):1" : nil
