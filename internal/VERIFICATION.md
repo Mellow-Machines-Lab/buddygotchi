@@ -364,7 +364,10 @@ Each suite says what it pins.
   the needs-you card shows them in full), long reasons that move the
   needs-you card from the top of the pane, and a face that isn't on the
   left gutter in any Overview (a line that can't shrink would widen the
-  column). It includes Unicode names,
+  column); and if any onboarding picture has its footprints or its main
+  button at another height than the rest: onboarding's frame never moves.
+  Each onboarding picture's face is a still in the look its act and state
+  give it (napping, curious, sad when stuck, excited). It includes Unicode names,
   invalid names, every onboarding act (`onboarding-*`), a crowded Overview at
   a bounded height, the Boop tab (`boop-*`), the World tab with a buddy's
   card open, sent, off, loading and out of reach (`world-*`), and each pane

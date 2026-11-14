@@ -40,6 +40,19 @@ enum Snapshots {
             // The pack's mirror of the board, when it has one (Boop's).
             let gelState = StateSnapshot(doing: "working", activity: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
             var gelImage: NSImage?, onboardingGel: NSImage?
+            /// Each onboarding picture's face in the look its act and state
+            /// give it, through the board's engine, drawn once a look.
+            var onboardingStills: [String: NSImage] = [:]
+            func onboardingStill(_ look: StateSnapshot) -> NSImage? {
+                guard SlimeFeed.folder != nil else { return nil }
+                if let image = onboardingStills[look.jsonLine] { return image }
+                let image = try? SlimeSnapshots.image(look, to: home.appendingPathComponent("look-\(onboardingStills.count).png"))
+                onboardingStills[look.jsonLine] = image
+                return image
+            }
+            /// Where each onboarding picture's footprints start and its
+            /// main button ends, in pixels: the same in every one.
+            var onboardingFrames: [(name: String, marks: Int?, bar: Int?)] = []
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
                 checkSlimeHandOver()
@@ -48,7 +61,7 @@ enum Snapshots {
                 // Every look onboarding uses, through the board's engine:
                 // one it doesn't show as asked fails here.
                 for (name, look) in StateSnapshot.onboardingLooks {
-                    _ = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"))
+                    onboardingStills[look.jsonLine] = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"))
                 }
                 _ = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-working.png"))
                 // The popover's 46 pt tile, zoomed on the slime, at 2×.
@@ -283,8 +296,14 @@ enum Snapshots {
                 longSettings.advancedOpen = true
                 shot("settings-long", longSettings, pane: .settings)
 
-                for (name, onboarding) in onboardings(installer, gel: onboardingGel) {
-                    render(OnboardingView(model: onboarding), "onboarding-\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
+                let bareHome = home.appendingPathComponent("no-agents")
+                try FileManager.default.createDirectory(at: bareHome, withIntermediateDirectories: true)
+                let noAgents = HookInstaller.boop(home: bareHome, hookPath: hook.path)
+                for (name, onboarding) in onboardings(installer, noAgents: noAgents, unbuilt: unbuilt, gel: onboardingGel,
+                                                      still: onboardingStill) {
+                    let picture = "onboarding-\(name)-\(dark ? "dark" : "light")"
+                    let rep = render(OnboardingView(model: onboarding), picture, dark: dark, to: out)
+                    onboardingFrames.append((picture, onboardingMarksTop(rep), onboardingBarFoot(rep)))
                 }
                 if let crowded = overviews(installer).first(where: { $0.0 == "crowded" })?.1 {
                     crowded.status?.snapshot.vol = 0
@@ -302,26 +321,78 @@ enum Snapshots {
                 }
                 renderIcons(dark: dark, to: out)
             }
+            checkOnboardingFrame(onboardingFrames)
         } catch {
             fail("snapshots: \(error)")
         }
         exit(0)
     }
 
+    // MARK: Onboarding's frame
+
+    /// Every onboarding picture has its footprints' top and its main
+    /// button's foot at one height: the frame doesn't move from act to
+    /// act, or state to state, whatever an act holds.
+    static func checkOnboardingFrame(_ frames: [(name: String, marks: Int?, bar: Int?)]) {
+        guard let first = frames.first, let marks = first.marks, let bar = first.bar else {
+            fail("snapshots: onboarding: no footprints or main button in \(frames.first?.name ?? "any picture")")
+        }
+        // Half a point either way, for antialiasing.
+        let off = frames.filter { frame in
+            guard let m = frame.marks, let b = frame.bar else { return true }
+            return abs(m - marks) > 1 || abs(b - bar) > 1
+        }
+        guard off.isEmpty else {
+            fail("snapshots: onboarding's frame moves: footprints at \(marks) px and the button's foot at \(bar) px in \(first.name), but "
+                 + off.map { "\($0.name) \($0.marks.map(String.init) ?? "none")/\($0.bar.map(String.init) ?? "none")" }.joined(separator: ", "))
+        }
+        print("onboarding frame: \(frames.count) pictures, footprints at \(CGFloat(marks) / scale) pt, "
+              + "the main button's foot at \(CGFloat(bar) / scale) pt in every one")
+    }
+
+    /// Whether a pixel isn't the paper.
+    private static func inked(_ rep: NSBitmapImageRep, _ x: Int, _ y: Int, paper: NSColor) -> Bool {
+        guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+        return abs(c.redComponent - paper.redComponent) + abs(c.greenComponent - paper.greenComponent)
+            + abs(c.blueComponent - paper.blueComponent) > 0.08
+    }
+
+    /// The footprints' first inked row, across the window's middle, in the
+    /// top 80 pt.
+    static func onboardingMarksTop(_ rep: NSBitmapImageRep) -> Int? {
+        guard let paper = rep.colorAt(x: 2, y: 2)?.usingColorSpace(.sRGB) else { return nil }
+        let px = { (pt: CGFloat) in Int(pt * scale) }
+        return (0..<px(80)).first { y in stride(from: px(200), to: px(520), by: 1).contains { inked(rep, $0, y, paper: paper) } }
+    }
+
+    /// The main button's last inked row, up from the window's foot, just
+    /// inside its right edge (the gutter, x 672).
+    static func onboardingBarFoot(_ rep: NSBitmapImageRep) -> Int? {
+        guard let paper = rep.colorAt(x: 2, y: 2)?.usingColorSpace(.sRGB) else { return nil }
+        let x = Int((OnboardingView.size.width - Theme.windowGutter - Theme.gapSnug) * scale)
+        return stride(from: rep.pixelsHigh - 1, to: rep.pixelsHigh / 2, by: -1).first { inked(rep, x, $0, paper: paper) }
+    }
+
     /// Onboarding's acts, and the states of them worth seeing, each on a
     /// model of its own.
-    static func onboardings(_ installer: HookInstaller, gel: NSImage?) -> [(String, OnboardingModel)] {
-        func at(_ act: Onboarding.Act, status: Runtime.Status? = nil, _ set: (OnboardingModel) -> Void = { _ in }) -> OnboardingModel {
+    /// `noAgents` finds neither agent; `unbuilt` has no agent-hook to call.
+    /// Each picture's face is `still` of the look its act and state give
+    /// it, else `gel`.
+    static func onboardings(_ installer: HookInstaller, noAgents: HookInstaller, unbuilt: HookInstaller, gel: NSImage?,
+                            still: (StateSnapshot) -> NSImage?) -> [(String, OnboardingModel)] {
+        func at(_ act: Onboarding.Act, status: Runtime.Status? = nil, installer: HookInstaller = installer,
+                _ set: (OnboardingModel) -> Void = { _ in }) -> OnboardingModel {
             let app = model(installer, status: status)
             app.setup.name = act.index >= Onboarding.Act.makeMeYours.index ? "Mochi" : ""
             let onboarding = OnboardingModel(app: app, act: act, stateDir: URL(fileURLWithPath: "/tmp/boop-snapshots-onboarding"))
-            onboarding.feed.stillImage = gel
             set(onboarding)
+            onboarding.feed.stillImage = still(onboarding.look) ?? gel
             return onboarding
         }
+        let firmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
         let behind = at(.body, status: status()) {
             $0.body = .joined
-            $0.app.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+            $0.app.boardFirmware = firmware
         }
         return [
             ("1-hello", at(.hello)),
@@ -345,6 +416,17 @@ enum Snapshots {
             }),
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
+            // The update eating, and one that couldn't.
+            ("4-body-joined-feeding", at(.body, status: status()) {
+                $0.body = .joined
+                $0.app.boardFirmware = firmware
+                $0.app.firmwareWrite = .writing(0.42)
+            }),
+            ("4-body-joined-feed-failed", at(.body, status: status()) {
+                $0.body = .joined
+                $0.app.boardFirmware = firmware
+                $0.app.firmwareWrite = .failed("plug Mochi's body into this Mac with a USB cable that carries data, then try again.")
+            }),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
             // No board, in a build with the simulator window: it's offered.
             ("4-body-simulator-offered", at(.body) { $0.simulatorHere = true }),
@@ -373,9 +455,10 @@ enum Snapshots {
                 $0.body = .joined
                 $0.progress.lessons = [.tap]
             }),
+            // Three done, and the practice request glowing amber.
             ("5-how-to-done", at(.howTo, status: status()) {
                 $0.body = .joined
-                $0.progress.lessons = [.tap, .button]
+                $0.progress.lessons = [.tap, .button, .talk]
             }),
             ("5-how-to-no-board", at(.howTo, status: status(connected: false))),
             ("5-how-to-talk", at(.howTo, status: status()) {
@@ -400,12 +483,24 @@ enum Snapshots {
                 $0.talk = .heard("Hi Boop")
             }),
             ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
+            // Neither agent on this Mac; the agent-hook missing; a hook that couldn't go in.
+            ("6-agents-none", at(.agents, status: status(), installer: noAgents)),
+            ("6-agents-client-missing", at(.agents, status: status(), installer: unbuilt) { $0.app.setup.agents = [.claude] }),
+            ("6-agents-hook-error", at(.agents, status: status()) {
+                $0.app.setup.agents = [.claude]
+                $0.app.hookErrors[.claude] = "couldn't write ~/.claude/settings.json: permission denied"
+            }),
             ("6-agents-what-gets-added", at(.agents, status: status()) {
                 $0.app.setup.agents = [.claude]
                 $0.showHooks = true
             }),
             ("6-agents-hello", at(.agents, status: status()) { $0.connected = true }),
             ("6-agents-heard", at(.agents, status: status()) {
+                $0.connected = true
+                $0.progress.heard = "claude"
+            }),
+            // A board that doesn't tour (no drawer): heard, and on its way.
+            ("6-agents-heard-no-tour", at(.agents, status: status(face: .pixel)) {
                 $0.connected = true
                 $0.progress.heard = "claude"
             }),
@@ -425,6 +520,16 @@ enum Snapshots {
             }),
             ("7-small-things", at(.smallThings, status: status())),
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
+            ("7-small-things-mic-asking", at(.smallThings, status: status()) { $0.mic = .asking }),
+            ("7-small-things-mic-refused", at(.smallThings, status: status()) {
+                $0.mic = .refused("Allow Boop in System Settings → Privacy & Security → Microphone.")
+            }),
+            ("7-small-things-key-saved", at(.smallThings, status: status()) { $0.keySaved = true }),
+            ("7-small-things-key-failed", at(.smallThings, status: status()) { $0.keySaved = false }),
+            ("7-small-things-login-approval", at(.smallThings, status: status()) {
+                $0.app.loginItem = LoginItem(state: { .needsApproval }, set: { _ in })
+                $0.app.refreshLoginItem()
+            }),
             // Act 5's push-to-talk had the mic allowed: no card for it.
             ("7-small-things-mic-allowed-before", at(.smallThings, status: status()) { $0.askMic = false }),
             // `make dev`'s bare binary, which can't open at login.
@@ -452,19 +557,26 @@ enum Snapshots {
                 $0.body = .joined
                 $0.progress.lessons = [.tap, .button]
             }),
+            // No name in acts 6 and 7: their longest words are errors.
             ("6-agents-long", at(.agents, status: status(name: Long.name)) {
                 $0.app.setup.name = Long.name
                 $0.connected = true
                 $0.progress.heard = "claude"
+                $0.app.hookErrors[.codex] = Long.detail
             }),
             ("7-small-things-long", at(.smallThings, status: status(name: Long.name)) {
                 $0.app.setup.name = Long.name
+                $0.app.loginItemError = Long.detail
+                $0.mic = .refused(Long.detail)
+                $0.keySaved = false
             }),
             ("8-world", at(.world, status: status())),
             ("8-world-long", at(.world, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
+            ("8-world-unbroken", at(.world, status: status(name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
             ("9-finale-long", at(.finale, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
             ("9-finale-unbroken", at(.finale, status: status(connected: false, name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
-            ("9-finale", at(.finale, status: status())),
+            // A board with no drawer: the poke's tip.
+            ("9-finale", at(.finale, status: status(face: .pixel))),
             // A gel board: the drawer's tip in the poke's place.
             ("9-finale-gel", at(.finale, status: status(face: .gel))),
             // After "I don't have my Boop yet": the Mac's way of each tip.
@@ -1226,7 +1338,9 @@ enum Snapshots {
     private static let window = NSWindow(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
 
     /// `whole`: tall enough for all of it, so nothing in it may scroll.
-    static func render<V: View>(_ view: V, _ name: String, dark: Bool, to dir: URL, heightLimit: CGFloat? = nil, whole: Bool = false) {
+    @discardableResult
+    static func render<V: View>(_ view: V, _ name: String, dark: Bool, to dir: URL, heightLimit: CGFloat? = nil,
+                                whole: Bool = false) -> NSBitmapImageRep {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: view
             .environment(\.colorScheme, dark ? .dark : .light)
@@ -1260,6 +1374,7 @@ enum Snapshots {
         let url = dir.appendingPathComponent("\(name).png")
         do { try png.write(to: url) } catch { fail("snapshots: can't write \(url.path): \(error)") }
         print("\(name).png \(Int(host.bounds.width))×\(Int(host.bounds.height)) pt at \(Int(scale))×")
+        return rep
     }
 
     /// Pixels a point in the panes' and onboarding's pictures.

@@ -46,6 +46,9 @@ final class OnboardingModel: ObservableObject {
 
     // Act 6: what gets added, shown.
     @Published var showHooks = false
+    /// How act 7's key card last saved, to draw it so (the snapshots do):
+    /// true kept, false refused, nil none yet. The card keeps its own after.
+    var keySaved: Bool?
 
     // Act 7: the microphone and speech, once asked. The card is left out
     // when act 5's push-to-talk already had them allowed.

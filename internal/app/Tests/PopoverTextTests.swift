@@ -4,7 +4,7 @@ import XCTest
 /// Text in the Mac app's views wraps, and its pane makes room or scrolls:
 /// nothing is cut, unless the line says so with `// cut:` and why, and its
 /// whole text is in the view's help (a session's row, the header's status
-/// line). `Boop --snapshots` checks the Overview by laying it out with long
+/// line, onboarding's bar and its long titles). `Boop --snapshots` checks the Overview by laying it out with long
 /// values, which these tests can't, as `Boop` isn't a library.
 final class PopoverTextTests: XCTestCase {
     static let views = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
