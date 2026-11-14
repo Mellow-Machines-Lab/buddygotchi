@@ -182,6 +182,12 @@ enum Snapshots {
                 (longMemory.notes, longMemory.recently) = (longNotes, longDays)
                 shot("memory-long", model(installer, status: longMemory), pane: .memory)
                 shot("memory-not-running", model(installer, status: nil), pane: .memory)
+                // A note just forgotten, its Undo still there, and a second pinned note first.
+                var forgetting = status()
+                forgetting.notes.append(.init(id: 14, section: .you, days: ["2026-10-21"], pinned: true, text: "You call the board \"the slime\"."))
+                PendingForgets.shared.show(12)
+                shot("memory-forget-pending", model(installer, status: forgetting), pane: .memory)
+                PendingForgets.shared.reset()
                 let settings = model(installer, status: status(sessions: [["codex", "landing", "work"]]))
                 try? installer.install(.claude)
                 settings.refreshHooks()
