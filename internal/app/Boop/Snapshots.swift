@@ -166,6 +166,21 @@ enum Snapshots {
                 settings.restartAgents = true
                 settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
+                // Advanced open: the body, the paired board, the simulator, the key, uninstall.
+                settings.advancedOpen = true
+                shot("settings-advanced", settings, pane: .settings)
+                // Renaming: the field under the Name row, and a week's wait after.
+                let renaming = model(installer, status: status())
+                renaming.renameDraft = "Mochi Jr"
+                shot("settings-renaming", renaming, pane: .settings)
+                renaming.renameDraft = "Mochi: the second"
+                shot("settings-renaming-issue", renaming, pane: .settings)
+                var locked = status()
+                locked.nextRename = Date().addingTimeInterval(4 * 86_400)
+                shot("settings-rename-locked", model(installer, status: locked), pane: .settings)
+                var swearing = status()
+                swearing.swearing = true
+                shot("settings-swearing-on", model(installer, status: swearing), pane: .settings)
                 // Out of the world, and shown as "a buddy".
                 var privately = status()
                 privately.world?.on = false
@@ -206,6 +221,7 @@ enum Snapshots {
                 // The board runs older firmware than the app carries, and then it's being written.
                 let behind = model(installer, status: status())
                 behind.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                behind.advancedOpen = true
                 shot("settings-firmware-offer", behind, pane: .settings)
                 behind.firmwareWrite = .writing(0.42)
                 shot("settings-firmware-writing", behind, pane: .settings)
@@ -214,8 +230,11 @@ enum Snapshots {
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: bluetooth(.poweredOff))),
                      pane: .settings)
                 // The simulator window, in a build that has it: off, and on.
-                shot("settings-simulator-off", model(installer, status: status()), pane: .settings)
+                let simulatorOff = model(installer, status: status())
+                simulatorOff.advancedOpen = true
+                shot("settings-simulator-off", simulatorOff, pane: .settings)
                 let simulated = model(installer, status: status())
+                simulated.advancedOpen = true
                 simulated.usingSimulator = true
                 shot("settings-simulator-on", simulated, pane: .settings)
                 // A card with another pack than the app's, and no card or pack: no voice.
@@ -232,6 +251,7 @@ enum Snapshots {
                 longSettings.loginItemError = Long.detail
                 longSettings.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
                 longSettings.firmwareWrite = .failed(Long.detail)
+                longSettings.advancedOpen = true
                 shot("settings-long", longSettings, pane: .settings)
 
                 for (name, onboarding) in onboardings(installer, gel: onboardingGel) {
