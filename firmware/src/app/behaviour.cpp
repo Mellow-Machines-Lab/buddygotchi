@@ -111,6 +111,7 @@ bool Behaviour::sayDue(uint32_t t) const {
 bool Behaviour::exprOn(uint32_t t) const { return expr_ && within(t, exprAt_, exprMs_); }
 
 bool Behaviour::signOn(uint32_t t) const { return sign_.text[0] && within(t, sign_.at, sign_.ms); }
+bool Behaviour::goldOn(uint32_t t) const { return gold_.text[0] && within(t, gold_.at, gold_.ms); }
 
 bool Behaviour::signDue(uint32_t t) const { return sign_.text[0] && int32_t(t - sign_.at) < int32_t(sign_.ms); }
 
@@ -271,7 +272,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
       greetKey_ = 0;
       say_ = Say{};  // no `say`, sign or ask while something needs you
       if (ask_.q[0]) endAsk("ignored", t);
-      sign_ = gone_ = reason_ = Sign{};
+      sign_ = gone_ = reason_ = gold_ = Sign{};
       expr_ = false;
     }
     // Answered on the Mac (`attn` leaves), or back after no app: the face
@@ -329,7 +330,7 @@ Behaviour::Parts Behaviour::partsOf(const ReactionIn& in, uint32_t t) const {
   p.anim = in.anim != render::SceneState::kNone && (listen || !(noApp(t) || held(t)));
   p.say = in.take >= 0 && !model_.attn && !noApp(t);
   p.face = in.expr && !heldFrom(in, t);  // listening, if it's still on, holds the face
-  p.sign = in.sign[0] && !heldFrom(in, t);
+  p.sign = (in.sign[0] || in.gold[0]) && !heldFrom(in, t);
   return p;
 }
 
@@ -393,7 +394,17 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       if (say && voice + say_.ms > exprMs_) exprMs_ = voice + say_.ms;
       exprKey_ = in.key;
     }
-    if (sign) {  // as long as the rest of it plays, from now, and long enough to read
+    // A newer reaction takes the gold down, as it takes the reason.
+    gold_ = Sign{};
+    if (sign && in.gold[0]) {  // as a low sign's, and as long as the rest of it plays
+      copyStr(gold_.text, sizeof(gold_.text), in.gold);
+      gold_.at = t;
+      gold_.ms = kLowSignMinMs;
+      if (anim && !listen) gold_.ms = std::max(gold_.ms, reaction_.ms);
+      if (in.expr) gold_.ms = std::max(gold_.ms, exprMs_);
+      gold_.key = in.key;
+    }
+    if (sign && in.sign[0]) {  // as long as the rest of it plays, from now, and long enough to read
       copyStr(sign_.text, sizeof(sign_.text), in.sign);
       sign_.reply = in.expr && in.reply[0];
       sign_.low = in.low;
@@ -420,7 +431,9 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       reason_.at = t;
       reason_.ms = kSignMinMs;
       if (anim && !listen) reason_.ms = std::max(reason_.ms, reaction_.ms);
-      if (say) reason_.ms = std::max(reason_.ms, voice + say_.ms);
+      // A face that has one row for both shows the bubble first: the reason
+      // stays to be read after the words.
+      if (say) reason_.ms = std::max(reason_.ms, voice + say_.ms + kSignMinMs);
       if (in.expr) reason_.ms = std::max(reason_.ms, exprMs_);
       reason_.key = in.key;
       if (own) {
@@ -497,7 +510,7 @@ void Behaviour::endSay(uint32_t t, CutBy by) {
   say_ = Say{};
   expr_ = false;
   if (signOn(t)) signGoes(t);
-  sign_ = reason_ = Sign{};
+  sign_ = reason_ = gold_ = Sign{};
   ++reactionSeq_;
 }
 
@@ -689,6 +702,7 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   }
   if (c.borrowed) c.reply = exprReply_, c.replyAt = exprAt_;
   c.attentionId = model_.attnId;
+  c.attentionKind = model_.attnKind;
   c.agent = model_.agent;
   c.project = model_.project;
   c.thread = model_.name;
@@ -740,7 +754,7 @@ void Behaviour::setFaceDown(bool down, uint32_t t) {
     if (down && say_.take >= 0) endSay(t, CutBy::kNone);
     if (down && signOn(t)) signGoes(t);
     if (down && ask_.q[0]) endAsk("ignored", t);
-    if (down) sign_ = reason_ = Sign{};
+    if (down) sign_ = reason_ = gold_ = Sign{};
   });
 }
 
@@ -877,7 +891,7 @@ const char* Behaviour::caption(uint32_t t) const {
   if (asking(t) || !reason_.text[0] || !within(t, reason_.at, reason_.ms) || noApp(t)) return nullptr;
   if (model_.attn && !reason_.reply) return nullptr;
   // A low sign and a finish's ticket have the lane's foot.
-  if ((sign_.low && signOn(t)) || finishShown(t)) return nullptr;
+  if ((sign_.low && signOn(t)) || goldOn(t) || finishShown(t)) return nullptr;
   return reason_.text;
 }
 
@@ -924,7 +938,10 @@ void Behaviour::signGoes(uint32_t at) {
 
 render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
-  if (noApp(t) || (model_.attn && !(signOn(t) ? sign_ : gone_).reply)) return s;
+  if (noApp(t)) return s;
+  if (goldOn(t) && !model_.attn)
+    s.gold = gold_.text, s.goldMs = t - gold_.at, s.goldLeftMs = int32_t(gold_.at + gold_.ms - t);
+  if (model_.attn && !(signOn(t) ? sign_ : gone_).reply) return s;
   if (signOn(t)) {
     s.text = sign_.text, s.ms = t - sign_.at, s.low = sign_.low;
     if (sign_.low) s.leftMs = int32_t(sign_.at + sign_.ms - t);

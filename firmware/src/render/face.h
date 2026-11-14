@@ -84,6 +84,12 @@ struct SignShow {
   // and how long until it has gone.
   bool low = false;
   int32_t leftMs = -1;
+  // A celebration's words, held low in gold with the rim glowing gold
+  // (`gold`, "level 13!"), beside the sign or alone: how long since the
+  // reaction began, and how long until it has gone. Null for none.
+  const char* gold = nullptr;
+  uint32_t goldMs = 0;
+  int32_t goldLeftMs = -1;
 };
 // The finished turn the brain's reaction is about (its `who`), while the
 // reaction plays and lingers after (app/behaviour.h): whose turn, how it
@@ -133,6 +139,7 @@ struct FaceContext {
   const char* reply = "";
   uint32_t replyAt = 0;
   uint32_t attentionId = 0;
+  AttnKind attentionKind = AttnKind::kNone;
   const char* agent = "";
   const char* project = "";
   const char* thread = "";

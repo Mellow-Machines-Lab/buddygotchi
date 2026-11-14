@@ -1,7 +1,7 @@
 // The three anti-aliased fonts (the v1 build plan's F2, and the needs-you screen's): Geist Mono, generated into
 // firmware/assets/fonts.h by internal/tools/fontgen. Monospaced, printable ASCII plus
 // "·" (UTF-8 C2 B7). Accented Latin letters (U+00C0 to U+00FF) show as their
-// plain letter and anything else as "?". Text is drawn over black with an
+// plain letter, "…" (E2 80 A6) is a glyph of its own, and anything else is "?". Text is drawn over black with an
 // ink ramp, or in black over the needs-you screen's amber (kInkOnAmber).
 #pragma once
 #include <cstddef>
@@ -11,13 +11,17 @@
 
 namespace render {
 
+// The glyph index of "…" (U+2026), the second extra after '~': the gel
+// ends a cut in it, one cell where ".." takes two.
+constexpr int kEllipsis = 96;
+
 struct Font {
   uint8_t w, h, baseline, count;
   const uint8_t* data;  // 4-bit coverage, high nibble first, row by row
 };
 
-extern const Font& kSmall;  // 8 × 18 cells, for the strip
-extern const Font& kLarge;  // 13 × 30 cells, for the bubble's text
+extern const Font& kSmall;  // 8 × 18 cells: the CYD's strip; on the gel, art only, never words to read
+extern const Font& kLarge;  // 13 × 30 cells: the CYD's bubble; on the gel, a second line, the narration
 extern const Font& kSign;   // 17 × 38 cells, for a reaction's sign, the needs-you screen's thread and the gel's lane
 
 // Draws `text` with its cell's top-left at (x, y). Returns the x after it.

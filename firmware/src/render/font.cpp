@@ -39,6 +39,10 @@ int nextGlyph(const char*& p) {
     ++p;
     return kDot;
   }
+  if (c == 0xE2 && next == 0x80 && static_cast<unsigned char>(p[1]) == 0xA6) {
+    p += 2;
+    return kEllipsis;
+  }
   if (c == 0xC3 && (next & 0xC0) == 0x80) {
     ++p;
     return kLatin1[next - 0x80] - 0x20;

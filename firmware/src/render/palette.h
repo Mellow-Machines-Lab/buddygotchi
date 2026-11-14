@@ -23,10 +23,23 @@ struct Rgb {
 
 // The Warm Terminal colours.
 constexpr Rgb kGlass = {0, 0, 0};          // the backlit black
-constexpr Rgb kEyeRgb = {246, 244, 238};   // warm white: whose turn it was, a reply's dots
-constexpr Rgb kAmberRgb = {255, 176, 0};   // the one accent: needs you, the bubble's text
+constexpr Rgb kEyeRgb = {246, 244, 238};   // warm white: whose turn it was, the voice's words, the numbers
+// The one accent, and it means needs you only: its dot, its name, the
+// drawer's row, and on the gel the card itself, filled, its words in
+// kNeedsYouInkRgb on it. (The pixel face's needs-you screen is this amber
+// with black on it.) Gold celebrates (kGoldRgb); neither is ever the voice.
+constexpr Rgb kAmberRgb = {255, 176, 0};
+constexpr Rgb kNeedsYouInkRgb = {28, 20, 0};
 constexpr Rgb kGreyRgb = {140, 132, 121};  // secondary text
 constexpr Rgb kDimRgb = {74, 68, 62};      // faint text, dividers, rings, the bubble's box
+// The gel's reading greys, warm: the narration and the strip's words, a
+// line a person reads in grey; the drawer's grabber; the lane's rule.
+constexpr Rgb kNarrationRgb = {173, 163, 150};
+constexpr Rgb kGrabberRgb = {112, 104, 96};
+constexpr Rgb kRuleRgb = {58, 54, 50};
+// Celebration: today's ring full, a level, the trophy. A shape's colour, or
+// a celebration's low sign's, never the voice's words.
+constexpr Rgb kGoldRgb = {242, 196, 86};
 // The finish's marks on the strip: a success's tick in sage, a failure's
 // cross in clay, the Mac's own inks for them on dark (its Theme).
 constexpr Rgb kSageRgb = {163, 204, 144};

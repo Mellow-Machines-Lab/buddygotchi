@@ -1014,6 +1014,18 @@ static void test_needs_you_shows_and_alerts_once() {
   TEST_ASSERT_EQUAL_STRING("150000", alertOf(r).c_str());
   r.usbLine("{\"t\":\"dbg.state\"}");
   TEST_ASSERT_TRUE(has(r.usb.text, "\"project\":\"site\",\"name\":\"Fix the hero\""));
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"kind\":\"approve\""));  // none said, none shown back
+  // What it asks of you (`attn.kind`) is read and shown back, and an
+  // unknown kind is none; the kind alone is the same needs-you.
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"codex\",\"project\":\"site\",\"name\":\"Fix the hero\",\"id\":5,\"kind\":\"plan\"}}");
+  TEST_ASSERT_EQUAL_STRING("150000", alertOf(r).c_str());
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"id\":5,\"kind\":\"plan\""));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"attn\":{\"agent\":\"codex\",\"project\":\"site\",\"id\":5,\"kind\":\"later\"}}");
+  r.usbLine("{\"t\":\"dbg.state\"}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"id\":5}"));
   r.usbLine("{\"t\":\"state\",\"base\":\"working\"}");
   TEST_ASSERT_EQUAL_STRING("face", r.screen().c_str());
   TEST_ASSERT_EQUAL_UINT32(0, r.hal.led);
