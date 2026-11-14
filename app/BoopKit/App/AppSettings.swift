@@ -6,6 +6,10 @@ import Foundation
 public struct AppSettings: Codable, Equatable, Sendable {
     /// How much it says (`Talk`).
     public var talk = Talk.default
+    /// Whether Boop may swear when a turn fails badly: off unless you turn
+    /// it on. Off, the brain is never offered a swear and no swear take
+    /// plays (`MomentOutput.speech`).
+    public var swearing = false
     public var volume = 6
     /// Several buddies side by side, each its own board and pack: empty, or
     /// one, for the one Boop.
@@ -45,6 +49,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // Chatter, the debugging personality before Talk (2026-10-25), was
         // the chatty one.
         talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? (saved == "chatter" ? .chatty : .default)
+        swearing = (try? c.decodeIfPresent(Bool.self, forKey: .swearing)) ?? false
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
         buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
         board = try? c.decodeIfPresent(String.self, forKey: .board)
@@ -55,11 +60,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, volume, buddies, board, onboarding, workStream, simulator, world, worldShown }
+    enum CodingKeys: String, CodingKey { case personality, talk, swearing, volume, buddies, board, onboarding, workStream, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
         try c.encode(talk, forKey: .talk)
+        if swearing { try c.encode(swearing, forKey: .swearing) }
         try c.encode(volume, forKey: .volume)
         if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
         try c.encodeIfPresent(board, forKey: .board)

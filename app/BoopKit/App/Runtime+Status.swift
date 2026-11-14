@@ -107,6 +107,8 @@ extension Runtime {
         public var board: String?
         /// Whether the board shows the work stream.
         public var workStream = true
+        /// Whether Boop may swear (`AppSettings.swearing`).
+        public var swearing = false
         /// Each buddy, when there are several; empty for one, which the
         /// fields above are.
         public var buddies: [BuddyStatus] = []
@@ -186,6 +188,7 @@ extension Runtime {
         status.uncleanExit = uncleanExit
         status.board = settings.board
         status.workStream = settings.workStream
+        status.swearing = options.swearing ?? settings.swearing
         status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }
         if pipeline.several {
             status.buddies = rigs.map { rig in
