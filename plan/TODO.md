@@ -1,8 +1,63 @@
 # TODO
 
-Updated 2026-11-09. What's next, one at a time, top first. Tick an item
+Updated 2026-11-14. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-14: the UI review, built
+
+**Read this first.** [ui-review.md](ui-review.md) is built on `v1-polish`, from
+`c12c9cc8` to the merge of `ui-board`. SlimeBuddy's `main-v2` has two new local
+commits (`a2bb048`, `a87455b`) and PixelBuddy's one (`427a7a3`, its demo
+recordings). Nothing is pushed, nothing is flashed, and the packs' `engine/` pins
+didn't move. The §7 questions went by the review's recommendations; the corner gap
+and the angry face are left for the owner's eye.
+
+**Landed:**
+- **The base:** one spacing scale (the gutter 18 → 16), named type, radii by use,
+  one `Chip`, row buttons 24 pt tall, and a light-paper partner for every bright
+  colour drawn as a shape. The contrast check covers shapes (92 pairs). A request
+  says what it asks (`attn.kind`: a yes or no, a question, a plan to read).
+- **The header and Now:** two rows that can't overflow (the level went to the Boop
+  tab, Hush into Talk's menu); a needs-you card with its kind and real buttons; one
+  list sorted by need; notices as one strip; a mood card only with a reason. A
+  check keeps the face on the gutter in every Overview.
+- **The tabs:** the Boop tab without "XP" ("82 of 100", a level bar, days
+  together, seven slots); the World tab as a sentence in a small world, a band
+  with a lane for you, a legend and region counts, one "Say hi"; the memory pane
+  in one card, with five seconds to undo a forget.
+- **Settings:** the buddy first, Talk as one control, Advanced closed, one trouble
+  strip; rename once a week (the runtime restarts to take the name); a swear
+  switch, off by default (evals and demos keep swearing on, so no prompt changed).
+- **Onboarding:** one frame for all 9 acts (the marks and the button never move;
+  a check pins it in all 132 pictures); act 5 fits; a face for each state; the
+  missing states pictured.
+- **The board:** nothing to read under the 22 px font; one lane row (bubble, else
+  narration, else the strip in words); a needs-you card in the top band with its
+  kind; the ring and a level as one moment (a `do`'s `gold`); 66 px drawer rows;
+  "no Mac"; signs Boop holds in lower case; amber for needs you only.
+
+**Checked:** `make -C internal test` (737 passed, 1 skipped), `Boop --snapshots`
+(every check), `boopdev eval --scripted` (142/142), and on `ui-board`
+`make -C internal check`, `boards` (both SUCCESS), the mirror (582 shots the same),
+355 goldens looked at and accepted. No Jev request.
+
+**Not done:** the world goal card and "Mochi added" (the world snapshot has no
+goal); activities 8 → 4 and emotions 42 → 18 (the model phase); onboarding's 5
+acts; BRD-15, 19 (the ask's two pills), 26, 35, 36, 42; the 4 px corner gap.
+
+**The owner, on the panel** (with `make dev` off its Bluetooth, the board flashed
+from this branch):
+- From the chair: the narration, the ring's number, the strip in words, the card's
+  kind line. Is the saturated amber card too bright at night?
+- A finger on each 66 px drawer row; the bubble 3 px under the grabber.
+- The finish glow's dither; the gold flood, by day and at night.
+- Frame rate with the new drawing (`boopctl perf --scenes`); none was measured.
+- The work act's rise: the strip fades beside the sign for a moment.
+- The angry face (`moods/angry.png` looks delighted) and the corner gap.
+
+**On the Mac, live:** rename restarts the runtime, which reconnects the board's
+Bluetooth: try it once. Hover, motion and focus were judged from stills only.
 
 ## Plan, 2026-11-09: after the product review
 
