@@ -2,68 +2,79 @@ import BoopKit
 import SwiftUI
 
 /// The World tab: the live numbers, the band of time zones with a buddy's
-/// card on a click, what other buddies did for Boop today, and the regions.
+/// card on a click, and what other buddies did for Boop today. While the
+/// world loads, or can't be reached, the layout stays as it will be, with
+/// the words on the empty band, so the popover doesn't jump.
 /// The world is fetched only while this tab is in sight (`AppModel.tab`).
 struct WorldPane: View {
     @ObservedObject var model: AppModel
+
+    /// Under this many buddies the numbers are a sentence, not a card.
+    static let small = 20
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.gapSection) {
             if let world = model.status?.world {
                 content(world)
             } else {
-                NoteCard("The world isn't reachable from here.")
+                VStack(alignment: .leading, spacing: Theme.gap) {
+                    sentence(nil)
+                    band(nil, world: nil, message: "The world isn't reachable from here.", trouble: false)
+                }
             }
         }
     }
 
     @ViewBuilder private func content(_ world: Runtime.WorldStatus) -> some View {
-        if !world.on {
-            privateNote
-        } else if !world.inWorld {
-            Label("Joining the world…", systemImage: "globe")
-                .caption()
-                .padding(.leading, 2)
-        }
-        if let snapshot = world.link.snapshot {
-            VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                if world.link.trouble != nil {
-                    Label("The world isn't answering, so this may be out of date.", systemImage: "exclamationmark.triangle")
-                        .caption()
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.leading, 2)
-                }
-                tiles(snapshot)
-            }
-            VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                WorldBand(buddies: snapshot.buddies, awake: snapshot.awake, me: world.link.id,
-                          you: world.utcOffset, youIn: world.inWorld,
-                          pick: Binding(get: { model.worldPick }, set: { pick in withAnimation(.boopSettle) { model.worldPick = pick } }))
-                Text("Buddies around the world, by time zone. Click one.")
+        let snapshot = world.link.snapshot
+        VStack(alignment: .leading, spacing: Theme.gap) {
+            if !world.on { privateNote }
+            // One slot for how the world is with you: joining, or out of date.
+            if let note = statusNote(world) {
+                Label(note, systemImage: world.link.trouble != nil ? "exclamationmark.triangle" : "globe")
                     .caption()
-                    .padding(.leading, 2)
-                if let pick = model.worldPick, let buddy = snapshot.buddies.first(where: { $0.id == pick }) {
-                    card(buddy, world: world)
-                        .transition(.opacity)
-                }
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, Theme.hair)
             }
-        } else if world.link.trouble != nil {
-            NoteCard("The world can't be reached just now. \(model.name) will keep trying.")
-        } else {
-            NoteCard("Looking around the world…")
+            if let snapshot, snapshot.total >= Self.small { columns(snapshot) } else { sentence(snapshot) }
+            band(snapshot, world: world,
+                 message: snapshot != nil ? nil : world.link.trouble != nil
+                     ? "The world can't be reached just now. \(model.name) will keep trying." : "Looking around the world…",
+                 trouble: snapshot == nil && world.link.trouble != nil)
+            if let snapshot, snapshot.total < Self.small {
+                Text(Self.firstLine(snapshot.total, name: model.name)).caption()
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.leading, Theme.hair)
+            }
+            if let snapshot, let pick = model.worldPick, let buddy = snapshot.buddies.first(where: { $0.id == pick }) {
+                card(buddy, world: world)
+                    .transition(.opacity)
+            }
         }
-        PaneSection("For \(model.name) today") { arrivals(world.link.today) }
-        if let snapshot = world.link.snapshot {
-            PaneSection("Around the world") { regions(snapshot.regions) }
+        // Not known while the world can't be read: hidden until it can, or something came.
+        if snapshot != nil || !world.link.today.isEmpty {
+            PaneSection("For \(model.name) today") { arrivals(world.link.today) }
         }
+    }
+
+    /// Joining, or the world not answering with an older world on show.
+    private func statusNote(_ world: Runtime.WorldStatus) -> String? {
+        if world.on, !world.inWorld { return "Joining the world…" }
+        if world.link.snapshot != nil, world.link.trouble != nil { return "The world isn't answering, so this may be out of date." }
+        return nil
+    }
+
+    /// "5 buddies so far. Mochi is one of the first."
+    static func firstLine(_ total: Int, name: String) -> String {
+        "\(total.formatted()) \(total == 1 ? "buddy" : "buddies") so far. \(name) is one of the first."
     }
 
     /// The world is off: Boop is out of it, and the way back in.
     private var privateNote: some View {
         Card {
             HStack(alignment: .center, spacing: Theme.gapSnug) {
-                Text("\(model.name) is private. Others can't see or boop it.")
-                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+                Text("\(model.name) is private. Others can't see or say hi to it.")
+                    .font(.body).foregroundStyle(Theme.inkSoft)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 Button("Open Settings") { model.pane = .settings }
@@ -72,82 +83,143 @@ struct WorldPane: View {
         }
     }
 
-    // MARK: The numbers
-
-    private func tiles(_ snapshot: World.Snapshot) -> some View {
-        HStack(spacing: Theme.gapSnug) {
-            tile(snapshot.awake, "awake")
-            tile(snapshot.doing[World.Activity.coding.rawValue] ?? 0, "coding")
-            tile(snapshot.today.testsPassed, "tests today")
-        }
+    private func band(_ snapshot: World.Snapshot?, world: Runtime.WorldStatus?, message: String?, trouble: Bool) -> some View {
+        WorldBand(buddies: snapshot?.buddies ?? [], awake: snapshot?.awake ?? 0, regions: snapshot?.regions,
+                  me: world?.link.id, you: world?.utcOffset ?? TimeZone.current.secondsFromGMT() / 60,
+                  youIn: world?.inWorld ?? false,
+                  pick: Binding(get: { model.worldPick }, set: { pick in withAnimation(.boopSettle) { model.worldPick = pick } }),
+                  message: message, trouble: trouble)
     }
 
-    private func tile(_ n: Int, _ label: String) -> some View {
-        Card(padding: 10) {
-            VStack(alignment: .leading, spacing: 1) {
-                // A big number takes a smaller size rather than wrap or cut.
-                ViewThatFits(in: .horizontal) {
-                    ForEach([17, 14, 12] as [CGFloat], id: \.self) { size in
-                        Text(n.formatted()).font(.boop(size, .bold)).monospacedDigit().fixedSize()
-                    }
-                }
-                Text(label).caption()
-            }
+    // MARK: The numbers
+
+    /// The three numbers: awake, coding and tests passed today; nil while
+    /// the world isn't known.
+    static func numbers(_ snapshot: World.Snapshot?) -> [(n: Int?, label: String)] {
+        [(snapshot?.awake, "awake"),
+         (snapshot.map { $0.doing[World.Activity.coding.rawValue] ?? 0 }, "coding"),
+         (snapshot?.today.testsPassed, "tests today")]
+    }
+
+    /// A small world's numbers, as one line: "3 awake · 1 coding · 12 tests today".
+    private func sentence(_ snapshot: World.Snapshot?) -> some View {
+        Self.numbers(snapshot).enumerated().reduce(Text("")) { line, item in
+            let (i, number) = item
+            return line + Text(i > 0 ? " · " : "").foregroundStyle(Theme.inkSoft)
+                + Text(number.n?.formatted() ?? "–").fontWeight(.semibold) + Text(" \(number.label)")
         }
+        .font(.lead)
+        .padding(.leading, Theme.hair)
         .accessibilityElement(children: .combine)
+    }
+
+    /// A large world's numbers: one card, three columns.
+    private func columns(_ snapshot: World.Snapshot) -> some View {
+        Card(padding: Card<EmptyView>.rows) {
+            HStack(spacing: 0) {
+                ForEach(Array(Self.numbers(snapshot).enumerated()), id: \.offset) { i, number in
+                    if i > 0 { Rectangle().fill(Theme.hairline).frame(width: 1) }
+                    VStack(alignment: .leading, spacing: Theme.hair) {
+                        // A big number takes a smaller size rather than wrap or cut.
+                        ViewThatFits(in: .horizontal) {
+                            ForEach([Font.boopTitle, .boopHeading, .boopLabel], id: \.self) { font in
+                                Text(number.n?.formatted() ?? "–").font(font).monospacedDigit().fixedSize()
+                            }
+                        }
+                        Text(number.label).caption()
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(Theme.gap)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     // MARK: A buddy's card
 
+    /// What saying hi to a buddy sends: the boop, or Cheer while it ships.
+    static func gesture(for buddy: World.Buddy) -> World.GestureKind { buddy.activity == .shipping ? .cheer : .boop }
+
+    /// The face a buddy's card shows, by what it's doing.
+    static func face(_ activity: World.Activity) -> FaceMood {
+        switch activity {
+        case .asleep: .asleep
+        case .idle, .waiting: .idle
+        case .coding, .testing, .shipping: .working
+        }
+    }
+
     private func card(_ buddy: World.Buddy, world: Runtime.WorldStatus) -> some View {
         let isYou = buddy.id == world.link.id
-        let sent = model.worldSent[buddy.id] ?? .init()
-        let kinds: [World.GestureKind] = [.wave, .boop, .heart] + (buddy.activity == .shipping ? [.cheer] : [])
-        return Card {
+        return HStack(alignment: .top, spacing: Theme.gap) {
+            BoopFace(mood: Self.face(buddy.activity), size: 32)
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
-                HStack(alignment: .firstTextBaseline, spacing: 0) {
-                    Text(buddy.name).font(.system(size: 13, weight: .semibold))
-                    Text(" · level \(buddy.level)" + (isYou ? " · you" : "")).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                        .fixedSize()
+                VStack(alignment: .leading, spacing: Theme.hair) {
+                    (Text(buddy.name).font(.bodyStrong) + Text(" · level \(buddy.level.formatted())" + (isYou ? " · you" : ""))
+                        .font(.body).foregroundStyle(Theme.inkSoft))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(Self.whereAndWhat(buddy)).caption()
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(.trailing, 18)
-                Text(Self.whereAndWhat(buddy)).caption()
-                    .fixedSize(horizontal: false, vertical: true)
+                .padding(.trailing, Theme.target)
                 if isYou {
                     Text("This is \(model.name), as other buddies see it.").caption()
                         .fixedSize(horizontal: false, vertical: true)
-                } else {
-                    HStack(spacing: 6) {
-                        ForEach(kinds, id: \.self) { kind in
-                            let done = sent.sent.contains(kind)
-                            Button { model.sendGesture(kind, to: buddy.id) } label: {
-                                // Snug, so four fit on a line: Cheer's too, for a ship.
-                                HStack(spacing: 4) {
-                                    Image(systemName: done ? "checkmark" : Self.symbol(kind))
-                                    Text(Self.label(kind))
-                                }
-                                .fixedSize()
-                                .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.row)
-                            .disabled(!world.inWorld || model.worldSending || done)
-                            .accessibilityLabel(done ? "\(Self.label(kind)), sent" : Self.label(kind))
-                        }
-                    }
-                    if let (words, failed) = sentWords(sent, buddy: buddy, world: world) {
-                        Text(words).font(.system(size: 11)).foregroundStyle(failed ? Theme.clayInk : Theme.inkSoft)
+                } else if !world.on {
+                    HStack(alignment: .center, spacing: Theme.gapSnug) {
+                        Text("\(model.name) is private, so it can't say hi.").caption()
                             .fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: 0)
+                        Button("Open Settings") { model.pane = .settings }.buttonStyle(.row).fixedSize()
                     }
+                } else {
+                    action(buddy, world: world)
                 }
             }
         }
+        .padding(Theme.gap)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.lifted, in: RoundedRectangle(cornerRadius: Theme.cardRadius))
+        .overlay(RoundedRectangle(cornerRadius: Theme.cardRadius).strokeBorder(Theme.hairlineStrong, lineWidth: 1))
+        .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         .overlay(alignment: .topTrailing) {
             Button { withAnimation(.boopSettle) { model.worldPick = nil } } label: {
-                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+                Image(systemName: "xmark")
             }
-            .buttonStyle(.quiet)
-            .padding(6)
+            .buttonStyle(.quietIcon)
+            .padding(Theme.gapTight)
             .accessibilityLabel("Close")
+        }
+    }
+
+    /// The one button, Say hi or Cheer the ship, and beside it how it went.
+    private func action(_ buddy: World.Buddy, world: Runtime.WorldStatus) -> some View {
+        let kind = Self.gesture(for: buddy)
+        let sent = model.worldSent[buddy.id] ?? .init()
+        let done = sent.sent.contains(kind)
+        let failed = sent.failed == kind
+        return HStack(alignment: .center, spacing: Theme.gap) {
+            if done {
+                Label(kind == .cheer ? "Cheered" : "Said hi", systemImage: "checkmark")
+                    .font(.detailStrong).foregroundStyle(Theme.sageInk)
+                    .frame(minHeight: Theme.target)
+                    .fixedSize()
+            } else {
+                Button { model.sendGesture(kind, to: buddy.id) } label: {
+                    Label(failed ? "Try again" : kind == .cheer ? "Cheer the ship" : "Say hi",
+                          systemImage: kind == .cheer ? "party.popper.fill" : "hand.wave.fill")
+                }
+                .buttonStyle(.rowFilled)
+                .fixedSize()
+                .disabled(!world.inWorld || model.worldSending)
+            }
+            if let (words, isFailure) = Self.sentWords(sent, kind: kind, buddy: buddy, world: world, name: model.name) {
+                Text(words).caption()
+                    .foregroundStyle(isFailure ? Theme.clayInk : Theme.inkSoft)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -168,41 +240,26 @@ struct WorldPane: View {
         activity == .idle ? "resting" : activity.words
     }
 
-    /// Under the buttons: why they can't be pressed, or how the last one
-    /// went, and whether that's a failure.
-    private func sentWords(_ sent: AppModel.WorldSend, buddy: World.Buddy, world: Runtime.WorldStatus) -> (String, Bool)? {
-        if !world.on { return ("\(model.name) is private, so it can't say hi. Turn on the world in Settings.", false) }
-        if !world.inWorld { return ("\(model.name) is still finding its way into the world. Try again in a moment.", false) }
-        if let kind = sent.sending { return ("Sending a \(kind.rawValue)…", false) }
-        if let kind = sent.failed {
-            return ("The \(kind.rawValue) didn't go through. Try again in a while.", true)
-        }
-        if !sent.sent.isEmpty {
-            return (buddy.activity == .asleep ? "Sent. \(buddy.name) will see it when it wakes."
-                                              : "Sent. \(buddy.name) will see it in a moment.", false)
-        }
-        return nil
-    }
-
-    static func label(_ kind: World.GestureKind) -> String { kind.rawValue.capitalized }
-
-    static func symbol(_ kind: World.GestureKind) -> String {
-        switch kind {
-        case .wave: "hand.wave.fill"
-        case .boop: "hand.point.up.left.fill"
-        case .heart: "heart.fill"
-        case .cheer: "party.popper.fill"
-        }
+    /// Beside the button: why it can't be pressed, or how it went, and
+    /// whether that's a failure.
+    static func sentWords(_ sent: AppModel.WorldSend, kind: World.GestureKind, buddy: World.Buddy,
+                          world: Runtime.WorldStatus, name: String) -> (String, Bool)? {
+        if !world.inWorld { return ("\(name) is still finding its way into the world.", false) }
+        if sent.failed == kind { return ("That didn't go through.", true) }
+        if sent.sending == kind { return nil }
+        let later = buddy.activity == .asleep ? "\(buddy.name) will see it when it wakes." : nil
+        if sent.sent.contains(kind) { return (later ?? "\(buddy.name) will see it in a moment.", false) }
+        return later.map { ($0, false) }
     }
 
     // MARK: For Boop today
 
-    /// How many arrivals get a card each; the rest are summed in a line.
+    /// How many arrivals get a row each; the rest are summed in a line.
     static let arrivalCards = 5
 
     /// What other buddies did, newest first: the newest few that played on
-    /// the board each a card, and everything else, those too and the ones
-    /// that didn't play (too many boops in an hour), summed up in one line.
+    /// the board each a row of one card, and everything else, those too and
+    /// the ones that didn't play (too many in an hour), summed up in one line.
     private func arrivals(_ today: [WorldLink.Arrival]) -> some View {
         let played = today.filter(\.plays)
         let shown = Array(played.prefix(Self.arrivalCards))
@@ -212,53 +269,55 @@ struct WorldPane: View {
             if today.isEmpty {
                 NoteCard("Nothing yet today.")
             }
-            ForEach(shown) { arrival in
-                Card(padding: 10) {
-                    HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
-                        Image(systemName: Self.symbol(arrival.counts.first?.kind ?? .boop))
-                            .caption().frame(width: 16)
-                        Text(arrival.sentence(name: model.name)).font(.system(size: 12))
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
-                        Text(arrival.at.formatted(date: .omitted, time: .shortened))
-                            .caption()
-                            .fixedSize()
+            if !shown.isEmpty {
+                Card(padding: Card<EmptyView>.rows) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(shown.enumerated()), id: \.element.id) { i, arrival in
+                            if i > 0 { Hairline().padding(.horizontal, Theme.gap) }
+                            HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
+                                Image(systemName: Self.symbol(arrival.counts.first?.kind ?? .boop))
+                                    .caption().frame(width: Theme.iconColumn)
+                                (Text(arrival.at.formatted(Self.shortTime)).foregroundStyle(Theme.inkSoft)
+                                    + Text("  " + Self.words(arrival, name: model.name)))
+                                    .font(.body)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                Spacer(minLength: 0)
+                            }
+                            .padding(.horizontal, Theme.gap).padding(.vertical, Theme.gapSnug)
+                            .accessibilityElement(children: .combine)
+                        }
                     }
                 }
-                .accessibilityElement(children: .combine)
             }
             if more > 0 {
                 Text(Self.moreLine(more, anyShown: !shown.isEmpty))
                     .caption()
-                    .padding(.leading, 2)
+                    .padding(.leading, Theme.hair)
             }
         }
     }
 
-    /// "And 4 more today.", or with no cards above it, "1 hello from
+    /// The time as its first word: "10:42".
+    static let shortTime = Date.FormatStyle().hour(.defaultDigits(amPM: .omitted)).minute()
+
+    /// An arrival in the person's words: the boop they send as Say hi
+    /// arrives as "said hi".
+    static func words(_ arrival: WorldLink.Arrival, name: String) -> String {
+        arrival.sentence(name: name).replacingOccurrences(of: "booped \(name)", with: "said hi to \(name)")
+    }
+
+    static func symbol(_ kind: World.GestureKind) -> String {
+        switch kind {
+        case .wave, .boop: "hand.wave.fill"
+        case .heart: "heart.fill"
+        case .cheer: "party.popper.fill"
+        }
+    }
+
+    /// "And 4 more today.", or with no rows above it, "1 hello from
     /// another buddy today."
     static func moreLine(_ n: Int, anyShown: Bool) -> String {
         if anyShown { return "And \(n) more today." }
         return n == 1 ? "1 hello from another buddy today." : "\(n) hellos from other buddies today."
-    }
-
-    // MARK: Around the world
-
-    private func regions(_ counts: [World.RegionCount]) -> some View {
-        Card(padding: 0) {
-            VStack(spacing: 0) {
-                ForEach(Array(World.Region.allCases.enumerated()), id: \.element) { i, region in
-                    if i > 0 { Hairline().padding(.horizontal, 12) }
-                    let awake = counts.first { $0.region == region }?.awake ?? 0
-                    HStack {
-                        Text(region.name).font(.system(size: 12))
-                        Spacer()
-                        Text(awake == 0 ? "all asleep" : "\(awake.formatted()) awake")
-                            .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                    }
-                    .padding(.horizontal, 12).padding(.vertical, 7)
-                }
-            }
-        }
     }
 }

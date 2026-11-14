@@ -2,14 +2,16 @@ import BoopKit
 import SwiftUI
 
 /// The Boop tab: today's ring and the level, the last 7 days' rings, and a
-/// peek at what Boop knows, which opens the whole memory.
+/// peek at what Boop knows, which opens the whole memory. No game words:
+/// the ring counts to 100, the level has a bar, and the days together are
+/// days.
 struct BoopPane: View {
     @ObservedObject var model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.gapSection) {
             if let status = model.status {
-                if let growth = status.growth { today(growth) }
+                if let growth = status.growth { today(growth, daysOld: status.daysOld) }
                 if !status.week.isEmpty {
                     PaneSection("The last 7 days") { week(status.week) }
                 }
@@ -22,30 +24,63 @@ struct BoopPane: View {
 
     // MARK: Today
 
-    /// Today's ring, its number in the middle, and beside it the level, the
-    /// XP of every day together, how far the next level is, and a line.
-    private func today(_ growth: Growth) -> some View {
-        HStack(alignment: .center, spacing: Theme.gutter) {
-            Ring(fill: Double(growth.today) / Double(Growth.perDay), width: 9)
-                .frame(width: 96, height: 96)
-                .overlay {
-                    VStack(spacing: 0) {
-                        Text("\(growth.today)").font(.boop(28, .bold)).monospacedDigit()
-                        Text("today").caption()
+    static let ringSize: CGFloat = 96, ringWidth: CGFloat = 9
+
+    /// Today's ring with its number inside, the level beside it, top-aligned
+    /// so "Level N" never moves, and the day's line under both, full width.
+    private func today(_ growth: Growth, daysOld: Int?) -> some View {
+        VStack(alignment: .leading, spacing: Theme.gap) {
+            HStack(alignment: .top, spacing: Theme.gutter) {
+                Ring(fill: Double(growth.today) / Double(Growth.perDay), width: Self.ringWidth)
+                    .frame(width: Self.ringSize, height: Self.ringSize)
+                    .overlay {
+                        VStack(spacing: 0) {
+                            Text("\(growth.today)").font(.boopDisplay).monospacedDigit()
+                            Text("of \(Growth.perDay)").caption()
+                        }
+                        // The digits' ink sits low in their line: lift it to the ring's middle.
+                        .offset(y: -1)
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Today's ring: \(growth.today) of \(Growth.perDay)")
+                VStack(alignment: .leading, spacing: Theme.gapSnug) {
+                    Text("Level \(growth.level.formatted())").font(.boopTitle)
+                        .padding(.top, Theme.gapSnug)
+                    levelBar(growth)
+                    if let daysOld { Text(Self.together(daysOld)).font(.body).foregroundStyle(Theme.inkSoft) }
                 }
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Level \(growth.level)").font(.boop(18, .bold))
-                Text("\(growth.xp.formatted()) XP together").font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                Text("\(growth.toNextLevel) to level \(growth.level + 1)").font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                Text(line(growth))
-                    .font(.system(size: 12))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 6)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(line(growth))
+                .font(.body)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .accessibilityElement(children: .combine)
+    }
+
+    /// A thin bar to the next level, and how far it still is.
+    private func levelBar(_ growth: Growth) -> some View {
+        let done = Double(Growth.perLevel - growth.toNextLevel) / Double(Growth.perLevel)
+        return HStack(spacing: Theme.gapSnug) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Theme.hairlineStrong)
+                    Capsule().fill(Theme.ring).frame(width: geo.size.width * done)
+                }
+            }
+            .frame(height: 4)
+            Text("\(growth.toNextLevel) to go").font(.body).foregroundStyle(Theme.inkSoft).fixedSize()
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(growth.toNextLevel) to level \(growth.level + 1)")
+    }
+
+    /// "47 days together", from Boop's age.
+    static func together(_ daysOld: Int) -> String {
+        switch daysOld {
+        case ...0: "Your first day together"
+        case 1: "1 day together"
+        default: "\(daysOld.formatted()) days together"
+        }
     }
 
     /// One warm line about today's ring.
@@ -57,43 +92,109 @@ struct BoopPane: View {
 
     // MARK: The week
 
+    /// Always seven slots, in a card: the days before Boop was born are
+    /// dashed and faint.
     private func week(_ days: [Runtime.Status.DayRing]) -> some View {
-        HStack(spacing: 0) {
-            ForEach(days) { day in
-                VStack(spacing: 4) {
-                    Ring(fill: Double(day.xp) / Double(Growth.perDay), width: 4)
-                        .frame(width: 26, height: 26)
-                    Text(day.name).font(.system(size: 10, weight: day.isToday ? .semibold : .regular))
-                        .foregroundStyle(day.isToday ? Theme.ink : Theme.inkSoft)
+        Card {
+            HStack(spacing: 0) {
+                ForEach(Self.seven(days), id: \.day) { slot in
+                    VStack(spacing: Theme.gapTight) {
+                        if let ring = slot.ring {
+                            Ring(fill: Double(ring.xp) / Double(Growth.perDay), width: 3)
+                                .overlay {
+                                    if ring.xp >= Growth.perDay {
+                                        Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+                                            .foregroundStyle(Theme.sageSignal)
+                                    }
+                                }
+                                .frame(width: 28, height: 28)
+                        } else {
+                            Circle().strokeBorder(Theme.hairlineStrong, style: StrokeStyle(lineWidth: 1.5, dash: [2, 3]))
+                                .frame(width: 28, height: 28)
+                        }
+                        Text(slot.name).font(slot.ring?.isToday == true ? .chip.weight(.semibold) : .chip)
+                            .foregroundStyle(slot.ring?.isToday == true ? Theme.ink : Theme.inkSoft)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(slot.ring.map { "\(slot.name): \($0.xp >= Growth.perDay ? "full" : "\($0.xp)")" }
+                        ?? "\(slot.name): before \(model.name)")
                 }
-                .frame(maxWidth: .infinity)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("\(day.name): \(day.xp >= Growth.perDay ? "full" : "\(day.xp)")")
             }
         }
     }
 
+    /// One of the week's seven slots: a day's ring, or a day before the first.
+    struct Slot {
+        var day: String
+        var name: String
+        var ring: Runtime.Status.DayRing?
+    }
+
+    /// The last seven days, oldest first: the rings there are, after a
+    /// dashed slot for each day before the first ring.
+    static func seven(_ days: [Runtime.Status.DayRing]) -> [Slot] {
+        let rings = Array(days.suffix(7))
+        let missing = 7 - rings.count
+        guard missing > 0, let first = rings.first, let start = dayFormat.date(from: first.day) else {
+            return rings.map { Slot(day: $0.day, name: $0.name, ring: $0) }
+        }
+        let before = (1...missing).reversed().map { back -> Slot in
+            let date = utc.date(byAdding: .day, value: -back, to: start) ?? start
+            let day = dayFormat.string(from: date)
+            return Slot(day: day, name: weekdayFormat.string(from: date), ring: nil)
+        }
+        return before + rings.map { Slot(day: $0.day, name: $0.name, ring: $0) }
+    }
+
+    private static let utc = { var c = Calendar(identifier: .gregorian); c.timeZone = TimeZone(identifier: "UTC")!; return c }()
+    private static let dayFormat = {
+        let f = DateFormatter()
+        f.calendar = utc
+        f.timeZone = utc.timeZone
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    private static let weekdayFormat = {
+        let f = DateFormatter()
+        f.calendar = utc
+        f.timeZone = utc.timeZone
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "EEE"
+        return f
+    }()
+
     // MARK: What Boop knows
 
-    /// A few of the written memory's notes, and the way to all of them.
+    /// A few of the written memory's notes, plain lines in one card, and
+    /// the way to all of them as its last row.
     private func knows(_ notes: [WrittenMemory.Note]) -> some View {
-        VStack(alignment: .leading, spacing: Theme.gapSnug) {
-            if notes.isEmpty {
-                NoteCard("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
-            }
-            ForEach(notes.prefix(Self.peek), id: \.id) { note in
-                Card(padding: 10) {
-                    Text(note.text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+        Card(padding: Card<EmptyView>.rows) {
+            VStack(alignment: .leading, spacing: 0) {
+                if notes.isEmpty {
+                    row(Text("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
+                        .foregroundStyle(Theme.inkSoft))
+                    Hairline().padding(.horizontal, Theme.gap)
                 }
+                ForEach(notes.prefix(Self.peek), id: \.id) { note in
+                    row(Text(note.text))
+                    Hairline().padding(.horizontal, Theme.gap)
+                }
+                Button { model.pane = .memory } label: { Text("See everything ›") }
+                    .buttonStyle(.wordLink)
+                    .padding(.horizontal, Theme.gap).padding(.vertical, Theme.gapTight)
+                    .help("See everything \(model.name) knows (⇧⌘M)")
             }
-            Button { model.pane = .memory } label: {
-                Text("See everything \(model.name) knows ›").font(.system(size: 12, weight: .semibold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(Theme.sageInk)
-            .padding(.leading, 2)
-            .help("See everything \(model.name) knows (⇧⌘M)")
         }
+    }
+
+    private func row(_ text: Text) -> some View {
+        text.font(.body)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Theme.gap).padding(.vertical, Theme.gapSnug)
     }
 
     /// How many notes the peek shows.
@@ -101,7 +202,8 @@ struct BoopPane: View {
 }
 
 /// A day's ring: a track, and the day's share of it from the top,
-/// clockwise; full, it turns green.
+/// clockwise: blue while it fills, sage when full. The arc starts and ends
+/// half a round cap in, so a cap never pokes back past the top.
 struct Ring: View {
     /// 0 to 1.
     let fill: Double
@@ -109,13 +211,23 @@ struct Ring: View {
     var full: Bool { fill >= 1 }
 
     var body: some View {
-        ZStack {
-            Circle().stroke(Theme.well, lineWidth: width)
-            Circle()
-                .trim(from: 0, to: max(0, min(1, fill)))
-                .stroke(full ? Theme.sage : Theme.blush, style: StrokeStyle(lineWidth: width, lineCap: .round))
-                .rotationEffect(.degrees(-90))
+        GeometryReader { geo in
+            let radius = max(1, (min(geo.size.width, geo.size.height) - width) / 2)
+            // Half the cap's width, as a share of the circle.
+            let cap = Double(width / 2) / Double(2 * .pi * radius)
+            let shown = max(0, min(1, fill))
+            ZStack {
+                Circle().stroke(Theme.hairlineStrong, lineWidth: width)
+                if full {
+                    Circle().stroke(Theme.sageSignal, lineWidth: width)
+                } else if shown > 0 {
+                    Circle()
+                        .trim(from: cap, to: cap + shown * (1 - 2 * cap))
+                        .stroke(Theme.ring, style: StrokeStyle(lineWidth: width, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                }
+            }
+            .padding(width / 2)
         }
-        .padding(width / 2)
     }
 }
