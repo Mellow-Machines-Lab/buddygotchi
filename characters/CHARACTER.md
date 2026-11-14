@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-09. The contract a character pack meets, so that any
+Updated 2026-11-14. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -448,7 +448,9 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 A pack with a voice has recorded takes, each tagged with the moods it plays
 in, a feeling or a topic (what the brain's `say` picks), or a reply it's the
 words of (§7), and a kind (sound, word, phrase or swear). The Moment's size
-picks the kind: a sound small, a word medium, a phrase big or huge.
+picks the kind: a sound small, a word medium, a phrase big or huge. A swear
+plays only when the brain's `say` asks for one, and the person has turned
+swearing on in Settings (it's off by default).
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the

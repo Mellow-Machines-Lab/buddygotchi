@@ -107,6 +107,11 @@ extension Runtime {
         public var board: String?
         /// Whether the board shows the work stream.
         public var workStream = true
+        /// Whether Boop may swear (`AppSettings.swearing`).
+        public var swearing = false
+        /// When Boop may next be renamed, or nil for now
+        /// (`BuddyName.nextRename`).
+        public var nextRename: Date?
         /// Each buddy, when there are several; empty for one, which the
         /// fields above are.
         public var buddies: [BuddyStatus] = []
@@ -186,6 +191,8 @@ extension Runtime {
         status.uncleanExit = uncleanExit
         status.board = settings.board
         status.workStream = settings.workStream
+        status.swearing = options.swearing ?? settings.swearing
+        status.nextRename = BuddyName.nextRename(after: settings.renamed, at: wall).map { Date(timeIntervalSince1970: Double($0) / 1000) }
         status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }
         if pipeline.several {
             status.buddies = rigs.map { rig in

@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-08. How we check that Jev decides as Boop should: short
+Updated 2026-11-14. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -16,7 +16,9 @@ fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
 say how long Boop has been in it, and how much it says (normal unless the file says quiet
-or chatty), told in CONTEXT's Talk row and held in code. The runner (`Eval` in
+or chatty), told in CONTEXT's Talk row and held in code, with swearing on
+(the app's Settings switch, off there by default, so `say` offers the swear
+as it always has here). The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a Moment goes to a fake device, which answers at once with the

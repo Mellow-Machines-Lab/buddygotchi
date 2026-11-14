@@ -53,20 +53,17 @@ struct SetupDraft {
     var name = ""
     var agents = Set(Agent.allCases)
 
-    var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    var trimmedName: String { BuddyName.trimmed(name) }
 
-    /// The memory file accepts 23 characters, not the device protocol's
-    /// 23 bytes. Keep the field's normalization and
-    /// control-character cleanup without cutting Unicode names early.
+    /// The name field's rules are `BuddyName`'s, which Settings' Rename
+    /// shares: 23 characters, not the device protocol's 23 bytes.
     mutating func editName(_ text: String) {
-        name = String(StateSnapshot.clip(text, max: Int.max).prefix(23))
+        name = BuddyName.edited(text)
     }
 
-    var nameIssue: String? {
-        trimmedName.contains("·") || trimmedName.contains(":") ? "Names can't use “·” or “:”." : nil
-    }
+    var nameIssue: String? { BuddyName.issue(name) }
 
-    var canContinueName: Bool { !trimmedName.isEmpty && nameIssue == nil }
+    var canContinueName: Bool { BuddyName.valid(name) }
 }
 
 /// What the views show. Updated on the main thread only.
@@ -199,6 +196,16 @@ final class AppModel: ObservableObject {
     var runtime: Runtime?
     /// Starts the runtime again, after it couldn't start.
     var start: () -> Void = {}
+    /// Stops the runtime and starts a new one, which reads what changed
+    /// on disk: a new name.
+    var restart: () -> Void = {}
+    /// Settings' Advanced group is open: closed until opened, and kept
+    /// while the app runs.
+    @Published var advancedOpen = false
+    /// The new name being typed in Settings' Name row: nil while it isn't
+    /// being renamed. Why the last rename failed, until the next try.
+    @Published var renameDraft: String?
+    @Published var renameError: String?
     /// Asks, then takes Boop off this Mac and quits (`Uninstall`).
     var uninstall: () -> Void = {}
     /// The Keychain entry this copy keeps Jev's key in
@@ -604,6 +611,30 @@ final class AppModel: ObservableObject {
     }
 
     /// Takes effect from the next event.
+    func setSwearing(_ on: Bool) {
+        guard status?.swearing != on else { return }
+        status?.swearing = on
+        runtime?.setSwearing(on)
+    }
+
+    /// Gives Boop a new name, then starts the runtime again under it, so
+    /// every place the name lives reads it. `done` gets why not, or nil.
+    func rename(_ name: String, done: @escaping @MainActor (String?) -> Void) {
+        guard let runtime else { return done("\(self.name) isn't running.") }
+        runtime.rename(to: name) { result in
+            Task { @MainActor [weak self] in
+                switch result {
+                case .success(let renamed):
+                    done(nil)
+                    if renamed { self?.restart() }
+                case .failure(let refusal):
+                    done("Couldn't rename: \(refusal.description).")
+                }
+            }
+        }
+    }
+
+    /// Takes effect from the next event.
     func setTalk(_ talk: Talk) {
         guard talk != self.talk else { return }
         status?.talk = talk
@@ -725,6 +756,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // The login item's state, for Settings, before it's first opened.
         model.refreshInBackground()
         model.start = { [weak self] in self?.startRuntime() }
+        model.restart = { [weak self] in self?.restartRuntime() }
         model.uninstall = { [weak self] in self?.uninstall() }
         model.log = { [log] in log.write($0) }
         // It starts on the body it was last given.
@@ -1002,6 +1034,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             model.startError = AppModel.startProblem(error)
             updateIcon()
         }
+    }
+
+    /// Stops the runtime and starts a new one on the same folder and body:
+    /// after a rename, which the runtime reads only as it starts.
+    func restartRuntime() {
+        guard let old = model.runtime else { return }
+        log.write("boop: starting again, to read what changed")
+        presenceSignals.stop()
+        model.startOnSimulator = model.usingSimulator
+        old.onChange = nil
+        old.stop()
+        model.runtime = nil
+        startRuntime()
     }
 
     /// Every status push lands here, and most change neither the look nor

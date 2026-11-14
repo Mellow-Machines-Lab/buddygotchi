@@ -175,6 +175,9 @@ public final class MomentOutput: Output {
     /// How much it says, chosen in Settings: on Quiet, `say` offers no
     /// topic and no swear, and a small moment or a finish says nothing.
     let talk: () -> Talk
+    /// Whether it may swear, chosen in Settings: off, `say` offers no swear
+    /// and no swear take plays. The evals keep it on.
+    let swears: () -> Bool
     /// Picks among the takes that fit, and remembers the last
     /// `recentSays` says' words, the newest first, which aren't said again
     /// while another fits: a quiet face has few takes, and "Cozy" three
@@ -215,7 +218,7 @@ public final class MomentOutput: Output {
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
                 nap: @escaping (Int64) -> Void = { _ in },
-                talk: @escaping () -> Talk = { .default }, reason: @escaping (Event?) -> Narration? = { _ in nil },
+                talk: @escaping () -> Talk = { .default }, swears: @escaping () -> Bool = { true }, reason: @escaping (Event?) -> Narration? = { _ in nil },
                 moodMoved: @escaping (Event?, LogView) -> String? = { _, _ in nil }, note: @escaping (String, Int64) -> Void = { _, _ in },
                 dreams: [TaggedLine] = [], line: @escaping (Event) -> Line? = { _ in nil },
                 occasion: @escaping (Int64) -> String? = { _ in nil },
@@ -257,6 +260,7 @@ public final class MomentOutput: Output {
         self.hush = hush
         self.nap = nap
         self.talk = talk
+        self.swears = swears
         self.reason = reason
         self.moodMoved = moodMoved
         self.note = note
@@ -600,7 +604,7 @@ public final class MomentOutput: Output {
         let about = Self.about(now, log)
         let hushedNow = about.map { hushed($0.at) } ?? false
         if let about, Self.isTalk(about) {
-            let asked = Self.speech(askedOfTalk, hushed: hushedNow, talk: talk(), in: pack)
+            let asked = Self.speech(askedOfTalk, hushed: hushedNow, talk: talk(), swears: swears(), in: pack)
             let captions = replyCaptions(about)
             guard !captions.isEmpty else { return asked }
             return asked + [Question(key: Signs.questionKey,
@@ -613,7 +617,7 @@ public final class MomentOutput: Output {
         // Another buddy's gesture always gets a moment, and what it holds
         // up answers it.
         if let about, about.type == .world {
-            let asked = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack).map { q in
+            let asked = Self.speech(asked, hushed: hushedNow, talk: talk(), swears: swears(), in: pack).map { q in
                 q.key == Self.emotionKey ? Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
                                                     options: q.options.filter { $0.name != "none" }) : q
             }
@@ -626,7 +630,7 @@ public final class MomentOutput: Output {
         }
         if let about, about.type == .lock {
             let lock = about.phase == .start
-            let asked = Self.speech(Self.lockQuestions(asked, lock: lock, mayNap: mayNap(about), in: pack), hushed: hushedNow, talk: talk(), in: pack)
+            let asked = Self.speech(Self.lockQuestions(asked, lock: lock, mayNap: mayNap(about), in: pack), hushed: hushedNow, talk: talk(), swears: swears(), in: pack)
             let captions = offered(now, log)
             guard !captions.isEmpty else { return asked }
             return asked + [Question(key: Signs.questionKey,
@@ -634,7 +638,7 @@ public final class MomentOutput: Output {
                                      about: "NOW and CONTEXT", judgeBy: "PERSONALITY and MOOD",
                                      options: [Option("none", "No sign: the wave alone, or no wave, with MOOD grumpy, irritated or annoyed.")] + captions.map { Option($0, "MOOD isn't cross: a sign that says this.") })]
         }
-        let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), in: pack)
+        let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), swears: swears(), in: pack)
         // A question it may ask, the sign being the ask; at an idle
         // check-in, a musing beside it.
         let questions = askOptions(about, log)
@@ -766,12 +770,15 @@ public final class MomentOutput: Output {
 
     /// `questions` as Boop may speak: while hushed, no `say` but to what
     /// you said, whose reply may be `unhush`, letting it talk (and else says
-    /// nothing, `run`); on Quiet, `say` without the topics and the swear.
-    static func speech(_ questions: [Question], hushed: Bool, talk: Talk, in pack: CharacterPack) -> [Question] {
+    /// nothing, `run`); on Quiet, `say` without the topics and the swear;
+    /// with swearing off, `say` without the swear.
+    static func speech(_ questions: [Question], hushed: Bool, talk: Talk, swears: Bool = true, in pack: CharacterPack) -> [Question] {
         let talking = questions.contains { $0.key == moveKey && $0.options.contains { $0.name == "hush" } }
         return questions.compactMap { q in
             if q.key == sayKey {
                 if hushed, !talking { return nil }
+                let q = swears ? q : Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy,
+                                              options: q.options.filter { $0.name != "swear" })
                 // Chatty says something at every face.
                 if talk == .chatty {
                     return Question(key: q.key, text: q.text, about: q.about, judgeBy: q.judgeBy, options: q.options.filter { $0.name != "none" })
@@ -939,14 +946,14 @@ public final class MomentOutput: Output {
                 said = [own]
             } else {
                 said = saying.flatMap {
-                    Voice.take($0.part, meaning: $0.meaning, kind: $0.swear ? .swear : size.kind, face: choice, finish: pick,
+                    Voice.take($0.part, meaning: $0.meaning, kind: $0.swear && swears() ? .swear : size.kind, face: choice, finish: pick,
                               avoiding: lastWords, never: never, in: pack, rng: &takes)
                 }.map { [$0] } ?? []
             }
         }
         // Bringing up what it remembers, what it says is its own word.
         if remembering != nil, !said.isEmpty {
-            said = pack.rememberWord.flatMap { Voice.word($0, face: choice, in: pack) }.map { [$0] } ?? []
+            said = pack.rememberWord.flatMap { Voice.word($0, face: choice, in: pack) }.flatMap { $0.kind != .swear || swears() ? [$0] : nil } ?? []
         }
         // A word may get a sound of the same before it, but not at a small
         // moment, nor on Quiet.

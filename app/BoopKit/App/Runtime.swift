@@ -20,6 +20,9 @@ public final class Runtime: @unchecked Sendable {
         public var steering: Steering
         /// Override how much it says in `settings.json` for this run only.
         public var talk: Talk?
+        /// Override whether it may swear in `settings.json`, for this run
+        /// only: a demo swears as it was written to.
+        public var swearing: Bool?
         /// Builds the brain from Jev's key; nil for no brain. Tests pass
         /// their own.
         public var brain: @Sendable (String?) -> (any Brain)? = { key in key.map { JevBrain(key: $0) } }
@@ -350,6 +353,7 @@ public final class Runtime: @unchecked Sendable {
         // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
         var talkNow: () -> Talk = { .default }
+        var swearsNow: () -> Bool = { false }
         var memoryNow: () -> String? = { nil }
         var remembersNow: () -> Memory? = { nil }
         let wallNow = options.wallClock
@@ -371,6 +375,7 @@ public final class Runtime: @unchecked Sendable {
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
+            mind.swears = { swearsNow() }
             if rig === rigs[0] {
                 mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
                 mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
@@ -433,6 +438,7 @@ public final class Runtime: @unchecked Sendable {
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
         talkNow = { [weak self] in self?.talk ?? .default }
+        swearsNow = { [weak self] in self.map { $0.options.swearing ?? $0.settings.swearing } ?? false }
         memoryNow = { [weak self] in self?.memorySection() }
         remembersNow = { [weak self] in self?.remembers }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
@@ -481,6 +487,7 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
+                               swears: @escaping () -> Bool = { true },
                                memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
                                felt: ((Int64) -> [Memory.Felt])? = nil, digests: (() -> [DayDigest])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
@@ -492,6 +499,7 @@ public final class Runtime: @unchecked Sendable {
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
                         company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
         if let seed { mind.seed = seed }
+        mind.swears = swears
         mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
         if let remembers {
             mind.noticing = Mind.Noticing(digests: digests ?? { remembers.digests }, shown: { remembers.noticesShown() }, onLately: { remembers.onLately($0) })
@@ -572,6 +580,8 @@ public final class Runtime: @unchecked Sendable {
         let keep = { [self] in remembers?.keepCounts(wall: options.wallClock(), now: true) }
         if DispatchQueue.getSpecific(key: onHome) == true { keep() } else { home.sync(execute: keep) }
         try? FileManager.default.removeItem(at: options.stateDir.appendingPathComponent(Self.runningFile))
+        // The folder is free for the next runtime, as a rename starts one.
+        lock.release()
     }
 
     /// Onboarding's greetings on the board, which it plays as a rule's
@@ -874,6 +884,11 @@ public final class Runtime: @unchecked Sendable {
 
     /// How much it says: the view's rules and Jev's state from the next
     /// event, kept in `settings.json`.
+    /// Swearing on or off, kept in `settings.json`: read at each pass.
+    public func setSwearing(_ on: Bool) {
+        home.async { [self] in saveSettings { $0.swearing = on } }
+    }
+
     public func setTalk(_ talk: Talk) {
         home.async { [self] in
             self.talk = talk

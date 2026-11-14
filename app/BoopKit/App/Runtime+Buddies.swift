@@ -74,6 +74,9 @@ extension Runtime {
         public var speaks: () -> Bool
         /// How much it says, chosen in Settings.
         public var talk: () -> Talk
+        /// Whether it may swear (`AppSettings.swearing`): on unless told,
+        /// as the evals keep it.
+        public var swears: () -> Bool = { true }
         /// Carries out the core's effects an output's choice caused (a hush):
         /// the app's show on the board; nil logs their records only.
         public var effects: (([CoreEffect]) -> Void)?
@@ -223,7 +226,7 @@ extension Runtime {
                 carryOut(ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at), at)
             }, nap: { at in
                 carryOut(core.nap(at: at), at)
-            }, talk: m.talk, reason: { [weak h] about in
+            }, talk: m.talk, swears: m.swears, reason: { [weak h] about in
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
                 guard let h, let about else { return nil }

@@ -225,7 +225,7 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear | say | `say` |
+| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear (only with Settings' swearing on) | say | `say` |
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
