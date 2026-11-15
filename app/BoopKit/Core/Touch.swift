@@ -28,6 +28,10 @@ public enum Touch: String, CaseIterable, Sendable {
         }
     }
 
+    /// Rough handling: a shake or a wrong-way stroke. Still your touch, so
+    /// it's company, but it earns no XP (`Growth.xp`).
+    public var isRough: Bool { self == .ruffle || self == .dizzy }
+
     /// A touch on the buddy itself, which meets a pet wish: anything you do
     /// by hand to its face, the wrong-way stroke too. Not a shake, a pick-up
     /// or turning it over, nor the drawer's swipe.
