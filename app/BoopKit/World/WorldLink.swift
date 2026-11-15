@@ -223,7 +223,7 @@ public final class WorldLink {
             todayDay = today
             status.today = []
         }
-        if !quiet { record(gestures.release(at: now)) }
+        if on, !quiet { record(gestures.release(at: now)) }
         fetchIfDue(at: now)
         guard !busy, retryAt.map({ now >= $0 }) ?? true else { return }
         if let leaving = identity, leaving.leaving == true { return goodbye(leaving, at: now) }
@@ -466,7 +466,8 @@ public final class WorldLink {
 
     /// Leaves the world: the buddy is deleted on the server, and its key
     /// here once it's gone. Nothing more is sent until the world is
-    /// switched on again; gestures still on their way are dropped. Left
+    /// switched on again; gestures still on their way, or waiting for you,
+    /// are dropped. Left
     /// while it was joining, it leaves as the join comes back.
     public func leave(at now: Int64) {
         guard var leaving = identity, leaving.leaving != true else {
@@ -482,6 +483,8 @@ public final class WorldLink {
         pendingSince = nil
         asleepDue = false
         retryAt = nil
+        gestures.drop()
+        saveWaiting()
         onChange()
         if !busy { goodbye(leaving, at: now) }
     }
