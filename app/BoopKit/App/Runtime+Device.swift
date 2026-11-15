@@ -83,6 +83,16 @@ extension Runtime {
             case "pick": if let row = BoopDevice.row(picked: ev) { run(pipeline.pick(row: row, at: now)) }
             default: break
             }
+        case "card":
+            // The card Boop holds: swiped to the next or the one before,
+            // or tapped, which opens it on the Mac.
+            options.log("device: card \(ev.did ?? "?")")
+            switch ev.did {
+            case "next": run(pipeline.swipeCard(by: 1, at: now))
+            case "prev": run(pipeline.swipeCard(by: -1, at: now))
+            case "open": run(pipeline.tapCard(at: now))
+            default: break
+            }
         case "ask":
             // An ask's end, which the board decides: the question, its
             // words and the answer come back with it; whether Boop keeps

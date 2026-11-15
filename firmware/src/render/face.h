@@ -91,6 +91,21 @@ struct SignShow {
   uint32_t goldMs = 0;
   int32_t goldLeftMs = -1;
 };
+// The card an agent handed Boop to hold (the Mac's `state.card`,
+// Behaviour::cardShow): one main thing, read from a chair, and at most one
+// small line under it, both the Mac's words; whose it is, by its lane's
+// slot (kNoSlot with no lane); whether a status's guess of the time has run
+// out; a result's is what the turn made. `index` of `count` cards (from 1),
+// for the dots. `on` only while nothing above
+// Doing has the screen, and `ms` since it came or last changed.
+struct CardShow {
+  static constexpr int kTextBytes = 80, kSmallBytes = 48, kNoSlot = -1;
+  bool on = false, result = false, over = false;
+  int slot = kNoSlot, index = 1, count = 1;
+  const char* text = "";
+  const char* small = "";
+  uint32_t ms = 0;
+};
 // The finished turn the brain's reaction is about (its `who`), while the
 // reaction plays and lingers after (app/behaviour.h): whose turn, how it
 // ended (kNone for a reply, or a face with no finish of its own), how long
@@ -205,6 +220,12 @@ class Face {
   // The wish to show (WishShow), set before each frame: a face that draws
   // no thought bubble ignores it.
   virtual void wish(const WishShow& show) { (void)show; }
+  // The card to hold (CardShow), set before each frame, and whether the
+  // canvas's (x, y) is on it as last drawn: a touch that starts there is the
+  // card's (a swipe to the next, a tap to open it). A face that holds no
+  // card draws none and has none to touch.
+  virtual void card(const CardShow& show) { (void)show; }
+  virtual bool cardAt(int x, int y) const { return (void)x, (void)y, false; }
   // The growth bar to show, set before each frame: a face with no bar ignores it.
   virtual void growth(const GrowthShow& show) { (void)show; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or

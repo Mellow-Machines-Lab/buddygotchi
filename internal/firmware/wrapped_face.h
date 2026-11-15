@@ -44,6 +44,11 @@ struct WrappedFace : render::Face {
   bool playsSwipe() const override { return f->playsSwipe(); }
 
   bool hasDrawer() const override { return drawers; }
+  // A card held across canvas y kCardTop to kCardBottom, while it's on.
+  static constexpr int kCardTop = 150, kCardBottom = 200;
+  bool carded = false;
+  void card(const render::CardShow& c) override { carded = c.on; }
+  bool cardAt(int, int y) const override { return carded && y >= kCardTop && y < kCardBottom; }
   int drawerTravel() const override { return kTravel; }
   int drawerRow(const render::Drawer& d, int x, int y) const override {
     (void)x;  // where its rows are open, however open it is: the device decides when they count

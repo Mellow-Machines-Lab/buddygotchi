@@ -45,7 +45,7 @@ bool sameModel(const Model& a, const Model& b) {
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
          !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && !std::strcmp(a.buddy, b.buddy) && a.workAct.kind == b.workAct.kind &&
-         a.workAct.result == b.workAct.result && a.wish == b.wish && a.wishHow == b.wishHow;
+         a.workAct.result == b.workAct.result && a.wish == b.wish && a.wishHow == b.wishHow && a.card.same(b.card);
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -193,6 +193,16 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   JsonObjectConst todo = doc["todo"];
   m.todoDone = todo["done"] | 0;
   m.todoTotal = todo["total"] | 0;
+  if (JsonObjectConst card = doc["card"]; !card.isNull()) {
+    Model::CardIn& c = m.card;
+    c.on = true;
+    c.slot = heldTo(card["a"], -1, render::Stream::kLanes - 1, render::CardShow::kNoSlot);
+    c.result = !std::strcmp(card["k"] | "s", "r");
+    render::foldText(card["t"].as<const char*>(), kCardGlyphs, c.text, sizeof(c.text));
+    render::foldText(card["d"].as<const char*>(), kCardSmallGlyphs, c.small, sizeof(c.small));
+    c.over = (card["o"] | 0) != 0;
+    c.count = heldTo(card["at"][1], 1, 9, 1), c.index = heldTo(card["at"][0], 1, c.count, 1);
+  }
   const char* wish = doc["wish"] | "";
   m.wish = !std::strcmp(wish, "pet")    ? render::WishShow::kPet
            : !std::strcmp(wish, "chat") ? render::WishShow::kChat
@@ -576,6 +586,10 @@ void Device::readInputs(uint32_t t) {
     const int open = drawerOpen(t);
     live_.drawerTouch =
         faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || (y >= kDrawerFromY && hasSessions()));
+    // The face is told of the card as it is now: it may not have drawn it yet.
+    const render::CardShow held = b_.cardShow(t);
+    if (faced) b_.face().card(held);
+    live_.cardTouch = faced && !live_.drawerTouch && open <= 0 && held.on && b_.face().cardAt(x, y);
     live_.drawerPulling = live_.scrolling = live_.touchSpent = false;
     live_.drawerDownId = 0;
     if (live_.drawerTouch) {
@@ -600,7 +614,7 @@ void Device::readInputs(uint32_t t) {
     live_.touchDismissed = live_.touchLeant = false;
     if (faced) {
       b_.pressDown(t);
-      if (!live_.drawerTouch) b_.face().finger(true, x, y);
+      if (!live_.drawerTouch && !live_.cardTouch) b_.face().finger(true, x, y);
       latency_.mark(Latency::kPress, real);
     }
   } else if (touching && contact) {
@@ -632,7 +646,7 @@ void Device::readInputs(uint32_t t) {
         if (open < 0) open /= 4;
         live_.drawerPulled = open;
       }
-    } else if (faced) {
+    } else if (faced && !live_.cardTouch) {
       b_.face().finger(true, x, y);
     }
   }
@@ -650,7 +664,7 @@ void Device::readInputs(uint32_t t) {
     // The face may carry on the finger's motion as it lets go.
     int vx, vy;
     live_.touchPath.velocity(vx, vy);
-    if (!live_.drawerTouch) b_.face().letGo(vx, vy);
+    if (!live_.drawerTouch && !live_.cardTouch) b_.face().letGo(vx, vy);
     render::Gesture g = render::Gesture::kHandoff;
     const TouchGesture::Kind kind = live_.touchPath.up(g, b_.face().noseDrop(), live_.touchLeant);
     live_.lastTouch = live_.touchPath.path();
@@ -679,7 +693,18 @@ void Device::readInputs(uint32_t t) {
       // A touch the face leaned into is only that: it says so, and a finish
       // or a needs-you that came up under it hears no tap.
       const bool brief = live_.lastTouch.ms < kNeedsYouTapMs && live_.touchPath.spread() <= TouchGesture::kHoldSpotPx;
-      if (live_.touchSpent) {
+      if (live_.cardTouch) {
+        // The card's: across it, the next card or the one before, which the
+        // Mac picks; else a tap, which the Mac opens. Nothing plays here, and
+        // a card gone from under the finger hears nothing.
+        live_.lastTouchWas = "card";
+        const int dx = live_.lastTouch.x - live_.lastTouch.x0, dy = live_.lastTouch.y - live_.lastTouch.y0;
+        if (b_.cardShow(t).on) {
+          input("card", t);
+          const bool across = std::abs(dx) >= kCardSwipePx && std::abs(dx) > std::abs(dy);
+          kit().emit("card", across ? (dx < 0 ? "next" : "prev") : "open", nullptr, live_.touchInjected);
+        }
+      } else if (live_.touchSpent) {
         if (live_.drawerTouch) live_.lastTouchWas = "drawer";
       } else if (live_.drawerTouch && (live_.drawerPulling || live_.drawerGrabbed > 0)) {
         live_.lastTouchWas = "drawer";
@@ -716,7 +741,7 @@ void Device::readInputs(uint32_t t) {
   }
   // After letGo, which wakes a doze with a start: it has to see the lean.
   followLean(touching, t);
-  if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = live_.scrolling = false;
+  if (!touching && live_.touchDown) live_.drawerTouch = live_.drawerPulling = live_.scrolling = live_.cardTouch = false;
   if (touching != live_.touchDown) dirty_ = true;
   live_.touchDown = touching;
   // A finger or BOOT jolts the board: the motion sensor's thump isn't one.
@@ -732,7 +757,8 @@ void Device::followLean(bool touching, uint32_t t) {
   using Lean = render::Face::Lean;
   Lean lean = Lean::kNone;
   const uint32_t rest = live_.touchPath.restMs(t);
-  const bool free = touching && rest >= TouchGesture::kLeanMs && !live_.pattern && !live_.drawerTouch && !live_.touchOnNeedsYou &&
+  const bool free = touching && rest >= TouchGesture::kLeanMs && !live_.pattern && !live_.drawerTouch && !live_.cardTouch &&
+                    !live_.touchOnNeedsYou &&
                     !b_.held(t) && !b_.finishShown(t) && !b_.faceDown() && drawerOpen(t) <= 0 &&
                     !(b_.asking(t) && live_.touchPath.path().y0 >= render::kLaneTop) && b_.face().leans(t);
   if (free) {
@@ -1071,6 +1097,7 @@ void Device::render(uint32_t t) {
     makeDrawer(t);
     b_.face().drawer(&drawer_);
     b_.face().wish(b_.wishShow(t));
+    b_.face().card(b_.cardShow(t));
     b_.face().growth(b_.growthShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))

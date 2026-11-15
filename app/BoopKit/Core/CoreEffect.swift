@@ -38,6 +38,9 @@ public enum CoreEffect: Equatable, Sendable {
     /// Open a thread on the Mac, in the app it runs in: a tap while
     /// something needs you.
     case open(ThreadRef)
+    /// Open what a result card links to: a web page, or a file shown in the
+    /// Finder. A tap on the card.
+    case openLink(String)
 
     /// The effect on one line, for replays and debug mode.
     public var summary: String {
@@ -50,6 +53,7 @@ public enum CoreEffect: Equatable, Sendable {
         case .reaction(let m): "do " + JSONObject([("name", .string(m.name)), ("args", .object(m.args))]).json
         case .call(let args): "do " + JSONObject([("name", .string(WorkStream.action)), ("args", .object(args))]).json
         case .open(let t): "open \(t.agent) \(t.session)"
+        case .openLink: "open a card's link"
         }
     }
 }

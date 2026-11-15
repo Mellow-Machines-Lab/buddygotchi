@@ -246,6 +246,28 @@ public final class Pipeline {
         }
     }
 
+    /// A card an agent handed Boop through the tool server (`Core.card`).
+    @discardableResult
+    public func card(_ card: Card, process: AgentProcess?, at now: Int64) -> Step {
+        input(at: now) { run(core.card(card, process: process, at: now)) }
+    }
+
+    /// Your swipe on the card Boop holds: the next (`by` 1) or the one before.
+    @discardableResult
+    public func swipeCard(by: Int, at now: Int64) -> Step {
+        input(at: now) { run(core.swipeCard(by: by, at: now)) }
+    }
+
+    /// Your tap on the card Boop holds: the core opens its link or its
+    /// thread on the Mac.
+    @discardableResult
+    public func tapCard(at now: Int64) -> Step {
+        input(at: now) {
+            let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: Core.cardTap))
+            run(core.tapCard(at: now, seq: e.seq))
+        }
+    }
+
     /// The popover's Dismiss on the request numbered `request`, the one
     /// its card showed, if it's still the session `key`'s
     /// (`Core.dismiss`).

@@ -95,6 +95,8 @@ public final class Core {
     /// board's tags, never events.
     public var hands: Hands?
     public var macSide: MacSide?
+    /// The cards the agents handed Boop, and the one it holds (`Cards`).
+    var cards = Cards()
     var lastSessions: [SessionSummary] = []
     var lastSessionsAt: Int64?
     /// Level-ups and the ring closing, waiting for nothing to need you.
@@ -341,7 +343,10 @@ public final class Core {
         advance(to: event.at)
         if event.type == .hush { replayHush(event) }
         if event.type == .wish { replayWish(event) }
-        if event.type == .presence { awayFromMac = event.phase == .start }
+        if event.type == .presence {
+            awayFromMac = event.phase == .start
+            if event.phase == .end { cards.youAreBack(at: event.at) }
+        }
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
@@ -368,6 +373,12 @@ public final class Core {
         switch change {
         case .turnStarted, .turnEnded, .sessionEnded:
             held[key] = nil
+            // Last turn's cards go as you prompt; its result shows as it ends.
+            switch change {
+            case .turnStarted: cards.turnStarted(key)
+            case .turnEnded: cards.turnEnded(key, away: awayFromMac, at: event.at)
+            default: break
+            }
         case .callEnded(let call, _):
             // The activity the call showed holds from now.
             if let call, held[key]?.act == Core.act(call) { held[key]?.at = event.at }
@@ -631,6 +642,10 @@ public final class Core {
             snapshot.wish = kind.rawValue
             snapshot.wishHow = !wishDone(kind)
         }
+        if attn == nil, !drawer { snapshot.card = cardShow(at: now) }
+        // A line too long for the board loses the card's small line, then the card.
+        if !snapshot.fits { snapshot.card?.small = nil }
+        if !snapshot.fits { snapshot.card = nil }
         // Last: its rows are what gets cut to fit the board's line.
         if drawer { list(into: &snapshot, at: now) }
         return snapshot
@@ -872,6 +887,7 @@ public final class Core {
                 summary.word = lane.word
                 summary.slot = lane.slot
             }
+            if let card = cardWords(s.key, at: now) { summary.card = [card.text, card.small].compactMap { $0 }.joined(separator: ", ") }
             return summary
         }
         return shown.map { summary($0, .waiting) }
@@ -1181,6 +1197,7 @@ public final class Core {
         recordGrowth(now, &fx)
         tidyNotes()
         updateActs(now)
+        tidyCards(now)
         let (shown, dismissed, active, _) = groups(at: now)
         let working = Set(active.map(\.key))
         stream.keep(working)
@@ -1244,6 +1261,8 @@ public struct SessionSummary: Equatable, Sendable {
     /// lane's slot there, whose colour it wears on the board.
     public var word: String?
     public var slot: Int?
+    /// The card it handed Boop, as one line: what it's on, or what it made.
+    public var card: String?
     /// Its to-do list, as counts.
     public var todo: StateSnapshot.Todo?
     /// Waiting, with its request dismissed: it no longer shows on Boop.

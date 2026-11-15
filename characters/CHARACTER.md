@@ -662,6 +662,15 @@ Besides drawing each mood and state, a face:
   `unlisted` after): its thread's name, its agent and project, and whether
   it needs you, works or rests. A Moment can ask for it (the `do`'s
   `"show": "drawer"`). A face with none: a swipe up its strip is a swipe.
+- **Holds an agent's card, if it can** (`Face::card`, `Face::cardAt`,
+  `render::CardShow`). Before each frame, and as a finger goes down, the
+  device hands the face the card the Mac's `state` carries: a status or a
+  result, its main thing (24 glyphs at most), its small line (28), its
+  session's lane slot, which card of how many, and how long it has shown.
+  It's on only while nothing above Doing has the screen. The face draws it
+  and says where it is (`cardAt`): a touch that begins there is the card's,
+  and the device sends the Mac a swipe or a tap, playing nothing. A face
+  with no card ignores it, and every touch stays the face's.
 - **Holds up a sign.** Any Moment may carry words in `sign` (the `do`'s
   args), at most 18 glyphs of the fonts (accents folded, and past that cut
   at a word with `..`, `render::foldText`). A face gets them as `SignShow`

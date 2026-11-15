@@ -174,6 +174,9 @@ class Device : public linkkit::App {
   // picks none.
   static constexpr uint32_t kDrawerMs = 380, kDrawerPawMs = 260;
   static constexpr int kDrawerPullPx = 22;
+  // A touch on the card that travels this far across, and further across
+  // than up or down, is a swipe to the next card; less is a tap on it.
+  static constexpr int kCardSwipePx = 28;
   // Where on the canvas a finger starts that can pull it: on the strip.
   static constexpr int kDrawerFromY = 205;
   // On the needs-you screen a touch shorter than this, and inside a hold's
@@ -318,6 +321,9 @@ class Device : public linkkit::App {
     int drawerFrom = 0, drawerTo = 0;
     uint32_t drawerAt = 0;
     bool drawerTouch = false, drawerPulling = false;
+    // A touch that began on the card Boop holds: the card's alone. It moves
+    // no face, and lets go as a swipe to the next card or a tap that opens it.
+    bool cardTouch = false;
     int drawerGrabbed = 0, drawerPulled = 0;
     uint32_t drawerTouchedAt = 0, drawerSaidAt = 0;
     bool drawerInjected = false, drawerToldOpen = false;

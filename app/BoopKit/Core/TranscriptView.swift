@@ -575,7 +575,7 @@ public final class TranscriptView {
                 ? EventLine.actStarted(agent: agent, kind: e.specificType, thread: thread, name: name, pack: pack)
                 : EventLine.actEnded(agent: agent, kind: e.specificType, thread: thread, passed: e["passed"]?.bool ?? true, name: name, pack: pack)
             return Line(text, facts: ["act": .string(e.specificType), "thread": threadFacts(t)])
-        case .listen?, .dream?, .memory?, .link?, nil: return nil
+        case .listen?, .dream?, .memory?, .link?, .card?, nil: return nil
         }
     }
 

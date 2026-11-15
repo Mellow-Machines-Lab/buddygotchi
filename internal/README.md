@@ -38,7 +38,7 @@ tests, evals, dev tools and skills.
 
 - **Swift.** `Package.swift` is at the repo root, because SwiftPM takes no
   target outside the package's root and the targets live in both `app/`
-  and here. The production targets (`BoopKit`, `Boop`, `CBoopVersion`, and the products
+  and here. The production targets (`BoopKit`, `Boop`, `BoopCards`, `CBoopVersion`, and the products
   they take from the three local packages the root one depends on,
   `agent-hooks`, `mellowharness` and `linkkit`) never depend on the internal
   ones (`BoopDevKit`, `BoopDev`, `BoopTests`, `XCTest`). SwiftPM alone only warns about an import of a

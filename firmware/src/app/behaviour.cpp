@@ -252,6 +252,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     const bool back = noApp(t);
     bool look = back || m.attn != model_.attn || m.look() != model_.look();
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
+    if (!m.card.same(model_.card)) cardAt_ = t;
     bar_.heard(m.xp, barHidden(m, back, t), t);
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
@@ -846,6 +847,16 @@ render::Strip Behaviour::strip(uint32_t t) const {
     s = stripOf(laneModel_, laneNoApp_, laneFinishes_ ? &laneFinish_ : nullptr);
   s.opacity = lane_.value(t);
   return s;
+}
+
+render::CardShow Behaviour::cardShow(uint32_t t) const {
+  render::CardShow show;
+  const Model::CardIn& c = model_.card;
+  show.on = c.on && !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
+  show.result = c.result, show.over = c.over, show.slot = c.slot;
+  show.index = c.index, show.count = c.count, show.text = c.text, show.small = c.small;
+  show.ms = t - cardAt_;
+  return show;
 }
 
 render::WishShow Behaviour::wishShow(uint32_t t) const {

@@ -250,6 +250,8 @@ public struct StateSnapshot: Equatable, Sendable {
 
     /// The act, while nothing else holds the screen.
     public var workAct: WorkAct?
+    /// The card Boop holds, while nothing needs you.
+    public var card: CardShow?
 
     /// One session in the board's agents' drawer: its number there, the one
     /// a tap on its row sends back (`ev drawer` `pick`), whether it needs
@@ -319,6 +321,20 @@ public struct StateSnapshot: Equatable, Sendable {
     /// headline; the message doesn't carry it.
     public var waiting: Int { attn.map { $0.more + 1 } ?? 0 }
 
+    /// The card Boop holds (`Cards`): whose it is, by its lane's slot (-1
+    /// with no lane) and its session, what it says, and where it is among
+    /// the cards showing. The session stays on the Mac.
+    public struct CardShow: Equatable, Sendable {
+        public var session: String
+        public var slot: Int
+        public var result: Bool
+        public var text: String
+        public var small: String?
+        public var over: Bool
+        public var index: Int
+        public var count: Int
+    }
+
     /// The message's fields after its `t`, in the protocol's order: the
     /// app's part of LinkKit's `state` (linkkit/SPEC.md §3).
     public var fields: JSONObject {
@@ -357,6 +373,13 @@ public struct StateSnapshot: Equatable, Sendable {
                 .array([.int($0.id), .string($0.status), .int($0.slot), .string($0.agent), .string($0.title),
                         .string($0.project)])
             })
+        }
+        if let card {
+            var c: JSONObject = ["a": .int(card.slot), "k": .string(card.result ? "r" : "s"), "t": .string(card.text)]
+            if let small = card.small { c["d"] = .string(small) }
+            if card.over { c["o"] = .int(1) }
+            c["at"] = .array([.int(card.index), .int(card.count)])
+            fields["card"] = .object(c)
         }
         if skip > 0 { fields["skip"] = .int(skip) }
         if unlisted > 0 { fields["unlisted"] = .int(unlisted) }

@@ -52,6 +52,20 @@ struct Model {
   // The to-do list of the longest turn working that has one (`todo`),
   // done of total; 0 of 0 for none.
   int todoDone = 0, todoTotal = 0;
+  // The card Boop holds (`card`): `on` with one, whose (`a`, its lane's
+  // slot), a result's or a status's (`k`), its main thing (`t`) and small
+  // line (`d`), its guess of the time run out (`o`), and where it is among
+  // the cards (`at`).
+  struct CardIn {
+    bool on = false, result = false, over = false;
+    int slot = render::CardShow::kNoSlot, index = 1, count = 1;
+    char text[render::CardShow::kTextBytes] = "";
+    char small[render::CardShow::kSmallBytes] = "";
+    bool same(const CardIn& o) const {
+      return on == o.on && result == o.result && over == o.over && slot == o.slot &&
+             index == o.index && count == o.count && !std::strcmp(text, o.text) && !std::strcmp(small, o.small);
+    }
+  } card;
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
@@ -112,6 +126,9 @@ constexpr size_t kSignBytes = 2 * kSignGlyphs + 1;
 // A low sign's (`low`, render/gel/low_sign.h): the Mac sends at most this many,
 // plain ASCII. A face that holds none cuts it as any other sign.
 constexpr int kLowGlyphs = 40;
+// A card's main thing and its small line (`card.t`, `card.d`), in glyphs:
+// the Mac's limits (Card.textMost, detailMost).
+constexpr int kCardGlyphs = 24, kCardSmallGlyphs = 28;
 constexpr size_t kSignTextBytes = kLowGlyphs + 1 > kSignBytes ? kLowGlyphs + 1 : kSignBytes;
 // An ask's answer (`ask`'s `a` and `b`): half the lane, cut the same way.
 constexpr int kAnswerGlyphs = 7;
@@ -348,6 +365,9 @@ class Behaviour {
   // The wish to show at t: the one waiting, or for WishShow::kPopMs after
   // wish_met or wish_gone, how the last one went.
   render::WishShow wishShow(uint32_t t) const;
+  // The card to hold at t: the Mac's, while nothing above Doing has the
+  // screen (needs you, listening, a Moment or its sign, face down, no Mac).
+  render::CardShow cardShow(uint32_t t) const;
   void wishPopped(bool met, uint32_t t);
   // The growth bar now (app/growth_bar.h).
   render::GrowthShow growthShow(uint32_t t) const;
@@ -616,6 +636,8 @@ class Behaviour {
   Sign gold_;
   // The greeting playing, by its key; 0 for none.
   uint32_t greetKey_ = 0;
+  // When the card last came or changed.
+  uint32_t cardAt_ = 0;
   // The last wish shown, and when one last popped and how.
   render::WishShow::Kind lastWish_ = render::WishShow::kNone;
   uint32_t wishPopAt_ = 0;

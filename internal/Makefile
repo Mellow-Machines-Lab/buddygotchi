@@ -23,7 +23,7 @@ build:
 	cd $(ROOT) && python3 characters/charactergen.py --stage
 	cd $(ROOT) && python3 internal/app/tools/gen-test-runner.py
 	cd $(ROOT) && swift build $(SWIFT_CHECK)
-	cd $(ROOT) && for product in agent-hook mellowharness-emit beacon linkkit-bridge linkkit-flash; do \
+	cd $(ROOT) && for product in agent-hook mellowharness-emit beacon linkkit-bridge linkkit-flash boop-cards; do \
 	  swift build $(SWIFT_CHECK) --product $$product || exit 1; \
 	done
 

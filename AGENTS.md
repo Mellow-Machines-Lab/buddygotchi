@@ -23,12 +23,13 @@ cheap ESP32 board with a screen is the body.
 | The boards and flashing | [firmware/README.md](firmware/README.md) |
 | The board with no board | [simulator/README.md](simulator/README.md) |
 | What's next | [plan/TODO.md](plan/TODO.md), [plan/product-ideas.md](plan/product-ideas.md) |
+| Agents' cards: what one is, the rules, how agents did | [plan/agent-cards.md](plan/agent-cards.md) |
 
 ## Repo layout
 
 | Path | What it is |
 | --- | --- |
-| `app/` | What ships on the Mac: the menu-bar app (`Boop`) and `BoopKit`, with the world's client in `app/BoopKit/World/` |
+| `app/` | What ships on the Mac: the menu-bar app (`Boop`) and `BoopKit`, with the world's client in `app/BoopKit/World/`, and `boop-cards`, the tool server agents hand Boop cards through (`app/BoopCards/`) |
 | `firmware/` | PlatformIO firmware for the two boards |
 | `linkkit/` | The device link, a package of its own: protocol, host library, device library ([SPEC](linkkit/SPEC.md)) |
 | `agent-hooks/`, `mellowharness/` | Submodules: reading agents' hooks, and the brain's harness. Each depends on nothing else here |
@@ -189,6 +190,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | work act | A command worth naming while it runs, the tests, the push or the build: a low sign says what's running, then `pass` or `fail`, and Boop hops or flinches at the result | act (that's the activity) | `wact` |
 | the strip | The counts along the bottom | | |
 | the drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to open on the Mac (`render::Drawer`) | roll call, list view | `list`, `drawer` |
+| card | What an agent hands Boop to hold, through the `boop-cards` tool server: a status while its turn runs, a result for 15 s after it; one main thing and at most one small line, in the agent's own words, never Jev's to read. Part of Doing: a swipe changes card, a tap opens it on the Mac (`Card`, `Cards`, `gel::paintCard`) | artifact, widget; sign, low sign (those are Boop's own) | `card` |
 | the needs-you screen | Amber, naming who's waiting, until you answer or dismiss it | sign (that's a Moment's) | |
 
 **Mood**
@@ -293,7 +295,8 @@ The rules that are easy to break, in full in
 - The brain is never on the screen's path, and answers multiple choice only.
 - The steering files are read-only at runtime.
 - No code, commands, tool output, file contents or agent transcripts go
-  to the brain: only readings, and your words to Boop.
+  to the brain: only readings, and your words to Boop. An agent's card
+  goes to the screen and the transcript, never to the brain.
 - Your hands reach the board as a tag and nothing else (`Hands`): that you
   type, never what, with no event, nothing in the transcript and nothing
   for the brain.
