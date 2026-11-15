@@ -7,10 +7,9 @@ that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 ## Report, 2026-11-14: the UI review, built
 
 **Read this first.** [ui-review.md](ui-review.md) is built on `v1-polish`, from
-`c12c9cc8` to the merge of `ui-board`. SlimeBuddy's `main-v2` has two new local
-commits (`a2bb048`, `a87455b`) and PixelBuddy's one (`427a7a3`, its demo
-recordings). Nothing is pushed, nothing is flashed, and the packs' `engine/` pins
-didn't move. The §7 questions went by the review's recommendations; the corner gap
+`c12c9cc8` to the merge of `ui-board`. SlimeBuddy's `main-v2` has three new local
+commits (`a2bb048`, `a87455b`, `9411c55`) and PixelBuddy's one (`427a7a3`, its demo
+recordings). Nothing is pushed, and the packs' `engine/` pins didn't move. The §7 questions went by the review's recommendations; the corner gap
 and the angry face are left for the owner's eye.
 
 **Landed:**
@@ -46,13 +45,19 @@ and the angry face are left for the owner's eye.
 goal); activities 8 → 4 and emotions 42 → 18 (the model phase); onboarding's 5
 acts; BRD-15, 19 (the ask's two pills), 26, 35, 36, 42; the 4 px corner gap.
 
-**The owner, on the panel** (with `make dev` off its Bluetooth, the board flashed
-from this branch):
+**On the board** (flashed 2026-11-14 from this branch, the Mac off Bluetooth):
+`boopctl run v1 lane drawer growbar states done finish acts reasons sign` gives 0
+expect failures and 0 pictures that differ from the simulator. `perf --scenes`
+passes every budget: needs you 30.7 fps (28), working 34.3 (30), frightened 30.0
+(28); stream 31.3, pokes 35.7, asleep 41.1, night 25.7. Needs you had been 26.0:
+the card's words were drawn whole for each corner of the card redrawn, now only
+inside its bounds (SlimeBuddy `9411c55`).
+
+**The owner, on the panel:**
 - From the chair: the narration, the ring's number, the strip in words, the card's
   kind line. Is the saturated amber card too bright at night?
 - A finger on each 66 px drawer row; the bubble 3 px under the grabber.
 - The finish glow's dither; the gold flood, by day and at night.
-- Frame rate with the new drawing (`boopctl perf --scenes`); none was measured.
 - The work act's rise: the strip fades beside the sign for a moment.
 - The angry face (`moods/angry.png` looks delighted) and the corner gap.
 
