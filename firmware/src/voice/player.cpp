@@ -105,8 +105,10 @@ int takeCount() { return int(file.count); }
 
 int takeIndex(const char* id) {
   if (!id || !file.source) return -1;
+  // One still loaded, unless its place is the next to be given away: that
+  // one is loaded afresh, so a `say`'s second lookup can't take its first's.
   for (const Loaded& s : slots)
-    if (s.handle >= 0 && !std::strcmp(s.id, id)) return s.handle;
+    if (s.handle >= 0 && nextHandle - s.handle < kSlots && !std::strcmp(s.id, id)) return s.handle;
   // Binary search of the index, which voicegen sorted by id's bytes.
   uint8_t r[kRecord];
   uint32_t lo = 0, hi = file.count;

@@ -102,6 +102,23 @@ void test_a_take_plays_whole_at_its_pitch() {
   TEST_ASSERT_EQUAL_UINT32(0, p.render(out.data(), 10));
 }
 
+// A `say`'s first take found still loaded, with its place the next to be
+// given away, is loaded afresh: looking up the second can't take it from
+// under the first (a lead sound said again, then a new word).
+void test_a_say_keeps_its_first_take_while_the_second_loads() {
+  NEEDS_VOICE_PACK();
+  voice::closeFile();
+  TEST_ASSERT_TRUE(voicefile::open());
+  TEST_ASSERT_TRUE(voice::takeIndex("previous.go") >= 0);
+  const char* others[] = {"new.d01", "new.d02", "new.d03", "new.d04", "new.d05", "new.d06", "new.d07"};
+  for (const char* id : others) TEST_ASSERT_TRUE(voice::takeIndex(id) >= 0);
+  voice::Say l = say("previous.go", 6, "new.d08");
+  TEST_ASSERT_TRUE(l.take >= 0 && l.then >= 0);
+  TEST_ASSERT_EQUAL_STRING("Go", voice::takeText(l.take));
+  TEST_ASSERT_EQUAL_UINT32(7042, l.a.len);
+  TEST_ASSERT_TRUE(l.b.len > 0);
+}
+
 // A `say` of two takes plays the first, 180 ms of
 // silence, then the second, and says both words; its mouth follows each.
 void test_a_say_of_two_takes() {
@@ -239,6 +256,7 @@ int main() {
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_the_voice_file_finds_takes_by_id);
   RUN_TEST(test_a_take_plays_whole_at_its_pitch);
+  RUN_TEST(test_a_say_keeps_its_first_take_while_the_second_loads);
   RUN_TEST(test_a_say_of_two_takes);
   RUN_TEST(test_an_unknown_take_plays_nothing);
   RUN_TEST(test_a_cut_fades_instead_of_clicking);
