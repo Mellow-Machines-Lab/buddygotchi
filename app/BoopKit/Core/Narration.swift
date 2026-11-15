@@ -381,14 +381,12 @@ extension Narration {
     /// outfitFor, eyewearFor and airFor): one hat, the first that fits, of a
     /// witch hat at Halloween, a party hat, a nightcap at night and a bobble
     /// hat in the winter holidays; on the gel, shades on a Friday from noon short of night (off while it
-    /// shows a feeling, which the popover doesn't follow), neither while it
-    /// sleeps, and pyjamas with the nightcap when it wears neither; on the
-    /// gel in the morning, the sun, and a coffee while it's awake
-    /// (render/gel/layers.cpp's layerContents); and in the
-    /// air, confetti at a party or New Year, snow in the winter holidays and
-    /// hearts on Valentine's.
+    /// shows a feeling, which the popover doesn't follow), not while it
+    /// sleeps. The gel wears one thing and shows nothing else for a day:
+    /// only a board that isn't the gel has confetti at a party or New Year,
+    /// snow in the winter holidays and hearts on Valentine's in the air.
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night, morning, friday }
+        public enum Kind: Sendable { case specialDay, night, friday }
 
         public var kind: Kind
         /// `Boop became a Sprout today`, `It's Friday`.
@@ -406,7 +404,7 @@ extension Narration {
 
         /// The reasons on for `when` (the `state`'s tags) and today's
         /// `occasions`, `asleep` when the board's look is, and `gel` for a
-        /// board that draws the gel, which alone wears eyewear and pyjamas.
+        /// board that draws the gel, which alone wears eyewear and has nothing in the air.
         public static func now(when: [String], specialDays: [Days.SpecialDay], asleep: Bool, gel: Bool) -> [Narration.Dressing] {
             let on = Set(when)
             let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
@@ -421,20 +419,17 @@ extension Narration {
                 case "halloween"?: if hat == "halloween" { things.append("a witch hat") }
                 case "winter"?:
                     if hat == "winter" { things.append("a bobble hat") }
-                    things.append("snow")
-                case "valentines"?: things.append("hearts")
+                    if !gel { things.append("snow") }
+                case "valentines"?: if !gel { things.append("hearts") }
                 case nil, "newyear"?, "lunar"?, "programmers"?:
                     if hat == "party" { things.append("a party hat") }
-                    if o.tag == nil || o.tag == "newyear" { things.append("confetti") }
+                    if !gel, o.tag == nil || o.tag == "newyear" { things.append("confetti") }
                 default: break
                 }
                 return Narration.Dressing(kind: .specialDay, why: o.why, what: list(things))
             }
             if hat == "night" {
-                out.append(Narration.Dressing(kind: .night, why: "It's night", what: gel && !shades ? "a nightcap and pyjamas" : "a nightcap"))
-            }
-            if gel && on.contains("morning") && !on.contains("night") {
-                out.append(Narration.Dressing(kind: .morning, why: "It's morning", what: asleep ? "the sun" : "the sun and a coffee"))
+                out.append(Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap"))
             }
             if shades { out.append(Narration.Dressing(kind: .friday, why: "It's Friday", what: "shades")) }
             return out

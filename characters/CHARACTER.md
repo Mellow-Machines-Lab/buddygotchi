@@ -617,7 +617,8 @@ Besides drawing each mood and state, a face:
   the Mac's popover (`Narration.Dressing`) agree: `render::outfitFor` (first
   that fits: Halloween's witch hat, a party hat, a nightcap at night, a
   bobble hat in winter), `render::eyewearFor` (shades on a Friday from noon
-  to night) and `render::airFor` (snow, confetti, hearts). The gel's Sprout
+  to night) and `render::airFor` (snow, confetti, hearts), which the gel
+  doesn't draw: it wears one thing and has nothing in the air. The gel's Sprout
   wears no party hat, so its leaves show (its `wornHat`). The gel draws its
   dressing at the anchors its pose gives (`rig::Anchors`, §15), so it moves
   with the body, and through the rig's layer stack (§15).

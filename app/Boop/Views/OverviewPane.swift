@@ -363,7 +363,6 @@ struct OverviewPane: View {
         switch kind {
         case .specialDay: "party.popper"
         case .night: "moon.stars"
-        case .morning: "sun.horizon"
         case .friday: "sunglasses"
         }
     }

@@ -221,8 +221,10 @@ final class DaysTests: XCTestCase {
 
     /// The popover's reasons choose as the board does
     /// (firmware/src/render/tags.cpp): one hat, the first that fits; on
-    /// the gel, Friday's shades, not asleep, and pyjamas with the nightcap only bare-eyed; the sun in the
-    /// morning, with a coffee while awake; confetti at a party or New Year.
+    /// the gel, Friday's shades, not asleep. The gel wears one thing and
+    /// has nothing in the sky or the air (its screen's rule), so a morning
+    /// has no reason and a party is its hat alone; a board that isn't the
+    /// gel still has its confetti, snow and hearts.
     func testTheReasonsAreTheBoards() {
         func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, asleep: Bool = false,
                      gel: Bool = true, tag: String? = nil) -> [String] {
@@ -231,21 +233,20 @@ final class DaysTests: XCTestCase {
             let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", time: utc)
             return Narration.Dressing.now(when: when, specialDays: specialDays, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
-        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 10, 21, tag: "sprout"), ["Pip is 50 days old today: confetti"], "the gel's Sprout shows its leaves")
+        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat"])
+        XCTAssertEqual(reasons(2026, 10, 21, tag: "sprout"), ["Pip is 50 days old today: -"], "the gel's Sprout shows its leaves")
         XCTAssertEqual(reasons(2026, 10, 21, gel: false, tag: "sprout"), ["Pip is 50 days old today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: snow", "It's night: a nightcap and pyjamas"])
+        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: -", "It's night: a nightcap"])
         XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
-        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: a bobble hat and snow"])
+        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: a bobble hat"])
+        XCTAssertEqual(reasons(2026, 12, 24, gel: false), ["It's the winter holidays: a bobble hat and snow"])
         XCTAssertEqual(reasons(2027, 3, 14), ["It's Pi Day: -"])
         XCTAssertEqual(reasons(2026, 10, 23), ["It's Friday: shades"])
-        XCTAssertEqual(reasons(2026, 10, 23, 9), ["It's morning: the sun and a coffee"], "shades from noon")
+        XCTAssertEqual(reasons(2026, 10, 23, 9), [], "shades from noon, and a morning shows nothing")
         XCTAssertEqual(reasons(2026, 10, 23, asleep: true), [])
         XCTAssertEqual(reasons(2026, 10, 23, gel: false), [])
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
-        XCTAssertEqual(reasons(2026, 10, 22, 8), ["It's morning: the sun and a coffee"])
-        XCTAssertEqual(reasons(2026, 10, 22, 8, asleep: true), ["It's morning: the sun"])
-        XCTAssertEqual(reasons(2026, 10, 22, 8, gel: false), [], "the sun and the coffee are the gel's")
+        XCTAssertEqual(reasons(2026, 10, 22, 8), [], "an ordinary morning")
     }
 
     /// The day Boop hatched is your first with it, so it's no occasion: no
