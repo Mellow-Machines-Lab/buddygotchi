@@ -6,7 +6,6 @@ from __future__ import annotations
 import functools
 import hashlib
 import json
-import os
 import socket
 import struct
 import sys

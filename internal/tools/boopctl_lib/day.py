@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 from boopctl_lib.common import FINISHES, call
-from boopctl_lib.dash.feed import FACE, action, action_end, choice, kind, sent_by, view_name
+from boopctl_lib.dash.feed import FACE, action, action_end, choice, kind, view_name
 
 Line = dict[str, Any]
 LOG = "debug.jsonl"

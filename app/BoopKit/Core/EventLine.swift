@@ -170,9 +170,6 @@ public enum EventLine {
         quote("You said to \(name)", words)
     }
 
-    /// `Pixel and Boop`: every buddy, for what you said to them all.
-    static func everyone(_ buddies: [Buddy]) -> String { listed(buddies.map(\.name)) }
-
     /// `a`, `a and b`, `a, b and c`.
     static func listed(_ words: [String]) -> String {
         words.count < 2 ? words.joined() : words.dropLast().joined(separator: ", ") + " and " + words.last!
