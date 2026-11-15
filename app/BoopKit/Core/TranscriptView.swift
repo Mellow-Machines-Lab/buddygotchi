@@ -170,6 +170,10 @@ public final class TranscriptView {
         /// then, so the request's clearing brings it back.
         var showing: Set<String> = []
         var missed: (key: String, line: Line)?
+        /// The latest finish that could wake the brain, by the events that
+        /// carry it, and its moment once made (`finishPlayed`): cut or
+        /// refused while another's request shows, it's `missed` too.
+        var finish: (seqs: Set<Int>, did: Int?, key: String, line: Line)?
         /// The turns that finished while you were away, for your coming back
         /// (`Notices.whileAway`).
         var whileAway: [(agent: String, thread: String, failed: Bool)] = []
@@ -399,6 +403,7 @@ public final class TranscriptView {
         }
         played(e)
         reactedToFix(e)
+        finishPlayed(e)
         return told(firstToday(foldLine(e), e), e)
     }
 
@@ -508,7 +513,8 @@ public final class TranscriptView {
             }
             // Its session's next turn: that finish is old news.
             if a.kind == .turn, a.phase == .start, fold.missed?.key == a.key { fold.missed = nil }
-            if let line, a.kind == .turn, a.phase == .end { noteMissed(line, key: a.key) }
+            if a.kind == .turn, a.phase == .start, fold.finish?.key == a.key { fold.finish = nil }
+            if let line, a.kind == .turn, a.phase == .end { noteMissed(line, key: a.key, seq: e.seq) }
             return line
         }
         advance(to: e.at)
@@ -853,14 +859,43 @@ public final class TranscriptView {
         let line = Line(EventLine.finished(finish.text, saying: reading),
                         notes: finish.notes + (EventLine.itsWords(reading.phrases).map { [$0] } ?? []),
                         facts: finish.facts.merging(["message": .object(reading.facts)]) { _, b in b })
-        noteMissed(line, key: key)
+        noteMissed(line, key: key, seq: e.seq)
         return line
     }
 
-    /// A finish `line` of the session `key`, kept if another's "needs
-    /// you" shows: it can't wake the brain now.
-    func noteMissed(_ line: Line, key: String) {
-        if !fold.showing.subtracting([key]).isEmpty { fold.missed = (key, line) }
+    /// A finish `line` of the session `key`, from the event `seq`: kept if
+    /// another's "needs you" shows, as it can't wake the brain now; else
+    /// followed until its moment has played (`finishPlayed`).
+    func noteMissed(_ line: Line, key: String, seq: Int) {
+        if !fold.showing.subtracting([key]).isEmpty {
+            fold.missed = (key, line)
+            fold.finish = nil
+        } else {
+            fold.finish = ((fold.finish?.key == key ? fold.finish?.seqs ?? [] : []).union([seq]), nil, key, line)
+        }
+    }
+
+    /// Follows the moment for the latest finish, as `played` follows the
+    /// telling's: refused, or cut on the board, while another's request
+    /// shows (the request came after the finish), nothing celebrated it, so
+    /// the request's clearing brings it back as it does one that came
+    /// under the request.
+    func finishPlayed(_ e: Event) {
+        guard e.fromHarness, e.action == MomentOutput.outputName, let finish = fold.finish, let about = e.about else { return }
+        let failed: Bool
+        if e.kind == Event.did, finish.seqs.contains(about) {
+            if e["ok"]?.bool == true {
+                fold.finish?.did = e.seq
+                return
+            }
+            failed = true
+        } else if e.kind == Event.ended, about == finish.did {
+            failed = e["outcome"]?.string != "done"
+        } else {
+            return
+        }
+        if failed, !fold.showing.subtracting([finish.key]).isEmpty { fold.missed = (finish.key, finish.line) }
+        fold.finish = nil
     }
 
     // MARK: Pokes
