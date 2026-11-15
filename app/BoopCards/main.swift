@@ -9,14 +9,17 @@ import Foundation
 // once, whether or not Boop is there: it never blocks an agent, and nothing
 // it returns is worth depending on.
 //
+// `boop-cards [claude|codex]`: the agent that runs it, claude unless named,
+// which is how it finds that agent's process, and so whose card it is.
+//
 // With BOOP_CARDS_LOG set, each call is also appended to that file as a
 // JSON line, for the test that asks whether agents send good cards.
 
 let environment = ProcessInfo.processInfo.environment
 let logPath = environment["BOOP_CARDS_LOG"]
+let agentName = CommandLine.arguments.dropFirst().first ?? "claude"
 /// The agent that started this server: the first ancestor that isn't a shell.
-let agentProcess = AgentProcess.find(agent: "claude", env: environment)
-let agentName: String? = environment["BOOP_CARDS_AGENT"]
+let agentProcess = AgentProcess.find(agent: agentName, env: environment)
 
 func reply(_ id: Any?, result: [String: Any]? = nil, error: (Int, String)? = nil) {
     guard let id else { return }  // a notification takes no answer
