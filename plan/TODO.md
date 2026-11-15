@@ -20,9 +20,10 @@ changed.
   At work: a glance at a word as it starts to fall, followed down for 1.6 s,
   then forward for at least 7 s (3 s while you sit watching too).
 - **Typing along.** While your hands are busy at the Mac it types with you,
-  made to show on a small screen across a desk: hunched over its keys, its
-  whole body bouncing with each one, its paws hammering and the keys under
-  them lighting, its eyes down. At work that's at its desk, in place of the
+  made to show on a small screen across a desk by size, not speed: its whole
+  body rocks slowly over its keys and springs up off each beat (one every
+  600 ms), its paws swing high, its eyes are down, and the keyboard and paws
+  are drawn no smaller than 95% of a Buddy's, so a Hatchling's show too. At work that's at its desk, in place of the
   agents' soft typing; idle, its keyboard comes out for it and goes 4 s after
   you stop. (The first build did this only when idle, and only with the paws:
   the owner works with agents running, and paws alone don't show.)
