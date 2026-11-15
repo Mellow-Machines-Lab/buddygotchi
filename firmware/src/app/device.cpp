@@ -143,6 +143,7 @@ void Device::reset() {
   hush();
   hal_.stopEffects();
   live_ = {};
+  toldFaceDown_ = false;
   dirty_ = true;
 }
 
@@ -422,6 +423,7 @@ void Device::onDo(const Do& c, uint32_t t) {
       break;
     case kWishMet:  // its sign is read; with none up, nothing holds it
       if (b_.signPending(t)) live_.restKey = c.key, live_.restAt = b_.signEnd();
+      else if (b_.reactionSeq() == seq) kit().ended(c.key);  // only the heart: over as it starts
       else kit().rest(c.key);
       break;
     case kStarting:
@@ -457,7 +459,24 @@ bool Device::nextDue(uint32_t from, uint32_t to, uint32_t& at) {
 // with that finish's id, the thread the Mac opens.
 // With no app a touch is the board's alone: no Mac hears of it later.
 void Device::tell(const char* event, const char* did, const char* data, uint32_t t, bool injected) {
-  if (!b_.noApp(t)) kit().emit(event, did, data, injected);
+  if (b_.noApp(t)) return;
+  kit().emit(event, did, data, injected);
+  // Which way up the Mac now takes the board to lie, if a link carried it.
+  if (did && (injected || kit().live(linkkit::Link::kBle) || kit().live(linkkit::Link::kUsb))) {
+    if (!std::strcmp(did, "facedown")) toldFaceDown_ = true;
+    if (!std::strcmp(did, render::gestureName(render::Gesture::kPeekaboo))) toldFaceDown_ = false;
+  }
+}
+
+// Face down and back up are the one touch the Mac keeps as a state (it
+// holds every event while Boop lies face down), so one it didn't hear, with
+// the Mac away or the link down, is told once it's back: the board says
+// which way up it lies now.
+void Device::tellWayUp(uint32_t t) {
+  if (toldFaceDown_ == b_.faceDown() || b_.noApp(t)) return;
+  if (!kit().live(linkkit::Link::kBle) && !kit().live(linkkit::Link::kUsb)) return;
+  kit().emit("gesture", b_.faceDown() ? "facedown" : render::gestureName(render::Gesture::kPeekaboo), nullptr, false);
+  toldFaceDown_ = b_.faceDown();
 }
 
 void Device::tapped(uint32_t t, bool injected, bool button, const char* was) {
@@ -956,6 +975,7 @@ void Device::tick(uint32_t t) {
   readInputs(t);
   tendDrawer(t);
   readMotion(t);
+  tellWayUp(t);
   followSound(t);
   drain();
 
