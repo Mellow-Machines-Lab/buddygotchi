@@ -550,10 +550,9 @@ def files_in(folder: Path) -> dict[str, Path]:
             if p.is_file() and ".git" not in p.relative_to(folder).parts}
 
 
-# What makes a pack that nothing staged reads (§2): its art's sources, its
-# references, which boopctl reference reads from the pack itself, and a
-# review/ folder an older pack may still have.
-UNSTAGED = ("design", "references", "review")
+# What makes a pack that nothing staged reads (§2): its art's sources, and
+# its references, which boopctl reference reads from the pack itself.
+UNSTAGED = ("design", "references")
 
 
 def overlay(dest: Path, own: Path) -> None:
@@ -820,7 +819,7 @@ def bundle(view: Path, dest: Path) -> None:
     say, and not their recordings, which only the simulator's page plays."""
     shutil.copytree(view, dest,
                     ignore=shutil.ignore_patterns(".git", "firmware", "voice", "Makefile", "tools", "tests", "design", "evals",
-                                                  "studio", "rig", "references", "review", "recordings"))
+                                                  "studio", "rig", "references", "recordings"))
 
 
 def checked_pack(pack: Path, reads: Reads | None = None) -> tuple[dict, dict[str, Path]] | None:

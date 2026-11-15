@@ -165,7 +165,7 @@ class StudioRuleTests(unittest.TestCase):
         pack = self.pack("solo", [{"id": "calm", "meaning": "Settled."}],
                          files=[("firmware/include/face.h", ""), ("mac/takes.tsv", ""), ("voice/voice.bin", ""),
                                 ("steering/guide.md", ""), ("design/art.txt", ""), ("rig/looks.json", {}),
-                                ("references/2026-10-24-art/reference.json", {}), ("review/queue.json", [])])
+                                ("references/2026-10-24-art/reference.json", {})])
         stage, gen.STAGE = gen.STAGE, self.dir / "stage"
         self.addCleanup(setattr, gen, "STAGE", stage)
         self.assertEqual(gen.stage(pack), 0)
@@ -178,7 +178,7 @@ class StudioRuleTests(unittest.TestCase):
                          ["staged/solo/character.json", "staged/solo/firmware/include/face.h",
                           "staged/solo/firmware/src/render/face/face.cpp", "staged/solo/mac/takes.tsv",
                           "staged/solo/rig/looks.json", "staged/solo/steering/guide.md", "staged/solo/voice/voice.bin"],
-                         "what makes the pack, its design/, references/ and review/, isn't staged")
+                         "what makes the pack, its design/ and references/, isn't staged")
         moods = (gen.STAGE / "firmware" / "include" / "moods.h").read_text()
         self.assertIn('kMoodNames[kMoodCount] = {"calm"}', moods)
         self.assertIn('kPackId = "solo"', moods)

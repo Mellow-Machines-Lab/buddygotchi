@@ -220,10 +220,12 @@ def check_after(run: Run, events: list[str]) -> None:
     # Nothing private may reach the app's files, debug.jsonl and the
     # transcript included: your prompt (PRIVATE_PROMPT) and the agent's last
     # message (PRIVATE_CLOSING), which `--keep-text` hands the app, are read
-    # on the Mac and never kept.
+    # on the Mac and never kept. A call's glimpse, the command's words the
+    # board shows (PRIVATE_ARG, PRIVATE_BRANCH), is kept on the Mac, the
+    # owner's choice (2026-11-14); it never reaches the brain.
     leaks = []
     for f in run.state.rglob("*"):
-        if f.is_file() and re.search(r"PRIVATE_[A-Z]", f.read_text(errors="replace")):
+        if f.is_file() and re.search(r"PRIVATE_(?!ARG_|BRANCH_)[A-Z]", f.read_text(errors="replace")):
             leaks.append(str(f))
     (run.fail if leaks else run.say)(f"PRIVATE_ markers in app files or the brain log: {leaks or 'none'}")
 

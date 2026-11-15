@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-14. How we check that Boop works, including what's on its
+Updated 2026-11-15. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -483,10 +483,12 @@ does all of it:
 5. Afterwards it checks the view events' lines in `debug.jsonl` against
    the fixtures' `expect.json` (for the whole run, not named fixtures or
    `--clip`), that no `PRIVATE_` marker from the fixtures reached any app
-   file, and, from `boop.log`, how every Moment Jev made ended (none
+   file but a call's glimpse (`PRIVATE_ARG_`, `PRIVATE_BRANCH_`: the
+   command's words the board shows, kept on the Mac and never sent to
+   Jev), and, from `boop.log`, how every Moment Jev made ended (none
    skipped as a name the board doesn't play, none cut short by Jev's own
    next one). One that waited in the queue, or was skipped for waiting past
-   its 5 s, is fine.
+   its 5 s (15 s for a finish), is fine.
 
 **Pass:** every checkpoint matches, and p95 latency from hook to board is
 under 300 ms (about 225 ms measured on the AMOLED over USB).

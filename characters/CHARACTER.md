@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-14. The contract a character pack meets, so that any
+Updated 2026-11-15. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -121,7 +121,7 @@ The first of these wins:
 from there:
 
 - `staged/<name>/`: the pack's files, each a link, but for what no build
-  reads (`design/`, `references/`, and an older pack's `review/`).
+  reads (`design/` and `references/`).
 - `pack`: the one pointer to it.
 - `firmware/`: the pack's, with the two headers staging makes (`moods.h`,
   §9, and `rig_tables.h`, §15).
