@@ -59,7 +59,7 @@ extension Runtime {
             // Onboarding hears every tap and BOOT press, which it was, and
             // whether it was on a finish, after the core takes it (onTap
             // is called on `home`, after this returns).
-            if rig === rig { home.async { [weak self] in self?.onTap?(button, opens != nil) } }
+            home.async { [weak self] in self?.onTap?(button, opens != nil) }
             // BOOT: the core decides whether it hands you the next agent;
             // the board has played its guess (its hand-off, or a poke).
             if button { return run(pipeline.press(at: now, finish: opens)) }
@@ -76,7 +76,7 @@ extension Runtime {
             // has scrolled to), shut, or a row picked in it, by its number.
             options.log("device: drawer \(ev.did ?? "?")" + (BoopDevice.row(picked: ev).map { " \($0)" } ?? ""))
             // Onboarding's tour hears it open, and a row picked.
-            if rig === rig, let did = ev.did, did != "closed" { home.async { [weak self] in self?.onDrawer?(did) } }
+            if let did = ev.did, did != "closed" { home.async { [weak self] in self?.onDrawer?(did) } }
             switch ev.did {
             case "open", "closed":
                 run(pipeline.drawer(open: ev.did == "open", from: BoopDevice.rows(from: ev), at: now))
@@ -116,9 +116,9 @@ extension Runtime {
     /// (`BoopDevice.play`). The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
-    func playRule(_ reaction: Moment) {
+    func playRule(_ reaction: Moment, _ ended: @escaping (DeviceLink.Outcome) -> Void = { _ in }) {
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction), ttl: BoopDevice.reactionTTL, by: .rule,
-                    now: options.clock()) { _ in }
+                    now: options.clock(), ended)
     }
 
     /// A word of the work stream that comes forward: it waits in the

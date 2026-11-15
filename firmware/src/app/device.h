@@ -347,6 +347,8 @@ class Device : public linkkit::App {
   void input(const char* k, uint32_t t, int x = -1, int y = -1);
   // A tap, from BOOT or the panel; `was` is what else the path would have made it.
   void tell(const char* event, const char* did, const char* data, uint32_t t, bool injected);
+  // Tells the Mac which way up the board lies, if it missed the turn-over.
+  void tellWayUp(uint32_t t);
   void tapped(uint32_t t, bool injected, bool button, const char* was = nullptr);
   // A gesture the board reacts to itself, then tells the Mac (`ev gesture`,
   // `did` its name); `facedown` plays nothing. A quick swipe goes as
@@ -408,6 +410,7 @@ class Device : public linkkit::App {
   bool noApp_ = false;
   uint32_t drawnReal_ = 0;  // the real time the last frame was drawn
   bool dirty_ = true;
+  bool toldFaceDown_ = false;  // what the Mac was last told of face down
   bool frame_ = false;
   // Frames pushed (noteFrame): counted over each real second into fps_.
   uint32_t frames_ = 0, fpsSinceReal_ = 0, fps_ = 0;

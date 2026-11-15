@@ -2,7 +2,7 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// The popover. One 360 pt column on warm paper; the overview's three tabs
+/// The popover. One 420 pt column on warm paper; the overview's three tabs
 /// (Now, Boop and World), Settings and What Boop knows open inside it.
 /// Setup is onboarding's, in its own window.
 struct PopoverView: View {
@@ -82,7 +82,7 @@ struct PopoverView: View {
             .font(.body)
             .buttonStyle(.quiet)
             // The quiet buttons' own 8 pt inset puts their words on the gutter.
-            .padding(.horizontal, Theme.gapSnug)
+            .padding(.horizontal, Theme.gap)
             .padding(.vertical, Theme.gapSnug)
         }
     }

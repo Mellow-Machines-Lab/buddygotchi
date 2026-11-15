@@ -110,8 +110,11 @@ enum Theme {
     static let blush = Color(hex: Palette.blush)
 
     // One spacing scale, on a 4 pt grid, so margins can't drift a point or
-    // two per view: 2, 4, 8, 12, 16, 20. No arithmetic on them: a value
-    // that isn't on the scale is a new token or a mistake.
+    // two per view: 2, 4, 8, 16, 24. No arithmetic on them: a value
+    // that isn't on the scale is a new token or a mistake. The popover is
+    // roomy on purpose (2026-11-15: 420 pt wide, 24 pt sides, 16 pt inside
+    // a card, 13 pt text): the room is for air round each thing, not for
+    // more things.
     /// A title over its detail; lining loose text up with a card's edge.
     static let hair: CGFloat = 2
     /// An icon to its word; lines in a group.
@@ -119,11 +122,11 @@ enum Theme {
     /// The icon column to its text; between cards; a row's vertical padding.
     static let gapSnug: CGFloat = 8
     /// A card's padding; a row's horizontal padding.
-    static let gap: CGFloat = 12
+    static let gap: CGFloat = 16
     /// The popover's sides.
-    static let gutter: CGFloat = 16
+    static let gutter: CGFloat = 24
     /// Between sections.
-    static let gapSection: CGFloat = 20
+    static let gapSection: CGFloat = 24
     /// The icon column in rows and notices.
     static let iconColumn: CGFloat = 20
     /// The smallest a control is to the pointer.
@@ -141,7 +144,7 @@ enum Theme {
     /// A session's bar and small decorations.
     static let barRadius: CGFloat = 2
 
-    static let width: CGFloat = 360
+    static let width: CGFloat = 420
 }
 
 extension Font {
@@ -163,16 +166,16 @@ extension Font {
     /// Onboarding's body lines.
     static let lead = Font.system(size: 14)
     /// Text. A row's title is medium; a card's title is semibold.
-    static let body = Font.system(size: 12)
-    static let bodyMedium = Font.system(size: 12, weight: .medium)
-    static let bodyStrong = Font.system(size: 12, weight: .semibold)
+    static let body = Font.system(size: 13)
+    static let bodyMedium = Font.system(size: 13, weight: .medium)
+    static let bodyStrong = Font.system(size: 13, weight: .semibold)
     /// Detail lines; small buttons.
-    static let detail = Font.system(size: 11)
-    static let detailStrong = Font.system(size: 11, weight: .medium)
+    static let detail = Font.system(size: 12)
+    static let detailStrong = Font.system(size: 12, weight: .medium)
     /// Chips, day names, the device line.
     static let chip = Font.system(size: 10, weight: .medium)
     /// What an agent is doing; a file or branch name.
-    static let mono = Font.system(size: 11, design: .monospaced)
+    static let mono = Font.system(size: 12, design: .monospaced)
 }
 
 // MARK: - Motion

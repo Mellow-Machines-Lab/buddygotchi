@@ -8,7 +8,7 @@ import SwiftUI
 /// the footprints and the bar never move from one act or state to the next.
 struct OnboardingView: View {
     @ObservedObject var model: OnboardingModel
-    static let size = CGSize(width: 720, height: 560)
+    static let size = CGSize(width: 720, height: 620)
     /// Above the footprints, and below every act's bar.
     static let edge: CGFloat = 30
 

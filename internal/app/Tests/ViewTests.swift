@@ -36,6 +36,32 @@ final class ViewTests: XCTestCase {
     }
 
 
+    /// The other order: the turn finishes first, and another agent's
+    /// request cuts its finish on the board (or blocks it while the brain
+    /// still thinks). That finish comes back too once the request clears;
+    /// one that played doesn't.
+    func testAFinishARequestCutComesBackOnceItClears() throws {
+        func finishThenRequest(_ rig: CoreRig, failed why: String?) throws -> [ViewEvent] {
+            rig.send(.turnStart, session: "main")
+            rig.send(.turnStart, session: "readme")
+            rig.now += 20_000
+            let finish = try XCTUnwrap(events(rig.send(.turnEnd, session: "readme")).first { $0.wakesBrain }, "nothing needs you yet")
+            let h = rig.pipeline.harness
+            let did = h.emit(Event.did("Boop had a happy moment.", for: finish.seq, action: MomentOutput.outputName, by: "brain", open: true, at: rig.now))
+            rig.now += 1000
+            rig.send(.activity, session: "main", tool: "Bash", id: "b")
+            rig.send(.needsYou, session: "main", tool: "Bash")
+            h.emit(Event.ended(did.seq, action: MomentOutput.outputName, by: "brain", failed: why, at: rig.now))
+            rig.now += 5000
+            return events(rig.send(.activity, session: "main", tool: "Bash", failed: false, id: "b"))
+        }
+        let back = try XCTUnwrap(finishThenRequest(CoreRig(), failed: "cut short: something needed you").first { $0.wakesBrain })
+        XCTAssertEqual(back.notes.last, EventLine.finishedWhileYouWereBusy)
+        XCTAssertEqual(back.about, "claude/readme", "the finish's own thread")
+        let played = try finishThenRequest(CoreRig(), failed: nil)
+        XCTAssertFalse(played.contains { $0.notes.contains(EventLine.finishedWhileYouWereBusy) }, "it played before the request: not again")
+    }
+
     var rig = CoreRig()
 
     @discardableResult

@@ -64,10 +64,12 @@ extension Runtime {
     /// in onboarding.
     var worldOn: Bool { settings.world && settings.worldShown }
 
-    /// Night, you're away, or something needs you (whose events are held
-    /// from Jev): gestures wait for you to be free in the day.
+    /// Night, the screen is locked, you're away, or something needs you
+    /// (whose events are held from Jev): gestures wait for you to be free
+    /// in the day. A lock counts from its start, well before it's an away:
+    /// its own "asleep" send brings gestures, to an empty chair.
     func worldQuiet(at now: Int64) -> Bool {
-        core.calendar(at: now).contains("night") || core.awayFromMac || core.needsYouBlock != nil
+        core.calendar(at: now).contains("night") || presence.lockedAt != nil || core.awayFromMac || core.needsYouBlock != nil
     }
 
     func worldTick(at now: Int64) {

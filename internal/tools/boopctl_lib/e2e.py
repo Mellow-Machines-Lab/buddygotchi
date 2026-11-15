@@ -292,14 +292,14 @@ def order(log: str) -> list[dict[str, Any]]:
 
 
 # How a brain reaction may end without anything being wrong (linkkit/SPEC.md
-# §4): played through; cut by a tap, something needing you, a `now` from
-# someone else or a reset; or skipped because it waited in the queue past its
+# §4): played through; cut by a tap, something needing you, the mic, face
+# down, a `now` from someone else or a reset; or skipped because it waited in the queue past its
 # ttl, behind another's `say` (the Mac used to drop those before sending), or
 # the device refused it (`nothing` when none of it would play). `skipped
 # (unknown)` means the device doesn't play that name, and a `now` of the
 # brain's own never cuts it: those fail.
-FINE_ENDS = re.compile(r"^(done|cut \((tap|needs_you|now|reset)\)|skipped( \((late|busy|full|needs_you|no_app|listening|mic_on|"
-                       r"not_listening|nothing|reset)\))?)$")
+FINE_ENDS = re.compile(r"^(done|cut \((tap|needs_you|mic_on|facedown|now|reset)\)|skipped( \((late|busy|full|needs_you|no_app|"
+                       r"listening|mic_on|not_listening|facedown|nothing|reset)\))?)$")
 
 
 def check_order(run: Any) -> dict[str, Any]:

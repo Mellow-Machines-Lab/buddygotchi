@@ -50,7 +50,7 @@ public struct Growth: Equatable, Sendable {
     /// XP for a turn that ends done, a tool call that ends without failing
     /// and a helper coming back: the agents' work.
     public static let turnXP = 5, toolXP = 1, helperXP = 2
-    /// XP for a care touch (`Touch.isCare`), a word to Boop, an answered
+    /// XP for a care touch that isn't rough (`Touch.isCare`, `isRough`), a word to Boop, an answered
     /// ask, a met wish and you coming back to the Mac.
     public static let careXP = 3, talkXP = 3, answerXP = 5, wishXP = 20, backXP = 2
 
@@ -65,7 +65,7 @@ public struct Growth: Equatable, Sendable {
             }
         }
         switch e.type {
-        case .gesture? where Touch(e)?.isCare == true: return careXP
+        case .gesture? where Touch(e).map({ $0.isCare && !$0.isRough }) == true: return careXP
         case .said?: return talkXP
         case .ask? where e.specificType != Asks.ignored: return answerXP
         case .presence? where e.phase == .end: return backXP

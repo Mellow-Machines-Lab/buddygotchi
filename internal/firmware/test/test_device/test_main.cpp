@@ -2498,6 +2498,9 @@ static void test_a_stroke_keeps_its_answer_when_it_meets_a_wish() {
   s.usb.text.clear();
   doLine(s, 1, "wish_met", "next", "{}");
   TEST_ASSERT_FALSE(has(s.usb.text, "\"skipped\""));
+  // It played nothing of its own, so it's over as it starts: its `ended`
+  // doesn't wait for whatever comes next (the Mac gives up after a minute).
+  TEST_ASSERT_TRUE(has(s.usb.text, endedLine(1, "done")));
   TEST_ASSERT_TRUE(has(momentOf(s), "gesture"));
 }
 
@@ -2670,6 +2673,39 @@ static void test_face_down_is_do_not_disturb() {
   r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
   for (int i = 0; i < 10; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
   TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"peekaboo\"}\n"));
+}
+
+// Turned back up while the Mac was away (no `state` for 30 s), the board
+// can't tell it then: it says so at the Mac's next `state`, or the Mac
+// would hold every event as "face down" until the next turn-over. And
+// turned face down while it was away, likewise.
+static void test_the_mac_hears_which_way_up_once_its_back() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "\"did\":\"facedown\""));
+  for (int i = 0; i < 31; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":1000}");  // the Mac goes
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":1000}");
+  for (int i = 0; i < 10; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"did\":\"peekaboo\""));  // nobody to tell
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"peekaboo\"}\n"));
+  r.usb.text.clear();
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_FALSE(has(r.usb.text, "peekaboo"));  // once
+
+  for (int i = 0; i < 31; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":1000}");
+  r.usbLine("{\"t\":\"dbg.imu\",\"ax\":0,\"ay\":0,\"az\":-1000}");
+  for (int i = 0; i < 40; ++i) r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_FALSE(has(r.usb.text, "\"did\":\"facedown\""));
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  r.usbLine("{\"t\":\"dbg.clock\",\"step\":50}");
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"gesture\",\"did\":\"facedown\"}\n"));
 }
 
 // dbg.reset starts the motion sensor's readings again with the clock: a
@@ -3007,6 +3043,7 @@ int main() {
   RUN_TEST(test_an_unanswered_ask_ends_ignored);
   RUN_TEST(test_a_swipe_plays_the_faces_stroke_and_goes_to_the_mac);
   RUN_TEST(test_face_down_is_do_not_disturb);
+  RUN_TEST(test_the_mac_hears_which_way_up_once_its_back);
   RUN_TEST(test_reset_reads_motion_from_0);
   RUN_TEST(test_reactions_read_their_facts);
   RUN_TEST(test_only_the_reply_ends_the_macs_listening);

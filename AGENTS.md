@@ -179,8 +179,8 @@ things on three channels, **voice**, **sign** and **narration**.
 | activity | How it's working: testing, delegating, terminal, searching, analysing, a tool, waiting, planning | act | `act` |
 | tier | How long it's been working or resting: tier 1 at 30 s to tier 5 at 10 min (`Tags.tiers`) | stage (that's growth's) | `tier1`…`tier5` |
 | pastime | What Boop does to pass the time, by Doing and tier or wait (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
-| kit | Props shown while true: mugs, headphones, the zone, the plant | | |
-| dressing | Outfits and decorations from tags: a hat, shades, the sun, the air | outfit, layers, occasion (as a design) | |
+| kit | What's out while true: on the gel, the headphones alone | | |
+| dressing | What's worn for the tags, one thing at a time: a hat, shades. The gel has nothing in the sky or the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
 | tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | lean (that's a finger's) | |
 | the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |

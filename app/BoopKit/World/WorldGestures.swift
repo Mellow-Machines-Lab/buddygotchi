@@ -75,6 +75,9 @@ public struct WorldGestures: Sendable {
         }
     }
 
+    /// You left the world: what waited goes with it.
+    public mutating func drop() { waiting = [] }
+
     /// You're here in the day: what waited, as one event, which plays.
     public mutating func release(at now: Int64) -> [Event] {
         guard !waiting.isEmpty else { return [] }

@@ -338,6 +338,20 @@ final class PresenceRuntimeTests: XCTestCase {
         .filter { $0.type == .presence }.map { "\($0.phase?.rawValue ?? "") \($0.specificType)" }
     }
 
+    /// The world's gestures wait while the screen is locked, from the lock
+    /// itself, not only once it's an away 10 minutes on: nobody is there to
+    /// see them.
+    func testALockedScreenIsQuietForTheWorld() throws {
+        let clock = VirtualClock(presenceT0)
+        let runtime = try makeRuntime(clock: clock)
+        XCTAssertFalse(runtime.home.sync { runtime.worldQuiet(at: clock.now) })
+        dev(runtime, #"{"dev":"presence","signal":"locked"}"#)
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertTrue(runtime.home.sync { runtime.worldQuiet(at: clock.now) }, "a second into the lock")
+        dev(runtime, #"{"dev":"presence","signal":"unlocked"}"#)
+        XCTAssertFalse(runtime.home.sync { runtime.worldQuiet(at: clock.now) })
+    }
+
     /// A lock from a dev line becomes an away 10 minutes later, on the tick; the
     /// unlock and the next tick the back, which the view keeps as waking.
     /// Relaunched while away, the next touch is the back, not a second

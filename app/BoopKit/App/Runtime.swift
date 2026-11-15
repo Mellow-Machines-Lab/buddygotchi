@@ -191,6 +191,12 @@ public final class Runtime: @unchecked Sendable {
     /// once the step is carried out, not inside it, where the moment's own
     /// effects would join the step and be carried out twice.
     var growthDue = false
+    /// The level and ring events just logged, whose one moment is about to
+    /// go to the board; and when the board last missed one, so the next XP
+    /// doesn't try again at once (`growthRetryMs`).
+    var celebrating: [Event] = []
+    var growthMissedAt: Int64?
+    static let growthRetryMs: Int64 = 60_000
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
     /// This launch's debug lines outside debug mode, for `saveReport`: in
@@ -435,7 +441,7 @@ public final class Runtime: @unchecked Sendable {
         rig.link.onHello = { [weak self] hello in
             DeviceInfo(hello).logLines.forEach(log)
             if let self, let latest = rig.latest { self.show(latest) }
-            self?.playGrowthDue(at: clock())
+            self?.playGrowthDue(at: clock(), hello: true)
         }
         // A pass can change a mood, which its device and the menu bar show.
         harness.on(Event.did) { [weak self] e in
@@ -739,7 +745,11 @@ public final class Runtime: @unchecked Sendable {
                 mic(on, by: by)
                 stateChanged = true
             case .reaction(let reaction):
-                playRule(reaction)
+                if celebrating.isEmpty || (reaction.gold == nil && reaction.sign != Core.ringSign) {
+                    playRule(reaction)
+                } else {
+                    playGrowth(reaction)
+                }
             case .call(let args):
                 playCall(args)
             case .open(let thread):
@@ -748,6 +758,9 @@ public final class Runtime: @unchecked Sendable {
         }
         // Only the outermost step: a step inside an input joins it, which
         // carries these out after.
+        // Growth logged with no moment sent for it (something needed you
+        // by then): still due.
+        if !celebrating.isEmpty, pipeline.step == nil { missedGrowth(celebrating) }
         if growthDue, pipeline.step == nil {
             growthDue = false
             if !playGrowthDue(at: options.clock()) { xpMoved = true }
@@ -772,7 +785,7 @@ public final class Runtime: @unchecked Sendable {
     /// makes one, once it's carried out (`run`), so the board gets one line
     /// for one hook.
     func grow(_ e: Event) {
-        growth.played(e)
+        if growth.played(e) { celebrating.append(e) }
         let now = options.clock()
         guard growth.count(e, xp: Growth.xp(for: e), today: options.time.boopDay(options.wallClock())) > 0 else { return }
         grew = true
@@ -780,15 +793,46 @@ public final class Runtime: @unchecked Sendable {
         if !playGrowthDue(at: now) { publishXP(at: now) }
     }
 
-    /// What's due plays on every board, and is celebrated as it does
-    /// (`played`): after XP that reached it, at a board's hello (so one held
-    /// over a quit isn't lost), and after a demo, which shows none.
+    /// What's due plays on the board, and is celebrated as it's sent
+    /// (`played`): after XP that reached it, at the board's hello (so one
+    /// held over a quit, or reached with the board out of reach, isn't
+    /// lost), and after a demo, which shows none. A board that isn't here
+    /// is waited for; one that just missed it isn't asked again for
+    /// `growthRetryMs`, but at its hello.
     @discardableResult
-    func playGrowthDue(at now: Int64) -> Bool {
+    func playGrowthDue(at now: Int64, hello: Bool = false) -> Bool {
         let beats = growth.due(today: options.time.boopDay(options.wallClock()))
-        guard showsGrowth, !beats.isEmpty else { return false }
+        guard showsGrowth, !beats.isEmpty, rig.link.transport == nil || rig.link.hello != nil,
+              hello || growthMissedAt.map({ now - $0 >= Self.growthRetryMs }) ?? true else { return false }
         run(core.grew(beats, at: now))
         return true
+    }
+
+    /// The growth moment, sent as a rule's is, and taken back
+    /// (`GrowthStore.missed`) if the board never showed it: skipped in its
+    /// queue or by face down, cut by a request, or the link dropped.
+    func playGrowth(_ reaction: Moment) {
+        let events = celebrating
+        celebrating = []
+        // With no board at all there's nothing to wait for.
+        guard rig.link.transport != nil else { return playRule(reaction) }
+        playRule(reaction) { [weak self] outcome in
+            let shown: Bool
+            switch outcome {
+            case .ended(let ended):
+                shown = ended.how == .done || (ended.how == .cut && ended.why != "needs_you" && ended.why != "facedown")
+            case .failed(let failure):
+                shown = failure != .notConnected && failure != .disconnected && failure != .noHello
+            }
+            if !shown { self?.missedGrowth(events) }
+        }
+    }
+
+    func missedGrowth(_ events: [Event]) {
+        celebrating = []
+        growth.missed(events)
+        growthMissedAt = options.clock()
+        options.log("growth: the board didn't show \(events.map { "\($0.type?.rawValue ?? "") \($0.specificType)" }.joined(separator: ", ")); still due")
     }
 
     /// Changes the settings here and in `settings.json`, keeping what

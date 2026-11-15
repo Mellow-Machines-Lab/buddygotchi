@@ -1,8 +1,225 @@
 # TODO
 
-Updated 2026-11-14. What's next, one at a time, top first. Tick an item
+Updated 2026-11-15. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-15: bugs, a calmer screen, a roomier popover
+
+**Read this first.** On the worktree branch
+`worktree-bridge-cse_01357DH3yRTShbBqPx5mCzgZ` (on main `2caeb3cf`) and
+SlimeBuddy's `calm-2026-11-15` (on `main-v2` `4bf8c55`, in this worktree's
+`characters/.repos/SlimeBuddy`). Nothing is merged or pushed, and the packs'
+`engine/` pins didn't move. Every picture and number below is kept outside the
+repo, in `~/.boopdev/calm-2026-11-15/`. No Jev request: no prompt or steering
+changed.
+
+**Fixed** (each with a test that failed before):
+- A level-up or "today's done!" that the board never showed was celebrated
+  anyway and never played. Now it waits for the board's hello, and one skipped,
+  or cut by a request or face down, is due again
+  (`GrowthTests.testALevelUpTheBoardNeverPlayedIsStillDue`).
+- About one `say` in eight with a lead sound was silent with a bubble reading
+  "(null)" (`test_voice`'s `test_a_say_keeps_its_first_take_while_the_second_loads`).
+- The world's gestures played to a locked screen, and after you switched the
+  world off (`PresenceRuntimeTests.testALockedScreenIsQuietForTheWorld`,
+  `WorldTests.testGesturesWaitingAreDroppedWithTheWorld`).
+- A finish cut by a request that came just after it never came back
+  (`ViewTests.testAFinishARequestCutComesBackOnceItClears`).
+- Turned over while the Mac was away, the board never said so, and the Mac held
+  every event as "face down" (`test_device`'s
+  `test_the_mac_hears_which_way_up_once_its_back`). A `wish_met` that played
+  nothing never reported its end (the same suite).
+- Shakes and wrong-way strokes earned XP (`GrowthTests.testCareEarnsXP`).
+- A burst of 20 calls asked the popover for 20 statuses, now 1
+  (`WorkStreamTests.testABurstOfCallsAsksForOneStatus`). Measured: a status
+  takes 0.11 ms and a tool call's two hooks 0.6 to 0.8 ms (debug build), so the
+  Mac's side isn't hot, and the rest of the survey's Mac items are left.
+- `boopctl e2e` takes a moment cut by the mic or face down as fine.
+
+**Cut and calmed, on the board.** The screen's rule, written where the
+renderer decides it (the pack's `render/gel/layers.h` and `pastimes.h`) and
+pinned by `test_nothing_hangs_in_the_sky_or_the_air` and
+`test_the_kit_is_the_headphones_alone`:
+
+1. The face comes first. What it wears is on its body, one thing at a time: a
+   hat for the night or the day, or Friday's shades, or headphones in long
+   work (a hat wins).
+2. Nothing hangs in the sky or drifts through the air for a time of day, a
+   season or a holiday. Only the work stream's words fall behind it.
+3. Beside the face at most one thing moves at a time: a Moment, else the
+   needs-you card, else a pastime. A pastime brings what it holds and takes it
+   away, 20 to 45 s after the last.
+4. The top band holds one of the needs-you card, LISTENING, a start's card or
+   the bar; the lane one of the bubble, the narration, a low sign or the strip
+   (as before).
+
+| Commit (SlimeBuddy) | What went | Before and after |
+| --- | --- | --- |
+| `eb71c77` | The sun, the moon and stars, snow, all-day confetti, hearts, the coffee in its hand | `gel-1-sky-air-coffee.png` (32 pictures) |
+| `da40b10` | The pyjamas | `gel-2-pyjamas.png` (18) |
+| `98ebd8c` | The desk's mug and its stack, the zone's motes, the plant, the notes off the headphones; the sip, the refill, the coffee reach and watering; pastimes 20 to 45 s apart (was 4 to 10), moves 5 minutes (was 90 s) | `gel-3-kit-a.png`, `gel-3-kit-b.png` (51) |
+
+Each commit reverts alone. Kept: the work stream, needs you, the strip and the
+drawer, finishes and the low sign, signs, the wish, the bar, the hats, the
+headphones, 48 pastimes. `board-day.png` is the board driven through a day
+over USB (13 steps, each the same pixels as the simulator).
+
+**Cut and calmed, on the Mac** (`c773a249`): the popover is 420 pt wide (was
+360) with 24 pt sides (16), 16 pt inside a card (12) and 13 pt text (12), and
+nothing added; onboarding's window is 620 pt tall (560), so acts 5 and 7 still
+fit. The "Why it looks like this" card follows the gel (`27609a41`). Before
+and after: `mac-*.png`, and every snapshot in `mac-before/` and `mac-after/`.
+
+**Simplified:** in the pack's firmware, rig and tests, 977 lines out and 199
+in (the sky, the air, the coffee, the pyjamas, the kit, four pastimes and
+their clips, nine colours); here, two always-true checks, `EventLine.everyone`
+and five unused Python imports. `Contents` has three layers, not five;
+`PastimeShow` carries the headphones alone; the painter no longer erases the
+whole surface for scenery.
+
+**Checked** (all on the last commits):
+- `make -C internal check`: its tests, firmware tests, tools' tests and both
+  faces' scenarios pass (741 Swift tests, 1 skipped); its last step, the
+  mirror, failed on the page test's "a pastime in 40 s", was fixed in the pack
+  (`4859c1f`) and passes run again (`make -C internal mirror`). `make -C
+  internal boards`: both boards build. The simulator's own tests
+  (`sim-test`) and the demos weren't run.
+- BoopTests 740 passed, 1 skipped; test_gel 159 of 159; test_device 100 of
+  100; test_voice 10 of 10; boopctl's 155.
+- The mirror built again after each cut, its shots (576) the simulator's.
+- On the AMOLED, the profiling build, before → after: night 25.1 → 30.5 fps,
+  asleep 32.3 → 38.2, working 34.0 → 34.9 (its slowest frame 51 → 48 ms, so
+  `perf --scenes` passes where it failed), needs you 30.4 → 31.0, frightened
+  29.8 → 30.0, stream 29.0 → 29.2, pokes 35.3 → 35.8; the heap floor 141.2 →
+  142.4 KB. `perf --plays`: night 20.5 → 27.9, working at night 18.2 → 23.0;
+  three that play once read lower in their first second (the push 20.7 → 17.5,
+  growing to a Chonk 23.0 → 18.8, the bar 45.8 → 40.4) and have no budget.
+  `perf --motion`: 32 fps at worst, no frame over 33.7 ms.
+- On the everyday build: `boopctl e2e` PASS (p95 231 ms); `boopctl latency`
+  within every budget (a press 78 ms p95, a tap 73, a state 70, a do 77, none
+  lost); `boopctl soak`, 20 minutes: no reset, heap drift 0, 141 moments each
+  ended once; `boopctl run`: 0 expect failures, 574 of 576 pictures the
+  simulator's (the two below).
+
+**Suspected, not fixed:**
+- On the board, `wish/gone` and `wish/slump` draw the body less slumped than
+  the simulator (`boopctl run wish`). It's the same on main's firmware
+  (`2caeb3cf`), so not from this branch.
+- Face down doesn't end when the board is stood up rather than laid flat
+  (`motion_gesture.cpp` wants az over +800 mg): try it in the case.
+- A shell command started in the background reads as passed, and counts a
+  ship, as its hook returns.
+- The first USB line after a board reset may be lost (the boot ROM's text
+  joins it).
+- The time zone is read once at launch: after a flight, night and Boop's day
+  are the old place's until the app restarts.
+- A `say` reads the card from the frame loop; a Bluetooth notify that fails
+  sleeps in it. Neither was measured.
+
+**For the owner:**
+- **The look.** Is the nightcap alone right, or do you miss the pyjamas
+  (`da40b10`)? Are 20 to 45 s between pastimes calm, or too quiet? Friday's
+  shades cover the eyes all afternoon: keep them (recommended, they come off
+  for every feeling) or cut?
+- **The time zone:** restart the runtime when macOS says the zone changed
+  (recommended; it reconnects Bluetooth, as a rename does), or follow it live.
+- **Failed checks reach the brain** (#2, decided): it changes when Jev is
+  asked, so it wants `--only` Jev runs. Not done here.
+- **"While you were away"** on a gesture that waited for a request to clear
+  (#10): say "Earlier," for every wait (recommended; a prompt line, so one
+  quick Jev run).
+- **A slow Jev answer drops a finish:** a finish may wait 15 s on the board
+  but its pass has 1.5 s and one try. Ask again while it's still news?
+- **Several buddies' last leftovers** (`Runtime.Rig`, `Buddy`, one-entry maps):
+  about 40 lines and a layer, a refactor of its own.
+- **L6, on the desk:** the calm look from the chair by day and at night; the
+  headphones going on up to 45 s into tier 3; the popover's size on your
+  screen and on the laptop's; onboarding's taller window; a level-up after the
+  board comes back into Bluetooth's reach.
+- **To land:** SlimeBuddy `calm-2026-11-15` first, then this branch, then the
+  packs' `engine/` pins. The board is flashed back to main's firmware.
+
+### The survey, before any change
+
+What was found on main `2caeb3cf`, ranked by how much you'd notice it. The
+baseline: `make -C internal check` passes (735 tests, 1 skipped). On the AMOLED
+with the profiling build: needs you 30.4 fps, working 34.0, frightened 29.8,
+stream 29.0, asleep 32.3, pokes 35.3, **night 25.1**; working's slowest frame
+51 ms against its 50; heap floor 141 KB; `perf --motion` 31 fps at worst, no
+frame over 33.8 ms.
+
+**Bugs**
+
+1. A level-up or "today's done!" is marked celebrated when it's logged, not when
+   the board plays it: with the board out of reach, or the moment skipped in the
+   queue or cut by needs you, it never plays (`GrowthStore.played`,
+   `Runtime.playRule`).
+2. A `say` with a lead sound and a take: about one in eight is silent with a
+   bubble that reads "(null)". The voice's eight-slot cache hands the lead's
+   slot to the take (`voice/player.cpp`).
+3. World gestures play to an empty chair: a lock's "asleep" send brings them and
+   the next tick plays them, worded "while you were away". They also play after
+   you switch the world off (`WorldLink.tick`, `leave`).
+4. A finish cut by a request that came after it never comes back
+   (`TranscriptView.noteMissed` keeps one only when the request came first).
+5. Face down, or back up, while the Mac is away or Bluetooth blinks is never
+   told: the Mac holds every event as "face down" until the next turn-over
+   (`Device::tell`).
+6. Shakes and wrong-way strokes earn XP (decided 2026-11-09: they don't).
+7. A failed check never asks the brain (#2 of the product review, decided).
+8. The time zone is read once at launch: after a flight, night, Boop's day and
+   the world's region are the old place's until the app restarts.
+9. `wish_met` that plays nothing never reports its `ended`.
+10. `boopctl e2e` fails a moment cut by the mic or by face down: its list of
+    fine endings has drifted from the firmware's.
+
+Suspected, to be reproduced: face down never ends when the board is stood up
+rather than laid flat; a shell command started in the background reads as
+passed at once; the first USB line after a board reset is lost.
+
+**Feel and performance**
+
+1. The Mac builds a whole status, and the open popover redraws, at every tool
+   call: a session's word isn't throttled as the board's is, and every line
+   from the board (each call's `ended`) asks for one more.
+2. That status repeats work that changes once a day or a quarter hour (the
+   week, the special days, a JSON encode for the debug log outside debug mode),
+   and `Memory.tick` reads SQLite and decodes the dream every second.
+3. The popover's mirror of the board parses every line all day with the
+   popover closed.
+4. On the board: night is the slowest scene (the sky, the cap and the pyjamas);
+   the morning sun is drawn a pixel at a time and no perf scene has it; a `say`
+   reads the card from the frame loop.
+
+**The look: what's on the gel's screen**
+
+Counted in the goldens. Up to five things share the screen with the face: in
+winter's morning a sun, a bobble hat, snow, a coffee and the desk.
+
+| Thing | When | Verdict |
+| --- | --- | --- |
+| The sun; the moon and stars | all morning; all night | Cut: scenery that says nothing you act on |
+| Coffee in a little hand | idle or working in the morning | Cut with the sun |
+| Snow, confetti, hearts in the air | all winter; a party day; Valentine's | Cut: the hat says the day. A finish keeps its confetti |
+| Pyjamas | all night | Cut: the nightcap says night |
+| A mug on the desk, a stack of them, motes "in the zone" | working, by tier | Cut: too small to read, and they need explaining |
+| A plant that grows | idle, tier 3 up | Cut: random |
+| Notes floating from the headphones | working, tier 3 up | Cut: a second thing moving all the time |
+| Headphones | working, tier 3 up | Keep: one thing, on the body, "settled in" |
+| A hat for the day, the nightcap, Friday's shades | by tag | Keep: one thing worn |
+| Pastimes with props that are gone (sip, refill, reach, water) or random (tower) | by tier | Cut |
+| The other pastimes | one at a time, 4 to 10 s apart | Keep, further apart |
+| The work stream, needs you, the strip, the drawer, finishes, signs, the wish, the bar | | Keep |
+
+**The Mac's popover**: 360 pt wide with 16 pt sides and 12 pt text. Wider, with
+more room round each thing, and nothing added.
+
+**Simplification**: the leftovers of several buddies (`Runtime.Rig`, `Buddy`,
+`rig === rig`, one-entry maps and name arrays), `Runtime.init` and
+`Runtime.harness` wiring the same `Mind` twice, names that only tests use in
+the shipped app, the wish kinds spelled three times in the firmware, unused
+Python imports.
 
 ## Report, 2026-11-14 (evening): a polish pass over main
 

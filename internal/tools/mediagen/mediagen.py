@@ -267,7 +267,6 @@ def watch_gif() -> None:
             ("claude", {"hook_event_name": "Stop", "session_id": "s1", "cwd": L,
                         "last_assistant_message": "Fixed."}, 1),
         ]
-        import json
         for agent, hook, pause in script:
             subprocess.run([str(bin_dir / "agent-hook"), agent], input=json.dumps(hook), env=env, text=True,
                            check=True)

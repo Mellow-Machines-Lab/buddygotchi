@@ -518,6 +518,23 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(events, [], "the reply's boop, after the leave")
     }
 
+    /// Gestures that waited for the morning go with the buddy when you
+    /// switch the world off: none plays after, and none is kept.
+    func testGesturesWaitingAreDroppedWithTheWorld() throws {
+        let world = link()
+        var events: [Event] = []
+        world.onEvents = { events += $0 }
+        tick(world, 0)
+        tick(world, 1_000, quiet: true)
+        XCTAssertEqual(world.gestures.waiting.count, 1)
+        queue.sync { world.leave(at: 2_000) }
+        settle()
+        tick(world, 3_000, on: false)
+        XCTAssertEqual(events, [])
+        XCTAssertTrue(world.gestures.waiting.isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(WorldLink.waitingFileName).path))
+    }
+
     /// Gestures held for the morning outlive a quit.
     func testHeldGesturesOutliveAQuit() throws {
         let world = link()

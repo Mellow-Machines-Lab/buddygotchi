@@ -21,7 +21,7 @@ import termios
 import threading
 import time
 import tty
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 # Escape sequences, so the screen's words can be searched: CSI, OSC and
 # the two-byte ones.
