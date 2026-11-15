@@ -752,8 +752,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             log.write("hooks: left alone, since only the everyday Boop (\(AppSettings.defaultStateDir().path)) installs "
                       + "or repairs them; this copy hears them as \(name).sock")
         }
-        model.refreshHooks()
-        // The login item's state, for Settings, before it's first opened.
+        // The hooks as the steps above left them, and the login item's state,
+        // for Settings, before it's first opened.
         model.refreshInBackground()
         model.start = { [weak self] in self?.startRuntime() }
         model.restart = { [weak self] in self?.restartRuntime() }
@@ -1104,6 +1104,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // It opens on Now each time: most of the time, that's what's wanted.
         model.tab = .now
         model.worldSent = [:]
+        // A half-typed name goes with Settings.
+        model.renameDraft = nil
+        model.renameError = nil
     }
 
     /// Settings' Uninstall: asks first, then takes out the hooks, the

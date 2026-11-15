@@ -4,8 +4,10 @@ import Foundation
 /// changes: 1 to 23 characters, without "·" or ":", which `long-term.md`'s
 /// line uses, and a new one at most once a week.
 public enum BuddyName {
-    /// The most characters a name has. The memory file counts characters;
-    /// the board's field counts bytes, and `StateSnapshot.clip` cuts it.
+    /// The most characters a name has, here and in the world (the server's
+    /// `NAME_MAX`, internal/world/src/names.ts). The memory file counts
+    /// characters; the board's field counts bytes, and `StateSnapshot.clip`
+    /// cuts it.
     public static let maxLength = 23
     /// A rename waits this long after the last one: a name is who the
     /// buddy is, to you and to the world.

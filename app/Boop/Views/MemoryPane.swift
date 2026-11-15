@@ -42,7 +42,7 @@ struct MemoryPane: View {
 
     @ViewBuilder private var content: some View {
         if let status = model.status {
-            let notes = status.notes.filter { !forgets.gone.contains($0.id) }
+            let notes = status.notes.filter { forgets.gone[$0.id] != $0.text }
             if notes.isEmpty, status.recently.isEmpty {
                 NoteCard("\(model.name) is still getting to know you. What it learns shows here after it dreams.")
             } else {
@@ -110,7 +110,7 @@ struct MemoryPane: View {
                 .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 4 }
                 .help(note.pinned ? "Let it age as the others do" : "Keep it for good, as it is")
                 .accessibilityLabel(note.pinned ? "Unpin" : "Pin")
-                Button { forgets.forget(note.id, runtime: model.runtime) } label: {
+                Button { forgets.forget(note.id, text: note.text, runtime: model.runtime) } label: {
                     Image(systemName: "trash")
                 }
                 .buttonStyle(.quietIcon)
@@ -147,18 +147,20 @@ final class PendingForgets: ObservableObject {
 
     /// Forgotten, and still to be undone.
     @Published private(set) var pending: Set<Int> = []
-    /// Forgotten for good, and hidden until the status no longer has them.
-    @Published private(set) var gone: Set<Int> = []
+    /// Forgotten for good, by id, with the text that was forgotten: hidden
+    /// until the status no longer has them. The text keeps a new note that
+    /// takes a forgotten one's id (ids are the highest + 1) from hiding too.
+    @Published private(set) var gone: [Int: String] = [:]
     private var timers: [Int: Task<Void, Never>] = [:]
 
-    func forget(_ id: Int, runtime: Runtime?) {
+    func forget(_ id: Int, text: String, runtime: Runtime?) {
         pending.insert(id)
         timers[id]?.cancel()
         timers[id] = Task { [weak self] in
             try? await Task.sleep(for: Self.wait)
             guard let self, !Task.isCancelled, self.pending.contains(id) else { return }
             self.pending.remove(id)
-            self.gone.insert(id)
+            self.gone[id] = text
             self.timers[id] = nil
             runtime?.forgetNote(id)
         }
@@ -174,6 +176,6 @@ final class PendingForgets: ObservableObject {
     /// Forgets every pending forget, made or not, for the next snapshot.
     func reset() {
         timers.values.forEach { $0.cancel() }
-        (timers, pending, gone) = ([:], [], [])
+        (timers, pending, gone) = ([:], [], [:])
     }
 }

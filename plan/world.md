@@ -191,7 +191,7 @@ GET /v1/world
 
 ### 2.7 Names
 
-- At most 16 characters, letters, digits, spaces and a few marks.
+- At most 23 characters (the Mac's limit too), letters, digits, spaces and a few marks.
 - Refused: a word list (kept in `names.ts`), anything that looks like a link, a
   handle or a phone number. A refused name is stored but shown as "a buddy",
   and the Mac is told, so its Settings can say so.

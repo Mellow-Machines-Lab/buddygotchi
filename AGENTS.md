@@ -276,7 +276,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | the world | Everyone's buddies together on one server (`internal/world/`), which Boop joins unless you keep it private; the Mac's client is `WorldLink` | map, network | |
-| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship; a `world` event, which Jev answers. At most 3 an hour play; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
+| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship; a `world` event, which Jev answers. One reply's are one moment, at most 3 an hour; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
 | region | Where a buddy is, from its UTC offset only: the Americas, Europe and Africa, Asia and Oceania | country, location | `from_region` |
 
 ## Architecture rules

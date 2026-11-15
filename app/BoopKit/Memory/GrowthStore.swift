@@ -92,7 +92,9 @@ public final class GrowthStore {
     public func count(_ e: Event, xp: Int, today: String) -> Int {
         guard e.seq > lastSeq, xp > 0 else { return 0 }
         lastSeq = e.seq
-        if day != today {
+        // A day only moves on: a clock set back, or a flight west across
+        // 5:00, counts on the day it's on, not a fresh ring of an old one.
+        if day.map({ today > $0 }) ?? true {
             if let day { past = Array(([(day, growth.today)] + past).prefix(Self.keptDays - 1)) }
             day = today
             growth.today = 0

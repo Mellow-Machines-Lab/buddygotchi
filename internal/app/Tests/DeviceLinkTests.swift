@@ -114,6 +114,17 @@ final class DeviceLinkTests: XCTestCase {
     /// pack its card has; a tap names the brain's finish it landed on, when
     /// it only dipped the face; a hold on the needs-you screen names the request it
     /// showed, in a request's 32 bits.
+    /// Three agents ending within 2 s each get their finish: a finish
+    /// plays about 4 s on the board and waits up to 15 s for its turn
+    /// (checked on the AMOLED: at 5 s the third went `skipped late`);
+    /// anything else still waits 5 s, as a late one is worse than none.
+    func testAFinishWaitsLongEnoughForTwoBeforeIt() {
+        XCTAssertEqual(BoopDevice.ttl(Moment(anim: "task_complete", loops: 2, outcome: "success")), 15_000)
+        XCTAssertEqual(BoopDevice.ttl(Moment(anim: "reply_ready", loops: 1)), 15_000)
+        XCTAssertEqual(BoopDevice.ttl(Moment(anim: "wake_up", loops: 1)), BoopDevice.reactionTTL)
+        XCTAssertGreaterThanOrEqual(BoopDevice.finishTTL, 2 * 5_000 + 2_000, "two finishes before it, sent 2 s apart")
+    }
+
     func testWhatTheDeviceSays() throws {
         let hello = try XCTUnwrap({ if case .hello(let h) = Wire.decode(FakeTransport.hello) { h } else { nil } }())
         XCTAssertEqual(DeviceInfo(hello), DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: Take.voiceVersion))

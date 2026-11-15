@@ -4,6 +4,47 @@ Updated 2026-11-14. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Report, 2026-11-14 (evening): a polish pass over main
+
+On the worktree branch `worktree-bridge-cse_01357DH6tQBCCYsfsU7iyGjZ`, six commits on
+main `d98a9a60`, not merged or pushed. No firmware or pack changed.
+
+**Fixed:**
+- A level-up or the ring's moment was sent to the board twice (its `do` and its
+  `state`); now once, after the step that reached it.
+- An overnight hourly check-in asked Jev about once an hour: its hold was only the
+  debug label's. It's the harness's hold now, pinned by a test with a counting brain.
+- A third finish in a row was dropped (#1): a finish waits up to 15 s. On the board,
+  three finishes 1 s apart went done, done, skipped at 5 s; done ×3 at 15 s.
+- Gestures in one world reply were passed over (#7): one reply is one moment.
+- The world client: replies read leniently (an unknown gesture, activity or region
+  drops that item, not the reply and its gestures); counts never go negative after a
+  crash; a 400 doesn't resend the same body forever; a quit sends asleep once.
+- The ring's day only moves forward when the clock goes back.
+- The popover: a forgotten note's id no longer hides the next new note; app names
+  looked up once; `memory.md` read only when it changes, not at every event; the
+  hush's end to the second, so the status doesn't change every push; a half-typed
+  rename is cleared on close; renaming past 16 letters says the world will show
+  "a buddy" (the server's `NAME_MAX`, pinned by a test); a buddy's local time on the
+  World card keeps time. Dead views and literal font sizes removed.
+
+**Checked:** `make -C internal test` (744 passed, 1 skipped); `make -C internal check`
+(on the 2nd commit: firmware tests, both packs' scenarios, the mirror's 582 shots the
+same); `boopdev eval --scripted` 142/142; `Boop --snapshots`, all 333 pixel-identical
+to main's. On the AMOLED: `perf --scenes` all within budget (needs you 31.0, working
+34.7, night 25.7); `boopctl e2e` passes except the two below, which fail on main too.
+No Jev request.
+
+**The owner's answers, the same evening:** merge it; the e2e latency budget is
+300 ms p95 now (`LATENCY_P95_MS`; 258 ms measured); the quit's send keeps the
+gestures for the next launch (`?keep_gestures=1`, a server change: **deploy the
+world** for it to take); names are 23 characters in the world too (`NAME_MAX`, also
+in the deploy); night's 25.7 fps is fine; the Boop tab's numbers and onboarding's
+words stay.
+
+**Still open:** `boopctl e2e` fails on the work stream's `glimpse`, which keeps
+command arguments in the transcript and debug log (never in a prompt).
+
 ## Report, 2026-11-14: the UI review, built
 
 **Read this first.** [ui-review.md](ui-review.md) is built on `v1-polish`, from
@@ -106,8 +147,9 @@ pictures are in `~/.boopdev/product-review-2026-11-09/`.
 
 ### Phase 0: fix and measure
 
-- [ ] Finishes wait longer in the queue (`BoopDevice.swift:36`, `reactionTTL`; #1).
-      Test: three agents end within 2 s, and three names show.
+- [x] Finishes wait longer in the queue (`BoopDevice.finishTTL`, 15 s; #1).
+      Checked on the AMOLED: three finishes sent 1 s apart all end `done`; at
+      5 s the third went `skipped late`. `DeviceLinkTests` pins it.
 - [ ] Failed checks reach the brain on the ladder (`Harness.swift:604`,
       `TranscriptView.swift:334-336`; #2). Eval `04` gets act events so it can fail.
 - [ ] One moment for ring and level (`Core.swift:523-537`; #3): the sign
@@ -116,13 +158,16 @@ pictures are in `~/.boopdev/product-review-2026-11-09/`.
       is sent once (`Runtime.swift:792-811`; #5).
 - [ ] Rough touches earn no XP (`Touch.swift:24-28`, `Growth.swift:68`; #6). A poke
       stays at 0, as now.
-- [ ] Batched world gestures play (`WorldGestures.swift:47-51`; #7); a cheer needs a
+- [ ] ~~Batched world gestures play (#7)~~ done 2026-11-14: one reply's gestures are
+      one moment (`WorldGestures.arrived`). Still open: a cheer needs a
       ship (`internal/world/src/app.ts`; #8); "while you were away" only after an
       away (#10); the data race at `Runtime+World.swift:135` (#11).
 - [ ] The dream's sentence names its threads and its real days; the morning caption
       leads with turns (`MemoryReader.swift:254, 262-267`; #13 to #15).
 - [ ] No brain pass for hourly check-ins while away, or a turn start with no prompt
-      (#17, #18); fix the `(no pass)` debug label.
+      (#17, #18); fix the `(no pass)` debug label. The hourly half is done
+      (2026-11-14): the hold was only the label's, now it's the harness's
+      (`Pipeline.hourlyHold`); a turn start with no prompt still asks.
 - [ ] Quick wins 1 to 5, 11, 12, 15, 17 to 22 and 26 (review §11.1): strings, asks,
       `[bye working]`, Login Items, the narrations that scold.
 - [ ] Trust: the world screen and Settings name all five counts; the brain's

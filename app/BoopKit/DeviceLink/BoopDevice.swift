@@ -34,6 +34,15 @@ public enum BoopDevice {
     /// How long a brain reaction may wait in the device's queue: a
     /// late reaction is worse than none.
     public static let reactionTTL = 5000
+    /// How long a finish may wait: it names its thread, and plays about 5 s,
+    /// so three agents ending together each get theirs, in turn.
+    public static let finishTTL = 15_000
+    /// How long `reaction` may wait in the device's queue.
+    public static func ttl(_ reaction: Moment) -> Int {
+        finishes.contains(reaction.name) ? finishTTL : reactionTTL
+    }
+    /// The moments that are a turn's finish.
+    public static let finishes: Set<String> = ["task_complete", "reply_ready"]
     /// How long a word of the work stream that comes forward may wait: it
     /// was news only just now.
     public static let callTTL = 1500

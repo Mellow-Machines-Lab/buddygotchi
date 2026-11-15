@@ -95,6 +95,12 @@ public final class Pipeline {
         harness = Harness(name: name, brain: nil, log: transcript,
                           clock: clock ?? Harness.Clock(now: { input.now }), queue: queue, options: options, note: note)
         view.register(on: harness) { [unowned self] buddy in self.core(buddy).needsYouBlock }
+        // The hourly check-in's own hold reads the cores, which the view
+        // doesn't have: it's the harness's, so a pass is held, not only its
+        // line in the debug log.
+        harness.hold(Event.Kind.checkIn.rawValue) { [unowned self] e, log, voice in
+            view.hold(e, log, buddy: voice?.id, needsYou: { self.core(voice?.id).needsYouBlock }) ?? hourlyHold(e)
+        }
         // With several buddies, one's reaction is an event the others hear,
         // one more in its chain when it answers another's.
         harness.on(Event.did) { [unowned self] d in
@@ -437,14 +443,19 @@ public final class Pipeline {
         if let why = view.hold(e, transcript.view(now: inputTime.now), buddy: e.buddy, needsYou: { core.needsYouBlock }) {
             return why
         }
-        // The hourly check-in costs a request: while Boop sleeps or you're
-        // away (your coming back has a pass of its own), only while its mood
-        // has somewhere to settle, its resting one not reached. The view's
-        // caught up to it now.
-        if e.type == .checkIn, e.specificType == TranscriptView.hourly, core.moodNow == core.config.pack.defaultMood {
-            if core.snapshot(at: e.at).doing == "asleep" { return "\(core.config.pack.name) is asleep" }
-            if view.away { return "you're away" }
-        }
+        return hourlyHold(e)
+    }
+
+    /// The hourly check-in costs a request: while Boop sleeps or you're
+    /// away (your coming back has a pass of its own), only while its mood
+    /// has somewhere to settle, its resting one not reached. The view's
+    /// caught up to it now.
+    func hourlyHold(_ e: Event) -> String? {
+        guard e.type == .checkIn, e.specificType == TranscriptView.hourly else { return nil }
+        let core = core(e.buddy)
+        guard core.moodNow == core.config.pack.defaultMood else { return nil }
+        if core.snapshot(at: e.at).doing == "asleep" { return "\(core.config.pack.name) is asleep" }
+        if view.away { return "you're away" }
         return nil
     }
 }

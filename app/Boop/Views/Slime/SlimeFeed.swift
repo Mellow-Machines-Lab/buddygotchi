@@ -216,7 +216,7 @@ final class SlimeFeed: NSObject, WKNavigationDelegate, ObservableObject {
 
     /// A `do` no link sent, with no id, since nothing it says comes back.
     private func play(_ reaction: Moment, _ play: Wire.Play) {
-        post(Wire.do(id: 0, name: reaction.name, play: play, ttl: BoopDevice.reactionTTL, args: reaction.args))
+        post(Wire.do(id: 0, name: reaction.name, play: play, ttl: BoopDevice.ttl(reaction), args: reaction.args))
     }
 
     private func call(_ script: String, _ arguments: [String: Any] = [:], then: (() -> Void)? = nil) {

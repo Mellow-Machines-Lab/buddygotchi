@@ -197,6 +197,10 @@ public final class Runtime: @unchecked Sendable {
     var grew = false
     /// The XP moved during an input, which its step still has to carry out.
     var xpMoved = false
+    /// A level or the ring was reached during an input: its moment plays
+    /// once the step is carried out, not inside it, where the moment's own
+    /// effects would join the step and be carried out twice.
+    var growthDue = false
     /// The last `status` line written to `debug.jsonl`, without its time.
     var lastStatus: String?
     /// This launch's debug lines outside debug mode, for `saveReport`: in
@@ -631,9 +635,9 @@ public final class Runtime: @unchecked Sendable {
             let rig = rigs[0], now = options.clock()
             let reaction = Moment(anim: "task_complete", loops: 2, who: who, outcome: "success")
             options.log("onboarding: a cheer for \(who.agent)'s \(who.thread) on the board")
-            let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
+            let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.ttl(reaction), by: .brain,
                                  now: now) { _ in }
-            if let id, let thread = who.opens { rig.reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
+            if let id, let thread = who.opens { rig.reactions.sent(id, opens: thread, ttl: BoopDevice.ttl(reaction), now: now) }
         }
     }
 
@@ -781,7 +785,13 @@ public final class Runtime: @unchecked Sendable {
                 open(thread, by: "tap")
             }
         }
-        if xpMoved {
+        // Only the outermost step: a step inside an input joins it, which
+        // carries these out after.
+        if growthDue, pipeline.step == nil {
+            growthDue = false
+            if !playGrowthDue(at: options.clock()) { xpMoved = true }
+        }
+        if xpMoved, pipeline.step == nil {
             xpMoved = false
             publishXP(at: options.clock())
         }
@@ -805,10 +815,8 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock()
         guard growth.count(e, xp: Growth.xp(for: e), today: options.time.boopDay(options.wallClock())) > 0 else { return }
         grew = true
-        guard playGrowthDue(at: now) else {
-            if pipeline.step != nil { xpMoved = true } else { publishXP(at: now) }
-            return
-        }
+        if pipeline.step != nil { return growthDue = true }
+        if !playGrowthDue(at: now) { publishXP(at: now) }
     }
 
     /// What's due plays on every board, and is celebrated as it does

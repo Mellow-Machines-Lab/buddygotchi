@@ -4,7 +4,7 @@
 import { REPORTS_TO_HIDE } from "./limits.js";
 
 export const HIDDEN_NAME = "a buddy";
-export const NAME_MAX = 16;
+export const NAME_MAX = 23;  // the Mac's BuddyName.maxLength
 /** What's stored of a name, refused or not. */
 const STORED_MAX = 32;
 

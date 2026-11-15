@@ -51,6 +51,17 @@ test("a send's reply hands out what's waiting, once, as GET /v1/gestures does", 
   assert.deepEqual((await w.json("GET", "/v1/gestures", { key: lisbon.key })).body.gestures.map((g: any) => g.kind), ["boop"], "it waited for the GET");
 });
 
+test("the send before a quit keeps what's waiting for the next launch", async () => {
+  const tokyo = await w.join("Bob", 540);
+  const lisbon = await w.join("Ann", 0);
+  assert.equal((await w.json("POST", "/v1/gestures", { key: tokyo.key, body: { to: lisbon.id, kind: "boop" } })).status, 201);
+  const quit = await w.json("PUT", "/v1/buddies/me?keep_gestures=1", { key: lisbon.key, body: state({ seq: 1, activity: "asleep" }) });
+  assert.equal(quit.status, 200);
+  assert.deepEqual(quit.body.gestures, []);
+  const next = await w.json("GET", "/v1/gestures", { key: lisbon.key });
+  assert.deepEqual(next.body.gestures.map((g: any) => g.kind), ["boop"], "still there");
+});
+
 test("a gesture needs a real buddy, not itself, and a known kind", async () => {
   const a = await w.join("Ann");
   const b = await w.join("Bob");

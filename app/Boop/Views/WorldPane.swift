@@ -160,8 +160,11 @@ struct WorldPane: View {
                     (Text(buddy.name).font(.bodyStrong) + Text(" · level \(buddy.level.formatted())" + (isYou ? " · you" : ""))
                         .font(.body).foregroundStyle(Theme.inkSoft))
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(Self.whereAndWhat(buddy)).caption()
-                        .fixedSize(horizontal: false, vertical: true)
+                    // Its time there keeps time while the card is open.
+                    TimelineView(.everyMinute) { context in
+                        Text(Self.whereAndWhat(buddy, now: context.date)).caption()
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .padding(.trailing, Theme.target)
                 if isYou {

@@ -55,8 +55,10 @@ public final class WorldClient: @unchecked Sendable {
         }.resume()
     }
 
-    func request(_ method: String, _ path: String, key: String?, body: Encodable?) -> URLRequest {
-        var request = URLRequest(url: base.appendingPathComponent(path))
+    func request(_ method: String, _ path: String, query: [URLQueryItem] = [], key: String?, body: Encodable?) -> URLRequest {
+        var url = base.appendingPathComponent(path)
+        if !query.isEmpty { url.append(queryItems: query) }
+        var request = URLRequest(url: url)
         request.httpMethod = method
         if let key { request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization") }
         if let body {
@@ -101,12 +103,14 @@ public final class WorldClient: @unchecked Sendable {
     }
 
     /// The same, waiting at most `timeout` seconds on this thread, for the
-    /// app's quit: whether it went.
+    /// app's quit: whether it went. The server keeps the gestures waiting
+    /// for the next launch, as the app won't live to play them.
     public func sendNow(_ state: World.State, key: String, timeout: TimeInterval) -> Bool {
         // The semaphore orders the answer's write before the read here.
         final class Went: @unchecked Sendable { var value = false }
         let done = DispatchSemaphore(value: 0), went = Went()
-        session.dataTask(with: request("PUT", "v1/buddies/me", key: key, body: state)) { data, response, error in
+        session.dataTask(with: request("PUT", "v1/buddies/me", query: [URLQueryItem(name: "keep_gestures", value: "1")], key: key,
+                                     body: state)) { data, response, error in
             if case .success = Self.result(World.Reply.self, data, response, error) { went.value = true }
             done.signal()
         }.resume()

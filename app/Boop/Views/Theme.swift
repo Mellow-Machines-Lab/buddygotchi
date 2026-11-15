@@ -212,7 +212,7 @@ struct NoteCard: View {
 
     var body: some View {
         Card {
-            Text(text).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+            Text(text).font(.body).foregroundStyle(Theme.inkSoft)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -222,10 +222,9 @@ struct NoteCard: View {
 /// column reads as a stack of the same object.
 struct Card<Content: View>: View {
     /// A card's padding: `regular` for content, `rows` for a card of rows,
-    /// which pad themselves, `roomy` for onboarding's.
+    /// which pad themselves.
     static var regular: CGFloat { Theme.gap }
     static var rows: CGFloat { 0 }
-    static var roomy: CGFloat { Theme.gutter }
 
     var padding: CGFloat = Theme.gap
     var tone: Color? = nil
@@ -279,8 +278,8 @@ struct DayRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(entry.when).font(.system(size: 10, weight: .medium)).foregroundStyle(Theme.inkSoft)
-            let line = Text(entry.line).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+            Text(entry.when).font(.chip).foregroundStyle(Theme.inkSoft)
+            let line = Text(entry.line).font(.body).fixedSize(horizontal: false, vertical: true)
             if selectable { line.textSelection(.enabled) } else { line }
         }
     }
@@ -337,7 +336,7 @@ struct MoreDetails: View {
                 Label("Details", systemImage: shown ? "chevron.down" : "chevron.right")
             }
             .buttonStyle(.plain)
-            .font(.system(size: 11, weight: .medium)).foregroundStyle(Theme.inkSoft)
+            .font(.detailStrong).foregroundStyle(Theme.inkSoft)
             .padding(.top, 2)
             if shown {
                 Text(text).caption()
@@ -518,14 +517,6 @@ struct Chip: View {
     }
 }
 
-/// The status word in its tone, on a wash of the same hue.
-struct StatusChip: View {
-    let text: String
-    let tone: Color
-
-    var body: some View { Chip(text, tone: tone) }
-}
-
 /// Footer and inline buttons: quiet text that darkens on hover, and fades
 /// while disabled.
 struct QuietButtonStyle: ButtonStyle {
@@ -560,29 +551,6 @@ struct OpensButtonStyle: ButtonStyle {
             .onHover { hovering = $0 }
             .animation(.boopSettle, value: hovering)
             .animation(.boopSettle, value: configuration.isPressed)
-    }
-}
-
-/// The one filled button per screen: black glass with an oat label, like
-/// the device's face (oat on dark paper), rounded, a little squash when
-/// pressed.
-struct ProminentButtonStyle: ButtonStyle {
-    var wide = false
-    @Environment(\.isEnabled) private var enabled
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Theme.fillLabel)
-            .padding(.horizontal, 16).padding(.vertical, 8)
-            .frame(maxWidth: wide ? .infinity : nil)
-            .frame(minHeight: 32)
-            .background(configuration.isPressed ? Theme.fillPressed : Theme.fill,
-                        in: RoundedRectangle(cornerRadius: Theme.wellRadius))
-            .opacity(enabled ? 1 : Theme.disabled)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1)
-            .animation(.boopSettle, value: configuration.isPressed)
-            .contentShape(RoundedRectangle(cornerRadius: Theme.wellRadius))
     }
 }
 

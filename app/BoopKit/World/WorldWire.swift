@@ -75,9 +75,11 @@ public enum World {
                    linesChanged: a.linesChanged + b.linesChanged)
         }
 
+        /// What's left of `a` once `b` is sent, never under 0: `b` may be a
+        /// send kept over a quit, which counted what this launch never had.
         public static func - (a: Counts, b: Counts) -> Counts {
-            Counts(turns: a.turns - b.turns, testsPassed: a.testsPassed - b.testsPassed, ships: a.ships - b.ships,
-                   linesChanged: a.linesChanged - b.linesChanged)
+            Counts(turns: max(0, a.turns - b.turns), testsPassed: max(0, a.testsPassed - b.testsPassed),
+                   ships: max(0, a.ships - b.ships), linesChanged: max(0, a.linesChanged - b.linesChanged))
         }
 
         enum CodingKeys: String, CodingKey {
@@ -116,6 +118,14 @@ public enum World {
         }
 
         enum CodingKeys: String, CodingKey { case kind, fromRegion = "from_region", at }
+
+        /// A region this Mac doesn't know yet is no region.
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            kind = try c.decode(GestureKind.self, forKey: .kind)
+            fromRegion = try? c.decodeIfPresent(Region.self, forKey: .fromRegion)
+            at = try c.decode(String.self, forKey: .at)
+        }
     }
 
     /// The reply to a send: how the name shows, and the gestures waiting.
@@ -127,6 +137,14 @@ public enum World {
         public var duplicate: Bool?
 
         enum CodingKeys: String, CodingKey { case name, nameHidden = "name_hidden", gestures, duplicate }
+
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            name = try c.decodeIfPresent(String.self, forKey: .name)
+            nameHidden = try c.decodeIfPresent(Bool.self, forKey: .nameHidden)
+            gestures = try c.lenient(Gesture.self, forKey: .gestures)
+            duplicate = try c.decodeIfPresent(Bool.self, forKey: .duplicate)
+        }
     }
 
     /// The reply to joining: the buddy's id and its key, shown only here.
@@ -174,6 +192,19 @@ public enum World {
         public var regions: [RegionCount]
         public var buddies: [Buddy]
 
+        enum CodingKeys: String, CodingKey { case at, awake, total, doing, today, regions, buddies }
+
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            at = try c.decode(String.self, forKey: .at)
+            awake = try c.decode(Int.self, forKey: .awake)
+            total = try c.decode(Int.self, forKey: .total)
+            doing = try c.decode([String: Int].self, forKey: .doing)
+            today = try c.decode(Counts.self, forKey: .today)
+            regions = try c.lenient(RegionCount.self, forKey: .regions) ?? []
+            buddies = try c.lenient(Buddy.self, forKey: .buddies) ?? []
+        }
+
         public init(at: String, awake: Int, total: Int, doing: [String: Int], today: Counts, regions: [RegionCount], buddies: [Buddy]) {
             self.at = at
             self.awake = awake
@@ -218,4 +249,24 @@ extension World {
         case .cheer: count > 1 ? ["\(count) cheers for you!", "\(count) cheers!"] : ["a cheer for you!"]
         }
     }
+}
+
+extension KeyedDecodingContainer {
+    /// An array from the world server, leaving out each element that won't
+    /// decode (a gesture, activity or region this Mac doesn't know yet)
+    /// instead of failing the whole reply; nil when it's missing or null.
+    func lenient<T: Decodable>(_ type: T.Type, forKey key: Key) throws -> [T]? {
+        guard contains(key), try !decodeNil(forKey: key) else { return nil }
+        var array = try nestedUnkeyedContainer(forKey: key)
+        var out: [T] = []
+        while !array.isAtEnd {
+            if let value = try? array.decode(T.self) { out.append(value) } else { _ = try array.decode(Skipped.self) }
+        }
+        return out
+    }
+}
+
+/// Any JSON value, read past.
+private struct Skipped: Decodable {
+    init(from decoder: Decoder) throws {}
 }

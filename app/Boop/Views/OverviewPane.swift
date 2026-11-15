@@ -710,7 +710,7 @@ struct Opens<Content: View>: View {
 }
 
 /// What a click on a session does, after "Click to".
-func openVerb(_ target: ThreadLink.Target) -> String {
+@MainActor func openVerb(_ target: ThreadLink.Target) -> String {
     switch target {
     case .url(let url) where url.hasPrefix("claude:"): "open it in Claude"
     case .url(let url) where url.hasPrefix("codex:"): "open it in Codex"
@@ -721,7 +721,7 @@ func openVerb(_ target: ThreadLink.Target) -> String {
 }
 
 /// The needs-you card's button: where a click opens the session.
-func openLabel(_ target: ThreadLink.Target) -> String {
+@MainActor func openLabel(_ target: ThreadLink.Target) -> String {
     switch target {
     case .url(let url) where url.hasPrefix("claude:"): "Open in Claude"
     case .url(let url) where url.hasPrefix("codex:"): "Open in Codex"
@@ -731,11 +731,17 @@ func openLabel(_ target: ThreadLink.Target) -> String {
     }
 }
 
-/// An app's name by its bundle ID, as Finder shows it.
-func appName(_ id: String) -> String {
+/// An app's name by its bundle ID, as Finder shows it. Kept once found: a
+/// row asks for it at every status, and each look-up is LaunchServices'.
+@MainActor func appName(_ id: String) -> String {
+    if let name = appNames[id] { return name }
     guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: id) else { return "its app" }
-    return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    let name = FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    appNames[id] = name
+    return name
 }
+
+@MainActor private var appNames: [String: String] = [:]
 
 /// A session keyed by its agent, project and thread and which of those
 /// sessions it is, so a row that changes status moves, instead of the row
@@ -768,15 +774,6 @@ struct KeyedSession: Identifiable {
             .sorted { (need($0.element.session), $0.offset) < (need($1.element.session), $1.offset) }
             .map(\.element)
     }
-}
-
-/// What the popover calls a session: its project, with the thread's name
-/// beside or under it. One with no folder (agent-hooks' `unknown`) goes by
-/// the thread's name alone.
-func sessionTitle(project: String, name: String?) -> (title: String, name: String?) {
-    let name = name?.isEmpty == false ? name : nil
-    if project.isEmpty || project == "unknown" { return (name ?? "Untitled session", nil) }
-    return (project, name)
 }
 
 /// What a session's row and the needs-you card call it: the thread's name,

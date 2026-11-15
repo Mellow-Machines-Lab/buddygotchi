@@ -144,11 +144,11 @@ extension Runtime {
     func queue(_ reaction: Moment, _ pending: Pending, on rig: Rig? = nil) {
         let rig = rig ?? rigs[0]
         let now = options.clock(), reactions = rig.reactions
-        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.reactionTTL, by: .brain,
+        let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.ttl(reaction), by: .brain,
                              now: now) { outcome in
             if let end = reactions.read(outcome, pending) { pending.finish(end) }
         }
-        if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.reactionTTL, now: now) }
+        if let id, let thread = reaction.who?.opens { reactions.sent(id, opens: thread, ttl: BoopDevice.ttl(reaction), now: now) }
     }
 
     /// Drops the device links and looks for the devices again now.

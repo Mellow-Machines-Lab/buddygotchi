@@ -232,7 +232,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("the brain's finish") {
             transport.dos("task_complete").contains {
-                $0.contains(#""play":"next","ttl":5000,"args":{"outcome":"success","#) && $0.contains(#""say":"#)
+                $0.contains(#""play":"next","ttl":15000,"args":{"outcome":"success","#) && $0.contains(#""say":"#)
                     && $0.contains(#""mood":"excited""#)
             }
         }
@@ -1631,7 +1631,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("the brain's finish", timeout: 4) { transport.dos.count >= before + 1 }
         let finish = transport.dos[before]
-        XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","#),
+        XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":15000,"args":{"outcome":"success","#),
                       "one do, a variation for its outcome: \(finish)")
         XCTAssertTrue(finish.contains(#""who":{"agent":"claude","thread":"jetpack"},"say":"#), "names whose turn: \(finish)")
         XCTAssertTrue(finish.hasSuffix(#","mood":"excited","loops":1}}"#), "in its face, held once: \(finish)")

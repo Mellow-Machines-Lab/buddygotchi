@@ -264,7 +264,9 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       goal_added: await goalAdded(c.var.db, id),
       // So a Mac that sends on change rarely needs to poll.
       rewards: await currentRewards(c.var.db),
-      gestures: await deliverGestures(c.var.db, id),
+      // The Mac's last send before it quits keeps them for its next launch:
+      // a reply it may not live to read would lose them.
+      gestures: c.req.query("keep_gestures") === "1" ? [] : await deliverGestures(c.var.db, id),
     });
   });
 

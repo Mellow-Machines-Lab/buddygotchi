@@ -60,13 +60,25 @@ public final class MemoryStore {
     // MARK: The written memory
 
     /// `memory.md`, as it is now: empty before the first dream's write.
+    /// Read again only when the file's date or size has changed, as the
+    /// status asks for it at every event; a hand edit still shows.
     public func written() -> WrittenMemory {
-        (try? String(contentsOf: url(WrittenMemory.fileName), encoding: .utf8)).map(WrittenMemory.parse) ?? WrittenMemory()
+        let file = url(WrittenMemory.fileName)
+        let attributes = try? FileManager.default.attributesOfItem(atPath: file.path)
+        let stamp = attributes.map { WrittenStamp(date: $0[.modificationDate] as? Date, size: ($0[.size] as? NSNumber)?.intValue) }
+        if let stamp, let cached = writtenCache, cached.stamp == stamp { return cached.memory }
+        let memory = (try? String(contentsOf: file, encoding: .utf8)).map(WrittenMemory.parse) ?? WrittenMemory()
+        writtenCache = stamp.map { (stamp: $0, memory: memory) }
+        return memory
     }
+
+    private struct WrittenStamp: Equatable { var date: Date?; var size: Int? }
+    private var writtenCache: (stamp: WrittenStamp, memory: WrittenMemory)?
 
     /// Writes `memory.md`, with a copy in `history/<day>/`.
     public func keep(_ memory: WrittenMemory, day: String) throws {
         try write(memory.markdown, WrittenMemory.fileName)
+        writtenCache = nil
         let dir = historyURL(day)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         try Data(memory.markdown.utf8).write(to: dir.appendingPathComponent(WrittenMemory.fileName), options: .atomic)

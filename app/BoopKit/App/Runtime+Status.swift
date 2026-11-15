@@ -187,7 +187,9 @@ extension Runtime {
                                        specialDays: Days.special(at: wall, hatched: config.hatched, name: name, time: options.time),
                                        asleep: status.snapshot.doing == "asleep", gel: status.device?.face != .pixel)
         status.talk = talk
-        status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: Double(wall + $0.until - now) / 1000) }
+        // To the second: the wall and the monotonic clock are read apart, and a
+        // millisecond's wobble would make every status a new one.
+        status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: (Double(wall + $0.until - now) / 1000).rounded()) }
         status.uncleanExit = uncleanExit
         status.board = settings.board
         status.workStream = settings.workStream

@@ -358,6 +358,13 @@ public final class WorldLink {
         }
         backoff = min(Self.maxBackoffMs, max(Self.backoffMs, backoff * 2))
         retryAt = now + backoff
+        if case .status(400, _, _) = failure, identity?.unanswered != nil {
+            // The server won't take that body, so it can't go again as it
+            // was: the next send is a new one, with what's waiting now.
+            log("world: the server refused a send (\(failure)); the next one starts afresh")
+            identity?.unanswered = nil
+            save()
+        }
         if failure.forgotten, identity?.leaving != true {
             // The world forgot this buddy (30 days unseen, or left
             // elsewhere): it joins again as new, after the backoff.
@@ -447,7 +454,14 @@ public final class WorldLink {
         save()
         let state = World.State(seq: identity.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
                                 utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added)
-        if !client.sendNow(state, key: identity.key, timeout: Self.quitWait) { log("world: asleep didn't go before the quit") }
+        guard client.sendNow(state, key: identity.key, timeout: Self.quitWait) else {
+            return log("world: asleep didn't go before the quit")
+        }
+        // Gone: a second stop (a restart's, then the quit's) has nothing to send.
+        var asleep = me
+        asleep.activity = .asleep
+        last = asleep
+        pending = World.Counts()
     }
 
     /// Leaves the world: the buddy is deleted on the server, and its key

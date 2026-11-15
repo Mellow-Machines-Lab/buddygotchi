@@ -1,4 +1,4 @@
-// The name filter (plan/world.md §2.7): 16 characters at most, letters,
+// The name filter (plan/world.md §2.7): 23 characters at most, as the Mac's, letters,
 // digits, spaces and a few marks; no word from the list, link, handle or
 // phone number. A refused name is kept but shown as "a buddy".
 

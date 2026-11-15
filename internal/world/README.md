@@ -1,6 +1,6 @@
 # The world server
 
-Updated 2026-11-08.
+Updated 2026-11-14.
 
 Every buddy that joins the world talks to this server. A buddy sends its
 state and counts each minute. Each Mac reads the world's snapshot: how many
@@ -93,7 +93,9 @@ What the Mac must know about `PUT /v1/buddies/me`:
 - **The reply hands out what's waiting**: `gestures`, as
   `GET /v1/gestures` does and each once, and the world's current
   `rewards`, as in the snapshot. A resend's reply (`duplicate`) does too; a
-  429 does not. So a Mac that sends on change rarely needs to poll.
+  429 does not. So a Mac that sends on change rarely needs to poll. The
+  send the Mac makes as it quits adds `?keep_gestures=1`: its reply hands
+  out none, and they wait for the next launch's send or `GET`.
 
 A buddy not seen for 15 minutes counts as asleep in the snapshot.
 The snapshot's `regions` are always the three, in this order, from each

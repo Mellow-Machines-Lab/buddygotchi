@@ -2258,6 +2258,43 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertFalse(settling.isEmpty, "a grumpy Boop can still calm down overnight")
     }
 
+    /// Held for real: the harness doesn't ask the brain for that hourly
+    /// check-in, as well as the debug log's line saying it wouldn't.
+    func testTheHourlyCheckInsPassIsHeldNotOnlyItsLine() {
+        struct Asked: Brain {
+            final class Count: @unchecked Sendable { var calls = 0 }
+            let count = Count()
+            let id = "asked"
+            func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
+                count.calls += 1
+                return [:]
+            }
+        }
+        let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
+        rig.core.mood = { CharacterPack.active.defaultMood }
+        var held: [String] = []
+        rig.pipeline.harness.onPass = { pass in
+            if pass.event?.type == .checkIn, let why = pass.held { held.append(why) }
+        }
+        let brain = Asked()
+        rig.pipeline.harness.use(brain)
+        // The brain answers on the main queue: each minute lets it.
+        func minutes(_ n: Int) {
+            for _ in 0..<n {
+                _ = rig.wait(60_000)
+                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.002))
+            }
+        }
+        rig.send(.turnStart)
+        rig.send(.turnEnd)
+        minutes(5)
+        let asked = brain.count.calls
+        minutes(3 * 60)
+        XCTAssertFalse(held.isEmpty, "its turn came, and it was held")
+        XCTAssertTrue(held.allSatisfy { $0.hasSuffix("is asleep") || $0 == "you're away" }, "\(held)")
+        XCTAssertEqual(brain.count.calls, asked, "no request overnight")
+    }
+
     func testNoSessionsIsAsleep() {
         XCTAssertEqual(CoreRig().state.doing, "asleep")
     }

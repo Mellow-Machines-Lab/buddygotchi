@@ -51,6 +51,62 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(world.doing["coding"], 38)
     }
 
+    /// A server newer than this Mac: a gesture, activity or region it
+    /// doesn't know leaves out that one gesture or buddy, not the reply.
+    func testWhatThisMacDoesntKnowYetIsLeftOut() throws {
+        let reply = try JSONDecoder().decode(World.Reply.self, from: Data(#"""
+            {"ok":true,"gestures":[{"kind":"hug","at":"2026-11-08T16:58:12Z"},
+             {"kind":"wave","from_region":"antarctica","at":"2026-11-08T16:59:00Z"}]}
+            """#.utf8))
+        XCTAssertEqual(reply.gestures, [World.Gesture(kind: .wave, fromRegion: nil, at: "2026-11-08T16:59:00Z")])
+        let world = try JSONDecoder().decode(World.Snapshot.self, from: Data(#"""
+            {"at":"2026-11-08T17:00:00Z","awake":2,"total":2,"doing":{"coding":1},
+             "today":{"turns":0,"tests_passed":0,"ships":0,"lines_changed":0},
+             "regions":[{"region":"americas","awake":1},{"region":"moon","awake":1}],
+             "buddies":[{"id":"a","name":"A","level":1,"activity":"dancing"},{"id":"b","name":"B","level":2,"activity":"coding"}]}
+            """#.utf8))
+        XCTAssertEqual(world.regions.map(\.region), [.americas])
+        XCTAssertEqual(world.buddies.map(\.id), ["b"])
+    }
+
+    /// A send kept over a quit counted what this launch never had: what's
+    /// left once it's answered is nothing, never less.
+    func testCountsNeverGoUnderNothing() {
+        let left = World.Counts(turns: 1) - World.Counts(turns: 3, ships: 1)
+        XCTAssertEqual(left, World.Counts())
+    }
+
+    /// A send the server refuses can't go again as it was: the next is new.
+    func testARefusedSendIsntSentAgainAsItWas() throws {
+        let world = link()
+        tick(world, 0)
+        world.heard(Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s"), at: 0)
+        Stub.answer = { method, _ in method == "PUT" ? (400, #"{"error":"bad_request"}"#) : (200, "{}") }
+        tick(world, 1_000)
+        let first = try XCTUnwrap(Stub.seen.last?.body)
+        Stub.answer = { _, _ in (200, #"{"ok":true}"#) }
+        tick(world, 1_000 + WorldLink.heartbeatMs + WorldLink.backoffMs)
+        let again = try XCTUnwrap(Stub.seen.last?.body)
+        XCTAssertEqual(again["seq"] as? Int, (first["seq"] as? Int).map { $0 + 1 }, "a new seq")
+    }
+
+    /// The send before a quit asks the server to keep the gestures waiting:
+    /// the app won't live to play them.
+    func testTheQuitsSendKeepsTheGestures() throws {
+        let client = WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self])
+        let request = client.request("PUT", "v1/buddies/me", query: [URLQueryItem(name: "keep_gestures", value: "1")], key: "k", body: nil)
+        XCTAssertEqual(request.url?.absoluteString, "http://world.test/v1/buddies/me?keep_gestures=1")
+        XCTAssertEqual(client.request("PUT", "v1/buddies/me", key: "k", body: nil).url?.absoluteString, "http://world.test/v1/buddies/me")
+    }
+
+    /// A name the Mac takes is one the world shows: the server's
+    /// NAME_MAX is BuddyName.maxLength.
+    func testTheWorldsLongestNameIsTheMacs() throws {
+        let names = try String(contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .appendingPathComponent("../../world/src/names.ts").standardized, encoding: .utf8)
+        XCTAssertTrue(names.contains("export const NAME_MAX = \(BuddyName.maxLength);"))
+    }
+
     /// The regions' edges are the server's (internal/world/src/regions.ts).
     func testTheRegionsAreTheServers() {
         XCTAssertEqual(World.Region(offset: -720), .americas)
@@ -76,17 +132,22 @@ final class WorldTests: XCTestCase {
         }
     }
 
-    /// Pins `WorldGestures`' limits: at most 3 boops, waves and hearts an
-    /// hour play, the rest logged as not playing; one ship's cheers are one
-    /// moment, and more within 30 minutes don't play.
+    /// Pins `WorldGestures`' limits: what one reply brings is one moment;
+    /// at most 3 moments of boops, waves and hearts an hour play, the rest
+    /// logged as not playing; one ship's cheers are one moment, and more
+    /// within 30 minutes don't play.
     func testAtMostThreeAnHourAndOneMomentForCheers() {
         XCTAssertEqual(WorldGestures.perHour, 3)
         XCTAssertEqual(WorldGestures.cheerWindowMs, 30 * 60_000)
         var g = WorldGestures()
         let boop = World.Gesture(kind: .boop, fromRegion: .americas, at: "")
         let first = g.arrived([boop, boop, boop, boop], quiet: false, at: 0)
-        XCTAssertEqual(first.map { $0["plays"]?.bool != false }, [true, true, true, false])
-        XCTAssertEqual(g.arrived([boop], quiet: false, at: 59 * 60_000).map { $0["plays"]?.bool != false }, [false])
+        XCTAssertEqual(first.count, 1, "one reply, one moment")
+        XCTAssertEqual(first.first?["count"]?.int, 4)
+        XCTAssertNil(first.first?["plays"])
+        XCTAssertNil(first.first?["from_region"], "four buddies, no one region")
+        let plays = (1...3).map { g.arrived([boop], quiet: false, at: Int64($0) * 60_000).map { $0["plays"]?.bool != false } }
+        XCTAssertEqual(plays, [[true], [true], [false]])
         XCTAssertEqual(g.arrived([boop], quiet: false, at: 60 * 60_000).map { $0["plays"]?.bool != false }, [true], "an hour on")
         let cheer = World.Gesture(kind: .cheer, fromRegion: nil, at: "")
         let cheers = g.arrived([cheer, cheer, cheer], quiet: false, at: 0)
@@ -94,14 +155,27 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(cheers.first?["count"]?.int, 3)
         XCTAssertEqual(g.arrived([cheer], quiet: false, at: 10 * 60_000).first?["plays"]?.bool, false)
         XCTAssertNil(g.arrived([cheer], quiet: false, at: 41 * 60_000).first?["plays"], "a new ship's")
-        // Logged, the one past the hour wakes no pass; the others may.
+    }
+
+    /// A wave, a heart and a boop in one reply, with a cheer inside its
+    /// window: the cheer is logged as not playing, then one moment for the
+    /// rest, last, so it's the one the brain answers.
+    func testGesturesThatComeTogetherPlayAsOne() {
+        var g = WorldGestures()
+        let cheer = World.Gesture(kind: .cheer, fromRegion: nil, at: "")
+        _ = g.arrived([cheer], quiet: false, at: 0)
+        let came = g.arrived([World.Gesture(kind: .wave, fromRegion: .europeAfrica, at: ""), cheer,
+                              World.Gesture(kind: .heart, fromRegion: .americas, at: ""),
+                              World.Gesture(kind: .boop, fromRegion: .americas, at: "")], quiet: false, at: 60_000)
+        XCTAssertEqual(came.map { $0["plays"]?.bool != false }, [false, true])
+        XCTAssertEqual(WorldGestures.counts(of: came[1]).map { "\($0.0)\($0.1)" }, ["boop1", "wave1", "heart1"])
         let rig = CoreRig()
-        rig.pipeline.world(first, at: rig.now)
+        rig.pipeline.world(came, at: rig.now)
         let log = rig.pipeline.harness.log.view(now: rig.now)
         let logged = log.events.filter { $0.type == .world }
-        XCTAssertEqual(logged.count, 4)
-        XCTAssertNil(rig.view.hold(logged[0], log, needsYou: { nil }))
-        XCTAssertNotNil(rig.view.hold(logged[3], log, needsYou: { nil }), "past the hour: the World tab counts it")
+        XCTAssertEqual(logged.count, 2)
+        XCTAssertNotNil(rig.view.hold(logged[0], log, needsYou: { nil }), "the cheer: the World tab counts it")
+        XCTAssertNil(rig.view.hold(logged[1], log, needsYou: { nil }))
     }
 
     /// At night or while you're away, gestures wait, and come back as one

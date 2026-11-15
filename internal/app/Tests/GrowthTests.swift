@@ -100,6 +100,10 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(count(growth, event(23, .turn, .end, ["outcome": .string("done")]), day: "2026-10-23"), 5, "a new day")
         XCTAssertEqual(growth.growth, Growth(xp: 105, today: 5))
         XCTAssertEqual(growth.growth(on: "2026-10-24"), Growth(xp: 105), "the next day's ring is empty")
+        XCTAssertEqual(count(growth, event(24, .turn, .end, ["outcome": .string("done")]), day: "2026-10-22"), 5,
+                       "a clock set back counts on the day it's on")
+        XCTAssertEqual(growth.growth, Growth(xp: 110, today: 10))
+        XCTAssertEqual(growth.week(to: "2026-10-23").map(\.xp).suffix(2), [100, 10], "no day twice")
     }
 
     /// The last 7 days' rings, oldest first, kept across opens; a day with

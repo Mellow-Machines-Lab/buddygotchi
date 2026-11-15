@@ -272,7 +272,7 @@ Boop did nothing on its own.</pre>
 <section id="world">
   <h2>The world</h2>
   <p>Every buddy that joins lives in one world: a small server (<code>internal/world/</code>, Hono on Vercel, Postgres) and a client on the Mac (<code>app/BoopKit/World/</code>). <code>WorldLink</code>, on the runtime's queue, joins once onboarding's world screen has been shown, then sends the buddy's state (<code>World.State</code>, and nothing else) on a change of what it's doing, a level-up or the ring closing, with the counts batched for up to 3 minutes, a heartbeat every 10 and "asleep" at once on a lock or a quit. The gestures waiting come back in a send's reply, or from a check every 10 minutes with nothing sent, and on an unlock. The world itself is fetched only while the World tab is open, every 30 s.</p>
-  <p>A gesture from another buddy becomes a <code>world</code> event in the transcript (<code>WorldGestures</code>): Jev answers it, always with a face and a sign from the pack's <code>[world]</code> lines, and the narration says who and where, by region only. At most 3 boops, waves and hearts an hour play, the rest logged as not playing and counted on the World tab; one ship's cheers are one moment; at night, while you're away, or while something needs you, they wait, and come back as one line. Off, the buddy is deleted from the world: you can still look, but nobody can boop you.</p>
+  <p>A gesture from another buddy becomes a <code>world</code> event in the transcript (<code>WorldGestures</code>): Jev answers it, always with a face and a sign from the pack's <code>[world]</code> lines, and the narration says who and where, by region only. What one reply brings is one moment, so gestures that come together all play; at most 3 such moments of boops, waves and hearts an hour play, the rest logged as not playing and counted on the World tab; one ship's cheers are one moment; at night, while you're away, or while something needs you, they wait, and come back as one line. Off, the buddy is deleted from the world: you can still look, but nobody can boop you.</p>
 </section>
 
 <section id="narration">
@@ -291,6 +291,7 @@ Boop did nothing on its own.</pre>
     <tr><td>Needs you</td><td>Cuts it at once. A greeting cut this way, its sign not read, tells its dream again at your next showing up.</td></tr>
     <tr><td>Your touch</td><td>Answers at once, over its animation. Its words and sign play on.</td></tr>
     <tr><td>Your push-to-talk</td><td>Cuts it, and drops what waits.</td></tr>
+    <tr><td>A finish</td><td>Waits, up to 15 s, then drops: three agents ending together each get theirs, in turn.</td></tr>
     <tr><td>Another moment of Jev's, your lock's wave</td><td>Waits, up to 5 s, then drops.</td></tr>
     <tr><td>A rule's moment with a sign: a day's greeting, a wish met</td><td>Waits, up to 5 s, then drops. Not sent at all while something needs you.</td></tr>
     <tr><td>A rule's moment with nothing to read</td><td>Drops: late is worse than none.</td></tr>
