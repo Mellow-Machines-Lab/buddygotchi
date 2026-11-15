@@ -4,12 +4,13 @@ line, and Preview's own `state` and `do` lines for its sim. The socket never rep
 command counts as landed when its entry shows up in debug.jsonl."""
 from __future__ import annotations
 
+import json
 import subprocess
 import time
 from pathlib import Path
 from typing import Any, Callable
 
-from boopctl_lib.common import REPO, do
+from boopctl_lib.common import REPO, do, takes
 from boopctl_lib.dash.feed import Line, action, kind
 
 CONFIRM_S = 2.0
