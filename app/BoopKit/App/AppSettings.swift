@@ -28,6 +28,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// debug and internal builds), rather than its board: chosen in onboarding or Settings, and
     /// kept from launch to launch. Off, the board, unless chosen.
     public var simulator = false
+    /// Boop types along with you and watches the work with you (`Hands`):
+    /// on unless you turn it off. Off, the Mac's key and input idle times
+    /// aren't read for it.
+    public var typesAlong = true
+    /// The side of Boop your Mac is on, where Boop turns when something
+    /// needs you; not set, it doesn't turn.
+    public var macSide: MacSide?
     /// Boop lives in the world of buddies: on unless you keep it private.
     public var world = true
     /// Onboarding's world screen has been shown: nothing goes to the world
@@ -56,11 +63,13 @@ public struct AppSettings: Codable, Equatable, Sendable {
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
         workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
         simulator = (try? c.decodeIfPresent(Bool.self, forKey: .simulator)) ?? false
+        typesAlong = (try? c.decodeIfPresent(Bool.self, forKey: .typesAlong)) ?? true
+        macSide = try? c.decodeIfPresent(MacSide.self, forKey: .macSide)
         world = (try? c.decodeIfPresent(Bool.self, forKey: .world)) ?? true
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, swearing, renamed, volume, board, onboarding, workStream, simulator, world, worldShown }
+    enum CodingKeys: String, CodingKey { case personality, talk, swearing, renamed, volume, board, onboarding, workStream, typesAlong, macSide, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -71,6 +80,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
         if !workStream { try c.encode(workStream, forKey: .workStream) }
+        if !typesAlong { try c.encode(typesAlong, forKey: .typesAlong) }
+        try c.encodeIfPresent(macSide, forKey: .macSide)
         if simulator { try c.encode(simulator, forKey: .simulator) }
         if !world { try c.encode(world, forKey: .world) }
         if worldShown { try c.encode(worldShown, forKey: .worldShown) }

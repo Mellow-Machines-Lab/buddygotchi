@@ -32,6 +32,11 @@ extension Runtime {
                 devIdleMs = max(0, ms)
                 options.log("dev: idle \(devIdleMs) ms")
             }
+            if let ms = (object["key_idle_ms"] as? NSNumber)?.int64Value {
+                devKeyIdleMs = max(0, ms)
+                options.log("dev: key idle \(ms) ms")
+                handsTick()
+            }
             if let signal = (object["signal"] as? String).flatMap(PresenceDetector.Signal.init(rawValue:)) {
                 options.log("dev: presence \(signal.rawValue)")
                 presenceSignal(signal)

@@ -4,6 +4,72 @@ Updated 2026-11-15. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Report, 2026-11-15 (later): gaze and typing along, to try
+
+**Read this first.** Two ways Boop is with you through the day, on the
+branch `gaze-and-mirror` here and in SlimeBuddy (in this worktree's
+`characters/.repos/SlimeBuddy`), both on today's main. Not merged or pushed.
+The AMOLED is flashed with the branch's firmware, to try it: run `make dev`
+from this worktree, and `make flash` from the main checkout puts main's back.
+Pictures: `~/.boopdev/gaze-and-mirror/`. No Jev request: nothing for the brain
+changed.
+
+**What it does**
+- **Gaze.** Its eyes rest forward and turn to one thing at a time. Something
+  needs you: up at you for 1.2 s, then to the Mac's side, held while it waits.
+  At work: a glance at a word as it starts to fall, followed down for 1.6 s,
+  then forward for at least 7 s (3 s while you sit watching too).
+- **Typing along.** While your hands are busy at the Mac it types with you,
+  made to show on a small screen across a desk by size, not speed: its whole
+  body rocks slowly over its keys and springs up off each beat (one every
+  600 ms), its paws swing high, its eyes are down, and the keyboard and paws
+  are drawn no smaller than 95% of a Buddy's, so a Hatchling's show too. At work that's at its desk, in place of the
+  agents' soft typing; idle, its keyboard comes out for it and goes 4 s after
+  you stop. (The first build did this only when idle, and only with the paws:
+  the owner works with agents running, and paws alone don't show.)
+
+**How it's built, so more can be added the same way**
+- The Mac sends facts, as tags: `typing`, `reading` (your hands, from two
+  idle times read every 250 ms, never the keys), `macleft`, `macright` (a
+  Settings choice). No new message, no event, nothing in the transcript.
+- The board decides what to draw from them, as it does for pastimes. Gaze is
+  one ordered list of rules in the pack's `render/gel/gaze.h`: a new look is
+  one more rule there. Typing along sits beside the kit in `GelFace`.
+- What keeps it calm: one rule each. A look never applies while anything
+  else has the eyes (a finger, a Moment, a pastime, a word forward, a work
+  act, sleep), and the eyes turn at under half a finger's rate. Typing along
+  is the lowest thing there is: it waits for a pastime, is never dealt over,
+  and goes with the idle look.
+
+**Checked:** BoopTests 742 passed, 1 skipped; test_gel 163 of 163 (four new
+tests: the rules' order, a glance's times with at most seven in the busiest
+minute, a look slower than a finger, the keys' linger); the simulator, 18 new
+pictures and 30 changed, each looked at; the mirror's 594 shots the
+simulator's. On the board: `boopctl run gaze along`, 0 pictures differ;
+a hook, the headless app and a dev line put `typing` on the board and its
+keyboard out (`live.png`); `boopctl e2e` PASS; `perf --motion` 31 to 32 fps,
+no frame over 34.3 ms, in the last four runs (two runs straight after the
+headless app measured 23 and 25 fps: not reproduced). `make -C internal
+check`: its tests and firmware tests passed, its tools' tests failed on boopctl's
+list of gel scenarios (it had no `gaze` or `along`), which was fixed, and the
+rest (tools-test, sim, mirror) passed run after it; `boards`: both build. Not run: `perf
+--scenes` on the profiling build, a soak, the demos.
+
+**For the owner, at the desk (L6)**
+- Does the Mac's key time follow your real typing inside the app? From a
+  shell it reads without a prompt; in the menu-bar app it hasn't been seen.
+- The feel: is a 2 s tail after your last key right? Is a glance every 7 s
+  calm, or still too often? Is the turn to the Mac enough without a lean?
+- On a Hatchling the keyboard sits over the lower face, as its desk does.
+- Set "Your Mac is on" in Settings, or it won't turn.
+
+**Left out on purpose:** quiet on a call (the mic's "in use" signal may be on
+all day with Hey Siri: it wants a check on your Mac first); a look down at a
+finish's name and up when you come back (both are inside Moments, which have
+the eyes); a demo script (the demo format has no line for your hands yet);
+awake while you type with no agent open (Phase 4's #9: today it naps then,
+so typing along needs an agent's session open, working or idle).
+
 ## Report, 2026-11-15: bugs, a calmer screen, a roomier popover
 
 **Read this first.** On the worktree branch

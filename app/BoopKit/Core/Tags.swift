@@ -1,8 +1,9 @@
 import Foundation
 
 /// What's true now, as tags: the calendar's (`Days.tags`), how long the
-/// agents have worked or sat idle (the tiers), Boop's growth stage, and
-/// whether Boop is hushed. The core sends them in the `state` message
+/// agents have worked or sat idle (the tiers), Boop's growth stage,
+/// whether Boop is hushed, your hands at the Mac (`Hands`) and the side of
+/// Boop the Mac is on (`MacSide`). The core sends them in the `state` message
 /// (`when`), and the board shows only the designs whose tags are all on
 /// (characters/CHARACTER.md §9). The board adds `busy` and `frantic`
 /// itself, from the `state` message's count of sessions working. The
@@ -10,8 +11,16 @@ import Foundation
 /// the same order (firmware/src/render/tags.h).
 public enum Tags {
     /// Every tag: the calendar's, the board's own two for how busy the
-    /// agents are, the tiers, the stages, then `hushed`.
-    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [hushed]
+    /// agents are, the tiers, the stages, `hushed`, your hands, then the
+    /// Mac's side.
+    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + stageTags + [hushed] + hands + macSides
+
+    /// Your hands at the Mac (`Hands`): the gel types along while you type,
+    /// and watches the work with you while you read.
+    public static let hands = Hands.allCases.map(\.rawValue)
+    /// The side of Boop the Mac is on (`MacSide`): where the gel turns when
+    /// something needs you.
+    public static let macSides = MacSide.allCases.map(\.tag)
 
     /// The tags no board reads: the signs and the brain have them, and the
     /// `state` message leaves them out.
