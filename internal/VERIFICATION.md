@@ -124,7 +124,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
   popover's panes, onboarding's acts and their states, gel frames and
   menu-bar icons as PNGs (L0). Besides the `{"dev":…}` lines `--help`
-  lists, a headless socket takes `{"dev":"presence",…}`, the Mac's lock,
+  lists, a headless socket takes `{"dev":"presence",…}`, the Mac's lock, the time since the last key (`key_idle_ms`, for your hands),
   sleep and idle time.
 - `.build/debug/beacon` and `.build/debug/mellowharness-emit`:
   MellowHarness's worked example and its event sender

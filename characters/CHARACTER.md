@@ -599,8 +599,9 @@ Besides drawing each mood and state, a face:
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
   - The growth stage Boop is at, `hatchling`, `sprout` or `chonk`, none at
-    Buddy (`Tags.stages`), reached at levels 5, 15 and 30; and `hushed` while the buddy is
-    hushed (`Core.Hush`). The gel's body and its pastimes go by the stage;
+    Buddy (`Tags.stages`), reached at levels 5, 15 and 30; `hushed` while the buddy is
+    hushed (`Core.Hush`); your hands at the Mac, `typing` or `reading`
+    (`Hands`); and the Mac's side, `macleft` or `macright` (`MacSide`). The gel's body and its pastimes go by the stage;
     nothing useful does. A board with no Mac keeps the stage's tag, and only
     that, as the rest go stale.
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board

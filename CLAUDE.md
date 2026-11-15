@@ -164,6 +164,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | words | What you say to Boop on push-to-talk | talk (for the event), said | `talk` |
 | listening | Boop hearing you, while BOOT or the mic is held | push-to-talk (the state) | `listening` |
 | presence | You at the Mac, away, or back | | `presence_start`, `presence_end` |
+| your hands | Whether you're typing at the Mac, or there with your hands still: two idle times, never the keys; a tag, not an event (`Hands`) | pace (that's the agents'), activity | `typing`, `reading` |
 | lock, unlock | The Mac's screen locking and unlocking, every time however short; an away only after 10 min | | `lock_start`, `lock_end` |
 | button | BOOT: hands you the next agent in the line | press, hand-off | `press` |
 | dismiss | A finger held on the needs-you screen | | |
@@ -182,6 +183,8 @@ things on three channels, **voice**, **sign** and **narration**.
 | kit | What's out while true: on the gel, the headphones alone | | |
 | dressing | What's worn for the tags, one thing at a time: a hat, shades. The gel has nothing in the sky or the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
+| gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright` |
+| typing along | Idle, Boop's keyboard out and its paws tapping while you type (`GelFace::showAlong`) | mirroring | `typing` |
 | tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | lean (that's a finger's) | |
 | the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
 | work act | A command Boop plays out while it runs, with a low sign and Jev's voice: the tests, the push, the build | act (that's the activity) | `wact` |
@@ -293,6 +296,9 @@ The rules that are easy to break, in full in
 - The steering files are read-only at runtime.
 - No code, commands, tool output, file contents or agent transcripts go
   to the brain: only readings, and your words to Boop.
+- Your hands reach the board as a tag and nothing else (`Hands`): that you
+  type, never what, with no event, nothing in the transcript and nothing
+  for the brain.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
   buddy's name, level and stage, its UTC offset, one of six activities and
   counts. Nothing before onboarding's world screen, nothing with it off.

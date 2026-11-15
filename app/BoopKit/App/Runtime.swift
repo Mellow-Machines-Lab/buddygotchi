@@ -57,6 +57,9 @@ public final class Runtime: @unchecked Sendable {
         /// reads none of the Mac's signals: `{"dev":"presence"}` lines
         /// stand in.
         public var idleMs: (@Sendable () -> Int64)?
+        /// Seconds since the last key press, in ms, for your hands
+        /// (`Hands`): a number, never the keys. Nil, the dev line's.
+        public var keyIdleMs: (@Sendable () -> Int64)?
         public var log: @Sendable (String) -> Void = { _ in }
         /// Narrows the board's Bluetooth transport to the one advertised
         /// name (`Boop-54FE`), or widens it again for nil: remembering the
@@ -165,6 +168,7 @@ public final class Runtime: @unchecked Sendable {
     var uncleanExit: Bool
     var server: HookServer?
     var timer: DispatchSourceTimer?
+    var handsTimer: DispatchSourceTimer?
     /// Keeps macOS from napping the app while it runs.
     var activity: NSObjectProtocol?
     let places = Places()
@@ -249,6 +253,10 @@ public final class Runtime: @unchecked Sendable {
     /// The idle time `{"dev":"presence","idle_ms":N}` set, read in place of
     /// the Mac's when there's no `idleMs`.
     var devIdleMs: Int64 = 0
+    /// The time since the last key `{"dev":"presence","key_idle_ms":N}`
+    /// set, read in place of the Mac's when there's no `keyIdleMs`; none
+    /// until a dev line says one, so a headless run has no hands.
+    var devKeyIdleMs: Int64?
     /// Hears every agent's hook as it comes, before Boop takes it: a live
     /// demo's player (`play`), which keeps its script to the agent's pace.
     var demoHeard: ((HookLine) -> Void)?
@@ -335,6 +343,7 @@ public final class Runtime: @unchecked Sendable {
         config.firstAsk = SessionTracker.randomFirstRequest()
         config.workStream = settings.workStream
         let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
+        core.macSide = settings.macSide
         core.setWallClock(wall, at: wallAt)
         view = TranscriptView(rules: rules, seed: longTerm.seed ^ UInt64(now), place: places.place)
         let transcript = Transcript.log(folder: options.stateDir.appendingPathComponent(Transcript.folderName),
@@ -526,6 +535,16 @@ public final class Runtime: @unchecked Sendable {
         timer.setEventHandler { [weak self] in self?.tick() }
         timer.resume()
         self.timer = timer
+        // Your hands, read more often than the tick, so Boop starts typing
+        // within a beat of you: two numbers from the Mac, and a `state`
+        // only when they change what your hands are doing.
+        if options.keyIdleMs != nil {
+            let hands = DispatchSource.makeTimerSource(queue: home)
+            hands.schedule(deadline: .now() + 1, repeating: .milliseconds(Self.handsEveryMs))
+            hands.setEventHandler { [weak self] in self?.handsTick() }
+            hands.resume()
+            handsTimer = hands
+        }
         // From here on the harness and the callbacks are touched only on
         // `home`: reading Jev's key sets the brain and calls `onChange`,
         // so it starts now, after the app has set its callbacks.
@@ -546,6 +565,8 @@ public final class Runtime: @unchecked Sendable {
     public func stop() {
         timer?.cancel()
         timer = nil
+        handsTimer?.cancel()
+        handsTimer = nil
         if let activity { ProcessInfo.processInfo.endActivity(activity) }
         activity = nil
         server?.stop()
@@ -671,10 +692,26 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
+    /// How often your hands are read (`handsTick`).
+    static let handsEveryMs = 250
+
+    /// Your hands at the Mac now (`Hands`), for the board's tags: none
+    /// with the setting off, the screen locked or you away. A change is a
+    /// new `state`, and nothing else: no event, no pass.
+    func handsTick() {
+        let keyIdle = options.keyIdleMs?() ?? devKeyIdleMs, idle = options.idleMs?() ?? devIdleMs
+        let there = settings.typesAlong && presence.lockedAt == nil && !core.awayFromMac
+        let hands = there ? keyIdle.flatMap { Hands.now(keyIdleMs: $0, idleMs: idle) } : nil
+        guard hands != core.hands else { return }
+        core.hands = hands
+        run(core.stateChanged(at: options.clock()))
+    }
+
     func tick() {
         // The core follows the Mac's clock, set or moved.
         let now = options.clock(), wall = options.wallClock()
         core.setWallClock(wall, at: now)
+        handsTick()
         run(pipeline.tick(at: now))
         worldTick(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
@@ -884,6 +921,23 @@ public final class Runtime: @unchecked Sendable {
         home.async { [self] in
             run(core.setVolume(volume, at: options.clock()))
             saveSettings { $0.volume = core.config.volume }
+        }
+    }
+
+    /// Typing along with you on or off, kept in `settings.json`.
+    public func setTypesAlong(_ on: Bool) {
+        home.async { [self] in
+            saveSettings { $0.typesAlong = on }
+            handsTick()
+        }
+    }
+
+    /// The side of Boop the Mac is on, kept in `settings.json`.
+    public func setMacSide(_ side: MacSide?) {
+        home.async { [self] in
+            saveSettings { $0.macSide = side }
+            core.macSide = side
+            run(core.stateChanged(at: options.clock()))
         }
     }
 

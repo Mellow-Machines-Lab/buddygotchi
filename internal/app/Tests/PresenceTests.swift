@@ -338,6 +338,66 @@ final class PresenceRuntimeTests: XCTestCase {
         .filter { $0.type == .presence }.map { "\($0.phase?.rawValue ?? "") \($0.specificType)" }
     }
 
+    /// Pins `Hands`: typing until 2 s after the last key, reading until 20 s
+    /// after the last input of any kind, then nothing to say.
+    func testYourHandsFromTwoIdleTimes() {
+        XCTAssertEqual([Hands.typingMs, Hands.readingMs], [2000, 20_000])
+        XCTAssertEqual(Hands.now(keyIdleMs: 0, idleMs: 0), .typing)
+        XCTAssertEqual(Hands.now(keyIdleMs: 1999, idleMs: 1999), .typing)
+        XCTAssertEqual(Hands.now(keyIdleMs: 2000, idleMs: 2000), .reading, "a pause")
+        XCTAssertEqual(Hands.now(keyIdleMs: 600_000, idleMs: 500), .reading, "the mouse moves, no keys")
+        XCTAssertEqual(Hands.now(keyIdleMs: 19_999, idleMs: 19_999), .reading)
+        XCTAssertNil(Hands.now(keyIdleMs: 20_000, idleMs: 20_000), "still too long to say")
+        XCTAssertEqual(Tags.hands, ["typing", "reading"])
+        XCTAssertEqual(Tags.macSides, ["macleft", "macright"])
+    }
+
+    /// Your hands reach the board as a tag and nothing else: a `state` when
+    /// they change, no event in the transcript and no pass. None while the
+    /// screen is locked or with the setting off, and none until the Mac
+    /// says a key time at all. The Mac's side is a tag once you choose it.
+    func testYourHandsAreATagAndNothingElse() throws {
+        let clock = VirtualClock(presenceT0)
+        let runtime = try makeRuntime(clock: clock)
+        func when() -> [String] { runtime.home.sync { runtime.core.snapshot(at: clock.now).when } }
+        func logged() -> Int { runtime.home.sync { runtime.harness.log.view(now: clock.now).events.count } }
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertFalse(when().contains { Tags.hands.contains($0) }, "no key time yet: no hands")
+        let before = logged()
+        dev(runtime, #"{"dev":"presence","idle_ms":0,"key_idle_ms":0}"#)
+        XCTAssertTrue(when().contains("typing"))
+        dev(runtime, #"{"dev":"presence","idle_ms":3000,"key_idle_ms":3000}"#)
+        XCTAssertTrue(when().contains("reading") && !when().contains("typing"))
+        dev(runtime, #"{"dev":"presence","idle_ms":60000,"key_idle_ms":60000}"#)
+        XCTAssertFalse(when().contains { Tags.hands.contains($0) })
+        XCTAssertEqual(logged(), before, "nothing in the transcript")
+
+        dev(runtime, #"{"dev":"presence","idle_ms":0,"key_idle_ms":0}"#)
+        dev(runtime, #"{"dev":"presence","signal":"locked"}"#)
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertFalse(when().contains("typing"), "locked")
+        dev(runtime, #"{"dev":"presence","signal":"unlocked"}"#)
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertTrue(when().contains("typing"))
+
+        runtime.setTypesAlong(false)
+        runtime.home.sync {}
+        XCTAssertFalse(when().contains("typing"), "switched off in Settings")
+        runtime.setTypesAlong(true)
+        runtime.home.sync {}
+        XCTAssertTrue(when().contains("typing"))
+
+        XCTAssertFalse(when().contains { Tags.macSides.contains($0) }, "no side until you choose")
+        runtime.setMacSide(.right)
+        runtime.home.sync {}
+        XCTAssertTrue(when().contains("macright"))
+        runtime.setMacSide(.left)
+        runtime.home.sync {}
+        XCTAssertTrue(when().contains("macleft") && !when().contains("macright"))
+        runtime.home.sync {}
+        XCTAssertEqual(AppSettings.load(from: dir).macSide, .left, "kept")
+    }
+
     /// The world's gestures wait while the screen is locked, from the lock
     /// itself, not only once it's an away 10 minutes on: nobody is there to
     /// see them.

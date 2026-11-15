@@ -121,6 +121,14 @@ struct SettingsPane: View {
                         Toggle("Falling words", isOn: Binding(get: { model.status?.workStream ?? true }, set: { model.setWorkStream($0) }))
                             .toggleStyle(.boop).labelsHidden()
                     }
+                    RowDivider()
+                    SettingRow(icon: "keyboard", title: "Types along",
+                               detail: "\(model.name) types when you do. It knows your keys are busy, never what you type.") {
+                        Toggle("Types along", isOn: Binding(get: { model.status?.typesAlong ?? true }, set: { model.setTypesAlong($0) }))
+                            .toggleStyle(.boop).labelsHidden()
+                    }
+                    RowDivider()
+                    macSideRow
                 }
             }
         }
@@ -198,6 +206,19 @@ struct SettingsPane: View {
         SettingRow(icon: "bubble.left", title: "Talk", detail: model.talk.about(model.name), wide: true) {
             Segmented(label: "Talk", options: Talk.allCases.map { ($0, $0.title) },
                       chosen: Binding(get: { model.talk }, set: { model.setTalk($0) }))
+        }
+    }
+
+    /// Which side of Boop the Mac is on, so it can turn to it when
+    /// something needs you. Not set until you choose.
+    private var macSideRow: some View {
+        let side = model.status?.macSide
+        return SettingRow(icon: "arrow.left.and.right", title: "Your Mac is on",
+                          detail: side == nil ? "Pick a side and \(model.name) turns to your Mac when an agent needs you."
+                              : "\(model.name) turns to its \(side!.rawValue) when an agent needs you.",
+                          wide: true) {
+            Segmented(label: "Your Mac is on", options: MacSide.allCases.map { (Optional($0), $0 == .left ? "Its left" : "Its right") },
+                      chosen: Binding(get: { side }, set: { model.setMacSide($0) }))
         }
     }
 

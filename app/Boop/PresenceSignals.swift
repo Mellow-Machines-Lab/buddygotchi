@@ -3,7 +3,8 @@ import BoopKit
 import CoreGraphics
 
 /// The Mac's raw signals for the presence detector: the screen locking and unlocking, switching to another user and
-/// back, the Mac or its displays sleeping and waking, and the idle time.
+/// back, the Mac or its displays sleeping and waking, the idle time, and the
+/// time since the last key.
 /// None of them asks for a permission. It says what happened, never what
 /// it means: the detector decides.
 final class PresenceSignals {
@@ -14,6 +15,13 @@ final class PresenceSignals {
     static let idleMs: @Sendable () -> Int64 = {
         let any = CGEventType(rawValue: ~0)!
         return Int64(CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: any) * 1000)
+    }
+
+    /// Seconds since the last key press, in ms, for whether your hands are
+    /// busy (`Hands`): a number from the system's event state, never the
+    /// keys, and it asks for no permission.
+    static let keyIdleMs: @Sendable () -> Int64 = {
+        Int64(CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .keyDown) * 1000)
     }
 
     /// Hands each signal to `send`, on the main thread, until `stop`.

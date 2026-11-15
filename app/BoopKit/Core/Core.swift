@@ -94,6 +94,11 @@ public final class Core {
     var stream = WorkStream()
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
+    /// Your hands at the Mac now and the side of Boop the Mac is on, which
+    /// the runtime sets (`Runtime.handsTick`, Settings): facts for the
+    /// board's tags, never events.
+    public var hands: Hands?
+    public var macSide: MacSide?
     var lastSessions: [SessionSummary] = []
     var lastSessionsAt: Int64?
     /// Level-ups and the ring closing, waiting for nothing to need you.
@@ -873,12 +878,14 @@ public final class Core {
     /// The tags on at `now`: the calendar's, then the tier reached, from the start
     /// of the working stretch (`workingSince`), else from when the latest
     /// session came to rest (`idleSince`), then the growth stage's, then
-    /// `hushed`, in `Tags.all`'s order.
+    /// `hushed`, your hands and the Mac's side, in `Tags.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
         on += Tags.stages(stage)
         if hushed(at: now) != nil { on.append(Tags.hushed) }
+        if let hands { on.append(hands.rawValue) }
+        if let macSide { on.append(macSide.tag) }
         return Tags.all.filter(on.contains)
     }
 

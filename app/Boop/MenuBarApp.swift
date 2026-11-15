@@ -599,6 +599,18 @@ final class AppModel: ObservableObject {
         runtime?.setVolume(volume)
     }
 
+    func setTypesAlong(_ on: Bool) {
+        guard status?.typesAlong != on else { return }
+        status?.typesAlong = on
+        runtime?.setTypesAlong(on)
+    }
+
+    func setMacSide(_ side: MacSide?) {
+        guard status?.macSide != side else { return }
+        status?.macSide = side
+        runtime?.setMacSide(side)
+    }
+
     func setWorkStream(_ on: Bool) {
         guard status?.workStream != on else { return }
         status?.workStream = on
@@ -971,6 +983,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Here and away: the Mac's idle time on
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs
+        options.keyIdleMs = PresenceSignals.keyIdleMs
         // Your prompts, read on this Mac on macOS 26 whenever Apple
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac
