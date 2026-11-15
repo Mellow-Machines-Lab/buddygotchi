@@ -104,8 +104,8 @@ whole surface for scenery.
 
 **Suspected, not fixed:**
 - On the board, `wish/gone` and `wish/slump` draw the body less slumped than
-  the simulator (`boopctl run wish`). Not known to be new: the last pass ran
-  other scenarios.
+  the simulator (`boopctl run wish`). It's the same on main's firmware
+  (`2caeb3cf`), so not from this branch.
 - Face down doesn't end when the board is stood up rather than laid flat
   (`motion_gesture.cpp` wants az over +800 mg): try it in the case.
 - A shell command started in the background reads as passed, and counts a
