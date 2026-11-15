@@ -19,9 +19,13 @@ changed.
   needs you: up at you for 1.2 s, then to the Mac's side, held while it waits.
   At work: a glance at a word as it starts to fall, followed down for 1.6 s,
   then forward for at least 7 s (3 s while you sit watching too).
-- **Typing along.** Idle, while your hands are busy at the Mac, its keyboard
-  is out and its paws tap, its eyes on the keys. You stop: they rest, and the
-  keyboard goes 4 s later.
+- **Typing along.** While your hands are busy at the Mac it types with you,
+  made to show on a small screen across a desk: hunched over its keys, its
+  whole body bouncing with each one, its paws hammering and the keys under
+  them lighting, its eyes down. At work that's at its desk, in place of the
+  agents' soft typing; idle, its keyboard comes out for it and goes 4 s after
+  you stop. (The first build did this only when idle, and only with the paws:
+  the owner works with agents running, and paws alone don't show.)
 
 **How it's built, so more can be added the same way**
 - The Mac sends facts, as tags: `typing`, `reading` (your hands, from two
@@ -63,7 +67,7 @@ all day with Hey Siri: it wants a check on your Mac first); a look down at a
 finish's name and up when you come back (both are inside Moments, which have
 the eyes); a demo script (the demo format has no line for your hands yet);
 awake while you type with no agent open (Phase 4's #9: today it naps then,
-so typing along needs an agent's session open).
+so typing along needs an agent's session open, working or idle).
 
 ## Report, 2026-11-15: bugs, a calmer screen, a roomier popover
 

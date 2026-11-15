@@ -184,7 +184,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | dressing | What's worn for the tags, one thing at a time: a hat, shades. The gel has nothing in the sky or the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
 | gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright` |
-| typing along | Idle, Boop's keyboard out and its paws tapping while you type (`GelFace::showAlong`) | mirroring | `typing` |
+| typing along | Boop typing while you do, hunched over its keys and bouncing with each: at its desk at work, with its keyboard out when idle (`GelFace::showAlong`) | mirroring | `typing` |
 | tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | lean (that's a finger's) | |
 | the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
 | work act | A command Boop plays out while it runs, with a low sign and Jev's voice: the tests, the push, the build | act (that's the activity) | `wact` |
