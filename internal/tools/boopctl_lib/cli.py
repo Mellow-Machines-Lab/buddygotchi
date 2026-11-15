@@ -317,6 +317,8 @@ def perf_scenes(args: argparse.Namespace) -> int:
         dev.request({"t": "dbg.clock", "run": True})
         say = takes()[0].id if args.sound else None
         for name, state, repeat, fps_budget in PERF_SCENES:
+            if args.only and name not in args.only:
+                continue
             samples: list[dict[str, float]] = []
             start = time.monotonic()
             next_state = next_do = next_line = 0.0
@@ -1285,7 +1287,7 @@ def build_parser() -> argparse.ArgumentParser:
                      help="the amoled206_profile build's timings, scene by scene, against their budgets")
     how.add_argument("--plays", action="store_true",
                      help="the amoled206_profile build's timings, second by second, through what plays once")
-    p.add_argument("--only", nargs="*", help="with --plays: these, not all")
+    p.add_argument("--only", nargs="*", help="with --plays or --scenes: these, not all")
     p.add_argument("--sound", action="store_true", help="with --scenes: a `say` every 3 s, for the DAC under load")
     p.set_defaults(func=cmd_perf)
     p = sub.add_parser("latency", help="time inputs and Mac messages to the frame that shows them, against "

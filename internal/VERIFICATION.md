@@ -417,7 +417,8 @@ accepted; the mirror's shots are the simulator's.
    `do` reaches the panel within its budget at the p95 and at worst, none
    lost (the budgets are in §8). On the
    AMOLED, with the `amoled206_profile` build flashed,
-   `internal/tools/boopctl perf --scenes` (and again with `--sound`): each
+   `internal/tools/boopctl perf --scenes` (and again with `--sound`;
+   `--only attention working` plays just those): each
    scene's slowest second reaches its frames a second, working draws no
    frame over 50 ms, at least 50 KB of internal heap stays free and the
    DAC has no write errors. `perf --plays` (`--only NAME…`) goes second by
