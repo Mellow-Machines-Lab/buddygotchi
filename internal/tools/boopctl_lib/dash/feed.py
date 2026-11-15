@@ -663,13 +663,11 @@ def talk_level(context: list[str] | None) -> str:
 
 
 def growth_text(st: Line) -> str:
-    """The stage, the XP, and today's XP from each pool against its cap,
-    from the status line."""
+    """The level, the XP, and today's ring against its cap, from the
+    status line."""
     if "xp" not in st:
-        return f"stage {st['stage']}" if "stage" in st else "?"
-    today = st.get("today_xp") or {}
-    return (f"stage {st.get('stage', '?')} · {st['xp']} XP · today: work {today.get('work', 0)}/{today.get('work_cap', '?')},"
-            f" care {today.get('care', 0)}/{today.get('care_cap', '?')}")
+        return f"level {st['level']}" if "level" in st else "?"
+    return f"level {st.get('level', '?')} · {st['xp']} XP · today {st.get('today_xp', 0)}/{st.get('today_cap', '?')}"
 
 
 def dream_day(d: Line) -> str:
@@ -733,9 +731,9 @@ def status_text(st: Line, before: Line | None = None) -> str:
         "brain": lambda v: f"brain {v}",
         "sessions": lambda v: "sessions " + sessions_text(v),
         "connected": lambda v: "device " + ("connected" if v else "not connected"),
-        "stage": lambda v: f"stage {v}",
+        "level": lambda v: f"level {v}",
         "mood_reason": lambda v: f"the mood's reason: {v}",
     }
-    # A key the line doesn't have (`stage`, before 2026-10-01) isn't shown.
+    # A key the line doesn't have isn't shown.
     return " · ".join(show(st[key]) for key, show in shown.items()
                       if key in st and (not before or st.get(key) != before.get(key)))

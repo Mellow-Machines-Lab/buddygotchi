@@ -2,8 +2,9 @@ import AppKit
 import BoopKit
 import SwiftUI
 
-/// The popover. One 360 pt column on warm paper; Overview, Settings and
-/// What Boop knows open inside it. Setup is onboarding's, in its own window.
+/// The popover. One 360 pt column on warm paper; the overview's three tabs
+/// (Now, Boop and World), Settings and What Boop knows open inside it.
+/// Setup is onboarding's, in its own window.
 struct PopoverView: View {
     @ObservedObject var model: AppModel
     var onClose: () -> Void = {}
@@ -55,37 +56,33 @@ struct PopoverView: View {
                         Label("Settings", systemImage: "gearshape")
                     }
                     .keyboardShortcut(",", modifiers: .command)
-                    Button {
-                        model.pane = .memory
-                    } label: {
-                        Image(systemName: "brain")
-                    }
-                    .keyboardShortcut("m", modifiers: [.command, .shift])
-                    .help("What \(model.name) knows about you")
-                    .accessibilityLabel("What \(model.name) knows about you")
-                    Button {
-                        model.saveReport()
-                    } label: {
-                        Image(systemName: "ladybug")
-                    }
-                    .keyboardShortcut("b", modifiers: .command)
-                    .disabled(model.status == nil)  // Boop isn't running (or not yet)
-                    .help("Save a bug report: what \(model.name) saw and did this launch, to hand to an agent")
-                    .accessibilityLabel("Save a bug report")
+                    // A bug report, from anywhere on the Overview: Settings
+                    // has its button, and the "stopped unexpectedly" notice.
+                    Button("Save a bug report") { model.saveReport() }
+                        .keyboardShortcut("b", modifiers: .command)
+                        .disabled(model.status == nil)  // Boop isn't running (or not yet)
+                        .opacity(0).frame(width: 0, height: 0)
+                        .accessibilityHidden(true)
                 } else if model.pane == .settings {
                     // The versions, where Settings would be.
                     Text("Boop \(BoopVersion.current)" + (model.status?.device.map { " · firmware \($0.fw)" } ?? ""))
-                        .font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-                        .padding(.leading, 8)
+                        .caption()
+                        .padding(.leading, Theme.gapSnug)
                         .textSelection(.enabled)
                 }
                 Spacer()
+                // What Boop knows, from anywhere in the popover.
+                Button("What \(model.name) knows") { model.pane = .memory }
+                    .keyboardShortcut("m", modifiers: [.command, .shift])
+                    .opacity(0).frame(width: 0, height: 0)
+                    .accessibilityHidden(true)
                 Button("Quit") { NSApp.terminate(nil) }
                     .keyboardShortcut("q", modifiers: .command)
             }
-            .font(.system(size: 12))
+            .font(.body)
             .buttonStyle(.quiet)
-            .padding(.horizontal, Theme.gutter - 8)
+            // The quiet buttons' own 8 pt inset puts their words on the gutter.
+            .padding(.horizontal, Theme.gapSnug)
             .padding(.vertical, Theme.gapSnug)
         }
     }
@@ -98,6 +95,9 @@ struct PopoverView: View {
 struct FittedScroll<Content: View>: View {
     var maxHeight: CGFloat
     @ViewBuilder var content: Content
+    /// Where the content ends, in the scroll view's own space.
+    @ViewState private var bottom: CGFloat = 0
+    private static var space: String { "fitted-scroll" }
 
     var body: some View {
         content
@@ -115,9 +115,38 @@ struct FittedScroll<Content: View>: View {
                 // its measure and is cut off at the bottom behind a bar.
                 ViewThatFits(in: .vertical) {
                     content.fixedSize(horizontal: false, vertical: true)
-                    ScrollView { content }
-                        .scrollBounceBehavior(.basedOnSize)
+                    ScrollView {
+                        content.background(GeometryReader { g in
+                            Color.clear.preference(key: ContentBottom.self, value: g.frame(in: .named(Self.space)).maxY)
+                        })
+                    }
+                    .coordinateSpace(name: Self.space)
+                    .scrollBounceBehavior(.basedOnSize)
+                    // Scroll bars over the content, never beside it: with a
+                    // mouse's bars, which take their width from the content,
+                    // none, so the cards line up with the header; the fade
+                    // says there's more.
+                    .scrollIndicators(NSScroller.preferredScrollerStyle == .legacy ? .never : .automatic)
+                    .onPreferenceChange(ContentBottom.self) { bottom = $0 }
+                    .overlay(alignment: .bottom) {
+                        GeometryReader { g in
+                            // While more is below: a fade into the footer,
+                            // so the last row isn't cut through its words.
+                            LinearGradient(colors: [Theme.paper.opacity(0), Theme.paper], startPoint: .top, endPoint: .bottom)
+                                .frame(height: Theme.gutter)
+                                .frame(maxHeight: .infinity, alignment: .bottom)
+                                .opacity(bottom > g.size.height + 1 ? 1 : 0)
+                                .animation(.boopSettle, value: bottom > g.size.height + 1)
+                        }
+                        .allowsHitTesting(false)
+                    }
                 }
             }
     }
+}
+
+/// Where a scroll view's content ends, so it knows whether more is below.
+private struct ContentBottom: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }

@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-04. How we check that Boop works, including what's on its
+Updated 2026-11-14. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -43,6 +43,8 @@ where it says:
   page's tests and `boopctl mirror` (the part of `make -C internal mirror`
   without Emscripten, which the runners don't have; they test the board.js
   checked in).
+- `npm ci`, `npm run typecheck` and `npm test` in `internal/world/`, the
+  world's server, on PGlite, on Linux.
 - Both boards' firmware: the CYD's with Pixel
   (`CHARACTER=pixel firmware/tools/pio.sh run -e cyd24`) and the AMOLED's
   with Boop's gel face (`CHARACTER=boop firmware/tools/pio.sh run -e amoled206`).
@@ -145,7 +147,13 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   ([CHARACTER.md](../characters/CHARACTER.md) §2).
 - `internal/tools/packs.py`: the character packs in `characters/`,
   fetched from their repositories (what `make -C internal packs` runs;
-  `--help`).
+  `--help`). `characters/packs.json` names each as `Owner/Repo`, or
+  `Owner/Repo@branch` to fetch a branch.
+- `internal/tools/world_e2e.py URL`: two headless Boops, each with its own
+  state folder and `HOME`, join the world at URL, see each other, boop
+  each other and leave (L4). `npm run dev` in `internal/world/` serves a
+  fake world on PGlite; the live one only when the owner asks. The Swift
+  side's own tests, `WorldTests`, stub the network and never reach one.
 - The generators, each in its pack and writing into it, which its
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;
@@ -351,9 +359,19 @@ Each suite says what it pins.
   look, and nothing blurred or seamed: the panes and acts are drawn at
   2 pixels a point, as a Retina Mac shows them. The run fails by itself on
   low contrast. The run also fails if text twice as long leaves the
-  Overview no taller: a value that's cut off, and long reasons that move the needs-you card from the top of the pane. It includes Unicode names,
+  Overview no taller: a value that's cut off (a session's row cuts its
+  title at 2 lines and its place at 1, its whole text in the row's help;
+  the needs-you card shows them in full), long reasons that move the
+  needs-you card from the top of the pane, and a face that isn't on the
+  left gutter in any Overview (a line that can't shrink would widen the
+  column); and if any onboarding picture has its footprints or its main
+  button at another height than the rest: onboarding's frame never moves.
+  Each onboarding picture's face is a still in the look its act and state
+  give it (napping, curious, sad when stuck, excited). It includes Unicode names,
   invalid names, every onboarding act (`onboarding-*`), a crowded Overview at
-  a bounded height, and each pane at its longest values (`*-long*`).
+  a bounded height, the Boop tab (`boop-*`), the World tab with a buddy's
+  card open, sent, off, loading and out of reach (`world-*`), and each pane
+  at its longest values (`*-long*`).
   There are no goldens.
 
 **Pass:** everything green. New code comes with tests.
@@ -385,7 +403,8 @@ accepted; the mirror's shots are the simulator's.
    Mac app connected over Bluetooth keeps sending its own `state`, which
    silently replaces the test's.
 2. `internal/tools/boopctl run`: every `expect` passes, and every
-   screenshot is identical to the simulator's.
+   screenshot is identical to the simulator's. It stops at once if the
+   board says it's face down, which refuses Moments and hides the bar.
 3. `internal/tools/boopctl perf --motion`: a frame drawn in every second
    while moving, no sampled frame taking over 40 ms to draw and push (on a
    board whose `hello` says `gel`, the longer of the two), at
@@ -398,7 +417,8 @@ accepted; the mirror's shots are the simulator's.
    `do` reaches the panel within its budget at the p95 and at worst, none
    lost (the budgets are in §8). On the
    AMOLED, with the `amoled206_profile` build flashed,
-   `internal/tools/boopctl perf --scenes` (and again with `--sound`): each
+   `internal/tools/boopctl perf --scenes` (and again with `--sound`;
+   `--only attention working` plays just those): each
    scene's slowest second reaches its frames a second, working draws no
    frame over 50 ms, at least 50 KB of internal heap stays free and the
    DAC has no write errors. `perf --plays` (`--only NAME…`) goes second by

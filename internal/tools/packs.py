@@ -2,7 +2,9 @@
 """Puts the character packs the engine is tested with in characters/.
 
 Each pack is in a repository of its own, which characters/packs.json
-names by the pack's id; the pack is that repository's character/ folder.
+names by the pack's id, as Owner/Repo or Owner/Repo@branch (the branch
+fetched; the repository's default without one); the pack is that
+repository's character/ folder.
 A pack fetched goes in characters/.repos/<repository>/, a clone, with
 characters/<id> a link to its pack, so every path the engine and its
 tests use is the same as when the packs were here.
@@ -39,6 +41,7 @@ def run(*args: str) -> None:
 
 
 def fetch(pack: str, repo: str, update: bool) -> int:
+    repo, _, branch = repo.partition("@")
     link, clone = CHARACTERS / pack, REPOS / repo.split("/")[-1]
     if link.exists() and not (link.is_symlink() and os.readlink(link) == os.path.relpath(clone / "character", CHARACTERS)):
         return 0  # a pack of its own here, or linked elsewhere: leave it
@@ -46,7 +49,7 @@ def fetch(pack: str, repo: str, update: bool) -> int:
         url = os.environ.get("BOOP_PACKS_URL", "https://github.com/").rstrip("/") + f"/{repo}.git"
         print(f"packs: fetching {pack} from {url}", file=sys.stderr)
         REPOS.mkdir(parents=True, exist_ok=True)
-        run("git", "clone", "--quiet", url, str(clone))
+        run("git", "clone", "--quiet", *(["--branch", branch] if branch else []), url, str(clone))
     elif update:
         run("git", "-C", str(clone), "pull", "--quiet", "--ff-only")
     if not (clone / "character" / "character.json").is_file():

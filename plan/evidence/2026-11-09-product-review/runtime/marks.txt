@@ -1,0 +1,72 @@
+21:08:20.308 A0 baseline
+21:08:20.309 A1 session start + prompt
+21:08:23.325 A2 calls: read, edit, test pass
+21:08:28.040 A3 test fail x3
+21:08:39.045 A4 test pass after fails
+21:08:42.892 A5 finish done
+21:09:21.470 A6 failed turn
+21:09:33.661 A7 stopped turn (Esc)
+21:09:43.196 A8 end
+21:10:03.555 B1 two agents working
+21:10:07.701 B2 a asks permission (needs-you)
+21:10:10.891 B3 b finishes while a needs you
+21:10:17.900 B4 poke under needs-you (tap = open thread)
+21:10:20.404 B5 needs-you answered (allowed)
+21:10:31.464 B6 end
+21:10:45.075 B7 b grinds calls to 99 xp
+21:10:50.105 B8 a needs you, then ring closes under it
+21:10:57.052 B9 answered: does the ring/level play now?
+21:11:05.068 B10 past 100: more calls + turn done
+21:11:17.788 B11 end
+21:12:37.148 C0 old daemon died: sessions gone?
+21:13:08.414 C1 three agents start
+21:13:13.080 C2 todo + helper out
+21:13:16.912 C3 helper returns
+21:13:21.248 C4 long turn: tiers
+21:13:48.193 C5 push after >30 min: full work act
+21:14:01.252 C6 finishes: three in a row
+21:14:17.300 C7 end
+21:14:54.719 D1 lock, unlock after 20 s
+21:15:05.737 D2 lock again within the hour, unlock after 3 min
+21:15:16.746 D3 away 15 min by idle time (no lock), then back
+21:15:28.772 D4 lock at night (after 22:00)
+21:15:36.780 D5 the night passes (30 min steps to 07:40)
+21:15:48.665 D6 morning: unlock
+21:16:09.683 D7 end
+21:18:01.710 E0 morning, ring at 2
+21:18:01.711 E1 stroke
+21:18:06.713 E2 stroke again x2
+21:18:14.719 E3 pokes x6
+21:18:22.949 E4 nose boop
+21:18:26.951 E5 lean 2.5 s
+21:18:32.959 E6 ruffle (wrong-way stroke)
+21:18:36.967 E7 shake x3
+21:18:50.690 E8 words to Boop
+21:19:02.702 E9 end
+21:19:30.702 F0 sessions end: no agents
+21:19:35.260 F1 quiet day, no agents, you at the Mac: 5 h in 5-min steps
+21:20:05.492 F2 end
+12:21:56.971 G1 a boop arrives while idle
+12:22:05.983 G2 the hour's limit: wave, heart (Sol) + boop (Tam)
+12:22:24.001 G2b Sol's 4th gesture to Rex in the hour
+12:22:27.007 G3 a cheer with no ship
+12:22:40.020 G4 a heart while something needs you
+12:22:52.435 G5 answered: the heart comes back
+12:23:06.487 G6 end
+02:24:21.756 G7 Sol's world forgot it: next heartbeat
+02:24:31.764 G8 night: a boop and a heart arrive at 02:30
+02:24:38.384 G9 the night ends (you at the Mac): 30-min steps to 05:30
+02:24:51.612 G10 end
+12:26:31.522 H1 a turn, then quiet 40 min
+12:26:47.123 H2 forced pass: ask 'fav snack?'
+12:26:50.128 H3 tap the left answer in the lane
+12:26:55.135 H4 forced pass: wish 'stroke my face?'
+12:27:03.141 H5 stroke: wish met?
+12:27:11.152 H6 end
+12:29:43.552 I1 grind to 99
+12:29:51.069 I2 the level-up starts, and 0.6 s later an agent needs you
+12:29:58.913 I3 answered: is the level-up shown again?
+12:30:07.941 I4 end
+12:30:51.815 J1 grind to the ring, nothing else going on
+12:31:01.755 J2 the 100th XP
+12:31:17.986 J3 end

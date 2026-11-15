@@ -1,0 +1,17 @@
+Boop's counts, the last 2 days. Numbers only: no words, threads or notes. Nothing sends this: it's yours to send or not.
+
+days touched: 2 of 2
+touches: 16, 16 with no wish open
+wishes: 0 made, 0 met, 0 given up, waiting - on average
+threads opened from the board: 1
+needs you: 2, 2 answered, in 0 min on average
+spoken: 11.9 an hour at the Mac (66 in 333 min)
+hushes: 0; days on Quiet: 0; volume: 0
+face down: 0
+unplugged: 0 min, on 0 day(s); disconnects: 0
+failures: 5
+level: 2
+
+day         touches  no-wish  made  met  gaveup  opened  needs  answered  spoken  here-min  hushes  facedown  unplugged  drops  failed
+2026-11-09        1        1     0    0       0       1      2         2      42        84       0         0          0      0       5
+2026-11-10       15       15     0    0       0       0      0         0      24       249       0         0          0      0       0

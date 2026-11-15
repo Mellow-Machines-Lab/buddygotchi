@@ -37,6 +37,15 @@ enum Pane: Equatable {
     case overview, settings, memory
 }
 
+/// The overview's three tabs: how things are now, Boop itself, and the
+/// world of buddies. Now is where the popover opens.
+enum Tab: String, CaseIterable, Equatable {
+    case now, boop, world
+
+    /// Its label: Now, Boop and World, whatever the buddy is called.
+    var title: String { rawValue.capitalized }
+}
+
 /// What the person has chosen so far in onboarding: a name, and which
 /// agents to watch. It lives in the app's model, so moving between
 /// acts loses nothing.
@@ -44,30 +53,76 @@ struct SetupDraft {
     var name = ""
     var agents = Set(Agent.allCases)
 
-    var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    var trimmedName: String { BuddyName.trimmed(name) }
 
-    /// The memory file accepts 23 characters, not the device protocol's
-    /// 23 bytes. Keep the field's normalization and
-    /// control-character cleanup without cutting Unicode names early.
+    /// The name field's rules are `BuddyName`'s, which Settings' Rename
+    /// shares: 23 characters, not the device protocol's 23 bytes.
     mutating func editName(_ text: String) {
-        name = String(StateSnapshot.clip(text, max: Int.max).prefix(23))
+        name = BuddyName.edited(text)
     }
 
-    var nameIssue: String? {
-        trimmedName.contains("·") || trimmedName.contains(":") ? "Names can't use “·” or “:”." : nil
-    }
+    var nameIssue: String? { BuddyName.issue(name) }
 
-    var canContinueName: Bool { !trimmedName.isEmpty && nameIssue == nil }
+    var canContinueName: Bool { BuddyName.valid(name) }
 }
 
 /// What the views show. Updated on the main thread only.
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var pane = Pane.overview
+    @Published var pane = Pane.overview {
+        didSet { worldInSight() }
+    }
+    @Published var tab = Tab.now {
+        didSet {
+            worldInSight()
+            if tab != .world { worldPick = nil }
+        }
+    }
+    /// The buddy whose card is open on the World tab, and what was sent it.
+    @Published var worldPick: String?
+    @Published var worldSent: [String: WorldSend] = [:]
+    /// What was sent one buddy this launch: the kinds that went through,
+    /// which stay sent (the world takes 3 gestures to a buddy an hour),
+    /// the one on its way, and the last one that didn't go.
+    struct WorldSend: Equatable {
+        var sent: Set<World.GestureKind> = []
+        var sending: World.GestureKind?
+        var failed: World.GestureKind?
+    }
+    /// A gesture is on its way to some buddy: every button waits for it.
+    var worldSending: Bool { worldSent.values.contains { $0.sending != nil } }
     /// The popover is open. Its views live on while it's closed, so they
     /// hold their loops still until it opens again.
     @Published var shown = false {
-        didSet { if shown { catchUp() } }
+        didSet {
+            if shown { catchUp() }
+            worldInSight()
+        }
+    }
+    /// Whether the runtime was last told the World tab is open.
+    private var worldTabOpen = false
+
+    /// The world is fetched only while its tab is in sight: the popover
+    /// open, on the overview, at the World tab.
+    private func worldInSight() {
+        let open = shown && pane == .overview && tab == .world
+        guard open != worldTabOpen else { return }
+        worldTabOpen = open
+        runtime?.worldTab(open: open)
+    }
+
+    /// Sends `kind` to the buddy `id`, and keeps how it went for its card.
+    func sendGesture(_ kind: World.GestureKind, to id: String) {
+        guard !worldSending, worldSent[id]?.sent.contains(kind) != true else { return }
+        worldSent[id, default: .init()].sending = kind
+        worldSent[id]?.failed = nil
+        runtime?.sendGesture(kind, to: id) { [weak self] ok in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.worldSent[id]?.sending = nil
+                if ok { self.worldSent[id]?.sent.insert(kind) } else { self.worldSent[id]?.failed = kind }
+            }
+        }
     }
     /// Onboarding's window is open: its acts show the status too.
     var onboardingShown = false {
@@ -141,6 +196,16 @@ final class AppModel: ObservableObject {
     var runtime: Runtime?
     /// Starts the runtime again, after it couldn't start.
     var start: () -> Void = {}
+    /// Stops the runtime and starts a new one, which reads what changed
+    /// on disk: a new name.
+    var restart: () -> Void = {}
+    /// Settings' Advanced group is open: closed until opened, and kept
+    /// while the app runs.
+    @Published var advancedOpen = false
+    /// The new name being typed in Settings' Name row: nil while it isn't
+    /// being renamed. Why the last rename failed, until the next try.
+    @Published var renameDraft: String?
+    @Published var renameError: String?
     /// Asks, then takes Boop off this Mac and quits (`Uninstall`).
     var uninstall: () -> Void = {}
     /// The Keychain entry this copy keeps Jev's key in
@@ -374,8 +439,8 @@ final class AppModel: ObservableObject {
         if status?.listening == true { return "Listening…" }
         if s.waiting > 0 { return s.waiting == 1 ? "Needs you" : "\(s.waiting) sessions need you" }
         switch s.doing {
-        case "working": return s.working == 1 ? "1 session working" : "\(s.working) sessions working"
-        case "idle": return "Hanging out"
+        case "working": return "Working"
+        case "idle": return "Resting"
         default: return "Napping"
         }
     }
@@ -546,6 +611,30 @@ final class AppModel: ObservableObject {
     }
 
     /// Takes effect from the next event.
+    func setSwearing(_ on: Bool) {
+        guard status?.swearing != on else { return }
+        status?.swearing = on
+        runtime?.setSwearing(on)
+    }
+
+    /// Gives Boop a new name, then starts the runtime again under it, so
+    /// every place the name lives reads it. `done` gets why not, or nil.
+    func rename(_ name: String, done: @escaping @MainActor (String?) -> Void) {
+        guard let runtime else { return done("\(self.name) isn't running.") }
+        runtime.rename(to: name) { result in
+            Task { @MainActor [weak self] in
+                switch result {
+                case .success(let renamed):
+                    done(nil)
+                    if renamed { self?.restart() }
+                case .failure(let refusal):
+                    done("Couldn't rename: \(refusal.description).")
+                }
+            }
+        }
+    }
+
+    /// Takes effect from the next event.
     func setTalk(_ talk: Talk) {
         guard talk != self.talk else { return }
         status?.talk = talk
@@ -667,6 +756,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // The login item's state, for Settings, before it's first opened.
         model.refreshInBackground()
         model.start = { [weak self] in self?.startRuntime() }
+        model.restart = { [weak self] in self?.restartRuntime() }
         model.uninstall = { [weak self] in self?.uninstall() }
         model.log = { [log] in log.write($0) }
         // It starts on the body it was last given.
@@ -890,6 +980,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // Your prompts, read on this Mac on macOS 26 whenever Apple
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac
+        // The world of buddies: the live server, or BOOP_WORLD_URL's.
+        options.worldURL = WorldClient.url()
         model.devices = options.link as? DeviceChooser
         if model.startOnSimulator { model.devices?.choose(.simulator) }
         do {
@@ -944,6 +1036,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
     }
 
+    /// Stops the runtime and starts a new one on the same folder and body:
+    /// after a rename, which the runtime reads only as it starts.
+    func restartRuntime() {
+        guard let old = model.runtime else { return }
+        log.write("boop: starting again, to read what changed")
+        presenceSignals.stop()
+        model.startOnSimulator = model.usingSimulator
+        old.onChange = nil
+        old.stop()
+        model.runtime = nil
+        startRuntime()
+    }
+
     /// Every status push lands here, and most change neither the look nor
     /// the words.
     func updateIcon() {
@@ -996,6 +1101,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // A finished update's word has been seen; one going on keeps going.
         if case .done = model.firmwareWrite { model.firmwareWrite = .idle }
         if model.pane != .overview { model.pane = .overview }
+        // It opens on Now each time: most of the time, that's what's wanted.
+        model.tab = .now
+        model.worldSent = [:]
     }
 
     /// Settings' Uninstall: asks first, then takes out the hooks, the

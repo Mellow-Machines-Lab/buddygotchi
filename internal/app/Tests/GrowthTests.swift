@@ -6,8 +6,9 @@ import XCTest
 @testable import BoopDevKit
 @testable import BoopKit
 
-/// XP by rule from the agents' events, the stages, and
-/// how both are kept in `boop.sqlite`.
+/// XP kept simple (plan/v1-buddy.md §5): a fixed XP per thing, a ring of
+/// 100 a day, a level per 100, sizes at levels 5, 15 and 30, and how it's
+/// kept in `boop.sqlite`.
 final class GrowthTests: XCTestCase {
     var dir: URL!
 
@@ -35,178 +36,96 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth.xp(for: event(1, .subagent, .end)), 2)
         XCTAssertEqual(Growth.xp(for: event(1, .turn, .end, ["outcome": .string("done")])), 5)
         XCTAssertEqual(Growth.xp(for: event(1, .turn, .end, ["outcome": .string("failed")])), 0)
-        XCTAssertEqual(Growth.xp(for: event(1, .turn, .end, ["outcome": .string("stopped")])), 0)
         XCTAssertEqual(Growth.xp(for: event(1, .tool, .start)), 0)
-        XCTAssertEqual(Growth.xp(for: event(1, .turn, .start)), 0)
         XCTAssertEqual(Growth.xp(for: event(1, .poke, from: .device)), 0)
     }
 
-    /// Care earns too: a care gesture 3, a word to Boop 3, an answered ask
-    /// 5, coming back 2; a poke, a thump or an ignored ask nothing.
+    /// Pins v1-buddy.md §5.2: a care touch 3, a word 3, an answered ask 5,
+    /// a met wish 20, coming back 2; a startle or a poke nothing.
     func testCareEarnsXP() {
         func you(_ type: Event.Kind, _ specific: String, _ phase: Event.Phase? = nil) -> Event {
             Event(at: 1_000, source: .device, type: type, phase: phase, specificType: specific)
         }
-        XCTAssertEqual([Growth.careXP, Growth.talkXP, Growth.answerXP, Growth.backXP], [3, 3, 5, 2])
-        XCTAssertEqual(Growth.earning(for: you(.gesture, "stroke"))?.xp, 3)
-        XCTAssertEqual(Growth.earning(for: you(.gesture, "stroke"))?.pool, .care)
+        XCTAssertEqual([Growth.turnXP, Growth.toolXP, Growth.helperXP], [5, 1, 2])
+        XCTAssertEqual([Growth.careXP, Growth.talkXP, Growth.answerXP, Growth.wishXP, Growth.backXP], [3, 3, 5, 20, 2])
+        XCTAssertEqual(Growth.xp(for: you(.gesture, "stroke")), 3)
         XCTAssertEqual(Growth.xp(for: you(.said, "mic")), 3)
         XCTAssertEqual(Growth.xp(for: you(.ask, "a")), 5)
         XCTAssertEqual(Growth.xp(for: you(.ask, Asks.ignored)), 0)
         XCTAssertEqual(Growth.xp(for: Event(at: 1, source: .mac, type: .presence, phase: .end, specificType: "unlocked")), 2)
+        XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)), 20)
+        XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)), 0)
         XCTAssertEqual(Growth.xp(for: you(.gesture, "startle")), 0)
         XCTAssertEqual(Growth.xp(for: you(.poke, "input")), 0)
-        XCTAssertEqual(Growth.earning(for: event(1, .tool, .end))?.pool, .work)
     }
 
-    /// Counts `e` as the runtime does with no caps in the way: what it earns.
-    @discardableResult
-    func count(_ growth: GrowthStore, _ e: Event, day: String = "2026-10-22") -> Bool {
-        growth.count(e, earned: Growth.xp(for: e), day: day)
-    }
-
-    /// Pins Growth.workPerDay and carePerDay (60 each): each pool earns at
-    /// most 60 XP a Boop day, apart, and a new Boop day starts both again.
-    /// The memory reader keeps the day's totals (its tallies' workXP and
-    /// careXP) and hands growth what each event earned as it reads it.
-    func testEachPoolIsCappedADay() throws {
-        XCTAssertEqual([Growth.workPerDay, Growth.carePerDay], [60, 60])
-        let store = try KeyValueStore(directory: nil)
-        let reader = MemoryReader(store: store, time: LocalTime())
-        let runner = Checkpointed(reader, store: store, time: LocalTime(), note: { _ in })
-        let growth = GrowthStore(store)
-        let first: Int64 = 1_793_000_000_000, next = first + 24 * 3_600_000
-        var seq = 0
-        var counted = false
-        reader.earned = { e, xp in counted = growth.count(e, earned: xp) }
-        func feed(_ e: Event) -> Bool {
-            var e = e
-            seq += 1
-            e.seq = seq
-            counted = false
-            runner.feed(e, line: nil)
-            return counted
-        }
-        func stroke(_ at: Int64) -> Bool { feed(Event(at: at, source: .device, type: .gesture, specificType: "stroke")) }
-        func turn(_ at: Int64) -> Bool {
-            feed(Event(at: at, source: .claude, type: .turn, phase: .end, specificType: "Stop", session: "s1", data: ["outcome": .string("done")]))
-        }
-        for _ in 0..<20 { XCTAssertTrue(stroke(first)) }
-        XCTAssertFalse(stroke(first), "care's 60 reached")
-        XCTAssertEqual(growth.growth.xp, 60)
-        for _ in 0..<12 { XCTAssertTrue(turn(first)) }
-        XCTAssertFalse(turn(first), "the work's 60 apart")
-        XCTAssertEqual(growth.growth.xp, 120)
-        XCTAssertEqual(runner.state?.careXP, 60)
-        XCTAssertEqual(runner.state?.workXP, 60)
-        XCTAssertTrue(stroke(next), "a new Boop day")
-        XCTAssertEqual(growth.growth.xp, 123)
-        XCTAssertEqual(runner.state?.careXP, 3)
-    }
-
-    /// Four stages at 0, 200, 1,000 and 5,000 XP, and an XP past the table
-    /// a Chonk with the bar full.
-    func testStagesStartAtTheirThresholds() {
-        XCTAssertEqual(Growth.stages.map(\.from), [0, 200, 1_000, 5_000])
+    /// Pins v1-buddy.md §5.3 and §5.4: level = 1 + XP / 100, no maximum;
+    /// the sizes at levels 1, 5, 15 and 30; the ring 100 a day.
+    func testLevelsAndSizes() {
+        XCTAssertEqual(Growth.perDay, 100)
+        XCTAssertEqual(Growth.perLevel, 100)
+        XCTAssertEqual(Growth(xp: 0).level, 1)
+        XCTAssertEqual(Growth(xp: 99).level, 1)
+        XCTAssertEqual(Growth(xp: 100).level, 2)
+        XCTAssertEqual(Growth(xp: 1_182).level, 12)
+        XCTAssertEqual(Growth(xp: 1_182).toNextLevel, 18)
+        XCTAssertEqual(Growth(xp: 1_000_000).level, 10_001, "no maximum")
+        XCTAssertEqual(Growth.stages.map(\.level), [1, 5, 15, 30])
         XCTAssertEqual(Growth.stages.map(\.name), ["Hatchling", "Sprout", "Buddy", "Chonk"])
-        XCTAssertEqual(Growth.stage(for: 0), 1)
-        XCTAssertEqual(Growth.stage(for: 199), 1)
-        XCTAssertEqual(Growth.stage(for: 200), 2)
-        XCTAssertEqual(Growth.stage(for: 4_999), 3)
-        XCTAssertEqual(Growth.stage(for: 5_000), 4)
-        XCTAssertEqual(Growth.stage(for: 1_000_000), 4)
-
-        let g = Growth(xp: 600)
-        XCTAssertEqual(g.stage, 2)
-        XCTAssertEqual(g.name, "Sprout")
-        XCTAssertEqual(g.nextAt, 1_000)
-        XCTAssertEqual(g.progress, 0.5)
-        XCTAssertNil(Growth(xp: 40_000).nextAt)
-        XCTAssertEqual(Growth(xp: 40_000).progress, 1)
+        XCTAssertEqual(Growth(xp: 399).stageName, "Hatchling")
+        XCTAssertEqual(Growth(xp: 400).stageName, "Sprout")
+        XCTAssertEqual(Growth(xp: 1_400).stageName, "Buddy")
+        XCTAssertEqual(Growth(xp: 2_900).stageName, "Chonk")
+        XCTAssertEqual([1, 2, 5, 6, 15, 30, 31].filter(Growth.grows(at:)), [5, 15, 30])
+        XCTAssertEqual(Growth(today: 82).percent, 82)
+        XCTAssertEqual(Growth(today: 140).today, 100, "a ring holds 100")
+        XCTAssertTrue(Growth(today: 100).ringClosed)
     }
 
-    /// A stage saved when there were six, and a stage never went back: Pal
-    /// comes to Buddy, Chonk and Legend to Chonk; it keeps at least its stage's
-    /// size, in XP, as the stage is the XP's from then on, once: what it loses
-    /// later isn't given back at the next launch. A store with no stage saved
-    /// (new, or moved already) is left at its XP.
-    func testASavedStageKeepsItsSize() throws {
-        XCTAssertEqual((1...6).map(Growth.stage(fromSix:)), [1, 2, 3, 3, 4, 4])
-        XCTAssertEqual([0, 9].map(Growth.stage(fromSix:)), [1, 4], "held to the table")
-        // Stage, XP saved; the stage and XP it comes to.
-        let cases: [(old: Int, xp: Int, name: String, to: Int)] = [
-            (1, 50, "Hatchling", 50),      // a Hatchling stays a Hatchling
-            (2, 300, "Sprout", 300),
-            (2, 10, "Sprout", 200),        // a Sprout by a stage never lost, its XP lower
-            (3, 10, "Buddy", 1_000),
-            (4, 4_200, "Buddy", 4_200),    // Pal
-            (4, 10, "Buddy", 1_000),
-            (4, 5_100, "Chonk", 5_100),    // past the new threshold by its XP
-            (5, 12_500, "Chonk", 12_500),  // Chonk
-            (5, 10, "Chonk", 5_000),
-            (6, 31_000, "Chonk", 31_000),  // Legend
-        ]
-        for c in cases {
-            let dir = dir.appendingPathComponent("\(c.old)-\(c.xp)")
-            let store = try KeyValueStore(directory: dir)
-            try store.set(["growth.xp": String(c.xp), "growth.stage": String(c.old)])
-            let growth = GrowthStore(store)
-            XCTAssertEqual(growth.growth.name, c.name, "\(c)")
-            XCTAssertEqual(growth.growth.xp, c.to, "\(c)")
-            XCTAssertGreaterThanOrEqual(growth.growth.stage, Growth.stage(fromSix: c.old), "\(c)")
-            XCTAssertNil(store.int("growth.stage"), "read once")
-            XCTAssertEqual(store.int("growth.xp"), c.to, "kept")
-        }
-        // Once: it goes backwards from there, and stays gone back.
-        let store = try KeyValueStore(directory: dir)
-        try store.set(["growth.xp": "1000", "growth.stage": "3"])
-        let growth = GrowthStore(store)
-        growth.decay(today: "2026-11-01")
-        growth.decay(today: "2026-11-05")
-        XCTAssertEqual(growth.growth.xp, 950)
-        try XCTAssertEqual(GrowthStore(KeyValueStore(directory: dir)).growth.xp, 950, "the next launch gives none of it back")
+    @discardableResult
+    func count(_ growth: GrowthStore, _ e: Event, day: String = "2026-10-22") -> Int {
+        growth.count(e, xp: Growth.xp(for: e), today: day)
     }
 
-    /// The first launch on going backwards costs nothing, however long since
-    /// it last earned, as nothing kept that day: the 3 days start then.
-    func testAFirstLaunchLosesNothing() throws {
-        let store = try KeyValueStore(directory: dir)
-        try store.set(["growth.xp": "1000", "growth.stage": "3", "growth.last_seq": "9"])
-        let growth = GrowthStore(store)
-        XCTAssertNil(growth.earnedDay)
-        XCTAssertFalse(growth.decay(today: "2026-12-25"))
-        XCTAssertEqual(growth.earnedDay, "2026-12-25")
-        XCTAssertFalse(growth.decay(today: "2026-12-28"), "the 3 days are free")
-        XCTAssertEqual(growth.growth.xp, 1_000)
-        XCTAssertTrue(growth.decay(today: "2026-12-29"))
-        XCTAssertEqual(growth.growth.xp, 950)
+    /// The day's cap is the ring: past 100, nothing counts, from any source,
+    /// until Boop's next day.
+    func testTheDayIsCappedAtTheRing() throws {
+        let growth = GrowthStore(try KeyValueStore(directory: nil))
+        for seq in 1...19 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
+        XCTAssertEqual(growth.growth.today, 95)
+        XCTAssertEqual(count(growth, Event(seq: 20, at: 1, source: .device, type: .gesture, specificType: "stroke")), 3)
+        XCTAssertEqual(count(growth, event(21, .turn, .end, ["outcome": .string("done")])), 2, "only up to 100")
+        XCTAssertEqual(count(growth, event(22, .turn, .end, ["outcome": .string("done")])), 0)
+        XCTAssertEqual(growth.growth, Growth(xp: 100, today: 100))
+        XCTAssertEqual(count(growth, event(23, .turn, .end, ["outcome": .string("done")]), day: "2026-10-23"), 5, "a new day")
+        XCTAssertEqual(growth.growth, Growth(xp: 105, today: 5))
+        XCTAssertEqual(growth.growth(on: "2026-10-24"), Growth(xp: 105), "the next day's ring is empty")
     }
 
-    /// The bar's percent (`state.xp`): how far through the stage, whole,
-    /// and 100 only at the last.
-    func testThePercentTheBoardShows() {
-        XCTAssertEqual(Growth(xp: 0).percent, 0)
-        XCTAssertEqual(Growth(xp: 100).percent, 50)
-        XCTAssertEqual(Growth(xp: 199).percent, 99, "not full short of the stage")
-        XCTAssertEqual(Growth(xp: 200).percent, 0)
-        XCTAssertEqual(Growth(xp: 600).percent, 50)
-        XCTAssertEqual(Growth(xp: 5_000).percent, 100)
-        XCTAssertEqual(Growth(xp: 40_000).percent, 100)
+    /// The last 7 days' rings, oldest first, kept across opens; a day with
+    /// none is 0.
+    func testTheWeeksRingsAreKept() throws {
+        let growth = GrowthStore(try KeyValueStore(directory: dir))
+        count(growth, event(1, .turn, .end, ["outcome": .string("done")]), day: "2026-10-20")
+        count(growth, event(2, .tool, .end), day: "2026-10-22")
+        count(growth, event(3, .tool, .end), day: "2026-10-22")
+        let again = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(again.week(to: "2026-10-23").map(\.xp), [0, 0, 0, 5, 0, 2, 0])
+        XCTAssertEqual(again.week(to: "2026-10-23").map(\.day).last, "2026-10-23")
+        XCTAssertEqual(again.week(to: "2026-10-23").map(\.day).first, "2026-10-17")
+        XCTAssertEqual(again.week(to: "2024-03-01").map(\.day).suffix(2), ["2024-02-29", "2024-03-01"], "a leap day")
     }
 
-    /// What growing sends through the runtime: a `state` with the bar's
-    /// percent as a turn's XP moves it, no sign of the rule's, and at a stage a
-    /// `grew` event that wakes a pass. A demo sends no percent.
-    func testEarningMovesTheBarAndGrowingTellsJev() throws {
+    /// What growing sends through the runtime: a `state` with today's ring
+    /// as a turn's XP moves it; at a level, a `level` event and its moment,
+    /// `level 2!` held low in gold; at 100 today, the ring's, the same
+    /// moment holding up `today's done!`. A demo sends no ring.
+    func testALevelUpAndTheRingThroughTheRuntime() throws {
         try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-grow-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         try Runtime.setUp(stateDir: dir, name: "Pip")
-        do {
-            let store = try KeyValueStore(directory: dir)
-            try store.set(["growth.xp": "190"])
-        }
         let clock = VirtualClock(1_793_000_000_000)
         var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
                                       steering: RuntimeTests.steering)
@@ -214,10 +133,14 @@ final class GrowthTests: XCTestCase {
         options.clock = { clock.now }
         options.wallClock = { clock.now }
         options.readJevKey = { _ in nil }
+        do {
+            let store = try KeyValueStore(directory: dir)
+            try store.set([GrowthStore.xpKey: "90", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 90"])
+        }
         let runtime = try Runtime(options)
         let core = runtime.core(runtime.rigs[0])
         var now: Int64 { clock.now }
-        XCTAssertEqual(core.snapshot(at: now).xp, 95)
+        XCTAssertEqual(core.snapshot(at: now).xp, 90)
         func turn() {
             runtime.home.sync {
                 runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
@@ -226,116 +149,34 @@ final class GrowthTests: XCTestCase {
                 clock.now += 60_000
             }
         }
+        func events(_ type: Event.Kind) -> [Event] { runtime.harness.log.view(now: now).events.filter { $0.type == type } }
         turn()
-        XCTAssertEqual(runtime.growth.growth.xp, 195)
-        XCTAssertEqual(core.snapshot(at: now).xp, 97)
-        XCTAssertFalse(runtime.harness.log.view(now: now).events.contains { $0.type == .grew })
+        XCTAssertEqual(runtime.growth.growth.xp, 95)
+        XCTAssertEqual(core.snapshot(at: now).xp, 95)
+        XCTAssertTrue(events(.level).isEmpty)
         turn()
-        XCTAssertEqual(runtime.growth.growth.xp, 200)
-        XCTAssertEqual(runtime.growth.growth.name, "Sprout")
-        XCTAssertEqual(core.snapshot(at: now).xp, 0)
-        XCTAssertTrue(core.snapshot(at: now).when.contains("sprout"))
-        let grew = runtime.harness.log.view(now: now).events.filter { $0.type == .grew }
-        XCTAssertEqual(grew.map(\.specificType), ["Sprout"])
+        XCTAssertEqual(runtime.growth.growth, Growth(xp: 100, today: 100))
+        XCTAssertEqual(events(.level).map(\.specificType), ["2"])
+        XCTAssertEqual(events(.ring).count, 1)
+        XCTAssertTrue(runtime.harness.log.view(now: now).events.contains { $0.action == "react" && $0["by"]?.string == "rule" })
+        turn()
+        XCTAssertEqual(events(.ring).count, 1, "once a day")
+        XCTAssertEqual(runtime.growth.growth.xp, 100, "nothing past the ring")
+
+        // Across 5:00, by the runtime's own clock: a new Boop day, an empty
+        // ring, and yesterday's full one in the week.
+        let yesterday = options.time.boopDay(clock.now)
+        while options.time.boopDay(clock.now) == yesterday { clock.now += 10 * 60_000 }
+        XCTAssertEqual(core.snapshot(at: now).xp, 0, "the new day's ring")
+        turn()
+        XCTAssertEqual(runtime.growth.growth, Growth(xp: 105, today: 5))
+        XCTAssertEqual(core.snapshot(at: now).xp, 5)
+        let week = runtime.growth.week(to: options.time.boopDay(clock.now))
+        XCTAssertEqual(week.suffix(2).map(\.xp), [100, 5])
+        XCTAssertEqual(week.suffix(2).first?.day, yesterday)
 
         runtime.playingDemo = true
-        let shown = core.snapshot(at: now)
-        XCTAssertNil(shown.xp, "a demo sends none")
-        XCTAssertFalse(shown.when.contains("sprout"), "a demo's full size")
-    }
-
-    /// A stage reached earlier today with no `grew` in the log, as a quit
-    /// while something needed you leaves it: the next launch tells Jev, once.
-    func testAGrewAQuitLostComesAtTheNextLaunch() throws {
-        try requirePack("boop")
-        let dir = URL(fileURLWithPath: "/tmp/boop-grew-\(UUID().uuidString.prefix(8))")
-        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        defer { try? FileManager.default.removeItem(at: dir) }
-        try Runtime.setUp(stateDir: dir, name: "Pip")
-        let clock = VirtualClock(1_793_000_000_000)
-        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: nil,
-                                      steering: RuntimeTests.steering)
-        options.devLines = true
-        options.clock = { clock.now }
-        options.wallClock = { clock.now }
-        options.readJevKey = { _ in nil }
-        do {
-            let store = try KeyValueStore(directory: dir)
-            try store.set(["growth.xp": "200", GrowthStore.reachedKey: options.time.day(clock.now)])
-        }
-        func launch() throws -> Int {
-            let runtime = try Runtime(options)
-            let grew = runtime.home.sync { () -> Int in
-                let now = clock.now
-                runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
-                return runtime.harness.log.view(now: now).events.filter { $0.type == .grew && $0.specificType == "Sprout" }.count
-            }
-            runtime.stop()
-            runtime.home.sync {}
-            return grew
-        }
-        var grew = try launch()
-        XCTAssertEqual(grew, 1)
-        clock.now += 60_000
-        grew = try launch()
-        XCTAssertEqual(grew, 1, "and only once")
-    }
-
-    /// `offered` for a `grew`: the stage's lines first, then any stage's.
-    func testWhatItMayHoldUpGrowing() {
-        let lines = [TaggedLine(tags: ["idle"], text: "quiet day..."),
-                     TaggedLine(tags: ["grew"], text: "i grew!"),
-                     TaggedLine(tags: ["grew", "sprout"], text: "look, a sprout!"),
-                     TaggedLine(tags: ["grew", "chonk"], text: "so much me!"),
-                     TaggedLine(tags: ["grew", "buddy"], text: "a sign much too long to hold up")]
-        XCTAssertEqual(Signs.grew(lines, stage: "Sprout"), ["look, a sprout!", "i grew!"])
-        XCTAssertEqual(Signs.grew(lines, stage: "Chonk"), ["so much me!", "i grew!"])
-        XCTAssertEqual(Signs.grew(lines, stage: "Buddy"), ["i grew!"])
-    }
-
-    /// 3 days with no XP are free, then 5% a day, and it never reaches zero.
-    func testItGoesBackwardsAfterThreeDays() throws {
-        XCTAssertEqual(Growth.decayed(1_000, days: 1), 950)
-        XCTAssertEqual(Growth.decayed(1_000, days: 2), 903)
-        XCTAssertEqual(Growth.decayed(2, days: 400), 1)
-        XCTAssertEqual(Growth.decayed(0, days: 4), 0)
-
-        let store = try KeyValueStore(directory: dir)
-        try store.set(["growth.xp": "1020"])
-        let growth = GrowthStore(store)
-        XCTAssertFalse(growth.decay(today: "2026-11-01"), "the first day starts the clock")
-        XCTAssertFalse(growth.decay(today: "2026-11-04"), "the third day is free")
-        XCTAssertTrue(growth.decay(today: "2026-11-05"))
-        XCTAssertEqual(growth.growth.xp, 969)
-        XCTAssertEqual(growth.growth.name, "Sprout", "a stage goes with it")
-        XCTAssertFalse(growth.decay(today: "2026-11-05"), "once a day")
-        XCTAssertEqual(growth.shrankWords(today: "2026-11-05", name: "Pip"), "Pip shrank a little. You were gone 4 days.")
-        XCTAssertEqual(growth.shrankWords(today: "2026-11-06", name: "Pip"), "Pip shrank a little. You were gone 4 days.")
-        XCTAssertNil(growth.shrankWords(today: "2026-11-07", name: "Pip"))
-
-        let again = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(again.growth.xp, 969)
-        XCTAssertFalse(again.decay(today: "2026-11-05"), "kept across a launch")
-    }
-
-    /// Going backwards is settled before what's earned counts, and earning stops it.
-    func testEarningStopsGoingBackwards() throws {
-        let store = try KeyValueStore(directory: dir)
-        try store.set(["growth.xp": "1000", "growth.earned": "2026-11-01"])
-        let growth = GrowthStore(store)
-        XCTAssertTrue(growth.count(event(1, .tool, .end), earned: 1, day: "2026-11-06"))
-        XCTAssertEqual(growth.growth.xp, 904)
-        XCTAssertFalse(growth.decay(today: "2026-11-09"))
-        XCTAssertTrue(growth.decay(today: "2026-11-10"))
-    }
-
-    /// A met wish is worth 40, and only one a day counts.
-    func testAMetWishEarnsForty() {
-        let met = Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)
-        XCTAssertEqual(Growth.earning(for: met)?.xp, 40)
-        XCTAssertEqual(Growth.earning(for: met)?.pool, .wish)
-        XCTAssertEqual(Growth.cap(.wish), 40)
-        XCTAssertNil(Growth.earning(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)))
+        XCTAssertNil(core.snapshot(at: now).xp, "a demo sends none")
     }
 
     func testTheKeyValueStoreKeepsValuesAcrossOpens() throws {
@@ -385,36 +226,51 @@ final class GrowthTests: XCTestCase {
     /// alone, so a launch's read-back can't count it again.
     func testEachEventCountsOnceAndIsKept() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertTrue(count(growth, event(1, .tool, .end)))
-        XCTAssertFalse(count(growth, event(2, .tool, .start)))
-        XCTAssertTrue(count(growth, event(3, .turn, .end, ["outcome": .string("done")])))
-        XCTAssertFalse(count(growth, event(3, .turn, .end, ["outcome": .string("done")])))
-        XCTAssertFalse(count(growth, event(1, .tool, .end)))
+        XCTAssertEqual(count(growth, event(1, .tool, .end)), 1)
+        XCTAssertEqual(count(growth, event(2, .tool, .start)), 0)
+        XCTAssertEqual(count(growth, event(3, .turn, .end, ["outcome": .string("done")])), 5)
+        XCTAssertEqual(count(growth, event(3, .turn, .end, ["outcome": .string("done")])), 0)
+        XCTAssertEqual(count(growth, event(1, .tool, .end)), 0)
         XCTAssertEqual(growth.growth.xp, 6)
 
         let again = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(again.growth, Growth(xp: 6))
+        XCTAssertEqual(again.growth, Growth(xp: 6, today: 6))
         XCTAssertEqual(again.lastSeq, 3)
     }
 
-    func testCrossingAThresholdReachesTheNextStage() throws {
-        let lines = Lines()
-        let growth = GrowthStore(try KeyValueStore(directory: nil), log: { lines.add($0) })
-        for seq in 1...39 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
-        XCTAssertEqual(growth.growth.stage, 1)
-        count(growth, event(40, .turn, .end, ["outcome": .string("done")]))
-        XCTAssertEqual(growth.growth, Growth(xp: 200))
-        XCTAssertEqual(lines.all, ["growth: reached stage 2, Sprout, at 200 XP"])
+    /// A level and the ring closing are celebrated only as their events
+    /// are logged, which is when they play: until then they stay due, so a
+    /// quit while something needs you, or a demo, loses neither. Kept across
+    /// opens.
+    func testALevelIsCelebratedAsItPlays() throws {
+        let growth = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(growth.celebrated, 1)
+        for seq in 1...20 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
+        let day = "2026-10-22"
+        XCTAssertEqual(growth.due(today: day), [.level(2, grewTo: nil), .ringClosed])
+        XCTAssertEqual(GrowthStore(try KeyValueStore(directory: dir)).due(today: day), [.level(2, grewTo: nil), .ringClosed], "still due after a quit")
+        XCTAssertEqual(growth.due(today: "2026-10-23"), [.level(2, grewTo: nil)], "a ring held past 5:00 is yesterday's")
+        growth.played(Event(at: 0, source: .boop, type: .level, specificType: "2"))
+        growth.played(Event(at: 0, source: .boop, type: .ring, specificType: "closed"))
+        XCTAssertEqual(growth.due(today: day), [])
+        let reopened = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(reopened.celebrated, 2)
+        XCTAssertEqual(reopened.due(today: day), [], "and not again")
+        XCTAssertEqual(Growth(xp: 1_400).level, 15)
+        XCTAssertTrue(Growth.grows(at: 15))
     }
 
-    /// The day a stage was reached is kept, so a relaunch that day still
-    /// has its party.
-    func testTheDayAStageWasReachedIsKept() throws {
+    /// XP starts from zero: what growth kept before is deleted at the first open.
+    func testTheOldXPIsForgotten() throws {
+        do {
+            let store = try KeyValueStore(directory: dir)
+            try store.set(["growth.xp": "3000", "growth.stage": "4", "growth.reached": "2026-10-01", "growth.decayed": "2"])
+        }
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertNil(growth.reachedDay)
-        for seq in 1...40 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")]), day: "2026-10-22") }
-        let reopened = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(reopened.reachedDay, "2026-10-22")
+        XCTAssertEqual(growth.growth, Growth())
+        let store = try KeyValueStore(directory: dir)
+        XCTAssertNil(store.string("growth.xp"))
+        XCTAssertNil(store.string("growth.reached"))
     }
 
     /// A transcript whose files are all gone numbers from 1 again: counting
@@ -427,7 +283,7 @@ final class GrowthTests: XCTestCase {
         growth.follow(transcriptAt: 0)
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.lastSeq, 0)
-        XCTAssertTrue(count(growth, event(1, .tool, .end)))
+        XCTAssertEqual(count(growth, event(1, .tool, .end)), 1)
         XCTAssertEqual(growth.growth.xp, 2)
     }
 }

@@ -67,8 +67,8 @@ final class ContextTests: XCTestCase {
         XCTAssertEqual(ContextSection.talk(.quiet, silentMs: 8 * minute - 1000, name: "Boop"),
                        "Talk: silent for 8 more min, then quiet again: Boop says nothing till then, but its faces and replies go on, each answering what you said.")
         XCTAssertEqual(ContextSection.talk(.normal, silentMs: 0, name: "Boop"), nil)
-        XCTAssertEqual(ContextSection.buddy(.init(stage: "Sprout", daysOld: 40), name: "Boop"), "Boop: a Sprout, 40 days old.")
-        XCTAssertEqual(ContextSection.buddy(.init(stage: "Hatchling", daysOld: 0), name: "Boop"), "Boop: a Hatchling, hatched today.")
+        XCTAssertEqual(ContextSection.buddy(.init(level: 12, today: 82, daysOld: 40), name: "Boop"), "Boop: level 12, 40 days old; today's ring 82 of 100.")
+        XCTAssertEqual(ContextSection.buddy(.init(level: 1, today: 0, daysOld: 0), name: "Boop"), "Boop: level 1, hatched today; today's ring 0 of 100.")
     }
 
     /// The agents: what needs you, working and resting, in the core's
@@ -113,7 +113,7 @@ final class ContextTests: XCTestCase {
         c.talks = 12
         let long = String(repeating: "w", count: 80)
         let agents = (0..<5).map { StatusReply.Agent(agent: "codex", places: [long + "\($0)"], workingSince: t0) }
-        let section = ContextSection.section(talk: .chatty, silentMs: 119 * minute, buddy: .init(stage: "Hatchling", daysOld: 400),
+        let section = ContextSection.section(talk: .chatty, silentMs: 119 * minute, buddy: .init(level: 1234, today: 100, daysOld: 400),
                                              company: c, agents: agents, noticed: Notices.whileAway([("claude", "\"wwwwwwwwwwwwwwww\"", false), ("codex", "\"wwwwwwwwwwwwwwww\"", true), ("codex", "\"w\"", true)]),
                                              at: t0 + 11 * hour, name: "Boop")!
         XCTAssertEqual(section.components(separatedBy: "\n").count, 7)

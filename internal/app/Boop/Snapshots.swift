@@ -34,11 +34,25 @@ enum Snapshots {
             checkStatusPublishing(installer)
             checkPulse()
             checkNothingCut(installer)
+            checkFaceAtGutter(installer)
             checkNeedsYouComesFirst(installer)
 
             // The pack's mirror of the board, when it has one (Boop's).
             let gelState = StateSnapshot(doing: "working", activity: "terminal", mood: "happy", attn: nil, working: 1, vol: 6)
             var gelImage: NSImage?, onboardingGel: NSImage?
+            /// Each onboarding picture's face in the look its act and state
+            /// give it, through the board's engine, drawn once a look.
+            var onboardingStills: [String: NSImage] = [:]
+            func onboardingStill(_ look: StateSnapshot) -> NSImage? {
+                guard SlimeFeed.folder != nil else { return nil }
+                if let image = onboardingStills[look.jsonLine] { return image }
+                let image = try? SlimeSnapshots.image(look, to: home.appendingPathComponent("look-\(onboardingStills.count).png"))
+                onboardingStills[look.jsonLine] = image
+                return image
+            }
+            /// Where each onboarding picture's footprints start and its
+            /// main button ends, in pixels: the same in every one.
+            var onboardingFrames: [(name: String, marks: Int?, bar: Int?)] = []
             OnboardingSound.enabled = false
             if SlimeFeed.folder != nil {
                 checkSlimeHandOver()
@@ -47,7 +61,7 @@ enum Snapshots {
                 // Every look onboarding uses, through the board's engine:
                 // one it doesn't show as asked fails here.
                 for (name, look) in StateSnapshot.onboardingLooks {
-                    _ = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"))
+                    onboardingStills[look.jsonLine] = try SlimeSnapshots.image(look, to: out.appendingPathComponent("slime-onboarding-\(name).png"))
                 }
                 _ = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-working.png"))
                 // The popover's 46 pt tile, zoomed on the slime, at 2×.
@@ -60,10 +74,11 @@ enum Snapshots {
                 try checkMoodStills()
             }
             for dark in [false, true] {
-                /// The popover on `pane`, tall enough for all of it.
-                func shot(_ name: String, _ model: AppModel, pane: Pane) {
+                /// The popover on `pane` and `tab`, tall enough for all of it.
+                func shot(_ name: String, _ model: AppModel, pane: Pane, tab: Tab = .now) {
                     model.pane = pane
-                    render(PopoverView(model: model, maxHeight: 2000), "\(name)-\(dark ? "dark" : "light")", dark: dark, to: out, whole: true)
+                    model.tab = tab
+                    render(PopoverView(model: model, maxHeight: 2600), "\(name)-\(dark ? "dark" : "light")", dark: dark, to: out, whole: true)
                 }
                 for (name, model) in overviews(installer) { shot("overview-\(name)", model, pane: .overview) }
                 if gelImage != nil {
@@ -75,6 +90,100 @@ enum Snapshots {
                     gel.hooks[.claude] = .installed
                     shot("overview-gel", gel, pane: .overview)
                 }
+                // The Boop tab: the ring part full, full, and on the first day.
+                shot("boop", model(installer, status: status()), pane: .overview, tab: .boop)
+                shot("boop-ring-full", model(installer, status: status(growth: Growth(xp: 1_200, today: 100))), pane: .overview, tab: .boop)
+                var newborn = status(growth: Growth())
+                (newborn.notes, newborn.week, newborn.daysOld) = ([], [.init(day: "2026-11-08", xp: 0, today: "2026-11-08")], 0)
+                shot("boop-first-day", model(installer, status: newborn), pane: .overview, tab: .boop)
+                shot("boop-long", model(installer, status: longOverview(installer).status), pane: .overview, tab: .boop)
+                // The third day: four dashed days before the first ring, the first one full.
+                var young = status(growth: Growth(xp: 160, today: 12))
+                young.daysOld = 2
+                young.week = [("2026-11-06", 100), ("2026-11-07", 48), ("2026-11-08", 12)].map { .init(day: $0, xp: $1, today: "2026-11-08") }
+                shot("boop-third-day", model(installer, status: young), pane: .overview, tab: .boop)
+                // The World tab: the world, a buddy's card open, sent, and off;
+                // still loading, out of reach, and with no world at all.
+                shot("world", model(installer, status: status()), pane: .overview, tab: .world)
+                let card = model(installer, status: status())
+                card.worldPick = "b-bean"
+                shot("world-card", card, pane: .overview, tab: .world)
+                card.worldSent["b-bean"] = .init(sent: [.boop])
+                shot("world-card-sent", card, pane: .overview, tab: .world)
+                // Say hi on its way: only its button dims. Then one that failed.
+                card.worldSent["b-bean"] = .init(sending: .boop)
+                shot("world-card-sending", card, pane: .overview, tab: .world)
+                card.worldSent["b-bean"] = .init(failed: .boop)
+                shot("world-card-failed", card, pane: .overview, tab: .world)
+                // A small world: the numbers as a sentence, names on the band, Bean's card open.
+                var small = status()
+                small.world?.link.snapshot = World.Snapshot(
+                    at: "2026-11-08T13:20:00Z", awake: 3, total: 5, doing: ["coding": 1, "testing": 1, "idle": 1],
+                    today: World.Counts(turns: 40, testsPassed: 12, ships: 0, linesChanged: 900),
+                    regions: try! JSONDecoder().decode([World.RegionCount].self, from: Data(#"""
+                        [{"region": "americas", "awake": 1}, {"region": "europe_africa", "awake": 2}, {"region": "asia_oceania", "awake": 0}]
+                        """#.utf8)),
+                    buddies: [World.Buddy(id: "b-pip", name: "Pip", level: 4, utcOffset: -300, activity: .coding),
+                              World.Buddy(id: "b-me", name: "Mochi", level: 12, utcOffset: 60, activity: .idle),
+                              World.Buddy(id: "b-nori", name: "Nori", level: 2, utcOffset: 120, activity: .testing),
+                              World.Buddy(id: "b-bean", name: "Bean", level: 7, utcOffset: 540, activity: .asleep),
+                              World.Buddy(id: "b-dot", name: "Dot", level: 1, utcOffset: 600, activity: .asleep)])
+                let smallWorld = model(installer, status: small)
+                shot("world-small", smallWorld, pane: .overview, tab: .world)
+                smallWorld.worldPick = "b-bean"
+                shot("world-small-card", smallWorld, pane: .overview, tab: .world)
+                // Your own dot: marked, its card with nothing to send.
+                let mine = model(installer, status: status())
+                mine.worldPick = "b-me"
+                shot("world-card-you", mine, pane: .overview, tab: .world)
+                // What other buddies did: one held, one that didn't play, and many.
+                var held = status()
+                held.world?.link.today.insert(.init(counts: [.init(kind: .heart, n: 1)], region: .americas, held: true,
+                                                    at: Calendar.current.startOfDay(for: Date()).addingTimeInterval(11 * 3600)), at: 0)
+                shot("world-arrivals-held", model(installer, status: held), pane: .overview, tab: .world)
+                var many = status()
+                let start = Calendar.current.startOfDay(for: Date())
+                many.world?.link.today = (0..<9).map { i in
+                    .init(counts: [.init(kind: [.boop, .wave, .heart][i % 3], n: 1 + i % 2)], region: World.Region.allCases[i % 3],
+                          at: start.addingTimeInterval(Double(12 * 3600 - i * 1800)))
+                } + [.init(counts: [.init(kind: .boop, n: 4)], region: nil, plays: false, at: start.addingTimeInterval(3600))]
+                shot("world-arrivals-many", model(installer, status: many), pane: .overview, tab: .world)
+                // The world from before, and it isn't answering now.
+                var stale = status()
+                stale.world?.link.trouble = "the world didn't answer"
+                shot("world-stale", model(installer, status: stale), pane: .overview, tab: .world)
+                // On, and not in it yet.
+                var joining = status()
+                joining.world?.inWorld = false
+                joining.world?.link.joined = false
+                shot("world-joining", model(installer, status: joining), pane: .overview, tab: .world)
+                let shipping = model(installer, status: status())
+                shipping.worldPick = "b-pip"
+                shot("world-card-shipping", shipping, pane: .overview, tab: .world)
+                // At its longest: the longest names, Boop's and another buddy's, its card open.
+                var longWorld = status(name: Long.name)
+                longWorld.world?.link.snapshot?.buddies.append(World.Buddy(id: "b-long", name: Long.name, level: 1234,
+                                                                           utcOffset: 330, activity: .waiting))
+                let long = model(installer, status: longWorld)
+                long.worldPick = "b-long"
+                shot("world-long", long, pane: .overview, tab: .world)
+                var away = status()
+                away.world?.on = false
+                away.world?.link.joined = false
+                away.world?.inWorld = false
+                let offCard = model(installer, status: away)
+                offCard.worldPick = "b-bean"
+                shot("world-off", offCard, pane: .overview, tab: .world)
+                shot("world-off-no-card", model(installer, status: away), pane: .overview, tab: .world)
+                var loading = status()
+                loading.world?.link.snapshot = nil
+                loading.world?.link.today = []
+                shot("world-loading", model(installer, status: loading), pane: .overview, tab: .world)
+                loading.world?.link.trouble = "the world didn't answer"
+                shot("world-trouble", model(installer, status: loading), pane: .overview, tab: .world)
+                var nowhere = status()
+                nowhere.world = nil
+                shot("world-unreachable", model(installer, status: nowhere), pane: .overview, tab: .world)
                 // What Boop knows: with notes, with a section still empty, with none.
                 shot("memory", model(installer, status: status()), pane: .memory)
                 var partly = status()
@@ -87,12 +196,41 @@ enum Snapshots {
                 (longMemory.notes, longMemory.recently) = (longNotes, longDays)
                 shot("memory-long", model(installer, status: longMemory), pane: .memory)
                 shot("memory-not-running", model(installer, status: nil), pane: .memory)
+                // A note just forgotten, its Undo still there, and a second pinned note first.
+                var forgetting = status()
+                forgetting.notes.append(.init(id: 14, section: .you, days: ["2026-10-21"], pinned: true, text: "You call the board \"the slime\"."))
+                PendingForgets.shared.show(12)
+                shot("memory-forget-pending", model(installer, status: forgetting), pane: .memory)
+                PendingForgets.shared.reset()
                 let settings = model(installer, status: status(sessions: [["codex", "landing", "work"]]))
                 try? installer.install(.claude)
                 settings.refreshHooks()
                 settings.restartAgents = true
                 settings.status?.board = "b00p-01dd"  // the board it remembered
                 shot("settings", settings, pane: .settings)
+                // Advanced open: the body, the paired board, the simulator, the key, uninstall.
+                settings.advancedOpen = true
+                shot("settings-advanced", settings, pane: .settings)
+                // Renaming: the field under the Name row, and a week's wait after.
+                let renaming = model(installer, status: status())
+                renaming.renameDraft = "Mochi Jr"
+                shot("settings-renaming", renaming, pane: .settings)
+                renaming.renameDraft = "Mochi: the second"
+                shot("settings-renaming-issue", renaming, pane: .settings)
+                var locked = status()
+                locked.nextRename = Date().addingTimeInterval(4 * 86_400)
+                shot("settings-rename-locked", model(installer, status: locked), pane: .settings)
+                var swearing = status()
+                swearing.swearing = true
+                shot("settings-swearing-on", model(installer, status: swearing), pane: .settings)
+                // Out of the world, and shown as "a buddy".
+                var privately = status()
+                privately.world?.on = false
+                privately.world?.inWorld = false
+                shot("settings-world-off", model(installer, status: privately), pane: .settings)
+                var hidden = status()
+                hidden.world?.link.nameHidden = true
+                shot("settings-world-name-hidden", model(installer, status: hidden), pane: .settings)
                 try? installer.remove(.claude)
                 shot("settings-chatty", model(installer, status: status(talk: .chatty)), pane: .settings)
                 shot("settings-no-hook", model(unbuilt, status: status()), pane: .settings)
@@ -124,7 +262,8 @@ enum Snapshots {
                 shot("settings-login-unavailable", bare, pane: .settings)
                 // The board runs older firmware than the app carries, and then it's being written.
                 let behind = model(installer, status: status())
-                behind.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                behind.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                behind.advancedOpen = true
                 shot("settings-firmware-offer", behind, pane: .settings)
                 behind.firmwareWrite = .writing(0.42)
                 shot("settings-firmware-writing", behind, pane: .settings)
@@ -133,8 +272,11 @@ enum Snapshots {
                 shot("settings-bluetooth-off", model(installer, status: status(connected: false, linkTrouble: bluetooth(.poweredOff))),
                      pane: .settings)
                 // The simulator window, in a build that has it: off, and on.
-                shot("settings-simulator-off", model(installer, status: status()), pane: .settings)
+                let simulatorOff = model(installer, status: status())
+                simulatorOff.advancedOpen = true
+                shot("settings-simulator-off", simulatorOff, pane: .settings)
                 let simulated = model(installer, status: status())
+                simulated.advancedOpen = true
                 simulated.usingSimulator = true
                 shot("settings-simulator-on", simulated, pane: .settings)
                 // A card with another pack than the app's, and no card or pack: no voice.
@@ -149,12 +291,19 @@ enum Snapshots {
                 longSettings.status?.board = "b00p-01dd"
                 longSettings.hookErrors[.claude] = Long.detail
                 longSettings.loginItemError = Long.detail
-                longSettings.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
+                longSettings.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
                 longSettings.firmwareWrite = .failed(Long.detail)
+                longSettings.advancedOpen = true
                 shot("settings-long", longSettings, pane: .settings)
 
-                for (name, onboarding) in onboardings(installer, gel: onboardingGel) {
-                    render(OnboardingView(model: onboarding), "onboarding-\(name)-\(dark ? "dark" : "light")", dark: dark, to: out)
+                let bareHome = home.appendingPathComponent("no-agents")
+                try FileManager.default.createDirectory(at: bareHome, withIntermediateDirectories: true)
+                let noAgents = HookInstaller.boop(home: bareHome, hookPath: hook.path)
+                for (name, onboarding) in onboardings(installer, noAgents: noAgents, unbuilt: unbuilt, gel: onboardingGel,
+                                                      still: onboardingStill) {
+                    let picture = "onboarding-\(name)-\(dark ? "dark" : "light")"
+                    let rep = render(OnboardingView(model: onboarding), picture, dark: dark, to: out)
+                    onboardingFrames.append((picture, onboardingMarksTop(rep), onboardingBarFoot(rep)))
                 }
                 if let crowded = overviews(installer).first(where: { $0.0 == "crowded" })?.1 {
                     crowded.status?.snapshot.vol = 0
@@ -172,26 +321,78 @@ enum Snapshots {
                 }
                 renderIcons(dark: dark, to: out)
             }
+            checkOnboardingFrame(onboardingFrames)
         } catch {
             fail("snapshots: \(error)")
         }
         exit(0)
     }
 
+    // MARK: Onboarding's frame
+
+    /// Every onboarding picture has its footprints' top and its main
+    /// button's foot at one height: the frame doesn't move from act to
+    /// act, or state to state, whatever an act holds.
+    static func checkOnboardingFrame(_ frames: [(name: String, marks: Int?, bar: Int?)]) {
+        guard let first = frames.first, let marks = first.marks, let bar = first.bar else {
+            fail("snapshots: onboarding: no footprints or main button in \(frames.first?.name ?? "any picture")")
+        }
+        // Half a point either way, for antialiasing.
+        let off = frames.filter { frame in
+            guard let m = frame.marks, let b = frame.bar else { return true }
+            return abs(m - marks) > 1 || abs(b - bar) > 1
+        }
+        guard off.isEmpty else {
+            fail("snapshots: onboarding's frame moves: footprints at \(marks) px and the button's foot at \(bar) px in \(first.name), but "
+                 + off.map { "\($0.name) \($0.marks.map(String.init) ?? "none")/\($0.bar.map(String.init) ?? "none")" }.joined(separator: ", "))
+        }
+        print("onboarding frame: \(frames.count) pictures, footprints at \(CGFloat(marks) / scale) pt, "
+              + "the main button's foot at \(CGFloat(bar) / scale) pt in every one")
+    }
+
+    /// Whether a pixel isn't the paper.
+    private static func inked(_ rep: NSBitmapImageRep, _ x: Int, _ y: Int, paper: NSColor) -> Bool {
+        guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+        return abs(c.redComponent - paper.redComponent) + abs(c.greenComponent - paper.greenComponent)
+            + abs(c.blueComponent - paper.blueComponent) > 0.08
+    }
+
+    /// The footprints' first inked row, across the window's middle, in the
+    /// top 80 pt.
+    static func onboardingMarksTop(_ rep: NSBitmapImageRep) -> Int? {
+        guard let paper = rep.colorAt(x: 2, y: 2)?.usingColorSpace(.sRGB) else { return nil }
+        let px = { (pt: CGFloat) in Int(pt * scale) }
+        return (0..<px(80)).first { y in stride(from: px(200), to: px(520), by: 1).contains { inked(rep, $0, y, paper: paper) } }
+    }
+
+    /// The main button's last inked row, up from the window's foot, just
+    /// inside its right edge (the gutter, x 672).
+    static func onboardingBarFoot(_ rep: NSBitmapImageRep) -> Int? {
+        guard let paper = rep.colorAt(x: 2, y: 2)?.usingColorSpace(.sRGB) else { return nil }
+        let x = Int((OnboardingView.size.width - Theme.windowGutter - Theme.gapSnug) * scale)
+        return stride(from: rep.pixelsHigh - 1, to: rep.pixelsHigh / 2, by: -1).first { inked(rep, x, $0, paper: paper) }
+    }
+
     /// Onboarding's acts, and the states of them worth seeing, each on a
     /// model of its own.
-    static func onboardings(_ installer: HookInstaller, gel: NSImage?) -> [(String, OnboardingModel)] {
-        func at(_ act: Onboarding.Act, status: Runtime.Status? = nil, _ set: (OnboardingModel) -> Void = { _ in }) -> OnboardingModel {
+    /// `noAgents` finds neither agent; `unbuilt` has no agent-hook to call.
+    /// Each picture's face is `still` of the look its act and state give
+    /// it, else `gel`.
+    static func onboardings(_ installer: HookInstaller, noAgents: HookInstaller, unbuilt: HookInstaller, gel: NSImage?,
+                            still: (StateSnapshot) -> NSImage?) -> [(String, OnboardingModel)] {
+        func at(_ act: Onboarding.Act, status: Runtime.Status? = nil, installer: HookInstaller = installer,
+                _ set: (OnboardingModel) -> Void = { _ in }) -> OnboardingModel {
             let app = model(installer, status: status)
             app.setup.name = act.index >= Onboarding.Act.makeMeYours.index ? "Mochi" : ""
             let onboarding = OnboardingModel(app: app, act: act, stateDir: URL(fileURLWithPath: "/tmp/boop-snapshots-onboarding"))
-            onboarding.feed.stillImage = gel
             set(onboarding)
+            onboarding.feed.stillImage = still(onboarding.look) ?? gel
             return onboarding
         }
+        let firmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
         let behind = at(.body, status: status()) {
             $0.body = .joined
-            $0.app.boardFirmware = [BoardFirmware(board: "cyd24", chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+            $0.app.boardFirmware = firmware
         }
         return [
             ("1-hello", at(.hello)),
@@ -215,6 +416,17 @@ enum Snapshots {
             }),
             ("4-body-joined", at(.body, status: status()) { $0.body = .joined }),
             ("4-body-joined-hungry", behind),
+            // The update eating, and one that couldn't.
+            ("4-body-joined-feeding", at(.body, status: status()) {
+                $0.body = .joined
+                $0.app.boardFirmware = firmware
+                $0.app.firmwareWrite = .writing(0.42)
+            }),
+            ("4-body-joined-feed-failed", at(.body, status: status()) {
+                $0.body = .joined
+                $0.app.boardFirmware = firmware
+                $0.app.firmwareWrite = .failed("plug Mochi's body into this Mac with a USB cable that carries data, then try again.")
+            }),
             ("4-body-joined-no-voice", at(.body, status: status(voice: "none")) { $0.body = .joined }),
             // No board, in a build with the simulator window: it's offered.
             ("4-body-simulator-offered", at(.body) { $0.simulatorHere = true }),
@@ -243,9 +455,10 @@ enum Snapshots {
                 $0.body = .joined
                 $0.progress.lessons = [.tap]
             }),
+            // Three done, and the practice request glowing amber.
             ("5-how-to-done", at(.howTo, status: status()) {
                 $0.body = .joined
-                $0.progress.lessons = [.tap, .button]
+                $0.progress.lessons = [.tap, .button, .talk]
             }),
             ("5-how-to-no-board", at(.howTo, status: status(connected: false))),
             ("5-how-to-talk", at(.howTo, status: status()) {
@@ -270,12 +483,24 @@ enum Snapshots {
                 $0.talk = .heard("Hi Boop")
             }),
             ("6-agents", at(.agents, status: status()) { $0.app.setup.agents = [.claude] }),
+            // Neither agent on this Mac; the agent-hook missing; a hook that couldn't go in.
+            ("6-agents-none", at(.agents, status: status(), installer: noAgents)),
+            ("6-agents-client-missing", at(.agents, status: status(), installer: unbuilt) { $0.app.setup.agents = [.claude] }),
+            ("6-agents-hook-error", at(.agents, status: status()) {
+                $0.app.setup.agents = [.claude]
+                $0.app.hookErrors[.claude] = "couldn't write ~/.claude/settings.json: permission denied"
+            }),
             ("6-agents-what-gets-added", at(.agents, status: status()) {
                 $0.app.setup.agents = [.claude]
                 $0.showHooks = true
             }),
             ("6-agents-hello", at(.agents, status: status()) { $0.connected = true }),
             ("6-agents-heard", at(.agents, status: status()) {
+                $0.connected = true
+                $0.progress.heard = "claude"
+            }),
+            // A board that doesn't tour (no drawer): heard, and on its way.
+            ("6-agents-heard-no-tour", at(.agents, status: status(face: .pixel)) {
                 $0.connected = true
                 $0.progress.heard = "claude"
             }),
@@ -295,6 +520,16 @@ enum Snapshots {
             }),
             ("7-small-things", at(.smallThings, status: status())),
             ("7-small-things-mic-allowed", at(.smallThings, status: status()) { $0.mic = .allowed }),
+            ("7-small-things-mic-asking", at(.smallThings, status: status()) { $0.mic = .asking }),
+            ("7-small-things-mic-refused", at(.smallThings, status: status()) {
+                $0.mic = .refused("Allow Boop in System Settings → Privacy & Security → Microphone.")
+            }),
+            ("7-small-things-key-saved", at(.smallThings, status: status()) { $0.keySaved = true }),
+            ("7-small-things-key-failed", at(.smallThings, status: status()) { $0.keySaved = false }),
+            ("7-small-things-login-approval", at(.smallThings, status: status()) {
+                $0.app.loginItem = LoginItem(state: { .needsApproval }, set: { _ in })
+                $0.app.refreshLoginItem()
+            }),
             // Act 5's push-to-talk had the mic allowed: no card for it.
             ("7-small-things-mic-allowed-before", at(.smallThings, status: status()) { $0.askMic = false }),
             // `make dev`'s bare binary, which can't open at login.
@@ -322,21 +557,30 @@ enum Snapshots {
                 $0.body = .joined
                 $0.progress.lessons = [.tap, .button]
             }),
+            // No name in acts 6 and 7: their longest words are errors.
             ("6-agents-long", at(.agents, status: status(name: Long.name)) {
                 $0.app.setup.name = Long.name
                 $0.connected = true
                 $0.progress.heard = "claude"
+                $0.app.hookErrors[.codex] = Long.detail
             }),
             ("7-small-things-long", at(.smallThings, status: status(name: Long.name)) {
                 $0.app.setup.name = Long.name
+                $0.app.loginItemError = Long.detail
+                $0.mic = .refused(Long.detail)
+                $0.keySaved = false
             }),
-            ("8-finale-long", at(.finale, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
-            ("8-finale-unbroken", at(.finale, status: status(connected: false, name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
-            ("8-finale", at(.finale, status: status())),
+            ("8-world", at(.world, status: status())),
+            ("8-world-long", at(.world, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
+            ("8-world-unbroken", at(.world, status: status(name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
+            ("9-finale-long", at(.finale, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
+            ("9-finale-unbroken", at(.finale, status: status(connected: false, name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
+            // A board with no drawer: the poke's tip.
+            ("9-finale", at(.finale, status: status(face: .pixel))),
             // A gel board: the drawer's tip in the poke's place.
-            ("8-finale-gel", at(.finale, status: status(face: .gel))),
+            ("9-finale-gel", at(.finale, status: status(face: .gel))),
             // After "I don't have my Boop yet": the Mac's way of each tip.
-            ("8-finale-no-board", at(.finale, status: status(connected: false))),
+            ("9-finale-no-board", at(.finale, status: status(connected: false))),
         ]
     }
 
@@ -541,7 +785,7 @@ enum Snapshots {
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
                        linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
-                       growth: Growth? = Growth(xp: 1_340),
+                       growth: Growth? = Growth(xp: 1_182, today: 82),
                        face: DeviceInfo.Face = SlimeFeed.folder != nil ? .gel : .pixel) -> Runtime.Status {
         let statuses: [String: SessionSummary.Status] = ["wait": .waiting, "work": .working, "idle": .idle]
         // Each in its agent's own app, so its row opens it.
@@ -549,7 +793,7 @@ enum Snapshots {
         // before; those working are each at a call of their own, in their
         // lanes, and the first has a to-do list.
         let words = ["swift test", "edit +18 \u{2212}2", "grep", "pytest", "build", "read"]
-        var working = 0
+        var working = 0, sessionsWaiting = 0
         let sessions = rows.enumerated().map { i, row in
             var s = SessionSummary(agent: row[0], project: row[1], name: row.count > 3 && !row[3].isEmpty ? row[3] : nil,
                                    workspace: row.count > 4 ? row[4] : nil, status: statuses[row[2]]!,
@@ -557,6 +801,11 @@ enum Snapshots {
                                                      app: row[0] == "claude" ? "com.anthropic.claudefordesktop" : "com.openai.codex",
                                                      appSession: "local_\(i)"),
                                    since: Date().addingTimeInterval(-Double(60 * (2 + 5 * i))))
+            // Waiting on a yes or no, then a question, then a plan.
+            if s.status == .waiting {
+                s.asks = [.approve, .question, .plan][sessionsWaiting % 3]
+                sessionsWaiting += 1
+            }
             if s.status == .working {
                 s.word = words[working % words.count]
                 s.slot = working < 4 ? working : nil
@@ -571,7 +820,8 @@ enum Snapshots {
             // Cut as the core cuts it for the device; the popover shows it whole.
             attn: wait.first.map {
                 StateSnapshot.Attention(agent: $0.agent, project: StateSnapshot.clip($0.project, marked: true),
-                                        name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1)
+                                        name: $0.name.map { StateSnapshot.clip($0, marked: true) } ?? "", more: wait.count - 1,
+                                        kind: $0.asks)
             },
             working: sessions.filter { $0.status == .working }.count, vol: vol)
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
@@ -583,6 +833,9 @@ enum Snapshots {
         status.talk = talk
         if snapshot.doing == "asleep" { status.doingReason = Narration.sleeping(noAgents: false, napping: false, dozeMs: 3_600_000, name: name) }
         status.daysOld = 47
+        status.week = zip(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08"],
+                          [100, 64, 100, 100, 35, 100, growth?.today ?? 0]).map { .init(day: $0, xp: $1, today: "2026-11-08") }
+        status.world = world(name: name)
         status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked \(name) 4 times.",
                                  today: "2026-10-22"),
                            .init(day: "2026-10-20", line: "Three turns broke on \"api\". You said \"still broken\".", today: "2026-10-22")]
@@ -591,6 +844,47 @@ enum Snapshots {
                         .init(id: 9, section: .boop, days: ["2026-10-14", "2026-10-21"], pinned: true,
                               text: "You stroke \(name) when you sit down in the morning.")]
         return status
+    }
+
+    /// A world of a few hundred buddies, a sample of them spread over the
+    /// time zones, and what two of them did for Boop today, with more that
+    /// didn't play on the board.
+    static func world(name: String) -> Runtime.WorldStatus {
+        let names = ["Bean", "Pip", "Mochi", "Tofu", "Nori", "Biscuit", "Pebble", "Dumpling", "Sprout", "Wobble", "Kiwi",
+                     "Noodle", "Sesame", "Clementine", "Fig", "Juniper", "Mallow", "Pudding", "Taro", "Yuzu"]
+        let activities: [World.Activity] = [.coding, .asleep, .idle, .coding, .testing, .asleep, .waiting, .coding, .asleep, .idle]
+        // Clustered where people are: the Americas, Europe and Africa, Asia.
+        let offsets = [-480, -420, -360, -300, -300, -240, -180, 0, 60, 60, 60, 120, 120, 180, 330, 480, 540, 540, 600, 720]
+        var buddies = (0..<40).map { i in
+            World.Buddy(id: "b-\(i)", name: names[(i * 7) % names.count], level: 1 + (i * 13) % 40,
+                        utcOffset: offsets[(i * 3) % offsets.count] + (i % 3 == 0 ? 60 : 0), activity: activities[i % activities.count])
+        }
+        buddies.append(World.Buddy(id: "b-bean", name: "Bean", level: 7, utcOffset: 540, activity: .asleep))
+        buddies.append(World.Buddy(id: "b-pip", name: "Pip", level: 23, utcOffset: -300, activity: .shipping))
+        // Boop itself, as the world sees it, and one with no time zone, off the band.
+        buddies.append(World.Buddy(id: "b-me", name: name, level: 12, utcOffset: 60, activity: .idle))
+        buddies.append(World.Buddy(id: "b-nowhere", name: "Moss", level: 3, utcOffset: nil, activity: .coding))
+        // As the server sends them: they're only ever read.
+        let regions = try! JSONDecoder().decode([World.RegionCount].self, from: Data(#"""
+            [{"region": "americas", "awake": 88, "today_turns": 2100},
+             {"region": "europe_africa", "awake": 97, "today_turns": 2400},
+             {"region": "asia_oceania", "awake": 29, "today_turns": 710}]
+            """#.utf8))
+        let snapshot = World.Snapshot(at: "2026-11-08T13:20:00Z", awake: 214, total: 386,
+                                      doing: ["coding": 38, "testing": 12, "shipping": 3, "waiting": 9, "idle": 152],
+                                      today: World.Counts(turns: 5_210, testsPassed: 12_400, ships: 61, linesChanged: 240_000),
+                                      regions: regions,
+                                      buddies: buddies)
+        let today = Calendar.current.startOfDay(for: Date())
+        var link = WorldLink.Status(joined: true, shownName: name, snapshot: snapshot, today: [
+            .init(counts: [.init(kind: .boop, n: 1)], region: .europeAfrica, at: today.addingTimeInterval(10 * 3600 + 42 * 60)),
+            .init(counts: [.init(kind: .cheer, n: 3)], region: nil, at: today.addingTimeInterval(9 * 3600 + 15 * 60)),
+            .init(counts: [.init(kind: .boop, n: 3), .init(kind: .wave, n: 1)], region: nil, plays: false,
+                  at: today.addingTimeInterval(8 * 3600)),
+        ])
+        link.nameHidden = false
+        link.id = "b-me"
+        return Runtime.WorldStatus(on: true, inWorld: true, utcOffset: 60, link: link)
     }
 
     static func overviews(_ installer: HookInstaller) -> [(String, AppModel)] {
@@ -625,11 +919,10 @@ enum Snapshots {
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
             ]))),
-            // The day it grew a stage, a Friday: why it wears a party hat and
-            // shades.
+            // Its 50th day, a Friday: why it wears a party hat and shades.
             ("celebrating", {
                 var s = status(sessions: [["claude", "jetpack", "work"]])
-                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi became a Buddy today", what: "a party hat and confetti"),
+                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi is 50 days old today", what: "a party hat and confetti"),
                               Narration.Dressing(kind: .friday, why: "It's Friday", what: "shades")]
                 return model(installer, status: s)
             }()),
@@ -700,18 +993,19 @@ enum Snapshots {
                              .init(id: "right", name: "Sir Reginald Fluffy III", snapshot: s.snapshot, connected: false, device: nil)]
                 return model(installer, status: s)
             }()),
-            // Every notice, each with its longest words, Details open.
-            ("long-notices", {
-                var s = status(sessions: [["claude", "jetpack", "idle"]], name: Long.name,
-                               brainTrouble: BrainTrouble(kind: .failing, why: Long.detail, inARow: 3),
-                               micTrouble: Long.detail, deviceTrouble: Long.detail)
-                s.uncleanExit = true
-                let m = model(installer, status: s)
-                m.hookErrors[.codex] = Long.detail
-                m.restartAgents = true
-                OpenDetails.shared.show(Long.detail)
+            // The longest feeling, a level over a thousand and the longest
+            // name: the header's status line is cut, never the popover.
+            ("long-mood", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], name: Long.name,
+                                                          mood: Long.mood, growth: Growth(xp: 123_400)))),
+            // Every notice, each with its longest words, Details open, and
+            // the rest unfolded.
+            ("long-notices-open", {
+                let m = longNotices(installer)
+                OpenDetails.shared.show(NoticeStrip.foldKey(m))
                 return m
             }()),
+            // Every notice, each with its longest words, Details open.
+            ("long-notices", longNotices(installer)),
             // Many sessions, a long project, two in one project told apart
             // by their threads' names, and one needing you from no folder.
             ("crowded", model(installer, status: status(sessions: [
@@ -777,6 +1071,19 @@ enum Snapshots {
         }
     }
 
+    /// Every notice, each with its longest words, Details open: two show, and the rest fold.
+    static func longNotices(_ installer: HookInstaller) -> AppModel {
+        var s = status(sessions: [["claude", "jetpack", "idle"]], name: Long.name,
+                       brainTrouble: BrainTrouble(kind: .failing, why: Long.detail, inARow: 3),
+                       micTrouble: Long.detail, deviceTrouble: Long.detail)
+        s.uncleanExit = true
+        let m = model(installer, status: s)
+        m.hookErrors[.codex] = Long.detail
+        m.restartAgents = true
+        OpenDetails.shared.show(Long.detail)
+        return m
+    }
+
     static func longOverview(_ installer: HookInstaller) -> AppModel {
         var s = status(sessions: [
             ["claude", Long.project, "wait", Long.thread, Long.workspace],
@@ -803,8 +1110,10 @@ enum Snapshots {
     /// With Details and the like shut, and no other value of any length.
     static func checkNothingCut(_ installer: HookInstaller) {
         func words(_ count: Int) -> String { String(repeating: "several words ", count: count).trimmingCharacters(in: .whitespaces) }
-        func height(_ status: Runtime.Status) -> CGFloat {
-            let host = NSHostingView(rootView: PopoverView(model: model(installer, status: status), maxHeight: 8000)
+        func height(_ status: Runtime.Status, tab: Tab = .now) -> CGFloat {
+            let shown = model(installer, status: status)
+            shown.tab = tab
+            let host = NSHostingView(rootView: PopoverView(model: shown, maxHeight: 8000)
                 .environment(\.stillMotion, true))
             window.contentView = host
             for _ in 0..<3 {
@@ -830,23 +1139,70 @@ enum Snapshots {
                              .init(id: "right", name: words(n), snapshot: s.snapshot, connected: false, device: nil)]
                 return s
             }),
-            ("a thread's name", { bare([["claude", "jetpack", "work", words($0)]]) }),
-            ("a project", { bare([["claude", words($0), "work", "A thread"]]) }),
-            ("a workspace", { bare([["claude", "jetpack", "work", "", words($0)]]) }),
-            ("a notice", { n in var s = bare(); s.micTrouble = words(n); return s }),
+            // A row cuts its title at 2 lines and its place at 1, the whole
+            // in its help; the needs-you card shows them in full.
+            ("a thread's name", { bare([["claude", "jetpack", "wait", words($0)]]) }),
+            ("a project", { bare([["claude", words($0), "wait", "A thread"]]) }),
+            ("a workspace", { bare([["claude", "jetpack", "wait", "", words($0)]]) }),
+            ("a notice", { n in
+                var s = bare()
+                s.micTrouble = words(n)
+                OpenDetails.shared.show(words(n))  // its words are behind Details
+                return s
+            }),
             ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(kind: .friday, why: words(n), what: nil)]; return s }),
-            ("a note", { n in var s = bare(); s.notes = [.init(id: 1, section: .you, days: [], text: words(n))]; return s }),
-            ("a day's line", { n in var s = bare(); s.recently = [.init(day: "2026-10-21", line: words(n), today: "2026-10-22")]; return s }),
         ]
         for (what, status) in values where height(status(20)) >= height(status(40)) {
             fail("snapshots: \(what) is cut off: twice the words leave the Overview no taller")
+        }
+        // The Boop tab's peek at the memory, and the buddy's name in its tab.
+        let note = { (n: Int) in var s = bare(); s.notes = [.init(id: 1, section: .you, days: [], text: words(n))]; return s }
+        guard height(note(20), tab: .boop) < height(note(40), tab: .boop) else {
+            fail("snapshots: a note is cut off: twice the words leave the Boop tab no taller")
         }
         // The needs-you card, apart from its session's row, which grows too.
         let grown = { (kind: String) in
             height(bare([["claude", "jetpack", kind, words(40)]])) - height(bare([["claude", "jetpack", kind, words(20)]]))
         }
         guard grown("wait") > grown("work") + 1 else { fail("snapshots: the needs-you card's thread name is cut off") }
-        print("long values: \(values.count + 1) grow the Overview, none cut off")
+        // A row's title stops at two lines.
+        guard grown("work") < 1 else { fail("snapshots: a row's title isn't cut at two lines") }
+        print("long values: \(values.count + 2) grow the Overview, none cut off")
+    }
+
+    /// The face sits on the left gutter in every Overview, however long
+    /// the name, the mood or the level: a line that can't shrink would
+    /// widen the column past the popover, which centres it (NOW-1).
+    static func checkFaceAtGutter(_ installer: HookInstaller) {
+        for (name, shown) in overviews(installer) {
+            let host = NSHostingView(rootView: PopoverView(model: shown, maxHeight: 2600)
+                .environment(\.stillMotion, true).environment(\.colorScheme, .light))
+            host.appearance = NSAppearance(named: .aqua)
+            window.appearance = host.appearance
+            window.contentView = host
+            for _ in 0..<3 {
+                host.layoutSubtreeIfNeeded()
+                host.frame = CGRect(origin: .zero, size: host.fittingSize)
+                window.setContentSize(host.frame.size)
+                RunLoop.main.run(until: Date().addingTimeInterval(0.005))
+            }
+            host.layoutSubtreeIfNeeded()
+            window.displayIfNeeded()
+            let rep = bitmap(host.bounds.size, scale: 1)
+            host.cacheDisplay(in: host.bounds, to: rep)
+            let paper = NSColor(hex: Palette.paperLight)
+            // Across the face's middle, the first point that isn't paper.
+            let y = Int(Theme.gutter) + 23
+            let edge = (0..<rep.pixelsWide).first { x in
+                guard let c = rep.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { return false }
+                return abs(c.redComponent - paper.redComponent) + abs(c.greenComponent - paper.greenComponent)
+                    + abs(c.blueComponent - paper.blueComponent) > 0.1
+            }
+            guard host.bounds.width == Theme.width, let edge, abs(CGFloat(edge) - Theme.gutter) <= 1 else {
+                fail("snapshots: overview-\(name)'s face starts at \(edge.map(String.init) ?? "none") pt, not the \(Int(Theme.gutter)) pt gutter, in \(Int(host.bounds.width)) pt")
+            }
+        }
+        print("face: on the gutter in every Overview")
     }
 
     /// However long the reasons run, the needs-you card stays where it is:
@@ -894,6 +1250,10 @@ enum Snapshots {
         .init(day: "2026-10-20", line: Long.day, today: "2026-10-22"),
     ]
 
+    /// The board the fixtures' device is, so firmware offered for it is
+    /// offered: the gel's face is the AMOLED's (`BoardFirmware.board(of:)`).
+    static var fixtureBoard: String { SlimeFeed.folder != nil ? "amoled206" : "cyd24" }
+
     // MARK: Contrast
 
     /// The popover's contrast rules, checked on every run, in both
@@ -920,7 +1280,7 @@ enum Snapshots {
                           ("\(name) on a \(look) card", tone, card, 4.5),
                           ("\(name) on the \(look) well", tone, well, 4.5),
                           ("\(name) on its \(look) chip", tone, mix(tone, Theme.chipTint, over: card), 4.5),
-                          ("\(name) on the \(look) needs-you card", tone, mix(Palette.amber, Theme.cardTint, over: card), 4.5)]
+                          ("\(name) on the \(look) needs-you card", tone, mix(Palette.amber, Theme.needsYouTint, over: card), 4.5)]
             }
             pairs += [("a button's label on its \(look) fill", label, fill, 4.5),
                       ("a button's label on its \(look) pressed fill", label, pressed, 4.5),
@@ -928,6 +1288,22 @@ enum Snapshots {
         }
         pairs += [("needs you on a light menu bar", Palette.menuAmberLight, "#F5F5F5", 3),
                   ("needs you on a dark menu bar", Palette.amber, "#2A2A2A", 3)]
+        // Shapes that carry meaning, 3:1 on each surface they're drawn on
+        // (WCAG 1.4.11): needs you's dot and bar, the lanes' bars, the
+        // ring and a full one, a switch on and off, a slider's groove.
+        let shapes = [("needs you's dot", Palette.menuAmberLight, Palette.amber),
+                      ("the ring", Palette.ringLight, Palette.ringDark),
+                      ("a full ring or a switch that's on", Palette.sageSignalLight, Palette.sage),
+                      ("a switch that's off", Palette.controlOffLight, Palette.controlOffDark)]
+            + Palette.lanes.indices.map { ("lane \($0)'s bar", Palette.lanesLight[$0], Palette.lanes[$0]) }
+        for (i, (look, paper, card, _, _, _, _)) in looks.enumerated() {
+            for (name, light, dark) in shapes {
+                let shape = i == 0 ? light : dark
+                pairs += [("\(name) on \(look) paper", shape, paper, 3), ("\(name) on a \(look) card", shape, card, 3)]
+            }
+        }
+        pairs += [("a switch's knob on it, on", "#FFFFFF", Palette.sageSignalLight, 3),
+                  ("a switch's knob on it, off", "#FFFFFF", Palette.controlOffLight, 3)]
         let low = pairs.compactMap { what, fg, bg, least -> String? in
             let ratio = contrast(fg, bg)
             return ratio < least ? "\(what) is \(String(format: "%.2f", ratio)):1, under \(least):1" : nil
@@ -962,7 +1338,9 @@ enum Snapshots {
     private static let window = NSWindow(contentRect: .zero, styleMask: [.borderless], backing: .buffered, defer: false)
 
     /// `whole`: tall enough for all of it, so nothing in it may scroll.
-    static func render<V: View>(_ view: V, _ name: String, dark: Bool, to dir: URL, heightLimit: CGFloat? = nil, whole: Bool = false) {
+    @discardableResult
+    static func render<V: View>(_ view: V, _ name: String, dark: Bool, to dir: URL, heightLimit: CGFloat? = nil,
+                                whole: Bool = false) -> NSBitmapImageRep {
         let appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         let host = NSHostingView(rootView: view
             .environment(\.colorScheme, dark ? .dark : .light)
@@ -996,6 +1374,7 @@ enum Snapshots {
         let url = dir.appendingPathComponent("\(name).png")
         do { try png.write(to: url) } catch { fail("snapshots: can't write \(url.path): \(error)") }
         print("\(name).png \(Int(host.bounds.width))×\(Int(host.bounds.height)) pt at \(Int(scale))×")
+        return rep
     }
 
     /// Pixels a point in the panes' and onboarding's pictures.
@@ -1005,7 +1384,7 @@ enum Snapshots {
     /// top row at 1× and the bottom at 2×, each pixel blown up to 4×4 or 2×2
     /// so the grid can be judged.
     static func renderIcons(dark: Bool, to dir: URL) {
-        let moods: [FaceMood] = [.asleep, .idle, .working, .needsYou, .stopped]
+        let moods: [FaceMood] = [.asleep, .waking, .idle, .working, .needsYou, .stopped]
         let icon = MenuBarIcon.image(.idle).size
         let pad: CGFloat = 10, gap: CGFloat = 14, row: CGFloat = 24, zoom: CGFloat = 4
         let size = NSSize(width: 2 * pad + CGFloat(moods.count) * icon.width + CGFloat(moods.count - 1) * gap,

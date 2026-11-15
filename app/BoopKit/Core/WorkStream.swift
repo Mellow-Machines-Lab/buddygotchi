@@ -103,8 +103,9 @@ struct WorkStream {
     /// how long its result shows: `actLeadMs` and `actResultMs` on the board.
     static func leadMs(_ kind: String, full: Bool) -> Int64 { !full ? 900 : kind == "push" ? 3400 : 1800 }
     static func resultMs(full: Bool) -> Int64 { full ? 6000 : 2600 }
-    /// What each act's sign says at a pass; a failure's says `FAIL`.
-    static let passWords = ["push": "shipped!", "tests": "PASS", "build": "BUILT"]
+    /// What each act's sign says at a pass; a failure's says `fail`. Lower
+    /// case, as everything Boop holds is.
+    static let passWords = ["push": "shipped!", "tests": "pass", "build": "built"]
     /// A failure after this long gets the full ending, whichever version
     /// started: not a push's, whose crash needs its rocket's start.
     static let longRunMs: Int64 = 60_000
@@ -257,7 +258,7 @@ struct WorkStream {
         }
         let passed = e.failed == false
         running.passed = passed
-        running.words = passed ? Self.passWords[running.kind] ?? "PASS" : "FAIL"
+        running.words = passed ? Self.passWords[running.kind] ?? "pass" : "fail"
         if !passed, running.kind != "push", now - running.startedAt >= Self.longRunMs { running.full = true }
         running.until = max(now, running.startedAt + Self.leadMs(running.kind, full: running.full))
             + Self.resultMs(full: running.full)

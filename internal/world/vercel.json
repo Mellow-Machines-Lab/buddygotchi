@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "hono",
+  "crons": [
+    {
+      "path": "/api/cron/expire",
+      "schedule": "17 4 * * *"
+    }
+  ]
+}

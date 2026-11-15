@@ -2,7 +2,7 @@ import Foundation
 
 /// What day it is: the part of the day, the weekday, the holidays, and
 /// Boop's own special days (a milestone since it hatched, its
-/// anniversary, a growth stage reached). Their tags go to the board with
+/// anniversary). Their tags go to the board with
 /// the others (`Tags`), and CONTEXT's When row says them in words, so the
 /// brain can play along.
 public enum Days {
@@ -22,12 +22,12 @@ public enum Days {
     }
 
     /// The fixed holidays, by month and day, each with its words and its
-    /// sign.
+    /// sign, in lower case as everything Boop holds is.
     static let holidays: [(tag: String, month: Int, days: ClosedRange<Int>, words: String, sign: String)] = [
-        ("newyear", 1, 1...1, "New Year's Day", "Happy New Year!"), ("valentines", 2, 14...14, "Valentine's Day", "Happy Valentine's"),
-        ("piday", 3, 14...14, "Pi Day", "Happy Pi Day!"), ("aprilfools", 4, 1...1, "April Fools' Day", "April Fools'!"),
-        ("may4", 5, 4...4, "May the 4th", "May the 4th!"), ("halloween", 10, 31...31, "Halloween", "Happy Halloween!"),
-        ("winter", 12, 24...26, "the winter holidays", "Happy holidays!"),
+        ("newyear", 1, 1...1, "New Year's Day", "happy new year!"), ("valentines", 2, 14...14, "Valentine's Day", "happy valentine's"),
+        ("piday", 3, 14...14, "Pi Day", "happy pi day!"), ("aprilfools", 4, 1...1, "April Fools' Day", "april fools'!"),
+        ("may4", 5, 4...4, "May the 4th", "may the 4th!"), ("halloween", 10, 31...31, "Halloween", "happy halloween!"),
+        ("winter", 12, 24...26, "the winter holidays", "happy holidays!"),
     ]
 
     /// One special day today: its calendar tag (nil for one of Boop's own
@@ -36,8 +36,7 @@ public enum Days {
     public struct SpecialDay: Equatable, Sendable {
         public var tag: String? = nil
         public var words: String
-        /// What it holds up to greet the day; nil for a stage reached,
-        /// which Jev holds up for as it grows.
+        /// What it holds up to greet the day; nil for none.
         public var sign: String?
 
         /// Why it's on, as the popover says it: `It's Halloween`, `Boop is
@@ -59,39 +58,34 @@ public enum Days {
     /// holidays, Programmers' Day and Lunar New Year.
     static func calendar(_ c: LocalTime.Parts, at ms: Int64, time: LocalTime) -> [SpecialDay] {
         var on: [SpecialDay] = []
-        if c.weekday == 6, c.day == 13 { on.append(SpecialDay(tag: "friday13", words: "Friday the 13th", sign: "Friday the 13th!")) }
+        if c.weekday == 6, c.day == 13 { on.append(SpecialDay(tag: "friday13", words: "Friday the 13th", sign: "friday the 13th!")) }
         for h in holidays where h.month == c.month && h.days.contains(c.day) {
             on.append(SpecialDay(tag: h.tag, words: h.words, sign: h.sign))
         }
-        if c.dayOfYear == 256 { on.append(SpecialDay(tag: "programmers", words: "Programmers' Day", sign: "Programmers' Day!")) }
-        if time.isLunarNewYear(ms) { on.append(SpecialDay(tag: "lunar", words: "Lunar New Year", sign: "Lunar New Year!")) }
+        if c.dayOfYear == 256 { on.append(SpecialDay(tag: "programmers", words: "Programmers' Day", sign: "programmers' day!")) }
+        if time.isLunarNewYear(ms) { on.append(SpecialDay(tag: "lunar", words: "Lunar New Year", sign: "lunar new year!")) }
         return on
     }
 
     /// The calendar's tags on at `ms`: `hatched` is the day Boop was set up
-    /// (`yyyy-MM-dd`), and `party` any other reason for one (a stage
-    /// reached today), which the day Boop hatched isn't: that's your first
-    /// day with it, and only New Year's Day makes it a party.
-    public static func tags(at ms: Int64, hatched: String?, party: Bool = false, time: LocalTime) -> [String] {
+    /// (`yyyy-MM-dd`), which isn't a party: that's your first day with it,
+    /// and only New Year's Day makes it one.
+    public static func tags(at ms: Int64, hatched: String?, time: LocalTime) -> [String] {
         let c = time.components(ms), today = time.day(ms)
         var on = [dayPart(at: ms, time: time)]
         if c.weekday == 6 { on.append("friday") }
         if c.weekday == 7 || c.weekday == 1 { on.append("weekend") }
         on += calendar(c, at: ms, time: time).compactMap(\.tag)
-        let party = party && hatched != today
-        if party || on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: today) }) == true {
+        if on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: today) }) == true {
             on.append("party")
         }
         return Tags.all.filter(on.contains)
     }
 
     /// Today's special days at `ms`: the calendar's, then Boop's own days, its
-    /// anniversary or a milestone day since it hatched (`hatched`), then
-    /// the growth stage it reached today (`stage`), unless it hatched today
-    /// too: your first day with it is no celebration. Empty on an ordinary
-    /// day.
-    public static func special(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
-                                 time: LocalTime) -> [SpecialDay] {
+    /// anniversary or a milestone day since it hatched (`hatched`). Empty on
+    /// an ordinary day.
+    public static func special(at ms: Int64, hatched: String?, name: String, time: LocalTime) -> [SpecialDay] {
         var out = calendar(time.components(ms), at: ms, time: time)
         let today = time.day(ms)
         if let hatched {
@@ -102,19 +96,16 @@ public enum Days {
                                     sign: years == 1 ? "1 year old!" : "\(years) years old!"))
             } else if isMilestone(days: days, hatched: hatched, today: today) {
                 out.append(days == monthDays ? SpecialDay(words: "\(name) is a month old", sign: "1 month old!")
-                    : SpecialDay(words: "\(name) is \(days) days old", sign: "Day \(days)!"))
+                    : SpecialDay(words: "\(name) is \(days) days old", sign: "day \(days)!"))
             }
         }
-        if let stage, stage.day == today, hatched != today { out.append(SpecialDay(words: "\(name) became a \(stage.name)")) }
         return out
     }
 
     /// The calendar's tags in words, for CONTEXT's When row: `Halloween`,
-    /// `Boop is 50 days old`, `Boop became a Sprout` on the day `stage`
-    /// was reached. Empty on an ordinary day.
-    public static func words(at ms: Int64, hatched: String?, name: String, stage: (name: String, day: String)? = nil,
-                             time: LocalTime) -> [String] {
-        special(at: ms, hatched: hatched, name: name, stage: stage, time: time).map(\.words)
+    /// `Boop is 50 days old`. Empty on an ordinary day.
+    public static func words(at ms: Int64, hatched: String?, name: String, time: LocalTime) -> [String] {
+        special(at: ms, hatched: hatched, name: name, time: time).map(\.words)
     }
 
     /// The sign Boop greets a day of `days` with: the one most its

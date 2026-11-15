@@ -220,7 +220,10 @@ final class ReasonsTests: XCTestCase {
         case .memory: return [(event(kind), [:])]
         case .wish: return Core.WishKind.allCases.map { (event(kind, $0.rawValue, phase: .start), [:]) }
             + [(event(kind, "met", phase: .end, data: ["kind": "pet"]), [:]), (event(kind, "gaveup", phase: .end, data: ["kind": "pet"]), [:])]
-        case .grew: return [(event(kind, "sprout"), [:])]
+        case .level: return [(event(kind, "12"), [:]), (event(kind, "15", data: ["stage": "Buddy"]), [:])]
+        case .ring: return [(event(kind, "closed"), [:])]
+        case .world: return [(event(kind, "boop", data: ["from_region": "americas"]), [:]), (event(kind, "cheer", data: ["count": 3]), [:]),
+                             (event(kind, "boop", data: ["held": true, "counts": ["boop": 2, "cheer": 1]]), [:])]
         case .ask: return [(event(kind, "a"), ["answer": "yes"]), (event(kind, Asks.ignored), [:])]
         case .link: return [(event(kind, "ble", phase: .start), [:]), (event(kind, "ble", phase: .end), [:])]
         @unknown default: return nil

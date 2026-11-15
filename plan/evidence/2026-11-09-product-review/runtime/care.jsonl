@@ -1,0 +1,21 @@
+{"demo": 1, "title": "Care and XP", "start": "2026-11-12T10:00"}
+{"agent": "prompt", "text": "Fix the login bug", "after": 1}
+{"agent": "read", "file": "README.md", "after": 1}
+{"agent": "review", "task": "check the fix", "prompt": "review it", "after": 1}
+{"agent": "read", "file": "login.ts", "by": "reviewer", "after": 1}
+{"agent": "reply", "text": "Looks right.", "by": "reviewer", "after": 1}
+{"agent": "reply", "text": "Fixed the login bug; the tests pass.", "after": 2}
+{"brain": {"react.face": "happy", "react.move": "success", "say": "glad"}}
+{"you": "wait", "minutes": 70, "after": 5, "note": "A quiet hour later"}
+{"brain": {"react.face": "curious", "react.sign": "fav snack?"}}
+{"you": "answer", "pick": "a", "after": 4}
+{"brain": {"react.face": "happy", "react.sign": "nom nom", "say": "glad"}}
+{"you": "wait", "minutes": 45, "after": 5, "note": "45 quiet minutes"}
+{"brain": {"react.face": "curious", "react.sign": "stroke my face?"}}
+{"you": "wait", "minutes": 20, "after": 4}
+{"you": "gesture", "kind": "stroke", "after": 3}
+{"brain": {"react.face": "happy", "say": "glad"}}
+{"you": "talk", "text": "good boop", "after": 4}
+{"brain": {"react.face": "happy", "react.move": "yes", "say": "glad"}}
+{"you": "back", "minutes": 30, "after": 4}
+{"brain": {"react.face": "happy", "react.move": "wake up", "say": "hello"}}

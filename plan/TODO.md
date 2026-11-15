@@ -1,8 +1,276 @@
 # TODO
 
-Updated 2026-11-04. What's next, one at a time, top first. Tick an item
+Updated 2026-11-14. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-14: the UI review, built
+
+**Read this first.** [ui-review.md](ui-review.md) is built on `v1-polish`, from
+`c12c9cc8` to the merge of `ui-board`. SlimeBuddy's `main-v2` has three new local
+commits (`a2bb048`, `a87455b`, `9411c55`) and PixelBuddy's one (`427a7a3`, its demo
+recordings). Nothing is pushed, and the packs' `engine/` pins didn't move. The §7 questions went by the review's recommendations; the corner gap
+and the angry face are left for the owner's eye.
+
+**Landed:**
+- **The base:** one spacing scale (the gutter 18 → 16), named type, radii by use,
+  one `Chip`, row buttons 24 pt tall, and a light-paper partner for every bright
+  colour drawn as a shape. The contrast check covers shapes (92 pairs). A request
+  says what it asks (`attn.kind`: a yes or no, a question, a plan to read).
+- **The header and Now:** two rows that can't overflow (the level went to the Boop
+  tab, Hush into Talk's menu); a needs-you card with its kind and real buttons; one
+  list sorted by need; notices as one strip; a mood card only with a reason. A
+  check keeps the face on the gutter in every Overview.
+- **The tabs:** the Boop tab without "XP" ("82 of 100", a level bar, days
+  together, seven slots); the World tab as a sentence in a small world, a band
+  with a lane for you, a legend and region counts, one "Say hi"; the memory pane
+  in one card, with five seconds to undo a forget.
+- **Settings:** the buddy first, Talk as one control, Advanced closed, one trouble
+  strip; rename once a week (the runtime restarts to take the name); a swear
+  switch, off by default (evals and demos keep swearing on, so no prompt changed).
+- **Onboarding:** one frame for all 9 acts (the marks and the button never move;
+  a check pins it in all 132 pictures); act 5 fits; a face for each state; the
+  missing states pictured.
+- **The board:** nothing to read under the 22 px font; one lane row (bubble, else
+  narration, else the strip in words); a needs-you card in the top band with its
+  kind; the ring and a level as one moment (a `do`'s `gold`); 66 px drawer rows;
+  "no Mac"; signs Boop holds in lower case; amber for needs you only.
+
+**Checked:** `make -C internal test` (737 passed, 1 skipped), `Boop --snapshots`
+(every check), `boopdev eval --scripted` (142/142), and on `ui-board`
+`make -C internal check`, `boards` (both SUCCESS), the mirror (582 shots the same),
+355 goldens looked at and accepted. No Jev request.
+
+**Not done:** the world goal card and "Mochi added" (the world snapshot has no
+goal); activities 8 → 4 and emotions 42 → 18 (the model phase); onboarding's 5
+acts; BRD-15, 19 (the ask's two pills), 26, 35, 36, 42; the 4 px corner gap.
+
+**On the board** (flashed 2026-11-14 from this branch, the Mac off Bluetooth):
+`boopctl run v1 lane drawer growbar states done finish acts reasons sign` gives 0
+expect failures and 0 pictures that differ from the simulator. `perf --scenes`
+passes every budget: needs you 30.7 fps (28), working 34.3 (30), frightened 30.0
+(28); stream 31.3, pokes 35.7, asleep 41.1, night 25.7. Needs you had been 26.0:
+the card's words were drawn whole for each corner of the card redrawn, now only
+inside its bounds (SlimeBuddy `9411c55`).
+
+**The owner, on the panel:**
+- From the chair: the narration, the ring's number, the strip in words, the card's
+  kind line. Is the saturated amber card too bright at night?
+- A finger on each 66 px drawer row; the bubble 3 px under the grabber.
+- The finish glow's dither; the gold flood, by day and at night.
+- The work act's rise: the strip fades beside the sign for a moment.
+- The angry face (`moods/angry.png` looks delighted) and the corner gap.
+
+**On the Mac, live:** rename restarts the runtime, which reconnects the board's
+Bluetooth: try it once. Hover, motion and focus were judged from stills only.
+
+## Plan, 2026-11-09: after the product review
+
+**Read this first.** The owner's answers to [product-review.md](product-review.md)
+§13, and the work in order. Bug numbers (#) and section numbers (§) are the review's.
+The brain in the box and the voice come last ([TODOs.md](TODOs.md)): Jev stays the
+brain until the behaviour is right, and every phase below shapes that behaviour.
+The review's evidence (reports, logs, the bugs' log lines) is in
+[evidence/2026-11-09-product-review/](evidence/2026-11-09-product-review/); its
+pictures are in `~/.boopdev/product-review-2026-11-09/`.
+
+### Decided
+
+- **Boop is a coworker and a pet, about equally.** Not a mirror: notices and memory
+  stay small and correctable. Say it at the top of `personality.md` (Phase 2).
+- **Status:** a finish waits longer in the queue, not folded (keeps it simple). A
+  failed check wakes the brain on the ladder: the first failure, the third in a
+  row, and a pass after failures. Ring and level make one moment. Rough touches
+  (shake, wrong-way stroke) earn no XP. No hourly check-ins while you're away.
+  Prompt reactions stay; only a turn start with no prompt stops asking the brain.
+- **Growth:** XP amounts may change, set from a measured week. Stage names leave the
+  UI; the bigger body at 5, 15 and 30 stays. Marks at levels 50, 100 and 365; the
+  shelf only if the Boop tab gets opened. Most pastimes unlock from day one, 6 stay
+  as stage rewards.
+- **The model:** 7 moods and 18 emotions, by an alias table first and deletion after
+  a week. Fades as numbers in code, and no mood graph. Code picks the move and the
+  size. Activities 8 to 4, touches 14 to 7; tiers 5 to 3 last.
+- **Friend:** the signs' register is settled now (lowercase, teasing); the spoken
+  words wait for the voice. An idle floor. Awake while you're at the Mac. No swearing
+  by default, with a switch. The memory writer is frozen until two real weeks are read.
+- **World:** a goal a month, no XP reward. The public list shows no names. A rename
+  once a week. A poke boops back. A product domain before any buyer.
+- **Scope:** stop several buddies; stop the CYD and Pixel in the engine after v1's
+  panel checks; the Studio becomes one contact sheet; onboarding goes to 5 acts once
+  the board teaches touches itself, keeping the brain card until the end.
+- **Measure:** the counts below, and evals that cover act events, stacked finishes
+  and batched gestures.
+
+**Still open:** how care counts in the ring (below); a Mac-only test with 10 people
+(review §9.4).
+
+### Phase 0: fix and measure
+
+- [ ] Finishes wait longer in the queue (`BoopDevice.swift:36`, `reactionTTL`; #1).
+      Test: three agents end within 2 s, and three names show.
+- [ ] Failed checks reach the brain on the ladder (`Harness.swift:604`,
+      `TranscriptView.swift:334-336`; #2). Eval `04` gets act events so it can fail.
+- [ ] One moment for ring and level (`Core.swift:523-537`; #3): the sign
+      `today's done!` and the low sign `Level N!`.
+- [ ] A level-up cut by needs you comes back (`GrowthStore.swift:118-131`; #4), and
+      is sent once (`Runtime.swift:792-811`; #5).
+- [ ] Rough touches earn no XP (`Touch.swift:24-28`, `Growth.swift:68`; #6). A poke
+      stays at 0, as now.
+- [ ] Batched world gestures play (`WorldGestures.swift:47-51`; #7); a cheer needs a
+      ship (`internal/world/src/app.ts`; #8); "while you were away" only after an
+      away (#10); the data race at `Runtime+World.swift:135` (#11).
+- [ ] The dream's sentence names its threads and its real days; the morning caption
+      leads with turns (`MemoryReader.swift:254, 262-267`; #13 to #15).
+- [ ] No brain pass for hourly check-ins while away, or a turn start with no prompt
+      (#17, #18); fix the `(no pass)` debug label.
+- [ ] Quick wins 1 to 5, 11, 12, 15, 17 to 22 and 26 (review §11.1): strings, asks,
+      `[bye working]`, Login Items, the narrations that scold.
+- [ ] Trust: the world screen and Settings name all five counts; the brain's
+      line says what goes to Jev (#24, #25).
+- [ ] Daily counts: the hour the ring closed, XP by source and past the cap,
+      finishes played and dropped, needs-you answer time in seconds, push-to-talk
+      uses, asks shown and answered, touches by kind, world gestures in, played,
+      held and sent, Boop and World tab opens (`DailyCounts.swift`).
+- [ ] Owed panel checks with the Mac off (the reports below): `perf --scenes`,
+      latency, the ring's label and sparkle at arm's length.
+
+Jev: `--only` on the scenarios each fix touches, then one standard run at the end.
+
+### Phase 1: growth
+
+- [ ] Run Phase 0's counts on the owner's own desk for a week.
+- [ ] Decide how care counts (open, below), then set the amounts in `Growth.swift`
+      from the week, and pin them in `GrowthTests`.
+- [ ] Part-full rings blue, not red; no "XP" in the UI (`BoopPane.swift`).
+- [ ] Stage names out of the UI and the world; marks at 50, 100 and 365.
+- [ ] Unlock pastimes but 6 (`pastimes.cpp`'s stage column).
+- [ ] A demo that sends `xp`, and scripted evals for the ring and a level-up.
+
+### Phase 2: the model
+
+- [ ] "A coworker and a pet" at the top of `personality.md`.
+- [ ] The alias table: 42 emotions onto 18, 16 moods onto 7 (`character.json`),
+      with cross as one mood with a level counted by code. A week on the owner's desk.
+- [ ] Then delete: the 24 emotions' art, 9 mood files, the graph and its bridge
+      tests; fades as numbers in code.
+- [ ] Code picks the move and the size; Jev's questions drop to mood, emotion, say
+      and sometimes a sign (`MomentOutput.swift`).
+- [ ] Activities to 4 on the board, each with a body-size prop; touches to 7, each
+      with its own clear answer; tiers to 3.
+- [ ] Stop several buddies; then, after the panel checks, the CYD and Pixel in the
+      engine; the Studio as one contact sheet.
+
+Jev: `--only` while building; one standard run and the judge to re-baseline.
+
+### Phase 3: the pet and the content
+
+- [ ] The signs' register: one page in the pack (`VOICE.md`), and the code's signs
+      (`Level N!`, `Today's done!`, the special days) moved into the pack.
+- [ ] About 170 sign lines where they fire most (review `words.md` §I).
+- [ ] Asks that come back: 20, some daily, some monthly (`asks.md`, `Asks.swift`).
+- [ ] Notices that read as care, each with its own pose and a sign (review idea 2.4).
+- [ ] The pet side: wishes with more variety, first-time hints for each touch on
+      the board (idea 1.13), care that shows on the ring.
+
+### Phase 4: the day and the world
+
+- [ ] Awake while you're at the Mac with no agent, on the board and in the world (#9).
+- [ ] The idle floor; the evening card.
+- [ ] The swear switch, off by default.
+- [ ] World: a monthly goal, "Mochi added 82", the honest small world, boop back,
+      no names in the public list, rename, the product domain, the abuse limits (#12).
+- [ ] Onboarding in 5 acts, the brain card kept.
+
+### Open
+
+- [ ] **How care counts in the ring.** With the pet equal, care must move the ring
+      on a busy day too, and new amounts alone can't promise that. Options: (a) new
+      amounts only, measured; (b) work can fill at most part of the ring (say 70),
+      so the rest is care; (c) two halves, work and care, and the ring closes when
+      both are full. (b) and (c) bend "no limits by source". Recommended: (b), set
+      from the week of counts, and never a sad Boop for a ring that isn't full.
+- [ ] A Mac-only Boop for 10 testers (review §9.4): it bends "built for buyers of a
+      board", and is the only way to get real counts before hardware ships.
+
+## Report, 2026-11-09: a check and polish of v1, on `v1-polish`
+
+**Read this first.** v1 was reviewed against its plans, the bugs found are fixed with a test each, and the AMOLED runs this branch's firmware. Nothing is pushed; `v1-polish` sits on `main-v2`, and SlimeBuddy's `main-v2` has one new local commit (the label).
+
+**Fixed:**
+- World: a lock keeps the buddy asleep in the world until you're back (it woke again 10 s later); a retry the server had counted sends the state again; cheers' window no longer slides; a gesture while something needs you waits instead of being lost; a quit sends the counts not yet sent; the snapshot goes when the World tab closes; at most 50 arrivals a day are kept.
+- XP: a level-up or the ring held over a quit plays at the board's next hello, and after a demo; a ring held past 5:00 doesn't play the next morning; a size held while the next level comes keeps its bigger moment.
+- The popover: the World tab says when it's private, joining or out of date; your own dot is marked and has no gesture buttons; one gesture at a time, a sent one ticked, a failed one said; "Resting", "Click one", "1 hello"; VoiceOver can reach the band's buddies; asleep dots show in dark mode; ⇧⌘M works on every tab.
+- The board: the "N today" label sits inside the panel's rounded corner (the bar is 232 wide); a ring filled while the bar was hidden shows and sparkles next time it can; one sparkle per fill; the wish that closes the ring keeps its heart; at 5:00 the bar slides out.
+- `boopctl run` stops when the board says it's face down.
+
+**Checked:** `make -C internal check` and `boards`; `world_e2e.py` against `npm run dev`; the board flashed and `boopctl run growbar growth v1 wish`. No Jev run: no prompt changed.
+
+**On the board:** it had been lying screen down (`dbg.state`'s `face_down`), which refuses Moments and hides the bar, so 69 shots differed. Screen up, `boopctl run growbar growbar-listening growth v1 wish` gives 0 expect failures and 9 of its shots differ, each a few pixels of the body's motion (the heart's flight, `gone`, the wish's `slump`): the bar, its label, the heart and the signs draw as the simulator's.
+
+**Owed:** the panel by eye (the label in the corner, the sparkle, gold at arm's length, a level's body change before its held Moment); `18-long-grind`; the judge for the standard run; the packs' `engine/` pins once this lands.
+
+## Report, 2026-11-08: Boop v1 on `main-v2`
+
+**Read this first.** v1's four tenets are built on `main-v2` (plan/world.md §9, plan/v1-buddy.md §5): XP kept simple, the popover's three tabs, and the world of buddies, client and board. Nothing was flashed and nobody has seen it on the panel; the frames are the simulator's.
+
+Frames and snapshots are on the owner's Mac in `~/.boopdev/v1/` (`frames/`, `snapshots/`).
+
+**Landed:**
+- **XP, kept simple.** A fixed XP per thing, one ring of 100 a Boop day, a level per 100 XP, never down, and the sizes as bigger level-ups at levels 5, 15 and 30. XP starts from zero, with no migration. `Growth` and `GrowthStore` are rewritten; the pools, the decay, the stage's party day and the `grew` event are gone.
+- **On the board, today's ring.** The growth bar is today's ring: it shows when XP comes in, with "54 today" beside it, and turns gold and sparkles when it's full. A level-up is the rules' moment, proud, with `Level 12!` on the low sign. The ring closing is a happy one, "Today's done!". Both wait while something needs you.
+- **The popover's three tabs**, as sketched:
+  - Now: status first.
+  - Boop: the ring, the level, the last 7 days, a peek at what Boop knows.
+  - World: live numbers; the time-zone band, night shaded, you marked; a buddy's card with Wave, Boop and Heart (and Cheer for one shipping); today's arrivals; the regions.
+  - Settings has the world's switch, which leaves the world when off, how the buddy shows, and what's shared. Onboarding has its world screen, which tells and doesn't ask, with "Keep Mochi private". Nothing is sent until you leave that screen forward.
+- **The world client** (`app/BoopKit/World/`). The live server allows 5 joins an hour from one address, and each e2e run joins 2.
+  - It joins after onboarding's world screen and sends `World.State` only (`WorldTests` fails on any other field).
+  - It sends on a change, batches the counts for 3 min, heartbeats every 10, and says asleep at once on a lock or quit.
+  - Gestures come back in the reply, or from a check every 10 min and on an unlock. The world is fetched only while the World tab is open, every 30 s.
+  - The world off leaves it: the buddy is deleted on the server.
+- **Boops on the board.**
+  - A gesture is a `world` event that Jev answers: always a face, and a sign from the pack's `[world]` lines.
+  - The reason says who, by region.
+  - At most 3 boops, waves and hearts an hour play, and the rest are counted on the World tab. Cheers for one ship are one moment. At night or while you're away they wait, and come back as one line.
+- **The words rule** is in CLAUDE.md and applied to the new strings.
+
+**Checked:**
+- The Swift tests: 719 pass.
+- The firmware's native tests, the simulator's gel scenarios (new goldens for the bar and a `v1` scenario), and Pixel's, with no change.
+- Both boards' firmware builds, and the mirror is rebuilt.
+- `internal/tools/world_e2e.py`: two headless Boops join, see each other, boop and wave, and leave. It passes against `npm run dev`, and passed against the live server on 2026-11-09 at 07:57 UTC, and again at 08:54 on the reviewed code with main-v2's server retry: the live world had 0 buddies after each.
+- Getting there took three live runs, and it found a client bug. A leave the server didn't take was lost, because the key went before the DELETE succeeded, so a buddy stayed in the world. Now the key stays, marked as leaving, and the DELETE is tried again until the server confirms (`WorldTests`). The test buddies left on the live server by the earlier runs were deleted by hand.
+- No server change was needed.
+
+**After the orchestrator's review** (fixed, each with a test where one could fail first):
+- No rejoin storm: only the world server's own 401 forgets the key, and a rejoin or a failed join waits its backoff.
+- Keeping private is safe: "Keep Mochi private" wins over a join on its way, and a leave keeps the key until the server confirms.
+- XP starts from zero: the old `growth.*` rows are deleted, and the new keys are `xp.*`. A level-up and the ring closing are marked done only as they play, so a quit or a demo loses neither.
+- Sends: a send with no answer goes again with the same seq and counts. "Asleep" at a lock waits for a send on its way, and at a quit waits up to 2 s.
+- Gestures: held ones are kept across a quit, and ones that arrive after you left are dropped. The unlock check follows the switch and the backoff. The key file is 0600 from the start.
+- On the board: a met wish after a full ring shows no bar.
+- The UI's words were reviewed, and the header says "Working" or "Idle". The band shades night better in dark mode, and "you" is dim when you're not in the world. A `world-long` snapshot was added.
+
+**Evals:**
+- The standard suite passed 130/131, with 748 Jev requests.
+- The new world musts `187` and `188` pass, and `06` is Pixel's. `189`, a boop when cross, moved from grumpy to curious after its guideline was made plainer.
+- The one miss, `18-long-grind` (20 quiet minutes of work, against 7), fails the same way on `main-v2` before this work: it isn't v1's, and it's still to fix.
+- The feel scenarios (110) went to no judge: run the judge on `/tmp/boop-eval/20261108-220953-81575.trajectories.jsonl` if it's still there, or on the next standard run.
+
+**Decisions taken, say if wrong:**
+- The middle tab says "Boop", whatever the buddy is called.
+- Full rings are green on the Mac and gold on the board.
+- A stage reached no longer makes the day a party: it's a bigger level-up.
+- With no growth store (demos, evals), CONTEXT says level 1 with an empty ring.
+- The world switched off deletes the buddy on the server: one control, the switch.
+- The pack's `[grew]` signs and the four growing evals are deleted.
+
+**Owed:**
+- The panel: the ring's bar and label at arm's length, the sparkle, the level-up's low sign, and a boop's bounce. No fps was measured.
+- The judge for the standard run.
+- `18-long-grind`.
+- The world snapshot stays in the popover's status after the World tab closes, and the day's arrivals aren't capped. Both are fine at today's sizes (the /simplify pass's notes).
+- The packs' `engine/` pins move to this commit once it lands.
 
 ## Report, 2026-11-04
 

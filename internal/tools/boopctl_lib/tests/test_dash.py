@@ -74,7 +74,7 @@ class WeekTests(unittest.TestCase):
     ROW = {"day": "2026-11-04", "touches": 5, "touchesNoWish": 2, "wishesMade": 1, "wishesMet": 1, "wishesGaveUp": 0,
            "wishWaitMs": 1_200_000, "threadsOpened": 3, "needsYou": 4, "answered": 2, "answerMs": 240_000, "spoken": 9,
            "hereMinutes": 180, "hushes": 1, "faceDown": 0, "unpluggedMinutes": 7, "disconnects": 2, "failures": 3,
-           "quiet": False, "volume": 6, "stage": 2}
+           "quiet": False, "volume": 6, "level": 2}
 
     @unittest.skipUnless(controls.BOOP.exists(), "needs Boop built (make -C internal app)")
     def test_a_week_from_the_app_with_bad_lines(self) -> None:
@@ -606,20 +606,19 @@ class MemoryTests(unittest.TestCase):
 
     def test_boop_now(self):
         """Talk from CONTEXT (normal: no Talk row), growth from the status
-        line (the stage, the XP, today's from each pool against its cap),
+        line (the level, the XP, today's ring against its cap),
         and CONTEXT as the last pass's prompt had it."""
         facts = dict(self.board.facts(self.board.newest_ms))
         self.assertEqual(facts["talk"], "normal")
-        self.assertEqual(facts["growth"], "stage 1 · 16 XP · today: work 0/60, care 0/60",
-                         "the day closed, so today's pools start again")
+        self.assertEqual(facts["growth"], "level 1 · 16 XP · today 0/100",
+                         "the day closed, so today's ring starts again")
         self.assertEqual(facts["why"], "nothing has moved it yet", "the mood never moved")
-        self.assertEqual(facts["CONTEXT"].splitlines()[1:], ["Pip: a Hatchling, hatched today.",
+        self.assertEqual(facts["CONTEXT"].splitlines()[1:], ["Pip: level 1, hatched today; today's ring 16 of 100.",
                                                              'Agents: claude idle on "jetpack" for 1 min.',
                                                              "Today: you touched Pip once."])
         self.assertRegex(facts["CONTEXT"], r"^When: \d\d:\d\d, Sunday, day\.")
         today = [line["status"]["today_xp"] for line in fixture_lines(MEMORY) if "status" in line]
-        self.assertEqual(max(t["work"] for t in today), 11, "a tool call 1 and each turn done 5, before the close")
-        self.assertEqual(max(t["care"] for t in today), 5, "the answered ask")
+        self.assertEqual(max(today), 16, "a tool call 1, each turn done 5 and the answered ask 5, before the close")
         self.assertNotIn("status: ", [text for _, text in self.rows], "a status where only XP moved has no row")
 
     def test_talk_and_growth_from_their_rows(self):
@@ -635,10 +634,9 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(feed.context_rows("You are.\n\nCONTEXT (how things stand. x)\nWhen: 9.\nTalk: quiet.\n\n"
                                            "HISTORY (oldest first)\nh"), ["When: 9.", "Talk: quiet."])
         self.assertIsNone(feed.context_rows("You are.\nMOOD\ncalm"), "an older log's prompt")
-        self.assertEqual(feed.growth_text({"stage": 2}), "stage 2")
-        self.assertEqual(feed.growth_text({"stage": 3, "xp": 1234, "today_xp": {"work": 60, "work_cap": 60,
-                                                                                "care": 9, "care_cap": 60}}),
-                         "stage 3 · 1234 XP · today: work 60/60, care 9/60")
+        self.assertEqual(feed.growth_text({"level": 2}), "level 2")
+        self.assertEqual(feed.growth_text({"level": 13, "xp": 1234, "today_xp": 69, "today_cap": 100}),
+                         "level 13 · 1234 XP · today 69/100")
         board = Board()
         board.apply({"status": {"brain": "jev", "mood_reason": "Pip is lonely. You came back after a day away."},
                      "received_at_ms": 1})

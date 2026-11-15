@@ -1,0 +1,28 @@
+{
+  "name": "boop-world",
+  "private": true,
+  "description": "Boop's world server: buddies, the world's numbers, the goal and gestures",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "test": "node --import tsx --test \"test/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "0.5.15",
+    "hono": "4.13.17",
+    "postgres": "3.4.9"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite-socket": "0.2.18",
+    "@hono/node-server": "2.1.6",
+    "@types/node": "24.19.2",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
+  }
+}

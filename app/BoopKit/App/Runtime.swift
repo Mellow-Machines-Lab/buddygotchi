@@ -20,6 +20,9 @@ public final class Runtime: @unchecked Sendable {
         public var steering: Steering
         /// Override how much it says in `settings.json` for this run only.
         public var talk: Talk?
+        /// Override whether it may swear in `settings.json`, for this run
+        /// only: a demo swears as it was written to.
+        public var swearing: Bool?
         /// Builds the brain from Jev's key; nil for no brain. Tests pass
         /// their own.
         public var brain: @Sendable (String?) -> (any Brain)? = { key in key.map { JevBrain(key: $0) } }
@@ -68,6 +71,9 @@ public final class Runtime: @unchecked Sendable {
         /// Boop full size whatever its XP, for a demo: from before the
         /// first `state`, which goes out before a demo's first step.
         public var fullSize = false
+        /// The world's server (`WorldClient.url()`); nil for no world at all,
+        /// as in tests, which never reach the live one.
+        public var worldURL: URL?
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
@@ -131,6 +137,8 @@ public final class Runtime: @unchecked Sendable {
     /// The key-value store growth and memory keep their rows in; it keeps
     /// an away's start too (`PresenceDetector.awayKey`).
     var keyValues: KeyValueStore?
+    /// Boop's buddy in the world, with a world server to talk to.
+    var world: WorldLink?
     public private(set) var settings: AppSettings
     /// How much it says now (`Talk`), touched only on `home`.
     public private(set) var talk: Talk
@@ -183,8 +191,8 @@ public final class Runtime: @unchecked Sendable {
     /// A demo script plays: its brain steps answer what you say, so a
     /// runtime with no brain doesn't shrug at it.
     var playingDemo = false
-    /// Boop's XP and stage, counted from each event as it's logged,
-    /// and whether the XP changed since the last status.
+    /// Boop's XP, level and today's ring, counted from each event as it's
+    /// logged, and whether the XP changed since the last status.
     let growth: GrowthStore
     var grew = false
     /// The XP moved during an input, which its step still has to carry out.
@@ -345,6 +353,7 @@ public final class Runtime: @unchecked Sendable {
         // The outputs' closures are only ever called on `home`, and reach
         // `self` once it's whole.
         var talkNow: () -> Talk = { .default }
+        var swearsNow: () -> Bool = { false }
         var memoryNow: () -> String? = { nil }
         var remembersNow: () -> Memory? = { nil }
         let wallNow = options.wallClock
@@ -366,6 +375,7 @@ public final class Runtime: @unchecked Sendable {
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
+            mind.swears = { swearsNow() }
             if rig === rigs[0] {
                 mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
                 mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
@@ -417,28 +427,18 @@ public final class Runtime: @unchecked Sendable {
             remembers.relog(unlessIn: logNow)
             home.sync { remembers.attach(to: pipeline) }
             remembers.countsSample = { [weak self] in
-                self.map { ($0.talk == .quiet, $0.settings.volume, $0.growth.growth.stage) } ?? (false, 0, 0)
+                self.map { ($0.talk == .quiet, $0.settings.volume, $0.growth.growth.level) } ?? (false, 0, 1)
             }
             self.remembers = remembers
         }
-        // The cores read the growth stage where the growth store keeps it.
-        // Weak: the runtime holds the cores.
+        // The cores read the growth stage and today's ring where the growth
+        // store keeps them. Weak: the runtime holds the cores.
         for rig in rigs {
-            core(rig).stage = { [weak self] in self.map { $0.showsGrowth ? $0.growth.growth.stage : 3 } ?? 3 }
-            core(rig).growthPercent = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growth.growth.percent : nil } }
+            core(rig).growth = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growthNow : nil } }
             core(rig).pushToTalkWorks = options.pushToTalkWorks
         }
-        growth.decay(today: options.time.day(options.wallClock()))
-        if let day = growth.reachedDay {
-            let grown = growth.growth.name, told = logNow.events.filter { $0.type == .grew && $0.specificType == grown }
-            for rig in rigs {
-                core(rig).reachedStage(grown, day: day, at: now)
-                if day == options.time.day(options.wallClock()), !told.contains(where: { $0.buddy == rig.tag }) {
-                    core(rig).grewLost(grown, at: now)
-                }
-            }
-        }
         talkNow = { [weak self] in self?.talk ?? .default }
+        swearsNow = { [weak self] in self.map { $0.options.swearing ?? $0.settings.swearing } ?? false }
         memoryNow = { [weak self] in self?.memorySection() }
         remembersNow = { [weak self] in self?.remembers }
         queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
@@ -460,6 +460,7 @@ public final class Runtime: @unchecked Sendable {
             rig.link.onHello = { [weak self] hello in
                 DeviceInfo(hello).logLines.forEach { log(whose + $0) }
                 if let self, let latest = rig.latest { self.show(latest, on: rig) }
+                self?.playGrowthDue(at: clock())
             }
         }
         // A pass can change a mood, which its device and the menu bar show.
@@ -469,27 +470,13 @@ public final class Runtime: @unchecked Sendable {
             run(core(rig).stateChanged(at: options.clock()), on: rig)
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
-        // Every event as it's logged, never the read-back's: those were
-        // counted. What it earned within the day's caps is the memory
-        // reader's, as it reads it; with no memory (its store won't open),
-        // what it earns, uncapped.
-        let grow: (Event, Int) -> Void = { [weak self] e, earned in
-            guard let self else { return }
-            let before = growth.growth.stage, percent = growth.growth.percent, now = options.clock()
-            let wall = options.wallClock()
-            guard growth.count(e, earned: earned, day: options.time.day(wall)) else { return }
-            grew = true
-            // A stage reached makes the rest of the day a party, and Boop
-            // celebrates it now, unless Boop hatched today.
-            if growth.growth.stage > before {
-                for rig in rigs { run(core(rig).reachedStage(growth.growth.name, celebrate: true, at: now), on: rig) }
-            } else if growth.growth.percent != percent {
-                // An input's own `state` carries it, when it makes one: once
-                // it's carried out (`run`), so the board gets one line for one hook.
-                if pipeline.step != nil { xpMoved = true } else { publishXP(at: now) }
-            }
+        // Every event as it's logged: the growth store counts each once, and
+        // caps the day at its ring; the world adds its counts.
+        harness.on("*") { [weak self] e in
+            self?.grow(e)
+            self?.worldHeard(e)
         }
-        if let remembers { remembers.reader.earned = grow } else { harness.on("*") { grow($0, Growth.xp(for: $0)) } }
+        startWorld()
     }
 
     /// Boop's brain for one buddy, the process's character (`brain`): the
@@ -500,6 +487,7 @@ public final class Runtime: @unchecked Sendable {
                                reactions: Reactions = Reactions(), queue: @escaping (Moment, Pending) -> Void,
                                speaks: @escaping () -> Bool = { true },
                                talk: @escaping () -> Talk = { .default },
+                               swears: @escaping () -> Bool = { true },
                                memory: @escaping () -> String? = { nil }, remembers: Memory? = nil, seed: UInt64? = nil,
                                felt: ((Int64) -> [Memory.Felt])? = nil, digests: (() -> [DayDigest])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
@@ -511,6 +499,7 @@ public final class Runtime: @unchecked Sendable {
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
                         company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
         if let seed { mind.seed = seed }
+        mind.swears = swears
         mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
         if let remembers {
             mind.noticing = Mind.Noticing(digests: digests ?? { remembers.digests }, shown: { remembers.noticesShown() }, onLately: { remembers.onLately($0) })
@@ -585,10 +574,14 @@ public final class Runtime: @unchecked Sendable {
         server?.stop()
         server = nil
         for rig in rigs { rig.transport?.stop() }
+        let sleep = { [self] in worldSleep() }
+        if DispatchQueue.getSpecific(key: onHome) == true { sleep() } else { home.sync(execute: sleep) }
         // Today's counts as they stand: the next launch reads the rest back.
         let keep = { [self] in remembers?.keepCounts(wall: options.wallClock(), now: true) }
         if DispatchQueue.getSpecific(key: onHome) == true { keep() } else { home.sync(execute: keep) }
         try? FileManager.default.removeItem(at: options.stateDir.appendingPathComponent(Self.runningFile))
+        // The folder is free for the next runtime, as a rename starts one.
+        lock.release()
     }
 
     /// Onboarding's greetings on the board, which it plays as a rule's
@@ -706,7 +699,7 @@ public final class Runtime: @unchecked Sendable {
         let now = options.clock(), wall = options.wallClock()
         for rig in rigs { core(rig).setWallClock(wall, at: now) }
         run(pipeline.tick(at: now))
-        goBackwards(at: now)
+        worldTick(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
         var troubled = false
@@ -799,6 +792,36 @@ public final class Runtime: @unchecked Sendable {
         for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
     }
 
+    /// The growth on Boop's day now: a ring of a day before is empty.
+    var growthNow: Growth { growth.growth(on: options.time.boopDay(options.wallClock())) }
+
+    /// Counts what `e` earns. A level reached or the ring closing is a
+    /// moment on every board, after the `state` that carries it; any other
+    /// XP is only the bar, which an input's own `state` carries when it
+    /// makes one, once it's carried out (`run`), so the board gets one line
+    /// for one hook.
+    func grow(_ e: Event) {
+        growth.played(e)
+        let now = options.clock()
+        guard growth.count(e, xp: Growth.xp(for: e), today: options.time.boopDay(options.wallClock())) > 0 else { return }
+        grew = true
+        guard playGrowthDue(at: now) else {
+            if pipeline.step != nil { xpMoved = true } else { publishXP(at: now) }
+            return
+        }
+    }
+
+    /// What's due plays on every board, and is celebrated as it does
+    /// (`played`): after XP that reached it, at a board's hello (so one held
+    /// over a quit isn't lost), and after a demo, which shows none.
+    @discardableResult
+    func playGrowthDue(at now: Int64) -> Bool {
+        let beats = growth.due(today: options.time.boopDay(options.wallClock()))
+        guard showsGrowth, !beats.isEmpty else { return false }
+        for rig in rigs { run(core(rig).grew(beats, at: now), on: rig) }
+        return true
+    }
+
     /// Changes the settings here and in `settings.json`, keeping what
     /// onboarding saved there since (`AppSettings.update`).
     func saveSettings(_ change: (inout AppSettings) -> Void) {
@@ -861,6 +884,11 @@ public final class Runtime: @unchecked Sendable {
 
     /// How much it says: the view's rules and Jev's state from the next
     /// event, kept in `settings.json`.
+    /// Swearing on or off, kept in `settings.json`: read at each pass.
+    public func setSwearing(_ on: Bool) {
+        home.async { [self] in saveSettings { $0.swearing = on } }
+    }
+
     public func setTalk(_ talk: Talk) {
         home.async { [self] in
             self.talk = talk
@@ -905,12 +933,4 @@ extension Runtime {
     /// Whether the board shows Boop's real growth: a demo, or `fullSize`,
     /// draws Boop full size, with no bar.
     var showsGrowth: Bool { !options.fullSize && !playingDemo }
-
-    /// Boop left alone goes backwards, once for each day past the grace,
-    /// which shows on the board at once.
-    func goBackwards(at now: Int64) {
-        guard growth.decay(today: options.time.day(options.wallClock())) else { return }
-        changed()
-        for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
-    }
 }

@@ -1,3 +1,4 @@
+import AppKit
 import BoopKit
 import LinkKit
 import SwiftUI
@@ -15,29 +16,29 @@ struct HelloAct: View {
 
     var body: some View {
         let calm = still || reduced
-        VStack(spacing: 24) {
-            Spacer(minLength: 0)
-            ZStack(alignment: .topLeading) {
-                OnboardingBuddy(model: model, snapshot: .onboarding(mood: "happy"), size: 196)
-                    .scaleEffect(x: squash ? 1.12 : 1, y: squash ? 0.86 : 1, anchor: .bottom)
-                    .offset(y: calm || landed ? 0 : -360)
-                Bubble("Hi! I'm a Boop.")
-                    .offset(x: -96, y: -42)
-                    .scaleEffect(calm || greeted ? 1 : 0.2, anchor: .bottomTrailing)
-                    .opacity(calm || greeted ? 1 : 0)
-            }
-            .padding(.top, 30)
+        let shown = calm || greeted
+        ActFrame(kind: .hero, slot: ActSize.entranceSlot, bar: ActBar(model: model, next: "Hi, Boop!", shown: shown)) {
+            // The face at the slot's foot, the bubble up and left of it,
+            // its tail toward the face.
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.entrance)
+                .scaleEffect(x: squash ? 1.12 : 1, y: squash ? 0.86 : 1, anchor: .bottom)
+                .offset(y: calm || landed ? 0 : -360)
+                .overlay(alignment: .topLeading) {
+                    Bubble("Hi! I'm a Boop.", tailTrailing: true)
+                        .fixedSize()
+                        .alignmentGuide(.leading) { $0[.trailing] - ActSize.side }
+                        .alignmentGuide(.top) { $0[.bottom] - Theme.gap }
+                        .scaleEffect(shown ? 1 : 0.2, anchor: .bottomTrailing)
+                        .opacity(shown ? 1 : 0)
+                }
+                .frame(maxHeight: .infinity, alignment: .bottom)
+        } content: {
             Text("A little creature for your desk. I keep an eye on your coding agents, and I'll show you how in a couple of minutes.")
-                .font(.system(size: 15))
+                .font(.lead)
                 .foregroundStyle(Theme.inkSoft)
                 .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
-                .opacity(calm || greeted ? 1 : 0)
-            Button("Hi, Boop!") { model.next() }
-                .buttonStyle(ProminentButtonStyle())
-                .keyboardShortcut(.defaultAction)
-                .opacity(calm || greeted ? 1 : 0)
-            Spacer(minLength: 0)
+                .frame(maxWidth: ActSize.lead)
+                .opacity(shown ? 1 : 0)
         }
         .task { await arrive(calm: calm) }
     }
@@ -138,47 +139,55 @@ struct WhatIDoAct: View {
         static func < (a: Step, b: Step) -> Bool { a.rawValue < b.rawValue }
     }
 
+    /// The demo's tile, 4:3, the engine's own shape, so the "needs you"
+    /// sign fits.
+    static let tile = CGSize(width: 184, height: 138)
+
     var body: some View {
-        VStack(spacing: 18) {
-            ActTitle(title: "I keep an eye on your agents")
-            HStack(spacing: 22) {
-                terminal
-                // 4:3, the engine's own shape, so the "needs you" sign fits.
-                OnboardingBuddy(model: model, snapshot: step.look(drops: drops), size: 236, height: 177)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 177 * 0.27 + 6)
-                            .strokeBorder(Theme.amber, lineWidth: 5)
-                            .padding(-6)
-                            .opacity(step == .asking ? 1 : 0)
-                    }
-                    .animation(.boopSettle, value: step)
+        ActFrame(kind: .list, title: "I keep an eye on your agents", bar: ActBar(model: model, next: "Neat!")) {
+            EmptyView()
+        } content: {
+            VStack(alignment: .leading, spacing: Theme.gapSnug) {
+                HStack(spacing: Theme.gapSection) {
+                    terminal
+                    OnboardingBuddy(model: model, snapshot: step.look(drops: drops), size: Self.tile.width, height: Self.tile.height)
+                        .overlay {
+                            // Inside the tile's edge, so it stays in the gutter.
+                            RoundedRectangle(cornerRadius: Self.tile.height * 0.27)
+                                .strokeBorder(Theme.amber, lineWidth: 4)
+                                .opacity(step == .asking ? 1 : 0)
+                        }
+                        .animation(.boopSettle, value: step)
+                }
+                HStack(alignment: .top, spacing: Theme.gapSnug) {
+                    card(0, "Working along", "The files, searches and commands of your agent fall past me. Failures hit me.")
+                    card(1, "Needs you", "I glow amber and knock, and say who's waiting.")
+                    card(2, "A big finish", "I cheer work that earns it, and hold up whose it was.")
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                MoodLegend()
+                    .padding(.top, Theme.gapTight)
+                Text("I only watch. I never approve, deny or block anything for you.")
+                    .font(.note)
+                    .foregroundStyle(Theme.inkSoft)
+                    .frame(maxWidth: .infinity)
             }
-            HStack(spacing: 10) {
-                card(0, "Working along", "The files, searches and commands of your agent fall past me. Failures hit me.")
-                card(1, "Needs you", "I glow amber and knock, and say who's waiting.")
-                card(2, "A big finish", "I cheer work that earns it, and hold up whose it was.")
-            }
-            Text("I only watch. I never approve, deny or block anything for you.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.inkSoft)
-            Spacer(minLength: 0)
-            ActNav(model: model, next: "Neat!")
         }
         .task(id: clicks) { await play() }
     }
 
     private var terminal: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: Theme.gapTight) {
             ForEach(Array(step.lines.enumerated()), id: \.offset) { _, line in
                 Text(line.0).foregroundStyle(line.1)
                     .transition(.opacity.combined(with: .offset(y: 6)))
             }
             Spacer(minLength: 0)
         }
-        .font(.system(size: 12.5, design: .monospaced))
-        .padding(16)
+        .font(.mono)
+        .padding(Theme.gap)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 178)
+        .frame(height: Self.tile.height)
         .terminalCard()
         .animation(.boopSettle, value: step)
     }
@@ -192,12 +201,14 @@ struct WhatIDoAct: View {
             from = Step.first(of: index)
             clicks += 1
         } label: {
-            Card(padding: 14, tone: lit ? tone : nil) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title).font(.boop(14, .bold))
-                    Text(detail).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+            Card(tone: lit ? tone : nil) {
+                VStack(alignment: .leading, spacing: Theme.gapTight) {
+                    Text(title).font(.boopHeading)
+                    Text(detail).font(.body).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
+                // As tall as the row's tallest, so the three line up.
+                .frame(maxHeight: .infinity, alignment: .top)
             }
             .animation(.boopSettle, value: step)
             .overlay(alignment: .bottomLeading) {
@@ -207,7 +218,7 @@ struct WhatIDoAct: View {
                             .frame(width: max(0, box.size.width * played), height: 3)
                     }
                     .frame(height: 3)
-                    .padding(.horizontal, 14).padding(.bottom, 7)
+                    .padding(.horizontal, Theme.gap).padding(.bottom, Theme.gapTight)
                     .transition(.opacity)
                 }
             }
@@ -240,7 +251,7 @@ struct WhatIDoAct: View {
                     withAnimation(.linear(duration: beat.cardSeconds)) { played = 1 }
                 }
                 switch beat {
-                case .failing: model.feed.call(BoopDevice.call("FAIL", style: "hail", slot: 0))
+                case .failing: model.feed.call(BoopDevice.call("fail", style: "hail", slot: 0))
                 case .asking: OnboardingSound.play(.step)
                 case .finished: model.feed.reaction(Moment(anim: "task_complete", outcome: "success"))
                 default: break
@@ -260,6 +271,47 @@ struct WhatIDoAct: View {
     }
 }
 
+/// How Boop feels: four of its moods, each with what brings it on, and
+/// how a mood moves. Something to read, not cards to pick.
+struct MoodLegend: View {
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Theme.gapSnug) {
+            HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
+                Text("HOW I FEEL").font(.detail.weight(.semibold)).tracking(0.6).foregroundStyle(Theme.inkSoft)
+                Text("My mood holds steady. Big moments move it, and it settles back with time.")
+                    .font(.body).foregroundStyle(Theme.inkSoft)
+            }
+            HStack(spacing: Theme.gapSnug) {
+                face("happy", "Happy", "it's going well")
+                face("grumpy", "Grumpy", "failures pile up")
+                face("proud", "Proud", "a big finish")
+                face("tired", "Tired", "a long day")
+            }
+        }
+    }
+
+    private func face(_ design: String, _ title: String, _ detail: String) -> some View {
+        HStack(spacing: Theme.gapSnug) {
+            MoodTile(mood: design, size: ActSize.side)
+                // The glass's edge on dark paper, as the big face has.
+                .overlay {
+                    if scheme == .dark {
+                        RoundedRectangle(cornerRadius: ActSize.side * 0.27, style: .continuous)
+                            .strokeBorder(Theme.hairlineStrong, lineWidth: 1)
+                    }
+                }
+            VStack(alignment: .leading, spacing: Theme.hair) {
+                Text(title).font(.boopLabel)
+                Text(detail).font(.detail).foregroundStyle(Theme.inkSoft)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// Act 3: a name, for keeps.
 struct MakeMeYoursAct: View {
     @ObservedObject var model: OnboardingModel
@@ -274,45 +326,85 @@ struct MakeMeYoursAct: View {
 
     private var draft: SetupDraft { app.setup }
 
+    /// The widest name, 23 letters each as wide as a W, with the field's
+    /// sides.
+    static let field: CGFloat = 492
+
+    private var issue: String? { model.nameError ?? draft.nameIssue }
+
+    /// What the bubble says: a long name on a line of its own.
+    private var loved: String {
+        let name = draft.trimmedName
+        return name.count > 12 ? "\(name)!\nI love it." : "\(name)! I love it."
+    }
+
     var body: some View {
-        VStack(spacing: 14) {
-            OnboardingBuddy(model: model, snapshot: .onboarding(mood: "happy"), size: 108, face: .happy)
+        ActFrame(kind: .hero, title: "What should I be called?",
+                 bar: ActBar(model: model, next: "That's me", enabled: draft.canContinueName) { model.saveName() }) {
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .happy)
                 .offset(y: hop ? -10 : 0)
                 // Off the tile's top corner and out of the layout, so a
                 // name of any length leaves the tile where it is: the
                 // bubble's room, 240 at most, starts just inside the
                 // tile's edge, and it grows from there.
-                .overlay(alignment: .topTrailing) {
+                .overlay(alignment: .topLeading) {
                     if !draft.trimmedName.isEmpty, draft.nameIssue == nil {
-                        Bubble("\(draft.trimmedName)! I love it.")
+                        Bubble(loved)
                             .frame(width: 240, alignment: .leading)
-                            .offset(x: 240 - Theme.gapSnug, y: -6)
+                            .offset(x: ActSize.hero - Theme.gapSnug, y: Theme.gapSnug)
                             .transition(.scale(scale: 0.4, anchor: .bottomLeading).combined(with: .opacity))
                     }
                 }
                 .animation(.boopPop, value: draft.trimmedName.isEmpty)
-            ActTitle(title: "What should I be called?")
-            TextField("A name", text: Binding(get: { app.setup.name }, set: { app.setup.editName($0) }))
-                .font(.boop(20, .bold))
-                .multilineTextAlignment(.center)
-                .textFieldStyle(.plain)
-                .padding(.vertical, 11)
-                .fieldBox(Theme.raised, radius: 12, focus: $nameFocused)
-                // Room for the widest name: 23 letters, each as wide as a W.
-                .frame(maxWidth: 460)
-                .focused($nameFocused)
-                .onAppear { nameFocused = true }
-                .onSubmit { model.saveName() }
-                .onChange(of: draft.trimmedName) {
-                    withAnimation(.spring(response: 0.18, dampingFraction: 0.5)) { hop = true }
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.12)) { hop = false }
+        } content: {
+            VStack(spacing: Theme.gap) {
+                TextField("A name", text: Binding(get: { app.setup.name }, set: { app.setup.editName($0) }))
+                    .font(.boopTitle)
+                    .multilineTextAlignment(.center)
+                    .textFieldStyle(.plain)
+                    .padding(.horizontal, Theme.gutter).padding(.vertical, Theme.gap)
+                    .fieldBox(Theme.raised, radius: Theme.cardRadius, focus: $nameFocused)
+                    .overlay {
+                        if issue != nil {
+                            RoundedRectangle(cornerRadius: Theme.cardRadius).strokeBorder(Theme.clayInk, lineWidth: 1.5)
+                        }
+                    }
+                    .frame(maxWidth: Self.field)
+                    .focused($nameFocused)
+                    .onAppear {
+                        nameFocused = true
+                        // The caret at the end, not the name selected: coming
+                        // Back with a name set shows no selection box.
+                        DispatchQueue.main.async(execute: Self.caretToEnd)
+                    }
+                    .onChange(of: nameFocused) {
+                        if nameFocused { DispatchQueue.main.async(execute: Self.caretToEnd) }
+                    }
+                    .onSubmit { model.saveName() }
+                    .onChange(of: draft.trimmedName) {
+                        withAnimation(.spring(response: 0.18, dampingFraction: 0.5)) { hop = true }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6).delay(0.12)) { hop = false }
+                    }
+                VStack(spacing: Theme.gapTight) {
+                    Text(issue ?? "My name is for keeps, so pick one you love.")
+                        .foregroundStyle(issue != nil ? Theme.clayInk : Theme.inkSoft)
+                    // It's public: the world of buddies shows it.
+                    if issue == nil {
+                        Text("Other buddies in the world will see it too.")
+                            .foregroundStyle(Theme.inkSoft)
+                    }
                 }
-            Text(model.nameError ?? draft.nameIssue ?? "My name is for keeps, so pick one you love.")
-                .font(.system(size: 12))
-                .foregroundStyle(model.nameError != nil || draft.nameIssue != nil ? Theme.clayInk : Theme.inkSoft)
-            Spacer(minLength: 0)
-            ActNav(model: model, next: "That's me", enabled: draft.canContinueName) { model.saveName() }
+                .font(.note)
+                .multilineTextAlignment(.center)
+            }
         }
     }
 
+    /// Moves the field editor's caret to the end of its text, wherever a
+    /// window is editing one.
+    static func caretToEnd() {
+        for editor in NSApp.windows.compactMap({ $0.firstResponder as? NSTextView }) where editor.isFieldEditor {
+            editor.selectedRange = NSRange(location: (editor.string as NSString).length, length: 0)
+        }
+    }
 }

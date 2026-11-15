@@ -768,7 +768,7 @@ final class CoreNeedsYouTests: XCTestCase {
         rig.send(.turnStart, project: "jetpack")
         let fx = rig.send(.needsYou, project: "jetpack", tool: "Bash")
         let attn = states(fx).last?.attn
-        XCTAssertEqual(attn, StateSnapshot.Attention(agent: "claude", project: "jetpack", more: 0, id: 1))
+        XCTAssertEqual(attn, StateSnapshot.Attention(agent: "claude", project: "jetpack", more: 0, id: 1, kind: .approve))
         XCTAssertEqual(states(fx).last?.waiting, 1)
         XCTAssertEqual(rig.sessions, [["claude", "jetpack", "waiting"]])
         XCTAssertEqual(woke(fx), [], "needs you never wakes the brain")
@@ -1270,9 +1270,9 @@ final class CoreNeedsYouTests: XCTestCase {
         rig.send(.needsYou, .claude, session: "a", project: "jetpack", tool: "Bash")
         rig.wait(1000)
         rig.send(.needsYou, .claude, session: "b", project: "landing", tool: "Edit")
-        XCTAssertEqual(rig.state.attn, StateSnapshot.Attention(agent: "claude", project: "jetpack", more: 1, id: 1))
+        XCTAssertEqual(rig.state.attn, StateSnapshot.Attention(agent: "claude", project: "jetpack", more: 1, id: 1, kind: .approve))
         rig.send(.activity, session: "a")
-        XCTAssertEqual(rig.state.attn, StateSnapshot.Attention(agent: "claude", project: "landing", more: 0, id: 2))
+        XCTAssertEqual(rig.state.attn, StateSnapshot.Attention(agent: "claude", project: "landing", more: 0, id: 2, kind: .approve))
     }
 
     /// "a different request becomes the one shown: one
@@ -1532,6 +1532,24 @@ final class CoreYouAndBoopTests: XCTestCase {
     /// sign goes, the session counts as idle and stays first in BOOT's
     /// line, a tap is a poke again, and the brain may wake. Nothing answers
     /// the agent, and its next request shows again.
+    /// A request says what it asks of you, so the card can say how long it
+    /// will take: a plan to read when Claude asks to leave plan mode, a
+    /// question when it asks for input, else a call to allow.
+    func testARequestSaysWhatItAsks() {
+        typealias Kind = StateSnapshot.Attention.Kind
+        XCTAssertEqual(Kind.of(asking: "permission", tools: ["Bash"]), .approve)
+        XCTAssertEqual(Kind.of(asking: "permission", tools: ["ExitPlanMode"]), .plan)
+        XCTAssertEqual(Kind.of(asking: "input", tools: [""]), .question)
+        XCTAssertEqual(Kind.of(asking: "permission", tools: ["AskUserQuestion"]), .question)
+        XCTAssertEqual(Kind.of(asking: nil, tools: []), .approve)
+        XCTAssertTrue(Kind.allWords.allSatisfy { $0.count <= 16 }, "the board's card holds 16 characters")
+        let rig = CoreRig()
+        rig.send(.turnStart, session: "a")
+        rig.send(.needsYou, session: "a", tool: "ExitPlanMode")
+        XCTAssertEqual(rig.state.attn?.kind, .plan)
+        XCTAssertEqual(rig.state.fields["attn"]?.object?["kind"], "plan", "the board is told it")
+    }
+
     func testHoldingTheSignDismissesItsRequest() {
         let rig = CoreRig()
         rig.send(.turnStart, session: "a")
@@ -2308,7 +2326,7 @@ final class CoreRulesTests: XCTestCase {
                                       ["claude", "jetpack", "working"], ["claude", "notes", "idle"]])
         XCTAssertEqual([s.working, s.waiting], [2, 1])
         let when = s.when.map { "\"\($0)\"" }.joined(separator: ",")
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"calm","attn":{"agent":"claude","project":"landing","more":0,"id":1},"busy":2,"idle":1,"vol":6,"when":["# + when + "]}")
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"calm","attn":{"agent":"claude","project":"landing","more":0,"id":1,"kind":"approve"},"busy":2,"idle":1,"vol":6,"when":["# + when + "]}")
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
     }
 

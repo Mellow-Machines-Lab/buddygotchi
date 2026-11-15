@@ -93,6 +93,12 @@ enum Headless {
         // agents' runs only log where.
         if args.has("--no-open") { options.open = { _ in log.write("open: skipped (--no-open)"); return true } }
         if let talk { options.talk = talk }
+        // A demo plays as it was written, its swear included, whatever
+        // Settings' swearing says.
+        if script != nil { options.swearing = true }
+        // The world only when BOOP_WORLD_URL names a server: tests and
+        // scripts use `npm run dev` in internal/world, never the live one by default.
+        options.worldURL = ProcessInfo.processInfo.environment["BOOP_WORLD_URL"].flatMap { $0.isEmpty ? nil : URL(string: $0) }
         let runtime: Runtime
         do {
             runtime = try Runtime(options)

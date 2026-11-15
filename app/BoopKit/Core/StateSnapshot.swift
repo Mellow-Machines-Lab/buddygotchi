@@ -14,13 +14,46 @@ public struct StateSnapshot: Equatable, Sendable {
         /// launch: a new one is a different request, which the face knocks for again.
         /// 0 sends none.
         public var id: Int
+        /// What the request asks of you, so a glance says how long it'll
+        /// take; nil when it isn't known (a request from before, or practice).
+        public var kind: Kind?
 
-        public init(agent: String, project: String, name: String = "", more: Int, id: Int = 0) {
+        /// What a request asks of you: to say yes or no to a call, to
+        /// answer a question, or to read a plan.
+        public enum Kind: String, Sendable, CaseIterable {
+            case approve, question, plan
+
+            /// Every kind's words, for a test of their length.
+            public static var allWords: [String] { allCases.map(\.words) }
+
+            /// The words for it, after "needs you": short enough for the
+            /// board's card (16 characters at most).
+            public var words: String {
+                switch self {
+                case .approve: "a yes or no"
+                case .question: "a question"
+                case .plan: "a plan to read"
+                }
+            }
+
+            /// The kind of a request, from what it asks for and the tools
+            /// asking: a plan when Claude asks to leave plan mode, a
+            /// question when it asks for input or asks you something, else
+            /// a call to allow.
+            public static func of(asking: String?, tools: [String]) -> Kind {
+                if tools.contains("ExitPlanMode") { return .plan }
+                if asking == "input" || tools.contains("AskUserQuestion") { return .question }
+                return .approve
+            }
+        }
+
+        public init(agent: String, project: String, name: String = "", more: Int, id: Int = 0, kind: Kind? = nil) {
             self.agent = agent
             self.project = project
             self.name = name
             self.more = more
             self.id = id
+            self.kind = kind
         }
     }
 
@@ -168,8 +201,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The to-do list of the longest turn working that has one, while
     /// nothing needs you; nil sends none.
     public var todo: Todo?
-    /// How far through its growth stage, in whole percent (`Growth.percent`):
-    /// the board's growth bar, which comes when it moves. Nil sends none.
+    /// Today's ring, the day's XP in whole percent (`Growth.percent`): the
+    /// board's bar, which comes when it moves. Nil sends none.
     public var xp: Int?
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
@@ -299,6 +332,7 @@ public struct StateSnapshot: Equatable, Sendable {
             if !attn.name.isEmpty { a["name"] = .string(attn.name) }
             a["more"] = .int(attn.more)
             if attn.id > 0 { a["id"] = .int(attn.id) }
+            if let kind = attn.kind { a["kind"] = .string(kind.rawValue) }
             fields["attn"] = .object(a)
         }
         fields["busy"] = .int(working)  // the wire calls the count busy

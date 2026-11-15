@@ -45,6 +45,7 @@ struct Model {
   char buddy[kBuddyBytes] = "";  // what you call it, when that isn't the pack's name (`buddy`)
   int more = 0;
   uint32_t attnId = 0;  // the needs-you shown's number; 0 when the Mac sends none
+  render::AttnKind attnKind = render::AttnKind::kNone;  // what it asks of you (`attn.kind`)
   int busy = 0;     // sessions working
   int idle = 0;     // sessions idle, waiting for your next prompt
   int helpers = 0;  // helpers working, over every session
@@ -54,8 +55,8 @@ struct Model {
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
-  // How far through its growth stage Boop is, in percent (`xp`), -1 for a
-  // Mac that sends none, which shows no bar.
+  // Today's ring, the day's XP in percent (`xp`), -1 for a Mac that sends
+  // none, which shows no bar.
   int xp = -1;
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
@@ -173,6 +174,10 @@ struct ReactionIn {
   char sign[kSignTextBytes] = "";
   // Held low (`low`): in the lane, the face clear, once its words end.
   bool low = false;
+  // A celebration's words held low in gold (`gold`: "level 13!"), the rim
+  // glowing gold, beside or without the sign: "" for none. A face that
+  // holds nothing low shows them as its sign when it has none.
+  char gold[kSignBytes] = "";
   // A greeting (`greeting`): the first moment of your day. Its sign waits
   // until its words end, and the work stream waits until it's over.
   bool greeting = false;
@@ -553,6 +558,7 @@ class Behaviour {
   bool sayDue(uint32_t t) const;       // the `say` plays, or waits to
   bool exprOn(uint32_t t) const;
   bool signOn(uint32_t t) const;
+  bool goldOn(uint32_t t) const;
   bool signDue(uint32_t t) const;  // the sign shows, or waits to
   Source sourceAt(uint32_t t) const;
   // What the strip shows: what the Mac last said, with no app or not, and
@@ -606,16 +612,15 @@ class Behaviour {
   Done done_;
   Say say_;
   Sign sign_;
+  // The gold low sign (ReactionIn::gold), from the reaction's start.
+  Sign gold_;
   // The greeting playing, by its key; 0 for none.
   uint32_t greetKey_ = 0;
   // The last wish shown, and when one last popped and how.
   render::WishShow::Kind lastWish_ = render::WishShow::kNone;
   uint32_t wishPopAt_ = 0;
   render::WishShow::Pop wishPop_ = render::WishShow::kWaiting;
-  // The growth bar: filling from `from` (0 … 1000) to `to` (the XP's percent,
-  // -1 until heard) from fillAt, past the end of the bar by `wrap` when the
-  // stage changed (1 up, -1 down), up from onAt to offAt, with a met wish's
-  // heart leaving at heartAt.
+  // Today's ring's bar, and a met wish's heart flying into it.
   GrowthBar bar_;
   // Whether the screen is another's, or Boop's not looking: no bar then.
   bool barHidden(const Model& m, bool alone, uint32_t t) const;

@@ -264,7 +264,7 @@ final class RuntimeTests: XCTestCase {
         try again.start()
         defer { again.stop() }
         eventually("a status") { again.home.sync { !after.isEmpty } }
-        XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6))
+        XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6, today: 6))
     }
 
     /// A hook that earns XP and changes what the board shows is one `state`,
@@ -1165,8 +1165,9 @@ final class RuntimeTests: XCTestCase {
         // and only changes; the mood's reason once something moved it.
         let statuses = lines.compactMap { $0["status"] as? [String: Any] }
         XCTAssertFalse(statuses.isEmpty)
-        XCTAssertEqual(Set(statuses[0].keys), ["brain", "sessions", "connected", "stage", "xp", "today_xp"], "a state carries the mood")
-        XCTAssertEqual(statuses[0]["today_xp"] as? [String: Int], ["work": 0, "work_cap": 60, "care": 0, "care_cap": 60])
+        XCTAssertEqual(Set(statuses[0].keys), ["brain", "sessions", "connected", "level", "xp", "today_xp", "today_cap"], "a state carries the mood")
+        XCTAssertEqual(statuses[0]["today_xp"] as? Int, 0)
+        XCTAssertEqual(statuses[0]["today_cap"] as? Int, 100)
         XCTAssertEqual(statuses.last?["brain"] as? String, "scripted")
         XCTAssertEqual(statuses.last?["connected"] as? Bool, true)
         let sessions = try XCTUnwrap(statuses.last?["sessions"] as? [[String: String]])
@@ -1290,8 +1291,7 @@ final class RuntimeTests: XCTestCase {
     /// next coming back or touch to tell; with nothing new since, no dream.
     /// `{"dev":"dream_preview"}`, its `D`: one `dream_preview` line in
     /// debug.jsonl and nothing else. The status line carries what CONTEXT
-    /// lacks: the XP, today's from each pool against its cap
-    /// (`Growth.workPerDay`, `carePerDay`).
+    /// lacks: the XP, and today's against the ring (`Growth.perDay`).
     func testDreamingNowAndItsPreview() throws {
         let transport = FakeTransport()
         var options = try options(transport, readJevKey: { _ in nil })
@@ -1327,33 +1327,29 @@ final class RuntimeTests: XCTestCase {
 
         let status = try XCTUnwrap(debugLines().compactMap { $0["status"] as? [String: Any] }.last)
         XCTAssertNotNil(status["xp"] as? Int)
-        XCTAssertEqual((status["today_xp"] as? [String: Int])?["work_cap"], Growth.workPerDay)
-        XCTAssertEqual((status["today_xp"] as? [String: Int])?["care_cap"], Growth.carePerDay)
-        XCTAssertEqual(Growth.workPerDay, 60, "the dashboard shows each pool against 60")
-        XCTAssertEqual(Growth.carePerDay, 60)
+        XCTAssertNotNil(status["today_xp"] as? Int)
+        XCTAssertEqual(status["today_cap"] as? Int, 100, "the dashboard shows today against the ring")
     }
 
-    /// DebugLog.status: the stage, the XP, today's XP from each pool
-    /// against its cap and the mood's reason, which the dashboard shows
-    /// beside CONTEXT; a line only when something changed.
+    /// DebugLog.status: the level, the XP, today's ring against its cap and
+    /// the mood's reason, which the dashboard shows beside CONTEXT; a line
+    /// only when something changed.
     func testTheStatusLineCarriesWhatContextLacks() throws {
         var status = Runtime.Status(name: "Pip", snapshot: StateSnapshot(doing: "idle", mood: "lonely", attn: nil, working: 0, vol: 6),
-                                    sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234))
+                                    sessions: [], connected: true, device: nil, brain: "jev", growth: Growth(xp: 1234, today: 18))
         status.moodReason = Narration(cause: "You came back after 26 hours away.")
-        var today = MemoryReader.Tallies()
-        today.workXP = 12
-        today.careXP = 6
         var last: String?
-        let line = try XCTUnwrap(DebugLog.status(status, today: today, at: 5, last: &last))
+        let line = try XCTUnwrap(DebugLog.status(status, at: 5, last: &last))
         let o = try XCTUnwrap(try JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any])
         let fields = try XCTUnwrap(o["status"] as? [String: Any])
         XCTAssertEqual(fields["mood_reason"] as? String, "Pip is lonely. You came back after 26 hours away.")
         XCTAssertEqual(fields["xp"] as? Int, 1234)
-        XCTAssertEqual(fields["stage"] as? Int, 3)
-        XCTAssertEqual(fields["today_xp"] as? [String: Int], ["work": 12, "work_cap": 60, "care": 6, "care_cap": 60])
-        XCTAssertNil(DebugLog.status(status, today: today, at: 6, last: &last), "unchanged")
-        today.workXP = 13
-        XCTAssertNotNil(DebugLog.status(status, today: today, at: 7, last: &last), "XP earned")
+        XCTAssertEqual(fields["level"] as? Int, 13)
+        XCTAssertEqual(fields["today_xp"] as? Int, 18)
+        XCTAssertEqual(fields["today_cap"] as? Int, 100)
+        XCTAssertNil(DebugLog.status(status, at: 6, last: &last), "unchanged")
+        status.growth = Growth(xp: 1235, today: 19)
+        XCTAssertNotNil(DebugLog.status(status, at: 7, last: &last), "XP earned")
     }
 
     /// BOOT held and let go turns the mic on and off; with

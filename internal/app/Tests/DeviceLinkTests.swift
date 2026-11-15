@@ -338,11 +338,11 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertNil(StateSnapshot.boardName("🐛🔥✨"), "nothing left")
         XCTAssertEqual(StateSnapshot.boardName("Ünïcödé café"), "Ünïcödé café")
         let s = StateSnapshot(doing: "working", mood: "determined",
-                              attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
+                              attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max), kind: .question),
                               working: 999, idle: 999, helpers: 999, vol: 10, when: mostTags)
         XCTAssertLessThanOrEqual(s.jsonLine.utf8.count, Wire.maxLine)
         XCTAssertNotNil(try? JSONSerialization.jsonObject(with: Data(s.jsonLine.utf8)))
-        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","programmers","lunar","party"]}"#)
+        XCTAssertEqual(s.jsonLine, #"{"t":"state","base":"working","mood":"determined","attn":{"agent":"claude","project":"\#(esc)","name":"\#(esc)","more":999,"id":2147483647,"kind":"question"},"busy":999,"idle":999,"helpers":999,"vol":10,"when":["morning","friday","programmers","lunar","party"]}"#)
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 

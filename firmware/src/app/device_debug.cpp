@@ -235,6 +235,7 @@ void Device::state(JsonObject d, uint32_t t) {
     d["attn"]["name"] = m.name;
     d["attn"]["more"] = m.more;
     d["attn"]["id"] = m.attnId;
+    if (const char* kind = render::attnKindName(m.attnKind)) d["attn"]["kind"] = kind;
   } else {
     d["attn"] = nullptr;
   }
@@ -252,6 +253,9 @@ void Device::state(JsonObject d, uint32_t t) {
   else d["expr"] = nullptr;
   if (b_.signUp(t)) d["sign"] = b_.sign(t).text;
   else d["sign"] = nullptr;
+  // A celebration's words held low in gold, beside the sign or alone.
+  if (const char* gold = b_.sign(t).gold) d["gold"] = gold;
+  else d["gold"] = nullptr;
   // The caption, the reaction's reason; and an ask's answers in the lane.
   if (const char* caption = b_.caption(t)) d["reason"] = caption;
   else d["reason"] = nullptr;

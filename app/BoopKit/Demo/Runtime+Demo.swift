@@ -150,6 +150,7 @@ public final class DemoPlayer: @unchecked Sendable {
                 runtime.demoHeard = nil
                 runtime.labeler = labelerBefore
                 runtime.playingDemo = false
+                runtime.playGrowthDue(at: runtime.options.clock())
                 done()
             }
             return

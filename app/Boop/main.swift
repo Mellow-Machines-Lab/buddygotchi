@@ -23,6 +23,8 @@ let usage = """
                 [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
+               The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
+               fake one on http://localhost:8787.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
                reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
                every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
@@ -52,7 +54,9 @@ let usage = """
                (a forced pass), "mood", "dream_now" (Boop dreams now: the dream, then its write) and
                "dream_preview" (what dreaming now would do, to debug.jsonl, nothing kept);
                and for push-to-talk with no mic, "listen" (the app's button,
-               {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"}).
+               {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"});
+               and for the world, "world": {"dev":"world","shown":true} (onboarding's world screen),
+               "on":false (the switch), "tab":true (the World tab) and "to":ID,"gesture":"boop".
            Boop --counts [--state-dir DIR] [--days N]
                Prints a summary of the last N days (7) from DIR/daily-counts.jsonl, then exits: numbers and dates only,
                no words, threads or notes, for you to send or not. Nothing leaves the Mac by itself. Starts nothing.

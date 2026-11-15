@@ -96,7 +96,7 @@ The dashboard shows the face, Boop's mood and memory, its automatic
 Moments and the ones Jev decided, with the CONTEXT Jev last read. It can
 force a mood or a Moment, and `d` dreams at once, so the dream and its
 write show in seconds; `D` previews them and keeps nothing. `b` saves a bug
-report, as the popover's ladybug does, and with Boop on the simulator a
+report, as ⌘B on the popover does, and with Boop on the simulator a
 report gets the board's screen too.
 
 How each level of checking works, from unit tests to the board, is in

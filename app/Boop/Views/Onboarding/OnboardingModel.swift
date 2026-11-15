@@ -46,6 +46,9 @@ final class OnboardingModel: ObservableObject {
 
     // Act 6: what gets added, shown.
     @Published var showHooks = false
+    /// How act 7's key card last saved, to draw it so (the snapshots do):
+    /// true kept, false refused, nil none yet. The card keeps its own after.
+    var keySaved: Bool?
 
     // Act 7: the microphone and speech, once asked. The card is left out
     // when act 5's push-to-talk already had them allowed.
@@ -110,6 +113,10 @@ final class OnboardingModel: ObservableObject {
     }
 
     func next() {
+        // Leaving the world's screen forward answers it: "Sounds good", or
+        // "Keep private", which has switched the world off first. Nothing
+        // goes to the world before.
+        if act == .world { worldShown() }
         if let next = act.next { go(next) } else { finish() }
     }
 
@@ -125,6 +132,8 @@ final class OnboardingModel: ObservableObject {
             askMic = !SpeechListener.allowed
             // On by default: Boop only watches while it's open.
             if !loginTouched, app.ownsHooks, app.loginItemState == .off { app.setOpenAtLogin(true) }
+        case .world:
+            startRuntime()
         case .finale:
             celebrate()
         default:
@@ -389,6 +398,33 @@ final class OnboardingModel: ObservableObject {
     }
 
     // MARK: Act 8
+
+    /// The world's act was answered: from now on the buddy may join, if the
+    /// world is on. The runtime runs past the name, and a launch that comes
+    /// back to the act starts it as it opens; one that couldn't start tells
+    /// the settings itself, where the runtime reads it when it does.
+    func worldShown() {
+        world({ $0.worldScreenShown() }, else: { $0.worldShown = true }, "the world's screen was shown")
+    }
+
+    /// "Keep Boop private": the world off, and on to the finale.
+    func keepPrivate() {
+        world({ $0.setWorld(false) }, else: { $0.world = false }, "kept private, out of the world")
+        next()
+    }
+
+    /// A world setting through the runtime, or, if it couldn't start,
+    /// straight into `settings.json`, which it reads when it does.
+    private func world(_ runtime: (Runtime) -> Void, else change: (inout AppSettings) -> Void, _ what: String) {
+        if let started = app.runtime {
+            runtime(started)
+        } else {
+            do { try AppSettings.update(in: stateDir, change) } catch { log("onboarding: can't save that it \(what): \(error)") }
+        }
+        log("onboarding: \(what)")
+    }
+
+    // MARK: Act 9
 
     /// A click on the on-screen Boop: it pokes back, as the board does.
     func pokeOnScreen() {

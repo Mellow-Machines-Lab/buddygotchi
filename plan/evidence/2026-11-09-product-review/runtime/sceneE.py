@@ -1,0 +1,21 @@
+from d import *
+mark("E0 morning, ring at 2")
+xp()
+mark("E1 stroke"); stroke(); sl(5); xp()
+mark("E2 stroke again x2")
+stroke(); sl(4); stroke(); sl(4); xp()
+mark("E3 pokes x6")
+for i in range(6):
+    poke(); sl(0.7)
+sl(4); xp()
+mark("E4 nose boop"); nose(); sl(4); xp()
+mark("E5 lean 2.5 s"); lean(); sl(6); xp()
+mark("E6 ruffle (wrong-way stroke)"); ruffle(); sl(4); xp()
+mark("E7 shake x3")
+for i in range(3):
+    shake(); sl(4)
+xp()
+mark("E8 words to Boop")
+said("good morning boop"); sl(6); xp()
+said("you are the best"); sl(6); xp()
+mark("E9 end")

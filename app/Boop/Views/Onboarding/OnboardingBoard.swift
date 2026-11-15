@@ -21,111 +21,147 @@ struct BodyAct: View {
     static let hintAfter: TimeInterval = 20
 
     var body: some View {
-        VStack(spacing: 16) {
-            switch model.body {
-            case .intro: intro
-            case .looking: looking
-            case .joined: joined
-            case .skipped: EmptyView()
+        // Looked at again now and then, for the hint while it looks.
+        TimelineView(.periodic(from: .now, by: 5)) { _ in
+            ActFrame(kind: .hero, title: words.title, lead: words.lead, bar: bar) {
+                hero
+            } content: {
+                content
             }
         }
-    }
-
-    // MARK: Plug me in
-
-    private var intro: some View {
-        VStack(spacing: 18) {
-            PlugIn(model: model).frame(height: 170)
-            if model.onSimulator {
-                ActTitle(title: "Let's find my body", detail: Self.onSimulator)
-            } else {
-                ActTitle(title: "Let's find my body",
-                         detail: "Plug the board on your desk into power with its USB cable. Its screen lights up when it's on.")
-                if model.hasLink {
-                    Label("macOS will ask if I can use Bluetooth. Say OK, so I can find my body.", systemImage: "info.circle")
-                        .font(.system(size: 13))
-                        .foregroundStyle(Theme.inkSoft)
-                } else {
-                    Text("This copy of Boop runs without a board.").font(.system(size: 13)).foregroundStyle(Theme.inkSoft)
-                }
-                // No board on the desk: the simulator window will do.
-                if model.hasLink, model.simulatorHere {
-                    Button("No board? Use the simulator window", action: model.useSimulator).buttonStyle(.row)
-                }
-            }
-            Spacer(minLength: 0)
-            if model.hasLink {
-                ActNav(model: model, next: "Look for me", quiet: (label: "I don't have my Boop yet", action: { model.skipBoard() })) {
-                    model.lookForBoard()
-                }
-            } else {
-                ActNav(model: model, next: "Next") { model.skipBoard() }
-            }
+        .animation(.boopPop, value: model.board)
+        .task(id: model.body == .joined) {
+            guard model.body == .joined, !still else { return }
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) { flown = true }
         }
     }
 
     /// Where the body is when it's the simulator: its window.
     static let onSimulator = "My body is the simulator window: a board with its screen, button and sounds. It opens beside this one."
 
-
-    // MARK: Looking, and found
-
-    private var looking: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                // Rings while looking; none while something stops it.
-                if !stuck { Ripples().frame(width: 360, height: 220) }
-                OnboardingBuddy(model: model, snapshot: .onboarding(mood: "curious"), size: 140)
-            }
-            .frame(height: 220)
-            if let problem = app.startError {
-                ActTitle(title: "I couldn't start", detail: problem)
-                Button("Try again", action: model.startRuntime).buttonStyle(.row)
-            } else {
-                lookingWords
-            }
-            Spacer(minLength: 0)
-            HStack {
-                ActBack(model: model)
-                Spacer()
-                // While nothing can look, the way on isn't "no board".
-                Button(stuck ? "Go on without my body for now" : "I don't have my Boop yet", action: model.skipBoard)
-                    .buttonStyle(.quiet).font(.system(size: 13))
+    /// The title and the line under it, in each state.
+    private var words: (title: String, lead: String?) {
+        switch model.body {
+        case .intro, .skipped:
+            return ("Let's find my body", model.onSimulator ? Self.onSimulator
+                    : "Plug the board on your desk into power with its USB cable. Its screen lights up when it's on.")
+        case .joined:
+            return ("There you are!", "That's me \(model.onSimulator ? app.simulatorWhere : "on your desk"). Say hi to my body.")
+        case .looking:
+            if let problem = app.startError { return ("I couldn't start", problem) }
+            switch model.board {
+            case .found:
+                return (model.onSimulator ? "Tap my screen \(app.simulatorWhere)" : "Tap my screen on your desk",
+                        "I'm the one holding up “\(Runtime.Greeting.tapMe)”. A tap is also how you poke me, any time.")
+            case .trouble(let device): return ("I can't look for my body", device.detail)
+            case .none: return ("Looking for my body…", hint)
             }
         }
-        .animation(.boopPop, value: model.board)
     }
 
-    /// Boop couldn't start, or can't use Bluetooth: nothing's looking.
-    private var stuck: Bool {
-        if app.startError != nil { return true }
-        if case .trouble = model.board { return true }
-        return false
+    // MARK: The hero slot: one tile, one size, in every state
+
+    @ViewBuilder private var hero: some View {
+        switch model.body {
+        case .intro, .skipped: PlugIn(model: model)
+        case .looking:
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: model.stuck ? .stopped : .happy)
+                // Rings while looking; none while something stops it.
+                .background { if !model.stuck { Ripples().frame(width: Ripples.frame.width, height: Ripples.frame.height) } }
+                .overlay(alignment: .bottom) {
+                    if case .found(let name) = model.board {
+                        Text("FOUND \(name.uppercased())")
+                            .font(.detail.weight(.semibold)).tracking(0.6)
+                            .foregroundStyle(Theme.sageInk)
+                            .padding(.horizontal, Theme.gapSnug).padding(.vertical, Theme.gapTight)
+                            .background(Theme.paper, in: RoundedRectangle(cornerRadius: Theme.chipRadius))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.chipRadius).strokeBorder(Theme.hairlineStrong, lineWidth: 1))
+                            // Across the tile's foot.
+                            .alignmentGuide(.bottom) { $0[VerticalAlignment.center] }
+                            .transition(.scale(scale: 0.9).combined(with: .opacity))
+                            .task { await model.beckon() }
+                    }
+                }
+        case .joined:
+            ZStack {
+                // The on-screen Boop leaps off toward the desk, and leaves:
+                // one slime on the page at a time…
+                if !(still || flown) {
+                    OnboardingBuddy(model: model, snapshot: .onboarding(mood: "excited"), size: ActSize.hero)
+                        .transition(.asymmetric(insertion: .identity, removal: .scale(scale: 0.3)
+                            .combined(with: .offset(x: 300, y: 120)).combined(with: .opacity)))
+                }
+                // …and the board on the desk wakes up.
+                DeskBoard(model: model)
+                    .scaleEffect(still || flown ? 1 : 0.6)
+                    .opacity(still || flown ? 1 : 0)
+            }
+        }
     }
 
-    @ViewBuilder private var lookingWords: some View {
-            switch model.board {
-            case .found(let name):
-                VStack(spacing: 6) {
-                    Text("FOUND \(name.uppercased())")
-                        .font(.system(size: 12, weight: .semibold)).tracking(0.6)
-                        .foregroundStyle(Theme.sageInk)
-                    ActTitle(title: model.onSimulator ? "Tap my screen \(app.simulatorWhere)" : "Tap my screen on your desk",
-                             detail: "I'm the one holding up “\(Runtime.Greeting.tapMe)”. A tap is also how you poke me, any time.")
+    // MARK: The body
+
+    @ViewBuilder private var content: some View {
+        switch model.body {
+        case .intro, .skipped:
+            if !model.onSimulator {
+                VStack(spacing: Theme.gap) {
+                    if model.hasLink {
+                        Label("macOS will ask if I can use Bluetooth. Say OK, so I can find my body.", systemImage: "info.circle")
+                    } else {
+                        Text("This copy of Boop runs without a board.")
+                    }
+                    // No board on the desk: the simulator window will do.
+                    if model.hasLink, model.simulatorHere {
+                        Button("No board? Use the simulator window", action: model.useSimulator).buttonStyle(ActControlStyle())
+                    }
                 }
-                .transition(.scale(scale: 0.9).combined(with: .opacity))
-                .task { await model.beckon() }
-            case .trouble(let device):
-                ActTitle(title: "I can't look for my body", detail: device.detail)
-                if case .system(let label, let url)? = device.fix {
-                    Button(label) { NSWorkspace.shared.open(url) }.buttonStyle(.row)
-                }
-            case .none:
-                // Looked at again now and then, for the hint.
-                TimelineView(.periodic(from: .now, by: 5)) { _ in
-                    ActTitle(title: "Looking for my body…", detail: hint)
+                .font(.note).foregroundStyle(Theme.inkSoft)
+            }
+        case .looking:
+            EmptyView()
+        case .joined:
+            if let firmware = app.firmwareOffer {
+                snack(firmware)
+            } else if let device = app.status?.device, !device.hasTheVoice {
+                Card(padding: Theme.gutter) {
+                    Label("I've lost my voice: there's no voice file on my card. I'll still show everything; Settings says how to fix it.",
+                          systemImage: "speaker.slash")
+                        .font(.body).foregroundStyle(Theme.inkSoft)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
+        }
+    }
+
+    // MARK: The bar: the main button always there
+
+    private var bar: ActBar {
+        let skip = (label: "I don't have my Boop yet", action: { model.skipBoard() })
+        // While nothing can look, the way on isn't "no board".
+        let onWithout = (label: "Go on without my body for now", action: { model.skipBoard() })
+        switch model.body {
+        case .intro, .skipped:
+            return model.hasLink
+                ? ActBar(model: model, next: "Look for me", quiet: skip) { model.lookForBoard() }
+                : ActBar(model: model, next: "Next") { model.skipBoard() }
+        case .joined:
+            return ActBar(model: model)
+        case .looking:
+            if app.startError != nil {
+                return ActBar(model: model, next: "Try again", quiet: onWithout, action: model.startRuntime)
+            }
+            switch model.board {
+            case .trouble(let device):
+                if case .system(let label, let url)? = device.fix {
+                    return ActBar(model: model, next: label, quiet: onWithout) { NSWorkspace.shared.open(url) }
+                }
+                return ActBar(model: model, next: onWithout.label, action: onWithout.action)
+            case .found: return ActBar(model: model, next: "Waiting for a tap", busy: true, quiet: skip)
+            case .none: return ActBar(model: model, next: "Looking…", busy: true, quiet: skip)
+            }
+        }
     }
 
     private var hint: String {
@@ -138,57 +174,21 @@ struct BodyAct: View {
         return "Can't see me yet. Is my screen on? Try unplugging me and plugging me back in."
     }
 
-    // MARK: Joined
-
-    private var joined: some View {
-        VStack(spacing: 14) {
-            ZStack {
-                // The on-screen Boop leaps off toward the desk, and leaves:
-                // one slime on the page at a time…
-                if !(still || flown) {
-                    OnboardingBuddy(model: model, snapshot: .onboarding(mood: "excited"), size: 150)
-                        .transition(.asymmetric(insertion: .identity, removal: .scale(scale: 0.3)
-                            .combined(with: .offset(x: 300, y: 120)).combined(with: .opacity)))
-                }
-                // …and the board on the desk wakes up.
-                DeskBoard(model: model)
-                    .scaleEffect(still || flown ? 1 : 0.6)
-                    .opacity(still || flown ? 1 : 0)
-            }
-            .frame(height: 210)
-            ActTitle(title: "There you are!", detail: "That's me \(model.onSimulator ? app.simulatorWhere : "on your desk"). Say hi to my body.")
-            if let firmware = app.firmwareOffer {
-                snack(firmware)
-            } else if let device = app.status?.device, !device.hasTheVoice {
-                Card(padding: 14) {
-                    Label("I've lost my voice: there's no voice file on my card. I'll still show everything; Settings says how to fix it.",
-                          systemImage: "speaker.slash")
-                        .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-                }
-            }
-            Spacer(minLength: 0)
-            ActNav(model: model)
-        }
-        .task {
-            guard !still else { return }
-            try? await Task.sleep(for: .milliseconds(250))
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) { flown = true }
-        }
-    }
-
     /// Older firmware than the app carries: a snack, over USB.
     private func snack(_ firmware: BoardFirmware) -> some View {
-        Card(padding: 14) {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("I'm a bit hungry. Feed me an update?").font(.boop(14, .bold))
-                    Text(snackDetail(firmware)).font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
+        Card(padding: Theme.gutter) {
+            HStack(spacing: Theme.gap) {
+                VStack(alignment: .leading, spacing: Theme.hair) {
+                    Text("I'm a bit hungry. Feed me an update?").font(.boopHeading)
+                    Text(snackDetail(firmware)).font(.body).foregroundStyle(Theme.inkSoft)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer()
+                Spacer(minLength: 0)
                 switch app.firmwareWrite {
-                case .idle, .failed: Button("Update") { app.updateFirmware() }.buttonStyle(.rowFilled)
-                case .writing, .done: EmptyView()
+                case .idle, .failed: Button("Update") { app.updateFirmware() }.buttonStyle(ActControlStyle())
+                case .writing: ProgressView().controlSize(.small).frame(width: ActSize.controls)
+                case .done: Image(systemName: "checkmark.circle.fill").font(.boopTitle).foregroundStyle(Theme.sage)
+                        .frame(width: ActSize.controls)
                 }
             }
         }
@@ -208,34 +208,47 @@ struct BodyAct: View {
 /// its cable running to a plug, waiting to be found.
 private struct PlugIn: View {
     @ObservedObject var model: OnboardingModel
+    static let cable = CGSize(width: 90, height: 4), plug = CGSize(width: 26, height: 18)
 
     var body: some View {
-        HStack(spacing: 0) {
-            OnboardingBuddy(model: model, snapshot: .onboarding(doing: "asleep", mood: "comfy"), size: 150, face: .asleep)
-                .overlay(alignment: .topTrailing) {
-                    Text("z z")
-                        .font(.boop(18, .heavy))
-                        .foregroundStyle(Theme.inkSoft)
-                        .offset(x: 18, y: -14)
+        // The tile centred under the title; the cable and plug off its side,
+        // out of the layout.
+        OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero, face: .asleep)
+            .overlay(alignment: .topTrailing) {
+                Text("z z")
+                    .font(.boopTitle)
+                    .foregroundStyle(Theme.inkSoft)
+                    .alignmentGuide(.trailing) { $0[.leading] }
+                    .alignmentGuide(.top) { $0[VerticalAlignment.center] }
+            }
+            .overlay(alignment: .trailing) {
+                HStack(spacing: 0) {
+                    Capsule().fill(Theme.inkFaint).frame(width: Self.cable.width, height: Self.cable.height)
+                    RoundedRectangle(cornerRadius: Theme.chipRadius).fill(Theme.inkSoft)
+                        .frame(width: Self.plug.width, height: Self.plug.height)
+                        .overlay { Image(systemName: "bolt.fill").font(.detail).foregroundStyle(Theme.paper) }
                 }
-            Capsule().fill(Theme.hairlineStrong).frame(width: 90, height: 8)
-            RoundedRectangle(cornerRadius: 6).fill(Theme.inkSoft).frame(width: 30, height: 22)
-                .overlay { Image(systemName: "bolt.fill").font(.system(size: 11)).foregroundStyle(Theme.paper) }
-        }
-        .accessibilityElement()
-        .accessibilityLabel("The board, plugged into power, napping")
+                .alignmentGuide(.trailing) { $0[.leading] }
+            }
+            .accessibilityElement()
+            .accessibilityLabel("The board, plugged into power, napping")
     }
 }
 
-/// The board after the jump: its screen, awake, on a little desk.
+/// The board after the jump: its screen, awake, on a little desk under it,
+/// the same size as before so nothing moves.
 private struct DeskBoard: View {
     @ObservedObject var model: OnboardingModel
+    static let desk = CGSize(width: 280, height: 8)
 
     var body: some View {
-        VStack(spacing: 0) {
-            OnboardingBuddy(model: model, snapshot: .onboarding(mood: "happy"), size: 160)
-            RoundedRectangle(cornerRadius: 3).fill(Theme.hairlineStrong).frame(width: 260, height: 6)
-        }
+        OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.hero)
+            .overlay(alignment: .bottom) {
+                RoundedRectangle(cornerRadius: Theme.gapTight).fill(Theme.well)
+                    .overlay(RoundedRectangle(cornerRadius: Theme.gapTight).strokeBorder(Theme.hairlineStrong, lineWidth: 1))
+                    .frame(width: Self.desk.width, height: Self.desk.height)
+                    .alignmentGuide(.bottom) { $0[.top] - Theme.gapTight }
+            }
     }
 }
 
@@ -256,10 +269,12 @@ struct HowToAct: View {
     private var paired: Bool { model.hasBoard }
 
     var body: some View {
-        VStack(spacing: 14) {
-            ActTitle(title: "Here's how we get along",
-                     detail: paired ? nil : "You'll try these on my body when we meet.")
-            VStack(spacing: 8) {
+        ActFrame(kind: .list, title: "Here's how we get along",
+                 lead: paired ? nil : "You'll try these on my body when we meet.",
+                 bar: ActBar(model: model, next: "Got it")) {
+            OnboardingBuddy(model: model, snapshot: model.look, size: ActSize.side)
+        } content: {
+            VStack(spacing: Theme.gapSnug) {
                 lesson(1, "Tap my screen", "I poke back. Tap a lot and I get grumpy.", done: model.lessons.contains(.tap))
                 lesson(2, "Press my button", buttonDetail,
                        done: model.lessons.contains(.button), waiting: paired && model.lessons.contains(.tap))
@@ -269,19 +284,6 @@ struct HowToAct: View {
                 lesson(4, "When I glow amber, tap me", amberDetail, done: model.lessons.contains(.amber),
                        waiting: paired && model.lessons.isSuperset(of: [.tap, .button, .talk]), amber: true)
             }
-            VStack(alignment: .leading, spacing: 6) {
-                Text("HOW I FEEL").font(.system(size: 11, weight: .semibold)).foregroundStyle(Theme.inkSoft)
-                HStack(spacing: 8) {
-                    face("happy", "Happy", "it's going well")
-                    face("grumpy", "Grumpy", "failures pile up")
-                    face("proud", "Proud", "a big finish")
-                    face("tired", "Tired", "a long day")
-                }
-                Text("My mood holds steady. Big moments move it, and it settles back with time.")
-                    .font(.system(size: 12)).foregroundStyle(Theme.inkSoft)
-            }
-            Spacer(minLength: 0)
-            ActNav(model: model, next: "Got it")
         }
         .task {
             // Without a board, the on-screen Boop shows the poke now and then.
@@ -331,7 +333,7 @@ struct HowToAct: View {
         let examples = Self.examples(name: name)
         let chips = { (words: [String]) in
             HStack(spacing: Theme.gapSnug) {
-                Text("TRY").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.inkFaint)
+                Text("TRY").font(.detail.weight(.semibold)).tracking(0.6).foregroundStyle(Theme.inkSoft)
                 ForEach(words, id: \.self, content: exampleChip)
             }
         }
@@ -340,14 +342,16 @@ struct HowToAct: View {
             chips([examples[0], examples[2]])
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.leading, 56)
+        // Under the lesson's title, past its number.
+        .padding(.leading, StepRow.indent)
         .accessibilityElement(children: .combine)
     }
 
     private func exampleChip(_ words: String) -> some View {
-        Text("“\(words)”").font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-            .padding(.horizontal, 8).padding(.vertical, 3)
-            .background(Capsule().strokeBorder(Theme.hairlineStrong))
+        // Words to say aloud, not buttons: no edge.
+        Text("“\(words)”").font(.detail).foregroundStyle(Theme.inkSoft)
+            .padding(.horizontal, Theme.gapSnug).padding(.vertical, Theme.gapTight)
+            .background(Theme.well, in: RoundedRectangle(cornerRadius: Theme.chipRadius))
     }
 
     /// The talk lesson's words: what it's for, what the Mac heard, or why
@@ -375,22 +379,5 @@ struct HowToAct: View {
     private func lesson(_ number: Int, _ title: String, _ detail: String, done: Bool = false, waiting: Bool = false,
                         amber: Bool = false) -> some View {
         StepRow(number: number, title: title, detail: detail, done: done, waiting: waiting, amber: amber)
-    }
-
-    /// The legend's tiles: each mood still, the slime's or the pack's face.
-    static let faceTile: CGFloat = 44
-
-    /// One mood of the legend, its idle face, on the paper: something to
-    /// read, not a card to pick.
-    private func face(_ design: String, _ title: String, _ detail: String) -> some View {
-        HStack(spacing: Theme.gapSnug) {
-            MoodTile(mood: design, size: Self.faceTile)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.boop(13, .bold))
-                Text(detail).font(.system(size: 11)).foregroundStyle(Theme.inkSoft)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityElement(children: .combine)
     }
 }

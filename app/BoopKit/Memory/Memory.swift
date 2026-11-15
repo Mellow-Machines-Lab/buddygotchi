@@ -30,7 +30,7 @@ public final class Memory: @unchecked Sendable {
     /// The day's counts (`daily-counts.jsonl`), and the settings and growth
     /// they keep as they stand, the runtime's; nil where there are none.
     public let counts: Checkpointed<CountsReader>
-    public var countsSample: (() -> (quiet: Bool, volume: Int, stage: Int))?
+    public var countsSample: (() -> (quiet: Bool, volume: Int, level: Int))?
     private var countsWrittenAt: Int64?
     private var countsWritten: DayCounts?
     /// The digests as read, so a check-in doesn't decode the file each time
@@ -228,8 +228,7 @@ public final class Memory: @unchecked Sendable {
         recordWish(e)
         recordFelt(e)
         recordNotice(e)
-        // The dream's first: reading `e` can earn a stage, whose `grew` is
-        // logged and heard inside the day's read, with a later seq.
+        // The dream's first.
         dreams.feed(e, line: line)
         runner.feed(e, line: line)
         counts.feed(e, line: line)
@@ -462,11 +461,11 @@ public final class Memory: @unchecked Sendable {
         guard let files, let sample = countsSample?(), let state = counts.state else { return }
         // Quiet stays on for the day once it has been on.
         let quiet = sample.quiet || state.row.quiet == true
-        if state.row.quiet != quiet || state.row.volume != sample.volume || state.row.stage != sample.stage {
+        if state.row.quiet != quiet || state.row.volume != sample.volume || state.row.level != sample.level {
             counts.update {
                 $0.row.quiet = quiet
                 $0.row.volume = sample.volume
-                $0.row.stage = sample.stage
+                $0.row.level = sample.level
             }
         }
         if !now, let at = countsWrittenAt, wall - at < Self.countsEveryMs, wall >= at { return }

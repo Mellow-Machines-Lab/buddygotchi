@@ -1,0 +1,11 @@
+{
+  "seq": 418,
+  "name": "Mochi",
+  "level": 12,
+  "stage": "buddy",
+  "utc_offset": 60,
+  "activity": "testing",
+  "day": "2026-11-08",
+  "xp_today": 82,
+  "added": { "turns": 3, "tests_passed": 2, "ships": 0, "lines_changed": 140 }
+}

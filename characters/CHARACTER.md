@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-04. The contract a character pack meets, so that any
+Updated 2026-11-14. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -375,14 +375,19 @@ your prompt (`Signs`, the `react.sign` question, asked only when NOW is a
 prompt's reading, not a message's). A pack without the file holds up no
 signs.
 
-Its `[grew]` lines, and `[grew sprout]`, `[grew buddy]` and `[grew chonk]`, the
-stage's first, are what it may hold up as it grows (`Signs.grew`): Jev picks the
-one that says what grew, at the `grew` event, which waits while something needs
-you (`Core.reachedStage`). A pack with none holds up nothing
-then, and the board still plays the new body.
+Its `[world]` lines, and `[world boop]`, `[world wave]`, `[world heart]` and
+`[world cheer]`, the kind's first, are what it may hold up when another buddy
+reaches out from the world (`Signs.world`): Jev picks one at the `world` event.
+A pack with none holds up nothing then. A level-up holds `level 12!` low in
+gold (the `do`'s `gold`; a face that holds nothing low holds it up as its
+sign), and today's ring closing holds up `today's done!`, one moment when
+both come at once: the rules' own, needing nothing of the pack's.
 
-**The growth bar,** the gel's own (`render::GrowthShow`, `paintGrowthBar`), goes
-by `state.xp`, the percent through the stage. A face with no bar ignores it.
+**Today's ring,** the gel's own bar (`render::GrowthShow`, `paintGrowthBar`),
+goes by `state.xp`, today's XP in percent: it shows when XP comes in, with the
+number after it, inside the panel's rounded corners, and sparkles once when
+it's full, or, filled while it couldn't show, the next time it can; while
+LISTENING has the top band it gives way. A face with no bar ignores it.
 
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own
@@ -445,7 +450,9 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 A pack with a voice has recorded takes, each tagged with the moods it plays
 in, a feeling or a topic (what the brain's `say` picks), or a reply it's the
 words of (§7), and a kind (sound, word, phrase or swear). The Moment's size
-picks the kind: a sound small, a word medium, a phrase big or huge.
+picks the kind: a sound small, a word medium, a phrase big or huge. A swear
+plays only when the brain's `say` asks for one, and the person has turned
+swearing on in Settings (it's off by default).
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
@@ -580,10 +587,9 @@ Besides drawing each mood and state, a face:
   `firmware/src/render/tags.h`:
   - The part of the day: `morning`, `day`, `evening`, `night`.
   - Special days: `friday`, `newyear`, `valentines`, `halloween`, `winter`,
-    `programmers`, `lunar`, and `party` (a milestone day since hatching, New
-    Year's Day, the day a growth stage was reached, but never the day it
-    hatched). The Mac greets a special day with its sign. A stage reached has
-    none of its own: Jev picks one as it grows.
+    `programmers`, `lunar`, and `party` (a milestone day since hatching or New
+    Year's Day, but never the day it hatched). The Mac greets a special day
+    with its sign.
   - The tiers (`Tags.tiers`): `tier1` from 30 seconds, `tier2` from a
     minute, `tier3` from 2, `tier4` from 5, `tier5` from 10. They count how
     long the agents' working stretch has run, from its first turn, a rest of
@@ -592,7 +598,7 @@ Besides drawing each mood and state, a face:
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
   - The growth stage Boop is at, `hatchling`, `sprout` or `chonk`, none at
-    Buddy (`Tags.stages`), which can go back; and `hushed` while the buddy is
+    Buddy (`Tags.stages`), reached at levels 5, 15 and 30; and `hushed` while the buddy is
     hushed (`Core.Hush`). The gel's body and its pastimes go by the stage;
     nothing useful does. A board with no Mac keeps the stage's tag, and only
     that, as the rest go stale.

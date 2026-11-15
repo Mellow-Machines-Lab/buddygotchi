@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-04. How we check that Jev decides as Boop should: short
+Updated 2026-11-14. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -16,7 +16,9 @@ fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
 say how long Boop has been in it, and how much it says (normal unless the file says quiet
-or chatty), told in CONTEXT's Talk row and held in code. The runner (`Eval` in
+or chatty), told in CONTEXT's Talk row and held in code, with swearing on
+(the app's Settings switch, off there by default, so `say` offers the swear
+as it always has here). The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
 (`Runtime.harness`), with the real `mood` and `react` outputs, except
 that a Moment goes to a fake device, which answers at once with the
@@ -65,7 +67,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
-| `grew` | Boop's XP reaches the stage the step's `kind` names (`Sprout` unless it says), as `Core.reachedStage` hears it: a `grew` event, `Boop grew: it's a Sprout now.`, a pass |
+| `world` | Another buddy's gesture from the world, the step's `kind` (`boop` unless it says; `wave`, `heart`, `cheer`), `count` of them together, from Europe or Africa: a `world` event, `Someone in Europe or Africa booped Boop.`, a pass |
 | `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
@@ -277,7 +279,7 @@ file-name order:
 | `steps[].workspace` | The thread's workspace, when it has one |
 | `steps[].session` | Claude's session, `s1` unless it says: another session is another thread, working at the same time |
 | `steps[].agent` | Whose step it is: `claude` (the default) or `codex`, whose hooks it then sends (a failed turn is Claude's alone: Codex has no hook for it) |
-| `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says |
+| `steps[].count` | How many pokes a `pokes` step makes, 4 unless it says; how many lines an `edit` removes; how many gestures a `world` step brings together |
 | `steps[].todos` | A `to-do list` step's list, `3/7`: done, of all |
 | `steps[].reaction` | How a Moment this step's passes start ends: `done` (the default), `in progress` (HISTORY keeps saying so), or `failed: <why>` (HISTORY leaves it out) |
 | `steps[].brain` | The expect brain's answers for the step's passes, one choice a question as a demo's brain step has them (`{"react.face": "amused"}`), ahead of its `expect` |

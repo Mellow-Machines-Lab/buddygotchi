@@ -113,7 +113,7 @@ final class DailyCountsTests: XCTestCase {
         XCTAssertEqual(kept.day, "2026-11-05")
         XCTAssertEqual(kept.quiet, true)
         XCTAssertEqual(kept.volume, 4)
-        XCTAssertEqual(kept.stage, 2)
+        XCTAssertEqual(kept.level, 2)
         memory.tick(wall: t0 + 49 * 60 * minute)
         XCTAssertTrue(MemoryStore.counts(in: a).map(\.day).contains("2026-11-05"), "its day closed, its row stays")
     }
@@ -136,7 +136,7 @@ final class DailyCountsTests: XCTestCase {
     }
 
     /// Quiet lasts its own day: after a day on Quiet, the next row says what
-    /// the setting says. Volume and stage carry, having no day of their own.
+    /// the setting says. Volume and level carry, having no day of their own.
     func testQuietClearsWithTheDay() throws {
         let dir = try temp()
         let memory = Memory(store: try KeyValueStore(directory: nil), time: time, files: try MemoryStore(directory: dir, today: "2026-11-04"))
@@ -255,11 +255,11 @@ final class DailyCountsTests: XCTestCase {
         var r = DayCounts(day: "2026-11-04")
         r.quiet = false
         r.volume = 6
-        r.stage = 1
+        r.level = 1
         let data = try JSONEncoder().encode(r)
         let keys = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any]).keys.sorted()
-        XCTAssertEqual(keys, ["answerMs", "answered", "day", "disconnects", "faceDown", "failures", "hereMinutes", "hushes", "needsYou", "quiet", "spoken",
-                              "stage", "threadsOpened", "touches", "touchesNoWish", "unpluggedMinutes", "volume", "wishWaitMs", "wishesGaveUp", "wishesMade", "wishesMet"])
+        XCTAssertEqual(keys, ["answerMs", "answered", "day", "disconnects", "faceDown", "failures", "hereMinutes", "hushes", "level", "needsYou", "quiet", "spoken",
+                              "threadsOpened", "touches", "touchesNoWish", "unpluggedMinutes", "volume", "wishWaitMs", "wishesGaveUp", "wishesMade", "wishesMet"])
         let bare = try JSONDecoder().decode(DayCounts.self, from: Data(#"{"day":"2026-11-04","touches":3}"#.utf8))
         XCTAssertEqual(bare.touches, 3)
     }

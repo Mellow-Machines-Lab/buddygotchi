@@ -41,7 +41,7 @@ bool sameModel(const Model& a, const Model& b) {
     return false;
   for (int i = 0; i < a.listCount; ++i)
     if (!sameRow(a.list[i], b.list[i])) return false;
-  return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId &&
+  return a.base == b.base && a.act == b.act && a.mood == b.mood && a.attn == b.attn && a.attnId == b.attnId && a.attnKind == b.attnKind &&
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
          !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && !std::strcmp(a.buddy, b.buddy) && a.workAct.kind == b.workAct.kind &&
@@ -184,6 +184,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     copyStr(m.name, sizeof(m.name), attn["name"] | "");
     m.more = attn["more"] | 0;
     m.attnId = attn["id"] | 0u;
+    m.attnKind = render::attnKindFromName(attn["kind"]);
   }
   m.busy = doc["busy"] | 0;
   m.idle = doc["idle"] | 0;
@@ -298,6 +299,13 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
   // The words to hold up, as the fonts draw them, cut to kSignGlyphs.
   mo.low = (args["low"] | false) && b_.face().holdsUpFinish();
   render::foldText(args["sign"].as<const char*>(), mo.low ? kLowGlyphs : kSignGlyphs, mo.sign, sizeof(mo.sign));
+  // A celebration's, held low in gold; a face that holds nothing low holds
+  // it up as its sign, when it has none.
+  render::foldText(args["gold"].as<const char*>(), kSignGlyphs, mo.gold, sizeof(mo.gold));
+  if (mo.gold[0] && !b_.face().holdsUpFinish()) {
+    if (!mo.sign[0]) copyStr(mo.sign, sizeof(mo.sign), mo.gold);
+    mo.gold[0] = 0;
+  }
   // Why it plays, for the lane, cut the same.
   render::foldText(args["reason"].as<const char*>(), kSignGlyphs, mo.reason, sizeof(mo.reason));
   // What a face it brings replies to what you said, by name.

@@ -74,6 +74,9 @@ extension Runtime {
         public var speaks: () -> Bool
         /// How much it says, chosen in Settings.
         public var talk: () -> Talk
+        /// Whether it may swear (`AppSettings.swearing`): on unless told,
+        /// as the evals keep it.
+        public var swears: () -> Bool = { true }
         /// Carries out the core's effects an output's choice caused (a hush):
         /// the app's show on the board; nil logs their records only.
         public var effects: (([CoreEffect]) -> Void)?
@@ -223,7 +226,7 @@ extension Runtime {
                 carryOut(ms.map { core.hush(forMs: $0, by: .talk, at: at) } ?? core.unhush(by: .talk, at: at), at)
             }, nap: { at in
                 carryOut(core.nap(at: at), at)
-            }, talk: m.talk, reason: { [weak h] about in
+            }, talk: m.talk, swears: m.swears, reason: { [weak h] about in
                 // Why, from the line the brain read for it. Weak: the
                 // harness holds this output.
                 guard let h, let about else { return nil }
@@ -283,11 +286,12 @@ extension Runtime {
                 // NOW is an idle check-in when one is the newest thing to happen.
                 let newest = log.events.last { !$0.fromHarness }
                 let idle = newest.map(MomentOutput.isCheckIn) == true
-                let stage = Growth.stages[max(1, min(core.stage(), Growth.stages.count)) - 1].name
                 let wall = core.wall(now), time = core.config.time
-                let buddy = ContextSection.Buddy(stage: stage, daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
-                let when = ContextSection.when(at: wall, specialDays: Days.words(at: wall, hatched: core.config.hatched, name: pack.name,
-                                                                                    stage: core.config.stageReached, time: time),
+                // With no growth store (a demo, an eval), a level 1 with an empty ring.
+                let growth = core.growth() ?? Growth()
+                let buddy = ContextSection.Buddy(level: growth.level, today: growth.today,
+                                                 daysOld: core.config.hatched.map { time.days(from: $0, to: wall) })
+                let when = ContextSection.when(at: wall, specialDays: Days.words(at: wall, hatched: core.config.hatched, name: pack.name, time: time),
                                                time: time)
                 return ContextSection.section(when: when, talk: m.talk(), silentMs: core.hushed(at: now).map { $0.until - now },
                                               buddy: buddy, company: m.company(),
