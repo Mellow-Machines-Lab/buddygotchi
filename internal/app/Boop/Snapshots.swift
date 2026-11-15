@@ -143,10 +143,16 @@ enum Snapshots {
                 shot("world-arrivals-held", model(installer, status: held), pane: .overview, tab: .world)
                 var many = status()
                 let start = Calendar.current.startOfDay(for: Date())
-                many.world?.link.today = (0..<9).map { i in
-                    .init(counts: [.init(kind: [.boop, .wave, .heart][i % 3], n: 1 + i % 2)], region: World.Region.allCases[i % 3],
-                          at: start.addingTimeInterval(Double(12 * 3600 - i * 1800)))
-                } + [.init(counts: [.init(kind: .boop, n: 4)], region: nil, plays: false, at: start.addingTimeInterval(3600))]
+                // In steps, with their types: as one expression it's too slow
+                // for CI's compiler to type-check.
+                let kinds: [World.GestureKind] = [.boop, .wave, .heart]
+                var arrivals: [WorldLink.Arrival] = (0..<9).map { (i: Int) -> WorldLink.Arrival in
+                    WorldLink.Arrival(counts: [.init(kind: kinds[i % 3], n: 1 + i % 2)], region: World.Region.allCases[i % 3],
+                                      at: start.addingTimeInterval(Double(12 * 3600 - i * 1800)))
+                }
+                arrivals.append(WorldLink.Arrival(counts: [.init(kind: .boop, n: 4)], region: nil, plays: false,
+                                                  at: start.addingTimeInterval(3600)))
+                many.world?.link.today = arrivals
                 shot("world-arrivals-many", model(installer, status: many), pane: .overview, tab: .world)
                 // The world from before, and it isn't answering now.
                 var stale = status()
