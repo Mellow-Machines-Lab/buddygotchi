@@ -95,6 +95,7 @@ public final class Core {
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
     var lastSessions: [SessionSummary] = []
+    var lastSessionsAt: Int64?
     /// Level-ups and the ring closing, waiting for nothing to need you.
     var growthHeld: [GrowthBeat] = []
     /// The session a BOOT press opened last, and when.
@@ -1241,14 +1242,20 @@ public final class Core {
         numberRows()
         let snapshot = snapshot(at: now)
         let sessions = sessionList(at: now)
-        defer { lastSessions = sessions }
         // Only a lane's new word changed: it waits for the next `state`
-        // once `sendEveryMs` has passed, or for the next tick.
-        var wordsOnly = false
+        // once `sendEveryMs` has passed, or for the next tick. The
+        // popover's list waits the same way, so a burst of calls builds one
+        // status, not one each.
+        var wordsOnly = false, listWordsOnly = false
         if var before = lastPublished, let at = lastPublishedAt, now - at < WorkStream.sendEveryMs {
             before.calls = snapshot.calls
             wordsOnly = before == snapshot
         }
+        if let at = lastSessionsAt, now - at < WorkStream.sendEveryMs {
+            func wordless(_ list: [SessionSummary]) -> [SessionSummary] { list.map { var s = $0; s.word = nil; return s } }
+            listWordsOnly = wordless(sessions) == wordless(lastSessions)
+        }
+        if snapshot != lastPublished, !wordsOnly { (lastSessions, lastSessionsAt) = (sessions, now) }
         if snapshot != lastPublished, !wordsOnly {
             // A Doing that changed with no reason on anything playing: a
             // caption alone, which no line records, so the brain hears nothing new.
@@ -1261,7 +1268,8 @@ public final class Core {
             lastPublishedAt = now
             // The picture changes before any reaction plays on top of it.
             fx.insert(.state(snapshot), at: 0)
-        } else if sessions != lastSessions {
+        } else if sessions != lastSessions, !listWordsOnly {
+            (lastSessions, lastSessionsAt) = (sessions, now)
             fx.insert(.sessions, at: 0)
         }
     }

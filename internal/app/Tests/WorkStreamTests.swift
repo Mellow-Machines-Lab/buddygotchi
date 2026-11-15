@@ -190,6 +190,26 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(rig.state.calls, [], "the needs-you screen clears the stream")
     }
 
+    /// The popover's list waits as the board's `state` does: a session's
+    /// new word alone asks for no new status within `sendEveryMs` of the
+    /// last, so twenty calls in a burst build one, not twenty.
+    func testABurstOfCallsAsksForOneStatus() {
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.now += 1000
+        var pushes = 0
+        for n in 1...20 {
+            let fx = rig.send(call(rig, "\(n)", program: n % 2 == 0 ? "grep" : "sed"))
+            pushes += fx.effects.filter { if case .state = $0 { true } else if case .sessions = $0 { true } else { false } }.count
+            rig.now += 10
+        }
+        XCTAssertEqual(pushes, 1, "the first call's; the rest wait")
+        rig.now += 250
+        let next = rig.send(call(rig, "21", program: "rg"))
+        XCTAssertEqual(next.effects.filter { if case .state = $0 { true } else if case .sessions = $0 { true } else { false } }.count, 1)
+        XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.word, "rg")
+    }
+
     /// Four lanes at most (`WorkStream.maxLanes`), each its own slot: a
     /// fifth session at work gets none, and no other's slot, until one
     /// frees, when its next call takes it.
