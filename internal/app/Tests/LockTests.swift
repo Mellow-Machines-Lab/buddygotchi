@@ -1,7 +1,6 @@
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 private let t0: Int64 = 1_790_000_000_000

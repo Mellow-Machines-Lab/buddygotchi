@@ -2,7 +2,6 @@ import AgentHooks
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// What Boop did before its brain moved onto MellowHarness (main at 4bea7b21)

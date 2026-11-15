@@ -25,7 +25,7 @@ What a pack holds, and what it must have:
 | `demo/<name>.jsonl` | no | Its demos ([DEMOS.md](DEMOS.md)) |
 | `demo/recordings/<name>.json` | one for each demo of one buddy | What the board was sent as the demo played, which the simulator's page plays (§13) |
 | `studio/` and `studio` in `character.json` | no | Its preview in the Character Studio (§12) |
-| `references/`, `review/` | no | What people gave to make it from, and what's up for review (§16) |
+| `references/` | no | What people gave to make it from (§16) |
 | `LICENSE` | no | The pack's own licence; without one, the repository's MIT licence (§11) |
 | `design/`, `tools/`, `tests/`, `evals/` | no | What its art and sounds are made from, and its own tests |
 
@@ -40,7 +40,10 @@ make -C internal build && .build/debug/boopdev check # every pack in characters/
   does: `character.json` with its moods and their graph, the steering and
   its budgets, the faces' files, the voice and every demo.
 - `charactergen.py --check` says whether it builds: the moods and startup
-  mood `moods.h` needs, the rig, the studio entry and the references.
+  mood `moods.h` needs, the rig, the studio entry and the references. It
+  also prints the pack's gaps, what it lacks that doesn't stop it: moods a
+  preview has no art for, lasting moods with no steering file, moods with
+  no voice takes, no signs or dream signs.
 - `CHARACTER=<name> make -C internal fw-test` builds the firmware with it,
   to check its faces.
 
@@ -118,15 +121,13 @@ The first of these wins:
 from there:
 
 - `staged/<name>/`: the pack's files, each a link, but for what no build
-  reads (`design/`, `references/`, `review/`).
+  reads (`design/`, `references/`, and an older pack's `review/`).
 - `pack`: the one pointer to it.
 - `firmware/`: the pack's, with the two headers staging makes (`moods.h`,
   §9, and `rig_tables.h`, §15).
 - `packs/`: what the app bundles, which leaves out a pack's firmware, rig,
   voice file, tools and tests. It holds the chosen pack, which
-  `packs/chosen` names, and every other pack in the chosen one's folder, for
-  buddies that run another pack. The app loads each buddy's pack by its `id`
-  (`Buddy`, internal/VERIFICATION.md §2's `--buddies`).
+  `packs/chosen` names.
 
 `firmware/tools/pio.sh` stages before every PlatformIO run, and
 `make -C internal build` before every app build. A stage changes only what
@@ -169,7 +170,7 @@ The table above says what each is. Laid out:
   rig/        expressions.json  looks.json  clips/<id>.json
   voice/      voice.bin
   demo/       <name>.jsonl  recordings/<name>.json
-  studio/  references/  review/  design/  tools/  evals/
+  studio/  references/  design/  tools/  evals/
   tests/      firmware/  tools/  mirror/
 ```
 
@@ -276,7 +277,7 @@ the same for every pack (`Steering.Budget`, in
 `app/BoopKit/Harness/Steering.swift`). The app logs a file over its budget
 and still uses it.
 
-The prompt's order is the buddy's header (several buddies only), the guide,
+The prompt's order is the guide,
 PERSONALITY, MEMORY, MOOD, CONTEXT, HISTORY (closed by how long the mood has
 lasted) and NOW.
 
@@ -757,9 +758,10 @@ from elsewhere brings its own.
 
 ## 12. The studio (optional)
 
-The [Character Studio](studio/README.md), `characters/studio/`, is one page
-for any pack: its moods and the engine's states, and a preview of each pair
-when the pack brings one. A pack opts in with `studio` in `character.json`,
+The [Character Studio](studio/README.md), `characters/studio/`, is one
+contact sheet for any pack: every mood against every one of the engine's
+states, each cell drawn by a preview, and one cell large when clicked. A
+pack opts in to a preview of its own with `studio` in `character.json`,
 a list with an entry for each preview it brings. Pixel's:
 
 ```json
@@ -795,9 +797,7 @@ a list with an entry for each preview it brings. Pixel's:
   adds to it; with none, the card is the board's own.
 
 With no entry, every pack gets the board's own preview of each face its
-boards have (`faces`, §9), its id `board-<face>`, which the studio's
-Transitions and References run on too (§16), and shows its steering, moods,
-signs, takes, demos, evals and golden frames (`tests/golden-*/`).
+boards have (`faces`, §9), its id `board-<face>`.
 
 `charactergen.py` writes the page's data (`characters/studio/packs.js`) from
 the packs, and `--check` fails when a declared file is missing, a preview
@@ -831,9 +831,9 @@ the app leaves the recordings out. How to write, record and play one:
 6. Try it: `CHARACTER=<yours> make demo NAME=hello` plays Pixel's short
    demo, which the copy carries, in the simulator's page.
 7. Flash it: `make flash CHARACTER=<yours>`.
-8. Optionally, write it demos ([DEMOS.md](DEMOS.md)), and give it a studio
-   entry (§12) to look at every mood and state in
-   `characters/studio/index.html`.
+8. Optionally, write it demos ([DEMOS.md](DEMOS.md)). To look at every
+   mood and state on its board, open the Character Studio (§12); a studio
+   entry of its own is only for a preview that isn't the board.
 
 How the last new character ran, step by step, is
 [new-character-playbook.md](new-character-playbook.md).
@@ -996,11 +996,11 @@ and idle from a tier, while something needs you or asleep from a wait, or
 whenever a tag is on. Its kit stays out while its tier lasts. `dbg.pastime`
 plays one by its name, for scenarios and tools.
 
-## 16. References and review (optional)
+## 16. References (optional)
 
 A person gives a short reference, a sketch, a still, a GIF or a video, with
 a line: inspiration, or "make this". An agent reads it and turns it into the
-pack's data, and the studio (§12) shows the two side by side. Each reference
+pack's data. Each reference
 is a folder, `references/<YYYY-MM-DD>-<topic>/`, Boop's worked one:
 
 ```
@@ -1030,7 +1030,7 @@ references/2026-10-24-notice-perk/
 | `note` | The person's line about it |
 | `status` | `new`, then `read` (cut into frames), `translated` (read and turned into data), `in review`, `approved` |
 | `became` | What it became on the rig (§15): each a `clip`, by its file's name, an `expression`, by its mood, or `art`, a style an expression wears, by its `id` |
-| `show` | Optional: what the studio plays beside it on the board, a `mood` and a `state`, and then `anim`, a state asked for at the reference's 0 ms |
+| `show` | Optional: what it shows on the board, a `mood` and a `state`, and then `anim`, a state asked for at the reference's 0 ms |
 | `frames`, `ms` | Written by the tool: the frames cut from all its files, and the longest file's length |
 
 The steps, each by a tool or an agent:
@@ -1044,22 +1044,14 @@ internal/tools/boopctl reference read characters/boop/references/2026-10-24-noti
    copies the files in.
 2. **Read.** `reference read` cuts each file into frames (ffmpeg) and a
    sheet, and moves the status to `read`. The sheets are committed and the
-   frames aren't: in another checkout, run it again for the studio to play
-   the reference frame by frame. The agent looks at the sheets and writes
+   frames aren't: in another checkout, run it again to cut them. The agent looks at the sheets and writes
    `reading.md`: the beats and their timing, the poses, squash and stretch,
    the eyes' and mouth's shapes, the colours and the silhouette. A reference
    that needs more than the character has (arms, ears, a new body) says so,
    for the owner, and is never faked.
 3. **Translate.** The agent makes it into the rig's data (§15), sets
-   `became` and `show`, and puts it up for review.
-4. **Review.** Agents list what's up in `review/queue.json`, each item
-   `{"id", "title", "what", "before", "after", "status"}`: `before` and
-   `after` are images in `characters/`, by their paths from the repository's
-   root, and the status is `in review`, `changes` or `approved`. The owner
-   approves or asks for a change in the studio's Review, and its server
-   appends each verdict to `review/notes.jsonl`, a line each:
-   `{"at", "id", "verdict": "approve" | "change", "text"}`. Agents read the
-   notes, act on them, and update the item and the reference.
+   `became` and `show`, and moves the status to `in review`, for the owner
+   to approve.
 
 `charactergen.py --check` fails on a reference:
 
@@ -1073,10 +1065,8 @@ internal/tools/boopctl reference read characters/boop/references/2026-10-24-noti
 - that's translated or later without `reading.md` or a `became`, or became
   something the rig hasn't.
 
-It checks the queue's items and their images, and the notes, the same way,
-each problem with its file and key (`reference.json: show.mood: …`,
-`queue.json: perk.status: …`, `notes.jsonl:2: verdict: …`). None of it stops
-a pack staging. The app doesn't bundle either folder.
+Each problem comes with its file and key (`reference.json: show.mood: …`).
+None of it stops a pack staging. The app doesn't bundle the folder.
 
 ## Not yet
 

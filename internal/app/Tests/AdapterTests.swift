@@ -369,15 +369,6 @@ final class AdapterTests: XCTestCase {
     }
 }
 
-final class Received: @unchecked Sendable {
-    private let lock = NSLock()
-    private var stored: [HookLine] = []
-    func add(_ line: HookLine) { lock.withLock { stored.append(line) } }
-    var lines: [HookLine] { lock.withLock { stored } }
-    var count: Int { lines.count }
-
-}
-
 /// Hook payloads: the Claude and Codex recordings agent-hooks keeps
 /// (agent-hooks/Tests/AgentHooksTests/Fixtures), and Boop's pipeline check's
 /// own sessions (Fixtures/hooks/e2e, VERIFICATION.md L4).

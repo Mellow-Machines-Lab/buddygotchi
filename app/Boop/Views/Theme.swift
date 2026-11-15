@@ -221,9 +221,7 @@ struct NoteCard: View {
 /// A raised card on the paper: one hairline, one radius, one padding, so the
 /// column reads as a stack of the same object.
 struct Card<Content: View>: View {
-    /// A card's padding: `regular` for content, `rows` for a card of rows,
-    /// which pad themselves.
-    static var regular: CGFloat { Theme.gap }
+    /// A card of rows, which pad themselves, has none.
     static var rows: CGFloat { 0 }
 
     var padding: CGFloat = Theme.gap

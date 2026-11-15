@@ -77,10 +77,6 @@ public final class Runtime: @unchecked Sendable {
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
-        /// The buddies, each on its own board with its own pack. Empty runs
-        /// the one buddy, the process's character, on `link` with
-        /// `steering`, as Boop always has.
-        public var buddies: [BuddyOptions] = []
         /// Labels your prompts on the Mac: the menu-bar app's is Apple
         /// Intelligence on macOS 26, which labels while it's on. None
         /// (headless's unless it asks, and the tests') counts them only.
@@ -117,15 +113,15 @@ public final class Runtime: @unchecked Sendable {
     /// Set on `home`, so `stop` can tell it's already there: a demo's end is.
     private let onHome = DispatchSpecificKey<Bool>()
     public let options: Options
-    /// Each buddy's board as it runs, the first first.
-    var rigs: [Rig] = []
-    /// The buddies, the first first.
-    public var buddies: [Buddy] { pipeline.buddies }
-    /// LinkKit's link to the first buddy's device, in Boop's vocabulary
+    /// The buddy's board as it runs.
+    let rig: Rig
+    /// The buddy.
+    public var buddy: Buddy { pipeline.buddy }
+    /// LinkKit's link to the buddy's device, in Boop's vocabulary
     /// (`BoopDevice`).
-    public var link: DeviceLink { rigs[0].link }
-    /// The newest snapshot sent to the first buddy's device.
-    public var latest: StateSnapshot? { rigs[0].latest }
+    public var link: DeviceLink { rig.link }
+    /// The newest snapshot sent to the device.
+    public var latest: StateSnapshot? { rig.latest }
     /// Boop's name, from `long-term.md`.
     public let name: String
     /// Boop's long-term memory: long-term.md, read at launch.
@@ -142,14 +138,14 @@ public final class Runtime: @unchecked Sendable {
     public private(set) var settings: AppSettings
     /// How much it says now (`Talk`), touched only on `home`.
     public private(set) var talk: Talk
-    /// The first buddy's core.
+    /// The buddy's core.
     var core: Core { pipeline.core }
     let view: TranscriptView
     let pipeline: Pipeline
     /// MellowHarness's `Harness`: Boop's brain.
     let harness: Harness
-    /// The first buddy's mood, MellowHarness's `Choice`.
-    var mood: Choice { rigs[0].mood }
+    /// The buddy's mood, MellowHarness's `Choice`.
+    var mood: Choice { rig.mood }
     /// Whether the brain has failed for long enough to say so,
     /// and how many passes that asked it have
     /// dropped in a row.
@@ -175,19 +171,13 @@ public final class Runtime: @unchecked Sendable {
     /// Jev's key, touched only on `home`: nil until read, and then the key
     /// or none. Until then no event wakes the brain.
     var jevKey: String??
-    /// The brain's reactions on the first buddy's device until each ends:
-    /// the device decides when each plays.
-    var reactions: Reactions { rigs[0].reactions }
-    /// The first buddy's transport's `trouble` as the status last had it.
-    var linkTrouble: TransportTrouble? { rigs[0].linkTrouble }
-    /// Whether the Mac's mic is on, which several buddies' cores may ask
-    /// for at once, and the buddy whose board's button turned it on last:
-    /// what it hears is said to that one.
+    /// The transport's `trouble` as the status last had it.
+    var linkTrouble: TransportTrouble? { rig.linkTrouble }
+    /// Whether the Mac's mic is on.
     var micOn = false
-    var listener: Rig?
-    /// What a demo's mic hears as its button is let go, for the buddy it's
-    /// said to: the words come once the mic is off, as speech's do.
-    var wordsOnRelease: (words: String, buddy: String?)?
+    /// What a demo's mic hears as its button is let go: the words come once
+    /// the mic is off, as speech's do.
+    var wordsOnRelease: String?
     /// A demo script plays: its brain steps answer what you say, so a
     /// runtime with no brain doesn't shrug at it.
     var playingDemo = false
@@ -313,43 +303,37 @@ public final class Runtime: @unchecked Sendable {
         let places = self.places
         // The only buddy goes by the name you gave it, in what it hears and
         // what it counts as its name.
-        let plans = options.buddies.isEmpty
-            ? [BuddyOptions(buddy: .only(CharacterPack.active.named(longTerm.name)), link: options.link, steering: options.steering)]
-            : options.buddies
-        let several = plans.count > 1
-        rigs = plans.map { Rig($0, tag: several ? $0.buddy.id : nil, log: log) }
-        // The first board's lines go to its mirror too, once `self` is whole.
+        let buddy = Buddy.only(CharacterPack.active.named(longTerm.name))
+        let rig = Rig(link: options.link, steering: options.steering, log: log)
+        self.rig = rig
+        // The board's lines go to its mirror too, once `self` is whole.
         var mirror: (String) -> Void = { _ in }
-        for rig in rigs {
+        do {
             // boop.log leaves out a `state` sent again unchanged (the keepalive,
             // a reply to `hello`), which debug.jsonl keeps.
             var lastState: String?
-            let sent = options.onDeviceLine, whose = Runtime.whose(rig), first = rig === rigs[0]
+            let sent = options.onDeviceLine
             rig.link.onSend = { line, sender in
                 sent?(line)
-                if first { mirror(line) }
+                mirror(line)
                 emit(DebugLog.sent(line, by: sender, at: clock()))
                 guard debugLog != nil, line != lastState else { return }
                 if line.hasPrefix(#"{"t":"state""#) { lastState = line }
-                log("link\(whose) \(sender == .brain ? "brain" : "rules") → " + line)
+                log("link \(sender == .brain ? "brain" : "rules") → " + line)
             }
-            for over in rig.steering.overBudget(in: rig.buddy.pack) { log("steering\(whose): over budget: \(over)") }
+            for over in rig.steering.overBudget(in: buddy.pack) { log("steering: over budget: \(over)") }
         }
-        // Each buddy's core, its own seed apart. The launch's read-back
-        // prunes the transcript, so today isn't a new day.
-        let volume = settings.volume, workStream = settings.workStream
-        let cores = plans.enumerated().map { i, plan in
-            var config = Core.Config(volume: volume, time: options.time, pack: plan.buddy.pack, hatched: longTerm.hatched)
-            config.firstAsk = SessionTracker.randomFirstRequest()
-            config.workStream = workStream
-            let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
-            core.setWallClock(wall, at: wallAt)
-            return (plan.buddy, core)
-        }
+        // The core. The launch's read-back prunes the transcript, so today
+        // isn't a new day.
+        var config = Core.Config(volume: settings.volume, time: options.time, pack: buddy.pack, hatched: longTerm.hatched)
+        config.firstAsk = SessionTracker.randomFirstRequest()
+        config.workStream = settings.workStream
+        let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
+        core.setWallClock(wall, at: wallAt)
         view = TranscriptView(rules: rules, seed: longTerm.seed ^ UInt64(now), place: places.place)
         let transcript = Transcript.log(folder: options.stateDir.appendingPathComponent(Transcript.folderName),
                                         time: options.time, note: log)
-        pipeline = Pipeline(cores, view: view, transcript: transcript, time: options.time,
+        pipeline = Pipeline(core: core, buddy: buddy, view: view, transcript: transcript, time: options.time,
                             clock: Harness.Clock(now: options.clock, wall: options.wallClock), queue: home, note: log)
         pipeline.brain = false  // until Jev's key is read
         harness = pipeline.harness
@@ -361,33 +345,24 @@ public final class Runtime: @unchecked Sendable {
         var memoryNow: () -> String? = { nil }
         var remembersNow: () -> Memory? = { nil }
         let wallNow = options.wallClock
-        var queued: (Rig, Moment, Pending) -> Void = { _, _, _ in }
-        var effected: (Rig, [CoreEffect]) -> Void = { _, _ in }
-        let rigs = self.rigs
-        let made = pipeline
-        let moods = Runtime.brain(pipeline, rigs.map { rig in
-            let link = rig.link, pack = rig.buddy.pack, rigCore = made.core(rig.buddy.id)
-            // Each buddy speaks its own pack's personality. Only the first
-            // is the one long-term.md set up.
-            var mind = Mind(buddy: rig.buddy, steering: rig.steering,
-                        reactions: rig.reactions, queue: { queued(rig, $0, $1) },
+        var queued: (Moment, Pending) -> Void = { _, _ in }
+        var effected: ([CoreEffect]) -> Void = { _ in }
+        let link = rig.link
+        var mind = Mind(buddy: buddy, steering: rig.steering,
+                        reactions: rig.reactions, queue: { queued($0, $1) },
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
-                        talk: { talkNow() }, effects: { effected(rig, $0) },
-                        memory: rig === rigs[0] ? { memoryNow() } : { nil },
+                        talk: { talkNow() }, effects: { effected($0) },
+                        memory: { memoryNow() },
                         askable: { about, log, questions, mood in
-                            Asks.askable(about, log, questions: questions, core: rigCore, mood: mood, talk: talkNow(),
+                            Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talkNow(),
                                          memory: remembersNow(), wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
-            mind.swears = { swearsNow() }
-            if rig === rigs[0] {
-                mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
-                mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
-                                              onLately: { remembersNow()?.onLately($0) ?? false })
-            }
-            return mind
-        })
-        for (rig, mood) in zip(rigs, moods) { rig.mood = mood }
+        mind.swears = { swearsNow() }
+        mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
+        mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
+                                      onLately: { remembersNow()?.onLately($0) ?? false })
+        rig.mood = Runtime.brain(pipeline, mind)
         // The questions line is debug.jsonl's first, before the read-back's
         // lines, the socket or the link can add one, so a changed first line
         // means a new launch. The read-back's own lines wait for it.
@@ -435,43 +410,37 @@ public final class Runtime: @unchecked Sendable {
             }
             self.remembers = remembers
         }
-        // The cores read the growth stage and today's ring where the growth
-        // store keeps them. Weak: the runtime holds the cores.
-        for rig in rigs {
-            core(rig).growth = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growthNow : nil } }
-            core(rig).pushToTalkWorks = options.pushToTalkWorks
-        }
+        // The core reads the growth stage and today's ring where the growth
+        // store keeps them. Weak: the runtime holds the core.
+        core.growth = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growthNow : nil } }
+        core.pushToTalkWorks = options.pushToTalkWorks
         talkNow = { [weak self] in self?.talk ?? .default }
         swearsNow = { [weak self] in self.map { $0.options.swearing ?? $0.settings.swearing } ?? false }
         memoryNow = { [weak self] in self?.memorySection() }
         remembersNow = { [weak self] in self?.remembers }
-        queued = { [weak self] rig, reaction, pending in self?.queue(reaction, pending, on: rig) }
-        effected = { [weak self] rig, fx in self?.run(fx, on: rig) }
+        queued = { [weak self] reaction, pending in self?.queue(reaction, pending) }
+        effected = { [weak self] fx in self?.run(fx) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
-        for rig in rigs {
-            // The core reads the mood where the mood output keeps it. Weak:
-            // the harness holds the core.
-            let mood = rig.mood!
-            core(rig).mood = { [weak harness = self.harness] in
-                harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? mood.start
-            }
-            // The device's taps and push-to-talk; the link leaves out those
-            // of a device whose firmware doesn't fit.
-            rig.link.onEvent = { [weak self] ev in self?.deviceEvent(ev, on: rig) }
-            // A hello (the first on a link, or one that says something new):
-            // log who the device is, and show it what's true now.
-            let whose = rig.tag.map { "\($0): " } ?? ""
-            rig.link.onHello = { [weak self] hello in
-                DeviceInfo(hello).logLines.forEach { log(whose + $0) }
-                if let self, let latest = rig.latest { self.show(latest, on: rig) }
-                self?.playGrowthDue(at: clock())
-            }
+        // The core reads the mood where the mood output keeps it. Weak:
+        // the harness holds the core.
+        let mood = rig.mood!
+        core.mood = { [weak harness = self.harness] in
+            harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? mood.start
+        }
+        // The device's taps and push-to-talk; the link leaves out those
+        // of a device whose firmware doesn't fit.
+        rig.link.onEvent = { [weak self] ev in self?.deviceEvent(ev) }
+        // A hello (the first on a link, or one that says something new):
+        // log who the device is, and show it what's true now.
+        rig.link.onHello = { [weak self] hello in
+            DeviceInfo(hello).logLines.forEach(log)
+            if let self, let latest = rig.latest { self.show(latest) }
+            self?.playGrowthDue(at: clock())
         }
         // A pass can change a mood, which its device and the menu bar show.
         harness.on(Event.did) { [weak self] e in
             guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
-            let rig = rig(e.buddy)
-            run(core(rig).stateChanged(at: options.clock()), on: rig)
+            run(core.stateChanged(at: options.clock()))
         }
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged: the growth store counts each once, and
@@ -496,7 +465,7 @@ public final class Runtime: @unchecked Sendable {
                                felt: ((Int64) -> [Memory.Felt])? = nil, digests: (() -> [DayDigest])? = nil,
                                wall: @escaping () -> Int64 = { Int64(Date().timeIntervalSince1970 * 1000) }) -> (harness: Harness, mood: Choice) {
         let core = pipeline.core
-        var mind = Mind(buddy: pipeline.buddies[0], steering: steering, reactions: reactions,
+        var mind = Mind(buddy: pipeline.buddy, steering: steering, reactions: reactions,
                         queue: queue, speaks: speaks, talk: talk, memory: memory,
                         askable: { about, log, questions, mood in
                             Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
@@ -508,7 +477,7 @@ public final class Runtime: @unchecked Sendable {
         if let remembers {
             mind.noticing = Mind.Noticing(digests: digests ?? { remembers.digests }, shown: { remembers.noticesShown() }, onLately: { remembers.onLately($0) })
         }
-        return (pipeline.harness, brain(pipeline, [mind])[0])
+        return (pipeline.harness, brain(pipeline, mind))
     }
 
     /// `debug.jsonl`'s lines from `pipeline`, to `emit`: its events
@@ -538,11 +507,9 @@ public final class Runtime: @unchecked Sendable {
         self.server = server
         // Only once it runs: a start that failed isn't a crash.
         FileManager.default.createFile(atPath: options.stateDir.appendingPathComponent(Self.runningFile).path, contents: nil)
-        for rig in rigs {
-            rig.transport?.start(
-                onLine: { [weak self] line in self?.home.async { self?.device(line, on: rig) } },
-                onConnection: { [weak self] up in self?.home.async { self?.connection(up, on: rig) } })
-        }
+        rig.transport?.start(
+            onLine: { [weak self] line in self?.home.async { self?.device(line) } },
+            onConnection: { [weak self] up in self?.home.async { self?.connection(up) } })
         // A menu-bar app with its popover closed is a candidate for App Nap,
         // which coalesces timers; the 10 s keepalive must beat the device's
         // 30 s no-app timeout. This doesn't keep the Mac awake.
@@ -561,7 +528,7 @@ public final class Runtime: @unchecked Sendable {
             run(pipeline.tick(at: options.clock()))
             changed()
             options.log("boop: running on \(options.stateDir.path), socket \(options.socketPath), "
-                        + "link \(rigs.map { ($0.tag.map { "\($0) " } ?? "") + ($0.transport?.name ?? "none") }.joined(separator: ", ")), "
+                        + "link \(rig.transport?.name ?? "none"), "
                         + "talk \(talk.rawValue), "
                         + "mood \(moodNow), brain \(harness.brain?.id ?? "still to come")"
                         + (options.debug ? ", debug log \(debugLogURL.path)" : ""))
@@ -577,7 +544,7 @@ public final class Runtime: @unchecked Sendable {
         activity = nil
         server?.stop()
         server = nil
-        for rig in rigs { rig.transport?.stop() }
+        rig.transport?.stop()
         let sleep = { [self] in worldSleep() }
         if DispatchQueue.getSpecific(key: onHome) == true { sleep() } else { home.sync(execute: sleep) }
         // Today's counts as they stand: the next launch reads the rest back.
@@ -616,14 +583,14 @@ public final class Runtime: @unchecked Sendable {
     public func practice(_ on: Bool) {
         home.async { [self] in
             options.log("onboarding: practice request \(on ? "up" : "down")")
-            run(core(rigs[0]).setPractice(on, at: options.clock()), on: rigs[0])
+            run(core.setPractice(on, at: options.clock()))
         }
     }
 
     public func greet(_ greeting: Greeting) {
         home.async { [self] in
             options.log("onboarding: \(greeting.reaction.name) on the board")
-            run(core(rigs[0]).greet(greeting.reaction, at: options.clock()), on: rigs[0])
+            run(core.greet(greeting.reaction, at: options.clock()))
         }
     }
 
@@ -632,7 +599,7 @@ public final class Runtime: @unchecked Sendable {
     /// (`Reactions.sent`), as it will after any finished turn.
     public func cheer(_ who: Moment.Who) {
         home.async { [self] in
-            let rig = rigs[0], now = options.clock()
+            let rig = rig, now = options.clock()
             let reaction = Moment(anim: "task_complete", loops: 2, who: who, outcome: "success")
             options.log("onboarding: a cheer for \(who.agent)'s \(who.thread) on the board")
             let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.ttl(reaction), by: .brain,
@@ -689,7 +656,7 @@ public final class Runtime: @unchecked Sendable {
         // The hook's words don't wait with the reading: only its agent and
         // session do, for the log.
         let agent = line.agent, session = line.session
-        PromptIntake.read(text, names: pipeline.buddies.map(\.name), labeler: labeler, home: home) { [weak self] reading in
+        PromptIntake.read(text, names: [buddy.name], labeler: labeler, home: home) { [weak self] reading in
             guard let self else { return }
             guard let step = pipeline.read(reading, about: turn, at: options.clock()) else {
                 return options.log("\(reading.kind.rawValue): \(agent)'s session \(session) moved on before its reading; dropped it")
@@ -699,24 +666,20 @@ public final class Runtime: @unchecked Sendable {
     }
 
     func tick() {
-        // Every buddy's core follows the Mac's clock, set or moved.
+        // The core follows the Mac's clock, set or moved.
         let now = options.clock(), wall = options.wallClock()
-        for rig in rigs { core(rig).setWallClock(wall, at: now) }
+        core.setWallClock(wall, at: now)
         run(pipeline.tick(at: now))
         worldTick(at: now)
         if let e = presence.tick(at: now, idleMs: options.idleMs?() ?? devIdleMs) { recordPresence(e) }
         // The keepalive, and the reactions whose `ended` never came.
-        var troubled = false
-        for rig in rigs {
-            rig.link.tick(now: now)
-            rig.reactions.tick(now: now)
-            let trouble = rig.link.transport?.trouble
-            if trouble != rig.linkTrouble {
-                rig.linkTrouble = trouble
-                troubled = true
-            }
+        rig.link.tick(now: now)
+        rig.reactions.tick(now: now)
+        let trouble = rig.link.transport?.trouble
+        if trouble != rig.linkTrouble {
+            rig.linkTrouble = trouble
+            changed()
         }
-        if troubled { changed() }
     }
 
     /// You stepped away or came back, as the detector decided: recorded,
@@ -751,10 +714,9 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// Carries out a core's effects from a call outside the pipeline: the
-    /// first buddy's, or `rig`'s.
-    func run(_ effects: [CoreEffect], on rig: Rig? = nil) {
-        run(pipeline.effects(effects, buddy: rig?.tag, at: options.clock()))
+    /// Carries out the core's effects from a call outside the pipeline.
+    func run(_ effects: [CoreEffect]) {
+        run(pipeline.effects(effects, at: options.clock()))
     }
 
     /// Carries out what an input did: the core's
@@ -762,11 +724,10 @@ public final class Runtime: @unchecked Sendable {
     /// for each view event that wakes the brain.
     func run(_ step: Pipeline.Step) {
         var stateChanged = false
-        for (buddy, effect) in step.tagged {
-            let rig = rig(buddy)
+        for effect in step.effects {
             switch effect {
             case .state(let snapshot):
-                show(snapshot, on: rig)
+                show(snapshot)
                 stateChanged = true
             case .sessions:
                 stateChanged = true
@@ -778,9 +739,9 @@ public final class Runtime: @unchecked Sendable {
                 mic(on, by: by)
                 stateChanged = true
             case .reaction(let reaction):
-                playRule(reaction, on: rig)
+                playRule(reaction)
             case .call(let args):
-                playCall(args, on: rig)
+                playCall(args)
             case .open(let thread):
                 open(thread, by: "tap")
             }
@@ -799,7 +760,7 @@ public final class Runtime: @unchecked Sendable {
     }
 
     private func publishXP(at now: Int64) {
-        for rig in rigs { run(core(rig).stateChanged(at: now), on: rig) }
+        run(core.stateChanged(at: now))
     }
 
     /// The growth on Boop's day now: a ring of a day before is empty.
@@ -826,7 +787,7 @@ public final class Runtime: @unchecked Sendable {
     func playGrowthDue(at now: Int64) -> Bool {
         let beats = growth.due(today: options.time.boopDay(options.wallClock()))
         guard showsGrowth, !beats.isEmpty else { return false }
-        for rig in rigs { run(core(rig).grew(beats, at: now), on: rig) }
+        run(core.grew(beats, at: now))
         return true
     }
 
@@ -853,7 +814,7 @@ public final class Runtime: @unchecked Sendable {
         home.async { [self] in
             guard let agent = Agent(rawValue: thread.agent) else { return }
             let key = SessionFold.key(agent, thread.session), now = options.clock()
-            for rig in rigs { run(pipeline.dismiss(key, request: request, at: now, buddy: rig.tag)) }
+            run(pipeline.dismiss(key, request: request, at: now))
         }
     }
 
@@ -877,7 +838,7 @@ public final class Runtime: @unchecked Sendable {
 
     public func setVolume(_ volume: Int) {
         home.async { [self] in
-            for rig in rigs { run(core(rig).setVolume(volume, at: options.clock()), on: rig) }
+            run(core.setVolume(volume, at: options.clock()))
             saveSettings { $0.volume = core.config.volume }
         }
     }
@@ -885,7 +846,7 @@ public final class Runtime: @unchecked Sendable {
     /// The work stream on or off, on every buddy, kept in `settings.json`.
     public func setWorkStream(_ on: Bool) {
         home.async { [self] in
-            for rig in rigs { run(core(rig).setWorkStream(on, at: options.clock()), on: rig) }
+            run(core.setWorkStream(on, at: options.clock()))
             saveSettings { $0.workStream = on }
         }
     }
@@ -912,7 +873,7 @@ public final class Runtime: @unchecked Sendable {
     public func hush(forMs ms: Int64 = Core.hushMs) {
         home.async { [self] in
             let now = options.clock()
-            for rig in rigs { run(core(rig).hush(forMs: ms, by: .app, at: now), on: rig) }
+            run(core.hush(forMs: ms, by: .app, at: now))
             options.log("hush \(ms / 60_000) min")
         }
     }
@@ -921,7 +882,7 @@ public final class Runtime: @unchecked Sendable {
     public func unhush() {
         home.async { [self] in
             let now = options.clock()
-            for rig in rigs { run(core(rig).unhush(by: .app, at: now), on: rig) }
+            run(core.unhush(by: .app, at: now))
             options.log("unhush")
         }
     }

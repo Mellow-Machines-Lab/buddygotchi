@@ -3,7 +3,6 @@ import Darwin
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// A soak: two synthetic days of work in the transcript, about 25,000

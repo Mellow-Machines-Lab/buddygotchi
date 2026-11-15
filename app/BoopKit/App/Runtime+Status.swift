@@ -112,28 +112,6 @@ extension Runtime {
         /// When Boop may next be renamed, or nil for now
         /// (`BuddyName.nextRename`).
         public var nextRename: Date?
-        /// Each buddy, when there are several; empty for one, which the
-        /// fields above are.
-        public var buddies: [BuddyStatus] = []
-
-        /// One of several buddies, as the popover lists it.
-        public struct BuddyStatus: Sendable, Equatable {
-            /// Where it sits.
-            public var id: String
-            public var name: String
-            /// What its device shows, and its mood.
-            public var snapshot: StateSnapshot
-            public var connected: Bool
-            public var device: DeviceInfo?
-
-            public init(id: String, name: String, snapshot: StateSnapshot, connected: Bool, device: DeviceInfo?) {
-                self.id = id
-                self.name = name
-                self.snapshot = snapshot
-                self.connected = connected
-                self.device = device
-            }
-        }
 
         public init(name: String, snapshot: StateSnapshot, sessions: [SessionSummary], connected: Bool,
                     device: DeviceInfo?, linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
@@ -167,7 +145,7 @@ extension Runtime {
 
     func changed() {
         let now = options.clock()
-        var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: rigs.flatMap { core($0).sessionList(at: now) },
+        var status = Status(name: name, snapshot: latest ?? core.snapshot(at: now), sessions: core.sessionList(at: now),
                             connected: link.connected, device: link.hello.map(DeviceInfo.init), linkTrouble: linkTrouble,
                             deviceTrouble: link.trouble.map(Self.words), brain: harness.brain?.id ?? "none",
                             keyRead: jevKey != nil, brainTrouble: trouble, listening: core.listening != nil,
@@ -196,12 +174,6 @@ extension Runtime {
         status.swearing = options.swearing ?? settings.swearing
         status.nextRename = BuddyName.nextRename(after: settings.renamed, at: wall).map { Date(timeIntervalSince1970: Double($0) / 1000) }
         status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }
-        if pipeline.several {
-            status.buddies = rigs.map { rig in
-                Status.BuddyStatus(id: rig.buddy.id, name: rig.buddy.name, snapshot: rig.latest ?? core(rig).snapshot(at: now),
-                                   connected: rig.link.connected, device: rig.link.hello.map(DeviceInfo.init))
-            }
-        }
         grew = false
         if let line = DebugLog.status(status, at: now, last: &lastStatus) { emit(line) }
         onChange?(status)

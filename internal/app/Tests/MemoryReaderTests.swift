@@ -460,78 +460,6 @@ final class MemoryReaderTests: XCTestCase {
         XCTAssertEqual(memory.feltShown().keys.sorted(), ["u stay up late"])
     }
 
-    /// TranscriptView.played: a dream counts as told only once its moment
-    /// has played. A needs-you that cuts it, or a brain that never answers,
-    /// leaves it to tell at your next showing up; a second touch while the
-    /// first's pass is out doesn't tell it twice.
-    func testADreamIsToldOnlyOnceItsMomentHasPlayed() throws {
-        let rig = CoreRig()
-        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
-        memory.attach(to: rig.pipeline)
-        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
-        rig.turn(60_000)
-        rig.wait(16 * hour, every: 60_000)
-        let dream = try XCTUnwrap(memory.dream)
-        let told = { (fx: Fx) in events(fx).filter { $0.facts["dream_day"] != nil } }
-        let stroke = { rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now))) }
-
-        let first = try XCTUnwrap(told(stroke()).first, "the first touch tells it")
-        XCTAssertEqual(told(stroke()).count, 0, "its pass is still out")
-        XCTAssertFalse(memory.dream?.told == true)
-        rig.wait(TranscriptView.tellingWaitMs, every: TranscriptView.tellingWaitMs)
-        let again = try XCTUnwrap(told(stroke()).first, "the brain never answered: the next touch tells it")
-        XCTAssertGreaterThan(again.seq, first.seq)
-
-        moment(rig, for: again.seq, failed: "cut short: something needed you")
-        XCTAssertFalse(memory.dream?.told == true, "a needs-you cut it")
-        let third = try XCTUnwrap(told(stroke()).first, "so the next touch tells it")
-
-        moment(rig, for: third.seq)
-        XCTAssertEqual(memory.dream?.day, dream.day)
-        XCTAssertTrue(memory.dream?.told == true, "it played through")
-        XCTAssertEqual(told(stroke()).count, 0, "told once")
-    }
-
-    /// With several buddies one dream is told once: by the first you touch,
-    /// and on your coming back by the first of them, who answers it.
-    func testSeveralBuddiesTellOneDreamOnce() throws {
-        let rig = CoreRig()
-        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
-        memory.attach(to: rig.pipeline)
-        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
-        rig.turn(60_000)
-        rig.wait(16 * hour, every: 60_000)
-        XCTAssertNotNil(memory.dream)
-        rig.pipeline.view.buddies = [Buddy(id: "left", pack: CharacterPack.active.named("Mochi")),
-                                     Buddy(id: "right", pack: CharacterPack.active.named("Pix"))]
-        let h = rig.pipeline.harness
-        func poke(_ buddy: String) -> (seq: Int, told: String?) {
-            let e = h.emit(Event(at: rig.now, source: .device, type: .poke, specificType: "input", buddy: buddy))
-            return (e.seq, h.line(e.seq)?.facts["dream_told"]?.string)
-        }
-        let first = poke("right")
-        XCTAssertTrue(first.told?.hasPrefix("Pix dreamed") == true, "\(first)")
-        XCTAssertNil(poke("left").told, "its moment is still out")
-        moment(rig, for: first.seq)
-        XCTAssertTrue(memory.dream?.told == true)
-        XCTAssertNil(poke("left").told, "the other buddy doesn't tell it again")
-    }
-
-    func testYourComingBackTellsTheDreamInTheFirstBuddysName() throws {
-        let rig = CoreRig()
-        let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
-        memory.attach(to: rig.pipeline)
-        rig.note(Fx(rig.pipeline.gesture("stroke", at: rig.now)))
-        rig.turn(60_000)
-        rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .start, specificType: "locked",
-                                    data: ["since": .int(rig.now)]))
-        rig.wait(16 * hour, every: 60_000)
-        rig.pipeline.view.buddies = [Buddy(id: "left", pack: CharacterPack.active.named("Mochi")),
-                                     Buddy(id: "right", pack: CharacterPack.active.named("Pix"))]
-        let back = rig.note(Fx(rig.pipeline.presence(Event(at: rig.now, source: .mac, type: .presence, phase: .end, specificType: "unlocked"))))
-        XCTAssertTrue(events(back).first?.facts["dream_told"]?.string?.hasPrefix("Mochi dreamed") == true)
-    }
-
     /// TranscriptView.told: the dream is told on your first coming back
     /// after it was dreamed: never an agent's event or while you're away,
     /// and once.
@@ -552,7 +480,7 @@ final class MemoryReaderTests: XCTestCase {
                                                                specificType: "unlocked"))))
         XCTAssertEqual(told(back), [dream.day])
         let line = try XCTUnwrap(events(back).first)
-        XCTAssertEqual(line.notes.last, "\(rig.pipeline.buddies[0].name) dreamed about \(dream.about ?? ""): \(dream.sentence).")
+        XCTAssertEqual(line.notes.last, "\(rig.pipeline.buddy.name) dreamed about \(dream.about ?? ""): \(dream.sentence).")
         XCTAssertEqual(Narration.of(rig.pipeline.transcript.event(line.seq)!, line: Line(line.line, facts: line.facts))?.fact,
                        dream.fact, "the dream is the reason")
         moment(rig, for: line.seq)

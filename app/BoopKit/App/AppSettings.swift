@@ -14,9 +14,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// waits a week after it (`BuddyName.nextRename`). Nil for never.
     public var renamed: Int64?
     public var volume = 6
-    /// Several buddies side by side, each its own board and pack: empty, or
-    /// one, for the one Boop.
-    public var buddies: [BuddySetting] = []
     /// The one Boop's board, by its `hello.id`, remembered the first time
     /// it's tapped over Bluetooth: from then on Boop takes only it, until
     /// Settings forgets it.
@@ -55,7 +52,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         swearing = (try? c.decodeIfPresent(Bool.self, forKey: .swearing)) ?? false
         renamed = try? c.decodeIfPresent(Int64.self, forKey: .renamed)
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
-        buddies = (try? c.decodeIfPresent([BuddySetting].self, forKey: .buddies)) ?? []
         board = try? c.decodeIfPresent(String.self, forKey: .board)
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
         workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
@@ -64,7 +60,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, swearing, renamed, volume, buddies, board, onboarding, workStream, simulator, world, worldShown }
+    enum CodingKeys: String, CodingKey { case personality, talk, swearing, renamed, volume, board, onboarding, workStream, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -72,7 +68,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         if swearing { try c.encode(swearing, forKey: .swearing) }
         try c.encodeIfPresent(renamed, forKey: .renamed)
         try c.encode(volume, forKey: .volume)
-        if !buddies.isEmpty { try c.encode(buddies, forKey: .buddies) }
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
         if !workStream { try c.encode(workStream, forKey: .workStream) }

@@ -992,13 +992,6 @@ enum Snapshots {
                 s.moodReason = Long.said
                 return model(installer, status: s)
             }()),
-            // Several buddies with the longest names, and the longest feeling.
-            ("long-buddies", {
-                var s = status(sessions: [["claude", "jetpack", "work"]], name: Long.name, mood: Long.mood)
-                s.buddies = [.init(id: "left", name: Long.name, snapshot: s.snapshot, connected: true, device: nil),
-                             .init(id: "right", name: "Sir Reginald Fluffy III", snapshot: s.snapshot, connected: false, device: nil)]
-                return model(installer, status: s)
-            }()),
             // The longest feeling, a level over a thousand and the longest
             // name: the header's status line is cut, never the popover.
             ("long-mood", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], name: Long.name,
@@ -1058,11 +1051,6 @@ enum Snapshots {
             let dream = EventLine.dreamed(about: "the last 2 days", sentence: "you stroked it 4 times; 7 turns on \"\(project)\", 3 failed; you said \"still broken\"", name: name)
             let told = Narration.of(event(.gesture, "stroke"), line: Line("", facts: ["dream_told": .string(dream)]), name: name)
             return Narration.day(1_041, leading: told).noting(Narration.noticed("a rough hour: 3 failures"))
-        }
-
-        /// An agent's calls failing, on its branch.
-        static var failing: Narration? {
-            Narration.of(event(.tool), line: Line("", facts: ["failing": .int(4), "thread": .object(thread_)]), name: name)
         }
 
         /// A work act, on its branch.
@@ -1139,12 +1127,6 @@ enum Snapshots {
             ("the mood's reason", { n in var s = bare(); s.moodReason = Narration(cause: words(n)); return s }),
             ("the wish", { n in var s = bare(); s.wishing = words(n); return s }),
             ("the doing's reason", { n in var s = bare(); s.doingReason = Narration(cause: words(n)); return s }),
-            ("a buddy's name", { n in
-                var s = bare()
-                s.buddies = [.init(id: "left", name: words(n), snapshot: s.snapshot, connected: true, device: nil),
-                             .init(id: "right", name: words(n), snapshot: s.snapshot, connected: false, device: nil)]
-                return s
-            }),
             // A row cuts its title at 2 lines and its place at 1, the whole
             // in its help; the needs-you card shows them in full.
             ("a thread's name", { bare([["claude", "jetpack", "wait", words($0)]]) }),

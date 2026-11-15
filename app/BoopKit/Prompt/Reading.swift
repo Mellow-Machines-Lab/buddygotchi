@@ -122,15 +122,6 @@ public struct Reading<Of: ReadingText>: Equatable, Sendable {
             }
             self.init(kind: kind, tone: tone, phrases: json["phrases"] as? [String] ?? [])
         }
-
-        /// The same, to write.
-        public var json: [String: Any] {
-            var out: [String: Any] = [:]
-            if let kind { out["kind"] = kind.rawValue }
-            if let tone { out["tone"] = tone.rawValue }
-            if !phrases.isEmpty { out["phrases"] = phrases }
-            return out
-        }
     }
 
     public struct LabelsError: Error, CustomStringConvertible {

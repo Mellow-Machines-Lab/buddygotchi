@@ -18,8 +18,7 @@ A recording is every message the app sent the board, made by playing the
 script through the real headless app with the simulator's board as its
 device, on the face the pack gives the AMOLED board. It keeps the hash of
 the script it was made from, and it's out of date when the script changes.
-A demo with two buddies or more plays live, on a board each, and has no
-recording. CHARACTER=<pack> picks one where two packs have a demo of the
+CHARACTER=<pack> picks one where two packs have a demo of the
 same name. The standard library only, for the Mac's own Python.
 """
 import argparse
@@ -88,15 +87,6 @@ class Demo:
     def recording(self) -> Path:
         return self.path.parent / "recordings" / f"{self.name}.json"
 
-    @property
-    def buddies(self) -> List[dict]:
-        return self.header.get("buddies", [])
-
-    @property
-    def recordable(self) -> bool:
-        """A recording is one board's: a demo of several buddies plays live."""
-        return len(self.buddies) < 2
-
     def to_record(self, folder: Path) -> Path:
         """The script as it's recorded: with the clock's start, if it has
         none, in a copy of the same name in the folder."""
@@ -131,8 +121,6 @@ class Demo:
     def places(self) -> List[str]:
         """Where it can play: what `where` asks, in its order."""
         does = {s["agent"] for s in self.steps if "agent" in s}
-        if not self.recordable:
-            return ["boards"]
         places = ["page", "board"]
         # An agent needs the project it works in, and one buddy; the rest
         # as session.py refuses them.
@@ -148,7 +136,6 @@ class Demo:
 PLACES = {
     "page": "The simulator, in your browser (recorded: starts at once)",
     "board": "The real board, over USB",
-    "boards": "A simulated board each, side by side in your browser (live)",
     "claude-terminal": "Claude Code, in this terminal (its model replayed from the script)",
     "codex-terminal": "Codex, in this terminal (its model replayed from the script)",
     "claude-app": "Your real Claude, in the Claude desktop app",
@@ -191,8 +178,8 @@ def table(all_demos: List[Demo], numbered: bool) -> None:
         print(f"\n  {creature(pack)}'s demos ({face(pack)} face)")
         for d in (d for d in all_demos if d.pack == pack):
             n += 1
-            where = "two boards, live" if not d.recordable else "with an agent too" if len(d.places()) > 2 else ""
-            stale = "" if not d.recordable or d.fresh() else "not recorded yet"
+            where = "with an agent too" if len(d.places()) > 2 else ""
+            stale = "" if d.fresh() else "not recorded yet"
             number = f"{n:3}  " if numbered else "  "
             print(f"  {number}{d.name:{width}}  {d.title:{title}}  {d.length():>5}  {stale or where}")
 
@@ -228,13 +215,11 @@ def menu() -> int:
     places = d.places()
     for i, place in enumerate(places, 1):
         print(f"    {i}  {PLACES[place]}")
-    if len(places) < 3 and d.recordable:
+    if len(places) < 3:
         print("    (Only a demo with a project in internal/sessions/ plays with an agent.)")
     where = places[int(ask(f"Where? (1-{len(places)})", [str(i) for i in range(1, len(places) + 1)], "1")) - 1]
     if where == "page":
         return play_page(d)
-    if where == "boards":
-        return play_boards(d)
     if where == "board":
         return play_board(d, None)
     agent = {"claude-terminal": ["--agent", "claude"], "codex-terminal": ["--agent", "codex"],
@@ -366,7 +351,6 @@ def record_one(d: Demo, core: Path) -> Optional[str]:
 
 
 def record(chosen: List[Demo], jobs: int = JOBS) -> int:
-    chosen = [d for d in chosen if d.recordable]
     if not chosen:
         print("demos: every recording is up to date")
         return 0
@@ -396,7 +380,7 @@ def record(chosen: List[Demo], jobs: int = JOBS) -> int:
 
 
 def check() -> int:
-    stale = [d for d in demos() if d.recordable and not d.fresh()]
+    stale = [d for d in demos() if not d.fresh()]
     for d in stale:
         why = "has no recording" if not d.recording.exists() else "has changed since it was recorded"
         print(f"demos: {d.path.relative_to(REPO)} {why}")
@@ -435,13 +419,12 @@ def lay_out(chosen: List[Demo]) -> None:
             (folder / f"{d.name}-voice.bin").write_bytes(subset(voices[voice], recording["takes"]))
 
 
-def serve(query: str, cables: Optional[Dict[str, str]] = None, then=None) -> int:
-    """Serves the page until Ctrl-C (or until `then` returns), and opens it at
-    the query."""
+def serve(query: str) -> int:
+    """Serves the page until Ctrl-C, and opens it at the query."""
     port = free_port()
     work = Path(tempfile.mkdtemp(prefix="boop-page.", dir="/tmp"))
     argv = [sys.executable, str(REPO / "simulator/web/serve.py"), "--port", str(port)]
-    argv += [a for name, path in (cables or {}).items() for a in ("--cable", f"{name}={path}")] or ["--socket", str(work / "usb.sock")]
+    argv += ["--socket", str(work / "usb.sock")]
     server = subprocess.Popen(argv, cwd=REPO, stdout=subprocess.DEVNULL, start_new_session=True)
     url = f"http://127.0.0.1:{port}/?{query}"
     try:
@@ -452,8 +435,6 @@ def serve(query: str, cables: Optional[Dict[str, str]] = None, then=None) -> int
         # Opened only for someone at a terminal, not for a script or an agent.
         if sys.stdout.isatty():
             webbrowser.open(url)
-        if then:
-            return then()
         server.wait()
         return 0
     except KeyboardInterrupt:
@@ -466,8 +447,6 @@ def serve(query: str, cables: Optional[Dict[str, str]] = None, then=None) -> int
 
 
 def play_page(d: Demo) -> int:
-    if not d.recordable:
-        return play_boards(d)
     if not d.fresh():
         print(f"demos: {d.id} isn't recorded yet, so it's recorded first, as long as it runs")
         if record([d]):
@@ -478,39 +457,17 @@ def play_page(d: Demo) -> int:
 
 
 def play_all() -> int:
-    stale = [d for d in demos() if d.recordable and not d.fresh()]
+    stale = [d for d in demos() if not d.fresh()]
     if stale:
         print(f"demos: {len(stale)} demo{'s' * (len(stale) > 1)} aren't recorded yet: they're recorded first")
         if record(stale):
             return 1
-    chosen = [d for d in demos() if d.recordable]
+    chosen = demos()
     build_page(sorted({d.pack for d in chosen}))
     lay_out(chosen)
     playlist = [{"id": d.id, "title": d.title, "length": d.length()} for d in chosen]
     (DIST / "demo" / "playlist.json").write_text(json.dumps(playlist))
     return serve("demos=all")
-
-
-def play_boards(d: Demo) -> int:
-    """A demo of several buddies, live: a simulated board each, side by side."""
-    build_app()
-    places = [b["place"] for b in d.buddies]
-    packs = [b.get("pack", d.pack) for b in d.buddies]
-    build_page(sorted(set(packs)))
-    work = Path(tempfile.mkdtemp(prefix="boop-two.", dir="/tmp"))
-    cables = {place: str(work / f"{place}.sock") for place in places}
-
-    def run() -> int:
-        print("demos: it starts once the page's boards are up")
-        for path in cables.values():
-            wait_for(Path(path), 10)
-        return subprocess.call(
-            [str(BOOP), "--headless", "--state-dir", str(work / "state"), "--socket", str(work / "boop.sock"),
-             "--no-open", "--demo", str(d.path), "--links", ",".join(f"usb:{p}" for p in cables.values())],
-            cwd=REPO, env=dict(os.environ, BOOP_CHARACTER=str(CHARACTERS / d.pack)))
-
-    faces = ",".join(face(p) for p in packs)
-    return serve(f"boards={','.join(places)}&packs={','.join(packs)}&faces={faces}", cables, run)
 
 
 def play_board(d: Demo, board: Optional[str]) -> int:

@@ -2,7 +2,6 @@ import AgentHooks
 import Foundation
 import MellowHarness
 import XCTest
-@testable import BoopDevKit
 @testable import BoopKit
 
 /// The view: raw events folded into what the brain hears.

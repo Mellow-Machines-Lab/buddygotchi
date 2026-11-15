@@ -142,7 +142,7 @@ final class GrowthTests: XCTestCase {
             try store.set([GrowthStore.xpKey: "90", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 90"])
         }
         let runtime = try Runtime(options)
-        let core = runtime.core(runtime.rigs[0])
+        let core = runtime.core
         var now: Int64 { clock.now }
         XCTAssertEqual(core.snapshot(at: now).xp, 90)
         func turn() {

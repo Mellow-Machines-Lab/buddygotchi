@@ -21,10 +21,8 @@ import MellowHarness
 public final class MomentOutput: Output {
     public static let outputName = "react"
     public let name = MomentOutput.outputName
-    /// Whose reactions: its character, and the buddy's voice when there
-    /// are several.
+    /// Whose reactions: its character.
     let pack: CharacterPack
-    public let voice: String?
     /// The questions' keys.
     public static let emotionKey = "react.face", moveKey = "react.move", sizeKey = "react.intensity", sayKey = "say"
     /// Its questions, built once: none of them changes. What you said gets
@@ -199,7 +197,7 @@ public final class MomentOutput: Output {
     func recall(_ log: LogView) {
         guard !recalled else { return }
         recalled = true
-        let mine = log.events.filter { $0.kind == Event.did && $0.action == Self.outputName && $0["voice"]?.string == voice }
+        let mine = log.events.filter { $0.kind == Event.did && $0.action == Self.outputName }
         let texts = Dictionary(Take.all(in: pack).map { ($0.id, $0.text) }, uniquingKeysWith: { first, _ in first })
         recentWords = mine.compactMap { d in
             let said = d["takes"]?.array?.compactMap(\.string).compactMap { texts[$0] } ?? []
@@ -208,12 +206,10 @@ public final class MomentOutput: Output {
         lastSign = lastSign ?? mine.last { $0["sign"] != nil }?["sign"]?.string
     }
 
-    /// With a `voice`, a buddy's: its picks are its own, so two buddies
-    /// don't say the same words.
     public init(queue: @escaping (Moment, Pending) -> Void, blocked: @escaping () -> String?,
                 replyBlocked: (() -> String?)? = nil, who: @escaping (Event?) -> Moment.Who? = { _ in nil },
                 turnMs: @escaping (Event?) -> Int64? = { _ in nil }, speaks: @escaping () -> Bool = { true },
-                pack: CharacterPack = .active, voice: String? = nil, signs: [TaggedLine] = [],
+                pack: CharacterPack = .active, signs: [TaggedLine] = [],
                 calendar: @escaping (Event) -> [String] = { _ in [] }, replies: [TaggedLine] = [],
                 status: @escaping (Event) -> StatusReply.Answer? = { _ in nil }, moment: @escaping (Event) -> [String] = { _ in [] },
                 hushed: @escaping (Int64) -> Bool = { _ in false }, hush: @escaping (_ ms: Int64?, _ at: Int64) -> Void = { _, _ in },
@@ -239,10 +235,8 @@ public final class MomentOutput: Output {
         self.dayNumber = dayNumber
         self.moodFace = moodFace
         self.wishWhy = wishWhy
-        let own = voice.map(SplitMix64.seed(of:)) ?? 0
-        takes = SplitMix64(seed: seed ^ own)
+        takes = SplitMix64(seed: seed)
         self.pack = pack
-        self.voice = voice
         asked = Self.asked(in: pack)
         askedOfTalk = Self.talkQuestions(Self.asked(in: pack), in: pack)
         self.queue = queue

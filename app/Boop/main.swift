@@ -20,7 +20,6 @@ let usage = """
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH]
                 [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--name NAME]
                 [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
-                [--buddies PLACE:PACK[:AGENT[:NAME]],… [--links LINK,…]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
                The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
@@ -30,10 +29,6 @@ let usage = """
                every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
                asks no brain at all, even with a key: only the rules, and dev lines' answers. Your prompts are
                counted only, never read by Apple Intelligence.
-               --buddies runs several buddies side by side, each with its place (left, right), its character pack,
-               the agent it watches first and its own name; --links gives each its own link, in order (usb:SOCKET
-               or none). A demo whose header names buddies runs them without --buddies. With several, a {"dev":…}
-               line takes "buddy": PLACE for the one it's for.
                Stops cleanly on SIGINT or SIGTERM. {"dev":"advance","ms":N} on the socket moves the clock forward,
                and {"dev":"tap"} stands in for a tap on the board. A tap while something needs you opens that
                thread on this Mac; --no-open only logs where it would have opened.
@@ -83,8 +78,8 @@ func bundledCharacter() -> CharacterPack {
     do { return try CharacterPack(directory: packs.appendingPathComponent(chosen)) } catch { fail("the app's character pack is broken: \(error)") }
 }
 
-/// The folder of every character pack the app holds, for buddies that run
-/// another pack. In `Boop.app` it's in Contents/Resources, where
+/// The folder of the character pack the app holds. In `Boop.app` it's in
+/// Contents/Resources, where
 /// `make bundle` puts it: SwiftPM's `Bundle.module` looks at the top of the
 /// app, where code signing allows nothing, and when that fails falls back
 /// to the build folder, which on the Mac that built it would quietly
@@ -113,29 +108,18 @@ func transport(_ link: LinkSetting, only: String? = nil, log: LogFile) -> Transp
 /// `log`, in debug mode everything printed to the terminal, and with
 /// `devLines` the dashboard's `{"dev":…}` lines taken. The menu-bar app and `--headless` both start from these.
 func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug: Bool, devLines: Bool,
-                    log: LogFile, buddies: [BuddySetting] = [], links: [LinkSetting] = []) -> Runtime.Options {
+                    log: LogFile) -> Runtime.Options {
     // The board over Bluetooth, or the simulator's window, when onboarding
     // or Settings makes it Boop's body. Over Bluetooth, the one Boop takes only
     // the board it remembered, and narrows to the first one tapped.
-    let remembered = buddies.count > 1 ? nil : AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
+    let remembered = AppSettings.load(from: stateDir).board.flatMap(BoopDevice.advertised)
     let board = transport(link, only: remembered, log: log)
     // The simulator to choose, in a window of the app's own, where the build offers it.
     let chooser = { (board: Transport) -> Transport in
         AppModel.offersSimulator ? DeviceChooser(board: board, simulator: { BoardLink() }, log: { log.write($0) }) : board
     }
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
-    if let ble = board as? BLETransport, buddies.count <= 1 { options.chooseBoard = { ble.take(only: $0) } }
-    // Several buddies: each its own board, over Bluetooth the one its
-    // `board` names, else its own link in `links`, in order.
-    if buddies.count > 1 {
-        options.buddies = buddies.enumerated().map { i, setting in
-            let buddy: Buddy
-            do { buddy = try setting.buddy(bundled: bundledPacks, among: buddies) } catch { fail("buddy \(setting.place): \(error)") }
-            let own = i < links.count ? links[i] : link == .bluetooth ? .bluetooth : .none
-            return Runtime.BuddyOptions(buddy: buddy, link: transport(own, only: setting.board.flatMap(BoopDevice.advertised), log: log),
-                                        steering: bundledSteering(buddy.pack))
-        }
-    }
+    if let ble = board as? BLETransport { options.chooseBoard = { ble.take(only: $0) } }
     options.log = { log.write($0) }
     options.pushToTalkWorks = { SpeechListener.allowed }
     options.debug = debug
@@ -197,8 +181,7 @@ final class LogFile: @unchecked Sendable {
 let raw = Array(CommandLine.arguments.dropFirst())
 let (launchHeadless, launchSnapshots, launchCounts) = (raw.contains("--headless"), raw.contains("--snapshots"), raw.contains("--counts"))
 let (launchOptions, launchFlags): (Set<String>, Set<String>) =
-    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record",
-                       "--buddies", "--links"],
+    launchHeadless ? (["--state-dir", "--link", "--socket", "--talk", "--brain", "--name", "--demo", "--record"],
                       ["--headless", "--debug", "--no-open", "--live"])
     : launchSnapshots ? (["--snapshots"], [])
     : launchCounts ? (["--state-dir", "--days"], ["--counts"])

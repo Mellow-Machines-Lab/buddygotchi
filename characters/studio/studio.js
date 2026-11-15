@@ -1,12 +1,10 @@
-// Character Studio: one page for any character pack's moods, states and sounds.
-// The page owns the selection, the pickers, the views and the URL. A pack that
-// declares a `studio` entry in its character.json brings its own preview:
-// scripts that call Studio.register(id, adapter) with the entry's id
-// (README.md, "Writing an adapter"); each face its boards have gets the
-// board's own (board.js). The views beyond the scene and the matrix are
-// views.js's (the board's and the workbench's) and character.js's (the
-// character's own: its overview, personality, moods, words and tests), in
-// the tabs below.
+// Character Studio: one contact sheet for any character pack, every mood
+// against every state (the matrix), and one cell large with its pickers,
+// transport and sound (the scene). The page owns the selection, the
+// pickers, the two views and the URL. A pack that declares a `studio` entry
+// in its character.json brings its own preview: scripts that call
+// Studio.register(id, adapter) with the entry's id (README.md, "Writing an
+// adapter"); each face its boards have gets the board's own (board.js).
 // charactergen.py writes the pack data this reads, window.StudioData (packs.js).
 (() => {
   const root=document.getElementById('studio');
@@ -183,8 +181,6 @@
     if((view||opening)!=='scene'&&adapter?.transport==='live'){instance.setPaused(true);rested=true;}
     if(view==='matrix'){clearMatrix();buildMatrix();fillSoon();}
     render({autoplay:(view||opening)==='scene'});
-    views[view]?.card?.();
-    if(view)renderTabs();
   }
   function change(patch,{resetVariant=false}={}){
     if(busyNow())return;
@@ -198,7 +194,7 @@
   // and looping where the adapter can (`preview()`). Only cells on screen
   // play, at most LIMIT at once, a hovered cell first, then those wholly on
   // screen: a live character's each holds a WebGL context, and a page gets
-  // about 16. A cell opens its scene.
+  // about 16. A cell opens its scene, the page's other view.
   const LIMIT={clip:60,live:12};
   // The view shown: none until the first setView(), which shows the address's,
   // `opening` until then.
@@ -256,9 +252,9 @@
     for(const c of [...matrix.playing.keys()])if(!want.includes(c))unmount(c);
     for(const c of want)if(!matrix.playing.has(c))mount(c);
   }
-  // A silent, looping preview of one mood and state in `thumb`, by the card's
-  // adapter, as a matrix cell and the character's views show one: its
-  // instance and what it selected, or why it couldn't.
+  // A silent, looping preview of one mood and state in a matrix cell's
+  // `thumb`, by the card's adapter: its instance and what it selected, or
+  // why it couldn't.
   function preview(thumb,{mood,state='idle',outcome='success',context='new_task',variant=0}){
     if(!adapter)return {error:`${label(sel.card)} has no preview.`};
     const s={mood:shows(sel.card,moodOf(mood)),face:null,state,outcome,context,variant};
@@ -329,69 +325,21 @@
   }
 
   // ── Views ──────────────────────────────────────────────────────────────
-  // The scene, the matrix, and views.js's, each made with what it needs of the page.
-  // A board view records on the stage's board (board.js), which rests while it's shown.
-  const api={root,data,packs,sel,title,stateInfo,stateIds,stateGroups,families,writeHash,colourOf,preview,unpreview,
-    entry:()=>entryOf(sel.pack,sel.card),
-    cards:()=>cardsOf(sel.pack).map(id=>({id,label:label(id)})),
-    shows:mood=>shows(sel.card,moodOf(mood)),
-    // To a view, with the selection patched first and the view's own params (its address's).
-    go(next,patch,params){if(patch)change(patch);if(next===view)views[view]?.enter?.(params);else setView(next,params);},
-    boardCards:()=>cardsOf(sel.pack).filter(c=>entryOf(sel.pack,c)?.board),
-    switchCard:card=>switchCard(sel.pack,card),
-    record:options=>instance?.record?instance.record(options):Promise.reject(Error(`${label(sel.card)} isn't a board.`)),
-    open(patch){setView('scene');change({face:null,...patch});}};
-  const views=Object.fromEntries(Object.entries({...window.StudioCharacterViews,...window.StudioBehaviorViews,...window.StudioViews}).map(([name,make])=>[name,make(api)]));
-  // The tabs, each its views in the order its own buttons show them: a
-  // tab's first view is where it opens. A view a pack has nothing for
-  // (`views[name].empty()`) leaves its tab's buttons.
-  const TABS=[
-    {id:'overview',label:'Overview',views:{overview:'Overview'}},
-    {id:'personality',label:'Personality',views:{personality:'Personality'}},
-    {id:'moods',label:'Moods',views:{moods:'Moods'}},
-    {id:'behavior',label:'Behavior',views:{behavior:'Map',brain:'Brain'},
-      about:'What it does and why: what sets each thing off and who decides, a rule on the Mac, the brain or the board, and what the brain reads and answers.'},
-    {id:'animations',label:'Animations',views:{scene:'Scene',matrix:'Matrix',transitions:'Transitions',stills:'Stills'},
-      about:'How it looks: one mood and state, all of them at once, the board between two, and the frames its tests hold it to.'},
-    {id:'words',label:'Words',views:{signs:'Signs',dreams:'Dreams',voice:'Voice'},
-      about:'What it says: the captions it holds up, the signs it tells its dreams with, and its recorded voice.'},
-    {id:'tests',label:'Tests',views:{evals:'Evals',demos:'Demos'},
-      about:'What holds it to all this: the brain\'s eval scenarios, and the scripted demos it lives through.'},
-    {id:'workbench',label:'Workbench',views:{references:'References',review:'Review'},
-      about:'What it\'s being made from, and what\'s up for review.'},
-  ];
-  const tabOf=name=>TABS.find(t=>name in t.views);
-  const VIEWS=TABS.flatMap(t=>Object.keys(t.views)).filter(name=>name==='scene'||name==='matrix'||views[name]);
-  function renderTabs(){
-    const tab=tabOf(view);
-    root.dataset.tab=tab?.id||'';root.dataset.shown=view;
-    $('[data-tabs]').replaceChildren(...TABS.map(t=>{
-      const b=document.createElement('button');b.type='button';b.setAttribute('role','tab');b.dataset.tab=t.id;b.textContent=t.label;
-      b.setAttribute('aria-selected',String(t===tab));return b;
-    }));
-    const shown=tab?Object.entries(tab.views).filter(([name])=>VIEWS.includes(name)&&!views[name]?.empty?.()):[];
-    $('[data-subnav]').hidden=shown.length<2;
-    $('[data-subnav-about]').textContent=tab?.about||'';
-    $('[data-view-choice]').replaceChildren(...shown.map(([name,text])=>{const b=document.createElement('button');b.type='button';b.dataset.value=name;b.textContent=text;return b;}));
-    setSegment($('[data-view-choice]'),view);
-  }
-  // The stage's own preview rests in every other view: a live one is one of the page's WebGL contexts.
+  // The matrix, where the page opens, and the scene, a cell's detail.
+  const VIEWS=['matrix','scene'];
+  // The stage's own preview rests in the matrix: a live one is one of the page's WebGL contexts.
   let rested=false;
-  // `params` (the address's) re-enter the view shown, as a link to it does.
-  function setView(next,params){
-    if(!VIEWS.includes(next)||busyNow())return;
-    if(next===view){if(params)views[view]?.enter(params);return;}
+  function setView(next){
+    if(!VIEWS.includes(next)||busyNow()||next===view)return;
     const was=view;view=next;
+    root.dataset.shown=view;
     for(const el of $$('[data-view]'))el.hidden=el.dataset.view!==view;
-    renderTabs();
     if(was==='matrix'){clearTimeout(board.timer);board.timer=0;for(const c of [...matrix.playing.keys()])unmount(c);}
-    views[was]?.leave?.();
-    // Back in the scene, the stage takes its board back from the views: playing again if it rested, else paused as it was.
+    // Back in the scene, the stage takes its board back from the matrix: playing again if it rested, else paused as it was.
     if(view==='scene'){if(adapter?.transport==='live')instance.setPaused(instance.paused&&!rested);rested=false;}
     else if(adapter?.transport==='live'&&!instance.paused){instance.setPaused(true);rested=true;}
     else if(instance?.playing)instance.stop();
     if(view==='matrix'){fitMatrix();buildMatrix();fillSoon();if(!board.timer)askBoard();}
-    views[view]?.enter(params);
     writeHash();
   }
 
@@ -400,8 +348,7 @@
     const p=new URLSearchParams({pack:sel.pack,c:sel.card,mood:sel.face||sel.mood,state:sel.state});
     const fact=facts[sel.state];if(fact)p.set(fact.name,sel[fact.name]);
     if(sel.variant)p.set('v',String(sel.variant+1));
-    if(view!=='overview')p.set('view',view);
-    views[view]?.hash?.(p);
+    if(view)p.set('view',view);
     if(board.url)p.set('board',board.url);
     const hash='#'+p.toString().replaceAll('%3A',':').replaceAll('%2F','/');
     if(location.hash!==hash)history.replaceState(null,'',hash);
@@ -413,7 +360,7 @@
     if(mood.includes(':')){face=mood;mood=mood.split(':')[0];}
     const out={pack,card:cardsOf(pack).includes(p.get('c'))?p.get('c'):cardsOf(pack)[0],mood,face,
       state:stateIds.includes(p.get('state'))?p.get('state'):'idle',variant:Math.max(0,(Number(p.get('v'))||1)-1),
-      view:VIEWS.includes(p.get('view'))?p.get('view'):'overview',params:p,board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
+      view:VIEWS.includes(p.get('view'))?p.get('view'):'matrix',board:BOARD_URL.test(p.get('board')||'')?p.get('board'):null};
     for(const fact of Object.values(facts)){const v=p.get(fact.name);out[fact.name]=fact.options.some(o=>o.id===v)?v:fact.options[0].id;}
     return out;
   }
@@ -425,13 +372,12 @@
   root.addEventListener('pointerdown',e=>{if(!e.target.closest('[data-start]'))start();},{capture:true});
   $('[data-cards]').addEventListener('click',e=>{const b=e.target.closest('[data-character]');if(b)switchCard(sel.pack,b.dataset.character);});
   $('[data-pack-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)switchCard(b.dataset.value,'');});
-  $('[data-tabs]').addEventListener('click',e=>{const b=e.target.closest('[data-tab]');if(b)setView(Object.keys(TABS.find(t=>t.id===b.dataset.tab).views).find(name=>VIEWS.includes(name)));});
+  $('[data-back]').addEventListener('click',()=>setView('matrix'));
   $('[data-moods]').addEventListener('click',e=>{const b=e.target.closest('[data-mood]');if(b)change({mood:b.dataset.mood,face:null},{resetVariant:!resetOnState()});});
   $('[data-states]').addEventListener('click',e=>{const b=e.target.closest('[data-state]');if(b){if(b.dataset.state===sel.state)instance?.replay?.();change({state:b.dataset.state},{resetVariant:resetOnState()});}});
   $('[data-facts]').addEventListener('click',e=>{const b=e.target.closest('button'),seg=e.target.closest('[data-fact]');if(b&&seg)change({[seg.dataset.fact]:b.dataset.value},{resetVariant:true});});
   $('[data-face-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)change({face:b.dataset.value.includes(':')?b.dataset.value:null},{resetVariant:true});});
   $('[data-variation]').addEventListener('change',e=>change({variant:Number(e.target.value)}));
-  $('[data-view-choice]').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setView(b.dataset.value);});
   $('[data-board-show]').addEventListener('click',()=>board.cell?.scrollIntoView({block:'center',inline:'center',behavior:'smooth'}));
   matrix.table.addEventListener('pointerover',e=>{const c=e.target.closest('.cell');if(c&&c!==matrix.hovered){matrix.hovered=c;fillSoon();}});
   matrix.table.addEventListener('click',e=>{const c=e.target.closest('.cell');if(!c)return;
@@ -454,7 +400,7 @@
 
   document.addEventListener('keydown',e=>{
     if(e.metaKey||e.ctrlKey||e.altKey||busyNow()||e.target.closest?.('input,select,textarea'))return;
-    if((e.key==='m'||e.key==='M')&&tabOf(view)?.id==='animations'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
+    if(e.key==='m'||e.key==='M'){setView(view==='matrix'?'scene':'matrix');e.preventDefault();return;}
     if(view!=='scene')return;
     const i=stateIds.indexOf(sel.state);
     if(e.key==='ArrowLeft')step(-1);
@@ -468,25 +414,21 @@
     started=true;e.preventDefault();
   });
   window.addEventListener('hashchange',()=>{
-    const {view:nextView,board:url,params,...next}=readHash();board.url=url;setView(nextView,params);
+    const {view:nextView,board:url,...next}=readHash();board.url=url;setView(nextView);
     if(next.pack!==sel.pack||next.card!==sel.card){Object.assign(sel,next,{pack:sel.pack,card:sel.card});switchCard(next.pack,next.card,next.variant);}
     else{Object.assign(sel,next);render();}
   });
 
   // For browser checks and the console: select by fields, or by a scene id the adapter knows.
   // The first character loads as its view will show it (the stage playing for the scene, resting for any other), and then the view shows.
-  const ready=(async()=>{const {view:firstView,board:url,params,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});
-    opening=firstView;await switchCard(first.pack,first.card,first.variant);opening='';setView(firstView,params);})();
+  const ready=(async()=>{const {view:firstView,board:url,...first}=readHash();board.url=url;Object.assign(sel,first,{pack:'',card:''});
+    opening=firstView;await switchCard(first.pack,first.card,first.variant);opening='';setView(firstView);})();
   root.studio={sel,ready,packs,get adapter(){return instance;},get view(){return view;},setView,
-    views:Object.fromEntries(Object.entries(views).map(([name,v])=>[name,v.state])),
-    // Each tab's views, and those its buttons show for the pack shown.
-    get tabs(){return TABS.map(t=>({id:t.id,views:Object.keys(t.views).filter(n=>VIEWS.includes(n)),
-      shown:Object.keys(t.views).filter(n=>VIEWS.includes(n)&&!views[n]?.empty?.())}));},
     get matrix(){return {cells:matrix.cells.length,playing:matrix.playing.size,transport:adapter?.transport||null,board:board.shows};},
     boardCell,
     async select({pack,character,...patch}){if(pack||character)await switchCard(pack||sel.pack,character||sel.card);change(patch);},
     async selectAsset(id,card=sel.card){
       await switchCard(sel.pack,card);const found=instance?.find?.(id);if(!found)throw Error('No scene '+id);
-      Object.assign(sel,{face:null,...found});render();
+      setView('scene');Object.assign(sel,{face:null,...found});render();
     }};
 })();

@@ -134,8 +134,6 @@ public struct Narration: Equatable, Sendable {
             return Narration(cause: "\(agent)'s thread\(on) ended.")
         case .subagent?:
             return e.phase == .start ? Narration(cause: "\(agent) started a helper\(on).") : Narration(cause: "A helper of \(agent)'s finished\(on).")
-        case .reacted?:
-            return Narration(cause: "The other buddy reacted.", fact: fit("the other reacted"))
         case .act?:
             return e.phase == .start ? act(e.specificType, agent: agent, on: on, name: name)
                 : actEnded(e.specificType, passed: e["passed"]?.bool ?? true, on: on, name: name)

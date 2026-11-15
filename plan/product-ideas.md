@@ -8,7 +8,7 @@ what's next to build is [TODO.md](TODO.md).
 ## Ground rules from the owner
 
 - **Built for people who buy a ready-made Boop**, not people who flash their own.
-- **One buddy first.** Several buddies are for demos for now.
+- **One buddy.** Several buddies were cut on 2026-11-14; the world is where other buddies live.
 - **Everything on the buddy.** No phone, nothing outside the desk.
 - **A Jev key is fine for now.** The aim is to ship with a rules brain
   built from the evals, and grow into Jev for the richer things. So

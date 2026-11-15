@@ -15,8 +15,6 @@ extension Runtime {
     }
 
     func renameNow(_ name: String) -> Result<Bool, Refusal> {
-        // Several buddies each take their name from settings.json's `buddies`.
-        guard !pipeline.several else { return .failure(Refusal("several buddies are named in settings.json")) }
         let new = BuddyName.trimmed(name)
         guard new != self.name else { return .success(false) }
         let wall = options.wallClock()

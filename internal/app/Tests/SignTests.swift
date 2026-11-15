@@ -95,27 +95,6 @@ final class SignTests: XCTestCase {
         XCTAssertNil(queued.last?.sign, "only an offered caption")
     }
 
-    /// With several buddies, the reading records whose names you said, its
-    /// line names them, and each buddy's sign question offers its `named`
-    /// captions only when you said its own name.
-    func testEachBuddyHearsWhetherYouSaidItsOwnName() throws {
-        let pack = CharacterPack.active
-        let buddies = [Buddy(id: "left", pack: pack.named("Pip")), Buddy(id: "right", pack: pack.named("Bo"))]
-        let pipeline = Pipeline(buddies.map { ($0, Core(config: .init(pack: $0.pack))) }, view: TranscriptView(rules: .init(), seed: 1))
-        let step = pipeline.agent(Event(at: 1, source: .claude, type: .turn, phase: .start, specificType: "UserPromptSubmit", session: "s1",
-                                        data: ["prompt": "nice one bo, now the docs"]))
-        let reading = try XCTUnwrap(step.recorded.first { $0.type == .prompt })
-        XCTAssertEqual(reading.buddy, "left", "the session's buddy")
-        XCTAssertEqual(reading["named"], .array(["Bo"]))
-        XCTAssertTrue(step.views.contains { $0.line.contains("and said Bo's name.") }, "\(step.views.map(\.line))")
-        let log = pipeline.transcript.view(now: 1)
-        func signs(_ buddy: Buddy) -> [String] {
-            MomentOutput(queue: { _, _ in }, blocked: { nil }, pack: buddy.pack, signs: lines).offered(reading, log)
-        }
-        XCTAssertEqual(signs(buddies[1]), ["me?!", "plain caption"])
-        XCTAssertEqual(signs(buddies[0]), ["plain caption"], "its own name wasn't said")
-    }
-
     /// Every caption in each pack's signs.md fits a sign once filled in
     /// with a short phrase, in the board's fonts (printable ASCII), and
     /// its tags are ones a reading or the calendar can have: the calendar

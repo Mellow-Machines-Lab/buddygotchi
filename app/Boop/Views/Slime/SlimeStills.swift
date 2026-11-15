@@ -23,9 +23,6 @@ final class SlimeStills: ObservableObject {
 
     func image(_ snapshot: StateSnapshot) -> NSImage? { images[snapshot.jsonLine] }
 
-    /// A picture the snapshot harness drew already.
-    func keep(_ image: NSImage, for snapshot: StateSnapshot) { images[snapshot.jsonLine] = image }
-
     /// Draws `snapshots` that aren't drawn or waiting, for a pack with a mirror.
     func want(_ snapshots: [StateSnapshot]) {
         guard SlimeFeed.folder != nil else { return }

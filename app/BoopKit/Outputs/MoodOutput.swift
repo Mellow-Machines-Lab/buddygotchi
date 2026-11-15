@@ -89,9 +89,9 @@ public enum MoodOutput {
 
     /// Boop's mood as MellowHarness's `Choice`: its question, offered stay and
     /// every move from the mood it has (`options(from:)`), and the line a
-    /// change shows. With a `voice`, it's that buddy's, in its `pack`.
-    public static func choice(voice: String? = nil, pack: CharacterPack = .active) -> Choice {
-        Choice(name: outputName, start: pack.defaultMood, voice: voice, question: "After NOW, what is \(pack.name)'s mood?",
+    /// change shows, in `pack`.
+    public static func choice(pack: CharacterPack = .active) -> Choice {
+        Choice(name: outputName, start: pack.defaultMood, question: "After NOW, what is \(pack.name)'s mood?",
                       about: "the NOW and HISTORY sections", judgeBy: "the MOOD section, its reason to leave",
                       said: { from, to in "\(pack.name)'s mood changed: \(from) → \(to)." },
                       options: { current, _, _ in options(from: pack.settled(current) ?? pack.defaultMood, in: pack) })

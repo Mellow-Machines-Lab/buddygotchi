@@ -178,8 +178,6 @@ struct SettingsPane: View {
                         nameFocused = true
                     }
                     .buttonStyle(.row)
-                    // Several buddies take their names from settings.json.
-                    .disabled(model.status?.buddies.isEmpty == false)
                     .help("Give \(model.name) a new name, here, on its board and in the world")
                 }
             }

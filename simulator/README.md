@@ -1,6 +1,6 @@
 # Boop Simulator
 
-Updated 2026-11-04. A board with no board: the firmware's own code in a
+Updated 2026-11-14. A board with no board: the firmware's own code in a
 web page, for development, tests and demos, and for trying Boop without
 one. It's Boop's only; nothing here ships in the Mac app or the firmware.
 
@@ -19,15 +19,13 @@ run it.
 `http://127.0.0.1:8206/characters/studio/`; the page's "Every mood and
 state" link opens its matrix with `&board=/board`, so it marks the cell
 the board shows now (`/board`, under USB below; the first board's, with
-several). The studio's own boards, a preview of each face, on which its
-Transitions and References record, are this `Board` too: the
-server serves the page's files again at `/simulator/`, where the studio
-looks for them
+several). The studio's own boards, a preview of each face, are this
+`Board` too: the server serves the page's files again at `/simulator/`,
+where the studio looks for them
 ([characters/studio/README.md](../characters/studio/README.md), On the
-board). It is the studio's only server: it saves a review verdict to a
-pack's `review/notes.jsonl` (`/review`), and with `--capture-dir DIR` the
-review clips a pack names, only from its own page; `--characters DIR`
-serves another folder of packs.
+board). It is the studio's only server: with `--capture-dir DIR` it saves
+the review clips a pack's tools record, only from its own page;
+`--characters DIR` serves another folder of packs.
 
 **With the Mac app.** The app's body is the simulator in one way: a
 window of its own, in `make dev`'s debug build and the internal build.

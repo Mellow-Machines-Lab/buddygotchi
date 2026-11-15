@@ -33,11 +33,11 @@ for it unless BOOP_SIM_FACE says: the pixel face if it has one, else its
 first. Both read the chosen pack without PACK.
 
 Every form but --which and --firmware-to also checks the board's states
-against CHARACTER.md §9, each
-pack's studio entry (§12), references and review queue (§16), and writes
-characters/studio/packs.js, the studio page's data for the packs in this
-checkout, which git ignores. --check fails on a problem with any of them;
---stage only warns.
+against CHARACTER.md §9, each pack's studio entry (§12) and references
+(§16), and writes characters/studio/packs.js, the studio page's data for
+the packs in this checkout, which git ignores. --check fails on a problem
+with any of them; --stage only warns. --check also prints each pack's
+gaps, what it lacks that doesn't stop it (gaps()), and passes with them.
 
 PACK is a pack's folder. Without one, the chosen pack is the first of:
 $BOOP_CHARACTER (a folder), $CHARACTER (a name in characters/), the name or
@@ -68,11 +68,6 @@ FIRMWARE_ACTS = ROOT / "firmware" / "src" / "app" / "behaviour.cpp"
 # The rig's channels, and the tags an occasion may need, as the firmware has them.
 RIG_H = ROOT / "firmware" / "src" / "render" / "rig" / "rig.h"
 TAGS_H = ROOT / "firmware" / "src" / "render" / "tags.h"
-EVERYDAY = ROOT / "characters" / "studio" / "everyday.jsonl"
-# What wakes the brain (the transcript view's wakes and quiet kinds), and
-# the personality settings the app reads, for the studio's behaviour map.
-WAKES = ROOT / "app" / "BoopKit" / "Core" / "TranscriptView.swift"
-SETTINGS = ROOT / "app" / "BoopKit" / "Core" / "Personality.swift"
 
 
 def own_folder(folder: Path) -> Path:
@@ -444,24 +439,20 @@ inline constexpr Rig kRig = {{{', '.join(lists)}}};
 """
 
 
-# ── References and review (CHARACTER.md §16) ────────────────────────────────
+# ── References (CHARACTER.md §16) ───────────────────────────────────────────
 # A reference is a folder, references/<YYYY-MM-DD>-<topic>/: the media a
 # person gave (a still is one frame; a GIF or a video is cut a frame every
 # FRAME_MS), reference.json, the agent's reading.md, and what `boopctl
 # reference read` makes of each file, frames/<file>/NNNN.png and
 # sheets/<file>.png. The sheets are committed; the frames, heavy for a
 # video, stay where they were cut, so a checkout may have none.
-FRAME_MS = 40  # 25 fps: a reference's frames, and the board's that the studio records beside them, frame for frame
+FRAME_MS = 40  # 25 fps: a reference's frames, and the board's that a pack's studio tools record
 MEDIA = {".png": "still", ".jpg": "still", ".jpeg": "still", ".webp": "still", ".gif": "gif",
          ".mp4": "video", ".mov": "video", ".m4v": "video", ".webm": "video"}
 REFERENCE_FOLDER = re.compile(r"\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*")
 KINDS = ("inspiration", "direct")
 STATUSES = ("new", "read", "translated", "in review", "approved")
 BECOMES = ("clip", "expression", "art")
-# What an item agents put up for review (review/queue.json) may be, and a
-# verdict on one, as the studio's server appends it to review/notes.jsonl.
-REVIEW_STATUSES = ("in review", "changes", "approved")
-NOTE = {"at": str, "id": str, "verdict": ("approve", "change"), "text": str}
 
 
 def reference_folders(pack: Path) -> list[Path]:
@@ -529,65 +520,16 @@ def reference_problems(folder: Path, moods: set[str], states: list[str], rig: di
     return problems
 
 
-def review(pack: Path) -> tuple[list, list, list[str]]:
-    """A pack's review queue (review/queue.json, which agents write), the
-    notes on it (review/notes.jsonl, which the studio's server appends),
-    and what's wrong with them. An item's before and after are images in
-    the characters folder, by their paths from the repository's root."""
-    folder, queue, notes, problems = pack / "review", [], [], []
-    if (folder / "queue.json").is_file():
-        try:
-            queue = json.loads((folder / "queue.json").read_text())
-        except ValueError as e:
-            return [], [], [f"queue.json: isn't JSON ({e})"]
-        if not isinstance(queue, list) or not all(isinstance(item, dict) for item in queue):
-            return [], [], ["queue.json isn't a list of items"]
-        def still(path):
-            """A still in a pack, by its path from the repository's root,
-            characters/<pack>/…: this pack's own wherever its folder is
-            (a character repository's character/), or one beside it."""
-            parts = Path(path).parts
-            if len(parts) < 3 or parts[0] != "characters" or ".." in parts:
-                return False
-            mine = parts[1] in (pack.name, load(pack).get("id"))
-            file = (own_folder(pack) if mine else pack.parent / parts[1]).joinpath(*parts[2:])
-            return file.is_file() and MEDIA.get(file.suffix.lower()) == "still"
-
-        image = Rule("isn't an image in the characters folder", lambda v: isinstance(v, str) and still(v))
-        item_schema = {"id": A_NAME, "title": TEXT, "what": TEXT, "before": image, "after": image, "status": REVIEW_STATUSES}
-        for i, item in enumerate(queue):
-            fields("queue.json", item, item_schema, problems, at=item["id"] if A_NAME.test(item.get("id")) else f"[{i}]",
-                   required=("id", "title", "what", "status"))
-        ids = [item.get("id") for item in queue]
-        if len(ids) != len(set(map(str, ids))):
-            problems.append("queue.json has two items with one id")
-    if (folder / "notes.jsonl").is_file():
-        for number, line in enumerate((folder / "notes.jsonl").read_text().splitlines(), 1):
-            rel, said = f"notes.jsonl:{number}", len(problems)
-            try:
-                note = json.loads(line)
-            except ValueError:
-                problems.append(f"{rel}: isn't JSON")
-                continue
-            fields(rel, note, NOTE, problems, required=tuple(NOTE))
-            if len(problems) == said:
-                notes.append(note)
-    return queue, notes, problems
-
-
 class Reads:
-    """Each pack's rig/ (read_rig()) and review/ (review()), read once for
-    as long as one of these is kept: main() keeps one for its run and
-    hands it on, and a call given none reads afresh."""
+    """Each pack's rig/ (read_rig()), read once for as long as one of these
+    is kept: main() keeps one for its run and hands it on, and a call given
+    none reads afresh."""
 
     def __init__(self) -> None:
         self.seen: dict = {}
 
     def rig(self, pack: Path) -> tuple[dict, list[str]]:
         return self.once(read_rig, pack)
-
-    def review(self, pack: Path) -> tuple[list, list, list[str]]:
-        return self.once(review, pack)
 
     def once(self, read, pack: Path):
         key = (read, pack.resolve())
@@ -609,8 +551,8 @@ def files_in(folder: Path) -> dict[str, Path]:
 
 
 # What makes a pack that nothing staged reads (§2): its art's sources, its
-# references and its review queue, which the tools and the studio read
-# from the pack itself.
+# references, which boopctl reference reads from the pack itself, and a
+# review/ folder an older pack may still have.
 UNSTAGED = ("design", "references", "review")
 
 
@@ -647,16 +589,6 @@ def firmware_states(source: Path = FIRMWARE_STATES) -> list[str]:
     return re.findall(r'"([a-z_]+)"', match.group(1))
 
 
-def pastimes_by_stage(pack: Path) -> list[dict]:
-    """The pack's pastimes, its table's rows' names, looks and stages, for
-    the studio; none for a pack with no such table."""
-    table = pack / "firmware" / "src" / "render" / "gel" / "pastimes.cpp"
-    if not table.is_file():
-        return []
-    row = re.compile(r'\{Pastime::k\w+, Body::k\w+, "([^"]+)", SceneState::k(\w+), \d+, \d+, (\d+)')
-    return [{"name": n, "look": look, "stage": int(stage)} for n, look, stage in row.findall(table.read_text())]
-
-
 def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
     """The states the board draws while working for what the agent does, a
     `state` message's `act`: those the firmware's actFromName keeps (any
@@ -665,150 +597,6 @@ def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
     if not match:
         raise SystemExit(f"charactergen: no actFromName in {source}")
     return [re.sub(r"(?<!^)(?=[A-Z])", "_", e).lower() for e in re.findall(r"case SceneState::k(\w+):", match.group(1))]
-
-
-def everyday(source: Path = EVERYDAY) -> list[dict]:
-    """The everyday transitions, which the studio's Rank records on the
-    board: those everyday.jsonl records. Each run of its shots with
-    one name (`<ms>-<name>`) after the first is one, named so, from what
-    showed before the messages that start it to what they ask for, each a
-    cell as the studio's address has it (mood/state, and /fact for a state
-    with one): a `state` its look (working's design for what the agent
-    does, if the board draws one), a `do` its reaction in its own mood, and
-    a touch the board's own, a tap's poke or a stroke's gesture, which plays
-    over the look and leaves it to the next."""
-    acts, out = set(firmware_acts()), []
-    look, mood, name, asked = None, None, None, None  # asked: (from, to) since the last shot
-    for line in source.read_text().splitlines():
-        if not line.strip() or line.lstrip().startswith("//"):
-            continue
-        step = json.loads(line)
-        if "shot" in step:
-            shot = step["shot"].partition("-")[2]
-            if asked and asked[0] and shot != name:
-                out.append({"name": shot.replace("-", " "), "from": asked[0], "to": asked[1]})
-            name, asked = shot, None
-            continue
-        kind = step.get("t")
-        if kind == "state":
-            mood, act = step["mood"], step.get("act")
-            cell = f"{mood}/{act if step['base'] == 'working' and act in acts else step['base']}"
-        elif kind == "do":
-            args = step.get("args", {})
-            cell = "/".join([args.get("mood", mood), step["name"]] + [f for f in (args.get("outcome") or args.get("ctx"),) if f])
-        elif kind == "dbg.touch":
-            cell = f"{mood}/{'gesture' if 'to_x' in step else 'poked'}"
-        else:
-            continue
-        asked = (asked[0] if asked else look, cell)
-        if kind != "dbg.touch":
-            look = cell
-    return out
-
-
-DECLARED = r"\b{}\b\s*(?::[^=\n]*)?=\s*([0-9][0-9_]*(?:\.[0-9]+)?(?:\s*[*+]\s*[0-9][0-9_]*)*)"
-
-
-def code_number(ref: dict, root: Path = ROOT) -> float | None:
-    """A number the code keeps: the value `ref["name"]` is declared with in
-    `ref["in"]` (`static let x: Int64 = 30_000`, `constexpr int kX = 3;`),
-    or the first group of `ref["find"]` there, a literal or a product or
-    sum of literals; None when it isn't found."""
-    path = root / ref["in"]
-    if not path.is_file():
-        return None
-    match = re.search(ref.get("find") or DECLARED.format(re.escape(ref.get("name", ""))), path.read_text())
-    if not match:
-        return None
-    try:
-        terms = [[float(f.replace("_", "")) for f in term.split("*")] for term in match.group(1).split("+")]
-    except ValueError:
-        return None
-    value = sum(math.prod(t) for t in terms)
-    return int(value) if value == int(value) else value
-
-
-def brain_wakes(source: Path = WAKES) -> tuple[dict[str, int], list[str]]:
-    """The kinds of event that wake the brain, each with its wake (the
-    higher goes first), and the quiet ones, which have a line but never
-    wake it: the transcript view's `wakes` and `quiet`."""
-    text = source.read_text()
-    table = re.search(r"static let wakes: \[String: Int\] = \[(.*?)\]", text, re.S)
-    quiet = re.search(r"static let quiet = \[(.*?)\]", text, re.S)
-    if not table or not quiet:
-        raise SystemExit(f"charactergen: no wakes or quiet in {source}")
-    return ({k: int(v) for k, v in re.findall(r'"([a-z_]+)": (\d+)', table.group(1))}, re.findall(r'"([a-z_]+)"', quiet.group(1)))
-
-
-def personality_settings(source: Path = SETTINGS) -> list[str]:
-    """The front-matter keys of a personality the app reads."""
-    return re.findall(r'case "([a-z_]+)":', source.read_text())
-
-
-def behavior(studio: Path = STUDIO, root: Path = ROOT) -> tuple[dict | None, list[str]]:
-    """The studio's behaviour map (behavior.json), each number with the
-    value its code declares and each brain's kinds with their wake, and
-    what's wrong with it: a decider, state, other row, kind of event or
-    setting that isn't one, a number its code doesn't declare, and a state
-    of the board's that nothing plays. None for a studio without one."""
-    path = studio / "behavior.json"
-    if not path.is_file():
-        return None, []
-    data, problems = json.loads(path.read_text()), []
-    table = states(studio)
-    ids, facts = state_ids(table), table["facts"]
-    deciders = {d["id"] for d in data["deciders"]}
-    wakes, quiet = brain_wakes(root / WAKES.relative_to(ROOT))
-    settings = personality_settings(root / SETTINGS.relative_to(ROOT))
-    rows = [r for g in data["groups"] for r in g["rows"]]
-    names = [r["id"] for r in rows]
-    if len(names) != len(set(names)):
-        problems.append(f"{path.name}: each row needs an id of its own")
-    played = set()
-
-    def check_states(at: str, cells: list[str]) -> None:
-        for cell in cells:
-            state, *fact = cell.split("/")
-            options = [o["id"] for o in facts.get(state, {}).get("options", [])]
-            if state not in ids or len(fact) > 1 or (fact and fact[0] not in options):
-                problems.append(f"{path.name}: {at} plays {cell}, which isn't a state of the board's (or a fact of one)")
-            else:
-                played.add(state)
-
-    def check_numbers(at: str, numbers: list[dict]) -> None:
-        for n in numbers:
-            n["value"] = code_number(n, root)
-            if n["value"] is None:
-                problems.append(f"{path.name}: {at}'s number \"{n.get('what')}\" isn't declared in {n.get('in')} ({n.get('name') or n.get('find')})")
-
-    check_numbers("brain", data.get("brain", {}).get("numbers", []))
-    for layer in data["layers"]:
-        check_states(layer["id"], layer["states"])
-        check_numbers(layer["id"], layer.get("numbers", []))
-        if layer["decides"] not in deciders:
-            problems.append(f"{path.name}: layer {layer['id']} is decided by {layer['decides']}, which isn't one of {sorted(deciders)}")
-    for row in rows:
-        at = row["id"]
-        check_states(at, row.get("plays", []))
-        check_numbers(at, row.get("numbers", []))
-        for who in row["decides"]:
-            if who not in deciders:
-                problems.append(f"{path.name}: {at} is decided by {who}, which isn't one of {sorted(deciders)}")
-        for other in row.get("also", []):
-            if other not in names:
-                problems.append(f"{path.name}: {at} names {other}, which isn't a row")
-        brain = row.get("brain")
-        if brain:
-            unknown = [k for k in brain["kinds"] if k not in wakes and k not in quiet]
-            problems += [f"{path.name}: {at}'s brain hears {k}, which the transcript view neither wakes on nor keeps quiet" for k in unknown]
-            woken = [wakes[k] for k in brain["kinds"] if k in wakes]
-            brain["wake"] = max(woken) if woken else None
-        if row.get("setting") and row["setting"] not in settings:
-            problems.append(f"{path.name}: {at}'s setting {row['setting']} isn't one a personality has ({', '.join(settings)})")
-    for state in ids:
-        if state not in played:
-            problems.append(f"{path.name}: nothing plays {state}: no row or layer names it")
-    return data, problems
 
 
 def wears(pack: Path, entry: dict) -> dict[str, str]:
@@ -823,7 +611,7 @@ def wears(pack: Path, entry: dict) -> dict[str, str]:
 def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIRMWARE_STATES, reads: Reads | None = None) -> list[str]:
     """What's wrong with the studio's data: the states it lists against the
     board's, each pack's declared files, a preview that has a mood
-    wear one that isn't the pack's, and its references and review queue."""
+    wear one that isn't the pack's, and its references."""
     problems, reads = [], reads or Reads()
     table = states(studio)
     ids, board = state_ids(table), firmware_states(source)
@@ -838,7 +626,6 @@ def studio_problems(packs: list[Path], studio: Path = STUDIO, source: Path = FIR
                 problems.append(f"{pack.name}: references/{folder.name} isn't a folder named <YYYY-MM-DD>-<topic>")
                 continue
             problems += [f"{pack.name}: references/{folder.name}: {p}" for p in reference_problems(folder, moods, ids, rig)]
-        problems += [f"{pack.name}: review/{p}" for p in reads.review(pack)[2]]
         entries = previews(character)
         names = [e.get("id") for e in entries + boards(character)]
         if None in names or len(names) != len(set(names)):
@@ -894,244 +681,16 @@ def board(face: str) -> dict:
             "icon": "board.svg", "board": face, "scripts": [], "styles": [], "wears": {}}
 
 
-def references_data(pack: Path, here) -> list[dict]:
-    """Each reference, as the studio shows it: reference.json, the reading,
-    and each file with the frames cut from it."""
-    out = []
-    for folder in reference_folders(pack):
-        try:
-            ref = json.loads((folder / "reference.json").read_text())
-        except (OSError, ValueError):
-            continue  # --check says why
-        reading = folder / "reading.md"
-        out.append({**ref, "id": folder.name, "path": here(folder) + "/", "became": ref.get("became", []),
-                    "reading": reading.read_text() if reading.is_file() else None,
-                    "media": [{"file": p.name, "kind": MEDIA[p.suffix.lower()], "frames": frame_count(folder, p.name)}
-                              for p in media(folder)]})
-    return out
-
-
-# ── What the studio shows of the character itself ──────────────────────
-# Its steering (§7), voice (§8), demos (§13) and evals, read as the page
-# shows them: the files' own words, comments and section headings left out.
-
-COMMENT = re.compile(r"<!--.*?-->", re.S)
-# A steering file's section heading (MOOD, PERSONALITY), which the page leaves out.
-HEADING = re.compile(r"^[A-Z][A-Z ]+$")
-
-
-def front_matter(text: str) -> tuple[dict[str, str], str]:
-    """A steering file's settings between --- lines at its top, and the rest."""
-    lines = text.splitlines()
-    if not lines or lines[0].strip() != "---" or "---" not in [l.strip() for l in lines[1:]]:
-        return {}, text
-    end = 1 + [l.strip() for l in lines[1:]].index("---")
-    settings = dict(l.split(":", 1) for l in lines[1:end] if ":" in l)
-    return {k.strip(): v.strip() for k, v in settings.items()}, "\n".join(lines[end + 1:])
-
-
-def steering(path: Path) -> tuple[dict[str, str], str] | None:
-    """A steering file's settings and words, or None when there's no file."""
-    if not path.is_file():
-        return None
-    settings, text = front_matter(path.read_text())
-    lines = [l.rstrip() for l in COMMENT.sub("", text).splitlines()]
-    lines = [l for l in lines if not HEADING.match(l.strip())]
-    return settings, "\n".join(lines).strip()
-
-
-def with_examples(text: str) -> dict:
-    """Words with Examples (§7): the words, and each example, its lines
-    joined, a line that starts with → kept on its own. A line that isn't
-    indented ends the examples, and its paragraph goes with the words, as
-    the closing one a personality has after its Examples."""
-    words: list[str] = []
-    examples: list[str] = []
-    listing = False
-    for line in text.splitlines():
-        if line.strip() == "Examples:":
-            listing = True
-        elif listing and line.startswith("- "):
-            examples.append(line[2:].strip())
-        elif listing and line.startswith(" ") and examples:
-            examples[-1] += ("\n" if line.strip().startswith("→") else " ") + line.strip()
-        elif line.strip() or not listing:
-            listing = False
-            words.append(line)
-        else:
-            words.append(line)
-    return {"text": "\n".join(words).strip(), "examples": examples}
-
-
-def tagged(path: Path) -> list[dict]:
-    """A list of `- [tags] words` lines (signs.md, dreams.md): each line's tags and words."""
-    found = steering(path)
-    out = []
-    for line in (found[1].splitlines() if found else []):
-        m = re.match(r"^- (?:\[([^\]]*)\]\s*)?(.*)$", line.strip())
-        if m:
-            out.append({"tags": (m.group(1) or "").split(), "text": m.group(2)})
-    return out
-
-
-# What a mood file's sentences say, by how they start, in the order the page shows them.
-MOOD_PARTS = [("faces", ("Its faces",)), ("says", ("Says", "Grumbles", "Speaks", "Mumbles")),
-              ("stays", ("Stays",)), ("leaves", ("Leaves for",)), ("fades", ("Fades",))]
-
-
-def mood_steering(text: str, moods: list[str]) -> dict:
-    """A mood file (§7) in parts: what the mood is, which faces it leans to,
-    what it says, the rest of how it acts, what it stays through, each mood
-    it leaves for and when, and when it fades. A part the file doesn't
-    have is left out."""
-    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z])", " ".join(text.split()))
-    parts: dict[str, list[str]] = {}
-    for i, sentence in enumerate(sentences):
-        key = next((k for k, starts in MOOD_PARTS if sentence.startswith(starts)), None)
-        if key is None:
-            if i == 0 and len(sentence.split()) == 1:
-                continue  # the mood's own name, "Calm."
-            key = "acts" if parts else "about"
-        parts.setdefault(key, []).append(sentence)
-    out: dict = {k: " ".join(v) for k, v in parts.items() if k != "leaves"}
-    if "leaves" in parts:
-        out["leaves"] = [leave for s in parts["leaves"] for leave in leaves(s, moods)]
-    return out
-
-
-def leaves(sentence: str, moods: list[str]) -> list[dict]:
-    """"Leaves for X when…; Y at…": each clause's moods and when. A clause
-    that doesn't start with moods keeps its words whole, with the moods it names."""
-    out = []
-    for clause in sentence.removeprefix("Leaves for ").rstrip(".").split(";"):
-        words, to = clause.split(), []
-        while words and (words[0].strip(",") in moods or words[0] in ("or", "and")):
-            word = words.pop(0).strip(",")
-            if word in moods:
-                to.append(word)
-        if to:
-            out.append({"to": to, "when": " ".join(words)})
-        elif clause.strip():
-            out.append({"to": [w for w in re.findall(r"[a-z]+", clause) if w in moods], "when": clause.strip()})
-    return out
-
-
-def voice_table(path: Path) -> dict:
-    """A voice's table (mac/takes.tsv, §8): its version, and each take as
-    [id, text, part, meaning, kind, moods, finish, ms]."""
-    rows = [l.split("\t") for l in path.read_text().splitlines() if l and not l.startswith("#")]
-    version, takes = rows[0][0], []
-    for row in rows[1:]:
-        if len(row) == 8:
-            take = row[:5] + [row[5].split(), row[6] or None, int(row[7]) if row[7].isdigit() else 0]
-            takes.append(take)
-    return {"version": version, "takes": takes}
-
-
-def demo_script(path: Path) -> dict:
-    """A demo (§13): its title, what its first comment says it is, and its steps."""
-    about, title, steps = [], path.stem.replace("-", " "), []
-    for line in path.read_text().splitlines():
-        if line.startswith("//"):
-            if not steps:
-                about.append(line[2:].strip())
-            continue
-        if not line.strip():
-            continue
-        try:
-            step = json.loads(line)
-        except ValueError:
-            continue  # boopdev check says why
-        if "demo" in step:
-            title = step.get("title", title)
-        else:
-            steps.append(step)
-    return {"id": path.stem, "title": title, "about": " ".join(about), "steps": steps}
-
-
-def eval_scenario(path: Path) -> dict | None:
-    """An eval scenario (internal/EVALS.md): what the page shows of it."""
-    try:
-        scenario = json.loads(path.read_text())
-    except ValueError:
-        return None  # EvalTests says why
-    keys = ("name", "case", "why", "always", "gap", "talk", "mood", "checks", "steps")
-    return {"id": path.stem, **{k: scenario[k] for k in keys if k in scenario}}
-
-
-def stills(pack: Path, here) -> list[dict]:
-    """The pack's golden frames (tests/golden-*/<group>/<name>.png), each
-    group with its pictures: the frames its tests hold its faces to."""
-    out = []
-    for golden in sorted(pack.glob("tests/golden-*")):
-        for group in sorted(p for p in golden.iterdir() if p.is_dir()):
-            pictures = sorted(group.glob("*.png"))
-            if pictures:
-                out.append({"set": golden.name.removeprefix("golden-"), "group": group.name,
-                            "stills": [{"name": p.stem, "path": here(p)} for p in pictures]})
-    return out
-
-
-def character_data(pack: Path, character: dict, here) -> tuple[dict, tuple[str, dict] | None]:
-    """What the studio shows of a pack's character: its personalities,
-    talk files, each mood's steering in parts, its signs and dream signs, its
-    voice's table (with the pack that has it, which may be another, §6),
-    its demos, evals and stills. The voice comes back on its own, with the
-    name of the pack whose it is, so the page holds a shared one once."""
-    ids = [m["id"] for m in character["moods"]]
-    folder = pack / "steering"
-    # The pack's one personality, as a list of one for the page.
-    found = steering(folder / "personality.md")
-    personalities = [{"id": character["id"], "settings": found[0], **with_examples(found[1])}] if found else []
-    order = {"quiet": 0, "normal": 1, "chatty": 2}
-    talks = [{"id": f.stem, "settings": steering(f)[0], **with_examples(steering(f)[1])}
-             for f in sorted((folder / "talk").glob("*.md"), key=lambda f: (order.get(f.stem, 3), f.stem))]
-    mood_files = {}
-    for mood in ids:
-        found = steering(folder / "mood" / f"{mood}.md")
-        if found:
-            mood_files[mood] = mood_steering(found[1], ids)
-    table = pack / "mac" / "takes.tsv"
-    voice = None
-    if table.is_file():
-        owner = table.parent.parent
-        voice = (owner.name, {**voice_table(table), "file": here(owner / "voice" / "voice.bin")})
-    guide = steering(folder / "guide.md")
-    return {
-        "id": character["id"],
-        "version": character.get("version"),
-        "startup_mood": character.get("startup_mood"),
-        "faces": character.get("faces", {}),
-        "personalities": personalities,
-        "talks": talks,
-        "guide": guide[1] if guide else None,
-        "steering": mood_files,
-        "signs": tagged(folder / "signs.md"),
-        "dreams": tagged(folder / "dreams.md"),
-        "voice": voice[0] if voice else None,
-        "demos": [demo_script(p) for p in sorted(pack.glob("demo/*.jsonl"))],
-        "evals": [e for e in (eval_scenario(p) for p in sorted(pack.glob("evals/*.json"), key=eval_order)) if e],
-        "stills": stills(pack, here),
-    }, voice
-
-
-def eval_order(path: Path) -> tuple:
-    """Scenarios by their number, 2 before 10."""
-    number = re.match(r"\d+", path.stem)
-    return (int(number.group()) if number else 1 << 30, path.stem)
-
-
-def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, reads: Reads | None = None) -> dict:
+def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO) -> dict:
     """The studio page's data: the engine's states, with the acts the board
-    draws while working; the frames' interval; the everyday transitions
-    (everyday()); the staged pack; and, for
-    each pack, its moods, its studio entries (its own, those it uses and a
-    board for each face), its references, and its review queue and notes,
-    with paths from the page."""
-    last, reads = staged(), reads or Reads()
-    data = {"chosen": chosen_pack.name, "staged": own_folder(last).name if last else None,
-            "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "everyday": everyday(),
-            "behavior": behavior(studio)[0], "voices": {}, "packs": {}}
+    draws while working; the frames' interval; the staged pack; and, for
+    each pack, its moods and its studio entries (its own and a board for
+    each face), with paths from the page."""
+    last = staged()
+    # The staged pack by the name the page and the board's hello know it by (its staged folder's, its id),
+    # not its own folder's, which a character repository calls character/.
+    data = {"chosen": chosen_pack.name, "staged": last.name if last else None,
+            "states": {**states(studio), "acts": firmware_acts()}, "frame_ms": FRAME_MS, "packs": {}}
     page = lambda path: Path(os.path.relpath(path, studio)).as_posix()
     for pack in packs:
         character = load(pack)
@@ -1146,20 +705,11 @@ def studio_data(packs: list[Path], chosen_pack: Path, studio: Path = STUDIO, rea
             entry.pop("captures", None)
             if entry.get("board"):  # its board's card, with what the pack adds
                 entries[i] = (home, {**board(entry["board"]), **entry})
-        queue, notes, _ = reads.review(pack)
-        about, voice = character_data(pack, character, page)
-        if voice:
-            data["voices"][voice[0]] = voice[1]
         data["packs"][pack.name] = {
-            **about,
             "name": character["name"],
             "default_mood": character["default_mood"],
-            "moods": [{k: m[k] for k in ("id", "meaning", "family", "face", "moves", "settles") if k in m} for m in character["moods"]],
+            "moods": [{k: m[k] for k in ("id", "meaning", "family", "settles") if k in m} for m in character["moods"]],
             "studio": [entry for _, entry in entries] + boards(character),
-            "references": references_data(pack, page),
-            "pastimes": pastimes_by_stage(pack),
-            "review": {"queue": [{**item, **{k: page(pack.parent.parent / item[k]) for k in ("before", "after")
-                                             if isinstance(item.get(k), str)}} for item in queue], "notes": notes},
         }
     return data
 
@@ -1182,10 +732,10 @@ def write_studio(pack: Path, check: bool, reads: Reads | None = None) -> int:
     """Checks the studio's data and writes characters/studio/packs.js, which
     opens on `pack`. Problems fail --check and only warn otherwise."""
     packs, reads = local_packs(pack), reads or Reads()
-    problems = studio_problems(packs, reads=reads) + state_problems() + behavior()[1]
+    problems = studio_problems(packs, reads=reads) + state_problems()
     for problem in problems:
         print(("CHARACTERGEN FAIL: " if check else "charactergen: warning: ") + problem, file=sys.stderr)
-    data = json.dumps(studio_data(packs, pack, reads=reads), indent=1)
+    data = json.dumps(studio_data(packs, pack), indent=1)
     (STUDIO / "packs.js").write_text(f"// Generated by characters/charactergen.py. Do not edit.\nwindow.StudioData = {data};\n")
     return 1 if check and problems else 0
 
@@ -1213,6 +763,45 @@ def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> li
     return problems + (reads or Reads()).rig(pack)[1]
 
 
+def listed(path: Path) -> int:
+    """How many `- ` lines a steering list has (signs.md, dreams.md), its
+    comments left out; 0 with no file."""
+    if not path.is_file():
+        return 0
+    text = re.sub(r"<!--.*?-->", "", path.read_text(), flags=re.S)
+    return sum(1 for line in text.splitlines() if line.strip().startswith("- "))
+
+
+def gaps(pack: Path, character: dict) -> list[str]:
+    """What a pack lacks that doesn't stop it: moods a studio preview has no
+    art of its own for, moods with no steering file, moods its voice has no
+    take for (its own mac/takes.tsv, a reply's words left out), and no signs
+    or dream signs."""
+    ids, out = [m["id"] for m in character["moods"]], []
+    for entry in previews(character):
+        worn = wears(pack, entry) if not entry.get("wears") or (pack / entry["wears"]).is_file() else {}
+        if worn:
+            out.append(f"{entry.get('label') or character['name']} has art for {len(ids) - len(worn)} of {len(ids)} moods; "
+                       f"the rest wear another's")
+    lasting = [m["id"] for m in character["moods"] if "settles" not in m]  # a face only has no file (§5)
+    unsteered = [m for m in lasting if not (pack / "steering" / "mood" / f"{m}.md").is_file()]
+    if unsteered:
+        out.append(f"{len(unsteered)} of {len(lasting)} lasting moods have no steering file, so they act as "
+                   f"{character['default_mood']}: {', '.join(unsteered)}")
+    table = pack / "mac" / "takes.tsv"
+    if table.is_file():
+        rows = [l.split("\t") for l in table.read_text().splitlines() if l and not l.startswith("#")][1:]
+        said = {mood for row in rows if len(row) == 8 and row[2] != "reply" for mood in row[5].split()}
+        mute = [m for m in ids if m not in said]
+        if mute:
+            out.append(f"{len(mute)} of {len(ids)} moods have no voice takes: {', '.join(mute)}")
+    if not listed(pack / "steering" / "signs.md"):
+        out.append("no signs (steering/signs.md), so it never holds one up")
+    if not listed(pack / "steering" / "dreams.md"):
+        out.append("no dream signs (steering/dreams.md), so it tells its dreams with none")
+    return out
+
+
 def check(pack: Path, reads: Reads | None = None) -> int:
     character = load(pack)
     problems = pack_problems(pack, character, reads)
@@ -1220,6 +809,8 @@ def check(pack: Path, reads: Reads | None = None) -> int:
         print(f"CHARACTERGEN FAIL: {pack.name}: {problem}", file=sys.stderr)
     if not problems:
         print(f"CHARACTERGEN PASS: {character['id']}")
+        for gap in gaps(pack, character):
+            print(f"CHARACTERGEN GAP: {pack.name}: {gap}")
     return 1 if problems else 0
 
 
@@ -1249,8 +840,7 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
     (.character-build/firmware/) with the generated moods.h and
     rig_tables.h, and the pack
     as the Mac app bundles it, with what the app reads and no more
-    (.character-build/packs/<name>/), beside every other pack beside it
-    for buddies that run one, with packs/chosen naming this one.
+    (.character-build/packs/<name>/), with packs/chosen naming it.
 
     It's all laid out afresh in a folder of its own, and then only what
     differs changes in .character-build (sync()): a build reading the
@@ -1262,7 +852,7 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
         return 1
     character = checked
     STAGE.mkdir(exist_ok=True)
-    # Named by its id, as the app finds a buddy's pack, whatever its folder's called.
+    # Named by its id, whatever its folder's called.
     name = character["id"]
     view = STAGE / "staged" / name
     with tempfile.TemporaryDirectory(dir=STAGE, prefix=".staging-") as temp:
@@ -1270,16 +860,6 @@ def stage(pack: Path, reads: Reads | None = None) -> int:
         overlay(new / "staged" / name, pack)
         firmware_from(new / "staged" / name, pack, character, new / "firmware")
         bundle(new / "staged" / name, new / "packs" / name)
-        # Every other pack beside it goes in the app too, for buddies that
-        # run another pack (CHARACTER.md §2). The chosen one is named in
-        # packs/chosen.
-        for other in sorted(p.parent for p in pack.parent.glob("*/character.json")):
-            if other.resolve() == own_folder(pack) or pack_problems(other, load(other), reads):
-                continue
-            with tempfile.TemporaryDirectory() as each:
-                theirs = load(other)["id"]
-                overlay(Path(each) / theirs, other)
-                bundle(Path(each) / theirs, new / "packs" / theirs)
         (new / "packs" / "chosen").write_text(f"{name}\n")
         # The firmware's test suites: the engine's, then the staged pack's
         # (tests/firmware/test_*), linked so an edit lands in the real file.
@@ -1378,7 +958,7 @@ def main(argv: list[str]) -> int:
     if "--sim-face" in argv:
         print(sim_face(load(pack)))
         return 0
-    reads = Reads()  # each pack's rig/ and review/, read once this run
+    reads = Reads()  # each pack's rig/, read once this run
     if "--stage" in argv:
         return stage(pack, reads) | write_studio(pack, False, reads)
     to = [a.split("=", 1)[1] for a in argv if a.startswith("--firmware-to=")]

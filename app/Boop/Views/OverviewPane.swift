@@ -141,9 +141,8 @@ struct OverviewPane: View {
                     }
                     HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
                         statusLine
-                        if model.status != nil, !severalBuddies { oneDevice }
+                        if model.status != nil { oneDevice }
                     }
-                    if severalBuddies { buddies }
                 }
             }
             // Under the name, so the chips never squeeze each other or the
@@ -229,27 +228,6 @@ struct OverviewPane: View {
                     ForEach(chips, id: \.1) { icon, text in Chip(text, icon: icon) }
                 }
                 .transition(.opacity)
-            }
-        }
-    }
-
-    private var severalBuddies: Bool { model.status?.buddies.isEmpty == false }
-
-    /// With several buddies, each one's name, its dot saying whether its
-    /// board is there: on a line while they fit, a line each when they don't.
-    @ViewBuilder private var buddies: some View {
-        if let buddies = model.status?.buddies {
-            let row = { (b: Runtime.Status.BuddyStatus) in
-                HStack(alignment: .firstTextBaseline, spacing: Theme.gapTight) {
-                    Circle().fill(b.connected ? Theme.sageSignal : Theme.inkFaint).frame(width: 6, height: 6)
-                    Text(b.name).font(.chip).foregroundStyle(Theme.inkSoft)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .help("\(b.name), on the \(b.id): \(b.connected ? "connected" : "not connected"), \(b.snapshot.mood)")
-            }
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: Theme.gapSnug) { ForEach(buddies, id: \.id, content: row) }
-                VStack(alignment: .leading, spacing: Theme.hair) { ForEach(buddies, id: \.id, content: row) }
             }
         }
     }
@@ -399,7 +377,7 @@ struct OverviewPane: View {
     /// the board's needs-you screen does, or dismiss it from Boop.
     private func needsYou(_ attn: StateSnapshot.Attention, _ sessions: [SessionSummary]) -> some View {
         // The request the card names: never one dismissed, and the agent's
-        // that asks (with several buddies, the list is all of theirs).
+        // that asks.
         let waiting = sessions.first { $0.status == .waiting && !$0.dismissed && $0.agent == attn.agent }
             ?? sessions.first { $0.status == .waiting && !$0.dismissed }
         let (title, project) = rowTitle(project: waiting?.project ?? attn.project, name: waiting?.name ?? attn.name)

@@ -9,21 +9,19 @@ extension Runtime {
     /// `debug.jsonl`.
     func dev(_ data: Data) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        // With several buddies, which one a line is for: the first's by default.
-        let buddy = object["buddy"] as? String
         switch object["dev"] as? String {
         case "advance":
             if let ms = (object["ms"] as? NSNumber)?.int64Value { advanceClock(ms) }
         case "answer":
-            if let choices = object["answers"] as? [String: String] { forcePass(choices, by: Runtime.forcedBy, buddy: buddy) }
+            if let choices = object["answers"] as? [String: String] { forcePass(choices, by: Runtime.forcedBy) }
         case "mood":
-            if let to = object["mood"] as? String { forceMood(to, by: Runtime.forcedBy, buddy: buddy) }
+            if let to = object["mood"] as? String { forceMood(to, by: Runtime.forcedBy) }
         case "said":
             // What push-to-talk heard, without a mic (VERIFICATION.md §2).
             guard let words = object["words"] as? String else { return }
             heard(words, by: (object["by"] as? String).flatMap(Core.Talker.init(rawValue:)) ?? .app)
         case "tap":
-            tapped(buddy: buddy)
+            tapped()
         case "listen":
             if let on = object["on"] as? Bool { listen(on) }
         case "presence":
@@ -69,58 +67,50 @@ extension Runtime {
         tick()
     }
 
-    /// A forced pass, for the buddy `buddy` (the first's by default): the
-    /// outputs keep their own rules. `by` is who the pass is by, in the
+    /// A forced pass: the outputs keep their own rules. `by` is who the pass is by, in the
     /// transcript.
-    func forcePass(_ choices: [String: String], by: String, who: String = "dev", buddy: String? = nil) {
-        let rig = rig(buddy)
-        let ran = harness.force(choices, by: by, voice: rig.tag)
-        options.log("\(who): forced pass\(Runtime.whose(rig)) → " + Harness.OutputRecord.names(ran))
+    func forcePass(_ choices: [String: String], by: String, who: String = "dev") {
+        let ran = harness.force(choices, by: by)
+        options.log("\(who): forced pass → " + Harness.OutputRecord.names(ran))
         changed()
     }
 
-    /// The mood output's own change, the buddy `buddy`'s, which tells its
-    /// device too.
-    func forceMood(_ to: String, by: String, who: String = "dev", buddy: String? = nil) {
-        let rig = rig(buddy)
+    /// The mood output's own change, which tells the device too.
+    func forceMood(_ to: String, by: String, who: String = "dev") {
         let result = harness.force(rig.mood, by: by) { MoodOutput.change(rig.mood, to: to, log: harness.log.view(now: options.clock())) }
-        options.log("\(who): mood\(Runtime.whose(rig)) \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
+        options.log("\(who): mood \(to)" + (result.map { $0.ok ? "" : ": \($0.message)" } ?? ""))
         changed()
     }
 
-    /// A tap on the device, the buddy `buddy`'s, without one.
-    func tapped(who: String = "dev", buddy: String? = nil) {
-        let rig = rig(buddy)
-        options.log("\(who): tap\(Runtime.whose(rig))")
-        run(pipeline.poke(at: options.clock(), buddy: rig.tag))
+    /// A tap on the device, without one.
+    func tapped(who: String = "dev") {
+        options.log("\(who): tap")
+        run(pipeline.poke(at: options.clock()))
         changed()
     }
 
     /// BOOT pressed, as the board reports it (a `tap` from the button).
-    func pressed(who: String = "dev", buddy: String? = nil) {
-        let rig = rig(buddy)
-        options.log("\(who): press\(Runtime.whose(rig))")
-        run(pipeline.press(at: options.clock(), buddy: rig.tag))
+    func pressed(who: String = "dev") {
+        options.log("\(who): press")
+        run(pipeline.press(at: options.clock()))
         changed()
     }
 
-    /// What you did to the device, the buddy `buddy`'s, as it reports it
+    /// What you did to the device, as it reports it
     /// (`ev gesture`): `dismiss`, a finger held on the needs-you screen, names
     /// the request its last state showed, as the board does.
-    func gestured(_ kind: String, who: String = "dev", buddy: String? = nil) {
-        let rig = rig(buddy)
-        options.log("\(who): gesture \(kind)\(Runtime.whose(rig))")
-        run(pipeline.gesture(kind, request: rig.latest?.attn?.id, at: options.clock(), buddy: rig.tag))
+    func gestured(_ kind: String, who: String = "dev") {
+        options.log("\(who): gesture \(kind)")
+        run(pipeline.gesture(kind, request: rig.latest?.attn?.id, at: options.clock()))
         changed()
     }
 
     /// The question the buddy asked last answered, as its board would say
     /// it (`ev ask`): `pick` "a", "b", "touch" (its first answer) or
     /// "ignored". Nothing when it has asked nothing.
-    func answered(_ pick: String, who: String = "dev", buddy: String? = nil) {
-        let rig = rig(buddy)
-        options.log("\(who): answer \(pick)\(Runtime.whose(rig))")
-        guard let step = pipeline.answerLast(pick, at: options.clock(), buddy: rig.tag) else {
+    func answered(_ pick: String, who: String = "dev") {
+        options.log("\(who): answer \(pick)")
+        guard let step = pipeline.answerLast(pick, at: options.clock()) else {
             options.log("\(who): nothing was asked")
             return
         }

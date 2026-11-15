@@ -85,7 +85,7 @@ final class RenameTests: XCTestCase {
         options.wallClock = { Self.t0 + Self.day }
         let next = try Runtime(options)
         XCTAssertEqual(next.name, "Bean")
-        XCTAssertEqual(next.buddies.map(\.name), ["Bean"])
+        XCTAssertEqual(next.buddy.name, "Bean")
         XCTAssertEqual(next.home.sync { next.core.snapshot(at: 0).buddy }, "Bean", "the board's state.buddy")
         XCTAssertEqual(next.home.sync { next.worldNow(at: 0, day: "2026-10-22").name }, "Bean", "the world's next send")
         XCTAssertEqual(next.home.sync { next.renameNow("Pea") }, .failure(Refusal("Bean was renamed less than a week ago")))

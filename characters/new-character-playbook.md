@@ -1,6 +1,6 @@
 # A new character: the playbook, and what would make it repeatable
 
-Updated 2026-11-01. Written while building Pixel Bro
+Updated 2026-11-14. Written while building Pixel Bro
 ([Mellow-Machines-Lab/PixelBro](https://github.com/Mellow-Machines-Lab/PixelBro)),
 the third character: Pixel's body with a new soul, on the AMOLED. The first
 half is the playbook as it ran, so the next character can follow it. The
@@ -64,7 +64,6 @@ pick from. Nothing here is decided.
 | Pixel's firmware tests (`tests/firmware/`) and the bank's `qa/check.mjs` pin Pixel's exact counts, and the bank's check can't find the engine in a character repository's layout | Tests that check rules (every state answered, loops close) rather than counts; the bank's check finding the engine through `engine/` or `charactergen.py --which` |
 | There's no tool that draws a pack's designs as the board does, for looking at them; Pixel Bro's art worker wrote `tools/facegen/sheet.py` | Make a contact sheet a standard `boopctl` command: any mood × state, every frame, as one PNG |
 | facegen cut the rig face's parts from the first idle design, which a new outfit can leave untagged | Cut from the first tagged idle (Pixel Bro's facegen does), and say so in the bank's guide |
-| The studio's `check.cjs` fails unless every face's simulator build exists | Skip, with a note, a face whose build isn't there |
 | The pixel face plays no clip for a push-to-talk reply (`reply-<name>`, §15), so a reply is only a sign and a face | Reply clips for the pixel face, or a reply state the bank can draw |
 | The studio registers a face's adapter by the pack's face id, and the bank's bundle sets one global (`window.Boop`), so a second pack on the pixel face clashes with Pixel's (Pixel Bro's sets `globalThis.PixelBro`) | Register adapters by pack id, and give each bank's bundle the pack's name |
 | The popover's snapshots (`internal/app/Boop/Snapshots.swift`) show Boop's own diary lines whatever the pack, so `make media` drew "I stayed brave" in Pixel Bro's README until the lines were swapped by hand for the run; the social preview is made by hand too | Fill the snapshot's diary from the pack's `diary.md`, and have `mediagen` make the social preview from the pack's name and README tagline |

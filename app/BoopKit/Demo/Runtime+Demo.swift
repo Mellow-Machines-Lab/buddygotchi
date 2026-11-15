@@ -83,15 +83,15 @@ public final class DemoPlayer: @unchecked Sendable {
     /// The agent playing the script's: the script's, until a live one's
     /// hooks say who it is.
     lazy var agent = script.agent
-    /// The agent a step is about: a live one's, else its buddy's agent's.
-    func agent(of step: DemoScript.Step) -> String { live ? agent : script.agent(of: step.buddy) }
+    /// The agent a step is about: a live one's, else the script's.
+    func agent(of step: DemoScript.Step) -> String { live ? agent : script.agent }
 
-    /// With no agent: whether each buddy's agent's main thread's turn is
-    /// going (`""` for the only one).
+    /// With no agent: whether the agent's main thread's turn is going
+    /// (`""`).
     var turnOpen: Set<String> = []
-    /// The named sessions started so far, `buddy/session`.
+    /// The named sessions started so far.
     var sessions: Set<String> = []
-    /// The reviewers sent off and not yet back, by session (`buddy/session`),
+    /// The reviewers sent off and not yet back, by session,
     /// each by its `agent_id`, the first sent the first back.
     var reviewers: [String: [String]] = [:]
     var calls = 0
@@ -121,9 +121,7 @@ public final class DemoPlayer: @unchecked Sendable {
         runtime.playingDemo = true
         if !readings.isEmpty { runtime.labeler = ScriptLabeler(readings: readings, otherwise: labelerBefore) }
         if !live {
-            for buddy in script.buddies.isEmpty ? [nil] : script.buddies.map(\.place) {
-                send("SessionStart", buddy: buddy) { $0.source = "startup" }
-            }
+            send("SessionStart") { $0.source = "startup" }
         }
         next()
     }
@@ -171,29 +169,29 @@ public final class DemoPlayer: @unchecked Sendable {
         switch step.what {
         case .poke:
             heardStep(step, agent(of: step))
-            runtime.tapped(who: Runtime.demoBy, buddy: step.buddy)
+            runtime.tapped(who: Runtime.demoBy)
             then()
         case .press:
             heardStep(step, agent(of: step))
-            runtime.pressed(who: Runtime.demoBy, buddy: step.buddy)
+            runtime.pressed(who: Runtime.demoBy)
             then()
         case .gesture(let kind):
             // The board reacts to it by itself, as it does to a finger; the
             // app hears what it was.
             heardStep(step, agent(of: step))
-            runtime.gestured(kind, who: Runtime.demoBy, buddy: step.buddy)
+            runtime.gestured(kind, who: Runtime.demoBy)
             then()
         case .answer(let pick):
             // The board ends its ask by itself; the app hears the answer.
             heardStep(step, agent(of: step))
-            runtime.answered(pick, who: Runtime.demoBy, buddy: step.buddy)
+            runtime.answered(pick, who: Runtime.demoBy)
             then()
         case .hold:
             // The board tells the Mac once the finger has been down its
             // hold; the demo's finger stays a little longer.
             heardStep(step, agent(of: step))
             later(DemoScript.holdSeconds) { [self] in
-                runtime.gestured(Core.dismissGesture, who: Runtime.demoBy, buddy: step.buddy)
+                runtime.gestured(Core.dismissGesture, who: Runtime.demoBy)
                 then()
             }
         case .wait(let ms):
@@ -202,16 +200,16 @@ public final class DemoPlayer: @unchecked Sendable {
             then()
         case .talk(let words, let hold):
             heardStep(step, agent(of: step))
-            runtime.listen(true, who: Runtime.demoBy, buddy: step.buddy)
+            runtime.listen(true, who: Runtime.demoBy)
             later(hold) { [self] in
                 // Let go, the mic goes off and hears the words, as it does
                 // for a person: a reply to them may play, the mic being off.
-                runtime.wordsOnRelease = (words, step.buddy)
-                runtime.listen(false, who: Runtime.demoBy, buddy: step.buddy)
+                runtime.wordsOnRelease = words
+                runtime.listen(false, who: Runtime.demoBy)
                 if runtime.wordsOnRelease != nil {
                     // The mic was already off: the words are heard all the same.
                     runtime.wordsOnRelease = nil
-                    runtime.heard(words, by: .app, who: Runtime.demoBy, to: step.buddy)
+                    runtime.heard(words, by: .app, who: Runtime.demoBy)
                 }
                 then()
             }
@@ -220,8 +218,8 @@ public final class DemoPlayer: @unchecked Sendable {
             runtime.cameBack(afterMs: ms)
             then()
         case .brain(let answers, let mood):
-            if !answers.isEmpty { runtime.forcePass(answers, by: Runtime.demoBy, who: Runtime.demoBy, buddy: step.buddy) }
-            if let mood { runtime.forceMood(mood, by: Runtime.demoBy, who: Runtime.demoBy, buddy: step.buddy) }
+            if !answers.isEmpty { runtime.forcePass(answers, by: Runtime.demoBy, who: Runtime.demoBy) }
+            if let mood { runtime.forceMood(mood, by: Runtime.demoBy, who: Runtime.demoBy) }
             then()
         case .agent(let a):
             if live {
@@ -318,14 +316,14 @@ public final class DemoPlayer: @unchecked Sendable {
 
     // MARK: No agent: the player is it
 
-    /// Sends a hook as the agent would, the buddy `buddy`'s agent's, in its
-    /// session `session` (nil for its first), with `set`'s fields. Each
-    /// session is its own thread, in a folder of its own.
-    func send(_ hook: String, buddy: String? = nil, session name: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
-        let tail = [buddy, name].compactMap { $0 }.map { "-\($0)" }.joined()
+    /// Sends a hook as the agent would, in its session `session` (nil for
+    /// its first), with `set`'s fields. Each session is its own thread, in a
+    /// folder of its own.
+    func send(_ hook: String, session name: String? = nil, _ set: (inout HookLine) -> Void = { _ in }) {
+        let tail = name.map { "-\($0)" } ?? ""
         let session = "demo" + tail
         let cwd = "/demo/\(slug)" + tail
-        var line = HookLine(agent: script.agent(of: buddy), hook: hook, session: session, cwd: cwd,
+        var line = HookLine(agent: script.agent, hook: hook, session: session, cwd: cwd,
                             process: Self.agentProcess(for: session), ts: runtime.options.wallClock())
         set(&line)
         runtime.hook(line, received: runtime.options.clock())
@@ -338,15 +336,14 @@ public final class DemoPlayer: @unchecked Sendable {
 
     func act(_ a: DemoScript.Step.Agent, step: DemoScript.Step, then: @escaping () -> Void) {
         calls += 1
-        let buddy = step.buddy
-        let codex = script.agent(of: buddy) == "codex"
+        let codex = script.agent == "codex"
         // A session the script hasn't used yet starts first, as an agent's would.
-        let key = (buddy ?? "") + "/" + (a.session ?? "")
+        let key = a.session ?? ""
         if let name = a.session, !sessions.contains(key) {
             sessions.insert(key)
-            self.send("SessionStart", buddy: buddy, session: name) { $0.source = "startup" }
+            self.send("SessionStart", session: name) { $0.source = "startup" }
         }
-        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, buddy: buddy, session: a.session, set) }
+        func send(_ hook: String, _ set: (inout HookLine) -> Void = { _ in }) { self.send(hook, session: a.session, set) }
         let open = key
         let id = "t\(calls)"
         let finish = { [self] in heardStep(step, agent(of: step)); then() }

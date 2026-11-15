@@ -245,11 +245,6 @@ final class AppModel: ObservableObject {
     func take(_ status: Runtime.Status) {
         var status = status
         if !onboardingShown { status.snapshot.calls = [] }
-        status.buddies = status.buddies.map { buddy in
-            var buddy = buddy
-            buddy.snapshot.calls = []
-            return buddy
-        }
         latest = status
         if shown || onboardingShown { catchUp() }
     }
@@ -972,8 +967,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // In debug mode (`make dev`) the dashboard can drive it; without
         // --debug, as Boop.app runs, it stays deaf to it.
         var options = runtimeOptions(stateDir: stateDir, socketPath: stateDir.appendingPathComponent("boop.sock").path,
-                                     link: model.link, debug: debug, devLines: debug, log: log,
-                                     buddies: AppSettings.load(from: stateDir).buddies)
+                                     link: model.link, debug: debug, devLines: debug, log: log)
         // Here and away: the Mac's idle time on
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs

@@ -205,7 +205,6 @@ final class ReasonsTests: XCTestCase {
         case .said: return [(event(kind), ["words": "hi"])]
         case .needsYou: return [(event(kind, phase: .start), ["thread": thread]), (event(kind, phase: .end), ["thread": thread])]
         case .listen: return [(event(kind, phase: .start), [:]), (event(kind, phase: .wait), [:]), (event(kind, phase: .end), [:])]
-        case .reacted: return [(event(kind), [:])]
         case .press: return [(event(kind), [:])]
         case .gesture: return Touch.allCases.filter { $0 != .poke }.map { (event(kind, $0.rawValue), [:]) }
         case .hush: return [(event(kind, "app", phase: .start), [:]), (event(kind, "timer", phase: .end), [:])]

@@ -1,10 +1,12 @@
 # A UI and UX review of Boop, down to the pixel
 
-Updated 2026-11-09. A review of how Boop looks and feels to use, on the Mac and on the board, at branch `v1-polish` (`548c6e03`). It changes no product code. The brief is [ui-review-prompt.md](ui-review-prompt.md). It builds on [product-review.md](product-review.md) and fits the phases in [TODO.md](TODO.md) ("Plan, 2026-11-09"). It does not repeat that review's word fixes or its decided items; where a decided item needs a look, this review gives the look.
+Updated 2026-11-09. A review of how Boop looks and feels to use, on the Mac and on the board, at branch `v1-polish` (`548c6e03`). It changes no product code. Its brief was `plan/ui-review-prompt.md` (at commit `510a78ac`). It builds on [product-review.md](product-review.md) and fits the phases in [TODO.md](TODO.md) ("Plan, 2026-11-09"). It does not repeat that review's word fixes or its decided items; where a decided item needs a look, this review gives the look.
+
+> Its evidence folder, `plan/evidence/2026-11-09-ui-review/`, left the repository on 2026-11-14: read it at commit `510a78ac` (`git show 510a78ac:plan/evidence/2026-11-09-ui-review/…`). A copy, with the pictures, is in `~/.boopdev/ui-review-2026-11-09/` on the owner's Mac.
 
 ## 1. Summary
 
-**What was done.** Every one of the Mac's 286 snapshots and the board's 570 simulator frames was looked at, measured in pixels and traced to its cause in code. Five reviews ran side by side (the design system, the header and Now tab, the other tabs and Settings, onboarding, the board), and I checked their main findings against the pictures. The long form of every finding, with its measurements, is in [evidence/2026-11-09-ui-review/](evidence/2026-11-09-ui-review/). This document holds what is broken or rough, the layout proposals with mockups, and the plan.
+**What was done.** Every one of the Mac's 286 snapshots and the board's 570 simulator frames was looked at, measured in pixels and traced to its cause in code. Five reviews ran side by side (the design system, the header and Now tab, the other tabs and Settings, onboarding, the board), and I checked their main findings against the pictures. The long form of every finding, with its measurements, is in `evidence/2026-11-09-ui-review/`. This document holds what is broken or rough, the layout proposals with mockups, and the plan.
 
 **The state of the UI.** The look is sound. Colours go through `Theme` almost everywhere, the gutters and card edges line up, dark mode holds, and the writing in onboarding is good. The problems are of four kinds:
 
@@ -39,7 +41,7 @@ Updated 2026-11-09. A review of how Boop looks and feels to use, on the Mac and 
 
 ## 2. The system
 
-The full audit, with every count and the commands, is [evidence/2026-11-09-ui-review/system.md](evidence/2026-11-09-ui-review/system.md). Its census is [evidence/2026-11-09-ui-review/system/census.md](evidence/2026-11-09-ui-review/system/census.md), its contrast table [evidence/2026-11-09-ui-review/system/contrast.md](evidence/2026-11-09-ui-review/system/contrast.md), and a list of 177 places to change [evidence/2026-11-09-ui-review/system/changes.md](evidence/2026-11-09-ui-review/system/changes.md).
+The full audit, with every count and the commands, is `evidence/2026-11-09-ui-review/system.md`. Its census is `evidence/2026-11-09-ui-review/system/census.md`, its contrast table `evidence/2026-11-09-ui-review/system/contrast.md`, and a list of 177 places to change `evidence/2026-11-09-ui-review/system/changes.md`.
 
 ### 2.1 What the tokens are
 
@@ -103,74 +105,74 @@ Each row is one finding: what is wrong, the cause, the fix. **Sev.** is broken (
 
 ### 3.1 The popover's header, the Now tab, the footer, the menu bar icon
 
-Long form: [evidence/2026-11-09-ui-review/now.md](evidence/2026-11-09-ui-review/now.md) (40 findings, a measured spec of the header and a row, 6 proposals).
+Long form: `evidence/2026-11-09-ui-review/now.md` (40 findings, a measured spec of the header and a row, 6 proposals).
 
-![The gutter is 8 pt, not 18](evidence/2026-11-09-ui-review/now/crops/01-working-gutter-8pt.png)
+!The gutter is 8 pt, not 18
 
 | Id | Sev. | Eff. | State | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| NOW-1 | broken | S | `working`, `long`, `long-buddies` | The header's third line cannot shrink. Over 266 pt wide, the whole column grows past 360 pt and is centred: the left gutter is 8 pt in `working`, 0 in `long-buddies`, where the face and Talk are cut. The label has 140 pt; a mood over about 8 letters or a level of 100 or more overflows | `OverviewPane.swift:135-140`; `.fixedSize()` at `:180`, `:285`, `:303` | Remove `.fixedSize()` at `:180`; `lineLimit(1)` with a low layout priority. Better: §4.1. Add a snapshot check that the face's left edge is at the gutter in every state | [1](evidence/2026-11-09-ui-review/now/crops/01-working-gutter-8pt.png), [2](evidence/2026-11-09-ui-review/now/crops/02-long-buddies-clipped.png) |
-| NOW-2 | rough | S | needs you | An invisible "+0 more" column is always laid out, so the hint wraps 52 pt early | `OverviewPane.swift:420-422` | Draw "+N more" only when N > 0, as an overlay | [crop](evidence/2026-11-09-ui-review/now/crops/07-needs-you-reserved-column.png) |
-| NOW-3 | rough | S | needs you | Dismiss is bare 11 pt text in the corner of a card that is itself one button. "+1 more" looks the same and does nothing | `OverviewPane.swift:383-386, :420` | A small outlined button; "+1 more" as plain soft text. Better: §4.2 | [crop](evidence/2026-11-09-ui-review/now/crops/06-needs-you-card.png) |
-| NOW-4 | rough | S | needs you, light | The card's fill is 1.14:1 on paper and its edge 1.38:1. The eye goes to the face, the name and the tabs first. Medium confidence | `Theme.swift:83, :170` | Tint 0.08 → 0.16 and a solid amber edge, or a 4 pt amber bar on its leading edge | [crop](evidence/2026-11-09-ui-review/now/crops/06-needs-you-card.png) |
-| NOW-5 | rough | S | needs you, light | The amber status dot is 1.71:1 | `OverviewPane.swift:314, :691` | `#B87400` in light mode, as the menu bar icon already uses | [crop](evidence/2026-11-09-ui-review/now/crops/20-status-dot-amber-light.png) |
-| NOW-6 | rough | S | all | "Feeling" and "· Level 12" use `inkFaint`: 2.66:1 at 11 pt | `OverviewPane.swift:174, :177` | `Theme.inkSoft` | [crop](evidence/2026-11-09-ui-review/now/crops/18-feeling-contrast.png) |
-| NOW-7 | rough | S | rows, light | Lane bars are 1.29 to 2.18:1. The fifth working session has no lane, so its bar is dark grey: the strongest bar, by accident | `OverviewPane.swift:692`; `Theme.swift:40` | A light-mode lane set at 3:1; a faint fallback bar; a tooltip "Its lane on the board" | [1](evidence/2026-11-09-ui-review/now/crops/08-rows-lanes.png), [2](evidence/2026-11-09-ui-review/now/crops/29-lime-bar-light.png) |
+| NOW-1 | broken | S | `working`, `long`, `long-buddies` | The header's third line cannot shrink. Over 266 pt wide, the whole column grows past 360 pt and is centred: the left gutter is 8 pt in `working`, 0 in `long-buddies`, where the face and Talk are cut. The label has 140 pt; a mood over about 8 letters or a level of 100 or more overflows | `OverviewPane.swift:135-140`; `.fixedSize()` at `:180`, `:285`, `:303` | Remove `.fixedSize()` at `:180`; `lineLimit(1)` with a low layout priority. Better: §4.1. Add a snapshot check that the face's left edge is at the gutter in every state | 1, 2 |
+| NOW-2 | rough | S | needs you | An invisible "+0 more" column is always laid out, so the hint wraps 52 pt early | `OverviewPane.swift:420-422` | Draw "+N more" only when N > 0, as an overlay | crop |
+| NOW-3 | rough | S | needs you | Dismiss is bare 11 pt text in the corner of a card that is itself one button. "+1 more" looks the same and does nothing | `OverviewPane.swift:383-386, :420` | A small outlined button; "+1 more" as plain soft text. Better: §4.2 | crop |
+| NOW-4 | rough | S | needs you, light | The card's fill is 1.14:1 on paper and its edge 1.38:1. The eye goes to the face, the name and the tabs first. Medium confidence | `Theme.swift:83, :170` | Tint 0.08 → 0.16 and a solid amber edge, or a 4 pt amber bar on its leading edge | crop |
+| NOW-5 | rough | S | needs you, light | The amber status dot is 1.71:1 | `OverviewPane.swift:314, :691` | `#B87400` in light mode, as the menu bar icon already uses | crop |
+| NOW-6 | rough | S | all | "Feeling" and "· Level 12" use `inkFaint`: 2.66:1 at 11 pt | `OverviewPane.swift:174, :177` | `Theme.inkSoft` | crop |
+| NOW-7 | rough | S | rows, light | Lane bars are 1.29 to 2.18:1. The fifth working session has no lane, so its bar is dark grey: the strongest bar, by accident | `OverviewPane.swift:692`; `Theme.swift:40` | A light-mode lane set at 3:1; a faint fallback bar; a tooltip "Its lane on the board" | 1, 2 |
 | NOW-8 | rough | M | `crowded` | Sessions are grouped by agent in a fixed order, so a waiting session can be the 7th row. Medium confidence | `OverviewPane.swift:451-468` | One list sorted needs you, working, idle (§4.2) | — |
-| NOW-9 | rough | S | needs you | The card says project then name; the row says name then project | `OverviewPane.swift:398-413` against `:729-740` | One order: name first | [crop](evidence/2026-11-09-ui-review/now/crops/27-row-order-vs-card.png) |
-| NOW-10 | rough | S | `long` | Rows never truncate. A long row is 4 lines; a branch breaks inside a word. The code wants this ("neither is ever cut"), so it is a decision. Medium confidence | `OverviewPane.swift:642-658, :733-747` | Title 2 lines; workspace 1 line, cut in the middle; full text in the tooltip | [crop](evidence/2026-11-09-ui-review/now/crops/26-long-needs-you-card.png) |
-| NOW-11 | rough | S | notices | A notice's cross costs its text 39 pt of width | `OverviewPane.swift:532-540` | The cross as an overlay; pad the title only | [crop](evidence/2026-11-09-ui-review/now/crops/11-notice-x-wrap.png) |
-| NOW-12 | rough | M | `long-notices` | Each notice is a full card 20 pt apart. Six push the sessions to 838 pt down. Raw system errors show in the same style as plain words | `OverviewPane.swift:42, :47-87` | At most two, the rest folded into "3 more"; raw text in monospace (§4.2) | [crop](evidence/2026-11-09-ui-review/now/crops/12-notices-wall.png) |
-| NOW-13 | rough | M | `*-bounded` | With a visible scroll bar the cards end at 326.5 pt while the header ends at 342 pt. Medium confidence: it depends on the Mac's scroll bar setting | `PopoverView.swift:114-118` | Overlay scrollers on the pane | [crop](evidence/2026-11-09-ui-review/now/crops/09-bounded-scroller.png) |
-| NOW-14 | rough | S | `*-bounded` | The last row is cut through its second line by the footer, with no fade | `PopoverView.swift:116` | A 16 pt fade above the footer while more is below | [crop](evidence/2026-11-09-ui-review/now/crops/10-bounded-cut.png) |
-| NOW-15 | rough | S | dark | The selected tab is darker than the well, so it looks pressed in. In light it is raised | `OverviewPane.swift:816` | Paper in light, `hairlineStrong` in dark | [crop](evidence/2026-11-09-ui-review/now/crops/05-tab-pill-dark.png) |
-| NOW-16 | rough | M | all | The header holds up to 9 things and is 73.5 to 128 pt tall. It repeats on Boop and World, where the mood, the level and Connected do not matter | `OverviewPane.swift:110-151` | §4.1 | [crop](evidence/2026-11-09-ui-review/now/crops/17-all-chips-header.png) |
-| NOW-17 | rough | S | long name | A 20-letter name wraps at 187 pt because "Connected" sits beside it | `OverviewPane.swift:122-126` | §4.1 | [crop](evidence/2026-11-09-ui-review/now/crops/17-all-chips-header.png) |
-| NOW-18 | rough | S | `hushed` | After Hush is clicked the button goes, and a "Hushed · 24 min ×" chip appears two rows lower, looking like the passive chips. Medium confidence | `OverviewPane.swift:255-289` | One control in one place: the button becomes a filled "Hushed 24m" | [crop](evidence/2026-11-09-ui-review/now/crops/16-hushed-chip.png) |
-| NOW-19 | rough | S | about 30 of 40 states | The mood card says "Mochi is calm." and nothing else. The header already says it | `OverviewPane.swift:93-94, :780-788` | Show the card only with a reason, and lead with the reason (§4.2) | [crop](evidence/2026-11-09-ui-review/now/crops/31-mood-card-bare.png) |
-| NOW-20 | rough | S | `waking-up` | The pane is empty: tabs, 28.5 pt of nothing, the footer | `OverviewPane.swift:88` | A "Waking up…" note | [crop](evidence/2026-11-09-ui-review/now/crops/14-waking-up-empty.png) |
-| NOW-21 | rough | S | footer | The ladybug is "Save a bug report" (⌘B). It has no word and reads as decoration | `PopoverView.swift:59-67` | Move it into Settings; keep it in the "stopped unexpectedly" notice | [crop](evidence/2026-11-09-ui-review/now/crops/19-footer.png) |
-| NOW-22 | rough | S | rows | Status chips are almost shapeless in light (1.17 to 1.26:1), and "working" is louder than "needs you". Medium confidence | `Theme.swift:409-420` | Needs you: solid amber. Working: soft ink. Idle: no chip | [crop](evidence/2026-11-09-ui-review/now/crops/08-rows-lanes.png) |
-| NOW-23 | rough | S | face tile | The slime tile has circular corners and no border; the still face has continuous corners, a hairline and an amber rim. In dark the tile has no edge (1.18:1). Medium confidence | `Slime/SlimeView.swift:51-52`; `BoopFace.swift:78-82` | One shape and one border for both | [crop](evidence/2026-11-09-ui-review/now/crops/21-tiles.png) |
-| NOW-25 | rough | S | no agents | The "No agents awake" card is built by hand and differs from a notice (icon size, alignment) | `OverviewPane.swift:438-446` | Build it with `notice(…)` | [crop](evidence/2026-11-09-ui-review/now/crops/13-no-agents-icon.png) |
-| NOW-26 | rough | M | menu bar | Idle and working differ by one 3 pt dot. The asleep bars sit 2 pt low. Waking up draws the asleep icon. Medium confidence | `BoopFace.swift:217-284` | A 4 pt dot or eyes that look down; bars at the eyes' height | [crop](evidence/2026-11-09-ui-review/now/crops/15-menubar.png) |
+| NOW-9 | rough | S | needs you | The card says project then name; the row says name then project | `OverviewPane.swift:398-413` against `:729-740` | One order: name first | crop |
+| NOW-10 | rough | S | `long` | Rows never truncate. A long row is 4 lines; a branch breaks inside a word. The code wants this ("neither is ever cut"), so it is a decision. Medium confidence | `OverviewPane.swift:642-658, :733-747` | Title 2 lines; workspace 1 line, cut in the middle; full text in the tooltip | crop |
+| NOW-11 | rough | S | notices | A notice's cross costs its text 39 pt of width | `OverviewPane.swift:532-540` | The cross as an overlay; pad the title only | crop |
+| NOW-12 | rough | M | `long-notices` | Each notice is a full card 20 pt apart. Six push the sessions to 838 pt down. Raw system errors show in the same style as plain words | `OverviewPane.swift:42, :47-87` | At most two, the rest folded into "3 more"; raw text in monospace (§4.2) | crop |
+| NOW-13 | rough | M | `*-bounded` | With a visible scroll bar the cards end at 326.5 pt while the header ends at 342 pt. Medium confidence: it depends on the Mac's scroll bar setting | `PopoverView.swift:114-118` | Overlay scrollers on the pane | crop |
+| NOW-14 | rough | S | `*-bounded` | The last row is cut through its second line by the footer, with no fade | `PopoverView.swift:116` | A 16 pt fade above the footer while more is below | crop |
+| NOW-15 | rough | S | dark | The selected tab is darker than the well, so it looks pressed in. In light it is raised | `OverviewPane.swift:816` | Paper in light, `hairlineStrong` in dark | crop |
+| NOW-16 | rough | M | all | The header holds up to 9 things and is 73.5 to 128 pt tall. It repeats on Boop and World, where the mood, the level and Connected do not matter | `OverviewPane.swift:110-151` | §4.1 | crop |
+| NOW-17 | rough | S | long name | A 20-letter name wraps at 187 pt because "Connected" sits beside it | `OverviewPane.swift:122-126` | §4.1 | crop |
+| NOW-18 | rough | S | `hushed` | After Hush is clicked the button goes, and a "Hushed · 24 min ×" chip appears two rows lower, looking like the passive chips. Medium confidence | `OverviewPane.swift:255-289` | One control in one place: the button becomes a filled "Hushed 24m" | crop |
+| NOW-19 | rough | S | about 30 of 40 states | The mood card says "Mochi is calm." and nothing else. The header already says it | `OverviewPane.swift:93-94, :780-788` | Show the card only with a reason, and lead with the reason (§4.2) | crop |
+| NOW-20 | rough | S | `waking-up` | The pane is empty: tabs, 28.5 pt of nothing, the footer | `OverviewPane.swift:88` | A "Waking up…" note | crop |
+| NOW-21 | rough | S | footer | The ladybug is "Save a bug report" (⌘B). It has no word and reads as decoration | `PopoverView.swift:59-67` | Move it into Settings; keep it in the "stopped unexpectedly" notice | crop |
+| NOW-22 | rough | S | rows | Status chips are almost shapeless in light (1.17 to 1.26:1), and "working" is louder than "needs you". Medium confidence | `Theme.swift:409-420` | Needs you: solid amber. Working: soft ink. Idle: no chip | crop |
+| NOW-23 | rough | S | face tile | The slime tile has circular corners and no border; the still face has continuous corners, a hairline and an amber rim. In dark the tile has no edge (1.18:1). Medium confidence | `Slime/SlimeView.swift:51-52`; `BoopFace.swift:78-82` | One shape and one border for both | crop |
+| NOW-25 | rough | S | no agents | The "No agents awake" card is built by hand and differs from a notice (icon size, alignment) | `OverviewPane.swift:438-446` | Build it with `notice(…)` | crop |
+| NOW-26 | rough | M | menu bar | Idle and working differ by one 3 pt dot. The asleep bars sit 2 pt low. Waking up draws the asleep icon. Medium confidence | `BoopFace.swift:217-284` | A 4 pt dot or eyes that look down; bars at the eyes' height | crop |
 
-**Nits** (in [evidence/2026-11-09-ui-review/now.md](evidence/2026-11-09-ui-review/now.md)): NOW-24 the tile's art is soft and its laptop is cut; NOW-27 nine different left edges; NOW-28 Connected ends 2.5 pt left of Talk; NOW-29 the `</>` and `{}` marks; NOW-30 "grep · 12m" but "idle 27m"; NOW-31 seven radii; NOW-32 gaps of 5, 3 and 2; NOW-33 Talk is 0.5 pt taller than Hush; NOW-34 the Details arrow; NOW-35 the face against the text; NOW-36 the footer; NOW-37 a name in tracked capitals; NOW-38 trouble shown twice; NOW-40 the idle bar. NOW-39 found the hairlines sound.
+**Nits** (in `evidence/2026-11-09-ui-review/now.md`): NOW-24 the tile's art is soft and its laptop is cut; NOW-27 nine different left edges; NOW-28 Connected ends 2.5 pt left of Talk; NOW-29 the `</>` and `{}` marks; NOW-30 "grep · 12m" but "idle 27m"; NOW-31 seven radii; NOW-32 gaps of 5, 3 and 2; NOW-33 Talk is 0.5 pt taller than Hush; NOW-34 the Details arrow; NOW-35 the face against the text; NOW-36 the footer; NOW-37 a name in tracked capitals; NOW-38 trouble shown twice; NOW-40 the idle bar. NOW-39 found the hairlines sound.
 
 ### 3.2 The Boop tab
 
-Long form: [evidence/2026-11-09-ui-review/tabs.md](evidence/2026-11-09-ui-review/tabs.md) (58 findings for this tab, World, the memory pane and Settings, and 6 proposals).
+Long form: `evidence/2026-11-09-ui-review/tabs.md` (58 findings for this tab, World, the memory pane and Settings, and 6 proposals).
 
 | Id | Sev. | Eff. | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- |
-| BOOP-1 | rough | S | Decided: the part-full ring becomes blue. The look: `#2F7FD6` in light (3.83:1 on paper), `#58A6F0` in dark (6.84:1). Full stays sage, with a small check inside a full week ring, so "full" does not depend on colour alone. Do not use the gel's own blue `#4AAFFF` in light: it is 2.22:1 | `BoopPane.swift:118` | Add `Theme.ring` | [crop](evidence/2026-11-09-ui-review/tabs/crops/boop-today.png) |
-| BOOP-4 | rough | S | The week's rings start at 28 pt; the heading is at 20 and the cards at 18 | `BoopPane.swift:62-71` | Put the strip in a card, or align its ends to the heading | [crop](evidence/2026-11-09-ui-review/tabs/crops/boop-week.png) |
-| BOOP-5 | rough | S | On the first day one ring sits alone in the middle under "THE LAST 7 DAYS" | `BoopPane.swift:13, :63` | Always seven slots; days before the first are dashed | [crop](evidence/2026-11-09-ui-review/tabs/crops/boop-first-day.png) |
-| BOOP-6 | rough | S | "82" is on screen three times, with four numbers in 96 pt of height | `BoopPane.swift:36-45, :54` | §4.3 | [crop](evidence/2026-11-09-ui-review/tabs/crops/boop-today.png) |
+| BOOP-1 | rough | S | Decided: the part-full ring becomes blue. The look: `#2F7FD6` in light (3.83:1 on paper), `#58A6F0` in dark (6.84:1). Full stays sage, with a small check inside a full week ring, so "full" does not depend on colour alone. Do not use the gel's own blue `#4AAFFF` in light: it is 2.22:1 | `BoopPane.swift:118` | Add `Theme.ring` | crop |
+| BOOP-4 | rough | S | The week's rings start at 28 pt; the heading is at 20 and the cards at 18 | `BoopPane.swift:62-71` | Put the strip in a card, or align its ends to the heading | crop |
+| BOOP-5 | rough | S | On the first day one ring sits alone in the middle under "THE LAST 7 DAYS" | `BoopPane.swift:13, :63` | Always seven slots; days before the first are dashed | crop |
+| BOOP-6 | rough | S | "82" is on screen three times, with four numbers in 96 pt of height | `BoopPane.swift:36-45, :54` | §4.3 | crop |
 | BOOP-7 | rough | S | "Level N" moves 7 pt between part-full and full, because the text block is centred on the ring | `BoopPane.swift:28` | Top-align; move the line under the row | — |
-| BOOP-12 | rough | S | The three note cards share the look of cards that open, and do not open. Medium confidence | `BoopPane.swift:85-96` | One card of plain lines with the link as its last row | [crop](evidence/2026-11-09-ui-review/tabs/crops/boop-peek-pad2.png) |
+| BOOP-12 | rough | S | The three note cards share the look of cards that open, and do not open. Medium confidence | `BoopPane.swift:85-96` | One card of plain lines with the link as its last row | crop |
 
 **Nits:** BOOP-2 the arc's round cap pokes 4.5 pt back past the top; BOOP-3 the small rings' stroke is 15% of their size, the big ring's 9%; BOOP-8 the number sits 2.5 pt low; BOOP-9 the line always wraps; BOOP-10 the empty track is 1.19:1; BOOP-11 paddings of 10 and 12; BOOP-13 the link carries the name; BOOP-14 today is shown twice.
 
 ### 3.3 The World tab
 
-![The region labels are not under their regions, and dots stack](evidence/2026-11-09-ui-review/tabs/crops/world-band-light.png)
+!The region labels are not under their regions, and dots stack
 
 | Id | Sev. | Eff. | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- |
-| WORLD-1 | rough | S | The band maps 26 hours, so the regions are 118.5, 56 and 127 pt wide, not thirds. "Europe and Africa" is 78 pt of label over a 56 pt region. Nothing marks where a region starts | `WorldBand.swift:160-179` | Two hairline ticks; each label left-aligned to its region, in a footer strip (§4.4) | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-band-light.png) |
-| WORLD-2 | rough | M | A buddy's x is exactly its time zone, so buddies stack in vertical columns and overlap | `WorldBand.swift:82-86` | Spread x a little by a hash; keep centres 7 pt apart | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-band-light.png) |
-| WORLD-3 | rough | S | A picked asleep buddy is hidden under another dot: the card says "Bean · asleep" and the ring is round a green dot | `WorldBand.swift:34` | Draw asleep first, then awake, then the picked dot and your own on top | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-pick.png) |
-| WORLD-4 | rough | S | "you" touches the top dots; the line runs through every dot in your zone; your own picked dot wears two rings | `WorldBand.swift:37, :42, :85, :155` | Keep the top 18 pt for "you"; line behind the dots | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-you.png) |
-| WORLD-5 | rough | S | In light mode the dots nearly match the band in brightness: teal 1.03:1 and amber 1.02:1 on the night side | `WorldBand.swift:118, :140-148` | A thin ink outline on awake dots; asleep as hollow rings, in both modes | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-band-light.png) |
+| WORLD-1 | rough | S | The band maps 26 hours, so the regions are 118.5, 56 and 127 pt wide, not thirds. "Europe and Africa" is 78 pt of label over a 56 pt region. Nothing marks where a region starts | `WorldBand.swift:160-179` | Two hairline ticks; each label left-aligned to its region, in a footer strip (§4.4) | crop |
+| WORLD-2 | rough | M | A buddy's x is exactly its time zone, so buddies stack in vertical columns and overlap | `WorldBand.swift:82-86` | Spread x a little by a hash; keep centres 7 pt apart | crop |
+| WORLD-3 | rough | S | A picked asleep buddy is hidden under another dot: the card says "Bean · asleep" and the ring is round a green dot | `WorldBand.swift:34` | Draw asleep first, then awake, then the picked dot and your own on top | crop |
+| WORLD-4 | rough | S | "you" touches the top dots; the line runs through every dot in your zone; your own picked dot wears two rings | `WorldBand.swift:37, :42, :85, :155` | Keep the top 18 pt for "you"; line behind the dots | crop |
+| WORLD-5 | rough | S | In light mode the dots nearly match the band in brightness: teal 1.03:1 and amber 1.02:1 on the night side | `WorldBand.swift:118, :140-148` | A thin ink outline on awake dots; asleep as hollow rings, in both modes | crop |
 | WORLD-8 | rough | S | Decided: a legend. The look: one 10 pt row under the band with 6 pt dots, asleep hollow, and only the kinds present | `WorldBand.swift:140-148` | §4.4 | — |
-| WORLD-11 | rough | S | The three number tiles look like buttons and do nothing. Medium confidence | `WorldPane.swift:85-98` | One sentence in a small world; one card with three columns in a large one | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-tiles.png) |
-| WORLD-12 | rough | M | The buddy's card looks like every other card; the sketch lifted it and gave it a face. Medium confidence | `WorldPane.swift:106-152` | §4.4 | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-card.png) |
-| WORLD-14 | rough | S | Private and sending look the same: three dimmed buttons over a line of text | `WorldPane.swift:120-140` | Private: no buttons, the line and "Open Settings". Sending: dim only the pressed button | [1](evidence/2026-11-09-ui-review/tabs/crops/world-off-card.png), [2](evidence/2026-11-09-ui-review/tabs/crops/world-card-sending.png) |
-| WORLD-17 | rough | S | The time column forces every arrival onto two lines, with 70 pt empty before the time | `WorldPane.swift:216-227` | A short time as the first word | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-arrivals.png) |
+| WORLD-11 | rough | S | The three number tiles look like buttons and do nothing. Medium confidence | `WorldPane.swift:85-98` | One sentence in a small world; one card with three columns in a large one | crop |
+| WORLD-12 | rough | M | The buddy's card looks like every other card; the sketch lifted it and gave it a face. Medium confidence | `WorldPane.swift:106-152` | §4.4 | crop |
+| WORLD-14 | rough | S | Private and sending look the same: three dimmed buttons over a line of text | `WorldPane.swift:120-140` | Private: no buttons, the line and "Open Settings". Sending: dim only the pressed button | 1, 2 |
+| WORLD-17 | rough | S | The time column forces every arrival onto two lines, with 70 pt empty before the time | `WorldPane.swift:216-227` | A short time as the first word | crop |
 | WORLD-18 | rough | S | Each arrival is its own card. Medium confidence | `WorldPane.swift:211-229` | One card with hairline rows | — |
-| WORLD-19 | rough | M | The same count shows three ways: a tile, the band, and a regions card. Medium confidence | `WorldPane.swift:56-58, :247-263` | Region counts in the band's footer; the regions card goes | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-regions.png) |
-| WORLD-21 | rough | M | Loading, trouble and unreachable are three grey cards, and the popover jumps from 314 to 690 pt when the world loads. Trouble has no way to try again | `WorldPane.swift:15, :50-55, :212-214` | Keep the layout at full height with the message on the empty band | [crop](evidence/2026-11-09-ui-review/tabs/crops/world-empty-states.png) |
+| WORLD-19 | rough | M | The same count shows three ways: a tile, the band, and a regions card. Medium confidence | `WorldPane.swift:56-58, :247-263` | Region counts in the band's footer; the regions card goes | crop |
+| WORLD-21 | rough | M | Loading, trouble and unreachable are three grey cards, and the popover jumps from 314 to 690 pt when the world loads. Trouble has no way to try again | `WorldPane.swift:15, :50-55, :212-214` | Keep the layout at full height with the message on the empty band | crop |
 
 **Nits:** WORLD-6 a lighter 12 pt strip at the band's left edge; WORLD-7 day and night are hard to tell apart; WORLD-9, 10, 20 uneven gaps and paddings; WORLD-13 Cheer is 2 pt taller than its siblings; WORLD-15 the close cross is a 9 pt mark; WORLD-16 "level 1234" without a comma; WORLD-22 9 pt type; WORLD-23 asleep dots in dark.
 
@@ -178,9 +180,9 @@ Long form: [evidence/2026-11-09-ui-review/tabs.md](evidence/2026-11-09-ui-review
 
 | Id | Sev. | Eff. | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- |
-| MEM-1 | rough | M | A card for each section: five sentences take 572 pt. Medium confidence | `MemoryPane.swift:35-40, :47-74` | One card, headings inside, empty sections hidden | [crop](evidence/2026-11-09-ui-review/tabs/crops/mem-rows.png) |
-| MEM-2 | rough | M | The pin and the cross cost each note 70 pt of width, so every note is two lines. Medium confidence | `MemoryPane.swift:52-68` | Show both on hover, over the row's end | [crop](evidence/2026-11-09-ui-review/tabs/crops/mem-rows.png) |
-| MEM-4 | rough | M | Forget is a 10 pt cross beside the pin, and it deletes with no undo. The cross also means "close" elsewhere. Medium confidence | `MemoryPane.swift:62-66` | "Forgotten. Undo" in the row for 5 s | [crop](evidence/2026-11-09-ui-review/tabs/crops/mem-rows.png) |
+| MEM-1 | rough | M | A card for each section: five sentences take 572 pt. Medium confidence | `MemoryPane.swift:35-40, :47-74` | One card, headings inside, empty sections hidden | crop |
+| MEM-2 | rough | M | The pin and the cross cost each note 70 pt of width, so every note is two lines. Medium confidence | `MemoryPane.swift:52-68` | Show both on hover, over the row's end | crop |
+| MEM-4 | rough | M | Forget is a 10 pt cross beside the pin, and it deletes with no undo. The cross also means "close" elsewhere. Medium confidence | `MemoryPane.swift:62-66` | "Forgotten. Undo" in the row for 5 s | crop |
 
 **Nits:** MEM-3 the marks miss the card's padding; MEM-5 a whole card for "Nothing yet."; MEM-6 empty and not-running look alike; MEM-7 the footer holds only Quit; MEM-8 pinned and unpinned differ by one mark.
 
@@ -189,60 +191,60 @@ Long form: [evidence/2026-11-09-ui-review/tabs.md](evidence/2026-11-09-ui-review
 | Id | Sev. | Eff. | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- |
 | SET-1 | rough | M | It is 1,499 pt long: 2.76 screens, 8 sections, 17 rows. The world's switch is about 1,090 pt down | `SettingsPane.swift:24-36` | §4.4 | — |
-| SET-2 | rough | S | Icons and controls are centred on the row, not on the title. With a five-line error the button sits 44 pt below its title | `SettingsPane.swift:469` | Top-align the row | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-no-voice.png) |
-| SET-3 | rough | M | Trouble is up to five lines of red 11 pt text squeezed beside the button. Medium confidence | `SettingsPane.swift:150-165, :194-196` | A short state in the row; the reason in a strip under it, full width | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-hooks-off.png) |
-| SET-4 | rough | M | The Talk picker is three nested boxes and 190 pt tall. Medium confidence | `SettingsPane.swift:312-322, :402-455` | A three-part control and only the chosen kind's line: about 58 pt | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-talk.png) |
-| SET-5 | rough | S | In dark mode chosen rows and outlined buttons are darker than their surround. Medium confidence | `SettingsPane.swift:438-440`; `Theme.swift:494-495` | A "lifted" tone: paper in light, `#38332B` in dark | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-dark-device.png) |
-| SET-6 | rough | S | An off switch is 1.41:1. A disabled one is 1.07:1: it cannot be seen | `Theme.swift:517, :524` | Off track in `inkFaint`; disabled at 0.5 with a knob outline | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-login-unavailable.png) |
-| SET-8 | rough | S | "Forget about me" squeezes its own explanation to three lines, and looks like Reconnect though it deletes | `SettingsPane.swift:93-97` | Its own line, in clay ink, with a confirm | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-brain-memory.png) |
-| SET-9 | rough | S | Two different "Forget" buttons on one scroll: the board's pairing and the memory. Medium confidence | `SettingsPane.swift:95, :213` | The board's goes under Advanced | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-agents-device.png) |
-| SET-10 | rough | M | A buyer never needs "Boop-01DD / Forget", the firmware row or the Simulator | `SettingsPane.swift` (Device) | A closed Advanced group (§4.4) | [crop](evidence/2026-11-09-ui-review/tabs/crops/set-agents-device.png) |
+| SET-2 | rough | S | Icons and controls are centred on the row, not on the title. With a five-line error the button sits 44 pt below its title | `SettingsPane.swift:469` | Top-align the row | crop |
+| SET-3 | rough | M | Trouble is up to five lines of red 11 pt text squeezed beside the button. Medium confidence | `SettingsPane.swift:150-165, :194-196` | A short state in the row; the reason in a strip under it, full width | crop |
+| SET-4 | rough | M | The Talk picker is three nested boxes and 190 pt tall. Medium confidence | `SettingsPane.swift:312-322, :402-455` | A three-part control and only the chosen kind's line: about 58 pt | crop |
+| SET-5 | rough | S | In dark mode chosen rows and outlined buttons are darker than their surround. Medium confidence | `SettingsPane.swift:438-440`; `Theme.swift:494-495` | A "lifted" tone: paper in light, `#38332B` in dark | crop |
+| SET-6 | rough | S | An off switch is 1.41:1. A disabled one is 1.07:1: it cannot be seen | `Theme.swift:517, :524` | Off track in `inkFaint`; disabled at 0.5 with a knob outline | crop |
+| SET-8 | rough | S | "Forget about me" squeezes its own explanation to three lines, and looks like Reconnect though it deletes | `SettingsPane.swift:93-97` | Its own line, in clay ink, with a confirm | crop |
+| SET-9 | rough | S | Two different "Forget" buttons on one scroll: the board's pairing and the memory. Medium confidence | `SettingsPane.swift:95, :213` | The board's goes under Advanced | crop |
+| SET-10 | rough | M | A buyer never needs "Boop-01DD / Forget", the firmware row or the Simulator | `SettingsPane.swift` (Device) | A closed Advanced group (§4.4) | crop |
 
 **Nits:** SET-11 two World rows that are not settings; SET-12 four left edges inside the cards; SET-13 one 10 pt note; SET-14 up to three filled buttons on a screen; SET-15 an 84 pt slider for 11 steps; SET-16 ghost controls when not running; SET-17 long names wrap titles.
 
 ### 3.6 Onboarding
 
-Long form: [evidence/2026-11-09-ui-review/onboarding.md](evidence/2026-11-09-ui-review/onboarding.md) (65 entries, a table of every act's sizes, and 4 proposals). The window is 720 × 560 pt in every act. Review the 9 acts for polish only: the move to 5 acts is decided for later, and §4.6 is the frame both need.
+Long form: `evidence/2026-11-09-ui-review/onboarding.md` (65 entries, a table of every act's sizes, and 4 proposals). The window is 720 × 560 pt in every act. Review the 9 acts for polish only: the move to 5 acts is decided for later, and §4.6 is the frame both need.
 
-![Act 5 does not fit: the marks and the button move](evidence/2026-11-09-ui-review/onboarding/crops/onb-5-frame-drift.jpg)
+!Act 5 does not fit: the marks and the button move
 
 | Id | Sev. | Eff. | Act | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| ONB-1 | broken | M | 5 | The content is 18 to 43 pt taller than its room, and SwiftUI centres the overflow. The progress marks rise from 29 pt to 7.5 pt and the button's bottom margin falls from 30 to 8.5 pt. The frame also moves when a lesson is done | `OnboardingView.swift:17-33`; `OnboardingBoard.swift:259-285` | A fixed box for the act; move the mood legend out; a snapshot check on the marks and the button | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-5-frame-drift.jpg) |
-| ONB-54 | broken | S | 9 | With a long name the finale's title wraps to two lines and turns left-aligned under a centred face | `OnboardingFinish.swift:374` | `.multilineTextAlignment(.center)`, 2 lines, scale down to 0.7 | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-9-unbroken.png) |
-| ONB-2 | rough | M | all | The title's top is at 7 heights, from 59 to 316.5 pt. Act 4 alone moves it 4 times | Each act builds its own stack | §4.6 | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-all-light.jpg) |
-| ONB-3 | rough | M | all | The face has 8 sizes (44 to 236 pt) and 9 positions | Literals in every act | Three sizes: hero 150, side 64, legend 44 | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-all-light.jpg) |
-| ONB-4 | rough | M | 3, 6, 7 | Empty bands above the button: 278 pt in act 6, 188 in act 3, up to 210 in act 7 | Every act ends with a spacer | Centre the body between the title and the bar | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-empty-bands.jpg) |
+| ONB-1 | broken | M | 5 | The content is 18 to 43 pt taller than its room, and SwiftUI centres the overflow. The progress marks rise from 29 pt to 7.5 pt and the button's bottom margin falls from 30 to 8.5 pt. The frame also moves when a lesson is done | `OnboardingView.swift:17-33`; `OnboardingBoard.swift:259-285` | A fixed box for the act; move the mood legend out; a snapshot check on the marks and the button | crop |
+| ONB-54 | broken | S | 9 | With a long name the finale's title wraps to two lines and turns left-aligned under a centred face | `OnboardingFinish.swift:374` | `.multilineTextAlignment(.center)`, 2 lines, scale down to 0.7 | crop |
+| ONB-2 | rough | M | all | The title's top is at 7 heights, from 59 to 316.5 pt. Act 4 alone moves it 4 times | Each act builds its own stack | §4.6 | crop |
+| ONB-3 | rough | M | all | The face has 8 sizes (44 to 236 pt) and 9 positions | Literals in every act | Three sizes: hero 150, side 64, legend 44 | crop |
+| ONB-4 | rough | M | 3, 6, 7 | Empty bands above the button: 278 pt in act 6, 188 in act 3, up to 210 in act 7 | Every act ends with a spacer | Centre the body between the title and the bar | crop |
 | ONB-6 | rough | S | all | Three bottom bars: the main button on the right (acts 2 to 8), centred with no Back (acts 1 and 9), none at all (act 4 looking and its errors) | `OnboardingView.swift:225-245` is skipped by three acts | One bar | — |
-| ONB-7 | rough | S | 4 | After "Look for me", the link "I don't have my Boop yet" jumps 114.5 pt right and 4.5 pt down | `OnboardingBoard.swift:88-94` | The shared bar with a disabled "Looking…" | [1](evidence/2026-11-09-ui-review/onboarding/crops/onb-4-bar-intro.png), [2](evidence/2026-11-09-ui-review/onboarding/crops/onb-4-bar-looking.png) |
-| ONB-9 | rough | S | 4 | The "for keeps" label wraps to two lines with a long name | `OnboardingView.swift:257` | One line, cut in the middle | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-4-lock-wrap.png) |
-| ONB-12 | rough | S | 6 | A disabled "Next" is 1.42:1, and the only live control is the quiet "Skip the tour". Medium confidence | `Theme.swift:474` | An outline with a readable label | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-6-nav-disabled.png) |
-| ONB-13 | rough | S | all | The footprints are 5 × 8 pt, unwalked ones 1.54:1, and the current one differs only by size. They read as decoration, not "step 5 of 9" | `OnboardingView.swift:71-82` | 6 × 10 pt, `inkFaint`, a dot under the current pair | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-footprints-light.png) |
-| ONB-19 | rough | S | 2 | The three cards are 94, 79 and 79 pt tall | `OnboardingIntro.swift:156-160` | Equal heights | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-2-cards.png) |
-| ONB-21 | rough | S | 3 | The name field has no side padding: text runs to 3 pt from its border | `OnboardingIntro.swift:299` | 16 pt at each side | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-3-unbroken-field.png) |
-| ONB-22 | rough | S | 3 | A grey box sits behind the name: the system's selection. Low confidence on how it looks live | `OnboardingIntro.swift:304` | Caret at the end, not select-all | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-3-field-highlight.png) |
-| ONB-25 | rough | S | 4 | The board's drawing is 60 pt left of centre | `OnboardingBoard.swift:213-224` | Centre the tile; the cable as an overlay | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-4-intro-art.png) |
-| ONB-27 | rough | M | 4 | Four layouts in one sequence: tile 150, 140, 160; four title heights | `OnboardingBoard.swift:38, :75-80, :145-158` | One slot and one tile size | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-4-states.jpg) |
-| ONB-28 | rough | S | 4 | Error states leave a 61 pt hole, and the face still looks curious | `OnboardingBoard.swift:75-80` | The same slot; a sad mood | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-4-stuck-gap.png) |
+| ONB-7 | rough | S | 4 | After "Look for me", the link "I don't have my Boop yet" jumps 114.5 pt right and 4.5 pt down | `OnboardingBoard.swift:88-94` | The shared bar with a disabled "Looking…" | 1, 2 |
+| ONB-9 | rough | S | 4 | The "for keeps" label wraps to two lines with a long name | `OnboardingView.swift:257` | One line, cut in the middle | crop |
+| ONB-12 | rough | S | 6 | A disabled "Next" is 1.42:1, and the only live control is the quiet "Skip the tour". Medium confidence | `Theme.swift:474` | An outline with a readable label | crop |
+| ONB-13 | rough | S | all | The footprints are 5 × 8 pt, unwalked ones 1.54:1, and the current one differs only by size. They read as decoration, not "step 5 of 9" | `OnboardingView.swift:71-82` | 6 × 10 pt, `inkFaint`, a dot under the current pair | crop |
+| ONB-19 | rough | S | 2 | The three cards are 94, 79 and 79 pt tall | `OnboardingIntro.swift:156-160` | Equal heights | crop |
+| ONB-21 | rough | S | 3 | The name field has no side padding: text runs to 3 pt from its border | `OnboardingIntro.swift:299` | 16 pt at each side | crop |
+| ONB-22 | rough | S | 3 | A grey box sits behind the name: the system's selection. Low confidence on how it looks live | `OnboardingIntro.swift:304` | Caret at the end, not select-all | crop |
+| ONB-25 | rough | S | 4 | The board's drawing is 60 pt left of centre | `OnboardingBoard.swift:213-224` | Centre the tile; the cable as an overlay | crop |
+| ONB-27 | rough | M | 4 | Four layouts in one sequence: tile 150, 140, 160; four title heights | `OnboardingBoard.swift:38, :75-80, :145-158` | One slot and one tile size | crop |
+| ONB-28 | rough | S | 4 | Error states leave a 61 pt hole, and the face still looks curious | `OnboardingBoard.swift:75-80` | The same slot; a sad mood | crop |
 | ONB-29 | rough | S | 4 | In an error state the fix is a 22 pt row button, and there is no main button. Medium confidence | `OnboardingBoard.swift:83, :121` | The fix is the bar's main button | — |
-| ONB-35 | rough | S | 5 | "waiting…" takes 75 pt of the row, so details wrap to a one-word last line | `OnboardingView.swift:172-175` | Put it on the title's line | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-5-waiting-wrap.png) |
+| ONB-35 | rough | S | 5 | "waiting…" takes 75 pt of the row, so details wrap to a one-word last line | `OnboardingView.swift:172-175` | Put it on the title's line | crop |
 | ONB-36 | rough | S | 5 | The current lesson is marked by a 1.16:1 tint. Medium confidence | `OnboardingView.swift:153` | A full-ink 1.5 pt border | — |
-| ONB-37 | rough | S | 5 | "TRY" is 10 pt at 2.66:1 | `OnboardingBoard.swift:334` | 11 pt, soft ink | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-5-try-chips.png) |
-| ONB-40 | rough | M | 5 | The mood legend's four faces are 44 pt; Grumpy, Proud and Tired differ by 2 to 4 pixels. Medium confidence | `OnboardingBoard.swift:272-282` | Move it, with 64 pt faces | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-5-moods.png) |
-| ONB-43 | rough | S | 6 | On the "not found" Codex card the switch is 1.08:1 and the text 2.42:1 | `OnboardingFinish.swift:148`; `Theme.swift:524` | Do not fade the card; hide the switch | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-6-codex.png) |
-| ONB-45 | rough | M | 6 | The hooks panel: 100-character lines, a white scroll track, the first card cut with no fade | `OnboardingFinish.swift:62-77` | The agent's card first; 520 pt wide text; no track, a fade | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-6-hooks.jpg) |
-| ONB-49 | rough | S | 7 | Three rows, three control sizes: a 22 pt switch, a 22 pt "Allow" with 11 pt text, a 13 pt tick, a 24 pt field | `OnboardingFinish.swift:311-316, :345-347` | One 28 pt control size in one column | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-7-rows-right.png) |
-| ONB-56 | rough | S | 9 | Tip cards in one row are 61 and 76 pt tall | `OnboardingFinish.swift:375-392` | A grid with stretched cells | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-9-grid.png) |
-| ONB-59 | rough | S | all, dark | The black face tile on dark paper is 1.19:1 and its shadow is gone: the tile has no edge | `Slime/SlimeView.swift:51-52` | A 1 pt border in dark mode | [crop](evidence/2026-11-09-ui-review/onboarding/crops/onb-1-tile-dark.png) |
+| ONB-37 | rough | S | 5 | "TRY" is 10 pt at 2.66:1 | `OnboardingBoard.swift:334` | 11 pt, soft ink | crop |
+| ONB-40 | rough | M | 5 | The mood legend's four faces are 44 pt; Grumpy, Proud and Tired differ by 2 to 4 pixels. Medium confidence | `OnboardingBoard.swift:272-282` | Move it, with 64 pt faces | crop |
+| ONB-43 | rough | S | 6 | On the "not found" Codex card the switch is 1.08:1 and the text 2.42:1 | `OnboardingFinish.swift:148`; `Theme.swift:524` | Do not fade the card; hide the switch | crop |
+| ONB-45 | rough | M | 6 | The hooks panel: 100-character lines, a white scroll track, the first card cut with no fade | `OnboardingFinish.swift:62-77` | The agent's card first; 520 pt wide text; no track, a fade | crop |
+| ONB-49 | rough | S | 7 | Three rows, three control sizes: a 22 pt switch, a 22 pt "Allow" with 11 pt text, a 13 pt tick, a 24 pt field | `OnboardingFinish.swift:311-316, :345-347` | One 28 pt control size in one column | crop |
+| ONB-56 | rough | S | 9 | Tip cards in one row are 61 and 76 pt tall | `OnboardingFinish.swift:375-392` | A grid with stretched cells | crop |
+| ONB-59 | rough | S | all, dark | The black face tile on dark paper is 1.19:1 and its shadow is gone: the tile has no edge | `Slime/SlimeView.swift:51-52` | A 1 pt border in dark mode | crop |
 | ONB-61 | rough | S | all | Seven body text sizes: 15, 14, 13, 12.5, 12, 11, 10 | Literals | Four named sizes (§2.3) | — |
 
 **Nits:** ONB-5, 8, 10, 11, 14 to 18, 20, 23, 24, 26, 30 to 33, 38, 39, 41, 42, 44, 46 to 48, 50 to 52, 55, 57, 58, 60, 63, 64. ONB-53 notes that act 8 is the cleanest act and the model for the frame.
 
 ### 3.7 The board
 
-Long form: [evidence/2026-11-09-ui-review/board.md](evidence/2026-11-09-ui-review/board.md) (48 findings, a table of every text style, a map of the screen's zones, 7 proposals). The frame is 502 × 410 px; 1 px is 0.081 mm. At 70 cm, text reads comfortably with an x-height of 15 px and is legible down to 10 px. A finger needs about 87 px.
+Long form: `evidence/2026-11-09-ui-review/board.md` (48 findings, a table of every text style, a map of the screen's zones, 7 proposals). The frame is 502 × 410 px; 1 px is 0.081 mm. At 70 cm, text reads comfortably with an x-height of 15 px and is legible down to 10 px. A finger needs about 87 px.
 
-![From the chair: what survives](evidence/2026-11-09-ui-review/board/crops/brd40-from-the-chair-key-states.png)
+!From the chair: what survives
 
 The sheet above shows key states at half size with a slight blur, which is about how the panel looks from a chair. The amber card, the names, the digits and the signs survive. The narration, the ring's label, "Today's done!", the drawer's detail and the no-app plug do not.
 
@@ -257,34 +259,34 @@ The sheet above shows key states at half size with a slight blur, which is about
 
 | Id | Sev. | Eff. | Frame | What is wrong | Cause | Fix | Picture |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| BRD-1 | broken | S | `states/poked`, `v1/ring-closed`, `reasons/*` | The narration is in the 13 px font: 0.56 mm. It carries the "why" and today the ring's "Today's done!" | gel `lane.cpp:205-209` | The 22 px font in a lighter grey; 18 letters fit | [crop](evidence/2026-11-09-ui-review/board/crops/brd03-caption.png) |
-| BRD-2 | broken | S | `growbar/*`, `v1/ring-filling` | The ring's label "49 today" is 0.56 mm | gel `layers.cpp:839-841` | The number alone, in 22 px, after the bar; the bar 200 wide | [crop](evidence/2026-11-09-ui-review/board/crops/brd05-ring-label.png) |
-| BRD-3 | broken | M | `drawer/open` | The drawer's sub-line and its WORKING / IDLE / NEEDS YOU chips are 0.56 to 0.73 mm | gel `drawer.cpp:47-54, :63` | Sub-line in 22 px; the strip's marks in place of word chips | [crop](evidence/2026-11-09-ui-review/board/crops/brd08-drawer-rows.png) |
-| BRD-20 | broken | M | `drawer/open` | Drawer rows are 48 px tall: 3.9 mm. A miss opens the wrong session | gel `drawer.h:31-32` | Rows 66 px, pitch 72; 4 rows show | [crop](evidence/2026-11-09-ui-review/board/crops/brd08-drawer-rows.png) |
-| BRD-37 | broken | S | `states/no_app`, `alone/*` | With no app the only sign is a 24 × 18 px grey plug in a corner, and Boop looks happy | gel `lane.cpp:246-251, :416` | The plug twice the size, centred, with words beside it | [crop](evidence/2026-11-09-ui-review/board/crops/brd11-no-app-plug.png) |
-| BRD-45 | broken | L | the 8 activities | They differ by 20 to 950 pixels inside a monitor 7.7 mm wide. Delegating against working: 20 pixels. Decided: 4 activities with props the size of the body | gel `props.cpp:160-186` | A prop of 120 px or more for each | [crop](evidence/2026-11-09-ui-review/board/crops/brd42-from-the-chair-activities.png) |
-| BRD-4 | rough | S | `states/needs_you` | "Continue on your Mac" is 0.97 mm: marginal. Medium confidence | gel `props.cpp:250` | The kind line in 28 px (§4.5) | [crop](evidence/2026-11-09-ui-review/board/crops/brd01-needs-you-card-body.png) |
+| BRD-1 | broken | S | `states/poked`, `v1/ring-closed`, `reasons/*` | The narration is in the 13 px font: 0.56 mm. It carries the "why" and today the ring's "Today's done!" | gel `lane.cpp:205-209` | The 22 px font in a lighter grey; 18 letters fit | crop |
+| BRD-2 | broken | S | `growbar/*`, `v1/ring-filling` | The ring's label "49 today" is 0.56 mm | gel `layers.cpp:839-841` | The number alone, in 22 px, after the bar; the bar 200 wide | crop |
+| BRD-3 | broken | M | `drawer/open` | The drawer's sub-line and its WORKING / IDLE / NEEDS YOU chips are 0.56 to 0.73 mm | gel `drawer.cpp:47-54, :63` | Sub-line in 22 px; the strip's marks in place of word chips | crop |
+| BRD-20 | broken | M | `drawer/open` | Drawer rows are 48 px tall: 3.9 mm. A miss opens the wrong session | gel `drawer.h:31-32` | Rows 66 px, pitch 72; 4 rows show | crop |
+| BRD-37 | broken | S | `states/no_app`, `alone/*` | With no app the only sign is a 24 × 18 px grey plug in a corner, and Boop looks happy | gel `lane.cpp:246-251, :416` | The plug twice the size, centred, with words beside it | crop |
+| BRD-45 | broken | L | the 8 activities | They differ by 20 to 950 pixels inside a monitor 7.7 mm wide. Delegating against working: 20 pixels. Decided: 4 activities with props the size of the body | gel `props.cpp:160-186` | A prop of 120 px or more for each | crop |
+| BRD-4 | rough | S | `states/needs_you` | "Continue on your Mac" is 0.97 mm: marginal. Medium confidence | gel `props.cpp:250` | The kind line in 28 px (§4.5) | crop |
 | BRD-5 | rough | M | `drawer/open` | Up to three sizes and two weights on one screen | `internal/tools/fontgen/fontgen.py:27-31` | Retire 13 px from all reading text | — |
-| BRD-7 | rough | S | `lane/needs-you-long-name` | A cut name ends in two dots, "Make the device..", in the name's own ink | gel `lane.cpp:86-87` | A one-cell "…", or fade the last two letters | [crop](evidence/2026-11-09-ui-review/board/crops/brd04-long-name.png) |
-| BRD-8 | rough | S | many | Case has no rule: NEEDS YOU, PASS, "shipped!", "Level 12!", "boop back!". Medium confidence | — | Capitals for the board's own cards; lower case for all that Boop holds | [crop](evidence/2026-11-09-ui-review/board/crops/brd21-act-low-sign.png) |
-| BRD-10 | rough | S | every strip | The first chip is 4 px from the corner's arc, and the arc's radius came from a photo. Medium confidence | gel `lane.cpp:39` | A 10 px gap everywhere | [crop](evidence/2026-11-09-ui-review/board/crops/brd02-strip-chips.png) |
-| BRD-11 | rough | M | `lane/working-counts` | The strip is a rebus: `✳2 ●●●● z3 3/7`. Only the digits survive from the chair. Medium confidence | gel `lane.cpp:216-232, :272-314` | Words when there is room (§4.5) | [crop](evidence/2026-11-09-ui-review/board/crops/brd02-strip-chips.png) |
-| BRD-13 | rough | M | `states/poked` | A touch replaces the strip, the rule and the drawer's handle with the caption for 2.5 s. Medium confidence | gel `lane.cpp:462-468` | The rule stays; the caption takes only the strip's row | [crop](evidence/2026-11-09-ui-review/board/crops/brd03-caption.png) |
-| BRD-14 | rough | S | `transitions/act-on-1` | A low sign rises over the strip while the strip still shows | gel `lane.cpp:538-545` | Fade the strip as the sign rises | [crop](evidence/2026-11-09-ui-review/board/crops/brd26-low-sign-over-strip.png) |
-| BRD-16 | rough | S | `done/sign-long` | A two-line low sign runs into the finish's glow, to 9 px from the edge | gel `low_sign.cpp:62-63` | Raise it when a glow is on, or one line | [crop](evidence/2026-11-09-ui-review/board/crops/brd24-finish-sign-long.png) |
+| BRD-7 | rough | S | `lane/needs-you-long-name` | A cut name ends in two dots, "Make the device..", in the name's own ink | gel `lane.cpp:86-87` | A one-cell "…", or fade the last two letters | crop |
+| BRD-8 | rough | S | many | Case has no rule: NEEDS YOU, PASS, "shipped!", "Level 12!", "boop back!". Medium confidence | — | Capitals for the board's own cards; lower case for all that Boop holds | crop |
+| BRD-10 | rough | S | every strip | The first chip is 4 px from the corner's arc, and the arc's radius came from a photo. Medium confidence | gel `lane.cpp:39` | A 10 px gap everywhere | crop |
+| BRD-11 | rough | M | `lane/working-counts` | The strip is a rebus: `✳2 ●●●● z3 3/7`. Only the digits survive from the chair. Medium confidence | gel `lane.cpp:216-232, :272-314` | Words when there is room (§4.5) | crop |
+| BRD-13 | rough | M | `states/poked` | A touch replaces the strip, the rule and the drawer's handle with the caption for 2.5 s. Medium confidence | gel `lane.cpp:462-468` | The rule stays; the caption takes only the strip's row | crop |
+| BRD-14 | rough | S | `transitions/act-on-1` | A low sign rises over the strip while the strip still shows | gel `lane.cpp:538-545` | Fade the strip as the sign rises | crop |
+| BRD-16 | rough | S | `done/sign-long` | A two-line low sign runs into the finish's glow, to 9 px from the edge | gel `low_sign.cpp:62-63` | Raise it when a glow is on, or one line | crop |
 | BRD-19 | rough | M | an ask (from code; no frame exists) | An ask's two answers are one bubble with four spaces between them, in the voice's colour. Medium confidence | `firmware/src/app/behaviour.cpp:441-444` | Two pills. Add an `ask` scenario to the simulator | — |
-| BRD-21 | rough | S | `drawer/open` | The drawer's lid chips start at x 18 and its rows at x 35 | gel `drawer.cpp:141` against `:72-75` | One margin | [crop](evidence/2026-11-09-ui-review/board/crops/brd30-drawer-lid-misaligned.png) |
-| BRD-22 | rough | S | `drawer/more` | Nothing shows that the drawer scrolls, and the last row is cut by the corners. Medium confidence | gel `drawer.cpp` | A fade at the bottom and a small thumb | [crop](evidence/2026-11-09-ui-review/board/crops/brd09-drawer-bottom.png) |
-| BRD-24 | rough | S | every strip | The drawer's handle is a 20 × 9 px arrow in the dimmest ink (2.2:1). Medium confidence | gel `lane.cpp:320-326` | A 44 × 5 px grabber | [crop](evidence/2026-11-09-ui-review/board/crops/brd02-strip-chips.png) |
-| BRD-25 | rough | M | `states/needs_you` | The card covers 17 px of Boop's head and cuts the dome flat | gel `props.cpp:13` | The card higher (y 16 to 92); the body ducks 12 px | [crop](evidence/2026-11-09-ui-review/board/crops/brd01-needs-you-card-body.png) |
-| BRD-26 | rough | L | many | Five box styles for five kinds of message: sign, low sign, card, start card, bubble | gel `layers.cpp`, `low_sign.cpp`, `props.cpp`, `lane.cpp` | Two families: "Boop holds it" and "the board says it" | [crop](evidence/2026-11-09-ui-review/board/crops/brd07-sign-hands.png) |
-| BRD-27 | rough | M | `lane/bubble-*` | Amber has three jobs: needs you, the voice's words, and gold. "Technical difficulties" in amber reads as an alert. Medium confidence | gel `lane.cpp:199` | The bubble's words in warm white; amber for needs you only | [crop](evidence/2026-11-09-ui-review/board/crops/brd10-bubble.png) |
-| BRD-30 | rough | M | `growbar-listening/*` | The top band stacks the ring's bar, LISTENING and the flying heart. Medium confidence | gel `layers.cpp`, `props.cpp` | One thing in the top band at a time | [crop](evidence/2026-11-09-ui-review/board/crops/brd27-top-band-stack.png) |
+| BRD-21 | rough | S | `drawer/open` | The drawer's lid chips start at x 18 and its rows at x 35 | gel `drawer.cpp:141` against `:72-75` | One margin | crop |
+| BRD-22 | rough | S | `drawer/more` | Nothing shows that the drawer scrolls, and the last row is cut by the corners. Medium confidence | gel `drawer.cpp` | A fade at the bottom and a small thumb | crop |
+| BRD-24 | rough | S | every strip | The drawer's handle is a 20 × 9 px arrow in the dimmest ink (2.2:1). Medium confidence | gel `lane.cpp:320-326` | A 44 × 5 px grabber | crop |
+| BRD-25 | rough | M | `states/needs_you` | The card covers 17 px of Boop's head and cuts the dome flat | gel `props.cpp:13` | The card higher (y 16 to 92); the body ducks 12 px | crop |
+| BRD-26 | rough | L | many | Five box styles for five kinds of message: sign, low sign, card, start card, bubble | gel `layers.cpp`, `low_sign.cpp`, `props.cpp`, `lane.cpp` | Two families: "Boop holds it" and "the board says it" | crop |
+| BRD-27 | rough | M | `lane/bubble-*` | Amber has three jobs: needs you, the voice's words, and gold. "Technical difficulties" in amber reads as an alert. Medium confidence | gel `lane.cpp:199` | The bubble's words in warm white; amber for needs you only | crop |
+| BRD-30 | rough | M | `growbar-listening/*` | The top band stacks the ring's bar, LISTENING and the flying heart. Medium confidence | gel `layers.cpp`, `props.cpp` | One thing in the top band at a time | crop |
 | BRD-32 | rough | M | `v1/ring-closed`, `v1/level-up` | The ring closing is the quietest big moment: a yellow line and two labels at 0.56 mm. Decided: one moment with the level | — | §4.5 | — |
-| BRD-38 | rough | S | `lane/finish-*` | The finish's glow shows bands and a shift of hue in its tail. Medium confidence: the panel will tell | gel `done.cpp:58-94` | Dither the fade | [crop](evidence/2026-11-09-ui-review/board/crops/brd16-rim-glow-corner.png) |
-| BRD-39 | rough | S | `finish/gold` | The gold trophy disappears on the gold flood | gel `finish.cpp:223-225, :582-591` | A dark outline during Gold Rush | [crop](evidence/2026-11-09-ui-review/board/crops/brd17-gold-flood.png) |
-| BRD-40 | rough | S | `finish/gold`, `finish/mega` | The gold flood lights 49% of full white against 13% at rest: a flash at night. Medium confidence | gel `finish.cpp` | Cap its golds at 70%; halve them at night | [crop](evidence/2026-11-09-ui-review/board/crops/brd17-gold-flood.png) |
-| BRD-46 | rough | L | `moods/*` | About 10 of the 42 emotions are distinct at real size. Decided: 18. The report gives 9 groups. Medium confidence | — | Give each kept emotion a change of shape or colour, since eyes are 10 to 14 px | [crop](evidence/2026-11-09-ui-review/board/crops/brd41-from-the-chair-42-emotions.png) |
+| BRD-38 | rough | S | `lane/finish-*` | The finish's glow shows bands and a shift of hue in its tail. Medium confidence: the panel will tell | gel `done.cpp:58-94` | Dither the fade | crop |
+| BRD-39 | rough | S | `finish/gold` | The gold trophy disappears on the gold flood | gel `finish.cpp:223-225, :582-591` | A dark outline during Gold Rush | crop |
+| BRD-40 | rough | S | `finish/gold`, `finish/mega` | The gold flood lights 49% of full white against 13% at rest: a flash at night. Medium confidence | gel `finish.cpp` | Cap its golds at 70%; halve them at night | crop |
+| BRD-46 | rough | L | `moods/*` | About 10 of the 42 emotions are distinct at real size. Decided: 18. The report gives 9 groups. Medium confidence | — | Give each kept emotion a change of shape or colour, since eyes are 10 to 14 px | crop |
 
 **One to check by eye:** `moods/angry.png` shows squeezed eyes and an open smile. It reads as delight, not anger (BRD-46).
 
@@ -294,11 +296,11 @@ The sheet above shows key states at half size with a slight blur, which is about
 
 ## 4. Layout and UX changes
 
-The mockups are rough. The Mac's are HTML in `Theme.swift`'s colours, not SwiftUI, so spacing and type are close but not exact. The board's are drawn on real frames with the board's own font. Their sources are in [evidence/2026-11-09-ui-review/mock/](evidence/2026-11-09-ui-review/mock/).
+The mockups are rough. The Mac's are HTML in `Theme.swift`'s colours, not SwiftUI, so spacing and type are close but not exact. The board's are drawn on real frames with the board's own font. Their sources are in `evidence/2026-11-09-ui-review/mock/`.
 
 ### 4.1 A two-row header
 
-![Now: before and after](evidence/2026-11-09-ui-review/mock/pair-now.png)
+!Now: before and after
 
 **Today** the header has up to nine things in four rows, is 73.5 to 128 pt tall, and overflows (NOW-1, 16, 17).
 
@@ -325,7 +327,7 @@ The same mockup shows four changes.
 
 ### 4.3 The Boop tab without "XP"
 
-![Boop: before and after](evidence/2026-11-09-ui-review/mock/pair-boop.png)
+!Boop: before and after
 
 - **In the ring:** `82` over `of 100`, as the sketch had it. Blue while filling, sage when full.
 - **Beside it:** "Level 12", a thin bar to the next level with "18 to go", and "11 full days together" in place of "1,182 XP together".
@@ -337,7 +339,7 @@ Effort: M.
 
 ### 4.4 The World tab and Settings
 
-![World: before and after](evidence/2026-11-09-ui-review/mock/pair-world.png)
+!World: before and after
 
 **World, for a small world.**
 
@@ -348,7 +350,7 @@ Effort: M.
 - **A goal card,** since a monthly goal is decided: the goal, a bar, and "Mochi added 340".
 - **"For Mochi today"** is one card with the time as each row's first word (WORLD-17, 18).
 
-![Settings: before and after](evidence/2026-11-09-ui-review/mock/pair-settings.png)
+!Settings: before and after
 
 **Settings, regrouped:** about 990 pt in the mockup against 1,499.
 
@@ -361,29 +363,29 @@ Effort: M for World, M for Settings.
 
 ### 4.5 The board: a reading rule and a calmer lane
 
-![Needs you, with its kind](evidence/2026-11-09-ui-review/mock/board-needs-you.png)
+!Needs you, with its kind
 
 **The needs-you card, with its kind** (decided; BRD-4, 25, 28). The card moves up to the top band and clears Boop's head. A drawn mark for the kind, "NEEDS YOU", and the kind in the 28 px font: "a yes or no", "a question", "a plan to read". "Continue on your Mac" goes: the card says it by being there.
 
-![The ring closes and the level goes up: one moment](evidence/2026-11-09-ui-review/mock/board-ring-level.png)
+!The ring closes and the level goes up: one moment
 
 **The ring and the level, one moment** (decided; BRD-1, 2, 32). The bar fills to gold with its number in the 22 px font. Boop holds up `today's done!`. A gold low sign follows with the level, and the finish's glow in gold. The narration row is not used.
 
-![The strip in words](evidence/2026-11-09-ui-review/mock/board-strip.png)
+!The strip in words
 
 **The strip in words** (BRD-11, 12). "2 working · 3 idle" fits in the lane at the 28 px size. Marks come back only when a name takes the room.
 
-![Narration you can read](evidence/2026-11-09-ui-review/mock/board-narration.png)
+!Narration you can read
 
 **Narration you can read** (BRD-1, 13). The 22 px font in a lighter grey, on the lane's own row, with the rule and the handle still there.
 
-**The rule behind all four.** One content box (x 24 to 478, y 16 to 394). Three bands: top 16 to 92, face 92 to 328, lane 328 to 394, with one message in each band at a time. Reading sizes are 28 px, and 22 px for a second line; 13 px is for art only. A touch target is at least 87 × 60 px. The full wireframes, with the drawer at 66 px rows, are in [evidence/2026-11-09-ui-review/board.md](evidence/2026-11-09-ui-review/board.md) §D.
+**The rule behind all four.** One content box (x 24 to 478, y 16 to 394). Three bands: top 16 to 92, face 92 to 328, lane 328 to 394, with one message in each band at a time. Reading sizes are 28 px, and 22 px for a second line; 13 px is for art only. A touch target is at least 87 × 60 px. The full wireframes, with the drawer at 66 px rows, are in `evidence/2026-11-09-ui-review/board.md` §D.
 
 Effort: S each for the narration and the ring's label; M for the card, the strip and the drawer.
 
 ### 4.6 One frame for onboarding
 
-Two variants cover all nine acts, and the five to come. The wireframes are in [evidence/2026-11-09-ui-review/onboarding.md](evidence/2026-11-09-ui-review/onboarding.md) §C.
+Two variants cover all nine acts, and the five to come. The wireframes are in `evidence/2026-11-09-ui-review/onboarding.md` §C.
 
 | Part | Rule |
 | --- | --- |
@@ -465,7 +467,7 @@ Fitted to the phases in [TODO.md](TODO.md). Each step ships alone. A step that c
 | 2 | 0 | Fix the snapshot fixtures: the firmware offer, the identical pairs, a real face for each state. Extend the contrast check to graphics and `inkFaint` | 1 day | The "Update" row, seen for the first time |
 | 3 | 0 | Quick fixes 32 to 40 on the board; rebuild the mirror; new goldens | 1 day | **On the panel, from your chair:** the narration, the ring's number, the corner gap at all four corners |
 | 4 | 1 | The Boop tab (§4.3) with the decided ring colour | 1 to 2 days | The blue against the gel's own blue; the ring at 0 and at 100 |
-| 5 | 2 | The token set (§2.3): spacing, named type, radii, one card, row, chip and button family. Use [evidence/2026-11-09-ui-review/system/changes.md](evidence/2026-11-09-ui-review/system/changes.md) as the list, and read each line before you apply it | 3 days | Every snapshot, before and after, side by side: it should look the same, only more even |
+| 5 | 2 | The token set (§2.3): spacing, named type, radii, one card, row, chip and button family. Use `evidence/2026-11-09-ui-review/system/changes.md` as the list, and read each line before you apply it | 3 days | Every snapshot, before and after, side by side: it should look the same, only more even |
 | 6 | 2 | The two-row header (§4.1) | 1 to 2 days | A long name, a long mood, hushed, muted |
 | 7 | 2 | The board's lane (§4.5): the strip in words, one row, the needs-you card with its kind, the ring and level moment, the drawer's rows. With the model's cuts: 4 activities with props | 1 week | **On the panel:** read each state from 70 cm; hit each drawer row with a finger; the gold flood in a dark room |
 | 8 | 3 | The Now tab (§4.2): the card, the sorted list, the notices strip, the mood card | 3 days | Six notices at once; a session changing state while you watch |
@@ -502,7 +504,7 @@ No product code was changed. No Jev request was made. Nothing was pushed.
 
 | What | Why | Who can judge it |
 | --- | --- | --- |
-| The real panel: colour, brightness, real legibility, banding, touch, frame rate | `boopctl ping` showed `ble: conn` (the owner's app was connected) and `face_down: true`, so the board was left alone | The owner, with the app off its Bluetooth. [evidence/2026-11-09-ui-review/board.md](evidence/2026-11-09-ui-review/board.md) §E lists 11 things to look at |
+| The real panel: colour, brightness, real legibility, banding, touch, frame rate | `boopctl ping` showed `ble: conn` (the owner's app was connected) and `face_down: true`, so the board was left alone | The owner, with the app off its Bluetooth. `evidence/2026-11-09-ui-review/board.md` §E lists 11 things to look at |
 | The app live: hover, pressed and focus states, motion, scrolling, the popover's own frame and arrow | The internal build was not opened: it puts a window on the owner's screen, and the stills answered the layout questions | The owner, or a later session with leave to open it |
 | The simulator's page in a browser | A simulator was already running on port 8206; the same firmware's frames were read from `make -C internal sim` | — |
 | Whether each face fits its words in onboarding | Every big face in the stills is one image | After the fixture is fixed (§5) |
@@ -525,9 +527,9 @@ No product code was changed. No Jev request was made. Nothing was pushed.
 
 | What | Where |
 | --- | --- |
-| The five long reports | [evidence/2026-11-09-ui-review/system.md](evidence/2026-11-09-ui-review/system.md), [evidence/2026-11-09-ui-review/now.md](evidence/2026-11-09-ui-review/now.md), [evidence/2026-11-09-ui-review/tabs.md](evidence/2026-11-09-ui-review/tabs.md), [evidence/2026-11-09-ui-review/onboarding.md](evidence/2026-11-09-ui-review/onboarding.md), [evidence/2026-11-09-ui-review/board.md](evidence/2026-11-09-ui-review/board.md) |
+| The five long reports | `evidence/2026-11-09-ui-review/system.md`, `evidence/2026-11-09-ui-review/now.md`, `evidence/2026-11-09-ui-review/tabs.md`, `evidence/2026-11-09-ui-review/onboarding.md`, `evidence/2026-11-09-ui-review/board.md` |
 | 158 marked crops | `evidence/2026-11-09-ui-review/now/crops/` (33), `evidence/2026-11-09-ui-review/tabs/crops/` (45), `evidence/2026-11-09-ui-review/onboarding/crops/` (47), `evidence/2026-11-09-ui-review/board/crops/` (33) |
-| The mockups and their sources | [evidence/2026-11-09-ui-review/mock/](evidence/2026-11-09-ui-review/mock/): four before-and-after pairs for the Mac, four for the board, the HTML, and `board.py` |
+| The mockups and their sources | `evidence/2026-11-09-ui-review/mock/`: four before-and-after pairs for the Mac, four for the board, the HTML, and `board.py` |
 | The design system's census, contrast table and change list | `evidence/2026-11-09-ui-review/system/` |
 | Everything else: all 286 snapshots, the 570 frames, work sheets | `~/.boopdev/ui-review-2026-11-09/` on the owner's Mac |
 | The sketch compared against | `~/.boopdev/v1-ui/v1-ui.html`, `v1-ui.png` |

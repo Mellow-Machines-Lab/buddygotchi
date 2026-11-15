@@ -1,4 +1,3 @@
-import AgentHooks
 import Foundation
 
 /// A demo: one script, played in order, of what three take part in do: the
@@ -130,10 +129,6 @@ public struct DemoScript: Sendable {
         /// Seconds an agent step takes, with no agent to take them.
         public var takes: Double
         public var note: String?
-        /// With several buddies, whose step it is: its agent's, a poke or
-        /// talk on its board, its brain's answers. Nil for the first's,
-        /// and talk to them all.
-        public var buddy: String?
         /// Its line number in the file.
         public var number: Int
     }
@@ -152,9 +147,6 @@ public struct DemoScript: Sendable {
     /// now.
     public var start: Int64?
     public var steps: [Step]
-    /// The buddies it plays on, when several: each with its place, pack,
-    /// the agent whose hooks its steps are, and name. Empty for one.
-    public var buddies: [BuddySetting] = []
 
     public struct Problem: Error, CustomStringConvertible {
         public var description: String
@@ -168,7 +160,6 @@ public struct DemoScript: Sendable {
     public init(_ text: String, named name: String = "the demo") throws {
         var title = "", agent = "claude"
         var steps: [Step] = []
-        var buddies: [BuddySetting] = []
         var start: Int64?
         for (index, raw) in text.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             let line = raw.trimmingCharacters(in: .whitespaces)
@@ -193,7 +184,6 @@ public struct DemoScript: Sendable {
                     case "after", "takes", "ask", "hold", "minutes", "demo": value is NSNumber && !isBool
                     case "fails", "waits": isBool
                     case "brain": value is [String: String]
-                    case "buddies": value is [Any]
                     case "reading": value is [String: Any]
                     default: value is String
                     }
@@ -208,14 +198,6 @@ public struct DemoScript: Sendable {
                 if let text = string("start") {
                     guard let ms = Self.date(text) else { throw Problem(description: "\(here): start is a date and time, like 2026-10-31T09:00") }
                     start = ms
-                }
-                if let list = o["buddies"] {
-                    // As settings.json has them (`BuddySetting`).
-                    guard let read = try? JSONDecoder().decode([BuddySetting].self, from: JSONSerialization.data(withJSONObject: list)) else {
-                        throw Problem(description: "\(here): each buddy has a place and a pack, and maybe agents and a name")
-                    }
-                    if let problem = BuddySetting.problem(read) { throw Problem(description: "\(here): \(problem)") }
-                    buddies = read
                 }
                 continue
             }
@@ -302,15 +284,10 @@ public struct DemoScript: Sendable {
             case .poke, .press, .hold, .talk, .back, .wait, .gesture, .answer: (0.8, 0)
             case .brain: (0.3, 0)
             }
-            let buddy = string("buddy")
-            if let buddy, !buddies.contains(where: { $0.place == buddy }) {
-                throw Problem(description: "\(here): buddy is one of the header's: \(buddies.map(\.place).joined(separator: ", "))")
-            }
             steps.append(Step(what: what, after: number("after") ?? defaults.after, takes: number("takes") ?? defaults.takes,
-                              note: string("note"), buddy: buddy, number: index + 1))
+                              note: string("note"), number: index + 1))
         }
         self.init(title: title, agent: agent, steps: steps)
-        self.buddies = buddies
         self.start = start
     }
 
@@ -328,11 +305,6 @@ public struct DemoScript: Sendable {
         dateFormatter(timeZone).date(from: text).map { Int64($0.timeIntervalSince1970 * 1000) }
     }
 
-    /// `ms` as `date` reads it, in `timeZone`.
-    public static func date(_ ms: Int64, timeZone: TimeZone = .current) -> String {
-        dateFormatter(timeZone).string(from: Date(timeIntervalSince1970: Double(ms) / 1000))
-    }
-
     static func dateFormatter(_ timeZone: TimeZone) -> DateFormatter {
         let f = DateFormatter()
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -343,36 +315,28 @@ public struct DemoScript: Sendable {
 
     /// The keys each kind of step takes, besides `anyStep`'s.
     static let keys: [String: [String]] = [
-        "demo": ["demo", "title", "agent", "buddies", "start"],
+        "demo": ["demo", "title", "agent", "start"],
         "agent": ["agent", "text", "say", "file", "old", "new", "cmd", "about", "fails", "ask", "waits", "task", "prompt", "summary", "by",
                   "takes", "session", "reading", "todos"],
         "you": ["you", "text", "hold", "minutes", "kind", "pick"],
         "brain": ["brain", "mood"],
     ]
-    static let anyStep = ["after", "note", "buddy"]
+    static let anyStep = ["after", "note"]
 
     static func type(of key: String) -> String {
         switch key {
         case "after", "takes", "ask", "hold", "minutes", "demo": "a number"
         case "fails", "waits": "true or false"
         case "brain": "question keys to choices, both strings"
-        case "buddies": "a list of buddies, as settings.json has them"
         case "reading": "a prompt's reading: its kind, tone and phrases"
         default: "a string"
         }
     }
 
-    public init(title: String = "", agent: String = "claude", steps: [Step], buddies: [BuddySetting] = []) {
+    public init(title: String = "", agent: String = "claude", steps: [Step]) {
         self.title = title
         self.agent = agent
         self.steps = steps
-        self.buddies = buddies
-    }
-
-    /// The agent whose hooks the buddy `buddy`'s steps are: its own, else
-    /// the script's.
-    public func agent(of buddy: String?) -> String {
-        buddies.first { $0.place == buddy }?.agents?.first ?? agent
     }
 }
 

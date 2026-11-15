@@ -1,6 +1,8 @@
 # A product review of Boop v1, and ideas to make it better
 
-Updated 2026-11-09. A review of branch `v1-polish` (`270ee70c`) as a buyer would live with it, against the four pillars of [v1-buddy.md](v1-buddy.md) §1. It changes no code. The brief is [product-review-prompt.md](product-review-prompt.md). What is next to build stays in [TODO.md](TODO.md); ideas that are not decided stay in [product-ideas.md](product-ideas.md).
+Updated 2026-11-09. A review of branch `v1-polish` (`270ee70c`) as a buyer would live with it, against the four pillars of [v1-buddy.md](v1-buddy.md) §1. It changes no code. Its brief was `plan/product-review-prompt.md` (at commit `510a78ac`). What is next to build stays in [TODO.md](TODO.md); ideas that are not decided stay in [product-ideas.md](product-ideas.md).
+
+> Its evidence folder, `plan/evidence/2026-11-09-product-review/`, left the repository on 2026-11-14: read it at commit `510a78ac` (`git show 510a78ac:plan/evidence/2026-11-09-product-review/…`). A copy, with the pictures, is in `~/.boopdev/product-review-2026-11-09/` on the owner's Mac.
 
 ## 1. Summary
 
@@ -1359,7 +1361,7 @@ No Jev request was made in this session (`boopdev eval --list`: "today: 0 of 250
 | `evidence/2026-11-09-product-review/runtime.md`, `evidence/2026-11-09-product-review/runtime/` | The headless day: `headless.log`, `world-*.log`, `care-live.log`, `ring.log`, `world_e2e.txt` (§2, §3, §11.2) |
 | `evidence/2026-11-09-product-review/words.md` | Every string, sign, ask, reply and narration, with 25 rewrites and 35 inconsistencies (§4.4, §11.1) |
 
-**Where it's kept.** The text (reports, tallies, logs and the scripts that made them) is in [evidence/2026-11-09-product-review/](evidence/2026-11-09-product-review/). The pictures and a full copy (snapshots, contact sheets, Studio screenshots, eval outputs) are on the owner's Mac in `~/.boopdev/product-review-2026-11-09/`. The Jev trajectories the frequency report read are on the owner's Mac in `~/.boopdev/night-2026-11-01/`, `~/.boopdev/day2/`, `~/.boopdev/tonight/` and `/tmp/boop-eval/20261108-220953-81575.*` (the last is the only one with every option's probability, and `/tmp/boop-eval` is cleared after a day).
+**Where it's kept.** The text (reports, tallies, logs and the scripts that made them) is in `evidence/2026-11-09-product-review/`. The pictures and a full copy (snapshots, contact sheets, Studio screenshots, eval outputs) are on the owner's Mac in `~/.boopdev/product-review-2026-11-09/`. The Jev trajectories the frequency report read are on the owner's Mac in `~/.boopdev/night-2026-11-01/`, `~/.boopdev/day2/`, `~/.boopdev/tonight/` and `/tmp/boop-eval/20261108-220953-81575.*` (the last is the only one with every option's probability, and `/tmp/boop-eval` is cleared after a day).
 
 **Pictures looked at** (contact sheets made from the snapshots and the simulator's frames, in `~/.boopdev/product-review-2026-11-09/sheets/`).
 

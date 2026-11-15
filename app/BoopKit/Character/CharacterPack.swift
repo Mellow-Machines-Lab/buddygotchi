@@ -78,10 +78,6 @@ public struct CharacterPack: Sendable {
 }
 
 extension CharacterPack {
-    /// The pack's demo, if it has one: `demo/demo.jsonl` (`DemoScript`,
-    /// characters/DEMOS.md).
-    public var demo: URL? { demo(named: "demo") }
-
     /// One of the pack's demos by name, `demo/<name>.jsonl`, if it has it.
     public func demo(named name: String) -> URL? {
         let url = directory.appendingPathComponent("demo/\(name).jsonl")
@@ -190,8 +186,7 @@ extension CharacterPack {
 extension CharacterPack {
     /// The process's character: the one `use(_:)` set, else the pack at
     /// `BOOP_CHARACTER`, else the one the repo last staged. It stops the
-    /// process if that one doesn't load: nothing works without moods. A
-    /// buddy of another pack is handed its own.
+    /// process if that one doesn't load: nothing works without moods.
     public static var active: CharacterPack { store.get() }
 
     /// Sets the process's character. Call it once, before anything reads
@@ -212,16 +207,15 @@ extension CharacterPack {
         return copy
     }
 
-    /// The pack with `id` beside the process's: in the app's bundle, which
-    /// holds every pack, or in the repo's `characters/` (read staged when
-    /// it's the one staged), for the tests and headless runs.
-    public static func named(id: String, bundled: URL? = nil) throws -> CharacterPack {
+    /// The pack with `id` beside the process's, in the repo's `characters/`
+    /// (read staged when it's the one staged), for the tests.
+    public static func named(id: String) throws -> CharacterPack {
         if active.id == id { return active }
-        let folders = [bundled?.appendingPathComponent(id), staged(repo.appendingPathComponent("characters").appendingPathComponent(id))]
-        for case let folder? in folders where FileManager.default.fileExists(atPath: folder.appendingPathComponent("character.json").path) {
-            return try CharacterPack(directory: folder)
+        let folder = staged(repo.appendingPathComponent("characters").appendingPathComponent(id))
+        guard FileManager.default.fileExists(atPath: folder.appendingPathComponent("character.json").path) else {
+            throw CharacterPackError("no character pack \(id) in characters/")
         }
-        throw CharacterPackError("no character pack \(id): it isn't in the app or in characters/")
+        return try CharacterPack(directory: folder)
     }
 
     /// The pack a process uses when nothing chose one, by charactergen's

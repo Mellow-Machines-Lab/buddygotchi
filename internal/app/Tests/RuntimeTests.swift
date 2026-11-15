@@ -2434,7 +2434,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertNotNil(own.facts["length"])
         XCTAssertNil(own.facts["named"], "the pack's name isn't its name")
         runtime.home.sync {
-            XCTAssertEqual(runtime.buddies.map(\.name), ["Pip"])
+            XCTAssertEqual(runtime.buddy.name, "Pip")
             let log = runtime.harness.log.view(now: runtime.options.clock())
             XCTAssertEqual(runtime.mood.questions(now: nil, log: log).first?.text, "After NOW, what is Pip's mood?")
             let state = runtime.harness.prompt(for: runtime.harness.log.events.last { $0.type == .prompt }!)

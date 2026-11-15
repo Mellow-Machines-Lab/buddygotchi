@@ -68,7 +68,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 
 | Target | What it does |
 | --- | --- |
-| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), with the simulator window's page beside it (`app/tools/simulator.sh`), the studio's server and its matrix (`boopdev prompts` written first) and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; onboarding's act 4 and Settings' Simulator row switch to the simulator window (it needs Emscripten) and back, and the choice is kept. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. Ctrl-C stops the app, the studio's server and the dashboard |
+| `make dev` | The debug app with `--debug`, on a folder of its own (`~/Library/Application Support/Boop-dev`), with the simulator window's page beside it (`app/tools/simulator.sh`), the studio's server and its matrix, and `boopctl dash` in a Terminal window of its own (`internal/tools/dev.sh`). It starts on the board over Bluetooth, so it's the owner's; onboarding's act 4 and Settings' Simulator row switch to the simulator window (it needs Emscripten) and back, and the choice is kept. Its folder registers its own hook socket (`dev-Boop-dev.sock` in `~/.agent-hooks/sockets`) and keeps its own Jev key (Keychain account `dev-Boop-dev`), and it never changes the real hooks or the login item. `FRESH=1` starts the folder and its key afresh, so it's onboarding again. Ctrl-C stops the app, the studio's server and the dashboard |
 | `make bundle` | `Boop.app` as it ships, in `.build/Boop.app` (`app/tools/bundle.sh`): a release build for Apple silicon and Intel, signed with the hardened runtime, ad hoc unless `SIGN_IDENTITY` names a Developer ID. It fails unless the binary links FoundationModels weak and asks for macOS 14.0 at least. Opening it uses Bluetooth, so that's the owner's; agents can check it with `Boop.app/Contents/MacOS/Boop --snapshots DIR` or `--headless`. `INTERNAL=1` makes the internal build, in `.build/internal/Boop.app`, with the simulator as a body to choose, in a window of the app's own (`app/Boop/BoardWindow.swift`). It needs Emscripten. On the simulator it never uses Bluetooth, so an agent may open it on a folder of its own (`--state-dir`) and choose the simulator in onboarding's act 4 before anything looks for a board |
 | `make demo` | Asks which demo and where it plays, then plays it: on the simulator's page from its checked-in recording, at once, on a board, or with a real agent (`simulator/tools/demos.py`, [characters/DEMOS.md](../characters/DEMOS.md)). `NAME=` plays one without asking, `NAME=all` every one in the page |
 | `make flash` | Builds the firmware and uploads it to the board on USB ([firmware/README.md](../firmware/README.md)) |
@@ -118,18 +118,14 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   fixtures in `internal/app/Tests/Fixtures/memory-nights.json`, for a
   person to judge it by), `memory gates` (its small questions scored
   against labels in `Fixtures/memory-gates.json`), `prompts` (what the brain reads in every
-  eval scenario, with no key, to `characters/studio/prompts.js` for the
-  Character Studio's Brain view; `make dev` writes it) and `hooks` (Boop's
+  eval scenario, with no key, as JSON) and `hooks` (Boop's
   hook installer, against any `--home`).
 - `.build/debug/Boop`: the menu-bar app; `--headless --state-dir DIR`,
   the whole runtime with no UI or Bluetooth (L4); `--snapshots DIR`, the
   popover's panes, onboarding's acts and their states, gel frames and
   menu-bar icons as PNGs (L0). Besides the `{"dev":…}` lines `--help`
   lists, a headless socket takes `{"dev":"presence",…}`, the Mac's lock,
-  sleep and idle time. `--buddies left:pixel:claude,right:boop:codex` runs
-  two buddies side by side, and `--links usb:SOCKET,usb:SOCKET` gives each
-  its own board; the menu-bar app reads the same from `settings.json`'s
-  `buddies`, each with its board's `hello.id` as `board`, over Bluetooth.
+  sleep and idle time.
 - `.build/debug/beacon` and `.build/debug/mellowharness-emit`:
   MellowHarness's worked example and its event sender
   ([mellowharness/README.md](../mellowharness/README.md)).
@@ -173,9 +169,6 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 - `swift internal/tools/appicon/appicon.swift app/Boop/AppIcon.icns`:
   the app's placeholder icon; a second argument also writes a 1024-pixel
   PNG to look at.
-- `node characters/studio/check.cjs`: the Character Studio in a headless
-  browser (its README, Checking it). It needs `boopdev prompts` run first,
-  and the studio's server (`python3 simulator/web/serve.py`).
 - `internal/tools/fontgen/fontgen.py` (the device's fonts) and
   `internal/tools/mediagen/mediagen.py` (the READMEs' GIFs, from real
   runs, [its README](tools/mediagen/README.md)), with

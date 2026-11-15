@@ -7,35 +7,27 @@ extension Runtime {
     /// turned the mic on last: an event that may wake the brain, whose
     /// pass replies or ends `listening` (`passed`). `who` is `mic` for
     /// the app's own.
-    /// With several buddies, a board's button says it to that buddy, and
-    /// the app's to them all.
-    func heard(_ words: String, by: Core.Talker?, who: String = "dev", to buddy: String? = nil) {
+    func heard(_ words: String, by: Core.Talker?, who: String = "dev") {
         let now = options.clock()
-        let by = by ?? core(listener ?? rigs[0]).pushToTalk.by
-        let to = buddy.map(rig) ?? (by == .device ? listener : nil)
-        let step = pipeline.said(words, by: by, buddy: to?.tag, at: now)
+        let by = by ?? core.pushToTalk.by
+        let step = pipeline.said(words, by: by, at: now)
         run(step)
-        for rig in to.map({ [$0] }) ?? rigs {
-            let core = core(rig)
-            run(core.heard(replyTo: step.waking.first?.seq, at: now), on: rig)
-            // No brain, no answer: a shrug and a sign that says why. A
-            // demo's brain steps answer for it.
-            if !pipeline.brain, !playingDemo {
-                var rng = SplitMix64(seed: UInt64(truncatingIfNeeded: now))
-                let sign = Signs.reply(rig.steering.replies, Core.noBrainReply, calendar: core.calendar(at: now) + [Core.noBrain],
-                                       rng: &rng)
-                run(core.shrug(sign: sign, at: now), on: rig)
-            }
+        run(core.heard(replyTo: step.waking.first?.seq, at: now))
+        // No brain, no answer: a shrug and a sign that says why. A
+        // demo's brain steps answer for it.
+        if !pipeline.brain, !playingDemo {
+            var rng = SplitMix64(seed: UInt64(truncatingIfNeeded: now))
+            let sign = Signs.reply(rig.steering.replies, Core.noBrainReply, calendar: core.calendar(at: now) + [Core.noBrain],
+                                   rng: &rng)
+            run(core.shrug(sign: sign, at: now))
         }
         options.log("\(who): said \(words.count) characters")
         onHeard?(words)
     }
 
-    /// The app's mic button, which every buddy listens to: `who` is `app`
-    /// for the app's own.
-    func listen(_ on: Bool, who: String = "dev", buddy: String? = nil) {
-        listener = nil
-        for rig in buddy.map({ [rig($0)] }) ?? rigs { run(core(rig).listen(on, by: .app, at: options.clock()), on: rig) }
+    /// The app's mic button: `who` is `app` for the app's own.
+    func listen(_ on: Bool, who: String = "dev") {
+        run(core.listen(on, by: .app, at: options.clock()))
         options.log("\(who): listen \(on)")
     }
 
@@ -44,14 +36,13 @@ extension Runtime {
     /// shows too. Off: what the mic heard comes back to `said` or
     /// `heardNothing`.
     func mic(_ on: Bool, by: Core.Talker) {
-        // Several buddies listening to the app's button turn it on once.
         guard on != micOn else { return }
         micOn = on
         options.log("talk: mic \(on ? "on" : "off") (\(by.rawValue))")
         guard on else {
             if let heard = wordsOnRelease {
                 wordsOnRelease = nil
-                home.async { [self] in self.heard(heard.words, by: .app, who: Runtime.demoBy, to: heard.buddy) }
+                home.async { [self] in self.heard(heard, by: .app, who: Runtime.demoBy) }
             } else if onListen != nil {
                 onListen?(false)
             } else {
@@ -77,7 +68,7 @@ extension Runtime {
     public func heardNothing() {
         home.async { [self] in
             options.log("talk: heard nothing")
-            for rig in rigs { run(core(rig).heardNothing(at: options.clock()), on: rig) }
+            run(core.heardNothing(at: options.clock()))
             onHeard?(nil)
         }
     }
@@ -87,7 +78,7 @@ extension Runtime {
     public func micFailed(_ why: String) {
         home.async { [self] in
             options.log("talk: \(why)")
-            for rig in rigs { run(core(rig).micFailed(why, at: options.clock()), on: rig) }
+            run(core.micFailed(why, at: options.clock()))
             changed()
         }
     }
@@ -95,7 +86,7 @@ extension Runtime {
     /// The popover's "can't hear you" notice was dismissed.
     public func dismissMicTrouble() {
         home.async { [self] in
-            for rig in rigs { core(rig).dismissMicTrouble() }
+            core.dismissMicTrouble()
             changed()
         }
     }
