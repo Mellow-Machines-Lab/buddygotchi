@@ -1,8 +1,91 @@
 # TODO
 
-Updated 2026-11-14. What's next, one at a time, top first. Tick an item
+Updated 2026-11-15. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-15: bugs, a calmer screen, a roomier popover
+
+### The survey, before any change
+
+What was found on main `2caeb3cf`, ranked by how much you'd notice it. The
+baseline: `make -C internal check` passes (735 tests, 1 skipped). On the AMOLED
+with the profiling build: needs you 30.4 fps, working 34.0, frightened 29.8,
+stream 29.0, asleep 32.3, pokes 35.3, **night 25.1**; working's slowest frame
+51 ms against its 50; heap floor 141 KB; `perf --motion` 31 fps at worst, no
+frame over 33.8 ms.
+
+**Bugs**
+
+1. A level-up or "today's done!" is marked celebrated when it's logged, not when
+   the board plays it: with the board out of reach, or the moment skipped in the
+   queue or cut by needs you, it never plays (`GrowthStore.played`,
+   `Runtime.playRule`).
+2. A `say` with a lead sound and a take: about one in eight is silent with a
+   bubble that reads "(null)". The voice's eight-slot cache hands the lead's
+   slot to the take (`voice/player.cpp`).
+3. World gestures play to an empty chair: a lock's "asleep" send brings them and
+   the next tick plays them, worded "while you were away". They also play after
+   you switch the world off (`WorldLink.tick`, `leave`).
+4. A finish cut by a request that came after it never comes back
+   (`TranscriptView.noteMissed` keeps one only when the request came first).
+5. Face down, or back up, while the Mac is away or Bluetooth blinks is never
+   told: the Mac holds every event as "face down" until the next turn-over
+   (`Device::tell`).
+6. Shakes and wrong-way strokes earn XP (decided 2026-11-09: they don't).
+7. A failed check never asks the brain (#2 of the product review, decided).
+8. The time zone is read once at launch: after a flight, night, Boop's day and
+   the world's region are the old place's until the app restarts.
+9. `wish_met` that plays nothing never reports its `ended`.
+10. `boopctl e2e` fails a moment cut by the mic or by face down: its list of
+    fine endings has drifted from the firmware's.
+
+Suspected, to be reproduced: face down never ends when the board is stood up
+rather than laid flat; a shell command started in the background reads as
+passed at once; the first USB line after a board reset is lost.
+
+**Feel and performance**
+
+1. The Mac builds a whole status, and the open popover redraws, at every tool
+   call: a session's word isn't throttled as the board's is, and every line
+   from the board (each call's `ended`) asks for one more.
+2. That status repeats work that changes once a day or a quarter hour (the
+   week, the special days, a JSON encode for the debug log outside debug mode),
+   and `Memory.tick` reads SQLite and decodes the dream every second.
+3. The popover's mirror of the board parses every line all day with the
+   popover closed.
+4. On the board: night is the slowest scene (the sky, the cap and the pyjamas);
+   the morning sun is drawn a pixel at a time and no perf scene has it; a `say`
+   reads the card from the frame loop.
+
+**The look: what's on the gel's screen**
+
+Counted in the goldens. Up to five things share the screen with the face: in
+winter's morning a sun, a bobble hat, snow, a coffee and the desk.
+
+| Thing | When | Verdict |
+| --- | --- | --- |
+| The sun; the moon and stars | all morning; all night | Cut: scenery that says nothing you act on |
+| Coffee in a little hand | idle or working in the morning | Cut with the sun |
+| Snow, confetti, hearts in the air | all winter; a party day; Valentine's | Cut: the hat says the day. A finish keeps its confetti |
+| Pyjamas | all night | Cut: the nightcap says night |
+| A mug on the desk, a stack of them, motes "in the zone" | working, by tier | Cut: too small to read, and they need explaining |
+| A plant that grows | idle, tier 3 up | Cut: random |
+| Notes floating from the headphones | working, tier 3 up | Cut: a second thing moving all the time |
+| Headphones | working, tier 3 up | Keep: one thing, on the body, "settled in" |
+| A hat for the day, the nightcap, Friday's shades | by tag | Keep: one thing worn |
+| Pastimes with props that are gone (sip, refill, reach, water) or random (tower) | by tier | Cut |
+| The other pastimes | one at a time, 4 to 10 s apart | Keep, further apart |
+| The work stream, needs you, the strip, the drawer, finishes, signs, the wish, the bar | | Keep |
+
+**The Mac's popover**: 360 pt wide with 16 pt sides and 12 pt text. Wider, with
+more room round each thing, and nothing added.
+
+**Simplification**: the leftovers of several buddies (`Runtime.Rig`, `Buddy`,
+`rig === rig`, one-entry maps and name arrays), `Runtime.init` and
+`Runtime.harness` wiring the same `Mind` twice, names that only tests use in
+the shipped app, the wish kinds spelled three times in the firmware, unused
+Python imports.
 
 ## Report, 2026-11-14 (evening): a polish pass over main
 
