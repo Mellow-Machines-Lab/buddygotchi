@@ -118,19 +118,40 @@ public final class GrowthStore {
             + (ringDue(today: today) ? [.ringClosed] : [])
     }
 
-    /// `e`, logged, played a growth moment: its level, or the ring's closing,
-    /// is celebrated, and isn't again. Marked only as it plays, so a quit
-    /// before then, or a demo, loses nothing.
-    public func played(_ e: Event) {
+    /// `e`, logged, is a growth moment going to the board: its level, or the
+    /// ring's closing, is celebrated, and isn't again, unless the board
+    /// says it never showed it (`missed`). Marked only as it's sent, so a
+    /// quit before then, or a demo, loses nothing. True if it marked one.
+    @discardableResult
+    public func played(_ e: Event) -> Bool {
         switch e.type {
         case .level?:
-            guard let level = Int(e.specificType), level > celebrated else { return }
+            guard let level = Int(e.specificType), level > celebrated else { return false }
             celebrated = level
             log("growth: level \(level), at \(growth.xp) XP")
         case .ring?:
-            guard ringCelebrated != day else { return }
+            guard ringCelebrated != day else { return false }
             ringCelebrated = day
-        default: return
+        default: return false
+        }
+        save()
+        return true
+    }
+
+    /// The board never showed the moment of `events` (`played` marked them):
+    /// each is due again, for the board's next hello or the next XP.
+    public func missed(_ events: [Event]) {
+        for e in events {
+            switch e.type {
+            case .level?:
+                if let level = Int(e.specificType), level <= celebrated { celebrated = level - 1 }
+            case .ring?:
+                if ringCelebrated == day {
+                    ringCelebrated = nil
+                    try? store.remove([Self.ringKey])
+                }
+            default: break
+            }
         }
         save()
     }

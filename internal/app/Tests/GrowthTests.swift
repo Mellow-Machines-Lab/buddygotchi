@@ -56,6 +56,10 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)), 20)
         XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)), 0)
         XCTAssertEqual(Growth.xp(for: you(.gesture, "startle")), 0)
+        // Rough handling earns nothing (decided 2026-11-09): a shake, a wrong-way stroke.
+        XCTAssertEqual(Growth.xp(for: you(.gesture, "dizzy")), 0)
+        XCTAssertEqual(Growth.xp(for: you(.gesture, "ruffle")), 0)
+        XCTAssertEqual(Set(Touch.allCases.filter(\.isRough)), [.dizzy, .ruffle])
         XCTAssertEqual(Growth.xp(for: you(.poke, "input")), 0)
     }
 
@@ -181,6 +185,68 @@ final class GrowthTests: XCTestCase {
 
         runtime.playingDemo = true
         XCTAssertNil(core.snapshot(at: now).xp, "a demo sends none")
+    }
+
+    /// A level-up is celebrated when the board plays it, not when it's
+    /// logged: one the board skips (it waited too long behind two finishes),
+    /// or one cut by a request, is still due and plays at the board's next
+    /// hello; with the board out of reach it waits for it.
+    func testALevelUpTheBoardNeverPlayedIsStillDue() throws {
+        try requirePack("boop")
+        let dir = URL(fileURLWithPath: "/tmp/boop-grow-\(UUID().uuidString.prefix(8))")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try Runtime.setUp(stateDir: dir, name: "Pip")
+        let clock = VirtualClock(1_793_000_000_000)
+        let transport = FakeTransport()
+        var options = Runtime.Options(stateDir: dir, socketPath: dir.appendingPathComponent("b.sock").path, link: transport,
+                                      steering: RuntimeTests.steering)
+        options.devLines = true
+        options.clock = { clock.now }
+        options.wallClock = { clock.now }
+        options.readJevKey = { _ in nil }
+        do {
+            let store = try KeyValueStore(directory: dir)
+            try store.set([GrowthStore.xpKey: "95", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 5"])
+        }
+        let runtime = try Runtime(options)
+        var now: Int64 { clock.now }
+        func turn() {
+            runtime.hook(HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+            clock.now += 60_000
+            runtime.hook(HookLine(agent: "claude", hook: "Stop", session: "s1", cwd: "/tmp/proj", ts: now), received: now)
+            clock.now += 60_000
+        }
+        func golds() -> [String] { transport.dos.filter { $0.contains("level 2!") } }
+        runtime.home.sync {
+            // The board is out of reach: the level waits for it.
+            turn()
+            XCTAssertEqual(runtime.growth.growth.level, 2)
+            XCTAssertEqual(runtime.growth.levelDue, 2, "not celebrated with no board to play it")
+            XCTAssertTrue(golds().isEmpty)
+
+            // It comes back: the level plays, but waits too long in its queue.
+            runtime.connection(true)
+            runtime.device(FakeTransport.hello)
+            XCTAssertEqual(golds().count, 1, "at the board's hello")
+            XCTAssertNil(runtime.growth.levelDue, "sent: celebrated unless the board says otherwise")
+            runtime.device(FakeTransport.ended(FakeTransport.id(golds()[0]), "skipped", "late"))
+            XCTAssertEqual(runtime.growth.levelDue, 2, "skipped: still due")
+
+            // More XP within the minute doesn't try again; the next hello does.
+            turn()
+            XCTAssertEqual(golds().count, 2, "two minutes on, with the next XP")
+            runtime.device(FakeTransport.ended(FakeTransport.id(golds()[1]), "cut", "needs_you"))
+            XCTAssertEqual(runtime.growth.levelDue, 2, "cut by a request: still due")
+            runtime.connection(false)
+            runtime.connection(true)
+            runtime.device(FakeTransport.hello)
+            XCTAssertEqual(golds().count, 3)
+            runtime.device(FakeTransport.ended(FakeTransport.id(golds()[2]), "done"))
+            XCTAssertNil(runtime.growth.levelDue, "played: celebrated")
+            turn()
+            XCTAssertEqual(golds().count, 3, "and never again")
+        }
     }
 
     func testTheKeyValueStoreKeepsValuesAcrossOpens() throws {

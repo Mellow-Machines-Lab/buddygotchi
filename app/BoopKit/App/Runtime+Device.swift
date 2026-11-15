@@ -116,9 +116,9 @@ extension Runtime {
     /// (`BoopDevice.play`). The core has already left it out while something
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
-    func playRule(_ reaction: Moment) {
+    func playRule(_ reaction: Moment, _ ended: @escaping (DeviceLink.Outcome) -> Void = { _ in }) {
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction), ttl: BoopDevice.reactionTTL, by: .rule,
-                    now: options.clock()) { _ in }
+                    now: options.clock(), ended)
     }
 
     /// A word of the work stream that comes forward: it waits in the
