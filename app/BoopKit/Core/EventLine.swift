@@ -71,12 +71,6 @@ public enum EventLine {
         return text.prefix(1).uppercased() + text.dropFirst() + "."
     }
 
-    /// A working check-in's note for its rung of a round, from the second:
-    /// `Boop's 2nd check-in of a round on this turn.`; nil for the first.
-    public static func checkIn(_ rung: Int, name: String = CharacterPack.active.name) -> String? {
-        rung > 1 ? "\(name)'s \(nth(rung)) check-in of a round on this turn." : nil
-    }
-
     static func toolCalls(_ n: Int) -> String {
         n == 0 ? "no tool calls" : n == 1 ? "1 tool call" : "\(n) tool calls"
     }
@@ -246,14 +240,11 @@ public enum EventLine {
         count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
     }
 
-    /// Boop reached a level: `Boop reached level 12.`
-    public static func level(_ level: Int, name: String = CharacterPack.active.name) -> String {
-        "\(name) reached level \(level)."
-    }
-
-    /// Today's ring closed: `Today's ring is full: Boop's done for the day.`
-    public static func ringClosed(name: String = CharacterPack.active.name) -> String {
-        "Today's ring is full: \(name)'s done for the day."
+    /// Boop grew: `Boop reached level 12.`, `Today's ring is full: Boop's
+    /// done for the day.`, or both, the level first.
+    public static func grew(level: Int?, ring: Bool, name: String = CharacterPack.active.name) -> String {
+        ((level.map { ["\(name) reached level \($0)."] } ?? [])
+            + (ring ? ["Today's ring is full: \(name)'s done for the day."] : [])).joined(separator: " ")
     }
 
     /// Boop's wish: made, and how it ended.
@@ -285,11 +276,6 @@ public enum EventLine {
     /// 40 min; no agents are open.`
     public static func idle(minutes: Int) -> String {
         "Nothing has happened for \(minutes) min; no agents are open."
-    }
-
-    /// The agent's context compacted, mid-work.
-    public static func compacted(agent: String, thread: String) -> String {
-        "\(agent)'s context on \(thread) was compacted; it picks up where it left off."
     }
 
     /// You answered a request ("needs you" cleared): allowed or denied.
@@ -339,8 +325,6 @@ public enum EventLine {
           long (5 minutes or more). Quick wins in a row are turns done in under
           \(TranscriptView.quickWinMs / 60_000) minutes, one after another on a thread, in streaks of up to \(streak): the
           line says which of its streak it is, and the \(nth(streak + 1)) starts a new one.
-        - A check-in is \(name) looking in on a turn that's still going, in
-          rounds of \(round); the note under it says which of its round it is.
         - "You asked" is the person's prompt to an agent, read on their Mac:
           what they asked for, how long, how they sound, and whether they said
           \(name)'s name. Never their words but the few under "Your words".
@@ -349,17 +333,13 @@ public enum EventLine {
           or only answers, and how it sounds. Never its words but the few under
           "Its words".
         - "You said to \(name)" quotes the person talking to \(name). It answers
-          what they meant with a face and a reply: a move of its body and a
+          what they meant with a face and a reply: its body's answer and a
           sign, maybe a sound, a word or a phrase, never words of its own.
         - An idle check-in ("Nothing has happened for 20 min") means the person is
-          around but no agent is working. A compacted context means the agent's
-          memory was squeezed to make room; it carries on from a summary.
+          around but no agent is working.
         - "You" stepping away from the Mac and coming back is the person. A
           short break is under 15 minutes; past that the line says how long,
           in minutes, hours or days.
-        - "You locked the Mac" and "You unlocked the Mac" are the person's screen,
-          and the person may be going. An unlock after a real break has no line
-          of its own: that is "You came back".
         - "You answered \(name)'s" question is the person tapping one of the two
           answers \(name) held up; it answers as to anything said to it, with a
           glad face and a sign back for the answer.

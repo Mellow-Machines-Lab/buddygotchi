@@ -95,8 +95,8 @@ public struct Moment: Equatable, Sendable {
     /// said. Nil sends none.
     public var reason: String?
     /// An ask: the question's id and its two answers, which the board
-    /// shows as two targets in the lane while the question is the sign;
-    /// `touch` when a stroke answers it too. Nil sends none.
+    /// shows as two targets in the lane while the question is the sign.
+    /// Nil sends none.
     public var ask: Asks.Question?
     /// The first moment of your day, or the one that tells the dream: it
     /// plays whole. Its sign waits until its words end, and the work stream
@@ -161,7 +161,7 @@ public struct Moment: Equatable, Sendable {
         if let sign { args["sign"] = .string(sign) }
         if let reason { args["reason"] = .string(reason) }
         if let ask {
-            args["ask"] = ["q": .string(ask.id), "a": .string(ask.a), "b": .string(ask.b), "touch": .bool(ask.touch)]
+            args["ask"] = ["q": .string(ask.id), "a": .string(ask.a), "b": .string(ask.b)]
         }
         if let reply { args["reply"] = .string(reply) }
         if let show { args["show"] = .string(show) }

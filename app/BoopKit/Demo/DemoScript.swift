@@ -13,7 +13,7 @@ import Foundation
 /// of the three:
 ///
 ///     {"agent": "prompt", "text": "Add keyboard shortcuts"}
-///     {"brain": {"react.face": "calm", "say": "start", "react.intensity": "medium"}}
+///     {"brain": {"react.face": "calm", "say": "work"}}
 ///     {"you": "poke"}
 ///     {"agent": "read", "file": "src/editor.js", "say": "I'll start by reading the editor."}
 ///     {"you": "talk", "text": "You suck at this!", "hold": 2}
@@ -21,7 +21,7 @@ import Foundation
 ///     {"agent": "todo", "todos": "2/4"}
 ///     {"you": "wait", "minutes": 8}
 ///     {"agent": "run", "cmd": "npm test", "about": "Run the tests", "fails": true}
-///     {"brain": {"react.face": "annoyed", "say": "upset", "react.intensity": "medium"}, "mood": "annoyed"}
+///     {"brain": {"react.face": "annoyed", "say": "upset"}, "mood": "cross"}
 ///
 /// - `agent` steps are what the agent does, in words both agents share:
 ///   `prompt` (you ask it, `text`), `read` and `edit` (a `file`; an edit's
@@ -414,8 +414,8 @@ extension DemoScript {
     public static func choices(in pack: CharacterPack = .active) -> [String: [String]] {
         var offered = Dictionary(uniqueKeysWithValues: MomentOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
         offered[MomentOutput.emotionKey] = ["none"] + pack.faces.map(\.name)
-        // What you said is answered with a reply for its move.
-        offered[MomentOutput.moveKey]? += MomentOutput.replies(of: pack.name).map(\.name) + ["unhush"]
+        // What you said is answered with a reply too.
+        offered[MomentOutput.replyKey] = MomentOutput.replies(of: pack.name).map(\.name) + ["unhush"]
         return offered
     }
 

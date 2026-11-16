@@ -21,12 +21,8 @@ public enum Tags {
     /// something needs you.
     public static let macSides = MacSide.allCases.map(\.tag)
 
-    /// The tags no board reads: the signs and the brain have them, and the
-    /// `state` message leaves them out.
-    public static let macOnly: Set<String> = ["weekend", "friday13", "piday", "aprilfools", "may4"]
-
-    /// The tags the board reads, in its order: every tag but `macOnly`.
-    public static let board = all.filter { !macOnly.contains($0) }
+    /// The tags the board reads, in its order: all of them.
+    public static let board = all
 
     /// On while Boop is hushed (`Core.Hush`): the gel zips its mouth.
     public static let hushed = "hushed"

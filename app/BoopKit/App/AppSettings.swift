@@ -21,9 +21,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// The onboarding act a quit left off at, after Boop was named; none
     /// once it's finished (`Onboarding.resume`).
     public var onboarding: Onboarding.Act?
-    /// Whether the board shows the agents' calls falling past Boop, and
-    /// the ones that hit it (`WorkStream`): on unless you turn it off.
-    public var workStream = true
     /// Boop's body is the simulator, in a window of the app's own (the
     /// debug and internal builds), rather than its board: chosen in onboarding or Settings, and
     /// kept from launch to launch. Off, the board, unless chosen.
@@ -48,20 +45,17 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // this version doesn't know are ignored: `moodGraph` from before the
         // one mood graph (2026-10-15), `mode` from before the
         // personalities (2026-09-27), `personality` from before each pack
-        // had one (2026-11-01), `classifier`, `writer` and `brain` from
+        // had one (2026-11-01), `workStream` from before the work stream
+        // was always on, `classifier`, `writer` and `brain` from
         // before the modes, and `focus`, `away`, `awaySince`, `finished` and
         // `projects` from before 2026-09-26.
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        let saved = try? c.decodeIfPresent(String.self, forKey: .personality)
-        // Chatter, the debugging personality before Talk (2026-10-25), was
-        // the chatty one.
-        talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? (saved == "chatter" ? .chatty : .default)
+        talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? .default
         swearing = (try? c.decodeIfPresent(Bool.self, forKey: .swearing)) ?? false
         renamed = try? c.decodeIfPresent(Int64.self, forKey: .renamed)
         volume = max(0, min(10, try c.decodeIfPresent(Int.self, forKey: .volume) ?? volume))
         board = try? c.decodeIfPresent(String.self, forKey: .board)
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
-        workStream = (try? c.decodeIfPresent(Bool.self, forKey: .workStream)) ?? true
         simulator = (try? c.decodeIfPresent(Bool.self, forKey: .simulator)) ?? false
         typesAlong = (try? c.decodeIfPresent(Bool.self, forKey: .typesAlong)) ?? true
         macSide = try? c.decodeIfPresent(MacSide.self, forKey: .macSide)
@@ -69,7 +63,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case personality, talk, swearing, renamed, volume, board, onboarding, workStream, typesAlong, macSide, simulator, world, worldShown }
+    enum CodingKeys: String, CodingKey { case talk, swearing, renamed, volume, board, onboarding, typesAlong, macSide, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -79,7 +73,6 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encode(volume, forKey: .volume)
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
-        if !workStream { try c.encode(workStream, forKey: .workStream) }
         if !typesAlong { try c.encode(typesAlong, forKey: .typesAlong) }
         try c.encodeIfPresent(macSide, forKey: .macSide)
         if simulator { try c.encode(simulator, forKey: .simulator) }

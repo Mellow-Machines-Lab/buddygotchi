@@ -179,7 +179,7 @@ public final class CountsReader: TranscriptReader {
         case .gesture? where e.specificType == "facedown": s.row.faceDown += 1
         case .turn? where e.phase == .end && e["outcome"]?.string == "failed": s.row.failures += 1
         case .act? where e.phase == .end && e["passed"]?.bool == false: s.row.failures += 1
-        case .level?: s.row.level = Int(e.specificType) ?? s.row.level
+        case .growth?: s.row.level = e["level"]?.int.map(Int.init) ?? s.row.level
         case .presence?:
             var away = AwayAndBack(since: s.away)
             switch away.fold(e) {

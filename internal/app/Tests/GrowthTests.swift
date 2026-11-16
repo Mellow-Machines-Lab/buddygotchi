@@ -154,14 +154,14 @@ final class GrowthTests: XCTestCase {
         turn()
         XCTAssertEqual(runtime.growth.growth.xp, 95)
         XCTAssertEqual(core.snapshot(at: now).xp, 95)
-        XCTAssertTrue(events(.level).isEmpty)
+        XCTAssertTrue(events(.growth).isEmpty)
         turn()
         XCTAssertEqual(runtime.growth.growth, Growth(xp: 100, today: 100))
-        XCTAssertEqual(events(.level).map(\.specificType), ["2"])
-        XCTAssertEqual(events(.ring).count, 1)
+        XCTAssertEqual(events(.growth).map { [$0["level"]?.int, $0["ring"]?.bool == true ? 1 : 0] }, [[2, 1]],
+                       "one event for the level and the ring that came together")
         XCTAssertTrue(runtime.harness.log.view(now: now).events.contains { $0.action == "react" && $0["by"]?.string == "rule" })
         turn()
-        XCTAssertEqual(events(.ring).count, 1, "once a day")
+        XCTAssertEqual(events(.growth).count, 1, "once a day")
         XCTAssertEqual(runtime.growth.growth.xp, 100, "nothing past the ring")
 
         // Across 5:00, by the runtime's own clock: a new Boop day, an empty
@@ -313,25 +313,11 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(growth.due(today: day), [.level(2), .ringClosed])
         try XCTAssertEqual(GrowthStore(KeyValueStore(directory: dir)).due(today: day), [.level(2), .ringClosed], "still due after a quit")
         XCTAssertEqual(growth.due(today: "2026-10-23"), [.level(2)], "a ring held past 5:00 is yesterday's")
-        growth.played(Event(at: 0, source: .boop, type: .level, specificType: "2"))
-        growth.played(Event(at: 0, source: .boop, type: .ring, specificType: "closed"))
+        growth.played(Core.growthEvent(level: 2, ring: true, at: 0))
         XCTAssertEqual(growth.due(today: day), [])
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.celebrated, 2)
         XCTAssertEqual(reopened.due(today: day), [], "and not again")
-    }
-
-    /// XP starts from zero: what growth kept before is deleted at the first open.
-    func testTheOldXPIsForgotten() throws {
-        do {
-            let store = try KeyValueStore(directory: dir)
-            try store.set(["growth.xp": "3000", "growth.stage": "4", "growth.reached": "2026-10-01", "growth.decayed": "2"])
-        }
-        let growth = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(growth.growth, Growth())
-        let store = try KeyValueStore(directory: dir)
-        XCTAssertNil(store.string("growth.xp"))
-        XCTAssertNil(store.string("growth.reached"))
     }
 
     /// A transcript whose files are all gone numbers from 1 again: counting

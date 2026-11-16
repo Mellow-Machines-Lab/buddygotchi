@@ -21,15 +21,16 @@ final class ReplyTests: XCTestCase {
         - [night bye] not first
         """)
 
-    /// The fifteen replies, in the order the question offers them, and
-    /// `unhush` while hushed (`HushTests`); what
-    /// you said is asked the same four questions as anything, but its face
-    /// is never none and its move is the reply.
+    /// The eleven replies, in the order the question offers them, and
+    /// `unhush` while hushed (`HushTests`); what you said is asked the same
+    /// two questions as anything, but its face is never none, and its
+    /// reply between them.
     func testWhatYouSaidIsAskedForAReply() {
         XCTAssertEqual(MomentOutput.replies.map(\.name),
-                       ["yes", "no", "huh", "hello", "bye", "thanks", "love", "ouch", "comfort", "hehe", "status", "nap", "hush", "dance", "notme"])
+                       ["yes", "no", "huh", "hello", "bye", "thanks", "ouch", "comfort", "hehe", "status", "hush"])
         let react = MomentOutput(queue: { _, _ in }, blocked: { nil })
-        XCTAssertEqual(react.questions(now: said, log: Self.log).map(\.key), askedKeys.filter { $0 != MoodOutput.outputName })
+        XCTAssertEqual(react.questions(now: said, log: Self.log).map(\.key),
+                       [MomentOutput.emotionKey, MomentOutput.replyKey] + (Take.all.isEmpty ? [] : [MomentOutput.sayKey]))
         XCTAssertEqual(react.questions(now: said, log: Self.log)[1].options.map(\.name), MomentOutput.replies.map(\.name), "no none: talk gets a reply")
         XCTAssertEqual(react.questions(now: said, log: Self.log)[0].options.map(\.name), CharacterPack.active.moods.map(\.id), "and a face, never none")
         XCTAssertEqual(react.questions(now: poke, log: Self.log).map(\.key), askedKeys.filter { $0 != MoodOutput.outputName })
@@ -37,7 +38,7 @@ final class ReplyTests: XCTestCase {
             XCTAssertTrue(reply.notFor?.contains("status") == true, "yes and no are never about the agents")
         }
         let yes = try! XCTUnwrap(MomentOutput.replies.first { $0.name == "yes" })
-        XCTAssertTrue(yes.notFor?.contains("nap, dance, notme or no") == true, "and yes is never a promise to do something")
+        XCTAssertTrue(yes.notFor?.contains("which is no") == true, "and yes is never a promise to do something")
     }
 
     /// A pass forced from outside (a demo's) is about what you said when
@@ -47,7 +48,7 @@ final class ReplyTests: XCTestCase {
         log.append(said, now: 1)
         log.append(Event(at: 1, source: .boop, type: .listen, phase: .end, specificType: "device"), now: 1)
         let react = MomentOutput(queue: { _, _ in }, blocked: { nil })
-        let move = { (now: Int64) in react.questions(now: nil, log: log.view(now: now)).first { $0.key == MomentOutput.moveKey } }
+        let move = { (now: Int64) in react.questions(now: nil, log: log.view(now: now)).first { $0.key == MomentOutput.replyKey } }
         XCTAssertTrue(move(1)?.options.contains { $0.name == "status" } == true)
         log.append(poke, now: 2)
         XCTAssertFalse(move(2)?.options.contains { $0.name == "status" } == true)
@@ -57,14 +58,14 @@ final class ReplyTests: XCTestCase {
     /// one that isn't a reply is `huh`, never silence or a guess; and a
     /// `huh` at a question plays as a shrug (`dunno`).
     func testAnUnsureReplyIsHuh() {
-        XCTAssertEqual(MomentOutput.reply(["react.move": a("love")]), "love")
-        XCTAssertEqual(MomentOutput.reply(["react.move": a("love", 0.3)]), "huh", "below the floor of 0.35")
-        XCTAssertEqual(MomentOutput.reply(["react.move": a("success")]), "huh")
+        XCTAssertEqual(MomentOutput.reply(["react.reply": a("thanks")]), "thanks")
+        XCTAssertEqual(MomentOutput.reply(["react.reply": a("thanks", 0.3)]), "huh", "below the floor of 0.35")
+        XCTAssertEqual(MomentOutput.reply(["react.reply": a("success")]), "huh")
         XCTAssertEqual(MomentOutput.reply([:]), "huh")
         XCTAssertEqual(MomentOutput.played("huh", words: "will it rain tomorrow?"), "dunno")
         XCTAssertEqual(MomentOutput.played("huh", words: "what's the capital of France"), "dunno", "a question word")
         XCTAssertEqual(MomentOutput.played("huh", words: "glorp fizzle banana sprocket"), "huh")
-        XCTAssertEqual(MomentOutput.played("love", words: "do you love me?"), "love", "only huh shrugs")
+        XCTAssertEqual(MomentOutput.played("thanks", words: "do you love me?"), "thanks", "only huh shrugs")
     }
 
     /// A reply rides on the reaction as `reply`, which the board plays its
@@ -80,7 +81,7 @@ final class ReplyTests: XCTestCase {
         func run(_ answers: [String: String], _ now: Event) -> String? {
             react.run(answers.mapValues { a($0) }, now: now, log: Self.log)?.message
         }
-        let hello = try XCTUnwrap(run(["react.face": "happy", "react.move": "hello", "say": "hello", "react.intensity": "medium"], said))
+        let hello = try XCTUnwrap(run(["react.face": "happy", "react.reply": "hello", "say": "hello"], said))
         XCTAssertTrue(hello.hasPrefix("\(creature) had a happy moment (medium), replying hello, holding up a sign: "), hello)
         XCTAssertEqual(queued.last?.reply, "hello")
         XCTAssertEqual(queued.last?.loops, 2)
@@ -92,60 +93,44 @@ final class ReplyTests: XCTestCase {
             XCTAssertEqual(Set(takes.map(\.meaning)), ["hello"], "its own words")
             XCTAssertTrue(takes.allSatisfy { $0.moods.contains("happy") })
         }
-        _ = run(["react.face": "focused", "react.move": "status"], said)
+        _ = run(["react.face": "focused", "react.reply": "status"], said)
         XCTAssertEqual(queued.last?.sign, "facts for is claud", "the status closure's, about what you said")
         XCTAssertEqual(queued.last?.show, "drawer", "and where the board shows the rest")
         XCTAssertTrue(queued.last?.args.json.contains(#""show":"drawer""#) == true)
         XCTAssertEqual(queued.last?.say?.takes, [], "say nothing: it says nothing")
-        _ = run(["react.face": "curious", "react.move": "huh"], said)
+        _ = run(["react.face": "curious", "react.reply": "huh"], said)
         XCTAssertNil(queued.last?.sign, "a reply with no line holds up nothing")
         XCTAssertEqual(queued.last?.reply, "dunno", "a huh to a question shrugs")
         XCTAssertNil(queued.last?.show, "only status shows the drawer")
-        _ = run(["react.face": "happy", "react.move": "success"], poke)
+        _ = run(["react.face": "happy", "react.reply": "yes"], poke)
         XCTAssertNil(queued.last?.reply, "only what you said gets a reply")
-        XCTAssertEqual(queued.last?.anim, "task_complete")
     }
 
-    /// Pins a reply's sign by the moment: a nap while an agent works, a
-    /// notme while something waits on you, and a love within `makeupMs`
-    /// of an ouch, each its own line when the pack has one.
+    /// Pins a reply's sign by the moment: a comfort while an agent works,
+    /// and a no while something waits on you, each its own line when the
+    /// pack has one.
     func testAReplysSignKnowsTheMoment() throws {
         var queued: [Moment] = []
         var moment: [String] = []
         let lines = TaggedLine.parse("""
-            - [nap] zzz
-            - [nap working] after this
-            - [notme] ask them!
-            - [notme waiting] that's ur job
-            - [love] <3
-            - [love makeup] ...fine
-            - [ouch] :(
+            - [comfort] there there
+            - [comfort working] u got this
+            - [no] nope
+            - [no waiting] that's ur job
             """)
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, replies: lines, moment: { _ in moment })
         func reply(_ move: String, at: Int64 = 0) -> String? {
             let e = Event(at: at, source: .mic, type: .said, specificType: "device", data: ["words": "hey"])
-            _ = react.run(["react.face": a("happy"), "react.move": a(move)], now: e, log: Self.log)
+            _ = react.run(["react.face": a("happy"), "react.reply": a(move)], now: e, log: Self.log)
             return queued.last?.sign
         }
-        XCTAssertEqual(reply("nap"), "zzz")
+        XCTAssertEqual(reply("comfort"), "there there")
         moment = ["working"]
-        XCTAssertEqual(reply("nap"), "after this")
+        XCTAssertEqual(reply("comfort"), "u got this")
         moment = ["waiting", "working"]
-        XCTAssertEqual(reply("notme"), "that's ur job")
+        XCTAssertEqual(reply("no"), "that's ur job")
         moment = []
-        XCTAssertEqual(reply("notme"), "ask them!")
-        XCTAssertEqual(MomentOutput.makeupMs, 10 * min)
-        XCTAssertEqual(reply("love", at: 0), "<3")
-        XCTAssertEqual(reply("ouch", at: 0), ":(")
-        XCTAssertEqual(reply("love", at: 9 * min), "...fine", "making up")
-        XCTAssertEqual(reply("love", at: 9 * min + 1), "<3", "made up once")
-        _ = reply("ouch", at: 20 * min)
-        _ = reply("hehe", at: 21 * min)
-        XCTAssertEqual(reply("love", at: 22 * min), "...fine", "a laugh between doesn't make up")
-        _ = reply("ouch", at: 40 * min)
-        XCTAssertEqual(reply("love", at: 40 * min + MomentOutput.makeupMs - 1), "...fine", "just inside ten minutes")
-        _ = reply("ouch", at: 60 * min)
-        XCTAssertEqual(reply("love", at: 60 * min + MomentOutput.makeupMs), "<3", "ten minutes on, it's forgotten")
+        XCTAssertEqual(reply("no"), "nope")
     }
 
     /// Pins `Signs.reply`: only lines whose first tag is the reply, the
@@ -157,12 +142,12 @@ final class ReplyTests: XCTestCase {
         let moments = TaggedLine.parse("""
             - [comfort] there there
             - [comfort night] bed time?
-            - [nap] zzz
-            - [nap working] after this
+            - [no] nope
+            - [no working] after this
             """)
         XCTAssertEqual(Signs.replies(moments, "comfort", calendar: ["night", "working"]), ["there there", "bed time?"],
                        "not bed time alone all night, at work too")
-        XCTAssertEqual(Signs.replies(moments, "nap", calendar: ["night", "working"]), ["after this"], "the moment's beats the plain one")
+        XCTAssertEqual(Signs.replies(moments, "no", calendar: ["night", "working"]), ["after this"], "the moment's beats the plain one")
         XCTAssertEqual(Signs.reply(lines, "bye", calendar: ["day"], rng: &rng), "bye bye")
         XCTAssertNil(Signs.reply(lines, "ouch", calendar: [], rng: &rng))
         for _ in 0..<10 {
@@ -188,7 +173,7 @@ final class ReplyTests: XCTestCase {
         XCTAssertGreaterThan(window, 1)
         var said: [String] = []
         for _ in 0..<12 {
-            _ = react.run(["react.face": a("happy"), "react.intensity": a("small"), "say": a("glad")], now: poke, log: Self.log)
+            _ = react.run(["react.face": a("happy"), "say": a("glad")], now: poke, log: Self.log)
             said.append(try XCTUnwrap(queued.last?.say?.takes.last?.text))
         }
         for i in window..<said.count {
@@ -205,7 +190,7 @@ final class ReplyTests: XCTestCase {
             var queued: [Moment] = []
             let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, seed: seed)
             for _ in 0..<8 {
-                _ = react.run(["react.face": a("happy"), "react.intensity": a("medium"), "say": a("tests")], now: poke, log: Self.log)
+                _ = react.run(["react.face": a("happy"), "say": a("tests")], now: poke, log: Self.log)
             }
             return queued.compactMap { $0.say?.takes.last?.text }
         }
@@ -223,7 +208,7 @@ final class ReplyTests: XCTestCase {
                                  facts: ["takes": .array([.string(take.id)]), "sign": "had a dream"], at: 10), now: 10)
         var queued: [Moment] = []
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
-        _ = react.run(["react.face": a("happy"), "react.intensity": a("medium"), "say": a("glad")], now: poke, log: log.view(now: 20))
+        _ = react.run(["react.face": a("happy"), "say": a("glad")], now: poke, log: log.view(now: 20))
         XCTAssertEqual(react.lastSign, "had a dream")
         XCTAssertEqual(react.lastWords.last, take.text)
         XCTAssertNotEqual(queued.last?.say?.takes.last?.text, take.text)
@@ -259,11 +244,11 @@ final class ReplyTests: XCTestCase {
         var queued: [Moment] = []
         var mic: String?
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { "something needs you" }, replyBlocked: { mic })
-        let answers = ["react.face": a("annoyed"), "react.move": a("notme"), "react.intensity": a("small")]
+        let answers = ["react.face": a("annoyed"), "react.reply": a("no")]
         _ = react.run(answers, now: poke, log: Self.log)
         XCTAssertEqual(queued.count, 0, "not a poke's")
         _ = react.run(answers, now: said, log: Self.log)
-        XCTAssertEqual(queued.last?.reply, "notme", "the reply plays")
+        XCTAssertEqual(queued.last?.reply, "no", "the reply plays")
         mic = "the mic is on"
         _ = react.run(answers, now: said, log: Self.log)
         XCTAssertEqual(queued.count, 1, "not while the mic is on")
@@ -271,7 +256,7 @@ final class ReplyTests: XCTestCase {
         // board opens none over the needs-you screen.
         let status = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { "something needs you" }, replyBlocked: { nil },
                                  status: { _ in .init(sign: "2 need you", show: StatusReply.drawer) })
-        _ = status.run(["react.face": a("focused"), "react.move": a("status"), "react.intensity": a("small")], now: said, log: Self.log)
+        _ = status.run(["react.face": a("focused"), "react.reply": a("status")], now: said, log: Self.log)
         XCTAssertEqual(queued.last?.sign, "2 need you")
         XCTAssertNil(queued.last?.show)
     }
@@ -317,8 +302,8 @@ final class ReplyTests: XCTestCase {
         let speaking = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, talk: { talk })
         // What it says, as each take's part and meaning: a sound before a
         // word is of the same, so each says one thing.
-        func meanings(_ move: String, _ say: Answer?, size: String = "medium", face: String = "happy") -> [String] {
-            var answers = ["react.face": a(face), "react.move": a(move), "react.intensity": a(size)]
+        func meanings(_ move: String, _ say: Answer?, face: String = "happy") -> [String] {
+            var answers = ["react.face": a(face), "react.reply": a(move)]
             answers["say"] = say
             _ = speaking.run(answers, now: said, log: Self.log)
             return Set(queued.last?.say?.takes.map { "\($0.part) \($0.meaning)" } ?? []).sorted()
@@ -330,21 +315,20 @@ final class ReplyTests: XCTestCase {
         XCTAssertEqual(meanings("thanks", a("work", 0.3)), ["reply thanks"])
         // A huh to a question shrugs, dunno, which has no words in a grumpy face.
         XCTAssertEqual(meanings("huh", a("upset"), face: "grumpy"), ["feeling upset"], "none of its own in the face: say's pick")
-        XCTAssertEqual(meanings("huh", a("start"), face: "grumpy"), [], "never a topic: dunno borrows no feeling")
+        XCTAssertEqual(meanings("huh", a("work"), face: "grumpy"), [], "never a topic: dunno borrows no feeling")
         XCTAssertEqual(meanings("huh", a("upset", 0.3), face: "grumpy"), [])
         XCTAssertEqual(meanings("comfort", a("glad", 0.3), face: "grumpy"), [], "comfort borrows none")
         XCTAssertEqual(meanings("comfort", a("retry"), face: "determined"), ["about retry"],
                        "but roots for the retry when you say it still doesn't work")
-        XCTAssertEqual(meanings("comfort", a("start"), face: "determined"), [], "and no other topic")
-        XCTAssertEqual(meanings("no", a("start")), ["feeling upset"], "no has none in a happy face: a topic picked, the feeling it borrows")
+        XCTAssertEqual(meanings("comfort", a("work"), face: "determined"), [], "and no other topic")
+        XCTAssertEqual(meanings("no", a("work")), ["feeling upset"], "no has none in a happy face: a topic picked, the feeling it borrows")
         talk = .quiet
         XCTAssertEqual(meanings("thanks", a("glad", 0.3)), ["reply thanks"])
-        XCTAssertEqual(meanings("thanks", a("glad", 0.3), size: "small"), [], "and nothing at a small moment")
     }
 
     /// A reply says its own words wherever it has some in the face, as big
     /// as the moment: "roll over" gets a no ("Tsk", "Not quite"), never an
-    /// upset word ("Failed", "Broken"); "I love you" a love, never a laugh.
+    /// upset word ("Failed", "Broken").
     func testAReplySaysItsOwnWords() throws {
         guard !Take.all.isEmpty else { return }
         var queued: [Moment] = []
@@ -352,23 +336,19 @@ final class ReplyTests: XCTestCase {
         let rollOver = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "roll over"])
         for reply in MomentOutput.replies.map(\.name) + ["unhush"] where reply != "huh" {
             for face in CharacterPack.active.moods.map(\.id) where Take.all.contains(where: { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) }) {
-                for size in MomentOutput.sizes.map(\.name) {
-                    _ = react.run(["react.face": a(face), "react.move": a(reply), "react.intensity": a(size), "say": a("glad")],
-                                  now: rollOver, log: Self.log)
-                    let takes = try XCTUnwrap(queued.last?.say?.takes)
-                    XCTAssertFalse(takes.isEmpty, "\(reply) in \(face) says something")
-                    XCTAssertTrue(takes.allSatisfy { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) },
-                                  "\(reply) in \(face): \(takes.map(\.id))")
-                }
+                _ = react.run(["react.face": a(face), "react.reply": a(reply), "say": a("glad")],
+                              now: rollOver, log: Self.log)
+                let takes = try XCTUnwrap(queued.last?.say?.takes)
+                XCTAssertFalse(takes.isEmpty, "\(reply) in \(face) says something")
+                XCTAssertTrue(takes.allSatisfy { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) },
+                              "\(reply) in \(face): \(takes.map(\.id))")
             }
         }
-        // The owner's examples, at every size.
-        for size in MomentOutput.sizes.map(\.name) {
-            for _ in 0..<20 {
-                _ = react.run(["react.face": a("annoyed"), "react.move": a("no"), "react.intensity": a(size), "say": a("upset")],
-                              now: rollOver, log: Self.log)
-                XCTAssertTrue(Set(queued.last?.say?.takes.map(\.text) ?? []).isDisjoint(with: ["Failed", "Broken", "Trouble"]))
-            }
+        // The owner's example.
+        for _ in 0..<60 {
+            _ = react.run(["react.face": a("annoyed"), "react.reply": a("no"), "say": a("upset")],
+                          now: rollOver, log: Self.log)
+            XCTAssertTrue(Set(queued.last?.say?.takes.map(\.text) ?? []).isDisjoint(with: ["Failed", "Broken", "Trouble"]))
         }
         // Every reply has words of its own.
         let has = Set(Take.all.filter { $0.part == .reply }.map(\.meaning))
@@ -408,7 +388,7 @@ final class ReplyTests: XCTestCase {
 
         func held(_ move: String, _ p: [String: Double], _ e: Event? = nil) -> String? {
             let pick = p.max { $0.value < $1.value }?.key ?? "facts"
-            _ = react.run(["react.face": a("happy"), "react.move": a(move), Signs.questionKey: Answer(choice: pick, probabilities: p)],
+            _ = react.run(["react.face": a("happy"), "react.reply": a(move), Signs.questionKey: Answer(choice: pick, probabilities: p)],
                           now: e ?? hello, log: Self.log)
             return queued.last?.sign
         }

@@ -23,9 +23,10 @@ final class GoldenStateTests: XCTestCase {
         .deletingLastPathComponent().appendingPathComponent("tests/golden-states")
 
     /// The scenarios pinned, by their number: failing checks, pokes, a busy
-    /// session, the dream, your words, the agents asked about, a wish, a
-    /// lock, a workday, the world.
-    static let pinned: Set<String> = ["04", "05", "21", "97", "126", "127", "152", "160", "173", "187"]
+    /// session, your frustrated prompt, your coming back, the dream, your
+    /// words, the agents asked about, a wish, a workday. Each has passes:
+    /// what the rules answer whole (a lock, the world) builds no state.
+    static let pinned: Set<String> = ["04", "05", "21", "24", "63", "97", "126", "127", "152", "173"]
 
     /// Answers from NOW's line alone, the same every time: a failure or a
     /// poke turns the mood cross, a win happy; a failure gets an annoyed
@@ -53,16 +54,12 @@ final class GoldenStateTests: XCTestCase {
             case MomentOutput.emotionKey:
                 out[q.key] = pick(q, now.contains(" started turn ") ? "none" : failed ? "annoyed" : won ? "happy"
                                   : poked ? "curious" : said ? "proud" : "focused")
-            case MomentOutput.moveKey:
-                out[q.key] = pick(q, !now.contains(" finished turn ") ? "none" : failed ? "failure" : "success")
             case Signs.questionKey:
                 // It asks whenever it may, so asks show in the states.
                 out[q.key] = pick(q, q.options.first { $0.what.hasPrefix("Ask:") }?.name ?? q.options[0].name)
-            case MomentOutput.sizeKey:
-                out[q.key] = pick(q, failed ? "medium" : "small")
             case MomentOutput.sayKey:
                 out[q.key] = pick(q, failed ? "upset" : won ? "glad" : poked ? "tickled" : now.contains("tests") ? "tests"
-                                  : now.contains(" finished turn ") ? "done" : now.contains(" started turn ") ? "start" : "work")
+                                  : now.contains(" finished turn ") ? "done" : "work")
             default:
                 out[q.key] = pick(q, q.options[0].name)
             }

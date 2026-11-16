@@ -282,19 +282,32 @@ public final class TranscriptView {
     // MARK: - Registration
 
     /// Each kind's `wake`: what you said goes ahead
-    /// of a finished turn, which goes ahead of the rest. A turn start
-    /// whose prompt is being read, or a finish whose last message is,
-    /// keeps its line but waits for its reading to wake the brain
-    /// (`hold`).
+    /// of a finished turn, which goes ahead of the rest. A finish whose
+    /// last message is being read keeps its line but waits for its
+    /// reading to wake the brain (`hold`). Of the check-ins only the idle
+    /// one wakes it: the working one is the rules' (`ruled`).
     public static let wakes: [String: Int] = [
-        "turn_start": 0, "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0, "lock_start": 0, "lock_end": 0,
-        "heartbeat": 0, "session_start": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "world": 0, "act_start": 0, "act_end": 0,
+        "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
+        "heartbeat": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
     ]
 
-    /// The kinds with lines that never wake the brain: a BOOT press that
-    /// opens an agent is the board's own reaction, as a tap that opens a
-    /// thread is.
-    public static let quiet = ["presence_start", "needs_you_start", "press", "hush_end", "wish_start", "level", "ring"]
+    /// The kinds with lines that never wake the brain: a turn's start,
+    /// which its prompt's reading speaks for; a BOOT press that opens an
+    /// agent, the board's own reaction, as a tap that opens a thread is;
+    /// and with `ruled`, what the rules answer whole.
+    public static let quiet = ["turn_start", "presence_start", "needs_you_start", "press", "hush_end", "wish_start", "growth"] + ruled
+
+    /// The kinds the rules answer with a Moment of their own and no pass
+    /// (`MomentOutput.ruled`): your lock and unlock, and another buddy's
+    /// gesture. The working check-in is theirs too, of a kind the idle
+    /// one shares (`ruledCheckIn`).
+    public static let ruled = ["lock_start", "lock_end", "world"]
+    public static let ruledCheckIn = "heartbeat"
+
+    /// Whether `e` is the rules' to answer, never the brain's.
+    public static func isRuled(_ e: Event) -> Bool {
+        e.type == .lock || e.type == .world || (e.type == .checkIn && e.specificType == "working")
+    }
 
     /// Registers Boop's lines, wakes, holds and check-ins on `h`. Weakly:
     /// a harness its runtime let go of may still tick once, and does nothing.
@@ -318,6 +331,13 @@ public final class TranscriptView {
     /// you said while the buddy lies face
     /// down, which is do not disturb: the board would refuse a reaction.
     public func hold(_ e: Event, _ log: LogView, needsYou: () -> String?) -> String? {
+        if e.type == .checkIn, e.specificType == "working" { return "the rules answer a working check-in" }
+        return held(e, log, needsYou: needsYou)
+    }
+
+    /// Why nothing may answer `e` now, the brain or a rule's Moment
+    /// (`MomentOutput.ruled`), or nil.
+    public func held(_ e: Event, _ log: LogView, needsYou: () -> String?) -> String? {
         // What you say to Boop wakes the brain even while something needs
         // you; nothing else does, a poke included: then a tap opens the
         // waiting thread.
@@ -550,10 +570,9 @@ public final class TranscriptView {
         case .hush?:
             return Line(e.phase == .start ? EventLine.hushed(name: name, minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name, why: e.specificType))
-        case .level?:
-            return Line(EventLine.level(Int(e.specificType) ?? 1, name: name),
-                        facts: ["level": .int(Int64(e.specificType) ?? 1)])
-        case .ring?: return Line(EventLine.ringClosed(name: name))
+        case .growth?:
+            let level = e["level"]?.int.map(Int.init), ring = e["ring"]?.bool == true
+            return Line(EventLine.grew(level: level, ring: ring, name: name), facts: level.map { ["level": .int(Int64($0))] } ?? [:])
         case .world?:
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }
@@ -676,12 +695,7 @@ public final class TranscriptView {
             var line = turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started), at: now)
             if let hits = newHits(&c, name: name) { line.notes.append(hits) }
             return line
-        case .sessionStart:
-            // The agent's context was compacted: it carries on from a
-            // summary. Any other session start is no line.
-            guard case .sessionStarted(let source) = change, source == Mapping.compacted else { return nil }
-            return Line(EventLine.compacted(agent: t.agent.rawValue, thread: threadLine(t)), facts: ["thread": threadFacts(t)])
-        case .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
+        case .sessionStart, .sessionEnd, .needsYou, .subagentStart, .subagentEnd:
             return nil
         }
     }
@@ -1117,15 +1131,14 @@ public final class TranscriptView {
         if let s = working.min(by: { ($0.turn.startedAt ?? now, $0.order) < ($1.turn.startedAt ?? now, $1.order) }) {
             let t = Thread(s)
             let ms = max(0, now - (s.turn.startedAt ?? now))
-            // Each check-in on a turn is a rung of a ladder, as quick wins
-            // are: the line says which.
+            // Each check-in on a turn is counted: the rule's Moment for
+            // it goes by its rung of a round (`MomentRule.checkIn`).
             var c = fold.counts[s.key] ?? Counts()
             c.checkIns += 1
             let hits = newHits(&c, name: name)
             fold.counts[s.key] = c
             return Line(EventLine.working(agent: t.agent.rawValue, thread: threadLine(t), ms: ms, topic: c.topic),
-                        notes: (EventLine.checkIn(EventLine.rung(c.checkIns, of: EventLine.round), name: name).map { [$0] } ?? [])
-                            + (hits.map { [$0] } ?? []),
+                        notes: hits.map { [$0] } ?? [],
                         facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(c.topic),
                                 "check_in": .int(Int64(c.checkIns))])
         }

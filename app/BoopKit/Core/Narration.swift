@@ -95,11 +95,11 @@ public struct Narration: Equatable, Sendable {
             // The sign answers what you said: the board needs no fact.
             guard let words = facts["words"]?.string, !words.isEmpty else { return nil }
             return Narration(cause: "You said \"\(Self.keep(words))\".")
-        case .level?:
-            let level = Int(e.specificType) ?? 1
-            return Narration(cause: EventLine.level(level, name: name), fact: fit("level \(level)!"))
-        case .ring?:
-            return Narration(cause: "Today's ring is full. Nice work.", fact: fit("today's done!"))
+        case .growth?:
+            guard let level = e["level"]?.int else {
+                return Narration(cause: "Today's ring is full. Nice work.", fact: fit("today's done!"))
+            }
+            return Narration(cause: EventLine.grew(level: Int(level), ring: e["ring"]?.bool == true, name: name), fact: fit("level \(level)!"))
         case .world?:
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }
@@ -128,9 +128,7 @@ public struct Narration: Equatable, Sendable {
             return e.phase == .start ? Narration(cause: "\(agent) needs you\(on).") : Narration(cause: "You answered \(agent)\(on).")
         case .turn? where e.phase == .start:
             return Narration(cause: "\(agent) started work\(on).", fact: fit("\(agent) started", "new task"))
-        case .session? where e.phase == .start:
-            return Narration(cause: "\(agent)'s memory\(on) was compacted.", fact: fit("\(agent) compacted", "memory compacted"))
-        case .session?:
+        case .session? where e.phase == .end:
             return Narration(cause: "\(agent)'s thread\(on) ended.")
         case .subagent?:
             return e.phase == .start ? Narration(cause: "\(agent) started a helper\(on).") : Narration(cause: "A helper of \(agent)'s finished\(on).")
@@ -170,6 +168,7 @@ public struct Narration: Equatable, Sendable {
         "memory": "Boop's own, and wakes no pass",
         "last_message": "its finish says how the turn went (`outcome`)",
         "tool start": "the work stream: a word falling, never a Moment",
+        "session start": "a thread opening is no news, and has no line",
         "tool wait": "the needs-you screen says it",
         "card start": "log-only: Boop holds the card up, part of Doing", "card end": "log-only: the finish plays, then the card shows",
     ]

@@ -40,8 +40,8 @@ public final class Core {
         /// The day Boop hatched (`yyyy-MM-dd`), for its milestone days; nil
         /// for none.
         public var hatched: String?
-        /// Whether the board shows the work stream (`WorkStream`): the
-        /// setting's, on unless you turn it off.
+        /// Whether the core runs the work stream (`WorkStream`): always, in
+        /// the app; a test of something else turns it off.
         public var workStream = true
 
         public init(volume: Int = 6, time: LocalTime = LocalTime(), pack: CharacterPack = .active,
@@ -74,7 +74,7 @@ public final class Core {
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
     var lastActiveDay: String?
-    /// The day `greetDay` last greeted, or found nothing to greet.
+    /// The day `dayGreeting` last greeted, or found nothing to greet.
     var greetedDay: String?
     var lastPublished: StateSnapshot?
     /// Onboarding's practice request (act 5's amber lesson): the needs-you
@@ -231,11 +231,8 @@ public final class Core {
         guard let agentEvent = AgentEvent(event) else { return [] }
         let now = event.at
         var fx: [CoreEffect] = []
-        // Asleep before it: no session yet.
-        let wasAsleep = sessions.isEmpty
         fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
-        greetDay(now, waking: wasAsleep, &fx)
         let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
         let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
         publish(now, &fx)
@@ -448,15 +445,6 @@ public final class Core {
         return fx
     }
 
-    /// The work stream on or off, from the next `state`.
-    public func setWorkStream(_ on: Bool, at now: Int64) -> [CoreEffect] {
-        config.workStream = on
-        if !on { stream = WorkStream() }
-        var fx: [CoreEffect] = []
-        publish(now, &fx)
-        return fx
-    }
-
     public func setVolume(_ volume: Int, at now: Int64) -> [CoreEffect] {
         config.volume = max(0, min(10, volume))
         var fx: [CoreEffect] = []
@@ -480,26 +468,19 @@ public final class Core {
         return fx
     }
 
-    /// The growth waiting for nothing to need you (`growthHeld`): its events,
-    /// and one moment for them all.
+    /// The growth waiting for nothing to need you (`growthHeld`): one
+    /// event that says what happened, and one moment for it all.
     func recordGrowth(_ now: Int64, _ fx: inout [CoreEffect]) {
         guard !growthHeld.isEmpty, needsYouBlock == nil, !showsListening(at: now) else { return }
         let beats = growthHeld
         growthHeld = []
-        var level: Int?
-        for beat in beats {
-            switch beat {
-            case .level(let n):
-                level = n  // the last, of a level held past the next
-                fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(n))))
-            case .ringClosed:
-                fx.append(.record(Event(at: now, source: .boop, type: .ring, specificType: "closed")))
-            }
-        }
-        // One moment for them all. The ring closing: Boop holds up that
-        // today's done. A level: its words held low in gold, the rim
-        // glowing gold, with the ring's sign when both come at once.
+        // The last level, of one held past the next.
+        let level = beats.compactMap { if case .level(let n) = $0 { n } else { nil } }.last
         let ring = beats.contains(.ringClosed)
+        fx.append(.record(Self.growthEvent(level: level, ring: ring, at: now)))
+        // The ring closing: Boop holds up that today's done. A level: its
+        // words held low in gold, the rim glowing gold, with the ring's
+        // sign when both come at once.
         guard let n = level else {
             return play(Moment(mood: Self.ringFace, loops: 2, sign: Self.ringSign), for: nil, now, &fx)
         }
@@ -507,6 +488,15 @@ public final class Core {
                        reason: Narration.fit(["level \(n)!"], name: config.pack.name))
         m.gold = Self.levelSign(n)
         play(m, for: nil, now, &fx)
+    }
+
+    /// The `growth` event: the `level` reached, if one was, and whether
+    /// today's `ring` closed.
+    public static func growthEvent(level: Int?, ring: Bool, at now: Int64) -> Event {
+        var data: [String: JSONValue] = [:]
+        if let level { data["level"] = .int(Int64(level)) }
+        if ring { data["ring"] = true }
+        return Event(at: now, source: .boop, type: .growth, specificType: level != nil ? "level" : "ring", data: data)
     }
 
     /// The level-up's words, held low in gold: `level 12!`, lower case, as
@@ -522,25 +512,9 @@ public final class Core {
         Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, time: config.time)
     }
 
-    /// On a day with an occasion, your first showing up holds up its sign
-    /// (`dayGreeting`), or else the first agent's event Boop sees greets
-    /// it, once a launch: Boop holds up its sign (`Happy Halloween!`,
-    /// `Day 50!`), so what it wears all day has a reason you saw, waking
-    /// up with it if it was asleep (`waking`), else noticing the day. It
-    /// waits its turn after the event's own reaction. While the screen is
-    /// another's (something needs you, or it's listening) the greeting
-    /// waits for the next event, not lost for the day.
-    func greetDay(_ now: Int64, waking: Bool, _ fx: inout [CoreEffect]) {
-        let today = day(now)
-        guard greetedDay != today, !needsYouShowing, !showsListening(at: now) else { return }
-        greetedDay = today
-        guard let sign = Days.greeting(specialDays(at: now)) else { return }
-        play(Moment(anim: waking ? "wake_up" : "notice", sign: sign), for: nil, now, &fx,
-             said: "\(config.pack.name) greeted the day, holding up a sign: \"\(sign)\".")
-    }
-
-    /// Today's occasion's sign, for the moment of your first showing up to
-    /// hold up, if `greetDay` hasn't: then it has greeted the day.
+    /// Today's occasion's sign (`Happy Halloween!`, `Day 50!`), for the
+    /// moment of your first showing up to hold up, once a day: so what
+    /// Boop wears all day has a reason you saw.
     public func dayGreeting(at now: Int64) -> String? {
         let today = day(now)
         guard greetedDay != today else { return nil }

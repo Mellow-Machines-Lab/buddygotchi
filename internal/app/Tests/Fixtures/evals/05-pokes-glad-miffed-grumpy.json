@@ -8,6 +8,6 @@
     {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "move": "none", "offered": "calm|happy|focused|proud|cross|sad", "mood": "calm|happy", "said": "some"}},
     {"event": "poke", "at": "1s", "expect": {"react": "annoyed|grumpy", "move": "none", "say": "upset|tickled", "mood": "cross", "said": "some"}},
     {"event": "poke", "at": "2s", "expect": {"react": "grumpy|angry|annoyed", "move": "none", "say": "upset|tickled", "mood": "cross", "said": "some"}},
-    {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "cross|calm"}}
+    {"event": "turn started", "at": "4m", "prompt": "carry on", "expect": {"react": "none|calm|annoyed", "mood": "cross|calm"}}
   ]
 }

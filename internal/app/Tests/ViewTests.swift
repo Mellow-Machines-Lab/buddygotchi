@@ -286,7 +286,7 @@ final class ViewTests: XCTestCase {
         rig.wait(30_000)
         let start = hook(.turnStart, workspace: nil).first
         XCTAssertEqual(start?.line, #"claude started turn 2 on "landing"."#)
-        XCTAssertEqual(TranscriptView.wakes[start!.name.replacingOccurrences(of: " ", with: "_")], 0)
+        XCTAssertNil(TranscriptView.wakes[start!.name.replacingOccurrences(of: " ", with: "_")], "a turn's start never wakes a pass")
         rig.wait(90_000)
         let stopped = hook(.turnStopped, workspace: nil, tool: "Bash")
         XCTAssertEqual(stopped.first?.line, #"claude finished turn 2 on "landing": stopped, a long turn, no tool calls."#)
@@ -352,13 +352,15 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(asked.map(\.name), ["tool wait"])
         XCTAssertFalse(asked[0].wakesBrain)
         XCTAssertEqual(rig.ruleActions, ["needs_you start"])
-        XCTAssertFalse(hook(.turnStart, session: "s2").first!.wakesBrain, "something needs you")
+        XCTAssertFalse(hook(.turnEnd, session: "s2").contains(where: \.wakesBrain), "something needs you")
         XCTAssertFalse(events(rig.poke()).first!.wakesBrain, "a poke opens the thread instead")
         hook(.activity, tool: "Bash")
         XCTAssertEqual(rig.ruleActions, ["needs_you start", "open_thread", "needs_you end"], "answered")
-        XCTAssertTrue(hook(.turnStart, session: "s3").first!.wakesBrain)
+        XCTAssertFalse(hook(.turnStart, session: "s3").first!.wakesBrain, "a turn's start never does")
+        rig.wait(3000)
+        XCTAssertTrue(events(rig.poke()).first!.wakesBrain)
         rig.pipeline.brain = false
-        XCTAssertFalse(hook(.turnStart, session: "s4").first!.wakesBrain, "no key")
+        rig.wait(3000)
         XCTAssertFalse(events(rig.poke()).first!.wakesBrain, "no key, not even a poke")
     }
 
@@ -553,7 +555,8 @@ final class ViewTests: XCTestCase {
         rig.wait(50 * 60_000)
         let working = rig.views.filter { $0.type == .checkIn }
         XCTAssertGreaterThan(working.count, 10, "the working check-in")
-        XCTAssertTrue(working.allSatisfy { $0.line.hasPrefix(#"claude is still working on "fix-nav" (landing), a "#) && $0.wakesBrain })
+        XCTAssertTrue(working.allSatisfy { $0.line.hasPrefix(#"claude is still working on "fix-nav" (landing), a "#) && !$0.wakesBrain },
+                      "each a line the rules answer, never a pass")
         XCTAssertEqual(working.last?.line, #"claude is still working on "fix-nav" (landing), a very long turn."#)
         hook(.turnEnd)
         XCTAssertEqual(events(rig.wait(5 * 60 * 60_000)).filter { $0.type == .checkIn }, [], "no check-in by the hour")
@@ -590,8 +593,8 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(win(), .int(1), "10 minutes after the last win starts again")
     }
 
-    /// Each working check-in on a turn is numbered in a note from the
-    /// second of each round of 4, and says what the turn's latest command
+    /// Each working check-in on a turn is counted in its facts, for the
+    /// rule's Moment (rounds of 4), and says what the turn's latest command
     /// was about; the next turn starts counting again.
     func testCheckInsAreNumberedAndSayTheTopic() {
         hook(.turnStart)
@@ -601,10 +604,9 @@ final class ViewTests: XCTestCase {
         XCTAssertGreaterThan(beats.count, 5)
         XCTAssertTrue(beats.allSatisfy { $0.line.hasSuffix(" turn, running tests.") }, beats.map(\.line).joined(separator: "\n"))
         XCTAssertEqual(EventLine.round, 4)
-        XCTAssertEqual(beats.prefix(6).map(\.notes), [[], ["Boop's 2nd check-in of a round on this turn."],
-                                                     ["Boop's 3rd check-in of a round on this turn."],
-                                                     ["Boop's 4th check-in of a round on this turn."], [],
-                                                     ["Boop's 2nd check-in of a round on this turn."]], "and round again")
+        XCTAssertEqual(beats.prefix(6).map(\.facts["check_in"]), (1...6).map { .int($0) })
+        XCTAssertEqual(beats.prefix(6).map { EventLine.rung(Int($0.facts["check_in"]?.int ?? 0), of: EventLine.round) }, [1, 2, 3, 4, 1, 2],
+                       "and round again")
         XCTAssertEqual(beats.last?.facts["check_in"], .int(Int64(beats.count)))
         hook(.turnEnd)
         hook(.turnStart)
@@ -616,14 +618,12 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(EventLine.working(agent: "codex", thread: "\"x\"", ms: 0, topic: "inspect"), #"codex is still working on "x", a very short turn."#)
     }
 
-    /// The agent's context compacting mid-turn is a line that wakes the
-    /// brain; a session starting any other way isn't.
-    func testACompactionIsALine() {
+    /// No session's start is a line, the agent's context compacting
+    /// mid-turn included: nothing Boop reacts to.
+    func testASessionsStartIsNoLine() {
         hook(.turnStart)
-        let compacted = events(rig.send(.sessionStart, workspace: "fix-nav", source: "compact"))
-        XCTAssertEqual(compacted.map(\.line), [#"claude's context on "fix-nav" (landing) was compacted; it picks up where it left off."#])
-        XCTAssertEqual(compacted.map(\.name), ["session start"])
-        XCTAssertTrue(compacted.allSatisfy(\.wakesBrain))
+        XCTAssertEqual(events(rig.send(.sessionStart, workspace: "fix-nav", source: "compact")), [], "a compaction")
+        XCTAssertNil(TranscriptView.wakes["session_start"])
         XCTAssertEqual(events(rig.send(.sessionStart, session: "s2", workspace: "fix-nav", source: "startup")), [], "a fresh session isn't")
         XCTAssertEqual(events(rig.send(.sessionStart, session: "s3", workspace: "fix-nav", source: "resume")), [], "nor a resumed one")
     }

@@ -31,10 +31,10 @@ final class DaysTests: XCTestCase {
     func testTheWeekAndTheHolidays() {
         XCTAssertEqual(tags(2026, 10, 21), ["day"], "an ordinary Wednesday")
         XCTAssertEqual(tags(2026, 10, 30), ["day", "friday"])
-        XCTAssertEqual(tags(2026, 10, 31), ["day", "weekend", "halloween"])
-        XCTAssertEqual(tags(2026, 11, 13), ["day", "friday", "friday13"])
+        XCTAssertEqual(tags(2026, 10, 31), ["day", "halloween"])
+        XCTAssertEqual(tags(2026, 11, 13), ["day", "friday"])
         XCTAssertEqual(tags(2027, 1, 1), ["day", "friday", "newyear", "party"], "New Year's Day is a party")
-        for (mo, d, tag) in [(2, 14, "valentines"), (3, 14, "piday"), (4, 1, "aprilfools"), (5, 4, "may4"), (12, 24, "winter"),
+        for (mo, d, tag) in [(2, 14, "valentines"), (12, 24, "winter"),
                              (12, 26, "winter")] {
             XCTAssertTrue(tags(2026, mo, d).contains(tag), tag)
             XCTAssertFalse(tags(2026, mo, d + 1 == 27 ? 27 : d - 1).contains(tag), "\(tag), not the day before or after")
@@ -82,7 +82,7 @@ final class DaysTests: XCTestCase {
         // The board's table keeps `tier4` and `tier5`, which Pixel's designs are
         // numbered by; the Mac never sends them.
         XCTAssertEqual(names.filter { !["tier4", "tier5"].contains($0) }, Tags.board)
-        XCTAssertEqual(Set(Tags.all).subtracting(Tags.board), Tags.macOnly)
+        XCTAssertEqual(Tags.all, Tags.board, "the board reads every tag")
         XCTAssertLessThanOrEqual(Tags.board.count, 32, "a set of tags is 32 bits on the board")
     }
 
@@ -122,13 +122,14 @@ final class DaysTests: XCTestCase {
         core.setWallClock(now, at: now)
         core.growth = { Growth(xp: 1_150, today: 50) }
         let fx = core.grew([.level(12)], at: now)
-        let records = fx.compactMap { if case .record(let e) = $0, e.type == .level { return e } else { return nil } }
-        XCTAssertEqual(records.map(\.specificType), ["12"])
+        let records: [Event] = fx.compactMap { if case .record(let e) = $0, e.type == .growth { return e } else { return nil } }
+        XCTAssertEqual(records.map { $0["level"]?.int }, [12])
+        XCTAssertEqual(records.map { $0["ring"] }, [nil])
         XCTAssertEqual(moments(fx).map(\.gold), ["level 12!"], "held low, in gold")
         XCTAssertEqual(moments(fx).map(\.sign), [nil], "nothing held up without the ring")
         XCTAssertEqual(moments(fx).map(\.mood), ["proud"])
         XCTAssertNotNil(moments(fx).first?.reason)
-        XCTAssertNil(TranscriptView.wakes["level"], "the rules play it: no pass")
+        XCTAssertNil(TranscriptView.wakes["growth"], "the rules play it: no pass")
         XCTAssertEqual(moments(core.grew([.level(15)], at: now)).map(\.mood), ["proud"], "no level is a bigger one")
         let ring = moments(core.grew([.ringClosed], at: now))
         XCTAssertEqual(ring.map(\.sign), [Core.ringSign])
@@ -140,7 +141,7 @@ final class DaysTests: XCTestCase {
 
     /// The ring closing and a level reached at once are one moment, not
     /// two, and neither is lost: Boop holds up `today's done!`, and the
-    /// level comes low in gold beside it; both events are logged.
+    /// level comes low in gold beside it; one `growth` event says both.
     func testTheRingAndALevelAreOneMoment() {
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
@@ -154,8 +155,12 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(both.first?.mood, "proud")
         XCTAssertEqual(both.first?.args["gold"], .string("level 13!"), "on the wire")
         XCTAssertEqual(BoopDevice.play(both[0]), .next, "worth waiting its turn")
-        let types = fx.compactMap { if case .record(let e) = $0 { return e.type } else { return nil } }
-        XCTAssertTrue(types.contains(.ring) && types.contains(.level), "both logged")
+        let grew: [Event] = fx.compactMap { if case .record(let e) = $0, e.type == .growth { return e } else { return nil } }
+        XCTAssertEqual(grew.count, 1, "one event")
+        XCTAssertEqual(grew.first?["level"]?.int, 13)
+        XCTAssertEqual(grew.first?["ring"]?.bool, true)
+        XCTAssertEqual(grew.first.flatMap { TranscriptView().line($0, Transcript.log().view(now: now))?.text },
+                       "\(creature) reached level 13. Today's ring is full: \(creature)'s done for the day.")
         XCTAssertEqual(BoopDevice.play(Moment(mood: "proud")), .ifFree)
         var gold = Moment(mood: "proud")
         gold.gold = "level 2!"
@@ -168,18 +173,18 @@ final class DaysTests: XCTestCase {
         let rig = CoreRig()
         rig.send(.needsYou, tool: "Bash")
         XCTAssertNotNil(rig.pipeline.core.needsYouBlock)
-        func levels() -> [Event] { rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .level } }
+        func levels() -> [Event] { rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .growth } }
         rig.pipeline.run(rig.pipeline.core.grew([.level(2)], at: rig.now))
         XCTAssertEqual(levels().count, 0, "not over needs you")
         rig.send(.activity, tool: "Bash")
         XCTAssertNil(rig.pipeline.core.needsYouBlock)
-        XCTAssertEqual(levels().map(\.specificType), ["2"], "once it's answered")
+        XCTAssertEqual(levels().map { $0["level"]?.int }, [2], "once it's answered")
         rig.send(.activity, tool: "Bash")
         XCTAssertEqual(levels().count, 1, "once")
     }
 
-    /// Two levels reached while held are one moment, the last's, and both
-    /// are logged.
+    /// Two levels reached while held are one moment and one event, the
+    /// last's.
     func testTwoHeldLevelsAreOneMoment() {
         let rig = CoreRig()
         rig.send(.needsYou, tool: "Bash")
@@ -187,39 +192,17 @@ final class DaysTests: XCTestCase {
         rig.pipeline.run(rig.pipeline.core.grew([.level(6)], at: rig.now))
         let fx = rig.send(.activity, tool: "Bash")
         XCTAssertEqual(moments(fx).compactMap(\.gold), [Core.levelSign(6)])
-        XCTAssertEqual(rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .level }.map(\.specificType), ["5", "6"])
+        XCTAssertEqual(rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .growth }.map { $0["level"]?.int }, [6])
     }
 
-    /// On a day with an occasion, the first agent's event greets it once,
-    /// with its sign, before the caption for why it woke, waking if it was
-    /// asleep and noticing it if not; never over needs you, nor lost to
-    /// it; an ordinary day has none.
+    /// On a day with an occasion, your first showing up holds up its sign,
+    /// once a day (`Core.dayGreeting`); no agent's event greets it.
     func testASpecialDayIsGreetedOnce() {
         let rig = CoreRig(start: ms(2026, 10, 31, 14))
-        let first = rig.send(.turnStart)
-        XCTAssertEqual(moments(first).map(\.sign), ["happy halloween!", nil])
-        XCTAssertEqual(moments(first).first?.anim, "wake_up")
-        XCTAssertEqual(moments(rig.send(.turnStart, session: "s2")).compactMap(\.sign), [], "once")
-        XCTAssertEqual(moments(CoreRig().send(.turnStart)).compactMap(\.sign), [], "an ordinary day")
-
-        // Awake at midnight, at work: it notices the day, not wakes up.
-        let late = CoreRig(start: ms(2026, 10, 30, 23))
-        late.send(.turnStart)
-        late.now = ms(2026, 10, 31, 0) + 60_000
-        let midnight = moments(late.send(.activity, tool: "Bash"))
-        XCTAssertEqual(midnight.map(\.anim), ["notice"])
-        XCTAssertEqual(midnight.map(\.sign), ["happy halloween!"])
-
-        // While something needs you, it waits for the next event.
-        let waiting = CoreRig(start: ms(2026, 10, 31, 0) - 120_000)
-        waiting.send(.turnStart)
-        waiting.send(.needsYou, tool: "Bash")
-        waiting.now = ms(2026, 10, 31, 0) + 60_000
-        XCTAssertEqual(moments(waiting.send(.activity, session: "s2", tool: "Read")).compactMap(\.sign), [],
-                       "not over needs you")
-        waiting.now += 1000
-        XCTAssertEqual(moments(waiting.send(.activity, tool: "Read")).compactMap(\.sign), ["happy halloween!"],
-                       "once it's answered")
+        XCTAssertEqual(moments(rig.send(.turnStart)).compactMap(\.sign), [], "not at an agent's event")
+        XCTAssertEqual(rig.core.dayGreeting(at: rig.now), "happy halloween!")
+        XCTAssertNil(rig.core.dayGreeting(at: rig.now), "once")
+        XCTAssertNil(CoreRig().core.dayGreeting(at: CoreRig().now), "an ordinary day")
     }
 
     /// The popover's reasons choose as the board does
@@ -242,7 +225,6 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
         XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: -"])
         XCTAssertEqual(reasons(2026, 12, 24, gel: false), ["It's the winter holidays: a bobble hat and snow"])
-        XCTAssertEqual(reasons(2027, 3, 14), ["It's Pi Day: -"])
         XCTAssertEqual(reasons(2026, 10, 23), [], "a Friday wears nothing")
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
         XCTAssertEqual(reasons(2026, 10, 22, 8), [], "an ordinary morning")

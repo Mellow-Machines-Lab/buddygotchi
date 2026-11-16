@@ -82,12 +82,10 @@ extension Event {
         /// how long it waited, `waited_ms`). The core's: it reads them back
         /// on launch.
         case wish
-        /// Boop reached a level just now (`specific_type` the level), by its
-        /// XP. The rules play its ceremony; it wakes no pass.
-        case level
-        /// Today's ring closed (`specific_type` `closed`): the day's XP is
-        /// full. The rules play its moment; it wakes no pass.
-        case ring
+        /// Boop grew just now, by its XP: it reached a level (`level`),
+        /// today's ring closed (`ring`), or both at once. The rules play
+        /// its one moment; it wakes no pass.
+        case growth
         /// Another buddy's gesture from the world (`specific_type` `boop`,
         /// `wave`, `heart` or `cheer`), with how many came together
         /// (`count`), the region of the first (`from_region`), and whether
@@ -116,7 +114,7 @@ extension Event {
 
     /// The `data` keys Boop's own fields take (`voice`: a buddy's, when
     /// Boop ran several, in transcripts from then).
-    static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd", "voice"]
+    static let metaKeys: Set<String> = ["specific_type", "session", "subagent", "cwd"]
 
     public init(seq: Int = 0, at: Int64, source: Source, type: Kind, phase: Phase? = nil, specificType: String,
                 session: String? = nil, subagent: String? = nil, cwd: String? = nil,

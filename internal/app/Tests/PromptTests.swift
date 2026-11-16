@@ -309,7 +309,7 @@ final class PromptTests: XCTestCase {
         }
         let late = try finish()
         rig.wait(1000)
-        XCTAssertEqual(woke(rig.send(.turnStart)), [#"claude started turn 2 on "landing"."#])
+        XCTAssertEqual(lined(rig.send(.turnStart)), [#"claude started turn 2 on "landing"."#])
         XCTAssertNil(rig.pipeline.read(PromptIntake.heard(late.text, names: []), about: late.end, at: rig.now), "dropped")
         XCTAssertFalse(rig.pipeline.transcript.events.contains { $0.type == .lastMessage })
         let plain = #"claude finished turn 1 on "landing": done, a short turn, no tool calls."#
@@ -327,8 +327,8 @@ final class PromptTests: XCTestCase {
 
     /// The prompt leaves the turn start, which says its reading follows
     /// and so doesn't wake the brain; the reading does, and Jev reads it,
-    /// never the words but "Your words". A turn start with no prompt still
-    /// wakes it.
+    /// never the words but "Your words". A turn start with no prompt has
+    /// its line and no pass.
     func testOnlyTheReadingReachesTheBrain() {
         let rig = CoreRig()
         let fx = rig.send(.turnStart, prompt: "it's still broken, please fix it")
@@ -338,7 +338,9 @@ final class PromptTests: XCTestCase {
         XCTAssertEqual(start?[PromptIntake.readingFollows], .bool(true))
         rig.send(.turnEnd)
         rig.wait(5000)
-        XCTAssertEqual(woke(rig.send(.turnStart)), [#"claude started turn 2 on "landing"."#], "no prompt: the turn start wakes it")
+        let bare = rig.send(.turnStart)
+        XCTAssertEqual(lined(bare), [#"claude started turn 2 on "landing"."#])
+        XCTAssertEqual(woke(bare), [], "no prompt: nothing wakes it")
         XCTAssertEqual(EventLine.asked(PromptReading(length: .essay, named: ["Pip"], kind: .fix, tone: .frustrated), agent: "codex",
                                        thread: #""api""#),
                        #"You asked codex on "api" for a fix, at length, frustrated, and said Pip's name."#)

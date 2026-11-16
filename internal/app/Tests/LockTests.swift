@@ -7,7 +7,7 @@ private let t0: Int64 = 1_790_000_000_000
 private let minute: Int64 = 60_000
 
 /// Every lock and unlock of the Mac: the detector makes the events, the view
-/// their lines, and Jev picks a wave, a snub or the nap.
+/// their lines, and the rule picks a wave, a snub or the nap (`MomentRule.wave`).
 final class LockTests: XCTestCase {
     static func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 1]) }
 
@@ -48,15 +48,16 @@ final class LockTests: XCTestCase {
         XCTAssertEqual(EventLine.unlocked(afterMs: 2 * minute), "You unlocked the Mac after 2 min.")
     }
 
-    /// Each short lock and unlock wakes a pass. One reaction at a long
-    /// unlock: the unlock ending an away has no line, so no pass, and the
-    /// back is the only one.
+    /// Each short lock and unlock has a line and no pass: the rules answer
+    /// it. One reaction at a long unlock: the unlock ending an away has no
+    /// line, so no wave, and the back is the only one, which wakes a pass.
     func testALongUnlockIsOneReaction() throws {
         let rig = CoreRig()
         func lock(_ e: Event) -> [ViewEvent] { events(rig.note(Fx(rig.pipeline.lock(e)))) }
         let first = try XCTUnwrap(lock(PresenceDetector.lockEvent(at: rig.now)).first)
         XCTAssertEqual(first.line, "You locked the Mac, first time in a while.")
         XCTAssertEqual(first.name, "lock start")
+        XCTAssertFalse(first.wakesBrain, "the rules' own")
         let locked = rig.now
         rig.now += 2 * minute
         let short = try XCTUnwrap(lock(PresenceDetector.unlockEvent(since: locked, at: rig.now)).first)
@@ -86,65 +87,114 @@ final class LockTests: XCTestCase {
     let lines = [TaggedLine(tags: ["bye"], text: "see ya!"), TaggedLine(tags: ["bye", "night"], text: "nite nite"), TaggedLine(tags: ["bye", "working"], text: "i got this"),
                  TaggedLine(tags: ["hello"], text: "oh, hi!")]
 
-    /// A lock's or unlock's questions: always a face, a wave or none, the
-    /// nap only at night with no agent working, and the lines for it.
-    func testALockIsAskedForAWave() {
-        var tags = ["day"], moment: [String] = []
-        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, calendar: { _ in tags }, replies: lines, moment: { _ in moment })
-        let log = Transcript.log().view(now: t0)
-        func options(_ e: Event, _ key: String) -> [String] {
-            react.questions(now: e, log: log).first { $0.key == key }?.options.map(\.name) ?? []
+    /// Pins `MomentRule.wave`, the whole table: a snub when cross; good
+    /// night and the nap at a night lock with no agent working; a real
+    /// wave at the first lock or one an hour or more (`lockWhileMs`) after
+    /// the last; a slight wave at any other lock, and at every unlock.
+    func testTheWaveIsARule() {
+        XCTAssertEqual(MomentRule.lockWhileMs, 60 * minute)
+        func wave(lock: Bool = true, since: Int64? = nil, night: Bool = false, working: Bool = false, mood: String = "calm") -> MomentRule.Wave {
+            MomentRule.wave(lock: lock, sinceLastMs: since, night: night, working: working, mood: mood)
         }
-        let lock = PresenceDetector.lockEvent(at: t0), unlock = PresenceDetector.unlockEvent(since: t0, at: t0 + 1)
-        XCTAssertFalse(options(lock, MomentOutput.emotionKey).contains("none"), "it always reacts")
-        XCTAssertEqual(options(lock, MomentOutput.moveKey), ["none", "wave"])
-        XCTAssertEqual(options(lock, Signs.questionKey), ["none", "see ya!"])
-        XCTAssertEqual(options(unlock, MomentOutput.moveKey), ["none", "wave"])
-        XCTAssertEqual(options(unlock, Signs.questionKey), ["none", "oh, hi!"])
-        tags = ["night"]
-        XCTAssertEqual(options(lock, MomentOutput.moveKey), ["none", "wave", "nap"])
-        XCTAssertEqual(Set(options(lock, Signs.questionKey)), ["none", "see ya!", "nite nite"])
-        XCTAssertEqual(options(unlock, MomentOutput.moveKey), ["none", "wave"], "an unlock never naps")
-        moment = ["working"]
-        XCTAssertEqual(options(lock, MomentOutput.moveKey), ["none", "wave"], "Boop keeps watching")
-        XCTAssertEqual(options(lock, Signs.questionKey), ["none", "i got this"])
+        XCTAssertEqual(wave(), .wave, "the first lock")
+        XCTAssertEqual(wave(since: 60 * minute), .wave, "an hour on")
+        XCTAssertEqual(wave(since: 60 * minute - 1), .slight, "within the hour")
+        XCTAssertEqual(wave(lock: false), .slight, "an unlock is routine")
+        XCTAssertEqual(wave(lock: false, night: true), .slight, "an unlock never naps")
+        XCTAssertEqual(wave(since: minute, night: true), .nap, "a night lock naps, however soon after the last")
+        XCTAssertEqual(wave(since: minute, night: true, working: true), .slight, "it keeps watching")
+        XCTAssertEqual(wave(night: true, working: true), .wave)
+        for mood in ["cross"] {
+            XCTAssertEqual(wave(mood: mood), .snub)
+            XCTAssertEqual(wave(lock: false, mood: mood), .snub)
+            XCTAssertEqual(wave(night: true, mood: mood), .snub, "no nap in a huff")
+        }
+        XCTAssertEqual(wave(mood: "sad"), .wave, "only cross snubs")
     }
 
-    /// A small wave is the slighter motion, a bigger one the real `bye` or
-    /// `hello`; none holds up nothing; the nap sleeps.
-    func testTheWaveIsAsBigAsTheMoment() throws {
+    /// The wave as it plays, with no pass: a slight one is the slighter
+    /// motion in silence with no sign; a real one the `bye` with a word and
+    /// one of the pack's bye lines for the moment; a snub the mood's face
+    /// and nothing else; the nap a real wave, and it sleeps.
+    func testTheWaveAsItPlays() throws {
         var queued: [Moment] = [], napped: [Int64] = []
-        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, calendar: { _ in ["night"] }, replies: lines,
-                                 nap: { napped.append($0) })
+        var tags = ["day"], moment: [String] = [], mood = "calm", sinceLast: Int64?
+        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, calendar: { _ in tags }, replies: lines,
+                                 moment: { _ in moment }, nap: { napped.append($0) },
+                                 moodFace: { _ in mood == "cross" ? "grumpy" : "calm" }, moodID: { _ in mood })
         let log = Transcript.log().view(now: t0)
         let lock = PresenceDetector.lockEvent(at: t0), unlock = PresenceDetector.unlockEvent(since: t0, at: t0 + 1)
-        func run(_ answers: [String: String], _ e: Event) -> String? {
-            react.run(answers.mapValues { Self.a($0) }, now: e, log: log)?.message
+        func play(_ e: Event) throws -> String {
+            let facts: [String: JSONValue] = sinceLast.map { ["since_last_ms": .int($0)] } ?? [:]
+            let ruled = try XCTUnwrap(react.ruled(e, facts: facts, log: log))
+            return try XCTUnwrap(react.play(ruled, about: e, log: log)?.message)
         }
-        let slight = try XCTUnwrap(run(["react.face": "calm", "react.move": "wave", "react.intensity": "small"], lock))
-        XCTAssertEqual(queued.last?.reply, "wave")
-        XCTAssertEqual(queued.last?.say?.takes, [], "no say, silent")
-        XCTAssertNil(queued.last?.sign)
-        XCTAssertTrue(slight.contains(", waving"), slight)
-
-        _ = run(["react.face": "happy", "react.move": "wave", "react.intensity": "medium", Signs.questionKey: "see ya!", "say": "glad"], lock)
+        let real = try play(lock)
         XCTAssertEqual(queued.last?.reply, "bye")
         XCTAssertEqual(queued.last?.sign, "see ya!")
-        _ = run(["react.face": "happy", "react.move": "wave", "react.intensity": "medium"], unlock)
-        XCTAssertEqual(queued.last?.reply, "hello")
-        _ = run(["react.face": "happy", "react.move": "wave", "react.intensity": "small"], unlock)
-        XCTAssertEqual(queued.last?.reply, "wave")
+        XCTAssertEqual(queued.last?.loops, 2, "medium")
+        XCTAssertEqual(queued.last?.mood, "calm", "in the mood's own face")
+        XCTAssertNil(queued.last?.anim, "no move but the wave")
+        XCTAssertTrue(real.contains("moment (medium), waving, holding up a sign: \"see ya!\""), real)
+        if !Take.all.isEmpty { XCTAssertEqual(queued.last?.say?.takes.isEmpty, false, "with a word") }
 
-        _ = run(["react.face": "grumpy", "react.move": "none", Signs.questionKey: "see ya!"], lock)
-        XCTAssertNil(queued.last?.reply, "a snub: no wave")
-        XCTAssertNil(queued.last?.sign, "and no sign")
+        sinceLast = 5 * minute
+        let slight = try play(lock)
+        XCTAssertEqual(queued.last?.reply, "wave")
+        XCTAssertEqual(queued.last?.say?.takes, [], "in silence")
+        XCTAssertNil(queued.last?.sign)
+        XCTAssertEqual(queued.last?.loops, 1)
+        XCTAssertTrue(slight.hasSuffix("(small), waving."), slight)
+        _ = try play(unlock)
+        XCTAssertEqual(queued.last?.reply, "wave", "an unlock's is slight")
+        XCTAssertNil(queued.last?.sign)
+
+        moment = ["working"]
+        sinceLast = nil
+        _ = try play(lock)
+        XCTAssertEqual(queued.last?.sign, "i got this", "it keeps watching")
         XCTAssertEqual(napped, [])
 
-        _ = run(["react.face": "happy", "react.move": "nap", "react.intensity": "small", Signs.questionKey: "nite nite"], lock)
-        XCTAssertEqual(queued.last?.reply, "nap", "the nap is the nap at any size")
-        XCTAssertEqual(queued.last?.sign, "nite nite")
-        XCTAssertEqual(napped, [t0])
-        XCTAssertEqual(MomentOutput.move(["react.move": Self.a("wave")]), "wave")
+        moment = []
+        tags = ["night"]
+        let night = try play(lock)
+        XCTAssertEqual(queued.last?.reply, "bye", "good night is a real wave")
+        XCTAssertTrue(["see ya!", "nite nite"].contains(queued.last?.sign ?? ""), "\(String(describing: queued.last?.sign))")
+        XCTAssertEqual(napped, [t0], "and it sleeps")
+        XCTAssertTrue(night.contains(", waving, and going to sleep"), night)
+
+        mood = "cross"
+        napped = []
+        _ = try play(lock)
+        XCTAssertNil(queued.last?.reply, "a snub: no wave")
+        XCTAssertNil(queued.last?.sign, "and no sign")
+        XCTAssertEqual(queued.last?.say?.takes, [], "nor a word")
+        XCTAssertEqual(queued.last?.mood, "grumpy", "its cross face")
+        XCTAssertEqual(napped, [], "nor the nap")
+    }
+
+    /// Through the pipeline, as the app runs: a lock plays its wave with
+    /// no brain at all, recorded as the rule's, under the lock's line.
+    func testALockPlaysWithNoBrain() throws {
+        let rig = CoreRig()
+        var queued: [Moment] = []
+        let mind = Runtime.Mind(buddy: rig.pipeline.buddy, steering: RuntimeTests.steering, reactions: Reactions(),
+                                queue: { r, p in queued.append(r); p.finish(.done) }, speaks: { false }, talk: { .normal })
+        _ = Runtime.brain(rig.pipeline, mind)
+        rig.pipeline.brain = false
+        let step = rig.pipeline.lock(PresenceDetector.lockEvent(at: rig.now))
+        XCTAssertEqual(queued.map(\.reply), ["bye"], "a first lock: a real wave")
+        let did = try XCTUnwrap(step.recorded.first { $0.kind == Event.did && $0.action == MomentOutput.outputName })
+        XCTAssertEqual(did["by"]?.string, "rule")
+        XCTAssertEqual(step.views.map(\.wakesBrain), [false], "and no pass")
+        rig.now += 2 * minute
+        rig.pipeline.lock(PresenceDetector.unlockEvent(since: rig.now - 2 * minute, at: rig.now))
+        XCTAssertEqual(queued.last?.reply, "wave", "the unlock: a slight one")
+        // Something needs you: the screen is its, and nothing plays.
+        rig.send(.needsYou, tool: "Bash")
+        rig.now += minute
+        rig.pipeline.lock(PresenceDetector.lockEvent(at: rig.now))
+        XCTAssertEqual(queued.count, 2)
     }
 
     /// The nap sleeps at once with an agent's session open; work or a request

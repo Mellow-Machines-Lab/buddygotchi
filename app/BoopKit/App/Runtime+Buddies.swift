@@ -262,18 +262,30 @@ extension Runtime {
             carryOut([.reaction(Moment(reason: fact))], at)
         }, dreams: m.steering.dreams, line: { [weak h] about in h?.line(about.seq) },
         occasion: { at in core.dayGreeting(at: at) }, asks: m.steering.asks, askable: { [mood] about, log, questions in m.askable(about, log, questions, mood) },
-        wishable: { [mood] about, log in
+        wishable: { about, _ in
             // At an ask's moment, within the core's caps.
-            Asks.moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(m.company(), at: about.at)).isEmpty
-                ? [] : core.wishable(at: about.at)
+            Asks.moment(about).isEmpty ? [] : core.wishable(at: about.at)
         }, makeWish: { kind, at in
             carryOut(core.makeWish(kind, at: at), at)
         }, wishDone: m.wishDone,
         dayNumber: { LocalTime.dayNumber(core.config.time.boopDay(core.wall($0))) ?? 0 },
         moodFace: { [mood] log in MoodOutput.face(mood, log, pack: pack) },
+        moodID: { [mood] log in MoodOutput.value(mood, log, pack: pack) },
         today: m.company, felt: m.felt, notice: noticeAt, wishWhy: wishWhy, seed: m.seed)
         h.output(mood)
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
+        // The Moments the rules make whole, with no pass: your lock and
+        // unlock, a working check-in, another buddy's gesture. Each plays
+        // as its event is logged, unless something holds the screen.
+        for kind in TranscriptView.ruled + [TranscriptView.ruledCheckIn] {
+            h.on(kind) { [weak h, weak react] e in
+                guard let h, let react, TranscriptView.isRuled(e), let line = h.line(e.seq) else { return }
+                let log = h.log.view(now: h.clock.now())
+                guard view.held(e, log, needsYou: { core.needsYouBlock }) == nil,
+                      let ruled = react.ruled(e, facts: line.facts, log: log) else { return }
+                h.force(react, by: "rule") { react.play(ruled, about: e, log: log) }
+            }
+        }
         // The only buddy goes by the name you gave it, which the pack's
         // own words don't know.
         let own = CharacterPack.active.name

@@ -14,10 +14,6 @@ public final class GrowthStore {
     public static let lastSeqKey = "xp.last_seq"
     public static let celebratedKey = "xp.celebrated"
     public static let ringKey = "xp.ring_closed"
-    /// What growth kept before XP was kept simple: gone at the first launch,
-    /// so XP starts from zero.
-    public static let oldKeys = ["growth.xp", "growth.stage", "growth.last_seq", "growth.reached", "growth.earned",
-                                 "growth.decayed", "growth.shrank"]
     /// How many days' rings it keeps, today's included: the Boop tab's week.
     public static let keptDays = 7
     /// Days by their number, as a day is in UTC.
@@ -42,9 +38,6 @@ public final class GrowthStore {
     public init(_ store: KeyValueStore, log: @escaping (String) -> Void = { _ in }) {
         self.store = store
         self.log = log
-        if Self.oldKeys.contains(where: { store.string($0) != nil }) {
-            do { try store.remove(Self.oldKeys) } catch { log("growth: can't forget the old XP: \(error)") }
-        }
         let today = store.string(Self.todayKey)?.split(separator: " ")
         day = today?.first.map(String.init)
         growth = Growth(xp: store.int(Self.xpKey) ?? 0, today: today?.dropFirst().first.flatMap { Int($0) } ?? 0)
@@ -124,33 +117,29 @@ public final class GrowthStore {
     /// quit before then, or a demo, loses nothing. True if it marked one.
     @discardableResult
     public func played(_ e: Event) -> Bool {
-        switch e.type {
-        case .level?:
-            guard let level = Int(e.specificType), level > celebrated else { return false }
+        guard e.type == .growth else { return false }
+        var marked = false
+        if let level = e["level"]?.int.map(Int.init), level > celebrated {
             celebrated = level
             log("growth: level \(level), at \(growth.xp) XP")
-        case .ring?:
-            guard ringCelebrated != day else { return false }
-            ringCelebrated = day
-        default: return false
+            marked = true
         }
-        save()
-        return true
+        if e["ring"]?.bool == true, ringCelebrated != day {
+            ringCelebrated = day
+            marked = true
+        }
+        if marked { save() }
+        return marked
     }
 
     /// The board never showed the moment of `events` (`played` marked them):
     /// each is due again, for the board's next hello or the next XP.
     public func missed(_ events: [Event]) {
-        for e in events {
-            switch e.type {
-            case .level?:
-                if let level = Int(e.specificType), level <= celebrated { celebrated = level - 1 }
-            case .ring?:
-                if ringCelebrated == day {
-                    ringCelebrated = nil
-                    try? store.remove([Self.ringKey])
-                }
-            default: break
+        for e in events where e.type == .growth {
+            if let level = e["level"]?.int.map(Int.init), level <= celebrated { celebrated = level - 1 }
+            if e["ring"]?.bool == true, ringCelebrated == day {
+                ringCelebrated = nil
+                try? store.remove([Self.ringKey])
             }
         }
         save()

@@ -985,12 +985,12 @@ static void test_listening_plays_while_something_needs_you() {
   // "Tell claude yes": the reply shakes its head and holds up its sign.
   a.talkOn();
   a.at(1000);
-  ReactionIn notme;
-  notme.said = true, notme.expr = true, notme.mood = render::Mood::kProud, notme.take = voice::takeIndex(kGo);
-  snprintf(notme.sign, sizeof(notme.sign), "%s", "that's ur job");
-  snprintf(notme.reply, sizeof(notme.reply), "%s", "notme");
-  TEST_ASSERT_NULL(a.b.admit(notme, a.t));
-  TEST_ASSERT_FALSE(a.b.play(notme, a.t));  // its say doesn't play
+  ReactionIn refusal;
+  refusal.said = true, refusal.expr = true, refusal.mood = render::Mood::kProud, refusal.take = voice::takeIndex(kGo);
+  snprintf(refusal.sign, sizeof(refusal.sign), "%s", "that's ur job");
+  snprintf(refusal.reply, sizeof(refusal.reply), "%s", "no");
+  TEST_ASSERT_NULL(a.b.admit(refusal, a.t));
+  TEST_ASSERT_FALSE(a.b.play(refusal, a.t));  // its say doesn't play
   TEST_ASSERT_EQUAL(SceneState::kNone, a.anim());
   TEST_ASSERT_TRUE(a.b.look(a.t) == SceneState::kNeedsYou);
   TEST_ASSERT_EQUAL_STRING("that's ur job", a.b.sign(a.t).text);

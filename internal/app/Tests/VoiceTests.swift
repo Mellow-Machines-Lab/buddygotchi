@@ -15,7 +15,7 @@ extension Moment.Say {
 
     /// A made-up take `ms` long, for tests that time a line.
     static func test(ms: Int) -> Moment.Say {
-        .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "start", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
+        .init(takes: [Take(id: "test", text: "Test", part: .about, meaning: "work", kind: .word, moods: ["calm"], finish: nil, ms: ms)])
     }
 }
 
@@ -31,9 +31,11 @@ final class VoiceTests: XCTestCase {
     /// a length and text the bubble can show; ids are unique.
     func testEveryTakeIsUsable() {
         let feelings = Set(MomentOutput.feelings.map(\.name)), topics = Set(MomentOutput.topics.map(\.name))
-        // The voice file's takes, each once as itself, and a feeling's or
-        // topic's take again as each reply it's the words of.
-        XCTAssertEqual(Set(Take.all.map(\.id)).count, 2995)
+        // The voice file's takes that something says, each once as itself,
+        // and a feeling's or topic's take again as each reply it's the
+        // words of. The takes of topics `say` no longer offers stay on the
+        // card, and off this table.
+        XCTAssertEqual(Set(Take.all.map(\.id)).count, 1844)
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
         let recorded = Dictionary(Take.all.filter { $0.part != .reply }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         let replies = Set(MomentOutput.replies.map(\.name) + ["dunno", "unhush"])
@@ -91,7 +93,9 @@ final class VoiceTests: XCTestCase {
         func u32(_ at: Int) -> Int { pack[at..<at + 4].enumerated().reduce(0) { $0 | Int($1.1) << (8 * $1.0) } }
         let count = u32(24), size = u32(28), index = u32(32)
         let ids = (0..<count).map { i in String(decoding: pack[(index + i * size)...].prefix(72).prefix { $0 != 0 }, as: UTF8.self) }
-        XCTAssertEqual(ids, Set(Take.all.map(\.id)).sorted { $0.utf8.lexicographicallyPrecedes($1.utf8) }, "a reply's words are a take the board has")
+        // The card keeps the takes of topics `say` no longer offers: the
+        // table is the ones something says, every one of them on the card.
+        XCTAssertEqual(Set(Take.all.map(\.id)).subtracting(ids), [], "every take the Mac may ask for is one the board has")
     }
 
     /// A take of the answer, in the face's mood only, fit for
@@ -168,7 +172,7 @@ final class VoiceTests: XCTestCase {
         // doesn't say its own.
         let ready = Take.named("phase1.word.begin.ready__calm__contained")
         for _ in 0..<50 {
-            XCTAssertNotEqual(Voice.take(.about, meaning: "start", kind: .word, face: "curious", finish: nil,
+            XCTAssertNotEqual(Voice.take(.about, meaning: "work", kind: .word, face: "curious", finish: nil,
                                          avoiding: [ready.text], rng: &rng)?.text, "Ready")
         }
     }
@@ -180,8 +184,8 @@ final class VoiceTests: XCTestCase {
         func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 0.9]) }
         XCTAssertEqual(MomentOutput.sizes.map(\.loops), [1, 2, 3], "small to big hold once to three times")
         XCTAssertEqual(MomentOutput.sizes.map(\.kind), [.sound, .word, .phrase])
-        XCTAssertEqual(MomentOutput.size([:]).name, "small", "no answer is a small moment")
-        XCTAssertEqual(MomentOutput.size([MomentOutput.sizeKey: a("big")]).loops, 3)
+        XCTAssertEqual(MomentOutput.size(loops: nil).name, "small", "no hold is a small moment")
+        XCTAssertEqual(MomentOutput.size(loops: 3).name, "big")
         XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("tests")])! == (.about, "tests", false))
         XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("glad")])! == (.feeling, "glad", false))
         XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("swear")])! == (.feeling, "upset", true))

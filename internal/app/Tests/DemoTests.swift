@@ -269,9 +269,9 @@ final class DemoTests: XCTestCase {
     func testAScriptThePackCantPlaySaysWhere() throws {
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go"}
-            {"brain": {"react.face": "jolly", "react.intensity": "medium", "react.dance": "yes"}}
+            {"brain": {"react.face": "jolly", "say": "glad", "react.dance": "yes"}}
             {"mood": "ecstatic"}
-            {"brain": {"react.face": "none", "react.intensity": "medim"}, "mood": "calm"}
+            {"brain": {"react.face": "none", "react.reply": "dance"}, "mood": "calm"}
             """)
         let pack = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel"))
         let problems = script.problems(for: pack)
@@ -279,7 +279,7 @@ final class DemoTests: XCTestCase {
         XCTAssertTrue(problems[0].hasPrefix("line 2: the brain is never asked react.dance"))
         XCTAssertTrue(problems[1].hasPrefix("line 2: react.face has no choice jolly; it has none, \(pack.moods[0].id)"))
         XCTAssertTrue(problems[2].hasPrefix("line 3: pixel has no lasting mood ecstatic"))
-        XCTAssertTrue(problems[3].hasPrefix("line 4: react.intensity has no choice medim"))
+        XCTAssertTrue(problems[3].hasPrefix("line 4: react.reply has no choice dance"))
     }
 
     /// characters/DEMOS.md: a header's `start` is when the demo's clock

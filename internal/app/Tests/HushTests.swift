@@ -9,13 +9,12 @@ final class HushTests: XCTestCase {
     let min: Int64 = 60_000
     func a(_ choice: String, _ p: Double = 0.9) -> Answer { Answer(choice: choice, probabilities: [choice: p]) }
 
-    /// Pins `Core.hushMs` (the app's 30 min) and `hushMsBySize` (15, 30,
-    /// 60 min by the reply's intensity): the core keeps the hush, the
+    /// Pins `Core.hushMs` (30 min, the app's and a hush said to it): the
+    /// core keeps the hush, the
     /// board gets `hushed` while it lasts, and its end is recorded at the
     /// time it ran out.
     func testAHushLastsItsTimeAndEndsByItself() throws {
         XCTAssertEqual(Core.hushMs, 30 * min)
-        XCTAssertEqual(Core.hushMsBySize, [15 * min, 30 * min, 60 * min])
         let rig = CoreRig()
         let start = rig.now
         let fx = rig.note(Fx(rig.pipeline.effects(rig.core.hush(forMs: Core.hushMs, by: .app, at: rig.now), at: rig.now)))
@@ -79,22 +78,22 @@ final class HushTests: XCTestCase {
         let said = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "shh"])
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
         XCTAssertTrue(react.questions(now: poke, log: log).contains { $0.key == MomentOutput.sayKey })
-        XCTAssertFalse(react.questions(now: said, log: log).first { $0.key == MomentOutput.moveKey }!.options.contains { $0.name == "unhush" },
+        XCTAssertFalse(react.questions(now: said, log: log).first { $0.key == MomentOutput.replyKey }!.options.contains { $0.name == "unhush" },
                        "unhush is offered only while hushed")
-        _ = react.run(["react.face": a("sad"), "react.move": a("hush"), "react.intensity": a("big"), "say": a("upset")],
+        _ = react.run(["react.face": a("sad"), "react.reply": a("hush"), "say": a("upset")],
                       now: said, log: log)
-        XCTAssertEqual(hushes, [60 * min], "a big hush: an hour")
+        XCTAssertEqual(hushes, [30 * min], "half an hour")
         XCTAssertEqual(queued.last?.reply, "hush")
         hushedNow = true
         XCTAssertFalse(react.questions(now: poke, log: log).contains { $0.key == MomentOutput.sayKey }, "no say while hushed")
-        XCTAssertTrue(react.questions(now: said, log: log).first { $0.key == MomentOutput.moveKey }!.options.contains { $0.name == "unhush" })
+        XCTAssertTrue(react.questions(now: said, log: log).first { $0.key == MomentOutput.replyKey }!.options.contains { $0.name == "unhush" })
         XCTAssertTrue(react.questions(now: said, log: log).contains { $0.key == MomentOutput.sayKey }, "what you said is asked it, for an unhush")
-        _ = react.run(["react.face": a("sad"), "react.move": a("comfort"), "say": a("upset")], now: said, log: log)
+        _ = react.run(["react.face": a("sad"), "react.reply": a("comfort"), "say": a("upset")], now: said, log: log)
         XCTAssertEqual(queued.last?.say?.takes, [], "any other reply says nothing")
-        _ = react.run(["react.face": a("grumpy"), "say": a("upset"), "react.intensity": a("medium")], now: poke, log: log)
+        _ = react.run(["react.face": a("grumpy"), "say": a("upset")], now: poke, log: log)
         XCTAssertEqual(queued.last?.mood, "grumpy", "its face goes on")
         XCTAssertEqual(queued.last?.say?.takes, [], "but it says nothing")
-        _ = react.run(["react.face": a("happy"), "react.move": a("unhush"), "say": a("glad")], now: said, log: log)
+        _ = react.run(["react.face": a("happy"), "react.reply": a("unhush"), "say": a("glad")], now: said, log: log)
         XCTAssertEqual(hushes.last, .some(nil), "let talk again")
         XCTAssertFalse(queued.last?.say?.takes.isEmpty ?? true, "and the reply that lets it talk speaks")
     }
@@ -106,24 +105,29 @@ final class HushTests: XCTestCase {
         try requireVoice()
         var talk = Talk.quiet
         var queued: [Moment] = []
-        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, talk: { talk })
+        var facts: [String: JSONValue] = [:]
+        let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, talk: { talk }, line: { _ in Line("", facts: facts) })
         let log = Transcript.log().view(now: 0)
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
+        let finish = Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "Stop")
+        let said = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "hi"])
         let quiet = try XCTUnwrap(react.questions(now: poke, log: log).first { $0.key == MomentOutput.sayKey })
         XCTAssertEqual(quiet.options.map(\.name), ["none", "upset", "glad", "tickled", "shaken"])
-        _ = react.run(["react.face": a("amused"), "say": a("tickled"), "react.intensity": a("small")], now: poke, log: log)
+        _ = react.run(["react.face": a("amused"), "say": a("tickled")], now: poke, log: log)
         XCTAssertEqual(queued.last?.say?.takes, [], "a small moment says nothing")
-        _ = react.run(["react.face": a("happy"), "react.move": a("success"), "say": a("glad"), "react.intensity": a("big")], now: poke, log: log)
+        facts = ["outcome": "done", "length_ms": 600_000, "tools": 3]
+        _ = react.run(["react.face": a("happy"), "say": a("glad")], now: finish, log: log)
         XCTAssertEqual(queued.last?.say?.takes, [], "nor a finish, however big")
         XCTAssertEqual(queued.last?.anim, "task_complete", "which still plays")
-        _ = react.run(["react.face": a("amused"), "say": a("tickled"), "react.intensity": a("medium")], now: poke, log: log)
+        facts = [:]
+        _ = react.run(["react.face": a("amused"), "react.reply": a("hehe"), "say": a("tickled")], now: said, log: log)
         XCTAssertFalse(queued.last?.say?.takes.isEmpty ?? true, "a medium moment says how it feels")
         talk = .normal
-        XCTAssertEqual(react.questions(now: poke, log: log).first { $0.key == MomentOutput.sayKey }?.options.count, 22)
+        XCTAssertEqual(react.questions(now: poke, log: log).first { $0.key == MomentOutput.sayKey }?.options.count, 12)
         // Chatty says something at every face: no "none".
         talk = .chatty
         let chatty = try XCTUnwrap(react.questions(now: poke, log: log).first { $0.key == MomentOutput.sayKey })
-        XCTAssertEqual(chatty.options.count, 21)
+        XCTAssertEqual(chatty.options.count, 11)
         XCTAssertFalse(chatty.options.contains { $0.name == "none" })
     }
 }

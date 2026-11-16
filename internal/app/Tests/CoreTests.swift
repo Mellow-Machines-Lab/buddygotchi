@@ -257,6 +257,12 @@ func woke(_ fx: Fx) -> [String] {
     events(fx).filter(\.wakesBrain).map(\.line)
 }
 
+/// The view events with a line and no pass, by their lines: a turn's
+/// start, which its prompt's reading speaks for.
+func lined(_ fx: Fx) -> [String] {
+    events(fx).filter { !$0.wakesBrain }.map(\.line)
+}
+
 /// A chatty Boop's rules, for tests that need the working check-in often.
 extension Personality.Rules {
     static let chatty = Personality.Rules(workCheckInMs: 45_000...90_000)
@@ -309,7 +315,8 @@ final class CoreAgentWorkTests: XCTestCase {
         let fx = rig.send(.turnStart)
         XCTAssertEqual(states(fx).last?.doing, "working")
         XCTAssertEqual(states(fx).last?.working, 1)
-        XCTAssertEqual(woke(fx), [#"claude started turn 1 on "landing"."#])
+        XCTAssertEqual(lined(fx), [#"claude started turn 1 on "landing"."#])
+        XCTAssertEqual(woke(fx), [], "a turn's start is a line, never a pass")
         XCTAssertNil(events(fx).first?.reaction, "a turn start's reaction is in the log, not HISTORY")
     }
 
@@ -2461,7 +2468,7 @@ final class CoreRulesTests: XCTestCase {
         // Starting again brings it back: resumed, or a new prompt.
         rig.send(.sessionStart)
         XCTAssertEqual(rig.sessions, [["claude", "jetpack", "idle"], ["claude", "landing", "idle"]])
-        XCTAssertEqual(woke(rig.send(.turnStart, session: "bg")), [#"claude started turn 1 on "landing"."#])
+        XCTAssertEqual(lined(rig.send(.turnStart, session: "bg")), [#"claude started turn 1 on "landing"."#])
         XCTAssertEqual(rig.state.doing, "working")
 
         // The mark lasts as long as a silent session is kept: a day.

@@ -116,12 +116,6 @@ struct SettingsPane: View {
                     RowDivider()
                     volumeRow
                     RowDivider()
-                    SettingRow(icon: "text.line.first.and.arrowtriangle.forward", title: "Falling words",
-                               detail: "Your agents' work falls past \(model.name), and failures hit it.") {
-                        Toggle("Falling words", isOn: Binding(get: { model.status?.workStream ?? true }, set: { model.setWorkStream($0) }))
-                            .toggleStyle(.boop).labelsHidden()
-                    }
-                    RowDivider()
                     SettingRow(icon: "keyboard", title: "Types along",
                                detail: "\(model.name) types when you do. It knows your keys are busy, never what you type.") {
                         Toggle("Types along", isOn: Binding(get: { model.status?.typesAlong ?? true }, set: { model.setTypesAlong($0) }))

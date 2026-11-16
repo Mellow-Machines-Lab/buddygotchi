@@ -319,7 +319,7 @@ public final class Runtime: @unchecked Sendable {
         let places = self.places
         // The only buddy goes by the name you gave it, in what it hears and
         // what it counts as its name.
-        let buddy = Buddy.only(CharacterPack.active.named(longTerm.name))
+        let buddy = Buddy(CharacterPack.active.named(longTerm.name))
         let rig = Rig(link: options.link, steering: options.steering, log: log)
         self.rig = rig
         // The board's lines go to its mirror too, once `self` is whole.
@@ -343,7 +343,6 @@ public final class Runtime: @unchecked Sendable {
         // isn't a new day.
         var config = Core.Config(volume: settings.volume, time: options.time, pack: buddy.pack, hatched: longTerm.hatched)
         config.firstAsk = SessionTracker.randomFirstRequest()
-        config.workStream = settings.workStream
         let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
         core.macSide = settings.macSide
         core.setWallClock(wall, at: wallAt)
@@ -961,14 +960,6 @@ public final class Runtime: @unchecked Sendable {
             saveSettings { $0.macSide = side }
             core.macSide = side
             run(core.stateChanged(at: options.clock()))
-        }
-    }
-
-    /// The work stream on or off, on every buddy, kept in `settings.json`.
-    public func setWorkStream(_ on: Bool) {
-        home.async { [self] in
-            run(core.setWorkStream(on, at: options.clock()))
-            saveSettings { $0.workStream = on }
         }
     }
 

@@ -24,8 +24,11 @@ public final class ExpectBrain: Brain, ScenarioBrain, @unchecked Sendable {
 
     public func willRun(_ step: Scenario.Step?) { self.step = step }
 
-    /// Which question each `expect` field answers.
-    public static let questions = ["react": MomentOutput.emotionKey, "move": MomentOutput.moveKey, "intensity": MomentOutput.sizeKey,
+    /// Which question each `expect` field answers. A `move` answers the
+    /// reply to what you said, the one move that's asked; any other move,
+    /// and the size, are the rules' (`MomentRule`), which an `expect`
+    /// checks and no brain answers.
+    public static let questions = ["react": MomentOutput.emotionKey, "move": MomentOutput.replyKey,
                                    "say": MomentOutput.sayKey, "mood": MoodOutput.outputName, "sign": Signs.questionKey]
 
     /// What `step` answers for each question, in the order to try:

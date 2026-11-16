@@ -626,12 +626,6 @@ final class AppModel: ObservableObject {
         runtime?.setMacSide(side)
     }
 
-    func setWorkStream(_ on: Bool) {
-        guard status?.workStream != on else { return }
-        status?.workStream = on
-        runtime?.setWorkStream(on)
-    }
-
     /// Takes effect from the next event.
     func setSwearing(_ on: Bool) {
         guard status?.swearing != on else { return }

@@ -287,7 +287,7 @@ final class NoticesTests: XCTestCase {
                                      moodFace: { _ in "calm" }, notice: { _, _ in n })
             let checkIn = Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in")
             let log = Transcript.log().view(now: 0)
-            _ = react.run([MomentOutput.emotionKey: Answer(choice: face), MomentOutput.sizeKey: Answer(choice: "big"), Signs.questionKey: Answer(choice: sign)],
+            _ = react.run([MomentOutput.emotionKey: Answer(choice: face), Signs.questionKey: Answer(choice: sign)],
                           now: checkIn, log: log)
             return played
         }

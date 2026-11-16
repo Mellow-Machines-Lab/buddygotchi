@@ -11,6 +11,15 @@ graph. How long a mood holds is code's, never Jev's: a mood fades on the
 clock by its pack's `fade`, and cross's level is counted. A `wait` step
 lets the fade run as the app's ticks do.
 
+Jev is asked only a Moment's emotion and what it says (and, to your words,
+the reply). Its move and its size are a rule's (`MomentRule`), and so is
+the whole Moment at your lock or unlock, a working check-in and a boop
+from the world, which wake no pass. An `expect` checks what played either
+way: a step of the rules' is checked against the rule's own Moment, and
+its scenario is `scripted`, as no Jev run could change it. A turn's start
+with no `prompt` wakes no pass, so a step that expects one gives it a
+prompt.
+
 ## 1. What an eval is
 
 A scenario is a few hook-level steps on a virtual clock. Each run starts
@@ -55,7 +64,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
 | `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
-| `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b`, `touch` (a stroke, its first answer) or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
+| `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b` or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
 | `gesture` | A touch on the board, its `kind` (`stroke`, `lean`, a finger kept still, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
@@ -64,12 +73,12 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
 | `away` | You lock the screen and leave: a `presence` start, `locked`, since this moment, `You stepped away from the Mac.`, which wakes no pass |
 | `back` | You unlock it: a `presence` end, `unlocked`, `You came back to the Mac after a long break.` with the break's band since the last `away` |
-| `lock`, `unlock` | The screen locks or unlocks, however short: a `lock` start, or end since the last `lock`, each waking a pass: `You locked the Mac, first time in a while.`, `You unlocked the Mac after 2 min.`. After an `away` the unlock has no line, so no pass: its `back` is the one reaction |
+| `lock`, `unlock` | The screen locks or unlocks, however short: a `lock` start, or end since the last `lock`, each a line the rules answer with a wave and no pass (`MomentRule.wave`): `You locked the Mac, first time in a while.`, `You unlocked the Mac after 2 min.`. After an `away` the unlock has no line, so no pass: its `back` is the one reaction |
 | `session started` | A Claude session opens with no turn (`SessionStart`, `startup`): Boop is awake and idle, not asleep. No line, so no pass |
-| `compact` | The agent's context is compacted (`SessionStart`, `compact`): `claude's context on "landing" was compacted; it picks up where it left off.` |
+| `compact` | The agent's context is compacted (`SessionStart`, `compact`): no line, and no pass |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
-| `world` | Another buddy's gesture from the world, the step's `kind` (`boop` unless it says; `wave`, `heart`, `cheer`), `count` of them together, from Europe or Africa: a `world` event, `Someone in Europe or Africa booped Boop.`, a pass |
+| `world` | Another buddy's gesture from the world, the step's `kind` (`boop` unless it says; `wave`, `heart`, `cheer`), `count` of them together, from Europe or Africa: a `world` event, `Someone in Europe or Africa booped Boop.`, which the rules answer with no pass (`MomentRule.world`) |
 | `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open. A mood's fade runs meanwhile |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
@@ -88,8 +97,8 @@ long list that checks little:
 | Checked | Against |
 | --- | --- |
 | `react` | Jev's pick for the `react.face` question: `none` or an emotion |
-| `move` | The move the Moment played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); at your lock or unlock `wave`, or at a night's lock `nap`; or `none` when it played none or Boop didn't react |
-| `intensity` | The Moment's size, Jev's `react.intensity` pick (`small` to `big`: how long the emotion held and how big what it said), or `none` when `react` didn't react |
+| `move` | The move the Moment played. At an event the rule's pick (`MomentRule.move`): a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name. To what you said the reply, Jev's `react.reply` pick (`huh` below the floor, and for the shrug a question gets); with the expect brain, the first reply listed is its answer. At your lock or unlock the wave: `wave` for the slight one, `bye` or `hello` for a real one. Or `none` when it played none or Boop didn't react |
+| `intensity` | The Moment's size, the rule's pick (`MomentRule.size`; `small` to `big`: how long the emotion held and how big what it said), or `none` when Boop didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the Moment held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
@@ -303,8 +312,8 @@ the file and step.
 packs keep strict scenarios of their own, in their words: a scenario with no
 brief is a must.
 
-- **Code checks** (`92`, `93`, `115`–`117`, `164`, `166`, `168`):
-  `scripted`, the code's rules, which need no Jev: the screen, one reaction at a long unlock, the nap asleep at once, a wish
+- **Code checks** (`92`, `93`, `115`–`117`, `160`, `164`, `166`, `168`, `187`, `188`):
+  `scripted`, the code's rules, which need no Jev: the screen, your lock's wave (a real one, a slight one, good night and the nap asleep at once), one reaction at a long unlock, a boop and a cheer from the world, a wish
   on offer with no agents open.
 - **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `123`, `126`,
   `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so

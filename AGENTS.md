@@ -176,7 +176,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | doing | What Boop is busy with: resting, working, asleep, listening, no app | base, look (for the state) | `base` |
-| nap | Boop asleep at once, Jev's pick at a lock at night, until you show up (`Core.nap`) | | `reply`: `nap`, `base`: `asleep` |
+| nap | Boop asleep at once, the rule's at a lock at night with no agent working, after its good-night wave, until you show up (`MomentRule.wave`, `Core.nap`) | | `base`: `asleep` |
 | look | Only the art that draws a Doing | | |
 | activity | How it's working, one of four the whole body shows (`Act`): typing (an edit, any other tool, a plan), looking (a read, a search, the web), running (a command, the tests, a build, helpers at work), waiting (a call gone quiet) | act | `act`: `tool_use`, `analyzing`, `terminal`, `waiting` |
 | tier | How long it's been working or resting: tier 1 at 1 min, tier 2 at 5 min, tier 3 at 15 min (`Tags.tiers`) | stage | `tier1`…`tier3` |
@@ -207,15 +207,15 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| moment | A beat on top of Doing: event, emotion, size, voice and sign; made by the board, the rules or Jev | reaction (for the beat), one-shot | `do` |
+| moment | A beat on top of Doing: event, emotion, size, voice and sign; made by the board, the rules or Jev. Jev picks only the emotion, the voice and the sign; the move and the size are the rules' (`MomentRule`), and so is the whole Moment at your lock or unlock, a working check-in, a boop from the world and Boop's growth | reaction (for the beat), one-shot | `do` |
 | event | What happened: a finish, a check, you came back, your words, your prompt naming Boop, a touch, or Boop's own beat | | |
 | Boop's own beat | A Moment with no outside event: an idle check-in, a musing, an ask | | |
 | emotion | The expression for one Moment, any of the pack's 18 faces | face | `react.face`, a `do`'s `mood` |
-| size | How much the Moment matters: small, medium, big | intensity, loops | `react.intensity`, `loops` |
-| finish | The animation a turn's end plays, one for each size by the turn's length: Little Win, Confetti, Gold Rush; the low sign and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
-| greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
-| wave | Boop's answer to your lock or unlock: `bye` or `hello`, or `reply-wave`, slighter, when small; a snub has none | | `reply` |
-| reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
+| size | How much the Moment matters: small, medium, big. A rule's pick, never Jev's: a finish by its turn's length, your words medium, a touch small (`MomentRule.size`) | intensity | `loops` |
+| finish | The animation a turn's end plays, the rule's pick by how the turn ended (`MomentRule.move`), one for each size by the turn's length: Little Win, Confetti, Gold Rush; the low sign and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
+| greeting | The animation of your coming back after an hour or more, or of your prompt naming Boop: the rule's pick (`MomentRule.move`) | move (wake up, notice) | `wake_up`, `notice` |
+| wave | Boop's answer to your lock or unlock, by rule and with no pass (`MomentRule.wave`): a real `bye` with a word and a sign at a first lock in an hour, good night and the nap at a lock at night, else `reply-wave`, slighter and silent; cross, a snub, which has none; an unlock ending an away has none either, as the back's greeting plays | | `reply` |
+| reply | Boop's answer to your words, Jev's pick of 11 (yes, no, huh, hello, bye, thanks, ouch, comfort, hehe, status, hush), with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `react.reply`, `reply` |
 | ask | A sign that is a question, with two answers you tap, from the pack's `asks.md`; never needs an answer | quiz, prompt | `ask` |
 | wish | Boop's want, about one a day by its steering, kind pet, chat or work, its sign picked by Jev like an ask's; a rule meets it at once by a touch on its face, push-to-talk or working with an agent; until you've met a kind once it shows how; left too long it sighs and slumps (`Core.Wish`, `[wish …]` in `asks.md`, `state.wish`, `wish_how`, `wish_met`, `wish_gone`) | need, request | `wish` |
 | notice | Something true about your day that Boop may care about: a fact on a moment that exists (`Noticed` in CONTEXT), or at an idle check-in, a line of its own, `waiting`, `stretch`, `rough` or `late`, a wish first (`Notices`, `[notice …]` in `signs.md`). The animation called `notice` on the wire is the greeting's, which a played notice borrows to look up at you | nag, reminder | `notice_key` |
@@ -229,7 +229,7 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear (only with Settings' swearing on) | say | `say` |
+| voice | What Boop says aloud: none, a sound, a word, a phrase, a swear (only with Settings' swearing on). Jev picks what it's about (`say`): nothing, a swear, one of 4 feelings or one of 6 topics (hello, work, tests, done, retry, quiet) | say | `say` |
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
@@ -248,9 +248,9 @@ things on three channels, **voice**, **sign** and **narration**.
 | message | One JSON line on the wire: `hello`, `state`, `do`, `ev` | line | |
 | the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD (the mood's file, then cross's level now), CONTEXT, HISTORY, NOW | the state | |
 | CONTEXT | The prompt's section for how things stand: When, Talk, the buddy, you, the agents, the day so far (`ContextSection`) | NOW (that's the event), status | |
-| pass | One request to Jev | | |
-| wake, hold | Whether an event asks Jev at all | | |
-| check-in | Boop looking in by itself: working (during a turn), or idle (while you're here) | heartbeat | `check_in`, `working` |
+| pass | One request to Jev: its mood, its emotion and what it says; to your words, its reply too; at some events a sign | | |
+| wake, hold | Whether an event asks Jev at all. What wakes it: your prompt's reading, a finish, your words, a failed check or a fix, a touch, your coming back, an answered ask, a wish's end, a hush from the Mac, a push's result, an answered request, and the idle check-in (`TranscriptView.wakes`). A turn's start, your lock and unlock, the working check-in, a boop from the world and Boop's growth never do | | |
+| check-in | Boop looking in by itself: working (during a turn), the rule's small Moment with a word about the work and no pass (`MomentRule.checkIn`); or idle (while you're here), which is Jev's | heartbeat | `check_in`, `working` |
 | output | What Jev's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action | |
 | speeds | Reflex, reactive and deliberative | loops | |
 | personality | Who Boop is, temperament included (characters/CHARACTER.md §7) | nature | |
@@ -269,8 +269,8 @@ things on three channels, **voice**, **sign** and **narration**.
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign at an idle check-in, about once a day (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
 | XP | What Boop earns, a fixed amount for each thing the agents get done and each bit of your care, never lost (`Growth`, plan/v1-buddy.md §5) | points | |
-| the ring | Today's XP, up to 100 a Boop day: full, nothing more counts that day. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is a moment | daily goal, progress bar | `xp` (today's percent), `ring` |
-| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `level` |
+| the ring | Today's XP, up to 100 a Boop day: full, nothing more counts that day. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is the rules' moment, one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `xp` (today's percent), `growth` |
+| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
 | special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 
@@ -279,7 +279,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | the world | Everyone's buddies together on one server (`internal/world/`), which Boop joins unless you keep it private; the Mac's client is `WorldLink` | map, network | |
-| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship; a `world` event, which Jev answers. One reply's are one moment, at most 3 an hour; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
+| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship; a `world` event, which the rules answer with a warm small face and one of the pack's signs for it, no pass (`MomentRule.world`). One reply's are one moment, at most 3 an hour; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
 | region | Where a buddy is, from its UTC offset only: the Americas, Europe and Africa, Asia and Oceania | country, location | `from_region` |
 
 ## Architecture rules
@@ -304,6 +304,9 @@ The rules that are easy to break, in full in
   buddy's name and level, its UTC offset, one of six activities and
   counts. Nothing before onboarding's world screen, nothing with it off.
 - "Needs you" and the screen priority are plain rules in the core.
+- Jev is asked only where it earns its place: a Moment's move and size,
+  and the whole Moment at your lock or unlock, a working check-in and a
+  boop from the world, are plain rules in one place (`MomentRule`).
 - The device renders, reports and decides when a Moment plays, never what
   Boop does.
 - The Mac's face is the board's firmware: a change to what the gel draws

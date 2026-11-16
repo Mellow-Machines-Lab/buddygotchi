@@ -13,8 +13,8 @@ public struct Buddy: Sendable {
         self.pack = pack
     }
 
-    /// The process's character, as Boop runs.
-    public static func only(_ pack: CharacterPack = .active) -> Buddy { Buddy(id: pack.id, pack: pack) }
+    /// `pack` as the buddy: the process's character, as Boop runs.
+    public init(_ pack: CharacterPack = .active) { self.init(id: pack.id, pack: pack) }
 
     /// What it's called.
     public var name: String { pack.name }

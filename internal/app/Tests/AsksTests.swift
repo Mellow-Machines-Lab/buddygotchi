@@ -9,7 +9,7 @@ import XCTest
 final class AsksTests: XCTestCase {
     let lines = TaggedLine.parse("""
         - [snack idle keeps] fav snack? | cookie | pizza
-        - [pet lonely touch] pet me? | ok | later
+        - [pet night] pet me? | ok | later
         - [tabs idle] tabs or spaces? | tabs | spaces
         - [snack cookie] nom nom
         - [tabs spaces] traitor
@@ -19,16 +19,15 @@ final class AsksTests: XCTestCase {
     let noon: Int64 = 1_793_102_400_000
 
     /// A line with parts is a question, its first tag the id and `keeps`
-    /// and `touch` taken out of the moment's tags; a line with none is a
+    /// taken out of the moment's tags; a line with none is a
     /// follow-up, found by the question's id and the answer.
     func testQuestionsAndFollowUps() {
         XCTAssertEqual(TaggedLine.parse("- [a] x | y | z")[0].parts, ["x", "y", "z"])
         XCTAssertEqual(TaggedLine.parse("- [a] plain words")[0].parts, ["plain words"])
         let q = Asks.questions(lines)
         XCTAssertEqual(q.map(\.id), ["snack", "pet", "tabs"])
-        XCTAssertEqual(q[0], Asks.Question(id: "snack", question: "fav snack?", a: "cookie", b: "pizza", tags: ["idle"], keeps: true, touch: false))
-        XCTAssertEqual(q[1].tags, ["lonely"])
-        XCTAssertTrue(q[1].touch)
+        XCTAssertEqual(q[0], Asks.Question(id: "snack", question: "fav snack?", a: "cookie", b: "pizza", tags: ["idle"], keeps: true))
+        XCTAssertEqual(q[1].tags, ["night"])
         XCTAssertEqual(Asks.followUps(lines, id: "snack", answer: "Cookie"), ["nom nom"])
         XCTAssertEqual(Asks.followUps(lines, id: "snack", answer: "pizza"), [])
     }
@@ -54,7 +53,7 @@ final class AsksTests: XCTestCase {
             Asks.offered(q, tags: tags, record: { records[$0] }, today: "2026-10-31").map(\.id)
         }
         XCTAssertEqual(offered(["idle"]), ["snack", "tabs"])
-        XCTAssertEqual(offered(["idle", "lonely"]), ["snack", "pet", "tabs"])
+        XCTAssertEqual(offered(["idle", "night"]), ["snack", "pet", "tabs"])
         XCTAssertEqual(offered(["working"]), [])
         XCTAssertEqual(offered(["idle"], ["snack": Asks.Record(asked: "2026-10-02", answer: "pizza", keeps: true)]), ["tabs"])
     }
@@ -120,16 +119,6 @@ final class AsksTests: XCTestCase {
         XCTAssertEqual(askable(nil), [])
         rig.send(.needsYou, tool: "Bash")
         XCTAssertEqual(askable(memory), [], "none while something needs you")
-    }
-
-    /// A `daily` question may come back the next day, answered or not.
-    func testADailyQuestionComesBackTheNextDay() {
-        let pet = Asks.questions(TaggedLine.parse("- [pet lonely touch daily] pet me? | ok | later"))[0]
-        XCTAssertTrue(pet.daily)
-        XCTAssertEqual(pet.tags, ["lonely"])
-        let answered = Asks.Record(asked: "2026-10-30", answer: "ok", keeps: false)
-        XCTAssertTrue(Asks.off(answered, today: "2026-10-30", daily: true))
-        XCTAssertFalse(Asks.off(answered, today: "2026-10-31", daily: true))
     }
 
     /// The idle musings: [idle] lines, blanks from the day, a line needing

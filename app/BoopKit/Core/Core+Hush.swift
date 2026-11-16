@@ -16,10 +16,8 @@ extension Core {
     /// (the brain's `hush` or `unhush` reply), or the time running out.
     public enum By: String, Sendable { case app, talk, timer }
 
-    /// The app's hush, and one said to Boop by the reply's intensity, small
-    /// to big: 15 minutes, 30, an hour.
+    /// How long a hush lasts, the app's or one said to Boop.
     public static let hushMs: Int64 = 30 * 60_000
-    public static let hushMsBySize: [Int64] = [15, 30, 60].map { $0 * 60_000 }
 
     /// Boop's hush at `now`, or nil when it may talk.
     public func hushed(at now: Int64) -> Hush? {

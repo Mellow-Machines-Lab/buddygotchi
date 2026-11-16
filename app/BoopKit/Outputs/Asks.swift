@@ -5,10 +5,9 @@ import MellowHarness
 /// with two answers you tap, and what it holds up after you answer. Boop
 /// can ask a thing; it never needs an answer, and the agents never wait
 /// on one. A line with parts (`question | a | b`) is a question, its first
-/// tag its id and the rest the moment's tags it needs, `keeps` (asked
-/// once, ever: its answer becomes part of Boop) and `touch` (a stroke
-/// answers it too); a line with none is a follow-up, tagged with the
-/// question's id and the answer.
+/// tag its id and the rest the moment's tags it needs and `keeps` (asked
+/// once, ever: its answer becomes part of Boop); a line with none is a
+/// follow-up, tagged with the question's id and the answer.
 public enum Asks {
     public struct Question: Equatable, Sendable {
         public var id: String
@@ -18,9 +17,6 @@ public enum Asks {
         /// The moment's tags it needs.
         public var tags: [String]
         public var keeps: Bool
-        public var touch: Bool
-        /// It may come back the next day, whatever the answer (`daily`).
-        public var daily = false
     }
 
     /// How an ask ended with nobody answering.
@@ -41,8 +37,8 @@ public enum Asks {
             let p = line.parts
             guard p.count == 3, let id = line.tags.first else { return nil }
             let rest = Array(line.tags.dropFirst())
-            return Question(id: id, question: p[0], a: p[1], b: p[2], tags: rest.filter { !["keeps", "touch", "daily"].contains($0) },
-                            keeps: rest.contains("keeps"), touch: rest.contains("touch"), daily: rest.contains("daily"))
+            return Question(id: id, question: p[0], a: p[1], b: p[2], tags: rest.filter { $0 != "keeps" },
+                            keeps: rest.contains("keeps"))
         }
     }
 
@@ -83,12 +79,10 @@ public enum Asks {
     }
 
     /// Whether the question may be asked on `today`, by its record: one
-    /// that keeps, answered, never again; a `daily` one, answered or not,
-    /// the next day; another answered, after 30 days; one ignored or still
-    /// unanswered, after a day.
-    public static func off(_ record: Record?, today: String, daily: Bool = false) -> Bool {
+    /// that keeps, answered, never again; another answered, after 30 days;
+    /// one ignored or still unanswered, after a day.
+    public static func off(_ record: Record?, today: String) -> Bool {
         guard let record, let asked = LocalTime.dayNumber(record.asked), let now = LocalTime.dayNumber(today) else { return false }
-        if daily { return now == asked }
         if record.answer != nil { return record.keeps || now - asked < answeredOffDays }
         return now - asked < ignoredOffDays
     }
@@ -97,7 +91,7 @@ public enum Asks {
     /// (`tags`), not off by their records, the file's order kept, so the
     /// ones that shape Boop, written first, are offered first.
     public static func offered(_ questions: [Question], tags: Set<String>, record: (String) -> Record?, today: String) -> [Question] {
-        questions.filter { Set($0.tags).isSubset(of: tags) && !off(record($0.id), today: today, daily: $0.daily) }
+        questions.filter { Set($0.tags).isSubset(of: tags) && !off(record($0.id), today: today) }
     }
 
     /// Whether it may ask anything now, by how many asks it made: none on
@@ -109,17 +103,10 @@ public enum Asks {
     }
 
     /// The moment `about` is for an ask, as its tags, or none when asks
-    /// don't belong there: `idle`, an idle check-in, and `lonely` too when
-    /// lonely may begin there (the buddy is lonely, or CONTEXT says you
-    /// haven't touched or talked to it for an hour or more: whether it is
-    /// is the steering's). Never at a finish: its sign names the thread, and
-    /// a wish waits for a check-in.
-    public static func moment(_ about: Event, _ log: LogView, mood: Choice, untouchedMs: Int64?) -> [String] {
-        if about.type == .checkIn, about.specificType == "check_in" {
-            let lonely = MoodOutput.value(mood, log) == "lonely" || (untouchedMs ?? 0) >= ContextSection.untouchedShownMs
-            return lonely ? ["idle", "lonely"] : ["idle"]
-        }
-        return []
+    /// don't belong there: `idle`, an idle check-in. Never at a finish: its
+    /// sign names the thread, and a wish waits for a check-in.
+    public static func moment(_ about: Event) -> [String] {
+        about.type == .checkIn && about.specificType == "check_in" ? ["idle"] : []
     }
 
     /// The questions it may ask at `about`, of `questions`: none but at an
@@ -130,7 +117,7 @@ public enum Asks {
     public static func askable(_ about: Event, _ log: LogView, questions: [Question], core: Core, mood: Choice,
                                talk: Talk, memory: Memory?, wall: Int64) -> [Question] {
         guard let memory, !questions.isEmpty else { return [] }
-        let moment = moment(about, log, mood: mood, untouchedMs: ContextSection.untouchedMs(memory.today, at: about.at))
+        let moment = moment(about)
         guard !moment.isEmpty else { return [] }
         let now = about.at, time = core.config.time
         if core.needsYouBlock != nil || core.listening != nil || core.hushed(at: now) != nil { return [] }

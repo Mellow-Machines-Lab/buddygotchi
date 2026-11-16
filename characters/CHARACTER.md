@@ -357,20 +357,17 @@ moving while it shows how (`state.wish_how`), and a lane with none says
 
 **`asks.md`** (optional): what it may ask you, with two answers you tap
 (`Asks`). Ask only what does something with the answer: it becomes part of
-the buddy (`keeps`), it gets a touch (`touch`), or it goes into memory; idle
+the buddy (`keeps`), or it goes into memory; idle
 chatter is a musing instead (`signs.md`). A pack without the file never
 asks.
 
 - `- [id tags] question | a | b` is a question. Its first tag is its id,
   then the tags it needs:
-  - its moment: `idle` (an idle check-in) or `lonely` (an idle check-in where
-    the buddy is lonely, or CONTEXT says you haven't touched it for an hour
-    or more). Never a finish, whose thread the face names;
+  - its moment: `idle` (an idle check-in). Never a finish, whose thread
+    the face names;
   - the calendar's, and your kept answers;
-  - `daily`: it may come back the next day, whatever the answer;
   - `keeps`: asked once, ever, and its answer becomes a tag for good, as
-    `cookie`;
-  - `touch`: a stroke or a nose boop answers it too, as its first answer.
+    `cookie`.
 - `- [id answer] words` is a follow-up it may hold up after that answer.
 - A question is at most 18 characters, an answer 7, a follow-up 18 (`boopdev
   check`).
@@ -426,14 +423,17 @@ LISTENING has the top band it gives way. A face with no bar ignores it.
 (`Signs.replies`). A pack without the file holds up nothing for a reply but
 the facts. A line's `{turns}` is today's turns (left out under 2).
 
-- The brain picks a reply (`react.move`'s options for your words): yes, no,
-  huh, hello, bye, thanks, love, ouch, comfort, hehe, status, nap, hush,
-  dance or notme (`MomentOutput.replies`), and while hushed unhush. A `huh`
-  to a question plays as `dunno`, a shrug.
+- The brain picks a reply (`react.reply`, asked only of your words): yes,
+  no, huh, hello, bye, thanks, ouch, comfort, hehe, status or hush
+  (`MomentOutput.replies`), and while hushed unhush. A `huh` to a question
+  plays as `dunno`, a shrug. Thanks takes affection and making up too, and
+  no a trick turned down or anything asked for an agent.
+- The `bye` lines are also what it holds up at your lock of the Mac, when
+  the rule gives it a real wave (`MomentRule.wave`): `[bye night]` at
+  night, `[bye working]` while an agent works.
 - Each line is `- [reply tags] words`. Its first tag is the reply; any more
   are the calendar's or the moment's: `working` (an agent works), `waiting`
-  (something waits on you), `makeup` (within 10 minutes of an `ouch`, until
-  a `love` makes up), `nobrain` (the `huh` Boop shrugs with when it has no
+  (something waits on you), `nobrain` (the `huh` Boop shrugs with when it has no
   brain to answer, `Core.shrug`).
 - `{words}` is a phrase of what you said, at most 12 characters
   (`Signs.maxPhrase`): the whole of it or a part between marks, lowercased,
@@ -461,8 +461,9 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 
 A pack with a voice has recorded takes, each tagged with the moods it plays
 in, a feeling or a topic (what the brain's `say` picks), or a reply it's the
-words of (§7), and a kind (sound, word, phrase or swear). The Moment's size
-picks the kind: a sound small, a word medium, a phrase big. A swear
+words of (§7), and a kind (sound, word, phrase or swear). The Moment's size,
+which the app's rules pick (`MomentRule.size`), picks the kind: a sound
+small, a word medium, a phrase big. A swear
 plays only when the brain's `say` asks for one, and the person has turned
 swearing on in Settings (it's off by default).
 
@@ -475,6 +476,10 @@ swearing on in Settings (it's off by default).
   `reply`, and one that's also a second feeling (the slime's `shaken`, from
   its startled and cross words) again as that feeling: the voice file has
   it once. `say` offers a pack only the feelings its table has takes of.
+  The table may list fewer takes than the voice file holds: `say` offers 4
+  feelings and 6 topics (hello, work, tests, done, retry, quiet,
+  `MomentOutput.topics`), and a take of any other meaning stays on the card
+  and off the table, so nothing picks it.
 
 Both are built files and checked in, and a pack has both or neither. Boop's
 pack holds the recordings and voicegen, the tool that makes the two files;
@@ -618,9 +623,6 @@ Besides drawing each mood and state, a face:
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board
     adds from `state.busy`. The working looks also play at 125% and 160%
     then (`render::workPace`, `FaceContext::pace`).
-  - The Mac has more (`weekend`, `friday13`, `piday`, `aprilfools`, `may4`),
-    for its signs and the brain, and sends the
-    board none of them (`Tags.macOnly`).
 
   A design that needs tags shows only while they're on. A look starts on one
   while it fits and turns to one two times in three, and a Moment always

@@ -130,8 +130,8 @@ public enum Signs {
     /// brain to pick: one of `replies`' lines at random, never one with
     /// your words. Nil when none fits.
     public static func reply(_ lines: [TaggedLine], _ reply: String, calendar: [String], avoiding: String? = nil,
-                             rng: inout SplitMix64) -> String? {
-        let pool = replies(lines, reply, calendar: calendar, avoiding: avoiding)
+                             turns: Int = 0, rng: inout SplitMix64) -> String? {
+        let pool = replies(lines, reply, calendar: calendar, avoiding: avoiding, turns: turns)
         return pool.isEmpty ? nil : pool[rng.int(in: 0...(pool.count - 1))]
     }
 

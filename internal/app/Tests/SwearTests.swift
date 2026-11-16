@@ -45,11 +45,14 @@ final class SwearTests: XCTestCase {
         try requireVoice()
         for swears in [false, true] {
             var queued: [Moment] = []
-            let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, swears: { swears })
+            // NOW is a failed turn: a swear plays only on a failure.
+            let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, swears: { swears },
+                                     line: { _ in Line("", facts: ["outcome": "failed", "length_ms": 0]) })
             let asked = react.questions(now: nil, log: Self.log).first { $0.key == MomentOutput.sayKey }?.options.map(\.name) ?? []
             XCTAssertEqual(asked.contains("swear"), swears)
-            _ = react.run(["react.face": a("grumpy"), "react.move": a("failure"), "say": a("swear")], now: nil, log: Self.log)
-            let kind = queued.last?.say?.takes.first?.kind
+            let failed = Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "StopFailure")
+            _ = react.run(["react.face": a("grumpy"), "say": a("swear")], now: failed, log: Self.log)
+            let kind = queued.last?.say?.takes.last?.kind
             if swears {
                 XCTAssertEqual(kind, .swear)
             } else {

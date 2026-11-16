@@ -971,8 +971,9 @@ if __name__ == "__main__":
 
 
 class ReactionKeysTests(unittest.TestCase):
-    """A reaction is `react.face`, `react.move`, `react.intensity` and
-    `say`."""
+    """A reaction's answers: `react.face`, `say` and, to what you said,
+    `react.reply`; in a log from before the rules took them, `react.move`
+    and `react.intensity` too."""
 
     @needs_voice
     def test_the_face_and_its_move(self) -> None:
@@ -992,6 +993,12 @@ class ReactionKeysTests(unittest.TestCase):
                             "say": a("none")}, "questions": ["react.face", "react.move", "react.intensity", "say"]}
         self.assertEqual(reaction_text({"pass": talk}), "a happy reaction face (small), replying hello",
                          "to what you said, the move is the reply")
+        # As the app asks now: the reply is its own question, and the move
+        # and the size are its rules', in no answer.
+        replied = {"answers": {"react.face": a("happy"), "react.reply": a("hello", 0.8), "say": a("none")},
+                   "questions": ["react.face", "react.reply", "say"]}
+        self.assertEqual(picks_text(replied), "happy 1.00 · hello 0.80 · says nothing")
+        self.assertEqual(reaction_text({"pass": replied}), "a happy reaction face, replying hello")
         shrug = {"answers": {**talk["answers"], "react.move": a("huh")}, "questions": talk["questions"]}
         self.assertEqual(reaction_text({"pass": shrug, "react": {"reply": "dunno"}}),
                          "a happy reaction face (small), replying dunno", "the reply as it played, a huh at a question")

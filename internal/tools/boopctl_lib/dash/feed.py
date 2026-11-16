@@ -574,13 +574,17 @@ def fate(row: Line) -> tuple[str, str]:
     return "ok", "  ✓ played"
 
 
-# A reaction's four questions: its face, its move (a finish, a wake-up or
-# a notice, or to what you said the reply), how big the moment is (how
-# long the face held and how big what it said) and what it says.
-FACE, MOVE, INTENSITY, SAY = "react.face", "react.move", "react.intensity", "say"
-# The moves at an event (MomentOutput.animations); any other move is a
-# reply to what you said.
+# A reaction's questions: its face, what it says, and to what you said its
+# reply. Its move (a finish, a wake-up or a notice) and how big it is are
+# the app's rules' (MomentRule), in no answer. A log from before the rules
+# took them has both as answers (`react.move`, `react.intensity`), and
+# reads as it did.
+FACE, REPLY, SAY = "react.face", "react.reply", "say"
+MOVE, INTENSITY = "react.move", "react.intensity"
+# The moves at an event (MomentOutput.moves), and the sizes; any other
+# move is a reply to what you said.
 MOVES = ["success", "failure", "reply", "wake up", "notice"]
+SIZES = ["small", "medium", "big"]
 
 
 def answer(p: Line, key: str) -> Line:
@@ -600,7 +604,7 @@ def move(p: Line) -> str | None:
     """The move a reaction played: at an event a finish (success, failure
     or reply), a wake up or a notice; to what you said its reply (yes,
     hello, status…); None for a face alone."""
-    pick = choice(p, MOVE)
+    pick = choice(p, REPLY) or choice(p, MOVE)
     return None if pick in (None, "none") else pick
 
 
@@ -610,7 +614,7 @@ def picks_text(p: Line) -> str:
     Voice picks a take of that meaning."""
     parts = [f"{choice(p, FACE)} {prob(p, FACE):.2f}"]
     if move(p):
-        parts.append(f"{move(p)} {prob(p, MOVE):.2f}")
+        parts.append(f"{move(p)} {prob(p, REPLY if choice(p, REPLY) else MOVE):.2f}")
     if choice(p, INTENSITY):
         parts.append(f"{choice(p, INTENSITY)} {prob(p, INTENSITY):.2f}")
     says = choice(p, SAY)

@@ -201,8 +201,10 @@ final class RuntimeTests: XCTestCase {
         eventually("the device's hello") { runtime.home.sync { runtime.link.hello != nil } }
     }
 
-    func hook(_ hook: String, tool: String? = nil) -> Data {
-        HookLine(agent: "claude", hook: hook, session: "s1", cwd: "/tmp/jetpack", tool: tool,
+    /// A hook's line. A turn's start alone wakes no pass: `prompt` gives
+    /// it one, whose reading does.
+    func hook(_ hook: String, tool: String? = nil, prompt: String? = nil) -> Data {
+        HookLine(agent: "claude", hook: hook, session: "s1", cwd: "/tmp/jetpack", tool: tool, prompt: prompt,
                  ts: Int64(Date().timeIntervalSince1970 * 1000)).encoded()
     }
 
@@ -666,13 +668,13 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         eventually("the brain") { runtime.home.sync { statuses.last?.brain == "scripted" } }
-        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("a mumble") { transport.dos("react").contains { $0.contains(#""say":"#) } }
         eventually("focused") { runtime.home.sync { runtime.moodNow == "focused" } }
         eventually("the device hears it") { transport.sent.contains { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""mood":"focused""#) } }
         XCTAssertTrue(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodOutput.outputName && $0["to"] == "focused" } },
                       "the mood is its latest change in the log")
-        eventually("the log line") { lines.lock.withLock { lines.log.contains { $0.hasPrefix("brain turn start ") && $0.hasSuffix("→ mood, react") } } }
+        eventually("the log line") { lines.lock.withLock { lines.log.contains { $0.hasPrefix("brain prompt ") && $0.hasSuffix("→ mood, react") } } }
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         let debugLog = dir.appendingPathComponent(DebugLog.fileName)
         func logged(_ kind: String) -> [Substring] {
@@ -708,7 +710,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         eventually("the brain") { runtime.home.sync { statuses.last?.brain == "scripted" } }
-        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("a mumble") { transport.dos("react").contains { $0.contains(#""say":"#) } }
         XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent(DebugLog.fileName).path),
                        "no debug.jsonl outside debug mode")
@@ -809,7 +811,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("SessionStart"), to: socketPath))
         XCTAssertTrue(HookSocket.send(hook("PreToolUse", tool: "Bash"), to: socketPath))
         eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
-        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("the pass in debug.jsonl") {
             self.debugLines().contains {
                 let e = $0["event"] as? [String: Any]
@@ -822,14 +824,15 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(log.contains("hook: claude PreToolUse s1 → tool start PreToolUse claude s1 · tool Bash"), "\(log)")
         XCTAssertTrue(log.contains { $0.hasPrefix("link rules → ") })
         XCTAssertFalse(log.contains { $0.contains("How to read HISTORY") }, "the state stays out of boop.log")
-        XCTAssertTrue(printed.contains { $0.hasPrefix("▸ ") && $0.contains(" turn start: claude started turn 1") }, "\(printed)")
+        XCTAssertTrue(printed.contains { $0.hasPrefix("▸ ") && $0.contains(" turn start (no pass): claude started turn 1") }, "\(printed)")
+        XCTAssertTrue(printed.contains { $0.hasPrefix("▸ ") && $0.contains(" prompt: You asked claude") }, "\(printed)")
         let pass = try XCTUnwrap(printed.first { $0.hasPrefix("  pass scripted") })
         XCTAssertTrue(pass.contains("react.face excited 1.00"), pass)
         XCTAssertTrue(pass.contains("    │ You are the mind of \(creature)"), "the first state in full")
         let started = try XCTUnwrap(printed.first { $0.hasPrefix("  … react: \(Self.name) had an excited moment (small)") }, "\(printed)")
-        if !Take.all.isEmpty {  // a pack with a voice says a start take with it
+        if !Take.all.isEmpty {  // a pack with a voice says a work take with it
             let word = String(started.dropFirst("  … react: \(Self.name) had an excited moment (small), and said \"".count).dropLast(2))
-            XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "start" && $0.moods.contains("excited") }, "a start take: \(word)")
+            XCTAssertTrue(Take.all.contains { $0.text == word && $0.meaning == "work" && $0.moods.contains("excited") }, "a work take: \(word)")
         }
         XCTAssertTrue(printed.contains { $0.hasPrefix("  ✗ react (") && $0.hasSuffix(") didn't happen: no device connected") },
                       "the fake device never connected: \(printed)")
@@ -1123,7 +1126,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
-        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("a mumble") { runtime.home.sync { sentLines.all.contains { $0.contains(#""say":"#) } } }
         runtime.home.sync {}
 
@@ -1136,13 +1139,13 @@ final class RuntimeTests: XCTestCase {
                        MoodOutput.options(from: "calm", mayMiss: false).map(\.name), "staying calm, then every other mood but lonely")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
-        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.")
+        XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, and may say something.")
         let none = try XCTUnwrap((questions[1]["options"] as? [[String: Any]])?.first)
         XCTAssertEqual(none["name"] as? String, "none")
         XCTAssertEqual(none["what"] as? String, "Stay quiet: most check-ins where nothing has happened; nothing in NOW is worth a moment, "
                        + "or HISTORY shows \(Self.name) still having the one it calls for, about the same thing (in progress).")
         XCTAssertEqual(none["not_for"] as? String, "Something new said to \(Self.name), which always gets a moment of its own, even while one plays; "
-                       + "a turn that finished done or failed, which always gets a moment and its finish; "
+                       + "a turn that finished done or failed, which always gets a moment; "
                        + "or anything PERSONALITY reacts to that \(Self.name) isn't already doing.")
         XCTAssertTrue((questions[0]["options"] as? [[String: Any]])?.first?["not_for"] is NSNull)
 
@@ -1247,7 +1250,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         eventually("no brain") { runtime.home.sync { runtime.jevKey != nil } }
-        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
 
         dev(#"{"dev":"answer","answers":{"react.face":"grumpy","say":"work"}}"#)
         eventually("a take with no brain") { transport.dos("react").contains { $0.contains(#""say":{"take":"#) && $0.contains(#""mood":"grumpy""#) } }
@@ -1435,7 +1438,7 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         dev(#"{"dev":"mood","mood":"grumpy"}"#)
-        dev(#"{"dev":"answer","answers":{"react.face":"grumpy","react.move":"success"}}"#)
+        dev(#"{"dev":"answer","answers":{"react.face":"grumpy","say":"upset"}}"#)
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         eventually("the hook after them") { transport.sent.contains { $0.contains(#""base":"working""#) } }
         runtime.home.sync {}
@@ -1561,13 +1564,12 @@ final class RuntimeTests: XCTestCase {
         }
     }
 
-    /// How much it says is saved; a missing or unknown one is the default.
-    /// Chatter, the debugging personality before Talk, comes back chatty;
-    /// a saved personality is ignored, each pack having one.
+    /// How much it says is saved; a missing or unknown one is the default,
+    /// and a key from an older version is ignored.
     func testSettingsKeepTheTalk() throws {
         try requirePack("boop")  // its steering
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        let cases: [(String, Talk)] = [(#"{"personality":"chatter"}"#, .chatty), (#"{"personality":"loud","talk":"loud"}"#, .normal),
+        let cases: [(String, Talk)] = [(#"{"personality":"chatter"}"#, .normal), (#"{"personality":"loud","talk":"loud"}"#, .normal),
                                        (#"{"talk":"quiet"}"#, .quiet), (#"{}"#, .normal)]
         for (json, t) in cases {
             try Data(json.utf8).write(to: dir.appendingPathComponent(AppSettings.file))
@@ -1612,7 +1614,7 @@ final class RuntimeTests: XCTestCase {
         connect(transport, runtime)
 
         eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
-        let prompt = HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/jetpack",
+        let prompt = HookLine(agent: "claude", hook: "UserPromptSubmit", session: "s1", cwd: "/tmp/jetpack", prompt: "go",
                               app: HostApp.claude, appSession: "local_7db5", ts: Int64(Date().timeIntervalSince1970 * 1000))
         XCTAssertTrue(HookSocket.send(prompt.encoded(), to: socketPath))
         eventually("working") { transport.sent.contains { $0.contains("\"base\":\"working\"") } }
@@ -1625,15 +1627,19 @@ final class RuntimeTests: XCTestCase {
         }
         XCTAssertTrue(HookSocket.send(Data(#"{"dev":"advance","ms":30000}"#.utf8), to: socketPath))
         eventually("clock moved") { skew.now == 30_000 }
-        let before = transport.dos.count
+        // It did something: a turn under a minute with no call and no claim
+        // only answered, which is a reply's finish (`MomentRule.move`).
+        XCTAssertTrue(HookSocket.send(hook("PreToolUse", tool: "Edit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("PostToolUse", tool: "Edit"), to: socketPath))
+        eventually("the call") { runtime.home.sync { self.recorded().contains { $0.kind == "tool_end" } } }
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
-        eventually("the brain's finish", timeout: 4) { transport.dos.count >= before + 1 }
-        let finish = transport.dos[before]
+        eventually("the brain's finish", timeout: 4) { !transport.dos("task_complete").isEmpty }
+        let finish = transport.dos("task_complete")[0]
         XCTAssertTrue(finish.contains(#","name":"task_complete","play":"next","ttl":15000,"args":{"outcome":"success","#),
                       "one do, a variation for its outcome: \(finish)")
         XCTAssertTrue(finish.contains(#""who":{"agent":"claude","thread":"jetpack"},"say":"#), "names whose turn: \(finish)")
         XCTAssertTrue(finish.hasSuffix(#","mood":"excited","loops":1}}"#), "in its face, held once: \(finish)")
-        XCTAssertEqual(transport.dos.count, before + 1, "no rule finish besides")
+        XCTAssertEqual(transport.dos("task_complete").count + transport.dos("reply_ready").count, 1, "no rule finish besides")
 
         let id = FakeTransport.id(finish)
         transport.onLine?(#"{"t":"ev","kind":"tap","did":"dip","data":{"on":\#(id)}}"#)
@@ -1858,7 +1864,7 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         connect(transport, runtime)
-        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
+        XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit", prompt: "go"), to: socketPath))
         eventually("the start") { !transport.dos("react").isEmpty }
         let sent = transport.sent
         let start = try XCTUnwrap(sent.firstIndex { $0.contains(#""name":"react""#) })
@@ -1888,7 +1894,7 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         func react(_ mood: String) {
-            runtime.home.sync { _ = runtime.harness.force(["react.face": mood, "react.intensity": "medium"], by: Runtime.forcedBy) }
+            runtime.home.sync { _ = runtime.harness.force(["react.face": mood], by: Runtime.forcedBy) }
         }
         func device(_ line: String) {
             transport.onLine?(line)
@@ -1906,7 +1912,7 @@ final class RuntimeTests: XCTestCase {
         react("excited")
         let sent = transport.dos("react")
         XCTAssertEqual(sent.count, 3, "none waits on the Mac")
-        XCTAssertTrue(sent.allSatisfy { $0.contains(#""play":"next","ttl":5000,"#) && $0.hasSuffix(#""loops":2}}"#) }, "\(sent)")
+        XCTAssertTrue(sent.allSatisfy { $0.contains(#""play":"next","ttl":5000,"#) && $0.hasSuffix(#""loops":1}}"#) }, "\(sent)")
         let ids = sent.map(FakeTransport.id)
         device(FakeTransport.ended(ids[0], "done"))
         device(FakeTransport.ended(ids[1], "cut", "tap"))
@@ -2051,13 +2057,14 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
-        func hook(_ name: String, tool: String? = nil, topic: String? = nil, failed: Bool = false) {
-            var line = HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/jetpack", tool: tool, ts: clock.now)
+        func hook(_ name: String, tool: String? = nil, topic: String? = nil, failed: Bool = false, prompt: String? = nil) {
+            var line = HookLine(agent: "claude", hook: name, session: "s1", cwd: "/tmp/jetpack", tool: tool, prompt: prompt, ts: clock.now)
             line.topic = topic
             line.toolError = failed ? "exit_code" : nil
             runtime.home.sync { runtime.hook(line, received: clock.now) }
         }
-        hook("UserPromptSubmit")
+        hook("UserPromptSubmit", prompt: "go")
+        eventually("the prompt's pass") { asked.all.count == 1 }
         hook("PreToolUse", tool: "Bash", topic: "tests")
         hook("PostToolUseFailure", tool: "Bash", topic: "tests", failed: true)
         hook("PreToolUse", tool: "Edit")

@@ -56,7 +56,7 @@ public final class Pipeline {
     /// `buddy` on `core`, the process's character unless another is given.
     /// `clock` is the harness's; with none, its time is each input's.
     /// `loop` false leaves the brain to `harness.respond(to:)` (the evals).
-    public init(core: Core, buddy: Buddy = .only(), view: TranscriptView, transcript: Log = Transcript.log(),
+    public init(core: Core, buddy: Buddy = Buddy(), view: TranscriptView, transcript: Log = Transcript.log(),
                 time: LocalTime = LocalTime(), clock: Harness.Clock? = nil, queue: DispatchQueue = .main, loop: Bool = true,
                 note: @escaping (String) -> Void = { _ in }) {
         self.buddy = buddy

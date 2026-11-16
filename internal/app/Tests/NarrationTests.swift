@@ -98,7 +98,6 @@ final class NarrationTests: XCTestCase {
                        "The tests on buddygotchi failed again: 3 times in a row.")
         XCTAssertEqual(of(.checkIn, facts: ["thread": wt, "working_ms": .int(12 * 60_000)]),
                        "claude has been working on buddygotchi for 12 minutes.")
-        XCTAssertEqual(of(.session, .start, facts: ["thread": wt]), "claude's memory on buddygotchi was compacted.")
         XCTAssertEqual(of(.needsYou, .start, facts: ["thread": wt]), "claude needs you on buddygotchi.")
         XCTAssertNil(Narration.of(Event(at: harnessT0, source: .claude, type: .turn, phase: .end, specificType: "Stop"),
                                   line: Line("LINE", facts: ["thread": wt, "outcome": "done"]))?.fact, "a finish's sign names it")
@@ -158,8 +157,7 @@ final class NarrationTests: XCTestCase {
         let finished = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil },
                                    who: { _ in Moment.Who(agent: "claude", thread: "api") }, turnMs: { _ in 60_000 },
                                    speaks: { false }, reason: { _ in Narration(cause: "x", fact: "y") })
-        _ = finished.run(["react.face": Answer(choice: "happy", probabilities: ["happy": 1]),
-                          "react.move": Answer(choice: "success", probabilities: ["success": 1])], now: stroke, log: log)
+        _ = finished.run(["react.face": Answer(choice: "happy", probabilities: ["happy": 1])], now: stroke, log: log)
         XCTAssertNotNil(queued.last?.who)
         XCTAssertNil(queued.last?.reason, "a finish's strip says what it's about")
     }
@@ -219,8 +217,7 @@ final class ReasonsTests: XCTestCase {
         case .memory: return [(event(kind), [:])]
         case .wish: return Core.WishKind.allCases.map { (event(kind, $0.rawValue, phase: .start), [:]) }
             + [(event(kind, "met", phase: .end, data: ["kind": "pet"]), [:]), (event(kind, "gaveup", phase: .end, data: ["kind": "pet"]), [:])]
-        case .level: return [(event(kind, "12"), [:])]
-        case .ring: return [(event(kind, "closed"), [:])]
+        case .growth: return [(event(kind, "level", data: ["level": 12]), [:]), (event(kind, "ring", data: ["ring": true]), [:])]
         case .world: return [(event(kind, "boop", data: ["from_region": "americas"]), [:]), (event(kind, "cheer", data: ["count": 3]), [:]),
                              (event(kind, "boop", data: ["held": true, "counts": ["boop": 2, "cheer": 1]]), [:])]
         case .ask: return [(event(kind, "a"), ["answer": "yes"]), (event(kind, Asks.ignored), [:])]
@@ -285,7 +282,6 @@ final class ReasonsTests: XCTestCase {
                        Narration(cause: "The tests on api pass.", fact: "tests pass"), "a first pass too")
         XCTAssertEqual(Narration.of(event(.presence, phase: .start), line: nil, name: "Boop")?.fact, "you stepped away")
         XCTAssertEqual(Narration.of(event(.turn, phase: .start), line: Line("", facts: ["thread": thread]), name: "Boop")?.fact, "claude started")
-        XCTAssertEqual(Narration.of(event(.session, phase: .start), line: Line("", facts: ["thread": thread]), name: "Boop")?.fact, "claude compacted")
         XCTAssertEqual(Narration.of(event(.hush, "app", phase: .start), line: nil, name: "Boop")?.fact, "you hushed Boop")
         XCTAssertEqual(Narration.of(event(.prompt, data: ["kind": "fix", "tone": "calm", "length": "sentence"]), line: Line("", facts: ["thread": thread]), name: "Boop")?.fact, "you asked claude")
         XCTAssertEqual(Narration.sleeping(noAgents: false, napping: false, dozeMs: 3_600_000, name: "Boop"),

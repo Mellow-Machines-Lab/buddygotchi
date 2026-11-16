@@ -30,11 +30,11 @@ This is all of `hello.jsonl`:
 // Half a minute: a read, an approved test run, done. A quick check that a demo plays end to end.
 {"demo": 1, "title": "Run the tests"}
 {"agent": "prompt", "text": "Run the tests"}
-{"brain": {"react.face": "curious", "say": "start", "react.intensity": "medium"}}
+{"brain": {"react.face": "curious", "say": "work"}}
 {"agent": "read", "file": "README.md", "say": "Let me look at the project first."}
 {"agent": "run", "cmd": "npm test", "about": "Run the tests", "ask": 2, "say": "I'll run the tests."}
 {"agent": "reply", "text": "The one test passes."}
-{"brain": {"react.face": "proud", "react.move": "success", "say": "done", "react.intensity": "medium"}, "mood": "proud"}
+{"brain": {"react.face": "proud", "say": "done"}, "mood": "proud"}
 ```
 
 ## Steps
@@ -66,7 +66,7 @@ Boop's brain.
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away: the clock jumps on by that long, as a `wait`'s does | `minutes` (60) |
 | `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (a minute, 5 and 15, where it may melt) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
-| `{"brain": {…}}` | How Boop reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. A `react.sign` that is one of the pack's `asks.md` questions asks it, at a finish or an idle check-in (after a `wait` past it), and a later step's `react.sign` may be a sign that needs a kept answer (`[cookie]`). After a `talk`, `react.move` is its reply (`hello`, `status`, `nap`…): the board plays the reply's clip, and its sign is `react.sign`, one of the pack's `replies.md` lines for that reply, else one looked up, or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
+| `{"brain": {…}}` | How Boop reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. A `react.sign` that is one of the pack's `asks.md` questions asks it, at a finish or an idle check-in (after a `wait` past it), and a later step's `react.sign` may be a sign that needs a kept answer (`[cookie]`). After a `talk`, `react.reply` is its reply (`hello`, `status`, `thanks`…): the board plays the reply's clip, and its sign is `react.sign`, one of the pack's `replies.md` lines for that reply, else one looked up, or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
 | `{"mood": "proud"}` | Boop's mood changes | |
 
 On any agent step, `say` is what the agent says before it acts,
@@ -79,8 +79,8 @@ several agents at once this way.
 the reply, with more of the agent's steps after it. It needs its
 `summary` and has no `say`: the context is full before the model can
 speak, so put the words on the step after it. Every agent says the same
-when it has compacted; the board shows nothing for it, and Jev may
-answer it. With no agent, Boop sends that hook. A replayed Claude Code or
+when it has compacted; the board shows nothing for it, and Boop has no
+line for it. With no agent, Boop sends that hook. A replayed Claude Code or
 Codex compacts for real, and its model writes the `summary`. The desktop
 app can't play a compact, since its real model can't be made to fill its
 context on cue.
@@ -114,9 +114,13 @@ A brain step answers the questions that the real brain gets:
 | Key | Choices |
 | --- | --- |
 | `react.face` | a mood of the pack that has a face, or `none` |
-| `react.move` | `success`, `failure` or `reply` for a turn that ended, `wake up` for you back after a long or very long break, `notice` for a prompt that says its name, else `none`; after talk, its reply (`yes`, `hello`, `status`, `nap`…) |
-| `react.intensity` | `small`, `medium`, `big`: how long the emotion holds and how big what it says is |
-| `say` | what it says: `none`, a feeling (`glad`, `upset`, `tickled`), `swear`, or a topic (`start`, `tests`, `done`…); only a pack with a voice says it |
+| `react.reply` | after talk only, its reply: `yes`, `no`, `huh`, `hello`, `bye`, `thanks`, `ouch`, `comfort`, `hehe`, `status` or `hush` |
+| `say` | what it says: `none`, a feeling (`glad`, `upset`, `tickled`, `shaken`), `swear`, or a topic (`hello`, `work`, `tests`, `done`, `retry`, `quiet`); only a pack with a voice says it |
+
+The move (a finish, a wake-up, a notice) and the size are never a brain
+step's: the app's rules pick them from the step above (`MomentRule`), as
+they do for the real brain. Your lock or unlock, a working check-in and a
+boop from the world play by rule alone, with no brain step.
 
 The choices and what each means are in
 `app/BoopKit/Outputs/MomentOutput.swift`. `boopdev check` lists them when

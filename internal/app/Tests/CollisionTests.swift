@@ -24,7 +24,7 @@ final class CollisionTests: XCTestCase {
                                      return Line("", facts: facts)
                                  },
                                  occasion: { _ in defer { left = nil }; return left })
-        var choices = [MomentOutput.emotionKey: "happy", MomentOutput.moveKey: "wake up", MomentOutput.sizeKey: "medium"]
+        var choices = [MomentOutput.emotionKey: "happy"]
         if let sign { choices[Signs.questionKey] = sign }
         _ = react.run(answers(choices), now: about, log: Transcript.log().view(now: about.at))
         return sent
@@ -79,9 +79,9 @@ final class CollisionTests: XCTestCase {
         let log = Transcript.log().view(now: 0)
         XCTAssertTrue(telling.wishOptions(back, log).isEmpty)
         XCTAssertTrue(telling.askOptions(back, log).isEmpty)
-        XCTAssertTrue(Asks.moment(back, log, mood: MoodOutput.choice(), untouchedMs: nil).isEmpty)
+        XCTAssertTrue(Asks.moment(back).isEmpty)
         let checkIn = Event(at: 1000, source: .boop, type: .checkIn, specificType: "check_in")
-        XCTAssertEqual(Asks.moment(checkIn, log, mood: MoodOutput.choice(), untouchedMs: nil), ["idle"])
+        XCTAssertEqual(Asks.moment(checkIn), ["idle"])
     }
 
     /// Bringing up a note: at an idle check-in only, the line low on the
@@ -96,7 +96,7 @@ final class CollisionTests: XCTestCase {
         let sign = try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey })
         XCTAssertTrue(sign.options.contains { $0.name == felt.line })
         XCTAssertNil(react.questions(now: back, log: log).first { $0.key == Signs.questionKey }?.options.first { $0.name == felt.line }, "at a check-in only")
-        let result = react.run(answers([MomentOutput.emotionKey: "amused", MomentOutput.sizeKey: "small", MomentOutput.sayKey: "quiet", Signs.questionKey: felt.line]),
+        let result = react.run(answers([MomentOutput.emotionKey: "amused", MomentOutput.sayKey: "quiet", Signs.questionKey: felt.line]),
                                now: checkIn, log: log)
         let moment = try XCTUnwrap(sent)
         XCTAssertEqual(moment.sign, felt.line)

@@ -31,7 +31,7 @@ from boopctl_lib.common import MOODS, lasting_moods, send_line
 from boopctl_lib.dash import controls
 from boopctl_lib.device import Device, DeviceError
 from boopctl_lib.image import save_shot
-from boopctl_lib.dash.feed import INTENSITY, MOVE, Board, Follower, clock, kind
+from boopctl_lib.dash.feed import MOVES, SIZES, Board, Follower, clock, kind
 
 STYLES = {"event": "bold", "pass": "cyan", "ok": "green", "fail": "red", "sent": "magenta", "status": "yellow",
           "head": "bold underline", "dim": "grey62", "mood": "bold yellow", "attn": "bold magenta",
@@ -381,10 +381,11 @@ class Dash(App[None]):
             # long it holds) and the take it says, straight to the
             # dashboard's sim.
             face = await self.pick("Preview a Moment: its emotion", [o for o in controls.options(asked[0]) if o != "none"])
-            moves = [o for q in asked if q["key"] == MOVE for o in controls.options(q)]
-            move = face and (await self.pick("…its move", moves) if moves else "none")
-            sizes = [o for q in asked if q["key"] == INTENSITY for o in controls.options(q)]
-            size = move and (await self.pick("…how big it is", sizes) if sizes else "small")
+            # The move and the size are the app's rules', so no question
+            # lists them: a preview picks among them all.
+            moves, sizes = ["none"] + MOVES, SIZES
+            move = face and await self.pick("…its move", moves)
+            size = move and await self.pick("…how big it is", sizes)
             said = {f"{t.text} ({t.id})": t.id for t in controls.takes()}
             take = size and await self.pick("…and what it says", ["nothing"] + list(said))
             if take and self.face:

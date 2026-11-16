@@ -105,8 +105,6 @@ extension Runtime {
         public var uncleanExit = false
         /// The one board Boop takes over Bluetooth, by its `hello.id`.
         public var board: String?
-        /// Whether the board shows the work stream.
-        public var workStream = true
         /// Whether Boop types along with you, and the side the Mac is on.
         public var typesAlong = true
         public var macSide: MacSide?
@@ -173,7 +171,6 @@ extension Runtime {
         status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: (Double(wall + $0.until - now) / 1000).rounded()) }
         status.uncleanExit = uncleanExit
         status.board = settings.board
-        status.workStream = settings.workStream
         status.typesAlong = settings.typesAlong
         status.macSide = settings.macSide
         status.swearing = options.swearing ?? settings.swearing

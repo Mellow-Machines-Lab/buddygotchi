@@ -64,7 +64,7 @@ final class EvalTests: XCTestCase {
             }
             if now.contains("failed") {
                 return ["mood": a(mood == "calm" ? "cross" : "focused"), "react.face": a("determined"),
-                        "say": a("tests"), "react.intensity": a("medium")]
+                        "say": a("tests")]
             }
             return ["mood": a(mood), "react.face": a("none"), "say": a("none")]
         }
@@ -96,7 +96,7 @@ final class EvalTests: XCTestCase {
         for (file, shown) in [("11-comeback-still-showing.json", true), ("12-comeback-that-didnt-happen.json", false)] {
             _ = try await eval.run(try Scenario(file: try Self.scenarios().appendingPathComponent(file)))
             let finish = try XCTUnwrap(states.all.last)
-            XCTAssertEqual(finish.contains("\n  Boop had a proud moment (small). (in progress)\n"), shown, finish)
+            XCTAssertEqual(finish.contains("\n  Boop had a proud moment (medium). (in progress)\n"), shown, finish)
             XCTAssertEqual(finish.contains("after failing.\n  Boop had"), shown, "one that didn't happen isn't shown: \(finish)")
         }
         let bad = FileManager.default.temporaryDirectory.appendingPathComponent("bad-reaction-\(UUID().uuidString).json")
@@ -256,7 +256,7 @@ final class EvalTests: XCTestCase {
 
         // A setup step and a checked step: each pass says who answered.
         let scenario = try XCTUnwrap(all.first { s in
-            s.brief == nil && s.checks == nil && !s.scripted && s.steps.contains(where: \.asksJev) && s.steps.contains { !$0.asksJev && $0.event != "session started" }
+            s.brief == nil && s.checks == nil && !s.scripted && s.steps.contains(where: \.asksJev) && s.steps.contains { !$0.asksJev && ["poke", "turn finished", "command"].contains($0.event) }
         })
         let quick = try await whoAnswers(scenario, steering: RuntimeTests.steering, scriptsSetup: true)
         XCTAssertFalse(quick.isEmpty)
@@ -382,8 +382,9 @@ final class EvalTests: XCTestCase {
 
     /// EVALS.md §3's whole-run checks, against a brain that makes the same
     /// excited face, saying nothing, at every pass and never changes the mood, over
-    /// five quick wins: it's the same reaction ten times running (starts
-    /// and finishes), of one kind, and the mood never moves.
+    /// five quick wins: it's the same reaction five times running (the
+    /// finishes: a turn's start wakes no pass), of one kind, and the mood
+    /// never moves.
     func testWholeRunChecksCatchTheSameReactionAgainAndAgain() async throws {
         let brain = ScriptedBrain(always: ["react.face": Answer(choice: "excited", probabilities: ["excited": 0.9]),
                                            "say": Answer(choice: "none", probabilities: ["none": 0.9])])
@@ -400,13 +401,13 @@ final class EvalTests: XCTestCase {
         XCTAssertFalse(result.passed)
         let failed = Dictionary(uniqueKeysWithValues: result.runChecks.map { ($0.name, $0) })
         XCTAssertEqual(failed["max_same_in_a_row 2"]?.passed, false)
-        XCTAssertTrue(failed["max_same_in_a_row 2"]?.detail.hasSuffix("in a row (excited)") ?? false,
+        XCTAssertTrue(failed["max_same_in_a_row 2"]?.detail.hasSuffix("in a row (excited success)") ?? false,
                       failed["max_same_in_a_row 2"]?.detail ?? "")
         XCTAssertEqual(failed["min_variety 2"]?.passed, false)
         XCTAssertEqual(failed["reactions 2 or more"]?.passed, true)
         XCTAssertEqual(failed["mood_changes 0-2"]?.passed, true)
         XCTAssertEqual(failed["words_said 0.5-1.0"]?.passed, false, "it never says anything")
-        XCTAssertEqual(failed["words_said 0.5-1.0"]?.detail, "0 of 10 reactions said something")
+        XCTAssertEqual(failed["words_said 0.5-1.0"]?.detail, "0 of 5 reactions said something")
         let report = Eval.report([result], story: scenario.story)
         XCTAssertEqual(report[1], "  case: " + scenario.story)
         let asGap = Eval.report([result], story: scenario.story, gap: "why")
@@ -414,7 +415,7 @@ final class EvalTests: XCTestCase {
         XCTAssertEqual(asGap[1], "  gap: why")
         XCTAssertEqual(Eval.summary([[result]], gaps: 1), "0/1 passed (1 known gaps failed)")
         XCTAssertTrue(report.contains { $0.hasPrefix("  whole run: max_same_in_a_row 2: ") }, report.joined(separator: "\n"))
-        XCTAssertTrue(Eval.timeline(result).contains { $0.contains("→ excited, small  [calm]") },
+        XCTAssertTrue(Eval.timeline(result).contains { $0.contains("→ excited success, small  [calm]") },
                       Eval.timeline(result).joined(separator: "\n"))
     }
 
@@ -457,7 +458,7 @@ final class EvalTests: XCTestCase {
     func testAScenarioStartsInItsMoodAndChecksWhatWasOffered() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("start-mood-\(UUID().uuidString).json")
         let others = MoodOutput.moods.map(\.name).filter { $0 != MoodOutput.missing }
-        try Data(#"{"name":"n","case":"c","why":"w","mood":"cross","steps":[{"event":"turn started","at":"2m","expect":{"offered":"\#(others.joined(separator: "|"))","mood":"sad"}},{"event":"turn finished","at":"2m30s","expect":{"offered":"calm|happy"}}]}"#.utf8)
+        try Data(#"{"name":"n","case":"c","why":"w","mood":"cross","steps":[{"event":"turn started","at":"2m","prompt":"carry on","expect":{"offered":"\#(others.joined(separator: "|"))","mood":"sad"}},{"event":"turn finished","at":"2m30s","expect":{"offered":"calm|happy"}}]}"#.utf8)
             .write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
         let scenario = try Scenario(file: file)

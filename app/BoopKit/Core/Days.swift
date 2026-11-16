@@ -8,7 +8,7 @@ import Foundation
 public enum Days {
     /// The calendar's tags, the ones `tags(at:)` gives: the part of the
     /// day, the weekday, the holidays and a party.
-    public static let calendarTags = dayParts.map(\.tag) + ["friday", "weekend", "friday13"] + holidays.map(\.tag)
+    public static let calendarTags = dayParts.map(\.tag) + ["friday"] + holidays.map(\.tag)
         + ["programmers", "lunar", "party"]
 
     /// The parts of the day, by the hour they start: morning from 5, day
@@ -25,8 +25,7 @@ public enum Days {
     /// sign, in lower case as everything Boop holds is.
     static let holidays: [(tag: String, month: Int, days: ClosedRange<Int>, words: String, sign: String)] = [
         ("newyear", 1, 1...1, "New Year's Day", "happy new year!"), ("valentines", 2, 14...14, "Valentine's Day", "happy valentine's"),
-        ("piday", 3, 14...14, "Pi Day", "happy pi day!"), ("aprilfools", 4, 1...1, "April Fools' Day", "april fools'!"),
-        ("may4", 5, 4...4, "May the 4th", "may the 4th!"), ("halloween", 10, 31...31, "Halloween", "happy halloween!"),
+        ("halloween", 10, 31...31, "Halloween", "happy halloween!"),
         ("winter", 12, 24...26, "the winter holidays", "happy holidays!"),
     ]
 
@@ -54,11 +53,10 @@ public enum Days {
     /// Boop's first month, in days.
     public static let monthDays = 30
 
-    /// The calendar's own special days at `ms`: Friday the 13th, the
-    /// holidays, Programmers' Day and Lunar New Year.
+    /// The calendar's own special days at `ms`: the holidays, Programmers'
+    /// Day and Lunar New Year.
     static func calendar(_ c: LocalTime.Parts, at ms: Int64, time: LocalTime) -> [SpecialDay] {
         var on: [SpecialDay] = []
-        if c.weekday == 6, c.day == 13 { on.append(SpecialDay(tag: "friday13", words: "Friday the 13th", sign: "friday the 13th!")) }
         for h in holidays where h.month == c.month && h.days.contains(c.day) {
             on.append(SpecialDay(tag: h.tag, words: h.words, sign: h.sign))
         }
@@ -74,7 +72,6 @@ public enum Days {
         let c = time.components(ms), today = time.day(ms)
         var on = [dayPart(at: ms, time: time)]
         if c.weekday == 6 { on.append("friday") }
-        if c.weekday == 7 || c.weekday == 1 { on.append("weekend") }
         on += calendar(c, at: ms, time: time).compactMap(\.tag)
         if on.contains("newyear") || hatched.map({ isMilestone(days: time.days(from: $0, to: ms), hatched: $0, today: today) }) == true {
             on.append("party")

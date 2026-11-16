@@ -488,8 +488,8 @@ public struct Scenario: Sendable {
                 let unknownTags = (when ?? []).subtracting(Tags.all)
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
-                                             ("intensity", step.expect?.intensity, MomentOutput.sizeOptions.map(\.name)),
-                                             ("move", step.expect?.move, (MomentOutput.animations + MomentOutput.replies).map(\.name) + ["unhush", MomentOutput.wave])] {
+                                             ("intensity", step.expect?.intensity, MomentOutput.sizes.map(\.name)),
+                                             ("move", step.expect?.move, MomentOutput.moves + MomentOutput.replies.map(\.name) + ["unhush", MomentOutput.wave])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -839,6 +839,8 @@ public struct Eval {
                 ending.sign = reaction.sign
                 ending.narration = reaction.reason
                 ending.reply = reaction.reply
+                ending.moment = reaction
+                ending.played.append(reaction)
                 guard let end = ending.end else { return ending.open.append(pending) }
                 if let ended = Eval.ended(end) {
                     reactions.read(.ended(ended), pending).map(pending.finish)
@@ -884,19 +886,36 @@ public struct Eval {
             var lastSaid: String?  // what its reaction said
             var lastTakes: [String] = []  // and its takes' texts
             var lastSign: String?  // and the sign it held up
+            var lastMoment: Moment?  // and the Moment itself, for its move and its size
             var toldDream = false  // any pass of the step, a check-in's on the way included
+            var ruled: (moment: Moment, line: String)?  // the last Moment the rules made whole at the step
             func respond(_ views: [ViewEvent]) async {
+                // The Moments the rules made whole at these inputs, with no
+                // pass (`MomentOutput.ruled`): on the timeline as a pass's are.
+                for view in views where !view.wakesBrain {
+                    guard let e = home.sync(execute: { harness.log.event(view.seq) }), TranscriptView.isRuled(e),
+                          let m = ending.played.last, ending.ruledSeen < ending.played.count else { continue }
+                    ending.ruledSeen = ending.played.count
+                    ruled = (m, view.line)
+                    timeline.append(Pass(atMs: clock.now - start, line: view.line,
+                                         reaction: Reaction(face: m.mood ?? "none", move: Eval.moved(m) ?? "none", said: m.say?.text ?? "none"),
+                                         intensity: MomentOutput.size(loops: m.loops).name, mood: moodNow(), sign: m.sign,
+                                         brain: "rule", step: i + 1, narration: m.reason, reply: m.reply))
+                }
+                ending.ruledSeen = ending.played.count
                 for view in views where view.wakesBrain {
                     ending.said = nil
                     ending.takes = []
                     ending.sign = nil
                     ending.narration = nil
                     ending.reply = nil
+                    ending.moment = nil
                     guard let e = home.sync(execute: { harness.log.event(view.seq) }),
                           let record = await harness.respond(to: e) else { continue }
                     lastSaid = ending.said
                     lastTakes = ending.takes
                     lastSign = ending.sign
+                    lastMoment = ending.moment
                     last = record
                     onPass?(i + 1, record)
                     if view.facts["dream_day"] != nil { toldDream = true }
@@ -905,9 +924,9 @@ public struct Eval {
                     timeline.append(Pass(
                         atMs: clock.now - start, line: view.line,
                         reaction: ran ? Reaction(face: answers[MomentOutput.emotionKey]?.choice ?? "none",
-                                                 move: MomentOutput.move(answers) ?? "none",
+                                                 move: ending.moment.flatMap(Eval.moved) ?? "none",
                                                  said: ending.said ?? "none") : nil,
-                        intensity: ran ? MomentOutput.size(answers).name : nil,
+                        intensity: ran ? MomentOutput.size(loops: ending.moment?.loops).name : nil,
                         mood: moodNow(), dropped: record.dropped,
                         offered: record.questions.first { $0.key == MoodOutput.outputName }?.options.map(\.name) ?? [],
                         answer: answers[MoodOutput.outputName]?.choice, sign: ran ? ending.sign : nil, brain: record.brain, step: i + 1, narration: ran ? ending.narration : nil, reply: ran ? ending.reply : nil))
@@ -975,13 +994,27 @@ public struct Eval {
                 if !expect.wantsAPass { continue }
             }
             guard let record = last else {
-                throw EvalError("\(scenario.file) step \(i + 1): expects a pass, but nothing woke the brain")
+                // No pass: the step is the rules' (your lock, a working
+                // check-in, a boop from the world), and their Moment is
+                // what's checked. `say` reads as `none`: nobody was asked.
+                guard let (m, line) = ruled else {
+                    // Nothing played: only an `expect` that wants nothing passes.
+                    guard let e = home.sync(execute: { harness.log.events.last { !$0.fromHarness } }), TranscriptView.isRuled(e) else {
+                        throw EvalError("\(scenario.file) step \(i + 1): expects a pass, but nothing woke the brain")
+                    }
+                    checks.append(Check(step: i + 1, line: "the rules", expected: expect, mood: moodNow(), latencyMs: 0))
+                    continue
+                }
+                checks.append(Check(step: i + 1, line: line, expected: expect, react: m.mood, move: Eval.moved(m),
+                                    intensity: MomentOutput.size(loops: m.loops).name, say: nil, said: m.say?.text,
+                                    saidTakes: m.say?.takes.map(\.text) ?? [], sign: m.sign, mood: moodNow(), latencyMs: 0))
+                continue
             }
             let react = record.answers[MomentOutput.emotionKey]?.choice
             let ran = record.outputs.contains { $0.name == MomentOutput.outputName && $0.result.ok }
             checks.append(Check(step: i + 1, line: record.line ?? "", expected: expect, react: react,
-                                move: ran ? MomentOutput.move(record.answers) : nil,
-                                intensity: ran ? MomentOutput.size(record.answers).name : nil,
+                                move: ran ? lastMoment.flatMap(Eval.moved) : nil,
+                                intensity: ran ? MomentOutput.size(loops: lastMoment?.loops).name : nil,
                                 say: ran ? MomentOutput.saying(record.answers) : nil,
                                 said: ran ? lastSaid : nil, saidTakes: ran ? lastTakes : [], sign: ran ? lastSign : nil,
                                 mood: moodNow(), offered: timeline.last?.offered ?? [], dropped: record.dropped,
@@ -994,6 +1027,12 @@ public struct Eval {
         let judged = judgesChoices ? scenario.checks : scenario.checks?.withoutChoices
         let runChecks = judged.map { Eval.judge($0, timeline: timeline, working: working, start: scenario.mood) } ?? []
         return Result(scenario: scenario.name, file: scenario.file, checks: checks, runChecks: runChecks, timeline: timeline)
+    }
+
+    /// The move a Moment played, as an `expect` names it: its scene's or
+    /// its reply, a shrug (`dunno`) being the `huh` it's played for.
+    static func moved(_ m: Moment) -> String? {
+        MomentOutput.move(of: m).map { $0 == "dunno" ? "huh" : $0 }
     }
 
     /// The whole-run checks (internal/EVALS.md §3) against a run's passes, the
@@ -1098,6 +1137,11 @@ public struct Eval {
     final class Ending: @unchecked Sendable {
         var end: Pending.End? = .done
         var open: [Pending] = []
+        /// The last reaction queued, every one queued, and how many of
+        /// them the rules' steps have counted.
+        var moment: Moment?
+        var played: [Moment] = []
+        var ruledSeen = 0
         /// What the last pass's reaction said, if any, and its takes'
         /// texts.
         var said: String?
