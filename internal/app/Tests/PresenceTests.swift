@@ -338,10 +338,16 @@ final class PresenceRuntimeTests: XCTestCase {
         .filter { $0.type == .presence }.map { "\($0.phase?.rawValue ?? "") \($0.specificType)" }
     }
 
-    /// Pins `Hands`: typing until 2 s after the last key, reading until 20 s
-    /// after the last input of any kind, then nothing to say.
+    /// Pins `Hands`: typing until 2 s after the last key, scrolling until
+    /// 1.5 s after the last scroll, reading until 20 s after the last input
+    /// of any kind, then nothing to say; typing beats scrolling, which
+    /// beats reading.
     func testYourHandsFromTwoIdleTimes() {
-        XCTAssertEqual([Hands.typingMs, Hands.readingMs], [2000, 20_000])
+        XCTAssertEqual([Hands.typingMs, Hands.scrollingMs, Hands.readingMs], [2000, 1500, 20_000])
+        XCTAssertEqual(Hands.now(keyIdleMs: 5000, scrollIdleMs: 0, idleMs: 0), .scrolling)
+        XCTAssertEqual(Hands.now(keyIdleMs: 5000, scrollIdleMs: 1499, idleMs: 1499), .scrolling)
+        XCTAssertEqual(Hands.now(keyIdleMs: 5000, scrollIdleMs: 1500, idleMs: 1500), .reading, "a pause in the scrolling")
+        XCTAssertEqual(Hands.now(keyIdleMs: 100, scrollIdleMs: 0, idleMs: 0), .typing, "typing beats scrolling")
         XCTAssertEqual(Hands.now(keyIdleMs: 0, idleMs: 0), .typing)
         XCTAssertEqual(Hands.now(keyIdleMs: 1999, idleMs: 1999), .typing)
         XCTAssertEqual(Hands.now(keyIdleMs: 2000, idleMs: 2000), .reading, "a pause")
@@ -387,15 +393,16 @@ final class PresenceRuntimeTests: XCTestCase {
         runtime.home.sync {}
         XCTAssertTrue(when().contains("typing"))
 
-        XCTAssertFalse(when().contains { Tags.macSides.contains($0) }, "no side until you choose")
-        runtime.setMacSide(.right)
+        XCTAssertFalse(when().contains { Tags.macSides.contains($0) }, "no side until Boop is shown where it sits")
+        let display = Anchor.Rect(x: 0, y: 0, width: 1500, height: 1000)
+        runtime.setAnchor(Anchor(x: 0, y: 900, display: display))
         runtime.home.sync {}
-        XCTAssertTrue(when().contains("macright"))
-        runtime.setMacSide(.left)
+        XCTAssertTrue(when().contains("macright"), "Boop on the screen's left: the Mac on its right")
+        runtime.setAnchor(Anchor(x: 1500, y: 900, display: display))
         runtime.home.sync {}
         XCTAssertTrue(when().contains("macleft") && !when().contains("macright"))
         runtime.home.sync {}
-        XCTAssertEqual(AppSettings.load(from: dir).macSide, .left, "kept")
+        XCTAssertEqual(AppSettings.load(from: dir).anchor?.side, .left, "kept")
     }
 
     /// The world's gestures wait while the screen is locked, from the lock

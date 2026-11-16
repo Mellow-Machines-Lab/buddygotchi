@@ -42,8 +42,10 @@ class Mixer {
   // kWeightMs); the same clip plays on.
   void setLook(const Clip* clip, uint32_t fadeMs = kWeightMs);
   // A reaction's clip, over everything playing. With kPlays playing, the
-  // oldest gives way, but the look's own clip.
-  void play(const Clip& clip);
+  // oldest gives way, but the look's own clip. Its weight comes and goes
+  // over `fadeMs` (at most a quarter of the clip): a pose held over the
+  // look wants longer than kWeightMs.
+  void play(const Clip& clip, uint32_t fadeMs = kWeightMs);
   // Each play of a reaction's clip fades out, as a look's old clip does.
   void stop(const Clip& clip);
   // Velocity added to a channel's spring, in its units a second.

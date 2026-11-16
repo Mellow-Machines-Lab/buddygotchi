@@ -620,10 +620,11 @@ final class AppModel: ObservableObject {
         runtime?.setTypesAlong(on)
     }
 
-    func setMacSide(_ side: MacSide?) {
-        guard status?.macSide != side else { return }
-        status?.macSide = side
-        runtime?.setMacSide(side)
+    /// Settings' "Show Boop where it sits": starts waiting for the tap, or
+    /// stops.
+    func showWhereBoopSits() {
+        status?.placing.toggle()
+        runtime?.showWhereBoopSits()
     }
 
     /// Takes effect from the next event.
@@ -994,6 +995,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     let presenceSignals = PresenceSignals()
+    let alongSignals = AlongSignals()
 
     /// Starts the runtime, once.
     func startRuntime() {
@@ -1006,6 +1008,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs
         options.keyIdleMs = PresenceSignals.keyIdleMs
+        // The rest of you at the Mac (`Along`), never content.
+        alongSignals.start()
+        options.along = { [alongSignals] in alongSignals.read() }
         // Your prompts, read on this Mac on macOS 26 whenever Apple
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac

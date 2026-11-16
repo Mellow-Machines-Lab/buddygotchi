@@ -79,6 +79,14 @@ struct Model {
   // occasion, how busy the agents are. The face shows only the designs
   // whose tags are all on, and picks each look's variation itself.
   uint32_t when = 0;
+  // The way to your pointer while it moves (`ptr`, `[x, y]` or `[x, y, 1]`):
+  // each of x (right) and y (down) in -10 … 10, and whether it's at the
+  // edge of the screen nearest the board. `on` only while the Mac sends it.
+  struct PointerIn {
+    bool on = false, near = false;
+    int8_t x = 0, y = 0;
+    bool same(const PointerIn& o) const { return on == o.on && near == o.near && x == o.x && y == o.y; }
+  } pointer;
   // The work stream's lanes (`calls`, render/stream.h), while the agents
   // work and nothing needs you.
   render::Stream::Lane lanes[render::Stream::kLanes];

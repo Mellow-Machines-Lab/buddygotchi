@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-15. How we check that Boop works, including what's on its
+Updated 2026-11-16. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -125,7 +125,12 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   popover's panes, onboarding's acts and their states, gel frames and
   menu-bar icons as PNGs (L0). Besides the `{"dev":…}` lines `--help`
   lists, a headless socket takes `{"dev":"presence",…}`, the Mac's lock, the time since the last key (`key_idle_ms`, for your hands),
-  sleep and idle time.
+  sleep and idle time; `{"dev":"along",…}`, the rest of you at the Mac
+  (`Along.Reading`): `scroll_idle_ms`, `click_idle_ms`, `pointer` [x, y]
+  and its `display` [x, y, w, h], `sound`, `front` (a bundle id), `camera`,
+  `mic` and `copy`; and `{"dev":"anchor",…}`, where Boop sits: `place`
+  (Settings' "Show Boop where it sits"; the next `{"dev":"tap"}` is the
+  spot), `at` [x, y] with its `display`, or `clear`.
 - `.build/debug/beacon` and `.build/debug/mellowharness-emit`:
   MellowHarness's worked example and its event sender
   ([mellowharness/README.md](../mellowharness/README.md)).

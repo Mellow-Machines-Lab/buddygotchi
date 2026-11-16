@@ -25,13 +25,15 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// debug and internal builds), rather than its board: chosen in onboarding or Settings, and
     /// kept from launch to launch. Off, the board, unless chosen.
     public var simulator = false
-    /// Boop types along with you and watches the work with you (`Hands`):
-    /// on unless you turn it off. Off, the Mac's key and input idle times
-    /// aren't read for it.
+    /// Boop notices what you do at the Mac (`Hands`, `Along`): it types
+    /// along, reads along, follows your pointer, hears music, keeps quiet on
+    /// a call and holds a copy. On unless you turn it off. Off, none of the
+    /// Mac's facts for it is read or sent.
     public var typesAlong = true
-    /// The side of Boop your Mac is on, where Boop turns when something
-    /// needs you; not set, it doesn't turn.
-    public var macSide: MacSide?
+    /// Where Boop sits beside your screen, shown once in Settings: where it
+    /// turns when something needs you, and where your pointer is from it.
+    /// Not set, it doesn't turn or follow.
+    public var anchor: Anchor?
     /// Boop lives in the world of buddies: on unless you keep it private.
     public var world = true
     /// Onboarding's world screen has been shown: nothing goes to the world
@@ -48,7 +50,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
         // had one (2026-11-01), `workStream` from before the work stream
         // was always on, `classifier`, `writer` and `brain` from
         // before the modes, and `focus`, `away`, `awaySince`, `finished` and
-        // `projects` from before 2026-09-26.
+        // `projects` from before 2026-09-26, and `macSide` from before the
+        // anchor (2026-11-16).
         let c = try decoder.container(keyedBy: CodingKeys.self)
         talk = (try? c.decodeIfPresent(Talk.self, forKey: .talk)) ?? .default
         swearing = (try? c.decodeIfPresent(Bool.self, forKey: .swearing)) ?? false
@@ -58,12 +61,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
         simulator = (try? c.decodeIfPresent(Bool.self, forKey: .simulator)) ?? false
         typesAlong = (try? c.decodeIfPresent(Bool.self, forKey: .typesAlong)) ?? true
-        macSide = try? c.decodeIfPresent(MacSide.self, forKey: .macSide)
+        anchor = try? c.decodeIfPresent(Anchor.self, forKey: .anchor)
         world = (try? c.decodeIfPresent(Bool.self, forKey: .world)) ?? true
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case talk, swearing, renamed, volume, board, onboarding, typesAlong, macSide, simulator, world, worldShown }
+    enum CodingKeys: String, CodingKey { case talk, swearing, renamed, volume, board, onboarding, typesAlong, anchor, simulator, world, worldShown }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -74,7 +77,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
         if !typesAlong { try c.encode(typesAlong, forKey: .typesAlong) }
-        try c.encodeIfPresent(macSide, forKey: .macSide)
+        try c.encodeIfPresent(anchor, forKey: .anchor)
         if simulator { try c.encode(simulator, forKey: .simulator) }
         if !world { try c.encode(world, forKey: .world) }
         if worldShown { try c.encode(worldShown, forKey: .worldShown) }

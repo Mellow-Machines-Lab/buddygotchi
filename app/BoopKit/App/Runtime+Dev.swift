@@ -41,6 +41,20 @@ extension Runtime {
                 options.log("dev: presence \(signal.rawValue)")
                 presenceSignal(signal)
             }
+        case "along":
+            // The rest of you at the Mac, headless only (`Along.Reading`):
+            // each field a raw fact, the rules run on them as on the Mac's.
+            guard options.along == nil else { return }
+            alongLine(object)
+        case "anchor":
+            // Settings' "Show Boop where it sits" (`place`), or an anchor
+            // set at once (`at`, with its `display`), or none (`clear`).
+            if object["place"] as? Bool == true { showWhereBoopSits() }
+            if let at = object["at"] as? [NSNumber], at.count == 2 {
+                let display = rect(object["display"]) ?? devAlong.display ?? Self.devDisplay
+                setAnchor(Anchor(x: at[0].doubleValue, y: at[1].doubleValue, display: display))
+            }
+            if object["clear"] as? Bool == true { setAnchor(nil) }
         case "report":
             saveReport { _ in }
         case "dream_now":
@@ -90,6 +104,7 @@ extension Runtime {
     /// A tap on the device, without one.
     func tapped(who: String = "dev") {
         options.log("\(who): tap")
+        if placing != nil { return placeHere(at: options.clock()) }
         run(pipeline.poke(at: options.clock()))
         changed()
     }
@@ -148,4 +163,46 @@ extension Runtime {
 
     /// Who forces passes and outputs, for no event: the dashboard's.
     public static let forcedBy = "dashboard"
+}
+
+// The `{"dev":"along"}` line's facts.
+extension Runtime {
+    /// The display a dev line's pointer is on when it names none: a
+    /// MacBook's, at the top left of the desktop.
+    static let devDisplay = Anchor.Rect(x: 0, y: 0, width: 1512, height: 982)
+
+    func rect(_ value: Any?) -> Anchor.Rect? {
+        guard let r = value as? [NSNumber], r.count == 4 else { return nil }
+        return Anchor.Rect(x: r[0].doubleValue, y: r[1].doubleValue, width: r[2].doubleValue, height: r[3].doubleValue)
+    }
+
+    /// `{"dev":"along",…}`: `scroll_idle_ms`, `click_idle_ms`, `pointer`
+    /// ([x, y]) and its `display` ([x, y, w, h]), `sound`, `front` (a bundle
+    /// id, or "" for none), `camera`, `mic` (each true or false), and
+    /// `copy` (true: one copy). Each stays as set until the next says
+    /// otherwise.
+    func alongLine(_ object: [String: Any]) {
+        var r = devAlong
+        if let ms = (object["scroll_idle_ms"] as? NSNumber)?.int64Value { r.scrollIdleMs = max(0, ms) }
+        if let ms = (object["click_idle_ms"] as? NSNumber)?.int64Value { r.clickIdleMs = max(0, ms) }
+        if let p = object["pointer"] as? [NSNumber], p.count == 2 {
+            r.pointerX = p[0].doubleValue
+            r.pointerY = p[1].doubleValue
+            r.display = r.display ?? Self.devDisplay
+        }
+        if let display = rect(object["display"]) { r.display = display }
+        if let on = object["sound"] as? Bool { r.sound = on }
+        if let front = object["front"] as? String { r.front = front.isEmpty ? nil : front }
+        if let on = object["camera"] as? Bool { r.camera = on }
+        if let on = object["mic"] as? Bool { r.mic = on }
+        devAlong = r
+        if object["copy"] as? Bool == true {
+            // The count as it was, read first, so the copy is a change.
+            if devAlong.copies == nil { devAlong.copies = 0 }
+            handsTick()
+            devAlong.copies! += 1
+        }
+        options.log("dev: along " + object.keys.filter { $0 != "dev" }.sorted().joined(separator: " "))
+        handsTick()
+    }
 }

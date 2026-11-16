@@ -60,7 +60,7 @@ void Mixer::setLook(const Clip* clip, uint32_t fadeMs) {
   if (clip) start(*clip, true, fadeMs);
 }
 
-void Mixer::play(const Clip& clip) { start(clip, false); }
+void Mixer::play(const Clip& clip, uint32_t fadeMs) { start(clip, false, fadeMs); }
 
 void Mixer::stop(const Clip& clip) {
   for (int i = 0; i < playing_; ++i)

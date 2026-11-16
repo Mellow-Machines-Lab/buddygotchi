@@ -88,11 +88,13 @@ public final class Core {
     var stream = WorkStream()
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
-    /// Your hands at the Mac now and the side of Boop the Mac is on, which
-    /// the runtime sets (`Runtime.handsTick`, Settings): facts for the
-    /// board's tags, never events.
-    public var hands: Hands?
-    public var macSide: MacSide?
+    /// You at the Mac now (`Along`: your hands, and the rest Boop notices)
+    /// and the side of Boop the Mac is on (`Anchor.side`), which the
+    /// runtime sets (`Runtime.handsTick`, Settings): facts for the board's
+    /// tags and its `ptr`, never events.
+    public var along = Along.Now()
+    public var hands: Hands? { along.hands }
+    public var macSide: Anchor.Side?
     /// The cards the agents handed Boop, and the one it holds (`Cards`).
     var cards = Cards()
     var lastSessions: [SessionSummary] = []
@@ -599,6 +601,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
+        snapshot.pointer = along.pointer
         snapshot.xp = growth()?.percent
         if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
@@ -815,12 +818,13 @@ public final class Core {
     /// The tags on at `now`: the calendar's, then the tier reached, from the start
     /// of the working stretch (`workingSince`), else from when the latest
     /// session came to rest (`idleSince`), then your hands and the Mac's
-    /// side, in `Tags.all`'s order.
+    /// side, and the rest of you at the Mac, in `Tags.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
-        if let hands { on.append(hands.rawValue) }
+        if let hands, hands != .scrolling { on.append(hands.rawValue) }
         if let macSide { on.append(macSide.tag) }
+        on += along.tags
         return Tags.all.filter(on.contains)
     }
 

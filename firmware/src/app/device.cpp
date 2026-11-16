@@ -45,7 +45,8 @@ bool sameModel(const Model& a, const Model& b) {
          a.more == b.more && a.busy == b.busy && a.idle == b.idle && a.helpers == b.helpers && a.vol == b.vol &&
          a.when == b.when && a.todoDone == b.todoDone && a.todoTotal == b.todoTotal && !std::strcmp(a.agent, b.agent) &&
          !std::strcmp(a.project, b.project) && !std::strcmp(a.name, b.name) && !std::strcmp(a.buddy, b.buddy) && a.workAct.kind == b.workAct.kind &&
-         a.workAct.result == b.workAct.result && a.wish == b.wish && a.wishHow == b.wishHow && a.card.same(b.card);
+         a.workAct.result == b.workAct.result && a.wish == b.wish && a.wishHow == b.wishHow && a.card.same(b.card) &&
+         a.pointer.same(b.pointer);
 }
 
 // Boop's do names, in hello.does's order, and the
@@ -214,6 +215,14 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
   m.when = render::reached(m.when) | render::busyTags(m.busy);
+  // The way to your pointer, `[x, y]`, `[x, y, 1]` at the edge nearest the
+  // board; none when missing, as an older Mac sends.
+  if (JsonArrayConst ptr = doc["ptr"].as<JsonArrayConst>(); ptr.size() >= 2) {
+    m.pointer.on = true;
+    m.pointer.x = int8_t(heldTo(ptr[0], -10, 10, 0));
+    m.pointer.y = int8_t(heldTo(ptr[1], -10, 10, 0));
+    m.pointer.near = (ptr[2] | 0) != 0;
+  }
   // The work stream's lanes, `[slot, calls, word]`, their words
   // as the fonts draw them.
   for (JsonArrayConst lane : doc["calls"].as<JsonArrayConst>()) {

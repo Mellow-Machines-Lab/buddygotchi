@@ -1,6 +1,6 @@
 # LinkKit: the spec
 
-Updated 2026-11-03. The contract between a host (a Mac app) and a small
+Updated 2026-11-16. The contract between a host (a Mac app) and a small
 device with a screen, a light or a speaker: four messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
@@ -84,7 +84,11 @@ Bluetooth link the system kept up. Older firmware ignores the type (§2).
 
 The app's own map, sent whole every time, so a lost or late message is
 fixed by the next. The kit reads none of it; any `state` counts as the host
-speaking (§5).
+speaking (§5). An app adds a field to it without a new `kit` (§6): a
+device that doesn't know the field ignores it (§2). A host may send it as
+often as what it says changes (Boop's, a few times a second while your
+pointer moves): over Bluetooth a newer one replaces one not yet started
+(§8).
 
 ### `do`: host → device
 

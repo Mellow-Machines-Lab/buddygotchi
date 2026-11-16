@@ -63,6 +63,8 @@ extension Runtime {
             // BOOT: the core decides whether it hands you the next agent;
             // the board has played its guess (its hand-off, or a poke).
             if button { return run(pipeline.press(at: now, finish: opens)) }
+            // Waiting to be shown where it sits: this tap is that, not a poke.
+            if placing != nil { return placeHere(at: now) }
             // A poke. The device has already poked,
             // cutting the animation playing but not a reaction's `say` or face;
             // on the brain's finish that names whose turn it was it only

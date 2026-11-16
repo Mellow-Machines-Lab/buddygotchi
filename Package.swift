@@ -81,7 +81,7 @@ var packageTargets: [Target] = [
         path: ".",
         exclude: excludingAllBut(["app/Boop", "internal/app/Boop"])
             + ["app/Boop/Info.plist", "app/Boop/AppIcon.icns", "app/Boop/Boop.entitlements"],
-        sources: ["app/Boop/main.swift", "app/Boop/MenuBarApp.swift", "app/Boop/PresenceSignals.swift",
+        sources: ["app/Boop/main.swift", "app/Boop/MenuBarApp.swift", "app/Boop/PresenceSignals.swift", "app/Boop/AlongSignals.swift",
                   "app/Boop/Talk.swift", "app/Boop/BoardWindow.swift", "app/Boop/Views", "internal/app/Boop"],
         resources: [.copy(".character-build/packs")],
         linkerSettings: [.linkedFramework("WebKit"), .unsafeFlags([
