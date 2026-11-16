@@ -2914,6 +2914,54 @@ static void test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px() {
   TEST_ASSERT_EQUAL_INT(1, d.count(kClosed));
 }
 
+// Pins the card's touches (kCardSwipePx, 28): a finger across the card asks
+// the Mac for the next card (leftwards) or the one before, a tap or a short
+// roll asks it to open the card, and neither is a tap or a stroke on Boop. A
+// touch off the card is Boop's as ever, and with no card, or under a
+// needs-you screen, there's no card to touch.
+static void test_a_swipe_across_the_card_asks_for_the_next_and_a_tap_opens_it() {
+  TEST_ASSERT_EQUAL_INT(28, app::Device::kCardSwipePx);
+  static constexpr const char* kCarded =
+      "{\"t\":\"state\",\"base\":\"working\",\"busy\":2,\"vol\":0,\"card\":{\"a\":1,\"k\":\"s\",\"t\":\"fixing the "
+      "overflow\",\"d\":\"2 of 5\",\"at\":[1,2]}}";
+  const auto ev = [](const char* did) {
+    return std::string("{\"t\":\"ev\",\"kind\":\"card\",\"did\":\"") + did + "\"}";
+  };
+  DrawerRig b(kCarded);
+  b.run(1000);
+  b.touch(250, 175, 190, 177, 150);  // leftwards
+  b.run(300);
+  TEST_ASSERT_EQUAL_INT(1, b.count(ev("next").c_str()));
+  b.touch(100, 175, 200, 180, 150);
+  b.run(300);
+  TEST_ASSERT_EQUAL_INT(1, b.count(ev("prev").c_str()));
+  b.touch(160, 175, 180, 175, 100);  // a tap, a little rolled
+  b.run(300);
+  TEST_ASSERT_EQUAL_INT(1, b.count(ev("open").c_str()));
+  TEST_ASSERT_EQUAL_INT(0, b.count(kTapped));
+  TEST_ASSERT_EQUAL_INT(0, b.count("\"kind\":\"gesture\""));
+  b.touch(160, 80, 160, 80, 80);  // on Boop, above the card
+  b.run(300);
+  TEST_ASSERT_EQUAL_INT(1, b.count(kTapped));
+  TEST_ASSERT_EQUAL_INT(3, b.count("\"kind\":\"card\""));
+
+  // The card gone from the state: its place is Boop's again.
+  b.line(DrawerRig::kState);
+  b.run(200);
+  b.touch(160, 175, 160, 175, 80);
+  b.run(300);
+  TEST_ASSERT_EQUAL_INT(3, b.count("\"kind\":\"card\""));
+  TEST_ASSERT_EQUAL_INT(2, b.count(kTapped));
+
+  // Under something that needs you, no card shows, so none is touched.
+  DrawerRig n("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"vol\":0,\"attn\":{\"id\":7,\"agent\":\"codex\","
+              "\"project\":\"api\",\"kind\":\"approve\"},\"card\":{\"a\":0,\"k\":\"s\",\"t\":\"fixing\",\"at\":[1,1]}}");
+  n.run(1000);
+  n.touch(160, 175, 160, 175, 80);
+  n.run(300);
+  TEST_ASSERT_EQUAL_INT(0, n.count("\"kind\":\"card\""));
+}
+
 // Pins what a pick opens: the session under the finger as it went down,
 // though a state reorders the rows before it lets go; and nothing when the
 // drawer shut under the finger (the Mac's listening).
@@ -3052,6 +3100,7 @@ int main() {
   RUN_TEST(test_a_wish_mets_sign_is_read_before_the_next);
   RUN_TEST(test_boot_only_shuts_the_open_drawer);
   RUN_TEST(test_a_drawer_pick_is_a_tap_and_a_pull_goes_22_px);
+  RUN_TEST(test_a_swipe_across_the_card_asks_for_the_next_and_a_tap_opens_it);
   RUN_TEST(test_a_pick_is_the_row_the_finger_went_down_on);
   RUN_TEST(test_needs_you_and_no_app_shut_the_drawer);
   RUN_TEST(test_face_down_silences_the_faces_sounds);

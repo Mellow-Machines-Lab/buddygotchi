@@ -224,6 +224,7 @@ final class ReasonsTests: XCTestCase {
         case .world: return [(event(kind, "boop", data: ["from_region": "americas"]), [:]), (event(kind, "cheer", data: ["count": 3]), [:]),
                              (event(kind, "boop", data: ["held": true, "counts": ["boop": 2, "cheer": 1]]), [:])]
         case .ask: return [(event(kind, "a"), ["answer": "yes"]), (event(kind, Asks.ignored), [:])]
+        case .card: return [(event(kind, "status", phase: .start), [:]), (event(kind, "result", phase: .end), [:])]
         case .link: return [(event(kind, "ble", phase: .start), [:]), (event(kind, "ble", phase: .end), [:])]
         @unknown default: return nil
         }

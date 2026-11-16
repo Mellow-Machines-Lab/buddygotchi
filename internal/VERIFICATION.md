@@ -150,6 +150,13 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   each other and leave (L4). `npm run dev` in `internal/world/` serves a
   fake world on PGlite; the live one only when the owner asks. The Swift
   side's own tests, `WorldTests`, stub the network and never reach one.
+- `internal/tools/cards/trial.py --models opus sonnet --out DIR`: do agents
+  send good cards? Fixed tasks in a small fixture project
+  (`internal/tools/cards/fixture/`) through real Claude Code sessions, one
+  per model and per way of telling the agent, with `boop-cards` logging
+  every card and sending none; then a scorecard (`--score DIR` writes it
+  again). Each run is a real agent session, so it costs, and only when the
+  owner asks. It reads no user settings, so no hooks run.
 - The generators, each in its pack and writing into it, which its
   repository's `make` runs: `characters/boop/tools/voicegen/voicegen.py`
   (the voice file and the Mac's take table; SlimeBuddy's `make voice`;

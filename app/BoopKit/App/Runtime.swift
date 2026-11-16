@@ -80,6 +80,8 @@ public final class Runtime: @unchecked Sendable {
         /// Opens a thread on the Mac (`ThreadLink`): a tap while something
         /// needs you, or a click in the popover. Tests pass their own.
         public var open: @Sendable (ThreadLink.Target) -> Bool = ThreadLink.openOnMac
+        /// Opens what a result card links to (`CardTool.open`).
+        public var openLink: @Sendable (String) -> Bool = CardTool.open
         /// Labels your prompts on the Mac: the menu-bar app's is Apple
         /// Intelligence on macOS 26, which labels while it's on. None
         /// (headless's unless it asks, and the tests') counts them only.
@@ -515,8 +517,12 @@ public final class Runtime: @unchecked Sendable {
             let received = clock()
             home.async { self?.hook(line, received: received) }
         }
-        let onOther: @Sendable (Data) -> Void = { [weak self] data in home.async { self?.dev(data) } }
-        let server = HookServer(path: options.socketPath, onLine: onLine, onOther: options.devLines ? onOther : nil)
+        // What isn't a hook: a card from the tool server, or a dev line.
+        let onOther: @Sendable (Data) -> Void = { [weak self] data in
+            let received = clock()
+            home.async { self?.other(data, received: received) }
+        }
+        let server = HookServer(path: options.socketPath, onLine: onLine, onOther: onOther)
         try server.start()
         self.server = server
         // Only once it runs: a start that failed isn't a crash.
@@ -662,6 +668,21 @@ public final class Runtime: @unchecked Sendable {
 
     // MARK: Inputs (on `home`)
 
+    /// A line on the socket that isn't a hook's: a card an agent handed
+    /// Boop (`CardTool.line`), held to the limits again here, since anything
+    /// may write to the socket; or, with `devLines`, a dev line.
+    func other(_ data: Data, received: Int64) {
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        guard object["card"] != nil else {
+            if options.devLines { dev(data) }
+            return
+        }
+        guard let (card, process) = CardTool.read(object) else { return }
+        let step = pipeline.card(card, process: process, at: received)
+        if options.debug { options.log("card: \(card.kind.rawValue) " + (step.recorded.isEmpty ? "for nobody" : "taken")) }
+        run(step)
+    }
+
     func hook(_ line: HookLine, received: Int64) {
         demoHeard?(line)
         // Your prompt and the agent's last message go no further than the
@@ -790,6 +811,9 @@ public final class Runtime: @unchecked Sendable {
                 playCall(args)
             case .open(let thread):
                 open(thread, by: "tap")
+            case .openLink(let link):
+                let opened = options.openLink(link)
+                options.log("open: a card's link" + (opened ? "" : ": open failed"))
             }
         }
         // Only the outermost step: a step inside an input joins it, which

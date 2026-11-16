@@ -2,7 +2,8 @@ import AgentHooks
 import Foundation
 
 /// A copy of each agent's settings from before Boop first changed them, in
-/// the state directory's `backups/`: Claude Code's `settings.json`, and
+/// the state directory's `backups/`: Claude Code's `settings.json` and
+/// `~/.claude.json` (where the card server is registered), and
 /// Codex's `hooks.json` and `config.toml`. Made once and never replaced,
 /// so it stays the file as it was before Boop, whatever Boop does after.
 public enum HookBackup {
@@ -11,7 +12,8 @@ public enum HookBackup {
     /// The files an agent's hooks live in, and what each copy is called.
     static func files(_ installer: HookInstaller, _ agent: Agent) -> [(from: URL, name: String)] {
         switch agent {
-        case .claude: [(installer.configURL(.claude), "claude-settings.json")]
+        case .claude: [(installer.configURL(.claude), "claude-settings.json"),
+                       (installer.home.appendingPathComponent(".claude.json"), "claude.json")]
         case .codex: [(installer.configURL(.codex), "codex-hooks.json"),
                       (installer.home.appendingPathComponent(".codex/config.toml"), "codex-config.toml")]
         }

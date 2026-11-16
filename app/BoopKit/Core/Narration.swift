@@ -171,6 +171,7 @@ public struct Narration: Equatable, Sendable {
         "last_message": "its finish says how the turn went (`outcome`)",
         "tool start": "the work stream: a word falling, never a Moment",
         "tool wait": "the needs-you screen says it",
+        "card start": "log-only: Boop holds the card up, part of Doing", "card end": "log-only: the finish plays, then the card shows",
     ]
 
     /// Why it holds up something it noticed: "It noticed a rough hour: 3

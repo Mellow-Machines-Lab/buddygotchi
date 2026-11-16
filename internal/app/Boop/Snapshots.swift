@@ -767,7 +767,9 @@ enum Snapshots {
     static func model(_ installer: HookInstaller, status: Runtime.Status?, link: LinkSetting = .bluetooth,
                       ownsHooks: Bool = true) -> AppModel {
         // Fixtures only: never the real Keychain, and a copy's entry if saved.
-        let model = AppModel(installer: installer, ownsHooks: ownsHooks, link: link,
+        let model = AppModel(installer: installer,
+                             cards: CardInstaller(home: installer.home, serverPath: installer.hookPath + "-cards"),
+                             ownsHooks: ownsHooks, link: link,
                              keyAccount: Keychain.account(for: URL(fileURLWithPath: "/tmp/boop-snapshots")))
         model.slime.stillImage = tileStill
         model.status = status

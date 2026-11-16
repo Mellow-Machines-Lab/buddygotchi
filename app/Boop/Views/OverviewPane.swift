@@ -791,7 +791,7 @@ struct SessionRow: View {
         case .idle: parts.append("idle")
         case .working: break
         }
-        if let word = session.word { parts.append(word) }
+        if let card = session.card { parts.append(card) } else if let word = session.word { parts.append(word) }
         if let todo = session.todo { parts.append("\u{2713} \(todo.text)") }
         if let since = session.since { parts.append(SessionRow.span(now.timeIntervalSince(since))) }
         return parts.joined(separator: " \u{00B7} ")

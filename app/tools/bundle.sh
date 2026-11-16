@@ -1,7 +1,7 @@
 #!/bin/sh
 # Builds Boop.app, the app as it ships: a release build for Apple silicon
-# and Intel, with agent-hook beside the binary (where the app copies it
-# from), the character packs, the icon and each board's firmware (which
+# and Intel, with agent-hook and boop-cards beside the binary (where the
+# app copies them from), the character packs, the icon and each board's firmware (which
 # the app updates a board with, firmware/tools/package.py) in Resources,
 # the Info.plist with the version from VERSION and a build number, signed
 # with the hardened runtime, once the binary is checked to open on macOS 14.
@@ -32,6 +32,7 @@ python3 characters/charactergen.py --stage
 build="swift build -c release --arch arm64 --arch x86_64${internal:+ -Xswiftc -DBOOP_INTERNAL}"
 $build --product Boop
 $build --product agent-hook
+$build --product boop-cards
 bin=$($build --show-bin-path)
 packs=$(find "$bin/Boop_Boop.bundle" -maxdepth 3 -type d -name packs | head -1)
 [ -n "$packs" ] || { echo "bundle: no packs in $bin/Boop_Boop.bundle" >&2; exit 1; }
@@ -47,7 +48,7 @@ number=$(git rev-list --count HEAD)
 
 rm -rf "$app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
-cp "$bin/Boop" "$bin/agent-hook" "$app/Contents/MacOS/"
+cp "$bin/Boop" "$bin/agent-hook" "$bin/boop-cards" "$app/Contents/MacOS/"
 # Boop opens on macOS 14, and Apple Intelligence's prompt labels need 26:
 # FoundationModels must be linked weak, or macOS 14 and 15 won't start the app.
 for arch in arm64 x86_64; do
@@ -75,7 +76,9 @@ plutil -insert CFBundleIconFile -string AppIcon "$plist"
 # Ad hoc signatures can't have a secure timestamp; a Developer ID's must.
 stamp=--timestamp
 [ "$identity" = - ] && stamp=--timestamp=none
-codesign --force --options runtime $stamp --sign "$identity" "$app/Contents/MacOS/agent-hook"
+for helper in agent-hook boop-cards; do
+  codesign --force --options runtime $stamp --sign "$identity" "$app/Contents/MacOS/$helper"
+done
 codesign --force --options runtime $stamp --sign "$identity" --entitlements app/Boop/Boop.entitlements "$app"
 codesign --verify --strict --deep "$app"
 echo "bundle: $app, Boop $version ($number)${internal:+, internal}, signed by ${identity}"

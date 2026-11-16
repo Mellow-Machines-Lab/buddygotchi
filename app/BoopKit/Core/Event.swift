@@ -97,6 +97,10 @@ extension Event {
         /// The board's link coming up (`start`) and dropping (`end`):
         /// log-only, for the daily counts.
         case link
+        /// A card an agent handed Boop (`Card`): its status (`start`) or
+        /// its result (`end`), with its words. Log-only: the words are the
+        /// agent's, shown on the screen, and never a line the brain reads.
+        case card
         /// An ask's end, which the board decides: you picked an answer
         /// (`specific_type` `a` or `b`), a touch answered it (`touch`), or
         /// nobody did (`ignored`), with the question's `q`, its words

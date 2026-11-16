@@ -4,6 +4,27 @@ Updated 2026-11-15. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
+## Report, 2026-11-15: agents' cards
+
+On the branch `agent-cards` (on main `dc57f70d`, with gaze) and SlimeBuddy's
+`agent-cards` (on `main-v2` `74240a1`, in this worktree's
+`characters/.repos/SlimeBuddy`, with a bundle in `~/.boopdev/agent-cards/`).
+Nothing is merged or pushed, and the board wasn't flashed: the owner was
+using it. The spec, the rules and how Opus and Sonnet did are in
+[agent-cards.md](agent-cards.md). No Jev request: a card never reaches Jev.
+
+- Built: the `boop-cards` tool server, the card on the Mac and on the gel's
+  board, swiping between cards, a tap that opens the link or the thread.
+- Checked: `make -C internal check` and `boards` pass; a real Sonnet session
+  with hooks and the tool server drove a headless Boop, whose states carried
+  the four cards it sent.
+- Many agents: Boop holds who you last prompted or swiped to; only results
+  interrupt, each once; a drawer row shows its card's words.
+- Installed with the hooks: connecting an agent registers the tool server
+  with it, and every connected agent gets it at launch (`CardInstaller`).
+- Owed by the owner: the card on the real board (its look, a swipe and a tap
+  with a finger, the frame rate while a card is held), a Codex session, and
+  the decisions at the end of the spec.
 ## Report, 2026-11-15 (later): gaze and typing along, to try
 
 **Read this first.** Two ways Boop is with you through the day, on the

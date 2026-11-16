@@ -186,6 +186,8 @@ final class AppModel: ObservableObject {
     @Published var loginItemError: String?
 
     let installer: HookInstaller
+    /// Registers the card server with each agent whose hooks are in.
+    let cards: CardInstaller
     /// False on a folder other than the everyday one: then this copy never
     /// changes the real hooks.
     let ownsHooks: Bool
@@ -215,8 +217,9 @@ final class AppModel: ObservableObject {
     /// Keychain may stop to ask for access; snapshots read none.
     var readKey: @Sendable () -> String?
 
-    init(installer: HookInstaller, ownsHooks: Bool = true, link: LinkSetting, keyAccount: String) {
+    init(installer: HookInstaller, cards: CardInstaller, ownsHooks: Bool = true, link: LinkSetting, keyAccount: String) {
         self.installer = installer
+        self.cards = cards
         self.ownsHooks = ownsHooks
         self.link = link
         self.keyAccount = keyAccount
@@ -379,11 +382,23 @@ final class AppModel: ObservableObject {
     }
 
     func install(_ agent: Agent) {
-        changeHooks(agent) { try installer.install(agent) }
+        changeHooks(agent) {
+            try installer.install(agent)
+            changeCards(agent) { try cards.install(agent) }
+        }
     }
 
     func remove(_ agent: Agent) {
-        changeHooks(agent) { try installer.remove(agent) }
+        changeHooks(agent) {
+            try installer.remove(agent)
+            changeCards(agent) { _ = try cards.remove(agent) }
+        }
+    }
+
+    /// The card server's entry goes in and out with the hooks. Its failing
+    /// is only logged: the hooks are what Boop needs.
+    func changeCards(_ agent: Agent, _ change: () throws -> Void) {
+        do { try change() } catch { log("cards: \(agent.rawValue): \(error.localizedDescription)") }
     }
 
     /// Only a change that worked asks for a restart; one that failed says
@@ -693,8 +708,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // everyday Boop keeps them, so settings shows how they stand.
         let everyday = AppSettings.isEveryday(stateDir)
         let hookDir = everyday ? stateDir : AppSettings.defaultStateDir()
-        model = AppModel(installer: .boop(home: URL(fileURLWithPath: NSHomeDirectory()),
-                                          hookPath: hookDir.appendingPathComponent("bin/\(HookInstaller.client)").path),
+        let home = URL(fileURLWithPath: NSHomeDirectory())
+        model = AppModel(installer: .boop(home: home, hookPath: hookDir.appendingPathComponent("bin/\(HookInstaller.client)").path),
+                         cards: CardInstaller(home: home, serverPath: hookDir.appendingPathComponent("bin/\(CardInstaller.name)").path),
                          ownsHooks: everyday, link: link, keyAccount: Keychain.account(for: stateDir))
         model.backupStateDir = everyday ? stateDir : nil
         super.init()
@@ -732,7 +748,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.mainMenu = AppDelegate.editMenu()
         if model.ownsHooks {
-            placeHookClient()
+            place(HookInstaller.client, at: model.installer.hookPath)
+            place(CardInstaller.name, at: model.cards.serverPath)
             // agent-hook sends to every socket listed in agent-hooks' folder:
             // Boop's is listed as a link.
             do {
@@ -748,6 +765,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             if !repaired.isEmpty {
                 log.write("hooks: repaired \(repaired.map(\.rawValue).joined(separator: ", "))")
                 model.restartAgents = true
+            }
+            // Every agent with hooks gets the card server, an app from before
+            // it existed too.
+            for agent in Agent.allCases where model.installer.health(agent) == .installed && !model.cards.installed(agent) {
+                model.changeCards(agent) {
+                    try model.cards.install(agent)
+                    log.write("cards: registered with \(agent.rawValue)")
+                    model.restartAgents = true
+                }
             }
         } else {
             // They report to the everyday Boop's socket, so pointing them here
@@ -949,16 +975,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     /// The hooks call a stable copy of agent-hooks' `agent-hook` in the
-    /// state directory, so a rebuilt or moved app doesn't break them.
-    func placeHookClient() {
+    /// state directory, and the agents a stable copy of `boop-cards`, so a
+    /// rebuilt or moved app doesn't break them: `name`, from beside the
+    /// app's binary, to `path`.
+    func place(_ name: String, at path: String) {
         let fm = FileManager.default
-        guard let built = Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent(HookInstaller.client),
+        let target = URL(fileURLWithPath: path)
+        guard let built = Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent(name),
               fm.isExecutableFile(atPath: built.path) else {
-            let placed = model.installer.clientInPlace ? "keeping the copy in place" : "hooks can't be installed or repaired"
-            log.write("hooks: no \(HookInstaller.client) next to the app; \(placed)")
+            let placed = fm.isExecutableFile(atPath: path) ? "keeping the copy in place" : "it can't be installed or repaired"
+            log.write("install: no \(name) next to the app; \(placed)")
             return
         }
-        let target = URL(fileURLWithPath: model.installer.hookPath)
         if fm.contentsEqual(atPath: built.path, andPath: target.path) { return }
         do {
             try fm.createDirectory(at: target.deletingLastPathComponent(), withIntermediateDirectories: true)
@@ -967,7 +995,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             try fm.copyItem(at: built, to: staged)
             _ = try fm.replaceItemAt(target, withItemAt: staged)
         } catch {
-            log.write("hooks: can't place \(HookInstaller.client): \(error)")
+            log.write("install: can't place \(name): \(error)")
         }
     }
 
@@ -1128,7 +1156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         let ask = NSAlert()
         ask.alertStyle = .warning
         ask.messageText = "Uninstall \(name)?"
-        ask.informativeText = "\(name) takes its hooks out of Claude Code and Codex, stops opening at login"
+        ask.informativeText = "\(name) takes its hooks and its cards out of Claude Code and Codex, stops opening at login"
             + (bundled ? ", moves Boop.app to the Trash" : "") + " and quits.\n\n"
             + "Its memory stays in \(folder), so a Boop installed again remembers. Delete that folder to forget it too."
         ask.addButton(withTitle: "Uninstall")
@@ -1140,7 +1168,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         }
         model.runtime?.stop()
         for agent in Agent.allCases { HookBackup.once(model.installer, agent, stateDir: stateDir) }
-        let result = Uninstall.run(installer: model.installer, stateDir: stateDir, loginItem: model.loginItem)
+        let result = Uninstall.run(installer: model.installer, cards: model.cards, stateDir: stateDir,
+                                   loginItem: model.loginItem)
         log.write("uninstall: removed " + (result.removed.isEmpty ? "nothing" : result.removed.joined(separator: ", "))
                   + (result.kept.isEmpty ? "" : "; left " + result.kept.joined(separator: "; "))
                   + (result.problems.isEmpty ? "" : "; couldn't remove " + result.problems.joined(separator: "; ")))

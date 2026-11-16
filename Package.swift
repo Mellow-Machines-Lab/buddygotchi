@@ -89,6 +89,14 @@ var packageTargets: [Target] = [
             "-Xlinker", Context.packageDirectory + "/app/Boop/Info.plist",
         ])]
     ),
+    // The tool server an agent talks to, to hand Boop a card (`CardTool`): a
+    // Model Context Protocol server over stdio, which ships beside the app
+    // as agent-hook does.
+    .executableTarget(
+        name: "boop-cards",
+        dependencies: ["BoopKit", agentHooks],
+        path: "app/BoopCards"
+    ),
     // Internal from here on: none of it ships.
 
     // What boopdev and the tests share: the harness evals (Eval) and hook
@@ -132,6 +140,7 @@ let package = Package(
     products: [
         .executable(name: "Boop", targets: ["Boop"]),
         .executable(name: "boopdev", targets: ["BoopDev"]),
+        .executable(name: "boop-cards", targets: ["boop-cards"]),
     ],
     // The hook layer (agent-hooks/README.md), the brain's harness
     // (mellowharness/README.md) and the device link (linkkit/README.md) are
