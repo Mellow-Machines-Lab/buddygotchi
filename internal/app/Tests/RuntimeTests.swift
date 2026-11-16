@@ -1512,11 +1512,9 @@ final class RuntimeTests: XCTestCase {
         let boop = Personality.Rules(workCheckInMs: 240_000...360_000, idleCheckInMs: 900_000...1_800_000)
         XCTAssertEqual(Self.steering.personality.rules, boop)
         XCTAssertEqual(Self.steering.rules(talk: .normal), boop, "normal keeps the personality's pace")
-        // Quiet looks in less often, chatty more; neither hears every tool use.
+        // Quiet looks in less often.
         XCTAssertEqual(Self.steering.rules(talk: .quiet),
                        Personality.Rules(workCheckInMs: 480_000...720_000, idleCheckInMs: 1_800_000...3_600_000))
-        XCTAssertEqual(Self.steering.rules(talk: .chatty),
-                       Personality.Rules(workCheckInMs: 120_000...180_000, idleCheckInMs: 600_000...900_000))
         XCTAssertNil(Personality.Rules(frontMatter: "working_heartbeat: 90-180").idleCheckInMs, "no idle check-ins unless a personality asks")
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: none").idleCheckInMs)
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleCheckInMs, "unreadable keeps the default")
@@ -1591,10 +1589,34 @@ final class RuntimeTests: XCTestCase {
         try runtime.start()
         defer { runtime.stop() }
         eventually("started normal") { runtime.home.sync { statuses.last?.talk == .normal } }
-        runtime.setTalk(.chatty)
-        eventually("chatty now") { runtime.home.sync { statuses.last?.talk == .chatty } }
-        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workCheckInMs }, 120_000...180_000)
-        XCTAssertEqual(AppSettings.load(from: dir).talk, .chatty)
+        runtime.setTalk(.quiet)
+        eventually("quiet now") { runtime.home.sync { statuses.last?.talk == .quiet } }
+        XCTAssertEqual(runtime.home.sync { runtime.view.rules.workCheckInMs }, 480_000...720_000)
+        XCTAssertEqual(AppSettings.load(from: dir).talk, .quiet)
+    }
+
+    /// A pass forced from outside (a demo's brain step, the dashboard's
+    /// answer) names the idle beat it holds up itself, whatever the order
+    /// and the cap (`IdleBeat.every`): the pack's question is asked, its
+    /// two answers on the wire.
+    func testAForcedPassNamesItsIdleBeat() throws {
+        try requirePack("boop")  // its asks.md
+        let transport = FakeTransport()
+        var options = try options(transport)
+        let skew = VirtualClock(0)
+        options.clock = { Int64(Date().timeIntervalSince1970 * 1000) + skew.now }
+        options.advance = { skew.now += $0 }
+        let runtime = try Runtime(options)
+        try runtime.start()
+        defer { runtime.stop() }
+        connect(transport, runtime)
+        eventually("the brain") { runtime.home.sync { runtime.harness.brain != nil } }
+        XCTAssertTrue(HookSocket.send(hook("SessionStart"), to: socketPath))
+        eventually("a session") { transport.sent.contains { $0.contains("\"base\":\"idle\"") } }
+        XCTAssertTrue(HookSocket.send(Data(#"{"dev":"advance","ms":4200000}"#.utf8), to: socketPath))
+        eventually("clock moved") { skew.now == 4_200_000 }
+        dev(#"{"dev":"answer","answers":{"react.face":"curious","react.sign":"fav snack?"}}"#)
+        eventually("the ask", timeout: 4) { transport.dos("react").contains { $0.contains(#""ask":{"q":"snack","a":"cookie","b":"pizza"}"#) } }
     }
 
     /// A long turn, finished after `{"dev":"advance"}`: no rule plays its

@@ -133,11 +133,11 @@ struct OverviewPane: View {
                 face
                 VStack(alignment: .leading, spacing: Theme.gapTight) {
                     // The name on one line while it fits beside the controls;
-                    // else it wraps, and while hushed the controls shrink to
+                    // else it wraps, and while it's quiet for a while the controls shrink to
                     // their icons, so no word of the name breaks.
                     ViewThatFits(in: .horizontal) {
                         nameRow(wraps: false, compact: false)
-                        nameRow(wraps: true, compact: model.status?.hushedUntil != nil)
+                        nameRow(wraps: true, compact: model.status?.quietUntil != nil)
                     }
                     HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
                         statusLine
@@ -248,42 +248,42 @@ struct OverviewPane: View {
         .animation(.boopSettle, value: device.short)
     }
 
-    /// Talk, and beside it while hushed the one control that says so and
-    /// ends it; else a small menu that hushes.
+    /// Talk, and beside it while it's quiet for a while the one control
+    /// that says so and ends it; else a small menu that hushes.
     private func talkControls(compact: Bool) -> some View {
         HStack(spacing: Theme.gapTight) {
-            if let until = model.status?.hushedUntil {
-                hushedButton(until, compact: compact)
+            if let until = model.status?.quietUntil {
+                quietButton(until, compact: compact)
             }
             talkButton(compact: compact)
-            if model.status?.hushedUntil == nil { talkMenu }
+            if model.status?.quietUntil == nil { talkMenu }
         }
         .fixedSize()
     }
 
-    /// While hushed, how long until it may talk again, counting down; a
-    /// click lets it talk now.
-    private func hushedButton(_ until: Date, compact: Bool) -> some View {
-        Button { model.runtime?.unhush() } label: {
+    /// While it's quiet for a while, how long until Talk is the setting's
+    /// again, counting down; a click ends it now.
+    private func quietButton(_ until: Date, compact: Bool) -> some View {
+        Button { model.runtime?.quietForAWhile(false) } label: {
             TimelineView(.periodic(from: .now, by: 15)) { context in
                 let minutes = max(1, Int((until.timeIntervalSince(context.date) / 60).rounded(.up)))
                 HStack(spacing: Theme.gapTight) {
                     Image(systemName: "mouth.fill")
-                    Text(compact ? "\(minutes)m" : "Hushed \(minutes)m")
+                    Text(compact ? "\(minutes)m" : "Quiet \(minutes)m")
                 }
             }
         }
         .buttonStyle(.rowFilled)
-        .help("\(model.name) says nothing until the time's up. Click to let it talk now")
-        .accessibilityLabel("Hushed. Let \(model.name) talk again")
+        .help("\(model.name) keeps quiet until the time's up. Click to let it talk now")
+        .accessibilityLabel("Quiet for now. Let \(model.name) talk again")
         .transition(.opacity)
     }
 
-    /// Talk's menu: Hush for half an hour (`Core.hushMs`), when it says
-    /// nothing, though its faces go on.
+    /// Talk's menu: Hush for half an hour (`Core.quietForMs`): Talk is
+    /// quiet till then.
     private var talkMenu: some View {
         Menu {
-            Button("Hush for \(Core.hushMs / 60_000) min") { model.runtime?.hush() }
+            Button("Hush for \(Core.quietForMs / 60_000) min") { model.runtime?.quietForAWhile() }
         } label: {
             Image(systemName: "chevron.down")
         }
@@ -292,7 +292,7 @@ struct OverviewPane: View {
         .font(.chip)
         .foregroundStyle(Theme.inkSoft)
         .frame(width: Theme.iconColumn, height: Theme.target)
-        .help("Hush \(model.name) for \(Core.hushMs / 60_000) min: it keeps making faces, but says nothing")
+        .help("Hush \(model.name) for \(Core.quietForMs / 60_000) min: it keeps making faces, and says very little")
         .accessibilityLabel("More: hush \(model.name)")
     }
 

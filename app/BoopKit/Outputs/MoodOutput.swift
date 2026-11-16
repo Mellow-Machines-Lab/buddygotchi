@@ -79,19 +79,15 @@ public enum MoodOutput {
     }
 
     /// Whether Boop may start to miss you at `now`, with no agent
-    /// `working` for you: an idle check-in once its wish has waited
-    /// `missAfterWishMs` (`wishWaitedMs`), or your coming back after
-    /// `missAwayMs` (its line's `away_ms`). A forced pass (no `now`)
-    /// never offers it: the dashboard and a demo set a mood itself
-    /// (`change`).
-    public static func mayMiss(_ now: Event?, facts: [String: JSONValue]?, working: Bool, wishWaitedMs: Int64?) -> Bool {
+    /// `working` for you: only at your coming back after `missAwayMs`
+    /// (its line's `away_ms`). A forced pass (no `now`) never offers it:
+    /// the dashboard and a demo set a mood itself (`change`).
+    public static func mayMiss(_ now: Event?, facts: [String: JSONValue]?, working: Bool) -> Bool {
         guard let now, !working else { return false }
-        if MomentOutput.isCheckIn(now) { return (wishWaitedMs ?? 0) >= missAfterWishMs }
         if now.type == .presence, now.phase == .end, case .int(let ms)? = facts?["away_ms"] { return missAwayMs.contains(ms) }
         return false
     }
 
-    public static let missAfterWishMs: Int64 = 60 * 60_000
     public static let missAwayMs: ClosedRange<Int64> = (20 * 3_600_000)...(40 * 3_600_000)
 
     /// Boop's mood as MellowHarness's `Choice`: its question, offered stay
@@ -155,7 +151,7 @@ public enum MoodOutput {
     public static func provocation(_ e: Event, facts: [String: JSONValue]) -> Int? {
         let inARow = facts["in_a_row"]?.int.map(Int.init) ?? 1
         if e.type == .poke { return inARow >= 2 ? inARow - 1 : nil }
-        if e.type == .gesture, e.specificType == TranscriptView.shake { return inARow }
+        if Touch(e) == .shake { return inARow }
         if facts["result"]?.string == "failed", let topic = facts["topic"]?.string, TranscriptView.checks.contains(topic) {
             return (facts["failed_before"]?.int.map(Int.init) ?? 0) + 1
         }

@@ -74,8 +74,6 @@ public final class Core {
     /// The last day with any activity, or the day the app opened: the first
     /// activity of a later one is a new day.
     var lastActiveDay: String?
-    /// The day `dayGreeting` last greeted, or found nothing to greet.
-    var greetedDay: String?
     var lastPublished: StateSnapshot?
     /// Onboarding's practice request (act 5's amber lesson): the needs-you
     /// screen, as an agent's request shows it, with no agent behind it,
@@ -178,22 +176,18 @@ public final class Core {
     final class Flag { var on = false }
     /// The board's gesture for dismissing: a finger held on the needs-you
     /// screen, with the number of the request it showed (`attn.id`).
-    public static let dismissGesture = Touch.dismiss.rawValue
+    public static let dismissGesture = "dismiss"
 
     /// Push-to-talk, as the core keeps it (`Talk`).
     public internal(set) var pushToTalk = Listening()
 
-    /// While Boop is hushed: who hushed it and until when (`Hush`).
-    public internal(set) var hush: Hush?
-    /// The wish open (`Wish`), the Boop day the last was made, and how
-    /// today's ended.
+    /// Until when Boop is quiet for a while (`quietUntil(at:)`), or nil.
+    var quietUntil: Int64?
+    /// The wish open (`Wish`), and the Boop day the last was made.
     public internal(set) var wish: Wish?
     var wishDay: String?
-    var wishEnded: (day: String, how: WishEnd)?
     /// What the board holds up as each wish is met: the pack's words.
     public var wishMetSigns: [WishKind: String] = [:]
-    /// Whether you've met a kind of wish once: until then the board shows how.
-    public var wishDone: (WishKind) -> Bool = { _ in false }
     /// Whether push-to-talk works: the recognizer and the mic both authorized.
     public var pushToTalkWorks: () -> Bool = { true }
     /// Whether you're away from the Mac, for the wish's wait.
@@ -338,7 +332,7 @@ public final class Core {
             return
         }
         advance(to: event.at)
-        if event.type == .hush { replayHush(event) }
+        replayQuiet(event)
         if event.type == .wish { replayWish(event) }
         if event.type == .presence {
             awayFromMac = event.phase == .start
@@ -512,15 +506,11 @@ public final class Core {
         Days.special(at: wall(now), hatched: config.hatched, name: config.pack.name, time: config.time)
     }
 
-    /// Today's occasion's sign (`Happy Halloween!`, `Day 50!`), for the
-    /// moment of your first showing up to hold up, once a day: so what
-    /// Boop wears all day has a reason you saw.
-    public func dayGreeting(at now: Int64) -> String? {
-        let today = day(now)
-        guard greetedDay != today else { return nil }
-        greetedDay = today
-        return Days.greeting(specialDays(at: now))
-    }
+    /// Today's special day's sign (`Happy Halloween!`, `Day 50!`), or nil
+    /// on a plain day: the day's first hello holds it up
+    /// (`TranscriptView.hello`), so what Boop wears all day has a reason
+    /// you saw.
+    public func daySign(at now: Int64) -> String? { Days.greeting(specialDays(at: now)) }
 
     /// How many days Boop is old at `now`, for the narration, or nil on the
     /// day it hatched, or with no hatching known.
@@ -551,7 +541,6 @@ public final class Core {
     public func tick(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         advance(to: now)
-        expireHush(now, &fx)
         tickWish(now, &fx)
         if let mic = pushToTalk.mic, now - mic.since >= Self.listenLimitMs {
             // The device's own button hits the same limit.
@@ -614,7 +603,6 @@ public final class Core {
         if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
-            snapshot.wishHow = !wishDone(kind)
         }
         if attn == nil, !drawer { snapshot.card = cardShow(at: now) }
         // A line too long for the board loses the card's small line, then the card.
@@ -826,12 +814,11 @@ public final class Core {
 
     /// The tags on at `now`: the calendar's, then the tier reached, from the start
     /// of the working stretch (`workingSince`), else from when the latest
-    /// session came to rest (`idleSince`), then `hushed`, your hands and
-    /// the Mac's side, in `Tags.all`'s order.
+    /// session came to rest (`idleSince`), then your hands and the Mac's
+    /// side, in `Tags.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
-        if hushed(at: now) != nil { on.append(Tags.hushed) }
         if let hands { on.append(hands.rawValue) }
         if let macSide { on.append(macSide.tag) }
         return Tags.all.filter(on.contains)

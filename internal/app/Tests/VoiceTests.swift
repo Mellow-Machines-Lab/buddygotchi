@@ -35,10 +35,10 @@ final class VoiceTests: XCTestCase {
         // and a feeling's or topic's take again as each reply it's the
         // words of. The takes of topics `say` no longer offers stay on the
         // card, and off this table.
-        XCTAssertEqual(Set(Take.all.map(\.id)).count, 1844)
+        XCTAssertEqual(Set(Take.all.map(\.id)).count, 1832)
         XCTAssertEqual(Set(Take.all.map { "\($0.id) \($0.part) \($0.meaning)" }).count, Take.all.count)
         let recorded = Dictionary(Take.all.filter { $0.part != .reply }.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
-        let replies = Set(MomentOutput.replies.map(\.name) + ["dunno", "unhush"])
+        let replies = Set(MomentOutput.replies.map(\.name) + ["dunno"])
         for t in Take.all {
             XCTAssertFalse(t.moods.isEmpty, t.id)
             XCTAssertTrue(Set(t.moods).isSubset(of: moods), "\(t.id) is in \(t.moods)")

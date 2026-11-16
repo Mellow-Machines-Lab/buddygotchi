@@ -124,10 +124,10 @@ final class SignTests: XCTestCase {
     /// Pins `Signs.maxPhrase`: every line of Boop's `replies.md` fits a
     /// sign in the board's fonts once filled with the longest phrase of
     /// what you said, its first tag a reply (not `status`, which holds up
-    /// the agents' facts; `dunno` too, a huh at a question, and `unhush`,
-    /// offered while hushed), any more the calendar's or the moment's.
+    /// the agents' facts; `dunno` too, a huh at a question), any more the
+    /// calendar's or the moment's.
     func testThePacksRepliesFit() throws {
-        let replies = Set(MomentOutput.replies.map(\.name)).subtracting(["status"]).union(["dunno", "unhush"])
+        let replies = Set(MomentOutput.replies.map(\.name)).subtracting(["status"]).union(["dunno"])
         let file = CharacterPackTests.repo.appendingPathComponent("characters/boop/steering/replies.md")
         let lines = TaggedLine.parse(try String(contentsOf: file, encoding: .utf8))
         XCTAssertEqual(Set(lines.compactMap(\.tags.first)), replies, "a line or more for every reply")

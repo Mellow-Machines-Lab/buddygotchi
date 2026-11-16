@@ -1,14 +1,14 @@
 // The tags on now: what the Mac sends in `state.when` (the part of the
 // day, Friday, a holiday, a milestone day, every tier the agents'
-// working stretch or their rest has reached, `hushed` while you've told Boop to be quiet,
+// working stretch or their rest has reached,
 // your hands at the Mac, `typing` or `reading`, and the side of Boop the Mac is on, `macleft` or `macright`),
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a pastime that carries tags fits only while every
 // one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
 // in this order (Tags.board, app/BoopKit/Core/Tags.swift), and
 // facegen numbers a design's tags by it. The Mac's tiers are three, a
-// minute, 5 and 15: `tier4` and `tier5` are never sent, and stay only
-// because Pixel's designs are numbered by this table.
+// minute, 5 and 15: `tier4`, `tier5` and `hushed` are never sent, and stay
+// only because Pixel's designs are numbered by this table.
 #pragma once
 #include <cstdint>
 

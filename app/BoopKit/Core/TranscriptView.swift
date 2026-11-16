@@ -87,13 +87,14 @@ public final class TranscriptView {
         var topic: String?
         var check: (topic: String, failed: Bool)?
         /// Failures in a row of each check topic, across turns.
-        var failRuns: [String: Int] = [:]
+        var failRuns: [String: InARow] = [:]
         /// This turn's failed checks, which a failed finish counts.
         var checksFailed = 0
-        /// Quick wins in a row on the thread, across turns, and when the
-        /// last one finished: a finish done in under `quickWinMs` within
-        /// `winRunGapMs` of the last.
-        var wins: (run: Int, at: Int64)?
+        /// Quick wins in a row on the thread, across turns: finishes done
+        /// in under `quickWinMs`.
+        var wins = InARow()
+        /// The calls that climb the work stream's failure ladder.
+        var failing = InARow()
         /// This turn's working check-ins.
         var checkIns = 0
         /// The work stream's moments that hit Boop this turn
@@ -133,11 +134,8 @@ public final class TranscriptView {
         /// The sessions, and what each one's turn did.
         var sessions: SessionTracker
         var counts: [String: Counts] = [:]
-        /// The run of pokes going on: when each came, and whether the run
-        /// came again, within `againMs` of the run before.
-        var pokes: (at: [Int64], again: Bool) = ([], false)
-        /// The run of shakes going on: when each came.
-        var shakes: [Int64] = []
+        /// The runs of pokes and of shakes going on.
+        var pokes = InARow(), shakes = InARow()
         /// The away you haven't come back from, paired as the memory
         /// reader pairs it.
         var away = AwayAndBack()
@@ -150,7 +148,7 @@ public final class TranscriptView {
         var telling: (seq: Int, at: Int64, did: Int?)?
         /// The Boop day you last showed up on.
         var shownUp: String?
-        /// Lying face down, from its `facedown` until its `peekaboo`.
+        /// Lying face down, from the touch until its end.
         var faceDown = false
         /// The last agent event, poke, thing you said or coming back.
         var lastActivityAt: Int64?
@@ -180,9 +178,6 @@ public final class TranscriptView {
         var failures: [Int64] = []
         var sharpAt: Int64?
         var promptedDay: [String: String] = [:]
-        /// When each session's calls that climb the work stream's failure
-        /// ladder failed, within `WorkStream.ladderMs`.
-        var ladder: [String: [Int64]] = [:]
         /// Each session's latest check or finished turn, by how it came
         /// out, for what Boop says when you ask (`StatusReply`).
         var results: [String: StatusReply.Result] = [:]
@@ -238,39 +233,22 @@ public final class TranscriptView {
     /// the bonks go quiet again.
     public static let wakingRungs = 3...4
 
-    /// A finish done in under this is a quick win, and quick wins within
-    /// `winRunGapMs` of each other are a run the line counts, as it counts
-    /// pokes, in streaks of `EventLine.streak`: the brain answers each rung
-    /// differently, where it would answer the same line the same way every
-    /// time, and a long run goes round the ladder again rather than staying
-    /// on its top rung.
+    /// A finish done in under this is a quick win, which its line counts
+    /// in a row (`InARow`).
     public static let quickWinMs: Int64 = 5 * 60_000
-    public static let winRunGapMs: Int64 = 10 * 60_000
 
-    /// A poke within this of the one before is another in a row, which its
-    /// line counts.
-    public static let inARowMs: Int64 = 3000
+    /// A poke within this of the one before is another in a row.
+    public static let inARowMs: Int64 = InARow.Kind.pokes.gapMs!
     /// The brain's reaction to this many pokes in a row or more answers the
     /// run; to fewer, the pokes after it still wake the brain, so Boop can
     /// go from glad to miffed to grumpy.
     public static let answersRunFrom = 3
-    /// A shake within this of the one before is another in a row, which
-    /// its line counts; every shake wakes the brain. The board finds a
-    /// shake at most every 1.5 s (`MotionGesture::kQuietMs`), so a hand
-    /// that keeps shaking makes one every 1.5 to 2 s.
-    public static let shakesInARowMs: Int64 = 4000
-    /// The board's gesture for a shake.
-    public static let shake = "dizzy"
     /// For this long after the last agent event, poke, thing you said or
     /// coming back, while a session is open and you're at the Mac, the
     /// idle check-in comes at the personality's `idle_heartbeat` pace
     /// instead: an idle check-in, so Boop has something to fidget at
     /// while you're around.
     public static let idleWindowMs: Int64 = 2 * 60 * 60 * 1000
-    /// A run of pokes within this of the run before it is that run again,
-    /// which its line says.
-    public static let againMs: Int64 = 2 * 60_000
-
     /// A new personality's settings, from the next event on. The working
     /// check-in starts its wait again at the new pace.
     public func setRules(_ rules: Personality.Rules) {
@@ -288,14 +266,14 @@ public final class TranscriptView {
     /// one wakes it: the working one is the rules' (`ruled`).
     public static let wakes: [String: Int] = [
         "prompt": 0, "turn_end": 1, "last_message": 1, "tool_end": 0, "poke": 0, "talk": 2, "presence_end": 0,
-        "heartbeat": 0, "needs_you_end": 0, "gesture": 0, "hush_start": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
+        "heartbeat": 0, "needs_you_end": 0, "gesture": 0, "ask": 2, "wish_end": 0, "act_start": 0, "act_end": 0,
     ]
 
     /// The kinds with lines that never wake the brain: a turn's start,
     /// which its prompt's reading speaks for; a BOOT press that opens an
     /// agent, the board's own reaction, as a tap that opens a thread is;
     /// and with `ruled`, what the rules answer whole.
-    public static let quiet = ["turn_start", "presence_start", "needs_you_start", "press", "hush_end", "wish_start", "growth"] + ruled
+    public static let quiet = ["turn_start", "presence_start", "needs_you_start", "press", "wish_start", "growth"] + ruled
 
     /// The kinds the rules answer with a Moment of their own and no pass
     /// (`MomentOutput.ruled`): your lock and unlock, and another buddy's
@@ -342,8 +320,7 @@ public final class TranscriptView {
         // you; nothing else does, a poke included: then a tap opens the
         // waiting thread.
         if let type = e.type, type != .said, let why = needsYou() { return why }
-        if e.type == .gesture, e.specificType == "facedown" { return "\(name) is face down" }
-        if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
+        if Touch(e) == .facedown { return "\(name) is face down" }
         // An act's voice is for a push's result: a start only shows its
         // low sign, and a check's result has a line of its own when it
         // matters (a failure, a pass after one).
@@ -359,7 +336,7 @@ public final class TranscriptView {
         // Folded up to `e` at most: `e` itself, if folded, is neither of
         // the two gestures that change it, so the fold says as before it.
         for x in log.events(after: fold.at) where x.seq <= e.seq { _ = take(x) }
-        if fold.faceDown, e.type != .said, !(e.type == .gesture && e.specificType == "peekaboo") { return "\(name) is face down" }
+        if fold.faceDown, e.type != .said { return "\(name) is face down" }
         guard e.type == .poke else { return nil }
         if log.dids(for: e.seq).contains(where: { $0.action == Core.openThread }) { return "the tap opened a thread" }
         if pokesAnswered(e, log) { return "\(name) is answering these pokes" }
@@ -423,24 +400,38 @@ public final class TranscriptView {
         played(e)
         reactedToFix(e)
         finishPlayed(e)
-        return told(firstToday(foldLine(e), e), e)
+        return hello(foldLine(e), e)
     }
 
-    /// Marks the first time you show up on a Boop day: your coming back or,
-    /// with none, your first touch. What Boop does then is the day's
-    /// greeting (`Moment.greeting`), and the narration leads with the day's
-    /// count.
-    func firstToday(_ line: Line?, _ e: Event) -> Line? {
+    /// Your hello, as its line's facts: the one place that says what comes
+    /// with you showing up (your coming back or, with none, a touch), which
+    /// `MomentRule.hello` reads. The first time on a Boop day is marked
+    /// (`firstTodayFact`): that hello plays whole, and the narration leads
+    /// with the day's count. And at most one extra, the first that's there:
+    /// on that first time, a special day's sign (`daySignFact`); else the
+    /// dream not yet told (`told`); else what happened while you were away,
+    /// which your coming back's line already carries (`noticedFact`).
+    func hello(_ line: Line?, _ e: Event) -> Line? {
         guard var line, Self.showsUp(e), fold.away.since == nil else { return line }
         let today = time.boopDay(e.at)
-        guard fold.shownUp != today else { return line }
+        let first = fold.shownUp != today
         fold.shownUp = today
-        line.facts[Self.firstTodayFact] = true
-        return line
+        if first { line.facts[Self.firstTodayFact] = true }
+        if first, let sign = daySign(e.at) {
+            line.facts[Self.daySignFact] = .string(sign)
+            line.facts[Self.noticedFact] = nil
+            return line
+        }
+        return told(line, e)
     }
 
-    /// A line's fact: it's the first time you show up today.
-    public static let firstTodayFact = "first_today"
+    /// Today's special day's sign at a time, or nil: the pipeline sets it,
+    /// from the core's calendar.
+    var daySign: (Int64) -> String? = { _ in nil }
+
+    /// A line's facts: it's the first time you show up today, and the
+    /// special day's sign that hello holds up.
+    public static let firstTodayFact = "first_today", daySignFact = "day_sign"
 
     /// Whether `e` is you showing up: back at the Mac, or a touch.
     static func showsUp(_ e: Event) -> Bool { (e.type == .presence && e.phase == .end) || Yours.touch(e) }
@@ -492,8 +483,9 @@ public final class TranscriptView {
     /// doesn't lose it, and your next showing up tells it. Its facts say
     /// which dream, for the memory to mark it told, the reason and the
     /// dream's signs.
-    func told(_ line: Line?, _ e: Event) -> Line? {
-        guard var line, let dream = fold.untold, Self.showsUp(e), fold.away.since == nil,
+    func told(_ line: Line, _ e: Event) -> Line {
+        var line = line
+        guard let dream = fold.untold,
               let about = (dream["about"] ?? dream["weekday"])?.string, let sentence = dream["sentence"]?.string else { return line }
         if let telling = fold.telling, telling.did != nil || e.at - telling.at < Self.tellingWaitMs { return line }
         fold.telling = (e.seq, e.at, nil)
@@ -503,6 +495,7 @@ public final class TranscriptView {
         line.facts["dream_tags"] = dream["tags"] ?? .array([])
         line.facts["dream_told"] = .string(told)
         line.facts["dream_fact"] = dream["fact"] ?? .null
+        line.facts[Self.noticedFact] = nil
         return line
     }
 
@@ -549,9 +542,11 @@ public final class TranscriptView {
             return messageRead(e)
         case .gesture?:
             noteActivity(e.at)
-            if e.specificType == "facedown" { fold.faceDown = true }
-            if e.specificType == "peekaboo" { fold.faceDown = false }
-            if e.specificType == Self.shake { return shake(e) }
+            // Face down lasts until its end, which has no line, as a
+            // put-down has none.
+            if e.specificType == Touch.facedown.rawValue { fold.faceDown = e.phase == nil }
+            if e.specificType == Core.dismissGesture { return Line(EventLine.dismissed(name: name), facts: ["gesture": .string(e.specificType)]) }
+            if Touch(e) == .shake { return shake(e) }
             return Touch(e)?.line(name: name).map { Line($0, facts: ["gesture": .string(e.specificType)]) }
         case .said?: return talk(e)
         case .ask?:
@@ -567,9 +562,6 @@ public final class TranscriptView {
         case .lock?: return lock(e)
         case .checkIn?: return checkIn(e)
         case .needsYou?: return needs(e)
-        case .hush?:
-            return Line(e.phase == .start ? EventLine.hushed(name: name, minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
-                                          : EventLine.unhushed(name: name, why: e.specificType))
         case .growth?:
             let level = e["level"]?.int.map(Int.init), ring = e["ring"]?.bool == true
             return Line(EventLine.grew(level: level, ring: ring, name: name), facts: level.map { ["level": .int(Int64($0))] } ?? [:])
@@ -608,7 +600,6 @@ public final class TranscriptView {
         if fold.counts.keys.contains(where: { fold.sessions.sessions[$0] == nil }) {
             fold.counts = fold.counts.filter { fold.sessions.sessions[$0.key] != nil }
             fold.unread = fold.unread.filter { fold.sessions.sessions[$0.key] != nil }
-            fold.ladder = fold.ladder.filter { fold.sessions.sessions[$0.key] != nil }
             fold.results = fold.results.filter { fold.sessions.sessions[$0.key] != nil }
         }
     }
@@ -690,8 +681,7 @@ public final class TranscriptView {
             fold.results[key] = StatusReply.Result(topic: nil, outcome: outcome, at: now)
             if outcome == "failed" { noteFailure(now) }
             if fold.away.since != nil { fold.whileAway.append((t.agent.rawValue, threadLine(t), outcome == "failed")) }
-            let run = c.wins.flatMap { now - $0.at < Self.winRunGapMs ? $0.run : nil } ?? 0
-            c.wins = outcome == "done" && now - started < Self.quickWinMs ? (run + 1, now) : nil
+            if outcome == "done", now - started < Self.quickWinMs { c.wins.add(.quickWins, at: now) } else { c.wins.reset() }
             var line = turnEnded(t, c, outcome: outcome, error: step == .turnFailed ? a.error : nil, lengthMs: max(0, now - started), at: now)
             if let hits = newHits(&c, name: name) { line.notes.append(hits) }
             return line
@@ -731,20 +721,18 @@ public final class TranscriptView {
         var notable = false
         var rung = 0
         if WorkStream.climbs(a) {
-            let recent = (fold.ladder[a.key] ?? []).filter { a.at - $0 < WorkStream.ladderMs } + [a.at]
-            fold.ladder[a.key] = recent
-            rung = recent.count
+            rung = c.failing.add(.failedCalls, at: a.at)
             notable = Self.wakingRungs.contains(rung)
         }
         if let topic {
             if TranscriptView.checks.contains(topic), let failed {
-                failedBefore = c.failRuns[topic] ?? 0
+                failedBefore = c.failRuns[topic]?.count ?? 0
                 if failed {
-                    c.failRuns[topic] = failedBefore + 1
+                    c.failRuns[topic, default: InARow()].add(.failedChecks, at: a.at)
                     c.checksFailed += 1
                     notable = true
                 } else {
-                    c.failRuns[topic] = 0
+                    c.failRuns[topic] = nil
                     if failedBefore > 0 {
                         notable = true
                         c.comeback = topic
@@ -802,13 +790,13 @@ public final class TranscriptView {
         let reactedToFix = outcome == "done" && c.fix?.did != nil && now - (c.fix?.at ?? now) < Self.fixJustNowMs
         let text = EventLine.turnEnd(agent: t.agent.rawValue, turn: t.turn, thread: threadLine(t), outcome: outcome,
                                      lengthMs: lengthMs, tools: c.tools, failedChecks: c.checksFailed,
-                                     ofStreak: EventLine.rung(c.wins?.run ?? 0, of: EventLine.streak),
+                                     quickWins: c.wins.count,
                                      linesGone: c.linesRemoved - c.linesAdded, reactedToFix: reactedToFix ? name : nil)
         return Line(text, facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
                             "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
-                            "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins?.run ?? 0)),
+                            "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins.count)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "reacted_to_fix": .bool(reactedToFix)])
     }
 
@@ -912,34 +900,23 @@ public final class TranscriptView {
 
     // MARK: Pokes
 
-    /// A poke, with how many came in a row: each within `inARowMs` of the
-    /// one before.
+    /// A poke, with how many came in a row.
     func poke(_ e: Event) -> Line {
         let now = e.at
         noteActivity(now)
-        var run = fold.pokes
-        if let last = run.at.last, now - last >= Self.inARowMs { run = ([], now - last < Self.againMs) }
-        run.at.append(now)
-        fold.pokes = run
-        let count = run.at.count
-        let seconds = max(1, Int((now - run.at[0] + 999) / 1000))
+        let count = fold.pokes.add(.pokes, at: now)
         // The first poke of a run wakes Boop; the rest find it awake.
         let asleep = count == 1 && fold.sessions.sessions.isEmpty
-        return Line(EventLine.poke(inARow: count, name: name, asleep: asleep, again: run.again),
-                    facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(seconds)), "asleep": .bool(asleep),
-                            "again": .bool(run.again)])
+        return Line(EventLine.poke(inARow: count, name: name, asleep: asleep),
+                    facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(fold.pokes.seconds)), "asleep": .bool(asleep)])
     }
 
-    /// A shake, with how many came in a row: each within `shakesInARowMs`
-    /// of the one before.
+    /// A shake, with how many came in a row.
     func shake(_ e: Event) -> Line {
-        var run = fold.shakes
-        if let last = run.last, e.at - last >= Self.shakesInARowMs { run = [] }
-        run.append(e.at)
-        fold.shakes = run
-        let seconds = max(1, Int((e.at - run[0] + 999) / 1000))
-        return Line(EventLine.shake(inARow: run.count, name: name),
-                    facts: ["gesture": .string(Self.shake), "in_a_row": .int(Int64(run.count)), "seconds": .int(Int64(seconds))])
+        let count = fold.shakes.add(.shakes, at: e.at)
+        return Line(EventLine.shake(inARow: count, name: name),
+                    facts: ["gesture": .string(Touch.shake.rawValue), "in_a_row": .int(Int64(count)),
+                            "seconds": .int(Int64(fold.shakes.seconds))])
     }
 
     /// Whether the brain's reaction to the run of pokes `e` is in (to

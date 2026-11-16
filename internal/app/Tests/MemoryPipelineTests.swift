@@ -603,10 +603,9 @@ final class MemoryPipelineTests: XCTestCase {
         XCTAssertEqual(tooLong, .refused)
     }
 
-    /// Pins Memory.feltOffered and feltAgainDays: at most 3 offered, none on
-    /// a day one showed, and the same line not again for 14 days.
+    /// Pins Memory.feltAgainDays: the same line not again for 14 days. How
+    /// often one comes is the idle beat's.
     func testWhatBoopMayBringUp() throws {
-        XCTAssertEqual(Memory.feltOffered, 3)
         XCTAssertEqual(Memory.feltAgainDays, 14)
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -621,7 +620,7 @@ final class MemoryPipelineTests: XCTestCase {
         func noon(_ day: Int) -> Int64 { Int64(LocalTime.dayNumber("2026-10-05")! + day) * 86_400_000 + 12 * 3_600_000 }
         XCTAssertEqual(memory.felt(at: noon(0)).map(\.line).sorted(), ["line 0", "line 1", "line 2"], "a note with no line isn't offered")
         memory.keepShown("line 0", at: noon(0))
-        XCTAssertEqual(memory.felt(at: noon(0)), [], "about once a day")
+        XCTAssertEqual(memory.felt(at: noon(0)).map(\.line).sorted(), ["line 1", "line 2"], "the others are still on offer: the idle beat's cap spaces them")
         XCTAssertEqual(memory.felt(at: noon(1)).map(\.line).sorted(), ["line 1", "line 2"], "not that line again for a while")
         XCTAssertEqual(memory.felt(at: noon(14)).map(\.line).sorted(), ["line 0", "line 1", "line 2"])
     }
@@ -645,7 +644,7 @@ final class MemoryPipelineTests: XCTestCase {
         let memory = Memory(store: try KeyValueStore(directory: nil), time: LocalTime(timeZone: TimeZone(identifier: "UTC")!), files: files)
         let noon = Int64(LocalTime.dayNumber("2026-10-05")!) * 86_400_000 + 12 * 3_600_000
         XCTAssertEqual(memory.felt(at: noon, longest: 18).map(\.line), ["more pets pls"])
-        XCTAssertEqual(memory.felt(at: noon, longest: 40).count, 3)
+        XCTAssertEqual(memory.felt(at: noon, longest: 40).count, 4)
     }
 
     /// The dream gives the proposing writer its digests, tonight's among

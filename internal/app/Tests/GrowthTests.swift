@@ -55,11 +55,10 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth.xp(for: Event(at: 1, source: .mac, type: .presence, phase: .end, specificType: "unlocked")), 2)
         XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)), 20)
         XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)), 0)
-        XCTAssertEqual(Growth.xp(for: you(.gesture, "startle")), 0)
-        // Rough handling earns nothing (decided 2026-11-09): a shake, a wrong-way stroke.
-        XCTAssertEqual(Growth.xp(for: you(.gesture, "dizzy")), 0)
-        XCTAssertEqual(Growth.xp(for: you(.gesture, "ruffle")), 0)
-        XCTAssertEqual(Set(Touch.allCases.filter(\.isRough)), [.dizzy, .ruffle])
+        XCTAssertEqual(Growth.xp(for: you(.gesture, "swipe")), 0)
+        // Rough handling earns nothing (decided 2026-11-09): a shake.
+        XCTAssertEqual(Growth.xp(for: you(.gesture, "shake")), 0)
+        XCTAssertEqual(Set(Touch.allCases.filter(\.isRough)), [.shake])
         XCTAssertEqual(Growth.xp(for: you(.poke, "input")), 0)
     }
 

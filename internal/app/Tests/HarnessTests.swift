@@ -350,26 +350,22 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodOutput.value(mood, view()), "cross", "a face's name reads as the mood it settles into")
     }
 
-    /// Missing you may begin only with no agent working: at an idle
-    /// check-in once the wish has waited an hour, or at your coming back
-    /// after 20 to 40 hours. A forced pass is offered none: a mood is set
-    /// itself there.
+    /// Missing you may begin only with no agent working, at your coming
+    /// back after 20 to 40 hours. A forced pass is offered none: a mood is
+    /// set itself there.
     func testMissingYouMayBeginOnlyWhenItsGateAllows() {
         let checkIn = Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in")
         let back = Event(at: 0, source: .mac, type: .presence, phase: .end, specificType: "active")
         let hour: Int64 = 3_600_000
-        XCTAssertEqual(MoodOutput.missAfterWishMs, hour, "the wish's hour")
         XCTAssertEqual(MoodOutput.missAwayMs, (20 * hour)...(40 * hour), "back after 20 to 40 hours")
-        XCTAssertFalse(MoodOutput.mayMiss(nil, facts: nil, working: false, wishWaitedMs: 2 * hour), "a forced pass")
-        XCTAssertTrue(MoodOutput.mayMiss(checkIn, facts: nil, working: false, wishWaitedMs: hour))
-        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: false, wishWaitedMs: hour - 1), "40 min is too soon")
-        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: false, wishWaitedMs: nil), "no wish")
-        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: true, wishWaitedMs: 2 * hour), "an agent working is company")
-        XCTAssertTrue(MoodOutput.mayMiss(back, facts: ["away_ms": .int(26 * hour)], working: false, wishWaitedMs: nil))
-        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(3 * hour)], working: false, wishWaitedMs: nil), "a short break")
-        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(72 * hour)], working: false, wishWaitedMs: nil), "after days it's glad")
+        XCTAssertFalse(MoodOutput.mayMiss(nil, facts: nil, working: false), "a forced pass")
+        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: false), "never at an idle check-in: a quiet spell isn't missing you")
+        XCTAssertTrue(MoodOutput.mayMiss(back, facts: ["away_ms": .int(26 * hour)], working: false))
+        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(26 * hour)], working: true), "an agent working is company")
+        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(3 * hour)], working: false), "a short break")
+        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(72 * hour)], working: false), "after days it's glad")
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
-        XCTAssertFalse(MoodOutput.mayMiss(poke, facts: nil, working: false, wishWaitedMs: 2 * hour), "nor at a poke")
+        XCTAssertFalse(MoodOutput.mayMiss(poke, facts: nil, working: false), "nor at a poke")
     }
 
     /// The mood the dashboard sets changes as Jev's does,

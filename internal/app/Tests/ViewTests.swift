@@ -93,10 +93,10 @@ final class ViewTests: XCTestCase {
 
         XCTAssertEqual(tests(failed: true, id: "t1").map(\.line), [#"claude's tests failed on "fix-nav" (landing)."#])
         XCTAssertEqual(tests(failed: true, id: "t2").map(\.line),
-                       [#"claude's tests failed again on "fix-nav" (landing), 2 times in a row."#])
+                       [#"claude's tests failed on "fix-nav" (landing), the 2nd in a row."#])
         let third = try XCTUnwrap(tests(failed: true, id: "t3").first)
         XCTAssertEqual(third.name, "tool end")
-        XCTAssertEqual(third.line, #"claude's tests failed again on "fix-nav" (landing), 3 times in a row."#)
+        XCTAssertEqual(third.line, #"claude's tests failed on "fix-nav" (landing), the 3rd in a row."#)
         XCTAssertEqual(third.facts["failed_before"], .int(2))
         XCTAssertEqual(third.facts["took"], "short", "40 s is short")
         XCTAssertEqual(third.facts["took_ms"], .int(40_000))
@@ -304,7 +304,7 @@ final class ViewTests: XCTestCase {
     /// that ended isn't back until it starts again.
     func testLateHooksAreLetGoAsTheCoreLetsThemGo() {
         XCTAssertEqual(SessionFold.idleNoticeMinMs, 30_000)
-        rig = CoreRig(seed: 7, rules: .chatty)
+        rig = CoreRig(seed: 7, rules: .often)
         hook(.turnStart)
         rig.wait(10_000)
         XCTAssertEqual(events(rig.send(.turnStopped, workspace: "fix-nav", notice: true)), [], "a stale idle notice")
@@ -328,7 +328,7 @@ final class ViewTests: XCTestCase {
     /// the safety net from the request only, and so worked on for the
     /// hour.
     func testTheViewWorksOnlyWhenTheCoreDoes() {
-        rig = CoreRig(seed: 7, rules: .chatty)
+        rig = CoreRig(seed: 7, rules: .often)
         hook(.turnStart)
         hook(.activity, tool: "Bash", id: "t1")
         hook(.needsYou, tool: "Bash")
@@ -391,11 +391,11 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(rig.pipeline.viewEvent(one[0].id)?.did.map(\.by), ["rule"])
         var last: [ViewEvent] = []
         for _ in 0..<3 { rig.wait(1000); last = events(rig.poke()) }
-        XCTAssertEqual(last.map(\.line), ["You poked \(creature) 4 times in a row."])
+        XCTAssertEqual(last.map(\.line), ["You poked \(creature), the 4th in a row."])
         XCTAssertEqual(last[0].facts["in_a_row"], .int(4))
         XCTAssertTrue(last[0].wakesBrain, "no limit")
         rig.wait(3000)
-        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked \(creature) again."], "3 s apart starts a new run, the last one again")
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked \(creature)."], "3 s apart starts a new run")
         // While something needs you there's no wiggle: the tap opens the
         // thread, and doesn't wake the brain.
         hook(.turnStart)
@@ -520,12 +520,13 @@ final class ViewTests: XCTestCase {
         XCTAssertTrue(events(rig.poke())[0].wakesBrain, "3 s apart is a new run")
     }
 
-    /// A shake's line counts the shakes in a row, each within
-    /// `shakesInARowMs` (4 s) of the last, so Boop can go from whoa to
-    /// cross; every shake wakes the brain, even while Boop reacts to one.
+    /// A shake's line counts the shakes in a row, each within 4 s of the
+    /// last (`InARow.Kind.shakes`), so Boop can go from whoa to cross;
+    /// every shake wakes the brain, even while Boop reacts to one. The
+    /// board's `dizzy`, and its `startle`, are shakes.
     func testShakesInARow() {
-        XCTAssertEqual(TranscriptView.shakesInARowMs, 4000)
-        let shake = TranscriptView.shake
+        XCTAssertEqual(InARow.Kind.shakes.gapMs, 4000)
+        let shake = "dizzy"
         var shakes: [ViewEvent] = []
         for _ in 0..<5 {
             let e = events(rig.gesture(shake))[0]
@@ -538,12 +539,12 @@ final class ViewTests: XCTestCase {
             }
             rig.wait(1600)
         }
-        XCTAssertEqual(shakes.map(\.line), ["You shook \(creature).", "You shook \(creature) 2 times in a row.",
-                                            "You shook \(creature) 3 times in a row.", "You shook \(creature) 4 times in a row.",
-                                            "You shook \(creature) 5 times in a row."])
+        XCTAssertEqual(shakes.map(\.line), ["You shook \(creature).", "You shook \(creature), the 2nd in a row.",
+                                            "You shook \(creature), the 3rd in a row.", "You shook \(creature), the 4th in a row.",
+                                            "You shook \(creature), the 5th in a row."])
         XCTAssertEqual(shakes[2].facts["in_a_row"], .int(3))
         rig.wait(4000)
-        XCTAssertEqual(events(rig.gesture(shake))[0].line, "You shook \(creature).", "4 s apart is a new run")
+        XCTAssertEqual(events(rig.gesture("startle"))[0].line, "You shook \(creature).", "4 s apart is a new run")
         XCTAssertEqual(events(rig.gesture("stroke"))[0].line, "You stroked \(creature).", "other gestures aren't counted")
     }
 
@@ -562,19 +563,16 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(events(rig.wait(5 * 60 * 60_000)).filter { $0.type == .checkIn }, [], "no check-in by the hour")
     }
 
-    /// Quick wins in a row on a thread are counted on the finish in streaks
-    /// of 5, so the brain answers each rung differently and a long run goes
-    /// round again; a failure, a stop, a turn of 5 minutes or more, or 10
-    /// minutes between wins starts again.
+    /// Quick wins in a row on a thread are counted on the finish; a
+    /// failure, a stop, a turn of 5 minutes or more, or 10 minutes between
+    /// wins starts again.
     func testTheFinishCountsQuickWinsInARow() {
         XCTAssertEqual(TranscriptView.quickWinMs, 5 * 60_000)
-        XCTAssertEqual(TranscriptView.winRunGapMs, 10 * 60_000)
-        XCTAssertEqual(EventLine.streak, 5)
+        XCTAssertEqual(InARow.Kind.quickWins.gapMs, 10 * 60_000)
         for i in 1...7 {
             hook(.turnStart)
             rig.wait(30_000)
-            let run = ["", "", ", the 2nd quick win of a streak", ", the 3rd quick win of a streak", ", the 4th quick win of a streak",
-                       ", the 5th quick win of a streak", "", ", the 2nd quick win of a streak"][i]
+            let run = i < 2 ? "" : ", the \(EventLine.nth(i)) quick win in a row"
             XCTAssertEqual(hook(.turnEnd).map(\.line), [#"claude finished turn \#(i) on "fix-nav" (landing): done, a short turn, no tool calls\#(run)."#])
             rig.wait(60_000)
         }
@@ -645,24 +643,18 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(forgotten, [], "the safety net cleared it: nobody answered")
     }
 
-    /// A poke with no session open says Boop was asleep; a run of pokes
-    /// within 2 minutes of the run before says it's again.
-    func testAPokeSaysWhetherBoopSleptAndWhetherItsAgain() {
-        XCTAssertEqual(TranscriptView.againMs, 2 * 60_000)
+    /// A poke with no session open says Boop was asleep.
+    func testAPokeSaysWhetherBoopSlept() {
         XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop while it slept."])
         rig.wait(1000)
-        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop 2 times in a row."], "the first poke woke it")
+        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop, the 2nd in a row."], "the first poke woke it")
         rig.wait(3 * 60_000)
         hook(.sessionStart)
         rig.wait(10_000)
         for _ in 0..<3 { rig.poke() }
         rig.wait(60_000)
-        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop again."])
-        XCTAssertEqual(events(rig.poke()).map(\.line), ["You poked Boop 2 times in a row, again."])
-        rig.wait(2 * 60_000)
         let fresh = events(rig.poke())
-        XCTAssertEqual(fresh.map(\.line), ["You poked Boop."], "2 minutes after the last run, a fresh one")
-        XCTAssertEqual(fresh.first?.facts["again"], .bool(false))
+        XCTAssertEqual(fresh.map(\.line), ["You poked Boop."], "a fresh run")
         XCTAssertEqual(fresh.first?.facts["asleep"], .bool(false))
     }
 

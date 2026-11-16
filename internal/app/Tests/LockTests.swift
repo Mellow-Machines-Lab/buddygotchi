@@ -7,7 +7,7 @@ private let t0: Int64 = 1_790_000_000_000
 private let minute: Int64 = 60_000
 
 /// Every lock and unlock of the Mac: the detector makes the events, the view
-/// their lines, and the rule picks a wave, a snub or the nap (`MomentRule.wave`).
+/// their lines, and the rule picks a wave, a snub or the nap (`MomentRule.bye`, `hello`).
 final class LockTests: XCTestCase {
     static func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 1]) }
 
@@ -87,15 +87,19 @@ final class LockTests: XCTestCase {
     let lines = [TaggedLine(tags: ["bye"], text: "see ya!"), TaggedLine(tags: ["bye", "night"], text: "nite nite"), TaggedLine(tags: ["bye", "working"], text: "i got this"),
                  TaggedLine(tags: ["hello"], text: "oh, hi!")]
 
-    /// Pins `MomentRule.wave`, the whole table: a snub when cross; good
-    /// night and the nap at a night lock with no agent working; a real
-    /// wave at the first lock or one an hour or more (`lockWhileMs`) after
-    /// the last; a slight wave at any other lock, and at every unlock.
+    /// Pins `MomentRule.bye` and an unlock's `hello`, the whole table: a
+    /// snub when cross; good night and the nap at a night lock with no
+    /// agent working; a real wave at the first lock or one an hour or more
+    /// (`lockWhileMs`) after the last; a slight wave at any other lock, and
+    /// at every unlock.
     func testTheWaveIsARule() {
         XCTAssertEqual(MomentRule.lockWhileMs, 60 * minute)
-        func wave(lock: Bool = true, since: Int64? = nil, night: Bool = false, working: Bool = false, mood: String = "calm") -> MomentRule.Wave {
-            MomentRule.wave(lock: lock, sinceLastMs: since, night: night, working: working, mood: mood)
+        let unlock = Event(at: 0, source: .mac, type: .lock, phase: .end, specificType: "screen")
+        func wave(lock: Bool = true, since: Int64? = nil, night: Bool = false, working: Bool = false, mood: String = "calm") -> MomentRule.Wave? {
+            lock ? MomentRule.bye(sinceLastMs: since, night: night, working: working, mood: mood)
+                : MomentRule.hello(unlock, facts: [:], mood: mood)?.wave
         }
+        XCTAssertEqual(MomentRule.hello(unlock, facts: [:], mood: "calm")?.asksJev, false, "an unlock's hello is the rule's")
         XCTAssertEqual(wave(), .wave, "the first lock")
         XCTAssertEqual(wave(since: 60 * minute), .wave, "an hour on")
         XCTAssertEqual(wave(since: 60 * minute - 1), .slight, "within the hour")

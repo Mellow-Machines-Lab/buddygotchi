@@ -1,9 +1,9 @@
 import Foundation
 import MellowHarness
 
-// The wish: Boop's one want a day, met by one thing you do anyway. The
-// brain picks when (a sign it holds up), and how often; code holds the rest:
-// one open, what meets it, how long it waits. Kept as the hush is: the core
+// The wish: Boop's one want a day, met by one thing you do anyway. It's
+// dealt as an idle beat (`IdleBeat`), once a Boop day, and code holds the
+// rest: one open, what meets it, how long it waits. The core
 // holds it, records it starting and ending in the transcript, and reads it
 // back on launch.
 extension Core {
@@ -51,9 +51,12 @@ extension Core {
 
     func wishDayNow(_ now: Int64) -> String { config.time.boopDay(wall(now)) }
 
+    /// Whether a wish was made on the Boop day of `now`: one a day.
+    public func wishedToday(at now: Int64) -> Bool { wishDay == wishDayNow(now) }
+
     /// The wishes Boop may make at `now`: none while one is open, none
     /// unless you're here, it hasn't dozed off and nothing needs
-    /// you, it isn't listening or hushed; `work` only while no agent works,
+    /// you and it isn't listening; `work` only while no agent works,
     /// else your next prompt meets it for nothing; `chat` only once
     /// push-to-talk works, so it never waits on what you couldn't answer.
     public func wishable(at now: Int64) -> [WishKind] {
@@ -69,9 +72,9 @@ extension Core {
     }
 
     /// Whether Boop may start something of its own at `now`: you're here,
-    /// and nothing needs you, it isn't listening or hushed.
+    /// nothing needs you and it isn't listening.
     public func mayBeOwnBeat(at now: Int64) -> Bool {
-        !awayFromMac && needsYouBlock == nil && listening == nil && hushed(at: now) == nil
+        !awayFromMac && needsYouBlock == nil && listening == nil
     }
 
     /// Makes the wish `kind`, recorded as `wish_start`, if it may be made.
@@ -82,7 +85,6 @@ extension Core {
         advance(to: now)
         wish = Wish(kind: kind, since: now, countedTo: now)
         wishDay = wishDayNow(now)
-        wishEnded = nil
         fx.append(.record(Event(at: now, source: .boop, type: .wish, phase: .start, specificType: kind.rawValue)))
         publish(now, &fx)
         return fx
@@ -111,8 +113,6 @@ extension Core {
     func endWish(_ how: WishEnd, _ now: Int64, _ fx: inout [CoreEffect]) {
         guard let w = wish else { return }
         wish = nil
-        // A wish closed by the day's end ended on its own day, not the new one's.
-        wishEnded = (wishDayNow(how == .closed ? w.since : now), how)
         fx.append(.record(Event(at: now, source: .boop, type: .wish, phase: .end, specificType: how.rawValue,
                                 data: ["kind": .string(w.kind.rawValue), "waited_ms": .int(w.waitedMs)])))
     }
@@ -194,37 +194,14 @@ extension Core {
         if e.phase == .start, let kind = WishKind(rawValue: e.specificType) {
             wish = Wish(kind: kind, since: e.at, countedTo: e.at)
             wishDay = wishDayNow(e.at)
-            wishEnded = nil
         } else if e.phase == .end {
-            let how = WishEnd(rawValue: e.specificType)
-            wishEnded = how.map { (wishDayNow($0 == .closed ? wish?.since ?? e.at : e.at), $0) }
             wish = nil
         }
     }
 
-    /// The wish for CONTEXT's You row: "Boop's wish: a pet, waiting 70 min
-    /// while you were here."; with none made today, that, and at an idle
-    /// check-in (`idle`) from noon that the day's half gone: a nudge for the
-    /// moment a wish suits, which at a poke would only press. Nil once one
-    /// was made today and ended (the Today row says how). `because` is why a
-    /// wish would fit (`Notices.wishReason`), said at an idle check-in.
-    public func wishRow(at now: Int64, name: String, idle: Bool = false, because: String? = nil) -> String? {
-        if let w = wish {
-            return "\(name)'s wish: \(w.kind.words), waiting \(ContextSection.span(w.waitedMs)) while you were here"
-        }
-        guard wishDay != wishDayNow(now) else { return nil }
-        let row = idle && config.time.components(wall(now)).hour >= 12 ? "no wish yet today, and the day's half gone" : "no wish yet today"
-        return idle ? [row, because].compactMap { $0 }.joined(separator: "; ") : row
-    }
-
-    /// The wish for CONTEXT's Today row: "Boop's wish today: met.".
-    public func wishToday(at now: Int64, name: String) -> String? {
-        guard let ended = wishEnded, ended.day == wishDayNow(now) else { return nil }
-        let how = switch ended.how {
-        case .met: "met"
-        case .gaveup: "left too long"
-        case .closed: "closed"
-        }
-        return "\(name)'s wish today: \(how)."
+    /// The open wish for CONTEXT's You row: "Boop's wish: a pet, waiting 70
+    /// min while you were here."; nil with none open.
+    public func wishRow(name: String) -> String? {
+        wish.map { "\(name)'s wish: \($0.kind.words), waiting \(ContextSection.span($0.waitedMs)) while you were here" }
     }
 }

@@ -26,8 +26,8 @@ A scenario is a few hook-level steps on a virtual clock. Each run starts
 fresh: a new core and view, an empty transcript kept in memory, the
 scenario's mood (`calm`, the resting mood, unless the file says), set as
 the dashboard would set it just before the first step, so HISTORY can
-say how long Boop has been in it, and how much it says (normal unless the file says quiet
-or chatty), told in CONTEXT's Talk row and held in code, with swearing on
+say how long Boop has been in it, and how much it says (normal unless the file says quiet),
+told in CONTEXT's Talk row and held in code, with swearing on
 (the app's Settings switch, off there by default, so `say` offers the swear
 as it always has here). The runner (`Eval` in
 `internal/app/BoopDevKit/Eval/Eval.swift`) wires them as the app does
@@ -62,18 +62,18 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
-| `hush` | The app's Hush button: Boop says nothing for `Core.hushMs`, a pass (it may sulk) |
+| `hush` | The app's Hush button: Talk is quiet for half an hour (`Core.quietForMs`); no line and no pass |
 | `press` | BOOT, the board having handed you an agent: the core opens the next one in line (no pass; check it with `expect.opens`) |
 | `ask answered` | The board ends the buddy's last question: `pick` `a` (the left answer, the default), `b` or `ignored`. Nothing when it asked nothing, so a step that expects a pass then fails |
-| `gesture` | A touch on the board, its `kind` (`stroke`, `lean`, a finger kept still, `ruffle`, `swipe`, a quick stroke, `nose`, `tickle`, `dizzy`, `pickup`, `putdown`, `startle`, `facedown`, `peekaboo`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
+| `gesture` | A touch on the board, its `kind`, one of the touches (`Touch`: `stroke`, `hold`, a finger kept still, `shake`, `pickup`, `swipe`, a quick stroke, `facedown`), which it already reacted to: a line, as a poke. `dismiss` is a finger held on the needs-you screen: the request that shows stops showing (`Core.dismiss`, named by its number, as the board does), though its agent still waits |
 | `to-do list` | The agent writes its to-do list, the step's `todos` (`3/7`: done, of all): a `TodoWrite` call's start with the counts, then its end |
 | `edit` | An edit that removes the step's `count` lines (100 unless it says) and adds none, as the hooks count them: a turn's finish says `, 1,200 lines gone` once its edits removed 500 or more net |
 | `helper started`, `helper returned` | The agent sends a helper off (`SubagentStart`), and it comes back (`SubagentStop`), the step's `helper` (`h1` unless it says) |
-| `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop 4 times in a row.`; `while it slept` for a run's first poke with no session open, `, again` for a run within 2 minutes of the last |
+| `pokes` | Four pokes at once from the device (the step's `count`, if it says), each a pass: the step checks the last, `You poked Boop, the 4th in a row.`; `while it slept` for a first poke with no session open |
 | `said` | What you said on push-to-talk, the step's `words`, after the device's button: a `talk` event, `You said to Boop: "…"` |
 | `away` | You lock the screen and leave: a `presence` start, `locked`, since this moment, `You stepped away from the Mac.`, which wakes no pass |
 | `back` | You unlock it: a `presence` end, `unlocked`, `You came back to the Mac after a long break.` with the break's band since the last `away` |
-| `lock`, `unlock` | The screen locks or unlocks, however short: a `lock` start, or end since the last `lock`, each a line the rules answer with a wave and no pass (`MomentRule.wave`): `You locked the Mac, first time in a while.`, `You unlocked the Mac after 2 min.`. After an `away` the unlock has no line, so no pass: its `back` is the one reaction |
+| `lock`, `unlock` | The screen locks or unlocks, however short: a `lock` start, or end since the last `lock`, each a line the rules answer with a bye or a hello's wave and no pass (`MomentRule.bye`, `hello`): `You locked the Mac, first time in a while.`, `You unlocked the Mac after 2 min.`. After an `away` the unlock has no line, so no pass: its `back` is the one reaction |
 | `session started` | A Claude session opens with no turn (`SessionStart`, `startup`): Boop is awake and idle, not asleep. No line, so no pass |
 | `compact` | The agent's context is compacted (`SessionStart`, `compact`): no line, and no pass |
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
@@ -271,11 +271,11 @@ file-name order:
 | `seed` | When check-ins fall within their gaps, 1 unless the file says: the same seed repeats, and another is another day's timing with the same steps. Jev answers much the same at the same prompt, so runs of one seed are nearly one sample: to measure something across days, as `173`'s wishes, copy the file with other seeds into a directory for `--scenarios` |
 | `hatched` | The day Boop hatched, `2026-09-01`, for its milestone days (`Days`) and how old it is: none by default |
 | `days` | The digests kept (`DayDigest`, each with its `day` and `weekday`), what Boop notices from (`Notices`): none by default |
-| `wish_today` | `met`: today's wish was made and met before the first step, so no wish is on offer |
+| `wish_today` | `met`: today's wish was made and met before the first step, so the idle beat deals no wish |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
 | `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |
-| `talk` | `normal` (the default), `quiet` or `chatty`: how much it says, chosen in Settings |
+| `talk` | `normal` (the default) or `quiet`: how much it says, chosen in Settings |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
 | `steps[].topic`, `failed` | A command's topic and whether it failed |
@@ -314,12 +314,12 @@ brief is a must.
 
 - **Code checks** (`92`, `93`, `115`–`117`, `160`, `164`, `166`, `168`, `187`, `188`):
   `scripted`, the code's rules, which need no Jev: the screen, your lock's wave (a real one, a slight one, good night and the nap asleep at once), one reaction at a long unlock, a boop and a cheer from the world, a wish
-  on offer with no agents open.
-- **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `123`, `126`,
+  dealt as the idle beat with no agents open.
+- **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `126`,
   `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so
   exact checks stay. A failed turn is never celebrated, and neither is an agent
   giving up. No wrong face, and no swearing at the person. Talked to, Boop
-  answers, and rightly about agents. Hush, Quiet and Chatty hold. The moments
+  answers, and rightly about agents. Quiet holds, the setting's and half an hour's after a hush. The moments
   the owner loves stay. Never lonely after a night or while agents work, and
   never sad about a wish you couldn't answer.
 - **Feel** (everything else): each has a brief, `judge`, `reasonable` and

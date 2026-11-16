@@ -85,6 +85,7 @@ public struct Narration: Equatable, Sendable {
             if let count = facts["in_a_row"]?.int, count > 1 {
                 return Narration(cause: "You shook it \(count) times in a row.", fact: fit("you shook {name} x\(count)"))
             }
+            if e.specificType == Core.dismissGesture { return Narration(cause: "You held a finger on the needs-you screen, to stop it showing.") }
             return Touch(e)?.narration.map { n in Narration(cause: n.cause, fact: n.fact.flatMap { fit($0) }) }
         case .ask?:
             guard e.specificType != Asks.ignored else { return Narration(cause: "Nobody answered its question.") }
@@ -115,11 +116,6 @@ public struct Narration: Equatable, Sendable {
                 : nil
         case .press?:
             return Narration(cause: e.specificType == Core.drawerPick ? "You opened a thread from its drawer." : "You pressed its button.")
-        case .hush?:
-            guard e.phase == .start else { return Narration(cause: "It may talk again.", fact: fit("{name} may talk")) }
-            let minutes = e["minutes"]?.int ?? 0
-            return Narration(cause: minutes > 0 ? "You told it to be quiet for \(minutes) minutes." : "You told it to be quiet.",
-                             fact: fit("you hushed {name}"))
         case .prompt?:
             guard let reading = PromptReading(facts: e.data) else { return nil }
             return Narration(cause: asked(reading, agent: agent, on: on),

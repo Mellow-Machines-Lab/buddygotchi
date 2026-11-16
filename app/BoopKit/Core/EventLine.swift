@@ -26,12 +26,12 @@ public enum EventLine {
     /// reacted to`, with `reactedToFix` that buddy's name), as that win was
     /// the reaction's: the finish is no new one.
     public static func turnEnd(agent: String, turn: Int, thread: String, outcome: String, lengthMs: Int64,
-                               tools: Int, failedChecks: Int = 0, ofStreak: Int = 0, linesGone: Int = 0,
+                               tools: Int, failedChecks: Int = 0, quickWins: Int = 0, linesGone: Int = 0,
                                reactedToFix: String? = nil) -> String {
         let how = outcome == "failed" || outcome == "stopped" ? outcome : "done"
         let after = outcome == "stopped" || failedChecks < 1 ? "" : failedChecks == 1 ? ", after a failed check"
             : ", after \(failedChecks) failed checks"
-        let run = ofStreak < 2 ? "" : ", the \(nth(ofStreak)) quick win of a streak"
+        let run = inARow(quickWins, "quick win")
         let gone = linesGone < bigDeletion ? "" : ", \(linesGone.formatted(.number.locale(Locale(identifier: "en_US")))) lines gone"
         let fix = reactedToFix.map { ", just after the fix \($0) already reacted to" } ?? ""
         return "\(agent) finished turn \(turn) on \(thread): \(how), a \(Band.length(ms: lengthMs)) turn, \(toolCalls(tools))\(gone)\(after)\(run)\(fix)."
@@ -41,16 +41,25 @@ public enum EventLine {
     /// to say how many are gone.
     public static let bigDeletion = 500
 
-    /// Quick wins in a row come in streaks of this many, and a turn's
-    /// check-ins in rounds of this many: the lines say which rung, and a
-    /// long run starts the ladder again.
-    public static let streak = 5, round = 4
+    /// A turn's working check-ins come in rounds of this many: the rule's
+    /// Moment goes by the rung (`MomentRule.checkIn`), and a long turn
+    /// starts the round again.
+    public static let round = 4
 
-    /// Which rung of a ladder of `size` the `n`th in a row is, from 1: the
-    /// 6th quick win is the 1st of a new streak.
+    /// Which rung of a round of `size` the `n`th is, from 1.
     public static func rung(_ n: Int, of size: Int) -> Int { n < 1 ? 0 : (n - 1) % size + 1 }
 
-    static func nth(_ n: Int) -> String { (0..<4).contains(n) ? ["0th", "1st", "2nd", "3rd"][n] : "\(n)th" }
+    /// How every line says a run (`InARow`), from the second on: `, the
+    /// 3rd in a row`, or with what's counted where the line needs it, `,
+    /// the 3rd quick win in a row`. Nothing for the first.
+    static func inARow(_ n: Int, _ what: String? = nil) -> String {
+        n < 2 ? "" : ", the \(nth(n)) \(what.map { $0 + " " } ?? "")in a row"
+    }
+
+    static func nth(_ n: Int) -> String {
+        let ends = (11...13).contains(n % 100) ? "th" : [1: "st", 2: "nd", 3: "rd"][n % 10] ?? "th"
+        return "\(n)\(ends)"
+    }
 
     /// The note on the work stream's moments that hit Boop, by their styles
     /// (`WorkStream.hits`): `Failed commands hit Boop in the face 3 times
@@ -119,11 +128,11 @@ public enum EventLine {
     }
 
     /// A tool use that woke the brain: a check that failed, or passed after
-    /// failing. A check failing again says how many times in a row:
-    /// `claude's tests failed again on "api", 3 times in a row.`
-    public static func check(agent: String, topic: String, thread: String, failed: Bool, inARow: Int = 1) -> String {
+    /// failing. A check failing again says which in a row:
+    /// `claude's tests failed on "api", the 3rd in a row.`
+    public static func check(agent: String, topic: String, thread: String, failed: Bool, inARow count: Int = 1) -> String {
         guard failed else { return "\(agent)'s \(topic) passed on \(thread) after failing." }
-        return inARow > 1 ? "\(agent)'s \(topic) failed again on \(thread), \(inARow) times in a row." : "\(agent)'s \(topic) failed on \(thread)."
+        return "\(agent)'s \(topic) failed on \(thread)\(inARow(count))."
     }
 
     /// A work act's start or its result, for Jev to say something over what
@@ -151,11 +160,10 @@ public enum EventLine {
 
     /// Commands failing one after another (the work stream's failure
     /// ladder, `TranscriptView.wakingRungs`), while the turn goes on:
-    /// `claude's commands keep failing on "api": 3 in 2 minutes, each one
+    /// `claude's commands keep failing on "api", the 3rd in a row, each one
     /// hitting Boop in the face. The turn goes on.`
     public static func failing(agent: String, thread: String, count: Int, name: String = CharacterPack.active.name) -> String {
-        let minutes = WorkStream.ladderMs / 60_000
-        return "\(agent)'s commands keep failing on \(thread): \(count) in \(minutes) minutes, each one hitting \(name) in the face. The turn goes on."
+        "\(agent)'s commands keep failing on \(thread)\(inARow(count)), each one hitting \(name) in the face. The turn goes on."
     }
 
     /// `You said to Boop: "…"`: what you said on push-to-talk, quoted and
@@ -169,16 +177,10 @@ public enum EventLine {
         words.count < 2 ? words.joined() : words.dropLast().joined(separator: ", ") + " and " + words.last!
     }
 
-    /// `You poked Boop.`, or `You poked Boop 4 times in a row.`; `while it
-    /// slept` for a run's first poke with no session open, and `, again` (`again` for one poke) when
-    /// the run before ended under `againMs` ago: the brain can't count the
-    /// runs back in HISTORY.
-    public static func poke(inARow count: Int, name: String = CharacterPack.active.name, asleep: Bool = false,
-                            again: Bool = false) -> String {
-        let poked = count <= 1 ? "You poked \(name)" : "You poked \(name) \(count) times in a row"
-        if asleep { return poked + " while it slept." }
-        if again { return poked + (count <= 1 ? " again." : ", again.") }
-        return poked + "."
+    /// `You poked Boop.`, or `You poked Boop, the 4th in a row.`; `while it
+    /// slept` for a run's first poke with no session open.
+    public static func poke(inARow count: Int, name: String = CharacterPack.active.name, asleep: Bool = false) -> String {
+        "You poked \(name)" + (asleep ? " while it slept." : inARow(count) + ".")
     }
 
     /// You stepping away from the Mac.
@@ -235,9 +237,9 @@ public enum EventLine {
         "\(name) dreamed about \(about): \(sentence)."
     }
 
-    /// `You shook Boop.`, or `You shook Boop 3 times in a row.`
+    /// `You shook Boop.`, or `You shook Boop, the 3rd in a row.`
     public static func shake(inARow count: Int, name: String = CharacterPack.active.name) -> String {
-        count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
+        "You shook \(name)\(inARow(count))."
     }
 
     /// Boop grew: `Boop reached level 12.`, `Today's ring is full: Boop's
@@ -257,6 +259,11 @@ public enum EventLine {
         case .gaveup: "\(name) gave up on its wish for \(kind.words), after \(ContextSection.span(waitedMs)) with you here."
         case .closed: "\(name)'s wish for \(kind.words) ended with the day."
         }
+    }
+
+    /// A finger held on the needs-you screen.
+    public static func dismissed(name: String = CharacterPack.active.name) -> String {
+        "You held a finger on \(name)'s needs-you screen, to stop it showing; the agent still waits."
     }
 
     /// A BOOT press that handed you an agent; what it opened is the core's
@@ -322,9 +329,10 @@ public enum EventLine {
         - Tests, build, deploy and docs are what a command was about; failed
           means it ended with an error.
         - Turns are short (under a minute), long (under 5 minutes) or very
-          long (5 minutes or more). Quick wins in a row are turns done in under
-          \(TranscriptView.quickWinMs / 60_000) minutes, one after another on a thread, in streaks of up to \(streak): the
-          line says which of its streak it is, and the \(nth(streak + 1)) starts a new one.
+          long (5 minutes or more).
+        - "the 3rd in a row" counts the same thing coming again with no break:
+          pokes, shakes, a check failing, commands failing, and quick wins,
+          turns done in under \(TranscriptView.quickWinMs / 60_000) minutes one after another on a thread.
         - "You asked" is the person's prompt to an agent, read on their Mac:
           what they asked for, how long, how they sound, and whether they said
           \(name)'s name. Never their words but the few under "Your words".
@@ -346,16 +354,6 @@ public enum EventLine {
         - "\(name) dreamed about Monday" is the day before, as \(name) kept it
           overnight, told the first time the person shows up after it.
         """
-    }
-
-    /// Boop hushed: from the Mac's button, or by what you said.
-    public static func hushed(name: String, minutes: Int64, byApp: Bool) -> String {
-        "You hushed \(name)\(byApp ? " from the Mac" : ""): it says nothing for \(minutes) min."
-    }
-
-    /// Boop free to talk again: its time ran out, or you said so.
-    public static func unhushed(name: String, why: String) -> String {
-        why == Core.By.timer.rawValue ? "\(name)'s hush ran out: it may talk again." : "You let \(name) talk again."
     }
 
     public static func needsYou(agent: String, thread: String) -> String {

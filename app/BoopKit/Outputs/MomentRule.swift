@@ -2,8 +2,9 @@ import Foundation
 import MellowHarness
 
 /// What code decides of a Moment, so Jev is never asked: its move and its
-/// size at every pass, and the whole Moment at your lock or unlock, a
-/// working check-in and a boop from the world, which have no pass. Plain
+/// size at every pass, your hello and your bye (`hello`, `bye`), and the
+/// whole Moment at your lock or unlock, a working check-in and a boop from
+/// the world, which have no pass. Plain
 /// functions of the event, its line's facts and the mood: the tables are
 /// here and nowhere else (`MomentRuleTests` pins them).
 public enum MomentRule {
@@ -20,15 +21,14 @@ public enum MomentRule {
     public static let longAwayMs: Int64 = 60 * 60_000
     public static let daysMs: Int64 = 24 * 60 * 60_000
 
-    /// A quick win from this rung of its streak is a step bigger.
+    /// A quick win from this one in a row is a step bigger.
     public static let streakFrom = 3
 
     // MARK: The move
 
     /// The move a Moment plays at `e`, by its line's `facts`, or nil for
-    /// just the face: a turn's finish by how it ended, the wake-up when
-    /// you're back after `longAwayMs`, the notice when your prompt says
-    /// the buddy's name.
+    /// just the face: a turn's finish by how it ended, a hello's (`hello`),
+    /// the notice when your prompt says the buddy's name.
     ///
     /// | The event | The move |
     /// | --- | --- |
@@ -50,7 +50,7 @@ public enum MomentRule {
             case .stopped: return nil
             }
         }
-        if e.type == .presence, e.phase == .end, (facts["away_ms"]?.int ?? 0) >= longAwayMs { return "wake up" }
+        if let move = hello(e, facts: facts, mood: nil)?.move { return move }
         if e.type == .prompt, PromptReading(facts: e.data)?.named.isEmpty == false { return "notice" }
         return nil
     }
@@ -84,12 +84,12 @@ public enum MomentRule {
     /// | The event | The size |
     /// | --- | --- |
     /// | A finish | by its turn's length: small under 1 min, medium to 5 min, big from there |
-    /// | … failed, hard-won (done after failed checks), or from the 3rd of a streak of quick wins | a step up, big at most |
+    /// | … failed, hard-won (done after failed checks), or from the 3rd quick win in a row | a step up, big at most |
     /// | … only a reply, stopped, or just after its fix; a win in a sad or cross mood | small |
     /// | Your words | medium |
     /// | A touch (a poke, a stroke, a shake…) | small |
     /// | Your prompt | medium when it sounds like something or says the buddy's name, else small |
-    /// | You back | small; medium after an hour; big after a day |
+    /// | A hello (`hello`) | small; medium after an hour away; big after a day |
     /// | A check failing | small; medium from the 2nd in a row |
     /// | A check passing after it failed, calls failing in a row, a push's result | medium |
     /// | Anything else (an idle check-in, an answered ask…) | small |
@@ -101,18 +101,15 @@ public enum MomentRule {
             if finish == .success, mood == sad || mood == cross { return small }
             let tier = min(big, Moment.turn(lengthMs: facts["length_ms"]?.int ?? 0))
             let hardWon = finish == .success && (facts["checks_failed"]?.int ?? 0) > 0
-            let streak = finish == .success
-                && EventLine.rung(Int(facts["wins_in_a_row"]?.int ?? 0), of: EventLine.streak) >= streakFrom
+            let streak = finish == .success && (facts["wins_in_a_row"]?.int ?? 0) >= Int64(streakFrom)
             return finish == .failure || hardWon || streak ? min(big, tier + 1) : tier
         }
+        if let hello = hello(e, facts: facts, mood: mood) { return hello.size }
         switch e.type {
         case .said?: return medium
         case .prompt?:
             guard let r = PromptReading(facts: e.data) else { return small }
             return !r.named.isEmpty || (r.tone != nil && r.tone != .calm) ? medium : small
-        case .presence?:
-            let away = facts["away_ms"]?.int ?? 0
-            return away >= daysMs ? big : away >= longAwayMs ? medium : small
         case .tool?:
             if facts["failing"] != nil { return medium }
             let before = facts["failed_before"]?.int ?? 0
@@ -122,9 +119,94 @@ public enum MomentRule {
         }
     }
 
-    // MARK: Your lock and unlock
+    // MARK: You came or went: hello and bye
 
-    /// What Boop does at your lock or unlock.
+    /// The one thing a hello may add, the first that's there: the special
+    /// day's sign; else the dream, told; else what happened while you were
+    /// away, as a fact (CONTEXT's Noticed row, and the narration). The view
+    /// picks it as it writes the hello's line (`TranscriptView.hello`).
+    public enum Extra: Equatable, Sendable {
+        case day(sign: String)
+        case telling(tags: [String])
+        case whileAway(String)
+
+        /// The extra a line's `facts` carry, or nil for none.
+        public init?(facts: [String: JSONValue]) {
+            if let sign = facts[TranscriptView.daySignFact]?.string {
+                self = .day(sign: sign)
+            } else if case .array(let tags)? = facts["dream_tags"] {
+                self = .telling(tags: tags.compactMap(\.string))
+            } else if let noticed = facts[TranscriptView.noticedFact]?.string {
+                self = .whileAway(noticed)
+            } else {
+                return nil
+            }
+        }
+    }
+
+    /// You came: what Boop's hello is.
+    public struct Hello: Equatable, Sendable {
+        /// How big it is.
+        public var size: Int
+        /// The move it plays (`MomentOutput.moves`), or nil for the face alone.
+        public var move: String?
+        /// At an unlock, its wave; nil when the brain picks the face.
+        public var wave: Wave?
+        /// Whether it plays whole (`Moment.greeting`): the first of Boop's
+        /// day, or the one that tells the dream.
+        public var whole: Bool
+        public var extra: Extra?
+        /// Whether Jev is asked: only after a real away (the presence
+        /// detector's, 10 min or more), or where the hello is your touch,
+        /// which has a pass of its own.
+        public var asksJev: Bool
+    }
+
+    /// The hello at `e`, by its line's `facts` and the lasting `mood`, or
+    /// nil when `e` isn't you coming.
+    ///
+    /// | You | The hello |
+    /// | --- | --- |
+    /// | unlock the Mac, not away | a slight wave, small, by rule; a snub when cross |
+    /// | come back from an away | Jev's face and word: small; medium with the wake-up after an hour; big after a day |
+    /// | touch it, the first you show up on Boop's day or with a dream to tell | the touch's own Moment, as a hello |
+    ///
+    /// The first of Boop's day, and one that tells the dream, plays whole.
+    /// At most one extra comes with it (`Extra`).
+    public static func hello(_ e: Event, facts: [String: JSONValue], mood: String?) -> Hello? {
+        if e.type == .lock, e.phase == .end {
+            return Hello(size: small, move: nil, wave: mood == cross ? .snub : .slight, whole: false, extra: nil, asksJev: false)
+        }
+        let extra = Extra(facts: facts)
+        var whole = facts[TranscriptView.firstTodayFact] != nil
+        if case .telling? = extra { whole = true }
+        if e.type == .presence, e.phase == .end {
+            let away = facts["away_ms"]?.int ?? 0
+            return Hello(size: away >= daysMs ? big : away >= longAwayMs ? medium : small, move: away >= longAwayMs ? "wake up" : nil,
+                         wave: nil, whole: whole, extra: extra, asksJev: true)
+        }
+        guard whole, Yours.touch(e) else { return nil }
+        return Hello(size: small, move: nil, wave: nil, whole: true, extra: extra, asksJev: true)
+    }
+
+    /// You went: the bye at your lock of the Mac, `sinceLastMs` after the
+    /// last lock (nil for the first), at `night` or not, with an agent
+    /// `working` or not, in the lasting `mood`. Stepping away has none:
+    /// nobody's there to see it.
+    ///
+    /// | When | The bye |
+    /// | --- | --- |
+    /// | The mood is cross | a snub |
+    /// | At night, no agent working | good night, and the nap |
+    /// | An hour or more after the last lock, or the first | a real wave |
+    /// | Any other lock | a slight wave |
+    public static func bye(sinceLastMs: Int64?, night: Bool, working: Bool, mood: String?) -> Wave {
+        if mood == cross { return .snub }
+        if night, !working { return .nap }
+        return sinceLastMs.map { $0 >= lockWhileMs } ?? true ? .wave : .slight
+    }
+
+    /// How a hello or a bye waves.
     public enum Wave: Equatable, Sendable {
         /// Cross with you: its cross face, no wave, no word, no sign.
         case snub
@@ -139,24 +221,6 @@ public enum MomentRule {
 
     /// A lock this long after the last, or the first one, gets a real wave.
     public static let lockWhileMs = EventLine.lockWhileMs
-
-    /// The wave at your lock (`lock`) or unlock, `sinceLastMs` after the
-    /// last lock (nil for the first), at `night` or not, with an agent
-    /// `working` or not, in the lasting `mood`. An unlock that ends an
-    /// away has no line, so it never gets here: the back's greeting plays.
-    ///
-    /// | When | The wave |
-    /// | --- | --- |
-    /// | The mood is cross | a snub |
-    /// | A lock at night, no agent working | good night, and the nap |
-    /// | A lock an hour or more after the last, or the first | a real wave |
-    /// | Any other lock, and every unlock | a slight wave |
-    public static func wave(lock: Bool, sinceLastMs: Int64?, night: Bool, working: Bool, mood: String?) -> Wave {
-        if mood == cross { return .snub }
-        guard lock else { return .slight }
-        if night, !working { return .nap }
-        return sinceLastMs.map { $0 >= lockWhileMs } ?? true ? .wave : .slight
-    }
 
     // MARK: The working check-in
 

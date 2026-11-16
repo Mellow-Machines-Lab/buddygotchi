@@ -21,8 +21,8 @@ final class ReplyTests: XCTestCase {
         - [night bye] not first
         """)
 
-    /// The eleven replies, in the order the question offers them, and
-    /// `unhush` while hushed (`HushTests`); what you said is asked the same
+    /// The eleven replies, in the order the question offers them; what
+    /// you said is asked the same
     /// two questions as anything, but its face is never none, and its
     /// reply between them.
     func testWhatYouSaidIsAskedForAReply() {
@@ -334,7 +334,7 @@ final class ReplyTests: XCTestCase {
         var queued: [Moment] = []
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil })
         let rollOver = Event(at: 0, source: .mic, type: .said, specificType: "device", data: ["words": "roll over"])
-        for reply in MomentOutput.replies.map(\.name) + ["unhush"] where reply != "huh" {
+        for reply in MomentOutput.replies.map(\.name) where reply != "huh" {
             for face in CharacterPack.active.moods.map(\.id) where Take.all.contains(where: { $0.part == .reply && $0.meaning == reply && $0.moods.contains(face) }) {
                 _ = react.run(["react.face": a(face), "react.reply": a(reply), "say": a("glad")],
                               now: rollOver, log: Self.log)
@@ -352,7 +352,7 @@ final class ReplyTests: XCTestCase {
         }
         // Every reply has words of its own.
         let has = Set(Take.all.filter { $0.part == .reply }.map(\.meaning))
-        XCTAssertEqual(Set(MomentOutput.replies.map(\.name) + ["dunno", "unhush"]).subtracting(has), [])
+        XCTAssertEqual(Set(MomentOutput.replies.map(\.name) + ["dunno"]).subtracting(has), [])
     }
 
     /// Pins how a reply's sign answers what you said: every reply's

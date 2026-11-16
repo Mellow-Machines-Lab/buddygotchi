@@ -189,7 +189,7 @@ final class EvalTests: XCTestCase {
     /// MOOD, as the app's does: normal unless it says.
     func testAScenarioRunsWithItsTalk() async throws {
         try requirePack("boop")  // its steering
-        for (talk, words) in [(nil, ""), ("quiet", "\nTalk: quiet."), ("chatty", "\nTalk: chatty.")] {
+        for (talk, words) in [(nil, ""), ("quiet", "\nTalk: quiet.")] {
             let states = Lines()
             let brain = ScriptedBrain { state, _ in
                 states.add(state)

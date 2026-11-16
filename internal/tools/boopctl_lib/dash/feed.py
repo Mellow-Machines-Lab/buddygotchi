@@ -655,15 +655,15 @@ def context_rows(state: str) -> list[str] | None:
 
 
 def talk_level(context: list[str] | None) -> str:
-    """The Talk setting, as CONTEXT's Talk row says it: chatty, quiet or
-    silent for N more min (the hush), and normal when there's no row."""
+    """Talk, as CONTEXT's Talk row says it: quiet, or quiet for N more min
+    (after a hush), and normal when there's no row."""
     if context is None:
         return "no pass yet"
     row = next((r for r in context if r.startswith("Talk: ")), None)
     if row is None:
         return "normal"
     words = row[len("Talk: "):]
-    return words.split(":")[0] if words.startswith("silent") else words.split(".")[0]
+    return words.split(".")[0]
 
 
 def growth_text(st: Line) -> str:

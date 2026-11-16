@@ -25,17 +25,16 @@ final class SwearTests: XCTestCase {
     func testOffTheBrainIsNeverOfferedASwear() {
         let asked = MomentOutput.asked(in: .active)
         func says(_ swears: Bool, _ talk: Talk) -> [String] {
-            MomentOutput.speech(asked, hushed: false, talk: talk, swears: swears, in: .active)
+            MomentOutput.speech(asked, talk: talk, swears: swears, in: .active)
                 .first { $0.key == MomentOutput.sayKey }?.options.map(\.name) ?? []
         }
         for talk in Talk.allCases {
             XCTAssertFalse(says(false, talk).contains("swear"), "\(talk)")
         }
         XCTAssertTrue(says(true, .normal).contains("swear"))
-        XCTAssertTrue(says(true, .chatty).contains("swear"))
         XCTAssertEqual(says(false, .normal), says(true, .normal).filter { $0 != "swear" }, "only the swear goes")
         // The default, as the evals and every caller that doesn't say, swears.
-        XCTAssertEqual(MomentOutput.speech(asked, hushed: false, talk: .normal, in: .active).first { $0.key == MomentOutput.sayKey }?.options.map(\.name),
+        XCTAssertEqual(MomentOutput.speech(asked, talk: .normal, in: .active).first { $0.key == MomentOutput.sayKey }?.options.map(\.name),
                        says(true, .normal))
     }
 

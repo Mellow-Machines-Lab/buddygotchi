@@ -37,9 +37,6 @@ public enum Signs {
     /// filled in, that fit a sign: your words in a tagged line first, then
     /// your words as they are, at most `maxYourWords` of them, then the
     /// tagged captions, then the rest, each once, at most `maxOffered`.
-    /// A musing is held up at most this often.
-    public static let musingEveryMs: Int64 = 60 * 60_000
-
     /// What it may hold up for another buddy's gesture `kind`: `signs.md`'s
     /// `[world]` lines and those for the kind, `[world cheer]`, the kind's first.
     public static func world(_ lines: [TaggedLine], kind: String) -> [String] {

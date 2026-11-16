@@ -32,9 +32,9 @@ final class NarrationTests: XCTestCase {
                        Narration(cause: "You poked it 4 times in a row.", fact: "you poked Boop x4"))
         XCTAssertEqual(Narration.of(event(.poke, "input"), line: Line("", facts: ["in_a_row": .int(1), "asleep": .bool(true)]), name: "Boop")?.fact,
                        "you woke Boop")
-        XCTAssertEqual(Narration.of(event(.gesture, "dizzy"), line: Line("", facts: ["in_a_row": .int(1)]), name: "Boop"),
+        XCTAssertEqual(Narration.of(event(.gesture, "shake"), line: Line("", facts: ["in_a_row": .int(1)]), name: "Boop"),
                        Narration(cause: "You shook it.", fact: "you shook Boop"))
-        XCTAssertEqual(Narration.of(event(.gesture, "dizzy"), line: Line("", facts: ["in_a_row": .int(3)]), name: "Boop"),
+        XCTAssertEqual(Narration.of(event(.gesture, "shake"), line: Line("", facts: ["in_a_row": .int(3)]), name: "Boop"),
                        Narration(cause: "You shook it 3 times in a row.", fact: "you shook Boop x3"))
         let said = Narration.of(event(.said, "mic"), line: Line("You said to Boop: \"hi\".", facts: ["words": .string("hi")]))
         XCTAssertEqual(said, Narration(cause: "You said \"hi\"."))
@@ -205,7 +205,6 @@ final class ReasonsTests: XCTestCase {
         case .listen: return [(event(kind, phase: .start), [:]), (event(kind, phase: .wait), [:]), (event(kind, phase: .end), [:])]
         case .press: return [(event(kind), [:])]
         case .gesture: return Touch.allCases.filter { $0 != .poke }.map { (event(kind, $0.rawValue), [:]) }
-        case .hush: return [(event(kind, "app", phase: .start), [:]), (event(kind, "timer", phase: .end), [:])]
         case .act: return ["tests", "build", "push"].flatMap { k in
             [(event(kind, k, phase: .start), ["thread": thread]),
              (event(kind, k, phase: .end, data: ["passed": true]), ["thread": thread]),
@@ -282,7 +281,6 @@ final class ReasonsTests: XCTestCase {
                        Narration(cause: "The tests on api pass.", fact: "tests pass"), "a first pass too")
         XCTAssertEqual(Narration.of(event(.presence, phase: .start), line: nil, name: "Boop")?.fact, "you stepped away")
         XCTAssertEqual(Narration.of(event(.turn, phase: .start), line: Line("", facts: ["thread": thread]), name: "Boop")?.fact, "claude started")
-        XCTAssertEqual(Narration.of(event(.hush, "app", phase: .start), line: nil, name: "Boop")?.fact, "you hushed Boop")
         XCTAssertEqual(Narration.of(event(.prompt, data: ["kind": "fix", "tone": "calm", "length": "sentence"]), line: Line("", facts: ["thread": thread]), name: "Boop")?.fact, "you asked claude")
         XCTAssertEqual(Narration.sleeping(noAgents: false, napping: false, dozeMs: 3_600_000, name: "Boop"),
                        Narration(cause: "Nothing's happened for an hour, so Boop dozed off.", fact: "quiet for 1 h"))
@@ -330,15 +328,49 @@ final class ReasonsTests: XCTestCase {
 
     /// The board's own captions and the Mac's are the same words, which is how
     /// the board knows a reason sent later for one it showed. Every touch with a
-    /// caption is in firmware's table, or it's deliberately only the Mac's.
+    /// caption is in firmware's table, under the board's own name for it, or
+    /// it's deliberately only the Mac's. The kinds the Mac folds into these
+    /// (a ruffle, a nose boop…) keep the board's own captions.
     func testTheBoardSaysATouchInTheMacsWords() throws {
         let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/app/touch_reason.h"), encoding: .utf8)
         let macOnly: Set<Touch> = [.facedown]  // the board goes dim at once: the Mac says it if Jev answers
+        let boards: [Touch: String] = [.hold: "lean", .shake: "dizzy"]
         for touch in Touch.allCases {
             guard let fact = touch.narration?.fact, !macOnly.contains(touch) else { continue }
-            XCTAssertTrue(header.contains("{\"\(touch.rawValue)\", \"\(fact)\"}"), "\(touch): firmware's table says otherwise")
+            let wire = boards[touch] ?? touch.rawValue
+            XCTAssertEqual(Touch.read(wire)?.touch, touch)
+            XCTAssertTrue(header.contains("{\"\(wire)\", \"\(fact)\"}"), "\(touch): firmware's table says otherwise")
         }
         XCTAssertTrue(header.contains("kTouchReasons"))
+    }
+
+    /// Pins the fold (`Touch.read`): the board's twelve gestures and the
+    /// app's read as the Mac's seven touches, a put-down and a peekaboo as
+    /// the ends of a pick-up and of face down.
+    func testTheBoardsGesturesFoldIntoSevenTouches() {
+        XCTAssertEqual(Touch.allCases, [.poke, .stroke, .hold, .shake, .pickup, .swipe, .facedown])
+        let fold: [String: (Touch, Bool)] = [
+            "stroke": (.stroke, false), "ruffle": (.stroke, false), "lean": (.hold, false), "nose": (.poke, false), "tickle": (.poke, false),
+            "dizzy": (.shake, false), "startle": (.shake, false), "pickup": (.pickup, false), "putdown": (.pickup, true),
+            "swipe": (.swipe, false), "facedown": (.facedown, false), "peekaboo": (.facedown, true),
+        ]
+        for (wire, want) in fold {
+            XCTAssertEqual(Touch.read(wire)?.touch, want.0, wire)
+            XCTAssertEqual(Touch.read(wire)?.ended, want.1, wire)
+        }
+        for touch in Touch.allCases { XCTAssertEqual(Touch.read(touch.rawValue)?.touch, touch, "its own name") }
+        XCTAssertNil(Touch.read("handoff"))
+        XCTAssertNil(Touch.read("dismiss"), "a finger on the needs-you screen is no touch")
+        // Through the pipeline: a nose boop is a poke, counted with the pokes;
+        // a put-down has no line.
+        let rig = CoreRig()
+        rig.send(.sessionStart)
+        rig.poke()
+        rig.wait(1000)
+        XCTAssertEqual(events(rig.note(Fx(rig.pipeline.gesture("nose", at: rig.now)))).map(\.line), ["You poked \(CharacterPack.active.name), the 2nd in a row."])
+        XCTAssertEqual(events(rig.note(Fx(rig.pipeline.gesture("ruffle", at: rig.now)))).map(\.line), ["You stroked \(CharacterPack.active.name)."])
+        XCTAssertEqual(events(rig.note(Fx(rig.pipeline.gesture("lean", at: rig.now)))).first?.facts["gesture"], "hold")
+        XCTAssertEqual(events(rig.note(Fx(rig.pipeline.gesture("putdown", at: rig.now)))), [])
     }
 
     /// Every pastime and transition the gel has has words for the popover.

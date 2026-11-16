@@ -415,7 +415,7 @@ extension DemoScript {
         var offered = Dictionary(uniqueKeysWithValues: MomentOutput.questions(in: pack).map { ($0.key, $0.options.map(\.name)) })
         offered[MomentOutput.emotionKey] = ["none"] + pack.faces.map(\.name)
         // What you said is answered with a reply too.
-        offered[MomentOutput.replyKey] = MomentOutput.replies(of: pack.name).map(\.name) + ["unhush"]
+        offered[MomentOutput.replyKey] = MomentOutput.replies(of: pack.name).map(\.name)
         return offered
     }
 

@@ -79,9 +79,9 @@ final class DaysTests: XCTestCase {
         let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/render/tags.h"), encoding: .utf8)
         let list = try XCTUnwrap(header.range(of: #"kTagNames\[kTagCount\] = \{[^}]*\}"#, options: .regularExpression))
         let names = header[list].split(separator: "\"").enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
-        // The board's table keeps `tier4` and `tier5`, which Pixel's designs are
-        // numbered by; the Mac never sends them.
-        XCTAssertEqual(names.filter { !["tier4", "tier5"].contains($0) }, Tags.board)
+        // The board's table keeps `tier4`, `tier5` and `hushed`, which Pixel's
+        // designs are numbered by; the Mac never sends them.
+        XCTAssertEqual(names.filter { !["tier4", "tier5", "hushed"].contains($0) }, Tags.board)
         XCTAssertEqual(Tags.all, Tags.board, "the board reads every tag")
         XCTAssertLessThanOrEqual(Tags.board.count, 32, "a set of tags is 32 bits on the board")
     }
@@ -195,14 +195,18 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .growth }.map { $0["level"]?.int }, [6])
     }
 
-    /// On a day with an occasion, your first showing up holds up its sign,
-    /// once a day (`Core.dayGreeting`); no agent's event greets it.
+    /// On a special day, your first hello holds up its sign, once a day
+    /// (`TranscriptView.hello`, from `Core.daySign`); no agent's event
+    /// greets it.
     func testASpecialDayIsGreetedOnce() {
         let rig = CoreRig(start: ms(2026, 10, 31, 14))
         XCTAssertEqual(moments(rig.send(.turnStart)).compactMap(\.sign), [], "not at an agent's event")
-        XCTAssertEqual(rig.core.dayGreeting(at: rig.now), "happy halloween!")
-        XCTAssertNil(rig.core.dayGreeting(at: rig.now), "once")
-        XCTAssertNil(CoreRig().core.dayGreeting(at: CoreRig().now), "an ordinary day")
+        XCTAssertEqual(rig.core.daySign(at: rig.now), "happy halloween!")
+        XCTAssertNil(CoreRig().core.daySign(at: CoreRig().now), "an ordinary day")
+        let signs = { (fx: Fx) in events(fx).compactMap { $0.facts[TranscriptView.daySignFact]?.string } }
+        XCTAssertEqual(signs(rig.poke()), ["happy halloween!"], "your first showing up")
+        rig.wait(10_000)
+        XCTAssertEqual(signs(rig.poke()), [], "once")
     }
 
     /// The popover's reasons choose as the board does
@@ -316,8 +320,8 @@ final class DaysTests: XCTestCase {
         let young = core.snapshot(at: ms(2026, 10, 22)).when
         core.growth = { Growth(xp: 2_900) }
         XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when, young)
-        XCTAssertEqual(Tags.board.suffix(6), ["tier3", "hushed", "typing", "reading", "macleft", "macright"],
-                       "no stage's tag between the tiers and `hushed`: the firmware's list ends the same way, after the two tiers it keeps for Pixel (render/tags.h)")
+        XCTAssertEqual(Tags.board.suffix(5), ["tier3", "typing", "reading", "macleft", "macright"],
+                       "no stage's tag after the tiers: the firmware's list ends the same way, after the two tiers and `hushed` it keeps for Pixel's numbering (render/tags.h)")
     }
 
     /// A demo's hold keeps its finger down longer than the board's hold

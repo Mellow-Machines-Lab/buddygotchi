@@ -13,17 +13,16 @@ final class CollisionTests: XCTestCase {
     }
 
     /// One moment from `react` about `about`, as the board is sent it.
-    private func moment(_ about: Event, firstToday: Bool = false, told: [String]? = nil, occasion: String? = nil,
+    private func moment(_ about: Event, firstToday: Bool = false, told: [String]? = nil, daySign: String? = nil,
                         sign: String? = nil, dreams: [TaggedLine] = []) -> Moment? {
         var sent: Moment?
-        var left = occasion
         let react = MomentOutput(queue: { m, _ in sent = m }, blocked: { nil }, speaks: { false }, dreams: dreams,
                                  line: { _ in
                                      var facts: [String: JSONValue] = firstToday ? [TranscriptView.firstTodayFact: true] : [:]
                                      if let told { facts["dream_tags"] = .array(told.map { .string($0) }) }
+                                     if let daySign { facts[TranscriptView.daySignFact] = .string(daySign) }
                                      return Line("", facts: facts)
-                                 },
-                                 occasion: { _ in defer { left = nil }; return left })
+                                 })
         var choices = [MomentOutput.emotionKey: "happy"]
         if let sign { choices[Signs.questionKey] = sign }
         _ = react.run(answers(choices), now: about, log: Transcript.log().view(now: about.at))
@@ -49,9 +48,9 @@ final class CollisionTests: XCTestCase {
         XCTAssertEqual(BoopDevice.callTTL, 1500)
     }
 
-    /// The first moment of your day, and the one that tells the dream, are
-    /// greetings; any other isn't.
-    func testWhatIsAGreeting() {
+    /// The first hello of your day, and the one that tells the dream, play
+    /// whole; any other doesn't.
+    func testWhichHelloPlaysWhole() {
         XCTAssertEqual(moment(back, firstToday: true)?.greeting, true)
         XCTAssertEqual(moment(back, told: ["fond"])?.greeting, true)
         XCTAssertEqual(moment(back)?.greeting, false)
@@ -59,29 +58,33 @@ final class CollisionTests: XCTestCase {
         XCTAssertNil(moment(back)?.args["greeting"], "and it's on the wire only then")
     }
 
-    /// A special day's sign is code's, on your first showing up, over the
-    /// brain's: Jev still picks the feeling and the words.
+    /// A special day's sign is code's, on your hello, over the brain's:
+    /// Jev still picks the feeling and the words.
     func testASpecialDaysSignIsCodes() {
         let dreams = TaggedLine.parse("- had a dream")
-        XCTAssertEqual(moment(back, firstToday: true, occasion: "Day 50!")?.sign, "Day 50!")
-        XCTAssertEqual(moment(back, firstToday: true, told: [], occasion: "Happy Halloween!", sign: "had a dream", dreams: dreams)?.sign,
-                       "Happy Halloween!", "over the dream's")
+        XCTAssertEqual(moment(back, firstToday: true, daySign: "Day 50!")?.sign, "Day 50!")
         XCTAssertEqual(moment(back, firstToday: true, told: [], sign: "had a dream", dreams: dreams)?.sign, "had a dream", "an ordinary day")
-        XCTAssertEqual(moment(back, occasion: "Day 50!")?.sign, nil, "only on your first showing up")
     }
 
-    /// The wish and the ask wait: neither is offered at the telling, nor at
-    /// any showing up: their moment is an idle check-in.
-    func testTheWishAndTheAskWaitForAnIdleCheckIn() {
-        let asks = TaggedLine.parse("- [wish pet] pet me?\n- [hat idle keeps] hat or bow? | hat | bow")
-        let telling = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, line: { _ in Line("", facts: ["dream_tags": .array([.string("fond")])]) }, asks: asks,
-                                   askable: { _, _, questions in questions }, wishable: { _, _ in [.pet] })
+    /// Pins a hello's one extra: the special day's sign, else the dream,
+    /// else what happened while you were away (`MomentRule.Extra`).
+    func testAHelloHasOneExtra() {
+        let day: [String: JSONValue] = [TranscriptView.daySignFact: "Day 50!", "dream_tags": .array([.string("fond")]), TranscriptView.noticedFact: "While you were gone…"]
+        XCTAssertEqual(MomentRule.Extra(facts: day), .day(sign: "Day 50!"))
+        XCTAssertEqual(MomentRule.Extra(facts: ["dream_tags": .array([.string("fond")]), TranscriptView.noticedFact: "While…"]), .telling(tags: ["fond"]))
+        XCTAssertEqual(MomentRule.Extra(facts: [TranscriptView.noticedFact: "While…"]), .whileAway("While…"))
+        XCTAssertNil(MomentRule.Extra(facts: ["away_ms": 1]))
+    }
+
+    /// The idle beat waits: nothing of it is offered at a hello, the
+    /// telling or not: its moment is an idle check-in.
+    func testTheIdleBeatWaitsForAnIdleCheckIn() {
+        let beat = IdleBeat.Candidate(.wish, signs: ["pet me?"], wish: .pet)
+        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false }, idleBeat: { _, _, _ in [beat] })
         let log = Transcript.log().view(now: 0)
-        XCTAssertTrue(telling.wishOptions(back, log).isEmpty)
-        XCTAssertTrue(telling.askOptions(back, log).isEmpty)
-        XCTAssertTrue(Asks.moment(back).isEmpty)
+        XCTAssertTrue(react.beats(back, log).isEmpty)
         let checkIn = Event(at: 1000, source: .boop, type: .checkIn, specificType: "check_in")
-        XCTAssertEqual(Asks.moment(checkIn), ["idle"])
+        XCTAssertEqual(react.beats(checkIn, log).first?.signs, ["pet me?"])
     }
 
     /// Bringing up a note: at an idle check-in only, the line low on the
@@ -89,8 +92,8 @@ final class CollisionTests: XCTestCase {
     func testBringingUpANote() throws {
         let felt = Memory.Felt(line: "u stay up late fridays", note: "You stay up late on Fridays.")
         var sent: Moment?
-        var talk = Talk.normal
-        let react = MomentOutput(queue: { m, _ in sent = m }, blocked: { nil }, speaks: { true }, talk: { talk }, felt: { _ in [felt] })
+        let react = MomentOutput(queue: { m, _ in sent = m }, blocked: { nil }, speaks: { true },
+                                 idleBeat: { _, _, _ in [IdleBeat.Candidate(.remembered, signs: [felt.line], remembered: felt)] })
         let log = Transcript.log().view(now: 1000)
         let checkIn = Event(at: 1000, source: .boop, type: .checkIn, specificType: "check_in")
         let sign = try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey })
@@ -105,10 +108,8 @@ final class CollisionTests: XCTestCase {
         XCTAssertNil(moment.reason, "the board shows the line")
         if let word = CharacterPack.active.rememberWord { XCTAssertEqual(moment.say?.text, word) }
         XCTAssertEqual(result?.facts["felt"], .string(felt.line))
-        XCTAssertNil(result?.facts["musing"])
+        XCTAssertEqual(result?.facts[IdleBeat.fact], "remembered")
         XCTAssertEqual(result?.facts["reason"]?.string, "\(CharacterPack.active.name) is amused. \(CharacterPack.active.name) remembers you stay up late on Fridays.")
-        talk = .quiet
-        XCTAssertTrue(react.feltOptions(checkIn).isEmpty, "never on Quiet")
     }
 
     /// Pins the board's room: a note's line fits a low sign.

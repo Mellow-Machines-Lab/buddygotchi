@@ -64,6 +64,7 @@ public final class Pipeline {
         self.view = view
         view.time = time
         view.name = buddy.name
+        view.daySign = { core.daySign(at: $0) }
         var options = Harness.Options()
         // Boop's own words on how to read HISTORY and NOW are in its guide's
         // section.
@@ -212,18 +213,31 @@ public final class Pipeline {
                    keeps: asked["keeps"]?.bool ?? false, at: now)
     }
 
-    /// What you did to the board (`kind`: a stroke, a shake, face down…),
-    /// which it reacted to at once: logged, and it may wake the brain, as
-    /// a poke does. The core hears only `dismiss`, a finger held on the
-    /// needs-you screen: the request numbered `request`, the one it
-    /// showed, stops showing if it still shows (`Core.dismiss`).
+    /// What you did to the board, as the board names it (`kind`: a stroke,
+    /// a shake, face down…), which it reacted to at once: read as one of
+    /// the seven touches (`Touch.read`) and logged as that, and it may wake
+    /// the brain, as a poke does. One the board plays as a poke with a
+    /// place (a boop on the nose, a tickle) is a poke. A touch's end (a
+    /// put-down, turned back up) is logged with no line. The core hears
+    /// only `dismiss`, a finger held on the needs-you screen: the request
+    /// numbered `request`, the one it showed, stops showing if it still
+    /// shows (`Core.dismiss`).
     @discardableResult
     public func gesture(_ kind: String, request: Int? = nil, at now: Int64) -> Step {
-        input(at: now) {
-            harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind))
+        if kind == Core.dismissGesture {
+            return input(at: now) {
+                harness.emit(Event(at: now, source: .device, type: .gesture, specificType: kind))
+                endNaps(at: now)
+                if let request { run(core.dismiss(request: request, at: now)) }
+            }
+        }
+        guard let (touch, ended) = Touch.read(kind) else { return Step() }
+        if touch == .poke { return poke(at: now) }
+        return input(at: now) {
+            harness.emit(Event(at: now, source: .device, type: .gesture, phase: ended ? .end : nil, specificType: touch.rawValue))
+            guard !ended else { return }
             endNaps(at: now)
-            if kind == Core.dismissGesture, let request { run(core.dismiss(request: request, at: now)) }
-            if Touch(rawValue: kind)?.meetsPetWish == true { run(core.meetWish(.pet, at: now)) }
+            if touch.meetsPetWish { run(core.meetWish(.pet, at: now)) }
         }
     }
 
@@ -285,6 +299,8 @@ public final class Pipeline {
     public func said(_ words: String, by: Core.Talker, at now: Int64) -> Step {
         let cut = Scrubber.scrub(words.count > HookLine.maxMessage ? String(words.prefix(HookLine.maxMessage)) : words)
         return input(at: now) {
+            // Talking to it ends a quiet for a while.
+            core.endQuiet()
             harness.emit(Event(at: now, source: .mic, type: .said, specificType: by.rawValue, data: ["words": .string(cut)]))
             endNaps(at: now)
             run(core.meetWish(.chat, at: now))

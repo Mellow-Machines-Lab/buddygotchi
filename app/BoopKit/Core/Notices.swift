@@ -1,14 +1,12 @@
 import Foundation
 
-/// What Boop notices about your day. Code finds what's true and says it in
-/// CONTEXT's Noticed row; Jev decides whether to use it. A notice never makes
-/// a Moment where one exists: at your coming back, your prompt or your
-/// goodnight it only adds a fact to that Moment. New Moments come only at an
-/// idle check-in, one at a time, and each is a pure function here over the
-/// digests and the moment, with its rest. A wish left open holds the others
-/// up, as it's what Boop has on its mind, but never `waiting`, whose window
-/// is short and which is of use to you; a day with no wish holds up none. It counts
-/// only once it has played (`Memory.recordNotice`). Nothing here holds a
+/// What Boop notices about your day. Code finds what's true. A notice
+/// never makes a Moment where one exists: at your coming back, your prompt
+/// or your goodnight it only adds a fact to that Moment (CONTEXT's Noticed
+/// row). New Moments come only at an idle check-in, as an idle beat
+/// (`IdleBeat`), which deals `waiting` first and any other after the wish;
+/// each is a pure function here over the digests and the moment, with its
+/// rest. It counts only once it has played (`Memory.recordNotice`). Nothing here holds a
 /// word of code, a command or a tool's output: thread names, counts and
 /// times.
 public enum Notices {
@@ -22,8 +20,6 @@ public enum Notices {
         public var restDays: Int { self == .late ? 7 : 1 }
     }
 
-    /// At most this many notices a Boop day, this far apart.
-    public static let perDay = 2, gapMs: Int64 = 60 * 60_000
     /// An idle agent counts from this long: past the upper end you've moved on.
     public static let waitingMs: ClosedRange<Int64> = (15 * 60_000)...(60 * 60_000)
     /// At the Mac this long with no break.
@@ -58,8 +54,6 @@ public enum Notices {
         /// Whether Boop has dozed off: only `late` comes then, the small
         /// hours being when it has.
         public var dozing = false
-        /// Whether a wish is open: only `waiting` comes then, if it's awake.
-        public var wishOpen = false
 
         public init(at: Int64, wall: Int64, time: LocalTime) {
             self.at = at
@@ -82,19 +76,18 @@ public enum Notices {
         public var agent: String?
     }
 
-    /// The one notice due at `m`, the rarest first; nil if none is true, all
-    /// that are true rest, today's are spent, or one played just now. Nothing
-    /// while something needs you.
-    public static func due(_ m: Moment) -> Notice? {
-        guard !m.agents.contains(where: \.needsYou), roomToday(m) else { return nil }
-        let order = m.dozing ? (m.wishOpen ? [] : [late(m)]) : m.wishOpen ? [waiting(m)] : [rough(m), stretch(m), late(m), waiting(m)]
-        return order.compactMap { $0 }.first { !rests($0, m) }
+    /// The `waiting` notice due at `m`: nil if no agent has sat long
+    /// enough, all that have rest, Boop has dozed off, or something needs
+    /// you.
+    public static func dueWaiting(_ m: Moment) -> Notice? {
+        m.agents.contains(where: \.needsYou) || m.dozing ? nil : waiting(m)
     }
 
-    static func roomToday(_ m: Moment) -> Bool {
-        let today = m.time.boopDay(m.at)
-        return m.shown.values.filter { m.time.boopDay($0) == today }.count < perDay
-            && !m.shown.values.contains { m.at - $0 < gapMs }
+    /// Any other notice due at `m`, the rarest first; nil if none is true
+    /// or all that are true rest. Nothing while something needs you.
+    public static func dueOther(_ m: Moment) -> Notice? {
+        guard !m.agents.contains(where: \.needsYou) else { return nil }
+        return (m.dozing ? [late(m)] : [rough(m), stretch(m), late(m)]).compactMap { $0 }.first { !rests($0, m) }
     }
 
     static func rests(_ n: Notice, _ m: Moment) -> Bool {
@@ -169,7 +162,7 @@ public enum Notices {
 
     // MARK: A reason for a wish
 
-    /// Why a wish would fit now, for CONTEXT's You row and the wish's reason:
+    /// Why a wish would fit now, for the wish's narration:
     /// you've missed your morning stroke, or you haven't said hi today. Quiet
     /// in the first `historyDays`.
     public static func wishReason(today t: MemoryReader.Tallies?, digests: @autoclosure () -> [DayDigest], daysOld: Int?, at wall: Int64, time: LocalTime) -> String? {

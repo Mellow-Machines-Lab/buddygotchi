@@ -45,9 +45,9 @@ public struct Scenario: Sendable {
         /// Which helper a `helper started` or `helper returned` step is,
         /// `h1` unless it says.
         public var helper: String?
-        /// What a `gesture` step did to the board: `stroke`, `nose`,
-        /// `dizzy`… (render::Gesture's names, `facedown`, and `dismiss`, a
-        /// finger held on the needs-you screen).
+        /// What a `gesture` step did to the board: one of the touches
+        /// (`Touch`: `stroke`, `hold`, `shake`…), or `dismiss`, a finger
+        /// held on the needs-you screen.
         public var kind: String?
         /// How an ask answered ends: a, b, touch or ignored.
         public var pick: String?
@@ -370,7 +370,7 @@ public struct Scenario: Sendable {
             self.checks = checks
         }
         talk = try (o["talk"] as? String).map {
-            guard let t = Talk(rawValue: $0) else { throw bad("talk is quiet, normal or chatty") }
+            guard let t = Talk(rawValue: $0) else { throw bad("talk is quiet or normal") }
             return t
         } ?? .default
         let lastingMoods = pack.lasting.map(\.id)
@@ -418,7 +418,9 @@ public struct Scenario: Sendable {
             step.words = s["words"] as? String
             step.helper = s["helper"] as? String
             step.kind = s["kind"] as? String
-            if event == "gesture", step.kind.flatMap({ Touch(rawValue: $0)?.line() }) == nil { throw badStep("gesture needs a kind the board makes") }
+            if event == "gesture", step.kind != Core.dismissGesture, step.kind.flatMap(Touch.init(rawValue:)) == nil {
+                throw badStep("gesture needs one of the touches: \(Touch.allCases.map(\.rawValue).joined(separator: ", ")), or dismiss")
+            }
             if event == "ask answered" {
                 step.pick = s["pick"] as? String ?? "a"
                 guard ["a", "b", "touch", Asks.ignored].contains(step.pick!) else { throw badStep("an ask's pick is a, b, touch or ignored") }
@@ -489,7 +491,7 @@ public struct Scenario: Sendable {
                 guard unknownTags.isEmpty else { throw badStep("expect.when has \(unknownTags.sorted().joined(separator: ", ")), not a tag") }
                 for (key, values, known) in [("say", step.expect?.say, MomentOutput.says.map(\.name)),
                                              ("intensity", step.expect?.intensity, MomentOutput.sizes.map(\.name)),
-                                             ("move", step.expect?.move, MomentOutput.moves + MomentOutput.replies.map(\.name) + ["unhush", MomentOutput.wave])] {
+                                             ("move", step.expect?.move, MomentOutput.moves + MomentOutput.replies.map(\.name) + [MomentOutput.wave])] {
                     let unknown = (values ?? []).subtracting(known + ["none"])
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not one of \(known.joined(separator: ", "))") }
                 }
@@ -1201,7 +1203,7 @@ public struct Eval {
                                              "todos_total": .int(Int64(step.todos?.total ?? 0))]
             return [hook(.tool, .start, "PreToolUse", list), hook(.tool, .end, "PostToolUse", ["tool": "TodoWrite", "failed": false])]
         case "poke": return [{ $0.poke(at: now) }]
-        case "hush": return [{ $0.effects($0.core.hush(forMs: Core.hushMs, by: .app, at: now), at: now) }]
+        case "hush": return [{ $0.core.quiet(at: now); return $0.effects([], at: now) }]
         case "pokes": return (0..<(step.count ?? 4)).map { _ in { $0.poke(at: now) } }
         // A Claude session opens with no turn yet: Boop is awake and idle,
         // not asleep. No line, so no pass.

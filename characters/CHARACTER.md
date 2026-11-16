@@ -312,7 +312,7 @@ included.
   Mac for 3 h; you haven't touched or talked to Boop in 2 h.`).
 - CONTEXT's rows (`ContextSection`), each only when it has something to say:
   When (the time, the weekday, the part of the day, the special days), Talk
-  (the setting, when it isn't normal, or a hush's minutes left), the buddy
+  (only while it's quiet, with the minutes left when that's for a while), the buddy
   (its level and age), You (at the Mac and untouched, each from an hour,
   never while away, and how long ago it was last lonely, for three hours
   after), Agents (each open session, at most three) and Today (turns and
@@ -349,11 +349,9 @@ prompt or your words, which have signs of their own.
 A line tagged `wish` in `asks.md` is its one want a day, not a question:
 `[wish pet] pet me?` is the sign that makes it, a kind's lines taking turns by the day, `[wish pet met] <3` what it
 holds up as it's met, for the kinds `pet`, `chat` and `work`; code says what
-meets each. `[wish pet how] stroke my face?`, optional, is the sign that makes
-it until you've met that kind once: it says what to do. A pack with no such
-line makes no wish. The gel draws the thought bubble (`state.wish`), its icon
-moving while it shows how (`state.wish_how`), and a lane with none says
-`wants: pet`.
+meets each, and deals it as an idle beat (`IdleBeat`). A pack with no such
+line makes no wish. The gel draws the thought bubble (`state.wish`), and a
+lane with none says `wants: pet`.
 
 **`asks.md`** (optional): what it may ask you, with two answers you tap
 (`Asks`). Ask only what does something with the answer: it becomes part of
@@ -371,10 +369,10 @@ asks.
 - `- [id answer] words` is a follow-up it may hold up after that answer.
 - A question is at most 18 characters, an answer 7, a follow-up 18 (`boopdev
   check`).
-- The sign question (`react.sign`) offers the questions that fit, as "Ask:
-  …", the file's first ones first, and it may always pass. Caps: one an
-  hour, three a day, six on Chatty, none on Quiet, never while something
-  needs you.
+- An ask is dealt as an idle beat (`IdleBeat`): the sign question
+  (`react.sign`) offers the first question that fits, when nothing before it
+  is due, and Jev may always pass. The beat's one cap: one an hour, four a
+  day, none on Quiet, never while something needs you.
 - The board holds the question up as its sign and the two answers in its
   lane. After 45 seconds, or a newer Moment, it ends unanswered (`ev ask`).
   One answered stays off for 30 days, one ignored for a day.
@@ -408,15 +406,15 @@ LISTENING has the top band it gives way. A face with no bar ignores it.
 - A line's own words are printable ASCII. Your phrases are kept as the
   board's fonts draw them (curly quotes made straight, accents precomposed),
   and one with anything the fonts lack is dropped.
-- Lines tagged `[idle]` are its musings instead: held up at an idle
-  check-in, beside any question it may ask, at most once an hour
-  (`Signs.musingEveryMs`), never on Quiet, and Jev may pass. `{turns}` is
+- Lines tagged `[idle]` are its musings instead: the idle beat dealt at an
+  idle check-in when nothing else is due (`IdleBeat`), up to three to choose
+  among, never on Quiet, and Jev may pass. `{turns}` is
   today's turns and `{thread}` the busiest session's thread name (a line
   that needs one is left out without it). A line may need a kept answer's
   tag (`[idle cookie] snack time?`).
 - Lines tagged `[notice waiting]`, `[notice stretch]`, `[notice rough]` or
   `[notice late]` are what it may hold up for a notice (`Notices`): only at
-  an idle check-in, by name. `{agent}` is the agent's name. A pack with no
+  an idle check-in, dealt as the idle beat (`waiting` first), by name. `{agent}` is the agent's name. A pack with no
   lines for a notice never has it.
 
 **`replies.md`** (optional): what it holds up replying to your words
@@ -425,11 +423,11 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 
 - The brain picks a reply (`react.reply`, asked only of your words): yes,
   no, huh, hello, bye, thanks, ouch, comfort, hehe, status or hush
-  (`MomentOutput.replies`), and while hushed unhush. A `huh` to a question
+  (`MomentOutput.replies`). A `huh` to a question
   plays as `dunno`, a shrug. Thanks takes affection and making up too, and
   no a trick turned down or anything asked for an agent.
 - The `bye` lines are also what it holds up at your lock of the Mac, when
-  the rule gives it a real wave (`MomentRule.wave`): `[bye night]` at
+  the rule gives it a real wave (`MomentRule.bye`): `[bye night]` at
   night, `[bye working]` while an agent works.
 - Each line is `- [reply tags] words`. Its first tag is the reply; any more
   are the calendar's or the moment's: `working` (an agent works), `waiting`
@@ -447,9 +445,8 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 - A `status` reply holds up a fact about the agents instead (`StatusReply`),
   so it needs no line. With several sessions it may count them (`2 working,
   1 idle`) and open the drawer (the `do`'s `show`).
-- A `hush` silences the buddy for as long as the moment is big
-  (`Core.hushMsBySize`: 15 minutes small, 30 medium, an hour big; the app's Hush
-  button, 30), and the board shows the `hushed` tag. `unhush` or the popover
+- A `hush` makes Talk quiet for half an hour (`Core.quiet`), as the app's
+  Hush button does. Talking to the buddy, the popover or choosing a Talk
   ends it.
 - The board plays the reply's clip (§15). If `say` says something, Voice
   says the reply's own words, its takes in the voice (§8): a yes says "Yep",
@@ -540,7 +537,7 @@ then go.
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart, unless a touch's `gesture` plays, which stays, or `listening` holds the face, when only the heart goes; a wish left, which fades the bubble and plays the rig's silent `wish-gone` clip, a sigh and a slump of about a second; the feeling after it is Jev's | the Mac's rules |
 | `notice` | You named it in your prompt: it looks up at you, surprised and pleased, as if it heard its name | the Mac (the brain) |
-| `gesture` | The board's own Moment for a touch, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose` (a tap on the face's middle; on the brain's finish that names whose turn it was, a tap on that opens the thread), `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first | the board |
+| `gesture` | The board's own Moment for a touch, its variations in this order (`render::Gesture`): `handoff` (BOOT hands you an agent), `stroke`, `ruffle` (stroked the wrong way), `nose` (a tap on the face's middle; on the brain's finish that names whose turn it was, a tap on that opens the thread), `tickle`, `dizzy` (shaken), `pickup`, `putdown`, `startle` (a thump on the desk), `peekaboo` (turned face up again). A face with fewer draws its first. The Mac reads these as its seven touches (`Touch.read`): a ruffle is a stroke, a nose boop and a tickle pokes, a thump a shake, a put-down and a peekaboo the ends of a pick-up and of face down | the board |
 | `poked` | A poke | the board |
 | `tap_spam` | The third poke in a row, and each after | the board |
 | `listening` | You hold the button to talk; it plays until the reply (at most 30 s, then 8 s) | the board |
@@ -615,7 +612,7 @@ Besides drawing each mood and state, a face:
     the latest session came to rest. The Mac sends the last reached and the
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
-  - `hushed` while the buddy is hushed (`Core.Hush`); your hands at the
+  - Your hands at the
     Mac, `typing` or `reading` (`Hands`); and the Mac's side, `macleft` or
     `macright` (`MacSide`). Boop's level puts no tag on: its body is one
     size at every level. A board with no Mac keeps none of the Mac's tags,

@@ -30,14 +30,14 @@ final class DailyCountsTests: XCTestCase {
         return [
             at(0) { Event(at: $0, source: .claude, type: .prompt, specificType: "reading", session: "s1", cwd: "/secret/thread-name",
                           data: ["phrases": .array([.string("prompt words")]), "kind": "fix", "length": "words"]) },
-            at(1) { Event(at: $0, source: .device, type: .gesture, specificType: "nose") },
+            at(1) { Event(at: $0, source: .device, type: .gesture, specificType: "stroke") },
             at(2) { Event(at: $0, source: .boop, type: .wish, phase: .start, specificType: "pet") },
             at(3) { Event(at: $0, source: .device, type: .gesture, specificType: "stroke") },
             at(3) { Event(at: $0, source: .boop, type: .wish, phase: .end, specificType: "met", data: ["kind": "pet", "waited_ms": .int(60_000)]) },
             at(4) { Event(at: $0, source: .mic, type: .said, specificType: "words", data: ["words": "my private words"]) },
             at(5) { Event(at: $0, source: .boop, type: .needsYou, phase: .start, specificType: Core.needsYou, session: "s1", data: ["agent": "claude"]) },
             at(7) { Event(at: $0, source: .boop, type: .needsYou, phase: .end, specificType: Core.needsYou, session: "s1", data: ["agent": "claude", "outcome": "done"]) },
-            at(8) { Event(at: $0, source: .boop, type: .hush, phase: .start, specificType: "app", data: ["until": .int($0 + 60_000)]) },
+            at(8) { Event.did("Boop replied hush", for: 1, action: MomentOutput.outputName, by: "brain", facts: ["takes": .array([]), "reply": "hush"], at: $0) },
             at(9) { Event(at: $0, source: .device, type: .gesture, specificType: "facedown") },
             at(10) { Event(at: $0, source: .claude, type: .turn, phase: .end, specificType: "StopFailure", session: "s1", cwd: "/secret/thread-name", data: ["outcome": "failed", "error": "api_error"]) },
             at(11) { Event(at: $0, source: .device, type: .link, phase: .end, specificType: "ble") },
@@ -179,7 +179,7 @@ final class DailyCountsTests: XCTestCase {
         var s = reader.open(day: "2026-11-04", carry: nil)
         let word = Event(at: t0, source: .mic, type: .said, specificType: "words")
         _ = reader.read(word, line: nil, into: &s)
-        let touch = Event(at: t0 + 10 * minute, source: .device, type: .gesture, specificType: "nose")
+        let touch = Event(at: t0 + 10 * minute, source: .device, type: .gesture, specificType: "stroke")
         _ = reader.read(touch, line: nil, into: &s)
         XCTAssertEqual(s.counted.hereMinutes, 10)
         var next = reader.open(day: "2026-11-05", carry: s)
@@ -219,7 +219,7 @@ final class DailyCountsTests: XCTestCase {
         XCTAssertNil(after.dreams.state?.tallies.hereSince)
         var m = Notices.Moment(at: back, wall: back, time: time)
         m.hereSince = after.today?.hereSince
-        XCTAssertNil(Notices.due(m), "no stretch across the restart")
+        XCTAssertNil(Notices.dueOther(m), "no stretch across the restart")
 
         feed(after, said(back, seq: 3))
         XCTAssertEqual(after.today?.hereSince, back)

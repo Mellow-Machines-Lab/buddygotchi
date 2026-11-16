@@ -1,7 +1,7 @@
 import Foundation
 
 /// What's true now, as tags: the calendar's (`Days.tags`), how long the
-/// agents have worked or sat idle (the tiers), whether Boop is hushed,
+/// agents have worked or sat idle (the tiers),
 /// your hands at the Mac (`Hands`) and the side of Boop the Mac is on
 /// (`MacSide`). The core sends them in the `state` message
 /// (`when`), and the board shows only the designs whose tags are all on
@@ -11,8 +11,8 @@ import Foundation
 /// the same order (firmware/src/render/tags.h).
 public enum Tags {
     /// Every tag: the calendar's, the board's own two for how busy the
-    /// agents are, the tiers, `hushed`, your hands, then the Mac's side.
-    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + [hushed] + hands + macSides
+    /// agents are, the tiers, your hands, then the Mac's side.
+    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides
 
     /// Your hands at the Mac (`Hands`): the gel types along while you type,
     /// and watches the work with you while you read.
@@ -24,8 +24,6 @@ public enum Tags {
     /// The tags the board reads, in its order: all of them.
     public static let board = all
 
-    /// On while Boop is hushed (`Core.Hush`): the gel zips its mouth.
-    public static let hushed = "hushed"
 
     /// The tiers, by how long the agents have worked (their working
     /// stretch, `Core.stretch`) or sat idle (since the latest session came

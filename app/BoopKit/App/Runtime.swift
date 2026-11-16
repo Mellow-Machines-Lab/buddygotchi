@@ -369,11 +369,10 @@ public final class Runtime: @unchecked Sendable {
                         speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
                         talk: { talkNow() }, effects: { effected($0) },
                         memory: { memoryNow() },
-                        askable: { about, log, questions, mood in
-                            Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talkNow(),
-                                         memory: remembersNow(), wall: wallNow())
+                        askable: { now, questions in
+                            Asks.due(questions, core: core, memory: remembersNow(), at: now, wall: wallNow())
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
-                        company: { remembersNow()?.today }, wishDone: { remembersNow()?.wishDone($0) ?? false })
+                        company: { remembersNow()?.today })
         mind.swears = { swearsNow() }
         mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
         mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
@@ -482,10 +481,10 @@ public final class Runtime: @unchecked Sendable {
         let core = pipeline.core
         var mind = Mind(buddy: pipeline.buddy, steering: steering, reactions: reactions,
                         queue: queue, speaks: speaks, talk: talk, memory: memory,
-                        askable: { about, log, questions, mood in
-                            Asks.askable(about, log, questions: questions, core: core, mood: mood, talk: talk(), memory: remembers, wall: wall())
+                        askable: { now, questions in
+                            Asks.due(questions, core: core, memory: remembers, at: now, wall: wall())
                         }, answerTags: { remembers?.answerTags(at: $0) ?? [] },
-                        company: { remembers?.today }, wishDone: { remembers?.wishDone($0) ?? false })
+                        company: { remembers?.today })
         if let seed { mind.seed = seed }
         mind.swears = swears
         mind.felt = felt ?? { remembers?.felt(at: $0) ?? [] }
@@ -973,6 +972,8 @@ public final class Runtime: @unchecked Sendable {
     public func setTalk(_ talk: Talk) {
         home.async { [self] in
             self.talk = talk
+            // Choosing a Talk ends a quiet for a while.
+            core.endQuiet()
             saveSettings { $0.talk = talk }
             view.setRules(options.steering.rules(talk: talk))
             options.log("talk \(talk.rawValue)")
@@ -980,22 +981,13 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// Hushes every buddy for `ms` (`Core.hushMs`) from the app's button:
-    /// it says nothing until then, and the brain hears of it.
-    public func hush(forMs ms: Int64 = Core.hushMs) {
+    /// The popover's button: quiet for a while (`Core.quietForMs`), or
+    /// with `on` false, Talk as the setting has it again.
+    public func quietForAWhile(_ on: Bool = true) {
         home.async { [self] in
-            let now = options.clock()
-            run(core.hush(forMs: ms, by: .app, at: now))
-            options.log("hush \(ms / 60_000) min")
-        }
-    }
-
-    /// Lets every buddy talk again before its hush runs out.
-    public func unhush() {
-        home.async { [self] in
-            let now = options.clock()
-            run(core.unhush(by: .app, at: now))
-            options.log("unhush")
+            if on { core.quiet(at: options.clock()) } else { core.endQuiet() }
+            options.log(on ? "quiet for \(Core.quietForMs / 60_000) min" : "quiet over")
+            changed()
         }
     }
 

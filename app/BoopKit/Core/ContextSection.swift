@@ -48,18 +48,12 @@ public enum ContextSection {
             + (specialDays.isEmpty ? "" : "; " + specialDays.joined(separator: ", ")) + "."
     }
 
-    /// The Talk row, when the setting isn't normal: what it asks, and why
-    /// it outranks the personality; or, for `silentMs` more, silent (the
-    /// hush), then back to the setting.
-    static func talk(_ t: Talk, silentMs: Int64? = nil, name: String) -> String? {
-        if let ms = silentMs, ms > 0 {
-            return "Talk: silent for \(max(1, (ms + 59_999) / 60_000)) more min, then \(t.rawValue) again: \(name) says nothing till then, but its faces and replies go on, each answering what you said."
-        }
-        return switch t {
-        case .normal: nil
-        case .chatty: "Talk: chatty. You asked \(name) to say something at every face; this outranks PERSONALITY's silent Examples."
-        case .quiet: "Talk: quiet. You asked \(name) to say less: nothing at small moments, and never a swear."
-        }
+    /// The Talk row, while Talk is quiet: what it asks; with `forMs`, for
+    /// how much longer ("shh" or the popover's button, `Core.quiet`).
+    static func talk(_ t: Talk, forMs: Int64? = nil, name: String) -> String? {
+        guard t == .quiet else { return nil }
+        let span = forMs.flatMap { $0 > 0 ? " for \(max(1, ($0 + 59_999) / 60_000)) more min" : nil } ?? ""
+        return "Talk: quiet\(span). You asked \(name) to say less: nothing at small moments, and never a swear."
     }
 
     /// The buddy's row: "Boop: level 12, 40 days old; today's ring 82 of 100."
@@ -113,11 +107,11 @@ public enum ContextSection {
     }
 
     /// The section, or nil when no row has anything to say.
-    public static func section(when: String? = nil, talk t: Talk = .normal, silentMs: Int64? = nil, buddy b: Buddy? = nil,
+    public static func section(when: String? = nil, talk t: Talk = .normal, quietForMs: Int64? = nil, buddy b: Buddy? = nil,
                                company: MemoryReader.Tallies?, agents list: [StatusReply.Agent], wish: String? = nil,
-                               wishToday: String? = nil, noticed: String? = nil, at now: Int64, name: String) -> String? {
-        let rows = [when, talk(t, silentMs: silentMs, name: name), buddy(b, name: name), you(company, wish: wish, at: now, name: name),
-                    agents(list, at: now), today(company, name: name), wishToday, noticed.map { "Noticed: \($0)" }].compactMap { $0 }
+                               noticed: String? = nil, at now: Int64, name: String) -> String? {
+        let rows = [when, talk(t, forMs: quietForMs, name: name), buddy(b, name: name), you(company, wish: wish, at: now, name: name),
+                    agents(list, at: now), today(company, name: name), noticed.map { "Noticed: \($0)" }].compactMap { $0 }
         return rows.isEmpty ? nil : ([heading] + rows).joined(separator: "\n")
     }
 

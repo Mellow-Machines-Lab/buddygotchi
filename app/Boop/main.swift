@@ -18,7 +18,7 @@ let usage = """
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
                onboarding (make dev FRESH=1).
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH]
-                [--talk quiet|normal|chatty] [--brain jev|scripted|none] [--name NAME]
+                [--talk quiet|normal] [--brain jev|scripted|none] [--name NAME]
                 [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.

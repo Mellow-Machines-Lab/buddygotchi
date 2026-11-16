@@ -27,10 +27,6 @@ public enum Asks {
     /// How long one answered stays off, and one ignored; a `keeps` one
     /// answered never comes back.
     public static let answeredOffDays = 30, ignoredOffDays = 1
-    /// At most one ask an hour, and this many a day (chatty, `chattyPerDay`).
-    public static let hourMs: Int64 = 60 * 60_000
-    public static let perDay = 3, chattyPerDay = 6
-
     /// The pack's questions, in the file's order.
     public static func questions(_ lines: [TaggedLine]) -> [Question] {
         lines.compactMap { line in
@@ -49,12 +45,10 @@ public enum Asks {
     }
 
     /// A wish's words from the pack's lines: `[wish pet] pet me?`, the sign
-    /// that makes it; `[wish pet how] stroke my face?`, that sign while it
-    /// shows how, if the pack has one; and `[wish pet met] <3`, the sign as
-    /// it's met. A kind's plain lines take turns by `day`, the Boop day's
-    /// number, so a day's sign stays put and the next day's differs.
-    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind, showsHow: Bool = false, day: Int = 0) -> String? {
-        if showsHow, let how = lines.first(where: { $0.tags == ["wish", kind.rawValue, "how"] }) { return how.text }
+    /// that makes it, and `[wish pet met] <3`, the sign as it's met. A
+    /// kind's plain lines take turns by `day`, the Boop day's number, so a
+    /// day's sign stays put and the next day's differs.
+    public static func wishSign(_ lines: [TaggedLine], _ kind: Core.WishKind, day: Int = 0) -> String? {
         let plain = lines.filter { $0.tags == ["wish", kind.rawValue] }
         return plain.isEmpty ? nil : plain[((day % plain.count) + plain.count) % plain.count].text
     }
@@ -94,38 +88,18 @@ public enum Asks {
         questions.filter { Set($0.tags).isSubset(of: tags) && !off(record($0.id), today: today) }
     }
 
-    /// Whether it may ask anything now, by how many asks it made: none on
-    /// Quiet, at most one an hour, `perDay` a day (chatty more).
-    public static func allowed(talk: Talk, askedAt: [Int64], now: Int64, sameDay: (Int64) -> Bool) -> Bool {
-        guard talk != .quiet else { return false }
-        if askedAt.contains(where: { now - $0 < hourMs }) { return false }
-        return askedAt.filter(sameDay).count < (talk == .chatty ? chattyPerDay : perDay)
-    }
+    /// The tag every ask's moment has: an idle check-in, where asks are
+    /// dealt (`IdleBeat`).
+    public static let moment = "idle"
 
-    /// The moment `about` is for an ask, as its tags, or none when asks
-    /// don't belong there: `idle`, an idle check-in. Never at a finish: its
-    /// sign names the thread, and a wish waits for a check-in.
-    public static func moment(_ about: Event) -> [String] {
-        about.type == .checkIn && about.specificType == "check_in" ? ["idle"] : []
-    }
-
-    /// The questions it may ask at `about`, of `questions`: none but at an
-    /// ask's moment (`moment`), none while something needs you, while it
-    /// listens or is hushed, or past the caps (`allowed`); else those whose
-    /// tags the moment's, the calendar's and the answers kept all cover
-    /// (`offered`).
-    public static func askable(_ about: Event, _ log: LogView, questions: [Question], core: Core, mood: Choice,
-                               talk: Talk, memory: Memory?, wall: Int64) -> [Question] {
+    /// The questions it may ask at an idle check-in at `now`, of
+    /// `questions`: those whose tags the moment's, the calendar's and the
+    /// answers kept all cover, and that aren't off (`offered`). When, and
+    /// how often, is the idle beat's (`IdleBeat`).
+    public static func due(_ questions: [Question], core: Core, memory: Memory?, at now: Int64, wall: Int64) -> [Question] {
         guard let memory, !questions.isEmpty else { return [] }
-        let moment = moment(about)
-        guard !moment.isEmpty else { return [] }
-        let now = about.at, time = core.config.time
-        if core.needsYouBlock != nil || core.listening != nil || core.hushed(at: now) != nil { return [] }
-        let askedAt = log.events.filter { $0.kind == Event.did && $0.action == MomentOutput.outputName && $0["ask"] != nil }.map(\.at)
-        let today = time.boopDay(wall)
-        guard allowed(talk: talk, askedAt: askedAt, now: now, sameDay: { time.boopDay($0) == time.boopDay(now) }) else { return [] }
-        let tags = Set(moment + core.calendar(at: now) + memory.answerTags(at: wall))
-        return offered(questions, tags: tags, record: memory.askRecord, today: today)
+        let tags = Set([moment] + core.calendar(at: now) + memory.answerTags(at: wall))
+        return offered(questions, tags: tags, record: memory.askRecord, today: core.config.time.boopDay(wall))
     }
 
     /// The answers kept as tags on `today`: a kept answer for good,

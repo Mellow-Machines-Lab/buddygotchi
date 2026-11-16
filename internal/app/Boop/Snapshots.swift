@@ -238,7 +238,7 @@ enum Snapshots {
                 hidden.world?.link.nameHidden = true
                 shot("settings-world-name-hidden", model(installer, status: hidden), pane: .settings)
                 try? installer.remove(.claude)
-                shot("settings-chatty", model(installer, status: status(talk: .chatty)), pane: .settings)
+                shot("settings-quiet", model(installer, status: status(talk: .quiet)), pane: .settings)
                 shot("settings-no-hook", model(unbuilt, status: status()), pane: .settings)
                 // A copy on another folder tried to connect Claude, and the
                 // Overview's notice was closed: the row still says why.
@@ -970,13 +970,13 @@ enum Snapshots {
                                                              connected: false, linkTrouble: bluetooth(.unauthorized)))),
             ("no-device", model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],
                                                           connected: false), link: .none)),
-            // Every chip at once (Chatty and Muted), under the longest kind of name.
+            // Every chip at once (Quiet and Muted), under the longest kind of name.
             ("all-chips", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], vol: 0,
-                                                          talk: .chatty, name: "Wobblebottom McSnugs"))),
-            // Hushed: its countdown chip, and no Hush button beside Talk.
-            ("hushed", {
+                                                          talk: .quiet, name: "Wobblebottom McSnugs"))),
+            // Quiet for a while: its countdown chip, and no Hush button beside Talk.
+            ("quiet-for-a-while", {
                 let m = model(installer, status: status(sessions: [["claude", "jetpack", "work"]]))
-                m.status?.hushedUntil = Date().addingTimeInterval(23 * 60 + 10)
+                m.status?.quietUntil = Date().addingTimeInterval(23 * 60 + 10)
                 return m
             }()),
             // Every value at its longest (Long).
@@ -1087,8 +1087,8 @@ enum Snapshots {
             ["claude", Long.project, "work", Long.thread, Long.workspace],
             ["claude", "unknown", "work", Long.thread],
             ["codex", Long.project, "idle", "", Long.workspace],
-        ], vol: 0, talk: .chatty, name: Long.name, mood: Long.mood)
-        s.hushedUntil = Date().addingTimeInterval(29 * 60)
+        ], vol: 0, talk: .quiet, name: Long.name, mood: Long.mood)
+        s.quietUntil = Date().addingTimeInterval(29 * 60)
         s.wishing = "\(Long.name) wishes for \(Core.WishKind.work.words) (3 h 20 min)."
         s.moodReason = Long.told
         s.doingReason = Long.act

@@ -77,8 +77,8 @@ final class MomentRuleTests: XCTestCase {
         XCTAssertEqual(size(finish("failed", minutes: 20)), "big", "big at most")
         XCTAssertEqual(size(finish(minutes: 2, checksFailed: 2)), "big", "hard-won")
         XCTAssertEqual(MomentRule.streakFrom, 3)
-        XCTAssertEqual((1...6).map { size(finish(wins: Int64($0))) }, ["small", "small", "medium", "medium", "medium", "small"],
-                       "from the 3rd of a streak; the 6th starts a new one")
+        XCTAssertEqual((1...6).map { size(finish(wins: Int64($0))) }, ["small", "small", "medium", "medium", "medium", "medium"],
+                       "from the 3rd quick win in a row")
         XCTAssertEqual(size(finish(minutes: 9, tools: 0, kind: "answer")), "small", "a reply")
         XCTAssertEqual(size(finish("stopped", minutes: 9)), "small")
         XCTAssertEqual(size(finish(minutes: 9, afterFix: true)), "small", "the fix was the win")
@@ -98,7 +98,7 @@ final class MomentRuleTests: XCTestCase {
     func testEveryOtherSlotHasItsSize() {
         func size(_ e: Event, _ facts: Facts = [:]) -> String { MomentOutput.sizes[MomentRule.size(e, facts: facts, mood: "calm")].name }
         XCTAssertEqual(size(event(.said)), "medium")
-        for touch in [event(.poke), event(.gesture, nil, "stroke"), event(.gesture, nil, TranscriptView.shake)] {
+        for touch in [event(.poke), event(.gesture, nil, "stroke"), event(.gesture, nil, "shake")] {
             XCTAssertEqual(size(touch, ["in_a_row": 5]), "small")
         }
         func prompt(_ tone: PromptText.Tone?, named: [String] = []) -> Event {
@@ -119,7 +119,7 @@ final class MomentRuleTests: XCTestCase {
         XCTAssertEqual(size(call, ["result": "ok", "failed_before": 2]), "medium", "the fix")
         XCTAssertEqual(size(call, ["failing": 3]), "medium")
         XCTAssertEqual(size(event(.act, .end, "push"), ["act": "push"]), "medium")
-        for e in [event(.checkIn, nil, "check_in"), event(.ask, nil, "a"), event(.needsYou, .end), event(.wish, .end, "met"), event(.hush, .start, "app")] {
+        for e in [event(.checkIn, nil, "check_in"), event(.ask, nil, "a"), event(.needsYou, .end), event(.wish, .end, "met")] {
             XCTAssertEqual(size(e), "small", e.kind)
         }
     }
@@ -209,15 +209,69 @@ final class MomentRuleTests: XCTestCase {
         }
     }
 
+    /// Pins `MomentRule.hello`, the whole table: an unlock's is the rule's,
+    /// a slight wave, or a snub when cross; a back's is Jev's, small, medium
+    /// with the wake-up after an hour, big after a day; a touch is a hello
+    /// only as the day's first show-up or with a dream to tell. The first
+    /// of the day, and the telling, play whole; and one extra comes with it.
+    func testAHelloIsOneRule() {
+        let unlock = event(.lock, .end, "screen"), back = event(.presence, .end, "unlocked"), stroke = event(.gesture, nil, "stroke")
+        XCTAssertEqual(MomentRule.hello(unlock, facts: [:], mood: "calm"),
+                       MomentRule.Hello(size: MomentRule.small, move: nil, wave: .slight, whole: false, extra: nil, asksJev: false))
+        XCTAssertEqual(MomentRule.hello(unlock, facts: [:], mood: "cross")?.wave, .snub)
+        func hello(_ e: Event, _ facts: Facts) -> MomentRule.Hello? { MomentRule.hello(e, facts: facts, mood: "calm") }
+        XCTAssertEqual(hello(back, ["away_ms": .int(20 * min)]),
+                       MomentRule.Hello(size: MomentRule.small, move: nil, wave: nil, whole: false, extra: nil, asksJev: true))
+        XCTAssertEqual(hello(back, ["away_ms": .int(60 * min)])?.move, "wake up")
+        XCTAssertEqual(hello(back, ["away_ms": .int(60 * min)])?.size, MomentRule.medium)
+        XCTAssertEqual(hello(back, ["away_ms": .int(24 * 60 * min)])?.size, MomentRule.big)
+        XCTAssertEqual(hello(back, ["away_ms": .int(20 * min), TranscriptView.firstTodayFact: true])?.whole, true, "the first of Boop's day")
+        XCTAssertEqual(hello(back, ["away_ms": .int(20 * min), "dream_tags": .array([.string("fond")])]),
+                       MomentRule.Hello(size: MomentRule.small, move: nil, wave: nil, whole: true, extra: .telling(tags: ["fond"]), asksJev: true))
+        XCTAssertEqual(hello(back, ["away_ms": .int(20 * min), TranscriptView.noticedFact: "While you were gone…"])?.extra, .whileAway("While you were gone…"))
+        XCTAssertEqual(hello(back, ["away_ms": .int(20 * min), TranscriptView.firstTodayFact: true, TranscriptView.daySignFact: "Day 50!"])?.extra,
+                       .day(sign: "Day 50!"))
+        XCTAssertNil(hello(stroke, [:]), "a touch is only a touch")
+        XCTAssertEqual(hello(stroke, [TranscriptView.firstTodayFact: true])?.whole, true, "but for the day's first show-up")
+        XCTAssertNil(hello(event(.prompt, nil, "reading"), [TranscriptView.firstTodayFact: true]), "never a prompt")
+        XCTAssertNil(hello(event(.lock, .start, "screen"), [:]), "a lock is a bye")
+    }
+
+    /// Pins the one counter (`InARow`): each kind's break, and the one way
+    /// a line says it.
+    func testInARowIsOneCounter() {
+        XCTAssertEqual([InARow.Kind.pokes, .shakes, .quickWins].map(\.gapMs), [3000, 4000, 10 * min])
+        XCTAssertEqual(InARow.Kind.failedCalls.spanMs, WorkStream.ladderMs)
+        XCTAssertNil(InARow.Kind.failedChecks.gapMs)
+        var pokes = InARow()
+        XCTAssertEqual([0, 1000, 3999].map { pokes.add(.pokes, at: $0) }, [1, 2, 3])
+        XCTAssertEqual(pokes.seconds, 4)
+        XCTAssertEqual(pokes.add(.pokes, at: 6999), 1, "3 s after the last starts over")
+        var calls = InARow()
+        XCTAssertEqual([0, 60_000, 119_000, 125_000].map { calls.add(.failedCalls, at: $0) }, [1, 2, 3, 3], "only those within the ladder's span")
+        var checks = InARow()
+        XCTAssertEqual([0, 3_600_000].map { checks.add(.failedChecks, at: $0) }, [1, 2], "no gap breaks it: only a pass does")
+        checks.reset()
+        XCTAssertEqual(checks.count, 0)
+        XCTAssertEqual([1, 2, 3, 4, 11, 12, 13, 21, 22, 23].map(EventLine.nth), ["1st", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd", "23rd"])
+        XCTAssertEqual(EventLine.inARow(1), "")
+        XCTAssertEqual(EventLine.inARow(3), ", the 3rd in a row")
+        XCTAssertEqual(EventLine.inARow(3, "quick win"), ", the 3rd quick win in a row")
+        XCTAssertEqual(EventLine.poke(inARow: 3, name: "Boop"), "You poked Boop, the 3rd in a row.")
+        XCTAssertEqual(EventLine.shake(inARow: 2, name: "Boop"), "You shook Boop, the 2nd in a row.")
+        XCTAssertEqual(EventLine.check(agent: "claude", topic: "tests", thread: "\"api\"", failed: true, inARow: 3), "claude's tests failed on \"api\", the 3rd in a row.")
+        XCTAssertTrue(EventLine.failing(agent: "claude", thread: "\"api\"", count: 3, name: "Boop").hasPrefix("claude's commands keep failing on \"api\", the 3rd in a row, "))
+    }
+
     /// What wakes Jev, all of it: a turn's start, your lock and unlock, a
     /// boop from the world, a session's start and Boop's growth have lines
     /// at most, and never a pass; nor has the working check-in.
     func testWhatWakesJev() {
         XCTAssertEqual(Set(TranscriptView.wakes.keys),
                        ["prompt", "turn_end", "last_message", "tool_end", "poke", "talk", "presence_end", "heartbeat", "needs_you_end",
-                        "gesture", "hush_start", "ask", "wish_end", "act_start", "act_end"])
+                        "gesture", "ask", "wish_end", "act_start", "act_end"])
         XCTAssertEqual(Set(TranscriptView.quiet),
-                       ["turn_start", "presence_start", "needs_you_start", "press", "hush_end", "wish_start", "growth", "lock_start", "lock_end", "world"])
+                       ["turn_start", "presence_start", "needs_you_start", "press", "wish_start", "growth", "lock_start", "lock_end", "world"])
         let view = TranscriptView()
         let log = Transcript.log().view(now: 0)
         let working = Event(at: 0, source: .clock, type: .checkIn, specificType: "working")

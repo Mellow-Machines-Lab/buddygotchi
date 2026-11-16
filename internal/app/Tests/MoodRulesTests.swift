@@ -119,7 +119,7 @@ final class MoodRulesTests: XCTestCase {
         rig.gesture("stroke")
         XCTAssertEqual(face(), "grumpy", "a stroke soothes it a level")
         XCTAssertEqual(changes(harness).last?["message"]?.string, "\(creature) is less cross: grumpy now.")
-        rig.gesture(TranscriptView.shake)
+        rig.gesture("shake")
         XCTAssertEqual(face(), "angry", "a shake provokes it")
 
         // It cools a level every 3 minutes since its last change, then to calm.
@@ -174,7 +174,7 @@ final class MoodRulesTests: XCTestCase {
     /// check failing in a row, a failed turn.
     func testWhatProvokesAndHowMuch() {
         let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
-        let shake = Event(at: 0, source: .device, type: .gesture, specificType: TranscriptView.shake)
+        let shake = Event(at: 0, source: .device, type: .gesture, specificType: "shake")
         let check = Event(at: 0, source: .claude, type: .tool, phase: .end, specificType: "PostToolUseFailure")
         let failed = Event(at: 0, source: .claude, type: .turn, phase: .end, specificType: "StopFailure")
         XCTAssertNil(MoodOutput.provocation(poke, facts: ["in_a_row": 1]))
@@ -190,6 +190,6 @@ final class MoodRulesTests: XCTestCase {
         XCTAssertEqual([1, 2, 3].map { MoodOutput.provoked($0, by: 1, of: 3) }, [2, 3, 3])
         XCTAssertEqual(MoodOutput.provoked(1, by: 3, of: 3), 3)
         XCTAssertEqual([1, 2, 3].map(MoodOutput.soothed), [1, 1, 2])
-        XCTAssertEqual(Touch.allCases.filter(\.soothes), [.stroke, .lean, .swipe])
+        XCTAssertEqual(Touch.allCases.filter(\.soothes), [.stroke, .hold, .swipe])
     }
 }

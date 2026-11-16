@@ -21,8 +21,6 @@ import MellowHarness
 /// writer off it and lands its edits back on it (`queue`).
 public final class Memory: @unchecked Sendable {
     public let store: KeyValueStore
-    /// `wishDone`'s answers: every `state` asks, and they change only here.
-    private var wishesDone: [String: Bool] = [:]
     public let reader: MemoryReader
     public let runner: Checkpointed<MemoryReader>
     public let dreamReader: DreamReader
@@ -225,7 +223,6 @@ public final class Memory: @unchecked Sendable {
             told(day)
         }
         recordAsk(e)
-        recordWish(e)
         recordFelt(e)
         recordNotice(e)
         // The dream's first.
@@ -247,9 +244,8 @@ public final class Memory: @unchecked Sendable {
 
     /// The most notes given a line a dream: each is a call.
     public static let signsADream = 4
-    /// The most offered at an idle check-in; a line shown isn't offered again
-    /// for this many days.
-    public static let feltOffered = 3, feltAgainDays = 14
+    /// A line shown isn't offered again for this many days.
+    public static let feltAgainDays = 14
 
     /// The notes with no line yet, and the lines kept without those of notes
     /// gone. Nothing asked here: a note whose line the checks refused is kept
@@ -301,20 +297,20 @@ public final class Memory: @unchecked Sendable {
         }
     }
 
-    /// What Boop may bring up at `ms`: at most `feltOffered` lines that fit
-    /// `longest` characters (`MemoryPipeline.signRoom`), those shown longest
-    /// ago first, none shown in `feltAgainDays`; none at all if one was shown
-    /// today.
+    /// What Boop may bring up at `ms`: the lines that fit `longest`
+    /// characters (`MemoryPipeline.signRoom`), those shown longest ago
+    /// first, none shown in `feltAgainDays`. When one comes is the idle
+    /// beat's (`IdleBeat`).
     public func felt(at ms: Int64, longest: Int = MemoryPipeline.signMax) -> [Felt] {
         guard let files else { return [] }
         let signs = files.days().signs
         guard !signs.isEmpty else { return [] }
         let shown = feltShown(), today = time.boopDay(ms)
-        guard !shown.values.contains(today), let now = LocalTime.dayNumber(today) else { return [] }
+        guard let now = LocalTime.dayNumber(today) else { return [] }
         func age(_ line: String) -> Int { shown[line].flatMap(LocalTime.dayNumber).map { now - $0 } ?? .max }
         return files.written().notes.compactMap { n in
             signs[n.text].flatMap { $0.isEmpty || $0.count > longest || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
-        }.sorted { age($0.line) > age($1.line) }.prefix(Self.feltOffered).map { $0 }
+        }.sorted { age($0.line) > age($1.line) }
     }
 
     /// When each line was last shown (`felt`, in the key-value store).
@@ -367,26 +363,6 @@ public final class Memory: @unchecked Sendable {
         var shown = noticesShown().filter { e.at - $0.value < longest }
         shown[key] = e.at
         keepJSON(shown, as: "notices", "the notice")
-    }
-
-    // MARK: The wish's "done once"
-
-    /// Whether you've met a wish of `kind` once (`wish.<kind>`). Until
-    /// then it shows how. For you, not for one buddy: you know how now.
-    public func wishDone(_ kind: Core.WishKind) -> Bool {
-        if let known = wishesDone[kind.rawValue] { return known }
-        let done = store.string("wish.\(kind.rawValue)") != nil
-        wishesDone[kind.rawValue] = done
-        return done
-    }
-
-    /// Keeps a wish met (the `wish_end` event).
-    func recordWish(_ e: Event) {
-        guard e.type == .wish, e.phase == .end, e.specificType == Core.WishEnd.met.rawValue, let kind = e["kind"]?.string else { return }
-        do {
-            try store.set(["wish.\(kind)": time.boopDay(e.at)])
-            wishesDone[kind] = true
-        } catch { note("memory: can't keep the wish: \(error)") }
     }
 
     // MARK: The ask record
@@ -539,8 +515,7 @@ public final class Memory: @unchecked Sendable {
     /// readers, with no lines.
     public func catchUp(_ events: [Event]) {
         for e in events {
-            recordWish(e)
-            if e.seq > runner.seq { runner.feed(e, line: nil, live: false) }
+                if e.seq > runner.seq { runner.feed(e, line: nil, live: false) }
             if e.seq > dreams.seq { dreams.feed(e, line: nil, live: false) }
             if e.seq > counts.seq { counts.feed(e, line: nil, live: false) }
         }

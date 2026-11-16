@@ -69,11 +69,11 @@ final class WishTests: XCTestCase {
         XCTAssertNil(r.core.wish, "a prompt you sent")
     }
 
-    /// Which touches meet a pet wish: a stroke, a poke, a nose boop, a tickle
-    /// and the wrong-way stroke; not a shake, a pick-up or face down, nor
-    /// anything else that isn't a hand on its face.
+    /// Which touches meet a pet wish: a stroke, a poke and a finger at
+    /// rest; not a shake, a pick-up or face down, nor anything else that
+    /// isn't a hand on its face.
     func testWhichTouchesMeetAPetWish() {
-        XCTAssertEqual(Set(Touch.allCases.filter(\.meetsPetWish)), [.poke, .stroke, .lean, .ruffle, .nose, .tickle])
+        XCTAssertEqual(Set(Touch.allCases.filter(\.meetsPetWish)), [.poke, .stroke, .hold])
         for touch in Touch.allCases where touch != .poke {
             let r = rig()
             r.core.makeWish(.pet, at: r.now)
@@ -152,7 +152,6 @@ final class WishTests: XCTestCase {
             r.send(.turnEnd)
         }
         XCTAssertNil(r.core.wish)
-        XCTAssertEqual(r.core.wishEnded?.how, .gaveup)
     }
 
     /// It closes quietly when Boop's day ends: no Moment, and no pass.
@@ -166,17 +165,16 @@ final class WishTests: XCTestCase {
         core.wish = Core.Wish(kind: .pet, since: evening, countedTo: evening)
         let fx = core.tick(at: evening + 8 * 3_600_000)
         XCTAssertNil(core.wish)
-        XCTAssertEqual(core.wishEnded?.how, .closed)
         XCTAssertFalse(fx.contains { if case .reaction(let m) = $0 { m.anim != nil } else { false } }, "at most a caption, of its dozing off")
-        // It closed yesterday's wish: the new day's rows don't say both.
+        // It closed yesterday's wish: the new day may have its own.
         let morning = evening + 8 * 3_600_000
-        XCTAssertEqual(core.wishRow(at: morning, name: "Boop"), "no wish yet today")
-        XCTAssertNil(core.wishToday(at: morning, name: "Boop"), "nor that it closed today")
+        XCTAssertFalse(core.wishedToday(at: morning))
+        XCTAssertNil(core.wishRow(name: "Boop"))
         let read = Core(config: .init(time: LocalTime(timeZone: TimeZone(identifier: "UTC")!)))
         read.setWallClock(morning, at: morning)
         read.replay(Event(at: evening, source: .boop, type: .wish, phase: .start, specificType: "pet"))
         read.replay(Event(at: morning, source: .boop, type: .wish, phase: .end, specificType: "closed", data: ["kind": "pet"]))
-        XCTAssertNil(read.wishToday(at: morning, name: "Boop"), "read back too")
+        XCTAssertFalse(read.wishedToday(at: morning), "read back too")
     }
 
     /// Kept like the hush: a launch reads an open wish back, and its wait:
@@ -229,46 +227,23 @@ final class WishTests: XCTestCase {
         XCTAssertEqual(r.core.wish?.waitedMs, 20 * minute, "only up to its since")
     }
 
-    /// CONTEXT's rows say the facts; the board's wire has the kind.
-    func testContextSaysIt() {
+    /// CONTEXT's row says the open wish, and only that; the board's wire
+    /// has the kind. One wish a Boop day: code keeps count.
+    func testContextSaysTheOpenWish() {
         let r = rig()
-        XCTAssertTrue(r.core.wishRow(at: r.now, name: "Boop")?.hasPrefix("no wish yet today") == true)
-        XCTAssertFalse(r.core.wishRow(at: r.now, name: "Boop")?.contains("half gone") == true, "the nudge is only for an idle check-in")
+        XCTAssertNil(r.core.wishRow(name: "Boop"), "none open: no row")
+        XCTAssertFalse(r.core.wishedToday(at: r.now))
         r.core.makeWish(.pet, at: r.now)
-        XCTAssertEqual(r.core.wishRow(at: r.now, name: "Boop"), "Boop's wish: a pet, waiting 1 min while you were here")
+        XCTAssertEqual(r.core.wishRow(name: "Boop"), "Boop's wish: a pet, waiting 1 min while you were here")
         XCTAssertTrue(r.state.jsonLine.contains(#""wish":"pet""#), r.state.jsonLine)
+        XCTAssertFalse(r.state.jsonLine.contains("wish_how"), "no how sign any more")
         r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
-        XCTAssertNil(r.core.wishRow(at: r.now, name: "Boop"))
-        XCTAssertEqual(r.core.wishToday(at: r.now, name: "Boop"), "Boop's wish today: met.")
+        XCTAssertNil(r.core.wishRow(name: "Boop"))
+        XCTAssertTrue(r.core.wishedToday(at: r.now), "met, and that was today's")
     }
 
-    /// The nudge, from noon, and only at an idle check-in: elsewhere, such as
-    /// at a poke, it would only press.
-    func testTheDaysHalfGoneOnlyAtAnIdleCheckIn() {
-        let core = Core(config: .init(time: LocalTime(timeZone: TimeZone(identifier: "UTC")!)))
-        var c = Calendar(identifier: .gregorian)
-        c.timeZone = TimeZone(identifier: "UTC")!
-        let afternoon = Int64(c.date(from: DateComponents(year: 2026, month: 10, day: 26, hour: 15))!.timeIntervalSince1970 * 1000)
-        let morning = afternoon - 6 * 3_600_000
-        core.setWallClock(afternoon, at: afternoon)
-        XCTAssertEqual(core.wishRow(at: afternoon, name: "Boop", idle: true), "no wish yet today, and the day's half gone")
-        XCTAssertEqual(core.wishRow(at: afternoon, name: "Boop"), "no wish yet today")
-        XCTAssertEqual(core.wishRow(at: morning, name: "Boop", idle: true), "no wish yet today")
-    }
-
-    /// Showing how: until you've met a kind once, the pack's longer sign and
-    /// `state.wish_how`; a "done once" kept per kind ends both for that kind.
-    func testDoneOnceEndsTheShowingHow() throws {
-        let lines = TaggedLine.parse("""
-            - [wish pet] pet me?
-            - [wish pet how] stroke my face?
-            - [wish chat] talk to me?
-            """)
-        XCTAssertEqual(Asks.wishSign(lines, .pet, showsHow: true), "stroke my face?")
-        XCTAssertEqual(Asks.wishSign(lines, .pet), "pet me?")
-        XCTAssertEqual(Asks.wishSign(lines, .chat, showsHow: true), "talk to me?", "a pack with no such line")
-
-        // A kind's plain lines take turns by the day, the how-sign first.
+    /// A kind's lines take turns by the day; a `how` line is no wish's sign.
+    func testAWishsSignTakesTurnsByTheDay() {
         let many = TaggedLine.parse("""
             - [wish pet] pet me?
             - [wish pet how] stroke my face?
@@ -277,53 +252,10 @@ final class WishTests: XCTestCase {
             """)
         XCTAssertEqual((0..<4).map { Asks.wishSign(many, .pet, day: $0) }, ["pet me?", "scritches?", "pat pat?", "pet me?"])
         XCTAssertEqual(Asks.wishSign(many, .pet, day: 2), Asks.wishSign(many, .pet, day: 2), "the same day, the same sign")
-        XCTAssertEqual(Asks.wishSign(many, .pet, showsHow: true, day: 2), "stroke my face?", "until you've met it once")
-
-        let r = rig()
-        let memory = Memory(store: try KeyValueStore(directory: nil), time: r.time)
-        memory.attach(to: r.pipeline)
-        r.core.wishDone = memory.wishDone
-        XCTAssertFalse(memory.wishDone(.pet))
-        r.core.makeWish(.pet, at: r.now)
-        XCTAssertTrue(r.core.snapshot(at: r.now).wishHow)
-        XCTAssertTrue(r.core.snapshot(at: r.now).jsonLine.contains(#""wish_how":true"#))
-        r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
-        XCTAssertTrue(memory.wishDone(.pet), "done once")
-        XCTAssertFalse(memory.wishDone(.chat), "for that kind")
-        r.core.makeWish(.pet, at: r.now)
-        XCTAssertEqual(r.core.snapshot(at: r.now).wish, "pet")
-        XCTAssertFalse(r.core.snapshot(at: r.now).wishHow, "still, from here on")
-        XCTAssertFalse(r.core.snapshot(at: r.now).jsonLine.contains("wish_how"))
-        r.note(Fx(r.pipeline.gesture("stroke", at: r.now)))
-        r.core.makeWish(.chat, at: r.now)
-        XCTAssertTrue(r.core.snapshot(at: r.now).wishHow, "a kind not yet met")
     }
 
-    /// The sign question offers its how sign until done, then the plain one.
-    func testTheSignOfferedFollowsDoneOnce() throws {
-        let lines = TaggedLine.parse("""
-            - [wish pet] pet me?
-            - [wish pet how] stroke my face?
-            """)
-        var done = false
-        var made: [Core.WishKind] = []
-        let react = MomentOutput(queue: { _, _ in }, blocked: { nil }, asks: lines, wishable: { _, _ in [.pet] },
-                                 makeWish: { k, _ in made.append(k) }, wishDone: { _ in done })
-        let log = Transcript.log().view(now: 0)
-        let checkIn = Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in")
-        func offered() throws -> [String] {
-            try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey }).options.map(\.name)
-        }
-        XCTAssertEqual(try? offered(), ["none", "stroke my face?"])
-        _ = react.run(["react.face": Answer(choice: "curious", probabilities: ["curious": 1]),
-                       Signs.questionKey: Answer(choice: "stroke my face?", probabilities: ["stroke my face?": 1])], now: checkIn, log: log)
-        XCTAssertEqual(made, [.pet], "the how sign makes the wish")
-        done = true
-        XCTAssertEqual(try? offered(), ["none", "pet me?"])
-    }
-
-    /// The sign question offers the pack's wishes at an ask's moment, and
-    /// picking one makes it; Quiet says nothing with it.
+    /// The wish dealt as the idle beat is offered by its sign, and holding
+    /// it up makes it.
     func testPickingItsSignMakesIt() throws {
         let lines = TaggedLine.parse("""
             - [wish pet] pet me?
@@ -335,7 +267,7 @@ final class WishTests: XCTestCase {
         var made: [Core.WishKind] = []
         var queued: [Moment] = []
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, asks: lines,
-                                 wishable: { _, _ in [.pet] }, makeWish: { k, _ in made.append(k) })
+                                 idleBeat: { _, _, _ in [IdleBeat.Candidate(.wish, signs: ["pet me?"], wish: .pet)] }, makeWish: { k, _ in made.append(k) })
         let log = Transcript.log().view(now: 0)
         let checkIn = Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in")
         let sign = try XCTUnwrap(react.questions(now: checkIn, log: log).first { $0.key == Signs.questionKey })

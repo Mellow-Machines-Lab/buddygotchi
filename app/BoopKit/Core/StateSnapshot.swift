@@ -207,8 +207,6 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
     public var wish: String?
-    /// Whether the wish shows how, its icon moving: until you've met one of its kind.
-    public var wishHow = false
 
     /// What you call the buddy, when that isn't the pack's own name, which the
     /// board knows: its own captions say it. Nil sends none.
@@ -358,7 +356,6 @@ public struct StateSnapshot: Equatable, Sendable {
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if let buddy { fields["buddy"] = .string(buddy) }
         if let wish { fields["wish"] = .string(wish) }
-        if wishHow { fields["wish_how"] = true }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }

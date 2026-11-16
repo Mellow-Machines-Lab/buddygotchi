@@ -263,9 +263,9 @@ func lined(_ fx: Fx) -> [String] {
     events(fx).filter { !$0.wakesBrain }.map(\.line)
 }
 
-/// A chatty Boop's rules, for tests that need the working check-in often.
+/// Rules for tests that need the working check-in often.
 extension Personality.Rules {
-    static let chatty = Personality.Rules(workCheckInMs: 45_000...90_000)
+    static let often = Personality.Rules(workCheckInMs: 45_000...90_000)
 }
 
 /// The working check-ins' lines: no rule mumbles,
@@ -388,7 +388,7 @@ final class CoreAgentWorkTests: XCTestCase {
     /// net's ten minutes, so Boop stayed amber about 11 minutes after Esc.
     func testClaudesIdleNoticeAnswersEveryRequest() {
         for asker in ["main agent", "notification alone"] {
-            let rig = CoreRig(rules: .chatty)
+            let rig = CoreRig(rules: .often)
             rig.send(.turnStart)
             rig.send(.needsYou, tool: asker == "main agent" ? "Bash" : nil)
             rig.wait(61_000)
@@ -421,7 +421,7 @@ final class CoreAgentWorkTests: XCTestCase {
     /// counts, but the session stays idle, with no working check-in, and only one
     /// stopped turn is recorded. A call that starts afterwards works again.
     func testALateResultDoesntRestartAStoppedTurn() {
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.send(.turnStart)
         rig.send(.activity, tool: "Read", id: "r")
         rig.send(.activity, tool: "Bash", id: "b")
@@ -469,7 +469,7 @@ final class CoreAgentWorkTests: XCTestCase {
     /// the stop was dropped for a session no longer working, and the late
     /// result made it work, with working check-ins, for up to an hour.
     func testAStopAfterTheSafetyNetEndsTheOpenTurn() {
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.send(.turnStart, .codex, session: "c")
         rig.send(.activity, .codex, session: "c", tool: "shell", id: "c1")
         rig.send(.needsYou, .codex, session: "c", tool: "shell")
@@ -490,7 +490,7 @@ final class CoreAgentWorkTests: XCTestCase {
         // interrupts the subagent's call while a sibling's result races it;
         // or Claude's idle notice comes instead.
         for stop in ["interrupt", "idle notice"] {
-            let rig = CoreRig(rules: .chatty)
+            let rig = CoreRig(rules: .often)
             rig.send(.turnStart)
             rig.send(.activity, tool: "Task", id: "t")
             rig.send(.activity, subagent: "a1", tool: "Bash", id: "b")
@@ -587,7 +587,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.wait(30_000)
         rig.send(.activity, tool: "Edit", failed: false, id: "e")
         let second = events(rig.send(.turnEnd))
-        XCTAssertEqual(second.map(\.line), [#"claude finished turn 1 on "landing": done, a short turn, 1 tool call, the 2nd quick win of a streak."#],
+        XCTAssertEqual(second.map(\.line), [#"claude finished turn 1 on "landing": done, a short turn, 1 tool call, the 2nd quick win in a row."#],
                        "a second finish on the thread within 10 minutes")
         XCTAssertEqual(second.first?.facts["tools"], .int(1), "its own call only")
         XCTAssertEqual(second.first?.facts["topics"], .object([:]), "none of the last turn's topics")
@@ -641,7 +641,7 @@ final class CoreAgentWorkTests: XCTestCase {
     /// its end left working, check-ins and all, until the idle notice
     /// stopped that turn with a `stopped` nobody caused.
     func testABackgroundHelperIsNoTurn() {
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.send(.turnStart)
         rig.send(.activity, tool: "Task", id: "tk")
         rig.send(.subagentStart, subagent: "a1")
@@ -1190,7 +1190,7 @@ final class CoreNeedsYouTests: XCTestCase {
     /// creates it idle, and a turn gone stale stays stale. A request that
     /// came while no turn was going leaves the session idle when it clears.
     func testASubagentsEndNeverMakesASessionWork() {
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.turn(5000)
         XCTAssertEqual(states(rig.send(.subagentEnd, subagent: "a1")), [])
         XCTAssertEqual(rig.sessions, [["claude", "landing", "idle"]])
@@ -1352,7 +1352,7 @@ final class CoreNeedsYouTests: XCTestCase {
     /// and no working check-in while the agent may still be waiting on its prompt.
     func testSafetyNetClearsAfterTenQuietMinutes() {
         XCTAssertEqual(SessionFold.safetyNetMs, 600_000)
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.send(.turnStart)
         rig.send(.needsYou, tool: "Bash")
         rig.wait(599_000)
@@ -1369,7 +1369,7 @@ final class CoreNeedsYouTests: XCTestCase {
     /// saw through its 2 s grace, as when the Mac sleeps right after Codex
     /// asks: the session goes idle rather than staying at work.
     func testSafetyNetCoversACodexRequestStillInItsGrace() {
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.send(.turnStart, .codex)
         rig.send(.activity, .codex, tool: "shell", topic: "deploy")
         rig.send(.needsYou, .codex, tool: "shell")
@@ -1798,7 +1798,8 @@ final class CoreYouAndBoopTests: XCTestCase {
     }
 
     /// Face down is do not disturb until it's turned back up: nothing
-    /// wakes the brain in between, and turning it up does.
+    /// wakes the brain in between. Turning it up is face down's end, with
+    /// no line of its own; what comes after wakes the brain again.
     func testFaceDownHoldsTheBrainUntilItsTurnedUp() {
         let rig = CoreRig()
         rig.send(.turnStart)
@@ -1807,7 +1808,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(woke(rig.send(.turnEnd)), [], "a finished turn while it lies face down")
         XCTAssertEqual(woke(rig.poke()), [])
         rig.wait(5000)
-        XCTAssertEqual(woke(rig.note(Fx(rig.pipeline.gesture("peekaboo", at: rig.now)))).count, 1)
+        XCTAssertEqual(events(rig.note(Fx(rig.pipeline.gesture("peekaboo", at: rig.now)))), [], "the board's peekaboo: face down's end")
         rig.wait(5000)
         rig.send(.turnStart)
         rig.wait(60_000)
@@ -2017,10 +2018,10 @@ final class CoreYouAndBoopTests: XCTestCase {
             lines += woke(rig.poke())
             rig.wait(900)
         }
-        XCTAssertEqual(lines, ["You poked \(creature).", "You poked \(creature) 2 times in a row.", "You poked \(creature) 3 times in a row.",
-                               "You poked \(creature) 4 times in a row."])
+        XCTAssertEqual(lines, ["You poked \(creature).", "You poked \(creature), the 2nd in a row.", "You poked \(creature), the 3rd in a row.",
+                               "You poked \(creature), the 4th in a row."])
         rig.wait(2100)
-        XCTAssertEqual(woke(rig.poke()), ["You poked \(creature) again."], "3 s after the last: a new run, within 2 minutes of the last")
+        XCTAssertEqual(woke(rig.poke()), ["You poked \(creature)."], "3 s after the last: a new run")
         var fx = Fx()
         for _ in 0..<20 { fx += rig.poke() }
         XCTAssertEqual(woke(fx).count, 20, "no limit")
@@ -2040,7 +2041,7 @@ final class CoreYouAndBoopTests: XCTestCase {
     /// Setting the Mac's clock back an hour doesn't stretch the working
     /// check-in's wait; moving it past midnight starts a new day.
     func testTimersFollowTheSteadyClockAndDaysTheWallClock() {
-        let rig = CoreRig(seed: 7, rules: .chatty)
+        let rig = CoreRig(seed: 7, rules: .often)
         rig.send(.turnStart)
         rig.wait(1000)
         rig.core.setWallClock(rig.now - 3_600_000, at: rig.now)  // the Mac's clock set back an hour
@@ -2109,7 +2110,7 @@ final class CorePersonalityTests: XCTestCase {
     /// (45–90 s here); a reaction every 30 s does.
     func testTheWorkingCheckInWaitsFromBoopsLastReaction() {
         func beats(reacting: Bool) -> Int {
-            let rig = CoreRig(seed: 7, rules: .chatty)
+            let rig = CoreRig(seed: 7, rules: .often)
             rig.send(.turnStart, session: "long")
             var n = 0
             for _ in 0..<20 {
@@ -2428,7 +2429,7 @@ final class CoreRulesTests: XCTestCase {
     /// session, working for an hour, or idle (awake at full backlight) for
     /// a day, and a late `Stop` cheered.
     func testALateHookAfterSessionEndDoesntBringItBack() {
-        let rig = CoreRig(rules: .chatty)
+        let rig = CoreRig(rules: .often)
         rig.send(.turnStart)
         rig.send(.activity, tool: "Bash", id: "b")
         rig.send(.needsYou, tool: "Bash")

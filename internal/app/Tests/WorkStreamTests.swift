@@ -307,7 +307,7 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(fail("2", error: "denied"), [], "you said no")
         XCTAssertEqual(fail("3", error: "timeout"), [])
         XCTAssertEqual(fail("4"), [])
-        XCTAssertEqual(fail("5"), [#"claude's commands keep failing on "landing": 3 in 2 minutes, each one hitting Boop in the face. The turn goes on."#])
+        XCTAssertEqual(fail("5"), [#"claude's commands keep failing on "landing", the 3rd in a row, each one hitting Boop in the face. The turn goes on."#])
         XCTAssertEqual(fail("6").count, 1, "the throw")
         XCTAssertEqual(fail("7"), [], "past the top rung")
         rig.now += WorkStream.ladderMs

@@ -49,9 +49,9 @@ extension Runtime {
         /// How much it says, chosen in Settings, and whether the pack
         /// offers a choice: none when its steering has no talk file.
         public var talk = Talk.default
-        /// While Boop is hushed, when it may talk again, for the popover's
-        /// countdown.
-        public var hushedUntil: Date?
+        /// While Boop is quiet for a while, when that ends, for the
+        /// popover's countdown.
+        public var quietUntil: Date?
         /// Why Boop feels as it does: what moved its mood last, in words
         /// ("You came back after 26 hours away."). Nil when nothing in the
         /// log says.
@@ -168,7 +168,7 @@ extension Runtime {
         status.talk = talk
         // To the second: the wall and the monotonic clock are read apart, and a
         // millisecond's wobble would make every status a new one.
-        status.hushedUntil = core.hushed(at: now).map { Date(timeIntervalSince1970: (Double(wall + $0.until - now) / 1000).rounded()) }
+        status.quietUntil = core.quietUntil(at: now).map { Date(timeIntervalSince1970: (Double(wall + $0 - now) / 1000).rounded()) }
         status.uncleanExit = uncleanExit
         status.board = settings.board
         status.typesAlong = settings.typesAlong

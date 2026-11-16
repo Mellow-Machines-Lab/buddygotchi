@@ -58,23 +58,6 @@ final class AsksTests: XCTestCase {
         XCTAssertEqual(offered(["idle"], ["snack": Asks.Record(asked: "2026-10-02", answer: "pizza", keeps: true)]), ["tabs"])
     }
 
-    /// At most one ask an hour and three a day; chatty six; quiet none.
-    func testTheCaps() {
-        let hour = Asks.hourMs
-        func allowed(_ talk: Talk, _ ago: [Int64]) -> Bool {
-            Asks.allowed(talk: talk, askedAt: ago.map { noon - $0 }, now: noon, sameDay: { _ in true })
-        }
-        XCTAssertTrue(allowed(.normal, []))
-        XCTAssertFalse(allowed(.quiet, []), "quiet asks nothing")
-        XCTAssertFalse(allowed(.normal, [hour - 1]), "one an hour")
-        XCTAssertTrue(allowed(.normal, [hour, 2 * hour]))
-        XCTAssertFalse(allowed(.normal, [hour, 2 * hour, 3 * hour]), "three a day, Asks.perDay")
-        XCTAssertTrue(allowed(.chatty, [hour, 2 * hour, 3 * hour]))
-        XCTAssertFalse(allowed(.chatty, (1...6).map { Int64($0) * hour }), "six a day chatty, Asks.chattyPerDay")
-        XCTAssertEqual([Asks.perDay, Asks.chattyPerDay], [3, 6])
-        XCTAssertEqual(hour, 3_600_000)
-    }
-
     /// A kept answer is a tag for good, another for 30 days, an ignored
     /// one none.
     func testAnswersBecomeTags() {
@@ -103,22 +86,21 @@ final class AsksTests: XCTestCase {
         XCTAssertEqual(memory.askRecord("tabs"), Asks.Record(asked: "2026-10-27", keeps: false, ignored: true))
     }
 
-    /// An idle moment offers the idle questions; nothing is asked while
-    /// an agent needs you, or with no memory to keep the answer.
-    func testNothingAsksWhileAnAgentNeedsYou() throws {
+    /// An idle check-in has the idle questions due; none with no memory
+    /// to keep the answer. Whether Boop may start anything then, an agent
+    /// needing you say, is the idle beat's (`IdleBeatTests`).
+    func testTheIdleQuestionsAreDue() throws {
         let rig = CoreRig()
         let memory = Memory(store: try KeyValueStore(directory: nil), time: rig.time)
         let questions = Asks.questions(lines)
         rig.send(.sessionStart)
-        func askable(_ memory: Memory?) -> [String] {
-            let about = Event(at: rig.now, source: .clock, type: .checkIn, specificType: "check_in")
-            return Asks.askable(about, rig.pipeline.harness.log.view(now: rig.now), questions: questions, core: rig.core,
-                                mood: MoodOutput.choice(), talk: .normal, memory: memory, wall: rig.now).map(\.id)
+        func due(_ memory: Memory?) -> [String] {
+            Asks.due(questions, core: rig.core, memory: memory, at: rig.now, wall: rig.now).map(\.id)
         }
-        XCTAssertEqual(askable(memory), ["snack", "tabs"], "an idle check-in, nobody untouched an hour yet")
-        XCTAssertEqual(askable(nil), [])
+        XCTAssertEqual(due(memory), ["snack", "tabs"])
+        XCTAssertEqual(due(nil), [])
         rig.send(.needsYou, tool: "Bash")
-        XCTAssertEqual(askable(memory), [], "none while something needs you")
+        XCTAssertFalse(rig.core.mayBeOwnBeat(at: rig.now), "nothing of Boop's own while something needs you")
     }
 
     /// The idle musings: [idle] lines, blanks from the day, a line needing
@@ -135,7 +117,6 @@ final class AsksTests: XCTestCase {
         XCTAssertFalse(Signs.musings(lines, tags: [], turns: 1, thread: "").contains("1 turns today!"), "turns from 2")
         XCTAssertEqual(Signs.musings(lines, tags: ["cookie"], turns: 7, thread: "api"),
                        ["quiet day...", "7 turns today!", "api again?", "snack time?"])
-        XCTAssertEqual(Signs.musingEveryMs, 3_600_000, "at most once an hour")
     }
 
     /// The pack check finds a line neither a question nor a follow-up, one

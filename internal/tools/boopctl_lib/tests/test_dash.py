@@ -627,10 +627,8 @@ class MemoryTests(unittest.TestCase):
         talk = feed.talk_level
         self.assertEqual(talk(None), "no pass yet")
         self.assertEqual(talk(["When: 09:02, Saturday, morning."]), "normal")
-        self.assertEqual(talk(["Talk: chatty. You asked Pip to say something at every face."]), "chatty")
         self.assertEqual(talk(["Talk: quiet. You asked Pip to say less."]), "quiet")
-        self.assertEqual(talk(["Talk: silent for 4 more min, then quiet again: Pip says nothing till then."]),
-                         "silent for 4 more min, then quiet again")
+        self.assertEqual(talk(["Talk: quiet for 4 more min. You asked Pip to say less."]), "quiet for 4 more min")
         self.assertEqual(feed.context_rows("You are.\n\nCONTEXT (how things stand. x)\nWhen: 9.\nTalk: quiet.\n\n"
                                            "HISTORY (oldest first)\nh"), ["When: 9.", "Talk: quiet."])
         self.assertIsNone(feed.context_rows("You are.\nMOOD\ncalm"), "an older log's prompt")

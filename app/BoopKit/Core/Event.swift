@@ -51,14 +51,10 @@ extension Event {
         /// picked in the board's agents' drawer, which it opens.
         case press
         /// What you did to the board, which it already reacted to: a
-        /// stroke, a boop on the nose, a shake, a pick-up, face down…, as the
-        /// event's `specific_type` (render::Gesture's names, and `facedown`).
+        /// stroke, a hold, a shake, a pick-up, a swipe, face down, as the
+        /// event's `specific_type` (`Touch`'s names; a pick-up's and face
+        /// down's end as phase `end`), and `dismiss`.
         case gesture
-        /// Boop hushed: told to be quiet (`start`, by `app` or `talk` as
-        /// its `specific_type`, with `until`), and free to talk again
-        /// (`end`, why as its `specific_type`). The core's: it reads them
-        /// back on launch.
-        case hush
         /// A work act starting or coming to its result (`WorkStream.Act`):
         /// `specific_type` is its kind, with its `session`, its sign's
         /// `words`, whether it's `full`, and at its end whether it `passed`.

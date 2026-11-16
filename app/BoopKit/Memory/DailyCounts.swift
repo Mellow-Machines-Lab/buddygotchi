@@ -153,6 +153,8 @@ public final class CountsReader: TranscriptReader {
         if e.kind == Event.did {
             if e.action == Core.openThread, e["ok"]?.bool != false { s.row.threadsOpened += 1 }
             if e.action == MomentOutput.outputName, e["ok"]?.bool != false, case .array(let takes)? = e["takes"], !takes.isEmpty { s.row.spoken += 1 }
+            // "Shh": the hush reply, which makes it quiet for a while.
+            if e.action == MomentOutput.outputName, e["ok"]?.bool != false, e["reply"]?.string == MomentOutput.hushReply { s.row.hushes += 1 }
         }
         switch e.type {
         case .wish?:
@@ -175,8 +177,7 @@ public final class CountsReader: TranscriptReader {
                 s.row.answered += 1
                 s.row.answerMs += max(0, e.at - from)
             }
-        case .hush? where e.phase == .start: s.row.hushes += 1
-        case .gesture? where e.specificType == "facedown": s.row.faceDown += 1
+        case .gesture? where Touch(e) == .facedown: s.row.faceDown += 1
         case .turn? where e.phase == .end && e["outcome"]?.string == "failed": s.row.failures += 1
         case .act? where e.phase == .end && e["passed"]?.bool == false: s.row.failures += 1
         case .growth?: s.row.level = e["level"]?.int.map(Int.init) ?? s.row.level

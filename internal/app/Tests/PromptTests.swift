@@ -289,7 +289,7 @@ final class PromptTests: XCTestCase {
         rig.wait(5000)
         rig.send(.turnStart)
         rig.wait(5000)
-        XCTAssertEqual(woke(rig.send(.turnEnd)), [#"claude finished turn 2 on "landing": done, a very short turn, no tool calls, the 2nd quick win of a streak."#])
+        XCTAssertEqual(woke(rig.send(.turnEnd)), [#"claude finished turn 2 on "landing": done, a very short turn, no tool calls, the 2nd quick win in a row."#])
     }
 
     /// Pins the drop: a message's reading that comes once the next turn
@@ -321,7 +321,7 @@ final class PromptTests: XCTestCase {
         let inTime = try finish()
         rig.wait(1000)
         let step = try XCTUnwrap(rig.pipeline.read(PromptIntake.heard(inTime.text, names: []), about: inTime.end, at: rig.now))
-        XCTAssertEqual(step.views.map(\.line), [#"claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win of a streak, saying it's done."#])
+        XCTAssertEqual(step.views.map(\.line), [#"claude finished turn 2 on "landing": done, a short turn, no tool calls, the 2nd quick win in a row, saying it's done."#])
         XCTAssertEqual(step.views.map(\.wakesBrain), [true])
     }
 
