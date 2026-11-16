@@ -46,12 +46,22 @@ waits, and shows as you come back.
 
 ## Several agents
 
-Boop holds one card. Which:
+Boop holds one card, and keeps it. With 7 or 8 agents at work, the card
+doesn't flick between them:
 
-- the card that changed last, but not before the one in its hands has had 8 s;
-- a result always gets its turn, since its start is a change;
-- a swipe across the card moves to the next (leftwards) or the one before,
-  and keeps your choice for 2 minutes.
+- It holds the card of the agent you last prompted. Another agent's status
+  never takes it.
+- A swipe across the card moves to the next agent (leftwards) or the one
+  before, and Boop holds that one until you swipe or prompt again.
+- Only a result interrupts. Each result takes the card once, in the order
+  the turns finished, and keeps it at least 8 s before the next. Then the
+  card you were on comes back. A result that waited out its 15 s is skipped:
+  it's still in the drawer and the popover.
+
+The card is one agent at a time; the drawer, pulled up from the strip, is
+every agent at once. There's no mode to switch between them. In the drawer, a
+row's second line is its card's words while it has one ("claude · running
+the tests"), else its project, so the overview needs no new layout.
 
 Dots under the card say how many there are and which this is. The card's rim
 is its session's lane colour, the same as its words in the work stream and

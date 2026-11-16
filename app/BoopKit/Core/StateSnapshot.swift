@@ -257,7 +257,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// a tap on its row sends back (`ev drawer` `pick`), whether it needs
     /// you, works or rests (`n`, `w`, `i`), its work stream lane's slot,
     /// whose colour it wears (-1 for none), its agent, its thread's name
-    /// (else its project) and its project (`""` when that's the title).
+    /// (else its project) and its second line: its card's words while it
+    /// has a card, else its project (`""` when that's the title).
     public struct Row: Equatable, Sendable {
         public var id: Int
         public var status: String

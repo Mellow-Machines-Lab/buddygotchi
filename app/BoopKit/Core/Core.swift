@@ -794,11 +794,14 @@ public final class Core {
             for (s, status) in window {
                 let name = StateSnapshot.boardName(s.name)
                 let named = name != nil
+                // The row's second line: its card's words while it has one,
+                // else the project under a thread's name.
+                let under = cards.shown(s.key, at: now)?.text ?? (named ? s.project : nil)
                 let row = StateSnapshot.Row(
                     id: rows[s.key] ?? 0, status: status,
                     slot: status == "w" && config.workStream ? stream.lanes[s.key]?.slot ?? -1 : -1, agent: s.agent.rawValue,
                     title: StateSnapshot.clip(name ?? s.project, marked: true, max: cut.title),
-                    project: named && cut.project > 0 ? StateSnapshot.clip(s.project, marked: true, max: cut.project) : "")
+                    project: under.map { cut.project > 0 ? StateSnapshot.clip($0, marked: true, max: cut.project) : "" } ?? "")
                 var next = snapshot
                 next.list?.append(row)
                 next.unlisted -= 1

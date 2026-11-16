@@ -129,35 +129,63 @@ final class CardsTests: XCTestCase {
         XCTAssertNil(cards.shown("a", at: 615_000))
     }
 
-    /// Boop holds the card that changed last, once the one in its hands has
-    /// had `holdMs` (8 s); a swipe keeps your choice for `pinMs` (2 min).
-    func testTheNewestChangeTakesTheHandsAfterTheHoldAndASwipePins() {
-        XCTAssertEqual(Cards.holdMs, 8000)
-        XCTAssertEqual(Cards.pinMs, 120_000)
+    /// Boop holds the card of the agent you last prompted, and another
+    /// agent's status never takes it; a swipe holds another until you
+    /// prompt again.
+    func testItHoldsWhoYouPromptedAndASwipeHoldsAnother() {
         var cards = Cards()
         let order = ["a", "b", "c"]
+        for key in order { cards.turnStarted(key) }  // you prompted c last
         cards.status(status("one"), for: "a", at: 0)
-        cards.refocus(order, at: 0)
-        XCTAssertEqual(cards.focus, "a")
-        cards.status(status("two"), for: "b", at: 3000)
-        cards.refocus(order, at: 3000)
-        XCTAssertEqual(cards.focus, "a", "a's card has had 3 s")
-        cards.refocus(order, at: 8000)
+        cards.refocus(cards.showing(in: order, at: 0), at: 0)
+        XCTAssertEqual(cards.focus, "a", "the only card")
+        cards.status(status("three"), for: "c", at: 1000)
+        cards.refocus(cards.showing(in: order, at: 1000), at: 1000)
+        XCTAssertEqual(cards.focus, "c", "who you prompted")
+        for at in stride(from: Int64(2000), to: 600_000, by: 7000) {
+            cards.status(status("one, at \(at)"), for: "a", at: at)
+            cards.status(status("two, at \(at)"), for: "b", at: at)
+            cards.refocus(cards.showing(in: order, at: at), at: at)
+            XCTAssertEqual(cards.focus, "c", "the others' changes never take it")
+        }
+        cards.swipe(by: -1, among: cards.showing(in: order, at: 600_000), at: 600_000)
         XCTAssertEqual(cards.focus, "b")
-        // The card in its hands changing isn't a reason to leave it.
-        cards.status(status("two, still"), for: "b", at: 30_000)
-        cards.refocus(order, at: 30_000)
+        cards.status(status("three, again"), for: "c", at: 700_000)
+        cards.refocus(cards.showing(in: order, at: 700_000), at: 700_000)
+        XCTAssertEqual(cards.focus, "b", "held until you prompt or swipe")
+        cards.swipe(by: 2, among: cards.showing(in: order, at: 710_000), at: 710_000)
+        XCTAssertEqual(cards.focus, "a", "round past the end")
+        cards.turnStarted("b")
+        cards.status(status("two, anew"), for: "b", at: 720_000)
+        cards.refocus(cards.showing(in: order, at: 720_000), at: 720_000)
+        XCTAssertEqual(cards.focus, "b", "a new prompt")
+    }
+
+    /// Only results interrupt: each takes the card once, in the order they
+    /// came, keeping it `holdMs` (8 s) before the next; then the card you
+    /// were on comes back. One that waited out its 15 s is skipped.
+    func testResultsInterruptOnceEachInTurn() {
+        XCTAssertEqual(Cards.holdMs, 8000)
+        var cards = Cards()
+        let order = ["a", "b", "c", "d"]
+        for key in order { cards.turnStarted(key); cards.status(status(key), for: key, at: 0) }
+        cards.refocus(cards.showing(in: order, at: 0), at: 0)
+        XCTAssertEqual(cards.focus, "d")
+        for (key, at) in [("a", Int64(1000)), ("b", 1500), ("c", 2000)] {
+            cards.result(result("\(key) done"), for: key, at: at)
+            cards.turnEnded(key, away: false, at: at)
+        }
+        cards.refocus(cards.showing(in: order, at: 2000), at: 2000)
+        XCTAssertEqual(cards.focus, "a", "the first to finish")
+        cards.refocus(cards.showing(in: order, at: 9999), at: 9999)
+        XCTAssertEqual(cards.focus, "a", "held 8 s")
+        cards.refocus(cards.showing(in: order, at: 10_000), at: 10_000)
         XCTAssertEqual(cards.focus, "b")
-        cards.status(status("three"), for: "c", at: 31_000)
-        cards.swipe(by: -1, among: order, at: 40_000)
-        XCTAssertEqual(cards.focus, "a")
-        cards.refocus(order, at: 100_000)
-        XCTAssertEqual(cards.focus, "a", "pinned")
-        cards.status(status("three, again"), for: "c", at: 161_000)
-        cards.refocus(order, at: 161_000)
-        XCTAssertEqual(cards.focus, "c", "the pin has run out")
-        cards.swipe(by: 1, among: order, at: 170_000)
-        XCTAssertEqual(cards.focus, "a", "round to the first")
+        cards.refocus(cards.showing(in: order, at: 17_000), at: 17_000)
+        XCTAssertEqual(cards.showing(in: order, at: 18_000), ["d"], "c waited out its 15 s: skipped")
+        cards.tidy(at: 18_000)
+        cards.refocus(cards.showing(in: order, at: 18_000), at: 18_000)
+        XCTAssertEqual(cards.focus, "d", "back to who you prompted")
     }
 
     // MARK: Through the core
@@ -227,18 +255,33 @@ final class CardsTests: XCTestCase {
         rig.pipeline.card(status("one"), process: AgentProcess(pid: 11, started: 1), at: rig.now)
         rig.wait(1000)
         rig.pipeline.card(status("two"), process: AgentProcess(pid: 22, started: 1), at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "one")
+        XCTAssertEqual(rig.state.card?.text, "two", "s2's: you prompted it last")
         XCTAssertEqual(rig.state.card?.count, 2)
         let first = try XCTUnwrap(rig.state.card?.index)
         rig.pipeline.swipeCard(by: 1, at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "two")
+        XCTAssertEqual(rig.state.card?.text, "one")
         XCTAssertNotEqual(rig.state.card?.index, first)
         rig.pipeline.swipeCard(by: 1, at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "one")
+        XCTAssertEqual(rig.state.card?.text, "two")
     }
 
     /// A tap opens the result's link, or with none the session's thread,
     /// and with no card nothing.
+    /// A drawer row's second line is its card's words while it has one.
+    func testADrawerRowSaysItsCard() throws {
+        let rig = CoreRig()
+        rig.send(.turnStart, session: "s1", project: "landing")
+        rig.send(.turnStart, session: "s2", project: "api")
+        var e = rig.event(.turnStart, session: "s2", project: "api")
+        e.data["process"] = .object(["pid": 22, "started": 1])
+        rig.send(e)
+        rig.pipeline.card(status("running the tests"), process: AgentProcess(pid: 22, started: 1), at: rig.now)
+        rig.pipeline.drawer(open: true, at: rig.now)
+        let list = try XCTUnwrap(rig.state.list)
+        XCTAssertEqual(list.first { $0.title == "api" }?.project, "running the tests")
+        XCTAssertEqual(list.first { $0.title == "landing" }?.project, "", "no card, no name: nothing under")
+    }
+
     func testATapOpensTheLinkOrTheThread() {
         let rig = CoreRig()
         XCTAssertFalse(Fx(rig.pipeline.tapCard(at: rig.now)).contains { if case .open = $0 { true } else { false } })

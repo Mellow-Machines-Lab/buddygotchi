@@ -18,6 +18,8 @@ using it. The spec, the rules and how Opus and Sonnet did are in
 - Checked: `make -C internal check` and `boards` pass; a real Sonnet session
   with hooks and the tool server drove a headless Boop, whose states carried
   the four cards it sent.
+- Many agents: Boop holds who you last prompted or swiped to; only results
+  interrupt, each once; a drawer row shows its card's words.
 - Installed with the hooks: connecting an agent registers the tool server
   with it, and every connected agent gets it at launch (`CardInstaller`).
 - Owed by the owner: the card on the real board (its look, a swipe and a tap

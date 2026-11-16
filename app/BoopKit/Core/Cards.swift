@@ -14,9 +14,13 @@ import Foundation
 /// itself, or at once at that session's next prompt. One that ended while
 /// you were away waits and shows as you come back.
 ///
-/// With several, Boop holds one: the card that changed last, but not
-/// before the one in its hands has had `holdMs`; a result always gets its
-/// turn; and a swipe pins your choice for `pinMs`.
+/// With several, Boop holds one, and keeps it: the card of the agent you
+/// last prompted, or the one you swiped to, until you prompt or swipe again.
+/// Another agent's status never takes it. Only a result does: each result
+/// takes the card as it comes, once, in the order they came, and a result
+/// in its hands keeps it at least `holdMs` before the next. A result that
+/// waited out its own `resultMs` is skipped; it's in the drawer and the
+/// popover.
 public struct Cards: Sendable {
     /// One session's cards.
     struct Held: Sendable {
@@ -25,8 +29,6 @@ public struct Cards: Sendable {
         /// Its lane's slot in the work stream as the card came, whose colour
         /// the card keeps once the turn is over and the lane gone.
         var slot: Int?
-        /// When what it shows last changed.
-        var changedAt: Int64 = 0
         /// The agent's first guess of the minutes left this turn, and its
         /// newest: how many, and when it said so. The first is for the
         /// finish ("said 5 min, took 12"); the newest is counted down as it
@@ -37,6 +39,8 @@ public struct Cards: Sendable {
         /// waits for you to be back.
         var ended = false
         var showsSince: Int64?
+        /// Its result has had the card.
+        var seen = false
         /// How long the turn took from the first guess, in minutes.
         var took: Int?
     }
@@ -49,23 +53,27 @@ public struct Cards: Sendable {
     /// A result shows this long after its turn ends: the finish's few
     /// seconds, and about ten to read it.
     public static let resultMs: Int64 = 15_000
-    /// The card in its hands stays at least this long before another's
-    /// change takes its place.
+    /// A result in its hands keeps the card at least this long before the
+    /// next result takes it.
     public static let holdMs: Int64 = 8000
-    /// A swipe keeps your choice this long.
-    public static let pinMs: Int64 = 120_000
 
     var held: [String: Held] = [:]
-    /// The session whose card Boop holds, since when, and until when your
-    /// swipe keeps it there.
+    /// The session whose card Boop holds, and since when.
     public private(set) var focus: String?
     var focusAt: Int64 = 0
-    var pinnedUntil: Int64 = 0
+    /// The session you last prompted, and the one you swiped to since,
+    /// whose card Boop goes back to.
+    var followed: String?
+    var swiped: String?
 
     public init() {}
 
-    /// A session's turn starts: last turn's cards go.
-    mutating func turnStarted(_ key: String) { held[key] = nil }
+    /// You prompted a session: last turn's cards go, and Boop follows it.
+    mutating func turnStarted(_ key: String) {
+        held[key] = nil
+        followed = key
+        swiped = nil
+    }
 
     /// The session is gone.
     mutating func gone(_ key: String) { held[key] = nil }
@@ -78,9 +86,6 @@ public struct Cards: Sendable {
             let guess = Guess(minutes: minutes, at: now)
             h.guess = guess
             if h.firstGuess == nil { h.firstGuess = guess }
-        }
-        if h.status?.text != card.text || h.status?.step != card.step || h.status?.of != card.of || card.minutes != nil {
-            h.changedAt = now
         }
         h.status = card
         held[key] = h
@@ -103,16 +108,12 @@ public struct Cards: Sendable {
         if let first = h.firstGuess { h.took = max(1, Int(((now - first.at) + 30_000) / 60_000)) }
         guard h.result != nil else { return held[key] = nil }
         h.showsSince = away ? nil : now
-        h.changedAt = now
         held[key] = h
     }
 
     /// You're back: the results that waited show from now.
     mutating func youAreBack(at now: Int64) {
-        for (key, h) in held where h.ended && h.showsSince == nil {
-            held[key]?.showsSince = now
-            held[key]?.changedAt = now
-        }
+        for (key, h) in held where h.ended && h.showsSince == nil { held[key]?.showsSince = now }
     }
 
     /// Forgets the results that have had their time.
@@ -128,26 +129,36 @@ public struct Cards: Sendable {
         }
     }
 
-    /// Picks the card Boop holds among `showing`: your pinned one; else a
-    /// result that just began, or the newest change, once the one in its
-    /// hands has had `holdMs`.
+    /// Picks the card Boop holds among `showing`: the oldest result it
+    /// hasn't held yet, unless a result in its hands is under `holdMs`;
+    /// else a result in its hands, for the rest of its time; else the card
+    /// you swiped to or the agent you last prompted; else the one it holds;
+    /// else the first.
     mutating func refocus(_ showing: [String], at now: Int64) {
         guard !showing.isEmpty else { return focus = nil }
         let current = focus.flatMap { showing.contains($0) ? $0 : nil }
-        if let current, now < pinnedUntil { return focus = current }
-        let newest = showing.max { (held[$0]?.changedAt ?? 0, $1) < (held[$1]?.changedAt ?? 0, $0) }!
-        guard let current else { return (focus, focusAt) = (newest, now) }
-        guard newest != current, (held[newest]?.changedAt ?? 0) > focusAt, now - focusAt >= Self.holdMs else { return }
-        (focus, focusAt) = (newest, now)
+        let holdingResult = current.map { held[$0]?.ended == true } ?? false
+        let waiting = showing.filter { held[$0]?.ended == true && held[$0]?.seen == false }
+            .min { (held[$0]?.showsSince ?? 0, $0) < (held[$1]?.showsSince ?? 0, $1) }
+        if let waiting, !holdingResult || now - focusAt >= Self.holdMs { return take(waiting, at: now) }
+        if holdingResult { return }
+        if let want = [swiped, followed].compactMap({ $0 }).first(where: showing.contains) { return take(want, at: now) }
+        take(current ?? showing[0], at: now)
+    }
+
+    mutating func take(_ key: String, at now: Int64) {
+        if held[key]?.ended == true { held[key]?.seen = true }
+        guard key != focus else { return }
+        (focus, focusAt) = (key, now)
     }
 
     /// Your swipe: the next card (`by` 1) or the one before (-1) among
-    /// `showing`, kept for `pinMs`.
+    /// `showing`, which Boop holds until you swipe or prompt again.
     mutating func swipe(by: Int, among showing: [String], at now: Int64) {
         guard showing.count > 1, let at = focus.flatMap(showing.firstIndex(of:)) else { return }
-        focus = showing[(at + by % showing.count + showing.count) % showing.count]
-        focusAt = now
-        pinnedUntil = now + Self.pinMs
+        let key = showing[(at + by % showing.count + showing.count) % showing.count]
+        swiped = key
+        take(key, at: now)
     }
 
     /// What a session's card says now: its main thing, its small line, its
