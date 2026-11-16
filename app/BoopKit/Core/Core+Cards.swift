@@ -53,16 +53,10 @@ extension Core {
     func cardShow(at now: Int64) -> StateSnapshot.CardShow? {
         let showing = cards.showing(in: cardOrder(at: now), at: now)
         guard let key = cards.focus, let index = showing.firstIndex(of: key), let shown = cards.shown(key, at: now) else { return nil }
-        return StateSnapshot.CardShow(session: key, slot: stream.lanes[key]?.slot ?? cards.held[key]?.slot ?? -1, result: shown.kind == .result,
+        return StateSnapshot.CardShow(slot: stream.lanes[key]?.slot ?? cards.held[key]?.slot ?? -1, result: shown.kind == .result,
                                       text: StateSnapshot.clip(shown.text, marked: true, max: StateSnapshot.maxSignBytes),
                                       small: shown.small, over: shown.over,
                                       index: index + 1, count: showing.count)
-    }
-
-    /// A session's card as its row in the popover shows it: the main thing
-    /// and the small line.
-    func cardWords(_ key: String, at now: Int64) -> (text: String, small: String?)? {
-        cards.shown(key, at: now).map { ($0.text, $0.small) }
     }
 
     /// Your swipe on the card: the next (`by` 1) or the one before (-1).

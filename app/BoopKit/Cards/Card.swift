@@ -1,3 +1,4 @@
+import AgentHooks
 import Foundation
 
 /// A card an agent hands Boop to hold (plan/agent-cards.md): one main thing,
@@ -5,8 +6,8 @@ import Foundation
 /// An agent sends one through the `boop-cards` tool server (`CardTool`); the
 /// to-do card is Boop's own, from the hooks. A card's words are the
 /// agent's: they go to the screen and never to the brain.
-public struct Card: Equatable, Codable, Sendable {
-    public enum Kind: String, Codable, Sendable {
+public struct Card: Equatable, Sendable {
+    public enum Kind: String, Sendable {
         /// What the agent is on now, while its turn runs.
         case status
         /// What the turn made, held up after its finish.
@@ -42,6 +43,17 @@ public struct Card: Equatable, Codable, Sendable {
         self.minutes = minutes
         self.detail = detail
         self.link = link
+    }
+
+    /// The card as its tool's arguments, which `make` reads back.
+    var args: [String: Any] {
+        var args: [String: Any] = [kind == .status ? "doing" : "headline": text]
+        args["step"] = step
+        args["of"] = of
+        args["minutes_left"] = minutes
+        args["detail"] = detail
+        args["link"] = link
+        return args
     }
 
     /// A card from a tool call's arguments, held to the limits: text is one
@@ -104,7 +116,6 @@ public struct Card: Equatable, Codable, Sendable {
 /// Those words are the whole of how an agent learns to use a card, so they
 /// say when to call and how short to be.
 public enum CardTool {
-    public static let server = "boop"
     /// What the server tells the agent as it connects.
     public static let instructions = """
         Boop is a small desk companion with a screen that sits beside the person you're working for. It shows them what \
@@ -156,16 +167,6 @@ public enum CardTool {
         ],
     ] }
 
-    /// A card that came over the socket, back as a tool call's arguments,
-    /// so `Card.make` holds it to the limits once more.
-    static func arguments(_ card: [String: Any]) -> [String: Any] {
-        var args = card
-        args["doing"] = card["text"]
-        args["headline"] = card["text"]
-        args["minutes_left"] = card["minutes"]
-        return args
-    }
-
     /// Opens what a result card links to, with `/usr/bin/open`: a web page
     /// in the browser; a file or folder shown in the Finder, never run or
     /// opened in an app. False when it isn't one of those or isn't there.
@@ -183,13 +184,25 @@ public enum CardTool {
         return (try? process.run()) != nil
     }
 
-    /// The line the tool server sends Boop for a card: the card, which
-    /// agent's tool it is and that agent's process, so Boop finds the session.
-    public static func line(_ card: Card, agent: String?, pid: Int32?, started: Int64?) -> Data {
-        var object: [String: Any] = [:]
-        if let data = try? JSONEncoder().encode(card), let c = try? JSONSerialization.jsonObject(with: data) { object["card"] = c }
-        if let agent { object["agent"] = agent }
-        if let pid, let started { object["process"] = ["pid": Int(pid), "started": started] }
+    /// The line the tool server sends Boop for a card: its kind and its
+    /// arguments as the card kept them, and the agent's process, so Boop
+    /// finds the session. Boop holds it to the limits again as it reads it,
+    /// since anything may write to the socket.
+    public static func line(_ card: Card, process: AgentProcess?) -> Data {
+        var object: [String: Any] = ["card": card.kind.rawValue, "args": card.args]
+        if let process { object["process"] = ["pid": Int(process.pid), "started": process.started] }
         return ((try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()) + Data("\n".utf8)
+    }
+
+    /// A card from a line `line` wrote, and its agent's process; nil for
+    /// any other line.
+    public static func read(_ object: [String: Any]) -> (card: Card, process: AgentProcess?)? {
+        guard let kind = (object["card"] as? String).flatMap(Card.Kind.init(rawValue:)),
+              let card = Card.make(kind, object["args"] as? [String: Any] ?? [:]) else { return nil }
+        let from = object["process"] as? [String: Any]
+        let process = (from?["pid"] as? NSNumber).flatMap { pid in
+            (from?["started"] as? NSNumber).map { AgentProcess(pid: pid.int32Value, started: $0.int64Value) }
+        }
+        return (card, process)
     }
 }

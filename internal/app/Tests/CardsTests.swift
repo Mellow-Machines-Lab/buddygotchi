@@ -64,12 +64,15 @@ final class CardsTests: XCTestCase {
     /// What the tool server sends is what the runtime reads back.
     func testTheToolsLineCarriesTheCardAndItsProcess() throws {
         let card = try XCTUnwrap(Card.make(.status, ["doing": "running the tests", "step": 2, "of": 5, "minutes_left": 4]))
-        let data = CardTool.line(card, agent: "claude", pid: 4242, started: 7)
+        let data = CardTool.line(card, process: AgentProcess(pid: 4242, started: 7))
         XCTAssertEqual(data.last, 0x0A)
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
-        let sent = try XCTUnwrap(object["card"] as? [String: Any])
-        XCTAssertEqual(Card.make(.status, CardTool.arguments(sent)), card)
-        XCTAssertEqual((object["process"] as? [String: Any])?["pid"] as? Int, 4242)
+        let read = try XCTUnwrap(CardTool.read(object))
+        XCTAssertEqual(read.card, card)
+        XCTAssertEqual(read.process, AgentProcess(pid: 4242, started: 7))
+        let result = Card(kind: .result, text: "preview deployed", detail: "build-4821", link: "https://example.com/b")
+        XCTAssertEqual(CardTool.read(["card": "result", "args": result.args])?.card, result)
+        XCTAssertNil(CardTool.read(["card": "status", "args": ["doing": " "]]), "held to the limits again")
         XCTAssertNil(HookLine.decode(data), "never taken for a hook")
     }
 

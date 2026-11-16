@@ -322,10 +322,8 @@ public struct StateSnapshot: Equatable, Sendable {
     public var waiting: Int { attn.map { $0.more + 1 } ?? 0 }
 
     /// The card Boop holds (`Cards`): whose it is, by its lane's slot (-1
-    /// with no lane) and its session, what it says, and where it is among
-    /// the cards showing. The session stays on the Mac.
+    /// with no lane), what it says, and where it is among the cards showing.
     public struct CardShow: Equatable, Sendable {
-        public var session: String
         public var slot: Int
         public var result: Bool
         public var text: String

@@ -668,7 +668,7 @@ Besides drawing each mood and state, a face:
   result, its main thing (24 glyphs at most), its small line (28), its
   session's lane slot, which card of how many, and how long it has shown.
   It's on only while nothing above Doing has the screen. The face draws it
-  and says where it is (`cardAt`): a touch that begins there is the card's,
+  and says where it is (`cardAt`), only while it's drawn: a touch that begins there is the card's,
   and the device sends the Mac a swipe or a tap, playing nothing. A face
   with no card ignores it, and every touch stays the face's.
 - **Holds up a sign.** Any Moment may carry words in `sign` (the `do`'s

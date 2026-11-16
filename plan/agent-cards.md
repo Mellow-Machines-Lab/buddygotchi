@@ -63,14 +63,16 @@ its row in the drawer.
   browser; a file shown in the Finder, never run or opened in an app), or
   with no link the session's thread, as a row picked in the drawer does.
 - A swipe across it changes card.
-- A touch anywhere else is Boop's, as ever. Under the needs-you screen there
-  is no card to touch.
+- A touch anywhere else is Boop's, as ever. A card that isn't drawn can't be
+  touched: under the needs-you screen, a sign or a work act, a tap is Boop's.
 
 ## How an agent sends one
 
 `boop-cards` is a Model Context Protocol server over stdio with two tools,
 `status` and `result` (`CardTool`). Each call is one line on Boop's hook
-socket, with the agent's process, so Boop knows whose card it is. It returns
+socket: the tool's arguments as the card kept them, and the agent's
+process, so Boop knows whose card it is. Boop holds the line to the limits
+again, since anything may write to the socket. It returns
 at once, needs nothing back, and works with Boop closed. It can't block or
 answer for the agent: it's the same one-way path the hooks use.
 
@@ -108,25 +110,42 @@ With the firm wording, which is what ships in `CardTool.instructions`:
 So: agents send good cards when the tool tells them firmly, and almost none
 when it's optional. Not tried: Codex, Haiku, and very long turns.
 
+## How it's installed
+
+The server goes in and out with the hooks (`CardInstaller`):
+
+- Connecting an agent in onboarding or Settings adds it; disconnecting takes
+  it out; Uninstall takes it out of both and deletes its copy.
+- At launch, every agent whose hooks are in gets it, so a Boop from before
+  cards gets it too, and an entry pointing somewhere else is put right.
+- Claude Code: `mcpServers.boop-cards` in `~/.claude.json`, as `claude mcp
+  add --scope user` writes it. Codex: `[mcp_servers.boop-cards]` in
+  `~/.codex/config.toml`. `~/.claude.json` is backed up once before Boop
+  first changes it, as the hooks' files are.
+- The entry runs `boop-cards claude` or `boop-cards codex` from the state
+  directory's `bin/`, copied there from the app like `agent-hook`.
+- Only the everyday Boop installs: `make dev`'s copy, on its own folder,
+  hears the cards but never changes the agents' files.
+- Its failing is only logged: the hooks are what Boop needs.
+
+There is no switch of its own: an agent that's connected gets cards.
+
 ## What's built
 
 - Mac: `app/BoopKit/Cards/Card.swift` (the card, its limits, the tools'
-  words), `app/BoopCards/` (the server), `Core/Cards.swift` (which card, how
+  words, the socket line), `Cards/CardInstaller.swift` (registering it), `app/BoopCards/` (the server), `Core/Cards.swift` (which card, how
   long), `Core/Core+Cards.swift` (whose card, the `state`, the tap), the
   popover's row.
 - Wire: `state.card` = `{"a":slot,"k":"s"|"r","t":main,"d":small,"o":1,"at":[index,count]}`;
   the board's `ev` `card` did `next`, `prev` or `open`.
 - Board: the engine parses and routes touches (`app/device.cpp`); the gel
   draws it (`render/gel/card.h`).
-- Tests: `CardsTests`, `test_device`'s card test, the gel's `cards` scenario.
+- Tests: `CardsTests`, `CardInstallerTests`, `test_device`'s card test, the gel's `cards` scenario.
 
 ## The owner's to decide
 
-1. **Registering the server.** Nothing adds `boop-cards` to an agent yet.
-   To try it by hand:
-   `claude mcp add boop -- "$PWD/.build/debug/boop-cards"`. Shipping it means
-   the installer adds it to Claude Code and Codex beside the hooks, and
-   Settings gets a switch.
+1. **A switch.** Cards come with a connected agent. Add a Settings switch
+   only if someone wants hooks without cards.
 2. **The finish.** Today the finish plays and the result card follows. If
    cards prove reliable in real use, the result card could be the finish's
    low sign instead of the thread's name.
@@ -136,4 +155,5 @@ when it's optional. Not tried: Codex, Haiku, and very long turns.
 4. **The to-do card.** A turn with a to-do list and no status card could show
    the item in progress. AgentHooks drops the item's words on purpose, so it
    needs a change there first.
-5. **Codex.** Its tool server setup differs and it wasn't tried.
+5. **Codex.** `codex mcp list` reads the entry, but no Codex session has
+   sent a card yet.

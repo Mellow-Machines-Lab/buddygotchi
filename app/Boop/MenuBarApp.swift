@@ -769,8 +769,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             // Every agent with hooks gets the card server, an app from before
             // it existed too.
             for agent in Agent.allCases where model.installer.health(agent) == .installed && !model.cards.installed(agent) {
-                model.changeCards(agent) { try model.cards.install(agent) }
-                if model.cards.installed(agent) {
+                model.changeCards(agent) {
+                    try model.cards.install(agent)
                     log.write("cards: registered with \(agent.rawValue)")
                     model.restartAgents = true
                 }

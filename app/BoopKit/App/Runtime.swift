@@ -673,18 +673,13 @@ public final class Runtime: @unchecked Sendable {
     /// may write to the socket; or, with `devLines`, a dev line.
     func other(_ data: Data, received: Int64) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
-        guard let card = object["card"] as? [String: Any] else {
+        guard object["card"] != nil else {
             if options.devLines { dev(data) }
             return
         }
-        guard let kind = (card["kind"] as? String).flatMap(Card.Kind.init(rawValue:)),
-              let made = Card.make(kind, CardTool.arguments(card)) else { return }
-        let from = object["process"] as? [String: Any]
-        let process = (from?["pid"] as? NSNumber).flatMap { pid in
-            (from?["started"] as? NSNumber).map { AgentProcess(pid: pid.int32Value, started: $0.int64Value) }
-        }
-        let step = pipeline.card(made, process: process, at: received)
-        if options.debug { options.log("card: \(kind.rawValue) " + (step.recorded.isEmpty ? "for nobody" : "taken")) }
+        guard let (card, process) = CardTool.read(object) else { return }
+        let step = pipeline.card(card, process: process, at: received)
+        if options.debug { options.log("card: \(card.kind.rawValue) " + (step.recorded.isEmpty ? "for nobody" : "taken")) }
         run(step)
     }
 

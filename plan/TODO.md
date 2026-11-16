@@ -6,8 +6,8 @@ that aren't decided yet stay in [product-ideas.md](product-ideas.md).
 
 ## Report, 2026-11-15: agents' cards
 
-On the branch `agent-cards` (on main `763ce92f`) and SlimeBuddy's
-`agent-cards` (on `main-v2` `b527599`, in this worktree's
+On the branch `agent-cards` (on main `dc57f70d`, with gaze) and SlimeBuddy's
+`agent-cards` (on `main-v2` `74240a1`, in this worktree's
 `characters/.repos/SlimeBuddy`, with a bundle in `~/.boopdev/agent-cards/`).
 Nothing is merged or pushed, and the board wasn't flashed: the owner was
 using it. The spec, the rules and how Opus and Sonnet did are in
@@ -18,10 +18,11 @@ using it. The spec, the rules and how Opus and Sonnet did are in
 - Checked: `make -C internal check` and `boards` pass; a real Sonnet session
   with hooks and the tool server drove a headless Boop, whose states carried
   the four cards it sent.
+- Installed with the hooks: connecting an agent registers the tool server
+  with it, and every connected agent gets it at launch (`CardInstaller`).
 - Owed by the owner: the card on the real board (its look, a swipe and a tap
-  with a finger, the frame rate while a card is held), and the five
-  decisions at the end of the spec, the first being how the tool server gets
-  registered with the agents.
+  with a finger, the frame rate while a card is held), a Codex session, and
+  the decisions at the end of the spec.
 ## Report, 2026-11-15 (later): gaze and typing along, to try
 
 **Read this first.** Two ways Boop is with you through the day, on the

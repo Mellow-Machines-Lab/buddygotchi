@@ -49,7 +49,7 @@ func call(_ name: String, _ args: [String: Any]) -> String {
          "pid": agentProcess.map { Int($0.pid) } as Any? ?? NSNull()])
     // The one thing worth telling an agent: a call with nothing to show.
     guard let card else { return kind == .status ? "status needs `doing`: a few plain words" : "result needs `headline`: a few plain words" }
-    let line = CardTool.line(card, agent: agentName, pid: agentProcess?.pid, started: agentProcess?.started)
+    let line = CardTool.line(card, process: agentProcess)
     for destination in HookSocket.destinations(environment: environment) { HookSocket.send(line, to: destination) }
     return "ok"
 }
@@ -62,7 +62,7 @@ while let text = readLine(strippingNewline: true) {
     case "initialize":
         reply(id, result: ["protocolVersion": params["protocolVersion"] as? String ?? "2025-06-18",
                            "capabilities": ["tools": [String: Any]()],
-                           "serverInfo": ["name": CardTool.server, "version": BoopVersion.current],
+                           "serverInfo": ["name": CardInstaller.name, "version": BoopVersion.current],
                            "instructions": CardTool.instructions])
     case "ping":
         reply(id, result: [:])

@@ -887,7 +887,7 @@ public final class Core {
                 summary.word = lane.word
                 summary.slot = lane.slot
             }
-            if let card = cardWords(s.key, at: now) { summary.card = [card.text, card.small].compactMap { $0 }.joined(separator: ", ") }
+            if let card = cards.shown(s.key, at: now) { summary.card = [card.text, card.small].compactMap { $0 }.joined(separator: ", ") }
             return summary
         }
         return shown.map { summary($0, .waiting) }
