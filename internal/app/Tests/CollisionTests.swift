@@ -39,7 +39,7 @@ final class CollisionTests: XCTestCase {
         XCTAssertEqual(BoopDevice.play(Moment(anim: BoopDevice.listening)), .now)
         XCTAssertEqual(BoopDevice.play(Moment(anim: "notice", sign: "Day 50!")), .next, "a day's greeting")
         XCTAssertEqual(BoopDevice.play(Moment(anim: Core.wishMet, sign: "thanks")), .next, "a wish met")
-        XCTAssertEqual(BoopDevice.play(Moment(anim: "starting")), .ifFree, "a late rule moment is worse than none")
+        XCTAssertEqual(BoopDevice.play(Moment(anim: Core.wishGone)), .ifFree, "a late rule moment is worse than none")
     }
 
     /// Pins how long each may wait: a moment 5 s, and a word forward, which

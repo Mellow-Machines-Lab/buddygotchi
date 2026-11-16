@@ -1,13 +1,15 @@
 # Boop: harness evals
 
-Updated 2026-11-14. How we check that Jev decides as Boop should: short
+Updated 2026-11-15. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
 
-The mood question offers staying and every move from the mood on the
-pack's graph ([characters/CHARACTER.md](../characters/CHARACTER.md) §5),
-and how long a mood holds is the steering's.
+The mood question offers staying and every other lasting mood of the pack
+([characters/CHARACTER.md](../characters/CHARACTER.md) §5): there is no
+graph. How long a mood holds is code's, never Jev's: a mood fades on the
+clock by its pack's `fade`, and cross's level is counted. A `wait` step
+lets the fade run as the app's ticks do.
 
 ## 1. What an eval is
 
@@ -47,7 +49,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | Step | Fed to the pipeline as (the transcript's raw events) |
 | --- | --- |
 | `turn started` | A `turn` start (`UserPromptSubmit`) |
-| `command` | A `tool` start of a `Bash` call with the step's `topic`, then its end at the same moment: `failed` as given (default false), with `error: exit_code` when it failed. `program` gives it a program (`git push`), and `half` plays only its `start` or `end`, for a command that runs a while: only then is it a work act, whose start is a pass of its own |
+| `command` | A `tool` start of a `Bash` call with the step's `topic`, then its end at the same moment: `failed` as given (default false), with `error: exit_code` when it failed. `program` gives it a program (`git push`), and `half` plays only its `start` or `end`, for a command that runs a while: only then is it a work act, and a push's end is a pass of its own |
 | `turn finished` | A `turn` end, `done` (`Stop`) |
 | `turn failed` | A `turn` end, `failed` (`StopFailure`), with the step's `error` (default `api_error`) |
 | `poke` | One poke from the device, a pass: steps a second apart make pokes in a row |
@@ -68,7 +70,7 @@ a request waits however long a step's `at` jumps, up to a silent day.
 | `needs you` | Claude asks to run a command: a `Bash` call's start, then its `PermissionRequest`. While it waits nothing wakes the brain but what you say |
 | `answered` | The call you allowed finishes (`PostToolUse`): "needs you" clears, `You answered claude on "landing".` |
 | `world` | Another buddy's gesture from the world, the step's `kind` (`boop` unless it says; `wave`, `heart`, `cheer`), `count` of them together, from Europe or Africa: a `world` event, `Someone in Europe or Africa booped Boop.`, a pass |
-| `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open, else hourly, which wakes the brain only while the mood has somewhere to settle when Boop sleeps or you're away |
+| `wait` | Nothing; only time passes: a check-in may come, the working one while a turn works, an idle check-in every 15 to 30 minutes for two hours after the last activity, twice that gap with no session open. A mood's fade runs meanwhile |
 
 Every event is Claude's, in project `landing`, in session `s1` or the
 step's `session`, with the step's `workspace` if it has one.
@@ -87,12 +89,12 @@ long list that checks little:
 | --- | --- |
 | `react` | Jev's pick for the `react.face` question: `none` or an emotion |
 | `move` | The move the Moment played, Jev's `react.move` pick: at an event a finish (`success`, `failure` or `reply`), `wake up`, or `notice`, when your prompt says its name; to what you said the reply (`huh` below the floor); at your lock or unlock `wave`, or at a night's lock `nap`; or `none` when it played none or Boop didn't react |
-| `intensity` | The Moment's size, Jev's `react.intensity` pick (`small` to `huge`: how long the emotion held and how big what it said), or `none` when `react` didn't react |
+| `intensity` | The Moment's size, Jev's `react.intensity` pick (`small` to `big`: how long the emotion held and how big what it said), or `none` when `react` didn't react |
 | `say` | What it asked to say, `say`'s pick when it reached the floor (a feeling, `swear` or a topic), or `none` |
 | `sign` | The sign the Moment held up: for a prompt's reading Jev's `react.sign` pick, from the pack's `signs.md`; for what you said, Jev's `react.sign` pick among the reply's lines in the pack's `replies.md` (your words played back included) or, for `status`, the agents' facts (`StatusReply`). `some` for any, `none` for none, or words any of which it says, in any case (`still broken` passes `still broken :(`) |
 | `said` | A take Boop said, by its text as the bubble shows it (`Tsk...`): the step passes when any of the `say`'s takes is one listed; `some` when it said anything, `none` when it said nothing. A scenario that names a text no take has doesn't load |
 | `mood` | Boop's mood after the pass |
-| `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every move the graph has from it, so a scenario can pin the graph |
+| `offered` | Exactly the options the pass's `mood` question offered, as a set: staying in the mood it had, and every other lasting mood, lonely only when its gate allows |
 
 A step fails if its pass was dropped (late, or an error), or if any
 expectation doesn't hold. A step with `expect` that wakes no pass stops
@@ -113,7 +115,6 @@ and to be tightened once Boop meets it (`Eval.judge`):
 | `reactions` | The run plays a number of Moments outside this range |
 | `min_variety` | The run plays fewer different Moments (emotion, animation and take) than this |
 | `words_said` | The share of the Moments played that said something falls outside this range |
-| `moves_on_graph` | A pass's `mood` answer wasn't one of the options it offered (or Jev gave none it could use), or the mood changed along something that isn't a move on the graph |
 | `signs_seen` | None of the signs it names (`"fav snack?|hat or bow?"`) was held up at any pass: for what Jev does now and then, such as asking, not at a given step |
 | `moods_seen` | A mood it names (`"lonely"`, or several, each required, `"lonely|sad"`) was never the mood at any pass: one that came and faded between two steps still counts |
 
@@ -142,22 +143,19 @@ BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the
 with its brain's answers written in. The expect brain (`ExpectBrain`)
 answers each pass as its step expects: the step's own `brain` answers
 first, else the first value of each `expect` set that the question
-offers, else what the pipeline check would. The mood moves a step a pass
-on the graph, so when the wanted mood isn't a move away, it takes the
-move on the shortest path there, and a step that wants no mood starts
-toward the next mood a later step wants if that's more than a move off.
+offers, else what the pipeline check would.
 It prices every run (`--list`), and `--scripted` runs every scenario
 once with it, with no key: what it checks is everything but Jev, that
-each step wakes the brain as it says, that the moods it expects lie on
-the graph's paths, and the whole-run checks a run can fail without Jev
-(`max_quiet_working`, `moves_on_graph`).
+each step wakes the brain as it says, that the moods it expects are
+offered, and the whole-run check a run can fail without Jev
+(`max_quiet_working`).
 
 **The levels.** Every request to Jev costs, so a run asks only what it
 needs. `--list` gives each level's total for the suite as it stands.
 
 | Level | Runs | Jev answers |
 | --- | --- | --- |
-| `quick`, the default | The must scenarios (§4). `--only` also runs a named feel scenario, in full | Only the passes of steps whose `expect` is about a pass, unless whole-run `checks` read them all. The expect brain answers the setup in between, a step's own `brain` answers and the mood's path on the graph included |
+| `quick`, the default | The must scenarios (§4). `--only` also runs a named feel scenario, in full | Only the passes of steps whose `expect` is about a pass, unless whole-run `checks` read them all. The expect brain answers the setup in between, a step's own `brain` answers included |
 | `standard` | Every scenario, once | Every pass |
 | `full` | The same, `always` ones 3 times | Every pass |
 
@@ -221,7 +219,7 @@ passes it, one that stays quiet fails `05-pokes-glad-miffed-grumpy` with the rep
 saying why, a step's `reaction` shows in HISTORY as in progress, or not
 at all when it didn't happen, a scenario starts in its `mood` and a
 step's `offered` is what its pass offered, and each whole-run check
-catches what it should, `moves_on_graph` an answer that wasn't offered.
+catches what it should.
 Every scenario passes with the expect brain and plays as a demo the pack
 can play, a scenario's `start` shows in CONTEXT's When row, and its
 `talk` shows that level's Talk row in CONTEXT (none for normal).
@@ -236,15 +234,15 @@ file-name order:
 ```json
 {
   "name": "Pokes make Boop curious, then miffed, then fed up",
-  "case": "The person pokes Boop once, again a second later, and a third time a second after that. The first poke makes Boop curious or glad: a curious or happy face, and its mood turns curious or happy. The second, two in a row, leaves it a little miffed: an annoyed face, maybe a huff, and its mood turns annoyed. The third, three in a row, makes it fed up: an irritated or grumpy face, maybe a grumble, never a swear, and its mood turns irritated or grumpy. Four minutes later, when the agent starts a new turn, it has calmed down a step, to annoyed (or irritated, from grumpy), and doesn't react to the start with anything but a calm or annoyed face.",
+  "case": "The person pokes Boop once, again a second later, and a third time a second after that. The first poke makes Boop curious or glad: a curious or happy face, and its mood stays calm or turns happy. The second, two in a row, leaves it a little miffed: an annoyed face, maybe a huff, and its mood turns cross. The third, three in a row, makes it fed up: a grumpy face, maybe a grumble, never a swear, and it stays cross, a level up, which the app counts. Four minutes later, when the agent starts a new turn, it has cooled by itself, a level or to calm, and doesn't react to the start with anything but a calm or annoyed face.",
   "always": true,
-  "why": "PERSONALITY's Examples and react.face: one poke gets a curious face, two in a row an annoyed huff, three or more an irritated or grumpy face. characters/boop/steering/mood/: a poke moves calm to happy or curious, two in a row to annoyed, three to irritated or, a jump a barrage earns, grumpy; irritated and grumpy fade a step toward calm after their minutes. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one",
+  "why": "PERSONALITY's Examples and react.face: one poke gets a cheeky grin (the temperament's Example: mischievous), two in a row an annoyed huff, three or more a grumpy face. character/steering/mood/: 2 pokes in a row move calm to cross; how cross is the app's count, and it fades a level at a time. The first two pokes' reactions don't hold back the third. Taps play the device's own animations, so no reaction plays one. The mood question offers staying and every other mood but lonely",
   "steps": [
     {"event": "session started", "at": "0s"},
-    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "move": "none", "mood": "curious|happy", "said": "some"}},
-    {"event": "poke", "at": "1s", "expect": {"react": "annoyed|irritated", "move": "none", "say": "upset|tickled", "mood": "annoyed", "said": "some"}},
-    {"event": "poke", "at": "2s", "expect": {"react": "irritated|grumpy|annoyed", "move": "none", "say": "upset|tickled", "mood": "irritated|grumpy", "said": "some"}},
-    {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "annoyed|irritated"}}
+    {"event": "poke", "at": "0s", "expect": {"react": "curious|happy|excited|mischievous|amused", "move": "none", "offered": "calm|happy|focused|proud|cross|sad", "mood": "calm|happy", "said": "some"}},
+    {"event": "poke", "at": "1s", "expect": {"react": "annoyed|grumpy", "move": "none", "say": "upset|tickled", "mood": "cross", "said": "some"}},
+    {"event": "poke", "at": "2s", "expect": {"react": "grumpy|angry|annoyed", "move": "none", "say": "upset|tickled", "mood": "cross", "said": "some"}},
+    {"event": "turn started", "at": "4m", "expect": {"react": "none|calm|annoyed", "mood": "cross|calm"}}
   ]
 }
 ```
@@ -256,7 +254,7 @@ file-name order:
 | `case` | A must's situation and what Boop should do in it, in plain words and no harness terms, so the steps can be rewritten to fit it when the harness changes |
 | `why` | A must's reason: the spec or steering file that says so |
 | `always` | `true` for Boop's character (§1): 3 runs at the full level, and `--always` runs these |
-| `scripted` | `true` for a scenario that checks the code's rules rather than Jev's choices (the mood kept on the graph, the screen's counts, which agent BOOT opens): it runs only with the expect brain, in `--scripted` and the unit tests, and a Jev run leaves it out. Never `always` |
+| `scripted` | `true` for a scenario that checks the code's rules rather than Jev's choices (the screen's counts, which agent BOOT opens): it runs only with the expect brain, in `--scripted` and the unit tests, and a Jev run leaves it out. Never `always` |
 | `runs` | How many runs it gets without `--runs`, at every level, when the default (§2) is too many or too few |
 | `mood` | The mood the run starts in, any of the pack's moods: `calm` by default |
 | `start` | When the run starts, a UTC date and time: `2026-10-31T09:00`. By default `Replay.defaultStart`, a Wednesday at 14:00 |
@@ -267,7 +265,7 @@ file-name order:
 | `wish_today` | `met`: today's wish was made and met before the first step, so no wish is on offer |
 | `memory` | The written memory the run starts with, as Jev reads it in MEMORY: `notes`, each as `memory.md` writes it without its id (`work · 2026-10-25 · "api" kept failing`), and `recently`, each a day and its line (`2026-10-25 · a long day`): none by default |
 | `gap` | A known gap (§1): why Boop can't pass it today, and what would fix it. Never on an `always` scenario |
-| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moves_on_graph` (`true`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |
+| `checks` | Whole-run checks (§1), any of `max_quiet_working` and `no_mood_bounce_within` (times, like `6m`), `max_same_in_a_row` and `min_variety` (counts), `mood_changes` and `reactions` (ranges, like `1-3`), `words_said` (a range of shares, like `0.5-`), `moods_seen` (moods, like `lonely`) and `signs_seen` (signs, any one of them) |
 | `talk` | `normal` (the default), `quiet` or `chatty`: how much it says, chosen in Settings |
 | `steps[].event` | One of the steps in §1 |
 | `steps[].at` | Virtual time since the start, in `h`, `m` and `s`: `0s`, `2m30s`, `1h5m` |
@@ -305,9 +303,8 @@ the file and step.
 packs keep strict scenarios of their own, in their words: a scenario with no
 brief is a must.
 
-- **Code checks** (`53`, `68`, `69`, `92`, `93`, `115`–`117`, `164`, `166`, `168`):
-  `scripted`, the code's rules, which need no Jev: the mood kept on the graph
-  and the screen, one reaction at a long unlock, the nap asleep at once, a wish
+- **Code checks** (`92`, `93`, `115`–`117`, `164`, `166`, `168`):
+  `scripted`, the code's rules, which need no Jev: the screen, one reaction at a long unlock, the nap asleep at once, a wish
   on offer with no agents open.
 - **Must** (`03`, `17`, `24`, `27`, `36`, `40`, `43`, `61`, `122`, `123`, `126`,
   `127`, `129`, `136`, `139`, `143`, `150`, `155`): would be plain wrong, so
@@ -319,8 +316,7 @@ brief is a must.
 - **Feel** (everything else): each has a brief, `judge`, `reasonable` and
   `unreasonable`. It checks no choice of Jev's, and a step's `brain` answers
   stand in for Jev where it isn't asked. What the code decides stays exact:
-  the screen, what's offered, a dream told, moves on the graph, the quiet
-  while working.
+  the screen, what's offered, a dream told, the quiet while working.
 
 ## 5. The judge
 

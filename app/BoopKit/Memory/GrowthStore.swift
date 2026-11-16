@@ -114,7 +114,7 @@ public final class GrowthStore {
 
     /// What's due to play on Boop day `today`: a level-up, and the ring closing.
     public func due(today: String) -> [Core.GrowthBeat] {
-        (levelDue.map { [.level($0, grewTo: Growth.grows(at: $0) ? Growth.stages[Growth.stage(forLevel: $0) - 1].name : nil)] } ?? [])
+        (levelDue.map { [.level($0)] } ?? [])
             + (ringDue(today: today) ? [.ringClosed] : [])
     }
 

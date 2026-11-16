@@ -4,10 +4,11 @@ import XCTest
 @testable import BoopDevKit
 @testable import BoopKit
 
-/// Every state the eval scenarios build, pinned (internal/VERIFICATION.md §5, L0):
-/// each scenario runs with a scripted brain that answers from NOW alone, and
+/// The states a few eval scenarios build, pinned (internal/VERIFICATION.md §5, L0):
+/// each of `pinned` runs with a scripted brain that answers from NOW alone, and
 /// every state it's sent must match Boop's pack's `tests/golden-states/<scenario>.txt`
-/// byte for byte. Nothing here needs Jev, so a change to how Boop's prompt
+/// byte for byte. A few, one for each kind of line, not all: every one holds the
+/// whole prompt, so a word changed in it rewrites every file. Nothing here needs Jev, so a change to how Boop's prompt
 /// is built, rather than to what it says, can't slip past: the steering
 /// evals, which would catch a wording change, need the owner's key. A
 /// deliberate change to the prompt rewrites the files:
@@ -21,12 +22,18 @@ final class GoldenStateTests: XCTestCase {
     static let folder = CharacterPack.active.directory.appendingPathComponent("character.json").resolvingSymlinksInPath()
         .deletingLastPathComponent().appendingPathComponent("tests/golden-states")
 
-    /// Answers from NOW's line alone, the same every time: a failure moves
-    /// the mood a step and gets an annoyed face, a win a happy one, a poke a
-    /// curious one, words to Boop a proud one, anything else an engaged one
+    /// The scenarios pinned, by their number: failing checks, pokes, a busy
+    /// session, the dream, your words, the agents asked about, a wish, a
+    /// lock, a workday, the world.
+    static let pinned: Set<String> = ["04", "05", "21", "97", "126", "127", "152", "160", "173", "187"]
+
+    /// Answers from NOW's line alone, the same every time: a failure or a
+    /// poke turns the mood cross, a win happy; a failure gets an annoyed
+    /// face, a win a happy one, a poke a
+    /// curious one, words to Boop a proud one, anything else a focused one
     /// or, for a turn starting, none. So HISTORY fills with every kind of
-    /// line Boop writes: moods changing, faces with and without an
-    /// animation, takes said.
+    /// line Boop writes: moods changing, cross's level counted and fading,
+    /// faces with and without an animation, takes said.
     nonisolated static let brain = ScriptedBrain(id: "golden") { state, questions in
         let now = state.components(separatedBy: "\nNOW (").last ?? ""
         // A turn done after failed checks is a win, however it got there.
@@ -42,11 +49,10 @@ final class GoldenStateTests: XCTestCase {
         for q in questions {
             switch q.key {
             case "mood":
-                let i = failed || poked ? 1 : won ? 2 : 0
-                out[q.key] = pick(q, q.options[min(i, q.options.count - 1)].name)
+                out[q.key] = pick(q, failed || poked ? "cross" : won ? "happy" : q.options[0].name)
             case MomentOutput.emotionKey:
                 out[q.key] = pick(q, now.contains(" started turn ") ? "none" : failed ? "annoyed" : won ? "happy"
-                                  : poked ? "curious" : said ? "proud" : "engaged")
+                                  : poked ? "curious" : said ? "proud" : "focused")
             case MomentOutput.moveKey:
                 out[q.key] = pick(q, !now.contains(" finished turn ") ? "none" : failed ? "failure" : "success")
             case Signs.questionKey:
@@ -91,7 +97,8 @@ final class GoldenStateTests: XCTestCase {
         }
         let eval = Eval(brain: brain, steering: RuntimeTests.steering)
         let scenarios = try Scenario.load(directory: try EvalTests.scenarios())
-        XCTAssertGreaterThanOrEqual(scenarios.count, 60)
+            .filter { Self.pinned.contains(String($0.file.prefix { $0 != "-" })) }
+        XCTAssertEqual(scenarios.count, Self.pinned.count)
         if record { try FileManager.default.createDirectory(at: Self.folder, withIntermediateDirectories: true) }
         var passes = 0
         for scenario in scenarios {
@@ -117,6 +124,6 @@ final class GoldenStateTests: XCTestCase {
             let at = Array(zip(a, b)).firstIndex { $0 != $1 } ?? min(a.count, b.count)
             XCTFail("\(scenario.file): line \(at + 1) differs\n  now:    \(at < a.count ? a[at] : "(end)")\n  pinned: \(at < b.count ? b[at] : "(end)")")
         }
-        XCTAssertGreaterThan(passes, 300, "the scenarios build states")
+        XCTAssertGreaterThan(passes, 30, "the scenarios build states")
     }
 }

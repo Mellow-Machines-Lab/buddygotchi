@@ -133,9 +133,9 @@ public enum EventLine {
     }
 
     /// A work act's start or its result, for Jev to say something over what
-    /// Boop already does by rule: the agent's clause, then the scene the pack
-    /// draws for it, if it says one (`character.json`'s `acts`):
-    /// `claude is pushing on "api". Boop has climbed on a rocket for it, by itself.`
+    /// Boop already does by rule: the agent's clause, then what the pack
+    /// shows for it, if it says (`character.json`'s `acts`):
+    /// `claude is pushing on "api". Boop is watching the push go.`
     public static func actStarted(agent: String, kind: String, thread: String, name: String = CharacterPack.active.name,
                                   pack: CharacterPack = .active) -> String {
         let doing: String = switch kind {
@@ -246,10 +246,9 @@ public enum EventLine {
         count <= 1 ? "You shook \(name)." : "You shook \(name) \(count) times in a row."
     }
 
-    /// Boop reached a level: `Boop reached level 12.`, or with the size it
-    /// grew to, `Boop reached level 5 and grew: it's a Sprout now.`
-    public static func level(_ level: Int, grewTo stage: String?, name: String = CharacterPack.active.name) -> String {
-        "\(name) reached level \(level)" + (stage.map { " and grew: it's a \($0) now." } ?? ".")
+    /// Boop reached a level: `Boop reached level 12.`
+    public static func level(_ level: Int, name: String = CharacterPack.active.name) -> String {
+        "\(name) reached level \(level)."
     }
 
     /// Today's ring closed: `Today's ring is full: Boop's done for the day.`
@@ -274,10 +273,6 @@ public enum EventLine {
     public static func pressed(name: String = CharacterPack.active.name) -> String { "You pressed \(name)'s button." }
     public static func picked(name: String = CharacterPack.active.name) -> String {
         "You picked an agent from \(name)'s list."
-    }
-
-    public static func checkIn(hours: Int) -> String {
-        "Nothing has happened for \(hours) hour\(hours == 1 ? "" : "s")."
     }
 
     /// The idle check-in: `Nothing has happened for 20 min; claude sits

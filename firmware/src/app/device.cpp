@@ -213,15 +213,14 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
     render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
   }
-  // The work act, `[kind, words, full, result]`: its result "p" or "f" once
-  // the command has ended, as its words change to say so.
+  // The work act, `[kind, words]`, then `[kind, words, result]`: its result
+  // "p" or "f" once the command has ended, as its words change to say so.
   JsonArrayConst workAct = doc["wact"].as<JsonArrayConst>();
   if (workAct.size() >= 2) {
     m.workAct.kind = render::actKindFromName(workAct[0].as<const char*>());
     render::foldText(workAct[1].as<const char*>(), render::Stream::kActBytes - 1, m.workAct.text,
                      sizeof(m.workAct.text));
-    m.workAct.full = workAct[2] | 0;
-    const char* result = workAct[3] | "";
+    const char* result = workAct[2] | "";
     m.workAct.result = *result == 'p'   ? render::ActResult::kPass
                        : *result == 'f' ? render::ActResult::kFail
                                         : render::ActResult::kRunning;

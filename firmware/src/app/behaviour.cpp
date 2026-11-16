@@ -252,7 +252,7 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     const bool back = noApp(t);
     bool look = back || m.attn != model_.attn || m.look() != model_.look();
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
-    bar_.heard(m.xp, render::growthStage(model_.when), render::growthStage(m.when), barHidden(m, back, t), t);
+    bar_.heard(m.xp, barHidden(m, back, t), t);
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
@@ -708,10 +708,9 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   c.thread = model_.name;
   c.more = model_.more;
   // With no app the Mac's tags are stale: a night's or a holiday's would
-  // stay up all the next day. Its growth stage isn't: a Hatchling stays one.
-  c.when = alone && !sleptThrough() ? model_.when & render::kGrowthTags : model_.when;
+  // stay up all the next day.
+  c.when = alone && !sleptThrough() ? 0 : model_.when;
   c.lookMs = t - lookAt_;
-  c.growthWaits = bar_.waits(t);
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;
 }

@@ -44,7 +44,7 @@ final class ContextTests: XCTestCase {
     }
 
     /// The Talk row only when it isn't normal, or silent for a hush's
-    /// minutes left, then back to the setting; the Boop row: its stage and
+    /// minutes left, then back to the setting; the Boop row: its level and
     /// age, and no hush.
     /// The When row, first: the time, the weekday, the part of the day,
     /// and the calendar's occasions in words, which NOW's heading no

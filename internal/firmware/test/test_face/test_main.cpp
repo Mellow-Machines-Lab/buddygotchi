@@ -515,7 +515,7 @@ void test_it_asks_harder_the_longer_it_waits() {
   TEST_ASSERT_EQUAL_INT(NeedsYou::kTop, p.placardY);
   TEST_ASSERT_EQUAL_INT(NeedsYou::kHeadScale, p.scale);
   TEST_ASSERT_FALSE(p.whole);
-  // Every stage draws the placard over most of the screen, with the head.
+  // Every part of the arc draws the placard over most of the screen, with the head.
   Strip s;
   s.agent = "claude", s.project = "boop", s.name = "Deploy the docs";
   for (uint32_t ms : {2000u, 8000u, 14000u, 19500u, 25000u}) {

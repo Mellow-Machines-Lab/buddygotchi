@@ -21,24 +21,25 @@ extension CoreRig {
 
 final class CoreActivityTests: XCTestCase {
 
-    /// A running call shows what it does, in working's
-    /// place: its tool and topic decide, and a `Task` or `Agent` call
-    /// delegates only from the main agent.
+    /// A running call shows what it does, in working's place, one of four:
+    /// running (`terminal` on the wire), looking (`analyzing`), typing
+    /// (`tool_use`) or waiting. Its tool and topic decide.
     func testEachCallShowsWhatItDoes() {
+        let running = "terminal", looking = "analyzing", typing = "tool_use"
         let cases: [(Agent, String, String?, String)] = [
-            (.claude, "Bash", nil, "terminal"), (.claude, "Bash", "build", "terminal"),
-            (.claude, "Bash", "deploy", "terminal"), (.claude, "Bash", "tests", "testing"),
-            (.claude, "Bash", "inspect", "analyzing"), (.claude, "Read", nil, "analyzing"),
-            (.claude, "Grep", nil, "analyzing"), (.claude, "Glob", nil, "analyzing"),
-            (.claude, "LS", nil, "analyzing"), (.claude, "WebSearch", nil, "searching"),
-            (.claude, "WebFetch", nil, "searching"), (.claude, "Task", nil, "delegating"),
-            (.claude, "Agent", nil, "delegating"), (.claude, "Edit", "docs", "tool_use"),
-            (.claude, "Write", nil, "tool_use"), (.claude, "NotebookEdit", nil, "tool_use"),
-            (.claude, "mcp__github__create_pr", nil, "tool_use"), (.claude, "Skill", nil, "tool_use"),
-            (.claude, "TodoWrite", nil, "planning"), (.claude, "ExitPlanMode", nil, "planning"),
-            (.codex, "shell", nil, "terminal"), (.codex, "exec_command", "tests", "testing"),
-            (.codex, "local_shell", "inspect", "analyzing"), (.codex, "apply_patch", nil, "tool_use"),
-            (.codex, "update_plan", nil, "planning"),
+            (.claude, "Bash", nil, running), (.claude, "Bash", "build", running),
+            (.claude, "Bash", "deploy", running), (.claude, "Bash", "tests", running),
+            (.claude, "Task", nil, running), (.claude, "Agent", nil, running),
+            (.claude, "Bash", "inspect", looking), (.claude, "Read", nil, looking),
+            (.claude, "Grep", nil, looking), (.claude, "Glob", nil, looking),
+            (.claude, "LS", nil, looking), (.claude, "WebSearch", nil, looking),
+            (.claude, "WebFetch", nil, looking), (.claude, "Edit", "docs", typing),
+            (.claude, "Write", nil, typing), (.claude, "NotebookEdit", nil, typing),
+            (.claude, "mcp__github__create_pr", nil, typing), (.claude, "Skill", nil, typing),
+            (.claude, "TodoWrite", nil, typing), (.claude, "ExitPlanMode", nil, typing),
+            (.codex, "shell", nil, running), (.codex, "exec_command", "tests", running),
+            (.codex, "local_shell", "inspect", looking), (.codex, "apply_patch", nil, typing),
+            (.codex, "update_plan", nil, typing),
         ]
         for (agent, tool, topic, act) in cases {
             let rig = CoreRig()
@@ -48,10 +49,6 @@ final class CoreActivityTests: XCTestCase {
             XCTAssertEqual(rig.state.visual, act, tool)
             XCTAssertEqual(rig.state.doing, "working", "\(tool): the base stays working")
         }
-        let rig = CoreRig()
-        rig.send(.turnStart)
-        rig.send(.activity, subagent: "a1", tool: "Agent")
-        XCTAssertEqual(rig.act, "tool_use", "a subagent doesn't delegate")
     }
 
     /// `act` goes out only while `base` is `working` and
@@ -84,53 +81,56 @@ final class CoreActivityTests: XCTestCase {
         XCTAssertFalse(rig.log.contains { if case .state(let s) = $0 { s.activity != nil && s.doing != "working" } else { false } })
     }
 
-    /// With several calls running the highest shows,
-    /// testing > delegating > terminal > searching > analyzing > tool_use
-    /// > waiting > planning; a higher one at once, and a lower one only once
-    /// the one showing is 1.5 s past its last call.
+    /// Pins the four activities, their wire names and their order: with
+    /// several calls running the highest shows, running > looking > typing
+    /// > waiting; a higher one at once, and a lower one only once the one
+    /// showing is its hold past its last call: 3 s for running and looking
+    /// (`Core.poseHoldMs`), 1.5 s for typing (`Core.actHoldMs`).
     func testTheHighestActivityShows() {
-        XCTAssertEqual(Act.allCases.map(\.rawValue),
-                       ["testing", "delegating", "terminal", "searching", "analyzing", "tool_use", "waiting", "planning"])
+        XCTAssertEqual(Act.allCases, [.running, .looking, .typing, .waiting])
+        XCTAssertEqual(Act.allCases.map(\.rawValue), ["terminal", "analyzing", "tool_use", "waiting"])
+        XCTAssertEqual(Act.allCases.map(\.holdMs), [3000, 3000, 1500, 1500])
         let rig = CoreRig()
         rig.send(.turnStart, mode: "plan")
-        XCTAssertEqual(rig.act, "planning", "plan mode, nothing running")
-        let climb: [(tool: String, topic: String?, act: String)] = [
-            ("Edit", nil, "tool_use"), ("Read", nil, "analyzing"), ("WebFetch", nil, "searching"), ("Bash", nil, "terminal"),
-            ("Agent", nil, "delegating"), ("Bash", "tests", "testing"),
-        ]
+        XCTAssertEqual(rig.act, "tool_use", "plan mode, nothing running: typing")
+        let climb: [(tool: String, act: Act)] = [("Edit", .typing), ("Read", .looking), ("Bash", .running)]
         for (n, call) in climb.enumerated() {
-            let fx = rig.send(.activity, tool: call.tool, topic: call.topic, id: "c\(n)")
-            XCTAssertEqual(states(fx).last?.activity, call.act, "\(call.tool): at once")
+            rig.send(.activity, tool: call.tool, id: "c\(n)", mode: "plan")
+            XCTAssertEqual(rig.act, call.act.rawValue, "\(call.tool): at once")
         }
         for n in climb.indices.reversed() {
+            let act = climb[n].act
             rig.send(.activity, tool: climb[n].tool, id: "c\(n)", done: true)
-            XCTAssertEqual(rig.act, climb[n].act, "\(climb[n].act) ended, and holds")
-            rig.tick(after: Core.actHoldMs - 1)
-            XCTAssertEqual(rig.act, climb[n].act, "\(climb[n].act): still")
+            XCTAssertEqual(rig.act, act.rawValue, "\(act) ended, and holds")
+            rig.tick(after: act.holdMs - 1)
+            XCTAssertEqual(rig.act, act.rawValue, "\(act): still")
             rig.tick(after: 1)
-            XCTAssertEqual(rig.act, n > 0 ? climb[n - 1].act : "planning", "then the next one down")
+            XCTAssertEqual(rig.act, n > 0 ? climb[n - 1].act.rawValue : "tool_use", "then the next one down")
         }
     }
 
-    /// An activity shows at least 1.5 s
-    /// (`Core.actHoldMs`) after its last call ends, so a burst of quick
-    /// reads is one stretch of analyzing, not a flicker; then plain
-    /// working.
+    /// Looking shows at least 3 s (`Core.poseHoldMs`) after its last call
+    /// ends, so a burst of quick reads is one stretch of looking, not a
+    /// flicker, and reads between edits don't rock the body back and
+    /// forth; then plain working.
     func testABurstOfQuickCallsIsOneStretch() {
         XCTAssertEqual(Core.actHoldMs, 1500)
+        XCTAssertEqual(Core.poseHoldMs, 3000)
         let rig = CoreRig()
         rig.send(.turnStart)
         var acts: [String?] = []
         func note(_ fx: Fx) { acts += states(fx).map(\.activity) }
-        for n in 0..<8 {  // a read of 50 ms every 600 ms
-            note(rig.send(.activity, tool: "Read", id: "r\(n)"))
-            rig.now += 50
-            note(rig.send(.activity, tool: "Read", id: "r\(n)", done: true))
-            note(rig.tick(after: 550))
+        for n in 0..<8 {  // a read of 50 ms, then an edit of 50 ms, every 1.2 s
+            for (tool, id) in [("Read", "r\(n)"), ("Edit", "e\(n)")] {
+                note(rig.send(.activity, tool: tool, id: id))
+                rig.now += 50
+                note(rig.send(.activity, tool: tool, id: id, done: true))
+                note(rig.tick(after: 550))
+            }
         }
         XCTAssertEqual(acts, ["analyzing"], "one stretch")
-        note(rig.tick(after: Core.actHoldMs - 550 - 1))
-        XCTAssertEqual(rig.act, "analyzing", "1.5 s after the last read")
+        note(rig.tick(after: Core.poseHoldMs - 1150 - 1))
+        XCTAssertEqual(rig.act, "analyzing", "3 s after the last read")
         note(rig.tick(after: 1))
         XCTAssertEqual(acts, ["analyzing", nil])
         XCTAssertEqual(rig.state.visual, "working")
@@ -138,7 +138,7 @@ final class CoreActivityTests: XCTestCase {
 
     /// A lower activity doesn't cut a higher one short.
     /// A command that starts during a read shows at once; when it ends it
-    /// holds 1.5 s, then the read still running shows again.
+    /// holds 3 s, then the read still running shows again.
     func testAHigherActivityShowsAtOnceAndHolds() {
         let rig = CoreRig()
         rig.send(.turnStart)
@@ -147,7 +147,7 @@ final class CoreActivityTests: XCTestCase {
         XCTAssertEqual(states(rig.send(.activity, tool: "Bash", id: "b")).last?.activity, "terminal")
         rig.now += 100
         rig.send(.activity, tool: "Bash", id: "b", done: true)
-        rig.tick(after: 1499)
+        rig.tick(after: 2999)
         XCTAssertEqual(rig.act, "terminal")
         rig.tick(after: 1)
         XCTAssertEqual(rig.act, "analyzing")
@@ -163,24 +163,30 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.turnStart)
         rig.send(.activity, tool: "Bash", topic: "tests", id: "t")
         rig.wait(19_000)
-        XCTAssertEqual(rig.act, "testing")
-        rig.wait(2000)
-        XCTAssertEqual(rig.act, "waiting", "20 s quiet, then its 1.5 s")
+        XCTAssertEqual(rig.act, "terminal")
+        rig.wait(4000)
+        XCTAssertEqual(rig.act, "waiting", "20 s quiet, then running's 3 s")
         rig.send(.activity, subagent: "a1", tool: "Read", id: "r")
-        XCTAssertEqual(rig.act, "testing", "heard from again")
+        XCTAssertEqual(rig.act, "terminal", "heard from again")
 
         let helper = CoreRig()
         helper.send(.turnStart)
         helper.send(.activity, tool: "Agent", id: "A")
         helper.send(.activity, subagent: "a1", tool: "Bash", id: "b")
         helper.wait(60_000)
-        XCTAssertEqual(helper.act, "delegating", "the helper's command waits; the helper works")
+        XCTAssertEqual(helper.act, "terminal", "the helper's command waits; the helper works")
+
+        let plan = CoreRig()
+        plan.send(.turnStart, mode: "plan")
+        plan.send(.activity, tool: "Read", id: "r", mode: "plan")
+        plan.wait(24_000)
+        XCTAssertEqual(plan.act, "waiting", "plan mode doesn't hide a call gone quiet")
     }
 
-    /// Planning shows only for Claude's plan
-    /// mode (from any event that says it) and a planning call; never from
-    /// the gap between a prompt and the first call.
-    func testPlanningComesOnlyFromPlanModeOrAPlanningCall() {
+    /// Plan mode is typing, with no call running: from Claude's plan mode
+    /// (from any event that says it) or a planning call; never from the
+    /// gap between a prompt and the first call.
+    func testPlanModeTypesWhileNothingRuns() {
         let rig = CoreRig()
         rig.send(.turnStart)
         rig.wait(10_000)
@@ -188,23 +194,23 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.activity, tool: "Read", id: "r", mode: "plan")
         XCTAssertEqual(rig.act, "analyzing", "a call shows over plan mode")
         rig.send(.activity, tool: "Read", id: "r", done: true, mode: "plan")
-        rig.wait(2000)
-        XCTAssertEqual(rig.act, "planning")
+        rig.wait(4000)
+        XCTAssertEqual(rig.act, "tool_use")
         rig.send(.activity, tool: "Edit", id: "e", mode: "acceptEdits")
         XCTAssertEqual(rig.act, "tool_use")
         rig.send(.activity, tool: "Edit", id: "e", done: true)
         rig.wait(2000)
         XCTAssertNil(rig.act, "out of plan mode; an event without a mode leaves it as it was")
         rig.send(.activity, tool: "TodoWrite", id: "t")
-        XCTAssertEqual(rig.act, "planning", "a planning call")
+        XCTAssertEqual(rig.act, "tool_use", "a planning call")
     }
 
-    /// Delegating from the main agent's `Task` or `Agent`
+    /// Running from the main agent's `Task` or `Agent`
     /// call until it ends, or while a helper Boop saw start
     /// (`SubagentStart`) hasn't ended; never from a helper's end or its
     /// call alone. A helper's start isn't activity: it wakes no idle
     /// session.
-    func testDelegatingLastsWhileAHelperWorks() {
+    func testRunningLastsWhileAHelperWorks() {
         let rig = CoreRig()
         rig.send(.turnStart)
         for (call, helper) in [("A1", "h1"), ("A2", "h2")] {  // background helpers: their calls return at once
@@ -213,14 +219,14 @@ final class CoreActivityTests: XCTestCase {
             rig.send(.activity, tool: "Agent", id: call, done: true)
         }
         rig.wait(5000)
-        XCTAssertEqual(rig.act, "delegating")
+        XCTAssertEqual(rig.act, "terminal")
         rig.send(.activity, subagent: "h1", tool: "Read", id: "h1r")
-        XCTAssertEqual(rig.act, "delegating", "it outranks a helper's read")
+        XCTAssertEqual(rig.act, "terminal", "it outranks a helper's read")
         rig.send(.subagentEnd, subagent: "h1")
         rig.wait(5000)
-        XCTAssertEqual(rig.act, "delegating", "h2 still works")
+        XCTAssertEqual(rig.act, "terminal", "h2 still works")
         rig.send(.subagentEnd, subagent: "h2")
-        rig.wait(2000)
+        rig.wait(4000)
         XCTAssertNil(rig.act)
 
         let other = CoreRig()
@@ -241,13 +247,12 @@ final class CoreActivityTests: XCTestCase {
     func testAHelpersCallsEndWithIt() {
         let rig = CoreRig()
         rig.send(.turnStart)
-        rig.send(.activity, tool: "Agent", id: "A")
         rig.send(.subagentStart, subagent: "h")
-        rig.send(.activity, subagent: "h", tool: "Bash", topic: "tests", id: "hb")
-        XCTAssertEqual(rig.act, "testing")
+        rig.send(.activity, subagent: "h", tool: "Read", id: "hr")
+        XCTAssertEqual(rig.act, "terminal", "a helper at work")
         rig.send(.subagentEnd, subagent: "h")
-        rig.wait(2000)
-        XCTAssertEqual(rig.act, "delegating", "its Agent call runs on")
+        rig.wait(4000)
+        XCTAssertNil(rig.act, "its read went with it")
 
         rig.send(.activity, tool: "Bash", id: "lost")
         rig.send(.turnEnd)
@@ -266,35 +271,35 @@ final class CoreActivityTests: XCTestCase {
         rig.send(.activity, tool: "Read", id: "r")
         XCTAssertNil(rig.state.attn, "moved on")
         rig.send(.activity, tool: "Read", id: "r", done: true)
-        rig.wait(2000)
+        rig.wait(4000)
         XCTAssertNil(rig.act, "not the denied command")
 
         rig.send(.activity, subagent: "a1", tool: "Bash", id: "s")
         rig.send(.needsYou, subagent: "a1", tool: "Bash")
         rig.send(.subagentEnd, subagent: "a1")
-        rig.wait(2000)
+        rig.wait(4000)
         XCTAssertNil(rig.act, "a denied subagent ends, and its command with it")
     }
 
     /// With several sessions working, the one heard from
     /// last shows what it's doing, among those doing something, once the
-    /// activity showing has shown 1.5 s.
+    /// activity showing has shown its hold.
     func testTheSessionHeardFromLastPicksTheActivity() {
         let rig = CoreRig()
         rig.send(.turnStart, session: "a")
         rig.send(.turnStart, session: "b")
         rig.send(.activity, session: "a", tool: "Bash", topic: "tests", id: "t")
-        XCTAssertEqual(rig.act, "testing")
+        XCTAssertEqual(rig.act, "terminal")
         rig.now += 500
         rig.send(.activity, session: "b", tool: "Read", id: "r")
-        XCTAssertEqual(rig.act, "testing", "testing has shown only 0.5 s")
-        rig.tick(after: 1000)
+        XCTAssertEqual(rig.act, "terminal", "running has shown only 0.5 s")
+        rig.tick(after: 2500)
         XCTAssertEqual(rig.act, "analyzing", "b was heard from last")
         rig.send(.activity, session: "b", tool: "Read", id: "r", done: true)
-        rig.wait(2000)
-        XCTAssertEqual(rig.act, "testing", "b is doing nothing now; a is")
+        rig.wait(4000)
+        XCTAssertEqual(rig.act, "terminal", "b is doing nothing now; a is")
         rig.send(.activity, session: "a", tool: "Bash", id: "t", done: true)
-        rig.wait(2000)
+        rig.wait(4000)
         XCTAssertNil(rig.act)
         XCTAssertEqual(rig.state.working, 2)
     }
@@ -303,29 +308,16 @@ final class CoreActivityTests: XCTestCase {
 // MARK: - The rules' reactions
 
 final class CoreRuleReactionTests: XCTestCase {
-    /// A session starting plays starting, fresh (startup,
-    /// clear), carrying on (resume) or with its context compacted
-    /// (compact), and a prompt plays it for a new task: a reaction of the rules', with no face of the brain's,
-    /// which plays only if nothing plays on the device.
-    func testStartsPlayStarting() {
-        for (source, ctx) in [("startup", "session"), ("clear", "session"), ("resume", "continuation"),
-                              ("compact", "compacted"), (nil, "session")] {
-            let rig = CoreRig()
-            let fx = rig.send(.sessionStart, source: source)
-            XCTAssertEqual(reactionNames(fx), ["starting \(ctx)"], source ?? "no source")
-            let reaction = moments(fx)[0]
-            XCTAssertNil(reaction.mood)
-            XCTAssertEqual(reaction.ctx, ctx, "the device picks a variation for it")
+    /// A session or a turn starting plays no reaction of the rules': the
+    /// look changes, and the work stream's first word says the rest.
+    func testAStartPlaysNoRuleReaction() {
+        for source in ["startup", "clear", "resume", "compact", nil] {
+            XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, source: source)), [], source ?? "no source")
         }
         let rig = CoreRig()
         let fx = rig.send(.turnStart)
-        let start = moments(fx)
-        XCTAssertEqual(start.count, 1)
-        XCTAssertEqual(start[0].line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free","args":{"ctx":"new_task","reason":"claude started"}}"#)
-        XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look first")
-        XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "resume")), ["starting continuation"])
-        XCTAssertEqual(reactionNames(CoreRig().send(.sessionStart, .codex, source: "compact")), ["starting compacted"])
-        XCTAssertEqual(reactionNames(rig.send(.sessionStart, subagent: "a1")), [], "a subagent's own start")
+        XCTAssertEqual(moments(fx).map { "\($0.name) \($0.args)" }, [#"react {"reason":"claude woke Boop"}"#], "only the caption for why it woke")
+        XCTAssertEqual(fx.effects.firstIndex { if case .state = $0 { true } else { false } }, 0, "the look")
     }
 
     /// An interrupt that ends a turn stops it, which reaches the brain
@@ -392,77 +384,20 @@ final class CoreRuleReactionTests: XCTestCase {
         XCTAssertEqual(reactionNames(rig.send(.activity, tool: "Task", id: "T", done: true)), [], "older hooks")
     }
 
-    /// Every reaction the rules play is recorded as a `did` named after
-    /// it, by rule, for the event that played it, as the poke's `wiggle`
-    /// is, so HISTORY and NOW say Boop already reacted. One the rules
-    /// leave out records nothing.
-    func testEachRuleReactionIsRecorded() {
+    /// A start, a helper back and a stop record no `did` of the rules':
+    /// the brain has them.
+    func testStartsAndStopsRecordNoRuleReaction() {
         let rig = CoreRig()
         func did(_ fx: Fx) -> [String] {
             let seq = rig.pipeline.transcript.events.last { $0.agent != nil }!.seq
             return rig.pipeline.transcript.view(now: rig.now).dids(for: seq)
                 .map { "\($0.action ?? "") \($0["by"]?.string ?? "") \($0["message"]?.string ?? "")" }
         }
-        XCTAssertEqual(did(rig.send(.sessionStart, source: "resume")),
-                       ["starting rule "])
-        XCTAssertEqual(rig.pipeline.transcript.events.last?["ctx"], "continuation")
-        XCTAssertEqual(did(rig.send(.sessionStart, session: "s2")), ["starting rule "])
-        XCTAssertEqual(did(rig.send(.sessionStart, session: "s3", source: "compact")),
-                       ["starting rule "])
-        rig.now += Core.startCardMs  // past the start's own card
-        let start = rig.send(.turnStart)
-        XCTAssertEqual(did(start), ["starting rule "], "recorded with no message: every turn starts with it")
-        XCTAssertNil(events(start).first?.reaction, "not shown under its line")
+        XCTAssertEqual(did(rig.send(.sessionStart, source: "resume")), [])
+        XCTAssertEqual(did(rig.send(.turnStart)), [])
         rig.send(.subagentStart, subagent: "h1")
         XCTAssertEqual(did(rig.send(.subagentEnd, subagent: "h1")), [], "a helper back is the brain's")
         rig.send(.activity, tool: "Bash", id: "3")
         XCTAssertEqual(did(rig.send(.turnStopped, tool: "Bash")), [], "and a stop")
-        rig.send(.turnStart, session: "s2")
-        rig.send(.needsYou, session: "s2", tool: "Bash")
-        XCTAssertEqual(did(rig.send(.turnStart)), [], "needs you shows: no rule reaction")
-    }
-
-    /// No rule reaction while something needs you or while
-    /// `listening` holds the screen, from any session; the event that
-    /// answers a request plays its own.
-    func testNoRuleReactionWhileSomethingHoldsTheScreen() {
-        let rig = CoreRig()
-        rig.send(.turnStart, session: "a")
-        rig.send(.activity, session: "a", tool: "Bash", id: "b")
-        rig.send(.needsYou, session: "a", tool: "Bash")
-        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "b")), [], "needs you shows")
-        XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "c")), [])
-        rig.send(.activity, session: "a", tool: "Bash", failed: false, id: "b")
-        XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "c2")), ["starting session"], "it ran, and answered the request")
-        rig.talk(true)
-        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "c")), [], "the mic is on")
-        rig.talk(false)
-        XCTAssertEqual(reactionNames(rig.send(.sessionStart, session: "d")), [], "listening waits for the reply")
-        rig.passed(reacted: true)
-        XCTAssertEqual(reactionNames(rig.send(.turnStart, session: "d")), ["starting new_task"], "its start's card never showed")
-    }
-
-    /// One card for a start: a session's first prompt within
-    /// `Core.startCardMs` of its start card shows none of its own, and a
-    /// follow-up within `Core.followUpMs` of its last turn's end none
-    /// either. A new task after a while does.
-    func testOneStartCardForAStart() {
-        let rig = CoreRig()
-        XCTAssertEqual(reactionNames(rig.send(.sessionStart)), ["starting session"])
-        rig.now += Core.startCardMs - 1000
-        XCTAssertEqual(reactionNames(rig.send(.turnStart)), [], "the start card said it")
-        rig.now += 60_000
-        rig.send(.turnEnd)
-        rig.now += Core.followUpMs - 1000
-        XCTAssertEqual(reactionNames(rig.send(.turnStart)), [], "a follow-up")
-        rig.now += 60_000
-        rig.send(.turnEnd)
-        rig.now += Core.followUpMs
-        XCTAssertEqual(reactionNames(rig.send(.turnStart)), ["starting new_task"], "a new task, a while later")
-
-        let slow = CoreRig()
-        slow.send(.sessionStart, session: "late")
-        slow.now += Core.startCardMs
-        XCTAssertEqual(reactionNames(slow.send(.turnStart, session: "late")), ["starting new_task"], "typed a minute on")
     }
 }

@@ -235,8 +235,8 @@ final class WorkStreamTests: XCTestCase {
         let lanes = (0..<WorkStream.maxLanes).map {
             StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxWordBytes))
         }
-        let s = StateSnapshot(doing: "working", activity: "delegating", mood: "overwhelmed", attn: nil, working: 12, idle: 9,
-                              helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "tier5", "pal", "chonk", "legend", "reading"],
+        let s = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 12, idle: 9,
+                              helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "tier3", "pal", "legend", "reading"],
                               todo: .init(done: 99, total: 99), calls: lanes)
         XCTAssertLessThan(s.jsonLine.utf8.count, 440, s.jsonLine)
     }
@@ -333,62 +333,46 @@ final class WorkStreamTests: XCTestCase {
     }
 
     /// An act is in `state` while it runs, and comes to its result there,
-    /// held for the opening's rest and the result's time (`leadMs`, `resultMs`,
-    /// the board's `actLeadMs`, `actResultMs`). No word forward either way.
+    /// held for the lead's rest and the result's time (`leadMs`, `resultMs`,
+    /// the board's `kActLeadMs`, `kActResultMs`). No word forward either way.
     func testAnActInTheState() throws {
-        XCTAssertEqual(WorkStream.leadMs("push", full: true), 3400)
-        XCTAssertEqual(WorkStream.resultMs(full: true), 6000)
+        XCTAssertEqual(WorkStream.leadMs, 900)
+        XCTAssertEqual(WorkStream.resultMs, 2600)
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
         run(rig, "0", program: "ls")
         rig.now += 3000
         XCTAssertEqual(calls(rig.send(call(rig, "1", program: "git push"))), [])
         var act = try XCTUnwrap(rig.core.snapshot(at: rig.now).fields["wact"])
-        XCTAssertEqual(act, .array([.string("push"), .string("git push"), .int(1)]))
-        rig.now += 1000
+        XCTAssertEqual(act, .array([.string("push"), .string("git push")]))
+        rig.now += 500
         XCTAssertEqual(calls(rig.send(call(rig, "1", program: "git push", failed: false))), [])
         act = try XCTUnwrap(rig.core.snapshot(at: rig.now).fields["wact"])
-        XCTAssertEqual(act, .array([.string("push"), .string("shipped!"), .int(1), .string("p")]))
-        rig.tick(after: 2400 + 6000 - 1)
-        XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "its opening's rest, then its result")
+        XCTAssertEqual(act, .array([.string("push"), .string("shipped!"), .string("p")]))
+        rig.tick(after: 400 + 2600 - 1)
+        XCTAssertNotNil(rig.core.snapshot(at: rig.now).fields["wact"], "its lead's rest, then its result")
         rig.tick(after: 1)
         XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"])
     }
 
-    /// The full act plays when its kind hasn't for 30 minutes, or it's the
-    /// first of the day; otherwise the small version. It pins the rule.
-    func testTheFullActIsTheFirstInAWhile() {
-        XCTAssertEqual(WorkStream.fullEveryMs, 30 * 60_000)
-        var s = WorkStream()
-        s.fullAt["push"] = 0
-        XCTAssertFalse(s.isFull("push", at: 30 * 60_000 - 1) { _ in true })
-        XCTAssertTrue(s.isFull("push", at: 30 * 60_000) { _ in true })
-        XCTAssertTrue(s.isFull("push", at: 1000) { _ in false }, "the first of the day")
-        XCTAssertTrue(s.isFull("tests", at: 1000) { _ in true }, "each kind for itself")
+    /// What Boop says over an act is Jev's, at a push's result alone: a
+    /// start only shows its sign, and a check's result has its own line when
+    /// it matters.
+    func testOnlyAPushsResultWakesTheBrain() {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
-        run(rig, "1", program: "git push")
-        rig.now += 60_000
-        rig.send(call(rig, "2", program: "git push"))
-        XCTAssertEqual(rig.core.snapshot(at: rig.now).fields["wact"], .array([.string("push"), .string("git push"), .int(0)]))
-    }
-
-    /// What Boop says over an act is Jev's: a full act's start and result
-    /// wake the brain, the small version's never do, and neither does a
-    /// check's failure twice.
-    func testAnActWakesTheBrainOnlyWhenFull() {
-        let rig = CoreRig(workStream: true)
-        rig.send(.turnStart)
-        func woke(_ id: String, failed: Bool? = nil) -> [String] {
-            rig.now += 500
+        func woke(_ id: String, topic: String? = nil, program: String, failed: Bool? = nil) -> [String] {
+            rig.now += 5000
             let before = rig.views.count
-            rig.send(call(rig, id, program: "git push", failed: failed))
+            rig.send(call(rig, id, topic: topic, program: program, failed: failed))
             return rig.views[before...].filter(\.wakesBrain).map(\.line)
         }
-        XCTAssertEqual(woke("1"), [#"claude is pushing on "landing". Boop has climbed on a rocket for it, by itself, and is blasting off."#])
-        XCTAssertEqual(woke("1", failed: false), [#"claude's push went through on "landing", and the turn goes on. Boop is parachuting back down, by itself."#])
-        XCTAssertEqual(woke("2"), [], "the small version")
-        XCTAssertEqual(woke("2", failed: true), [])
+        XCTAssertEqual(woke("1", program: "git push"), [], "the start")
+        XCTAssertEqual(woke("1", program: "git push", failed: false), [#"claude's push went through on "landing", and the turn goes on. Boop hops: its sign says shipped."#])
+        XCTAssertEqual(woke("2", program: "git push"), [])
+        XCTAssertEqual(woke("2", program: "git push", failed: true), [#"claude's push failed on "landing". Boop flinches: its sign says fail."#])
+        XCTAssertEqual(woke("3", topic: "tests", program: "make test"), [])
+        XCTAssertEqual(woke("3", topic: "tests", program: "make test", failed: false), [], "a check passing is no news")
     }
 
     /// One act at a time; a command with no end heard ends with its turn; a
@@ -416,12 +400,9 @@ final class WorkStreamTests: XCTestCase {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart)
         rig.send(call(rig, "1", program: "git push"))
-        let full = rig.core.stream.act?.full
-        XCTAssertEqual(full, true)
         rig.send(.needsYou, tool: "Bash")
         XCTAssertNil(rig.core.snapshot(at: rig.now).fields["wact"], "needs you holds the screen")
         XCTAssertNotNil(rig.core.stream.act, "and the act waits behind it")
-        XCTAssertEqual(rig.core.stream.act?.full, full)
         rig.now += 1000
         rig.send(call(rig, "1", program: "git push", failed: false))
         XCTAssertEqual(rig.core.stream.act?.passed, true, "and has its end")
@@ -453,21 +434,6 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(rig.core.stream.act?.callID, "2")
     }
 
-    /// The small version's failure after a long run gets the full ending;
-    /// a short one's doesn't, and a push's never does.
-    func testALongRunsFailureEndsInFull() {
-        XCTAssertEqual(WorkStream.longRunMs, 60_000)
-        let rig = CoreRig(workStream: true)
-        rig.send(.turnStart)
-        run(rig, "0", topic: "tests", program: "make test")
-        rig.now += 1000
-        run(rig, "1", ms: 1000, topic: "tests", program: "make test", failed: true, error: "exit_code")
-        XCTAssertEqual(rig.core.stream.act?.full, false)
-        rig.now += 10000
-        run(rig, "2", ms: 60_000, topic: "tests", program: "make test", failed: true, error: "exit_code")
-        XCTAssertEqual(rig.core.stream.act?.full, true)
-    }
-
     /// A timeout or a request you denied isn't a result: the act stops, and
     /// its word says what happened.
     func testAnActWithNoResultStops() {
@@ -487,10 +453,9 @@ final class WorkStreamTests: XCTestCase {
     }
 
     /// A turn's end comes forward by how it went, if the turn called a
-    /// tool: done gathers its words; a full context buries it; a rate limit
-    /// or an overload freezes them; another failure, or you stopping it,
-    /// drops them. A compaction squashes them into a cube. A turn with no
-    /// call brings nothing.
+    /// tool: done gathers its words; a failure, or you stopping it, drops
+    /// them, under a word for why. A compaction brings nothing forward, and
+    /// neither does a turn with no call.
     func testTheWholeTurnsMoments() {
         let rig = CoreRig(workStream: true)
         func turn(_ end: () -> Fx) -> [String] {
@@ -501,9 +466,9 @@ final class WorkStreamTests: XCTestCase {
             return calls(end())
         }
         XCTAssertEqual(turn { rig.send(.turnEnd) }, ["done gather"])
-        XCTAssertEqual(turn { rig.send(.turnFailed, error: "context_limit") }, ["context full buried"])
-        XCTAssertEqual(turn { rig.send(.turnFailed, error: "rate_limit") }, ["rate limit freeze"])
-        XCTAssertEqual(turn { rig.send(.turnFailed, error: "overloaded") }, ["overloaded freeze"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "context_limit") }, ["context full drop"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "rate_limit") }, ["rate limit drop"])
+        XCTAssertEqual(turn { rig.send(.turnFailed, error: "overloaded") }, ["overloaded drop"])
         XCTAssertEqual(turn { rig.send(.turnFailed, error: "api_error") }, ["failed drop"])
         XCTAssertEqual(turn { rig.send(.turnStopped) }, ["stopped drop"])
         rig.now += 10_000
@@ -513,7 +478,7 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart)
         run(rig, "x", program: "ls")
         rig.now += 3000
-        XCTAssertEqual(calls(rig.send(.sessionStart, source: Mapping.compacted)), ["context compact"])
+        XCTAssertEqual(calls(rig.send(.sessionStart, source: Mapping.compacted)), [], "a compaction")
     }
 
     /// Turned off, the stream sends nothing.
@@ -524,11 +489,12 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(rig.state.calls, [])
     }
 
-    /// characters/CHARACTER.md §4: the scene is the pack's. Boop's says it, and
-    /// a pack that draws no acts, as Pixel, is told only what the agent did.
+    /// characters/CHARACTER.md §4: what Boop does at an act is the pack's to
+    /// say. Boop's says it, and a pack that says nothing, as Pixel, is told
+    /// only what the agent did.
     func testAnActsSceneIsThePacks() throws {
         XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "build", thread: "\"api\"", name: "Mo", pack: .active),
-                       "claude is building on \"api\". Mo has put on a hard hat, by itself, and is hammering at a little house.")
+                       "claude is building on \"api\". Mo is watching the build run.")
         let pixel = try CharacterPack.named(id: "pixel")
         XCTAssertEqual(EventLine.actStarted(agent: "claude", kind: "push", thread: "\"api\"", pack: pixel), "claude is pushing on \"api\".")
         XCTAssertEqual(EventLine.actEnded(agent: "claude", kind: "tests", thread: "\"api\"", passed: false, pack: pixel), "claude's tests failed on \"api\".")

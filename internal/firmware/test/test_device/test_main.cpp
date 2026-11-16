@@ -2757,6 +2757,33 @@ static void test_a_call_comes_forward_over_the_work() {
   TEST_ASSERT_TRUE(has(r.usb.text, endedLine(5, "skipped", "hidden")));
 }
 
+// Pins the work act on the wire and its times: `wact` is `[kind, words]`
+// while the command runs and `[kind, words, "p" or "f"]` once it has ended;
+// a result that comes before kActLeadMs (900 ms) waits for it, then shows
+// for kActResultMs (2600 ms). dbg.state says the words showing.
+static void test_a_work_act_comes_in_the_state() {
+  static_assert(render::kActLeadMs == 900 && render::kActResultMs == 2600, "the Mac's WorkStream holds the same");
+  Rig r;
+  clockAt(r, 1000);
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"wact\":[\"tests\",\"running tests\"]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":\"running tests\""));
+  clockAt(r, 1500);
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"wact\":[\"tests\",\"pass\",\"p\"]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":\"running tests\""));  // not before its lead is over
+  clockAt(r, 1000 + render::kActLeadMs);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":\"pass\""));
+  clockAt(r, 1000 + render::kActLeadMs + render::kActResultMs - 10);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":\"pass\""));
+  clockAt(r, 1000 + render::kActLeadMs + render::kActResultMs);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":null"));
+  // A failure's, and a kind the board doesn't know is no act.
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"wact\":[\"build\",\"fail\",\"f\"]}");
+  clockAt(r, r.kit.now() + render::kActLeadMs);
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":\"fail\""));
+  r.usbLine("{\"t\":\"state\",\"base\":\"working\",\"busy\":1,\"wact\":[\"dance\",\"dancing\"]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"wact\":null"));
+}
+
 // A wish left has no animation, sign or word, and the board still plays it,
 // at once: its bubble fades (the face slumps with it), and it's over as it
 // starts. Only face down refuses it.
@@ -3019,6 +3046,7 @@ int main() {
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_the_face_plays_its_designs_sounds);
   RUN_TEST(test_a_call_comes_forward_over_the_work);
+  RUN_TEST(test_a_work_act_comes_in_the_state);
   RUN_TEST(test_a_wish_left_plays_at_once);
   RUN_TEST(test_a_stroke_keeps_its_answer_when_it_meets_a_wish);
   RUN_TEST(test_a_wish_mets_sign_is_read_before_the_next);

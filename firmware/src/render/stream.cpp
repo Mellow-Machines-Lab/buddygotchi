@@ -11,8 +11,7 @@ namespace render {
 namespace {
 
 constexpr const char* kCallStyleNames[] = {"land",   "helper", "back",    "shatter", "bonk",   "bonk2",  "bonk3",
-                                           "throw",  "shrug",  "timeout", "no",      "compact", "buried", "freeze",
-                                           "drop",   "gather"};
+                                           "throw",  "shrug",  "timeout", "no",      "drop",   "gather"};
 static_assert(sizeof(kCallStyleNames) / sizeof(kCallStyleNames[0]) == int(CallStyle::kCount), "a name for every style");
 
 // The same few bits for the same word, slot and count on every board, so a
@@ -43,9 +42,6 @@ CallMove callMove(CallStyle style) {
     case CallStyle::kTimeout: return CallMove::kHit;
     case CallStyle::kShrug: return CallMove::kShrug;
     case CallStyle::kShatter: return CallMove::kShatter;
-    case CallStyle::kCompact: return CallMove::kCompact;
-    case CallStyle::kBuried: return CallMove::kBuried;
-    case CallStyle::kFreeze: return CallMove::kFreeze;
     case CallStyle::kDrop: return CallMove::kDrop;
     case CallStyle::kGather: return CallMove::kGather;
     default: return CallMove::kSink;
@@ -59,9 +55,6 @@ uint32_t callFlightMs(CallStyle style) {
     case CallMove::kSink: return 520;
     case CallMove::kDrop: return 300;
     case CallMove::kGather: return 700;  // the words reach its mouth
-    case CallMove::kCompact: return 900;  // squashed, then the cube's drop
-    case CallMove::kBuried: return 1200;  // the pile reaching its eyes
-    case CallMove::kFreeze: return 600;   // the poke
     default: return 450;
   }
 }
@@ -82,7 +75,6 @@ bool Stream::taken(const Word& w) const {
   if (!call.live || !w.live || int32_t(w.born - call.at) > 0) return false;
   switch (call.style) {
     case CallStyle::kGather: return w.slot == call.slot;
-    case CallStyle::kCompact:
     case CallStyle::kDrop: return true;
     default: return false;
   }
@@ -122,14 +114,7 @@ void Stream::drop(const Lane& lane, int column, int columns, uint32_t t) {
 }
 
 void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t) {
-  if (showing && !on) {
-    if (!paused) since = t;
-    movedAt = t;
-  }
   if (!showing && on) ending = true, endedAt = t;
-  // A needs-you over the agents' work pauses it; anything else that stops
-  // it ends it.
-  paused = !showing && cleared && (on || paused);
   if (showing) ending = false;
   on = showing;
   if (n > kLanes) n = kLanes;
@@ -138,12 +123,10 @@ void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_
     const int was = column(next.slot);
     if (was < 0) {
       drop(next, i, n, t);
-      movedAt = t;
       continue;
     }
     // Counts go round at 1000.
     const int moved = (next.count - lanes[was].count + 1000) % 1000;
-    if (moved) movedAt = t;
     for (int k = 0; k < moved && k < kDropsPerState; ++k) {
       Lane l = next;
       l.count = uint16_t(next.count + 1000 - k);
@@ -188,13 +171,12 @@ void Stream::setAct(const ActIn& in, bool hold, uint32_t t) {
     act.kind = in.kind, act.at = t;
   }
   act.hidden = false;
-  act.full = in.full;
   if (in.result == ActResult::kRunning) {
     std::snprintf(act.text, sizeof(act.text), "%s", in.text);
   } else if (act.result == ActResult::kRunning) {
     act.result = in.result;
     std::snprintf(act.resultText, sizeof(act.resultText), "%s", in.text);
-    const uint32_t ready = act.at + actLeadMs(act.kind, act.full);
+    const uint32_t ready = act.at + kActLeadMs;
     act.resultAt = int32_t(ready - t) > 0 ? ready : t;
     if (!act.text[0]) std::snprintf(act.text, sizeof(act.text), "%s", in.text);
   }
@@ -203,31 +185,25 @@ void Stream::setAct(const ActIn& in, bool hold, uint32_t t) {
 Stream::ActNow Stream::actNow(uint32_t t) const {
   ActNow now;
   if (act.kind == ActKind::kNone || act.hidden) return now;
-  now.kind = act.kind, now.full = act.full, now.text = act.text;
+  now.kind = act.kind, now.text = act.text;
   now.ageMs = std::max(0, int(int32_t(t - act.at)));
   if (act.result != ActResult::kRunning && int32_t(t - act.resultAt) >= 0) {
     now.result = act.result, now.text = act.resultText;
     now.resultMs = int(int32_t(t - act.resultAt));
-    now.leftMs = int(actResultMs(act.full)) - now.resultMs;
+    now.leftMs = int(kActResultMs) - now.resultMs;
     if (now.leftMs <= 0) now.kind = ActKind::kNone;
   }
   return now;
 }
 
 void Stream::prune(uint32_t t) {
-  // The words a gather, a compaction or a drop takes go once they're taken.
+  // The words a gather or a drop takes go once they're taken.
   if (call.live && int32_t(t - call.at) >= int32_t(kTakeMs))
     for (auto& w : words)
       if (taken(w)) w.live = false;
-  // A freeze over, the words it held fall on from where they stopped.
-  if (frozen() && int32_t(t - call.at) >= int32_t(kCallMs))
-    for (auto& w : words)
-      if (w.live && int32_t(w.born - call.at) <= 0) w.born += kCallMs;
   if (call.live && int32_t(t - call.at) >= int32_t(kCallMs)) call.live = false;
-  for (auto& w : words) {
-    const bool held = frozen() && int32_t(w.born - call.at) <= 0;
-    if (w.live && !held && int32_t(t - w.born) >= int32_t(kFallMs)) w.live = false;
-  }
+  for (auto& w : words)
+    if (w.live && int32_t(t - w.born) >= int32_t(kFallMs)) w.live = false;
   // The stream ended a while ago: its last words and word forward go.
   if (ending && int32_t(t - endedAt) >= int32_t(kEndMs + kCallMs)) {
     ending = false;

@@ -97,7 +97,7 @@ AttnKind attnKindFromName(const char* name);  // "approve", "question" or "plan"
 const char* attnKindName(AttnKind k);         // the wire's name; null for kNone
 // The tier the turn a finish is for reached (its `turn`), as the tags count
 // them (render/tags.h): 0 short of the first, then 1 to kTurnTiers for tier1
-// to tier5; kNoTurn when the Mac doesn't say.
+// to tier5 (the Mac sends up to 3); kNoTurn when the Mac doesn't say.
 constexpr int kNoTurn = -1, kTurnTiers = 5;
 
 struct SceneShow {

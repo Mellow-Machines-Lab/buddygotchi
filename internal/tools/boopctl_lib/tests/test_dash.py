@@ -710,14 +710,13 @@ class MemoryTests(unittest.TestCase):
                          "4 changed (1 added, 2 updated, 1 aged), 0 refused")
 
     def test_the_pack_s_lasting_moods(self):
-        """`m` offers the lasting moods: those with a `meaning`, 16 in
-        Boop's pack of 42 faces."""
+        """`m` offers the lasting moods: 7 in Boop's pack of 18 faces."""
         from boopctl_lib.common import MOODS, REPO, lasting_moods
         boop = lasting_moods(REPO / "characters" / "boop")
-        self.assertEqual(len(boop), 16)
+        self.assertEqual(boop, ["calm", "happy", "focused", "proud", "cross", "sad", "lonely"])
         self.assertIn("lonely", boop)
-        self.assertNotIn("crying", boop, "a face only, which settles into sad")
-        self.assertEqual(len(MOODS), 42, "Preview keeps every face")
+        self.assertNotIn("wounded", boop, "a face only, which settles into sad")
+        self.assertEqual(len(MOODS), 42, "Preview keeps every face of the pixel face")
 
     def test_dreaming_now_lands_with_its_dream(self):
         pending = controls.Pending()
@@ -872,10 +871,10 @@ class AppTests(unittest.TestCase):
                 await pilot.pause()
                 self.assertEqual(app.screen.choices, lasting_moods(), "the pack's lasting moods")
                 await pilot.press("escape")
-                await pick("m", lasting_moods().index("grumpy"))
+                await pick("m", lasting_moods().index("cross"))
                 await pick("r", 6, 0, 1, 8)  # grumpy, no move, medium, retry
                 got = server.wait(2)
-                self.assertEqual(got, [{"dev": "mood", "mood": "grumpy"},
+                self.assertEqual(got, [{"dev": "mood", "mood": "cross"},
                                        {"dev": "answer", "answers": {"react.face": "grumpy", "react.move": "none",
                                                                      "react.intensity": "medium", "say": "retry"}}])
                 self.assertEqual(len(app.pending.waiting), 2)

@@ -124,9 +124,6 @@ inline int signLift(uint32_t ms, int rise, int bob) {
 // What the Mac last said, as far as a face may use it.
 struct FaceContext {
   bool alone = false;  // no Mac: the rest is the board's own, not what the Mac said
-  // A new growth stage's body waits: a met wish's heart hasn't landed, or
-  // it's just come, and the `do` of a wish that reached it may yet follow.
-  bool growthWaits = false;
   Mood mood = kStartupMood;
   SceneState look = SceneState::kIdle;
   bool working = false;

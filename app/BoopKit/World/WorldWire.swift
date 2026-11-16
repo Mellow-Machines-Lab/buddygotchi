@@ -93,7 +93,6 @@ public enum World {
         public var seq: Int
         public var name: String
         public var level: Int
-        public var stage: String
         public var utcOffset: Int
         public var activity: Activity
         public var day: String
@@ -101,7 +100,7 @@ public enum World {
         public var added: Counts
 
         enum CodingKeys: String, CodingKey {
-            case seq, name, level, stage, utcOffset = "utc_offset", activity, day, xpToday = "xp_today", added
+            case seq, name, level, utcOffset = "utc_offset", activity, day, xpToday = "xp_today", added
         }
     }
 
@@ -159,20 +158,18 @@ public enum World {
         public var id: String
         public var name: String
         public var level: Int
-        public var stage: String?
         public var utcOffset: Int?
         public var activity: Activity
 
-        public init(id: String, name: String, level: Int, stage: String? = nil, utcOffset: Int?, activity: Activity) {
+        public init(id: String, name: String, level: Int, utcOffset: Int?, activity: Activity) {
             self.id = id
             self.name = name
             self.level = level
-            self.stage = stage
             self.utcOffset = utcOffset
             self.activity = activity
         }
 
-        enum CodingKeys: String, CodingKey { case id, name, level, stage, utcOffset = "utc_offset", activity }
+        enum CodingKeys: String, CodingKey { case id, name, level, utcOffset = "utc_offset", activity }
     }
 
     /// A region's buddies awake now.

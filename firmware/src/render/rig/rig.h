@@ -151,17 +151,27 @@ struct TierClip {
   const Clip* clip;
   uint32_t when;
 };
-// A look: the base clip it loops, nullptr for none, its occasions, and its
-// tiers' base clips. Pixel's face loops its clip; the gel loops a tier's
-// (its engine moves the body otherwise).
+// A base clip a look loops in place of its own, and of any tier's, while
+// the agents' activity is `act` (the state a `state`'s `act` names).
+struct ActClip {
+  const Clip* clip;
+  SceneState act;
+};
+// A look: the base clip it loops, nullptr for none, its occasions, its
+// tiers' base clips and its activities'. Pixel's face loops its clip; the
+// gel loops an activity's, else a tier's (its engine moves the body
+// otherwise).
 struct Look {
   SceneState state;
   const Clip* clip;
   List<Occasion> occasions;
   List<TierClip> tiers{};
+  List<ActClip> acts{};
   // The base clip of the last tier reached of those the look names, by
   // the tags on (render::reached sets every tier below), or nullptr.
   const Clip* tiered(uint32_t when) const;
+  // The base clip of the activity `act`, or nullptr for one it doesn't name.
+  const Clip* acted(SceneState act) const;
   // How many of its occasions fit now; and the clip of the i-th of those.
   int fitting(uint32_t when, uint32_t lookMs) const;
   const Clip* fitting(uint32_t when, uint32_t lookMs, int i) const;

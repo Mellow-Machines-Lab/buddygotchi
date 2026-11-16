@@ -71,6 +71,11 @@ const Clip* Look::tiered(uint32_t when) const {
   return base;
 }
 
+const Clip* Look::acted(SceneState act) const {
+  const ActClip* a = find(acts, [&](const ActClip& c) { return c.act == act; });
+  return a ? a->clip : nullptr;
+}
+
 int Look::fitting(uint32_t when, uint32_t lookMs) const {
   int n = 0;
   for (const Occasion& o : occasions) n += fits(o.when, o.afterS, when, lookMs);

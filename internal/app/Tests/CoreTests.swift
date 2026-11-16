@@ -42,7 +42,7 @@ struct Fx: Equatable, ExpressibleByArrayLiteral {
 
 extension ViewEvent {
     /// What the rules did about it, as far as the view event has it when
-    /// it's made: a turn's start has its `starting` reaction.
+    /// it's made: a poke has its wiggle.
     var reaction: String? { did.first { $0.by == "rule" }?.message }
 }
 
@@ -294,9 +294,9 @@ func moments(_ fx: [CoreEffect]) -> [Moment] {
     fx.compactMap { if case .reaction(let m) = $0 { return m } else { return nil } }
 }
 
-/// The rule reactions as `anim` or `anim ctx`, for short checks.
+/// The rule reactions' animations, for short checks.
 func reactionNames(_ fx: Fx) -> [String] {
-    moments(fx).map { ([$0.anim ?? "-"] + [$0.ctx].compactMap { $0 }).joined(separator: " ") }
+    moments(fx).map { $0.anim ?? "-" }
 }
 
 // MARK: - Agent work
@@ -643,7 +643,7 @@ final class CoreAgentWorkTests: XCTestCase {
         rig.wait(1000)
         rig.send(.activity, subagent: "a1", tool: "Bash", topic: "tests", id: "b")
         XCTAssertEqual(rig.state.doing, "working")
-        XCTAssertEqual(rig.state.activity, "testing")
+        XCTAssertEqual(rig.state.activity, "terminal")
         XCTAssertEqual(workCheckIns(rig.wait(5 * 60_000)), [], "no working check-in")
         let failed = rig.send(.activity, subagent: "a1", tool: "Bash", topic: "tests", failed: true, id: "b")
         XCTAssertEqual(woke(failed), [#"claude's tests failed on "landing"."#])
@@ -1494,9 +1494,9 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.wait(9 * 60_000, every: 60_000)
         rig.send(.turnStart, session: "d")
         XCTAssertEqual(rig.state.todo, StateSnapshot.Todo(done: 2, total: 5), "d's turn has no list")
-        XCTAssertTrue(rig.state.when.contains("tier4"), "the stretch, c's turn and its helper's, has run 9 minutes")
-        rig.wait(60_000, every: 60_000)
-        XCTAssertTrue(rig.state.when.contains("tier5"))
+        XCTAssertTrue(rig.state.when.contains("tier2"), "the stretch, c's turn and its helper's, has run 9 minutes")
+        rig.wait(6 * 60_000, every: 60_000)
+        XCTAssertTrue(rig.state.when.contains("tier3"))
     }
 
     /// A turn whose end never came (the hook lost, or an interrupt that
@@ -1513,7 +1513,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         list.data["todos_total"] = 3
         rig.send(list)
         rig.wait(30 * 60_000, every: 60_000)
-        XCTAssertTrue(rig.state.when.contains("tier5"))
+        XCTAssertTrue(rig.state.when.contains("tier3"))
         XCTAssertEqual(rig.state.working, 1)
         XCTAssertNotNil(rig.state.todo)
         XCTAssertNotNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)))
@@ -1522,7 +1522,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertEqual(rig.state.doing, "asleep", "an hour silent")
         XCTAssertEqual(rig.state.working, 0)
         XCTAssertNil(rig.state.todo)
-        XCTAssertTrue(rig.state.when.contains("tier5"), "idle's now: its turn's last word was an hour ago")
+        XCTAssertTrue(rig.state.when.contains("tier3"), "idle's now: its turn's last word was an hour ago")
         XCTAssertNil(rig.view.workingSince(at: rig.now, rig.pipeline.transcript.view(now: rig.now)), "no more check-ins")
         let beats = rig.wait(2 * 3600 * 1000, every: 60_000).views.filter { $0.name == "heartbeat" && $0.facts["working_ms"] != nil }
         XCTAssertEqual(beats.count, 0, "none all night")
@@ -1591,8 +1591,8 @@ final class CoreYouAndBoopTests: XCTestCase {
         let rig = CoreRig()
         rig.send(.turnStart, session: "c", project: "docs")
         rig.send(.turnEnd, session: "c", project: "docs")
-        rig.wait(4 * 60_000)
-        XCTAssertTrue(rig.state.when.contains("tier3"))
+        rig.wait(6 * 60_000)
+        XCTAssertTrue(rig.state.when.contains("tier2"))
         rig.send(.needsYou, session: "a", project: "api", tool: "Bash")
         rig.wait(1000)
         rig.send(.needsYou, session: "b", project: "web", tool: "Bash")
@@ -1607,8 +1607,8 @@ final class CoreYouAndBoopTests: XCTestCase {
         XCTAssertNil(rig.state.attn)
         XCTAssertEqual(rig.state.idle, 3)
         XCTAssertFalse(rig.state.when.contains { $0.hasPrefix("tier") }, "b was dismissed just now")
-        rig.wait(30_000)
-        XCTAssertTrue(rig.state.when.contains("tier1"), "30 s after the last dismissal")
+        rig.wait(60_000)
+        XCTAssertTrue(rig.state.when.contains("tier1"), "a minute after the last dismissal")
     }
 
     /// A desk whose only session waits on a request you dismissed rests
@@ -1626,10 +1626,10 @@ final class CoreYouAndBoopTests: XCTestCase {
         dismissCard(rig)
         XCTAssertEqual(rig.state.doing, "idle")
         XCTAssertEqual(rig.state.idle, 1)
-        rig.wait(30_000)
+        rig.wait(60_000)
         XCTAssertTrue(rig.state.when.contains("tier1"))
-        rig.wait(10 * 60_000, every: 60_000)
-        XCTAssertTrue(rig.state.when.contains("tier5"), "ten minutes after the dismissal")
+        rig.wait(15 * 60_000, every: 60_000)
+        XCTAssertTrue(rig.state.when.contains("tier3"), "a quarter of an hour after the dismissal")
     }
 
     /// The board's hold names the request its sign showed (`attn.id`): one
@@ -1833,7 +1833,7 @@ final class CoreYouAndBoopTests: XCTestCase {
         rig.send(.needsYou, tool: "Bash")
         let needed = rig.poke()
         XCTAssertEqual(woke(needed), [], "the tap opens the thread; it doesn't wake the brain")
-        XCTAssertEqual(rig.ruleActions, ["wiggle", "starting", "needs_you start", "open_thread"], "no wiggle")
+        XCTAssertEqual(rig.ruleActions, ["wiggle", "needs_you start", "open_thread"], "no wiggle")
     }
 
     /// A tap while something needs you opens the thread
@@ -2173,8 +2173,7 @@ final class CoreRulesTests: XCTestCase {
     }
 
     /// Falling asleep and waking say why on the board, a caption with nothing
-    /// played, with no line for the brain: a `react` of only a reason. Every card
-    /// a rule starts carries its own.
+    /// played, with no line for the brain: a `react` of only a reason.
     func testSleepingAndWakingSayWhy() {
         func notes(_ fx: Fx) -> [String] { moments(fx).filter { $0.anim == nil }.compactMap(\.reason) }
         func dids(_ fx: Fx) -> Int {
@@ -2182,14 +2181,14 @@ final class CoreRulesTests: XCTestCase {
         }
         let day = CoreRig()
         let started = day.send(.turnStart)
-        XCTAssertEqual(moments(started).compactMap(\.reason), ["claude started"])
+        XCTAssertEqual(moments(started).compactMap(\.reason), ["claude woke Boop"])
         day.send(.turnEnd)
         let dozed = day.wait(Core.dozeOffMs, every: 60_000)
         XCTAssertEqual(day.state.doing, "asleep")
         XCTAssertEqual(notes(dozed), ["quiet for 1 h"])
         XCTAssertEqual(dids(dozed), 0, "the brain hears nothing new")
         XCTAssertEqual(day.core.doingReason(at: day.now)?.cause, "Nothing's happened for an hour, so Boop dozed off.")
-        XCTAssertEqual(notes(day.send(.turnStart)), [], "the start's card says why")
+        XCTAssertEqual(notes(day.send(.turnStart)), ["claude woke Boop"])
 
         let night = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)
         night.send(.turnStart)
@@ -2203,8 +2202,7 @@ final class CoreRulesTests: XCTestCase {
     }
 
     /// With sessions left open and resting, nothing waiting on you, Boop
-    /// dozes off: at night after the last tier (`Core.dozeOffNightMs`, 10
-    /// minutes), by day after an hour (`Core.dozeOffMs`). Work wakes it.
+    /// dozes off: at night after 10 minutes (`Core.dozeOffNightMs`), by day after an hour (`Core.dozeOffMs`). Work wakes it.
     func testItDozesOffWithSessionsLeftOpen() {
         let night = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
         night.send(.turnStart)
@@ -2213,7 +2211,7 @@ final class CoreRulesTests: XCTestCase {
         XCTAssertEqual(night.state.doing, "idle")
         night.wait(1000)
         XCTAssertEqual(night.state.doing, "asleep")
-        XCTAssertTrue(night.state.when.contains("tier5"))
+        XCTAssertTrue(night.state.when.contains("tier2"))
         night.send(.turnStart)
         XCTAssertEqual(night.state.doing, "working", "work wakes it")
 
@@ -2235,64 +2233,6 @@ final class CoreRulesTests: XCTestCase {
         waiting.wait(Core.dozeOffNightMs * 2, every: 60_000)
         XCTAssertNotNil(waiting.state.attn)
         XCTAssertNotEqual(waiting.state.doing, "asleep")
-    }
-
-    /// The hourly check-in wakes no brain while Boop sleeps (a session
-    /// left open overnight dozes off) or you're away, once its mood is the
-    /// resting one: it would cost a request a night's hour and say a word
-    /// to a sleeping board. A mood with somewhere to settle still gets it.
-    func testTheHourlyCheckInLetsASleepingBoopBe() {
-        let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
-        rig.core.mood = { CharacterPack.active.defaultMood }
-        rig.send(.turnStart)
-        rig.send(.turnEnd)
-        let night = rig.wait(6 * 3_600_000, every: 60_000).views.filter { $0.type == .checkIn }
-        XCTAssertFalse(night.isEmpty, "the check-ins still come, and are logged")
-        XCTAssertEqual(night.filter(\.wakesBrain).count, 0, "but wake no brain")
-
-        let grumpy = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)
-        grumpy.core.mood = { "grumpy" }
-        grumpy.send(.turnStart)
-        grumpy.send(.turnEnd)
-        let settling = grumpy.wait(3 * 3_600_000, every: 60_000).views.filter { $0.type == .checkIn && $0.wakesBrain }
-        XCTAssertFalse(settling.isEmpty, "a grumpy Boop can still calm down overnight")
-    }
-
-    /// Held for real: the harness doesn't ask the brain for that hourly
-    /// check-in, as well as the debug log's line saying it wouldn't.
-    func testTheHourlyCheckInsPassIsHeldNotOnlyItsLine() {
-        struct Asked: Brain {
-            final class Count: @unchecked Sendable { var calls = 0 }
-            let count = Count()
-            let id = "asked"
-            func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
-                count.calls += 1
-                return [:]
-            }
-        }
-        let rig = CoreRig(start: CoreRig.start + 9 * 3600 * 1000)  // 23:00
-        rig.core.mood = { CharacterPack.active.defaultMood }
-        var held: [String] = []
-        rig.pipeline.harness.onPass = { pass in
-            if pass.event?.type == .checkIn, let why = pass.held { held.append(why) }
-        }
-        let brain = Asked()
-        rig.pipeline.harness.use(brain)
-        // The brain answers on the main queue: each minute lets it.
-        func minutes(_ n: Int) {
-            for _ in 0..<n {
-                _ = rig.wait(60_000)
-                RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.002))
-            }
-        }
-        rig.send(.turnStart)
-        rig.send(.turnEnd)
-        minutes(5)
-        let asked = brain.count.calls
-        minutes(3 * 60)
-        XCTAssertFalse(held.isEmpty, "its turn came, and it was held")
-        XCTAssertTrue(held.allSatisfy { $0.hasSuffix("is asleep") || $0 == "you're away" }, "\(held)")
-        XCTAssertEqual(brain.count.calls, asked, "no request overnight")
     }
 
     func testNoSessionsIsAsleep() {
@@ -2641,9 +2581,8 @@ final class CoreFuzzTests: XCTestCase {
                 shots += 1
                 XCTAssertFalse(showing, "\(reaction.name) \(reaction.args) while something needs you\n\(why)")
                 XCTAssertNil(reaction.mood, why)
-                // A start's card, or a caption saying why Boop slept or woke.
-                XCTAssertTrue(reaction.anim == "starting" || (reaction.anim == nil && reaction.reason != nil), why)
-                XCTAssertEqual(reaction.ctx != nil, reaction.anim == "starting", why)
+                // A caption saying why Boop slept or woke.
+                XCTAssertTrue(reaction.anim == nil && reaction.reason != nil, why)
             }
             for sent in states(fx) {
                 XCTAssertTrue(sent.activity == nil || (sent.doing == "working" && sent.attn == nil), "\(sent.jsonLine)\n\(why)")
@@ -2661,7 +2600,6 @@ final class CoreFuzzTests: XCTestCase {
         XCTAssertGreaterThan(shown, 500, "the traffic asks often")
         XCTAssertGreaterThan(finishes, 100, "and finishes often")
         XCTAssertGreaterThan(acts, 500, "and shows what it's doing")
-        XCTAssertGreaterThan(shots, 500, "and plays rule reactions")
         print("  \(calls) calls, \(shown) requests shown, \(finishes) finishes, \(acts) activities, \(shots) rule reactions")
     }
 }

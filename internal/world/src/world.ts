@@ -49,7 +49,6 @@ export interface Snapshot {
     id: string;
     name: string;
     level: number;
-    stage: string | null;
     utc_offset: number | null;
     activity: Activity;
   }[];
@@ -199,7 +198,7 @@ export async function snapshot(db: Db): Promise<Snapshot> {
   const rewards = await currentRewards(db);
 
   const rows = await db.query<Snapshot["buddies"][number] & { name_ok: boolean; reports: number }>(
-    `select id::text as id, name, name_ok, reports, level, stage, utc_offset, ${SEEN_ACTIVITY} as activity
+    `select id::text as id, name, name_ok, reports, level, utc_offset, ${SEEN_ACTIVITY} as activity
        from buddies
       order by (${SEEN_ACTIVITY} <> 'asleep') desc, seen_at desc
       limit $2`,

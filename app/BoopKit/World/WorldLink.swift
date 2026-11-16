@@ -28,17 +28,15 @@ public final class WorldLink {
     public struct Now: Equatable, Sendable {
         public var name: String
         public var level: Int
-        public var stage: String
         public var utcOffset: Int
         public var activity: World.Activity
         public var day: String
         public var xpToday: Int
         public var ringClosed: Bool { xpToday >= Growth.perDay }
 
-        public init(name: String, level: Int, stage: String, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int) {
+        public init(name: String, level: Int, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int) {
             self.name = name
             self.level = level
-            self.stage = stage
             self.utcOffset = utcOffset
             self.activity = activity
             self.day = day
@@ -285,7 +283,7 @@ public final class WorldLink {
         identity.unanswered = sending
         self.identity = identity
         save()
-        let state = World.State(seq: sending.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
+        let state = World.State(seq: sending.seq, name: me.name, level: me.level,
                                 utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: sending.added)
         busy = true
         client.send(state, key: identity.key) { [weak self] result in
@@ -452,7 +450,7 @@ public final class WorldLink {
         identity.unanswered = nil
         self.identity = identity
         save()
-        let state = World.State(seq: identity.seq, name: me.name, level: me.level, stage: me.stage.lowercased(),
+        let state = World.State(seq: identity.seq, name: me.name, level: me.level,
                                 utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added)
         guard client.sendNow(state, key: identity.key, timeout: Self.quitWait) else {
             return log("world: asleep didn't go before the quit")

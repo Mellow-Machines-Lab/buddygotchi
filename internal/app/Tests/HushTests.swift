@@ -10,12 +10,12 @@ final class HushTests: XCTestCase {
     func a(_ choice: String, _ p: Double = 0.9) -> Answer { Answer(choice: choice, probabilities: [choice: p]) }
 
     /// Pins `Core.hushMs` (the app's 30 min) and `hushMsBySize` (15, 30,
-    /// 60, 120 min by the reply's intensity): the core keeps the hush, the
+    /// 60 min by the reply's intensity): the core keeps the hush, the
     /// board gets `hushed` while it lasts, and its end is recorded at the
     /// time it ran out.
     func testAHushLastsItsTimeAndEndsByItself() throws {
         XCTAssertEqual(Core.hushMs, 30 * min)
-        XCTAssertEqual(Core.hushMsBySize, [15 * min, 30 * min, 60 * min, 120 * min])
+        XCTAssertEqual(Core.hushMsBySize, [15 * min, 30 * min, 60 * min])
         let rig = CoreRig()
         let start = rig.now
         let fx = rig.note(Fx(rig.pipeline.effects(rig.core.hush(forMs: Core.hushMs, by: .app, at: rig.now), at: rig.now)))
@@ -81,7 +81,7 @@ final class HushTests: XCTestCase {
         XCTAssertTrue(react.questions(now: poke, log: log).contains { $0.key == MomentOutput.sayKey })
         XCTAssertFalse(react.questions(now: said, log: log).first { $0.key == MomentOutput.moveKey }!.options.contains { $0.name == "unhush" },
                        "unhush is offered only while hushed")
-        _ = react.run(["react.face": a("disappointed"), "react.move": a("hush"), "react.intensity": a("big"), "say": a("upset")],
+        _ = react.run(["react.face": a("sad"), "react.move": a("hush"), "react.intensity": a("big"), "say": a("upset")],
                       now: said, log: log)
         XCTAssertEqual(hushes, [60 * min], "a big hush: an hour")
         XCTAssertEqual(queued.last?.reply, "hush")

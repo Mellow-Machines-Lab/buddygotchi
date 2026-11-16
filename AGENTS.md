@@ -65,9 +65,9 @@ Jev requests cost, and evals have a daily limit: a code-only change that
 leaves prompts unchanged needs no Jev run. Which level to run is in
 [internal/EVALS.md](internal/EVALS.md) §2.
 
-A new or changed demo script is recorded in the same commit (`make -C
-internal demos`, then commit the pack's `demo/recordings/`). When a change
-alters what the app sends the board, record them all (`ALL=1`).
+A demo's recording is made when the demo is wanted (`make -C internal
+demos`, `ALL=1` for every one, then commit the pack's `demo/recordings/`):
+no check fails on a stale one, and `simulator/tools/demos.py check` lists them.
 
 ## Environment notes
 
@@ -177,17 +177,16 @@ things on three channels, **voice**, **sign** and **narration**.
 | doing | What Boop is busy with: resting, working, asleep, listening, no app | base, look (for the state) | `base` |
 | nap | Boop asleep at once, Jev's pick at a lock at night, until you show up (`Core.nap`) | | `reply`: `nap`, `base`: `asleep` |
 | look | Only the art that draws a Doing | | |
-| activity | How it's working: testing, delegating, terminal, searching, analysing, a tool, waiting, planning | act | `act` |
-| tier | How long it's been working or resting: tier 1 at 30 s to tier 5 at 10 min (`Tags.tiers`) | stage (that's growth's) | `tier1`…`tier5` |
-| pastime | What Boop does to pass the time, by Doing and tier or wait (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
-| kit | What's out while true: on the gel, the headphones alone | | |
-| dressing | What's worn for the tags, one thing at a time: a hat, shades. The gel has nothing in the sky or the air | outfit, layers, occasion (as a design) | |
+| activity | How it's working, one of four the whole body shows (`Act`): typing (an edit, any other tool, a plan), looking (a read, a search, the web), running (a command, the tests, a build, helpers at work), waiting (a call gone quiet) | act | `act`: `tool_use`, `analyzing`, `terminal`, `waiting` |
+| tier | How long it's been working or resting: tier 1 at 1 min, tier 2 at 5 min, tier 3 at 15 min (`Tags.tiers`) | stage | `tier1`…`tier3` |
+| pastime | What Boop does to pass the time, by Doing and tier or wait: a move of the body and nothing beside it, none while something needs you (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
+| dressing | What's worn for the tags: on the gel, a nightcap at night and nothing for a special day, nothing in the sky or the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
-| gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright` |
-| typing along | Boop typing while you do, hunched over its keys and bouncing with each: at its desk at work, with its keyboard out when idle (`GelFace::showAlong`) | mirroring | `typing` |
+| gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward; at work only while it types, as the other activities' poses have the eyes (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright` |
+| typing along | Boop typing while you do, hunched over its keys and bouncing with each: at its desk at work while its own activity is typing, with its keyboard out when idle (`GelFace::showAlong`) | mirroring | `typing` |
 | tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | lean (that's a finger's) | |
-| the work stream | Agents' calls as falling words: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
-| work act | A command Boop plays out while it runs, with a low sign and Jev's voice: the tests, the push, the build | act (that's the activity) | `wact` |
+| the work stream | Agents' calls as falling words, and the few that come forward and land on Boop: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
+| work act | A command worth naming while it runs, the tests, the push or the build: a low sign says what's running, then `pass` or `fail`, and Boop hops or flinches at the result | act (that's the activity) | `wact` |
 | the strip | The counts along the bottom | | |
 | the drawer | The AMOLED board's list of every agent, pulled up from the strip, a row each to open on the Mac (`render::Drawer`) | roll call, list view | `list`, `drawer` |
 | the needs-you screen | Amber, naming who's waiting, until you answer or dismiss it | sign (that's a Moment's) | |
@@ -196,11 +195,11 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| mood | One of the pack's 16 lasting moods (`CharacterPack.Mood.lasting`) | (a Moment's emotion) | `mood` |
+| mood | One of the pack's 7 lasting moods: calm, happy, focused, proud, cross, sad, lonely (`CharacterPack.lasting`). Jev keeps it or moves it to any other; the wire carries the face it rests in | (a Moment's emotion) | `mood` |
 | resting mood | Calm, where moods settle | default mood | |
-| neighbours | The moods a mood can move to; a jump is a big move | moves (the graph's), ordinary and dramatic | |
-| fade | A mood settling after its minutes | | |
-| mood file | The steering for one mood (`steering/mood/`) | | |
+| level | How cross it is, 1 to 3, which code counts and Jev never picks: pokes and shakes in a row, failed checks and turns, rude words; a stroke takes it one down. It picks cross's resting face: annoyed, grumpy, angry (`MoodOutput.level`) | intensity, step | `level` (the transcript's) |
+| fade | A mood settling by itself after its minutes in `character.json`, to calm (proud to happy, cross a level down), run by code on the Mac's clock, never by Jev (`MoodOutput.fade`) | drift | `fade` (the transcript's) |
+| mood file | The steering for one mood (`steering/mood/`): what it is, how its faces lean, what moves it. No minutes: code fades it | | |
 
 **Moment**
 
@@ -209,9 +208,9 @@ things on three channels, **voice**, **sign** and **narration**.
 | moment | A beat on top of Doing: event, emotion, size, voice and sign; made by the board, the rules or Jev | reaction (for the beat), one-shot | `do` |
 | event | What happened: a finish, a check, you came back, your words, your prompt naming Boop, a touch, or Boop's own beat | | |
 | Boop's own beat | A Moment with no outside event: an idle check-in, a musing, an ask | | |
-| emotion | The expression for one Moment, any of the pack's 42 faces | face | `react.face`, a `do`'s `mood` |
-| size | How much the Moment matters: small, medium, big, huge | intensity, loops | `react.intensity`, `loops` |
-| finish | The animation a turn's end plays, scaled by the turn's length; the low sign and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
+| emotion | The expression for one Moment, any of the pack's 18 faces | face | `react.face`, a `do`'s `mood` |
+| size | How much the Moment matters: small, medium, big | intensity, loops | `react.intensity`, `loops` |
+| finish | The animation a turn's end plays, one for each size by the turn's length: Little Win, Confetti, Gold Rush; the low sign and rim glow name the thread | move (success, failure), task_complete | `task_complete`, `reply_ready`, `outcome` |
 | greeting | The animation of your coming back, or of your prompt naming Boop | move (wake up, notice) | `wake_up`, `notice` |
 | wave | Boop's answer to your lock or unlock: `bye` or `hello`, or `reply-wave`, slighter, when small; a snub has none | | `reply` |
 | reply | Boop's answer to your words, with its clip and sign (`MomentOutput.replies`) | answer (that's a topic), response | `reply` |
@@ -232,7 +231,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
-| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a remembered line, a level in gold (`gel::LowSign`) | ticket | `low`, `gold` |
+| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a work act's words, a remembered line, a level in gold (`gel::LowSign`) | ticket | `low`, `gold` |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet, normal, chatty, or silent for a while (a hush) (`Talk`, `Core.Hush`) | chattiness, mute (that's the volume) | `talk`, `hush`, `hushed` |
 | narration | The plain words for why, the Mac's and the gel's board's own for a touch, never Jev's or Boop's voice (`Narration`, `app/touch_reason.h`); on the board, the caption | explanation | `reason` |
@@ -245,11 +244,11 @@ things on three channels, **voice**, **sign** and **narration**.
 | daily counts | A row a day of numbers on the Mac, `daily-counts.jsonl`, for "This week" and a summary you may send; no words, threads or notes (`DayCounts`, `Boop --counts`) | stats, telemetry | |
 | line | One event as a sentence Jev reads (MellowHarness's `Line`) | | |
 | message | One JSON line on the wire: `hello`, `state`, `do`, `ev` | line | |
-| the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD, CONTEXT, HISTORY, NOW | the state | |
+| the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD (the mood's file, then cross's level now), CONTEXT, HISTORY, NOW | the state | |
 | CONTEXT | The prompt's section for how things stand: When, Talk, the buddy, you, the agents, the day so far (`ContextSection`) | NOW (that's the event), status | |
 | pass | One request to Jev | | |
 | wake, hold | Whether an event asks Jev at all | | |
-| check-in | Boop looking in by itself: working (during a turn), idle (while you're here), hourly | heartbeat | `check_in`, `working`, `idle` |
+| check-in | Boop looking in by itself: working (during a turn), or idle (while you're here) | heartbeat | `check_in`, `working` |
 | output | What Jev's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action | |
 | speeds | Reflex, reactive and deliberative | loops | |
 | personality | Who Boop is, temperament included (characters/CHARACTER.md §7) | nature | |
@@ -269,8 +268,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
 | XP | What Boop earns, a fixed amount for each thing the agents get done and each bit of your care, never lost (`Growth`, plan/v1-buddy.md §5) | points | |
 | the ring | Today's XP, up to 100 a Boop day: full, nothing more counts that day. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is a moment | daily goal, progress bar | `xp` (today's percent), `ring` |
-| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign | | `level` |
-| stage | Boop's size, Hatchling to Chonk, reached at levels 5, 15 and 30: a bigger level-up, changing only the body and the pastimes | | `hatchling`, `sprout`, `chonk` |
+| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `level` |
 | special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 
@@ -300,7 +298,7 @@ The rules that are easy to break, in full in
   type, never what, with no event, nothing in the transcript and nothing
   for the brain.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
-  buddy's name, level and stage, its UTC offset, one of six activities and
+  buddy's name and level, its UTC offset, one of six activities and
   counts. Nothing before onboarding's world screen, nothing with it off.
 - "Needs you" and the screen priority are plain rules in the core.
 - The device renders, reports and decides when a Moment plays, never what

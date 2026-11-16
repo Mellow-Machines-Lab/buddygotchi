@@ -77,12 +77,6 @@ public final class Pipeline {
         harness = Harness(name: name, brain: nil, log: transcript,
                           clock: clock ?? Harness.Clock(now: { input.now }), queue: queue, options: options, note: note)
         view.register(on: harness) { core.needsYouBlock }
-        // The hourly check-in's own hold reads the core, which the view
-        // doesn't have: it's the harness's, so a pass is held, not only its
-        // line in the debug log.
-        harness.hold(Event.Kind.checkIn.rawValue) { [unowned self] e, log, _ in
-            view.hold(e, log, needsYou: { core.needsYouBlock }) ?? hourlyHold(e)
-        }
         harness.on("*") { [weak self] e in
             self?.step?.recorded.append(e)
             self?.onRecord?(e)
@@ -369,21 +363,6 @@ public final class Pipeline {
     /// a brain, and the view's holds.
     public func whyNotWake(_ e: Event) -> String? {
         if !brain { return "no brain" }
-        if let why = view.hold(e, transcript.view(now: inputTime.now), needsYou: { core.needsYouBlock }) {
-            return why
-        }
-        return hourlyHold(e)
-    }
-
-    /// The hourly check-in costs a request: while Boop sleeps or you're
-    /// away (your coming back has a pass of its own), only while its mood
-    /// has somewhere to settle, its resting one not reached. The view's
-    /// caught up to it now.
-    func hourlyHold(_ e: Event) -> String? {
-        guard e.type == .checkIn, e.specificType == TranscriptView.hourly else { return nil }
-        guard core.moodNow == core.config.pack.defaultMood else { return nil }
-        if core.snapshot(at: e.at).doing == "asleep" { return "\(core.config.pack.name) is asleep" }
-        if view.away { return "you're away" }
-        return nil
+        return view.hold(e, transcript.view(now: inputTime.now), needsYou: { core.needsYouBlock })
     }
 }

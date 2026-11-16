@@ -235,17 +235,15 @@ public struct StateSnapshot: Equatable, Sendable {
     public var calls: [Call]
 
     /// The work act running or its result (`WorkStream.Act`): which, what its
-    /// sign says, whether it plays fully, and how it ended, `p` or `f`.
+    /// sign says, and how it ended, `p` or `f`.
     public struct WorkAct: Equatable, Sendable {
         public var kind: String
         public var words: String
-        public var full: Bool
         public var result: String?
 
-        public init(kind: String, words: String, full: Bool, result: String? = nil) {
+        public init(kind: String, words: String, result: String? = nil) {
             self.kind = kind
             self.words = words
-            self.full = full
             self.result = result
         }
     }
@@ -350,7 +348,7 @@ public struct StateSnapshot: Equatable, Sendable {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }
         if let workAct {
-            var wact: [JSONObject.Value] = [.string(workAct.kind), .string(workAct.words), .int(workAct.full ? 1 : 0)]
+            var wact: [JSONObject.Value] = [.string(workAct.kind), .string(workAct.words)]
             if let result = workAct.result { wact.append(.string(result)) }
             fields["wact"] = .array(wact)
         }

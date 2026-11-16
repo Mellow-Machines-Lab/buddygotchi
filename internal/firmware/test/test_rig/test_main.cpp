@@ -250,6 +250,25 @@ static void test_a_new_look_fades_over_the_old_and_the_same_plays_on() {
   TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kLean]);
 }
 
+// A look that moves the whole body asks for a longer fade: both clips take
+// it, the old out and the new in, half way at half of it; and a look names
+// a base clip for an activity by its state, none for one it doesn't name.
+static void test_a_look_fades_as_long_as_asked_and_names_its_activities() {
+  Mixer m;
+  m.reset(0, 0, &kLeanLoop);
+  m.setLook(&kLeanBackLoop, 240);  // of these clips' 250 at most, a quarter of their second
+  m.advance(120);
+  TEST_ASSERT_INT_WITHIN(2, 100, m.channels()[Channel::kLean]);  // half of each: 250 - 150
+  m.advance(Mixer::kWeightMs - 120);
+  TEST_ASSERT_TRUE(m.channels()[Channel::kLean] > -300);  // where kWeightMs would have it
+  const std::vector<int> v = record(m, Channel::kLean, 20);
+  TEST_ASSERT_EQUAL_INT(-300, v.back());
+  static constexpr ActClip kActs[] = {{&kLeanBackLoop, SceneState::kWaiting}};
+  static constexpr Look kLook = {SceneState::kWorking, &kLeanLoop, {}, {}, {kActs, 1}};
+  TEST_ASSERT_EQUAL_PTR(&kLeanBackLoop, kLook.acted(SceneState::kWaiting));
+  TEST_ASSERT_NULL(kLook.acted(SceneState::kTerminal));
+}
+
 // A style cross-fades over kFadeMs, eased: half way at 100 ms; one asked for
 // mid-way waits for that fade to finish.
 static void test_a_style_cross_fades_and_a_newer_one_waits_its_turn() {
@@ -483,6 +502,7 @@ int main() {
   RUN_TEST(test_a_short_clip_fades_over_a_quarter_of_itself);
   RUN_TEST(test_additive_and_absolute_clips_blend_by_weight);
   RUN_TEST(test_a_new_look_fades_over_the_old_and_the_same_plays_on);
+  RUN_TEST(test_a_look_fades_as_long_as_asked_and_names_its_activities);
   RUN_TEST(test_a_style_cross_fades_and_a_newer_one_waits_its_turn);
   RUN_TEST(test_an_impulse_kicks_a_spring_and_it_settles);
   RUN_TEST(test_a_spring_comes_to_rest_exactly);

@@ -1,6 +1,6 @@
 # The world server
 
-Updated 2026-11-14.
+Updated 2026-11-15.
 
 Every buddy that joins the world talks to this server. A buddy sends its
 state and counts each minute. Each Mac reads the world's snapshot: how many
@@ -71,7 +71,8 @@ All JSON. A buddy sends `Authorization: Bearer <key>`.
 What the Mac must know about `PUT /v1/buddies/me`:
 
 - **Only the keys in `fixtures/buddy-state.json` are taken.** Any other
-  key is refused with 400.
+  key is refused with 400, but for `stage`, which a Mac built before Boop
+  was one size still sends: it's taken and ignored (`IGNORED_KEYS`).
 - **`utc_offset` is the Mac's offset from UTC, in minutes** (60, -480,
   330), from -720 to 840 and a multiple of 15; any other is refused with
   400. Left out, the last one stays; `null` clears it. The server keeps no
@@ -107,7 +108,7 @@ server's days are UTC. The numbers here are in `src/limits.ts`.
 
 | What | Kept | Gone |
 | --- | --- | --- |
-| A buddy: a random id, its key's hash, name, level, stage, UTC offset, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
+| A buddy: a random id, its key's hash, name, level, UTC offset, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
 | What a buddy added each UTC day: XP, turns, tests passed, ships, lines changed | 400 days | Then summed with every other buddy's into one row a day (`totals_by_day`), with no buddy in it |
 | Who joined lately: each join's IP address as an HMAC-SHA256 with `IP_SALT`, never the address | An hour | At the next join, or by the cron |
 | Gestures, with the sender's region | Until delivered | A day after delivery, or after two days unread |

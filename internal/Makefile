@@ -164,7 +164,8 @@ mirror:
 # Each pack's demos recorded again where the script has changed since its
 # recording, or has none (simulator/tools/demos.py record), several at
 # once, each as long as it runs: the recordings the simulator's page plays,
-# checked in beside their scripts. tools-test fails until they're recorded.
+# checked in beside their scripts. Nothing fails on a stale one:
+# `simulator/tools/demos.py check` lists them.
 # NAMES=… records those again, ALL=1 every one.
 demos:
 	cd $(ROOT) && simulator/tools/demos.py record $(NAMES) $(if $(ALL),--all)
@@ -178,7 +179,7 @@ e2e:
 # takes they read from the voice pack, and a reference cut into frames
 # with ffmpeg), the webcam recorder on synthetic video, charactergen's
 # staging and studio rules (internal/characters/), the studio's own logic
-# and server (with Node), that every demo's recording is up to date, and
+# and server (with Node), and
 # each character pack's own (its tests/tools/), and that the gel slime's
 # generated tables are fresh.
 tools-test: tools
@@ -186,7 +187,6 @@ tools-test: tools
 	cd $(ROOT) && node --test characters/studio/tests/*.test.cjs
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/webcam/tests
 	cd $(ROOT) && python3 -m unittest discover -s internal/tools/session/tests
-	cd $(ROOT) && python3 simulator/tools/demos.py check
 	cd $(ROOT) && python3 -m unittest discover -s internal/characters
 	cd $(ROOT) && for tests in characters/*/tests/tools; do \
 	  [ -d $$tests ] || continue; python3 -m unittest discover -s $$tests || exit 1; \

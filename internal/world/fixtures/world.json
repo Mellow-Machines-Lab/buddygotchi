@@ -25,7 +25,6 @@
       "id": "6f1c2a9e-3b4d-4e5f-8a7b-9c0d1e2f3a4b",
       "name": "Bean",
       "level": 7,
-      "stage": "buddy",
       "utc_offset": 540,
       "activity": "asleep"
     },
@@ -33,7 +32,6 @@
       "id": "0a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d",
       "name": "a buddy",
       "level": 1,
-      "stage": null,
       "utc_offset": null,
       "activity": "idle"
     }

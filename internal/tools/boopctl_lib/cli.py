@@ -274,7 +274,7 @@ PERF_SCENES = [
     ("stream", STREAM, STREAM_CALLS, None),
     ("attention", {**WORKING, "attn": {"id": 5000, "agent": "codex", "project": "perf"}}, None, 28),
     ("pokes", WORKING, {"t": "dbg.press", "ms": 100}, None),
-    ("frightened", {**WORKING, "mood": "frightened"}, None, 28),
+    ("wounded", {**WORKING, "mood": "wounded"}, None, 28),
     ("asleep", {"t": "state", "base": "asleep", "mood": "happy"}, None, None),
     # At night: the sky, the nightcap and pyjamas on the breathing body, the Zs.
     ("night", {"t": "state", "base": "asleep", "mood": "happy", "when": ["night"]}, None, None),
@@ -380,23 +380,22 @@ def perf_scenes(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
-# perf --plays: what plays once rather than holds, or holds on another stage:
+# perf --plays: what plays once rather than holds:
 # the name, the state (sent again every second), what comes when, in seconds
 # from its start (a `state` takes the place of the one sent again), and how
 # long it runs. Nothing but the heap has a budget here: internal/VERIFICATION.md
-# L2 gives frames a second only to working, needs you and a frightened face.
+# L2 gives frames a second only to working, needs you and a wounded face.
 def _at(when: list[str], base: str = "idle", mood: str = "calm", **more) -> dict:
     fields = {"idle": 1} if base == "idle" else {"act": "terminal", "busy": 1}
     return {"t": "state", "base": base, "mood": mood, "when": when, **fields, **more}
 
 
 DAY = ["day"]
-CHONK = ["day", "chonk"]
-ON_THE_DESK = _at(DAY, "working", "engaged", calls=[[0, 1, "edit"]])
+ON_THE_DESK = _at(DAY, "working", "focused", calls=[[0, 1, "edit"]])
 
 
-def _finish(state_mood: str = "happy", when: list[str] = DAY, **args) -> tuple[dict, list]:
-    return (_at(when, "working", state_mood),
+def _finish(state_mood: str = "happy", **args) -> tuple[dict, list]:
+    return (_at(DAY, "working", state_mood),
             [(1, do("task_complete", outcome="success", mood=state_mood, **args))])
 
 
@@ -405,23 +404,13 @@ PERF_PLAYS: list[tuple[str, dict, list[tuple[float, dict]], int]] = [
     # PERF_SCENES's, here too for a board a Mac is talking to.
     *[(name, state, [], 15) for name, state, repeat, _ in PERF_SCENES if repeat is None],
     ("stream", {k: v for k, v in STREAM.items() if k != "calls"}, [(2 * i, STREAM_CALLS[i % 3]) for i in range(8)], 16),
-    # The push's lift-off, then its long time away, then its landing.
-    ("push", {**ON_THE_DESK, "wact": ["push", "git push", 1]},
-     [(26, {**ON_THE_DESK, "wact": ["push", "shipped!", 1, "p"]})], 32),
-    ("tests", {**ON_THE_DESK, "wact": ["tests", "running tests", 1]},
-     [(16, {**ON_THE_DESK, "wact": ["tests", "PASS", 1, "p"]})], 22),
-    ("build", {**ON_THE_DESK, "wact": ["build", "building", 1]},
-     [(74, {**ON_THE_DESK, "wact": ["build", "BUILT", 1, "p"]})], 80),
-    ("night-working", _at(["night", "tier1", "tier2", "tier3", "tier4", "tier5"], "working", "happy"), [], 15),
-    ("chonk-idle", _at(CHONK), [], 12),
-    ("chonk-working", _at(CHONK, "working", "happy"), [], 12),
-    ("chonk-finish", *_finish(when=CHONK, loops=3), 12),
-    ("bar", _at(["day", "sprout"], xp=40), [(2, _at(["day", "sprout"], xp=50))], 8),
-    ("heart", _at(["day", "sprout"], xp=20, wish="pet"),
-     [(2, do("wish_met", sign="<3")), (2.4, _at(["day", "sprout"], xp=30))], 8),
-    ("grow-sprout", _at(["day", "hatchling"], "idle", "happy"),
-     [(2, _at(["day", "sprout"], "idle", "happy")), (2.1, do("react", mood="excited", sign="look, a sprout!"))], 10),
-    ("grow-chonk", _at(["day", "buddy"], "idle", "happy"), [(2, _at(CHONK, "idle", "happy"))], 10),
+    # A work act: its low sign rising, then its result.
+    ("act", {**ON_THE_DESK, "wact": ["tests", "running tests"]},
+     [(8, {**ON_THE_DESK, "wact": ["tests", "pass", "p"]})], 12),
+    ("night-working", _at(["night", "tier3"], "working", "happy"), [], 15),
+    ("bar", _at(DAY, xp=40), [(2, _at(DAY, xp=50))], 8),
+    ("heart", _at(DAY, xp=20, wish="pet"),
+     [(2, do("wish_met", sign="<3")), (2.4, _at(DAY, xp=30))], 8),
     # Driven by dbg.imu and dbg.touch: this board can't be tilted by a tool.
     ("tilt", _at(DAY),
      [(1, {"t": "dbg.imu", "ax": -300, "ay": 0, "az": 954}), (5, {"t": "dbg.imu", "ax": 300, "ay": 0, "az": 954}),
@@ -430,16 +419,12 @@ PERF_PLAYS: list[tuple[str, dict, list[tuple[float, dict]], int]] = [
     ("finish-little", *_finish(loops=1), 8),
     ("finish-confetti", *_finish(loops=2), 8),
     ("finish-gold", *_finish(loops=3), 10),
-    ("finish-fireworks", *_finish("excited", loops=3), 10),
-    ("finish-spotlight", *_finish("proud", loops=3), 10),
-    ("finish-parade", *_finish("amused", loops=3), 10),
-    ("finish-mega", *_finish(loops=4), 14),
 ]
 
 
 def clean_seconds(samples: list[dict]) -> list[dict]:
     """The samples a Mac's own message didn't touch: its state takes the
-    face for the moment until the tool's next, and a change of stage, mood
+    face for the moment until the tool's next, and a change of mood
     and Doing together costs the next seconds too, so a sample that heard
     one goes, and the three after it, and the first, a reset's."""
     return [x for i, x in enumerate(samples)

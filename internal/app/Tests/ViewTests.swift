@@ -351,11 +351,11 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(asked.map(\.line), [#"claude needs you on "fix-nav" (landing)."#])
         XCTAssertEqual(asked.map(\.name), ["tool wait"])
         XCTAssertFalse(asked[0].wakesBrain)
-        XCTAssertEqual(rig.ruleActions, ["starting", "needs_you start"])
+        XCTAssertEqual(rig.ruleActions, ["needs_you start"])
         XCTAssertFalse(hook(.turnStart, session: "s2").first!.wakesBrain, "something needs you")
         XCTAssertFalse(events(rig.poke()).first!.wakesBrain, "a poke opens the thread instead")
         hook(.activity, tool: "Bash")
-        XCTAssertEqual(rig.ruleActions, ["starting", "needs_you start", "open_thread", "needs_you end"], "answered")
+        XCTAssertEqual(rig.ruleActions, ["needs_you start", "open_thread", "needs_you end"], "answered")
         XCTAssertTrue(hook(.turnStart, session: "s3").first!.wakesBrain)
         rig.pipeline.brain = false
         XCTAssertFalse(hook(.turnStart, session: "s4").first!.wakesBrain, "no key")
@@ -545,27 +545,18 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(events(rig.gesture("stroke"))[0].line, "You stroked \(creature).", "other gestures aren't counted")
     }
 
-    /// An hour with nothing happening, and no thread working,
-    /// brings a check-in, and so does every hour after that. While a
-    /// thread works, the working check-in comes instead.
+    /// While a thread works, the working check-in comes. With nothing
+    /// happening and no personality's idle pace, none comes at all: moods
+    /// fade by the clock, so nothing asks Jev through a quiet day.
     func testCheckIns() {
-        XCTAssertEqual(TranscriptView.hourlyMs, 60 * 60_000)
-        let idle = { (views: [ViewEvent]) in views.filter { $0.type == .checkIn && $0.facts["idle_hours"] != nil } }
         hook(.turnStart)
         rig.wait(50 * 60_000)
-        XCTAssertEqual(idle(rig.views), [], "a thread was working")
         let working = rig.views.filter { $0.type == .checkIn }
-        XCTAssertGreaterThan(working.count, 10, "the working check-in instead")
+        XCTAssertGreaterThan(working.count, 10, "the working check-in")
         XCTAssertTrue(working.allSatisfy { $0.line.hasPrefix(#"claude is still working on "fix-nav" (landing), a "#) && $0.wakesBrain })
         XCTAssertEqual(working.last?.line, #"claude is still working on "fix-nav" (landing), a very long turn."#)
         hook(.turnEnd)
-        let beats = idle(events(rig.wait(2 * 60 * 60_000 + 1000)))
-        XCTAssertEqual(beats.map(\.line), ["Nothing has happened for 1 hour.", "Nothing has happened for 2 hours."])
-        // Calm, and dozed off by then, nothing for them to settle: they
-        // wake no brain (`Pipeline.whyNotWake`).
-        XCTAssertTrue(beats.allSatisfy { !$0.wakesBrain })
-        rig.poke()
-        XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "a poke starts the hour again")
+        XCTAssertEqual(events(rig.wait(5 * 60 * 60_000)).filter { $0.type == .checkIn }, [], "no check-in by the hour")
     }
 
     /// Quick wins in a row on a thread are counted on the finish in streaks
@@ -677,8 +668,8 @@ final class ViewTests: XCTestCase {
 
     /// With a personality's `idle_heartbeat`, the idle check-in comes at
     /// that pace for 2 hours after the last activity while a session is
-    /// open, as a check-in naming the thread last active; then hourly as
-    /// ever. Never while you're away.
+    /// open, as a check-in naming the thread last active; then none.
+    /// Never while you're away.
     func testIdleCheckIns() {
         XCTAssertEqual(TranscriptView.idleWindowMs, 2 * 60 * 60_000)
         rig = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
@@ -694,10 +685,9 @@ final class ViewTests: XCTestCase {
         let minutes = checkIns.compactMap { $0.facts["idle_minutes"]?.int }
         XCTAssertTrue(zip(minutes, minutes.dropFirst()).allSatisfy { $1 - $0 >= 15 && $1 - $0 <= 30 }, "\(minutes)")
         XCTAssertLessThan(minutes.last ?? 0, 120, "only within 2 hours of the last activity")
-        XCTAssertEqual(beats.filter { $0.facts["idle_hours"] != nil }.map(\.line), ["Nothing has happened for 2 hours.", "Nothing has happened for 3 hours."],
-                       "then hourly")
+        XCTAssertEqual(beats.count, checkIns.count, "and no other kind, by the hour")
 
-        // Away from the Mac: hourly only.
+        // Away from the Mac: none.
         rig.poke()
         rig.pipeline.presence(PresenceDetector.awayEvent(why: "locked", since: rig.now, at: rig.now))
         XCTAssertEqual(idle(events(rig.wait(59 * 60_000))), [], "no check-in while you're away")
@@ -706,7 +696,7 @@ final class ViewTests: XCTestCase {
 
     /// With no session open an idle check-in still comes, you at the Mac and
     /// recent activity needed, at twice the gap (`noAgentsGapTimes`), so 30
-    /// to 60 minutes for a personality's 15 to 30, then hourly.
+    /// to 60 minutes for a personality's 15 to 30, then none.
     func testIdleCheckInsWithNoSessionOpenComeAtTwiceTheGap() {
         XCTAssertEqual(TranscriptView.noAgentsGapTimes, 2)
         let quiet = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
@@ -723,7 +713,7 @@ final class ViewTests: XCTestCase {
         XCTAssertLessThanOrEqual(minutes[0], 60, "twice the 30")
         XCTAssertTrue(zip(minutes, minutes.dropFirst()).allSatisfy { $1 - $0 >= 30 && $1 - $0 <= 60 }, "\(minutes)")
         XCTAssertLessThan(minutes.last ?? 0, 120, "only within 2 hours of the last activity")
-        XCTAssertTrue(beats.contains { $0.facts["idle_hours"]?.int == 3 }, "then hourly")
+        XCTAssertEqual(beats.count, idle.count, "and none by the hour after")
 
         let away = CoreRig(rules: Personality.Rules(frontMatter: "idle_heartbeat: 900-1800"))
         away.poke()
@@ -755,36 +745,36 @@ final class ViewTests: XCTestCase {
         }
         let first = pipeline()
         rig = CoreRig()
-        first.agent(rig.event(.turnStart))  // and its starting reaction's did, 2
+        first.agent(rig.event(.turnStart))
         let start = first.record(Event.action(at: rig.now, phase: .start, name: "react",
                                        data: ["for": 1, "by": "brain", "ok": true, "message": "Boop smiled."]))
-        XCTAssertEqual(start.seq, 3)
+        XCTAssertEqual(start.seq, 2)
         first.agent(rig.event(.turnEnd))
         let old = dir.appendingPathComponent("2026-09-01.jsonl")
         try "{}\n".write(to: old, atomically: true, encoding: .utf8)
 
         let file = dir.appendingPathComponent(time.day(rig.now) + ".jsonl")
         let lines = try String(contentsOf: file, encoding: .utf8).split(separator: "\n")
-        XCTAssertEqual(lines.count, 4)
+        XCTAssertEqual(lines.count, 3)
         XCTAssertTrue(lines[0].hasPrefix(#"{"seq":1,"at":"#), String(lines[0]))
-        try (String(contentsOf: file, encoding: .utf8) + #"{"seq":5,"at":"#).write(to: file, atomically: true, encoding: .utf8)
+        try (String(contentsOf: file, encoding: .utf8) + #"{"seq":4,"at":"#).write(to: file, atomically: true, encoding: .utf8)
 
         let second = pipeline()
         var recorded: [Event] = []
         second.onRecord = { recorded.append($0) }
-        XCTAssertEqual(second.readBack(now: rig.now), 4, "the torn line is skipped")
+        XCTAssertEqual(second.readBack(now: rig.now), 3, "the torn line is skipped")
         XCTAssertFalse(FileManager.default.fileExists(atPath: old.path), "past 14 days")
         let restarted = try XCTUnwrap(recorded.last)
         XCTAssertEqual(restarted.data["why"], .string(Harness.restarted))
-        XCTAssertEqual(restarted.seq, 5, "seq goes on")
-        XCTAssertEqual(second.transcript.lastSeq, 5)
-        XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4, 5], "the last day stays in memory, the end included")
-        XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown, nor is the turn start's reaction")
-        rig.now += Core.followUpMs  // a new task, not a follow-up: its starting reaction is recorded too
+        XCTAssertEqual(restarted.seq, 4, "seq goes on")
+        XCTAssertEqual(second.transcript.lastSeq, 4)
+        XCTAssertEqual(second.transcript.events.map(\.seq), [1, 2, 3, 4], "the last day stays in memory, the end included")
+        XCTAssertEqual(second.views.first?.did.map(\.by), [], "a reaction that can't end now isn't shown")
+        rig.now += 5 * 60_000
         let next = second.agent(rig.event(.turnStart)).views
         XCTAssertEqual(next.map(\.line), [#"claude started turn 2 on "landing"."#])
         let third = pipeline()
-        XCTAssertEqual(third.readBack(now: rig.now), 7, "the torn line was ended, so the next launch's aren't glued to it")
+        XCTAssertEqual(third.readBack(now: rig.now), 5, "the torn line was ended, so the next launch's aren't glued to it")
     }
 
     /// A write a full disk cut short inside a multi-byte
@@ -925,7 +915,7 @@ final class ViewTests: XCTestCase {
         XCTAssertEqual(needs(second.tick(at: rig.now)), [], "nothing missing to record")
         XCTAssertNil(second.core.snapshot(at: rig.now).attn, "still dismissed")
         XCTAssertEqual(second.core.snapshot(at: rig.now).idle, 1)
-        XCTAssertTrue(second.core.snapshot(at: rig.now).when.contains("tier2"), "resting since the dismissal, a minute ago")
+        XCTAssertTrue(second.core.snapshot(at: rig.now).when.contains("tier1"), "resting since the dismissal, a minute ago")
         XCTAssertEqual(second.core.line(at: rig.now).map(\.id), ["s1"], "and in BOOT's line")
         second.agent(rig.event(.activity, tool: "Bash", id: "t1", done: true))
         second.agent(rig.event(.activity, tool: "Bash", id: "t2"))

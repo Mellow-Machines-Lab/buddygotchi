@@ -339,7 +339,7 @@ class RigRuleTests(unittest.TestCase):
             "looks.json": {"idle": {"clip": "sway"},
                            "working": {"clip": None, "occasions": [{"clip": "hop", "when": ["night", "tier4"]},
                                                                    {"clip": "hop", "after": 90}],
-                                       "tiers": {"tier2": "sway"}}},
+                                       "tiers": {"tier2": "sway"}, "acts": {"asleep": "sway"}}},
         })
         self.assertEqual(problems, [])
         text = gen.rig_h(self.dir, rig)
@@ -355,7 +355,9 @@ class RigRuleTests(unittest.TestCase):
                     # A tier's base clip, its tag as tags.h's bit (tier2 15).
                     f"{{kClips + 1, {1 << 15}u}},",
                     "{SceneState::kIdle, kClips + 1, {}},",
-                    "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}, {kTiers + 0, 1}},",
+                    # An activity's base clip, by its state.
+                    "{kClips + 1, SceneState::kAsleep},",
+                    "{SceneState::kWorking, nullptr, {kOccasions + 0, 2}, {kTiers + 0, 1}, {kActs + 0, 1}},",
                     "inline constexpr Rig kRig = {{pack::kExpressions, 1}, {pack::kClips, 2}, {pack::kLooks, 2}};"]:
             self.assertIn(row, text)
 
@@ -368,7 +370,8 @@ class RigRuleTests(unittest.TestCase):
             "clips/sway.json": {"ms": 200, "loop": True, "tracks": {"lean": [[0, 0], [200, 100]]}},
             "clips/Bad Name.json": {"ms": 0},
             "looks.json": {"idle": {"clip": "hop", "scene": "desk"},
-                           "working": {"clip": "nope", "tiers": {"tier1": "hop", "night": "sway", "tier3": "nope"}},
+                           "working": {"clip": "nope", "tiers": {"tier1": "hop", "night": "sway", "tier3": "nope"},
+                                       "acts": {"asleep": "hop", "dancing": "sway", "idle": "nope"}},
                            "dancing": {},
                            "asleep": {"occasions": [{"clip": "sway", "when": ["night"]}, {"clip": "hop"},
                                                     {"clip": "hop", "when": ["nighttime"], "after": -1}, {"when": []}]}},
@@ -397,6 +400,9 @@ class RigRuleTests(unittest.TestCase):
             "rig/looks.json: working.tiers.night: isn't a tier",
             "rig/looks.json: working.tiers.tier3: 'nope' isn't a clip in rig/clips/",
             "rig/looks.json: working.tiers.tier1: hop doesn't loop",
+            "rig/looks.json: working.acts.dancing: isn't a state the board has",
+            "rig/looks.json: working.acts.idle: 'nope' isn't a clip in rig/clips/",
+            "rig/looks.json: working.acts.asleep: hop doesn't loop",
             "rig/looks.json: asleep.occasions[0].clip: sway loops, and an occasion plays once",
             "rig/looks.json: asleep.occasions[1]: needs a tag or a wait, or it would always fit",
             f"rig/looks.json: asleep.occasions[2].when: isn't a list of tags, each once ({', '.join(gen.tag_names())})",

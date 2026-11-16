@@ -62,14 +62,14 @@ final class VoiceTests: XCTestCase {
         XCTAssertEqual(Take.voiceVersion.count, 12)
     }
 
-    /// The owner's rule: every face, each of the universal moods, has a
+    /// The owner's rule: every face of the pack has a
     /// take for every feeling and every topic, so the react output offers
     /// them all. Every feeling has one that plays whatever the finish, but
     /// glad in a bad mood, which is only relief at a success: a mood whose
     /// takes were performed in a bad one.
     func testNoFaceIsWithoutWords() {
-        let bad: Set = ["annoyed", "irritated", "grumpy", "whiny", "wounded", "sad"]
-        XCTAssertEqual(Set(moods), Set(CharacterPack.universalMoods))
+        let bad: Set = ["annoyed", "grumpy", "sad", "wounded"]
+        XCTAssertEqual(Set(moods), Set(CharacterPack.active.moods.map(\.id)))
         func performedIn(_ face: String) -> String { Take.all.first { $0.moods.contains(face) }!.moods[0] }
         for (part, answers) in [(Take.Part.feeling, MomentOutput.feelings), (.about, MomentOutput.topics)] {
             for a in answers.map(\.name) {
@@ -123,10 +123,10 @@ final class VoiceTests: XCTestCase {
         // Grumpy is glad only with relief, at a success.
         XCTAssertNil(Voice.take(.feeling, meaning: "glad", kind: .sound, face: "grumpy", finish: nil, rng: &rng))
         XCTAssertEqual(Voice.take(.feeling, meaning: "glad", kind: .sound, face: "grumpy", finish: "success", rng: &rng)?.finish, "success")
-        // Irritated swears at a failed turn; with no failure, the nearest
+        // Grumpy swears at a failed turn; with no failure, the nearest
         // plainer kind: a phrase.
-        XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .swear, face: "irritated", finish: "failure", rng: &rng)?.kind, .swear)
-        XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .swear, face: "irritated", finish: nil, rng: &rng)?.kind, .phrase)
+        XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .swear, face: "grumpy", finish: "failure", rng: &rng)?.kind, .swear)
+        XCTAssertEqual(Voice.take(.feeling, meaning: "upset", kind: .swear, face: "grumpy", finish: nil, rng: &rng)?.kind, .phrase)
         // "Passed" is about tests, and only at a success.
         XCTAssertFalse(Take.all.contains { $0.text == "Passed" && ($0.meaning != "tests" || $0.finish != "success") })
     }
@@ -174,12 +174,12 @@ final class VoiceTests: XCTestCase {
     }
 
     /// What Boop says is one thing, `say`'s answer, as big as the moment:
-    /// a sound when it's small, a word medium, a phrase big or huge; a
+    /// a sound when it's small, a word medium, a phrase big; a
     /// swear is an upset take sworn, at any size.
     func testWhatItSaysIsOneTakeAsBigAsTheMoment() {
         func a(_ choice: String) -> Answer { Answer(choice: choice, probabilities: [choice: 0.9]) }
-        XCTAssertEqual(MomentOutput.sizes.map(\.loops), [1, 2, 3, 4], "small to huge hold once to four times")
-        XCTAssertEqual(MomentOutput.sizes.map(\.kind), [.sound, .word, .phrase, .phrase])
+        XCTAssertEqual(MomentOutput.sizes.map(\.loops), [1, 2, 3], "small to big hold once to three times")
+        XCTAssertEqual(MomentOutput.sizes.map(\.kind), [.sound, .word, .phrase])
         XCTAssertEqual(MomentOutput.size([:]).name, "small", "no answer is a small moment")
         XCTAssertEqual(MomentOutput.size([MomentOutput.sizeKey: a("big")]).loops, 3)
         XCTAssertTrue(MomentOutput.said([MomentOutput.sayKey: a("tests")])! == (.about, "tests", false))

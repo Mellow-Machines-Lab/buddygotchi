@@ -97,7 +97,7 @@ public struct Narration: Equatable, Sendable {
             return Narration(cause: "You said \"\(Self.keep(words))\".")
         case .level?:
             let level = Int(e.specificType) ?? 1
-            return Narration(cause: EventLine.level(level, grewTo: e["stage"]?.string, name: name), fact: fit("level \(level)!"))
+            return Narration(cause: EventLine.level(level, name: name), fact: fit("level \(level)!"))
         case .ring?:
             return Narration(cause: "Today's ring is full. Nice work.", fact: fit("today's done!"))
         case .world?:
@@ -127,9 +127,9 @@ public struct Narration: Equatable, Sendable {
         case .needsYou?:
             return e.phase == .start ? Narration(cause: "\(agent) needs you\(on).") : Narration(cause: "You answered \(agent)\(on).")
         case .turn? where e.phase == .start:
-            return Narration(cause: "\(agent) started work\(on).", fact: started("new_task", agent: agent, name: name))
+            return Narration(cause: "\(agent) started work\(on).", fact: fit("\(agent) started", "new task"))
         case .session? where e.phase == .start:
-            return Narration(cause: "\(agent)'s memory\(on) was compacted.", fact: started("compacted", agent: agent, name: name))
+            return Narration(cause: "\(agent)'s memory\(on) was compacted.", fact: fit("\(agent) compacted", "memory compacted"))
         case .session?:
             return Narration(cause: "\(agent)'s thread\(on) ended.")
         case .subagent?:
@@ -153,9 +153,6 @@ public struct Narration: Equatable, Sendable {
             }
             if case .int(let minutes)? = facts["idle_minutes"] {
                 return Narration(cause: "Nothing has happened for \(Self.span(ms: minutes * 60_000).words).")
-            }
-            if case .int(let hours)? = facts["idle_hours"] {
-                return Narration(cause: "Nothing has happened for \(Self.span(ms: hours * 3_600_000).words).")
             }
             return nil
         default:
@@ -192,17 +189,6 @@ public struct Narration: Equatable, Sendable {
     public static func wish(_ kind: Core.WishKind, name: String, because: String? = nil) -> Narration {
         Narration(cause: "\(name) wants \(kind.words)" + (because.map { ": \($0)." } ?? "."),
                   fact: fit(["{name} wants \(kind.words)", "wants \(kind.words)", "a wish"], name: name))
-    }
-
-    /// The board's caption as a rule starts its card for `ctx`: a new task,
-    /// a new thread, one taken up again, or compacted.
-    static func started(_ ctx: String, agent: String, name: String) -> String? {
-        switch ctx {
-        case "session": fit(["new \(agent) thread", "\(agent) started"], name: name)
-        case "continuation": fit(["\(agent) carries on", "\(agent) is back"], name: name)
-        case "compacted": fit(["\(agent) compacted", "memory compacted"], name: name)
-        default: fit(["\(agent) started", "new task"], name: name)
-        }
     }
 
     /// A work act starting: "claude is running the tests on api."
@@ -249,7 +235,7 @@ public struct Narration: Equatable, Sendable {
 
     /// What it's doing to pass the time, for the popover alone, from the pack's
     /// words for what the face says (`CharacterPack.passing`):
-    /// "Boop's blowing bubbles to pass the time."
+    /// "Boop's stretching to pass the time."
     public static func passing(_ id: String, in pack: CharacterPack) -> String? {
         pack.passing[id].map { $0.ofDoing ? "\(pack.name)'s \($0.words)." : "\(pack.name)'s \($0.words) to pass the time." }
     }
@@ -374,22 +360,19 @@ public struct Narration: Equatable, Sendable {
 
 extension Narration {
     /// Why the board looks as it does now, for the popover: each reason, first
-    /// every special day Boop is celebrating today, then the night or the
-    /// morning and the Friday, with what the board wears or
-    /// shows for it. It chooses
-    /// as the board does, from the same tags (firmware/src/render/tags.cpp's
-    /// outfitFor, eyewearFor and airFor): one hat, the first that fits, of a
-    /// witch hat at Halloween, a party hat, a nightcap at night and a bobble
-    /// hat in the winter holidays; on the gel, shades on a Friday from noon short of night (off while it
-    /// shows a feeling, which the popover doesn't follow), not while it
-    /// sleeps. The gel wears one thing and shows nothing else for a day:
-    /// only a board that isn't the gel has confetti at a party or New Year,
-    /// snow in the winter holidays and hearts on Valentine's in the air.
+    /// every special day Boop is celebrating today, then the night, with
+    /// what the board wears or shows for it. It chooses as the board does,
+    /// from the same tags. The gel wears a nightcap at night and nothing
+    /// for a day. A board that isn't the gel wears one hat, the first that
+    /// fits, of a witch hat at Halloween, a party hat, a nightcap at night
+    /// and a bobble hat in the winter holidays, and has confetti at a party
+    /// or New Year, snow in the winter holidays and hearts on Valentine's
+    /// in the air.
     public struct Dressing: Equatable, Sendable, Identifiable {
-        public enum Kind: Sendable { case specialDay, night, friday }
+        public enum Kind: Sendable { case specialDay, night }
 
         public var kind: Kind
-        /// `Boop became a Sprout today`, `It's Friday`.
+        /// `Pip is 50 days old today`, `It's night`.
         public var why: String
         /// What the board wears or shows for it, in a few words: `a party hat
         /// and confetti`. Nil for an occasion it only plays along with.
@@ -403,15 +386,14 @@ extension Narration {
         }
 
         /// The reasons on for `when` (the `state`'s tags) and today's
-        /// `occasions`, `asleep` when the board's look is, and `gel` for a
-        /// board that draws the gel, which alone wears eyewear and has nothing in the air.
-        public static func now(when: [String], specialDays: [Days.SpecialDay], asleep: Bool, gel: Bool) -> [Narration.Dressing] {
+        /// `specialDays`, and `gel` for a board that draws the gel, which
+        /// wears only its nightcap and has nothing in the air.
+        public static func now(when: [String], specialDays: [Days.SpecialDay], gel: Bool) -> [Narration.Dressing] {
             let on = Set(when)
             let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
-            // The gel's Sprout shows its leaves on a party day (its wornHat).
-            let leaves = gel && on.contains("sprout")
-            let hat = on.contains("halloween") ? "halloween" : party ? (leaves ? nil : "party") : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
-            let shades = gel && !asleep && on.contains("friday") && !on.contains("night") && !on.contains("morning")
+            let hat = on.contains("night") && gel ? "night"
+                : gel ? nil
+                : on.contains("halloween") ? "halloween" : party ? "party" : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
 
             var out: [Narration.Dressing] = specialDays.map { o in
                 var things: [String] = []
@@ -431,7 +413,6 @@ extension Narration {
             if hat == "night" {
                 out.append(Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap"))
             }
-            if shades { out.append(Narration.Dressing(kind: .friday, why: "It's Friday", what: "shades")) }
             return out
         }
 

@@ -10,14 +10,14 @@
       {"id": "starting", "about": "An agent has just started a task, a session or a continuation, or had its context compacted."}
     ]},
     {"label": "Working", "states": [
-      {"id": "planning", "about": "The agent is planning."},
+      {"id": "planning", "about": "The agent is planning. The Mac no longer sends it: planning shows as tool_use."},
       {"id": "working", "about": "The agent is working, with nothing more specific to show."},
-      {"id": "terminal", "about": "Running a shell command."},
-      {"id": "tool_use", "label": "Tool use", "about": "Using a tool, such as an edit."},
-      {"id": "searching", "about": "Searching the web."},
-      {"id": "analyzing", "about": "Reading and searching files."},
-      {"id": "testing", "about": "Running tests."},
-      {"id": "delegating", "about": "Handing work to a helper agent."}
+      {"id": "terminal", "about": "Running: a shell command, the tests or a build, or helpers at work."},
+      {"id": "tool_use", "label": "Tool use", "about": "Typing: an edit, any other tool, or a plan."},
+      {"id": "searching", "about": "Searching the web. The Mac no longer sends it: it shows as analyzing."},
+      {"id": "analyzing", "about": "Looking: reading and searching files, or the web."},
+      {"id": "testing", "about": "Running tests. The Mac no longer sends it: it shows as terminal."},
+      {"id": "delegating", "about": "Handing work to a helper agent. The Mac no longer sends it: it shows as terminal."}
     ]},
     {"label": "Needs you", "states": [
       {"id": "waiting", "about": "Quiet while a tool takes its time. Nothing is asked of you."},

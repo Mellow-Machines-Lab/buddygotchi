@@ -166,7 +166,7 @@ extension Runtime {
         let config = core.config
         status.dressing = Narration.Dressing.now(when: status.snapshot.when,
                                        specialDays: Days.special(at: wall, hatched: config.hatched, name: name, time: options.time),
-                                       asleep: status.snapshot.doing == "asleep", gel: status.device?.face != .pixel)
+                                       gel: status.device?.face != .pixel)
         status.talk = talk
         // To the second: the wall and the monotonic clock are read apart, and a
         // millisecond's wobble would make every status a new one.

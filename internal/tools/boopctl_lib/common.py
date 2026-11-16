@@ -38,11 +38,11 @@ MOODS = json.loads((REPO / "characters" / "pixel" / "mac" / "faces.json").read_t
 @functools.lru_cache(maxsize=None)
 def lasting_moods(pack: Path | None = None) -> list[str]:
     """The lasting moods of `pack` (the one in use by default), in its
-    order: those its character.json gives a `meaning`, which the mood
-    output can move to. A face-only mood has `settles` instead
+    order, which the mood output can move to: its character.json's
+    `lasting`, or for a pack from before it, its faces with a `meaning`
     (characters/CHARACTER.md §5)."""
     character = json.loads(((pack or chosen_pack()) / "character.json").read_text())
-    return [m["id"] for m in character["moods"] if "meaning" in m]
+    return [m["id"] for m in character.get("lasting") or [m for m in character["moods"] if "meaning" in m]]
 
 
 # The animations a `do` plays by name:

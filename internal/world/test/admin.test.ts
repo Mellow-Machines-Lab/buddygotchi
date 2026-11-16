@@ -102,5 +102,5 @@ test("expiry: old buddies, old days into totals_by_day, gestures, and joins past
 test("migrations run once", async () => {
   assert.deepEqual(await migrate(w.db), [], "already applied");
   const rows = await w.db.query<{ name: string }>("select name from schema_migrations");
-  assert.deepEqual(rows.map((r) => r.name), ["001_world.sql", "002_utc_offset.sql", "003_joins.sql"]);
+  assert.deepEqual(rows.map((r) => r.name), ["001_world.sql", "002_utc_offset.sql", "003_joins.sql", "004_one_size.sql"]);
 });

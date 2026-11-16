@@ -221,7 +221,7 @@ extension StateSnapshot {
     /// snapshots to draw each through the slime engine.
     static var onboardingLooks: [(String, StateSnapshot)] {
         [("hello", .onboarding(mood: "happy")),
-         ("napping", .onboarding(doing: "asleep", mood: "comfy")),
+         ("napping", .onboarding(doing: "asleep", mood: "calm")),
          ("looking", .onboarding(mood: "curious")),
          ("stuck", .onboarding(mood: "sad")),
          ("jumping", .onboarding(mood: "excited"))]
@@ -247,7 +247,7 @@ extension OnboardingModel {
         case .whatIDo: return WhatIDoAct.Step.asking.look(drops: 0)
         case .body:
             switch body {
-            case .intro, .skipped: return .onboarding(doing: "asleep", mood: "comfy")
+            case .intro, .skipped: return .onboarding(doing: "asleep", mood: "calm")
             case .looking: return stuck ? .onboarding(mood: "sad") : .onboarding(mood: "curious")
             case .joined: return .onboarding(mood: "happy")
             }

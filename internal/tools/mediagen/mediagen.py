@@ -100,13 +100,21 @@ def device(screen: Image.Image, caption: str, pad: int = 22) -> Image.Image:
     return img
 
 
+def faces() -> list[str]:
+    """The faces the pack in use draws, by name."""
+    return [m["id"] for m in json.loads((chosen_pack() / "character.json").read_text())["moods"]]
+
+
+# The working face: a pack's `focused`, or `engaged` for one that still has it.
+WORKING_FACE = "focused" if "focused" in faces() else "engaged"
+
 STORY = [  # (at ms, message, caption from then on; {name} is the pack's)
     (0, {"t": "state", "base": "asleep", "busy": 0}, "no agents: napping"),
     (2600, {"t": "state", "base": "working", "act": "terminal", "mood": "calm", "busy": 1, "variant": 1},
      "agents working: so is {name}"),
     (6400, {"t": "state", "base": "working", "attn": {"agent": "claude", "project": "landing", "more": 0},
             "busy": 1}, "one needs you"),
-    (9600, {"t": "state", "base": "working", "act": "testing", "mood": "engaged", "busy": 1, "variant": 1},
+    (9600, {"t": "state", "base": "working", "act": "testing", "mood": WORKING_FACE, "busy": 1, "variant": 1},
      "back to work: running tests"),
     (12000, {"t": "state", "base": "idle", "mood": "happy", "busy": 0}, "done! a big finish"),
     (12000, {"t": "do", "id": 11, "name": "task_complete", "play": "now",
@@ -126,7 +134,8 @@ def boop_gif() -> None:
     save_gif(out, [STEP_MS] * len(out), OUT / "boop.gif")
 
 
-MOODS = ["excited", "proud", "curious", "calm", "grumpy", "sad", "tired", "wounded"]
+# Eight faces to show, of those the pack in use draws.
+MOODS = [m for m in ("excited", "proud", "curious", "calm", "grumpy", "sad", "tired", "wounded", "focused") if m in faces()][:8]
 
 
 def moods_gif() -> None:

@@ -62,7 +62,7 @@ int GrowthBar::fill(uint32_t t) const {
   return from_ + (to_ * 10 - from_) * render::ease1000(int32_t(t - fillAt_), int(G::kFillMs)) / 1000;
 }
 
-void GrowthBar::heard(int xp, int wasStage, int nowStage, bool hidden, uint32_t t) {
+void GrowthBar::heard(int xp, bool hidden, uint32_t t) {
   if (xp < 0) {
     *this = GrowthBar{};
     return;
@@ -89,7 +89,6 @@ void GrowthBar::heard(int xp, int wasStage, int nowStage, bool hidden, uint32_t 
     return;
   }
   wasFull_ = wasFull;
-  if (nowStage > wasStage) grew_ = true, grewAt_ = t;
   if (xp == to_) return;
   const bool coming = heart_ && int32_t(t - fillAt_) < 0;
   if (coming) {  // it fills as the heart lands

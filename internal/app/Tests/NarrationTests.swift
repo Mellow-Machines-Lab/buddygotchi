@@ -137,7 +137,7 @@ final class NarrationTests: XCTestCase {
     /// The sentences put the buddy's face or mood first, then the cause.
     func testTheSentences() {
         let r = Narration(cause: "You stroked it.", fact: "stroked")
-        XCTAssertEqual(r.reaction(face: "comfy", name: "Boop"), "Boop is comfy. You stroked it.")
+        XCTAssertEqual(r.reaction(face: "pleased", name: "Boop"), "Boop is pleased. You stroked it.")
         XCTAssertEqual(r.mood("lonely", name: "Boop"), "Boop is lonely. You stroked it.")
     }
 
@@ -150,10 +150,10 @@ final class NarrationTests: XCTestCase {
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, speaks: { false },
                                 reason: { $0.flatMap { Narration.of($0, line: nil) } })
         let log = Transcript.log().view(now: 0)
-        let result = try XCTUnwrap(react.run(["react.face": Answer(choice: "comfy", probabilities: ["comfy": 1])], now: stroke, log: log))
+        let result = try XCTUnwrap(react.run(["react.face": Answer(choice: "pleased", probabilities: ["pleased": 1])], now: stroke, log: log))
         XCTAssertEqual(queued.last?.reason, "you stroked \(CharacterPack.active.name)")
         XCTAssertEqual(queued.last?.args["reason"], .string("you stroked \(CharacterPack.active.name)"))
-        XCTAssertEqual(result.facts["reason"], .string("\(CharacterPack.active.name) is comfy. You stroked it."))
+        XCTAssertEqual(result.facts["reason"], .string("\(CharacterPack.active.name) is pleased. You stroked it."))
 
         let finished = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil },
                                    who: { _ in Moment.Who(agent: "claude", thread: "api") }, turnMs: { _ in 60_000 },
@@ -219,7 +219,7 @@ final class ReasonsTests: XCTestCase {
         case .memory: return [(event(kind), [:])]
         case .wish: return Core.WishKind.allCases.map { (event(kind, $0.rawValue, phase: .start), [:]) }
             + [(event(kind, "met", phase: .end, data: ["kind": "pet"]), [:]), (event(kind, "gaveup", phase: .end, data: ["kind": "pet"]), [:])]
-        case .level: return [(event(kind, "12"), [:]), (event(kind, "15", data: ["stage": "Buddy"]), [:])]
+        case .level: return [(event(kind, "12"), [:])]
         case .ring: return [(event(kind, "closed"), [:])]
         case .world: return [(event(kind, "boop", data: ["from_region": "americas"]), [:]), (event(kind, "cheer", data: ["count": 3]), [:]),
                              (event(kind, "boop", data: ["held": true, "counts": ["boop": 2, "cheer": 1]]), [:])]
@@ -265,9 +265,6 @@ final class ReasonsTests: XCTestCase {
                     }
                 }
             }
-            for ctx in ["new_task", "session", "continuation", "compacted"] {
-                for agent in ["claude", "codex"] { XCTAssertNotNil(Narration.started(ctx, agent: agent, name: name)) }
-            }
             for k in Core.WishKind.allCases { XCTAssertNotNil(Narration.wish(k, name: name).fact, k.rawValue) }
         }
     }
@@ -295,7 +292,7 @@ final class ReasonsTests: XCTestCase {
         XCTAssertEqual(Narration.sleeping(noAgents: true, napping: false, dozeMs: 3_600_000, name: "Boop").fact, "no agents open")
         XCTAssertNil(Narration.sleeping(noAgents: false, napping: true, dozeMs: 3_600_000, name: "Boop").fact, "the Moment that took the nap says why")
         XCTAssertEqual(Narration.moodMoved("grumpy", name: "Boop"), "Boop's grumpy now")
-        XCTAssertEqual(Narration.moodMoved("disappointed", name: "Boop"), "disappointed now")
+        XCTAssertEqual(Narration.moodMoved("affectionate", name: "Boop"), "affectionate now")
     }
 
     /// A real mood change says so on the board: the pass's own, not a later
@@ -312,13 +309,17 @@ final class ReasonsTests: XCTestCase {
                                         "from": "calm", "to": .string(to)]), now: e.at + 1)
             return logged
         }
-        let poke = moved(event(.poke), to: "grumpy")
+        let poke = moved(event(.poke), to: "cross")
         let view = log.view(now: harnessT0 + 2)
-        XCTAssertEqual(MoodOutput.boardFact(mood, view, now: poke, pack: pack), Narration.moodMoved("grumpy", name: pack.name))
+        XCTAssertEqual(MoodOutput.boardFact(mood, view, now: poke, pack: pack), Narration.moodMoved("annoyed", name: pack.name), "in the face it rests in")
         XCTAssertNil(MoodOutput.boardFact(mood, view, now: event(.poke), pack: pack), "another pass's")
         XCTAssertNil(MoodOutput.boardFact(mood, view, now: nil, pack: pack))
-        let fade = moved(event(.checkIn, "check_in"), to: pack.defaultMood)
-        XCTAssertNil(MoodOutput.boardFact(mood, log.view(now: harnessT0 + 3), now: fade, pack: pack), "a fade")
+        // A fade is code's, for no event: no pass's caption, and its own reason.
+        _ = log.append(Event(at: harnessT0 + 2, source: Event.harness, kind: Event.did,
+                             data: ["action": .string(MoodOutput.outputName), "for": .null, "ok": true, "by": "rule",
+                                    "from": "cross", "to": .string(pack.defaultMood), MoodOutput.fadeFact: true]), now: harnessT0 + 2)
+        XCTAssertNil(MoodOutput.boardFact(mood, log.view(now: harnessT0 + 3), now: poke, pack: pack), "a fade")
+        XCTAssertEqual(MoodOutput.reason(mood, log.view(now: harnessT0 + 3), line: { _ in nil })?.cause, "It settled by itself after a while.")
 
         var queued: [Moment] = [], notes: [String] = []
         let react = MomentOutput(queue: { m, _ in queued.append(m) }, blocked: { nil }, reason: { _ in Narration(cause: "Why.") },
@@ -350,11 +351,11 @@ final class ReasonsTests: XCTestCase {
         let source = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("characters/boop/firmware/src/render/gel/pastimes.cpp"), encoding: .utf8)
         let row = try NSRegularExpression(pattern: #"\{Pastime::k\w+, Body::k\w+, "([^"]+)""#)
         let names = row.matches(in: source, range: NSRange(source.startIndex..., in: source)).map { String(source[Range($0.range(at: 1), in: source)!]) }
-        XCTAssertGreaterThan(names.count, 40)
-        for n in names + ["to-work", "to-rest", "to-sleep", "act-on", "act-off"] {
+        XCTAssertEqual(names.count, 15, "the gel's pastimes (render/gel/pastimes.h)")
+        for n in names + ["to-work", "to-rest", "to-sleep"] {
             XCTAssertNotNil(pack.passing[n], "\(n) has no words in mac/passing.tsv")
         }
-        XCTAssertEqual(Narration.passing("bubble", in: pack.named("Boop")), "Boop's blowing bubbles to pass the time.")
+        XCTAssertEqual(Narration.passing("hop", in: pack.named("Boop")), "Boop's hopping to pass the time.")
         XCTAssertEqual(Narration.passing("to-work", in: pack.named("Boop")), "Boop's getting to work.")
     }
 }

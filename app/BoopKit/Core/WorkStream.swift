@@ -77,10 +77,11 @@ struct WorkStream {
     /// The `state` carries a lane's new word at most this often.
     static let sendEveryMs: Int64 = 250
 
-    /// A work act: a command Boop plays out for as long as it runs, by a
-    /// plain rule, with a low sign saying what's running. The board draws
-    /// it from `state` and times nothing but its own beats; the result ends
-    /// it. What Boop says over it is Jev's (`Event.Kind.act`).
+    /// A work act: a command worth naming, for as long as it runs, by a
+    /// plain rule: a low sign says what's running, then how it ended, and
+    /// Boop hops at a pass and flinches at a fail. The board draws it from
+    /// `state`; the result ends it. What Boop says at a push's result is
+    /// Jev's (`Event.Kind.act`).
     struct Act: Equatable {
         /// `push`, `tests` or `build`.
         var kind: String
@@ -89,30 +90,20 @@ struct WorkStream {
         /// Its session, and the call it plays out.
         var session: String
         var callID: String?
-        /// The full scene, or only the prop and the sign: see `isFull`.
-        var full: Bool
         var startedAt: Int64
         /// How it ended, once it has, and until when `state` holds that.
         var passed: Bool?
         var until: Int64?
     }
-    /// The full act plays when its kind hasn't played fully in this long, or
-    /// it's the first of the day; otherwise the small version.
-    static let fullEveryMs: Int64 = 30 * 60_000
-    /// How long an act's opening plays, however soon its command ends, and
-    /// how long its result shows: `actLeadMs` and `actResultMs` on the board.
-    static func leadMs(_ kind: String, full: Bool) -> Int64 { !full ? 900 : kind == "push" ? 3400 : 1800 }
-    static func resultMs(full: Bool) -> Int64 { full ? 6000 : 2600 }
+    /// How long an act's sign says what's running, however soon its command
+    /// ends, and how long its result shows: `kActLeadMs` and `kActResultMs`
+    /// on the board.
+    static let leadMs: Int64 = 900, resultMs: Int64 = 2600
     /// What each act's sign says at a pass; a failure's says `fail`. Lower
     /// case, as everything Boop holds is.
     static let passWords = ["push": "shipped!", "tests": "pass", "build": "built"]
-    /// A failure after this long gets the full ending, whichever version
-    /// started: not a push's, whose crash needs its rocket's start.
-    static let longRunMs: Int64 = 60_000
 
     var act: Act?
-    /// When each kind last played fully.
-    var fullAt: [String: Int64] = [:]
 
     var lanes: [String: Lane] = [:]
     var heldUntil: Int64 = .min
@@ -229,20 +220,11 @@ struct WorkStream {
         return nil
     }
 
-    /// Whether an act of `kind` starting at `now` plays fully: it hasn't for
-    /// `fullEveryMs`, or it's the first of `day`.
-    func isFull(_ kind: String, at now: Int64, sameDay: (Int64) -> Bool) -> Bool {
-        guard let last = fullAt[kind] else { return true }
-        return now - last >= Self.fullEveryMs || !sameDay(last)
-    }
-
     /// A shell call starting may begin an act: one at a time, so another
     /// agent's call while one runs is only its word.
-    mutating func startAct(_ e: AgentEvent, program: String?, at now: Int64, sameDay: (Int64) -> Bool) -> Act? {
+    mutating func startAct(_ e: AgentEvent, program: String?, at now: Int64) -> Act? {
         guard let (kind, words) = Self.actFor(e, program: program), act == nil || act?.passed != nil else { return nil }
-        let full = isFull(kind, at: now, sameDay: sameDay)
-        if full { fullAt[kind] = now }
-        act = Act(kind: kind, words: words, session: e.key, callID: e.toolUseID, full: full, startedAt: now)
+        act = Act(kind: kind, words: words, session: e.key, callID: e.toolUseID, startedAt: now)
         return act
     }
 
@@ -259,9 +241,7 @@ struct WorkStream {
         let passed = e.failed == false
         running.passed = passed
         running.words = passed ? Self.passWords[running.kind] ?? "pass" : "fail"
-        if !passed, running.kind != "push", now - running.startedAt >= Self.longRunMs { running.full = true }
-        running.until = max(now, running.startedAt + Self.leadMs(running.kind, full: running.full))
-            + Self.resultMs(full: running.full)
+        running.until = max(now, running.startedAt + Self.leadMs) + Self.resultMs
         act = running
         return running
     }
@@ -344,9 +324,8 @@ struct WorkStream {
     }
 
     /// A turn of session `e.key` ending, if it called a tool: done, it
-    /// gathers its words up; failed, by why (a full context buries it, a rate
-    /// limit or an overload freezes them, anything else drops them); stopped,
-    /// they drop. Always forward: the turn's end is news.
+    /// gathers its words up; failed or stopped, they drop, under a word for
+    /// why. Always forward: the turn's end is news.
     mutating func turnEnded(_ e: AgentEvent, at now: Int64) -> Forward? {
         let key = e.key
         guard called.contains(key) else { return nil }
@@ -356,9 +335,9 @@ struct WorkStream {
         case .done?: shown = ("done", "gather")
         case .failed?:
             switch e.error {
-            case "context_limit": shown = ("context full", "buried")
-            case "rate_limit": shown = ("rate limit", "freeze")
-            case "overloaded": shown = ("overloaded", "freeze")
+            case "context_limit": shown = ("context full", "drop")
+            case "rate_limit": shown = ("rate limit", "drop")
+            case "overloaded": shown = ("overloaded", "drop")
             default: shown = ("failed", "drop")
             }
         case .stopped?: shown = ("stopped", "drop")
@@ -366,13 +345,6 @@ struct WorkStream {
         }
         return offer(Forward(slot: lanes[key]?.slot ?? freeSlot(), word: shown.word, style: shown.style, priority: .always),
                      at: now)
-    }
-
-    /// The context of session `key` compacted while it works: its words
-    /// squashed into a cube.
-    mutating func compacted(_ key: String, at now: Int64) -> Forward? {
-        guard let lane = lanes[key] else { return nil }
-        return offer(Forward(slot: lane.slot, word: "context", style: "compact", priority: .always), at: now)
     }
 
     /// A turn starting in `key`: it has called no tool yet, so `turnEnded`

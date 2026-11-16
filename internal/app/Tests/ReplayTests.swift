@@ -9,7 +9,7 @@ final class ReplayTests: XCTestCase {
     /// Each snapshot as `+time base attn waiting`, e.g. `+3.0s idle claude/jetpack 1`,
     /// counting 1 + `attn.more` waiting, with `/act` after the base while
     /// there's one (`+2.0s working/terminal - 0`); each rule's reaction as
-    /// `+time name`, with its `ctx` (`+0.0s starting session`). The work
+    /// `+time name`. The work
     /// stream is off: its tests are `WorkStreamTests`.
     func summary(_ fixture: String, agent: String) throws -> [String] {
         let path = HookFixtures.agentHooks.appendingPathComponent(fixture).path
@@ -22,7 +22,7 @@ final class ReplayTests: XCTestCase {
             if parts[1] == "do" {
                 let args = object["args"] as? [String: Any] ?? [:]
                 XCTAssertNil(args["mood"], "a rule's reaction has no face of the brain's")
-                return ([parts[0], object["name"] as? String ?? "-"] + [args["ctx"] as? String].compactMap { $0 })
+                return [parts[0], object["name"] as? String ?? "-"]
                     .joined(separator: " ")
             }
             XCTAssertEqual(parts[1], "state")
@@ -47,12 +47,11 @@ final class ReplayTests: XCTestCase {
         let got = try summary("claude-code/synthetic/permission.jsonl", agent: "claude")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting session",
             "+1.0s working - 0",
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/jetpack 1",
-            "+125.0s working - 0 tier3",
-            "+301.0s working - 0 tier4",
+            "+125.0s working - 0 tier1",
+            "+301.0s working - 0 tier2",
             "+526.0s idle - 0",
         ])
     }
@@ -67,11 +66,10 @@ final class ReplayTests: XCTestCase {
         let got = try summary("claude-code/synthetic/subagents.jsonl", agent: "claude")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting session",
             "+1.0s working - 0",
             "+2.0s working/terminal - 0",
             "+3.0s idle claude/landing 1",
-            "+71.0s working/tool_use - 0 tier2",
+            "+71.0s working/tool_use - 0 tier1",
             "+72.0s idle - 0",
         ])
     }
@@ -81,34 +79,30 @@ final class ReplayTests: XCTestCase {
     /// a1's own `SubagentStop` answers it while the main agent works on,
     /// and a subagent that ends after the turn leaves the session idle.
     /// With no `SubagentStart` in its hooks, the main agent's `Agent`
-    /// calls show delegating; a1's denied command shows nothing more.
+    /// calls show running, and hold their 3 s; a1's denied command shows nothing more.
     func testADeniedSubagentsEndAnswersItsRequest() throws {
         let got = try summary("claude-code/synthetic/subagent-denied.jsonl", agent: "claude")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting session",
             "+1.0s working - 0",
-            "+2.0s working/delegating - 0",
+            "+2.0s working/terminal - 0",
             "+5.0s idle claude/landing 1",
-            "+31.0s working/delegating - 0 tier1",
-            "+34.0s working/tool_use - 0 tier1",
+            "+31.0s working/terminal - 0",
+            "+35.0s working - 0",
             "+35.0s idle - 0",
-            "+65.0s idle - 0 tier1",
-            "+95.0s idle - 0 tier2",
+            "+95.0s idle - 0 tier1",
         ])
     }
 
-    /// The tests show as testing, then waiting while the reviewer looks,
-    /// once testing has shown 1.5 s.
+    /// The tests show as running, through the reviewer's look, which is
+    /// over before running has shown its 3 s.
     func testCodexRequestItsReviewerHandlesNeverShows() throws {
         let got = try summary("codex/synthetic/approval-reviewed.jsonl", agent: "codex")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting session",
             "+1.0s working - 0",
-            "+2.0s working/testing - 0",
-            "+4.5s working/waiting - 0",
-            "+6.5s working - 0",
+            "+2.0s working/terminal - 0",
+            "+7.5s working - 0",
             "+25.5s idle - 0",
         ])
     }
@@ -117,43 +111,35 @@ final class ReplayTests: XCTestCase {
         let got = try summary("codex/synthetic/approval-asked.jsonl", agent: "codex")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting session",
             "+1.0s working - 0",
             "+2.0s working/terminal - 0",
             "+5.0s idle codex/landing 1",
             "+14.0s working - 0",
-            "+31.0s working - 0 tier1",
             "+55.0s idle - 0",
         ])
     }
 
     /// One Claude session through every activity
-    /// and every reaction of the rules: plan mode, a read, a web search,
-    /// a shell read, an edit, failing tests, a helper sent off and back, a
-    /// build that goes quiet, Esc, then a resume and a new task.
+    /// and every reaction of the rules: plan mode (typing), a read and a
+    /// web search (looking), a shell read (looking), an edit (typing),
+    /// failing tests, a helper sent off and back and a build (running),
+    /// which goes quiet (waiting), Esc, then a resume and a new task.
     func testAClaudeSessionShowsEveryActivityAndRuleReaction() throws {
         let got = try summary("claude-code/synthetic/states.jsonl", agent: "claude")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting session",
-            "+1.0s working/planning - 0",
+            "+1.0s working/tool_use - 0",
             "+2.0s working/analyzing - 0",
-            "+4.0s working/searching - 0",
-            "+7.0s working/planning - 0",
-            "+9.0s working - 0",
+            "+8.0s working - 0",
             "+11.0s working/analyzing - 0",
-            "+14.0s working - 0",
+            "+15.0s working - 0",
             "+15.0s working/tool_use - 0",
-            "+17.0s working/testing - 0",
-            "+20.0s working/delegating - 0",
-            "+20.0s working/delegating - 0 +1 helper",
-            "+23.0s working/delegating - 0",
-            "+26.0s working/terminal - 0",
-            "+31.0s working/terminal - 0 tier1",
-            "+46.0s working/waiting - 0 tier1",
+            "+17.0s working/terminal - 0",
+            "+20.0s working/terminal - 0 +1 helper",
+            "+23.0s working/terminal - 0",
+            "+47.0s working/waiting - 0",
             "+51.0s idle - 0",
-            "+52.0s starting continuation",
-            "+53.0s working - 0 tier1",
+            "+53.0s working - 0",
             "+54.0s idle - 0",
         ])
     }
@@ -165,16 +151,13 @@ final class ReplayTests: XCTestCase {
         let got = try summary("codex/synthetic/states.jsonl", agent: "codex")
         XCTAssertEqual(got, [
             "+0.0s idle - 0",
-            "+0.0s starting continuation",
             "+1.0s working - 0",
             "+2.0s working/analyzing - 0",
-            "+4.0s starting compacted",
-            "+5.0s working - 0",
-            "+7.0s working/testing - 0",
-            "+10.0s working/tool_use - 0",
+            "+6.0s working - 0",
+            "+7.0s working/terminal - 0",
+            "+11.0s working - 0",
             "+11.0s working/terminal - 0",
-            "+31.0s working/terminal - 0 tier1",
-            "+32.0s working/waiting - 0 tier1",
+            "+33.0s working/waiting - 0",
             "+37.0s idle - 0",
         ])
     }
@@ -186,14 +169,13 @@ final class ReplayTests: XCTestCase {
         let lines = replay.run(try Replay.steps(fromFile: path))
         let effects = lines.filter { $0.hasPrefix("+") }.map { $0.split(separator: " ", maxSplits: 1)[1] }
         let rules = effects.filter { $0.hasPrefix("do ") && !$0.contains(#""name":"call""#) }
-        XCTAssertEqual(rules.map { $0.contains(#""name":"starting""#) }, [true],
-                       "the rules play the start, its prompt just after showing no card of its own; the finish is the brain's")
+        XCTAssertEqual(rules, [], "the rules play nothing at a start; the finish is the brain's")
         // The test runs are a work act, in `state`.
-        XCTAssertTrue(effects.contains { $0.hasPrefix("state") && $0.contains(#""wact":["tests","running tests",1]"#) }, "\(effects)")
+        XCTAssertTrue(effects.contains { $0.hasPrefix("state") && $0.contains(#""wact":["tests","running tests"]"#) }, "\(effects)")
         XCTAssertTrue(effects.contains(#"view last_message · claude finished turn 1 on "fixture-project": done, a long turn, 10 tool calls."#), "\(effects)")
         let states = effects.filter { $0.hasPrefix("state") }
         // A tier reached mid-run sends a state too: count the runs.
-        let testing = states.map { $0.contains(#""act":"testing""#) }
+        let testing = states.map { $0.contains(#""wact":["tests","running tests"]"#) }
         XCTAssertEqual(zip([false] + testing, testing).filter { !$0 && $1 }.count, 10, "each of the ten test runs")
         let bases = states.compactMap { line -> String? in
             line.range(of: #""base":"[a-z]+""#, options: .regularExpression).map { String(line[$0]) }

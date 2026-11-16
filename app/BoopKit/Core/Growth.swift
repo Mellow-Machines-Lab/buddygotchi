@@ -4,9 +4,8 @@ import MellowHarness
 /// How Boop grows, kept simple: a fixed XP for each thing its agents get
 /// done and each bit of your care, at most `perDay` in one Boop day (the
 /// day's ring), and a level for every `perLevel` XP it ever earned. It
-/// never goes down. Some level-ups are bigger: at the levels in `stages`,
-/// Boop grows a size, which the board draws from its tag (`Tags.stages`).
-/// Nothing useful is ever locked behind a level.
+/// never goes down. Nothing is ever locked behind a level, and Boop's
+/// body is one size at every level.
 public struct Growth: Equatable, Sendable {
     /// Every XP it's ever earned.
     public var xp: Int
@@ -32,20 +31,6 @@ public struct Growth: Equatable, Sendable {
     public var ringClosed: Bool { today >= Growth.perDay }
     /// Today's ring in whole percent: what the board's bar shows (`state.xp`).
     public var percent: Int { today * 100 / Growth.perDay }
-
-    /// Each size's name and the level it's reached at, in order. Reaching
-    /// one is a bigger level-up.
-    public static let stages: [(name: String, level: Int)] = [
-        ("Hatchling", 1), ("Sprout", 5), ("Buddy", 15), ("Chonk", 30),
-    ]
-    /// The size it's at, from 1.
-    public var stage: Int { Growth.stage(forLevel: level) }
-    public var stageName: String { Growth.stages[stage - 1].name }
-    public static func stage(forLevel level: Int) -> Int {
-        (stages.lastIndex { level >= $0.level } ?? 0) + 1
-    }
-    /// Whether reaching `level` grows Boop a size.
-    public static func grows(at level: Int) -> Bool { level > 1 && stages.contains { $0.level == level } }
 
     /// XP for a turn that ends done, a tool call that ends without failing
     /// and a helper coming back: the agents' work.

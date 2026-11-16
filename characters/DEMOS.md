@@ -1,6 +1,6 @@
 # Demos
 
-Updated 2026-11-14. A demo is a short, scripted stretch of work that a
+Updated 2026-11-15. A demo is a short, scripted stretch of work that a
 character lives through: an agent gets a task, you poke and talk to
 Boop, and it reacts. Use demos to record videos, to show
 Boop off, and to check that everything works end to end.
@@ -65,7 +65,7 @@ Boop's brain.
 | `{"you": "hold"}` | You hold a finger on the needs-you screen for a second: the screen goes, though the agent still waits, and its next request shows again | |
 | `{"you": "talk"}` | You hold the talk button, then it hears `text` | `text`, `hold` (seconds, 1.5) |
 | `{"you": "back"}` | You come back to the Mac after `minutes` away: the clock jumps on by that long, as a `wait`'s does | `minutes` (60) |
-| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (the headphones at 2 minutes, the melt at 5, the mugs stacking up at 10) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
+| `{"you": "wait"}` | `minutes` pass at once: the demo's clock jumps on (headless Boop's, which every `make demo` plays on), so a long turn reaches its tiers (a minute, 5 and 15, where it may melt) and the quiet after it its own. The agent's process, one made up for each session, runs all through the demo, as its hooks say, so a request still waits however long passes, up to a silent day | `minutes` |
 | `{"brain": {…}}` | How Boop reacts to the step above | the answers; `mood` sets its mood. After a prompt, `react.sign` is the caption it holds up, one its `signs.md` offers for the prompt's reading. A `react.sign` that is one of the pack's `asks.md` questions asks it, at a finish or an idle check-in (after a `wait` past it), and a later step's `react.sign` may be a sign that needs a kept answer (`[cookie]`). After a `talk`, `react.move` is its reply (`hello`, `status`, `nap`…): the board plays the reply's clip, and its sign is `react.sign`, one of the pack's `replies.md` lines for that reply, else one looked up, or, for `status`, what the demo's agents are really doing, and asked about all of several, the board shows them in its drawer |
 | `{"mood": "proud"}` | Boop's mood changes | |
 
@@ -79,9 +79,8 @@ several agents at once this way.
 the reply, with more of the agent's steps after it. It needs its
 `summary` and has no `say`: the context is full before the model can
 speak, so put the words on the step after it. Every agent says the same
-when it has compacted, and the rules show it: Boop shows its
-compacted card, and a Moment after it waits on the board until the card
-has played. With no agent, Boop sends that hook. A replayed Claude Code or
+when it has compacted; the board shows nothing for it, and Jev may
+answer it. With no agent, Boop sends that hook. A replayed Claude Code or
 Codex compacts for real, and its model writes the `summary`. The desktop
 app can't play a compact, since its real model can't be made to fill its
 context on cue.
@@ -116,7 +115,7 @@ A brain step answers the questions that the real brain gets:
 | --- | --- |
 | `react.face` | a mood of the pack that has a face, or `none` |
 | `react.move` | `success`, `failure` or `reply` for a turn that ended, `wake up` for you back after a long or very long break, `notice` for a prompt that says its name, else `none`; after talk, its reply (`yes`, `hello`, `status`, `nap`…) |
-| `react.intensity` | `small`, `medium`, `big`, `huge`: how long the emotion holds and how big what it says is |
+| `react.intensity` | `small`, `medium`, `big`: how long the emotion holds and how big what it says is |
 | `say` | what it says: `none`, a feeling (`glad`, `upset`, `tickled`), `swear`, or a topic (`start`, `tests`, `done`…); only a pack with a voice says it |
 
 The choices and what each means are in

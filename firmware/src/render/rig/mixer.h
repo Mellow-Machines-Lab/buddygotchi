@@ -37,9 +37,10 @@ class Mixer {
   void reset(uint8_t eyes, uint8_t mouth, const Clip* look);
   // The styles to cross-fade to.
   void setStyles(uint8_t eyes, uint8_t mouth);
-  // The look's loop. A new clip fades in over the old one, which fades out;
-  // the same clip plays on.
-  void setLook(const Clip* clip);
+  // The look's loop. A new clip fades in over the old one, which fades out,
+  // each over `fadeMs` (a pose that moves the whole body wants longer than
+  // kWeightMs); the same clip plays on.
+  void setLook(const Clip* clip, uint32_t fadeMs = kWeightMs);
   // A reaction's clip, over everything playing. With kPlays playing, the
   // oldest gives way, but the look's own clip.
   void play(const Clip& clip);
@@ -63,6 +64,7 @@ class Mixer {
     uint32_t in = 0, out = 0;  // ms since it started fading in, and out
     int from = 0;              // its weight when it started fading out
     bool base = false, cut = false;
+    uint32_t fade = kWeightMs;  // how long its weight takes, in and out
   };
   struct Fader {
     Style style;
@@ -70,9 +72,9 @@ class Mixer {
     uint32_t age = 0;
     void advance(uint32_t dt);
   };
-  static uint32_t fadeMs(const Clip& clip);
+  static uint32_t fadeMs(const Play& p);
   static int weight(const Play& p);
-  void start(const Clip& clip, bool base);
+  void start(const Clip& clip, bool base, uint32_t fadeMs = kWeightMs);
   void fadeOut(Play& p);
   void mix();
 

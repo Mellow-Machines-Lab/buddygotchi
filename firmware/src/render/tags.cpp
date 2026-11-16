@@ -43,11 +43,6 @@ Outfit outfitFor(uint32_t when) {
   return Outfit::kNone;
 }
 
-Eyewear eyewearFor(uint32_t when) {
-  if (hasTag(when, "friday") && !hasTag(when, "night") && !hasTag(when, "morning")) return Eyewear::kShades;
-  return Eyewear::kNone;
-}
-
 uint8_t airFor(uint32_t when) {
   return (hasTag(when, "winter") ? kSnow : 0) | (hasTag(when, "party") || hasTag(when, "newyear") ? kConfetti : 0) |
          (hasTag(when, "valentines") ? kHearts : 0);

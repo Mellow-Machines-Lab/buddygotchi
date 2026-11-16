@@ -42,6 +42,10 @@ public enum Touch: String, CaseIterable, Sendable {
         }
     }
 
+    /// A gentle touch, which takes a levelled mood a level down
+    /// (`MoodOutput.soothed`): a stroke, a swipe, a finger at rest.
+    public var soothes: Bool { self == .stroke || self == .swipe || self == .lean }
+
     /// The brain's line for it, which the board already answered; a poke's
     /// is its own, by the run (`EventLine.poke`).
     public func line(name: String = CharacterPack.active.name) -> String? {

@@ -74,13 +74,6 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(Growth(xp: 1_182).level, 12)
         XCTAssertEqual(Growth(xp: 1_182).toNextLevel, 18)
         XCTAssertEqual(Growth(xp: 1_000_000).level, 10_001, "no maximum")
-        XCTAssertEqual(Growth.stages.map(\.level), [1, 5, 15, 30])
-        XCTAssertEqual(Growth.stages.map(\.name), ["Hatchling", "Sprout", "Buddy", "Chonk"])
-        XCTAssertEqual(Growth(xp: 399).stageName, "Hatchling")
-        XCTAssertEqual(Growth(xp: 400).stageName, "Sprout")
-        XCTAssertEqual(Growth(xp: 1_400).stageName, "Buddy")
-        XCTAssertEqual(Growth(xp: 2_900).stageName, "Chonk")
-        XCTAssertEqual([1, 2, 5, 6, 15, 30, 31].filter(Growth.grows(at:)), [5, 15, 30])
         XCTAssertEqual(Growth(today: 82).percent, 82)
         XCTAssertEqual(Growth(today: 140).today, 100, "a ring holds 100")
         XCTAssertTrue(Growth(today: 100).ringClosed)
@@ -317,17 +310,15 @@ final class GrowthTests: XCTestCase {
         XCTAssertEqual(growth.celebrated, 1)
         for seq in 1...20 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
         let day = "2026-10-22"
-        XCTAssertEqual(growth.due(today: day), [.level(2, grewTo: nil), .ringClosed])
-        XCTAssertEqual(GrowthStore(try KeyValueStore(directory: dir)).due(today: day), [.level(2, grewTo: nil), .ringClosed], "still due after a quit")
-        XCTAssertEqual(growth.due(today: "2026-10-23"), [.level(2, grewTo: nil)], "a ring held past 5:00 is yesterday's")
+        XCTAssertEqual(growth.due(today: day), [.level(2), .ringClosed])
+        try XCTAssertEqual(GrowthStore(KeyValueStore(directory: dir)).due(today: day), [.level(2), .ringClosed], "still due after a quit")
+        XCTAssertEqual(growth.due(today: "2026-10-23"), [.level(2)], "a ring held past 5:00 is yesterday's")
         growth.played(Event(at: 0, source: .boop, type: .level, specificType: "2"))
         growth.played(Event(at: 0, source: .boop, type: .ring, specificType: "closed"))
         XCTAssertEqual(growth.due(today: day), [])
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.celebrated, 2)
         XCTAssertEqual(reopened.due(today: day), [], "and not again")
-        XCTAssertEqual(Growth(xp: 1_400).level, 15)
-        XCTAssertTrue(Growth.grows(at: 15))
     }
 
     /// XP starts from zero: what growth kept before is deleted at the first open.

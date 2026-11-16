@@ -48,13 +48,12 @@ extension Runtime {
             if act.kind == "push" { return .shipping }
             if act.kind == "tests" { return .testing }
         }
-        if snapshot.activity == "testing" { return .testing }
         return snapshot.doing == "working" ? .coding : .idle
     }
 
     func worldNow(at now: Int64, day: String) -> WorldLink.Now {
         let g = growth.growth(on: day)
-        return WorldLink.Now(name: name, level: g.level, stage: g.stageName, utcOffset: utcOffset,
+        return WorldLink.Now(name: name, level: g.level, utcOffset: utcOffset,
                              activity: worldActivity(at: now), day: day, xpToday: g.today)
     }
 

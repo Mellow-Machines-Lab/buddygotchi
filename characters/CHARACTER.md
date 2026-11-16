@@ -37,7 +37,7 @@ make -C internal build && .build/debug/boopdev check # every pack in characters/
 ```
 
 - `boopdev check` says whether a pack plays. It reads the pack as the app
-  does: `character.json` with its moods and their graph, the steering and
+  does: `character.json` with its faces and lasting moods, the steering and
   its budgets, the faces' files, the voice and every demo.
 - `charactergen.py --check` says whether it builds: the moods and startup
   mood `moods.h` needs, the rig, the studio entry and the references. It
@@ -76,7 +76,6 @@ meaning.
 **Fixed by the engine, the same for every character:**
 - The **states**: what the agents are doing (`idle`, `working`, `needs_you`,
   `testing` and the rest, §9).
-- The **moods**' names: the same 42 for every character (§5).
 - When states change (the core's rules).
 - *That* a mood is picked after events.
 - The protocol.
@@ -180,33 +179,27 @@ own tools or what they were made from.
 
 ## 4. `character.json`
 
-Pixel's, cut to the first of its 42 moods, a lasting one, and a face-only
-one:
+Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
 
 ```json
 {
-  "id": "pixel",
-  "name": "Pixel",
+  "id": "boop",
+  "name": "Boop",
   "version": "0.1.0",
   "default_mood": "calm",
   "startup_mood": "happy",
-  "moods": [
+  "lasting": [
+    {"id": "calm", "meaning": "Settled, the resting mood: nothing much is happening."},
     {
-      "id": "calm",
-      "meaning": "Settled, the resting mood: nothing much is happening.",
-      "family": "settled",
-      "moves": {
-        "ordinary": ["comfy", "curious", "engaged", "happy", "lazy", "annoyed", "lonely"],
-        "dramatic": ["surprised", "wounded", "excited", "sad"]
-      },
-      "face": "A calm face: all quiet."
-    },
-    {
-      "id": "tired",
-      "family": "energy",
-      "settles": "lazy",
-      "face": "A tired face: a long stretch."
+      "id": "cross",
+      "meaning": "Cross: a failure, pokes or shakes that keep coming, an interruption, or being hushed.",
+      "levels": ["annoyed", "grumpy", "angry"],
+      "fade": {"minutes": 3}
     }
+  ],
+  "moods": [
+    {"id": "calm", "family": "settled", "face": "A calm face: all is well, and nothing stands out."},
+    {"id": "annoyed", "family": "frustration", "settles": "cross", "face": "An annoyed face: a small failure…", "face_not_for": "A win."}
   ]
 }
 ```
@@ -220,7 +213,8 @@ one:
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood` |
 | `remember_word` | no | The word of its voice it says as it brings up something it remembers, with `rig/clips/reply-remember.json` as its look. For now the bank's `Hey`, standing in until a "hey!" is recorded |
 | `claims_a_fix` | no | The words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check |
-| `moods` | yes | Every universal mood, once, in any order (§5). Its order is the firmware's `Mood` order |
+| `moods` | yes | Every face the pack draws, once (§5). Its order is the firmware's `Mood` order |
+| `lasting` | no | The moods the buddy settles into, with their fades (§5). Without it (Pixel's, from before), the faces with a `meaning` are its lasting moods, and none fades by itself |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
 | `faces` | yes | The face each board draws, by the board's name: `cyd24`, `amoled206` (§9). A board it names none for won't build with it |
@@ -229,40 +223,56 @@ Unknown keys are ignored, so a newer pack still loads in an older engine.
 
 ## 5. Moods
 
-Every pack has the same moods: the universal list,
-`CharacterPack.universalMoods` in `app/BoopKit/Character/Moods.swift`. A
-pack has each of them once, and no other: the app's loader and
-`boopdev check` refuse a pack that doesn't. What each means, how they
-connect and how each looks and sounds is the pack's.
+A pack names its own faces and its own moods; the engine names none. Boop
+has 18 faces and 7 lasting moods, and `character.json` is the one place
+that says which: read it there. Pixel keeps the 42 faces and 16 moods it
+had.
 
-Every mood is an emotion a Moment can show. Only some are lasting moods, the
-ones the buddy settles into: they have a `meaning` and `moves`, a file in
-`steering/mood/`, and the `mood` question offers only them. Each other mood
-is a face only, and names the lasting mood it `settles` into: a log from
-before reads it as that one, and the dashboard setting it sets that one.
-Boop and Pixel each have 16 lasting moods (calm, comfy, lazy, happy, proud,
-annoyed, irritated, grumpy, sad, wounded, engaged, curious, surprised,
-determined, excited and lonely) and 26 faces only.
+**A face** (`moods`) is what the board draws under one name: the emotion a
+Moment can show, and the name the wire's `mood` carries. **A lasting mood**
+(`lasting`) is what the buddy settles into: it has a file in
+`steering/mood/`, and the `mood` question offers staying in the one it has
+and every other. There is no graph: Jev may move to any mood when NOW
+gives a reason. A mood named `lonely` is offered only when it may begin
+(`MoodOutput.mayMiss`): no agent working, and either an idle check-in with
+the wish waiting an hour or your coming back after 20 to 40 hours.
 
-Each mood in `moods`:
+Each face in `moods`:
 
 | Key | Required | Meaning |
 | --- | --- | --- |
 | `id` | yes | Its name, as the brain and the protocol see it: lower case and `_` |
-| `face` | yes | What this mood's face means for a single Moment: the option text when the brain picks a Moment's emotion |
-| `meaning` | for a lasting mood | When the buddy is in it: the option text when the brain picks a mood, in plain words |
-| `moves` | for a lasting mood | Its neighbours, `ordinary` and `dramatic`: the lasting moods it can move to in one step. Staying is always allowed. A `dramatic` one needs a fresh, big event |
-| `settles` | for a face only | The lasting mood it settles into |
-| `not_for` | no | When the mood isn't meant, added to the `mood` question's option |
+| `face` | yes | What this face means for a single Moment: the option text when the brain picks a Moment's emotion |
+| `settles` | unless a lasting mood has its name | The lasting mood a word for it reads as: a log from before, or the dashboard setting it |
 | `face_not_for` | no | When the face isn't meant, added to the face's option |
-| `family` | no | A group of related moods (`joy`, `frustration`…), for designers; the engine doesn't read it |
+| `family` | no | A group of related faces (`joy`, `frustration`…), for designers; the engine doesn't read it |
 
-The moves are the pack's one mood graph: the brain is offered them, and a
-face may draw its transitions by them (slimegen bakes them into the gel's
-`slime.h`, a face-only mood moving as the one it settles into). The `mood`
-question offers staying and every neighbour. Staying, in any mood but the
-resting one, says it ends when the minutes the mood's file gives are up.
-Pacing, how long a mood holds and when it fades, is the steering's (§7).
+Each mood in `lasting`:
+
+| Key | Required | Meaning |
+| --- | --- | --- |
+| `id` | yes | Its name. It rests in the face of the same name, unless it has `levels` |
+| `meaning` | yes | When the buddy is in it: the option text when the brain picks a mood, in plain words |
+| `not_for` | no | When the mood isn't meant, added to its option |
+| `fade` | no | How it settles by itself: after `minutes` in it, to `to` (the resting mood for none). `holds` stops the clock while it's so: `working` (an agent works; the minutes count from the turn's end) or `away` (you're away; they count from your coming back). The resting mood has none |
+| `levels` | no | For a mood with levels, the face it rests in at each, mildest first. Code counts the level; a fade takes it a level down before it leaves |
+
+Two things are code's, never Jev's (`MoodOutput`, `Runtime.moodRules`), and
+each is a change of the mood in the transcript, by `rule`:
+
+- **The fade.** On the Mac's clock, a mood that has lasted its `minutes`
+  since its latest change goes to its `to`.
+- **The level.** A levelled mood starts as cross as what caused it and
+  goes a level up at each thing that provokes it: a poke that's the second
+  or more in a row, a shake, a failed check, a failed turn, rude words (a
+  reply of `ouch`). A stroke, a swipe or a finger at rest takes it a level
+  down, never below the first. The MOOD section ends with the level's
+  face, so Jev knows it without picking it.
+
+The wire's `mood` is the face the mood rests in: `focused` for focused,
+and `annoyed`, `grumpy` or `angry` for cross. On the gel, the body gives a
+small beat when the mood changes, and none for a change of face within one
+mood.
 
 ## 6. A pack stands alone
 
@@ -290,7 +300,7 @@ included.
 - Its front matter sets the check-ins: `working_heartbeat` (seconds between
   check-ins on a turn) and `idle_heartbeat` (seconds between idle check-ins
   while you're around and no agent works, twice that with no agent open;
-  without it, only the hourly one).
+  without it, none).
   Pixel's: `working_heartbeat: 120-240`.
 - Its Examples quote NOW's lines as the view writes them, where your prompt
   and the agent's last message are only their readings:
@@ -303,7 +313,7 @@ included.
 - CONTEXT's rows (`ContextSection`), each only when it has something to say:
   When (the time, the weekday, the part of the day, the special days), Talk
   (the setting, when it isn't normal, or a hush's minutes left), the buddy
-  (its stage and age), You (at the Mac and untouched, each from an hour,
+  (its level and age), You (at the Mac and untouched, each from an hour,
   never while away, and how long ago it was last lonely, for three hours
   after), Agents (each open session, at most three) and Today (turns and
   failed; touches and talks). They hold facts only: when they make the buddy
@@ -319,7 +329,8 @@ How much it says is the Talk setting, held in code (`Talk`). A pack has no
 file for it.
 
 **`mood/<mood>.md`** (one per lasting mood): how it acts while in that mood,
-what moves it, and when it fades. A missing file reads as `default_mood`'s.
+and what moves it. No minutes: the app fades a mood by its clock (§5). A
+missing file reads as `default_mood`'s.
 
 **`dreams.md`** (optional): the signs it may hold up as it tells its dream.
 A dream is everything since the last one, in tags and a sentence
@@ -437,7 +448,7 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
   so it needs no line. With several sessions it may count them (`2 working,
   1 idle`) and open the drawer (the `do`'s `show`).
 - A `hush` silences the buddy for as long as the moment is big
-  (`Core.hushMsBySize`: 15 minutes small to two hours huge; the app's Hush
+  (`Core.hushMsBySize`: 15 minutes small, 30 medium, an hour big; the app's Hush
   button, 30), and the board shows the `hushed` tag. `unhush` or the popover
   ends it.
 - The board plays the reply's clip (§15). If `say` says something, Voice
@@ -451,7 +462,7 @@ the facts. A line's `{turns}` is today's turns (left out under 2).
 A pack with a voice has recorded takes, each tagged with the moods it plays
 in, a feeling or a topic (what the brain's `say` picks), or a reply it's the
 words of (§7), and a kind (sound, word, phrase or swear). The Moment's size
-picks the kind: a sound small, a word medium, a phrase big or huge. A swear
+picks the kind: a sound small, a word medium, a phrase big. A swear
 plays only when the brain's `say` asks for one, and the person has turned
 swearing on in Settings (it's off by default).
 
@@ -502,14 +513,14 @@ show when no Moment plays.
 | `idle` | Agents are open, and none is working | the Mac |
 | `asleep` | No agent sessions at all, or every one resting with nothing waiting on you, at night 10 minutes and by day an hour (`Core.dozeOffNightMs`, `dozeOffMs`) | the Mac |
 | `working` | An agent works, with nothing more specific to show | the Mac |
-| `planning` | An agent is planning | the Mac |
-| `terminal` | An agent runs a shell command | the Mac |
-| `tool_use` | An agent uses a tool, such as an edit | the Mac |
-| `searching` | An agent searches the web | the Mac |
-| `analyzing` | An agent reads or searches files | the Mac |
-| `testing` | An agent runs tests | the Mac |
-| `delegating` | An agent hands work to a helper | the Mac |
+| `tool_use` | Typing: an agent edits, uses any other tool, or plans | the Mac |
+| `analyzing` | Looking: an agent reads or searches files, or the web | the Mac |
+| `terminal` | Running: an agent runs a command, the tests or a build, or its helpers work | the Mac |
 | `waiting` | A tool takes its time; nothing is asked of you | the Mac |
+| `planning` | No longer sent: the Mac's activities are the four above (`Act`). The board still knows it and Pixel's face draws it; the gel shows it as typing | no one |
+| `searching` | No longer sent, as `planning`; the gel shows it as looking | no one |
+| `testing` | No longer sent, as `planning`; the gel shows it as running | no one |
+| `delegating` | No longer sent, as `planning`; the gel shows it as running | no one |
 | `needs_you` | An agent waits for your approval or answer on the Mac | the Mac |
 | `no_app` | The engine no longer shows this look: with the Mac lost, the board shows `idle` with the strip's plug, then `asleep` with no plug. A touch gets the board's own reaction | the board |
 
@@ -518,8 +529,8 @@ then go.
 
 | State | When it plays | Sent by |
 | --- | --- | --- |
-| `starting` | An agent starts; `ctx` says how: `new_task`, `session`, `continuation` or `compacted` (its context made smaller). One card for a start: a session's first prompt within a minute of its start card shows none, nor does a follow-up within 5 minutes of its last turn (`Core.startCardMs`, `followUpMs`) | the Mac |
-| `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 5 (`Moment.turn`) | the Mac (the brain) |
+| `starting` | An agent starts; `ctx` may say how: `new_task`, `session`, `continuation` or `compacted`. The board's firmware knows it and Pixel's face draws it | a tool (`boopctl`); the Mac sends none |
+| `task_complete` | A turn ends: the finish. `outcome` is `success` or `failure`, and `turn` the tier it reached: 0 short of `tier1`, then 1 to 3 (`Moment.turn`) | the Mac (the brain) |
 | `reply_ready` | A turn ends with an answer, or a question back | the Mac (the brain) |
 | `wake_up` | You come back to the Mac after a long break | the Mac (the brain) |
 | `wish_met`, `wish_gone` | The rules': a wish given, which plays `notice`'s design under the thought bubble's heart, unless a touch's `gesture` plays, which stays, or `listening` holds the face, when only the heart goes; a wish left, which fades the bubble and plays the rig's silent `wish-gone` clip, a sigh and a slump of about a second; the feeling after it is Jev's | the Mac's rules |
@@ -558,14 +569,14 @@ draws the look in another emotion for a while, and the voice may speak.
 `ended` sent as it starts. With no lane working, or while something needs
 you, it's skipped `hidden`. A failed call is one of its styles.
 
-**A work act** (`wact` in `state`, `render::Stream::ActIn`) is a command the
-face plays out while it runs, part of Doing and never a Moment:
-`[kind, words, full, result]`, the kind `push`, `tests` or `build`, the words its low sign's, `full`
-1 for the whole scene or 0 for the small version (the words alone), and the
-result `p` or `f` once the command has ended, as the words change to say so.
-The Mac holds a result for the board's `actLeadMs`, less what's run of it, and
-`actResultMs`. A face that doesn't draw it ignores it, as Pixel does. The gel's
-scenes are `render/gel/act.h`.
+**A work act** (`wact` in `state`, `render::Stream::ActIn`) is a command
+worth naming while it runs, part of Doing and never a Moment: `[kind, words]`,
+then `[kind, words, result]`, the kind `push`, `tests` or `build`, the words
+its low sign's, and the result `p` or `f` once the command has ended, as the
+words change to say so. The Mac holds a result for the board's `kActLeadMs`,
+less what's run of it, and `kActResultMs`. A face that doesn't draw it ignores
+it, as Pixel does. The gel shows the low sign alone, and its body hops at a
+pass and flinches at a fail (`render/gel/act.h`, `GelFace::answerAct`).
 
 ### What else a face does
 
@@ -591,19 +602,19 @@ Besides drawing each mood and state, a face:
     `programmers`, `lunar`, and `party` (a milestone day since hatching or New
     Year's Day, but never the day it hatched). The Mac greets a special day
     with its sign.
-  - The tiers (`Tags.tiers`): `tier1` from 30 seconds, `tier2` from a
-    minute, `tier3` from 2, `tier4` from 5, `tier5` from 10. They count how
+  - The tiers (`Tags.tiers`): `tier1` from a minute, `tier2` from 5,
+    `tier3` from 15. The board's table also lists `tier4` and `tier5`,
+    which Pixel's designs are numbered by and the Mac never sends. They count how
     long the agents' working stretch has run, from its first turn, a rest of
-    under 30 seconds carrying it on; or, once nothing works, how long since
+    under a minute carrying it on; or, once nothing works, how long since
     the latest session came to rest. The Mac sends the last reached and the
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
-  - The growth stage Boop is at, `hatchling`, `sprout` or `chonk`, none at
-    Buddy (`Tags.stages`), reached at levels 5, 15 and 30; `hushed` while the buddy is
-    hushed (`Core.Hush`); your hands at the Mac, `typing` or `reading`
-    (`Hands`); and the Mac's side, `macleft` or `macright` (`MacSide`). The gel's body and its pastimes go by the stage;
-    nothing useful does. A board with no Mac keeps the stage's tag, and only
-    that, as the rest go stale.
+  - `hushed` while the buddy is hushed (`Core.Hush`); your hands at the
+    Mac, `typing` or `reading` (`Hands`); and the Mac's side, `macleft` or
+    `macright` (`MacSide`). Boop's level puts no tag on: its body is one
+    size at every level. A board with no Mac keeps none of the Mac's tags,
+    as they go stale.
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board
     adds from `state.busy`. The working looks also play at 125% and 160%
     then (`render::workPace`, `FaceContext::pace`).
@@ -615,12 +626,12 @@ Besides drawing each mood and state, a face:
   while it fits and turns to one two times in three, and a Moment always
   takes one. A pack's rig may name clips by tags too (§15).
 - **May dress for the tags.** One rule says what's worn, so the board and
-  the Mac's popover (`Narration.Dressing`) agree: `render::outfitFor` (first
-  that fits: Halloween's witch hat, a party hat, a nightcap at night, a
-  bobble hat in winter), `render::eyewearFor` (shades on a Friday from noon
-  to night) and `render::airFor` (snow, confetti, hearts), which the gel
-  doesn't draw: it wears one thing and has nothing in the air. The gel's Sprout
-  wears no party hat, so its leaves show (its `wornHat`). The gel draws its
+  the Mac's popover (`Narration.Dressing`) agree. Pixel's face reads
+  `render::outfitFor` (first that fits: Halloween's witch hat, a party hat,
+  a nightcap at night, a bobble hat in winter) and `render::airFor` (snow,
+  confetti, hearts). The gel wears only its nightcap at night
+  (`gel::nightcapFor`), nothing for a special day, and has nothing in the
+  air. The gel draws its
   dressing at the anchors its pose gives (`rig::Anchors`, §15), so it moves
   with the body, and through the rig's layer stack (§15).
 - **Times them.** Each design's loop length (`loopMs`), which sets how long
@@ -822,8 +833,8 @@ the app leaves the recordings out. How to write, record and play one:
    to `../<id>/character/`, gives it its id and name, links it as
    `characters/<id>` and checks it. Leave out `design/`, `tools/` and the `studio` entry
    until you need them.
-2. Change the moods' meanings and moves (§5). Every pack has the same moods,
-   so keep every one; its faces must draw them all.
+2. Change the faces and the lasting moods, their meanings and fades (§5);
+   its board's face must draw every face it names.
 3. Rewrite `steering/guide.md` and `steering/personality.md` in its voice,
    and a `steering/mood/` file for each mood that needs one.
 4. Change the faces, or keep Pixel's, which the copy already has. Keep its
@@ -850,7 +861,7 @@ fades ease on and the anchors a face reports (`rig.h`), the mixer that plays
 them (`mixer.h`) and the layer stack (`layers.h`). A clip in a pack's
 `clips/` plays on every face the pack has. Pixel's rig is the small one to
 copy: expressions for its 13 drawn moods, the looks `idle`, `working` and
-`asleep`, a `blink` and a stretch from `tier4`.
+`asleep`, a `blink` and a stretch from `tier4`, a tier the Mac never sends.
 
 **Channels.** The body's `squash`, `lean`, `lift`, `x` (sideways, far enough
 to leave the screen), `reach` (one side stretched out, the other pinched in)
@@ -914,12 +925,12 @@ Some clips' ids mean something to a face:
 - `reply-wave`: the gel plays it for a small wave at your lock or unlock
   of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
 - `reply-<name>`: the gel plays it for that reply, one for each of
-  `MomentOutput.replies` and `dunno`. A `nap` or a `dance` while the look is
-  idle or asleep plays the gel's own pastime instead.
+  `MomentOutput.replies` and `dunno`.
 - A clip named for a Moment's state (Boop's `notice`): the gel plays it once
   as the Moment starts. The gel's recipe for that state times it.
 
-**`looks.json`**: for each look (§9), keys `clip`, `occasions` and `tiers`:
+**`looks.json`**: for each look (§9), keys `clip`, `occasions`, `tiers` and
+`acts`:
 
 - `clip`: the clip it loops under the Moments, one that loops, or null.
 - `occasions`: pastimes the look plays now and then, each a `clip` that
@@ -929,9 +940,15 @@ Some clips' ids mean something to a face:
   face's: while some fit, one of them plays 67% of the time
   (`rig::kOccasionPct`). It fades out when the look gives way. The gel plays
   none: its are rows of its pastimes.
-- `tiers`: for a tier (`tier1` to `tier5`), a clip that loops in place of
+- `tiers`: for a tier (`tier1` to `tier3`), a clip that loops in place of
   `clip` while that's the last tier reached. The gel plays them; Pixel's
   face doesn't.
+- `acts`: for an activity, by its state (§9), a clip that loops in place of
+  `clip` and of any tier's while the agents' activity is that one: the pose
+  the whole body takes for it. The gel plays them, each coming over 400 ms
+  (`gel::kPoseMs`, the mixer's `setLook`), so a change of activity is a
+  move and not a jump; Pixel's face doesn't, having a design for each
+  state.
 
 Boop's:
 
@@ -939,8 +956,8 @@ Boop's:
 {
   "idle": {"clip": "breathe"},
   "working": {"clip": "work",
-              "tiers": {"tier1": "work-easy", "tier2": "work-leaning", "tier3": "work-focused",
-                        "tier4": "work-content", "tier5": "work-zone"}},
+              "tiers": {"tier1": "work-easy", "tier2": "work-focused", "tier3": "work-zone"},
+              "acts": {"analyzing": "work-looking", "terminal": "work-running", "waiting": "work-waiting"}},
   "asleep": {"clip": "doze"}
 }
 ```
@@ -949,8 +966,9 @@ Every file is optional, and one that's missing is empty.
 `charactergen.py --check` fails on an unknown key, channel, mood, state,
 clip or tag, a style that isn't a mood the pixel face the pack has draws
 (its `faces.h`'s), a value out of its range, keys out of order, a loop that
-doesn't close, an occasion that loops or would always fit, a tier's clip
-that doesn't loop or a key of `tiers` that isn't a tier and a cue that isn't
+doesn't close, an occasion that loops or would always fit, a tier's or
+an activity's clip that doesn't loop, a key of `tiers` that isn't a tier or
+of `acts` that isn't a state, and a cue that isn't
 a name before `ms`, each with its file and key (`rig/clips/hop.json:
 tracks.lift[2]: …`). Staging writes the files as `rig_tables.h` in the
 staged `firmware/include/`: `render::rig::kRig`, with a lookup by mood, clip
@@ -958,7 +976,8 @@ and look. The app doesn't bundle `rig/`.
 
 **How it plays.** The mixer holds a damped spring on each channel, at rest.
 The look's clip loops over the springs, and Moments' clips over that, a few
-at once, each easing in and out over 150 ms (a quarter of a shorter clip).
+at once, each easing in and out over 150 ms (a quarter of a shorter clip);
+a look's clip may ask for longer as it changes.
 With the mixer full, the oldest gives way, but the look's own. A poke or a
 stroke kicks a spring. A new style cross-fades over the rig's fade
 (`kFadeMs`, 200 ms). The face reports where the body is each frame
@@ -994,8 +1013,9 @@ is the engine's alone. `lift` and `x` are canvas px, 85 a body unit. Its
 expressions aren't the rig's. Its pastimes (`render/gel/pastimes.h`,
 `pastimes` in its design's `expressions.json`) are one table, a row each,
 whose body is a clip of the rig, a bit or a take: each for one look, at work
-and idle from a tier, while something needs you or asleep from a wait, or
-whenever a tag is on. Its kit stays out while its tier lasts. `dbg.pastime`
+and idle from a tier, asleep from a wait, or whenever a tag is on, and
+none while something needs you. Each is the body's own move, with nothing
+brought out beside it. `dbg.pastime`
 plays one by its name, for scenarios and tools.
 
 ## 16. References (optional)
@@ -1075,7 +1095,8 @@ None of it stops a pack staging. The app doesn't bundle the folder.
 - Pixel draws and voices 13 of the moods; the others borrow theirs
   (`characters/pixel/tools/borrowed.json`) until they have art and takes of
   their own.
-- Pixel's mood moves are Boop's; they become Pixel's own.
+- Pixel is frozen with the 42 faces and 16 moods it had: no `lasting`, so
+  nothing of its fades by itself, and its mood files still say minutes.
 - Pixel's rig face draws only the designs whose face is its mood's resting
   face (§15); a design whose face changes shape is still baked, since the
   rig's parts are one drawing of each eye. The gel's expressions, recipes,

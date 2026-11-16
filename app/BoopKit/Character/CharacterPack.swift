@@ -2,31 +2,53 @@ import Foundation
 import MellowHarness
 
 /// The character pack the engine runs (characters/CHARACTER.md): who the
-/// creature is, its moods and how they connect. The engine takes every mood
+/// creature is, its faces and its lasting moods. The engine takes every mood
 /// from here and names none itself. There's one per process, chosen at
 /// start (§2):
 /// - The app loads its bundled pack with `use(_:)`.
 /// - Anything that reads `active` before that (the tests, `boopdev`) gets
 ///   the pack at `BOOP_CHARACTER`, else the one the repo last staged.
 public struct CharacterPack: Sendable {
-    /// One mood (CHARACTER.md §5): a face, and, for the lasting moods the
-    /// creature settles into, a meaning and its moves. A face-only mood
-    /// settles into a lasting one.
+    /// One face the board draws (CHARACTER.md §5), under the name the wire
+    /// calls a mood: the emotion of a Moment, or a lasting mood's look.
     public struct Mood: Sendable, Equatable {
         public let id: String
-        /// When the creature is in it: the `mood` question's option. Nil for
-        /// a face-only mood.
-        public let meaning: String?
-        public let notFor: String?
         /// What its face means for one reaction: the reaction's face option.
         public let face: String
         public let faceNotFor: String?
-        public let neighbours: MoodGraph.Neighbours
-        /// The lasting mood a face-only one settles into; nil for a lasting one.
+        /// The lasting mood a word for this face reads as; nil for a
+        /// lasting mood's own face.
         public let settles: String?
+    }
 
-        /// One the creature settles into, with a meaning and moves.
-        public var lasting: Bool { meaning != nil }
+    /// One mood the creature settles into (CHARACTER.md §5): the `mood`
+    /// question's option, with the faces it rests in and how it fades.
+    public struct Lasting: Sendable, Equatable {
+        public let id: String
+        /// When the creature is in it.
+        public let meaning: String
+        public let notFor: String?
+        /// The faces it rests in, one for each level, mildest first: its own
+        /// for most; a levelled mood's `levels`, which code counts
+        /// (`MoodLevel`).
+        public let faces: [String]
+        public let fade: Fade?
+
+        /// Whether code counts a level for it.
+        public var levelled: Bool { faces.count > 1 }
+        /// Its resting face at `level`, from 1.
+        public func face(level: Int) -> String { faces[max(0, min(faces.count - 1, level - 1))] }
+    }
+
+    /// How a lasting mood settles by itself, on the Mac's clock (`MoodFade`):
+    /// after `minutes` in it, to `to` (the resting mood for none); a
+    /// levelled mood a level down first. `holds` stops the clock: it
+    /// starts again once that's over.
+    public struct Fade: Sendable, Equatable {
+        public enum Hold: String, Sendable { case working, away }
+        public let minutes: Int
+        public let to: String?
+        public let holds: Hold?
     }
 
     /// The pack's folder: its steering, and what the app reads at run time.
@@ -60,12 +82,12 @@ public struct CharacterPack: Sendable {
     /// What the board shows before the Mac sends a mood (CHARACTER.md §4):
     /// the pack's `startup_mood`, else its default mood.
     public let startupMood: String
-    /// Every universal mood (`universalMoods`), in the pack's order: each a
-    /// face, the lasting ones (`lasting`) moods too.
+    /// Every face the pack draws, in its order: the emotion question's
+    /// options, and the names the board knows.
     public let moods: [Mood]
     /// The moods the creature settles into, in the pack's order: the mood
-    /// question's options and the graph's nodes.
-    public let lasting: [Mood]
+    /// question's options.
+    public let lasting: [Lasting]
     /// What the pack draws for each work act, by kind and by `start`, `pass`
     /// or `fail`, as Jev reads it, with `{name}` for the creature's name
     /// (CHARACTER.md §4). Empty for a pack that draws none.
@@ -75,6 +97,7 @@ public struct CharacterPack: Sendable {
     let options: [Option]
     let faces: [Option]
     let byId: [String: Mood]
+    let lastingById: [String: Lasting]
 }
 
 extension CharacterPack {
@@ -99,9 +122,10 @@ public struct CharacterPackError: Error, CustomStringConvertible {
 
 extension CharacterPack {
     /// Reads `character.json` from a pack's folder, and throws if it isn't
-    /// a pack: a key missing, moods that aren't the universal ones, a move
-    /// or default mood that isn't a lasting one, or a face-only mood that
-    /// settles into none. Everything the pack has is in the one folder.
+    /// a pack: a key missing, a face or a mood named twice, a lasting mood
+    /// with no face to rest in, a default mood or a fade's end that isn't a
+    /// lasting one, or a face that settles into none. Everything the pack
+    /// has is in the one folder.
     public init(directory: URL) throws {
         let file = directory.appendingPathComponent("character.json")
         let data: Data
@@ -139,47 +163,79 @@ extension CharacterPack {
         // The board reports the id, and the firmware names each mood in code.
         guard id.wholeMatch(of: /[a-z0-9-]+/) != nil else { throw CharacterPackError("\(source): id \(id) isn't lower case, digits and -") }
         let names = Set(moods.map(\.id))
-        guard names.count == moods.count else { throw CharacterPackError("\(source): moods names a mood twice") }
-        let universal = Set(CharacterPack.universalMoods)
-        guard names == universal else {
-            let missing = universal.subtracting(names).sorted(), extra = names.subtracting(universal).sorted()
-            throw CharacterPackError("\(source): moods aren't the universal ones (missing \(missing), extra \(extra))")
-        }
-        lasting = moods.filter(\.lasting)
+        guard !moods.isEmpty else { throw CharacterPackError("\(source): moods names no face") }
+        guard names.count == moods.count else { throw CharacterPackError("\(source): moods names a face twice") }
+        // A pack from before `lasting` (Pixel's): its faces with a meaning
+        // are its lasting moods, which never fade by themselves.
+        let rows = json["lasting"] as? [[String: Any]]
+            ?? (json["moods"] as? [[String: Any]] ?? []).filter { $0["meaning"] != nil }
+        lasting = try rows.map { try CharacterPack.lasting($0, in: source) }
         let lastingNames = Set(lasting.map(\.id))
-        for m in moods {
-            for to in m.neighbours.all where !lastingNames.contains(to) {
-                throw CharacterPackError("\(source): \(m.id) leads to \(to), which isn't a lasting mood")
+        guard lastingNames.count == lasting.count else { throw CharacterPackError("\(source): lasting names a mood twice") }
+        for l in lasting {
+            for face in l.faces where !names.contains(face) {
+                throw CharacterPackError("\(source): \(l.id) rests in \(face), which isn't one of the pack's faces")
             }
-            if !m.lasting, !(m.settles.map(lastingNames.contains) ?? false) {
-                throw CharacterPackError("\(source): \(m.id) has no meaning, and settles into no lasting mood")
+            if let fade = l.fade {
+                guard fade.minutes > 0 else { throw CharacterPackError("\(source): \(l.id) fades after no minutes") }
+                if let to = fade.to, !lastingNames.contains(to) || to == l.id {
+                    throw CharacterPackError("\(source): \(l.id) fades to \(to), which isn't another lasting mood")
+                }
             }
-            if !m.lasting, !m.neighbours.all.isEmpty { throw CharacterPackError("\(source): \(m.id) has moves but no meaning") }
+        }
+        for m in moods where !lastingNames.contains(m.id) {
+            guard let settles = m.settles, lastingNames.contains(settles) else {
+                throw CharacterPackError("\(source): \(m.id) is no lasting mood, and settles into none")
+            }
         }
         guard lastingNames.contains(defaultMood) else { throw CharacterPackError("\(source): default_mood \(defaultMood) isn't a lasting mood") }
         guard lastingNames.contains(startupMood) else { throw CharacterPackError("\(source): startup_mood \(startupMood) isn't a lasting mood") }
+        let resting = defaultMood
+        if let fade = lasting.first(where: { $0.id == resting })?.fade {
+            throw CharacterPackError("\(source): default_mood \(resting) fades after \(fade.minutes) min, and it's where moods settle")
+        }
 
-        options = lasting.map { Option($0.id, $0.meaning!, notFor: $0.notFor) }
+        options = lasting.map { Option($0.id, $0.meaning, notFor: $0.notFor) }
         faces = moods.map { Option($0.id, $0.face, notFor: $0.faceNotFor) }
         byId = Dictionary(uniqueKeysWithValues: moods.map { ($0.id, $0) })
+        lastingById = Dictionary(uniqueKeysWithValues: lasting.map { ($0.id, $0) })
     }
 
-    /// The lasting mood a word reads as: a lasting mood itself, a face-only
-    /// one the mood it settles into, else nil.
+    /// The lasting mood a word reads as: a lasting mood itself, a face
+    /// the mood it settles into, else nil.
     public func settled(_ id: String) -> String? {
-        guard let m = byId[id] else { return nil }
-        return m.lasting ? id : m.settles
+        lastingById[id] != nil ? id : byId[id]?.settles
+    }
+
+    /// One lasting mood, or nil for a word that isn't one.
+    public func lasting(_ id: String) -> Lasting? { lastingById[id] }
+
+    /// The face the lasting mood `id` rests in at `level` (from 1; only a
+    /// levelled mood's counts): what the board and the popover show.
+    public func restingFace(_ id: String, level: Int = 1) -> String {
+        lastingById[id]?.face(level: level) ?? id
     }
 
     static func mood(_ m: [String: Any], in source: String) throws -> Mood {
         guard let id = m["id"] as? String, let face = m["face"] as? String else {
-            throw CharacterPackError("\(source): a mood without an id or a face")
+            throw CharacterPackError("\(source): a face without an id or a face")
         }
-        let moves = m["moves"] as? [String: [String]] ?? [:]
-        return Mood(id: id, meaning: m["meaning"] as? String, notFor: m["not_for"] as? String,
-                    face: face, faceNotFor: m["face_not_for"] as? String,
-                    neighbours: MoodGraph.Neighbours(ordinary: moves["ordinary"] ?? [], dramatic: moves["dramatic"] ?? []),
-                    settles: m["settles"] as? String)
+        return Mood(id: id, face: face, faceNotFor: m["face_not_for"] as? String, settles: m["settles"] as? String)
+    }
+
+    static func lasting(_ m: [String: Any], in source: String) throws -> Lasting {
+        guard let id = m["id"] as? String, let meaning = m["meaning"] as? String else {
+            throw CharacterPackError("\(source): a lasting mood without an id or a meaning")
+        }
+        var fade: Fade?
+        if let f = m["fade"] as? [String: Any] {
+            guard let minutes = f["minutes"] as? Int else { throw CharacterPackError("\(source): \(id)'s fade has no minutes") }
+            let holds = f["holds"] as? String
+            if let holds, Fade.Hold(rawValue: holds) == nil { throw CharacterPackError("\(source): \(id)'s fade holds \(holds), not working or away") }
+            fade = Fade(minutes: minutes, to: f["to"] as? String, holds: holds.flatMap(Fade.Hold.init))
+        }
+        let levels = m["levels"] as? [String] ?? []
+        return Lasting(id: id, meaning: meaning, notFor: m["not_for"] as? String, faces: levels.isEmpty ? [id] : levels, fade: fade)
     }
 }
 

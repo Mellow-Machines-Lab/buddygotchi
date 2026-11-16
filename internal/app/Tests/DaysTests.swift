@@ -79,7 +79,9 @@ final class DaysTests: XCTestCase {
         let header = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("firmware/src/render/tags.h"), encoding: .utf8)
         let list = try XCTUnwrap(header.range(of: #"kTagNames\[kTagCount\] = \{[^}]*\}"#, options: .regularExpression))
         let names = header[list].split(separator: "\"").enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }
-        XCTAssertEqual(names, Tags.board)
+        // The board's table keeps `tier4` and `tier5`, which Pixel's designs are
+        // numbered by; the Mac never sends them.
+        XCTAssertEqual(names.filter { !["tier4", "tier5"].contains($0) }, Tags.board)
         XCTAssertEqual(Set(Tags.all).subtracting(Tags.board), Tags.macOnly)
         XCTAssertLessThanOrEqual(Tags.board.count, 32, "a set of tags is 32 bits on the board")
     }
@@ -111,15 +113,15 @@ final class DaysTests: XCTestCase {
     }
 
     /// A level-up is the rules' moment, not Jev's: its event, logged after
-    /// the `state` with the new size, and a face with `level 12!` held low
-    /// in gold. A size grown is a bigger one. The ring closing holds up
+    /// the `state` with the new ring, and a face with `level 12!` held low
+    /// in gold, the same at every level. The ring closing holds up
     /// `today's done!`; with a level at once, one moment shows both.
     func testALevelUpIsTheRulesMoment() {
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
         core.growth = { Growth(xp: 1_150, today: 50) }
-        let fx = core.grew([.level(12, grewTo: nil)], at: now)
+        let fx = core.grew([.level(12)], at: now)
         let records = fx.compactMap { if case .record(let e) = $0, e.type == .level { return e } else { return nil } }
         XCTAssertEqual(records.map(\.specificType), ["12"])
         XCTAssertEqual(moments(fx).map(\.gold), ["level 12!"], "held low, in gold")
@@ -127,7 +129,7 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(moments(fx).map(\.mood), ["proud"])
         XCTAssertNotNil(moments(fx).first?.reason)
         XCTAssertNil(TranscriptView.wakes["level"], "the rules play it: no pass")
-        XCTAssertEqual(moments(core.grew([.level(15, grewTo: "Buddy")], at: now)).map(\.mood), ["excited"], "a size grown")
+        XCTAssertEqual(moments(core.grew([.level(15)], at: now)).map(\.mood), ["proud"], "no level is a bigger one")
         let ring = moments(core.grew([.ringClosed], at: now))
         XCTAssertEqual(ring.map(\.sign), [Core.ringSign])
         XCTAssertEqual(ring.map(\.gold), [nil])
@@ -144,7 +146,7 @@ final class DaysTests: XCTestCase {
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
         core.growth = { Growth(xp: 1_300, today: 100) }
-        let fx = core.grew([.ringClosed, .level(13, grewTo: nil)], at: now)
+        let fx = core.grew([.ringClosed, .level(13)], at: now)
         let both = moments(fx)
         XCTAssertEqual(both.count, 1, "one moment")
         XCTAssertEqual(both.first?.sign, "today's done!")
@@ -167,7 +169,7 @@ final class DaysTests: XCTestCase {
         rig.send(.needsYou, tool: "Bash")
         XCTAssertNotNil(rig.pipeline.core.needsYouBlock)
         func levels() -> [Event] { rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .level } }
-        rig.pipeline.run(rig.pipeline.core.grew([.level(2, grewTo: nil)], at: rig.now))
+        rig.pipeline.run(rig.pipeline.core.grew([.level(2)], at: rig.now))
         XCTAssertEqual(levels().count, 0, "not over needs you")
         rig.send(.activity, tool: "Bash")
         XCTAssertNil(rig.pipeline.core.needsYouBlock)
@@ -176,26 +178,27 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(levels().count, 1, "once")
     }
 
-    /// A size reached while held keeps its bigger moment when the next
-    /// level comes before it plays.
-    func testAHeldSizeKeepsItsCeremony() {
+    /// Two levels reached while held are one moment, the last's, and both
+    /// are logged.
+    func testTwoHeldLevelsAreOneMoment() {
         let rig = CoreRig()
         rig.send(.needsYou, tool: "Bash")
-        rig.pipeline.run(rig.pipeline.core.grew([.level(5, grewTo: "Sprout")], at: rig.now))
-        rig.pipeline.run(rig.pipeline.core.grew([.level(6, grewTo: nil)], at: rig.now))
+        rig.pipeline.run(rig.pipeline.core.grew([.level(5)], at: rig.now))
+        rig.pipeline.run(rig.pipeline.core.grew([.level(6)], at: rig.now))
         let fx = rig.send(.activity, tool: "Bash")
-        XCTAssertEqual(moments(fx).filter { $0.gold == Core.levelSign(6) }.map(\.mood), [Core.grewFace])
+        XCTAssertEqual(moments(fx).compactMap(\.gold), [Core.levelSign(6)])
+        XCTAssertEqual(rig.pipeline.harness.log.view(now: rig.now).events.filter { $0.type == .level }.map(\.specificType), ["5", "6"])
     }
 
     /// On a day with an occasion, the first agent's event greets it once,
-    /// with its sign after the event's own reaction, waking if it was
+    /// with its sign, before the caption for why it woke, waking if it was
     /// asleep and noticing it if not; never over needs you, nor lost to
     /// it; an ordinary day has none.
     func testASpecialDayIsGreetedOnce() {
         let rig = CoreRig(start: ms(2026, 10, 31, 14))
         let first = rig.send(.turnStart)
-        XCTAssertEqual(moments(first).map(\.sign), [nil, "happy halloween!"])
-        XCTAssertEqual(moments(first).last?.anim, "wake_up")
+        XCTAssertEqual(moments(first).map(\.sign), ["happy halloween!", nil])
+        XCTAssertEqual(moments(first).first?.anim, "wake_up")
         XCTAssertEqual(moments(rig.send(.turnStart, session: "s2")).compactMap(\.sign), [], "once")
         XCTAssertEqual(moments(CoreRig().send(.turnStart)).compactMap(\.sign), [], "an ordinary day")
 
@@ -220,31 +223,27 @@ final class DaysTests: XCTestCase {
     }
 
     /// The popover's reasons choose as the board does
-    /// (firmware/src/render/tags.cpp): one hat, the first that fits; on
-    /// the gel, Friday's shades, not asleep. The gel wears one thing and
-    /// has nothing in the sky or the air (its screen's rule), so a morning
-    /// has no reason and a party is its hat alone; a board that isn't the
-    /// gel still has its confetti, snow and hearts.
+    /// (firmware/src/render/tags.cpp). The gel wears its nightcap at night
+    /// and nothing for a day, and has nothing in the sky or the air (its
+    /// screen's rule); a board that isn't the gel still has one hat, the
+    /// first that fits, and its confetti, snow and hearts.
     func testTheReasonsAreTheBoards() {
-        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, asleep: Bool = false,
-                     gel: Bool = true, tag: String? = nil) -> [String] {
+        func reasons(_ y: Int, _ mo: Int, _ d: Int, _ h: Int = 12, gel: Bool = true) -> [String] {
             let at = ms(y, mo, d, h)
-            let when = Days.tags(at: at, hatched: "2026-09-01", time: utc) + (tag.map { [$0] } ?? [])
+            let when = Days.tags(at: at, hatched: "2026-09-01", time: utc)
             let specialDays = Days.special(at: at, hatched: "2026-09-01", name: "Pip", time: utc)
-            return Narration.Dressing.now(when: when, specialDays: specialDays, asleep: asleep, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
+            return Narration.Dressing.now(when: when, specialDays: specialDays, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
-        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: a party hat"])
-        XCTAssertEqual(reasons(2026, 10, 21, tag: "sprout"), ["Pip is 50 days old today: -"], "the gel's Sprout shows its leaves")
-        XCTAssertEqual(reasons(2026, 10, 21, gel: false, tag: "sprout"), ["Pip is 50 days old today: a party hat and confetti"])
+        XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: -"])
+        XCTAssertEqual(reasons(2026, 10, 21, 23), ["Pip is 50 days old today: -", "It's night: a nightcap"])
+        XCTAssertEqual(reasons(2026, 10, 21, 23, gel: false), ["Pip is 50 days old today: a party hat and confetti"])
+        XCTAssertEqual(reasons(2026, 10, 21, gel: false), ["Pip is 50 days old today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: -", "It's night: a nightcap"])
         XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
-        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: a bobble hat"])
+        XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: -"])
         XCTAssertEqual(reasons(2026, 12, 24, gel: false), ["It's the winter holidays: a bobble hat and snow"])
         XCTAssertEqual(reasons(2027, 3, 14), ["It's Pi Day: -"])
-        XCTAssertEqual(reasons(2026, 10, 23), ["It's Friday: shades"])
-        XCTAssertEqual(reasons(2026, 10, 23, 9), [], "shades from noon, and a morning shows nothing")
-        XCTAssertEqual(reasons(2026, 10, 23, asleep: true), [])
-        XCTAssertEqual(reasons(2026, 10, 23, gel: false), [])
+        XCTAssertEqual(reasons(2026, 10, 23), [], "a Friday wears nothing")
         XCTAssertEqual(reasons(2026, 10, 22), [], "an ordinary afternoon")
         XCTAssertEqual(reasons(2026, 10, 22, 8), [], "an ordinary morning")
     }
@@ -262,16 +261,16 @@ final class DaysTests: XCTestCase {
                       "hatched on New Year's Day")
     }
 
-    /// Pins `Tags.tiers`: `tier1` from 30 seconds, `tier2` from a
-    /// minute, `tier3` from 2, `tier4` from 5 and `tier5` from 10, the last.
+    /// Pins `Tags.tiers`: `tier1` from a minute, `tier2` from 5 and
+    /// `tier3` from 15, the last.
     /// The last reached is sent; the board takes the ones below it as on.
     func testTheTiers() {
-        XCTAssertEqual(Tags.tiers.map(\.fromMs), [30_000, 60_000, 120_000, 300_000, 600_000])
-        for (s, tag) in [(0, nil), (29, nil), (30, "tier1"), (59, "tier1"), (60, "tier2"), (119, "tier2"), (120, "tier3"),
-                         (299, "tier3"), (300, "tier4"), (599, "tier4"), (600, "tier5"), (7200, "tier5")] as [(Int64, String?)] {
+        XCTAssertEqual(Tags.tiers.map(\.fromMs), [60_000, 300_000, 900_000])
+        for (s, tag) in [(0, nil), (59, nil), (60, "tier1"), (299, "tier1"), (300, "tier2"), (899, "tier2"), (900, "tier3"),
+                         (7200, "tier3")] as [(Int64, String?)] {
             XCTAssertEqual(Tags.tier(after: s * 1000), tag, "\(s) s")
         }
-        XCTAssertEqual(Tags.stretchRestMs, 30_000, "a rest shorter than the first tier keeps a working stretch")
+        XCTAssertEqual(Tags.stretchRestMs, 30_000, "a rest shorter than this keeps a working stretch")
     }
 
     /// The board hears the tier in `state.when`: the working stretch's,
@@ -284,21 +283,21 @@ final class DaysTests: XCTestCase {
         XCTAssertEqual(tiers(), [])
         rig.wait(4 * 60_000)
         rig.send(.turnStart, session: "b")
-        XCTAssertEqual(tiers(), ["tier3"], "the stretch began with a's turn, 4 minutes ago")
+        XCTAssertEqual(tiers(), ["tier1"], "the stretch began with a's turn, 4 minutes ago")
         rig.wait(4 * 60_000)
-        XCTAssertEqual(tiers(), ["tier4"])
+        XCTAssertEqual(tiers(), ["tier2"])
         rig.send(.turnEnd, session: "a")
-        XCTAssertEqual(tiers(), ["tier4"], "b works on in the same stretch")
-        rig.wait(3 * 60_000)
-        XCTAssertEqual(tiers(), ["tier5"], "11 minutes in")
+        XCTAssertEqual(tiers(), ["tier2"], "b works on in the same stretch")
+        rig.wait(8 * 60_000)
+        XCTAssertEqual(tiers(), ["tier3"], "16 minutes in")
         rig.send(.turnEnd, session: "b")
         XCTAssertEqual(tiers(), [], "just finished: it settles")
-        rig.wait(30_000)
+        rig.wait(60_000)
         XCTAssertEqual(tiers(), ["tier1"])
-        rig.wait(90_000)
+        rig.wait(4 * 60_000)
+        XCTAssertEqual(tiers(), ["tier2"])
+        rig.wait(10 * 60_000)
         XCTAssertEqual(tiers(), ["tier3"])
-        rig.wait(480_000)
-        XCTAssertEqual(tiers(), ["tier5"])
         rig.send(.turnStart, session: "a")
         XCTAssertEqual(tiers(), [], "back to work, a new stretch")
     }
@@ -314,27 +313,29 @@ final class DaysTests: XCTestCase {
         rig.send(.turnEnd, session: "a")
         rig.wait(29_000)
         rig.send(.turnStart, session: "a")
-        XCTAssertEqual(tiers(), ["tier3"], "the stretch began 3.5 minutes ago")
+        XCTAssertEqual(tiers(), ["tier1"], "the stretch began 3.5 minutes ago")
         rig.wait(2 * 60_000)
-        XCTAssertEqual(tiers(), ["tier4"])
+        XCTAssertEqual(tiers(), ["tier2"])
         rig.send(.turnEnd, session: "a")
-        rig.wait(30_000)
+        rig.wait(60_000)
         XCTAssertEqual(tiers(), ["tier1"], "idle's")
         rig.send(.turnStart, session: "a")
         XCTAssertEqual(tiers(), [], "a new stretch")
+        rig.send(.turnEnd, session: "a")
+        rig.wait(30_000)
+        rig.send(.turnStart, session: "a")
+        XCTAssertEqual(tiers(), [], "30 seconds of rest ends a stretch")
     }
 
-    /// The stage Boop is at is a tag, not those it has passed; Buddy, the
-    /// full size, has none.
-    func testOnlyTheStageItIsAtIsOn() {
-        XCTAssertEqual(Tags.stageTags, ["hatchling", "sprout", "chonk"])
-        XCTAssertEqual(Tags.stages(1), ["hatchling"])
-        XCTAssertEqual(Tags.stages(2), ["sprout"])
+    /// Boop is one size at every level: its level puts no tag on.
+    func testALevelIsNoTag() {
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         core.growth = { Growth(xp: 500) }
-        XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when.suffix(1), ["sprout"])
-        core.growth = { Growth(xp: 1_400) }
-        XCTAssertFalse(core.snapshot(at: ms(2026, 10, 22)).when.contains { Tags.stageTags.contains($0) }, "Buddy's none")
+        let young = core.snapshot(at: ms(2026, 10, 22)).when
+        core.growth = { Growth(xp: 2_900) }
+        XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when, young)
+        XCTAssertEqual(Tags.board.suffix(6), ["tier3", "hushed", "typing", "reading", "macleft", "macright"],
+                       "no stage's tag between the tiers and `hushed`: the firmware's list ends the same way, after the two tiers it keeps for Pixel (render/tags.h)")
     }
 
     /// A demo's hold keeps its finger down longer than the board's hold

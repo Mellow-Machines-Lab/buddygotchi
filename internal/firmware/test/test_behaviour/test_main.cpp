@@ -1898,7 +1898,7 @@ static void test_a_met_wishs_heart_flies_into_the_growth_bar() {
   TEST_ASSERT_EQUAL(0, r.b.growthShow(r.t).opacity);
 }
 
-// At Buddy a met wish's +40 XP is about 1% of the stage, under kBarStep: the
+// A met wish's XP may move the ring by less than kStep: the
 // heart still lands on a fill that moves, whichever of the `do` and the state
 // came first.
 static void test_a_met_wish_fills_the_bar_by_however_little() {
@@ -2068,60 +2068,23 @@ static void test_a_new_day_slides_the_bar_out_first() {
   TEST_ASSERT_EQUAL(60, r.b.growthShow(r.t).fill);
 }
 
-// A new stage's body waits 300 ms for a wish's `do`, which follows its state;
-// then, for that wish's heart to land. Any other stage plays when the 300 ms are up.
-static void test_a_new_stage_waits_for_the_heart() {
-  using G = render::GrowthShow;
-  TEST_ASSERT_EQUAL(300, Behaviour::kStageWaitMs);
-  const uint32_t hatchling = render::tagBit("hatchling"), sprout = render::tagBit("sprout");
+// With no app the Mac's tags go, as they're stale: a night's or a holiday's
+// would stay up all the next day.
+static void test_alone_the_macs_tags_go() {
+  const uint32_t party = render::tagBit("party");
   auto face = std::make_unique<testface::WrappedFace>();
   testface::WrappedFace& f = *face;
   Behaviour b(std::move(face));
   app::Rng rng;
   b.reset(0, rng);
   Model m = base("idle");
-  m.xp = 90, m.when = hatchling, m.wish = render::WishShow::kPet;
+  m.when = party;
   b.onState(m, 100);
-  b.advance(1000, rng);
-  TEST_ASSERT_FALSE(f.context.growthWaits);
-  m.xp = 95, m.when = sprout, m.wish = render::WishShow::kNone;
-  b.onState(m, 1000);
-  TEST_ASSERT_TRUE(f.context.growthWaits);
-  b.advance(1299, rng);
-  TEST_ASSERT_TRUE(f.context.growthWaits);
-  b.advance(1300, rng);
-  TEST_ASSERT_FALSE(f.context.growthWaits);  // no wish came
-  m.when = hatchling, m.xp = 90, m.wish = render::WishShow::kPet;
-  b.onState(m, 6000);
-  b.advance(8000, rng);
-  m.xp = 95, m.when = sprout, m.wish = render::WishShow::kNone;
-  b.onState(m, 8000);
-  b.advance(8100, rng);
-  b.wishPopped(true, 8100);
-  const uint32_t landed = 8100 + G::kHeartWaitMs + G::kHeartFlyMs;
-  b.advance(landed - 1, rng);
-  TEST_ASSERT_TRUE(f.context.growthWaits);
-  b.advance(landed, rng);
-  TEST_ASSERT_FALSE(f.context.growthWaits);
-}
-
-// With no app the Mac's tags go, as they're stale, but not its growth stage:
-// a Hatchling doesn't grow to full size, ceremony and all, when the Mac sleeps.
-static void test_alone_it_stays_its_stage() {
-  const uint32_t hatchling = render::tagBit("hatchling"), party = render::tagBit("party");
-  auto face = std::make_unique<testface::WrappedFace>();
-  testface::WrappedFace& f = *face;
-  Behaviour b(std::move(face));
-  app::Rng rng;
-  b.reset(0, rng);
-  Model m = base("idle");
-  m.when = hatchling | party;
-  b.onState(m, 100);
+  b.advance(200, rng);
+  TEST_ASSERT_EQUAL_HEX32(party, f.context.when);
   b.advance(100 + Behaviour::kNoAppMs, rng);
   TEST_ASSERT_TRUE(b.noApp(100 + Behaviour::kNoAppMs));
-  TEST_ASSERT_EQUAL_HEX32(hatchling, f.context.when);
-  TEST_ASSERT_EQUAL(3, render::growthStage(0));
-  TEST_ASSERT_EQUAL(4, render::growthStage(render::tagBit("chonk")));
+  TEST_ASSERT_EQUAL_HEX32(0, f.context.when);
 }
 
 // With no app the wish's bubble goes: nothing waits on a Mac that isn't there,
@@ -3791,7 +3754,7 @@ static void test_listening_hides_an_act_and_it_resumes() {
   Rig r;
   r.at(1000);
   Model m = base("working");
-  m.workAct.kind = render::ActKind::kPush, m.workAct.full = true;
+  m.workAct.kind = render::ActKind::kPush;
   r.state(m);
   r.at(3000);
   TEST_ASSERT_EQUAL_INT(2000, r.b.stream().actNow(r.t).ageMs);
@@ -3895,19 +3858,18 @@ static void test_the_work_streams_words() {
   TEST_ASSERT_EQUAL_INT(0, live());
   TEST_ASSERT_TRUE(s.drawn(10200 + render::Stream::kTakeMs));
 
-  // A freeze holds the words falling where they are; after it they fall on
-  // from there.
+  // A drop takes every word falling, whichever its lane; and a style the
+  // board doesn't know (one the Mac no longer sends) is a word that lands.
   s.setLanes(lanes, 1, true, false, 20000);
   TEST_ASSERT_EQUAL_INT(1, live());
-  s.startCall("rate limit", 0, render::CallStyle::kFreeze, 21000);
-  TEST_ASSERT_TRUE(s.frozen());
-  s.prune(21000 + render::Stream::kCallMs - 1);
-  TEST_ASSERT_EQUAL_INT(1, live());  // 3.5 s old, held
-  s.prune(21000 + render::Stream::kCallMs);
-  TEST_ASSERT_FALSE(s.frozen());
-  TEST_ASSERT_EQUAL_INT(1, live());
-  for (const auto& w : s.words)
-    if (w.live) TEST_ASSERT_EQUAL_UINT32(20000 + render::Stream::kCallMs, w.born);
+  s.startCall("rate limit", 3, render::callStyleFromName("drop"), 21000);
+  taken = 0;
+  for (const auto& w : s.words) taken += s.taken(w);
+  TEST_ASSERT_EQUAL_INT(1, taken);
+  s.prune(21000 + render::Stream::kTakeMs);
+  TEST_ASSERT_EQUAL_INT(0, live());
+  for (const char* gone : {"compact", "buried", "freeze"})
+    TEST_ASSERT_TRUE(render::callStyleFromName(gone) == render::CallStyle::kLand);
 
   // Something needs you: everything goes at once.
   s.startCall("make", 0, render::CallStyle::kBonk, 24000);
@@ -3921,9 +3883,8 @@ static void test_the_work_streams_words() {
 // the whole word, in the large font, kWordEdgePx (12) inside the 502-wide
 // screen's sides, in the first lane and the last, whatever its jitter; with
 // every slot taken it reuses the one dropped longest ago, the clock wrapped
-// or not; and a needs-you over the agents' work only pauses the monitor's
-// clock (`since`), where the agents stopping ends it.
-static void test_falling_words_stay_on_screen_and_the_clock_runs_on() {
+// or not.
+static void test_falling_words_stay_on_screen() {
   TEST_ASSERT_EQUAL_INT(12, render::Stream::kWordEdgePx);
   render::Stream::Lane lanes[4];
   const char* longWord = "make_test_all";  // 13 glyphs
@@ -3956,20 +3917,6 @@ static void test_falling_words_stay_on_screen_and_the_clock_runs_on() {
   s.setLanes(lanes, 1, true, false, 10);
   TEST_ASSERT_EQUAL_STRING("grep", s.words[0].text);
   TEST_ASSERT_EQUAL_STRING("old", s.words[1].text);
-
-  render::Stream c;
-  c.setLanes(lanes, 1, true, false, 1000);
-  TEST_ASSERT_EQUAL_UINT32(1000, c.since);
-  c.setLanes(nullptr, 0, false, true, 5000);  // something needs you
-  c.setLanes(lanes, 1, true, false, 9000);    // answered: the agents work on
-  TEST_ASSERT_EQUAL_UINT32(1000, c.since);
-  c.setLanes(nullptr, 0, false, false, 12000);  // they stop
-  c.setLanes(lanes, 1, true, false, 15000);
-  TEST_ASSERT_EQUAL_UINT32(15000, c.since);
-  c.setLanes(nullptr, 0, false, true, 16000);   // needs you
-  c.setLanes(nullptr, 0, false, false, 17000);  // answered, the agents done
-  c.setLanes(lanes, 1, true, false, 20000);
-  TEST_ASSERT_EQUAL_UINT32(20000, c.since);
 }
 
 // Pins that a gesture leaves the brain's finish alone: a stroke, a tickle
@@ -4057,7 +4004,7 @@ static void test_a_greeting_plays_whole_then_the_work_stream() {
     m.laneCount = 1;
     m.lanes[0].slot = 0, m.lanes[0].count = 1;
     std::snprintf(m.lanes[0].word, sizeof(m.lanes[0].word), "edit");
-    m.workAct.kind = render::ActKind::kBuild, m.workAct.full = true;
+    m.workAct.kind = render::ActKind::kBuild;
     std::snprintf(m.workAct.text, sizeof(m.workAct.text), "building");
     r.state(m);
     TEST_ASSERT_TRUE(r.b.stream().on);
@@ -4378,7 +4325,7 @@ int main() {
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_listening_hides_an_act_and_it_resumes);
   RUN_TEST(test_the_work_streams_words);
-  RUN_TEST(test_falling_words_stay_on_screen_and_the_clock_runs_on);
+  RUN_TEST(test_falling_words_stay_on_screen);
   RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);
@@ -4470,8 +4417,7 @@ int main() {
   RUN_TEST(test_a_ring_filled_unseen_shows_once_it_can);
   RUN_TEST(test_the_wish_that_fills_the_ring_keeps_its_heart_and_sparkles_once);
   RUN_TEST(test_a_new_day_slides_the_bar_out_first);
-  RUN_TEST(test_a_new_stage_waits_for_the_heart);
-  RUN_TEST(test_alone_it_stays_its_stage);
+  RUN_TEST(test_alone_the_macs_tags_go);
   RUN_TEST(test_alone_a_touch_gets_the_boards_own_reaction);
   RUN_TEST(test_the_macs_return_gets_a_small_hello);
   return UNITY_END();

@@ -34,8 +34,8 @@ extension Event {
         /// time, however short: Boop answers each. An away and a back are
         /// `presence`, which go on as they are.
         case lock
-        /// Boop looking in by itself: working, idle (`check_in`) or
-        /// hourly; on disk by its older name.
+        /// Boop looking in by itself: working, or idle (`check_in`); on
+        /// disk by its older name.
         case checkIn = "heartbeat"
         /// What you said on push-to-talk; on disk by its older name.
         case said = "talk"
@@ -83,8 +83,7 @@ extension Event {
         /// on launch.
         case wish
         /// Boop reached a level just now (`specific_type` the level), by its
-        /// XP, with the size it grew to (`stage`) when the level is one of
-        /// `Growth.stages`'. The rules play its ceremony; it wakes no pass.
+        /// XP. The rules play its ceremony; it wakes no pass.
         case level
         /// Today's ring closed (`specific_type` `closed`): the day's XP is
         /// full. The rules play its moment; it wakes no pass.

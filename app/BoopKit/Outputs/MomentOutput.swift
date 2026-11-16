@@ -107,6 +107,9 @@ public final class MomentOutput: Output {
     func fixed(_ e: Event) -> Bool { (line(e)?.facts["checks_failed"]?.int ?? 0) > 0 }
 
     /// Whether `e` is an idle check-in.
+    /// The reply that says your words to it were rude.
+    static let rudeReply = "ouch"
+
     static func isCheckIn(_ e: Event) -> Bool { e.type == .checkIn && e.specificType == "check_in" }
 
     /// Whether it held up a musing in the last `Signs.musingEveryMs`.
@@ -283,7 +286,7 @@ public final class MomentOutput: Output {
         Option("upset", "Something went wrong or let \(name) down: a check or a turn failing, the agent stuck or giving up, a rude prompt."),
         Option("glad", "Something went right: a turn done and working, a check passing, a big win, a kind prompt.", notFor: "A failure."),
         Option("tickled", "Playful words: poked or teased with MOOD at ease, a poke, a tap, or a playful prompt."),
-        Option("shaken", "Had enough: shaken, again and again, the desk thumped, or poked with MOOD annoyed, irritated or grumpy."),
+        Option("shaken", "Had enough: shaken, again and again, the desk thumped, or poked with MOOD cross."),
     ] }
 
     /// What NOW can be about, the rest of what `say` offers: each a topic
@@ -305,7 +308,7 @@ public final class MomentOutput: Output {
         Option("answer", "A turn that only answered something or asked something back."),
         Option("stopped", "A turn stopped: interrupted, or the agent giving up."),
         Option("waiting", "Waiting: a long command, or the agent waiting on something slow."),
-        Option("quiet", "Content words, rarely: a long quiet at a check-in with MOOD calm, comfy or lazy."),
+        Option("quiet", "Content words, rarely: a long quiet at a check-in with MOOD calm."),
         Option("hello", "The person back at the Mac after a break, or greeting \(name): a hello."),
     ] }
 
@@ -340,7 +343,7 @@ public final class MomentOutput: Output {
             Option("status", "Status: a question about the agents or their work: done yet, how long, how many are running, what they're doing (\"what are you doing?\" too, asked of \(name) at its desk), anyone need me, how's the work going, did it work, how long you've been at it. It holds up the answer on a sign, from what it knows.",
                    notFor: "A question about \(name) itself, which is yes, no or huh; a greeting, which is hello."),
             Option("nap", "Nap: asked to sleep or rest: \"go to sleep\", \"nap time\". It yawns and settles down for a nap."),
-            Option("hush", "Hush: asked to stop talking: \"shh\", \"be quiet\", \"shut up\", \"stop talking\". It zips its lips and says nothing for a while, as long as the moment is big: 15 min small, 30 medium, an hour big, two hours huge.",
+            Option("hush", "Hush: asked to stop talking: \"shh\", \"be quiet\", \"shut up\", \"stop talking\". It zips its lips and says nothing for a while, as long as the moment is big: 15 min small, 30 medium, an hour big.",
                    notFor: "Asked to go to sleep or take a nap, which is nap, even at night; rude words that aren't asking for quiet, which is ouch."),
             Option("dance", "Dance: asked to dance or wiggle. It dances."),
             Option("notme", "Not me: asked to answer, approve, allow, stop or tell an agent something (\"tell claude yes\", \"approve it\", \"go ahead\"). \(name) never does: it shakes its head and looks to the Mac.",
@@ -405,7 +408,7 @@ public final class MomentOutput: Output {
             case moveKey:
                 return Question(key: q.key, text: "Does \(name) wave as you \(lock ? "lock" : "unlock") the Mac? The wave is as big as the moment.",
                                 about: "the NOW section", judgeBy: "PERSONALITY and MOOD",
-                                options: [Option("none", "No wave: MOOD is grumpy, irritated or annoyed, so \(name) is cross with you, and turns away or huffs."),
+                                options: [Option("none", "No wave: MOOD is cross, so \(name) is cross with you, and turns away or huffs."),
                                           Option(wave, lock ? "MOOD isn't cross: it waves you off, slight when the moment is small." : "MOOD isn't cross: it waves hello, slight when the moment is small.")]
                                     + (mayNap ? [Option("nap", "It says good night and falls asleep at once, until you're back.")] : []))
             case sayKey:
@@ -414,7 +417,7 @@ public final class MomentOutput: Output {
                                 about: q.about, judgeBy: q.judgeBy,
                                 options: q.options.map { o in
                                     switch o.name {
-                                    case "none": Option("none", "Nothing: a routine lock or unlock, the wave in silence, MOOD grumpy, irritated or annoyed, or wherever CONTEXT's Talk row asks for silence.")
+                                    case "none": Option("none", "Nothing: a routine lock or unlock, the wave in silence, MOOD cross, or wherever CONTEXT's Talk row asks for silence.")
                                     case "hello": Option("hello", lock ? "MOOD isn't cross: a word for your going, goodbye or good night." : "MOOD isn't cross: a word for your being back, hello.")
                                     default: o
                                     }
@@ -481,8 +484,7 @@ public final class MomentOutput: Output {
     public static let sizeOptions = [
         Option("small", "A small moment: the usual. The face holds once, and what it says is a sound."),
         Option("medium", "A moment that stands out. It holds twice, and says a word."),
-        Option("big", "A big moment, such as a long turn's hard-won work done or the top of a streak. It holds three times, and says a phrase."),
-        Option("huge", "The biggest moments: a very long turn that failed, a hard-won finish (a long turn done after failed checks), or a long turn that failed after failed checks or turns before it. It holds four times, and says a phrase.",
+        Option("big", "The biggest moments: a hard-won finish (a long turn done after failed checks), the top of a streak, a very long turn that failed, or a long turn that failed after failed checks or turns before it. It holds three times, and says a phrase.",
                notFor: "A check failing mid-turn, or a finish when HISTORY shows the reaction to its fix just now: that's small."),
     ]
 
@@ -495,8 +497,8 @@ public final class MomentOutput: Output {
     }
 
     /// Each intensity, in `sizeOptions`' order: once a sound, twice a
-    /// word, three and four times a phrase.
-    public static let sizes: [Size] = zip(sizeOptions, [(1, Take.Kind.sound), (2, .word), (3, .phrase), (4, .phrase)])
+    /// word, three times a phrase.
+    public static let sizes: [Size] = zip(sizeOptions, [(1, Take.Kind.sound), (2, .word), (3, .phrase)])
         .map { Size(name: $0.name, loops: $1.0, kind: $1.1) }
 
     /// The intensity `react.intensity` picked, or small when it's missing.
@@ -511,7 +513,7 @@ public final class MomentOutput: Output {
         let name = pack.name
         return
         [Option("none", "Nothing: the face in silence. The routine (a plain prompt, a quick finish, a check-in where nothing has happened), a prompt soon after another reaction, its wish \"waiting 1 h\" or more, and wherever CONTEXT's Talk row asks for silence."),
-         Option("swear", "A swear, upset: a failed turn that really stings, in an irritated or grumpy face.",
+         Option("swear", "A swear, upset: a failed turn that really stings, in a cross face.",
                 notFor: "A win, a poke, words to \(name), or anything about the person.")]
             + feelings(in: pack)
             + topics(of: name)
@@ -561,7 +563,7 @@ public final class MomentOutput: Output {
     ]
 
     /// A reaction still in progress this long after it started is ended as
-    /// failed: past the longest reaction, held four times (`huge`) in the
+    /// failed: past the longest reaction, held three times (`big`) in the
     /// design with the longest loop. The longest hold of the longest design
     /// must end on the device before the link stops waiting for its
     /// `ended` (its `ttl` plus 60 s, linkkit/SPEC.md §5), or a reaction that
@@ -630,7 +632,7 @@ public final class MomentOutput: Output {
             return asked + [Question(key: Signs.questionKey,
                                      text: "If \(pack.name) waves, does it hold up a sign as you \(lock ? "go" : "come back")? PERSONALITY says when.",
                                      about: "NOW and CONTEXT", judgeBy: "PERSONALITY and MOOD",
-                                     options: [Option("none", "No sign: the wave alone, or no wave, with MOOD grumpy, irritated or annoyed.")] + captions.map { Option($0, "MOOD isn't cross: a sign that says this.") })]
+                                     options: [Option("none", "No sign: the wave alone, or no wave, with MOOD cross.")] + captions.map { Option($0, "MOOD isn't cross: a sign that says this.") })]
         }
         let speech = Self.speech(asked, hushed: hushedNow, talk: talk(), swears: swears(), in: pack)
         // A question it may ask, the sign being the ask; at an idle

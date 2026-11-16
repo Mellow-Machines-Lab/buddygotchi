@@ -48,14 +48,16 @@ void Mixer::setStyles(uint8_t eyes, uint8_t mouth) {
   mouth_.want = mouth;
 }
 
-void Mixer::setLook(const Clip* clip) {
+void Mixer::setLook(const Clip* clip, uint32_t fadeMs) {
   for (int i = 0; i < playing_; ++i) {
     Play& p = plays_[i];
     if (!p.base || p.cut) continue;
     if (p.clip == clip) return;
+    // The old look leaves as slowly as the new one comes.
+    p.in = p.in * fadeMs / p.fade, p.fade = fadeMs;
     fadeOut(p);
   }
-  if (clip) start(*clip, true);
+  if (clip) start(*clip, true, fadeMs);
 }
 
 void Mixer::play(const Clip& clip) { start(clip, false); }
@@ -70,7 +72,7 @@ void Mixer::impulse(Channel channel, int velocity) {
   s.v = held(s.v + int64_t(velocity) * 256);
 }
 
-void Mixer::start(const Clip& clip, bool base) {
+void Mixer::start(const Clip& clip, bool base, uint32_t fadeMs) {
   if (playing_ == kPlays) {
     // Room: the oldest goes, but the look's own clip, the one look not
     // fading out (setLook fades out the others).
@@ -79,7 +81,7 @@ void Mixer::start(const Clip& clip, bool base) {
     for (int i = gone; i + 1 < playing_; ++i) plays_[i] = plays_[i + 1];
     --playing_;
   }
-  plays_[playing_++] = {&clip, 0, 0, 0, 0, base, false};
+  plays_[playing_++] = {&clip, 0, 0, 0, 0, base, false, fadeMs};
 }
 
 void Mixer::fadeOut(Play& p) {
@@ -88,10 +90,10 @@ void Mixer::fadeOut(Play& p) {
   p.out = 0;
 }
 
-uint32_t Mixer::fadeMs(const Clip& clip) { return std::min<uint32_t>(kWeightMs, clip.ms / 4); }
+uint32_t Mixer::fadeMs(const Play& p) { return std::min<uint32_t>(p.fade, p.clip->ms / 4); }
 
 int Mixer::weight(const Play& p) {
-  const int fade = int(fadeMs(*p.clip));
+  const int fade = int(fadeMs(p));
   int w = ease(int(p.in), fade);
   if (!p.clip->loop) w = std::min(w, ease(int(p.clip->ms) - int(p.age), fade));
   if (p.cut) w = std::min(w, p.from * (1024 - ease(int(p.out), fade)) / 1024);
@@ -103,10 +105,10 @@ void Mixer::advance(uint32_t dt) {
   for (int i = 0; i < playing_; ++i) {
     Play p = plays_[i];
     p.age += dt;
-    p.in = std::min(p.in + dt, kWeightMs);
-    if (p.cut) p.out = std::min(p.out + dt, kWeightMs);
+    p.in = std::min(p.in + dt, p.fade);
+    if (p.cut) p.out = std::min(p.out + dt, p.fade);
     if (p.clip->loop) p.age %= p.clip->ms;
-    const bool over = (!p.clip->loop && p.age >= p.clip->ms) || (p.cut && p.out >= fadeMs(*p.clip));
+    const bool over = (!p.clip->loop && p.age >= p.clip->ms) || (p.cut && p.out >= fadeMs(p));
     if (!over) plays_[kept++] = p;
   }
   playing_ = kept;

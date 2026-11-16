@@ -90,7 +90,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack and for Pixel's (`simulator/web/build.sh pixel`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
 | `make -C internal tools` | Makes or refreshes `internal/tools/.venv` (pyserial, Pillow, Textual). `boopctl` runs it on its first run |
-| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, that every demo's recording is up to date (`simulator/tools/demos.py check`), `charactergen.py`'s (`internal/characters/`), each pack's `tests/tools/` and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
+| `make -C internal tools-test` | The tools' own tests, with no board or camera: boopctl's, the Character Studio's logic and server's (`node --test characters/studio/tests/*.test.cjs`, so it needs Node), the webcam recorder's, the session tool's, `charactergen.py`'s (`internal/characters/`), each pack's `tests/tools/` and that the gel slime's tables are fresh (`slimegen.mjs --check`) |
 
 **Tools.**
 
@@ -315,7 +315,7 @@ Each suite says what it pins.
   tests; the harness and outputs run with a scripted brain and no network,
   and so does the eval runner ([EVALS.md](EVALS.md)). `CoreFuzzTests`
   plays random hooks through the pipeline and checks that HISTORY and the
-  screen agree. `GoldenStateTests` runs every eval scenario with a scripted
+  screen agree. `GoldenStateTests` runs ten eval scenarios (its `pinned`) with a scripted
   brain and checks every state it's sent against
   `characters/boop/tests/golden-states/`, byte for byte, so a change to
   how the prompt is built can't pass unnoticed without Jev. A deliberate
@@ -415,9 +415,9 @@ accepted; the mirror's shots are the simulator's.
    scene's slowest second reaches its frames a second, working draws no
    frame over 50 ms, at least 50 KB of internal heap stays free and the
    DAC has no write errors. `perf --plays` (`--only NAME…`) goes second by
-   second through what plays once: the acts, a Chonk, the bar and the heart,
-   the grow ceremony, a tilt and a lean (driven by `dbg.imu` and `dbg.touch`)
-   and the big finishes. A Mac on Bluetooth keeps sending its own `state`,
+   second through what plays once: a work act's sign, the bar and the
+   heart, a tilt and a lean (driven by `dbg.imu` and `dbg.touch`)
+   and the three finishes. A Mac on Bluetooth keeps sending its own `state`,
    so it starts each just after one, and `fps_min_clean` leaves out the
    seconds one came in; it has a budget only for the scenes `--scenes` has.
    Flash the everyday build (`make flash`) afterwards.

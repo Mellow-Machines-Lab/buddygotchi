@@ -247,7 +247,7 @@ class PerfScenesTests(unittest.TestCase):
 
         def answer(msg: dict) -> bytes:
             if msg["t"] == "state":
-                scene[0] = ("attention" if "attn" in msg else "frightened" if msg.get("mood") == "frightened"
+                scene[0] = ("attention" if "attn" in msg else "wounded" if msg.get("mood") == "wounded"
                             else "asleep" if msg["base"] == "asleep" else scene[0] if scene[0] == "pokes" else "working")
             elif msg["t"] == "do":
                 scene[0] = "pokes"
@@ -297,7 +297,7 @@ class PerfScenesTests(unittest.TestCase):
                 self.assertNotIn("say", message.get("args", {}))
 
     def test_each_scene_against_its_budget(self):
-        result = self.scenes({"working": 31, "stream": 25, "attention": 28, "pokes": 20, "frightened": 29,
+        result = self.scenes({"working": 31, "stream": 25, "attention": 28, "pokes": 20, "wounded": 29,
                               "asleep": 10, "night": 10})
         self.assertTrue(result["ok"], result)
         self.assertEqual(sorted(result["scenes"]), sorted(name for name, *_ in cli.PERF_SCENES))

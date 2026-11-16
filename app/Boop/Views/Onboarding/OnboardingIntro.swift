@@ -105,10 +105,10 @@ struct WhatIDoAct: View {
         /// Boop's look, with `drops` words fallen so far.
         func look(drops: Int) -> StateSnapshot {
             var look: StateSnapshot = switch self {
-            case .typing: .onboarding(doing: "working", activity: "planning", mood: "curious")
-            case .reading: .onboarding(doing: "working", activity: "analyzing", mood: "engaged")
-            case .testing: .onboarding(doing: "working", activity: "testing", mood: "determined")
-            case .failing: .onboarding(doing: "working", activity: "testing", mood: "grumpy")
+            case .typing: .onboarding(doing: "working", activity: Act.typing.rawValue, mood: "curious")
+            case .reading: .onboarding(doing: "working", activity: Act.looking.rawValue, mood: "focused")
+            case .testing: .onboarding(doing: "working", activity: Act.running.rawValue, mood: "determined")
+            case .failing: .onboarding(doing: "working", activity: Act.running.rawValue, mood: "grumpy")
             case .asking: .onboarding(doing: "working", mood: "curious", waiting: "claude")
             case .finished: .onboarding(doing: "idle", mood: "proud")
             }
@@ -287,7 +287,7 @@ struct MoodLegend: View {
                 face("happy", "Happy", "it's going well")
                 face("grumpy", "Grumpy", "failures pile up")
                 face("proud", "Proud", "a big finish")
-                face("tired", "Tired", "a long day")
+                face("sad", "Sad", "a long turn fails")
             }
         }
     }

@@ -9,8 +9,7 @@ public enum Personality {
     public struct Rules: Equatable, Sendable {
         /// The working check-in's wait, in milliseconds, or none.
         public var workCheckInMs: ClosedRange<Int>?
-        /// The idle check-in's wait, in milliseconds, or none: only the
-        /// hourly check-in, as before there were check-ins.
+        /// The idle check-in's wait, in milliseconds, or none.
         public var idleCheckInMs: ClosedRange<Int>?
 
         public init(workCheckInMs: ClosedRange<Int>? = 90_000...180_000, idleCheckInMs: ClosedRange<Int>? = nil) {

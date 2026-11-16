@@ -215,14 +215,14 @@ final class NoticesTests: XCTestCase {
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         let file = dir.appendingPathComponent("s.json")
-        try #"{"name":"n","case":"c","why":"w","checks":{"moves_on_graph":true},\#(json)}"#.write(to: file, atomically: true, encoding: .utf8)
+        try #"{"name":"n","case":"c","why":"w","checks":{"reactions":"0-"},\#(json)}"#.write(to: file, atomically: true, encoding: .utf8)
         let states = Lines()
         final class Seeing: Brain, ScenarioBrain, @unchecked Sendable {
             let id = "seeing"
             let inner = ExpectBrain()
             let states: Lines
             init(_ states: Lines) { self.states = states }
-            func willRun(_ step: Scenario.Step?, ahead: [String]) { inner.willRun(step, ahead: ahead) }
+            func willRun(_ step: Scenario.Step?) { inner.willRun(step) }
             func answer(state: String, questions: [Question], deadline: Duration) async throws -> Answers {
                 states.add(state)
                 return try await inner.answer(state: state, questions: questions, deadline: deadline)
@@ -279,7 +279,7 @@ final class NoticesTests: XCTestCase {
     /// alone, and with no face of Jev's in the mood's, small. `waiting` has
     /// its sign, not the look; a rough hour leans in instead.
     func testANoticePlaysALookAndItsReason() throws {
-        func play(_ kind: Notices.Kind, _ fact: String, sign: String, face: String = "comfy") -> Moment? {
+        func play(_ kind: Notices.Kind, _ fact: String, sign: String, face: String = "pleased") -> Moment? {
             var played: Moment?
             let n = Notices.Notice(kind: kind, key: kind.rawValue, fact: fact, short: "short why")
             let lines = TaggedLine.parse("- [notice \(kind.rawValue)] noticed it")

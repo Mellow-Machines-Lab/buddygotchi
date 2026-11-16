@@ -15,21 +15,21 @@ final class WorldTests: XCTestCase {
         Set(try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any]).keys)
     }
 
-    static let state = World.State(seq: 1, name: "Mochi", level: 12, stage: "buddy", utcOffset: 60, activity: .testing,
+    static let state = World.State(seq: 1, name: "Mochi", level: 12, utcOffset: 60, activity: .testing,
                                    day: "2026-11-08", xpToday: 82, added: .init(turns: 3, testsPassed: 2, ships: 0, linesChanged: 140))
 
-    /// What leaves the Mac, and nothing else (plan/world.md §9): the name,
-    /// level and stage, the UTC offset, one of six activities, the day's
+    /// What leaves the Mac, and nothing else (plan/world.md §9): the name
+    /// and level, the UTC offset, one of six activities, the day's
     /// XP, and the counts. A new field, kept or sent, fails here, whatever
     /// its coding key: no country, no time zone name, nothing of the work.
     func testOnlyTheseFieldsEverLeaveTheMac() throws {
         let sent = try JSONEncoder().encode(Self.state)
         let sentKeys = try keys(sent)
-        XCTAssertEqual(sentKeys, ["seq", "name", "level", "stage", "utc_offset", "activity", "day", "xp_today", "added"])
+        XCTAssertEqual(sentKeys, ["seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added"])
         let added = try XCTUnwrap((try JSONSerialization.jsonObject(with: sent) as? [String: Any])?["added"] as? [String: Any])
         XCTAssertEqual(Set(added.keys), ["turns", "tests_passed", "ships", "lines_changed"])
         XCTAssertEqual(Mirror(reflecting: Self.state).children.compactMap(\.label),
-                       ["seq", "name", "level", "stage", "utcOffset", "activity", "day", "xpToday", "added"])
+                       ["seq", "name", "level", "utcOffset", "activity", "day", "xpToday", "added"])
         XCTAssertEqual(Mirror(reflecting: World.Counts()).children.compactMap(\.label), ["turns", "testsPassed", "ships", "linesChanged"])
         XCTAssertEqual(World.Activity.allCases.map(\.rawValue), ["coding", "testing", "shipping", "waiting", "idle", "asleep"])
         // The server's example of a send has these keys exactly.
@@ -257,7 +257,7 @@ final class WorldTests: XCTestCase {
         WorldLink(client: WorldClient(base: URL(string: "http://world.test")!, queue: queue, protocols: [Stub.self]), stateDir: dir)
     }
 
-    static let me = WorldLink.Now(name: "Mochi", level: 2, stage: "Hatchling", utcOffset: 60, activity: .coding, day: "2026-11-08", xpToday: 40)
+    static let me = WorldLink.Now(name: "Mochi", level: 2, utcOffset: 60, activity: .coding, day: "2026-11-08", xpToday: 40)
 
     func settle() { for _ in 0..<50 { queue.sync {}; Thread.sleep(forTimeInterval: 0.01) } }
 
@@ -279,7 +279,7 @@ final class WorldTests: XCTestCase {
         let send = try XCTUnwrap(Stub.seen.last)
         XCTAssertEqual("\(send.method) \(send.path)", "PUT /v1/buddies/me")
         XCTAssertEqual(send.auth, "Bearer k1")
-        XCTAssertEqual(Set(send.body?.keys.map { $0 } ?? []), ["seq", "name", "level", "stage", "utc_offset", "activity", "day", "xp_today", "added"])
+        XCTAssertEqual(Set(send.body?.keys.map { $0 } ?? []), ["seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added"])
     }
 
     /// It sends on a change, not on a clock: the same state again waits for

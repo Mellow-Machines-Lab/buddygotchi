@@ -178,8 +178,6 @@ final class DeviceLinkTests: XCTestCase {
                        #"{"t":"do","id":558386700,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"},"mood":"proud","loops":1}}"#)
         XCTAssertEqual(Moment(say: .init(takes: []), mood: "calm", loops: 1).line(id: 5, play: .next),
                        #"{"t":"do","id":5,"name":"react","play":"next","ttl":5000,"args":{"say":{},"mood":"calm","loops":1}}"#)
-        XCTAssertEqual(Moment(anim: "starting", ctx: "new_task").line(id: 558386701, play: .ifFree),
-                       #"{"t":"do","id":558386701,"name":"starting","play":"if_free","args":{"ctx":"new_task"}}"#)
         XCTAssertEqual(Moment(anim: "notice").line(id: 9, play: .ifFree), #"{"t":"do","id":9,"name":"notice","play":"if_free"}"#)
         let finish = Moment(anim: "task_complete", say: .go, mood: "proud",
                                   who: .init(agent: "claude", thread: "api"), outcome: "success")
@@ -357,12 +355,11 @@ final class DeviceLinkTests: XCTestCase {
         XCTAssertEqual(s.jsonLine, Wire.state(s.fields), "LinkKit's state, Boop's fields")
     }
 
-    /// The tier reached, every growth stage, `hushed`, your hands and the
-    /// Mac's side are tags too;
+    /// The tier reached, `hushed`, your hands and the Mac's side are tags too;
     /// and the to-do count goes only with nothing needing you. The widest line
     /// either way, with every tag that can be on at once, fits.
-    func testTheTiersStagesAndToDoCountFitTheLine() {
-        let every = mostTags + ["tier5"] + Tags.stageTags + [Tags.hushed, "reading", "macright"]
+    func testTheTiersAndToDoCountFitTheLine() {
+        let every = mostTags + ["tier3", Tags.hushed, "reading", "macright"]
         var needs = StateSnapshot(doing: "working", mood: "determined",
                                   attn: .init(agent: "claude", project: widest, name: widest, more: 999, id: Int(Int32.max)),
                                   working: 999, idle: 999, helpers: 999, vol: 10, when: every)

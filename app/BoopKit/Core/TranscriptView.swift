@@ -152,10 +152,8 @@ public final class TranscriptView {
         var shownUp: String?
         /// Lying face down, from its `facedown` until its `peekaboo`.
         var faceDown = false
-        /// The last agent event, poke, thing you said or coming back, and
-        /// the idle check-ins since.
+        /// The last agent event, poke, thing you said or coming back.
         var lastActivityAt: Int64?
-        var hourlies = 0
         /// When the screen last locked, for the next lock's line.
         var lastLockAt: Int64?
         /// The last event folded, and whether the last agent event had a
@@ -263,9 +261,6 @@ public final class TranscriptView {
     public static let shakesInARowMs: Int64 = 4000
     /// The board's gesture for a shake.
     public static let shake = "dizzy"
-    /// While no thread works, a check-in after this long with no event,
-    /// and again every time as long again passes.
-    public static let hourlyMs: Int64 = 60 * 60 * 1000
     /// For this long after the last agent event, poke, thing you said or
     /// coming back, while a session is open and you're at the Mac, the
     /// idle check-in comes at the personality's `idle_heartbeat` pace
@@ -329,8 +324,12 @@ public final class TranscriptView {
         if let type = e.type, type != .said, let why = needsYou() { return why }
         if e.type == .gesture, e.specificType == "facedown" { return "\(name) is face down" }
         if e.type == .hush, e.specificType == Core.By.talk.rawValue { return "what you said hushed it, and its reply was the pass" }
-        if e.type == .act, e["full"]?.bool != true { return "the small version of the act has no voice" }
-        if e.type == .act, e.phase == .end, e["passed"]?.bool == false, e["topic"]?.string.map(Self.checks.contains) == true {
+        // An act's voice is for a push's result: a start only shows its
+        // low sign, and a check's result has a line of its own when it
+        // matters (a failure, a pass after one).
+        if e.type == .act, e.phase == .start { return "the low sign names the command" }
+        if e.type == .act, e.specificType != "push" { return "a check's result is its own line" }
+        if e.type == .act, e["passed"]?.bool == false, e["topic"]?.string.map(Self.checks.contains) == true {
             return "the check's failure is its own line"
         }
         if e.type == .ask, e.specificType == Asks.ignored { return "nobody answered \(name)'s question" }
@@ -552,7 +551,7 @@ public final class TranscriptView {
             return Line(e.phase == .start ? EventLine.hushed(name: name, minutes: e["minutes"]?.int ?? 0, byApp: e.specificType == Core.By.app.rawValue)
                                           : EventLine.unhushed(name: name, why: e.specificType))
         case .level?:
-            return Line(EventLine.level(Int(e.specificType) ?? 1, grewTo: e["stage"]?.string, name: name),
+            return Line(EventLine.level(Int(e.specificType) ?? 1, name: name),
                         facts: ["level": .int(Int64(e.specificType) ?? 1)])
         case .ring?: return Line(EventLine.ringClosed(name: name))
         case .world?:
@@ -811,7 +810,6 @@ public final class TranscriptView {
 
     func noteActivity(_ now: Int64) {
         fold.lastActivityAt = now
-        fold.hourlies = 0
     }
 
     // MARK: Your prompt
@@ -1051,6 +1049,12 @@ public final class TranscriptView {
         return fold.sessions.grouped(at: now).working.filter { $0.turn.startedAt != nil }
     }
 
+    /// Whether any turn works at `now`, as `log` has it.
+    public func isWorking(at now: Int64, _ log: LogView) -> Bool {
+        catchUp(log)
+        return !working(at: now).isEmpty
+    }
+
     /// When the oldest turn still working began, or nil: HISTORY reaches
     /// back at least that far.
     public func workingSince(at now: Int64, _ log: LogView) -> Int64? {
@@ -1060,8 +1064,9 @@ public final class TranscriptView {
 
     /// A check-in, if one is due at `now`, for MellowHarness to
     /// emit: while threads work, once the personality's wait has passed
-    /// with no reaction from Boop; while none works, each whole hour since
-    /// the last agent event, poke, thing you said or coming back.
+    /// with no reaction from Boop; while none works and you're at the Mac,
+    /// an idle one at the personality's pace, for `idleWindowMs` after the
+    /// last agent event, poke, thing you said or coming back.
     public func checkIn(at now: Int64, _ log: LogView) -> Event? {
         catchUp(log)
         // Boop started a reaction: the working check-in starts its wait
@@ -1088,26 +1093,20 @@ public final class TranscriptView {
         // and it's within `idleWindowMs` of the last activity. With no
         // session open it comes `noAgentsGapTimes` as far apart, which spares
         // Jev. Once you're away, or it's been quiet longer than that, as over
-        // a night or a weekend, only the hourly check-in comes; nothing reads
-        // the time of day.
-        if let idle = rules.idleCheckInMs, fold.away.since == nil, now - last < Self.idleWindowMs {
-            let times = fold.sessions.sessions.isEmpty ? Self.noAgentsGapTimes : 1
-            let gap = (idle.lowerBound * times)...(idle.upperBound * times)
-            if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
-            guard let beat = idleBeat, now >= beat.due else { return nil }
-            idleBeat = (last, now + Int64(rng.int(in: gap)))
-            return Event(at: now, source: .clock, type: .checkIn, specificType: "check_in")
-        }
-        guard (now - last) / Self.hourlyMs > Int64(fold.hourlies) else { return nil }
-        return Event(at: now, source: .clock, type: .checkIn, specificType: Self.hourly)
+        // a night or a weekend, none comes: moods fade by the clock
+        // (`MoodOutput.fade`), and nothing reads the time of day.
+        guard let idle = rules.idleCheckInMs, fold.away.since == nil, now - last < Self.idleWindowMs else { return nil }
+        let times = fold.sessions.sessions.isEmpty ? Self.noAgentsGapTimes : 1
+        let gap = (idle.lowerBound * times)...(idle.upperBound * times)
+        if idleBeat?.after != last { idleBeat = (last, last + Int64(rng.int(in: gap))) }
+        guard let beat = idleBeat, now >= beat.due else { return nil }
+        idleBeat = (last, now + Int64(rng.int(in: gap)))
+        return Event(at: now, source: .clock, type: .checkIn, specificType: "check_in")
     }
 
     /// How many times the personality's gap an idle check-in waits with no
     /// session open.
     public static let noAgentsGapTimes = 2
-
-    /// The hourly check-in's kind, after a quiet stretch.
-    public static let hourly = "idle"
 
     /// Whether you're away from the Mac, as the presence events say.
     public var away: Bool { fold.away.since != nil }
@@ -1130,22 +1129,16 @@ public final class TranscriptView {
                         facts: ["thread": threadFacts(t), "working_ms": .int(ms), "topic": .of(c.topic),
                                 "check_in": .int(Int64(c.checkIns))])
         }
-        guard let last = fold.lastActivityAt else { return nil }
-        let hours = (now - last) / Self.hourlyMs
-        if e.specificType == "check_in" {
-            // An idle check-in: you're around, and no agent works.
-            fold.hourlies = Int(hours)
-            let minutes = (now - last) / 60_000
-            guard let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) else {
-                return Line(EventLine.idle(minutes: Int(minutes)), facts: ["idle_minutes": .int(minutes)])
-            }
-            let t = Thread(s)
-            return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
-                        facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
+        // An idle check-in: you're around, and no agent works. Any other
+        // kind (an old transcript's hourly one) has no line.
+        guard let last = fold.lastActivityAt, e.specificType == "check_in" else { return nil }
+        let minutes = (now - last) / 60_000
+        guard let s = fold.sessions.sessions.values.max(by: { ($0.lastEventAt, $0.order) < ($1.lastEventAt, $1.order) }) else {
+            return Line(EventLine.idle(minutes: Int(minutes)), facts: ["idle_minutes": .int(minutes)])
         }
-        guard hours > 0 else { return nil }
-        fold.hourlies = Int(hours)
-        return Line(EventLine.checkIn(hours: Int(hours)), facts: ["idle_hours": .int(hours)])
+        let t = Thread(s)
+        return Line(EventLine.idle(minutes: Int(minutes), agent: t.agent.rawValue, thread: threadLine(t)),
+                    facts: ["thread": threadFacts(t), "idle_minutes": .int(minutes)])
     }
 
     // MARK: Needs you

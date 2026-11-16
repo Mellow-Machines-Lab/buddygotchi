@@ -92,7 +92,7 @@ final class ReplyTests: XCTestCase {
             XCTAssertEqual(Set(takes.map(\.meaning)), ["hello"], "its own words")
             XCTAssertTrue(takes.allSatisfy { $0.moods.contains("happy") })
         }
-        _ = run(["react.face": "engaged", "react.move": "status"], said)
+        _ = run(["react.face": "focused", "react.move": "status"], said)
         XCTAssertEqual(queued.last?.sign, "facts for is claud", "the status closure's, about what you said")
         XCTAssertEqual(queued.last?.show, "drawer", "and where the board shows the rest")
         XCTAssertTrue(queued.last?.args.json.contains(#""show":"drawer""#) == true)
@@ -259,7 +259,7 @@ final class ReplyTests: XCTestCase {
         var queued: [Moment] = []
         var mic: String?
         let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { "something needs you" }, replyBlocked: { mic })
-        let answers = ["react.face": a("skeptical"), "react.move": a("notme"), "react.intensity": a("small")]
+        let answers = ["react.face": a("annoyed"), "react.move": a("notme"), "react.intensity": a("small")]
         _ = react.run(answers, now: poke, log: Self.log)
         XCTAssertEqual(queued.count, 0, "not a poke's")
         _ = react.run(answers, now: said, log: Self.log)
@@ -271,7 +271,7 @@ final class ReplyTests: XCTestCase {
         // board opens none over the needs-you screen.
         let status = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { "something needs you" }, replyBlocked: { nil },
                                  status: { _ in .init(sign: "2 need you", show: StatusReply.drawer) })
-        _ = status.run(["react.face": a("engaged"), "react.move": a("status"), "react.intensity": a("small")], now: said, log: Self.log)
+        _ = status.run(["react.face": a("focused"), "react.move": a("status"), "react.intensity": a("small")], now: said, log: Self.log)
         XCTAssertEqual(queued.last?.sign, "2 need you")
         XCTAssertNil(queued.last?.show)
     }

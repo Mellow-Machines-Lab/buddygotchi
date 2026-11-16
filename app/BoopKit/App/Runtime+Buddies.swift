@@ -97,6 +97,58 @@ extension Runtime {
         }
     }
 
+    /// What code does to the mood, never Jev: a levelled mood's level,
+    /// counted from what provokes it (`MoodOutput.provocation`), and every
+    /// mood's fade on the harness's clock (`MoodOutput.fade`). Each is a
+    /// change of the mood in the transcript, by `rule`.
+    static func moodRules(_ mood: Choice, on h: Harness, view: TranscriptView, pack: CharacterPack) {
+        let levels = { (id: String) in pack.lasting(id).flatMap { $0.levelled ? $0.faces.count : nil } }
+        let step = { [weak h] (to: Int, about: Event?, log: LogView) in
+            guard let h, let result = MoodOutput.levelled(mood, to: to, log: log, pack: pack) else { return }
+            h.did(result.message, for: about, action: mood.name, facts: result.facts)
+        }
+        // When each hold was last so: a fade's clock starts again from it.
+        var heldAt: [CharacterPack.Fade.Hold: Int64] = [:]
+        let hold = { [weak h] (now: Int64, e: Event?) in
+            guard let h else { return }
+            if view.isWorking(at: now, h.log.view(now: now)) || (e?.type == .turn && e?.phase == .end) { heldAt[.working] = now }
+            if view.away || (e?.type == .presence && e?.phase == .end) { heldAt[.away] = now }
+        }
+        h.on("*") { [weak h] e in
+            guard let h else { return }
+            let log = h.log.view(now: e.at)
+            hold(e.at, e)
+            if e.kind == Event.did {
+                guard e["ok"]?.bool == true, e["by"]?.string != "rule" else { return }
+                let about = e.about.flatMap { log.event($0) }
+                // Entering a levelled mood: as cross as what caused it.
+                if e.action == mood.name, e["level"] == nil, let to = e["to"]?.string, to != e["from"]?.string, let count = levels(to),
+                   let about, let by = h.line(about.seq).flatMap({ MoodOutput.provocation(about, facts: $0.facts) }) {
+                    step(MoodOutput.provoked(nil, by: by, of: count), about, log)
+                }
+                // Rude words, as its reply says they were, provoke it too.
+                if e.action == MomentOutput.outputName, e["reply"]?.string == MomentOutput.rudeReply,
+                   let count = levels(MoodOutput.value(mood, log, pack: pack)) {
+                    step(MoodOutput.provoked(MoodOutput.level(mood, log), by: 1, of: count), about, log)
+                }
+                return
+            }
+            // In a levelled mood, what provokes it takes it a level up, and
+            // a gentle touch a level down.
+            guard let count = levels(MoodOutput.value(mood, log, pack: pack)) else { return }
+            if Touch(e)?.soothes == true { return step(MoodOutput.soothed(MoodOutput.level(mood, log)), e, log) }
+            guard let by = h.line(e.seq).flatMap({ MoodOutput.provocation(e, facts: $0.facts) }) else { return }
+            step(MoodOutput.provoked(MoodOutput.level(mood, log), by: by, of: count), e, log)
+        }
+        h.tick { [weak h] now, log in
+            hold(now, nil)
+            if let h, let result = MoodOutput.fade(mood, log, at: now, pack: pack, heldAt: { heldAt[$0] }) {
+                h.did(result.message, for: nil, action: mood.name, facts: result.facts)
+            }
+            return nil
+        }
+    }
+
     /// Boop's brain on the pipeline's harness, the app's and the evals', so
     /// the two can't drift apart: its outputs, mood then react, and the
     /// sections of Jev's state: the guide with how to read the rest,
@@ -108,7 +160,14 @@ extension Runtime {
         let h = pipeline.harness, view = pipeline.view, pack = m.buddy.pack, core = pipeline.core
         for kind in Core.WishKind.allCases { core.wishMetSigns[kind] = Asks.wishMetSign(m.steering.asks, kind) }
         core.wishDone = m.wishDone
-        let mood = MoodOutput.choice(pack: pack)
+        // Missing you is offered only when it may begin: no agent working,
+        // and a wish left an hour at an idle check-in, or you back after
+        // about a day.
+        let mood = MoodOutput.choice(pack: pack) { [weak h] now, log in
+            MoodOutput.mayMiss(now, facts: now.flatMap { h?.line($0.seq)?.facts }, working: view.isWorking(at: h?.clock.now() ?? 0, log),
+                               wishWaitedMs: core.wish?.waitedMs)
+        }
+        moodRules(mood, on: h, view: view, pack: pack)
         // What it notices, read by the output and CONTEXT alike: none on
         // Quiet, none when it couldn't start anything of its own, and none
         // with no lines for it. An open wish holds up all but `waiting`.
@@ -211,7 +270,7 @@ extension Runtime {
             carryOut(core.makeWish(kind, at: at), at)
         }, wishDone: m.wishDone,
         dayNumber: { LocalTime.dayNumber(core.config.time.boopDay(core.wall($0))) ?? 0 },
-        moodFace: { [mood] log in MoodOutput.value(mood, log) },
+        moodFace: { [mood] log in MoodOutput.face(mood, log, pack: pack) },
         today: m.company, felt: m.felt, notice: noticeAt, wishWhy: wishWhy, seed: m.seed)
         h.output(mood)
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
@@ -223,7 +282,9 @@ extension Runtime {
         h.section { _, _ in m.steering.personality.text }
         // What it remembers, after who it is and before how it feels.
         h.section { _, _ in m.memory() }
-        h.section { log, _ in m.steering.mood(MoodOutput.value(mood, log), in: pack) }
+        h.section { log, _ in
+            m.steering.mood(MoodOutput.value(mood, log, pack: pack), in: pack) + (MoodOutput.levelLine(mood, log, pack: pack).map { "\n" + $0 } ?? "")
+        }
         // How things stand: when it is, the talk setting, the buddy,
         // you, the agents, the day so far. Last before HISTORY.
         h.section { [weak h] log, _ in

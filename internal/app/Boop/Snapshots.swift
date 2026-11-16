@@ -68,7 +68,7 @@ enum Snapshots {
                 gelImage = try SlimeSnapshots.image(gelState, to: out.appendingPathComponent("slime-tile.png"),
                                                     size: NSSize(width: 92, height: 92), zoomed: true)
                 tileStill = gelImage
-                let gelAttention = StateSnapshot(doing: "working", mood: "frightened",
+                let gelAttention = StateSnapshot(doing: "working", mood: "surprised",
                     attn: .init(agent: "codex", project: "Boop", more: 0, id: 1), working: 1, vol: 6)
                 _ = try SlimeSnapshots.image(gelAttention, to: out.appendingPathComponent("slime-needs-you.png"))
                 try checkMoodStills()
@@ -748,7 +748,7 @@ enum Snapshots {
     /// Onboarding's legend of moods draws each from the mirror at runtime,
     /// off screen: every one must come back as a picture.
     static func checkMoodStills() throws {
-        let moods = ["happy", "grumpy", "proud", "tired"].map(MoodTile.snapshot)
+        let moods = ["happy", "grumpy", "proud", "sad"].map(MoodTile.snapshot)
         SlimeStills.shared.want(moods)
         let deadline = Date().addingTimeInterval(SlimeSnapshots.timeout)
         while moods.contains(where: { SlimeStills.shared.image($0) == nil }), Date() < deadline {
@@ -925,11 +925,11 @@ enum Snapshots {
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
             ]))),
-            // Its 50th day, a Friday: why it wears a party hat and shades.
+            // Its 50th day, at night: why it wears a nightcap.
             ("celebrating", {
                 var s = status(sessions: [["claude", "jetpack", "work"]])
-                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi is 50 days old today", what: "a party hat and confetti"),
-                              Narration.Dressing(kind: .friday, why: "It's Friday", what: "shades")]
+                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi is 50 days old today", what: nil),
+                              Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap")]
                 return model(installer, status: s)
             }()),
             ("quiet", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], talk: .quiet))),
@@ -1031,7 +1031,7 @@ enum Snapshots {
         static let project = "buddygotchi-landing-page-redesign-v2"
         static let workspace = "claude/very-long-branch-name-for-the-hero-section"
         /// No mood of a pack is longer.
-        static let mood = "uncomfortable"
+        static let mood = "affectionate"
         /// A note at `MemoryEdits.maxLength`, 140 characters.
         static let note = String(repeating: "You keep the tests green before lunch, and you say please to claude. ", count: 2).prefix(140).description
         /// A path and an error, as macOS and the hooks say them.
@@ -1091,7 +1091,7 @@ enum Snapshots {
         s.moodReason = Long.told
         s.doingReason = Long.act
         s.dressing = [Narration.Dressing(kind: .specialDay, why: "\(Long.name) became a Buddy today, and it's its birthday", what: "a witch hat, a party hat, confetti, snow and hearts"),
-                      Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap and pyjamas")]
+                      Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap")]
         s.growth = Growth(xp: 123_456)
         s.daysOld = 1_041
         s.notes = longNotes
@@ -1138,7 +1138,7 @@ enum Snapshots {
                 OpenDetails.shared.show(words(n))  // its words are behind Details
                 return s
             }),
-            ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(kind: .friday, why: words(n), what: nil)]; return s }),
+            ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(kind: .night, why: words(n), what: nil)]; return s }),
         ]
         for (what, status) in values where height(status(20)) >= height(status(40)) {
             fail("snapshots: \(what) is cut off: twice the words leave the Overview no taller")

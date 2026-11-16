@@ -189,7 +189,7 @@ struct SoakWork {
         }
         let animations = ["none", "success", "failure", "wiggle", "nod", "shrug", "gasp", "cheer", "sulk", "yawn", "bounce", "spin"]
         return ["mood": spread(moods, moods[n % moods.count]), MomentOutput.emotionKey: spread(faces, "happy"),
-                MomentOutput.moveKey: spread(animations, "success"), MomentOutput.sizeKey: spread(["small", "medium", "big", "huge"], "small"),
+                MomentOutput.moveKey: spread(animations, "success"), MomentOutput.sizeKey: spread(["small", "medium", "big"], "small"),
                 MomentOutput.sayKey: spread(["none", "glad", "upset", "tickled"] + (0..<16).map { "topic\($0)" }, "topic3")]
     }
 

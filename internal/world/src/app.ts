@@ -15,12 +15,13 @@ import {
   ACTIVITIES, COUNTS, METRICS, TODAY, checkGoal, currentRewards, deliverGestures, goalAdded, snapshot, type Count,
 } from "./world.js";
 
-export const STAGES = ["hatchling", "sprout", "buddy", "chonk"] as const;
 export const GESTURES = ["boop", "wave", "heart", "cheer"] as const;
 /** Every key a buddy may send in PUT /v1/buddies/me. Any other is refused. */
 export const STATE_KEYS = [
-  "seq", "name", "level", "stage", "utc_offset", "activity", "day", "xp_today", "added",
+  "seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added",
 ] as const;
+/** What a Mac built before Boop was one size still sends: taken and ignored. */
+export const IGNORED_KEYS = ["stage"] as const;
 
 export interface Options {
   /** Read on each request, so tests can set them. Default: the environment. */
@@ -146,13 +147,12 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
   // A buddy's state and what it added since its last send.
   app.put("/v1/buddies/me", buddy, async (c) => {
     const body = await json(c);
-    const unknown = Object.keys(body).filter((k) => !(STATE_KEYS as readonly string[]).includes(k));
+    const unknown = Object.keys(body).filter((k) => ![...STATE_KEYS, ...IGNORED_KEYS].includes(k as never));
     if (unknown.length) throw new BadRequest(`unknown keys: ${unknown.join(", ")}`);
     const { seq, activity } = body;
     if (!isInt(seq) || seq < 1) throw new BadRequest("seq must be a positive integer");
     if (!(ACTIVITIES as readonly unknown[]).includes(activity)) throw new BadRequest(`activity must be one of ${ACTIVITIES.join(", ")}`);
     if (body.level !== undefined && (!isInt(body.level) || body.level < 1)) throw new BadRequest("level must be a positive integer");
-    if (body.stage !== undefined && body.stage !== null && !(STAGES as readonly unknown[]).includes(body.stage)) throw new BadRequest(`stage must be one of ${STAGES.join(", ")}`);
     if (body.day !== undefined && !validDate(body.day)) throw new BadRequest("day must be YYYY-MM-DD");
     if (body.xp_today !== undefined && (!isInt(body.xp_today) || body.day === undefined)) throw new BadRequest("xp_today must be an integer, with day");
     const utcOffset = offset(body.utc_offset);
@@ -228,14 +228,13 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       }
       await tx.query(
         `update buddies set last_seq = $2, sent_at = now(), seen_at = now(), activity = $3,
-                level = coalesce($4, level), stage = case when $5::boolean then $6 else stage end,
-                utc_offset = case when $7::boolean then $8::int else utc_offset end,
-                xp_day = $9::date, xp_today = $10
+                level = coalesce($4, level),
+                utc_offset = case when $5::boolean then $6::int else utc_offset end,
+                xp_day = $7::date, xp_today = $8
           where id = $1`,
         [
           id, seq, activity,
           body.level === undefined ? null : Math.min(body.level as number, L.LEVEL_MAX),
-          "stage" in body, body.stage ?? null,
           "utc_offset" in body, utcOffset,
           xpDay, xpToday,
         ],

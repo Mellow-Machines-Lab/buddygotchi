@@ -255,13 +255,11 @@ final class DemoTests: XCTestCase {
             #"{"t":"do","id":4,"name":"task_complete","args":{"outcome":"failure"}}"#,
             #"{"t":"do","id":6,"name":"listening"}"#,
             #"{"t":"do","id":7,"name":"starting"}"#,
-            #"{"t":"do","id":8,"name":"starting","args":{"ctx":"compacted"}}"#,
             #"{"t":"do","id":9,"name":"wake_up","args":{"mood":"happy"}}"#,
         ] { recorder.sent(message) }
         XCTAssertEqual(recorder.recording(character: "pixel", face: "pixel").events.map(\.effect), [
             nil, nil, "Pip makes an excited face and says “Go”", "Pip makes a curious face",
             "Pip shows that it needs you", "Pip's mood is now proud", "Pip celebrates", "Pip slumps", "Pip listens", nil,
-            "Pip shows that the context was compacted",
             "Pip stretches and yawns",
         ])
     }

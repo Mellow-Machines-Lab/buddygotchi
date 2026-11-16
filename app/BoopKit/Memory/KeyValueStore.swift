@@ -3,7 +3,7 @@ import SQLite3
 
 /// Small values Boop keeps across launches, as text by key, in one SQLite
 /// table in the state directory: `boop.sqlite`'s
-/// `kv`. Growth's XP and stage are the first; anything
+/// `kv`. Growth's XP is the first; anything
 /// else that needs a value or two kept goes here too, under a prefix of its
 /// own (`growth.`). Each `set` replaces its keys in one transaction, so a
 /// crash keeps all of them or none. Touched only on `home`.

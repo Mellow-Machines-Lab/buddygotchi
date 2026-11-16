@@ -93,7 +93,7 @@ public struct Scenario: Sendable {
         /// The mood after the pass.
         public var mood: Set<String>?
         /// Exactly the options the pass's mood question offered: staying
-        /// in the mood it had, and its moves on the graph.
+        /// in the mood it had, and every other it may move to.
         public var offered: Set<String>?
         /// The thread a `press` opened on the Mac, as `agent thread`
         /// (`claude docs`): checked with no pass, since a press wakes no
@@ -172,10 +172,6 @@ public struct Scenario: Sendable {
         /// `words_said`: the share of the reactions played that said
         /// something, as a range (`0.5-`).
         public var wordsSaid: ClosedRange<Double>?
-        /// `moves_on_graph`: every pass's mood answer was one of the
-        /// options it offered, and every mood change was a move on the
-        /// mood graph.
-        public var onGraph = false
         /// `moods_seen`: moods the run must reach at some pass, like
         /// `lonely`; a mood that comes and fades between two steps still
         /// counts.
@@ -188,16 +184,15 @@ public struct Scenario: Sendable {
         public init() {}
 
         /// Only the checks a run can fail without Jev choosing: the quiet
-        /// while working, and moves on the mood graph.
+        /// while working.
         var withoutChoices: Checks {
             var kept = Checks()
             kept.quietWorkingMs = quietWorkingMs
-            kept.onGraph = onGraph
             return kept
         }
 
         static let keys = ["max_quiet_working", "max_same_in_a_row", "mood_changes", "no_mood_bounce_within",
-                           "reactions", "min_variety", "words_said", "moves_on_graph", "moods_seen", "signs_seen"]
+                           "reactions", "min_variety", "words_said", "moods_seen", "signs_seen"]
     }
 
     public var name: String
@@ -273,8 +268,9 @@ public struct Scenario: Sendable {
         return nil
     }
 
-    /// Reads one scenario file. Throws with the file and step on a bad one.
-    public init(file: URL) throws {
+    /// Reads one scenario file, whose faces and moods are `pack`'s. Throws
+    /// with the file and step on a bad one.
+    public init(file: URL, pack: CharacterPack = .active) throws {
         self.file = file.lastPathComponent
         func bad(_ why: String) -> Error { EvalError("\(file.lastPathComponent): \(why)") }
         guard let o = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any] else { throw bad("not a JSON object") }
@@ -361,14 +357,10 @@ public struct Scenario: Sendable {
             checks.reactions = try range("reactions", within: 0...Int.max)
             checks.variety = try count("min_variety")
             checks.wordsSaid = try range("words_said", within: 0...1.0, like: "0.5- or 0.2-0.8")
-            if let v = c["moves_on_graph"] {
-                guard let on = v as? Bool, on else { throw bad("checks.moves_on_graph is true") }
-                checks.onGraph = true
-            }
             if let v = c["moods_seen"] {
                 guard let text = v as? String else { throw bad("checks.moods_seen is like \"lonely|sad\"") }
                 checks.moodsSeen = text.split(separator: "|").map { $0.trimmingCharacters(in: .whitespaces) }
-                let unknown = checks.moodsSeen.filter { MoodGraph.mood($0) == nil }
+                let unknown = checks.moodsSeen.filter { pack.lasting($0) == nil }
                 guard unknown.isEmpty else { throw bad("checks.moods_seen has \(unknown.joined(separator: ", ")), not a mood") }
             }
             if let v = c["signs_seen"] {
@@ -381,11 +373,11 @@ public struct Scenario: Sendable {
             guard let t = Talk(rawValue: $0) else { throw bad("talk is quiet, normal or chatty") }
             return t
         } ?? .default
-        let graphMoods = MoodGraph.moods
+        let lastingMoods = pack.lasting.map(\.id)
         mood = try (o["mood"] as? String).map {
-            guard graphMoods.contains($0) else { throw bad("mood is one of \(graphMoods.joined(separator: ", "))") }
+            guard lastingMoods.contains($0) else { throw bad("mood is one of \(lastingMoods.joined(separator: ", "))") }
             return $0
-        } ?? MoodOutput.initial
+        } ?? pack.defaultMood
         if let n = o["seed"] as? Int { seed = UInt64(max(0, n)) }
         steps = try raw.enumerated().map { i, s in
             func badStep(_ why: String) -> Error { bad("step \(i + 1): \(why)") }
@@ -453,7 +445,7 @@ public struct Scenario: Sendable {
             if let e = s["expect"] as? [String: Any] {
                 // What `!` takes away from: every value a key may be.
                 // `none` first, as the expect brain answers with the first.
-                let every: [String: [String]] = ["react": ["none"] + CharacterPack.active.moods.map(\.id), "mood": graphMoods,
+                let every: [String: [String]] = ["react": ["none"] + pack.moods.map(\.id), "mood": lastingMoods,
                                                  "say": ["none"] + MomentOutput.says.map(\.name)]
                 func set(_ key: String) throws -> Set<String>? {
                     guard let v = e[key] else { return nil }
@@ -505,9 +497,9 @@ public struct Scenario: Sendable {
                 let unsaid = (step.expect?.said ?? []).subtracting(texts.union(["none", "some"]))
                 guard unsaid.isEmpty else { throw badStep("expect.said has \(unsaid.sorted().joined(separator: ", ")), not a take's text") }
                 // A face may be any mood's; a mood, or what's offered, only a lasting one's.
-                let faces = CharacterPack.active.moods.map(\.id) + ["none"]
+                let faces = pack.moods.map(\.id) + ["none"]
                 for (key, values) in [("react", step.expect?.react), ("mood", step.expect?.mood), ("offered", step.expect?.offered)] {
-                    let unknown = (values ?? []).subtracting(key == "react" ? faces : graphMoods)
+                    let unknown = (values ?? []).subtracting(key == "react" ? faces : lastingMoods)
                     guard unknown.isEmpty else { throw badStep("expect.\(key) has \(unknown.sorted().joined(separator: ", ")), not \(key == "react" ? "a face" : "a lasting mood")") }
                 }
             }
@@ -553,10 +545,10 @@ public struct Scenario: Sendable {
         return number.isEmpty ? total : nil
     }
 
-    public static func load(directory: URL) throws -> [Scenario] {
+    public static func load(directory: URL, pack: CharacterPack = .active) throws -> [Scenario] {
         try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)
             .filter { $0.pathExtension == "json" }.sorted { $0.lastPathComponent < $1.lastPathComponent }
-            .map(Scenario.init(file:))
+            .map { try Scenario(file: $0, pack: pack) }
     }
 }
 
@@ -926,7 +918,7 @@ public struct Eval {
             // the way to it included, from the step.
             let scripted = (setup ?? brain) as? ScenarioBrain
             if let setup { home.sync { harness.use(step.asksJev ? brain : setup) } }
-            scripted?.willRun(step, ahead: scenario.steps.dropFirst(i + 1).lazy.compactMap { $0.expectOrder["mood"] ?? $0.brain?[MoodOutput.outputName].map { [$0] } }.first ?? [])
+            scripted?.willRun(step)
             while clock.now < start + step.atMs {
                 clock.now = min(start + step.atMs, clock.now + 1000)
                 await respond(home.sync { pipeline.tick(at: clock.now).views })
@@ -941,7 +933,7 @@ public struct Eval {
                 read.labels = await labeler.label(Scrubber.scrub(message), as: MessageText.self).map(PromptIntake.Labels.message)
             }
             for input in Eval.inputs(read, at: clock.now) { await respond(home.sync { input(pipeline).views }) }
-            scripted?.willRun(nil, ahead: [])
+            scripted?.willRun(nil)
             let session = step.session ?? "s1"
             switch step.event {
             case "turn started":
@@ -1075,24 +1067,6 @@ public struct Eval {
             out.append(RunCheck(name: "moods_seen \(mood)", passed: at != nil,
                                 detail: at.map { "\(mood) from \(clock($0.atMs))" } ?? "never \(mood): \(Set(timeline.map(\.mood)).sorted().joined(separator: ", "))"))
         }
-        if c.onGraph {
-            // Each pass's answer against what it offered, and each change
-            // against the graph, from the mood before it.
-            var before = start
-            var wrong: String?
-            for p in timeline where wrong == nil {
-                if p.dropped?.hasPrefix("jev: no usable answer for \(MoodOutput.outputName)") == true {
-                    wrong = "at \(clock(p.atMs)): no usable mood answer"
-                } else if p.dropped == nil, let answer = p.answer, !p.offered.contains(answer) {
-                    wrong = "at \(clock(p.atMs)): answered \(answer), offered \(p.offered.joined(separator: "|"))"
-                } else if p.mood != before, !(MoodGraph.neighbours[before]?.all.contains(p.mood) ?? false) {
-                    wrong = "at \(clock(p.atMs)): \(before) → \(p.mood) isn't a move"
-                }
-                before = p.mood
-            }
-            out.append(RunCheck(name: "moves_on_graph", passed: wrong == nil,
-                                detail: wrong ?? "\(timeline.count) passes: \(path)"))
-        }
         return out
     }
 
@@ -1159,8 +1133,8 @@ public struct Eval {
             if let topic = step.topic { end["topic"] = .string(topic) }
             if step.failed == true { end["error"] = "exit_code" }
             var start: [String: JSONValue] = ["tool": "Bash"]
-            // A whole command in one moment is no work act: its start would
-            // be a pass of its own. `half` plays one.
+            // A whole command in one moment is no work act by its topic.
+            // `half` plays one.
             if let topic = step.topic, step.half != nil { start["topic"] = .string(topic) }
             if let program = step.program {
                 start["program"] = .string(program)

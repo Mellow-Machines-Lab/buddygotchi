@@ -4,7 +4,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { GESTURES, STAGES, STATE_KEYS } from "../src/app.js";
+import { GESTURES, STATE_KEYS } from "../src/app.js";
 import { REGIONS, validOffset } from "../src/regions.js";
 import { ACTIVITIES, COUNTS, METRICS } from "../src/world.js";
 import { ADMIN, fixture, world } from "./helpers.js";
@@ -16,7 +16,6 @@ test("buddy-state.json is every key a buddy may send, and the server takes it", 
   assert.deepEqual(Object.keys(sent).sort(), [...STATE_KEYS].sort());
   assert.deepEqual(Object.keys(sent.added as object).sort(), [...COUNTS].sort());
   assert.ok(ACTIVITIES.includes(sent.activity as never));
-  assert.ok(STAGES.includes(sent.stage as never));
   const b = await w.join();
   const r = await w.send(b, sent);
   assert.equal(r.status, 200);
@@ -46,20 +45,20 @@ function shape(v: unknown): unknown {
 test("world.json has the shape of a real snapshot", async () => {
   const example = fixture<any>("world.json");
   const a = await w.join("Bean", 540);
-  await w.send(a, { seq: 1, activity: "coding", level: 7, stage: "buddy", added: { tests_passed: 4 } });
+  await w.send(a, { seq: 1, activity: "coding", level: 7, added: { tests_passed: 4 } });
   await w.json("POST", "/v1/buddies", { body: { name: "boop.com" } });
   await w.json("PUT", "/v1/admin/goal", { key: ADMIN, body: { title: "Four tests", metric: "tests_passed", target: 4, ends: "2099-12-31", reward_tag: "worldparty" } });
   const real = (await w.json("GET", "/v1/world")).body;
 
-  // A buddy with no stage or offset has nulls there.
+  // A buddy with no offset has a null there.
   const nullable = example.buddies[1];
-  assert.deepEqual([nullable.stage, nullable.utc_offset], [null, null]);
-  const realNoStage = real.buddies.find((b: any) => b.stage === null);
-  assert.ok(realNoStage);
-  assert.deepEqual(shape(realNoStage), shape(nullable));
+  assert.equal(nullable.utc_offset, null);
+  const realNoOffset = real.buddies.find((b: any) => b.utc_offset === null);
+  assert.ok(realNoOffset);
+  assert.deepEqual(shape(realNoOffset), shape(nullable));
 
   example.buddies = example.buddies.slice(0, 1);
-  real.buddies = real.buddies.filter((b: any) => b.stage !== null);
+  real.buddies = real.buddies.filter((b: any) => b.utc_offset !== null);
   assert.deepEqual(shape(real), shape(example));
 
   assert.deepEqual(Object.keys(example.doing).sort(), [...ACTIVITIES].sort());

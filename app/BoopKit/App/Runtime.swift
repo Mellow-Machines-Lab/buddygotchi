@@ -425,8 +425,7 @@ public final class Runtime: @unchecked Sendable {
             }
             self.remembers = remembers
         }
-        // The core reads the growth stage and today's ring where the growth
-        // store keeps them. Weak: the runtime holds the core.
+        // The core reads today's ring where the growth store keeps it. Weak: the runtime holds the core.
         core.growth = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growthNow : nil } }
         core.pushToTalkWorks = options.pushToTalkWorks
         talkNow = { [weak self] in self?.talk ?? .default }
@@ -436,11 +435,11 @@ public final class Runtime: @unchecked Sendable {
         queued = { [weak self] reaction, pending in self?.queue(reaction, pending) }
         effected = { [weak self] fx in self?.run(fx) }
         mirror = { [weak self] line in self?.onBoardLine?(line) }
-        // The core reads the mood where the mood output keeps it. Weak:
-        // the harness holds the core.
-        let mood = rig.mood!
+        // The core reads the mood's face where the mood output keeps it.
+        // Weak: the harness holds the core.
+        let mood = rig.mood!, pack = core.config.pack
         core.mood = { [weak harness = self.harness] in
-            harness.map { MoodOutput.value(mood, $0.log.view(now: clock())) } ?? mood.start
+            harness.map { MoodOutput.face(mood, $0.log.view(now: clock()), pack: pack) } ?? pack.restingFace(mood.start)
         }
         // The device's taps and push-to-talk; the link leaves out those
         // of a device whose firmware doesn't fit.

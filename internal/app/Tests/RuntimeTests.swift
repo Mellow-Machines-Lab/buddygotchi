@@ -85,7 +85,7 @@ final class RuntimeTests: XCTestCase {
             let pending = Pending()
             pending.bind { ends.append($0) }
             runtime.queue(Moment(anim: "task_complete", mood: "happy", loops: 2, outcome: "success"), pending)
-            runtime.playRule(Moment(anim: "starting"))
+            runtime.playRule(Moment(anim: Core.wishGone))
             runtime.link.tick(now: runtime.options.clock() + DeviceLink.keepaliveMs)
             XCTAssertEqual(mirrored, Array(transport.sent.dropFirst(before)), "the board's lines, each as sent")
             XCTAssertEqual(transport.dos.count, 2)
@@ -107,7 +107,7 @@ final class RuntimeTests: XCTestCase {
     func testEveryHelloGetsTheMoodItself() throws {
         let transport = FakeTransport()
         let runtime = try makeRuntime(transport)
-        let logical = StateSnapshot(doing: "idle", mood: "frightened", attn: nil, working: 0, vol: 6)
+        let logical = StateSnapshot(doing: "idle", mood: "surprised", attn: nil, working: 0, vol: 6)
         let gelHello = FakeTransport.hello.dropLast() + #","face":"gel"}"#
         runtime.home.sync {
             runtime.show(logical)
@@ -117,11 +117,11 @@ final class RuntimeTests: XCTestCase {
                 runtime.device(hello)
                 let replies = transport.sent.dropFirst(before).filter { $0.hasPrefix(#"{"t":"state""#) }
                 XCTAssertFalse(replies.isEmpty, hello)
-                XCTAssertTrue(replies.allSatisfy { $0.contains(#""mood":"frightened""#) }, hello)
+                XCTAssertTrue(replies.allSatisfy { $0.contains(#""mood":"surprised""#) }, hello)
             }
             runtime.connection(false)
             runtime.connection(true)
-            XCTAssertEqual(runtime.link.state?["mood"]?.string, "frightened")
+            XCTAssertEqual(runtime.link.state?["mood"]?.string, "surprised")
         }
     }
 
@@ -253,7 +253,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("PostToolUse", tool: "Bash"), to: socketPath))
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
         eventually("XP for a tool and a turn") { runtime!.home.sync { statuses.last?.growth?.xp == 6 } }
-        XCTAssertEqual(runtime!.home.sync { statuses.last?.growth?.stage }, 1)
+        XCTAssertEqual(runtime!.home.sync { statuses.last?.growth?.level }, 1)
         runtime!.stop()
         runtime!.home.sync {}
         runtime = nil
@@ -653,7 +653,7 @@ final class RuntimeTests: XCTestCase {
         let transport = FakeTransport()
         let lines = DebugLines()
         var options = try options(transport, brain: ScriptedBrain(id: "scripted", always: [
-            "mood": Answer(choice: "engaged", probabilities: ["engaged": 0.7]),
+            "mood": Answer(choice: "focused", probabilities: ["focused": 0.7]),
             "react.face": Answer(choice: "grumpy", probabilities: ["grumpy": 0.6]),
             "say": Answer(choice: "work", probabilities: ["work": 0.5]),
         ]))
@@ -668,9 +668,9 @@ final class RuntimeTests: XCTestCase {
         eventually("the brain") { runtime.home.sync { statuses.last?.brain == "scripted" } }
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         eventually("a mumble") { transport.dos("react").contains { $0.contains(#""say":"#) } }
-        eventually("engaged") { runtime.home.sync { runtime.moodNow == "engaged" } }
-        eventually("the device hears it") { transport.sent.contains { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""mood":"engaged""#) } }
-        XCTAssertTrue(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodOutput.outputName && $0["to"] == "engaged" } },
+        eventually("focused") { runtime.home.sync { runtime.moodNow == "focused" } }
+        eventually("the device hears it") { transport.sent.contains { $0.hasPrefix(#"{"t":"state""#) && $0.contains(#""mood":"focused""#) } }
+        XCTAssertTrue(runtime.home.sync { runtime.harness.log.events.contains { $0.action == MoodOutput.outputName && $0["to"] == "focused" } },
                       "the mood is its latest change in the log")
         eventually("the log line") { lines.lock.withLock { lines.log.contains { $0.hasPrefix("brain turn start ") && $0.hasSuffix("→ mood, react") } } }
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
@@ -686,7 +686,7 @@ final class RuntimeTests: XCTestCase {
         // A mood file's first line, after its MOOD heading.
         func opening(_ mood: String) -> String { String(Self.steering.mood(mood).split(separator: "\n")[1].prefix(24)) }
         XCTAssertTrue(heads[0].contains(opening("calm")), "the first pass read calm")
-        XCTAssertTrue(heads[1].contains(opening("engaged")), "the next reads the new mood's file")
+        XCTAssertTrue(heads[1].contains(opening("focused")), "the next reads the new mood's file")
         XCTAssertTrue(Take.all.contains { $0.meaning == "work" && $0.moods.contains("grumpy")
                           && passes()[1].contains(#"\#(Self.name) had a grumpy moment (small), and said \"\#($0.text)\"."#) },
                       "HISTORY shows what the outputs did")
@@ -1133,7 +1133,7 @@ final class RuntimeTests: XCTestCase {
         let questions = try XCTUnwrap(lines.first?["questions"] as? [[String: Any]], "the questions come first")
         XCTAssertEqual(lines.filter { $0["questions"] != nil }.count, 1, "once: nothing changed them")
         XCTAssertEqual((questions[0]["options"] as? [[String: Any]])?.compactMap { $0["name"] as? String },
-                       ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying calm, then calm's moves")
+                       MoodOutput.options(from: "calm", mayMiss: false).map(\.name), "staying calm, then every other mood but lonely")
         XCTAssertEqual(questions.map { $0["key"] as? String }, askedKeys)
         XCTAssertEqual(questions.map { $0["action"] as? String }, askedKeys.map { $0 == "mood" ? "mood" : "react" })
         XCTAssertEqual(questions[1]["text"] as? String, "How should \(Self.name) react to NOW, if at all? A moment: it shows one emotion in this mood's way, with its move, and may say something.")
@@ -1228,9 +1228,9 @@ final class RuntimeTests: XCTestCase {
             runtime.run(runtime.core.tick(at: runtime.options.clock()))
         }
         XCTAssertEqual(moods().last, "calm")
-        runtime.home.sync { runtime.forceMood("grumpy", by: Runtime.forcedBy) }
-        XCTAssertEqual(moods().last, "grumpy", "the change's own state")
-        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).mood }, "grumpy")
+        runtime.home.sync { runtime.forceMood("cross", by: Runtime.forcedBy) }
+        XCTAssertEqual(moods().last, "annoyed", "the change's own state, in the face cross rests in")
+        XCTAssertEqual(runtime.home.sync { runtime.core.snapshot(at: runtime.options.clock()).mood }, "annoyed")
     }
 
     /// The dashboard's dev lines. A forced pass needs no
@@ -1252,11 +1252,11 @@ final class RuntimeTests: XCTestCase {
         dev(#"{"dev":"answer","answers":{"react.face":"grumpy","say":"work"}}"#)
         eventually("a take with no brain") { transport.dos("react").contains { $0.contains(#""say":{"take":"#) && $0.contains(#""mood":"grumpy""#) } }
         dev(#"{"dev":"mood","mood":"grumpy"}"#)
-        eventually("grumpy") { runtime.home.sync { runtime.moodNow == "grumpy" } }
+        eventually("cross, the mood a grumpy face is of") { runtime.home.sync { runtime.moodNow == "cross" } }
         dev(#"{"dev":"mood","mood":"happy"}"#)
         eventually("happy, off the graph") { runtime.home.sync { runtime.moodNow == "happy" } }
-        dev(#"{"dev":"answer","answers":{"mood":"excited"}}"#)
-        eventually("excited, a move from happy") { runtime.home.sync { runtime.moodNow == "excited" } }
+        dev(#"{"dev":"answer","answers":{"mood":"proud"}}"#)
+        eventually("proud, straight from happy") { runtime.home.sync { runtime.moodNow == "proud" } }
 
         let lines = debugLines()
         let pass = try XCTUnwrap(lines.compactMap { $0["pass"] as? [String: Any] }.first)
@@ -1268,13 +1268,13 @@ final class RuntimeTests: XCTestCase {
         let worked = try XCTUnwrap(actions.first?["message"]?.string)
         XCTAssertTrue(Take.all.contains { worked == "\(Self.name) had a grumpy moment (small), and said \"\($0.text)\"." && $0.meaning == "work"
             && $0.moods.contains("grumpy") }, worked)
-        XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(Self.name)'s mood changed: calm → grumpy.",
-                                                              "\(Self.name)'s mood changed: grumpy → happy.",
-                                                              "\(Self.name)'s mood changed: happy → excited."])
+        XCTAssertEqual(actions.dropFirst().map { $0["message"]?.string }, ["\(Self.name)'s mood changed: calm → cross.",
+                                                              "\(Self.name)'s mood changed: cross → happy.",
+                                                              "\(Self.name)'s mood changed: happy → proud."])
         XCTAssertEqual(actions.map(\.actionName), ["react", "mood", "mood", "mood"])
         for action in actions { XCTAssertEqual(action["for"], .null) }
         let moods = lines.compactMap { ($0["sent"] as? [String: Any])?["mood"] as? String }
-        XCTAssertEqual(moods.reduce(into: [String]()) { if $0.last != $1 { $0.append($1) } }, ["calm", "grumpy", "happy", "excited"],
+        XCTAssertEqual(moods.reduce(into: [String]()) { if $0.last != $1 { $0.append($1) } }, ["calm", "annoyed", "happy", "proud"],
                        "the device hears each change in a state")
         // One `questions` line, the launch's; a pass whose options differ
         // from it names the ones it asked, such as the mood's moves once it
@@ -1283,7 +1283,7 @@ final class RuntimeTests: XCTestCase {
         let passes = lines.compactMap { $0["pass"] as? [String: Any] }
         XCTAssertNil(passes[0]["options"], "the launch's options, calm's")
         let moved = try XCTUnwrap(passes.last?["options"] as? [String: [String]])
-        XCTAssertEqual(moved, ["mood": ["happy"] + MoodGraph.neighbours["happy"]!.all])
+        XCTAssertEqual(moved, ["mood": MoodOutput.options(from: "happy", mayMiss: false).map(\.name)])
     }
 
     /// `{"dev":"dream_now"}`, the dashboard's `d`: Boop dreams now of
@@ -1502,7 +1502,7 @@ final class RuntimeTests: XCTestCase {
     func testTheSteeringFitsItsBudgetsAndSettings() throws {
         try requirePack("boop")  // its personality, its talk and its steering
         let files = try XCTUnwrap(FileManager.default.subpaths(atPath: Self.steeringDir.path)).filter { $0.hasSuffix(".md") }.sorted()
-        XCTAssertEqual(files, (["asks.md", "dreams.md", "guide.md"] + MoodGraph.moods.map { "mood/\($0).md" }
+        XCTAssertEqual(files, (["asks.md", "dreams.md", "guide.md"] + MoodOutput.moods.map { "mood/\($0.name).md" }
                                + ["personality.md", "replies.md", "signs.md"]).sorted())
         XCTAssertEqual(Self.steering.overBudget(), [])
         XCTAssertGreaterThanOrEqual(Self.steering.dreams.count, 10, "a sign for every kind of day")
@@ -1519,7 +1519,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertNil(Personality.Rules(frontMatter: "idle_heartbeat: 30-10").idleCheckInMs, "unreadable keeps the default")
         XCTAssertFalse(Self.steering.guide.contains("<!--"), "comments are left out")
         XCTAssertTrue(Self.steering.personality.text.hasPrefix("PERSONALITY\n"))
-        XCTAssertTrue(Self.steering.mood("grumpy").hasPrefix("MOOD\nGrumpy."))
+        XCTAssertTrue(Self.steering.mood("cross").hasPrefix("MOOD\nCross."))
     }
 
     /// Settings from before the personalities and the 2026-09-26 cut still
@@ -1618,9 +1618,7 @@ final class RuntimeTests: XCTestCase {
         eventually("working") { transport.sent.contains { $0.contains("\"base\":\"working\"") } }
         eventually("the start's reaction") { transport.dos("react").contains { $0.contains("\"say\"") } }
         XCTAssertTrue(transport.dos("task_complete").isEmpty && transport.dos("reply_ready").isEmpty, "a start gets no finish")
-        let starting = transport.dos("starting")
-        XCTAssertEqual(starting.count, 1, "only the rule's reaction")
-        XCTAssertTrue(starting[0].contains(#","name":"starting","play":"if_free","args":{"ctx":"#), starting[0])
+        XCTAssertTrue(transport.dos("starting").isEmpty, "and no card")
         transport.endDos()  // the device says each has played
         eventually("the start's reaction has played") {
             runtime.home.sync { self.recorded().contains { $0.actionPhase == .end && $0.actionName == "react" } }
@@ -1861,13 +1859,13 @@ final class RuntimeTests: XCTestCase {
         defer { runtime.stop() }
         connect(transport, runtime)
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
-        eventually("the start") { !transport.dos("starting").isEmpty }
+        eventually("the start") { !transport.dos("react").isEmpty }
         let sent = transport.sent
-        let start = try XCTUnwrap(sent.firstIndex { $0.contains(#""name":"starting""#) })
+        let start = try XCTUnwrap(sent.firstIndex { $0.contains(#""name":"react""#) })
         XCTAssertTrue(sent[start - 1].hasPrefix(#"{"t":"state""#) && sent[start - 1].contains(#""base":"working""#),
                       "\(sent)")
-        XCTAssertTrue(sent[start].contains(#","name":"starting","play":"if_free","args":{"ctx":"#)
-                      && sent[start].hasSuffix(#"{"ctx":"new_task","reason":"claude started"}}"#), sent[start])
+        XCTAssertTrue(sent[start].contains(#","name":"react","play":"if_free","#)
+                      && sent[start].hasSuffix(#"{"reason":"claude woke Pip"}}"#), sent[start])
         let id = FakeTransport.id(sent[start])
         transport.endDos("skipped", why: "busy")
         eventually("its end logged") { lines.all.contains("device: do \(id) ended skipped (busy)") }
@@ -2160,15 +2158,15 @@ final class RuntimeTests: XCTestCase {
         func closing() -> String? { MoodOutput.sinceLine(mood, log(), at: clock.now) }
         func change(_ to: String) { harness.force(mood, by: Runtime.forcedBy) { MoodOutput.change(mood, to: to, log: log()) } }
         XCTAssertNil(closing(), "calm says nothing")
-        change("grumpy")
+        change("cross")
         clock.now += 30_000
-        XCTAssertEqual(closing(), "\(creature) has been grumpy for under a minute.")
+        XCTAssertEqual(closing(), "\(creature) has been cross for under a minute.")
         clock.now += 2 * 60_000
-        XCTAssertEqual(closing(), "\(creature) has been grumpy for 2 min.", "whole minutes, as HISTORY's")
+        XCTAssertEqual(closing(), "\(creature) has been cross for 2 min.", "whole minutes, as HISTORY's")
         let relaunched = Pipeline(core: Core(config: .init()), view: TranscriptView(), transcript: harness.log,
                                   clock: Harness.Clock(now: { clock.now }))
         let (_, again) = Runtime.harness(pipeline: relaunched, steering: Self.steering, queue: { _, _ in })
-        XCTAssertEqual(MoodOutput.sinceLine(again, log(), at: clock.now), "\(creature) has been grumpy for 2 min.",
+        XCTAssertEqual(MoodOutput.sinceLine(again, log(), at: clock.now), "\(creature) has been cross for 2 min.",
                        "the mood and its time are the log's, so a relaunch keeps both")
         change("happy")
         XCTAssertEqual(closing(), "\(creature) has been happy for under a minute.", "happy is a mood like any other")
@@ -2286,8 +2284,7 @@ final class RuntimeTests: XCTestCase {
     /// With no agent, a compact sends what each agent sends once it has
     /// compacted its context: Claude's `SessionStart` with the source
     /// `compact`, Codex's `PostCompact`. Either is a session start whose
-    /// context was compacted, which the rules play as `starting` with the
-    /// ctx `compacted`, while the turn goes on working.
+    /// context was compacted, while the turn goes on working.
     func testADemoWithNoAgentCompactsAsClaudeDoes() throws { try compactsWithNoAgent("claude") }
     func testADemoWithNoAgentCompactsAsCodexDoes() throws { try compactsWithNoAgent("codex") }
 
@@ -2343,7 +2340,7 @@ final class RuntimeTests: XCTestCase {
         let hooks = runtime.home.sync { runtime.harness.log.events.filter { $0.agent != nil && $0.type == .tool }.map(\.specificType) }
         XCTAssertEqual(hooks.suffix(2), ["PreToolUse", "PermissionRequest"], "still waiting: nobody allowed it")
         let states = transport.sent.filter { $0.hasPrefix(#"{"t":"state""#) }
-        XCTAssertTrue(states.contains { $0.contains(#""tier4""#) && $0.contains(#""todo":{"done":2,"total":4}"#) }, "\(states)")
+        XCTAssertTrue(states.contains { $0.contains(#""tier2""#) && $0.contains(#""todo":{"done":2,"total":4}"#) }, "\(states)")
         XCTAssertTrue(states.contains { $0.contains(#""attn""#) })
         runtime.home.sync {
             let now = runtime.core.snapshot(at: runtime.options.clock())
@@ -2365,7 +2362,9 @@ final class RuntimeTests: XCTestCase {
             {"agent": "reply", "text": "Done.", "after": 30}
             """)
         runtime.home.sync { runtime.play(script) }
-        eventually("\(agent): the compacted card") { transport.dos("starting").contains { $0.contains(#""ctx":"compacted""#) } }
+        eventually("\(agent): the compaction") {
+            runtime.home.sync { runtime.harness.log.events.filter { $0.kind == Event.kind(.session, .start) }.count == 2 }
+        }
         let starts = runtime.home.sync {
             runtime.harness.log.events.filter { $0.kind == Event.kind(.session, .start) }
                 .map { "\($0.specificType) \($0["source"]?.string ?? "")" }
@@ -2385,7 +2384,7 @@ final class RuntimeTests: XCTestCase {
         let script = try DemoScript("""
             {"agent": "prompt", "text": "Go"}
             {"agent": "compact", "summary": "Where it was."}
-            {"brain": {"react.face": "confused"}, "after": 0}
+            {"brain": {"react.face": "curious"}, "after": 0}
             {"agent": "reply", "text": "Done."}
             """)
         let cursor = dir.appendingPathComponent("demo-cursor-\(agent)")
@@ -2411,7 +2410,7 @@ final class RuntimeTests: XCTestCase {
             runtime.harness.log.events.filter { $0.kind == Event.pass && $0["by"]?.string == Runtime.demoBy }
                 .compactMap { $0["answers"]?.object?["react.face"]?.object?["choice"]?.string }
         }
-        XCTAssertEqual(forced, ["confused"], agent)
+        XCTAssertEqual(forced, ["curious"], agent)
     }
 
     /// The only buddy goes by the name you gave it at setup (`long-term.md`,

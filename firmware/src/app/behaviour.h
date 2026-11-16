@@ -85,7 +85,8 @@ struct Model {
 // `base` by name: working or asleep, and idle for anything else.
 render::SceneState baseFromName(const char* name);
 // `act` by name: planning, terminal, tool_use, searching, analyzing,
-// testing, delegating or waiting, and kWorking for anything else.
+// testing, delegating or waiting, and kWorking for anything else. The Mac
+// sends four (its `Act`): tool_use, analyzing, terminal and waiting.
 render::SceneState actFromName(const char* name);
 
 // What cut a reaction short (`ended`): a tap (its poke, or push-to-talk's
@@ -349,7 +350,6 @@ class Behaviour {
   render::WishShow wishShow(uint32_t t) const;
   void wishPopped(bool met, uint32_t t);
   // The growth bar now (app/growth_bar.h).
-  static constexpr uint32_t kStageWaitMs = GrowthBar::kStageWaitMs;
   render::GrowthShow growthShow(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.

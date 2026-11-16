@@ -88,7 +88,7 @@ test("a buddy's routes need its key", async () => {
 test("a send updates the buddy and adds its counts to today", async () => {
   const b = await w.join();
   const { status, body } = await w.send(b, state({
-    name: "Mochi", level: 12, stage: "buddy", utc_offset: 60, activity: "testing",
+    name: "Mochi", level: 12, utc_offset: 60, activity: "testing",
     xp_today: 82, added: { turns: 3, tests_passed: 2, ships: 0, lines_changed: 140 },
   }));
   assert.equal(status, 200);
@@ -96,8 +96,8 @@ test("a send updates the buddy and adds its counts to today", async () => {
   assert.deepEqual(body.clamped, []);
   assert.equal(body.name, "Mochi");
   assert.equal(body.goal_added, null, "no goal yet");
-  const [row] = await w.db.query("select level, stage, activity, last_seq::int as seq from buddies where id = $1", [b.id]);
-  assert.deepEqual(row, { level: 12, stage: "buddy", activity: "testing", seq: 1 });
+  const [row] = await w.db.query("select level, activity, last_seq::int as seq from buddies where id = $1", [b.id]);
+  assert.deepEqual(row, { level: 12, activity: "testing", seq: 1 });
   assert.deepEqual(await today(b.id), { xp: 82, turns: 3, tests_passed: 2, ships: 0, lines_changed: 140 });
 });
 
@@ -109,12 +109,17 @@ test("an unknown key or a bad value is refused", async () => {
     state({ seq: 0 }),
     state({ seq: "1" }),
     state({ activity: "dancing" }),
-    state({ stage: "giant" }),
     state({ day: "08/11/2026" }),
     state({ added: { turns: -1 } }),
     state({ level: 1.5 }),
   ];
   for (const s of cases) assert.equal((await w.send(b, s)).status, 400, JSON.stringify(s));
+});
+
+test("an older Mac's stage is taken and ignored", async () => {
+  const b = await w.join();
+  assert.equal((await w.send(b, state({ stage: "sprout" }))).status, 200);
+  assert.ok(!("stage" in (await w.json("GET", "/v1/world")).body.buddies[0]));
 });
 
 test("seq: a resend isn't counted twice", async () => {

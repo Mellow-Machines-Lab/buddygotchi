@@ -1,10 +1,9 @@
 import Foundation
 import MellowHarness
 
-/// What counts as you: an event is yours only if you did it. The hourly
-/// check-in fires all day on a Mac left awake, and agents log events
-/// overnight, so reading those as you would make an empty room look
-/// lived in. The view's company and the memory both ask here.
+/// What counts as you: an event is yours only if you did it. Agents log
+/// events overnight on a Mac left awake, so reading those as you would
+/// make an empty room look lived in. The view's company and the memory both ask here.
 public enum Yours {
     /// Whether `e` is the person's own doing: a poke, a care gesture, what
     /// they said to the buddy, a prompt to an agent, or coming back to the

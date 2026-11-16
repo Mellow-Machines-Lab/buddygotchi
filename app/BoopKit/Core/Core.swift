@@ -10,7 +10,7 @@ import MellowHarness
 /// events: "needs you" showing and ending, and a poke's answer
 /// (`pokeAnswer`: the device plays its poke), or while
 /// something needs you, the thread it opens (`open_thread`), and each
-/// reaction it plays (`starting`), as a `did` named after it. A session that's gone with no `SessionEnd`
+/// reaction it plays (a met wish, a level), as a `did` named after it. A session that's gone with no `SessionEnd`
 /// it records as its end (`sessionGone`), and a Claude app thread whose
 /// agent's process ended while it waited or worked as its turn stopping
 /// (`agentGone`). It also
@@ -57,20 +57,16 @@ public final class Core {
     typealias Session = SessionTracker.Session
 
     public private(set) var config: Config
-    /// Boop's mood now, which every `state` carries and the rules'
-    /// reactions are drawn in: the runtime reads it from the transcript,
-    /// where the mood output keeps it. The resting mood until it's set.
+    /// The face Boop's mood rests in now (`MoodOutput.face`), which every
+    /// `state` carries and the rules' reactions are drawn in: the runtime
+    /// reads it from the transcript, where the mood output keeps it. The
+    /// resting mood's until it's set.
     var mood: () -> String
-    /// The mood now, as the mood output keeps it.
-    public var moodNow: String { mood() }
     /// Boop's growth now, which the runtime reads from the growth store:
-    /// every `state` carries its stage as tags (`Tags.stages`) and today's
-    /// ring for the board's bar (`state.xp`), and CONTEXT its level. Nil
-    /// for a demo and a core with no store: Buddy's size, the full one, and
-    /// no bar.
+    /// every `state` carries today's ring for the board's bar (`state.xp`),
+    /// and CONTEXT its level. Nil for a demo and a core with no store: no
+    /// bar.
     var growth: () -> Growth? = { nil }
-    /// The growth stage Boop is at, from 1.
-    var stage: Int { growth()?.stage ?? 3 }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -122,9 +118,6 @@ public final class Core {
     /// What last woke Boop, and when, for the popover.
     var woke: (why: Narration, at: Int64)?
     var held: [String: Timed] = [:]
-    /// When each session's start showed its `starting` card, so a prompt
-    /// right after it doesn't show another.
-    var startCards: [String: Int64] = [:]
     /// The calendar's tags, worked out once a quarter of an hour: every
     /// time zone's hours start on one, so the part of the day and the date
     /// can't change within it.
@@ -218,7 +211,7 @@ public final class Core {
                 isRunning: @escaping (AgentProcess) -> Bool = AgentProcess.isRunning,
                 archive: @escaping (ThreadRef) -> ThreadArchive.State = { ThreadArchive.state($0) }) {
         self.config = config
-        mood = { config.pack.defaultMood }
+        mood = { config.pack.restingFace(config.pack.defaultMood) }
         self.lastActiveDay = lastActiveDay
         let readingBack = Flag()
         self.readingBack = readingBack
@@ -226,14 +219,6 @@ public final class Core {
                                  isRunning: { readingBack.on || isRunning($0) },
                                  archive: { readingBack.on ? .open : archive($0) })
     }
-
-    /// The rules' reaction: a start's card. A stop and a helper coming back
-    /// play none: the work stream and the brain have them.
-    public static let starting = "starting"
-    /// A prompt this soon after its session's start card shows no card of
-    /// its own, and one this soon after its session's last turn ended is a
-    /// follow-up, which shows none either.
-    public static let startCardMs: Int64 = 60_000, followUpMs: Int64 = 5 * 60_000
 
     // MARK: - Inputs
 
@@ -246,9 +231,8 @@ public final class Core {
         var fx: [CoreEffect] = []
         // Asleep before it: no session yet.
         let wasAsleep = sessions.isEmpty
-        let reaction = fold(agentEvent, ref: event.seq)
+        fold(agentEvent, ref: event.seq)
         startDayIfNew(now, &fx)
-        if let reaction { play(reaction, for: event.seq, now, &fx) }
         greetDay(now, waking: wasAsleep, &fx)
         let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
         let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
@@ -263,12 +247,12 @@ public final class Core {
         guard config.workStream, e.kind == .tool, e.tool != nil else { return false }
         let changed: WorkStream.Act?
         switch e.phase {
-        case .start: changed = stream.startAct(e, program: e.program, at: now) { day($0) == day(now) }
+        case .start: changed = stream.startAct(e, program: e.program, at: now)
         case .end: changed = stream.endAct(e, at: now)
         default: return false
         }
         guard let act = changed else { return false }
-        var data: [String: JSONValue] = ["session": .string(act.session), "words": .string(act.words), "full": .bool(act.full)]
+        var data: [String: JSONValue] = ["session": .string(act.session), "words": .string(act.words)]
         if let passed = act.passed { data["passed"] = .bool(passed) }
         if let topic = e.topic { data["topic"] = .string(topic) }
         fx.append(.record(Event(at: now, source: .boop, type: .act, phase: e.phase == .start ? .start : .end, specificType: act.kind, data: data)))
@@ -292,8 +276,6 @@ public final class Core {
         case (.turn, .end) where e.notice == nil && e.hook != Core.agentGone:
             // Not Claude's idle notice, nor an agent that's gone: nobody did anything.
             return stream.turnEnded(e, at: now)
-        case (.session, .start) where e.source == Mapping.compacted:
-            return stream.compacted(e.key, at: now)
         default:
             return nil
         }
@@ -353,7 +335,7 @@ public final class Core {
         defer { readingBack.on = false }
         replayWishWait(event)
         if let agentEvent = AgentEvent(event) {
-            _ = fold(agentEvent, ref: event.seq)
+            fold(agentEvent, ref: event.seq)
             return
         }
         advance(to: event.at)
@@ -375,40 +357,23 @@ public final class Core {
     }
 
     /// An agent's event folded into the session table, the timers due by
-    /// its time run first: the reaction it plays, if any.
+    /// its time run first. A start, a stop and a helper coming back play
+    /// no reaction: the work stream and the brain have them.
     /// `ref` is its `seq`, which a request it starts keeps.
-    private func fold(_ event: AgentEvent, ref: Int) -> Moment? {
+    private func fold(_ event: AgentEvent, ref: Int) {
         let key = event.key
         // The timers due by the event's time first, to hear what they did.
         advance(to: event.at, sparing: key)
-        guard let change = tracker.handle(event, ref: ref) else { return nil }
-        let now = event.at
+        guard let change = tracker.handle(event, ref: ref) else { return }
         switch change {
-        case .sessionStarted(let source):
-            // Only a card that shows counts (`play`'s rule).
-            if !needsYouShowing, !showsListening(at: now) { startCards[key] = now }
-            let ctx = Core.startCtx(source: source)
-            return Moment(anim: Core.starting, ctx: ctx, reason: Narration.started(ctx, agent: event.agent.rawValue, name: config.pack.name))
-        case .turnStarted:
+        case .turnStarted, .turnEnded, .sessionEnded:
             held[key] = nil
-            // One card for a start: not the session's first prompt just
-            // after its own, nor a follow-up in the same conversation.
-            if let shown = startCards.removeValue(forKey: key), now - shown < Core.startCardMs { return nil }
-            if let ended = sessions[key]?.turn.lastEndedAt, now - ended < Core.followUpMs { return nil }
-            return Moment(anim: Core.starting, ctx: "new_task", reason: Narration.started("new_task", agent: event.agent.rawValue, name: config.pack.name))
         case .callEnded(let call, _):
             // The activity the call showed holds from now.
-            if let call, held[key]?.act == Core.act(call) { held[key]?.at = now }
-            return nil
-        case .turnEnded:
-            held[key] = nil
-            return nil
-        case .sessionEnded:
-            held[key] = nil
-            startCards[key] = nil
-            return nil
-        case .callStarted, .asked, .subagentStarted, .subagentEnded, .requestExpired, .agentGone, .sessionGone, .other:
-            return nil
+            if let call, held[key]?.act == Core.act(call) { held[key]?.at = event.at }
+        case .sessionStarted, .callStarted, .asked, .subagentStarted, .subagentEnded, .requestExpired, .agentGone,
+             .sessionGone, .other:
+            break
         }
     }
 
@@ -423,8 +388,7 @@ public final class Core {
     func play(_ rule: Moment, for seq: Int?, _ now: Int64, _ fx: inout [CoreEffect], said: String? = nil) {
         guard rule.anim != nil || rule.mood != nil, !needsYouShowing, !showsListening(at: now) else { return }
         fx.append(.reaction(rule))
-        var did = Event.did(said ?? "", for: seq, action: rule.name, by: "rule",
-                            facts: rule.ctx.map { ["ctx": .string($0)] } ?? [:], at: now)
+        var did = Event.did(said ?? "", for: seq, action: rule.name, by: "rule", at: now)
         if said == nil { did.data["message"] = nil }
         fx.append(.record(did))
     }
@@ -489,16 +453,14 @@ public final class Core {
         return fx
     }
 
-    /// A moment of growth: a level reached (and the size it grew to, at
-    /// one of `Growth.stages`' levels), or today's ring closing.
+    /// A moment of growth: a level reached, or today's ring closing.
     public enum GrowthBeat: Equatable, Sendable {
-        case level(Int, grewTo: String?)
+        case level(Int)
         case ringClosed
     }
 
     /// Boop grew: each beat is logged and its rule moment plays once nothing
-    /// needs you or listens, after the `state` that carries the new size
-    /// and ring.
+    /// needs you or listens, after the `state` that carries the new ring.
     @discardableResult
     public func grew(_ beats: [GrowthBeat], at now: Int64) -> [CoreEffect] {
         growthHeld += beats.filter { !growthHeld.contains($0) }
@@ -508,20 +470,17 @@ public final class Core {
     }
 
     /// The growth waiting for nothing to need you (`growthHeld`): its events,
-    /// and one moment for them all, the biggest's.
+    /// and one moment for them all.
     func recordGrowth(_ now: Int64, _ fx: inout [CoreEffect]) {
         guard !growthHeld.isEmpty, needsYouBlock == nil, !showsListening(at: now) else { return }
         let beats = growthHeld
         growthHeld = []
-        var level: (Int, String?)?
+        var level: Int?
         for beat in beats {
             switch beat {
-            case .level(let n, let size):
-                // The last level, and the biggest's size: a level held past
-                // the next keeps its ceremony.
-                level = (n, size ?? level?.1)
-                fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(n),
-                                        data: size.map { ["stage": .string($0)] } ?? [:])))
+            case .level(let n):
+                level = n  // the last, of a level held past the next
+                fx.append(.record(Event(at: now, source: .boop, type: .level, specificType: String(n))))
             case .ringClosed:
                 fx.append(.record(Event(at: now, source: .boop, type: .ring, specificType: "closed")))
             }
@@ -530,12 +489,11 @@ public final class Core {
         // today's done. A level: its words held low in gold, the rim
         // glowing gold, with the ring's sign when both come at once.
         let ring = beats.contains(.ringClosed)
-        guard let (n, size) = level else {
+        guard let n = level else {
             return play(Moment(mood: Self.ringFace, loops: 2, sign: Self.ringSign), for: nil, now, &fx)
         }
-        var m = Moment(mood: size == nil ? Self.levelFace : Self.grewFace, loops: size == nil ? 2 : 3,
-                       sign: ring ? Self.ringSign : nil,
-                       reason: Narration.fit([size.map { "now a \($0)" } ?? "level \(n)!"], name: config.pack.name))
+        var m = Moment(mood: Self.levelFace, loops: 2, sign: ring ? Self.ringSign : nil,
+                       reason: Narration.fit(["level \(n)!"], name: config.pack.name))
         m.gold = Self.levelSign(n)
         play(m, for: nil, now, &fx)
     }
@@ -545,8 +503,8 @@ public final class Core {
     public static func levelSign(_ level: Int) -> String { "level \(level)!" }
     /// What Boop holds up as today's ring closes.
     public static let ringSign = "today's done!"
-    /// The faces the growth moments play: a level, a size grown, the ring.
-    static let levelFace = "proud", grewFace = "excited", ringFace = "happy"
+    /// The faces the growth moments play: a level, the ring.
+    static let levelFace = "proud", ringFace = "happy"
 
     /// Today's occasions at `now` (`Days.special`).
     func specialDays(at now: Int64) -> [Days.SpecialDay] {
@@ -588,8 +546,7 @@ public final class Core {
     }
 
     /// Something the state reads changed outside the core (the mood output
-    /// saved a new mood, or the XP or the stage changed with nothing to
-    /// celebrate): a `state` carries it at once.
+    /// saved a new mood, or the XP changed with nothing to celebrate): a `state` carries it at once.
     @discardableResult
     public func stateChanged(at now: Int64) -> [CoreEffect] {
         var fx: [CoreEffect] = []
@@ -661,7 +618,7 @@ public final class Core {
         // An act in `state` while nothing else holds the screen: back when
         // that's over, where it got to.
         let workAct = config.workStream && attn == nil && !showsListening(at: now) ? stream.act.map {
-            StateSnapshot.WorkAct(kind: $0.kind, words: $0.words, full: $0.full, result: $0.passed.map { $0 ? "p" : "f" })
+            StateSnapshot.WorkAct(kind: $0.kind, words: $0.words, result: $0.passed.map { $0 ? "p" : "f" })
         } : nil
         var snapshot = StateSnapshot(doing: base, activity: act, mood: mood(), attn: attn, working: working.count,
                                      idle: rests.count, helpers: helpers, vol: config.volume,
@@ -681,8 +638,8 @@ public final class Core {
 
     /// How long every session rests, nothing waiting on you, before Boop
     /// falls asleep with them still open (a terminal left open overnight):
-    /// at night from the last tier, by day after an hour.
-    public static let dozeOffNightMs = Tags.tiers.last!.fromMs
+    /// at night after 10 minutes, by day after an hour.
+    public static let dozeOffNightMs: Int64 = 10 * 60_000
     public static let dozeOffMs: Int64 = 60 * 60_000
 
     /// Boop sleeps at once, as Jev chose at your lock at night, with agents
@@ -877,12 +834,11 @@ public final class Core {
 
     /// The tags on at `now`: the calendar's, then the tier reached, from the start
     /// of the working stretch (`workingSince`), else from when the latest
-    /// session came to rest (`idleSince`), then the growth stage's, then
-    /// `hushed`, your hands and the Mac's side, in `Tags.all`'s order.
+    /// session came to rest (`idleSince`), then `hushed`, your hands and
+    /// the Mac's side, in `Tags.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
-        on += Tags.stages(stage)
         if hushed(at: now) != nil { on.append(Tags.hushed) }
         if let hands { on.append(hands.rawValue) }
         if let macSide { on.append(macSide.tag) }
@@ -896,21 +852,6 @@ public final class Core {
         let tags = Days.tags(at: wall, hatched: config.hatched, time: config.time)
         whenCache = (slot, config.hatched, tags)
         return tags
-    }
-
-    /// starting's `ctx` for a session whose context was compacted.
-    static let compacted = "compacted"
-
-    /// What a session's start is, from its `source`, as starting's `ctx`:
-    /// `session` for a fresh one (started or cleared, or no source),
-    /// `continuation` for one resumed, where the work goes on, and
-    /// `compacted` for one whose context was compacted.
-    static func startCtx(source: String?) -> String {
-        switch source {
-        case Mapping.compacted: compacted
-        case "resume": "continuation"
-        default: "session"
-        }
     }
 
     /// Every session, for the popover's list, in `groups`' order: those

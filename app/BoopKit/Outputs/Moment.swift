@@ -78,9 +78,6 @@ public struct Moment: Equatable, Sendable {
     /// The variation to play, from 1, when one is wanted; nil sends none,
     /// and the device picks.
     public var variant: Int?
-    /// With starting, what started: `new_task`, `session`,
-    /// `continuation` or `compacted`. Nil sends none.
-    public var ctx: String?
     /// What the buddy holds up on a sign while it plays (`Signs`); nil
     /// for none.
     public var sign: String?
@@ -120,7 +117,7 @@ public struct Moment: Equatable, Sendable {
 
     public init(anim: String? = nil, say: Say? = nil, mood: String? = nil, loops: Int? = nil,
                 who: Who? = nil, outcome: String? = nil, turn: Int? = nil, variant: Int? = nil,
-                ctx: String? = nil, sign: String? = nil, reason: String? = nil) {
+                sign: String? = nil, reason: String? = nil) {
         self.reason = reason
         self.anim = anim
         self.say = say
@@ -130,13 +127,12 @@ public struct Moment: Equatable, Sendable {
         self.outcome = outcome
         self.turn = turn
         self.variant = variant
-        self.ctx = ctx
         self.sign = sign
     }
 
     /// A finished turn's length as a finish's `turn`: the tier it reached,
-    /// as the tags count them (`Tags.tiers`), from 1 for `tier1` to 5
-    /// for `tier5`, and 0 short of the first.
+    /// as the tags count them (`Tags.tiers`), from 1 for `tier1` to 3
+    /// for `tier3`, and 0 short of the first.
     public static func turn(lengthMs: Int64) -> Int {
         Tags.tiers.lastIndex { lengthMs >= $0.fromMs }.map { $0 + 1 } ?? 0
     }
@@ -145,7 +141,7 @@ public struct Moment: Equatable, Sendable {
     /// state's name, besides `listening`, which only push-to-talk plays
     /// (`BoopDevice.listening`). A tap's `poked` and `tap_spam` the device
     /// plays itself.
-    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", "starting", Core.wishMet, Core.wishGone]
+    public static let anims = ["task_complete", "reply_ready", "wake_up", "notice", Core.wishMet, Core.wishGone]
     /// A brain reaction with no animation: takes, a face, or both.
     public static let react = "react"
 
@@ -162,7 +158,6 @@ public struct Moment: Equatable, Sendable {
         if let outcome { args["outcome"] = .string(outcome) }
         if let turn { args["turn"] = .int(turn) }
         if let variant { args["variant"] = .int(variant) }
-        if let ctx { args["ctx"] = .string(ctx) }
         if let sign { args["sign"] = .string(sign) }
         if let reason { args["reason"] = .string(reason) }
         if let ask {

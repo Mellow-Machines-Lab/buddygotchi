@@ -118,29 +118,25 @@ final class HarnessTests: XCTestCase {
     /// `none` does nothing; the meaning counts over 0.35,
     /// and Voice says a take of it in the face's mood, else nothing; the
     /// reaction carries the expression as its `mood`, `react.intensity`'s
-    /// pick as its loops (small to huge: 1–4, and small when it's missing),
+    /// pick as its loops (small to big: 1–3, and small when it's missing),
     /// the take as big as it, and
     /// a `say` whether or not there's a take, and goes to the queue with
     /// the handle the result is started with; a blocked reaction fails,
     /// with no handle.
     /// A finish's `turn`, which the device sizes it by: the tier the turn
-    /// reached, as the tags count them, 0 short of the first (30 s), then 1
-    /// to 5 (`tier1` to `tier5`: 30 s, a minute, 2, 5 and 10). The gel's
-    /// finish is at most medium below 2, at least big from 4 and biggest
-    /// at 5.
+    /// reached, as the tags count them, 0 short of the first (a minute),
+    /// then 1 to 3 (`tier1` to `tier3`: a minute, 5 and 15).
     func testAFinishSaysHowLongItsTurnRan() {
         XCTAssertEqual(Moment.turn(lengthMs: 0), 0)
-        XCTAssertEqual(Moment.turn(lengthMs: 29_999), 0)
-        XCTAssertEqual(Moment.turn(lengthMs: 30_000), 1)
-        XCTAssertEqual(Moment.turn(lengthMs: 59_999), 1)
-        XCTAssertEqual(Moment.turn(lengthMs: 60_000), 2)
-        XCTAssertEqual(Moment.turn(lengthMs: 2 * 60_000), 3)
-        XCTAssertEqual(Moment.turn(lengthMs: 5 * 60_000 - 1), 3)
-        XCTAssertEqual(Moment.turn(lengthMs: 5 * 60_000), 4)
-        XCTAssertEqual(Moment.turn(lengthMs: 10 * 60_000), 5)
-        XCTAssertEqual(Moment.turn(lengthMs: 60 * 60_000), 5)
-        XCTAssertEqual(Moment(anim: "task_complete", outcome: "success", turn: 5, variant: 1).args.json,
-                       #"{"outcome":"success","turn":5,"variant":1}"#)
+        XCTAssertEqual(Moment.turn(lengthMs: 59_999), 0)
+        XCTAssertEqual(Moment.turn(lengthMs: 60_000), 1)
+        XCTAssertEqual(Moment.turn(lengthMs: 5 * 60_000 - 1), 1)
+        XCTAssertEqual(Moment.turn(lengthMs: 5 * 60_000), 2)
+        XCTAssertEqual(Moment.turn(lengthMs: 15 * 60_000 - 1), 2)
+        XCTAssertEqual(Moment.turn(lengthMs: 15 * 60_000), 3)
+        XCTAssertEqual(Moment.turn(lengthMs: 60 * 60_000), 3)
+        XCTAssertEqual(Moment(anim: "task_complete", outcome: "success", turn: 3, variant: 1).args.json,
+                       #"{"outcome":"success","turn":3,"variant":1}"#)
     }
 
     /// Onboarding's finishes: the first hook's stands out, held twice; the
@@ -180,10 +176,8 @@ final class HarnessTests: XCTestCase {
                #"\#(creature) had a grumpy moment (medium), and said "SAID"."#)
         starts(["react.face": a("proud"), "say": a("glad", 0.31), "react.intensity": a("big")],
                "\(creature) had a proud moment (big).")
-        starts(["react.face": a("happy"), "say": a("none"), "react.intensity": a("huge")],
-               "\(creature) had a happy moment (huge).")
-        XCTAssertEqual(sent.count, 3)
-        XCTAssertEqual(Set(queued.map { ObjectIdentifier($0.pending) }).count, 3, "a handle each")
+        XCTAssertEqual(sent.count, 2)
+        XCTAssertEqual(Set(queued.map { ObjectIdentifier($0.pending) }).count, 2, "a handle each")
         let grumbled = try! XCTUnwrap(sent[0].say?.takes)
         XCTAssertEqual(Set(grumbled.map(\.meaning)), ["upset"], "one thing said, maybe with a sound of it first")
         XCTAssertEqual(grumbled.last?.kind, .word, "as big as the moment: medium is a word")
@@ -191,7 +185,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertNotNil(sent[1].say, "a reaction that says nothing still has a say")
         XCTAssertEqual(sent[1].say?.takes, [], "below the floor, Jev is guessing: nothing")
         XCTAssertNil(sent[0].anim, "it plays over the face")
-        XCTAssertEqual(sent.map(\.mood), ["grumpy", "proud", "happy"], "each wears its face")
+        XCTAssertEqual(sent.map(\.mood), ["grumpy", "proud"], "each wears its face")
         // Saying nothing is `say`'s none: the face, and a finish, play in
         // silence.
         starts(["react.face": a("pleased"), "say": a("none"), "react.move": a("success")],
@@ -199,7 +193,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(sent.last?.say?.takes, [], "a face in silence")
         XCTAssertEqual(sent.last?.anim, "task_complete", "with its finish")
         queued.removeLast()
-        XCTAssertEqual(sent.map(\.loops), [2, 3, 4], "held as long as the moment is big")
+        XCTAssertEqual(sent.map(\.loops), [2, 3], "held as long as the moment is big")
         XCTAssertTrue(sent[0].args.json.hasSuffix(#","mood":"grumpy","loops":2}"#), sent[0].args.json)
         XCTAssertEqual(sent[0].name, "react")
         XCTAssertEqual(react.run(["react.face": a("sulky")], now: nil, log: Self.log), nil, "not a face")
@@ -226,14 +220,14 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(success.anim, "task_complete")
         XCTAssertEqual(success.outcome, "success")
         let line = success.line(id: 7, play: .next)
-        XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","turn":4,"who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
+        XCTAssertTrue(line.hasPrefix(#"{"t":"do","id":7,"name":"task_complete","play":"next","ttl":5000,"args":{"outcome":"success","turn":2,"who":{"agent":"codex","thread":"fix-nav"},"say":"#), line)
         XCTAssertTrue(line.hasSuffix(#","mood":"proud","loops":3}}"#), line)
         queued.removeLast()
-        starts(["react.face": a("whiny"), "react.move": a("failure")], "\(creature) had a whiny moment (small), playing a failure.")
+        starts(["react.face": a("sad"), "react.move": a("failure")], "\(creature) had a sad moment (small), playing a failure.")
         let failure = try! XCTUnwrap(queued.last?.reaction)
         XCTAssertEqual([failure.anim, failure.outcome], ["task_complete", "failure"])
         XCTAssertEqual(failure.who, .init(agent: "codex", thread: "fix-nav"))
-        XCTAssertEqual(failure.turn, 4, "a finish says how long its turn ran: 9 minutes is tier4")
+        XCTAssertEqual(failure.turn, 2, "a finish says how long its turn ran: 9 minutes is tier2")
         queued.removeLast()
         starts(["react.face": a("curious"), "react.move": a("reply"), "say": a("answer"), "react.intensity": a("medium")],
                #"\#(creature) had a curious moment (medium), playing a reply, and said "SAID"."#)
@@ -270,15 +264,15 @@ final class HarnessTests: XCTestCase {
         for expression in CharacterPack.active.faces.map(\.name) {
             XCTAssertEqual(react.run(["react.face": a(expression)], now: nil, log: Self.log), .failed("something needs you"))
         }
-        XCTAssertEqual(sent.count, 3, "no face or take while something needs you")
+        XCTAssertEqual(sent.count, 2, "no face or take while something needs you")
         why = nil
         // A success take only on a success, a swear only on a failure: an
-        // irritated swear at a check failing mid-turn is a phrase, and at
+        // grumpy swear at a check failing mid-turn is a phrase, and at
         // a failed turn a swear, however small the moment.
-        starts(["react.face": a("irritated"), "say": a("swear")],
-               #"\#(creature) had an irritated moment (small), and said "SAID"."#)
+        starts(["react.face": a("grumpy"), "say": a("swear")],
+               #"\#(creature) had a grumpy moment (small), and said "SAID"."#)
         XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .phrase)
-        let swore = react.run(["react.face": a("irritated"), "react.move": a("failure"), "say": a("swear")], now: nil, log: Self.log)
+        let swore = react.run(["react.face": a("grumpy"), "react.move": a("failure"), "say": a("swear")], now: nil, log: Self.log)
         XCTAssertEqual(queued.last?.reaction.say?.takes.first?.kind, .swear, "\(String(describing: swore))")
         queued.removeAll()
         // The four questions, the same at every event.
@@ -286,7 +280,7 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[0].options.map(\.name), ["none"] + CharacterPack.active.moods.map(\.id),
                        "the faces are every mood's")
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[1].options.map(\.name), ["none", "success", "failure", "reply", "wake up", "notice"])
-        XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big", "huge"])
+        XCTAssertEqual(react.questions(now: nil, log: Self.log)[2].options.map(\.name), ["small", "medium", "big"])
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.map(\.name),
                        ["none", "swear", "upset", "glad", "tickled", "shaken"] + MomentOutput.topics.map(\.name))
         XCTAssertEqual(react.questions(now: nil, log: Self.log)[3].options.count, 22, "none, 4 feelings, a swear and the 16 topics")
@@ -304,7 +298,7 @@ final class HarnessTests: XCTestCase {
     /// rule's reaction never does.
     func testRuleReactionsCarryNoExpression() throws {
         try requireVoice()
-        XCTAssertEqual(Moment(anim: "starting").line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"starting","play":"if_free"}"#)
+        XCTAssertEqual(Moment(anim: Core.wishGone).line(id: 1, play: .ifFree), #"{"t":"do","id":1,"name":"wish_gone","play":"if_free"}"#)
         XCTAssertEqual(Moment(say: .go).line(id: 2, play: .next),
                        #"{"t":"do","id":2,"name":"react","play":"next","ttl":5000,"args":{"say":{"take":"new.d02"}}}"#)
         XCTAssertEqual(Moment(say: .go, mood: "grumpy").args.json, #"{"say":{"take":"new.d02"},"mood":"grumpy"}"#)
@@ -312,16 +306,13 @@ final class HarnessTests: XCTestCase {
 
     /// The pack's moods, in its order; a new Boop starts calm, the resting
     /// mood; the `mood` question offers, on every pass, staying in the
-    /// mood the log has and exactly that mood's moves on the graph, each
-    /// with its mood's meaning, the dramatic ones also saying they need a
-    /// fresh, big event. Staying is nothing to do, and so is an answer the
-    /// graph doesn't have from the mood; any move is a change in the log,
-    /// which is the mood from then on, and MOOD with it, however recently it
-    /// last changed (how long a mood lasts is the steering's call). It's
-    /// MellowHarness's `Choice`.
+    /// mood the log has and every other lasting mood, each with its
+    /// meaning: there's no graph. Staying is nothing to do, and so is an
+    /// answer that isn't a mood; any other is a change in the log, which is
+    /// the mood from then on, and MOOD with it, however recently it last
+    /// changed. It's MellowHarness's `Choice`.
     func testMood() throws {
         XCTAssertEqual(MoodOutput.moods.map(\.name), CharacterPack.active.lasting.map(\.id), "the lasting moods only")
-        XCTAssertEqual(MoodOutput.moods.map(\.name), MoodGraph.moods)
         XCTAssertEqual(MoodOutput.initial, "calm")
         let log = Transcript.log()
         let mood = MoodOutput.choice()
@@ -334,46 +325,65 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm", "a new Boop starts calm")
         func offered() -> [String] { mood.questions(now: nil, log: view())[0].options.map(\.name) }
         XCTAssertEqual(mood.questions(now: nil, log: view()).map(\.key), ["mood"])
-        XCTAssertEqual(offered(), ["calm"] + MoodGraph.neighbours["calm"]!.all, "staying, then calm's moves, with nothing fresh too")
-        let stay = try XCTUnwrap(mood.questions(now: nil, log: view())[0].options.first)
-        XCTAssertNil(stay.notFor, "the resting mood never fades")
-        XCTAssertNotNil(MoodOutput.options(from: "grumpy").first?.notFor, "any other mood stays only until its minutes are up")
-        for m in MoodGraph.moods {
+        let all = MoodOutput.moods.map(\.name)
+        XCTAssertEqual(offered(), ["calm"] + all.filter { $0 != "calm" }, "staying, then every other mood")
+        for m in all {
             let options = MoodOutput.options(from: m)
-            XCTAssertEqual(options.map(\.name), [m] + MoodGraph.neighbours[m]!.ordinary + MoodGraph.neighbours[m]!.dramatic, m)
+            XCTAssertEqual(options.map(\.name), [m] + all.filter { $0 != m }, m)
+            XCTAssertNil(options[0].notFor, "staying has no clock: fading is code's")
             for o in options.dropFirst() {
                 let meaning = MoodOutput.moods.first { $0.name == o.name }!
                 XCTAssertEqual(o.what, meaning.what, "\(m) → \(o.name) carries its meaning")
-                let jump = MoodGraph.neighbours[m]!.dramatic.contains(o.name)
-                XCTAssertEqual(o.notFor?.hasSuffix(MoodOutput.jump) ?? false, jump, "\(m) → \(o.name): only a jump says so")
-                if jump { XCTAssertEqual(o.notFor, [meaning.notFor, MoodOutput.jump].compactMap { $0 }.joined(separator: " ")) }
-                else { XCTAssertEqual(o.notFor, meaning.notFor) }
+                XCTAssertEqual(o.notFor, meaning.notFor)
             }
+            XCTAssertFalse(MoodOutput.options(from: m, mayMiss: false).dropFirst().contains { $0.name == MoodOutput.missing },
+                           "\(m): missing you is offered only when it may begin")
         }
+        XCTAssertEqual(MoodOutput.options(from: "lonely", mayMiss: false).first?.name, "lonely", "but staying in it always is")
 
         XCTAssertNil(run(["mood": a("calm")]), "staying is nothing to do")
-        XCTAssertNil(run(["mood": a("grumpy")]), "not a move from calm")
+        XCTAssertNil(run(["mood": a("grumpy")]), "a face, not a mood")
         XCTAssertNil(run(["mood": a("sulky")]), "not a mood")
         XCTAssertNil(run([:]), "no answer")
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm")
-        XCTAssertEqual(run(["mood": a("annoyed")]),
-                       .done("\(creature)'s mood changed: calm → annoyed.", facts: ["from": "calm", "to": "annoyed"]))
-        XCTAssertEqual(offered(), ["annoyed"] + MoodGraph.neighbours["annoyed"]!.all, "the next pass is offered annoyed's moves")
-        XCTAssertEqual(run(["mood": a("grumpy")])?.message, "\(creature)'s mood changed: annoyed → grumpy.", "straight after, a jump too")
-        XCTAssertNil(run(["mood": a("happy")]), "grumpy never moves straight to happy")
-        XCTAssertNil(run(["mood": a("excited")]), "nor to excited")
-        XCTAssertEqual(MoodOutput.value(mood, view()), "grumpy", "the latest change in the log")
-        XCTAssertEqual(MoodOutput.value(MoodOutput.choice(), view()), "grumpy", "so it survives a restart")
-        log.append(Event.did("\(creature)'s mood changed: grumpy → delighted.", for: nil, action: mood.name, by: "brain",
-                             facts: ["from": "grumpy", "to": "delighted"]), now: 1)
+        XCTAssertEqual(run(["mood": a("cross")]),
+                       .done("\(creature)'s mood changed: calm → cross.", facts: ["from": "calm", "to": "cross"]))
+        XCTAssertEqual(offered().first, "cross", "the next pass is offered staying cross first")
+        XCTAssertEqual(run(["mood": a("happy")])?.message, "\(creature)'s mood changed: cross → happy.", "straight after, any mood: a strong feeling flips it")
+        XCTAssertEqual(MoodOutput.value(mood, view()), "happy", "the latest change in the log")
+        XCTAssertEqual(MoodOutput.value(MoodOutput.choice(), view()), "happy", "so it survives a restart")
+        log.append(Event.did("\(creature)'s mood changed: happy → delighted.", for: nil, action: mood.name, by: "brain",
+                             facts: ["from": "happy", "to": "delighted"]), now: 1)
         XCTAssertEqual(MoodOutput.value(mood, view()), "calm", "one that isn't a mood reads as calm")
-        log.append(Event.did("\(creature)'s mood changed: grumpy → tired.", for: nil, action: mood.name, by: "brain",
-                             facts: ["from": "grumpy", "to": "tired"]), now: 1)
-        XCTAssertEqual(MoodOutput.value(mood, view()), "lazy", "a face-only mood, from a log of before, reads as the one it settles into")
+        log.append(Event.did("\(creature)'s mood changed: happy → grumpy.", for: nil, action: mood.name, by: "brain",
+                             facts: ["from": "happy", "to": "grumpy"]), now: 1)
+        XCTAssertEqual(MoodOutput.value(mood, view()), "cross", "a face's name reads as the mood it settles into")
+    }
+
+    /// Missing you may begin only with no agent working: at an idle
+    /// check-in once the wish has waited an hour, or at your coming back
+    /// after 20 to 40 hours. A forced pass is offered none: a mood is set
+    /// itself there.
+    func testMissingYouMayBeginOnlyWhenItsGateAllows() {
+        let checkIn = Event(at: 0, source: .clock, type: .checkIn, specificType: "check_in")
+        let back = Event(at: 0, source: .mac, type: .presence, phase: .end, specificType: "active")
+        let hour: Int64 = 3_600_000
+        XCTAssertEqual(MoodOutput.missAfterWishMs, hour, "the wish's hour")
+        XCTAssertEqual(MoodOutput.missAwayMs, (20 * hour)...(40 * hour), "back after 20 to 40 hours")
+        XCTAssertFalse(MoodOutput.mayMiss(nil, facts: nil, working: false, wishWaitedMs: 2 * hour), "a forced pass")
+        XCTAssertTrue(MoodOutput.mayMiss(checkIn, facts: nil, working: false, wishWaitedMs: hour))
+        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: false, wishWaitedMs: hour - 1), "40 min is too soon")
+        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: false, wishWaitedMs: nil), "no wish")
+        XCTAssertFalse(MoodOutput.mayMiss(checkIn, facts: nil, working: true, wishWaitedMs: 2 * hour), "an agent working is company")
+        XCTAssertTrue(MoodOutput.mayMiss(back, facts: ["away_ms": .int(26 * hour)], working: false, wishWaitedMs: nil))
+        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(3 * hour)], working: false, wishWaitedMs: nil), "a short break")
+        XCTAssertFalse(MoodOutput.mayMiss(back, facts: ["away_ms": .int(72 * hour)], working: false, wishWaitedMs: nil), "after days it's glad")
+        let poke = Event(at: 0, source: .device, type: .poke, specificType: "input")
+        XCTAssertFalse(MoodOutput.mayMiss(poke, facts: nil, working: false, wishWaitedMs: 2 * hour), "nor at a poke")
     }
 
     /// The mood the dashboard sets changes as Jev's does,
-    /// device included, to any of the moods, off the graph too; and it's
+    /// device included, to any of the moods; and it's
     /// told why when it can't: the mood it already is, or one that isn't a
     /// mood.
     func testAForcedMoodChangesItAsJevsDoes() throws {
@@ -385,27 +395,25 @@ final class HarnessTests: XCTestCase {
         func change(_ to: String) -> OutputResult? {
             harness.force(mood, by: Runtime.forcedBy) { MoodOutput.change(mood, to: to, log: harness.log.view(now: 1)) }
         }
-        XCTAssertEqual(change("grumpy")?.message, "\(creature)'s mood changed: calm → grumpy.", "off the graph")
-        XCTAssertEqual(change("grumpy"), .failed("already grumpy"))
+        XCTAssertEqual(change("cross")?.message, "\(creature)'s mood changed: calm → cross.")
+        XCTAssertEqual(change("cross"), .failed("already cross"))
         XCTAssertEqual(change("sulky"), .failed("sulky isn't a mood"))
-        XCTAssertEqual(MoodOutput.value(mood, harness.log.view(now: 1)), "grumpy")
+        XCTAssertEqual(MoodOutput.value(mood, harness.log.view(now: 1)), "cross")
         XCTAssertEqual(harness.force(["mood": "proud"], by: Runtime.forcedBy).map(\.result.message),
-                       ["\(creature)'s mood changed: grumpy → proud."], "Jev's, right after")
-        XCTAssertEqual(told, ["grumpy", "proud"], "the device hears each change")
-        XCTAssertEqual(change("tired")?.message, "\(creature)'s mood changed: proud → lazy.", "a face-only mood sets the one it settles into")
+                       ["\(creature)'s mood changed: cross → proud."], "Jev's, right after")
+        XCTAssertEqual(told, ["cross", "proud"], "the device hears each change")
+        XCTAssertEqual(change("wounded")?.message, "\(creature)'s mood changed: proud → sad.", "a face's name sets the mood it settles into")
     }
 
-    /// Each mood's file says where it leaves for, and
-    /// names only moods it can move to, in every pack.
-    func testEachMoodLeavesOnlyForItsNeighbours() throws {
-        for mood in MoodGraph.moods {
+    /// Each mood's file opens with its name and says what moves it, and
+    /// none gives minutes: the app fades a mood by its clock.
+    func testEachMoodFileOpensWithItsNameAndGivesNoMinutes() throws {
+        for mood in MoodOutput.moods.map(\.name) {
             let text = RuntimeTests.steering.mood(mood)
             let opening = "MOOD\n\(mood.prefix(1).uppercased())\(mood.dropFirst())"
             XCTAssertTrue(text.hasPrefix(opening + ".") || text.hasPrefix(opening + " is "), "\(mood) opens with its name")
-            let leaves = try! XCTUnwrap(text.range(of: "Leaves for"), mood)
-            let named = Set(text[leaves.lowerBound...].split { !$0.isLetter }.map(String.init)).intersection(MoodGraph.moods)
-            XCTAssertTrue(named.subtracting([mood]).isSubset(of: (MoodGraph.neighbours[mood]?.all ?? [])),
-                          "\(mood) leaves only for its neighbours, not \(named.subtracting((MoodGraph.neighbours[mood]?.all ?? []) + [mood]).sorted())")
+            XCTAssertNil(text.range(of: #"\d+ min"#, options: .regularExpression), "\(mood) gives no minutes")
+            XCTAssertFalse(text.contains("Fades to"), "\(mood): fading is code's")
         }
     }
 

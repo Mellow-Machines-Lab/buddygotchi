@@ -48,7 +48,7 @@ final class SwearTests: XCTestCase {
             let react = MomentOutput(queue: { r, _ in queued.append(r) }, blocked: { nil }, swears: { swears })
             let asked = react.questions(now: nil, log: Self.log).first { $0.key == MomentOutput.sayKey }?.options.map(\.name) ?? []
             XCTAssertEqual(asked.contains("swear"), swears)
-            _ = react.run(["react.face": a("irritated"), "react.move": a("failure"), "say": a("swear")], now: nil, log: Self.log)
+            _ = react.run(["react.face": a("grumpy"), "react.move": a("failure"), "say": a("swear")], now: nil, log: Self.log)
             let kind = queued.last?.say?.takes.first?.kind
             if swears {
                 XCTAssertEqual(kind, .swear)

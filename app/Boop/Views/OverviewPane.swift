@@ -336,8 +336,8 @@ struct OverviewPane: View {
 
     // MARK: Why it looks like this
 
-    /// What Boop is celebrating today, and the night, your prompt or the
-    /// Friday: each reason, and what the board wears or shows for it.
+    /// What Boop is celebrating today, and the night: each reason, and what
+    /// the board wears or shows for it.
     private func dressingCard(_ reasons: [Narration.Dressing]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
@@ -363,7 +363,6 @@ struct OverviewPane: View {
         switch kind {
         case .specialDay: "party.popper"
         case .night: "moon.stars"
-        case .friday: "sunglasses"
         }
     }
 

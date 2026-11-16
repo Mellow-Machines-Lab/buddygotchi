@@ -39,7 +39,7 @@ test("numbers, regions and the buddies, the awake first", async () => {
   const br2 = await w.join("Pip", -180);
   const gone = await w.join("Old", 540);
   await w.join("Nowhere", null);
-  await w.send(pt, state({ activity: "testing", level: 12, stage: "buddy", added: { turns: 3, tests_passed: 2, lines_changed: 140 } }));
+  await w.send(pt, state({ activity: "testing", level: 12, added: { turns: 3, tests_passed: 2, lines_changed: 140 } }));
   await w.send(br, state({ activity: "coding", added: { turns: 5 } }));
   await w.send(br2, state({ activity: "asleep" }));
   await w.send(gone, state({ activity: "coding", added: { turns: 1 } }));
@@ -59,7 +59,7 @@ test("numbers, regions and the buddies, the awake first", async () => {
   ], "a buddy with no offset is in no region");
   assert.deepEqual(body.buddies.slice(0, 3).map((b: any) => b.activity).sort(), ["coding", "idle", "testing"], "the awake first");
   const mochi = body.buddies.find((b: any) => b.id === pt.id);
-  assert.deepEqual(mochi, { id: pt.id, name: "Mochi", level: 12, stage: "buddy", utc_offset: 0, activity: "testing" });
+  assert.deepEqual(mochi, { id: pt.id, name: "Mochi", level: 12, utc_offset: 0, activity: "testing" });
   assert.equal(body.buddies.find((b: any) => b.id === gone.id).activity, "asleep");
 });
 

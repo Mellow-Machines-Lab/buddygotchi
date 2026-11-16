@@ -14,6 +14,22 @@ from this worktree, and `make flash` from the main checkout puts main's back.
 Pictures: `~/.boopdev/gaze-and-mirror/`. No Jev request: nothing for the brain
 changed.
 
+**Merged with the cut list's branch (2026-11-15).** What changed from the
+report below, which is as it was written on main:
+- The tags are 24, not 27: the three stage tags went with the one body size,
+  so `hushed` is still 19th and your hands and the Mac's side follow it.
+- A glance at a new word is for the typing pose only. Looking, running or
+  waiting, the pose's clip has the eyes, and the gaze rests (the pack's
+  `gaze.h`, rule 3). Needs you is still first.
+- At work it types along only in its typing pose. In the other three its
+  paws are off the keys and stay off, though you type.
+- No size boost for the keyboard and paws (`kAlongSize`): there's no
+  Hatchling to boost. No work act takes the screen any more, so none is
+  waited for.
+- Checked there: test_gel 149 of 149, the gel's scenarios (25 new pictures,
+  23 changed, each looked at: eyes only, and a gather's words, which go to
+  the mouth under them).
+
 **What it does**
 - **Gaze.** Its eyes rest forward and turn to one thing at a time. Something
   needs you: up at you for 1.2 s, then to the Mac's side, held while it waits.
@@ -103,6 +119,11 @@ changed.
   Mac's side isn't hot, and the rest of the survey's Mac items are left.
 - `boopctl e2e` takes a moment cut by the mic or face down as fine.
 
+The cut list's working-screen stage ([cut-list.md](cut-list.md) §3 and §4) has
+since gone further than this report: the headphones, the hats and shades, the
+start's card, the work acts' scenes and most pastimes are gone, and the rule
+below is the stricter one in `layers.h` and `pastimes.h`.
+
 **Cut and calmed, on the board.** The screen's rule, written where the
 renderer decides it (the pack's `render/gel/layers.h` and `pastimes.h`) and
 pinned by `test_nothing_hangs_in_the_sky_or_the_air` and
@@ -185,9 +206,7 @@ whole surface for scenery.
 
 **For the owner:**
 - **The look.** Is the nightcap alone right, or do you miss the pyjamas
-  (`da40b10`)? Are 20 to 45 s between pastimes calm, or too quiet? Friday's
-  shades cover the eyes all afternoon: keep them (recommended, they come off
-  for every feeling) or cut?
+  (`da40b10`)? Are 20 to 45 s between pastimes calm, or too quiet?
 - **The time zone:** restart the runtime when macOS says the zone changed
   (recommended; it reconnects Bluetooth, as a rename does), or follow it live.
 - **Failed checks reach the brain** (#2, decided): it changes when Jev is
@@ -200,7 +219,7 @@ whole surface for scenery.
 - **Several buddies' last leftovers** (`Runtime.Rig`, `Buddy`, one-entry maps):
   about 40 lines and a layer, a refactor of its own.
 - **L6, on the desk:** the calm look from the chair by day and at night; the
-  headphones going on up to 45 s into tier 3; the popover's size on your
+  popover's size on your
   screen and on the laptop's; onboarding's taller window; a level-up after the
   board comes back into Bluetooth's reach.
 - **To land:** SlimeBuddy `calm-2026-11-15` first, then this branch, then the
@@ -407,10 +426,10 @@ pictures are in `~/.boopdev/product-review-2026-11-09/`.
   row, and a pass after failures. Ring and level make one moment. Rough touches
   (shake, wrong-way stroke) earn no XP. No hourly check-ins while you're away.
   Prompt reactions stay; only a turn start with no prompt stops asking the brain.
-- **Growth:** XP amounts may change, set from a measured week. Stage names leave the
-  UI; the bigger body at 5, 15 and 30 stays. Marks at levels 50, 100 and 365; the
-  shelf only if the Boop tab gets opened. Most pastimes unlock from day one, 6 stay
-  as stage rewards.
+- **Growth:** XP amounts may change, set from a measured week. Marks at levels 50,
+  100 and 365; the shelf only if the Boop tab gets opened. Dropped 2026-11-15: the
+  stages. Boop is one body size at every level, and every pastime is known from
+  day one.
 - **The model:** 7 moods and 18 emotions, by an alias table first and deletion after
   a week. Fades as numbers in code, and no mood graph. Code picks the move and the
   size. Activities 8 to 4, touches 14 to 7; tiers 5 to 3 last.
@@ -470,8 +489,11 @@ Jev: `--only` on the scenarios each fix touches, then one standard run at the en
 - [ ] Decide how care counts (open, below), then set the amounts in `Growth.swift`
       from the week, and pin them in `GrowthTests`.
 - [ ] Part-full rings blue, not red; no "XP" in the UI (`BoopPane.swift`).
-- [ ] Stage names out of the UI and the world; marks at 50, 100 and 365.
-- [ ] Unlock pastimes but 6 (`pastimes.cpp`'s stage column).
+- [x] Stage names out of the UI and the world: the stages are dropped (2026-11-15),
+      with the body one size and `stage` out of `World.State`. The world's
+      deploy and its migration `004_one_size.sql` are owed by the owner.
+- [ ] Marks at 50, 100 and 365.
+- [x] Unlock pastimes: dropped with the stages, `pastimes.cpp` has no stage column.
 - [ ] A demo that sends `xp`, and scripted evals for the ring and a level-up.
 
 ### Phase 2: the model

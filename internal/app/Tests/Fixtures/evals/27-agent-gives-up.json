@@ -5,6 +5,6 @@
   "why": "character/steering/guide.md: a turn isn't routine when the agent's last message is giving up; character/steering/mood/calm.md: calm leaves for sad when the agent gives up; react.move: a message saying the agent couldn't finish is a failure, and success isn't for one; PERSONALITY's Examples: that message is sad, failure, says upset, small",
   "steps": [
     {"event": "turn started", "at": "0s", "prompt": "fix the login redirect", "reading": {"kind": "fix"}},
-    {"event": "turn finished", "at": "2m", "message": "I couldn't get the login working. The token keeps expiring before the redirect, and I'm stuck without access to the auth server's config.", "reading": {"kind": "stuck", "phrases": ["I'm stuck"]}, "expect": {"react": "sad|whiny|wounded", "move": "failure", "mood": "sad"}}
+    {"event": "turn finished", "at": "2m", "message": "I couldn't get the login working. The token keeps expiring before the redirect, and I'm stuck without access to the auth server's config.", "reading": {"kind": "stuck", "phrases": ["I'm stuck"]}, "expect": {"react": "sad|wounded", "move": "failure", "mood": "sad"}}
   ]
 }
