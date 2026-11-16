@@ -15,17 +15,18 @@ public enum Tags {
     /// agents are, the tiers, your hands, the Mac's side, then the rest
     /// of you at the Mac: in the board's order, the newest last, so no
     /// pack's numbering of the older ones moves.
-    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides + along
+    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides + along + [Anchor.Side.up.tag]
 
     /// Your hands at the Mac (`Hands`): the gel types along while you type,
     /// and watches the work with you while you read.
     public static let hands = [Hands.typing, .reading].map(\.rawValue)
     /// The side of Boop the Mac is on (`Anchor.side`): where the gel turns
-    /// when something needs you.
+    /// when something needs you. `macup`, the screen above Boop, came later,
+    /// so it's last of all.
     public static let macSides = [Anchor.Side.left, .right].map(\.tag)
     /// The rest of you at the Mac (`Along`): scrolling (`Hands`), typing
-    /// fast, music or a video playing, on a call, and a copy held.
-    public static let along = ["scrolling", "typingfast", "music", "watching", "call", "holding"]
+    /// fast, music or a video playing, on a call, and a copy.
+    public static let along = ["scrolling", "typingfast", "music", "video", "oncall", "copied"]
 
     /// The tags the board reads, in its order: all of them.
     public static let board = all

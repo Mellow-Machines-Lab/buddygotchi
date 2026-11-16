@@ -108,10 +108,13 @@ extension Runtime {
         /// Whether Boop notices what you do at the Mac; whether it knows
         /// where it sits (`Anchor`), and the side the Mac is on from it; and
         /// whether it waits for the tap that shows it.
-        public var typesAlong = true
+        public var noticesYou = true
         public var anchored = false
         public var macSide: Anchor.Side?
         public var placing = false
+        /// The display Boop was shown it sits by is gone or moved: it wants
+        /// showing again.
+        public var anchorGone = false
         /// Whether Boop may swear (`AppSettings.swearing`).
         public var swearing = false
         /// When Boop may next be renamed, or nil for now
@@ -175,10 +178,11 @@ extension Runtime {
         status.quietUntil = core.quietUntil(at: now).map { Date(timeIntervalSince1970: (Double(wall + $0 - now) / 1000).rounded()) }
         status.uncleanExit = uncleanExit
         status.board = settings.board
-        status.typesAlong = settings.typesAlong
+        status.noticesYou = settings.noticesYou
         status.anchored = settings.anchor != nil
-        status.macSide = settings.anchor?.side
+        status.macSide = anchor?.side
         status.placing = placing != nil
+        status.anchorGone = anchorGone
         status.swearing = options.swearing ?? settings.swearing
         status.nextRename = BuddyName.nextRename(after: settings.renamed, at: wall).map { Date(timeIntervalSince1970: Double($0) / 1000) }
         status.misfit = link.misfit.flatMap { $0.id.isEmpty ? nil : $0.id }

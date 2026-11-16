@@ -386,10 +386,10 @@ final class PresenceRuntimeTests: XCTestCase {
         dev(runtime, #"{"dev":"advance","ms":1000}"#)
         XCTAssertTrue(when().contains("typing"))
 
-        runtime.setTypesAlong(false)
+        runtime.setNoticesYou(false)
         runtime.home.sync {}
         XCTAssertFalse(when().contains("typing"), "switched off in Settings")
-        runtime.setTypesAlong(true)
+        runtime.setNoticesYou(true)
         runtime.home.sync {}
         XCTAssertTrue(when().contains("typing"))
 
@@ -403,6 +403,43 @@ final class PresenceRuntimeTests: XCTestCase {
         XCTAssertTrue(when().contains("macleft") && !when().contains("macright"))
         runtime.home.sync {}
         XCTAssertEqual(AppSettings.load(from: dir).anchor?.side, .left, "kept")
+    }
+
+    /// Awake while you're at the Mac, with no agent open: idle once the Mac
+    /// says you're here; asleep while the screen is locked and once you're
+    /// away; awake again as you come back. With nothing saying you're here
+    /// (the evals), asleep with no agent open, as before. Still at the Mac
+    /// past the doze time: asleep, and your next touch of the board wakes it.
+    func testAwakeWhileYoureAtTheMacWithNoAgent() throws {
+        let clock = VirtualClock(presenceT0)
+        let runtime = try makeRuntime(clock: clock)
+        func doing() -> String { runtime.home.sync { runtime.core.snapshot(at: clock.now).doing } }
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertEqual(doing(), "asleep", "nothing says you're here yet")
+        dev(runtime, #"{"dev":"presence","idle_ms":0}"#)
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertEqual(doing(), "idle", "you're at the Mac: awake with no agent open")
+        dev(runtime, #"{"dev":"presence","signal":"locked"}"#)
+        XCTAssertEqual(doing(), "asleep", "locked")
+        dev(runtime, #"{"dev":"presence","signal":"unlocked"}"#)
+        XCTAssertEqual(doing(), "idle")
+        dev(runtime, #"{"dev":"presence","idle_ms":1900000}"#)
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertTrue(runtime.home.sync { runtime.core.awayFromMac })
+        XCTAssertEqual(doing(), "asleep", "away")
+        dev(runtime, #"{"dev":"presence","idle_ms":0}"#)
+        dev(runtime, #"{"dev":"advance","ms":1000}"#)
+        XCTAssertEqual(doing(), "idle", "back")
+        // Still at the Mac past the doze time: asleep; a poke wakes it.
+        runtime.home.sync {
+            let core = runtime.core, now = clock.now
+            core.lastInputAt = now - core.dozeMs(at: now)
+            XCTAssertEqual(core.snapshot(at: now).doing, "asleep")
+            core.poke(at: now)
+            XCTAssertEqual(core.snapshot(at: now).doing, "idle")
+            core.lastInputAt = nil
+            XCTAssertEqual(core.snapshot(at: now).doing, "asleep", "nothing says you're here: as before")
+        }
     }
 
     /// The world's gestures wait while the screen is locked, from the lock

@@ -17,8 +17,13 @@ No Jev request: nothing new reaches Jev.
   scroll; typing fast and a look up as a long stretch stops; music and
   watching; on a call (still and silent); a copy held and let go. One
   switch, "Notices what you do at the Mac", turns it all off.
-- On this Mac, idle: the mic read not running (Hey Siri didn't hold it), so
-  a call is a camera, or the mic but for push-to-talk, for 5 s.
+- Fixes after the first review: Boop is awake while you're at the Mac with
+  no agent open (`Core.sleepsAlone`); sound, video and the call come from
+  Core Audio's process objects (which app plays or records), never Boop's
+  own; the tags are `oncall`, `video`, `copied` and the new `macup`; the
+  logs keep no timeline of the pointer or the new tags; stronger poses.
+- On this Mac, idle: no app ran sound input or output (Hey Siri held
+  nothing), so a call is a camera, or any other app recording, for 5 s.
 - Owed on the board: each pose's look and feel at arm's length, the
   pointer's following (smooth, not darting) and the frame rate while it
   follows, the groove's sway, and a real call, song, video and copy.
@@ -124,9 +129,8 @@ rest (tools-test, sim, mirror) passed run after it; `boards`: both build. Not ru
 **Left out on purpose:** quiet on a call (built 2026-11-16, above: the mic
 read idle on the owner's Mac); a look down at a
 finish's name and up when you come back (both are inside Moments, which have
-the eyes); a demo script (the demo format has no line for your hands yet);
-awake while you type with no agent open (Phase 4's #9: today it naps then,
-so typing along needs an agent's session open, working or idle).
+the eyes); a demo script (the demo format has no line for your hands yet).
+Awake while you type with no agent open came 2026-11-16 (`Core.sleepsAlone`).
 
 ## Report, 2026-11-15: bugs, a calmer screen, a roomier popover
 

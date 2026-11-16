@@ -6,13 +6,22 @@ import CoreMediaIO
 
 /// The Mac's facts for what Boop notices of you at the Mac (`Along`), read
 /// on the runtime's queue every hands tick. None asks for a permission and
-/// none is content: idle times, the pointer's place, whether the default
-/// output or input device or a camera is running somewhere, the frontmost
-/// app's bundle id and the pasteboard's change count, never what it holds.
+/// none is content: idle times, the pointer's place, which apps play or
+/// record sound and whether a camera runs, the frontmost app's bundle id
+/// and the pasteboard's change count, never what it holds.
+///
+/// The pointer, the keys, the scroll and the pasteboard are read every
+/// tick (4 a second); sound, the mic and the camera once a second, which
+/// they debounce over seconds anyway, so the Mac's devices aren't asked
+/// more often.
 final class AlongSignals: @unchecked Sendable {
     private let lock = NSLock()
     private var front: String?
     private var token: NSObjectProtocol?
+    /// The slow facts as last read, and when.
+    private var slow = Along.Facts()
+    private var slowAt: Date?
+    static let slowEvery: TimeInterval = 1
 
     /// Keeps the frontmost app's bundle id as it changes, on the main
     /// thread, where NSWorkspace says so.
@@ -27,46 +36,58 @@ final class AlongSignals: @unchecked Sendable {
     }
 
     /// The facts now, but the key and input idle times (`PresenceSignals`).
-    func read() -> Along.Reading {
-        var r = Along.Reading()
-        r.scrollIdleMs = Self.idleMs(.scrollWheel)
-        r.clickIdleMs = min(Self.idleMs(.leftMouseDown), Self.idleMs(.rightMouseDown))
+    func read() -> Along.Facts {
+        let front = lock.withLock { self.front }
+        if slowAt.map({ -$0.timeIntervalSinceNow >= Self.slowEvery }) ?? true {
+            slowAt = Date()
+            slow = Self.readSlow(front: front)
+        }
+        var f = slow
+        f.front = front
+        f.scrollIdleMs = Self.idleMs(.scrollWheel)
+        f.clickIdleMs = min(Self.idleMs(.leftMouseDown), Self.idleMs(.rightMouseDown))
         // CoreGraphics' global coordinates, y down, as the anchor keeps them.
         if let p = CGEvent(source: nil)?.location {
-            r.pointerX = p.x
-            r.pointerY = p.y
+            f.pointerX = p.x
+            f.pointerY = p.y
             var display = CGDirectDisplayID(0), count: UInt32 = 0
             if CGGetDisplaysWithPoint(p, 1, &display, &count) == .success, count > 0 {
-                let b = CGDisplayBounds(display)
-                r.display = Anchor.Rect(x: b.minX, y: b.minY, width: b.width, height: b.height)
+                f.display = Self.rect(CGDisplayBounds(display))
             }
         }
-        r.sound = Self.running(kAudioHardwarePropertyDefaultOutputDevice)
-        r.mic = Self.running(kAudioHardwarePropertyDefaultInputDevice)
-        r.camera = Self.cameraRunning()
-        r.front = lock.withLock { front }
-        r.copies = NSPasteboard.general.changeCount
-        return r
+        f.copies = NSPasteboard.general.changeCount
+        return f
     }
+
+    /// Every active display, for whether the anchor's is still there.
+    static func displays() -> [Anchor.Rect] {
+        var ids = [CGDirectDisplayID](repeating: 0, count: 16), count: UInt32 = 0
+        guard CGGetActiveDisplayList(16, &ids, &count) == .success else { return [] }
+        return ids.prefix(Int(count)).map { rect(CGDisplayBounds($0)) }
+    }
+
+    static func rect(_ b: CGRect) -> Anchor.Rect { Anchor.Rect(x: b.minX, y: b.minY, width: b.width, height: b.height) }
 
     static func idleMs(_ type: CGEventType) -> Int64 {
         Int64(CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: type) * 1000)
     }
 
-    /// Whether the default device of `which` (output or input) is running
-    /// for any app.
-    static func running(_ which: AudioObjectPropertySelector) -> Bool {
-        var address = AudioObjectPropertyAddress(mSelector: which, mScope: kAudioObjectPropertyScopeGlobal,
-                                                 mElement: kAudioObjectPropertyElementMain)
-        var device = AudioDeviceID(0)
-        var size = UInt32(MemoryLayout<AudioDeviceID>.size)
-        guard AudioObjectGetPropertyData(AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device) == noErr,
-              device != 0 else { return false }
-        address.mSelector = kAudioDevicePropertyDeviceIsRunningSomewhere
-        var on = UInt32(0)
-        size = UInt32(MemoryLayout<UInt32>.size)
-        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, &on) == noErr else { return false }
-        return on != 0
+    /// Sound, the mic and the camera.
+    static func readSlow(front: String?) -> Along.Facts {
+        var f = Along.Facts()
+        f.camera = cameraRunning()
+        // Which app plays or records sound is Core Audio's process objects,
+        // from macOS 14.2; on 14.0 and 14.1 there are none, so no sound or
+        // mic facts at all there (the camera still counts for a call).
+        if #available(macOS 14.2, *) {
+            for p in AudioProcess.all() where p.pid != getpid() {
+                if p.output {
+                    if p.belongs(to: front) { f.frontSound = true } else { f.otherSound = true }
+                }
+                if p.input, !AudioProcess.alwaysListening.contains(p.bundle ?? "") { f.otherInput = true }
+            }
+        }
+        return f
     }
 
     /// Whether any camera is running for any app.
@@ -89,5 +110,59 @@ final class AlongSignals: @unchecked Sendable {
             var got: UInt32 = 0
             return CMIOObjectGetPropertyData(device, &running, 0, nil, UInt32(MemoryLayout<UInt32>.size), &got, &on) == 0 && on != 0
         }
+    }
+}
+
+/// One app as Core Audio sees it: whether it plays sound (output) or
+/// records it (input) now, on any device. macOS 14.2 and later.
+@available(macOS 14.2, *)
+struct AudioProcess {
+    let pid: pid_t
+    let bundle: String?
+    let output: Bool
+    let input: Bool
+
+    /// Apps that may keep the mic open with nothing on, which aren't a call:
+    /// "Hey Siri" and its speech (CoreSpeech, assistantd, Siri) and Sound
+    /// Recognition (accessibility's heard). None ran input on the owner's
+    /// Mac when it was measured, idle (2026-11-16); they're here in case.
+    static let alwaysListening: Set<String> = [
+        "com.apple.CoreSpeech", "com.apple.assistantd", "com.apple.Siri", "com.apple.accessibility.heard",
+    ]
+
+    /// Whether this is the frontmost app's sound: its own process, one of
+    /// its helpers (Chrome's play from `com.google.Chrome.helper`), or for
+    /// Safari, WebKit's (Safari plays from `com.apple.WebKit.GPU`).
+    func belongs(to front: String?) -> Bool {
+        guard let front, let bundle else { return false }
+        if bundle == front || bundle.hasPrefix(front + ".") { return true }
+        return front == "com.apple.Safari" && bundle.hasPrefix("com.apple.WebKit.")
+    }
+
+    static func all() -> [AudioProcess] {
+        var address = AudioObjectPropertyAddress(mSelector: kAudioHardwarePropertyProcessObjectList,
+                                                 mScope: kAudioObjectPropertyScopeGlobal, mElement: kAudioObjectPropertyElementMain)
+        let system = AudioObjectID(kAudioObjectSystemObject)
+        var size: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr, size > 0 else { return [] }
+        var ids = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
+        guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &ids) == noErr else { return [] }
+        return ids.compactMap { id in
+            var out: UInt32 = 0, inp: UInt32 = 0, pid: pid_t = 0
+            guard get(id, kAudioProcessPropertyIsRunningOutput, &out), get(id, kAudioProcessPropertyIsRunningInput, &inp),
+                  out != 0 || inp != 0 else { return nil }
+            _ = get(id, kAudioProcessPropertyPID, &pid)
+            var bundle: Unmanaged<CFString>?
+            _ = get(id, kAudioProcessPropertyBundleID, &bundle)
+            let name = bundle?.takeRetainedValue() as String?
+            return AudioProcess(pid: pid, bundle: name?.isEmpty == true ? nil : name, output: out != 0, input: inp != 0)
+        }
+    }
+
+    static func get<T>(_ object: AudioObjectID, _ selector: AudioObjectPropertySelector, _ value: inout T) -> Bool {
+        var address = AudioObjectPropertyAddress(mSelector: selector, mScope: kAudioObjectPropertyScopeGlobal,
+                                                 mElement: kAudioObjectPropertyElementMain)
+        var size = UInt32(MemoryLayout<T>.size)
+        return AudioObjectGetPropertyData(object, &address, 0, nil, &size, &value) == noErr
     }
 }

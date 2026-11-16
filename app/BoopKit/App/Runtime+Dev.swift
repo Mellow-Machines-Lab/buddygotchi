@@ -30,6 +30,7 @@ extension Runtime {
             guard options.idleMs == nil else { return }
             if let ms = (object["idle_ms"] as? NSNumber)?.int64Value {
                 devIdleMs = max(0, ms)
+                devIdleSet = true
                 options.log("dev: idle \(devIdleMs) ms")
             }
             if let ms = (object["key_idle_ms"] as? NSNumber)?.int64Value {
@@ -42,7 +43,7 @@ extension Runtime {
                 presenceSignal(signal)
             }
         case "along":
-            // The rest of you at the Mac, headless only (`Along.Reading`):
+            // The rest of you at the Mac, headless only (`Along.Facts`):
             // each field a raw fact, the rules run on them as on the Mac's.
             guard options.along == nil else { return }
             alongLine(object)
@@ -121,6 +122,7 @@ extension Runtime {
     /// the request its last state showed, as the board does.
     func gestured(_ kind: String, who: String = "dev") {
         options.log("\(who): gesture \(kind)")
+        if places(gesture: kind) { return placeHere(at: options.clock()) }
         run(pipeline.gesture(kind, request: rig.latest?.attn?.id, at: options.clock()))
         changed()
     }
@@ -177,10 +179,11 @@ extension Runtime {
     }
 
     /// `{"dev":"along",…}`: `scroll_idle_ms`, `click_idle_ms`, `pointer`
-    /// ([x, y]) and its `display` ([x, y, w, h]), `sound`, `front` (a bundle
-    /// id, or "" for none), `camera`, `mic` (each true or false), and
-    /// `copy` (true: one copy). Each stays as set until the next says
-    /// otherwise.
+    /// ([x, y]) and its `display` ([x, y, w, h]), `sound` (who plays it:
+    /// "front", the frontmost app, "other", another, or "none"), `front` (a
+    /// bundle id, or "" for none), `camera` and `mic` (another app records:
+    /// true or false), and `copy` (true: one copy). Each stays as set until
+    /// the next says otherwise.
     func alongLine(_ object: [String: Any]) {
         var r = devAlong
         if let ms = (object["scroll_idle_ms"] as? NSNumber)?.int64Value { r.scrollIdleMs = max(0, ms) }
@@ -191,17 +194,12 @@ extension Runtime {
             r.display = r.display ?? Self.devDisplay
         }
         if let display = rect(object["display"]) { r.display = display }
-        if let on = object["sound"] as? Bool { r.sound = on }
+        if let who = object["sound"] as? String { (r.frontSound, r.otherSound) = (who == "front", who == "other") }
         if let front = object["front"] as? String { r.front = front.isEmpty ? nil : front }
         if let on = object["camera"] as? Bool { r.camera = on }
-        if let on = object["mic"] as? Bool { r.mic = on }
+        if let on = object["mic"] as? Bool { r.otherInput = on }
+        if object["copy"] as? Bool == true { r.copies = (r.copies ?? 0) + 1 }
         devAlong = r
-        if object["copy"] as? Bool == true {
-            // The count as it was, read first, so the copy is a change.
-            if devAlong.copies == nil { devAlong.copies = 0 }
-            handsTick()
-            devAlong.copies! += 1
-        }
         options.log("dev: along " + object.keys.filter { $0 != "dev" }.sorted().joined(separator: " "))
         handsTick()
     }

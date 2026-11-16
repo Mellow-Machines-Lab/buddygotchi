@@ -11,7 +11,7 @@ import Foundation
 /// It's a fact true now, sent to the board as a tag (`Tags.hands`,
 /// `Tags.along`), like the time of day: no event, nothing in the
 /// transcript, and nothing the brain reads.
-public enum Hands: String, CaseIterable, Sendable {
+public enum Hands: String, Sendable {
     case typing, reading, scrolling
 
     /// Typing until this long after the last key: a pause between words

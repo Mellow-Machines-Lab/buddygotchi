@@ -321,7 +321,7 @@ public struct StateSnapshot: Equatable, Sendable {
     public var visual: String { attn != nil ? "needs_you" : look }
 
     /// You're on a call (`Along`): Boop holds still and says nothing.
-    public var onCall: Bool { when.contains("call") }
+    public var onCall: Bool { when.contains("oncall") }
 
     /// How many sessions need you: `attn`'s and its `more`. The popover's
     /// headline; the message doesn't carry it.
@@ -391,6 +391,24 @@ public struct StateSnapshot: Equatable, Sendable {
         if skip > 0 { fields["skip"] = .int(skip) }
         if unlisted > 0 { fields["unlisted"] = .int(unlisted) }
         return fields
+    }
+
+    /// The tags of you at the Mac that the logs and a bug report don't keep
+    /// (`unnoticed`): what you scroll, play, record or copy.
+    public static let unloggedTags = Tags.along
+
+    /// `line`, a `state`, as the logs keep it: without the pointer (`ptr`)
+    /// and the tags of what you scroll, play, record or copy, so no log or
+    /// bug report holds a timeline of you at the Mac. Any other line as it is.
+    public static func unnoticed(_ line: String) -> String {
+        guard line.hasPrefix(#"{"t":"state""#), line.contains(#""ptr":"#) || unloggedTags.contains(where: { line.contains("\"\($0)\"") })
+        else { return line }
+        var out = line.replacingOccurrences(of: #","ptr":\[[-0-9,]*\]"#, with: "", options: .regularExpression)
+        for tag in unloggedTags {
+            out = out.replacingOccurrences(of: ",\"\(tag)\"", with: "").replacingOccurrences(of: "\"\(tag)\",", with: "")
+                .replacingOccurrences(of: ",\"when\":[\"\(tag)\"]", with: "")
+        }
+        return out
     }
 
     /// The message as one JSON line, keys in the protocol's order.

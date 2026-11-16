@@ -117,11 +117,10 @@ struct SettingsPane: View {
                     volumeRow
                     RowDivider()
                     SettingRow(icon: "keyboard", title: "Notices what you do at the Mac",
-                               detail: "\(model.name) types and reads along, follows your pointer, sways to your music and keeps quiet on a call. "
-                                   + "It goes by timing, where your pointer is, and whether sound or a camera is on. "
-                                   + "Never what you type, read or copy.") {
+                               detail: "\(model.name) types and reads along, sways to your music and keeps still on a call. "
+                                   + "It goes by timing and what's on, never what you type, read or copy.") {
                         Toggle("Notices what you do at the Mac",
-                               isOn: Binding(get: { model.status?.typesAlong ?? true }, set: { model.setTypesAlong($0) }))
+                               isOn: Binding(get: { model.status?.noticesYou ?? true }, set: { model.setNoticesYou($0) }))
                             .toggleStyle(.boop).labelsHidden()
                     }
                     RowDivider()
@@ -211,17 +210,19 @@ struct SettingsPane: View {
     /// Not known until you show it.
     private var placeRow: some View {
         let status = model.status, name = model.name
+        let gone = status?.anchorGone == true
         let detail = status?.placing == true
             ? "Move your pointer to the spot on your screen nearest \(name), then tap \(name)."
-            : status?.anchored != true ? "Then \(name) follows your pointer, and turns to your Mac when an agent needs you."
-            : status?.macSide.map { "\(name) follows your pointer, and turns to its \($0.rawValue) when an agent needs you." }
-            ?? "\(name) follows your pointer."
-        return SettingRow(icon: "cursorarrow.rays", title: "Show \(name) where it sits", detail: detail, wide: true) {
-            Button(status?.placing == true ? "Cancel" : status?.anchored == true ? "Again" : "Show") { model.showWhereBoopSits() }
+            : gone ? "Your screens changed. Show \(name) where it sits again, and it follows your pointer."
+            : "\(name) follows your pointer, and turns to your screen when an agent needs you."
+        let title = gone ? "Show \(name) where it sits again" : "Show \(name) where it sits"
+        return SettingRow(icon: "cursorarrow.rays", title: title, detail: detail, wide: true) {
+            Button(status?.placing == true ? "Cancel" : status?.anchored == true && !gone ? "Again" : "Show") { model.showWhereBoopSits() }
                 .buttonStyle(.row)
-                .disabled(status?.typesAlong == false)
+                .disabled(status?.noticesYou == false)
         }
     }
+
 
     private var volumeRow: some View {
         let vol = model.status?.snapshot.vol ?? 6

@@ -165,7 +165,11 @@ public final class Pipeline {
     @discardableResult
     public func poke(at now: Int64, finish: ThreadRef? = nil, touch: Bool = true) -> Step {
         input(at: now) {
-            let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input"))
+            // Whether it slept as you poked it, once the Mac says you can be
+            // here with no agent open (`Core.sleepsAlone`); else the view
+            // goes by whether any session is open, as it always did.
+            let data: [String: JSONValue] = core.lastInputAt == nil ? [:] : ["asleep": .bool(core.snapshot(at: now).doing == "asleep")]
+            let e = harness.emit(Event(at: now, source: .device, type: .poke, specificType: "input", data: data))
             endNaps(at: now)
             run(core.poke(at: now, seq: e.seq, finish: finish, touch: touch))
         }
@@ -179,6 +183,7 @@ public final class Pipeline {
                 guard !core.line(at: now).isEmpty else { return poke(at: now, finish: finish, touch: false) }
         return input(at: now) {
             let e = harness.emit(Event(at: now, source: .device, type: .press, specificType: "button"))
+            core.touched(at: now)
             endNaps(at: now)
             run(core.press(at: now, seq: e.seq))
         }
@@ -235,6 +240,7 @@ public final class Pipeline {
         if touch == .poke { return poke(at: now) }
         return input(at: now) {
             harness.emit(Event(at: now, source: .device, type: .gesture, phase: ended ? .end : nil, specificType: touch.rawValue))
+            core.touched(at: now)
             guard !ended else { return }
             endNaps(at: now)
             if touch.meetsPetWish { run(core.meetWish(.pet, at: now)) }
@@ -326,6 +332,7 @@ public final class Pipeline {
     public func lock(_ event: Event) -> Step {
         input(at: event.at) {
             harness.emit(event)
+            run(core.lock(event.phase == .start, at: event.at))
             if event.phase == .end { endNaps(at: event.at) }
         }
     }

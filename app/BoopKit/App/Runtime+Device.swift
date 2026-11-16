@@ -72,6 +72,8 @@ extension Runtime {
             run(pipeline.poke(at: now, finish: opens))
         case "gesture":
             options.log("device: gesture \(ev.did ?? "?")")
+            // Waiting to be shown where it sits: a touch on its face is that.
+            if let kind = ev.did, places(gesture: kind) { return placeHere(at: now) }
             if let kind = ev.did { run(pipeline.gesture(kind, request: BoopDevice.request(held: ev), at: now)) }
         case "drawer":
             // The agents' drawer, the board's own: open (from the row it
@@ -114,6 +116,17 @@ extension Runtime {
         }
     }
 
+    /// On a call every Moment is small (`MomentRule.small`): played once,
+    /// and a finish not sized by its turn, so nothing dances while your
+    /// camera is on.
+    func calmed(_ reaction: Moment) -> Moment {
+        guard core.along.onCall else { return reaction }
+        var m = reaction
+        if let loops = m.loops { m.loops = min(loops, MomentOutput.sizes[MomentRule.small].loops) }
+        if m.turn != nil { m.turn = 0 }
+        return m
+    }
+
     /// A snapshot for `rig`'s device.
     func show(_ snapshot: StateSnapshot) {
         rig.latest = snapshot
@@ -129,6 +142,7 @@ extension Runtime {
     /// needs you or `listening` shows. Push-to-talk's `listening` plays at
     /// once (`BoopDevice.play`), and drops the reactions waiting there.
     func playRule(_ reaction: Moment, _ ended: @escaping (DeviceLink.Outcome) -> Void = { _ in }) {
+        let reaction = calmed(reaction)
         rig.link.do(reaction.name, args: reaction.args, play: BoopDevice.play(reaction), ttl: BoopDevice.reactionTTL, by: .rule,
                     now: options.clock(), ended)
     }
@@ -145,6 +159,7 @@ extension Runtime {
     /// known how it went (read Boop's way by `Reactions`): at once when it
     /// can't be sent. On `home`.
     func queue(_ reaction: Moment, _ pending: Pending) {
+        let reaction = calmed(reaction)
         let now = options.clock(), reactions = rig.reactions
         let id = rig.link.do(reaction.name, args: reaction.args, play: .next, ttl: BoopDevice.ttl(reaction), by: .brain,
                              now: now) { outcome in

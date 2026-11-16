@@ -616,8 +616,9 @@ Besides drawing each mood and state, a face:
     Mac, `typing` or `reading` (`Hands`); the Mac's side, `macleft` or
     `macright` (from where Boop sits, `Anchor.side`); and, last in the table
     so no pack's numbering of the others moves, the rest of you at the Mac
-    (`Along`): `scrolling`, `typingfast`, `music` or `watching`, `call` and
-    `holding`. Boop's level puts no tag on: its body is one
+    (`Along`): `scrolling`, `typingfast`, `music` or `video`, `oncall` and
+    `copied`; and `macup`, the screen above the board (its anchor in the middle
+    third of its display). Boop's level puts no tag on: its body is one
     size at every level. A board with no Mac keeps none of the Mac's tags,
     as they go stale.
   - Not a tag: the way to your pointer while it moves (`state.ptr`, `[x,
@@ -945,7 +946,7 @@ Some clips' ids mean something to a face:
   as the Moment starts. The gel's recipe for that state times it.
 - You at the Mac: the gel loops `type-along` while it types with you, and
   `type-along-fast` over it while you type fast; `read-along` (then
-  `read-along-settled`), `watching`, `groove`, `on-call` and `holding`
+  `read-along-settled`), `video`, `groove`, `on-call` and `copied`
   while it's with you so (its `GelFace::showWithYou`); and once, `release`
   as a copy is let go, `stretch` as a call ends, `look-around` as the
   music stops.

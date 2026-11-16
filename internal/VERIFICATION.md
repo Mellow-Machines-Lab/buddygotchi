@@ -126,9 +126,10 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
   menu-bar icons as PNGs (L0). Besides the `{"dev":…}` lines `--help`
   lists, a headless socket takes `{"dev":"presence",…}`, the Mac's lock, the time since the last key (`key_idle_ms`, for your hands),
   sleep and idle time; `{"dev":"along",…}`, the rest of you at the Mac
-  (`Along.Reading`): `scroll_idle_ms`, `click_idle_ms`, `pointer` [x, y]
-  and its `display` [x, y, w, h], `sound`, `front` (a bundle id), `camera`,
-  `mic` and `copy`; and `{"dev":"anchor",…}`, where Boop sits: `place`
+  (`Along.Facts`): `scroll_idle_ms`, `click_idle_ms`, `pointer` [x, y]
+  and its `display` [x, y, w, h], `sound` (who plays: `front`, `other` or
+  `none`), `front` (a bundle id), `camera`, `mic` (another app records) and
+  `copy`; and `{"dev":"anchor",…}`, where Boop sits: `place`
   (Settings' "Show Boop where it sits"; the next `{"dev":"tap"}` is the
   spot), `at` [x, y] with its `display`, or `clear`.
 - `.build/debug/beacon` and `.build/debug/mellowharness-emit`:

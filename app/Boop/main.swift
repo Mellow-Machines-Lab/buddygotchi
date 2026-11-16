@@ -53,7 +53,7 @@ let usage = """
                and for the world, "world": {"dev":"world","shown":true} (onboarding's world screen),
                "on":false (the switch), "tab":true (the World tab) and "to":ID,"gesture":"boop";
                and headless, for you at the Mac, "along": {"dev":"along","scroll_idle_ms":0}, "click_idle_ms",
-               "pointer":[x,y] (and "display":[x,y,w,h]), "sound":true, "front":"com.apple.Safari", "camera",
+               "pointer":[x,y] (and "display":[x,y,w,h]), "sound":"front"|"other"|"none", "front":"com.apple.Safari", "camera",
                "mic" and "copy":true; and "anchor": {"dev":"anchor","place":true} (the next "tap" is where Boop
                sits), "at":[x,y] or "clear":true.
            Boop --counts [--state-dir DIR] [--days N]

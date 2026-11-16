@@ -29,7 +29,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// along, reads along, follows your pointer, hears music, keeps quiet on
     /// a call and holds a copy. On unless you turn it off. Off, none of the
     /// Mac's facts for it is read or sent.
-    public var typesAlong = true
+    public var noticesYou = true
     /// Where Boop sits beside your screen, shown once in Settings: where it
     /// turns when something needs you, and where your pointer is from it.
     /// Not set, it doesn't turn or follow.
@@ -60,13 +60,16 @@ public struct AppSettings: Codable, Equatable, Sendable {
         board = try? c.decodeIfPresent(String.self, forKey: .board)
         onboarding = try? c.decodeIfPresent(Onboarding.Act.self, forKey: .onboarding)
         simulator = (try? c.decodeIfPresent(Bool.self, forKey: .simulator)) ?? false
-        typesAlong = (try? c.decodeIfPresent(Bool.self, forKey: .typesAlong)) ?? true
+        noticesYou = (try? c.decodeIfPresent(Bool.self, forKey: .noticesYou)) ?? true
         anchor = try? c.decodeIfPresent(Anchor.self, forKey: .anchor)
         world = (try? c.decodeIfPresent(Bool.self, forKey: .world)) ?? true
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
     }
 
-    enum CodingKeys: String, CodingKey { case talk, swearing, renamed, volume, board, onboarding, typesAlong, anchor, simulator, world, worldShown }
+    // `noticesYou` keeps the key it had as "Types along".
+    enum CodingKeys: String, CodingKey {
+        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown
+    }
 
     public func encode(to encoder: Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -76,7 +79,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         try c.encode(volume, forKey: .volume)
         try c.encodeIfPresent(board, forKey: .board)
         try c.encodeIfPresent(onboarding, forKey: .onboarding)
-        if !typesAlong { try c.encode(typesAlong, forKey: .typesAlong) }
+        if !noticesYou { try c.encode(noticesYou, forKey: .noticesYou) }
         try c.encodeIfPresent(anchor, forKey: .anchor)
         if simulator { try c.encode(simulator, forKey: .simulator) }
         if !world { try c.encode(world, forKey: .world) }

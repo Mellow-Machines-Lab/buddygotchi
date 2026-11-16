@@ -906,7 +906,7 @@ public final class TranscriptView {
         noteActivity(now)
         let count = fold.pokes.add(.pokes, at: now)
         // The first poke of a run wakes Boop; the rest find it awake.
-        let asleep = count == 1 && fold.sessions.sessions.isEmpty
+        let asleep = count == 1 && (e["asleep"]?.bool ?? fold.sessions.sessions.isEmpty)
         return Line(EventLine.poke(inARow: count, name: name, asleep: asleep),
                     facts: ["in_a_row": .int(Int64(count)), "seconds": .int(Int64(fold.pokes.seconds)), "asleep": .bool(asleep)])
     }
