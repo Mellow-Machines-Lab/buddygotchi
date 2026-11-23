@@ -4,7 +4,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include "render/font.h"
 
 namespace render {
 
@@ -13,13 +12,6 @@ namespace {
 constexpr const char* kCallStyleNames[] = {"land",   "helper", "back",    "shatter", "bonk",   "bonk2",  "bonk3",
                                            "throw",  "shrug",  "timeout", "no",      "drop",   "gather"};
 static_assert(sizeof(kCallStyleNames) / sizeof(kCallStyleNames[0]) == int(CallStyle::kCount), "a name for every style");
-
-// The same few bits for the same word, slot and count on every board, so a
-// word falls where it did in the simulator.
-uint32_t mix(uint32_t h) {
-  h ^= h >> 16, h *= 0x7feb352d, h ^= h >> 15, h *= 0x846ca68b, h ^= h >> 16;
-  return h;
-}
 
 }  // namespace
 
@@ -54,7 +46,7 @@ uint32_t callFlightMs(CallStyle style) {
     case CallMove::kHit: return 380;
     case CallMove::kSink: return 520;
     case CallMove::kDrop: return 300;
-    case CallMove::kGather: return 700;  // the words reach its mouth
+    case CallMove::kGather: return 700;  // the word reaches its mouth
     default: return 450;
   }
 }
@@ -71,72 +63,19 @@ bool Stream::accepts(uint32_t t) const { return on || (ending && int32_t(t - end
 
 bool Stream::drawn(uint32_t t) const { return on || (ending && int32_t(t - endedAt) < int32_t(kEndMs + kCallMs)); }
 
-bool Stream::taken(const Word& w) const {
-  if (!call.live || !w.live || int32_t(w.born - call.at) > 0) return false;
-  switch (call.style) {
-    case CallStyle::kGather: return w.slot == call.slot;
-    case CallStyle::kDrop: return true;
-    default: return false;
-  }
-}
-
-void Stream::drop(const Lane& lane, int column, int columns, uint32_t t) {
-  // The newest of its lane's words still falling (or waiting to): this one
-  // drops kWordGapPx behind it, no faster.
-  const Word* ahead = nullptr;
-  for (const auto& o : words)
-    if (o.live && o.slot == lane.slot && (!ahead || int32_t(o.born - ahead->born) > 0)) ahead = &o;
-  const uint32_t h = mix(lane.slot * 131u + lane.count * 7919u + uint8_t(lane.word[0]));
-  uint16_t speed = uint16_t(95 + (h >> 8) % 50);
-  uint32_t born = t;
-  if (ahead) {
-    speed = std::min(speed, ahead->speed);
-    const uint32_t due = ahead->born + (uint32_t(kWordGapPx) * 1000 + ahead->speed - 1) / ahead->speed;
-    if (int32_t(due - t) > 0) born = due;
-    if (int32_t(born - t) > int32_t(kMostWaitMs)) return;
-  }
-  // The slot reused longest ago, or a free one.
-  Word* w = &words[0];
-  for (auto& o : words) {
-    if (!o.live) {
-      w = &o;
-      break;
-    }
-    if (int32_t(o.born - w->born) < 0) w = &o;  // the clock wraps
-  }
-  std::snprintf(w->text, sizeof(w->text), "%s", lane.word);
-  w->slot = lane.slot;
-  const int half = glyphCount(lane.word) * kLarge.w / 2, lo = kWordEdgePx + half, hi = 502 - kWordEdgePx - half;
-  w->x = int16_t(std::clamp(laneX(column, columns) + int(h % 81) - 40, lo, std::max(lo, hi)));
-  w->speed = speed;
-  w->born = born;
-  w->live = true;
-}
-
 void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t) {
   if (!showing && on) ending = true, endedAt = t;
   if (showing) ending = false;
   on = showing;
   if (n > kLanes) n = kLanes;
   for (int i = 0; i < n; ++i) {
-    const Lane& next = in[i];
-    const int was = column(next.slot);
-    if (was < 0) {
-      drop(next, i, n, t);
-      continue;
-    }
-    // Counts go round at 1000.
-    const int moved = (next.count - lanes[was].count + 1000) % 1000;
-    for (int k = 0; k < moved && k < kDropsPerState; ++k) {
-      Lane l = next;
-      l.count = uint16_t(next.count + 1000 - k);
-      drop(l, i, n, t);
-    }
+    const int was = column(in[i].slot);
+    if (was < 0 || in[i].count != lanes[was].count) std::snprintf(newest, sizeof(newest), "%s", in[i].word);
   }
   for (int i = 0; i < n; ++i) lanes[i] = in[i];
   laneCount = n;
+  if (!n) newest[0] = '\0';
   if (cleared) {
-    for (auto& w : words) w.live = false;
     call.live = false;
     ending = false;
   }
@@ -197,29 +136,14 @@ Stream::ActNow Stream::actNow(uint32_t t) const {
 }
 
 void Stream::prune(uint32_t t) {
-  // The words a gather or a drop takes go once they're taken.
-  if (call.live && int32_t(t - call.at) >= int32_t(kTakeMs))
-    for (auto& w : words)
-      if (taken(w)) w.live = false;
   if (call.live && int32_t(t - call.at) >= int32_t(kCallMs)) call.live = false;
-  for (auto& w : words)
-    if (w.live && int32_t(t - w.born) >= int32_t(kFallMs)) w.live = false;
-  // The stream ended a while ago: its last words and word forward go.
+  // The stream ended a while ago: its last word forward goes.
   if (ending && int32_t(t - endedAt) >= int32_t(kEndMs + kCallMs)) {
     ending = false;
-    for (auto& w : words) w.live = false;
     call.live = false;
   }
-  if (ending && int32_t(t - endedAt) >= int32_t(kEndMs))
-    for (auto& w : words)
-      if (w.live && !taken(w)) w.live = false;
 }
 
-bool Stream::moving(uint32_t t) const {
-  if (call.live && int32_t(t - call.at) < int32_t(kCallMs)) return true;
-  for (const auto& w : words)
-    if (w.live && int32_t(t - w.born) < int32_t(kFallMs)) return true;
-  return false;
-}
+bool Stream::moving(uint32_t t) const { return call.live && int32_t(t - call.at) < int32_t(kCallMs); }
 
 }  // namespace render

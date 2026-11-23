@@ -59,12 +59,12 @@ struct HelloAct: View {
 }
 
 /// Act 2: a pretend agent session, and Boop following it live: what its
-/// calls touch falling past Boop as words, a failed test hitting it, a
-/// request for you, and a finish.
+/// calls touch on Boop's monitor and at the bottom, a failed test hitting
+/// it, a request for you, and a finish.
 struct WhatIDoAct: View {
     @ObservedObject var model: OnboardingModel
     @ViewState private var step = Step.asking
-    /// How many words have fallen: the board drops one for each new call.
+    /// How many calls the session has made: the board shows each one's word.
     @ViewState private var drops = 0
     /// The beat the demo plays from, and a count of clicks on the cards,
     /// each of which starts it again from there.
@@ -160,7 +160,7 @@ struct WhatIDoAct: View {
                         .animation(.boopSettle, value: step)
                 }
                 HStack(alignment: .top, spacing: Theme.gapSnug) {
-                    card(0, "Working along", "The files, searches and commands of your agent fall past me. Failures hit me.")
+                    card(0, "Working along", "My monitor shows what your agent is doing, and what it works on. Failures hit me.")
                     card(1, "Needs you", "I glow amber and knock, and say who's waiting.")
                     card(2, "A big finish", "I cheer work that earns it, and hold up whose it was.")
                 }
@@ -230,8 +230,8 @@ struct WhatIDoAct: View {
     }
 
     /// Plays the session's beats over and over, from the one a card's click
-    /// asked for, each beat's words falling in turn, the failed test's FAIL
-    /// raining on Boop and the finish with Boop's own celebration, until
+    /// asked for, each beat's words showing in turn, the failed test's FAIL
+    /// hitting Boop and the finish with Boop's own celebration, until
     /// the act goes. Each card's bar fills over its beats.
     private func play() async {
         guard !still else {

@@ -58,7 +58,7 @@ public enum Onboarding {
 
         /// Act 6's tour, once an agent has said hi, on a board that draws
         /// the work stream and the agents' drawer (the gel's), in order:
-        /// its words falling past Boop, a tap on Boop's cheer for its
+        /// its work showing on Boop, a tap on Boop's cheer for its
         /// finished turn, which opens its thread, the drawer pulled up, and
         /// a row in it tapped, which opens that one's.
         public enum Tour: Int, CaseIterable, Hashable, Sendable { case words, cheer, drawer, row }

@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-16. The contract a character pack meets, so that any
+Updated 2026-11-22. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -587,8 +587,8 @@ Besides drawing each mood and state, a face:
 
 - **Draws the work stream, if it can.** Before each frame the device hands
   it the stream (`Face::watch`): each working lane's latest word and call
-  count from `state`'s `calls`, the words falling and the word a `call`
-  brought forward. A face that doesn't draw it ignores it.
+  count from `state`'s `calls`, the newest of those words, and the word a
+  `call` brought forward. A face that doesn't draw it ignores it.
 - **Has variations.** A state may have several designs, numbered from 1. The
   face picks a look's itself: a new look starts on its first, and at the end
   of a loop it may turn to another. It picks a Moment's too, among those for

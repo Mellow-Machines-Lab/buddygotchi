@@ -3774,149 +3774,55 @@ static void test_listening_hides_an_act_and_it_resumes() {
   TEST_ASSERT_EQUAL_INT(0, r.b.stream().actNow(r.t).ageMs);
 }
 
-// The work stream's model (render/stream.h): a lane whose count moves drops
-// a word for each new call, at most kDropsPerState (one) a `state`, each
-// kWordGapPx behind its lane's newest and never faster, so they never
-// overlap, or none if that's over kMostWaitMs away; a new lane drops its
-// latest; a lane gone, or the stream hidden (needs you), takes its words; a
-// word falls for kFallMs and a word forward lasts kCallMs.
-static void test_the_work_streams_words() {
-  TEST_ASSERT_EQUAL_UINT32(3200, render::Stream::kFallMs);
-  TEST_ASSERT_EQUAL_INT(1, render::Stream::kDropsPerState);
-  TEST_ASSERT_EQUAL_INT(36, render::Stream::kWordGapPx);
-  TEST_ASSERT_EQUAL_UINT32(800, render::Stream::kMostWaitMs);
+// The work stream's model (render/stream.h): a lane whose count moves, or a
+// new lane, makes its word the newest, the work's term; the same count
+// leaves it; no lanes clear it. A word forward lasts kCallMs; the stream
+// off, one may still come for kEndMs; something needing you takes all at
+// once.
+static void test_the_work_streams_newest_word() {
   TEST_ASSERT_EQUAL_UINT32(2500, render::Stream::kCallMs);
+  TEST_ASSERT_EQUAL_UINT32(1500, render::Stream::kEndMs);
   render::Stream s;
   render::Stream::Lane lanes[2];
   lanes[0].slot = 0, lanes[0].count = 4, std::strcpy(lanes[0].word, "grep");
-  auto live = [&] {
-    int n = 0;
-    for (const auto& w : s.words) n += w.live;
-    return n;
-  };
   s.setLanes(lanes, 1, true, false, 0);
-  TEST_ASSERT_EQUAL_INT(1, live());
-  lanes[0].count = 5;
-  s.setLanes(lanes, 1, true, false, 100);
-  TEST_ASSERT_EQUAL_INT(2, live());
-  lanes[0].count = 15;  // ten calls in one state: one word, the latest, once
-  s.setLanes(lanes, 1, true, false, 200);
-  TEST_ASSERT_EQUAL_INT(3, live());
-  // Each a word behind the one before: dropping once it's fallen
-  // kWordGapPx, never faster.
-  const render::Stream::Word* byAge[3];
-  for (int i = 0; i < 3; ++i) byAge[i] = &s.words[i];
-  std::sort(byAge, byAge + 3, [](auto* a, auto* b) { return int32_t(a->born - b->born) < 0; });
-  for (int i = 1; i < 3; ++i) {
-    const auto &before = *byAge[i - 1], &after = *byAge[i];
-    TEST_ASSERT_TRUE(after.speed <= before.speed);
-    TEST_ASSERT_TRUE(int(after.born - before.born) * before.speed >= render::Stream::kWordGapPx * 1000);
-  }
-  const uint32_t last = byAge[2]->born;
-  s.setLanes(lanes, 1, true, false, 300);  // the same count: none
-  TEST_ASSERT_EQUAL_INT(3, live());
+  TEST_ASSERT_EQUAL_STRING("grep", s.newest);
   lanes[1].slot = 2, lanes[1].count = 1, std::strcpy(lanes[1].word, "sed");
-  s.setLanes(lanes, 2, true, false, 300);
-  TEST_ASSERT_EQUAL_INT(4, live());
+  s.setLanes(lanes, 2, true, false, 100);
+  TEST_ASSERT_EQUAL_STRING("sed", s.newest);
   TEST_ASSERT_EQUAL_INT(1, s.column(2));
-  // The first lane's session rests: its words fall on where they dropped.
-  const int16_t x = s.words[0].x;
-  s.setLanes(&lanes[1], 1, true, false, 400);
-  TEST_ASSERT_EQUAL_INT(4, live());
-  TEST_ASSERT_EQUAL_INT(-1, s.column(0));
-  TEST_ASSERT_EQUAL_INT(x, s.words[0].x);
-  s.prune(last + render::Stream::kFallMs - 1);
-  TEST_ASSERT_EQUAL_INT(1, live());
-  s.prune(last + render::Stream::kFallMs);
-  TEST_ASSERT_EQUAL_INT(0, live());
+  // The first lane's count moves: its word is the newest again.
+  lanes[0].count = 5, std::strcpy(lanes[0].word, "Core.swift");
+  s.setLanes(lanes, 2, true, false, 200);
+  TEST_ASSERT_EQUAL_STRING("Core.swift", s.newest);
+  // The same counts: it stays.
+  s.setLanes(lanes, 2, true, false, 300);
+  TEST_ASSERT_EQUAL_STRING("Core.swift", s.newest);
   s.startCall("make", 2, render::callStyleFromName("bonk"), 5000);
   TEST_ASSERT_TRUE(s.call.live && s.call.style == render::CallStyle::kBonk);
   TEST_ASSERT_EQUAL_STRING("bonk", render::callStyleName(s.call.style));
   TEST_ASSERT_TRUE(render::callStyleFromName("nonsense") == render::CallStyle::kLand);
+  TEST_ASSERT_TRUE(s.moving(5000 + render::Stream::kCallMs - 1));
   s.prune(5000 + render::Stream::kCallMs);
   TEST_ASSERT_FALSE(s.call.live);
-
-  // The agents done: the stream off, its words linger kEndMs, and a word
-  // forward may still come in that time.
-  TEST_ASSERT_EQUAL_UINT32(1500, render::Stream::kEndMs);
-  TEST_ASSERT_EQUAL_UINT32(700, render::Stream::kTakeMs);
-  lanes[0].count = 16;
-  s.setLanes(lanes, 1, true, false, 10000);
-  TEST_ASSERT_EQUAL_INT(1, live());
-  s.setLanes(nullptr, 0, false, false, 10100);
-  TEST_ASSERT_TRUE(s.ending && s.accepts(10100 + render::Stream::kEndMs - 1));
-  TEST_ASSERT_FALSE(s.accepts(10100 + render::Stream::kEndMs));
-  TEST_ASSERT_EQUAL_INT(1, live());
-  // A turn's end gathers its lane's words: they're its for kTakeMs, then gone.
-  s.startCall("done", 0, render::callStyleFromName("gather"), 10200);
-  int taken = 0;
-  for (const auto& w : s.words) taken += s.taken(w);
-  TEST_ASSERT_EQUAL_INT(1, taken);
-  s.prune(10200 + render::Stream::kTakeMs - 1);
-  TEST_ASSERT_EQUAL_INT(1, live());
-  s.prune(10200 + render::Stream::kTakeMs);
-  TEST_ASSERT_EQUAL_INT(0, live());
-  TEST_ASSERT_TRUE(s.drawn(10200 + render::Stream::kTakeMs));
-
-  // A drop takes every word falling, whichever its lane; and a style the
-  // board doesn't know (one the Mac no longer sends) is a word that lands.
-  s.setLanes(lanes, 1, true, false, 20000);
-  TEST_ASSERT_EQUAL_INT(1, live());
-  s.startCall("rate limit", 3, render::callStyleFromName("drop"), 21000);
-  taken = 0;
-  for (const auto& w : s.words) taken += s.taken(w);
-  TEST_ASSERT_EQUAL_INT(1, taken);
-  s.prune(21000 + render::Stream::kTakeMs);
-  TEST_ASSERT_EQUAL_INT(0, live());
+  TEST_ASSERT_FALSE(s.moving(5000 + render::Stream::kCallMs));
   for (const char* gone : {"compact", "buried", "freeze"})
     TEST_ASSERT_TRUE(render::callStyleFromName(gone) == render::CallStyle::kLand);
 
+  // The agents done: a word forward may still come for kEndMs.
+  s.setLanes(nullptr, 0, false, false, 10100);
+  TEST_ASSERT_EQUAL_STRING("", s.newest);
+  TEST_ASSERT_TRUE(s.ending && s.accepts(10100 + render::Stream::kEndMs - 1));
+  TEST_ASSERT_FALSE(s.accepts(10100 + render::Stream::kEndMs));
+  s.startCall("done", 0, render::callStyleFromName("gather"), 10200);
+  TEST_ASSERT_TRUE(s.drawn(10200));
+
   // Something needs you: everything goes at once.
+  s.setLanes(lanes, 1, true, false, 20000);
   s.startCall("make", 0, render::CallStyle::kBonk, 24000);
   s.setLanes(nullptr, 0, false, true, 24100);
   TEST_ASSERT_FALSE(s.call.live);
-  TEST_ASSERT_EQUAL_INT(0, live());
   TEST_ASSERT_FALSE(s.accepts(24100));
-}
-
-// Pins where a falling word drops and which slot it takes: its middle keeps
-// the whole word, in the large font, kWordEdgePx (12) inside the 502-wide
-// screen's sides, in the first lane and the last, whatever its jitter; with
-// every slot taken it reuses the one dropped longest ago, the clock wrapped
-// or not.
-static void test_falling_words_stay_on_screen() {
-  TEST_ASSERT_EQUAL_INT(12, render::Stream::kWordEdgePx);
-  render::Stream::Lane lanes[4];
-  const char* longWord = "make_test_all";  // 13 glyphs
-  const int half = render::glyphCount(longWord) * render::kLarge.w / 2;
-  for (int i = 0; i < 4; ++i) lanes[i].slot = uint8_t(i), std::strcpy(lanes[i].word, longWord);
-  int least = 502, most = 0;
-  for (uint16_t count = 1; count <= 60; ++count) {
-    for (int n : {1, 4}) {
-      render::Stream s;
-      for (auto& l : lanes) l.count = count;
-      s.setLanes(lanes, n, true, false, 0);
-      for (const auto& w : s.words) {
-        if (!w.live) continue;
-        least = std::min(least, w.x - half), most = std::max(most, w.x + half);
-      }
-    }
-  }
-  TEST_ASSERT_TRUE(least >= render::Stream::kWordEdgePx);
-  TEST_ASSERT_TRUE(most <= 502 - render::Stream::kWordEdgePx);
-
-  // Every slot taken, born either side of the clock's wrap: the oldest,
-  // before it, goes.
-  render::Stream s;
-  for (int i = 0; i < render::Stream::kWords; ++i) {
-    auto& w = s.words[i];
-    w.live = true, w.slot = 3, w.speed = 100, std::strcpy(w.text, "old");
-    w.born = i == 0 ? 0xFFFFFF00u : i == 1 ? 5u : 0xFFFFFF80u + uint32_t(i);
-  }
-  lanes[0].slot = 0, lanes[0].count = 1, std::strcpy(lanes[0].word, "grep");
-  s.setLanes(lanes, 1, true, false, 10);
-  TEST_ASSERT_EQUAL_STRING("grep", s.words[0].text);
-  TEST_ASSERT_EQUAL_STRING("old", s.words[1].text);
 }
 
 // Pins that a gesture leaves the brain's finish alone: a stroke, a tickle
@@ -4324,8 +4230,7 @@ int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
   RUN_TEST(test_listening_hides_an_act_and_it_resumes);
-  RUN_TEST(test_the_work_streams_words);
-  RUN_TEST(test_falling_words_stay_on_screen);
+  RUN_TEST(test_the_work_streams_newest_word);
   RUN_TEST(test_a_gesture_leaves_a_named_finish_alone);
   RUN_TEST(test_no_app_is_silent_and_wears_no_tags);
   RUN_TEST(test_a_sleeping_boop_gets_no_plug_until_touched);

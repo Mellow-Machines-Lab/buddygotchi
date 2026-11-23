@@ -124,7 +124,7 @@ bool Behaviour::expression(uint32_t t, render::Mood& mood) const {
 }
 
 void Behaviour::advance(uint32_t t, Rng& rng) {
-  // The stream's words finish on their own; with no app, nothing works.
+  // The stream's word forward finishes on its own; with no app, nothing works.
   if (noApp(t)) stream_.clear();
   stream_.prune(t);
   if (after(modelT_, t)) {  // the clock went back: no history to replay
@@ -290,8 +290,8 @@ void Behaviour::onState(const Model& m, uint32_t t) {
 void Behaviour::followStream(uint32_t t) {
   const Model& m = model_;
   const bool greeting = greetingOn(t);
-  // A greeting clears the words at once, and they fall again after it, on
-  // the clock they'd have kept, as after a needs-you.
+  // A greeting clears the stream at once, and its lanes come back after
+  // it, as after a needs-you.
   const bool held = m.attn || greeting;  // each holds the screen
   stream_.setLanes(m.lanes, greeting ? 0 : m.laneCount, m.base == render::SceneState::kWorking && !held, held, t);
   stream_.setAct(greeting ? render::Stream::ActIn{} : m.workAct, held || listening(t), t);

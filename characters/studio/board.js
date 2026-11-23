@@ -28,9 +28,13 @@
   // show it with nothing more said: no_app's window.
   function wiring({acts, tap}) {
     const WORKING = {base: 'working', busy: 1};
+    // A call's word for each activity, as the Mac sends one, so the strip's
+    // term shows (render/gel/lane.cpp's termSign).
+    const SAMPLE_WORDS = {tool_use: 'Core.swift', analyzing: 'maxWordBytes', searching: 'maxWordBytes',
+      terminal: 'make fw', testing: 'WorkStream', waiting: 'curl', planning: 'plan', delegating: 'helper'};
     const LOOKS = {idle: {base: 'idle'}, asleep: {base: 'asleep'}, no_app: WORKING, working: WORKING,
       needs_you: {...WORKING, attn: {id: 1, agent: 'claude', project: 'Studio', more: 0}},
-      ...Object.fromEntries(acts.map(act => [act, {...WORKING, act}]))};
+      ...Object.fromEntries(acts.map(act => [act, {...WORKING, act, calls: [[0, 1, SAMPLE_WORDS[act] || 'Core.swift']]}]))};
     const TOUCH = {t: 'dbg.touch', x: tap[0], y: tap[1], ms: 60};
     const INPUTS = {poked: [[0, TOUCH]], tap_spam: [[0, TOUCH], [200, TOUCH], [400, TOUCH]], gesture: [[0, STROKE]]};
     let ids = 0;
