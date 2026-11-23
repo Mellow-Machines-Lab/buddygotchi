@@ -231,7 +231,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     auto& l = m.lanes[m.laneCount++];
     l.slot = uint8_t(heldTo(lane[0], 0, render::Stream::kLanes - 1, 0));
     l.count = uint16_t(heldTo(lane[1], 0, 999, 0));
-    render::foldText(lane[2].as<const char*>(), render::Stream::kWordBytes - 1, l.word, sizeof(l.word));
+    render::foldText(lane[2].as<const char*>(), render::Stream::kDoingBytes - 1, l.word, sizeof(l.word));
   }
   // The work act, `[kind, words]`, then `[kind, words, result]`: its result
   // "p" or "f" once the command has ended, as its words change to say so.

@@ -198,7 +198,7 @@ final class DrawerTests: XCTestCase {
     }
 
     /// The popover's rows: since when each has waited, worked or rested,
-    /// and a working one's latest word, lane and to-dos.
+    /// and what a working one is doing, its lane and to-dos.
     func testThePopoversRowsSayWhatEachIsDoing() throws {
         let rig = CoreRig(workStream: true)
         rig.send(.turnStart, session: "s1", project: "landing")
@@ -206,7 +206,7 @@ final class DrawerTests: XCTestCase {
         rig.send(.activity, session: "s1", project: "landing", tool: "Grep")
         let row = try XCTUnwrap(rig.core.sessionList(at: rig.now).first)
         XCTAssertEqual(row.status, .working)
-        XCTAssertEqual(row.word, "grep")
+        XCTAssertEqual(row.word, "searching")
         XCTAssertEqual(row.slot, 0)
         let since = try XCTUnwrap(row.since)
         let worked = Date(timeIntervalSince1970: Double(rig.core.wall(rig.now)) / 1000).timeIntervalSince(since)

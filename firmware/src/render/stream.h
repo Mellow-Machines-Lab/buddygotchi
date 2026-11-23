@@ -1,5 +1,5 @@
 // The work stream (the Mac's WorkStream): each working agent's lane with
-// its latest call's word, the newest of them, which a face shows as the
+// what its latest call is doing, the newest of them, which a face shows as the
 // work's term, and now and then a word that comes forward and hits the
 // buddy. The Mac decides which word comes forward and as which style; the
 // device times the flight, and a face draws it. Fixed sizes, no heap.
@@ -58,6 +58,7 @@ constexpr uint32_t kActLeadMs = 900, kActResultMs = 2600;
 struct Stream {
   static constexpr int kLanes = 4;        // WorkStream.maxLanes
   static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and a little room
+  static constexpr int kDoingBytes = 26;  // WorkStream.maxDoingBytes, its end and a little room
   // A word forward: its flight, then what it does once it lands, all
   // gone by kCallMs.
   static constexpr uint32_t kCallMs = 2500;
@@ -69,7 +70,7 @@ struct Stream {
   struct Lane {
     uint8_t slot = 0;
     uint16_t count = 0;
-    char word[kWordBytes] = "";
+    char word[kDoingBytes] = "";  // what its agent is doing: "searching TODO"
   };
   struct Call {
     char text[kWordBytes] = "";
@@ -115,7 +116,7 @@ struct Stream {
   bool on = false;
   // The newest call's word of any lane: the one whose count moved last,
   // or a new lane's. A face shows it as the work's term.
-  char newest[kWordBytes] = "";
+  char newest[kDoingBytes] = "";
   Call call;
   // The stream went off at endedAt, the agents done, a word forward may still come.
   bool ending = false;

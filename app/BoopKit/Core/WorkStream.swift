@@ -2,8 +2,8 @@ import AgentHooks
 import Foundation
 import LinkKit
 
-/// The work stream: every tool call as a word, its agent's lane's latest,
-/// which the board shows as the work's term after the strip's count, and
+/// The work stream: every tool call as what its agent is doing, its lane's
+/// latest, which the board shows first in the strip as the work's term, and
 /// the few that come forward and hit Boop: a failure, a helper, a big
 /// edit, a turn's end. A plain rule, as "needs you" is: it
 /// reads each call's tool, topic, program, glimpse, size and result, never
@@ -163,6 +163,58 @@ struct WorkStream {
         return options[Int(pick(e.toolUseID ?? "\(e.key)\(e.at)") % UInt64(options.count))]
     }
 
+    /// The longest a lane's doing may be, in bytes: what the strip shows
+    /// first, in its own font, with the counts as marks after it.
+    static let maxDoingBytes = 24
+
+    /// What the agent is doing in a call, for its lane: a verb and what
+    /// it's done to, the first piece of its glimpse ("searching TODO",
+    /// "reading Core.swift", "editing Core +12", "running make test"), or
+    /// the verb alone. A search names its pattern, a glimpse's first piece,
+    /// never just the tool. Words forward keep the short `word`.
+    static func doing(_ e: AgentEvent, program: String?) -> String {
+        let first = (e.glimpse ?? "").split(separator: " ").first.map(String.init)
+        let verb: String
+        var what = first
+        switch e.toolKind ?? .other {
+        case .shell:
+            let searches: Set<String> = ["rg", "grep", "ag", "ack", "find", "fd", "git grep"]
+            if let check = e.topic.flatMap({ TranscriptView.checks.contains($0) ? $0 : nil }), program?.contains(" ") != true {
+                (verb, what) = ("running", check)
+            } else if let program, searches.contains(program) {
+                verb = "searching"
+            } else if e.topic == Topic.inspect, let first {
+                (verb, what) = ("looking at", first)
+            } else {
+                (verb, what) = ("running", program ?? "a command")
+            }
+        case .edit:
+            verb = "editing"
+            if e.topic == "docs", first == nil { what = "docs" }
+            if let piece = first, let added = e.linesAdded, added > 0 {
+                let bare = (piece as NSString).deletingPathExtension
+                what = "\(bare.isEmpty ? piece : bare) +\(added)"
+            }
+        case .read: verb = "reading"
+        case .search: verb = "searching"
+        case .web: verb = e.tool?.lowercased().contains("search") == true ? "searching" : "reading"
+        case .subagent: (verb, what) = ("sending a helper", nil)
+        case .planning: (verb, what) = ("planning", nil)
+        case .mcp:
+            let parts = (e.tool ?? "").components(separatedBy: "__")
+            (verb, what) = ("using", parts.count > 1 && !parts[1].isEmpty ? parts[1] : "a tool")
+        case .other: (verb, what) = (spaced(e.tool ?? "tool"), nil)
+        }
+        guard let what, !what.isEmpty else { return clip(verb, maxDoingBytes) }
+        let room = maxDoingBytes - verb.utf8.count - 1
+        guard room >= 4 else { return clip(verb, maxDoingBytes) }
+        let piece = what.utf8.count <= room ? what : {
+            let stem = (what as NSString).deletingPathExtension
+            return StateSnapshot.clip(stem.isEmpty ? what : stem, max: room)
+        }()
+        return "\(verb) \(piece)"
+    }
+
     /// A glimpse's piece cut to fit a word: without its extension when
     /// it's too long with it (`TranscriptView.swift` is `TranscriptView`),
     /// then clipped.
@@ -263,7 +315,7 @@ struct WorkStream {
     /// A tool call starting in session `key`: its word joins its lane, and
     /// a helper going off may come forward.
     mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
-        let key = e.key, word = Self.word(e, program: program), shown = Self.shown(e, word: word)
+        let key = e.key, word = Self.word(e, program: program), shown = Self.doing(e, program: program)
         // A lane of its own while one is free: a fifth session gets none,
         // and no other's slot, until one frees; its words still come forward.
         let slot: Int

@@ -85,6 +85,35 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(WorkStream.maxWordBytes, 14)
     }
 
+    /// What each call's lane says its agent is doing: a verb and what it's
+    /// done to, cut to `maxDoingBytes`; a search names its pattern.
+    func testEachCallsDoing() {
+        let rig = CoreRig(workStream: true)
+        func doing(_ tool: String = "Bash", topic: String? = nil, program: String? = nil, glimpse: String? = nil,
+                   added: Int? = nil) -> String {
+            let e = call(rig, "1", tool: tool, topic: topic, program: program, glimpse: glimpse, added: added)
+            return AgentEvent(e).map { WorkStream.doing($0, program: e["program"]?.string) } ?? "?"
+        }
+        XCTAssertEqual(WorkStream.maxDoingBytes, 24)
+        XCTAssertEqual(doing("Grep", glimpse: "TODO app"), "searching TODO", "the pattern, not the tool")
+        XCTAssertEqual(doing("Grep"), "searching")
+        XCTAssertEqual(doing(topic: "inspect", program: "rg", glimpse: "maxWordBytes app"), "searching maxWordBytes")
+        XCTAssertEqual(doing("Read", glimpse: "Core.swift"), "reading Core.swift")
+        XCTAssertEqual(doing("Edit", glimpse: "Core.swift", added: 12), "editing Core +12")
+        XCTAssertEqual(doing("Edit", glimpse: "Core.swift"), "editing Core.swift")
+        XCTAssertEqual(doing(topic: "tests", program: "make"), "running tests")
+        XCTAssertEqual(doing(topic: "tests", program: "make fw-test"), "running make fw-test")
+        XCTAssertEqual(doing(program: "git push"), "running git push")
+        XCTAssertEqual(doing(), "running a command", "an older agent-hook names no program")
+        XCTAssertEqual(doing(topic: "inspect", program: "cat", glimpse: "README.md"), "looking at README.md")
+        XCTAssertEqual(doing("WebFetch", glimpse: "swift.org"), "reading swift.org")
+        XCTAssertEqual(doing("WebSearch", glimpse: "hooks"), "searching hooks")
+        XCTAssertEqual(doing("Agent"), "sending a helper")
+        XCTAssertEqual(doing("mcp__linear__create_issue"), "using linear")
+        XCTAssertEqual(doing("Read", glimpse: "AVeryLongFileNameIndeed.swift"), "reading AVeryLongFileNam",
+                       "too long: its extension goes, then it's cut")
+    }
+
     /// Almost every call is only its word, falling: nothing comes forward.
     func testAnOrdinaryCallIsOnlyItsWord() {
         let rig = CoreRig(workStream: true)
@@ -175,15 +204,15 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart, session: "s2")
         rig.now += 1000
         let first = states(rig.send(call(rig, "1", program: "grep")))
-        XCTAssertEqual(first.last?.calls, [StateSnapshot.Call(slot: 0, count: 1, word: "grep")])
-        XCTAssertTrue(first.last!.jsonLine.contains(#""calls":[[0,1,"grep"]]"#), first.last!.jsonLine)
+        XCTAssertEqual(first.last?.calls, [StateSnapshot.Call(slot: 0, count: 1, word: "searching")])
+        XCTAssertTrue(first.last!.jsonLine.contains(#""calls":[[0,1,"searching"]]"#), first.last!.jsonLine)
         XCTAssertFalse(first.last!.jsonLine.contains("landing"), "no project's name")
         rig.now += 100
         XCTAssertEqual(states(rig.send(call(rig, "2", program: "sed", session: "s2"))), [], "100 ms after the last state")
         rig.now += 200
         let both = states(rig.send(call(rig, "3", program: "rg")))
         XCTAssertEqual(both.last?.calls.map { [$0.slot, $0.count] }, [[0, 2], [1, 1]])
-        XCTAssertEqual(both.last?.calls.map(\.word), ["rg", "sed"])
+        XCTAssertEqual(both.last?.calls.map(\.word), ["searching", "running sed"])
         rig.send(.turnEnd)
         XCTAssertEqual(rig.state.calls.map(\.slot), [1], "s1 rests")
         rig.send(.needsYou, session: "s2", tool: "Bash")
@@ -207,7 +236,7 @@ final class WorkStreamTests: XCTestCase {
         rig.now += 250
         let next = rig.send(call(rig, "21", program: "rg"))
         XCTAssertEqual(next.effects.filter { if case .state = $0 { true } else if case .sessions = $0 { true } else { false } }.count, 1)
-        XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.word, "rg")
+        XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.word, "searching")
     }
 
     /// Four lanes at most (`WorkStream.maxLanes`), each its own slot: a
@@ -226,14 +255,14 @@ final class WorkStreamTests: XCTestCase {
         rig.now += 300
         rig.send(call(rig, "6", program: "sed", session: "s5"))
         XCTAssertEqual(rig.state.calls.map(\.slot), [0, 1, 2, 3], "the fifth takes the freed slot")
-        XCTAssertEqual(rig.state.calls.first { $0.slot == 1 }?.word, "sed")
+        XCTAssertEqual(rig.state.calls.first { $0.slot == 1 }?.word, "running sed")
     }
 
     /// The `state` with four lanes of the longest words, and
     /// many tags, fits the board's 512 bytes with room to spare.
     func testAFullStateFitsTheBoard() {
         let lanes = (0..<WorkStream.maxLanes).map {
-            StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxWordBytes))
+            StateSnapshot.Call(slot: $0, count: 999, word: String(repeating: "w", count: WorkStream.maxDoingBytes))
         }
         let s = StateSnapshot(doing: "working", activity: "delegating", mood: "determined", attn: nil, working: 12, idle: 9,
                               helpers: 20, vol: 10, when: ["evening", "friday", "halloween", "tier3", "pal", "legend", "reading"],
@@ -275,17 +304,17 @@ final class WorkStreamTests: XCTestCase {
         var shown: [String] = []
         for id in 0..<6 {
             rig.now += 3000
-            rig.send(call(rig, "\(id)", program: "sed", glimpse: "PlanB.swift acmeSecret"))
+            rig.send(call(rig, "\(id)", topic: "inspect", program: "sed", glimpse: "PlanB.swift acmeSecret"))
             shown += rig.core.stream.lanes.values.map(\.word)
             rig.now += 200
-            rig.send(call(rig, "\(id)", program: "sed", glimpse: "PlanB.swift acmeSecret", failed: id > 2,
+            rig.send(call(rig, "\(id)", topic: "inspect", program: "sed", glimpse: "PlanB.swift acmeSecret", failed: id > 2,
                           error: id > 2 ? "exit_code" : nil))
         }
         rig.wait(200_000)
         rig.send(.turnEnd)
         let heard = rig.views.flatMap { [$0.line] + $0.notes }.joined(separator: "\n")
         XCTAssertFalse(heard.contains("PlanB") || heard.contains("acmeSecret"), heard)
-        XCTAssertTrue(shown.contains { $0 == "PlanB.swift" || $0 == "acmeSecret" }, "the board does show it: \(shown)")
+        XCTAssertTrue(shown.contains("looking at PlanB.swift"), "the board does show it: \(shown)")
     }
 
     /// The third and fourth failures within the ladder's two minutes
