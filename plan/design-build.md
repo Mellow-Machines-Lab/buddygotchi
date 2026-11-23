@@ -199,7 +199,7 @@ The screen guide's "The show". Do it in three parts, and stop after each.
    inside the rules. View them on the Mac only. Show the owner the
    pictures and the scores before going on. Tune the tool's instructions
    here.
-2. **The Mac.** `app/BoopCards/main.swift` gets the `show` tool. The Mac
+2. ✓ (2026-11-23; 16 words, as the owner chose after the trial.) **The Mac.** `app/BoopCards/main.swift` gets the `show` tool. The Mac
    checks the SVG against the rules, answers the agent with what is
    wrong, draws it to an image, and shows it in the popover with its
    headline. An `image` path is read the same way.

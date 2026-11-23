@@ -18,7 +18,7 @@ final class ShowTests: XCTestCase {
     func testTheRules() {
         XCTAssertEqual([Show.width, Show.height, Show.svgMost], [420, 190, 4096])
         XCTAssertEqual([Show.textLeast, Show.lineLeast], [14, 3])
-        XCTAssertEqual([Show.wordsMost, Show.headlineMost], [12, 28])
+        XCTAssertEqual([Show.wordsMost, Show.headlineMost], [16, 28])
         XCTAssertEqual(Show.problems(svg: good), [])
     }
 
@@ -31,17 +31,43 @@ final class ShowTests: XCTestCase {
         XCTAssertTrue(problems(good.replacingOccurrences(of: "</svg>", with: "<image href=\"x.png\"/></svg>")).contains("image"))
         XCTAssertTrue(problems(good.replacingOccurrences(of: "</svg>", with: "<script>x</script></svg>")).contains("script"))
         XCTAssertTrue(problems("<svg").contains("well-formed"))
-        let wordy = good.replacingOccurrences(of: "p95 ms", with: String(repeating: "word ", count: 13))
-        XCTAssertTrue(problems(wordy).contains("12 words"))
+        let wordy = good.replacingOccurrences(of: "p95 ms", with: String(repeating: "word ", count: 17))
+        XCTAssertTrue(problems(wordy).contains("16 words"))
         XCTAssertTrue(problems(String(repeating: " ", count: 5000) + good).contains("4096"))
     }
 
-    /// The tool is offered only while the show is tried.
+    /// Every agent sees the tool, and is told firmly to use it.
     func testTheToolSaysItsRules() {
         let description = CardTool.showTool["description"] as? String ?? ""
-        for rule in ["0 0 420 190", "14 px", "3 px", "#5fae5a", "currentColor", "12 words", "28 characters"] {
+        for rule in ["0 0 420 190", "14 px", "3 px", "#5fae5a", "currentColor", "16 words", "28 characters"] {
             XCTAssertTrue(description.contains(rule), rule)
         }
-        XCTAssertFalse(CardTool.tools.contains { $0["name"] as? String == "show" }, "not yet among the tools every agent sees")
+        XCTAssertTrue(CardTool.tools.contains { $0["name"] as? String == "show" })
+        XCTAssertTrue(CardTool.instructions.contains("call `show` once"))
+    }
+
+    /// A show goes over the socket checked, and checked again; the core
+    /// keeps the latest for the popover 30 minutes, and records only its
+    /// headline.
+    func testAShowReachesThePopover() throws {
+        XCTAssertEqual(Core.showKeptMs, 1_800_000)
+        let made = Show.make(["headline": "search is 2.1x faster", "svg": good, "link": "https://example.com/r"])
+        let show = try XCTUnwrap(made.show)
+        XCTAssertEqual(made.problems, [])
+        let line = try XCTUnwrap(JSONSerialization.jsonObject(with: CardTool.line(show, process: nil)) as? [String: Any])
+        XCTAssertEqual(CardTool.readShow(line)?.show, show)
+        XCTAssertNil(CardTool.readShow(["show": ["headline": "x", "svg": "<svg"]]), "checked again as it's read")
+        XCTAssertNil(Show.make(["headline": "x"]).show, "a picture is needed")
+        let rig = CoreRig()
+        rig.pipeline.show(show, process: nil, at: rig.now)
+        XCTAssertNil(rig.core.shown(at: rig.now), "nobody's: dropped")
+        rig.send(.turnStart)
+        rig.pipeline.show(show, process: nil, at: rig.now)
+        XCTAssertEqual(rig.core.shown(at: rig.now)?.show.headline, "search is 2.1x faster")
+        let recorded = rig.pipeline.transcript.events.last { $0.type == .card }
+        XCTAssertEqual(recorded?["text"]?.string, "search is 2.1x faster")
+        XCTAssertFalse(recorded?.jsonLine.contains("<svg") ?? true, "the picture stays out of the log")
+        rig.wait(Core.showKeptMs, every: 60_000)
+        XCTAssertNil(rig.core.shown(at: rig.now))
     }
 }

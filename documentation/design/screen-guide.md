@@ -124,7 +124,7 @@ An agent sends one of:
 
 Rules the Mac checks before a show goes to the board:
 
-- One idea. At most 12 words. Text at least 14 px, lines at least 3 px.
+- One idea. At most 16 words. Text at least 14 px, lines at least 3 px.
 - Only these colours: ink `#e8e6e0`, dim `#9aa0a8`, good `#5fae5a`, bad
   `#f08a6c`, not checked `#f0b56c`, and `currentColor`, which is the agent's
   lane colour.
@@ -134,6 +134,10 @@ Rules the Mac checks before a show goes to the board:
 
 A picture that fails a rule goes back to the agent with what is wrong. If no
 good picture comes, the turn ends with the low sign alone.
+
+Built so far: the tool, its check (`Show.problems`) and the popover's card
+(`ShowCard`). The board doesn't draw a show yet: that needs a link message
+for the picture (part 3 of the build plan).
 
 The draft of the tool's instructions:
 
@@ -176,7 +180,7 @@ One mono face. Nothing under 14 px.
 | Strip, doing now | 22 px | Medium | 24 characters |
 | Picture rows, low sign, band | 18–19 px | Bold | Low sign: 26 characters |
 | Picture small line, pill | 16–17 px | Regular; the pill bold | |
-| Title bars, name chip, text in a show's picture | 14–15 px | Bold | A show's picture: 12 words |
+| Title bars, name chip, text in a show's picture | 14–15 px | Bold | A show's picture: 16 words |
 
 ## Colour
 

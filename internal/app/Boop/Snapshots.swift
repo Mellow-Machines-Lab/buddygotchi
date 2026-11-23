@@ -934,6 +934,21 @@ enum Snapshots {
                               Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap")]
                 return model(installer, status: s)
             }()),
+            // An agent showed a picture of its result (the show).
+            ("shown", {
+                var s = status(sessions: [["claude", "jetpack", "idle"]])
+                let svg = """
+                    <svg viewBox="0 0 420 190" xmlns="http://www.w3.org/2000/svg">\
+                    <text x="0" y="16" font-size="14" fill="#9aa0a8">p95 ms, before and after</text>\
+                    <rect x="14" y="36" width="60" height="126" fill="#9aa0a8"/><rect x="80" y="102" width="60" height="60" fill="currentColor"/>\
+                    <rect x="170" y="90" width="60" height="72" fill="#9aa0a8"/><rect x="236" y="108" width="60" height="54" fill="currentColor"/>\
+                    <line x1="0" y1="164" x2="420" y2="164" stroke="#e8e6e0" stroke-width="3"/>\
+                    <text x="14" y="186" font-size="14" fill="#e8e6e0">search</text><text x="170" y="186" font-size="14" fill="#e8e6e0">detail</text></svg>
+                    """
+                s.show = Core.Shown(show: Show(headline: "search is 2.1x faster", svg: svg, link: "https://example.com"),
+                                    agent: "claude", project: "jetpack", slot: 0, at: 0)
+                return model(installer, status: s)
+            }()),
             ("quiet", model(installer, status: status(sessions: [["claude", "jetpack", "work"]], talk: .quiet))),
             ("offline", {
                 let m = model(installer, status: status(base: "idle", sessions: [["claude", "jetpack", "idle"]],

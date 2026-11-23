@@ -7,6 +7,36 @@ import Foundation
 /// the check the Mac makes before a show goes anywhere: what's wrong goes
 /// back to the agent, which then calls again.
 public struct Show: Equatable, Sendable {
+    /// The show as its tool's arguments, which `make` reads back.
+    var args: [String: Any] {
+        var args: [String: Any] = ["headline": headline]
+        args["svg"] = svg
+        args["image"] = image
+        args["link"] = link
+        return args
+    }
+
+    /// A show from its tool's arguments and what's wrong with it: nil, and
+    /// the problems, when it can't show.
+    public static func make(_ args: [String: Any]) -> (show: Show?, problems: [String]) {
+        let headline = (args["headline"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        var problems: [String] = []
+        if headline.isEmpty { problems.append("show needs `headline`: the conclusion in a few plain words") }
+        if headline.count > headlineMost { problems.append("the headline is \(headline.count) characters: at most \(headlineMost)") }
+        let svg = args["svg"] as? String, image = args["image"] as? String
+        if let svg {
+            problems += Show.problems(svg: svg)
+        } else if let image {
+            if !image.hasPrefix("/") || !image.lowercased().hasSuffix(".png") || !FileManager.default.fileExists(atPath: image) {
+                problems.append("`image` must be an absolute path to a PNG that exists")
+            }
+        } else {
+            problems.append("show needs `svg` or `image`")
+        }
+        guard problems.isEmpty else { return (nil, problems) }
+        return (Show(headline: headline, svg: svg, image: svg == nil ? image : nil,
+                     link: (args["link"] as? String).flatMap(Card.openable)), [])
+    }
     public var headline: String
     public var svg: String?
     public var image: String?
@@ -17,7 +47,7 @@ public struct Show: Equatable, Sendable {
     /// The most an SVG may be, in bytes; the smallest text and line.
     public static let svgMost = 4096, textLeast = 14.0, lineLeast = 3.0
     /// The most words its text may hold, and the headline's characters.
-    public static let wordsMost = 12, headlineMost = 28
+    public static let wordsMost = 16, headlineMost = 28
     /// The only colours: ink, dim, good, bad, not checked, and the agent's
     /// lane colour as `currentColor`. `none` leaves a shape unfilled.
     public static let colours: Set<String> = ["#e8e6e0", "#9aa0a8", "#5fae5a", "#f08a6c", "#f0b56c", "currentcolor", "none"]

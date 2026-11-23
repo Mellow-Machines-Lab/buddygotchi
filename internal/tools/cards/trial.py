@@ -11,8 +11,8 @@ did, and what the result card said.
     internal/tools/cards/trial.py --score DIR          # the scorecard again
     internal/tools/cards/trial.py --show --models opus --told tool --out DIR
 
-With --show the server also offers the `show` tool (documentation/design/
-screen-guide.md, "The show"): each picture an agent drew is saved as an SVG
+With --show, the pictures agents drew with the `show` tool (documentation/
+design/screen-guide.md, "The show") are scored too: each is saved as an SVG
 and gathered on a contact sheet, `shows.html`, at the board's size, with
 the server's check of it, so a person can look before the board draws any.
 
@@ -68,8 +68,7 @@ def run(out, model, told, task):
     shutil.copytree(HERE / "fixture", work / "project")
     log = work / "cards.jsonl"
     config = {"mcpServers": {"boop": {"command": str(SERVER), "env": {
-        "BOOP_CARDS_LOG": str(log), "AGENT_HOOKS_SOCKET": str(work / "nobody.sock"),
-        **({"BOOP_CARDS_SHOW": "1"} if SHOW else {})}}}}
+        "BOOP_CARDS_LOG": str(log), "AGENT_HOOKS_SOCKET": str(work / "nobody.sock")}}}}
     (work / "mcp.json").write_text(json.dumps(config))
     command = ["claude", "-p", TASKS[task], "--model", model, "--setting-sources", "project", "--strict-mcp-config",
                "--mcp-config", str(work / "mcp.json"), "--allowedTools", *ALLOWED, "--disallowedTools", "Task",

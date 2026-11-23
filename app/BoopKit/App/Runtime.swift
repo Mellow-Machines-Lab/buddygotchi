@@ -709,6 +709,13 @@ public final class Runtime: @unchecked Sendable {
     /// may write to the socket; or, with `devLines`, a dev line.
     func other(_ data: Data, received: Int64) {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+        if object["show"] != nil {
+            // A show an agent drew (`CardTool.line(_:process:)`), checked again.
+            guard let (show, process) = CardTool.readShow(object) else { return }
+            let step = pipeline.show(show, process: process, at: received)
+            if options.debug { options.log("show: " + (step.recorded.isEmpty ? "for nobody" : "taken")) }
+            return run(step)
+        }
         guard object["card"] != nil else {
             if options.devLines { dev(data) }
             return

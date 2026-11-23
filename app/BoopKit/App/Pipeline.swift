@@ -272,6 +272,12 @@ public final class Pipeline {
         input(at: now) { run(core.card(card, process: process, at: now)) }
     }
 
+    /// A show an agent drew: the core keeps it for the popover.
+    @discardableResult
+    public func show(_ show: Show, process: AgentProcess?, at now: Int64) -> Step {
+        input(at: now) { run(core.show(show, process: process, at: now)) }
+    }
+
     /// Your swipe on the card Boop holds: the next (`by` 1) or the one before.
     @discardableResult
     public func swipeCard(by: Int, at now: Int64) -> Step {

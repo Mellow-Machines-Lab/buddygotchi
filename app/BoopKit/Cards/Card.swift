@@ -117,15 +117,17 @@ public struct Card: Equatable, Sendable {
 /// say when to call and how short to be.
 public enum CardTool {
     /// What the server tells the agent as it connects.
-    public static let instructions = """
+    public static let instructions: String = """
         Boop is a small desk companion with a screen that sits beside the person you're working for. It shows them what \
         you're doing, so they don't have to watch the terminal. In every turn that takes more than a couple of tool \
         calls: call `status` as you begin, and again each time you move to a different step; and call `result` once, \
         right before your final message, saying honestly how it went. Skip them only for a quick answer. Both return \
         at once and need no reply.
-        """
+        """ + showInstructions
 
-    public static var tools: [[String: Any]] { [
+    public static var tools: [[String: Any]] { cardTools + [showTool] }
+
+    static var cardTools: [[String: Any]] { [
         [
             "name": "status",
             "description": """
@@ -167,32 +169,37 @@ public enum CardTool {
         ],
     ] }
 
-    /// What the server adds to `instructions` while it offers `show`: as
-    /// firm as the rest, since "you may" got almost no cards in the first
+    /// What `instructions` say of `show`: as firm as the rest, since "you may" got almost no cards in the first
     /// trial (plan/agent-cards.md).
     public static let showInstructions = """
-         And in every turn that used tools, call `show` once, right before `result`: one small picture that proves         what the turn made, found or decided, by the tool's rules. Bad news is worth showing too.
+         And in every turn that used tools, call `show` once, right before `result`: one small picture that proves \
+        what the turn made, found or decided, by the tool's rules. Bad news is worth showing too.
         """
 
-    /// The `show` tool (documentation/design/screen-guide.md, "The show"),
-    /// offered only where `BOOP_CARDS_SHOW` is set, while the show is being
-    /// tried (internal/tools/cards/trial.py --show).
+    /// The `show` tool (documentation/design/screen-guide.md, "The show"):
+    /// a result as a picture, which the Mac checks and shows in the popover.
     public static var showTool: [String: Any] { [
         "name": "show",
         "description": """
-            Put one picture on the person's desk companion when your turn made, found or decided something. Call it             once, right before your final message, in every turn that used tools. Skip it only for a plain chat answer.
+            Put one picture on the person's desk companion when your turn made, found or decided something. Call it \
+            once, right before your final message, in every turn that used tools. Skip it only for a plain chat answer.
 
-            headline: the conclusion in a few plain words, at most 28 characters: "search is 2.1x faster", not             "performance results".
-            svg: one picture that proves the headline. Or image: an absolute path to a PNG you made, such as a             screenshot.
+            headline: the conclusion in a few plain words, at most 28 characters: "search is 2.1x faster", not \
+            "performance results".
+            svg: one picture that proves the headline. Or image: an absolute path to a PNG you made, such as a \
+            screenshot.
             link: optional. A URL or an absolute path to open on tap.
 
             Rules for the svg:
             - viewBox="0 0 420 190". The background is already dark; do not draw one.
-            - It is read from a chair, on a small screen. One idea. At most 12 words. Text at least 14 px, lines at             least 3 px.
-            - Use only these colors: ink #e8e6e0, dim #9aa0a8, good #5fae5a, bad #f08a6c, not checked #f0b56c, and             currentColor for your own accent.
+            - It is read from a chair, on a small screen. One idea. At most 16 words. Text at least 14 px, lines at \
+            least 3 px.
+            - Use only these colors: ink #e8e6e0, dim #9aa0a8, good #5fae5a, bad #f08a6c, not checked #f0b56c, and \
+            currentColor for your own accent.
             - Shapes, lines and text only. No gradients, filters, images, scripts, styles or outside links. At most 4 kB.
             - Show the bad news too: what failed, what you did not check.
-            - Pick the form that fits: bars for a before and after, a row of boxes for a chain or a flow, two frames             for a visual change, a short check list for done and not done.
+            - Pick the form that fits: bars for a before and after, a row of boxes for a chain or a flow, two frames \
+            for a visual change, a short check list for done and not done.
             """,
         "inputSchema": [
             "type": "object",
@@ -231,6 +238,24 @@ public enum CardTool {
         var object: [String: Any] = ["card": card.kind.rawValue, "args": card.args]
         if let process { object["process"] = ["pid": Int(process.pid), "started": process.started] }
         return ((try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()) + Data("\n".utf8)
+    }
+
+    /// The line the tool server sends Boop for a show, as for a card.
+    public static func line(_ show: Show, process: AgentProcess?) -> Data {
+        var object: [String: Any] = ["show": show.args]
+        if let process { object["process"] = ["pid": Int(process.pid), "started": process.started] }
+        return ((try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()) + Data("\n".utf8)
+    }
+
+    /// A show from a line `line(_:process:)` wrote, checked again, and its
+    /// agent's process; nil for any other line or one that fails the check.
+    public static func readShow(_ object: [String: Any]) -> (show: Show, process: AgentProcess?)? {
+        guard let args = object["show"] as? [String: Any], let show = Show.make(args).show else { return nil }
+        let from = object["process"] as? [String: Any]
+        let process = (from?["pid"] as? NSNumber).flatMap { pid in
+            (from?["started"] as? NSNumber).map { AgentProcess(pid: pid.int32Value, started: $0.int64Value) }
+        }
+        return (show, process)
     }
 
     /// A card from a line `line` wrote, and its agent's process; nil for

@@ -64,6 +64,8 @@ extension Runtime {
         /// Why the board looks as it does: what Boop celebrates today, and
         /// what it wears or shows for each.
         public var dressing: [Narration.Dressing] = []
+        /// The latest picture an agent showed, for the popover to hold up.
+        public var show: Core.Shown?
 
         /// A day's line, as the popover shows it.
         /// One day's ring: its XP, whether it's today, and its short name,
@@ -169,6 +171,7 @@ extension Runtime {
         status.moodReason = MoodOutput.reason(mood, harness.log.view(now: now), line: { [harness] in harness.line($0) })
         status.doingReason = core.doingReason(at: now)
         let config = core.config
+        status.show = core.shown(at: now)
         status.dressing = Narration.Dressing.now(when: status.snapshot.when,
                                        specialDays: Days.special(at: wall, hatched: config.hatched, name: name, time: options.time),
                                        gel: status.device?.face != .pixel)

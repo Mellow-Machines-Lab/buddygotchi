@@ -48,6 +48,9 @@ struct OverviewPane: View {
             if !notices.isEmpty {
                 NoticeStrip(notices: notices, foldKey: NoticeStrip.foldKey(model))
             }
+            if let status = model.status, let shown = status.show {
+                PaneSection("Shown") { ShowCard(shown: shown) }
+            }
             if let status = model.status {
                 PaneSection(status.sessions.isEmpty ? "Your agents" : "Your agents · \(status.sessions.count)") {
                     sessions(status)
