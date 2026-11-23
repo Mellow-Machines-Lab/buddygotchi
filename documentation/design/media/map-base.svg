@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="502" height="410" viewBox="0 0 502 410" role="img" aria-label="Base layout: band at the top, Boop in the middle, monitor bottom left, keys in the center, the line with pips, and the strip."><style>.zone{fill:none;stroke-width:2;stroke-dasharray:6 4}</style><rect width="502" height="410" fill="#000"/>
+<rect class="zone" x="1" y="1" width="500" height="37" stroke="#f2b33d"/><text x="251" y="25" text-anchor="middle" font-size="15" fill="#f2b33d" font-family="monospace">1 band</text>
+<ellipse cx="251" cy="190" rx="145" ry="118" fill="#1c4f86"/><text x="251" y="170" text-anchor="middle" font-size="15" fill="#e8e6e0" font-family="monospace">2 Boop</text>
+<rect class="zone" x="24" y="240" width="70" height="50" stroke="#35d0c9"/><text x="59" y="270" text-anchor="middle" font-size="15" fill="#35d0c9" font-family="monospace">3</text>
+<rect class="zone" x="150" y="290" width="210" height="20" stroke="#9aa0a8"/><text x="255" y="305" text-anchor="middle" font-size="13" fill="#9aa0a8" font-family="monospace">4 keys</text>
+<line x1="18" y1="358" x2="484" y2="358" stroke="#555" stroke-width="2"/><rect x="221" y="352" width="30" height="12" rx="6" fill="#35d0c9"/><circle cx="265" cy="358" r="6" fill="#b79cf5"/><circle cx="283" cy="358" r="5" fill="none" stroke="#f0a35c" stroke-width="2"/><text x="300" y="350" font-size="13" fill="#e8e6e0" font-family="monospace">5 pips</text>
+<rect class="zone" x="24" y="370" width="300" height="30" stroke="#e8e6e0"/><text x="32" y="391" font-size="15" fill="#e8e6e0" font-family="monospace">6 doing now</text>
+<rect class="zone" x="400" y="370" width="78" height="30" stroke="#35d0c9"/><text x="439" y="391" text-anchor="middle" font-size="15" fill="#35d0c9" font-family="monospace">7</text>
+</svg>

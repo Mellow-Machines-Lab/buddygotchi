@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="502" height="410" viewBox="0 0 502 410" role="img" aria-label="Show layout: Boop's eyes over the top edge, the show fills the screen above the strip, then folds into a sign in the strip's place."><style>.zone{fill:none;stroke-width:2;stroke-dasharray:6 4}</style><rect width="502" height="410" fill="#000"/>
+<ellipse cx="251" cy="20" rx="145" ry="60" fill="#1c4f86"/><text x="251" y="30" text-anchor="middle" font-size="14" fill="#e8e6e0" font-family="monospace">2 Boop, eyes only</text>
+<rect x="30" y="60" width="442" height="288" fill="#12161b" stroke="#35d0c9" stroke-width="2"/><rect x="30" y="60" width="442" height="24" fill="#35d0c9"/><text x="42" y="77" font-size="14" fill="#06201f" font-family="monospace" font-weight="700">claude wants to show you</text>
+<text x="48" y="116" font-size="18" fill="#e8e6e0" font-family="monospace" font-weight="700">headline, by Boop</text>
+<rect class="zone" x="40" y="130" width="420" height="190" stroke="#35d0c9"/><text x="250" y="230" text-anchor="middle" font-size="15" fill="#35d0c9" font-family="monospace">10 the agent's picture, 420 by 190</text>
+<circle cx="57" cy="59" r="13" fill="#5aa9ea"/><circle cx="445" cy="59" r="13" fill="#5aa9ea"/>
+<rect x="70" y="356" width="362" height="46" rx="16" fill="#101510" stroke="#9bd494" stroke-width="2"/><text x="251" y="385" text-anchor="middle" font-size="15" fill="#bfe6b9" font-family="monospace">11 sign, after the show</text>
+</svg>

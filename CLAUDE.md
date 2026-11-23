@@ -22,8 +22,9 @@ cheap ESP32 board with a screen is the body.
 | What a character pack holds | [characters/CHARACTER.md](characters/CHARACTER.md), [characters/new-character-playbook.md](characters/new-character-playbook.md) |
 | The boards and flashing | [firmware/README.md](firmware/README.md) |
 | The board with no board | [simulator/README.md](simulator/README.md) |
-| What's next | [plan/TODO.md](plan/TODO.md), [plan/product-ideas.md](plan/product-ideas.md) |
+| What's next | [plan/design-build.md](plan/design-build.md) (the design, step by step), [plan/TODO.md](plan/TODO.md), [plan/product-ideas.md](plan/product-ideas.md) |
 | Agents' cards: what one is, the rules, how agents did | [plan/agent-cards.md](plan/agent-cards.md) |
+| How Boop should feel and look on the board, across idle and work: the theory, every state moving, the screen guide. Mostly not built yet | [documentation/design/](documentation/design/README.md) |
 
 ## Repo layout
 

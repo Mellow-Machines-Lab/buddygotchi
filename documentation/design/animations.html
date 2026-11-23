@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boop animations</title>
+<!-- A reference sketch of what to expect on the board. Open this file in a browser. See README.md beside it. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: a dark bench of board screens at their real size, each with a caption that names the phase. Single dark look, like the board. */
+:root{color-scheme:dark;--bg:#0e1116;--panel:#161b22;--fg:#e6e8eb;--dim:#9aa3ad;--line:#2a323c;--lane:#35d0c9;--ink:#e8e6e0;--sdim:#9aa0a8;--good:#5fae5a;--bad:#f08a6c;--warn:#f0b56c;--gel:#5aa9ea;
+--ui:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace}
+body{background:var(--bg);color:var(--fg);font-family:var(--ui);font-size:15px;line-height:1.5;padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-size:26px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-size:18px;font-weight:600;margin:0}
+p{margin:0;color:var(--dim);max-width:65ch}
+section{display:flex;flex-direction:column;gap:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:22px}
+.grid.one{grid-template-columns:minmax(0,502px)}
+figure{margin:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+.frame{width:100%;max-width:502px;aspect-ratio:502/410;position:relative;overflow:hidden;border-radius:10px;outline:1px solid var(--line)}
+figcaption{display:flex;flex-direction:column;gap:2px}
+figcaption b{font-weight:600}
+figcaption .ph{color:var(--lane);font-family:var(--mono);font-size:13px;min-height:1.5em}
+figcaption .note{color:var(--dim);font-size:14px}
+
+.scr{width:502px;height:410px;position:absolute;left:0;top:0;transform-origin:0 0;background:#000;overflow:hidden;font-family:var(--mono);color:var(--ink)}
+.scr *{box-sizing:border-box}
+.boop{position:absolute;left:0;top:0;width:502px;height:300px;transition:transform .45s cubic-bezier(.3,1.3,.5,1)}
+.hold .boop{transform:translateY(-88px)}
+.peek .boop{transform:translateY(-196px)}
+.rig{position:absolute;inset:0;transform-origin:251px 300px}
+.dome{position:absolute;left:106px;top:52px;width:290px;height:250px;border-radius:50% 50% 46% 46% / 62% 62% 38% 38%;background:radial-gradient(circle at 38% 30%,#8fd0ff 0%,#4aa8f2 35%,#2b86dc 70%,#1c69b8 100%);box-shadow:inset 0 0 0 2px rgba(160,215,255,.5)}
+.shine{position:absolute;left:176px;top:96px;width:34px;height:14px;border-radius:50%;background:rgba(255,255,255,.55);transform:rotate(-18deg)}
+.eyes{position:absolute;inset:0}
+.eyes i{position:absolute;top:212px;width:16px;height:24px;border-radius:50%;background:#0d2a4d}
+.eyes i:first-child{left:196px}.eyes i:last-child{left:292px}
+.eyes i::after{content:"";position:absolute;left:4px;top:4px;width:5px;height:5px;border-radius:50%;background:#fff;opacity:0;transition:opacity .2s}
+.toyou .eyes i::after{opacity:1}
+.mon{position:absolute;left:24px;top:240px;width:70px;height:50px;border:3px solid #3a424c;border-radius:5px;background:#0b0d0f;display:flex;align-items:center;justify-content:center;transition:border-color .3s,opacity .3s}
+.mon.on{border-color:var(--lane);background:#0b1114}
+.mon.fail{border-color:var(--bad);background:#2a1310}
+.stand{position:absolute;left:52px;top:290px;width:14px;height:10px;background:#3a424c;transition:opacity .3s}
+.kbd{position:absolute;left:150px;top:290px;width:210px;height:20px;border-radius:5px;background:#1b2026;border:2px solid #4b5560;transition:opacity .3s}
+.hand{position:absolute;width:26px;height:26px;border-radius:50%;background:var(--gel);transition:left .4s,top .4s}
+.hand.l{left:176px;top:276px}.hand.r{left:310px;top:276px}
+.hold .hand.l{left:12px;top:240px}.hold .hand.r{left:464px;top:240px}
+.peek .hand.l{left:44px;top:46px}.peek .hand.r{left:432px;top:46px}
+.hold .mon,.hold .stand,.hold .kbd,.peek .kbd{opacity:0}
+.win,.show{position:absolute;background:#12161b;border:2px solid var(--lane);border-radius:3px;transition:transform .4s cubic-bezier(.3,1.2,.5,1),opacity .3s}
+.win{left:24px;top:158px;width:454px;height:188px}
+.win .bar{height:24px;font-size:15px}
+.win.down{transform:translateY(90px);opacity:0}
+.show{left:30px;top:60px;width:442px;height:288px;box-shadow:0 0 22px rgba(53,208,201,.55)}
+.show.down{transform:translateY(330px);opacity:0}
+.bar{height:20px;background:var(--lane);color:#06201f;font-size:13px;font-weight:700;padding:0 10px;display:flex;justify-content:space-between;align-items:center}
+.show .bar{height:24px;font-size:14px}
+.body{padding:18px 18px 0}
+.hl{padding:12px 18px 0;font-size:23px;font-weight:700}
+.pic{padding:8px 10px 0;color:var(--lane)}
+.pic svg{display:block;width:420px;height:190px}
+.rule{position:absolute;left:18px;top:358px;width:466px;height:1px;background:#333}
+.handle{position:absolute;left:229px;top:356px;width:44px;height:4px;border-radius:2px;background:#7a6d66}
+.strip{position:absolute;left:24px;top:368px;width:454px;height:32px;display:flex;justify-content:space-between;align-items:center;transition:opacity .25s}
+.term{font-size:22px;font-weight:500;color:#c9bfb2;white-space:nowrap}
+.term.fail{color:var(--bad)}
+.marks{display:flex;gap:12px;align-items:center;font-size:15px;color:var(--sdim)}
+.marks span{display:flex;gap:5px;align-items:center}
+.marks .new{color:#fff;font-weight:700}
+.sign{position:absolute;left:70px;top:352px;width:362px;height:46px;border:2px solid #9bd494;border-radius:16px;background:#101510;box-shadow:0 0 18px rgba(127,191,122,.6);display:flex;align-items:center;gap:10px;padding:0 16px;font-size:18px;font-weight:700;color:#bfe6b9;transition:transform .35s,opacity .3s}
+.sign.down{opacity:0;transform:translateY(24px)}
+.signed .strip,.signed .rule,.signed .handle,.signed .pager{opacity:0}
+.sign span{white-space:nowrap}
+
+/* templates */
+.steps{display:flex;gap:6px}
+.steps span{flex:1;height:22px;background:#2a3138;transition:background .3s}
+.steps .done{background:var(--lane)}
+.steps .cur{background:#0b1114;border:3px solid var(--lane)}
+.prow{display:flex;gap:16px;align-items:center}
+.pcol{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
+.big{font-size:26px;font-weight:700;white-space:nowrap}
+.small{font-size:17px;color:var(--sdim)}
+.ring{width:104px;height:104px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ring div{width:78px;height:78px;border-radius:50%;background:#12161b;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring b{font-size:30px;line-height:1}.ring small{font-size:14px;color:var(--sdim)}
+.rows{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;align-items:center;gap:10px}
+.row .f{width:136px;font-size:19px}
+.row .bars{flex:1;display:flex;gap:2px}
+.row .bars span{height:22px;transition:width .5s}
+.row .n{font-size:16px;color:var(--sdim);white-space:nowrap}
+.track{flex:1;height:22px;background:#1f252c;position:relative;overflow:hidden}
+.track i{position:absolute;top:0;left:-40%;width:40%;height:100%;background:var(--lane);animation:run 1.1s linear infinite}
+.track.ok{background:var(--good)}.track.ok i{display:none}
+
+.mon{color:var(--lane)}
+.marks span:first-child svg{color:var(--lane)}
+.lane{position:absolute;inset:0;transition:transform .22s ease-in,opacity .22s}
+.lane.outL{transform:translateX(-110px);opacity:0}.lane.outR{transform:translateX(110px);opacity:0}
+.lane.inL{transform:translateX(-110px);opacity:0;transition:none}.lane.inR{transform:translateX(110px);opacity:0;transition:none}
+.pager{position:absolute;left:0;top:352px;width:502px;height:14px;display:none;justify-content:center;align-items:center;gap:8px;background:transparent}
+.paged .pager{display:flex}.paged .handle{display:none}
+.pip{width:11px;height:11px;border-radius:6px;opacity:.5;transition:width .25s,opacity .25s;box-shadow:0 0 0 3px #000}
+.pip.idle{background:transparent!important;border:2px solid currentColor}
+.pip.cur{width:30px;opacity:1}
+.pip.pic{opacity:.9}
+.pip.ask{opacity:1;animation:pulse .8s ease-in-out infinite}
+.chip{font-size:14px;font-weight:700;color:#06201f;background:var(--lane);padding:2px 9px;border-radius:2px}
+.chev{position:absolute;top:150px;font-size:44px;line-height:1;color:#fff;opacity:0;font-family:var(--mono)}
+.chev.l{left:10px}.chev.r{right:10px}
+.hint .chev{animation:hint 1.6s ease-in-out 2}
+.finger{position:absolute;top:170px;left:330px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.8);opacity:0;pointer-events:none}
+.finger.goL{animation:goL .55s ease-in-out 1}.finger.goR{animation:goR .55s ease-in-out 1}
+.toast{position:absolute;left:50%;top:306px;transform:translate(-50%,16px);opacity:0;white-space:nowrap;padding:5px 16px;border-radius:16px;border:2px solid currentColor;background:#0d0f12;font-size:16px;font-weight:700;box-shadow:0 0 14px currentColor;transition:transform .3s,opacity .3s}
+.toast.up{transform:translate(-50%,0);opacity:1}
+.waves{position:absolute;left:404px;top:118px;opacity:0;transition:opacity .3s}
+.speak .waves{opacity:1}
+.waves path{fill:none;stroke:#bfe2ff;stroke-width:4;stroke-linecap:round;animation:wave 1.6s ease-out infinite}
+.waves path:nth-child(2){animation-delay:.25s}.waves path:nth-child(3){animation-delay:.5s}
+.speak .hand.r{left:386px;top:150px;width:32px;height:38px;border-radius:50% 60% 60% 50%}
+.speak .rig{animation:lean 1.6s ease-in-out infinite}
+.rig.lookpip .eyes{transform:translate(10px,14px)}
+.rig.tiltL{transform:rotate(-4deg)}.rig.tiltR{transform:rotate(4deg)}
+@keyframes pulse{0%,100%{transform:scale(1);box-shadow:0 0 0 3px #000,0 0 4px 3px currentColor}50%{transform:scale(1.5);box-shadow:0 0 0 3px #000,0 0 12px 6px currentColor}}
+@keyframes hint{0%,100%{opacity:0}50%{opacity:.85}}
+@keyframes goL{0%{opacity:0;transform:translateX(0)}20%{opacity:1}100%{opacity:0;transform:translateX(-190px)}}
+@keyframes goR{0%{opacity:0;transform:translateX(-190px)}20%{opacity:1}100%{opacity:0;transform:translateX(0)}}
+@keyframes wave{0%{opacity:0}30%{opacity:1}100%{opacity:0}}
+@keyframes lean{0%,100%{transform:rotate(5deg) translateY(0)}50%{transform:rotate(5deg) translateY(8px)}}
+.band{position:absolute;left:0;top:0;width:502px;height:38px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;letter-spacing:.06em;transform:translateY(-40px);transition:transform .3s}
+.band.up{transform:none}.band.needs{background:#f2b33d;color:#201400}.band.listen{background:#e8e6e0;color:#111}
+.rim{position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 0 0 0 #f2b33d;transition:box-shadow .3s}
+.amber .rim{box-shadow:inset 0 0 0 6px #f2b33d,inset 0 0 40px rgba(242,179,61,.5)}
+.dome,.shine,.eyes i{transition:filter .5s,height .2s,top .2s,opacity .5s}
+.asleep .dome{filter:brightness(.5)}.asleep .eyes i{height:4px;top:226px;border-radius:2px}.asleep .shine{opacity:.3}
+.asleep .hand,.asleep .kbd{opacity:.4}
+.zz{position:absolute;left:384px;top:70px;font-size:30px;font-weight:700;color:#7fa8d6;opacity:0}
+.asleep .zz{animation:zz 2.4s ease-in-out infinite}
+.sign.bad{border-color:#f08a6c;color:#ffc2b0;background:#1a100d;box-shadow:0 0 18px rgba(240,138,108,.6)}
+.sign .no{display:none}.sign.bad .no{display:block}.sign.bad .ok{display:none}
+.finger.tap{left:228px;top:150px;animation:tapf .5s ease-out 1}
+.rig.idle .eyes{animation:around 6s ease-in-out infinite}
+.rig.idle{animation:sway 2.4s ease-in-out infinite}
+@keyframes zz{0%{opacity:0;transform:translate(0,20px) scale(.7)}40%{opacity:1}100%{opacity:0;transform:translate(24px,-30px) scale(1.2)}}
+@keyframes tapf{0%{opacity:0;transform:scale(1.4)}30%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.8)}}
+@keyframes around{0%,20%{transform:translate(0,0)}30%,45%{transform:translate(-22px,-4px)}55%,75%{transform:translate(22px,-4px)}85%,100%{transform:translate(0,0)}}
+.ov{position:absolute;inset:0;pointer-events:none}
+.dimmer{position:absolute;inset:0;background:#000;opacity:0;transition:opacity .5s}.dimmer.on{opacity:.82}
+.drawer{position:absolute;left:0;top:412px;width:502px;height:262px;background:#12161b;border-top:2px solid #4b5560;border-radius:14px 14px 0 0;transition:top .35s;padding:16px 22px;display:flex;flex-direction:column;gap:16px}
+.drawer.up{top:150px}
+.drow{display:flex;align-items:center;gap:12px;font-size:19px}
+.drow i{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.drow b{width:64px}
+.drow span{color:#9aa0a8;font-size:16px;white-space:nowrap}
+.ask{position:absolute;left:30px;top:286px;width:442px;border:2px solid #e8e6e0;border-radius:16px;background:#101214;box-shadow:0 0 16px rgba(232,230,224,.4);padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;transform:translateY(140px);opacity:0;transition:transform .35s,opacity .3s}
+.ask.up{transform:none;opacity:1}
+.ask .q{font-size:18px;font-weight:700}
+.ask .ans{display:flex;gap:10px}
+.ask .ans span{flex:1;text-align:center;padding:8px 0;border-radius:10px;background:#20252b;font-size:18px;font-weight:700;transition:background .2s,color .2s}
+.ask .ans .pick{background:#5fae5a;color:#06200a}
+.asking .strip,.asking .rule,.asking .pager,.asking .handle{opacity:0}
+.rest .dome{filter:brightness(.72)}.rest .eyes i{height:12px;top:220px}
+.rig.squish{animation:squish .5s ease-out 1}
+.finger.up{left:228px;top:350px;animation:goU .6s ease-in-out 1}
+.finger.low{left:120px;top:340px;animation:tapf .5s ease-out 1}
+@keyframes squish{0%,100%{transform:none}30%{transform:scale(1.07,.88)}60%{transform:scale(.97,1.04)}}
+@keyframes goU{0%{opacity:0;transform:translateY(0)}20%{opacity:1}100%{opacity:0;transform:translateY(-180px)}}
+.mouth{position:absolute;left:240px;top:246px;width:22px;height:0;border-radius:50%;background:#0d2a4d;opacity:0}
+.rig.yawn{animation:stretchy 1.9s ease-in-out 1}
+.rig.yawn .mouth{animation:mouth 1.9s ease-in-out 1}
+.rig.yawn .eyes i{height:4px;top:224px}
+.late .eyes i{height:12px;top:223px;border-radius:3px 3px 50% 50%}
+.late .dome{filter:brightness(.86)}
+.late .rig.idle{animation-duration:5.5s}
+.late .rig.idle .eyes{animation-duration:12s}
+.rig.droop{animation:droop 3.2s ease-in-out infinite}
+.rig.bright{animation:sway 1.6s ease-in-out infinite}
+@keyframes mouth{0%,100%{height:0;opacity:0;top:246px}30%,70%{height:30px;opacity:1;top:236px}}
+@keyframes stretchy{0%,100%{transform:none}35%,65%{transform:scaleY(1.08) translateY(-8px)}}
+@keyframes droop{0%,100%{transform:none}50%{transform:translateY(9px) scaleY(.96)}}
+@keyframes run{to{left:100%}}
+@keyframes tap{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes sway{0%,100%{transform:translateX(-4px) rotate(-1.5deg)}50%{transform:translateX(4px) rotate(1.5deg)}}
+@keyframes nod{0%,100%{transform:translateY(0) rotate(3deg)}50%{transform:translateY(9px) rotate(3deg)}}
+@keyframes hop{0%,100%{transform:translateY(0)}35%{transform:translateY(-34px) scaleY(1.05)}70%{transform:translateY(0) scaleY(.94)}}
+@keyframes flinch{0%,100%{transform:translateX(0)}20%{transform:translateX(16px) rotate(4deg)}50%{transform:translateX(-8px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(5px)}}
+@keyframes glance{0%,18%{transform:translate(-20px,8px)}30%,70%{transform:translate(0,-8px)}82%,100%{transform:translate(-20px,8px)}}
+.rig.sway{animation:sway .9s ease-in-out infinite}
+.rig.fast{animation:sway .42s ease-in-out infinite}
+.rig.nod{animation:nod 1.6s ease-in-out infinite}
+.rig.hop{animation:hop .6s ease-out 2}
+.rig.flinch{animation:flinch .5s ease-out 1}
+.rig.look .eyes{transform:translate(-20px,8px)}
+.rig.glance .eyes{animation:glance 4s ease-in-out infinite}
+.typing .hand.l{animation:tap .42s ease-in-out infinite}
+.typing .hand.r{animation:tap .42s ease-in-out infinite .21s}
+.hold.typing .hand{animation:none}
+.hold.typing .win,.hold.typing .hand{animation:bob .42s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.scr *{animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:8px">
+<h1>Boop animations</h1>
+<p>Each screen is the board at its real size, 502 by 410. The line in teal under a screen names what is happening now. All names and numbers are examples.</p>
+</header>
+
+<section>
+<h2>One turn, start to end</h2>
+<p>You type a prompt, the agent works, Boop holds a live picture that follows the kind of work, puts it down when the data stops, and ends on a show.</p>
+<div class="grid one"><figure><div class="frame"><div class="scr" id="turn"></div></div>
+<figcaption><b>The whole flow</b><span class="ph" id="turn-ph"></span></figcaption></figure></div>
+</section>
+
+<section>
+<h2>The core states</h2>
+<p>Five states and one event. Moods and small gags are left out.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="c1"></div></div><figcaption><b>Idle</b><span class="note">No turn runs. Boop is the star: it looks around and plays. The monitor is dark, the pips are hollow.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="c2"></div></div><figcaption><b>Working</b><span class="note">The work is the star: the pose, the monitor icon and the strip change with each call.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="c3"></div></div><figcaption><b>Needs you</b><span class="ph" id="c3-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="c4"></div></div><figcaption><b>Listening</b><span class="ph" id="c4-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="c5"></div></div><figcaption><b>Asleep</b><span class="ph" id="c5-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="c6"></div></div><figcaption><b>A failure lands</b><span class="note">An event, not a state. The monitor turns red, the strip names it in clay, Boop flinches, and the work goes on.</span></figcaption></figure>
+</div>
+</section>
+
+<section>
+<h2>A turn finishes</h2>
+<p>Four endings. The fifth, a finish with a show, is in the whole flow at the top. The size of the answer follows who it is for: a show takes the screen, a low sign takes the strip, a pill is for an agent you are not watching.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="f1"></div></div><figcaption><b>Done, no show</b><span class="ph" id="f1-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="f2"></div></div><figcaption><b>Failed</b><span class="ph" id="f2-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="f3"></div></div><figcaption><b>A chat turn</b><span class="ph" id="f3-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="f4"></div></div><figcaption><b>Another agent finishes</b><span class="ph" id="f4-ph"></span></figcaption></figure>
+</div>
+</section>
+
+<section>
+<h2>Energy through the day</h2>
+<p>One dial, shown in two places: the eyelids and the tempo. The time of day and a long stretch of work both turn it. No costume: the nightcap is gone.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="e1"></div></div><figcaption><b>Morning</b><span class="ph" id="e1-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="e2"></div></div><figcaption><b>Day</b><span class="note">Normal lids, normal tempo. This is every other screen on this page.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="e3"></div></div><figcaption><b>Late, idle</b><span class="ph" id="e3-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="e4"></div></div><figcaption><b>Late, or a long stretch, at work</b><span class="ph" id="e4-ph"></span></figcaption></figure>
+</div>
+</section>
+
+<section>
+<h2>The strip's words</h2>
+<p>Always a verb and what it is done to, in plain words. Never a bare tool name, a bare file name or an inside name. A phrase stays at least a second, so the words never flicker.</p>
+<div class="grid one"><figure><div class="frame"><div class="scr" id="w1"></div></div>
+<figcaption><b>What the agent is doing, said so you can follow it</b><span class="ph" id="w1-ph"></span></figcaption></figure></div>
+</section>
+
+<section>
+<h2>The rest of the core</h2>
+<p>Your touch, an ask, the drawer, and the three cases where Boop goes quiet.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="r1"></div></div><figcaption><b>You touch Boop at work</b><span class="ph" id="r1-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="r6"></div></div><figcaption><b>An ask</b><span class="ph" id="r6-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="r5"></div></div><figcaption><b>The drawer</b><span class="ph" id="r5-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="r2"></div></div><figcaption><b>On a call</b><span class="note">A camera runs. Boop keeps still and silent. The monitor and the strip go on.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="r4"></div></div><figcaption><b>Face down</b><span class="ph" id="r4-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="r3"></div></div><figcaption><b>No Mac</b><span class="ph" id="r3-ph"></span></figcaption></figure>
+</div>
+<p>Not shown here, on purpose: moods, idle gags and pastimes, the wish, a level reached, and the hello and bye. They live on Boop's face and body and take no screen space of their own.</p>
+</section>
+
+<section>
+<h2>Several agents</h2>
+<p>The screen follows one agent at a time. The pips on the line show every agent in its own color: a long pip is the one you see, a hollow pip is idle, a pulsing pip wants you. The agent's name sits at the right of the strip. Swipe left or right anywhere on the desk to change agent.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="m1"></div></div><figcaption><b>You swipe between agents</b><span class="ph" id="m1-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="m2"></div></div><figcaption><b>Boop switches for you</b><span class="ph" id="m2-ph"></span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="m3"></div></div><figcaption><b>A chat turn ends in another agent</b><span class="ph" id="m3-ph"></span></figcaption></figure>
+</div>
+</section>
+
+<section>
+<h2>Held pictures, fed by what Boop already hears</h2>
+<p>These move because the hooks move them. The agent sends nothing extra.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="plan"></div></div><figcaption><b>Plan</b><span class="note">From the agent's to-do list. The ring counts down the agent's own guess.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="chg"></div></div><figcaption><b>Changes</b><span class="note">From each edit. Rows appear and bars grow as edits land.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="help"></div></div><figcaption><b>Helpers</b><span class="note">From helper start and stop events. One lane each.</span></figcaption></figure>
+</div>
+</section>
+
+<section>
+<h2>The show, three kinds of picture</h2>
+<p>Boop draws the bar and the headline. The agent draws only the picture, as a small SVG with the five allowed colors.</p>
+<div class="grid one"><figure><div class="frame"><div class="scr" id="show"></div></div>
+<figcaption><b>A result, shown</b><span class="ph" id="show-ph"></span></figcaption></figure></div>
+</section>
+
+<section>
+<h2>Going with you, at work</h2>
+<p>The pose and the monitor stay with the work. The rhythm and the gaze are yours.</p>
+<div class="grid">
+<figure><div class="frame"><div class="scr" id="u1"></div></div><figcaption><b>You type fast</b><span class="note">The looking pose sways at your speed. The strip keeps naming each call.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="u2"></div></div><figcaption><b>You speak</b><span class="note">One hand leaves the keys and cups an ear, Boop leans to you, and rings pulse on an even beat. No band and no reply.</span></figcaption></figure>
+<figure><div class="frame"><div class="scr" id="u4"></div></div><figcaption><b>You type while Boop holds a picture</b><span class="note">The picture bobs with your rhythm. It does not block it.</span></figcaption></figure>
+</div>
+</section>
+</div>
+
+<script>
+(function(){
+var SPIN='<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.5 A5.5 5.5 0 1 1 1.5 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+var MOON='<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14"><path d="M10.5 9.5 A5 5 0 1 1 5 2.2 A4 4 0 0 0 10.5 9.5 Z" fill="currentColor"/></svg>';
+var ICON={
+search:'<svg width="26" height="26" viewBox="0 0 26 26"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="3"/><path d="M16.5 16.5 L23 23" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>',
+edit:'<svg width="26" height="26" viewBox="0 0 26 26"><path d="M5 21 L7 15 L18 4 L22 8 L11 19 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>',
+run:'<svg width="26" height="26" viewBox="0 0 26 26"><path d="M7 5 L21 13 L7 21 Z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/></svg>',
+help:'<svg width="26" height="26" viewBox="0 0 26 26"><circle cx="6" cy="13" r="3" fill="currentColor"/><circle cx="13" cy="13" r="3" fill="currentColor"/><circle cx="20" cy="13" r="3" fill="currentColor"/></svg>',
+fail:'<svg width="26" height="26" viewBox="0 0 26 26"><path d="M6 6 L20 20 M20 6 L6 20" stroke="#f08a6c" stroke-width="3" stroke-linecap="round"/></svg>'
+};
+function make(id){
+  var el=document.getElementById(id);
+  el.innerHTML='<div class="boop"><div class="rig"><div class="dome"></div><div class="shine"></div><div class="eyes"><i></i><i></i></div><div class="mouth"></div></div></div>'+
+  '<svg class="waves" aria-hidden="true" width="60" height="100" viewBox="0 0 60 100"><path d="M8 30 Q20 50 8 70"/><path d="M22 20 Q42 50 22 80"/><path d="M36 10 Q64 50 36 90"/></svg>'+
+  '<div class="lane"><div class="mon"></div><div class="stand"></div><div class="kbd"></div>'+
+  '<div class="show down"><div class="bar"><span class="who">claude wants to show you</span><span>tap to open</span></div><div class="hl"></div><div class="pic"></div></div>'+
+  '<div class="win down"><div class="bar"><span class="t">claude</span><span aria-hidden="true">&bull;&bull;&bull;</span></div><div class="body"></div></div>'+
+  '<div class="rule"></div><div class="handle"></div><div class="strip"><span class="term"></span><span class="marks"></span></div></div>'+
+  '<div class="hand l"></div><div class="hand r"></div><div class="pager"></div><div class="toast"></div>'+
+  '<span class="chev l" aria-hidden="true">&lsaquo;</span><span class="chev r" aria-hidden="true">&rsaquo;</span><div class="finger"></div>'+
+  '<div class="sign down"><svg class="ok" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><path d="M3 10 L8 15 L17 5" fill="none" stroke="#bfe6b9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><svg class="no" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><path d="M4 4 L16 16 M16 4 L4 16" fill="none" stroke="#ffc2b0" stroke-width="3" stroke-linecap="round"/></svg><span></span></div>'+
+  '<div class="ov"></div><div class="band"></div><div class="zz" aria-hidden="true">z</div><div class="rim"></div>';
+  function q(s){return el.querySelector(s)}
+  var s={el:el,
+    term:function(t,fail){var e=q('.term');e.textContent=t;e.className='term'+(fail?' fail':'')},
+    marks:function(w,i,isNew){q('.marks').innerHTML=(w?'<span>'+SPIN+w+'</span>':'')+(i?'<span class="'+(isNew?'new':'')+'">'+MOON+i+'</span>':'')},
+    mon:function(k){var m=q('.mon');m.className='mon'+(k==='fail'?' fail':k?' on':'');m.innerHTML=ICON[k]||''},
+    card:function(title,html){q('.win .t').textContent='claude · '+title;q('.win .body').innerHTML=html;q('.win').classList.remove('down');el.classList.add('hold')},
+    drop:function(){q('.win').classList.add('down');el.classList.remove('hold')},
+    rig:function(c){var r=q('.rig');r.className='rig';void r.offsetWidth;r.className='rig '+(c||'')},
+    typing:function(on){el.classList.toggle('typing',!!on)},
+    toyou:function(on){el.classList.toggle('toyou',!!on)},
+    show:function(who,hl,svg){q('.who').textContent=who;q('.hl').textContent=hl;q('.pic').innerHTML=svg;q('.show').classList.remove('down');el.classList.remove('hold');el.classList.add('peek')},
+    unshow:function(){q('.show').classList.add('down');el.classList.remove('peek')},
+    agents:function(list,cur){el.classList.add('paged');el.style.setProperty('--lane',list[cur].c);
+      q('.pager').innerHTML=list.map(function(a,i){return '<span class="pip '+a.st+(i===cur?' cur':'')+'" style="background:'+a.c+';color:'+a.c+'"></span>'}).join('');
+      q('.marks').innerHTML='<span class="chip">'+list[cur].n+'</span>'},
+    swap:function(dir,fn){var L=q('.lane'),f=q('.finger');f.className='finger';void f.offsetWidth;f.className='finger '+(dir<0?'goL':'goR');
+      setTimeout(function(){L.className='lane '+(dir<0?'outL':'outR')},250);
+      setTimeout(function(){fn();L.className='lane '+(dir<0?'inR':'inL');void L.offsetWidth;L.className='lane'},520)},
+    slide:function(dir,fn){var L=q('.lane');L.className='lane '+(dir<0?'outL':'outR');setTimeout(function(){fn();L.className='lane '+(dir<0?'inR':'inL');void L.offsetWidth;L.className='lane'},260)},
+    hint:function(){el.classList.remove('hint');void el.offsetWidth;el.classList.add('hint')},
+    toast:function(t,c){var e=q('.toast');if(t){e.textContent=t;e.style.color=c;e.classList.add('up')}else e.classList.remove('up')},
+    speak:function(on){el.classList.toggle('speak',!!on)},
+    sign:function(t,bad){var g=q('.sign');if(t){q('.sign span').textContent=t;g.className='sign'+(bad?' bad':'');el.classList.add('signed')}else{g.className='sign down';el.classList.remove('signed')}},
+    band:function(t,kind){var e=q('.band');if(t){e.textContent=t;e.className='band up '+kind}else e.className='band';el.classList.toggle('amber',!!t&&kind==='needs')},
+    asleep:function(on){el.classList.toggle('asleep',!!on)},
+    ov:function(h){q('.ov').innerHTML=h;return q('.ov')},
+    cls:function(c,on){el.classList.toggle(c,!!on)},
+    fing:function(c){var f=q('.finger');f.className='finger';void f.offsetWidth;f.className='finger '+c},
+    tap:function(){var f=q('.finger');f.className='finger';void f.offsetWidth;f.className='finger tap'}
+  };
+  return s;
+}
+function plan(done,total,name,next,min,guess){
+  var b='';for(var i=0;i<total;i++)b+='<span class="'+(i<done?'done':i===done?'cur':'')+'"></span>';
+  var pct=Math.max(0,Math.min(100,100*min/guess));
+  return '<div class="prow"><div class="pcol"><div class="steps">'+b+'</div><div class="big">'+name+'</div><div class="small">'+next+'</div></div>'+
+  '<div class="ring" style="background:conic-gradient(var(--lane) 0 '+pct+'%,#2a3138 '+pct+'% 100%)"><div><b>'+min+'</b><small>min left</small></div></div></div>';
+}
+function changes(rows){
+  return '<div class="rows">'+rows.map(function(r){return '<div class="row"><span class="f">'+r[0]+'</span><span class="bars"><span style="width:'+r[1]*2.6+'px;background:#5fae5a"></span><span style="width:'+r[2]*2.6+'px;background:#f08a6c"></span></span><span class="n">+'+r[1]+' −'+r[2]+'</span></div>'}).join('')+'</div>';
+}
+function helpers(list){
+  return '<div class="rows">'+list.map(function(h){return '<div class="row"><span class="f">'+h[0]+'</span><span class="track'+(h[1]?' ok':'')+'"><i></i></span><span class="n">'+(h[1]?'done':'working')+'</span></div>'}).join('')+'</div>';
+}
+function play(steps){var i=0;(function next(){var st=steps[i];st[1]();i=(i+1)%steps.length;setTimeout(next,st[0])})()}
+
+var PIC={
+nav:'<svg viewBox="0 0 420 190" role="img" aria-label="Before, two nav items are cut off. After, they fold into a more button."><text x="0" y="16" font-size="14" fill="#9aa0a8">before</text><rect x="0" y="24" width="420" height="52" rx="4" fill="#e8e6e0"/><rect x="14" y="42" width="84" height="16" fill="#9aa0a8"/><rect x="112" y="42" width="84" height="16" fill="#9aa0a8"/><rect x="210" y="42" width="84" height="16" fill="#9aa0a8"/><rect x="308" y="42" width="84" height="16" fill="#f08a6c"/><rect x="406" y="42" width="14" height="16" fill="#f08a6c"/><text x="0" y="110" font-size="14" fill="#9aa0a8">after</text><rect x="0" y="118" width="420" height="52" rx="4" fill="#e8e6e0"/><rect x="14" y="136" width="84" height="16" fill="#9aa0a8"/><rect x="112" y="136" width="84" height="16" fill="#9aa0a8"/><rect x="210" y="136" width="84" height="16" fill="#9aa0a8"/><rect x="336" y="130" width="70" height="28" rx="3" fill="#5fae5a"/><text x="351" y="150" font-size="15" font-weight="700" fill="#0b1114">more</text></svg>',
+bars:'<svg viewBox="0 0 420 190" role="img" aria-label="p95 before and after for four endpoints. Search falls from 840 to 400 ms."><text x="0" y="16" font-size="14" fill="#9aa0a8">p95 ms, before and after</text><rect x="0" y="162" width="420" height="2" fill="#9aa0a8"/><rect x="14" y="36" width="34" height="126" fill="#9aa0a8"/><rect x="52" y="102" width="34" height="60" fill="currentColor"/><rect x="118" y="114" width="34" height="48" fill="#9aa0a8"/><rect x="156" y="118" width="34" height="44" fill="currentColor"/><rect x="222" y="90" width="34" height="72" fill="#9aa0a8"/><rect x="260" y="108" width="34" height="54" fill="currentColor"/><rect x="326" y="132" width="34" height="30" fill="#9aa0a8"/><rect x="364" y="132" width="34" height="30" fill="currentColor"/><text x="22" y="184" font-size="14" fill="#e8e6e0">search</text><text x="140" y="184" font-size="14" fill="#e8e6e0">list</text><text x="234" y="184" font-size="14" fill="#e8e6e0">detail</text><text x="340" y="184" font-size="14" fill="#e8e6e0">login</text></svg>',
+chain:'<svg viewBox="0 0 420 190" role="img" aria-label="A chain of four steps. The third, the cache key, is the broken one."><rect x="0" y="60" width="90" height="56" rx="4" fill="none" stroke="#9aa0a8" stroke-width="3"/><text x="16" y="94" font-size="15" fill="#e8e6e0">request</text><path d="M92 88 H108" stroke="#9aa0a8" stroke-width="3"/><rect x="110" y="60" width="90" height="56" rx="4" fill="none" stroke="#9aa0a8" stroke-width="3"/><text x="130" y="94" font-size="15" fill="#e8e6e0">locale</text><path d="M202 88 H218" stroke="#9aa0a8" stroke-width="3"/><rect x="220" y="60" width="90" height="56" rx="4" fill="#f08a6c"/><text x="226" y="94" font-size="15" font-weight="700" fill="#0b1114">cache key</text><path d="M312 88 H328" stroke="#9aa0a8" stroke-width="3"/><rect x="330" y="60" width="90" height="56" rx="4" fill="none" stroke="#9aa0a8" stroke-width="3"/><text x="356" y="94" font-size="15" fill="#e8e6e0">page</text><text x="220" y="146" font-size="14" fill="#f08a6c">drops the locale</text></svg>',
+check:'<svg viewBox="0 0 420 190" role="img" aria-label="Two items done, one not checked."><rect x="0" y="20" width="22" height="22" fill="#5fae5a"/><text x="38" y="38" font-size="18" fill="#e8e6e0">items fold into a menu</text><rect x="0" y="76" width="22" height="22" fill="#5fae5a"/><text x="38" y="94" font-size="18" fill="#e8e6e0">works down to 320 px</text><rect x="0" y="132" width="22" height="22" fill="#f0b56c"/><text x="38" y="150" font-size="18" fill="#f0b56c">Safari not checked</text></svg>'
+};
+
+/* one turn */
+var t=make('turn'),ph=document.getElementById('turn-ph');
+function P(x){ph.textContent=x}
+play([
+[2600,function(){t.sign();t.unshow();t.drop();t.mon();t.term('1 idle');t.marks(0,0);t.rig('sway');t.typing(1);P('1. You type a prompt. Boop types with you.')}],
+[2400,function(){t.typing(0);t.rig('look');t.mon('search');t.term('searching overflow');t.marks(1,0);t.card('plan',plan(0,4,'find the cause','next: fix the overflow',6,6));P('2. The turn starts. Boop holds the plan.')}],
+[1500,function(){t.term('reading Nav.css')}],
+[1500,function(){t.mon('edit');t.rig('');t.term('editing Nav.css +12');t.card('changes',changes([['Nav.css',12,3]]));P('3. The agent edits. The picture becomes Changes.')}],
+[1300,function(){t.term('editing Nav.css +48');t.card('changes',changes([['Nav.css',48,15]]))}],
+[1300,function(){t.term('editing Nav.tsx +22');t.card('changes',changes([['Nav.css',48,15],['Nav.tsx',22,4]]))}],
+[1700,function(){t.term('editing nav.test.ts +35');t.card('changes',changes([['Nav.css',48,15],['Nav.tsx',22,4],['nav.test.ts',35,0]]))}],
+[1800,function(){t.mon('run');t.term('running make test');t.card('plan',plan(3,4,'run the tests','last step',2,6));P('4. Tests run. Back to the plan.')}],
+[2200,function(){t.drop();P('5. Nothing changes for a while. Boop puts the picture down.')}],
+[900,function(){t.rig('hop');t.mon();t.term('1 idle');t.marks(0,0);P('6. The turn ends. Boop hops.')}],
+[5200,function(){t.rig('');t.toyou(1);t.show('claude wants to show you','the nav now folds',PIC.nav);P('7. The show. Boop holds it up and looks at you.')}],
+[3800,function(){t.unshow();t.toyou(0);t.sign('nav overflow fixed');P('8. It folds into the low sign. A tap still opens it.')}]
+]);
+
+/* plan */
+var p=make('plan');p.mon('search');p.marks(1,0);
+var names=[['find the cause','next: fix the overflow','searching overflow'],['fix the overflow','next: add tests','editing Nav.css +48'],['add tests','next: run the tests','editing nav.test.ts +35'],['run the tests','next: check the page','running make test'],['check the page','last step','reading preview']];
+var steps=[];names.forEach(function(n,i){steps.push([2300,function(){p.card('plan',plan(i,5,n[0],n[1],6-i,6));p.term(n[2])}])});
+steps.push([1500,function(){p.card('plan',plan(5,5,'all steps done','',0,6));p.term('1 idle')}]);
+steps.push([1400,function(){p.drop()}]);
+play(steps);
+
+/* changes */
+var c=make('chg');c.mon('edit');c.marks(1,0);
+play([
+[1300,function(){c.term('editing Nav.css +12');c.card('changes',changes([['Nav.css',12,3]]))}],
+[1300,function(){c.term('editing Nav.css +48');c.card('changes',changes([['Nav.css',48,15]]))}],
+[1300,function(){c.term('editing Nav.tsx +9');c.card('changes',changes([['Nav.css',48,15],['Nav.tsx',9,0]]))}],
+[1300,function(){c.term('editing Nav.tsx +22');c.card('changes',changes([['Nav.css',48,15],['Nav.tsx',22,4]]))}],
+[2600,function(){c.term('editing nav.test.ts +35');c.card('changes',changes([['Nav.css',48,15],['Nav.tsx',22,4],['nav.test.ts',35,0]]))}],
+[1400,function(){c.drop();c.term('running make test')}]
+]);
+
+/* helpers */
+var h=make('help');h.mon('help');
+play([
+[2200,function(){h.term('3 helpers searching');h.marks(1,2);h.card('helpers',helpers([['routes',0],['styles',0],['tests',0]]))}],
+[1800,function(){h.card('helpers',helpers([['routes',0],['styles',1],['tests',0]]));h.term('2 helpers searching')}],
+[1800,function(){h.card('helpers',helpers([['routes',1],['styles',1],['tests',0]]));h.term('1 helper searching')}],
+[1600,function(){h.card('helpers',helpers([['routes',1],['styles',1],['tests',1]]));h.term('reading 3 reports')}],
+[1400,function(){h.drop()}]
+]);
+
+/* show variants */
+var s=make('show'),sph=document.getElementById('show-ph');s.term('1 idle');s.toyou(1);
+var kinds=[['claude wants to show you','search is 2.1× faster',PIC.bars,'A chart: made something faster'],['claude found the cause','the cache key drops the locale',PIC.chain,'A chain: found a bug\'s cause'],['claude finished, with a gap','fixed, Safari not checked',PIC.check,'A check list: done and not checked']];
+var ss=[];kinds.forEach(function(k){ss.push([4600,function(){s.show(k[0],k[1],k[2]);sph.textContent=k[3]}]);ss.push([700,function(){s.unshow()}])});
+play(ss);
+
+/* going with you */
+var u1=make('u1');u1.mon('search');u1.marks(1,3);u1.rig('fast look');
+var calls=['searching TODO','reading Core.swift','searching overflow','reading Nav.css'],ci=0;
+setInterval(function(){u1.term(calls[ci++%calls.length])},1100);u1.term(calls[0]);
+var u2=make('u2');u2.mon('edit');u2.marks(1,0);u2.term('editing Core.swift +12');u2.speak(1);u2.toyou(1);
+var u4=make('u4');u4.marks(1,0);u4.term('editing Nav.css +48');u4.card('changes',changes([['Nav.css',48,15],['Nav.tsx',22,4]]));u4.typing(1);u4.rig('fast');
+
+/* several agents */
+function AG(st){return [{n:'web',c:'#35d0c9',st:st[0]},{n:'api',c:'#b79cf5',st:st[1]},{n:'docs',c:'#f0a35c',st:st[2]}]}
+function vWeb(x,st){x.agents(AG(st),0);x.drop();x.mon('search');x.term('searching TODO');x.rig('look')}
+function vApi(x,st){x.agents(AG(st),1);x.mon('edit');x.term('editing Api.ts +31');x.card('changes',changes([['Api.ts',31,6],['routes.ts',12,2]]));x.rig('')}
+function vDocs(x,st,term){x.agents(AG(st),2);x.drop();x.mon();x.term(term||'idle');x.rig('sway')}
+function PH(id){var e=document.getElementById(id);return function(t){e.textContent=t}}
+
+var m1=make('m1'),P1=PH('m1-ph'),S1=['work','pic','idle'];
+vWeb(m1,S1);m1.hint();P1('web: plain work, no picture.');
+play([
+[2800,function(){}],
+[3000,function(){m1.swap(-1,function(){vApi(m1,S1)});P1('Swipe left. api holds its Changes picture.')}],
+[2800,function(){m1.swap(-1,function(){vDocs(m1,S1)});P1('Swipe left. docs is idle.')}],
+[2800,function(){m1.swap(1,function(){vApi(m1,S1)});P1('Swipe right. Back to api.')}],
+[200,function(){m1.swap(1,function(){vWeb(m1,S1)});m1.hint();P1('Swipe right. web: plain work, no picture.')}]
+]);
+
+var m2=make('m2'),P2=PH('m2-ph');
+play([
+[3000,function(){vWeb(m2,['work','work','idle']);P2('1. You watch web. No agent has a picture.')}],
+[3600,function(){m2.slide(-1,function(){vApi(m2,['work','pic','idle'])});P2('2. api gets a picture. A picture beats plain work, so Boop switches.')}],
+[3600,function(){m2.swap(1,function(){vWeb(m2,['work','pic','idle'])});P2('3. You swipe back to web. Boop keeps your choice.')}],
+[1100,function(){m2.rig('hop');P2('4. api finishes its turn.')}],
+[4800,function(){m2.agents(AG(['work','idle','idle']),1);m2.toyou(1);m2.show('claude in api wants to show you','search is 2.1× faster',PIC.bars);P2('5. Its show takes the screen once. A show is for you.')}],
+[3000,function(){m2.unshow();m2.toyou(0);vWeb(m2,['work','idle','idle']);P2('6. Then Boop returns to web, where you were.')}]
+]);
+
+var m3=make('m3'),P3=PH('m3-ph');
+play([
+[2800,function(){m3.toast();m3.toyou(0);vWeb(m3,['work','work','work']);P3('1. You watch web. docs is in a chat turn.')}],
+[4000,function(){m3.agents(AG(['work','work','ask']),0);m3.rig('lookpip');m3.toast('docs is waiting for you','#f0a35c');P3('2. docs ends its turn. Its pip pulses, a pill rises, Boop looks at it.')}],
+[3600,function(){m3.toast();m3.swap(-1,function(){vDocs(m3,['work','work','idle'],'your turn');m3.toyou(1)});P3('3. Swipe, or tap the pill. docs is ready for your next prompt.')}]
+]);
+
+/* core states */
+var c1=make('c1');c1.agents(AG(['idle','idle','idle']),0);c1.term('3 idle');c1.mon();c1.rig('idle');
+setInterval(function(){c1.rig('hop');setTimeout(function(){c1.rig('idle')},1300)},7000);
+var c2=make('c2');c2.agents(AG(['work','idle','idle']),0);
+play([[1600,function(){c2.mon('search');c2.term('searching TODO');c2.rig('look');c2.typing(0)}],[1600,function(){c2.term('reading Core.swift')}],[1800,function(){c2.mon('edit');c2.term('editing Core.swift +12');c2.rig('');c2.typing(1)}],[2000,function(){c2.mon('run');c2.term('running make test');c2.typing(0)}]]);
+var c3=make('c3'),Pc3=PH('c3-ph');
+play([[2600,function(){c3.band();c3.toyou(0);vApi(c3,['work','pic','idle']);Pc3('api works. You watch web or api.')}],
+[4600,function(){c3.agents(AG(['work','ask','idle']),1);c3.drop();c3.band('API NEEDS YOU','needs');c3.toyou(1);c3.rig('');c3.term('allow: npm publish?');Pc3('Amber takes the screen. Everything else waits. The strip says what it asks.')}]]);
+var c4=make('c4'),Pc4=PH('c4-ph');
+play([[2600,function(){c4.band();c4.toyou(0);c4.agents(AG(['work','idle','idle']),0);c4.mon('edit');c4.term('editing Core.swift +12');c4.rig('');Pc4('The agent works.')}],
+[4200,function(){c4.band('LISTENING','listen');c4.toyou(1);c4.rig('tiltR');Pc4('You hold the button. The band shows, Boop turns to you. The work goes on below.')}]]);
+var c5=make('c5'),Pc5=PH('c5-ph');c5.term('');
+play([[4200,function(){c5.asleep(1);c5.toyou(0);c5.mon();c5.rig('');Pc5('No session is open. Nothing is the star.')}],
+[600,function(){c5.tap();Pc5('You tap.')}],
+[2200,function(){c5.asleep(0);c5.toyou(1);Pc5('It wakes a little, then sleeps again.')}]]);
+var c6=make('c6');c6.agents(AG(['work','idle','idle']),0);
+play([[2600,function(){c6.mon('run');c6.term('running make test');c6.rig('')}],[2800,function(){c6.mon('fail');c6.term('failed: make test',true);c6.rig('flinch')}],[2200,function(){c6.mon('edit');c6.term('editing nav.test.ts +4')}]]);
+
+/* finishes */
+var f1=make('f1'),Pf1=PH('f1-ph');
+play([[2600,function(){f1.sign();f1.agents(AG(['work','idle','idle']),0);f1.mon('edit');f1.term('editing Nav.css +48');f1.rig('');Pf1('The agent works.')}],
+[1300,function(){f1.rig('hop');f1.mon();f1.agents(AG(['idle','idle','idle']),0);Pf1('The turn ends well. Boop hops.')}],
+[4200,function(){f1.sign('nav overflow fixed');Pf1('A green low sign takes the strip. A tap opens the thread.')}]]);
+var f2=make('f2'),Pf2=PH('f2-ph');
+play([[2600,function(){f2.sign();f2.agents(AG(['work','idle','idle']),0);f2.mon('run');f2.term('running deploy');f2.rig('');Pf2('The agent works.')}],
+[1300,function(){f2.rig('flinch');f2.mon('fail');f2.term('failed: migrate',true);f2.agents(AG(['idle','idle','idle']),0);Pf2('The turn fails. Red monitor, Boop flinches.')}],
+[4200,function(){f2.sign('deploy stopped at migrate',true);Pf2('A clay low sign takes the strip. It is the only card for a failure.')}]]);
+var f3=make('f3'),Pf3=PH('f3-ph');
+play([[3000,function(){f3.toyou(0);f3.agents(AG(['work','idle','idle']),0);f3.mon('search');f3.term('reading README');f3.rig('look');Pf3('The agent reads, to answer your question.')}],
+[4600,function(){f3.agents(AG(['idle','idle','idle']),0);f3.mon();f3.term('your turn');f3.rig('');f3.toyou(1);Pf3('It answers. No hop, no low sign. Boop turns to you and the strip says "your turn".')}]]);
+var f4=make('f4'),Pf4=PH('f4-ph');
+play([[2800,function(){f4.sign();f4.toast();vWeb(f4,['work','work','idle']);Pf4('You watch web. api works too.')}],
+[3800,function(){f4.agents(AG(['work','ask','idle']),0);f4.rig('lookpip');f4.toast('api finished','#b79cf5');Pf4('api finishes with no show. A pill rises in its color and its pip pulses.')}],
+[4200,function(){f4.toast();f4.swap(-1,function(){f4.agents(AG(['work','idle','idle']),1);f4.mon();f4.rig('');f4.sign('rate limit added')});Pf4('Swipe or tap the pill: its low sign is there.')}]]);
+
+/* the rest */
+var r1=make('r1'),Pr1=PH('r1-ph');r1.agents(AG(['work','idle','idle']),0);
+play([[2600,function(){r1.toyou(0);r1.mon('edit');r1.term('editing Core.swift +12');r1.rig('');r1.typing(1);Pr1('The agent edits.')}],
+[500,function(){r1.tap();Pr1('You poke.')}],
+[1800,function(){r1.typing(0);r1.rig('squish');r1.toyou(1);r1.term('editing Core.swift +30');Pr1('Boop answers you. The strip keeps going.')}],
+[1800,function(){r1.toyou(0);r1.typing(1);r1.term('editing Tags.swift +4');Pr1('Then it is back in its pose.')}]]);
+var r2=make('r2');r2.agents(AG(['work','idle','idle']),0);r2.rig('');
+play([[1800,function(){r2.mon('edit');r2.term('editing Core.swift +12')}],[1800,function(){r2.mon('run');r2.term('running make test')}],[1800,function(){r2.mon('search');r2.term('searching TODO')}]]);
+var r3=make('r3'),Pr3=PH('r3-ph');r3.mon();r3.term('no Mac');
+play([[4000,function(){r3.asleep(0);r3.cls('rest',1);Pr3('The link is lost. Boop rests and the strip says so.')}],[3600,function(){r3.asleep(1);Pr3('After 5 minutes alone it sleeps.')}]]);
+var r4=make('r4'),Pr4=PH('r4-ph');r4.ov('<div class="dimmer"></div>');
+play([[2400,function(){r4.band();r4.toyou(0);r4.agents(AG(['work','idle','idle']),0);r4.mon('edit');r4.term('editing Core.swift +12');r4.rig('');r4.el.querySelector('.dimmer').className='dimmer';Pr4('The agent works.')}],
+[3400,function(){r4.el.querySelector('.dimmer').className='dimmer on';Pr4('You lay Boop on its face. The screen dims and it reacts to nothing.')}],
+[3800,function(){r4.band('WEB NEEDS YOU','needs');r4.term('allow: npm publish?');Pr4('Needs you still shows.')}]]);
+var r5=make('r5'),Pr5=PH('r5-ph');r5.agents(AG(['work','pic','idle']),0);r5.mon('search');r5.term('searching TODO');r5.rig('look');
+r5.ov('<div class="drawer"><div class="drow"><i style="background:#35d0c9"></i><b>web</b><span>searching TODO</span></div><div class="drow"><i style="background:#b79cf5"></i><b>api</b><span>editing Api.ts +31 · step 2 of 4</span></div><div class="drow"><i style="border:2px solid #f0a35c"></i><b>docs</b><span>idle · your turn</span></div></div>');
+play([[2600,function(){r5.el.querySelector('.drawer').className='drawer';Pr5('The pips show three agents.')}],
+[700,function(){r5.fing('up');Pr5('You pull up from the strip.')}],
+[4400,function(){r5.el.querySelector('.drawer').className='drawer up';Pr5('Every agent at once. A tap on a row goes to it.')}]]);
+var r6=make('r6'),Pr6=PH('r6-ph');
+r6.ov('<div class="ask"><div class="q">docs: update the README too?</div><div class="ans"><span>no</span><span class="y">yes</span></div></div>');
+play([[2600,function(){r6.cls('asking',0);r6.el.querySelector('.ask').className='ask';r6.el.querySelector('.y').className='y';r6.toyou(0);r6.agents(AG(['idle','idle','idle']),2);r6.mon();r6.term('3 idle');r6.rig('idle');Pr6('All idle. Boop may start something.')}],
+[3600,function(){r6.cls('asking',1);r6.el.querySelector('.ask').className='ask up';r6.rig('');r6.toyou(1);Pr6('Boop holds up an ask with two answers. Round, because it is Boop asking.')}],
+[1400,function(){r6.fing('low');r6.el.querySelector('.y').className='y pick';Pr6('You tap an answer.')}]]);
+
+/* energy */
+var e1=make('e1'),Pe1=PH('e1-ph');e1.agents(AG(['idle','idle','idle']),0);e1.term('3 idle');e1.mon();
+play([[2200,function(){e1.asleep(1);e1.toyou(0);e1.rig('');Pe1('Asleep. You unlock the Mac.')}],
+[2100,function(){e1.asleep(0);e1.rig('yawn');Pe1('The first hello of the day: a stretch and a yawn.')}],
+[4200,function(){e1.rig('bright');e1.toyou(1);Pe1('Then bright: quick sway, wide eyes.')}]]);
+var e2=make('e2');e2.agents(AG(['idle','idle','idle']),0);e2.term('3 idle');e2.mon();e2.rig('idle');
+var e3=make('e3'),Pe3=PH('e3-ph');e3.agents(AG(['idle','idle','idle']),0);e3.term('3 idle');e3.mon();e3.cls('late',1);
+play([[5200,function(){e3.rig('idle');Pe3('Heavy lids, a slow sway, a little dimmer.')}],[2100,function(){e3.rig('yawn');Pe3('A yawn now and then.')}]]);
+var e4=make('e4'),Pe4=PH('e4-ph');e4.agents(AG(['work','idle','idle']),0);e4.cls('late',1);
+play([[2400,function(){e4.mon('edit');e4.term('editing Core.swift +12');e4.rig('');e4.typing(1);Pe4('It still does the job.')}],
+[3200,function(){e4.typing(0);e4.mon('run');e4.term('running the tests');e4.rig('droop');Pe4('Between calls it droops.')}],
+[2000,function(){e4.rig('yawn');Pe4('The work on the monitor and strip is unchanged.')}]]);
+
+/* the strip's words */
+var w1=make('w1'),Pw1=PH('w1-ph');w1.agents(AG(['work','idle','idle']),0);
+var WORDS=[['search','searching TODO','not "grep"'],['search','reading Core.swift','not "Core.swift"'],['edit','editing Core.swift +12','the file and the lines added'],['run','building Boop','not "swift build -c release"'],['run','running the tests','not "make -C internal test"'],['fail','failed: 2 tests','clay, and it says what failed'],['edit','editing CoreTests.swift +6','back to work'],['run','committing 3 files','not "git commit"'],['help','sending a helper','not "Task"'],['search','reading the Swift docs','the web, in plain words'],['run','waiting on the build · 2 min','a long call says how long']];
+var wi=0;(function nextW(){var w=WORDS[wi++%WORDS.length];w1.mon(w[0]);w1.term(w[1],w[0]==='fail');w1.rig(w[0]==='fail'?'flinch':w[0]==='search'?'look':'');w1.typing(w[0]==='edit');Pw1(w[2]);setTimeout(nextW,2000)})();
+
+function fit(){document.querySelectorAll('.frame').forEach(function(f){f.firstElementChild.style.transform='scale('+f.clientWidth/502+')'})}
+fit();window.addEventListener('resize',fit);
+})();
+</script>
+</body>
+</html>

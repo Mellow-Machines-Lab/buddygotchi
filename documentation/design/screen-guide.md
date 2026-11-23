@@ -1,0 +1,294 @@
+# The screen guide
+
+Updated 2026-11-22. What takes which space on the gel's 502 by 410 screen,
+how large it is, what shape it has, and what wins when two things want the
+same place. The why is in [theory.md](theory.md); each case moves in
+[animations.html](animations.html).
+
+Positions are in pixels from the top left. They come from the sketch in
+`animations.html`, not from the firmware. When the firmware settles one,
+correct it here.
+
+## Words
+
+This guide uses the repo's words (CLAUDE.md, "Words") and four new ones. Add
+them to that table when they are built.
+
+| Word | Means | Not |
+| --- | --- | --- |
+| held picture | A card that is a live picture of the work: plan, changes or helpers. It replaces the card's text status | status card |
+| show | A result as a picture the agent drew, held up full screen. It replaces the card's text result | result card |
+| pips | The row of marks on the strip's line, one for each agent, in its lane colour | dots, pager |
+| pill | A small round note about an agent you are not watching: finished, or waiting for you | tag (that's a fact sent to the board), alert |
+
+## The map
+
+Three layouts cover every case. The bottom of the screen never moves: the
+line with the pips, and the strip under it. The bottom left always says what
+the agent does now.
+
+| Base: idle and plain work | Held picture | Show, then low sign |
+| --- | --- | --- |
+| ![Base layout](media/map-base.svg) | ![Held picture layout](media/map-picture.svg) | ![Show layout](media/map-show.svg) |
+
+## Each element
+
+| # | Element | Place and size | Its one job | Whose | How it changes |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Band | 0,0 · 502×38 | Something you must act on: needs you, listening | For you | Drops in. Needs you also puts an amber rim on the whole screen |
+| 2 | Boop | 106,52 · 290×250 | Pose: who it works for. Rhythm and gaze: you. Face: Boop | Boop | Moves all the time. Rises 88 for a held picture, 196 for a show |
+| 3 | Monitor | 24,240 · 70×50 | The kind of work: search, edit, run, helpers. Red for a failure | Agent | In place. Frame in the lane colour. Dark when idle |
+| 4 | Keys | 150,290 · 210×20 | Where the hands go when typing, yours or the agent's | Boop | In place |
+| 5 | Line and pips | y 352–366, centred | Every agent, and which one you see. The swipe hint. Pull up for the drawer | Agents | The long pip slides. A pip pulses when its agent wants you |
+| 6 | Doing now | 24,368 · left, 22 px | This call, as a verb and its object. Clay for a failure. "your turn" after a chat turn | Agent | In place, at every call |
+| 7 | Agent name | Right end of the strip, 14 px chip | Which agent you see, in its lane colour | Agent | In place, on a switch |
+| 8 | Held picture | 24,158 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
+| 9 | Pill | Centred, y 306 · 34 high | News from an agent you are not watching | For you | Rises, stays about 4 s, a tap goes there |
+| 10 | Show | 30,60 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
+| 11 | Low sign | 70,352 · 362×46 | A finished turn: green for done, clay for failed. A tap opens it | For you | Takes the strip's place |
+
+The drawer and an ask keep their places of today: the drawer comes up from
+the strip to about y 150, and an ask sits over the strip with its two
+answers.
+
+## What shows in each state
+
+One picture-size thing at a time: a held picture, or a show, or neither.
+
+| State | Band | Boop | Monitor | Held picture | Strip | Going with you |
+| --- | --- | --- | --- | --- | --- | --- |
+| Idle | No | Its own look; full size with you | Dark | No | The counts in words, or "your turn" | Full |
+| Working, plain | No | Work pose | Icon | No | Doing now | Light |
+| Working, with a picture | No | Up, holding | Hidden | Yes | Doing now | Light; the picture bobs |
+| A failure lands | No | Flinch | Red, 2.5 s | Stays | Clay word | Light |
+| A turn finished | No | Hop or flinch, then to you | Dark | Replaced by a show | Low sign in its place | Light |
+| Needs you | Amber | To you | Stays | Put down | What it asks | Off |
+| Listening | White | To you | Stays | Stays | Stays | Off |
+| On a call | No | Still and silent | Goes on | Stays, no bob | Goes on | Off |
+| Face down | Only needs you | Dimmed | Dimmed | Dimmed | Dimmed | Off |
+| Asleep | No | Dim, eyes closed | Dark | No | Empty | Off |
+| No Mac | No | Resting, then asleep | Dark | No | "no Mac" | Off |
+
+## Who wins the space
+
+1. **Needs you.** The band and the amber rim. It covers a show and puts a
+   held picture down.
+2. **Listening.** The band only. Nothing below it moves.
+3. **A show.** It takes the screen above the strip once, for the agent that
+   finished, then Boop returns to the agent you watched. It waits while 1 or
+   2 is up.
+4. **A low sign.** It takes the strip's place, for the agent you watch.
+5. **A pill.** For any other agent. Never more than one; a second one waits.
+6. **Your swipe.** Boop keeps your agent until it goes idle or you swipe
+   again.
+7. **A held picture.** An agent with a picture beats an agent with plain
+   work.
+8. **Plain work.** The monitor and the strip only.
+
+With several results at once, each show takes the screen in the order the
+turns finished, at least 8 s each.
+
+## How a turn ends
+
+| Ending | Boop | Then |
+| --- | --- | --- |
+| Done, with a show | Hops | The show for 30 s, then a green low sign |
+| Done, no show | Hops | A green low sign |
+| Failed | Flinches; the monitor is red | A show if the agent sent one, then a clay low sign. The low sign is the only card for a failure |
+| A chat turn | Turns to you. No hop | "your turn" in the strip. No sign, no glow |
+| Any of these in an agent you do not watch | Looks at its pip | A show still takes the screen once. Everything else is a pill, and its pip pulses |
+
+## Held pictures
+
+A held picture is fed by what the Mac already hears through the hooks, so it
+is live and costs the agent nothing. It shows only while its data changes.
+
+| Picture | Shows | Fed by | Shown while |
+| --- | --- | --- | --- |
+| Plan | Step blocks, the current step's name, a ring for the agent's own time guess | The agent's to-do | The agent has a to-do and nothing below fits |
+| Changes | A row for each file: a green and a red bar, "+48 −15" | Edit and write calls | The agent edits |
+| Helpers | A lane for each helper, working or done | Helper start and stop | Helpers run |
+
+Two more need numbers from the agent, so they come later: a meter (n of m,
+with a count of bad ones) and one number with its trend.
+
+## The show
+
+Boop draws the frame, and the agent draws the inside. The title bar and the
+headline are Boop's, in Boop's font. The agent gets the 420 by 190 picture.
+
+An agent sends one of:
+
+- `svg`: a small SVG on `viewBox="0 0 420 190"`.
+- `image`: an absolute path to a PNG it made, such as a screenshot.
+
+Rules the Mac checks before a show goes to the board:
+
+- One idea. At most 12 words. Text at least 14 px, lines at least 3 px.
+- Only these colours: ink `#e8e6e0`, dim `#9aa0a8`, good `#5fae5a`, bad
+  `#f08a6c`, not checked `#f0b56c`, and `currentColor`, which is the agent's
+  lane colour.
+- Shapes, lines and text. No gradients, filters, images, scripts or outside
+  links. At most 4 kB. The background is already dark.
+- A headline of at most 28 characters that states the conclusion.
+
+A picture that fails a rule goes back to the agent with what is wrong. If no
+good picture comes, the turn ends with the low sign alone.
+
+The draft of the tool's instructions:
+
+```text
+show: put one picture on the person's desk companion when your turn made,
+found or decided something. Call it once, right before your final message,
+in every turn that used tools. Skip it only for a plain chat answer.
+
+headline: the conclusion in a few plain words, at most 28 characters.
+  "search is 2.1x faster", not "performance results".
+svg: one picture that proves the headline. Or image: an absolute path to a
+  PNG you made, such as a screenshot.
+link: optional. A URL or an absolute path to open on tap.
+
+Show the bad news too: what failed, what you did not check.
+Pick the form that fits: bars for a before and after, a row of boxes for a
+chain or a flow, two frames for a visual change, a short check list for
+done and not done.
+```
+
+## Shape and light
+
+Shape says whose a thing is. Light says whether it is for you.
+
+| Look | Means | Used by |
+| --- | --- | --- |
+| Square, 3 px corners, lane colour, flat | The agent's. You can ignore it | Held picture, monitor |
+| Square, lane colour, glowing | The agent's, and for you | Show |
+| Round, 16 px corners, glowing | Boop's voice to you | Low sign, pill, ask |
+| Amber | Needs you, and nothing else | Band, rim |
+
+## Type
+
+One mono face. Nothing under 14 px.
+
+| Where | Size | Weight | Limit |
+| --- | --- | --- | --- |
+| Held picture, main line | 26 px | Bold | About 18 characters |
+| Show headline | 23 px | Bold | 28 characters |
+| Strip, doing now | 22 px | Medium | 24 characters |
+| Picture rows, low sign, band | 18–19 px | Bold | Low sign: 26 characters |
+| Picture small line, pill | 16–17 px | Regular; the pill bold | |
+| Title bars, name chip, text in a show's picture | 14–15 px | Bold | A show's picture: 12 words |
+
+## Colour
+
+- A lane colour belongs to one agent everywhere: its pip, its monitor frame,
+  its picture, its name chip, its pill.
+- Good, bad and not checked are for outcomes. They never mark an agent.
+- Amber means needs you. Keep lane colours away from it.
+
+## Motion
+
+| Motion | Means | Used by | Time |
+| --- | --- | --- | --- |
+| Change in place | The work goes on | Monitor, strip, pips, bars in a picture | At once, to 0.5 s |
+| Rise from below | Something arrives | Held picture, show, pill, low sign | 0.3–0.4 s |
+| Slide sideways | You changed agent | Monitor, picture, strip. Boop stays | 0.22 s out, 0.22 s in |
+| Drop from the top | You must act, or you talk to Boop | Band | 0.3 s |
+| Sway, lean, bob | You, at the Mac | Boop's body, a held picture | Your speed, or a 1.6 s beat |
+| Hop, flinch | Boop's feeling about an outcome | Boop's body | 0.5–1.2 s, once |
+
+## Going with you
+
+Each is a rhythm and a gaze. Full size is for idle. Light size rides on any
+work pose and on a held picture.
+
+| You | Signal, never content | Full size, idle | Light size, at work |
+| --- | --- | --- | --- |
+| Type | `typing`, `typingfast` | Keyboard out, Boop types with you | The pose sways at your speed |
+| Speak | Another app records and no camera runs (new; today this is `oncall`) | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
+| Scroll | `scrolling` | Reads along | Eyes step down |
+| Move the pointer | `ptr` | Eyes follow | Eyes follow |
+| Play music | `music` | Grooves | A small bounce |
+| Watch a video | `video` | Watches | A glance, then back |
+| Take a call | A camera runs | Still and silent | Still and silent |
+
+One rhythm at a time. If you type and speak together, speaking wins.
+
+## The strip's words
+
+The strip must always make sense to someone who is not watching the
+terminal. It is a verb and what it is done to.
+
+| The call | Say | Never |
+| --- | --- | --- |
+| A search | "searching TODO": the pattern | "grep", "rg" |
+| A read | "reading Core.swift": the file's name, no path | "Core.swift", "read" |
+| An edit | "editing Core.swift +12": the name and the lines added | A bare file name |
+| A build or compile | "building Boop", "compiling Core.swift" | The command line |
+| Tests | "running the tests" | "make -C internal test" |
+| Git | "committing 3 files", "pushing to main" | "git" |
+| An install | "installing 4 packages" | "npm" |
+| Another command | "running" and the program's name: "running ffmpeg" | Flags and paths |
+| The web | "searching" or "reading" and the subject or site | "web", a URL |
+| A helper | "sending a helper" | "Task", "subagent" |
+| A tool Boop does not know | "using" and the tool's name, spaced as words | An inside name such as `mcp__x__y` |
+| No call for a while | "thinking" | An empty strip |
+| A long call | The same phrase, then the time: "building Boop · 2 min" | A frozen phrase |
+| A failure | "failed:" and what, in clay: "failed: 2 tests" | A code |
+
+Rules:
+
+- At most 24 characters. Cut at a word, and cut the object before the verb.
+- A phrase stays at least 1 s. When calls come faster, show the newest and
+  skip the rest. The words must never flicker.
+- When only a number changes, change the number in place.
+- Every place that shows the work uses these same phrases: the strip, a
+  word that comes forward, the drawer's rows. A bare word such as "grep" or
+  "read" appears nowhere.
+
+Most of this is `WorkStream.doing` today. What is new: plain verbs for known
+commands (build, test, git, install), "using" for unknown tools, "thinking",
+the time on a long call, the 1 s hold, and no bare words coming forward.
+
+## Energy
+
+One dial with three levels. It shows on the eyelids and the tempo, in idle
+and at work.
+
+| Level | When | Eyelids | Tempo | Also |
+| --- | --- | --- | --- | --- |
+| Bright | The first hour after the day's first hello | Wide | Quick sway | The first hello is a stretch and a yawn |
+| Normal | The day | Normal | Normal | |
+| Tired | Night (the `night` tag), or `tier3`: 15 min and more of work without a rest | Heavy: about half height, flat on top | Slow: about half speed | A yawn now and then. At work, a droop between calls. A little dimmer |
+
+Energy never changes the monitor, the strip or a held picture, and it never
+slows a reaction to you.
+
+The Mac decides the level and sends it, so the board and the Mac app always
+agree. The popover says it in a few warm words under Boop's face when the
+level is not normal, such as "Boop's getting sleepy."
+
+## Small details: keep, fold or cut
+
+| Detail | Do | Why |
+| --- | --- | --- |
+| Nightcap | Cut | Energy says the time of day |
+| Tiers: looks by time worked or idle | Fold into energy | One dial, not two systems |
+| Busy and frantic typing | Cut | The tempo is yours |
+| The "copied" pose | Cut | Tiny, and it says nothing |
+| Music and video | Keep | They are you, on your channel |
+| A special day | Keep as one sign at the hello | No costume |
+| Zs, the hello, the bye | Keep | Clear and rare |
+
+A new detail must pass the three tests in [theory.md](theory.md).
+
+## Before you add something
+
+- Name its element in the table above. If none fits, it probably should not
+  ship.
+- If you can ignore it and lose nothing, it gets no rise, no rim and no
+  glow.
+- It must not say what another element already says. The monitor says the
+  kind, the strip says the call, a held picture shows progress.
+- It must read from a chair on the real board.
+- It must still let you type, speak and touch. Only needs you, listening
+  and sleep turn those off.

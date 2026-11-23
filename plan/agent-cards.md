@@ -1,5 +1,9 @@
 # Agent cards
 
+> The design has moved on: a card becomes a live picture or a full-screen show
+> ([documentation/design/](../documentation/design/README.md)). This file still
+> describes what is built, and the trial of how agents send cards.
+
 Updated 2026-11-15. An agent hands Boop a small card and Boop holds it up:
 what the agent is on now, and what its turn made. Built on the branch
 `agent-cards` (here and in SlimeBuddy), not merged. What's still the owner's
