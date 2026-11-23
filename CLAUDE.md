@@ -206,7 +206,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | watched | The agent the screen follows, with two or more: your swipe across the desk, kept while it works; else the one Boop holds a card for; else the one you last prompted (`Core.watched`). Its monitor, strip and card show; the others are pips | focused, current | `watch`, `who` |
 | pips | A mark each for every agent on the strip's line in the drawer's grabber's place, in its lane's colour: the watched one long, an idle one hollow, one that wants you pulsing (`Core.watchFields`, the gel's `paintPips`) | dots, pager | `pips` |
 | pill | News from an agent you aren't watching, in its colour, in the strip's row for 4 s: "api finished", "docs waits for you" (`Core.turnEndedElsewhere`) | toast, alert, tag | `pill` |
-| card | What an agent hands Boop to hold, through the `boop-cards` tool server: a result for 15 s after its turn (a status's words show only in the popover's row and as the plan's step; on the board a working agent's card is its held picture); one main thing and at most one small line, in the agent's own words, never Jev's to read. On the gel it's the agent's window: a title bar in its lane colour naming the agent, square-ish corners, and the desk's monitor lit in that colour, never one of Boop's round signs. Part of Doing: a swipe changes card, a tap opens it on the Mac (`Card`, `Cards`, `gel::paintCard`) | artifact, widget; sign, low sign (those are Boop's own) | `card` |
+| card | What an agent hands Boop to hold, through the `boop-cards` tool server: a result for 15 s after its turn (a status's words show only in the popover's row and as the plan's step; on the board a working agent's card is its held picture); one main thing and at most one small line, in the agent's own words, never Jev's to read. A result may also offer lines Boop might say, how you seemed and a note, which Boop's rules weigh (`MomentRule.offeredLine`, `agent-brief.json`). On the gel it's the agent's window: a title bar in its lane colour naming the agent, square-ish corners, and the desk's monitor lit in that colour, never one of Boop's round signs. Part of Doing: a swipe changes card, a tap opens it on the Mac (`Card`, `Cards`, `gel::paintCard`) | artifact, widget; sign, low sign (those are Boop's own) | `card` |
 | the needs-you screen | Amber, naming who's waiting, until you answer or dismiss it | sign (that's a Moment's) | |
 
 **Mood**
@@ -314,8 +314,11 @@ The rules that are easy to break, in full in
 - The brain is never on the screen's path, and answers multiple choice only.
 - The steering files are read-only at runtime.
 - No code, commands, tool output, file contents or agent transcripts go
-  to the brain: only readings, and your words to Boop. An agent's card
-  goes to the screen and the transcript, never to the brain.
+  to the brain: only readings, and your words to Boop. An agent's card,
+  its offered lines and its note included, goes to the screen and the
+  transcript, never to the brain. What goes the other way, Boop's brief to
+  the agent (`AgentBrief`), carries Boop's personality, mood and memory
+  only while Settings lets the agent help.
 - Your hands and what else Boop notices of you at the Mac reach the board
   as tags and `ptr` and nothing else (`Hands`, `Along`): that you type,
   scroll, copy or listen, never what, with no event, nothing in the

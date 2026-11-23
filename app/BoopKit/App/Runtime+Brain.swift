@@ -59,7 +59,13 @@ extension Runtime {
     /// and the mood as a call is prepared. On `home`.
     func rulesBrain() -> RulesBrain {
         let h = harness, view = view, mood = rig.mood!, pack = core.config.pack
+        let core = core
         return RulesBrain(facts: { [weak h] in h?.line($0)?.facts },
+                          seemed: { [weak h] e in
+                              // How the finished turn's agent read you, from its result card.
+                              guard let h, let key = TranscriptView.about(e, facts: h.line(e.seq)?.facts) else { return nil }
+                              return core.result(for: key)?.seemed
+                          },
                           mood: { log in (MoodOutput.value(mood, log, pack: pack), MoodOutput.level(mood, log)) },
                           working: { [weak h] log in view.isWorking(at: h?.clock.now() ?? 0, log) })
     }

@@ -430,6 +430,13 @@ public final class MomentOutput: Output {
     /// holds it so.
     public static let openForMs: Int64 = 90_000
 
+    /// The result card an agent handed in for the turn `now` finished, if
+    /// any: its offered lines play after the finish (`MomentRule.offeredLine`).
+    public var offered: (Event?) -> Card? = { _ in nil }
+    /// How long a line the board can hold low: the gel's low sign, or a
+    /// plain sign's room on a face that holds nothing low.
+    public var lineRoom: () -> Int = { MemoryPipeline.signMax }
+
     /// Below this, Jev is guessing, and silence beats a guessed meaning.
     public static let sayFloor = 0.35
 
@@ -885,6 +892,19 @@ public final class MomentOutput: Output {
         if reaction.who == nil, asking == nil, remembering == nil { reaction.reason = why?.fact ?? moodMoved(now, log) }
         let pending = Pending()
         queue(reaction, pending)
+        // The agent's line, after its finish: Boop's pick of what it offered,
+        // held low in the face Boop shows, with the narration saying whose
+        // words they were. Never in HISTORY: the brain never reads them.
+        var offeredLine = false
+        if reaction.outcome != nil, ruled == nil, blocked() == nil, let card = offered(now),
+           let line = MomentRule.offeredLine(card.lines, facts: lineFacts, face: choice, mood: moodID(log) ?? pack.defaultMood,
+                                             room: lineRoom()) {
+            var spoken = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: line.says)
+            spoken.low = true
+            spoken.reason = reaction.who.map { "\($0.agent) offered it" }
+            queue(spoken, Pending())
+            offeredLine = true
+        }
         // Asked to hush: quiet for a while, from here on.
         if reply == Self.hushReply { quiet(at) }
         if replied?.naps == true { nap(at) }
@@ -912,6 +932,7 @@ public final class MomentOutput: Output {
             facts["notice_key"] = .string(noticing.key)
         }
         if let remembering { facts["felt"] = .string(remembering.line) }
+        if offeredLine { facts["offered_line"] = true }
         if let wishing { facts["wish"] = .string(wishing.rawValue) }
         if let asking {
             facts["ask"] = .string(asking.id)

@@ -164,7 +164,13 @@ counts them (how long, whether you said Boop's name, a "please", a
 what you say to Boop when you hold its button. Your files, commands and
 tool output never do.
 
-At each dream, while Settings' "Your agent helps Boop think" is on, Boop
+While Settings' "Your agent helps Boop think" is on, your coding agent is
+told who Boop is, its mood and the notes in `memory.md` as its session
+starts, so it can offer Boop a line in its own voice; that goes into the
+agent's context, and so to its provider. The lines and the note it hands
+back stay on your Mac.
+
+At each dream, while that switch is on, Boop
 asks your own Claude Code or Codex the dream's small questions, on your
 plan: what you said to Boop since the last dream and the notes it may
 keep go to that agent's provider, the one that already has your prompts.

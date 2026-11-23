@@ -15,9 +15,12 @@ On the `brain` branch, not merged:
   Settings' "Your agent helps Boop think", on by default. On held-out
   questions it answered 61 of 64 right, against Apple Intelligence's 55
   (`boopdev memory gates --held-out --model agent`).
-- Not built: layer 2 (it waits for the design build's card changes), the
-  dream writing tomorrow's lines, layer 4, and Jev composed on top of the
-  rules.
+- Built: layer 2. The brief (`agent-brief.json`, `AgentBrief`), the result
+  card's `boop_lines`, `you_seemed` and `remember`, Boop's pick of a line
+  after the finish (`MomentRule.offeredLine`), the read of you as a mood
+  fact, and the note judged by the dream.
+- Not built: the dream writing tomorrow's lines, layer 4, and Jev composed
+  on top of the rules.
 
 ## The aim
 

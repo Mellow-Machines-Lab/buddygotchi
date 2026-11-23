@@ -79,6 +79,7 @@ public enum MemoryPipeline {
     public static func write(_ input: Input, model: MemoryModel?) async -> String {
         var candidates = await proposed(input, model: model)
         if let model { candidates += await moments(input, model: model) }
+        if let model { candidates += await agentNotes(input, model: model) }
         candidates += answers(input)
         if let model {
             let sagas = Set(candidates.filter { $0.key.hasPrefix("saga.") }.map { String($0.key.dropFirst(5)) })
@@ -108,6 +109,7 @@ public enum MemoryPipeline {
     /// What code counted tonight, for the checks' source.
     public static func evidence(_ input: Input) -> [String] {
         MemoryProposer.propose(input.digests).map { shuffled($0.evidence) } + answers(input).map { shuffled($0.evidence) }
+            + input.journal.compactMap { MemoryReader.agentNoted($0.line) }.map(shuffled)
             + [shuffled(facts(input, said: dayQuotes(input).first).joined(separator: " ") + " passed failing fought back still here stroked poked hours hardly anything happened single")]
     }
 
@@ -146,6 +148,23 @@ public enum MemoryPipeline {
             guard let text else { continue }
             out.append(MemoryCandidate(key: "moment.\(lower)", section: .you, text: text, strength: 90, signature: [clause.lowercased()],
                                        evidence: "You told Boop \(words) \(input.weekday)"))
+        }
+        return out
+    }
+
+    /// What an agent noted about you with its result card: kept as it was
+    /// written, once the model says it's worth keeping and not private, and
+    /// only a sentence about you ("You ...").
+    static func agentNotes(_ input: Input, model: MemoryModel) async -> [MemoryCandidate] {
+        var out: [MemoryCandidate] = []
+        for entry in input.journal {
+            guard let words = MemoryReader.agentNoted(entry.line), words.hasPrefix("You "), mayKeep(words),
+                  words.count <= MemoryEdits.maxLength else { continue }
+            let prompt = "An agent noted: \"\(words)\""
+            guard await model.yes(worth, prompt) == true, await model.yes(isPrivate, prompt) == false else { continue }
+            let key = words.lowercased()
+            out.append(MemoryCandidate(key: "agent.\(key)", section: .you, text: words, strength: 70,
+                                       signature: Array(MemoryEdits.meaning(words).sorted().prefix(3)), evidence: words))
         }
         return out
     }

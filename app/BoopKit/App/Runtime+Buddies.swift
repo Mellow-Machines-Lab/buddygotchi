@@ -57,6 +57,9 @@ extension Runtime {
         public var earned: (Int) -> (source: Growth.Source, xp: Int)? = { _ in nil }
         /// What it may bring up about you at a time (`Memory.felt`).
         public var felt: (Int64) -> [Memory.Felt] = { _ in [] }
+        /// How long a line the board holds low: the gel's low sign's room,
+        /// or a plain sign's on a face that holds nothing low.
+        public var lineRoom: () -> Int = { MemoryPipeline.signMax }
         /// What it notices from, or nil for a buddy that doesn't: the days
         /// kept, when each notice last played, and whether a thread had a
         /// turn since the last dream (`Memory`).
@@ -288,6 +291,13 @@ extension Runtime {
         today: m.company, seed: m.seed)
         h.output(mood)
         react.earned = { e in e.flatMap { m.earned($0.seq) } }
+        // The result card the finished turn's agent handed in: the lines
+        // it offered play after the finish (`MomentRule.offeredLine`).
+        react.offered = { [weak h] now in
+            guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts) else { return nil }
+            return core.result(for: key)
+        }
+        react.lineRoom = m.lineRoom
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
         // The Moments the rules make whole, with no pass: your bye at a
         // lock and your hello at an unlock, a working check-in, another

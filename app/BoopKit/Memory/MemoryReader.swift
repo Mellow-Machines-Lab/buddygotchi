@@ -212,6 +212,19 @@ public final class MemoryReader: TranscriptReader {
         }
     }
 
+    /// A note an agent handed in with its result card (`Card.remember`),
+    /// for the dream to judge: never the brain's, which reads no card.
+    static func agentNote(_ e: Event) -> (line: String, plain: Bool)? {
+        guard e.type == .card, e.phase == .end, let note = e["remember"]?.string else { return nil }
+        return ("\(e.agent?.rawValue ?? "an agent") noted: \"\(note)\"", false)
+    }
+
+    /// Whether a journal line is an agent's note (`agentNote`), and its words.
+    public static func agentNoted(_ line: String) -> String? {
+        guard let range = line.range(of: " noted: \""), line.hasSuffix("\"") else { return nil }
+        return String(line[range.upperBound...].dropLast())
+    }
+
     static func keep(_ note: (line: String, plain: Bool), at: Int64, in t: inout Tallies, time: LocalTime) {
         t.journal.append(Tallies.Note(at: time.clock(at), line: note.line, plain: note.plain))
         while t.journal.count > Self.journalMax {

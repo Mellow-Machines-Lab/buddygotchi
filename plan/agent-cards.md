@@ -7,7 +7,7 @@
 > below. The rest of this file is the first build and the trial of how agents
 > send cards.
 
-Updated 2026-11-15. An agent hands Boop a small card and Boop holds it up:
+Updated 2026-11-23. An agent hands Boop a small card and Boop holds it up:
 what the agent is on now, and what its turn made. Built on the branch
 `agent-cards` (here and in SlimeBuddy), not merged. What's still the owner's
 to decide is at the end.
@@ -30,6 +30,22 @@ line under it. Two kinds, and no others:
 - A result may carry a link: a web page, or an absolute path.
 - A card's words go to the screen, the popover's row and the transcript. No
   line for Jev carries them (`CardsTests` pins it).
+
+## The agent's part in Boop's mind
+
+A result may carry three more fields, each optional
+(documentation/design/brain.md, layer 2): `boop_lines`, two lines Boop
+might say about the turn, each with a feeling; `you_seemed`, how the person
+seemed; and `remember`, one sentence about them worth keeping. Boop picks
+one line or none by its own rule and holds it low after the finish; the
+read of you is a fact for the mood map; the note goes to the dream. The
+agent learns of them from the brief Boop writes beside the tool server
+(`agent-brief.json`). The server's instructions name every argument:
+Claude Code loads a tool's schema only when it needs it, and an agent that
+hasn't loaded it guesses the names. In the trial
+(`internal/tools/cards/brain_trial.py`), Claude agents offered lines with 5
+of 8 results on real work, every one within 40 characters, and none on a
+quick answer.
 
 ## How it sits with everything else
 

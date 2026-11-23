@@ -27,7 +27,7 @@ enum Headless {
         let talk = args.choice("--talk", of: Talk.allCases.map(\.rawValue)).flatMap(Talk.init(rawValue:))
         // A demo needs no brain: its script says how Boop reacts.
         let demo = args["--demo"]
-        let brain = args.choice("--brain", of: ["jev", "scripted", "none"]) ?? (demo == nil ? "jev" : "none")
+        let brain = args.choice("--brain", of: ["jev", "rules", "scripted", "none"]) ?? (demo == nil ? "jev" : "none")
         if args["--record"] != nil, demo == nil { fail("--record needs --demo") }
         if args.has("--live"), demo == nil { fail("--live needs --demo") }
         var script: DemoScript?

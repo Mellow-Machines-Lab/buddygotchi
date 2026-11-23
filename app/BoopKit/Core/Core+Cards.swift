@@ -27,12 +27,23 @@ extension Core {
         if let minutes = card.minutes { data["minutes"] = .int(Int64(minutes)) }
         if let detail = card.detail { data["detail"] = .string(detail) }
         if card.link != nil { data["link"] = true }
+        // The agent's part in Boop's mind: its offered lines and its read of
+        // you stay in the card's event, which no line for the brain reads;
+        // a note to remember goes to the dream's journal (`MemoryReader`).
+        if !card.lines.isEmpty { data["lines"] = .array(card.lines.map { .object(["says": .string($0.says), "feeling": .string($0.feeling)]) }) }
+        if let seemed = card.seemed { data["seemed"] = .string(seemed.rawValue) }
+        if let remember = card.remember { data["remember"] = .string(remember) }
         fx.append(.record(Event(at: now, source: Event.Source(session.agent), type: .card,
                                 phase: card.kind == .status ? .start : .end, specificType: card.kind.rawValue,
                                 session: session.id, data: data)))
         publish(now, &fx)
         return fx
     }
+
+    /// The result card the agent of session `key` handed in for its turn,
+    /// while Boop holds it: its offered lines and its read of you are for
+    /// the finish (`MomentRule.offeredLine`).
+    public func result(for key: String) -> Card? { cards.held[key]?.result }
 
     /// The sessions in the order their cards are swiped through: as the
     /// popover lists them.

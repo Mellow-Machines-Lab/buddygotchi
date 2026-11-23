@@ -16,6 +16,8 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
     let mood: (LogView) -> (mood: String, level: Int)
     /// Whether an agent is working for you now.
     let working: (LogView) -> Bool
+    /// How the finished turn's agent read you, from its result card.
+    let seemed: (Event) -> Card.Seemed?
     private let lock = NSLock()
     private var lastFace: [Slot: String] = [:]
     private var lastAny: String?
@@ -23,9 +25,11 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
 
     public init(seed: UInt64 = UInt64(Date().timeIntervalSince1970 * 1000),
                 facts: @escaping (Int) -> [String: JSONValue]?,
+                seemed: @escaping (Event) -> Card.Seemed? = { _ in nil },
                 mood: @escaping (LogView) -> (mood: String, level: Int),
                 working: @escaping (LogView) -> Bool = { _ in false }) {
         self.facts = facts
+        self.seemed = seemed
         self.mood = mood
         self.working = working
         rng = SplitMix(seed)
@@ -140,7 +144,10 @@ public final class RulesBrain: ReadingBrain, @unchecked Sendable {
 
     public func reading(now: Event, log: LogView) -> any Brain {
         let f = facts(now.seq) ?? [:]
-        let read = Self.read(now, facts: f)
+        var read = Self.read(now, facts: f)
+        // The agent read you as frustrated: a fact the mood map already
+        // names, "the person sounding frustrated". It adds no move of its own.
+        if f["outcome"] != nil, seemed(now) == .frustrated { read.cues.insert(.frustrated) }
         let (current, level) = mood(log)
         var moodTo = MoodMap.moves(from: current, cues: read.cues, level: level)
         // An agent starting work ends lonely only when one really works.

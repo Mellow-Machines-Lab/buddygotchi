@@ -423,6 +423,7 @@ public final class Runtime: @unchecked Sendable {
         mind.swears = { swearsNow() }
         mind.earned = { earnedNow($0) }
         mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
+        mind.lineRoom = { MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face }) }
         mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
                                       onLately: { remembersNow()?.onLately($0) ?? false })
         rig.mood = Runtime.brain(pipeline, mind)
@@ -513,7 +514,11 @@ public final class Runtime: @unchecked Sendable {
         harness.on(Event.did) { [weak self] e in
             guard let self, e.action == MoodOutput.outputName, e["ok"]?.bool == true else { return }
             run(core.stateChanged(at: options.clock()))
+            writeBrief()
         }
+        // A dream's write changes what the brief remembers.
+        harness.on(Event.Kind.memory.rawValue) { [weak self] _ in self?.writeBrief() }
+        writeBrief()
         harness.onPass = { [weak self] pass in self?.passed(pass) }
         // Every event as it's logged: the growth store counts each once, and
         // caps the day at its ring; the world adds its counts.
@@ -1168,9 +1173,25 @@ public final class Runtime: @unchecked Sendable {
     }
 
     /// Whether your own agent helps Boop think, kept in `settings.json`:
-    /// read at each dream.
+    /// read at each dream, and by the agents' tool server from the brief.
     public func setAgentsThink(_ on: Bool) {
-        home.async { [self] in saveSettings { $0.agentsThink = on } }
+        home.async { [self] in
+            saveSettings { $0.agentsThink = on }
+            writeBrief()
+        }
+    }
+
+    /// The agents' brief (`AgentBrief`), in the state folder beside the
+    /// tool server: who Boop is, what it remembers, how it feels now. On
+    /// `home`.
+    func writeBrief() {
+        let pack = core.config.pack
+        let notes = memory.written().notes.map(\.text)
+        let mood = MoodOutput.value(rig.mood, harness.log.view(now: options.clock()), pack: pack)
+        let personality = AgentBrief.personality(from: rig.steering["personality"]).replacingOccurrences(of: pack.name, with: name)
+        AgentBrief(name: name, personality: personality, memory: notes,
+                   mood: "\(name) is \(mood) now.", on: settings.agentsThink, faces: pack.faces.map(\.name))
+            .write(to: options.stateDir)
     }
 
     public func setTalk(_ talk: Talk) {

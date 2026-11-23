@@ -42,6 +42,10 @@ func log(_ entry: [String: Any]) {
     }
 }
 
+/// Boop's brief for agents, beside this server in its state folder, read
+/// fresh each time: its mood moves while the session runs.
+func brief() -> AgentBrief? { AgentBrief.read(server: CommandLine.arguments[0], environment: environment) }
+
 /// A show: checked, sent to Boop when it's fine, and answered with what's
 /// wrong when it isn't, so the agent calls again.
 func show(_ args: [String: Any]) -> String {
@@ -57,7 +61,7 @@ func show(_ args: [String: Any]) -> String {
 func call(_ name: String, _ args: [String: Any]) -> String {
     if name == "show" { return show(args) }
     guard let kind = Card.Kind(rawValue: name) else { return "no such tool" }
-    let card = Card.make(kind, args)
+    let card = Card.make(kind, args, faces: brief().map { Set($0.faces) })
     log(["ts": Int64(Date().timeIntervalSince1970 * 1000), "tool": name, "args": args, "kept": card != nil,
          "pid": agentProcess.map { Int($0.pid) } as Any? ?? NSNull()])
     // The one thing worth telling an agent: a call with nothing to show.
@@ -76,14 +80,17 @@ while let text = readLine(strippingNewline: true) {
         reply(id, result: ["protocolVersion": params["protocolVersion"] as? String ?? "2025-06-18",
                            "capabilities": ["tools": [String: Any]()],
                            "serverInfo": ["name": CardInstaller.name, "version": BoopVersion.current],
-                           "instructions": CardTool.instructions])
+                           "instructions": CardTool.instructions + (brief()?.instructions ?? "")])
     case "ping":
         reply(id, result: [:])
     case "tools/list":
         reply(id, result: ["tools": CardTool.tools])
     case "tools/call":
-        let said = call(params["name"] as? String ?? "", params["arguments"] as? [String: Any] ?? [:])
-        reply(id, result: ["content": [["type": "text", "text": said]], "isError": said != "ok"])
+        let name = params["name"] as? String ?? ""
+        let said = call(name, params["arguments"] as? [String: Any] ?? [:])
+        // A status that worked answers with how Boop is, while the agent helps.
+        let answer = said == "ok" && name == "status" ? (brief().flatMap { $0.on ? $0.mood : nil } ?? said) : said
+        reply(id, result: ["content": [["type": "text", "text": answer]], "isError": said != "ok"])
     default:
         if id != nil { reply(id, error: (-32601, "method not found")) }
     }

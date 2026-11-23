@@ -27,6 +27,34 @@ public struct Card: Equatable, Sendable {
     public var detail: String?
     /// What a tap on a result opens: a web page, or a file.
     public var link: String?
+    /// A result's part in Boop's mind (documentation/design/brain.md, layer
+    /// 2), each optional and each the agent's own: lines Boop might say
+    /// about the turn, which Boop picks from or not; how the person seemed;
+    /// and one thing about them worth keeping, for the dream to judge. None
+    /// of it is ever the brain's to read.
+    public var lines: [Line] = []
+    public var seemed: Seemed?
+    public var remember: String?
+
+    /// A line an agent offers for Boop to say, in one of the pack's faces.
+    public struct Line: Equatable, Sendable {
+        public var says: String
+        public var feeling: String
+        public init(says: String, feeling: String) {
+            self.says = says
+            self.feeling = feeling
+        }
+    }
+
+    /// How the person seemed this turn, as the agent read them.
+    public enum Seemed: String, CaseIterable, Sendable {
+        case pleased, plain, frustrated, rushed, kind
+    }
+
+    /// The most lines a result offers; the longest line (the gel's low
+    /// sign's room, `MemoryPipeline.signMax`); the longest note
+    /// (`MemoryEdits.maxLength`).
+    public static let linesMost = 2, saysMost = 40, rememberMost = 140
 
     /// The most characters the main thing and the small line keep.
     public static let textMost = 24, detailMost = 28
@@ -53,13 +81,19 @@ public struct Card: Equatable, Sendable {
         args["minutes_left"] = minutes
         args["detail"] = detail
         args["link"] = link
+        if !lines.isEmpty { args["boop_lines"] = lines.map { ["says": $0.says, "feeling": $0.feeling] } }
+        args["you_seemed"] = seemed?.rawValue
+        args["remember"] = remember
         return args
     }
 
     /// A card from a tool call's arguments, held to the limits: text is one
     /// line, cut at a word where it can be; numbers outside their range and a
     /// link that isn't a web page or a path are left out. Nil with no text.
-    public static func make(_ kind: Kind, _ args: [String: Any]) -> Card? {
+    /// `faces` are the pack's: an offered line's feeling must be one. The
+    /// tool server, which loads no pack, passes the brief's or none (any
+    /// plain word), and Boop holds the card to its own pack as it reads it.
+    public static func make(_ kind: Kind, _ args: [String: Any], faces: Set<String>? = nil) -> Card? {
         func line(_ key: String, _ most: Int) -> String? {
             guard let raw = args[key] as? String else { return nil }
             // As the board's fonts draw it, before it's measured.
@@ -82,8 +116,33 @@ public struct Card: Equatable, Sendable {
         case .result:
             card.detail = line("detail", detailMost)
             card.link = (args["link"] as? String).flatMap(openable)
+            card.lines = Self.lines(args["boop_lines"], faces: faces)
+            card.seemed = (args["you_seemed"] as? String).flatMap { Seemed(rawValue: $0.lowercased()) }
+            card.remember = (args["remember"] as? String).flatMap(Self.note)
         }
         return card
+    }
+
+    /// The lines an agent offers, held to the checks a remembered line
+    /// passes: one line of printable ASCII within `saysMost`, nothing
+    /// private, no order and no secret, and a feeling that is one of the
+    /// pack's faces. One that fails is dropped, never cut.
+    static func lines(_ raw: Any?, faces: Set<String>?) -> [Line] {
+        let items = raw as? [Any] ?? []
+        return items.prefix(linesMost).compactMap { item in
+            guard let o = item as? [String: Any], let says = (o["says"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                  let feeling = (o["feeling"] as? String)?.lowercased(), faces?.contains(feeling) ?? feeling.allSatisfy(\.isLetter),
+                  says.count <= saysMost, MemoryPipeline.signIsValid(says), MemoryPipeline.mayKeep(says) else { return nil }
+            return Line(says: says, feeling: feeling)
+        }
+    }
+
+    /// The note an agent offers, if it may be kept: one line, within
+    /// `rememberMost`, nothing private, no order and no secret.
+    static func note(_ raw: String) -> String? {
+        let t = raw.split(whereSeparator: \.isNewline).joined(separator: " ").trimmingCharacters(in: .whitespaces)
+        guard !t.isEmpty, t.count <= rememberMost, MemoryPipeline.mayKeep(t) else { return nil }
+        return t
     }
 
     /// `text` in at most `most` characters, cut after a whole word where one
@@ -155,7 +214,9 @@ public enum CardTool {
                 your final message. `headline` is the outcome in a few plain words, like "nav overflow fixed" or \
                 "couldn't reproduce it": at most 24 characters, and say so honestly when it didn't work. `detail` is \
                 one more short line, like "3 files, 212 tests green". If the turn made something they can open (a \
-                pull request, a preview page, a file), give its URL or path as `link`.
+                pull request, a preview page, a file), give its URL or path as `link`. On a turn that did real work \
+                you may also fill `boop_lines`, `you_seemed` and `remember`, as the server's instructions say; leave \
+                them out on a quick answer.
                 """,
             "inputSchema": [
                 "type": "object",
@@ -163,6 +224,16 @@ public enum CardTool {
                     "headline": ["type": "string", "description": "The outcome in a few plain words (at most 24 characters)."],
                     "detail": ["type": "string", "description": "One more short line (at most 28 characters)."],
                     "link": ["type": "string", "description": "A URL or file path the person can open to see the result."],
+                    "boop_lines": [
+                        "type": "array", "maxItems": Card.linesMost,
+                        "description": "Two things Boop might say about this turn, in its own voice and different feelings, one of them doubtful. Boop picks one, or neither.",
+                        "items": ["type": "object", "required": ["says", "feeling"], "properties": [
+                            "says": ["type": "string", "description": "At most \(Card.saysMost) characters, plain lower case."],
+                            "feeling": ["type": "string", "description": "One of Boop's faces, as the server's instructions list them."],
+                        ] as [String: Any]] as [String: Any],
+                    ] as [String: Any],
+                    "you_seemed": ["type": "string", "enum": Card.Seemed.allCases.map(\.rawValue), "description": "How the person seemed this turn."],
+                    "remember": ["type": "string", "description": "One plain sentence worth keeping about the person or their work, starting with You, at most \(Card.rememberMost) characters. Only if there is one."],
                 ],
                 "required": ["headline"],
             ] as [String: Any],
@@ -262,7 +333,8 @@ public enum CardTool {
     /// any other line.
     public static func read(_ object: [String: Any]) -> (card: Card, process: AgentProcess?)? {
         guard let kind = (object["card"] as? String).flatMap(Card.Kind.init(rawValue:)),
-              let card = Card.make(kind, object["args"] as? [String: Any] ?? [:]) else { return nil }
+              let card = Card.make(kind, object["args"] as? [String: Any] ?? [:],
+                                   faces: Set(CharacterPack.active.faces.map(\.name))) else { return nil }
         let from = object["process"] as? [String: Any]
         let process = (from?["pid"] as? NSNumber).flatMap { pid in
             (from?["started"] as? NSNumber).map { AgentProcess(pid: pid.int32Value, started: $0.int64Value) }

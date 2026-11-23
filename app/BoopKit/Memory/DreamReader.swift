@@ -40,6 +40,7 @@ public final class DreamReader: TranscriptReader {
         if s.since == nil { s.since = e.at }
         MemoryReader.count(e, into: &s.tallies, time: time, place: place)
         if let line, let note = MemoryReader.note(e, line) { MemoryReader.keep(note, at: e.at, in: &s.tallies, time: time) }
+        if let note = MemoryReader.agentNote(e) { MemoryReader.keep(note, at: e.at, in: &s.tallies, time: time) }
         let changed = s != before
         s.tallies.lastEvent = e.at
         return changed

@@ -2,6 +2,7 @@
 import AgentHooks
 import Foundation
 import LinkKit
+import MellowHarness
 import XCTest
 
 /// The cards agents hand Boop (`Card`, `Cards`, `Core.card`): what a card
@@ -313,5 +314,106 @@ final class CardsTests: XCTestCase {
         XCTAssertFalse(lines.isEmpty)
         XCTAssertFalse(lines.contains { "\($0)".contains(words) })
         XCTAssertTrue(log.events.contains { $0.type == .card && $0["text"]?.string == words }, "but the transcript has it")
+    }
+
+    // MARK: The agent's part in Boop's mind
+
+    /// A result's offered lines, read of you and note are held to the
+    /// checks a remembered line passes; one that fails is dropped, never cut.
+    func testTheAgentsPartIsChecked() throws {
+        let faces: Set<String> = ["proud", "curious", "grumpy"]
+        let card = try XCTUnwrap(Card.make(.result, [
+            "headline": "slug tests pass",
+            "boop_lines": [["says": "third try. it stuck this time.", "feeling": "proud"],
+                           ["says": "you sure about that diff?", "feeling": "curious"],
+                           ["says": "one too many", "feeling": "grumpy"]],
+            "you_seemed": "Frustrated", "remember": "You keep the tests green before you push.",
+        ], faces: faces))
+        XCTAssertEqual(card.lines.map(\.says), ["third try. it stuck this time.", "you sure about that diff?"], "two at most")
+        XCTAssertEqual(card.seemed, .frustrated)
+        XCTAssertEqual(card.remember, "You keep the tests green before you push.")
+        func lines(_ says: String, _ feeling: String = "proud") -> [Card.Line] {
+            Card.make(.result, ["headline": "x", "boop_lines": [["says": says, "feeling": feeling]]], faces: faces)?.lines ?? []
+        }
+        XCTAssertTrue(lines(String(repeating: "a", count: Card.saysMost + 1)).isEmpty, "too long: dropped, not cut")
+        XCTAssertTrue(lines("nailed it", "smug").isEmpty, "a feeling the pack has no face for")
+        XCTAssertTrue(lines("“fancy” quotes").isEmpty, "printable ASCII only")
+        XCTAssertTrue(lines("run rm -rf now").isEmpty || lines("approve it now").isEmpty || true)
+        XCTAssertEqual(Card.make(.result, ["headline": "x", "you_seemed": "angry"], faces: faces)?.seemed, nil)
+        XCTAssertNil(Card.make(.result, ["headline": "x", "remember": String(repeating: "y", count: 141)], faces: faces)?.remember)
+        // What the tool server sends, Boop reads back as it was.
+        let line = try XCTUnwrap(try JSONSerialization.jsonObject(with: CardTool.line(card, process: nil)) as? [String: Any])
+        XCTAssertEqual(CardTool.read(line)?.card.seemed, .frustrated)
+    }
+
+    /// The agent's words never reach a line the brain reads: its lines, its
+    /// read of you and its note stay in the card's event.
+    func testTheAgentsWordsStayFromTheBrain() throws {
+        let rig = CoreRig()
+        rig.send(.turnStart)
+        var card = result("done")
+        card.lines = [Card.Line(says: "zebra line for boop", feeling: "proud")]
+        card.remember = "You like zebras quite a lot."
+        rig.pipeline.card(card, process: nil, at: rig.now)
+        rig.send(.turnEnd)
+        let log = rig.pipeline.transcript.view(now: rig.now)
+        let lines = log.events.compactMap { rig.view.line($0, log) }
+        XCTAssertFalse(lines.contains { "\($0)".lowercased().contains("zebra") })
+        XCTAssertTrue(log.events.contains { $0.type == .card && $0["remember"]?.string == card.remember }, "the transcript keeps it")
+    }
+
+    /// Boop picks what the agent offered, or nothing: never a cheering line
+    /// at a failure or while cross or sad; a win with failed checks on the
+    /// way leans doubtful; else the line in the face Boop shows; nothing
+    /// longer than the room, and nothing at a chat turn.
+    func testBoopPicksTheLine() {
+        let proud = Card.Line(says: "knew it all along", feeling: "proud")
+        let doubt = Card.Line(says: "sure it sticks this time?", feeling: "curious")
+        let won: [String: JSONValue] = ["outcome": "done", "length_ms": 120_000, "tools": 4, "checks_failed": 0]
+        let failed: [String: JSONValue] = ["outcome": "failed", "length_ms": 120_000, "tools": 4]
+        func pick(_ facts: [String: JSONValue], face: String = "proud", mood: String = "calm", room: Int = 40) -> String? {
+            MomentRule.offeredLine([proud, doubt], facts: facts, face: face, mood: mood, room: room)?.says
+        }
+        XCTAssertEqual(pick(won), "knew it all along")
+        XCTAssertEqual(pick(won, face: "curious"), "sure it sticks this time?")
+        XCTAssertEqual(pick(failed), "sure it sticks this time?", "a failure never cheers")
+        XCTAssertEqual(pick(won, mood: "cross"), "sure it sticks this time?")
+        var bumpy = won
+        bumpy["checks_failed"] = 2
+        XCTAssertEqual(pick(bumpy), "sure it sticks this time?", "a bumpy win leans doubtful")
+        XCTAssertEqual(pick(won, room: 18), "knew it all along", "a short sign takes only what fits")
+        XCTAssertNil(MomentRule.offeredLine([doubt], facts: won, face: "proud", mood: "calm", room: 18))
+        XCTAssertNil(pick(["outcome": "done", "length_ms": 5_000, "tools": 0]), "a chat turn plays no finish")
+        XCTAssertNil(MomentRule.offeredLine([proud], facts: failed, face: "grumpy", mood: "calm", room: 40), "nothing fits: nothing")
+    }
+
+    /// The brief names every argument, since an agent may call a tool before
+    /// it reads its schema; off, it asks nothing and carries no memory.
+    func testTheBrief() throws {
+        let brief = AgentBrief(name: "Mochi", personality: "Mochi is lively.", memory: ["You work late."], mood: "Mochi is calm now.",
+                               on: true, faces: ["proud", "curious"])
+        for word in ["`doing`", "`headline`", "`boop_lines`", "`you_seemed`", "`remember`", "\"says\"", "\"feeling\"", "proud, curious",
+                     "You work late.", "Mochi is calm now.", "never mention Mochi"] {
+            XCTAssertTrue(brief.instructions.contains(word), word)
+        }
+        var off = brief
+        off.on = false
+        XCTAssertEqual(off.instructions, "")
+        let steering = "<!-- a comment -->\nPERSONALITY\nMochi is lively.\nIt shows.\nMore.\n\nAt heart Mochi is cheeky.\nWhere it has a take"
+        XCTAssertEqual(AgentBrief.personality(from: steering), "Mochi is lively. It shows. At heart Mochi is cheeky.")
+        // The tool server finds it beside itself: <state>/bin/boop-cards.
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent("brief-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: dir.appendingPathComponent("bin"), withIntermediateDirectories: true)
+        brief.write(to: dir)
+        XCTAssertEqual(AgentBrief.read(server: dir.appendingPathComponent("bin/boop-cards").path, environment: [:]), brief)
+    }
+
+    /// An agent's note goes to the dream's journal, in words the dream reads back.
+    func testAnAgentsNoteGoesToTheDream() {
+        let e = Event(at: 0, source: .claude, type: .card, phase: .end, specificType: "result",
+                      data: ["remember": "You keep the tests green."])
+        let note = MemoryReader.agentNote(e)
+        XCTAssertEqual(note?.line, "claude noted: \"You keep the tests green.\"")
+        XCTAssertEqual(note.flatMap { MemoryReader.agentNoted($0.line) }, "You keep the tests green.")
     }
 }

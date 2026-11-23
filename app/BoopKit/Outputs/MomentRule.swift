@@ -83,6 +83,29 @@ public enum MomentRule {
         }
     }
 
+    // MARK: The agent's line
+
+    /// The faces that cheer: a line in one of them never plays at a finish
+    /// that failed, nor while Boop is cross or sad.
+    static let cheering: Set<String> = ["proud", "happy", "excited", "pleased", "amused", "affectionate", "mischievous"]
+
+    /// Which of the lines an agent offered Boop says at its finish, or none
+    /// (documentation/design/brain.md, layer 2): Boop's pick, not the
+    /// agent's. A failed finish takes no cheering line; nor does a cross or
+    /// sad Boop; a win with failed checks on the way leans to the doubtful
+    /// line; else the line whose feeling is the face Boop shows, then the
+    /// first that fits. A chat turn plays no finish, so it says nothing.
+    public static func offeredLine(_ lines: [Card.Line], facts: [String: JSONValue], face: String, mood: String,
+                                   room: Int) -> Card.Line? {
+        guard let finish = finish(facts), finish == .success || finish == .failure else { return nil }
+        var fits = lines.filter { $0.says.count <= room }
+        if finish == .failure || mood == cross || mood == sad { fits.removeAll { cheering.contains($0.feeling) } }
+        if finish == .success, (facts["checks_failed"]?.int ?? 0) > 0, let doubtful = fits.first(where: { !cheering.contains($0.feeling) }) {
+            return doubtful
+        }
+        return fits.first { $0.feeling == face } ?? fits.first
+    }
+
     // MARK: The size
 
     /// How big a Moment at `e` is, by its line's `facts` and the lasting
