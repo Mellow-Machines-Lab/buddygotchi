@@ -94,16 +94,18 @@ struct SignShow {
 // The card an agent handed Boop to hold (the Mac's `state.card`,
 // Behaviour::cardShow): one main thing, read from a chair, and at most one
 // small line under it, both the Mac's words; whose it is, by its lane's
-// slot (kNoSlot with no lane); whether a status's guess of the time has run
+// slot (kNoSlot with no lane) and its agent's name (`claude`, `codex`, ""
+// for none), which a face may show so the card reads as the agent's; whether a status's guess of the time has run
 // out; a result's is what the turn made. `index` of `count` cards (from 1),
 // for the dots. `on` only while nothing above
 // Doing has the screen, and `ms` since it came or last changed.
 struct CardShow {
-  static constexpr int kTextBytes = 80, kSmallBytes = 48, kNoSlot = -1;
+  static constexpr int kTextBytes = 80, kSmallBytes = 48, kAgentBytes = 12, kNoSlot = -1;
   bool on = false, result = false, over = false;
   int slot = kNoSlot, index = 1, count = 1;
   const char* text = "";
   const char* small = "";
+  const char* agent = "";
   uint32_t ms = 0;
 };
 // The finished turn the brain's reaction is about (its `who`), while the

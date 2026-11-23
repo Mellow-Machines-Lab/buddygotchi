@@ -856,7 +856,7 @@ render::CardShow Behaviour::cardShow(uint32_t t) const {
   const Model::CardIn& c = model_.card;
   show.on = c.on && !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
   show.result = c.result, show.over = c.over, show.slot = c.slot;
-  show.index = c.index, show.count = c.count, show.text = c.text, show.small = c.small;
+  show.index = c.index, show.count = c.count, show.text = c.text, show.small = c.small, show.agent = c.agent;
   show.ms = t - cardAt_;
   return show;
 }

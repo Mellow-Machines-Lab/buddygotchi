@@ -34,8 +34,8 @@ public enum MomentRule {
     /// | --- | --- |
     /// | A turn finished, failed | failure |
     /// | A turn finished, done, its last message giving up | failure |
-    /// | A turn finished, done, its last message asking or only answering | reply |
-    /// | A turn finished, done, in under a minute with no tool calls and no claim it's done | reply |
+    /// | A turn finished, done, its last message asking or only answering | none: a chat turn goes quiet |
+    /// | A turn finished, done, in under a minute with no tool calls and no claim it's done | none: a chat turn goes quiet |
     /// | Any other turn finished, done | success |
     /// | A turn stopped | none |
     /// | You back after an hour or more | wake up |
@@ -46,7 +46,7 @@ public enum MomentRule {
             switch finish {
             case .failure: return "failure"
             case .success: return "success"
-            case .reply: return "reply"
+            case .reply: return nil
             case .stopped: return nil
             }
         }
@@ -55,11 +55,17 @@ public enum MomentRule {
         return nil
     }
 
-    /// How a finished turn ended, for the move and the size.
+    /// How a finished turn ended, for the move and the size. A reply, a
+    /// chat turn, plays nothing and names no thread (`namesTurn`): the
+    /// strip's idle count already says it's your turn.
     enum Finish { case success, failure, reply, stopped }
 
     /// The finish a line's `facts` tell, or nil when they tell none: the
     /// turn's outcome, then what its last message's reading says.
+    /// Whether a finished turn's face names its thread on the board (the
+    /// low sign and the rim's glow): every finish but a chat turn's.
+    static func namesTurn(_ facts: [String: JSONValue]) -> Bool { finish(facts) != .reply }
+
     static func finish(_ facts: [String: JSONValue]) -> Finish? {
         guard let outcome = facts["outcome"]?.string else { return nil }
         if outcome == "failed" { return .failure }

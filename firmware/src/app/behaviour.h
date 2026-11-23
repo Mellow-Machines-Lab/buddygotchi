@@ -53,17 +53,19 @@ struct Model {
   // done of total; 0 of 0 for none.
   int todoDone = 0, todoTotal = 0;
   // The card Boop holds (`card`): `on` with one, whose (`a`, its lane's
-  // slot), a result's or a status's (`k`), its main thing (`t`) and small
-  // line (`d`), its guess of the time run out (`o`), and where it is among
-  // the cards (`at`).
+  // slot), its agent (`g`), a result's or a status's (`k`), its main thing
+  // (`t`) and small line (`d`), its guess of the time run out (`o`), and
+  // where it is among the cards (`at`).
   struct CardIn {
     bool on = false, result = false, over = false;
     int slot = render::CardShow::kNoSlot, index = 1, count = 1;
     char text[render::CardShow::kTextBytes] = "";
     char small[render::CardShow::kSmallBytes] = "";
+    char agent[render::CardShow::kAgentBytes] = "";
     bool same(const CardIn& o) const {
       return on == o.on && result == o.result && over == o.over && slot == o.slot &&
-             index == o.index && count == o.count && !std::strcmp(text, o.text) && !std::strcmp(small, o.small);
+             index == o.index && count == o.count && !std::strcmp(text, o.text) && !std::strcmp(small, o.small) &&
+             !std::strcmp(agent, o.agent);
     }
   } card;
   // The wish waiting (`wish`), while its wait counts.

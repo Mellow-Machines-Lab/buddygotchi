@@ -331,6 +331,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// with no lane), what it says, and where it is among the cards showing.
     public struct CardShow: Equatable, Sendable {
         public var slot: Int
+        /// Whose it is, `claude` or `codex`: the board names the agent on
+        /// the card, so it reads as the agent's and not Boop's.
+        public var agent: String = ""
         public var result: Bool
         public var text: String
         public var small: String?
@@ -383,6 +386,7 @@ public struct StateSnapshot: Equatable, Sendable {
         }
         if let card {
             var c: JSONObject = ["a": .int(card.slot), "k": .string(card.result ? "r" : "s"), "t": .string(card.text)]
+            if !card.agent.isEmpty { c["g"] = .string(card.agent) }
             if let small = card.small { c["d"] = .string(small) }
             if card.over { c["o"] = .int(1) }
             c["at"] = .array([.int(card.index), .int(card.count)])

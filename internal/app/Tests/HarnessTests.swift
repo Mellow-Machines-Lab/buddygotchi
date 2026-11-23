@@ -205,10 +205,10 @@ final class HarnessTests: XCTestCase {
         XCTAssertEqual(failure.turn, 2, "a finish says how long its turn ran: 9 minutes is tier2")
         XCTAssertEqual(react.run(["react.face": a("sulky")], now: poke, log: Self.log), nil, "not a face")
         // The moves, each a scene: a success or a failure is the face's
-        // task_complete for that outcome, a reply its reply_ready, a wake
+        // task_complete for that outcome, a wake
         // up its wake_up, a notice its notice, naming the thread NOW is
         // about; the device picks the variation.
-        XCTAssertEqual(MomentOutput.moves, ["success", "failure", "reply", "wake up", "notice"])
+        XCTAssertEqual(MomentOutput.moves, ["success", "failure", "wake up", "notice"])
         XCTAssertEqual(Set(MomentOutput.scenes.keys), Set(MomentOutput.moves), "each plays a scene")
         queued.removeAll()
         facts = finished("done", minutes: 9)
@@ -225,12 +225,10 @@ final class HarnessTests: XCTestCase {
         starts(["react.face": a("pleased"), "say": a("none")], at: finish, "\(creature) had a pleased moment (small), playing a success.")
         XCTAssertEqual(sent.last?.say?.takes, [], "a face in silence")
         facts = finished("done", minutes: 2, tools: 0, kind: "answer")
-        starts(["react.face": a("curious"), "say": a("none")], at: finish, "\(creature) had a curious moment (small), playing a reply.")
+        starts(["react.face": a("curious"), "say": a("none")], at: finish, "\(creature) had a curious moment (small).")
         let reply = try XCTUnwrap(queued.last?.reaction)
-        XCTAssertEqual(reply.anim, "reply_ready")
-        XCTAssertNil(reply.outcome, "a reply has no outcome")
-        XCTAssertNil(reply.turn, "nor a turn to size it by")
-        XCTAssertEqual(reply.who, .init(agent: "codex", thread: "fix-nav"))
+        XCTAssertNil(reply.anim, "a chat turn plays no finish")
+        XCTAssertNil(reply.who, "and names no thread: the strip's idle count says it's your turn")
         facts = ["away_ms": .int(2 * 60 * 60_000)]
         starts(["react.face": a("happy"), "say": a("hello")], at: back,
                #"\#(creature) had a happy moment (medium), playing a wake up, and said "SAID"."#)

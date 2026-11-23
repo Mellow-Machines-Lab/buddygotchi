@@ -53,7 +53,8 @@ extension Core {
     func cardShow(at now: Int64) -> StateSnapshot.CardShow? {
         let showing = cards.showing(in: cardOrder(at: now), at: now)
         guard let key = cards.focus, let index = showing.firstIndex(of: key), let shown = cards.shown(key, at: now) else { return nil }
-        return StateSnapshot.CardShow(slot: stream.lanes[key]?.slot ?? cards.held[key]?.slot ?? -1, result: shown.kind == .result,
+        return StateSnapshot.CardShow(slot: stream.lanes[key]?.slot ?? cards.held[key]?.slot ?? -1,
+                                      agent: sessions[key]?.agent.rawValue ?? "", result: shown.kind == .result,
                                       text: StateSnapshot.clip(shown.text, marked: true, max: StateSnapshot.maxSignBytes),
                                       small: shown.small, over: shown.over,
                                       index: index + 1, count: showing.count)

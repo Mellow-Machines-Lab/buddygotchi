@@ -396,7 +396,7 @@ public final class MomentOutput: Output {
     /// The moves a Moment can play at an event (`MomentRule.move`): a
     /// turn's finish, a wake-up when you come back from a long break, or
     /// a notice when your prompt says its name.
-    public static let moves = ["success", "failure", "reply", "wake up", "notice"]
+    public static let moves = ["success", "failure", "wake up", "notice"]
 
     /// The move a Moment played, as the tools name it: its scene's, else
     /// its reply, or nil for none.
@@ -406,11 +406,11 @@ public final class MomentOutput: Output {
 
     /// What the device plays for each of `moves`: the face's
     /// task_complete scene for a success or a failure, with that outcome,
-    /// its reply_ready for a reply, its wake_up for a wake up, and its
-    /// notice for a notice.
+    /// its wake_up for a wake up, and its notice for a notice. A chat
+    /// turn plays none (`MomentRule.move`).
     public static let scenes: [String: (anim: String, outcome: String?)] = [
         "success": ("task_complete", "success"), "failure": ("task_complete", "failure"),
-        "reply": ("reply_ready", nil), "wake up": ("wake_up", nil), "notice": ("notice", nil),
+        "wake up": ("wake_up", nil), "notice": ("notice", nil),
     ]
 
     /// A reaction still in progress this long after it started is ended as
@@ -820,9 +820,9 @@ public final class MomentOutput: Output {
             // A notice isn't a turn's: it keeps its sign and reason.
             if noticing == nil { reaction.who = who(about) }
             if outcome != nil { reaction.turn = turnMs(about).map { Moment.turn(lengthMs: $0) } }
-        } else if turnMs(about) != nil {
+        } else if turnMs(about) != nil, MomentRule.namesTurn(lineFacts) {
             // A face for a finished turn names it too: the device marks
-            // the turn it's about while it plays.
+            // the turn it's about while it plays. A chat turn's doesn't.
             reaction.who = who(about)
         }
         // A finish that names its thread holds up nothing of the brain's:

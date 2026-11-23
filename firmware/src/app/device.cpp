@@ -201,6 +201,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     c.result = !std::strcmp(card["k"] | "s", "r");
     render::foldText(card["t"].as<const char*>(), kCardGlyphs, c.text, sizeof(c.text));
     render::foldText(card["d"].as<const char*>(), kCardSmallGlyphs, c.small, sizeof(c.small));
+    render::foldText(card["g"].as<const char*>(), render::CardShow::kAgentBytes - 1, c.agent, sizeof(c.agent));
     c.over = (card["o"] | 0) != 0;
     c.count = heldTo(card["at"][1], 1, 9, 1), c.index = heldTo(card["at"][0], 1, c.count, 1);
   }
