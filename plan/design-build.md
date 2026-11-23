@@ -1,6 +1,6 @@
 # Building the design
 
-Updated 2026-11-22. The order to build
+Updated 2026-11-23. The order to build
 [documentation/design/](../documentation/design/README.md) in, one step at a
 time. Nothing here is built. Tick a step in the commit that finishes it, and
 say there what checked it.
@@ -140,7 +140,7 @@ The screen guide's "How a turn ends", the chat row.
 Done when: after an answer, one glance at the board tells you it is your
 move.
 
-### 7. Several agents ✓ (not yet: the slide on a switch, the side arrows, and a finish elsewhere being only a pill)
+### 7. Several agents ✓ (2026-11-23: the slide on a switch, the side arrows and a colour for every agent. Not yet: a finish elsewhere being only a pill)
 
 The screen guide's map (5, 7, 9) and "Who wins the space".
 

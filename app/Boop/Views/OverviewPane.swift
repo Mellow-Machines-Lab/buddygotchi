@@ -769,7 +769,8 @@ func rowTitle(project: String, name: String?) -> (title: String, project: String
 /// in one, cut in the middle, and what it's doing, the agent's name first
 /// (its latest call's word, its to-dos and for how long). Needs you wears a
 /// solid amber chip and an amber bar; working a soft word and its lane's
-/// colour, as on the board; idle neither. The whole text is in its help.
+/// colour, as on the board; idle no word and its colour faint, as its
+/// hollow pip. The whole text is in its help.
 struct SessionRow: View {
     let session: SessionSummary
 
@@ -780,7 +781,7 @@ struct SessionRow: View {
         case .waiting where session.dismissed: Theme.amberSignal.opacity(0.4)
         case .waiting: Theme.amberSignal
         case .working: session.slot.flatMap(Theme.lane) ?? Theme.inkFaint
-        case .idle: nil
+        case .idle: session.slot.flatMap(Theme.lane)?.opacity(0.35)
         }
     }
 

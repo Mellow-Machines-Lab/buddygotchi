@@ -114,6 +114,10 @@ struct WorkStream {
     /// The most lanes the board shows, and the longest word it gets, in
     /// bytes: the whole `state` stays well under the board's 512.
     static let maxLanes = 4
+    /// Each session's own colour, a slot it keeps from when Boop first sees
+    /// it (`Core.colour`): its lane takes that slot when it's free, so its
+    /// pip, monitor, card and drawer row stay one colour across turns.
+    var colours: [String: Int] = [:]
     static let maxWordBytes = 14
     /// The `state` carries a lane's new word at most this often.
     static let sendEveryMs: Int64 = 250
@@ -384,7 +388,7 @@ struct WorkStream {
         // A lane of its own while one is free: a fifth session gets none,
         // and no other's slot, until one frees; its words still come forward.
         let slot: Int
-        if var lane = lanes[key] ?? openSlot().map({ Lane(slot: $0, count: 0, word: shown, since: now - Self.holdMs) }) {
+        if var lane = lanes[key] ?? openSlot(prefer: colours[key]).map({ Lane(slot: $0, count: 0, word: shown, since: now - Self.holdMs) }) {
             lane.count = (lane.count + 1) % 1000
             lane.say(shown, at: now)
             lane.open += 1
@@ -501,9 +505,11 @@ struct WorkStream {
         return f
     }
 
-    /// The lowest slot no lane holds, or nil when all are taken.
-    func openSlot() -> Int? {
+    /// The lowest slot no lane holds, or nil when all are taken; the
+    /// session's own colour (`prefer`) first when it's free.
+    func openSlot(prefer: Int? = nil) -> Int? {
         let taken = Set(lanes.values.map(\.slot))
+        if let prefer, (0..<Self.maxLanes).contains(prefer), !taken.contains(prefer) { return prefer }
         return (0..<Self.maxLanes).first { !taken.contains($0) }
     }
 

@@ -217,7 +217,8 @@ public final class Core {
     var watchSwipedAt: Int64?
     var unseen: [String: Int64] = [:]
     var pill: (key: String, text: String, at: Int64)?
-    var pipSlots: [String: Int] = [:]
+    /// Each session's own colour (`colour`).
+    var colours: [String: Int] = [:]
     /// The latest show an agent drew (`show`).
     var lastShow: Shown?
     /// What each session's turn has done, for its held pictures.
@@ -294,6 +295,7 @@ public final class Core {
             stream.turnStarted(e.key)
             return nil
         case (.tool, .start) where e.tool != nil:
+            colour(e.key)
             return stream.started(e, program: program, at: now)
         case (.tool, .end) where e.tool != nil:
             return stream.ended(e, program: program, at: now)
@@ -670,7 +672,7 @@ public final class Core {
                 snapshot.card = card
             } else if base == "working", let key = watched(at: now), working.contains(where: { $0.key == key }),
                       let picture = picture(for: key, at: now) {
-                snapshot.pic = StateSnapshot.PictureShow(slot: stream.lanes[key]?.slot ?? pipSlots[key] ?? -1,
+                snapshot.pic = StateSnapshot.PictureShow(slot: slot(of: key),
                                                          agent: sessions[key]?.agent.rawValue ?? "", picture: picture)
             }
         }
@@ -863,7 +865,7 @@ public final class Core {
                 let under = cards.shown(s.key, at: now)?.text ?? (named ? s.project : nil)
                 let row = StateSnapshot.Row(
                     id: rows[s.key] ?? 0, status: status,
-                    slot: status == "w" && config.workStream ? stream.lanes[s.key]?.slot ?? -1 : -1, agent: s.agent.rawValue,
+                    slot: config.workStream ? slot(of: s.key) : -1, agent: s.agent.rawValue,
                     title: StateSnapshot.clip(name ?? s.project, marked: true, max: cut.title),
                     project: under.map { cut.project > 0 ? StateSnapshot.clip($0, marked: true, max: cut.project) : "" } ?? "")
                 var next = snapshot
@@ -949,9 +951,9 @@ public final class Core {
             let since = status == .waiting ? s.needsSince
                 : status == .working ? s.turn.startedAt : s.turn.lastEndedAt ?? s.lastEventAt
             summary.since = since.map { Date(timeIntervalSince1970: Double(wall($0)) / 1000) }
+            if config.workStream { summary.slot = slot(of: s.key) }
             if status == .working, config.workStream, let lane = stream.lanes[s.key] {
                 summary.word = lane.shown(at: now)
-                summary.slot = lane.slot
             }
             if let card = cards.shown(s.key, at: now) { summary.card = [card.text, card.small].compactMap { $0 }.joined(separator: ", ") }
             return summary

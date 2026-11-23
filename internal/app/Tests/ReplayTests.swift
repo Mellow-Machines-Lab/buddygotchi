@@ -134,7 +134,6 @@ final class ReplayTests: XCTestCase {
             "+11.0s working/analyzing - 0",
             "+15.0s working - 0",
             "+15.0s working/tool_use - 0",
-            "+16.0s working/tool_use - 0",  // the edit's lines: Boop holds the changes picture
             "+17.0s working/terminal - 0",
             "+20.0s working/terminal - 0 +1 helper",
             "+23.0s working/terminal - 0",

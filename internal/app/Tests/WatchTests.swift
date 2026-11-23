@@ -54,4 +54,30 @@ final class WatchTests: XCTestCase {
         rig.core.swipeAgent(by: 1, at: rig.now)
         XCTAssertNotEqual(rig.state.pips[order.firstIndex(of: other)!].kind, "a", "seen")
     }
+
+    /// Every agent has a colour of its own from when Boop first sees it, a
+    /// resting one too, kept across turns: its lane takes that colour when
+    /// it works, so pip, monitor, card and drawer row agree.
+    func testEveryAgentHasItsColour() {
+        let rig = CoreRig(workStream: true)
+        for id in ["a", "b", "c"] {
+            rig.send(.turnStart, session: id)
+            rig.wait(500)
+            rig.send(.turnEnd, session: id)
+            rig.wait(500)
+        }
+        let slots = rig.state.pips.map(\.slot)
+        XCTAssertEqual(slots.count, 3)
+        XCTAssertFalse(slots.contains(nil), "resting ones too: \(slots)")
+        XCTAssertEqual(Set(slots.compactMap { $0 }).count, 3, "each its own")
+        let c = rig.core.sessions.values.first { $0.id == "c" }!.key
+        let before = rig.core.slot(of: c)
+        rig.send(.turnStart, session: "c")
+        rig.send(.activity, session: "c", tool: "Grep", id: "t1")
+        rig.wait(500)
+        XCTAssertEqual(rig.core.stream.lanes[c]?.slot, before, "its lane takes its colour")
+        rig.send(.turnEnd, session: "c")
+        rig.wait(500)
+        XCTAssertEqual(rig.core.slot(of: c), before, "and keeps it after")
+    }
 }

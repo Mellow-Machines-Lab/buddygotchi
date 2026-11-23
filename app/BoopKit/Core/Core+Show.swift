@@ -33,7 +33,7 @@ extension Core {
         let owner = process.flatMap { p in sessions.values.first { $0.process == p } } ?? (working.count == 1 ? working[0] : nil)
         guard let session = owner else { return fx }
         lastShow = Shown(show: show, agent: session.agent.rawValue, project: session.project,
-                         slot: stream.lanes[session.key]?.slot ?? pipSlots[session.key], at: now)
+                         slot: slot(of: session.key), at: now)
         let data: [String: JSONValue] = ["agent": .string(session.agent.rawValue), "text": .string(show.headline),
                                          "picture": .bool(true), "link": .bool(show.link != nil)]
         fx.append(.record(Event(at: now, source: Event.Source(session.agent), type: .card, phase: .end,

@@ -44,6 +44,23 @@ extension Core {
     public static let pictureHoldMs: Int64 = 30_000
     public static let planHoldMs: Int64 = 120_000
     public static let maxFiles = 3
+    /// The changes are worth a picture once the turn has changed this many
+    /// lines, or two files: one line in one file is no news.
+    public static let minChangeLines = 10
+
+    /// Whether an edited file is the project's: a path under where the
+    /// agent works, or one relative to it. A note in /tmp is not the work.
+    static func inProject(_ file: String, cwd: String?) -> Bool {
+        guard file.hasPrefix("/") || file.hasPrefix("~") else { return true }
+        guard let cwd, !cwd.isEmpty else { return false }
+        let root = cwd.hasSuffix("/") ? cwd : cwd + "/"
+        return file.hasPrefix(root)
+    }
+
+    /// Whether a turn's changes are worth a picture (`minChangeLines`).
+    static func worthShowing(_ files: [(name: String, added: Int, removed: Int)]) -> Bool {
+        files.count >= 2 || files.reduce(0) { $0 + $1.added + $1.removed } >= minChangeLines
+    }
 
     /// The hooks' event `e`, for the pictures: a turn starting clears its
     /// work; an edit ending adds its lines to its file; a helper ending
@@ -53,7 +70,7 @@ extension Core {
         if e.kind == .turn, e.phase == .start { turnWork[key] = TurnWork() }
         var w = turnWork[key] ?? TurnWork()
         if e.kind == .tool, e.phase == .end, e.toolKind == .edit, e.failed != true,
-           let file = (e.glimpse ?? "").split(separator: " ").first.map(String.init) {
+           let file = (e.glimpse ?? "").split(separator: " ").first.map(String.init), Self.inProject(file, cwd: e.cwd) {
             let name = (file as NSString).lastPathComponent
             let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
             if let i = w.files.firstIndex(where: { $0.name == name }) {
@@ -86,7 +103,7 @@ extension Core {
         if !s.helpers.isEmpty || fresh("helpers") {
             if s.helpers.count + w.helpersDone > 0 { return .helpers(working: s.helpers.count, done: w.helpersDone) }
         }
-        if fresh("changes"), !w.files.isEmpty { return .changes(Array(w.files.prefix(Self.maxFiles))) }
+        if fresh("changes"), Self.worthShowing(w.files) { return .changes(Array(w.files.prefix(Self.maxFiles))) }
         if let todos = w.todos, todos.total > 0, fresh("plan", Self.planHoldMs) || cards.held[key]?.status != nil {
             let status = cards.shown(key, at: now).flatMap { $0.kind == .status ? $0 : nil }
             var left: Int?

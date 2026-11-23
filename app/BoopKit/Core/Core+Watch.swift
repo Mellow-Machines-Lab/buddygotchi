@@ -62,6 +62,29 @@ extension Core {
         pill = (key, chat ? "\(name) waits for you" : "\(name) finished", now)
     }
 
+    /// The colour `key` is drawn in: its lane's while it has one, else its
+    /// own, given the first time Boop sees it and kept while it lives, so
+    /// an agent that has only rested still has a colour of its own.
+    func slot(of key: String) -> Int {
+        if let slot = stream.lanes[key]?.slot { return slot }
+        return colour(key)
+    }
+
+    /// The session's own colour: the one it has, else the one the fewest
+    /// other live sessions have, the lowest first.
+    @discardableResult
+    func colour(_ key: String) -> Int {
+        for k in colours.keys where sessions[k] == nil { colours[k] = nil }
+        if let c = colours[key] { stream.colours[key] = c; return c }
+        var uses = [Int](repeating: 0, count: WorkStream.maxLanes)
+        for (k, c) in colours where k != key && c < uses.count { uses[c] += 1 }
+        for lane in stream.lanes.values where lane.slot < uses.count { uses[lane.slot] += 1 }
+        let c = uses.indices.min { (uses[$0], $0) < (uses[$1], $1) } ?? 0
+        colours[key] = c
+        stream.colours = colours
+        return c
+    }
+
     /// The pips, the watched one and the pill for the `state`.
     func watchFields(into snapshot: inout StateSnapshot, at now: Int64) {
         let order = pipOrder(at: now)
@@ -73,14 +96,10 @@ extension Core {
         let watching = watched(at: now)
         if let w = watching { unseen[w] = nil }
         for key in unseen.keys where sessions[key] == nil || now - (unseen[key] ?? now) > 120_000 { unseen[key] = nil }
-        for key in pipSlots.keys where sessions[key] == nil { pipSlots[key] = nil }
         snapshot.pips = order.map { key in
             let kind: Character = waiting.contains(key) || unseen[key] != nil ? "a"
                 : showing.contains(key) ? "c" : busy.contains(key) ? "w" : "i"
-            // Its lane's colour, kept after its lane goes, so a pip and its
-            // pill keep the colour you knew it by.
-            if let slot = stream.lanes[key]?.slot ?? cards.held[key]?.slot { pipSlots[key] = slot }
-            return StateSnapshot.Pip(kind: kind, slot: pipSlots[key])
+            return StateSnapshot.Pip(kind: kind, slot: slot(of: key))
         }
         if let w = watching, let at = order.firstIndex(of: w), let s = sessions[w] {
             snapshot.watch = at

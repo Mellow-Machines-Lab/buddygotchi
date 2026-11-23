@@ -43,7 +43,7 @@ final class PicturesTests: XCTestCase {
         XCTAssertNil(rig.state.pic, "no edit for 30 s: put down")
         rig.send(.turnEnd)
         rig.send(.turnStart)
-        edit(rig, "4", file: "README.md", added: 2)
+        edit(rig, "4", file: "README.md", added: 12)
         guard case .changes(let again)? = rig.state.pic?.picture else {
             XCTFail("no changes")
             return
@@ -51,12 +51,34 @@ final class PicturesTests: XCTestCase {
         XCTAssertEqual(again.map(\.name), ["README.md"], "a new turn starts clean")
     }
 
+    /// The changes are worth a picture only past a bar (`minChangeLines`
+    /// 10, or two files), and only the project's files count: a one-line
+    /// edit, or a note in /tmp, holds nothing up.
+    func testTheChangesBar() {
+        XCTAssertEqual(Core.minChangeLines, 10)
+        let rig = CoreRig()
+        rig.send(.turnStart)
+        edit(rig, "1", file: "/tmp/boop-demo-notes.md", added: 40, removed: 2)
+        XCTAssertNil(rig.state.pic, "a file outside the project")
+        edit(rig, "2", file: "Core.swift", added: 1, removed: 1)
+        XCTAssertNil(rig.state.pic, "one line is no news")
+        edit(rig, "3", file: "Core.swift", added: 8)
+        XCTAssertNotNil(rig.state.pic, "ten lines are")
+        rig.send(.turnEnd)
+        rig.send(.turnStart)
+        edit(rig, "4", file: "a.swift", added: 1)
+        edit(rig, "5", file: "b.swift", added: 1)
+        XCTAssertNotNil(rig.state.pic, "two files are")
+        XCTAssertTrue(Core.inProject("/Users/me/app/a.swift", cwd: "/Users/me/app"))
+        XCTAssertFalse(Core.inProject("/Users/me/apple/a.swift", cwd: "/Users/me/app"))
+    }
+
     /// A result is for you and shows over a picture; a status card is
     /// none.
     func testAResultOverAPicture() {
         let rig = CoreRig()
         rig.send(.turnStart)
-        edit(rig, "1", file: "Core.swift", added: 5)
+        edit(rig, "1", file: "Core.swift", added: 15)
         XCTAssertNotNil(rig.state.pic)
         XCTAssertNil(rig.state.card)
         rig.pipeline.card(Card(kind: .result, text: "fixed"), process: nil, at: rig.now)

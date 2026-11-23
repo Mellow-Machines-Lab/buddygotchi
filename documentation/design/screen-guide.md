@@ -1,6 +1,6 @@
 # The screen guide
 
-Updated 2026-11-22. What takes which space on the gel's 502 by 410 screen,
+Updated 2026-11-23. What takes which space on the gel's 502 by 410 screen,
 how large it is, what shape it has, and what wins when two things want the
 same place. The why is in [theory.md](theory.md); each case moves in
 [animations.html](animations.html).
@@ -80,7 +80,14 @@ One picture-size thing at a time: a held picture, or a show, or neither.
 4. **A low sign.** It takes the strip's place, for the agent you watch.
 5. **A pill.** For any other agent. Never more than one; a second one waits.
 6. **Your swipe.** Boop keeps your agent until it goes idle or you swipe
-   again.
+   again. On a switch the strip's row and the card slide in from the side
+   you swiped toward (0.32 s) while Boop stays, and the monitor's frame
+   takes the new agent's colour. When the set of agents changes, two faint
+   arrows at the strip's ends say there are others to swipe to.
+
+Every agent has its own colour from when Boop first sees it, a resting one
+too, and keeps it across turns: its pip, its chip, the monitor's frame, its
+card and its row in the drawer and the popover all wear it.
 7. **A held picture.** An agent with a picture beats an agent with plain
    work.
 8. **Plain work.** The monitor and the strip only.
@@ -106,7 +113,7 @@ is live and costs the agent nothing. It shows only while its data changes.
 | Picture | Shows | Fed by | Shown while |
 | --- | --- | --- | --- |
 | Plan | Step blocks, the current step's name, a ring for the agent's own time guess | The agent's to-do | The agent has a to-do and nothing below fits |
-| Changes | A row for each file: a green and a red bar, "+48 −15" | Edit and write calls | The agent edits |
+| Changes | A row for each file: a green and a red bar, "+48 −15" | Edit and write calls on the project's files (not /tmp) | The agent edits, once the turn has changed 10 lines or 2 files |
 | Helpers | A lane for each helper, working or done | Helper start and stop | Helpers run |
 
 Two more need numbers from the agent, so they come later: a meter (n of m,
@@ -207,15 +214,18 @@ work pose and on a held picture.
 
 | You | Signal, never content | Full size, idle | Light size, at work |
 | --- | --- | --- | --- |
-| Type | `typing`, `typingfast` | Keyboard out, Boop types with you | The pose sways at your speed |
-| Speak | Another app records and no camera runs (new; today this is `oncall`) | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
+| Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the paw that taps | The pose sways at your speed, and the same ticks burst beside it |
+| Speak | Another app records and no camera runs | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
 | Scroll | `scrolling` | Reads along | Eyes step down |
 | Move the pointer | `ptr` | Eyes follow | Eyes follow |
 | Play music | `music` | Grooves | A small bounce |
 | Watch a video | `video` | Watches | A glance, then back |
 | Take a call | A camera runs | Still and silent | Still and silent |
 
-One rhythm at a time. If you type and speak together, speaking wins.
+One rhythm at a time. If you type and speak together, speaking wins. Each
+of the two has a mark beside the body that reads from a chair (the ticks,
+the rings), since a sway alone is too small to see. A sign held up hides
+the ticks.
 
 ## The strip's words
 
