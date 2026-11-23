@@ -711,6 +711,8 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
   // With no app the Mac's tags are stale: a night's or a holiday's would
   // stay up all the next day.
   c.when = alone && !sleptThrough() ? 0 : model_.when;
+  if (!alone && model_.pointer.on)
+    c.pointer = true, c.pointerNear = model_.pointer.near, c.pointerX = model_.pointer.x, c.pointerY = model_.pointer.y;
   c.lookMs = t - lookAt_;
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
   return c;

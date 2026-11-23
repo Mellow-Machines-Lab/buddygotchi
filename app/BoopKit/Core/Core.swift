@@ -88,11 +88,13 @@ public final class Core {
     var stream = WorkStream()
     /// The session list as last published, which can change while the
     /// snapshot doesn't: a second idle session, say.
-    /// Your hands at the Mac now and the side of Boop the Mac is on, which
-    /// the runtime sets (`Runtime.handsTick`, Settings): facts for the
-    /// board's tags, never events.
-    public var hands: Hands?
-    public var macSide: MacSide?
+    /// You at the Mac now (`Along`: your hands, and the rest Boop notices)
+    /// and the side of Boop the Mac is on (`Anchor.side`), which the
+    /// runtime sets (`Runtime.handsTick`, Settings): facts for the board's
+    /// tags and its `ptr`, never events.
+    public var along = Along.Now()
+    public var hands: Hands? { along.hands }
+    public var macSide: Anchor.Side?
     /// The cards the agents handed Boop, and the one it holds (`Cards`).
     var cards = Cards()
     var lastSessions: [SessionSummary] = []
@@ -195,6 +197,14 @@ public final class Core {
     /// Whether Boop went to sleep at your lock at night (`nap`), until you
     /// show up. A launch forgets it, as nothing else hangs on it.
     var napping = false
+    /// You at the Mac, for Doing with no session open (`sleepsAlone`):
+    /// whether the screen is locked (the `lock` events), and when you last
+    /// touched the Mac or the board, which the runtime keeps from the Mac's
+    /// idle time. Nil while nothing has said so (the evals, a headless run
+    /// with no `presence` line): then, with no session, Boop sleeps, as it
+    /// always did.
+    public internal(set) var screenLocked = false
+    public var lastInputAt: Int64?
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -338,6 +348,7 @@ public final class Core {
             awayFromMac = event.phase == .start
             if event.phase == .end { cards.youAreBack(at: event.at) }
         }
+        if event.type == .lock { screenLocked = event.phase == .start }
         if event.type == .needsYou, let session = event.session,
            let agent = event["agent"]?.string.flatMap(Agent.init(rawValue:)) {
             let key = SessionFold.key(agent, session)
@@ -410,6 +421,7 @@ public final class Core {
     @discardableResult
     public func poke(at now: Int64, seq: Int? = nil, finish: ThreadRef? = nil, touch: Bool = true) -> [CoreEffect] {
         var fx: [CoreEffect] = []
+        touched(at: now)
         advance(to: now)
         startDayIfNew(now, &fx)
         poked(now, seq: seq, finish: finish, touch: touch, &fx)
@@ -566,7 +578,9 @@ public final class Core {
         // nothing works.
         let rests = resting(idle: idle, dismissed: dismissed)
         let dozed = working.isEmpty && dozedOff(at: now, rests: rests, waiting: !shown.isEmpty || !dismissed.isEmpty)
-        let base = !working.isEmpty ? "working" : sessions.isEmpty || dozed ? "asleep" : "idle"
+        // With no session open, awake while you're at the Mac (`sleepsAlone`).
+        let asleep = sessions.isEmpty ? sleepsAlone(at: now) : dozed
+        let base = !working.isEmpty ? "working" : asleep ? "asleep" : "idle"
         let attn = shown.first.map {
             StateSnapshot.Attention(
                 agent: $0.agent.rawValue, project: StateSnapshot.clip($0.project, marked: true, max: StateSnapshot.maxSignBytes),
@@ -599,6 +613,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
+        snapshot.pointer = along.pointer
         snapshot.xp = growth()?.percent
         if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
@@ -661,7 +676,36 @@ public final class Core {
         return nil
     }
     private func sleepingWhy(at now: Int64) -> Narration {
-        Narration.sleeping(noAgents: sessions.isEmpty, napping: napping, dozeMs: dozeMs(at: now), name: config.pack.name)
+        let alone = sessions.isEmpty
+        return Narration.sleeping(noAgents: alone && lastInputAt == nil, napping: napping,
+                                  away: alone && (awayFromMac || screenLocked), dozeMs: dozeMs(at: now), name: config.pack.name)
+    }
+
+    /// Whether Boop sleeps at `now` with no session open: awake while
+    /// you're at the Mac; asleep once you're away, the screen is locked,
+    /// it went for its nap, or you've been still its doze time (`dozeMs`,
+    /// from your last input), or while nothing has said you're here at all.
+    public func sleepsAlone(at now: Int64) -> Bool {
+        guard let last = lastInputAt else { return true }
+        return awayFromMac || screenLocked || napping || now - last >= dozeMs(at: now)
+    }
+
+    /// You touched the board: you're here, for Doing (`lastInputAt`).
+    func touched(at now: Int64) {
+        if let last = lastInputAt, now > last { lastInputAt = now }
+    }
+
+    /// The Mac's screen locked or unlocked: with no session open, Boop
+    /// sleeps while it's locked.
+    @discardableResult
+    public func lock(_ locked: Bool, at now: Int64) -> [CoreEffect] {
+        guard locked != screenLocked else { return [] }
+        var fx: [CoreEffect] = []
+        advance(to: now)
+        screenLocked = locked
+        if !locked { touched(at: now) }
+        publish(now, &fx)
+        return fx
     }
     /// How long the popover says what woke Boop.
     static let wokeShownMs: Int64 = 60_000
@@ -815,12 +859,12 @@ public final class Core {
     /// The tags on at `now`: the calendar's, then the tier reached, from the start
     /// of the working stretch (`workingSince`), else from when the latest
     /// session came to rest (`idleSince`), then your hands and the Mac's
-    /// side, in `Tags.all`'s order.
+    /// side, and the rest of you at the Mac, in `Tags.all`'s order.
     func when(at now: Int64, workingSince: Int64?, idleSince: Int64?) -> [String] {
         var on = calendar(at: now)
         if let since = workingSince ?? idleSince, let tier = Tags.tier(after: now - since) { on.append(tier) }
-        if let hands { on.append(hands.rawValue) }
         if let macSide { on.append(macSide.tag) }
+        on += along.tags
         return Tags.all.filter(on.contains)
     }
 

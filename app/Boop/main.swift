@@ -51,7 +51,11 @@ let usage = """
                and for push-to-talk with no mic, "listen" (the app's button,
                {"dev":"listen","on":true}) and "said" (what the mic heard, {"dev":"said","words":"…"});
                and for the world, "world": {"dev":"world","shown":true} (onboarding's world screen),
-               "on":false (the switch), "tab":true (the World tab) and "to":ID,"gesture":"boop".
+               "on":false (the switch), "tab":true (the World tab) and "to":ID,"gesture":"boop";
+               and headless, for you at the Mac, "along": {"dev":"along","scroll_idle_ms":0}, "click_idle_ms",
+               "pointer":[x,y] (and "display":[x,y,w,h]), "sound":"front"|"other"|"none", "front":"com.apple.Safari", "camera",
+               "mic" and "copy":true; and "anchor": {"dev":"anchor","place":true} (the next "tap" is where Boop
+               sits), "at":[x,y] or "clear":true.
            Boop --counts [--state-dir DIR] [--days N]
                Prints a summary of the last N days (7) from DIR/daily-counts.jsonl, then exits: numbers and dates only,
                no words, threads or notes, for you to send or not. Nothing leaves the Mac by itself. Starts nothing.
@@ -125,6 +129,7 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
     options.debug = debug
     options.debugPrint = { log.echo($0) }
     options.devLines = devLines
+    options.readsHandsOften = true
     return options
 }
 

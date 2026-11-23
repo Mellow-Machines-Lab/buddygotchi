@@ -216,9 +216,10 @@ public struct Narration: Equatable, Sendable {
 
     /// Why Boop went to sleep, by what's true at that moment: no agent open,
     /// the nap, or a quiet that lasted `dozeMs`.
-    public static func sleeping(noAgents: Bool, napping: Bool, dozeMs: Int64, name: String) -> Narration {
+    public static func sleeping(noAgents: Bool, napping: Bool, away: Bool = false, dozeMs: Int64, name: String) -> Narration {
         if noAgents { return Narration(cause: "No agents are open, so \(name) went to sleep.", fact: fit(["no agents open"], name: name)) }
         if napping { return Narration(cause: "\(name) went for a nap, and you haven't been back.") }
+        if away { return Narration(cause: "You stepped away, so \(name) went to sleep.", fact: fit(["you stepped away"], name: name)) }
         let long = span(ms: dozeMs)
         let words = dozeMs == 3_600_000 ? "an hour" : long.words
         return Narration(cause: "Nothing's happened for \(words), so \(name) dozed off.", fact: fit(["quiet for \(long.short)"], name: name))

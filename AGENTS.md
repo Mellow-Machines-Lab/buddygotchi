@@ -166,7 +166,15 @@ things on three channels, **voice**, **sign** and **narration**.
 | words | What you say to Boop on push-to-talk | talk (for the event), said | `talk` |
 | listening | Boop hearing you, while BOOT or the mic is held | push-to-talk (the state) | `listening` |
 | presence | You at the Mac, away, or back | | `presence_start`, `presence_end` |
-| your hands | Whether you're typing at the Mac, or there with your hands still: two idle times, never the keys; a tag, not an event (`Hands`) | pace (that's the agents'), activity | `typing`, `reading` |
+| your hands | Whether you're typing at the Mac, scrolling, or there with your hands still: idle times, never the keys or the page; a tag, not an event (`Hands`) | pace (that's the agents'), activity | `typing`, `scrolling`, `reading` |
+| with you | What Boop notices you do at the Mac besides your hands, each a plain fact sent as a tag or `ptr`, never content, never an event, the transcript, the logs or the brain's (`Along`); Settings' "Notices what you do at the Mac" turns it all off | watching you, tracking, telemetry | the tags below, `ptr` |
+| typing fast | Keys in at least 6 of the last 8 quarter seconds (`Along.fastSlots`) | | `typingfast` |
+| pointer | The way from Boop to your pointer while it moves, as you see the board beside the screen, each of x and y in -10…10; none 3 s after it stops, or with no anchor (`Pointer`) | cursor, mouse | `ptr`: `[x, y]`, `[x, y, 1]` at the edge nearest Boop |
+| anchor | Where Boop sits beside your screen: the spot nearest it, shown once in Settings by pointing there and touching Boop ("Show Boop where it sits"); the side the screen is on comes from it, and up when it's in the middle third (`Anchor`) | calibration, position | `macleft`, `macright`, `macup` |
+| music | Sound another app plays, or a frontmost app that isn't a player, for 5 s and more (Core Audio's process objects, macOS 14.2+) | audio, song | `music` |
+| video | Sound the frontmost app itself plays, when it's a browser or a video player (`Along.players`) | watching | `video` |
+| on a call | A camera, or another app recording sound (never Boop's push-to-talk), on 5 s and more: Boop keeps still and silent, the board is sent no volume, no take is spoken and every Moment is small | meeting, call (that's a tool use) | `oncall` |
+| copied | A copy, from the pasteboard's change count, until your next key or click or 10 s; never what was copied | clipboard, holding | `copied` |
 | lock, unlock | The Mac's screen locking and unlocking, every time however short; an away only after 10 min | | `lock_start`, `lock_end` |
 | button | BOOT: hands you the next agent in the line | press, hand-off | `press` |
 | dismiss | A finger held on the needs-you screen | | |
@@ -176,16 +184,17 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| doing | What Boop is busy with: resting, working, asleep, listening, no app | base, look (for the state) | `base` |
-| nap | Boop asleep at once, the rule's at a bye at night with no agent working, after its good-night wave, until you show up (`MomentRule.bye`, `Core.nap`) | | `base`: `asleep` |
+| doing | What Boop is busy with: resting, working, asleep, listening, no app. With no agent open, resting while you're at the Mac and asleep once you're away, the screen is locked or you've been still its doze time (`Core.sleepsAlone`) | base, look (for the state) | `base` |
+| nap | Boop asleep at once, the rule's at a bye at night with no agent working, after its good-night wave, until you show up (`MomentRule.bye`, `Core.nap`); with no agent open, any lock puts it to sleep too (`doing`) | | `base`: `asleep` |
 | look | Only the art that draws a Doing | | |
 | activity | How it's working, one of four the whole body shows (`Act`): typing (an edit, any other tool, a plan), looking (a read, a search, the web), running (a command, the tests, a build, helpers at work), waiting (a call gone quiet) | act | `act`: `tool_use`, `analyzing`, `terminal`, `waiting` |
 | tier | How long it's been working or resting: tier 1 at 1 min, tier 2 at 5 min, tier 3 at 15 min (`Tags.tiers`) | stage | `tier1`…`tier3` |
 | pastime | What Boop does to pass the time, by Doing and tier or wait: a move of the body and nothing beside it, none while something needs you (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
 | dressing | What's worn for the tags: on the gel, a nightcap at night and nothing for a special day, nothing in the sky or the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
-| gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward; at work only while it types, as the other activities' poses have the eyes (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright` |
-| typing along | Boop typing while you do, hunched over its keys and bouncing with each: at its desk at work while its own activity is typing, with its keyboard out when idle (`GelFace::showAlong`) | mirroring | `typing` |
+| gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward; at work only while it types, as the other activities' poses have the eyes (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright`, `ptr` |
+| typing along | Boop typing while you do, a small sway over its keys, never a hop, quicker when you type fast, and a look up at you when a long stretch stops: at its desk at work while its own activity is typing, with its keyboard out when idle (`GelFace::showAlong`) | mirroring | `typing`, `typingfast` |
+| reading along | Boop turned to the screen while you scroll, its eyes going down a line at a time, settling in after two minutes (`GelFace::showWithYou`); its music, video, on-a-call and copied poses are the same function's | | `scrolling` |
 | tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | hold (that's a finger's) | |
 | the work stream | Agents' calls as falling words, and the few that come forward and land on Boop: part of Doing, never a Moment | gag (the stream's), call forward | `call` |
 | work act | A command worth naming while it runs, the tests, the push or the build: a low sign says what's running, then `pass` or `fail`, and Boop hops or flinches at the result | act (that's the activity) | `wact` |
@@ -297,9 +306,10 @@ The rules that are easy to break, in full in
 - No code, commands, tool output, file contents or agent transcripts go
   to the brain: only readings, and your words to Boop. An agent's card
   goes to the screen and the transcript, never to the brain.
-- Your hands reach the board as a tag and nothing else (`Hands`): that you
-  type, never what, with no event, nothing in the transcript and nothing
-  for the brain.
+- Your hands and what else Boop notices of you at the Mac reach the board
+  as tags and `ptr` and nothing else (`Hands`, `Along`): that you type,
+  scroll, copy or listen, never what, with no event, nothing in the
+  transcript and nothing for the brain, the world or the daily counts.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
   buddy's name and level, its UTC offset, one of six activities and
   counts. Nothing before onboarding's world screen, nothing with it off.

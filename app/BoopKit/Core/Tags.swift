@@ -2,8 +2,9 @@ import Foundation
 
 /// What's true now, as tags: the calendar's (`Days.tags`), how long the
 /// agents have worked or sat idle (the tiers),
-/// your hands at the Mac (`Hands`) and the side of Boop the Mac is on
-/// (`MacSide`). The core sends them in the `state` message
+/// your hands at the Mac (`Hands`), the side of Boop the Mac is on
+/// (`Anchor.side`) and what else Boop notices of you at the Mac
+/// (`Along`). The core sends them in the `state` message
 /// (`when`), and the board shows only the designs whose tags are all on
 /// (characters/CHARACTER.md §9). The board adds `busy` and `frantic`
 /// itself, from the `state` message's count of sessions working. The
@@ -11,15 +12,21 @@ import Foundation
 /// the same order (firmware/src/render/tags.h).
 public enum Tags {
     /// Every tag: the calendar's, the board's own two for how busy the
-    /// agents are, the tiers, your hands, then the Mac's side.
-    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides
+    /// agents are, the tiers, your hands, the Mac's side, then the rest
+    /// of you at the Mac: in the board's order, the newest last, so no
+    /// pack's numbering of the older ones moves.
+    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides + along + [Anchor.Side.up.tag]
 
     /// Your hands at the Mac (`Hands`): the gel types along while you type,
     /// and watches the work with you while you read.
-    public static let hands = Hands.allCases.map(\.rawValue)
-    /// The side of Boop the Mac is on (`MacSide`): where the gel turns when
-    /// something needs you.
-    public static let macSides = MacSide.allCases.map(\.tag)
+    public static let hands = [Hands.typing, .reading].map(\.rawValue)
+    /// The side of Boop the Mac is on (`Anchor.side`): where the gel turns
+    /// when something needs you. `macup`, the screen above Boop, came later,
+    /// so it's last of all.
+    public static let macSides = [Anchor.Side.left, .right].map(\.tag)
+    /// The rest of you at the Mac (`Along`): scrolling (`Hands`), typing
+    /// fast, music or a video playing, on a call, and a copy.
+    public static let along = ["scrolling", "typingfast", "music", "video", "oncall", "copied"]
 
     /// The tags the board reads, in its order: all of them.
     public static let board = all

@@ -381,9 +381,17 @@ final class ReasonsTests: XCTestCase {
         let row = try NSRegularExpression(pattern: #"\{Pastime::k\w+, Body::k\w+, "([^"]+)""#)
         let names = row.matches(in: source, range: NSRange(source.startIndex..., in: source)).map { String(source[Range($0.range(at: 1), in: source)!]) }
         XCTAssertEqual(names.count, 15, "the gel's pastimes (render/gel/pastimes.h)")
-        for n in names + ["to-work", "to-rest", "to-sleep"] {
+        // And every other name the face's passing() says: typing along, and
+        // what it does with you at the Mac (render/gel/face.cpp).
+        let face = try String(contentsOf: CharacterPackTests.repo.appendingPathComponent("characters/boop/firmware/src/render/gel/face.cpp"), encoding: .utf8)
+        let body = String(face[face.range(of: "const char* GelFace::passing")!.lowerBound...].prefix(800))
+        let said = try NSRegularExpression(pattern: #"return "([a-z-]+)";"#)
+        let others = said.matches(in: body, range: NSRange(body.startIndex..., in: body)).map { String(body[Range($0.range(at: 1), in: body)!]) }
+        XCTAssertEqual(Set(others), ["along", "oncall", "copied", "reading", "video", "music"], "passing()'s own names")
+        for n in names + others + ["to-work", "to-rest", "to-sleep"] {
             XCTAssertNotNil(pack.passing[n], "\(n) has no words in mac/passing.tsv")
         }
+        XCTAssertEqual(Narration.passing("reading", in: pack.named("Mochi")), "Mochi's reading along with you.")
         XCTAssertEqual(Narration.passing("hop", in: pack.named("Boop")), "Boop's hopping to pass the time.")
         XCTAssertEqual(Narration.passing("to-work", in: pack.named("Boop")), "Boop's getting to work.")
     }

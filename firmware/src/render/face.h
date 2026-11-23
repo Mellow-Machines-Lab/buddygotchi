@@ -161,6 +161,11 @@ struct FaceContext {
   // agents are busy (render::workPace), 100 for any other look.
   uint32_t when = 0, lookMs = 0;
   int pace = 100;
+  // The way to your pointer while it moves, from the Mac (`ptr`): each of
+  // x (right) and y (down) in -10 … 10, and whether it's at the edge of the
+  // screen nearest the board. Off with no Mac.
+  bool pointer = false, pointerNear = false;
+  int pointerX = 0, pointerY = 0;
 };
 class Face {
  public:

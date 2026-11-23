@@ -1,8 +1,34 @@
 # TODO
 
-Updated 2026-11-15. What's next, one at a time, top first. Tick an item
+Updated 2026-11-16. What's next, one at a time, top first. Tick an item
 in the commit that finishes it, and say there what checked it. Ideas
 that aren't decided yet stay in [product-ideas.md](product-ideas.md).
+
+## Report, 2026-11-16: with you at the Mac, to try
+
+On the branch `with-you` here and SlimeBuddy's `with-you` (in this
+worktree's `characters/.repos/SlimeBuddy`). Nothing is merged or pushed,
+and the board wasn't flashed or used: the board check is the reviewer's.
+No Jev request: nothing new reaches Jev.
+
+- Built, each the typing-along way (a fact on the Mac, a tag or `ptr` on
+  the wire, the board decides): the pointer, with Settings' "Show Boop
+  where it sits" in place of "Your Mac is on"; reading along while you
+  scroll; typing fast and a look up as a long stretch stops; music and
+  watching; on a call (still and silent); a copy held and let go. One
+  switch, "Notices what you do at the Mac", turns it all off.
+- Fixes after the first review: Boop is awake while you're at the Mac with
+  no agent open (`Core.sleepsAlone`); sound, video and the call come from
+  Core Audio's process objects (which app plays or records), never Boop's
+  own; the tags are `oncall`, `video`, `copied` and the new `macup`; the
+  logs keep no timeline of the pointer or the new tags; stronger poses.
+- On this Mac, idle: no app ran sound input or output (Hey Siri held
+  nothing), so a call is a camera, or any other app recording, for 5 s.
+- Owed on the board: each pose's look and feel at arm's length, the
+  pointer's following (smooth, not darting) and the frame rate while it
+  follows, the groove's sway, and a real call, song, video and copy.
+- Headless lines for each, in `internal/VERIFICATION.md` §2 (`along`,
+  `anchor`).
 
 ## Report, 2026-11-15: agents' cards
 
@@ -67,8 +93,8 @@ report below, which is as it was written on main:
 
 **How it's built, so more can be added the same way**
 - The Mac sends facts, as tags: `typing`, `reading` (your hands, from two
-  idle times read every 250 ms, never the keys), `macleft`, `macright` (a
-  Settings choice). No new message, no event, nothing in the transcript.
+  idle times read every 250 ms, never the keys), `macleft`, `macright` (from
+  where you showed Boop it sits, since 2026-11-16). No new message, no event, nothing in the transcript.
 - The board decides what to draw from them, as it does for pastimes. Gaze is
   one ordered list of rules in the pack's `render/gel/gaze.h`: a new look is
   one more rule there. Typing along sits beside the kit in `GelFace`.
@@ -98,14 +124,13 @@ rest (tools-test, sim, mirror) passed run after it; `boards`: both build. Not ru
 - The feel: is a 2 s tail after your last key right? Is a glance every 7 s
   calm, or still too often? Is the turn to the Mac enough without a lean?
 - On a Hatchling the keyboard sits over the lower face, as its desk does.
-- Set "Your Mac is on" in Settings, or it won't turn.
+- Show Boop where it sits in Settings, or it won't turn.
 
-**Left out on purpose:** quiet on a call (the mic's "in use" signal may be on
-all day with Hey Siri: it wants a check on your Mac first); a look down at a
+**Left out on purpose:** quiet on a call (built 2026-11-16, above: the mic
+read idle on the owner's Mac); a look down at a
 finish's name and up when you come back (both are inside Moments, which have
-the eyes); a demo script (the demo format has no line for your hands yet);
-awake while you type with no agent open (Phase 4's #9: today it naps then,
-so typing along needs an agent's session open, working or idle).
+the eyes); a demo script (the demo format has no line for your hands yet).
+Awake while you type with no agent open came 2026-11-16 (`Core.sleepsAlone`).
 
 ## Report, 2026-11-15: bugs, a calmer screen, a roomier popover
 

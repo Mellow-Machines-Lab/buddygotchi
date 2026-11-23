@@ -116,13 +116,15 @@ struct SettingsPane: View {
                     RowDivider()
                     volumeRow
                     RowDivider()
-                    SettingRow(icon: "keyboard", title: "Types along",
-                               detail: "\(model.name) types when you do. It knows your keys are busy, never what you type.") {
-                        Toggle("Types along", isOn: Binding(get: { model.status?.typesAlong ?? true }, set: { model.setTypesAlong($0) }))
+                    SettingRow(icon: "keyboard", title: "Notices what you do at the Mac",
+                               detail: "\(model.name) types and reads along, sways to your music and keeps still on a call. "
+                                   + "It goes by timing and what's on, never what you type, read or copy.") {
+                        Toggle("Notices what you do at the Mac",
+                               isOn: Binding(get: { model.status?.noticesYou ?? true }, set: { model.setNoticesYou($0) }))
                             .toggleStyle(.boop).labelsHidden()
                     }
                     RowDivider()
-                    macSideRow
+                    placeRow
                 }
             }
         }
@@ -203,18 +205,24 @@ struct SettingsPane: View {
         }
     }
 
-    /// Which side of Boop the Mac is on, so it can turn to it when
-    /// something needs you. Not set until you choose.
-    private var macSideRow: some View {
-        let side = model.status?.macSide
-        return SettingRow(icon: "arrow.left.and.right", title: "Your Mac is on",
-                          detail: side == nil ? "Pick a side and \(model.name) turns to your Mac when an agent needs you."
-                              : "\(model.name) turns to its \(side!.rawValue) when an agent needs you.",
-                          wide: true) {
-            Segmented(label: "Your Mac is on", options: MacSide.allCases.map { (Optional($0), $0 == .left ? "Its left" : "Its right") },
-                      chosen: Binding(get: { side }, set: { model.setMacSide($0) }))
+    /// Where Boop sits beside your screen (`Anchor`): it follows your
+    /// pointer from there, and turns to your Mac when an agent needs you.
+    /// Not known until you show it.
+    private var placeRow: some View {
+        let status = model.status, name = model.name
+        let gone = status?.anchorGone == true
+        let detail = status?.placing == true
+            ? "Move your pointer to the spot on your screen nearest \(name), then tap \(name)."
+            : gone ? "Your screens changed. Show \(name) where it sits again, and it follows your pointer."
+            : "\(name) follows your pointer, and turns to your screen when an agent needs you."
+        let title = gone ? "Show \(name) where it sits again" : "Show \(name) where it sits"
+        return SettingRow(icon: "cursorarrow.rays", title: title, detail: detail, wide: true) {
+            Button(status?.placing == true ? "Cancel" : status?.anchored == true && !gone ? "Again" : "Show") { model.showWhereBoopSits() }
+                .buttonStyle(.row)
+                .disabled(status?.noticesYou == false)
         }
     }
+
 
     private var volumeRow: some View {
         let vol = model.status?.snapshot.vol ?? 6

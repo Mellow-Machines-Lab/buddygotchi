@@ -60,6 +60,18 @@ public final class Runtime: @unchecked Sendable {
         /// Seconds since the last key press, in ms, for your hands
         /// (`Hands`): a number, never the keys. Nil, the dev line's.
         public var keyIdleMs: (@Sendable () -> Int64)?
+        /// The rest of what Boop notices of you at the Mac (`Along`): the
+        /// scroll's and the click's idle times, the pointer, whether sound,
+        /// a camera or the mic runs, the frontmost app, the pasteboard's
+        /// change count. Never content. Nil (headless): `{"dev":"along"}`
+        /// lines stand in.
+        public var along: (@Sendable () -> Along.Facts)?
+        /// The Mac's displays now, to tell whether the anchor's is still
+        /// there (`displaysChanged`). Nil (headless): it always is.
+        public var displays: (@Sendable () -> [Anchor.Rect])?
+        /// Reads your hands every `handsEveryMs` (headless and the app), not
+        /// only on the second's tick (tests, which tick them themselves).
+        public var readsHandsOften = false
         public var log: @Sendable (String) -> Void = { _ in }
         /// Narrows the board's Bluetooth transport to the one advertised
         /// name (`Boop-54FE`), or widens it again for nil: remembering the
@@ -255,10 +267,30 @@ public final class Runtime: @unchecked Sendable {
     /// The idle time `{"dev":"presence","idle_ms":N}` set, read in place of
     /// the Mac's when there's no `idleMs`.
     var devIdleMs: Int64 = 0
+    /// A `presence` line has said an idle time: from then on headless tells
+    /// the core when you last touched the Mac, as the app always does.
+    var devIdleSet = false
     /// The time since the last key `{"dev":"presence","key_idle_ms":N}`
     /// set, read in place of the Mac's when there's no `keyIdleMs`; none
     /// until a dev line says one, so a headless run has no hands.
     var devKeyIdleMs: Int64?
+    /// The rest of the Mac's facts `{"dev":"along",…}` lines set, read in
+    /// place of the Mac's when there's no `along` reader.
+    var devAlong: Along.Facts = {
+        var f = Along.Facts()
+        f.copies = 0  // the count as it was, so a dev line's first copy is one
+        return f
+    }()
+    /// The anchor's display is gone or changed (`displaysChanged`): Boop
+    /// follows nothing and turns nowhere until it's shown again.
+    var anchorGone = false
+    /// When the last `state` that only moved the pointer went (`handsTick`).
+    var pointerSentAt: Int64?
+    /// What Boop notices of you at the Mac, as it's kept (`Along`).
+    var alongState = Along()
+    /// While Boop waits for the tap that shows where it sits
+    /// (`showWhereBoopSits`): until when, and when it last asked.
+    var placing: (until: Int64, asked: Int64)?
     /// Hears every agent's hook as it comes, before Boop takes it: a live
     /// demo's player (`play`), which keeps its script to the agent's pace.
     var demoHeard: ((HookLine) -> Void)?
@@ -327,15 +359,23 @@ public final class Runtime: @unchecked Sendable {
         do {
             // boop.log leaves out a `state` sent again unchanged (the keepalive,
             // a reply to `hello`), which debug.jsonl keeps.
-            var lastState: String?
+            var lastState: String?, lastSent: String?
             let sent = options.onDeviceLine
             rig.link.onSend = { line, sender in
                 sent?(line)
                 mirror(line)
-                emit(DebugLog.sent(line, by: sender, at: clock()))
-                guard debugLog != nil, line != lastState else { return }
-                if line.hasPrefix(#"{"t":"state""#) { lastState = line }
-                log("link \(sender == .brain ? "brain" : "rules") → " + line)
+                // The logs and a bug report keep no timeline of you at the
+                // Mac: a `state` is logged without its pointer and the tags
+                // of what you play, record or copy, and one that changed
+                // only those isn't logged again.
+                let kept = StateSnapshot.unnoticed(line)
+                let isState = line.hasPrefix(#"{"t":"state""#)
+                if isState, kept == lastState, line != lastSent { return lastSent = line }
+                if isState { lastSent = line }
+                emit(DebugLog.sent(kept, by: sender, at: clock()))
+                guard debugLog != nil, kept != lastState else { return }
+                if isState { lastState = kept }
+                log("link \(sender == .brain ? "brain" : "rules") → " + kept)
             }
             for over in rig.steering.overBudget(in: buddy.pack) { log("steering: over budget: \(over)") }
         }
@@ -344,7 +384,9 @@ public final class Runtime: @unchecked Sendable {
         var config = Core.Config(volume: settings.volume, time: options.time, pack: buddy.pack, hatched: longTerm.hatched)
         config.firstAsk = SessionTracker.randomFirstRequest()
         let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
-        core.macSide = settings.macSide
+        core.macSide = settings.anchor?.side
+        if let displays = options.displays, let anchor = settings.anchor { anchorGone = !displays().contains(anchor.display) }
+        if anchorGone { core.macSide = nil }
         core.setWallClock(wall, at: wallAt)
         view = TranscriptView(rules: rules, seed: longTerm.seed ^ UInt64(now), place: places.place)
         let transcript = Transcript.log(folder: options.stateDir.appendingPathComponent(Transcript.folderName),
@@ -366,7 +408,7 @@ public final class Runtime: @unchecked Sendable {
         let link = rig.link
         var mind = Mind(buddy: buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued($0, $1) },
-                        speaks: { link.hello.map { DeviceInfo($0).hasTheVoice } ?? true },
+                        speaks: { (link.hello.map { DeviceInfo($0).hasTheVoice } ?? true) && !core.along.onCall },
                         talk: { talkNow() }, effects: { effected($0) },
                         memory: { memoryNow() },
                         askable: { now, questions in
@@ -541,7 +583,7 @@ public final class Runtime: @unchecked Sendable {
         // Your hands, read more often than the tick, so Boop starts typing
         // within a beat of you: two numbers from the Mac, and a `state`
         // only when they change what your hands are doing.
-        if options.keyIdleMs != nil {
+        if options.keyIdleMs != nil || options.readsHandsOften {
             let hands = DispatchSource.makeTimerSource(queue: home)
             hands.schedule(deadline: .now() + 1, repeating: .milliseconds(Self.handsEveryMs))
             hands.setEventHandler { [weak self] in self?.handsTick() }
@@ -713,22 +755,70 @@ public final class Runtime: @unchecked Sendable {
     /// How often your hands are read (`handsTick`).
     static let handsEveryMs = 250
 
-    /// Your hands at the Mac now (`Hands`), for the board's tags: none
-    /// with the setting off, the screen locked or you away. A change is a
-    /// new `state`, and nothing else: no event, no pass.
+    /// You at the Mac now (`Hands`, `Along`), for the board's tags and its
+    /// `ptr`: none with the setting off, the screen locked or you away. A
+    /// change is a new `state`, and nothing else: no event, no pass,
+    /// nothing in the transcript.
     func handsTick() {
-        let keyIdle = options.keyIdleMs?() ?? devKeyIdleMs, idle = options.idleMs?() ?? devIdleMs
-        let there = settings.typesAlong && presence.lockedAt == nil && !core.awayFromMac
-        let hands = there ? keyIdle.flatMap { Hands.now(keyIdleMs: $0, idleMs: idle) } : nil
-        guard hands != core.hands else { return }
-        core.hands = hands
-        run(core.stateChanged(at: options.clock()))
+        let now = options.clock()
+        if let until = placing?.until, now >= until { stopPlacing(why: "no tap in time") }
+        if let asked = placing?.asked, now - asked >= Self.placeAskEveryMs { askToPlace(at: now) }
+        let there = settings.noticesYou && presence.lockedAt == nil && !core.awayFromMac
+        var along = Along.Now()
+        if there {
+            along = alongState.read(facts(), anchor: anchor, at: now)
+        } else {
+            alongState = Along()  // its holds start again when you're back
+        }
+        guard along != core.along else { return }
+        // Only the pointer moved: at most every pointerEveryMs, the rest
+        // coalesced into the next.
+        if along.placeless == core.along.placeless {
+            if let sent = pointerSentAt, now - sent < Self.pointerEveryMs { return }
+            pointerSentAt = now
+        }
+        core.along = along
+        run(core.stateChanged(at: now))
+    }
+
+    /// The most often a `state` goes for the pointer alone: 4 a second.
+    static let pointerEveryMs: Int64 = 250
+
+    /// Where Boop sits, unless its display has gone.
+    var anchor: Anchor? { anchorGone ? nil : settings.anchor }
+
+    /// The Mac's displays changed (or the app started): an anchor whose
+    /// display is gone, or isn't where it was, is set aside until Boop is
+    /// shown where it sits again.
+    public func displaysChanged() {
+        home.async { [self] in
+            guard let displays = options.displays else { return }
+            let gone = settings.anchor.map { !displays().contains($0.display) } ?? false
+            guard gone != anchorGone else { return }
+            anchorGone = gone
+            options.log(gone ? "anchor: its display is gone; show Boop where it sits again" : "anchor: its display is back")
+            core.macSide = anchor?.side
+            run(core.stateChanged(at: options.clock()))
+            changed()
+        }
+    }
+
+    /// The Mac's facts now: the app's readers, else the dev lines'.
+    func facts() -> Along.Facts {
+        var r = options.along?() ?? devAlong
+        r.keyIdleMs = options.keyIdleMs?() ?? devKeyIdleMs
+        r.idleMs = options.idleMs?() ?? devIdleMs
+        return r
     }
 
     func tick() {
         // The core follows the Mac's clock, set or moved.
         let now = options.clock(), wall = options.wallClock()
         core.setWallClock(wall, at: now)
+        // When you last touched the Mac, for Doing with no agent open.
+        if let idle = options.idleMs?() ?? (devIdleSet ? devIdleMs : nil) {
+            core.lastInputAt = max(core.lastInputAt ?? .min, now - max(0, idle))
+        }
         handsTick()
         run(pipeline.tick(at: now))
         worldTick(at: now)
@@ -788,8 +878,11 @@ public final class Runtime: @unchecked Sendable {
         for effect in step.effects {
             switch effect {
             case .state(let snapshot):
+                // Only the pointer moved: the board's, and nothing the
+                // popover shows, so no status.
+                let pointerOnly = rig.latest.map { var was = $0; was.pointer = snapshot.pointer; return was == snapshot } ?? false
                 show(snapshot)
-                stateChanged = true
+                if !pointerOnly { stateChanged = true }
             case .sessions:
                 stateChanged = true
             case .record:
@@ -945,21 +1038,92 @@ public final class Runtime: @unchecked Sendable {
         }
     }
 
-    /// Typing along with you on or off, kept in `settings.json`.
-    public func setTypesAlong(_ on: Bool) {
+    /// Noticing what you do at the Mac on or off, kept in `settings.json`.
+    /// Off, Boop stops waiting to be shown where it sits.
+    public func setNoticesYou(_ on: Bool) {
         home.async { [self] in
-            saveSettings { $0.typesAlong = on }
+            saveSettings { $0.noticesYou = on }
+            if !on { stopPlacing(why: "noticing is off") }
             handsTick()
         }
     }
 
-    /// The side of Boop the Mac is on, kept in `settings.json`.
-    public func setMacSide(_ side: MacSide?) {
+    /// Settings' "Show Boop where it sits": Boop asks you to point at the
+    /// spot on your screen nearest it and tap it (`askToPlace`), and the
+    /// next tap on its face is that, not a poke (`placeHere`); pressed
+    /// again, or with no tap in `placeMs`, it stops.
+    public func showWhereBoopSits() {
         home.async { [self] in
-            saveSettings { $0.macSide = side }
-            core.macSide = side
-            run(core.stateChanged(at: options.clock()))
+            if placing != nil { return stopPlacing(why: "cancelled") }
+            guard settings.noticesYou else { return options.log("anchor: noticing is off") }
+            let now = options.clock()
+            placing = (now + Self.placeMs, now)
+            options.log("anchor: waiting for a tap on Boop")
+            askToPlace(at: now)
+            changed()
         }
+    }
+
+    /// How long Boop waits for its tap, and how often it asks again
+    /// meanwhile, as a sign stays up only while its Moment plays.
+    public static let placeMs: Int64 = 60_000
+    static let placeAskEveryMs: Int64 = 12_000
+    /// The sign Boop holds up while it waits, and the one it answers with.
+    public static let placeSign = "point, then tap me", placedSign = "got it"
+
+    func askToPlace(at now: Int64) {
+        guard placing != nil else { return }
+        placing?.asked = now
+        run(core.greet(Moment(mood: "curious", loops: Moment.maxLoops, sign: Self.placeSign), at: now))
+    }
+
+    func stopPlacing(why: String) {
+        guard placing != nil else { return }
+        placing = nil
+        options.log("anchor: stopped waiting (\(why))")
+        changed()
+    }
+
+    /// Where Boop sits, or none, kept in `settings.json`: the side the Mac
+    /// is on comes from it.
+    public func setAnchor(_ anchor: Anchor?) {
+        home.async { [self] in
+            saveSettings { $0.anchor = anchor }
+            anchorGone = false
+            core.macSide = anchor?.side
+            run(core.stateChanged(at: options.clock()))
+            changed()
+        }
+    }
+
+    /// Whether a touch on the board is the one Boop waits for to know where
+    /// it sits: any on its face, a tap, a nose boop, a tickle, a stroke or a
+    /// lean, while it waits.
+    func places(gesture kind: String) -> Bool {
+        guard placing != nil, let (touch, ended) = Touch.read(kind), !ended else { return false }
+        return touch == .poke || touch == .stroke || touch == .hold
+    }
+
+    /// The tap while Boop waits for it: the pointer's place now is where
+    /// it sits, kept in `settings.json`, and the side the Mac is on comes
+    /// from it. Boop nods. Not a poke: no pass, no count, no XP.
+    func placeHere(at now: Int64) {
+        guard settings.noticesYou else { return stopPlacing(why: "noticing is off") }
+        let r = facts()
+        guard let x = r.pointerX, let y = r.pointerY, let display = r.display else {
+            return options.log("anchor: no pointer to read; still waiting")
+        }
+        let anchor = Anchor(x: x, y: y, display: display)
+        placing = nil
+        anchorGone = false
+        saveSettings { $0.anchor = anchor }
+        core.macSide = anchor.side
+        options.log("anchor: set; the screen is \(anchor.side.map { $0 == .up ? "above it" : "on its \($0.rawValue)" } ?? "nowhere")")
+        var nod = Moment(mood: "happy", loops: 1, sign: Self.placedSign)
+        nod.clip = "reply-yes"
+        run(core.greet(nod, at: now))
+        run(core.stateChanged(at: now))
+        changed()
     }
 
     /// How much it says: the view's rules and Jev's state from the next

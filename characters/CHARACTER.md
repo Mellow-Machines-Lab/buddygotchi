@@ -1,6 +1,6 @@
 # Characters: the pack spec
 
-Updated 2026-11-15. The contract a character pack meets, so that any
+Updated 2026-11-16. The contract a character pack meets, so that any
 character can be dropped into the engine. The engine never knows *who* the
 buddy is: the pack says its moods, how it looks and sounds, and who it is.
 Choose a pack (§2), and the Mac app, the board's firmware and the simulator
@@ -613,10 +613,18 @@ Besides drawing each mood and state, a face:
     board takes every one below it as on (`render::reached`), so a design
     for `tier2` shows from then on, at work or idle as its look says.
   - Your hands at the
-    Mac, `typing` or `reading` (`Hands`); and the Mac's side, `macleft` or
-    `macright` (`MacSide`). Boop's level puts no tag on: its body is one
+    Mac, `typing` or `reading` (`Hands`); the Mac's side, `macleft` or
+    `macright` (from where Boop sits, `Anchor.side`); and, last in the table
+    so no pack's numbering of the others moves, the rest of you at the Mac
+    (`Along`): `scrolling`, `typingfast`, `music` or `video`, `oncall` and
+    `copied`; and `macup`, the screen above the board (its anchor in the middle
+    third of its display). Boop's level puts no tag on: its body is one
     size at every level. A board with no Mac keeps none of the Mac's tags,
     as they go stale.
+  - Not a tag: the way to your pointer while it moves (`state.ptr`, `[x,
+    y]` each in -10…10, `[x, y, 1]` at the edge of the screen nearest the
+    board), handed to the face as `FaceContext::pointer`. A face may follow
+    it or not; none while the Mac sends none.
   - `busy` (2–3 sessions working) and `frantic` (4 or more), which the board
     adds from `state.busy`. The working looks also play at 125% and 160%
     then (`render::workPace`, `FaceContext::pace`).
@@ -936,6 +944,12 @@ Some clips' ids mean something to a face:
   `MomentOutput.replies` and `dunno`.
 - A clip named for a Moment's state (Boop's `notice`): the gel plays it once
   as the Moment starts. The gel's recipe for that state times it.
+- You at the Mac: the gel loops `type-along` while it types with you, and
+  `type-along-fast` over it while you type fast; `read-along` (then
+  `read-along-settled`), `video`, `groove`, `on-call` and `copied`
+  while it's with you so (its `GelFace::showWithYou`); and once, `release`
+  as a copy is let go, `stretch` as a call ends, `look-around` as the
+  music stops.
 
 **`looks.json`**: for each look (§9), keys `clip`, `occasions`, `tiers` and
 `acts`:

@@ -1,24 +1,28 @@
 // The tags on now: what the Mac sends in `state.when` (the part of the
 // day, Friday, a holiday, a milestone day, every tier the agents'
 // working stretch or their rest has reached,
-// your hands at the Mac, `typing` or `reading`, and the side of Boop the Mac is on, `macleft` or `macright`),
+// your hands at the Mac, `typing` or `reading`, the side of Boop the Mac is on, `macleft` or `macright`,
+// the rest of you at the Mac: `scrolling`, `typingfast`, `music` or `video`, `oncall` and `copied`, and
+// `macup`, the screen above the board),
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a pastime that carries tags fits only while every
 // one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
 // in this order (Tags.board, app/BoopKit/Core/Tags.swift), and
 // facegen numbers a design's tags by it. The Mac's tiers are three, a
 // minute, 5 and 15: `tier4`, `tier5` and `hushed` are never sent, and stay
-// only because Pixel's designs are numbered by this table.
+// only because Pixel's designs are numbered by this table. A new tag goes
+// at the end, so no pack's numbering of the others moves.
 #pragma once
 #include <cstdint>
 
 namespace render {
 
-constexpr int kTagCount = 24;
+constexpr int kTagCount = 31;
 constexpr const char* kTagNames[kTagCount] = {
-    "morning", "day",         "evening", "night",  "friday", "newyear", "valentines", "halloween",
-    "winter",  "programmers", "lunar",   "party",  "busy",   "frantic", "tier1",      "tier2",
-    "tier3",   "tier4",       "tier5",   "hushed", "typing", "reading", "macleft",    "macright"};
+    "morning",   "day",        "evening", "night",  "friday", "newyear", "valentines", "halloween",
+    "winter",    "programmers", "lunar",  "party",  "busy",   "frantic", "tier1",      "tier2",
+    "tier3",     "tier4",      "tier5",   "hushed", "typing", "reading", "macleft",    "macright",
+    "scrolling", "typingfast", "music",   "video",  "oncall", "copied",  "macup"};
 static_assert(kTagCount <= 32, "a set of tags is 32 bits");
 
 // The tag's bit in a set of tags, or 0 for a name that isn't one.

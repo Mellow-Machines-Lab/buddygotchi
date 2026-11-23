@@ -614,16 +614,17 @@ final class AppModel: ObservableObject {
         runtime?.setVolume(volume)
     }
 
-    func setTypesAlong(_ on: Bool) {
-        guard status?.typesAlong != on else { return }
-        status?.typesAlong = on
-        runtime?.setTypesAlong(on)
+    func setNoticesYou(_ on: Bool) {
+        guard status?.noticesYou != on else { return }
+        status?.noticesYou = on
+        runtime?.setNoticesYou(on)
     }
 
-    func setMacSide(_ side: MacSide?) {
-        guard status?.macSide != side else { return }
-        status?.macSide = side
-        runtime?.setMacSide(side)
+    /// Settings' "Show Boop where it sits": starts waiting for the tap, or
+    /// stops.
+    func showWhereBoopSits() {
+        status?.placing.toggle()
+        runtime?.showWhereBoopSits()
     }
 
     /// Takes effect from the next event.
@@ -994,6 +995,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     }
 
     let presenceSignals = PresenceSignals()
+    let alongSignals = AlongSignals()
+    var screens: NSObjectProtocol?
 
     /// Starts the runtime, once.
     func startRuntime() {
@@ -1006,6 +1009,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         // every tick, and its locks, sleeps and wakes below.
         options.idleMs = PresenceSignals.idleMs
         options.keyIdleMs = PresenceSignals.keyIdleMs
+        // The rest of you at the Mac (`Along`), never content.
+        alongSignals.start()
+        options.along = { [alongSignals] in alongSignals.read() }
+        options.displays = { AlongSignals.displays() }
         // Your prompts, read on this Mac on macOS 26 whenever Apple
         // Intelligence is on, even if it's turned on later.
         options.labeler = AppleIntelligenceLabeler.onThisMac
@@ -1055,6 +1062,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
             try runtime.start()
             // Only once it runs, so a failed start leaves nothing holding it.
             presenceSignals.start { [weak runtime] in runtime?.presence($0) }
+            // A display coming or going: is the one Boop sits by still there?
+            screens = NotificationCenter.default.addObserver(
+                forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+            ) { [weak runtime] _ in runtime?.displaysChanged() }
             model.runtime = runtime
             model.startError = nil
             runtime.refresh()

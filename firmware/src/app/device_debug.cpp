@@ -223,6 +223,13 @@ void Device::state(JsonObject d, uint32_t t) {
   JsonArray when = d["when"].to<JsonArray>();
   for (int i = 0; i < render::kTagCount; ++i)
     if (m.when >> i & 1) when.add(render::kTagNames[i]);
+  if (m.pointer.on) {
+    JsonArray ptr = d["ptr"].to<JsonArray>();
+    ptr.add(m.pointer.x), ptr.add(m.pointer.y);
+    if (m.pointer.near) ptr.add(1);
+  } else {
+    d["ptr"] = nullptr;
+  }
   if (m.todoTotal > 0) {
     d["todo"]["done"] = m.todoDone;
     d["todo"]["total"] = m.todoTotal;

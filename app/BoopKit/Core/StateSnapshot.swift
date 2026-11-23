@@ -176,6 +176,10 @@ public struct StateSnapshot: Equatable, Sendable {
     /// busy the agents are. The device shows the designs whose tags are
     /// all on, and picks each look's variation itself.
     public var when: [String]
+    /// The way to your pointer while it moves and Boop knows where it sits
+    /// (`Along`, `Anchor`): the board's eyes follow it. Nil sends none.
+    /// The wire's `ptr`: `[x, y]`, or `[x, y, 1]` at the edge nearest Boop.
+    public var pointer: Pointer?
     /// An agent's to-do list, as counts.
     public struct Todo: Equatable, Sendable {
         public var done: Int
@@ -316,6 +320,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// does, else the look.
     public var visual: String { attn != nil ? "needs_you" : look }
 
+    /// You're on a call (`Along`): Boop holds still and says nothing.
+    public var onCall: Bool { when.contains("oncall") }
+
     /// How many sessions need you: `attn`'s and its `more`. The popover's
     /// headline; the message doesn't carry it.
     public var waiting: Int { attn.map { $0.more + 1 } ?? 0 }
@@ -349,9 +356,13 @@ public struct StateSnapshot: Equatable, Sendable {
         fields["busy"] = .int(working)  // the wire calls the count busy
         if idle > 0 { fields["idle"] = .int(idle) }
         if helpers > 0 { fields["helpers"] = .int(helpers) }
-        fields["vol"] = .int(vol)
+        // On a call Boop is silent: the board plays no voice and no sound.
+        fields["vol"] = .int(onCall ? 0 : vol)
         let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
+        if let pointer {
+            fields["ptr"] = .array([.int(pointer.x), .int(pointer.y)] + (pointer.near ? [.int(1)] : []))
+        }
         if let xp { fields["xp"] = .int(xp) }
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if let buddy { fields["buddy"] = .string(buddy) }
@@ -380,6 +391,24 @@ public struct StateSnapshot: Equatable, Sendable {
         if skip > 0 { fields["skip"] = .int(skip) }
         if unlisted > 0 { fields["unlisted"] = .int(unlisted) }
         return fields
+    }
+
+    /// The tags of you at the Mac that the logs and a bug report don't keep
+    /// (`unnoticed`): what you scroll, play, record or copy.
+    public static let unloggedTags = Tags.along
+
+    /// `line`, a `state`, as the logs keep it: without the pointer (`ptr`)
+    /// and the tags of what you scroll, play, record or copy, so no log or
+    /// bug report holds a timeline of you at the Mac. Any other line as it is.
+    public static func unnoticed(_ line: String) -> String {
+        guard line.hasPrefix(#"{"t":"state""#), line.contains(#""ptr":"#) || unloggedTags.contains(where: { line.contains("\"\($0)\"") })
+        else { return line }
+        var out = line.replacingOccurrences(of: #","ptr":\[[-0-9,]*\]"#, with: "", options: .regularExpression)
+        for tag in unloggedTags {
+            out = out.replacingOccurrences(of: ",\"\(tag)\"", with: "").replacingOccurrences(of: "\"\(tag)\",", with: "")
+                .replacingOccurrences(of: ",\"when\":[\"\(tag)\"]", with: "")
+        }
+        return out
     }
 
     /// The message as one JSON line, keys in the protocol's order.

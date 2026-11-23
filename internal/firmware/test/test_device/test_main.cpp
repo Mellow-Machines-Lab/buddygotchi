@@ -2799,6 +2799,28 @@ static void test_a_wish_left_plays_at_once() {
   TEST_ASSERT_TRUE(has(stateOf(r), "\"wish\":null"));
 }
 
+// The way to your pointer (`ptr`): `[x, y]`, or `[x, y, 1]` at the edge
+// nearest the board, each held to -10 … 10; none when missing, as an older
+// Mac sends, or when it isn't two numbers at least. The new tags at the
+// end of the table are read as any other.
+static void test_the_pointer_and_the_newest_tags_are_read() {
+  Rig r;
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\"}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"ptr\":null"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"ptr\":[-4,7]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"ptr\":[-4,7]"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"ptr\":[30,-12,1]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"ptr\":[10,-10,1]"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"ptr\":[3]}");
+  TEST_ASSERT_TRUE(has(stateOf(r), "\"ptr\":null"));
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"when\":[\"day\",\"macright\",\"scrolling\",\"typingfast\",\"music\","
+            "\"video\",\"oncall\",\"copied\",\"macup\"]}");
+  TEST_ASSERT_TRUE(has(stateOf(r),
+                       "\"when\":[\"day\",\"macright\",\"scrolling\",\"typingfast\",\"music\",\"video\",\"oncall\",\"copied\",\"macup\"]"));
+  static_assert(render::tagIndex("macright") == 23 && render::tagIndex("macup") == render::kTagCount - 1,
+                "the newest tags after the Mac's side, so no pack's numbering of the others moves");
+}
+
 // ---- The agents' drawer, on a face that has one (wrapped_face.h) -----------
 
 namespace {
@@ -3096,6 +3118,7 @@ int main() {
   RUN_TEST(test_a_call_comes_forward_over_the_work);
   RUN_TEST(test_a_work_act_comes_in_the_state);
   RUN_TEST(test_a_wish_left_plays_at_once);
+  RUN_TEST(test_the_pointer_and_the_newest_tags_are_read);
   RUN_TEST(test_a_stroke_keeps_its_answer_when_it_meets_a_wish);
   RUN_TEST(test_a_wish_mets_sign_is_read_before_the_next);
   RUN_TEST(test_boot_only_shuts_the_open_drawer);
