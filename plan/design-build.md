@@ -112,7 +112,7 @@ The screen guide's "Going with you".
 Done when: dictating into any app makes Boop listen, and a video call
 still makes it still and silent.
 
-### 5. Going with you in every pose
+### 5. Going with you in every pose ✓ (the 15 clips at arm's length are still to check on the board)
 
 The theory's "One body, three channels".
 

@@ -28,8 +28,10 @@ As of main `66d7fc1a`:
   pastime but the stretch, no copied pose; and energy (bright, normal,
   tired) on the lids, the eyes and the idle tempo, with the popover's line;
   and speaking along (a camera alone is a call; another app recording with
-  none is you speaking).
-- Not built: going with you as a layer in every pose, held
+  none is you speaking); and going with you as a layer: typing along sways
+  the body in every work pose and with a card held, its paws and eyes the
+  pose's.
+- Not built: the lean under a finger with a card held, held
   pictures in place of the text card, the show, the pips and the swipe
   between agents, the pill, "your turn" in the strip, energy in place of the
   nightcap and the tiers.
