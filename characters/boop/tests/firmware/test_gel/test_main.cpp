@@ -2343,6 +2343,58 @@ static void test_polygons_cover_their_area_wherever_they_sit() {
   TEST_ASSERT_TRUE(std::fabs((least) - (600)) <= 6);
   TEST_ASSERT_TRUE(std::fabs((most) - (600)) <= 6);
 }
+// Each pixel a polygon reaches takes the share of its area the polygon
+// covers, to within 1/32, however shallow its edges: a near-level edge
+// fades across the pixels it crosses instead of stepping in quarters, and
+// a lid a fifth of a pixel thick is drawn at a fifth, not dropped: its ink
+// within 5% of its area, the blend rounding each pixel's opacity down to a
+// 255th. (The green channel resolves 1/63.)
+static void test_polygon_coverage_is_each_pixels_area() {
+  // A triangle's area inside the pixel [x, x + 1) × [y, y + 1), in pixels.
+  auto areaIn = [](const Point* t, int x, int y) {
+    std::vector<std::array<double, 2>> poly;
+    for (int i = 0; i < 3; ++i) poly.push_back({t[i].x / 16.0, t[i].y / 16.0});
+    const double edges[4][3] = {{1, 0, double(x)}, {-1, 0, -double(x + 1)}, {0, 1, double(y)}, {0, -1, -double(y + 1)}};
+    for (const auto& e : edges) {  // keep e[0]·px + e[1]·py >= e[2]
+      std::vector<std::array<double, 2>> out;
+      for (size_t i = 0; i < poly.size(); ++i) {
+        const auto &p = poly[i], &q = poly[(i + 1) % poly.size()];
+        const double dp = e[0] * p[0] + e[1] * p[1] - e[2], dq = e[0] * q[0] + e[1] * q[1] - e[2];
+        if (dp >= 0) out.push_back(p);
+        if ((dp >= 0) != (dq >= 0)) {
+          const double s = dp / (dp - dq);
+          out.push_back({p[0] + (q[0] - p[0]) * s, p[1] + (q[1] - p[1]) * s});
+        }
+      }
+      poly = out;
+    }
+    double twice = 0;
+    for (size_t i = 0; i < poly.size(); ++i) {
+      const auto &p = poly[i], &q = poly[(i + 1) % poly.size()];
+      twice += p[0] * q[1] - q[0] * p[1];
+    }
+    return std::fabs(twice) / 2;
+  };
+  // A shallow triangle, its long edges near level; and a lid's sliver,
+  // 3/16 of a pixel thick at its open end.
+  const Point shallow[] = {{164, 322}, {1450, 422}, {197, 369}}, lid[] = {{160, 640}, {1440, 656}, {160, 643}};
+  for (const Point* t : {shallow, lid}) {
+    std::vector<uint16_t> px(128 * 80, 0);
+    Surface s{128, 80, px.data()};
+    Raster r{s};
+    r.polygon16(t, 3, 0xffff);
+    double worst = 0, inked = 0, area = 0;
+    for (int y = 0; y < 64; ++y)
+      for (int x = 0; x < 128; ++x) {
+        const double covered = ((px[y * 128 + x] >> 5) & 63) / 63.0, exact = areaIn(t, x, y);
+        worst = std::max(worst, std::fabs(covered - exact)), inked += covered, area += exact;
+      }
+    char message[64];
+    snprintf(message, sizeof message, "worst %.4f, ink %.2f of %.2f", worst, inked, area);
+    TEST_ASSERT_TRUE_MESSAGE(worst < 1.0 / 32, message);
+    TEST_ASSERT_TRUE_MESSAGE(std::fabs(inked - area) < area * .05, message);
+  }
+}
 static void test_strokes_keep_their_width_and_blend_once() {
   std::vector<uint16_t> px(502 * 410);
   Surface s{502, 410, px.data()};
@@ -2531,6 +2583,7 @@ int main() {
   RUN_TEST(test_the_lane_cuts_and_marks_as_the_canvas_does);
   RUN_TEST(test_rgb565_opacity_rounds_to_nearest);
   RUN_TEST(test_polygons_cover_their_area_wherever_they_sit);
+  RUN_TEST(test_polygon_coverage_is_each_pixels_area);
   RUN_TEST(test_strokes_keep_their_width_and_blend_once);
   RUN_TEST(test_the_body_outline_is_soft_without_seams);
   RUN_TEST(test_layers_follow_the_bodys_anchors);

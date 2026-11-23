@@ -33,23 +33,24 @@ int rowEdges(const Point* v, int n, int y, uint8_t (*edges)[2]) {
   return count;
 }
 
-// Where those edges cross the horizontal line at y16, sorted.
-int crossings(const Point* v, const uint8_t (*edges)[2], int n, int y16, int* hits) {
+// Where those edges cross the horizontal line `twice` 32nds of a pixel
+// down, in sixteenths, sorted.
+int crossings(const Point* v, const uint8_t (*edges)[2], int n, int twice, int* hits) {
   int count = 0;
   for (int k = 0; k < n; ++k) {
     const int i = edges[k][0], j = edges[k][1];
-    if ((v[i].y > y16) != (v[j].y > y16) && count < 128)
+    if ((2 * v[i].y > twice) != (2 * v[j].y > twice) && count < 128)
       // Sixteenths stay under 2^13, so the product fits 32 bits and the
       // board divides in hardware.
-      hits[count++] = v[i].x + (v[j].x - v[i].x) * (y16 - v[i].y) / (v[j].y - v[i].y);
+      hits[count++] = v[i].x + (v[j].x - v[i].x) * (twice - 2 * v[i].y) / (2 * (v[j].y - v[i].y));
   }
   std::sort(hits, hits + count);
   return count;
 }
 
 // Adds a sub-row's span [xl, xr), in sixteenths, to the row's coverage:
-// each pixel gets the share of its width the span covers, a quarter of
-// full coverage for each of the four sub-rows.
+// each pixel gets the share of its width the span covers, a sixteenth of
+// full coverage for each of the sixteen sub-rows.
 void addSpan(int xl, int xr, int px0, int px1) {
   xl = std::max(xl, px0 * 16);
   xr = std::min(xr, (px1 + 1) * 16);
@@ -57,12 +58,12 @@ void addSpan(int xl, int xr, int px0, int px1) {
   const int first = floor16(xl), last = floor16(xr - 1);
   touched(first), touched(last);
   if (first == last) {
-    coverage[first] += uint16_t((xr - xl) * 4);
+    coverage[first] += uint16_t(xr - xl);
     return;
   }
-  coverage[first] += uint16_t(((first + 1) * 16 - xl) * 4);
-  for (int p = first + 1; p < last; ++p) coverage[p] += 64;
-  coverage[last] += uint16_t((xr - last * 16) * 4);
+  coverage[first] += uint16_t((first + 1) * 16 - xl);
+  for (int p = first + 1; p < last; ++p) coverage[p] += 16;
+  coverage[last] += uint16_t(xr - last * 16);
 }
 
 // Floor square root of a 64-bit value (a segment's setup, not per pixel).
@@ -121,25 +122,94 @@ int64_t reciprocals[kSummedSegments];
 // centre (negative outside): a box filter one pixel wide, 0–256.
 int edgeCoverage(int inside) { return std::clamp((inside + 8) * 16, 0, 256); }
 
-// One row of a polygon's coverage (even-odd), cut to its clip when it has
-// one, added to the row's across [x0, x1]: four sub-rows, with exact
-// coverage across each span's ends.
+// A row's area to the right of each edge so far, cell by cell (cells),
+// twice over, in 256ths of a pixel squared: a cell's running sum from the
+// left is twice the area of it the polygon covers. It's all zero between
+// rows; [cellsLo, cellsHi] is what a row wrote.
+int32_t cells[Raster::kMaxWidth + 2];
+int cellsLo = Raster::kMaxWidth, cellsHi = -1;
+// Floor division by 256, right for negative values too.
+int floor256(int v) { return v >= 0 ? v >> 8 : -((255 - v) >> 8); }
+// A piece of edge inside one column, `col`, from x `from` to `to` (in 256ths
+// of a pixel), `dy` high (signed, 256ths): it covers its column right of its
+// middle and every column after; a column left of the row's first counts as
+// the first, and one past its last (x1) as nothing.
+void addPiece(int col, int from, int to, int dy, int x0, int x1) {
+  if (!dy || col > x1) return;
+  int right = 512;  // twice the share of the column right of the piece, of 256
+  if (col < x0)
+    col = x0;
+  else
+    right = 512 - (from + to - col * 512);
+  cells[col] += dy * right;
+  cells[col + 1] += dy * (512 - right);
+  cellsLo = std::min(cellsLo, col), cellsHi = std::max(cellsHi, col + 1);
+}
+// The edge from a to b (sixteenths) inside pixel row y, into the cells,
+// split where it crosses each column: exact, but for rounding the points
+// where it crosses to 256ths of a pixel.
+void addEdge(Point a, Point b, int y, int x0, int x1) {
+  if (a.y == b.y) return;
+  const int sign = a.y < b.y ? 1 : -1;
+  if (a.y > b.y) std::swap(a, b);
+  // In 256ths: under 2^17, so products of two fit 64 bits easily.
+  const int ax = a.x * 16, ay = a.y * 16, bx = b.x * 16, by = b.y * 16;
+  const int top = std::max(ay, y * 256), under = std::min(by, y * 256 + 256);
+  if (top >= under) return;
+  const int64_t dx = bx - ax, dy = by - ay;
+  // x where the edge is at height h, and the height where it's at x, rounded.
+  auto xAt = [&](int h) { return ax + int((2 * dx * (h - ay) + (dx >= 0 ? dy : -dy)) / (2 * dy)); };
+  auto yAt = [&](int x) { return std::clamp(ay + int((2 * dy * (x - ax) + dx) / (2 * dx)), top, under); };
+  const int xTop = top == ay ? ax : xAt(top), xUnder = under == by ? bx : xAt(under);
+  if (floor256(xTop) == floor256(xUnder) || dx == 0) {  // in one column
+    addPiece(floor256(std::min(xTop, xUnder)), xTop, xUnder, sign * (under - top), x0, x1);
+    return;
+  }
+  // Column by column, from the top, crossing each side at its height.
+  const int step = xUnder > xTop ? 1 : -1;
+  int x = xTop, h = top;
+  for (int col = floor256(step > 0 ? xTop : xTop - 1);; col += step) {
+    const int side = step > 0 ? (col + 1) * 256 : col * 256;
+    const bool last = step > 0 ? xUnder <= side : xUnder >= side;
+    const int nx = last ? xUnder : side, nh = last ? under : yAt(side);
+    addPiece(col, x, nx, sign * (nh - h), x0, x1);
+    if (last) break;
+    x = nx, h = nh;
+  }
+}
+// One row of a polygon's coverage, added to the row's across [x0, x1]:
+// each pixel exactly the area of it inside (nonzero). Cut to a clip, it's
+// sixteen sub-rows instead, each pixel the share of each it covers.
 void polygonRow(const Point* v, int n, const Point* clip, int clipCount, int y, int x0, int x1) {
+  if (!clipCount) {
+    const int top = y * 16, under = top + 16;
+    for (int i = 0, j = n - 1; i < n; j = i++)
+      if (std::max(v[i].y, v[j].y) > top && std::min(v[i].y, v[j].y) < under) addEdge(v[j], v[i], y, x0, x1);
+    // Past the last cell written the sum holds: to the row's end when the
+    // edge that closes it is past that.
+    int32_t sum = 0;
+    for (int x = cellsLo; x <= cellsHi || (sum && x <= x1); ++x) {
+      sum += cells[x];
+      cells[x] = 0;
+      const int c = std::min(256, (std::abs(sum) + 256) >> 9);
+      if (!c || x > x1) continue;
+      coverage[x] = uint16_t(coverage[x] + c);
+      touched(x);
+    }
+    cellsLo = Raster::kMaxWidth, cellsHi = -1;
+    return;
+  }
   int hits[128], clips[128];
   uint8_t edges[128][2], clipEdges[128][2];
   const int active = rowEdges(v, std::min(n, 128), y, edges),
-            clipActive = clipCount ? rowEdges(clip, std::min(clipCount, 128), y, clipEdges) : 0;
-  for (int sub = 0; sub < 4; ++sub) {
-    const int y16 = y * 16 + sub * 4 + 2;
-    const int count = crossings(v, edges, active, y16, hits),
-              clipped = clipCount ? crossings(clip, clipEdges, clipActive, y16, clips) : 0;
-    for (int i = 0; i + 1 < count; i += 2) {
-      if (!clipCount)
-        addSpan(hits[i], hits[i + 1], x0, x1);
-      else
-        for (int j = 0; j + 1 < clipped; j += 2)
-          addSpan(std::max(hits[i], clips[j]), std::min(hits[i + 1], clips[j + 1]), x0, x1);
-    }
+            clipActive = rowEdges(clip, std::min(clipCount, 128), y, clipEdges);
+  for (int sub = 0; sub < 16; ++sub) {
+    const int twice = 2 * (y * 16 + sub) + 1;  // the sub-row's middle, in 32nds
+    const int count = crossings(v, edges, active, twice, hits),
+              clipped = crossings(clip, clipEdges, clipActive, twice, clips);
+    for (int i = 0; i + 1 < count; i += 2)
+      for (int j = 0; j + 1 < clipped; j += 2)
+        addSpan(std::max(hits[i], clips[j]), std::min(hits[i + 1], clips[j + 1]), x0, x1);
   }
 }
 
