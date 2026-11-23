@@ -126,3 +126,18 @@ public struct AgentToolModel: MemoryModel {
         return String(data: data, encoding: .utf8)
     }
 }
+
+/// Asks `first`, and `then` only for a question `first` leaves unanswered.
+struct FallbackModel: MemoryModel {
+    let first: MemoryModel, then: MemoryModel
+
+    func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String? {
+        if let t = await first.text(instructions, prompt, tokens: tokens) { return t }
+        return await then.text(instructions, prompt, tokens: tokens)
+    }
+
+    func yes(_ instructions: String, _ prompt: String) async -> Bool? {
+        if let y = await first.yes(instructions, prompt) { return y }
+        return await then.yes(instructions, prompt)
+    }
+}

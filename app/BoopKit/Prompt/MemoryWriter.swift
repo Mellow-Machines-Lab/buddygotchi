@@ -82,8 +82,12 @@ public struct MemoryPipelineWriter: MemoryWriter {
         self.agentTool = agentTool
     }
 
-    /// The model this dream asks: your agent tool, else the Mac's.
-    var model: MemoryModel? { agentTool() ?? Self.model }
+    /// The model this dream asks: your agent tool, and the Mac's for any
+    /// question it leaves unanswered (not signed in, offline, too slow).
+    var model: MemoryModel? {
+        guard let agent = agentTool() else { return Self.model }
+        return Self.model.map { FallbackModel(first: agent, then: $0) } ?? agent
+    }
 
     public func write(_ request: MemoryRequest) async -> MemoryWriterReply {
         .reply(await MemoryPipeline.write(request.pipeline, model: model))

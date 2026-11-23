@@ -69,7 +69,17 @@ final class AgentToolModelTests: XCTestCase {
     func testTheWriterAsksTheAgentToolFirst() {
         let model = AgentToolModel(tool: .claude, executable: "/x/claude", folder: tempDir())
         let writer = MemoryPipelineWriter(agentTool: { model })
-        XCTAssertEqual((writer.model as? AgentToolModel)?.executable, "/x/claude")
+        let asked = writer.model
+        XCTAssertTrue(asked is AgentToolModel || (asked as? FallbackModel)?.first is AgentToolModel)
+    }
+
+    /// A question the agent tool leaves unanswered goes to the next model.
+    func testAnUnansweredQuestionFallsBack() async {
+        let bin = tempDir(), folder = tempDir()
+        let broken = AgentToolModel(tool: .claude, executable: fakeTool("claude", in: bin, answer: "", exit: 1).path, folder: folder)
+        let works = AgentToolModel(tool: .claude, executable: fakeTool("other", in: bin, answer: "no").path, folder: folder)
+        let a = await FallbackModel(first: broken, then: works).yes("?", "x")
+        XCTAssertEqual(a, false)
     }
 
     /// The switch is on unless you turn it off, and only an off is written.
