@@ -54,7 +54,8 @@ extension Runtime {
     func worldNow(at now: Int64, day: String) -> WorldLink.Now {
         let g = growth.growth(on: day)
         return WorldLink.Now(name: name, level: g.level, utcOffset: utcOffset,
-                             activity: worldActivity(at: now), day: day, xpToday: g.today)
+                             activity: worldActivity(at: now), day: day, xpToday: g.today,
+                             daysInARow: growth.daysInARow(on: day), color: core.config.color)
     }
 
     func worldNow(at now: Int64) -> WorldLink.Now { worldNow(at: now, day: options.time.boopDay(options.wallClock())) }
@@ -125,6 +126,11 @@ extension Runtime {
     /// The World tab opened or closed.
     public func worldTab(open: Bool) {
         home.async { [self] in world?.tab(open: open, at: options.clock()) }
+    }
+
+    /// A buddy's card opened on the World tab, or closed (nil): its profile is fetched.
+    public func worldOpen(_ id: String?) {
+        home.async { [self] in world?.open(id) }
     }
 
     /// A gesture for another buddy, from its card. `done`, on the main

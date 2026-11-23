@@ -62,7 +62,7 @@ public struct WorldGestures: Sendable {
         }
         if !playing.isEmpty {
             out.append(Self.event(Self.counted(playing), from: playing.count == 1 || Set(playing.map(\.kind)) == [.cheer]
-                                      ? playing[0].fromRegion : nil, at: now))
+                                      ? playing[0].fromRegion : nil, sender: Self.one(playing), at: now))
         }
         return out
     }
@@ -84,15 +84,25 @@ public struct WorldGestures: Sendable {
         defer { waiting = [] }
         let counts = Self.counted(waiting)
         if counts.contains(where: { $0.0 == .cheer }) { lastCheerAt = now }
-        return [Self.event(counts, from: waiting.count == 1 ? waiting[0].fromRegion : nil, held: true, at: now)]
+        return [Self.event(counts, from: waiting.count == 1 ? waiting[0].fromRegion : nil, sender: Self.one(waiting), held: true, at: now)]
     }
 
     /// The `world` event for `counts` of gestures, by kind, the first the
     /// event's kind: `from` the region of a single one, `held` if they
     /// waited, and whether it `plays` on the board.
-    public static func event(_ counts: [(World.GestureKind, Int)], from region: World.Region? = nil, held: Bool = false,
-                             plays: Bool = true, at now: Int64) -> Event {
+    /// The sender, when one buddy sent them all.
+    static func one(_ gestures: [World.Gesture]) -> World.Gesture.Sender? {
+        guard let first = gestures.first?.from, gestures.allSatisfy({ $0.from == first }) else { return nil }
+        return first
+    }
+
+    public static func event(_ counts: [(World.GestureKind, Int)], from region: World.Region? = nil, sender: World.Gesture.Sender? = nil,
+                             held: Bool = false, plays: Bool = true, at now: Int64) -> Event {
         var data: [String: JSONValue] = ["count": .int(Int64(counts.first?.1 ?? 1))]
+        if let sender, counts.count == 1, counts[0].1 == 1 {
+            data["from_id"] = .string(sender.id)
+            data["from_name"] = .string(sender.name)
+        }
         if counts.count > 1 { data["counts"] = .object(Dictionary(uniqueKeysWithValues: counts.map { ($0.0.rawValue, JSONValue.int(Int64($0.1))) })) }
         if let region { data["from_region"] = .string(region.rawValue) }
         if held { data["held"] = .bool(true) }

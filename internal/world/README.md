@@ -1,12 +1,14 @@
 # The world server
 
-Updated 2026-11-15.
+Updated 2026-11-22.
 
 Every buddy that joins the world talks to this server. A buddy sends its
 state and counts each minute. Each Mac reads the world's snapshot: how many
 buddies are awake, what they do, the day's and the year's totals, the goal
-and a sample of buddies for the map. Buddies send each other boops, waves,
-hearts and cheers. The design is in [plan/world.md](../../plan/world.md) §2.
+and a sample of buddies for the map; and the week's league, ranked by XP,
+with each buddy's public profile. Buddies send each other boops, waves,
+hearts and cheers. The design is in [plan/world.md](../../plan/world.md) §2
+and, for the league, [plan/xp-league.md](../../plan/xp-league.md) §6.
 
 It is a [Hono](https://hono.dev) app in TypeScript for Vercel Functions
 (Node 24, Fluid Compute), on Postgres (Neon). It doesn't ship to devices,
@@ -20,12 +22,14 @@ the Mac client's wire format, which `fixtures/` pins.
 | `src/limits.ts` | Every cap and rate limit, in one place |
 | `src/names.ts` | The name filter |
 | `src/world.ts` | The snapshot, and the goal: its progress, reached once, its reward |
+| `src/league.ts` | The weekly league: the week's standings, a week closed once with its places and medals, a buddy's profile |
+| `src/seeds.ts` | Made-up buddies for a small world: what each earned and does, from the time alone |
 | `src/regions.ts` | The UTC offsets a buddy may send, and the regions they fall in: their boundaries, in one place |
 | `src/auth.ts` | Buddy keys: 32 random bytes, base64url; the server keeps only their sha256. IP addresses' salted hashes, for the limit on joining |
 | `db/migrations/` | Plain SQL, applied in name order, each once |
-| `scripts/migrate.ts`, `scripts/dev.ts` | `npm run migrate` and `npm run dev` |
+| `scripts/migrate.ts`, `scripts/dev.ts`, `scripts/seed.ts` | `npm run migrate`, `npm run dev` and `npm run seed` |
 | `test/` | `node:test` against PGlite; `postgres.test.ts` goes through the `postgres` driver too, with PGlite over a socket |
-| `fixtures/` | The wire's examples: what a buddy sends, the reply to it, and the world's snapshot. The Mac's tests decode them too |
+| `fixtures/` | The wire's examples: what a buddy sends, the reply to it, the world's snapshot, the league and a buddy's profile. The Mac's tests decode them too |
 | `vercel.json` | The daily cron that expires old rows |
 
 ## Run it
@@ -39,7 +43,21 @@ npm run dev        # http://localhost:8787, on PGlite in memory; PORT changes th
 The local server starts empty each time. Its admin token and cron secret
 are `dev`, unless `ADMIN_TOKEN` or `CRON_SECRET` is set. Locally no caller
 has an address, so they share one: 5 joins an hour. To point the Mac
-app at it, set `BOOP_WORLD_URL=http://localhost:8787`.
+app at it, set `BOOP_WORLD_URL=http://localhost:8787`. `SEEDS=20 npm run dev`
+starts it with 20 made-up buddies.
+
+To seed the deployed world, or take the seeds out again:
+
+```sh
+npm run seed -- 30         # 30 made-up buddies, with DATABASE_URL or .env.local's
+npm run seed -- --remove   # every one, with its places and medals
+```
+
+A seed is a buddy row with `seed = true`. Nothing writes for it during the
+day: its XP, counts and activity come from the time, by a pure function
+(`src/seeds.ts`), so it counts in the league, the snapshot and the
+numbers like any buddy. A gesture to a seed is taken and dropped. Seeds
+never expire. Nothing marks a seed as one to other buddies.
 
 ## Test it
 
@@ -61,8 +79,10 @@ All JSON. A buddy sends `Authorization: Bearer <key>`.
 | `PUT /v1/buddies/me` | A buddy | Its state and what it added since its last send (`fixtures/buddy-state.json`). The reply (`fixtures/buddy-reply.json`) carries the gestures waiting for it and the current `rewards` |
 | `DELETE /v1/buddies/me` | A buddy | Leaves the world: its row, days, reports and gestures go |
 | `GET /v1/world` | Anyone | The snapshot (`fixtures/world.json`), cached 30 s at Vercel's edge |
+| `GET /v1/league` | Anyone; a buddy's key adds `me` and `last_week` | The week's league (`fixtures/league.json`): the top 100 by the week's XP, a tie to the first joined; with a key, its place, the buddy just ahead and behind, its percent among those with XP, and last week's place |
+| `GET /v1/buddies/:id` | Anyone; a buddy's key adds `between` | A buddy's public profile (`fixtures/buddy.json`): name, level, colour, region, what it does now, days in a row, medals, the week's XP and place, its best week, today's counts; with a key, the newest gesture each way and the last week this one beat it |
 | `POST /v1/gestures` | A buddy | `{to, kind}`, with `kind` one of `boop`, `wave`, `heart`, `cheer` |
-| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, at}]}`, for a Mac that hasn't sent in a while. Each gesture is handed out once, here or in a send's reply |
+| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, from, at}]}`, `from` the sender's `{id, name}` as the world shows it (null once it's gone), so it can be answered, for a Mac that hasn't sent in a while. Each gesture is handed out once, here or in a send's reply |
 | `POST /v1/reports` | A buddy | `{buddy}`: reports a name. Three buddies' reports hide it |
 | `PUT /v1/admin/goal` | The owner, with `ADMIN_TOKEN` | Sets the goal. The newest goal is the current one |
 | `GET /v1/health` | Anyone | `{ok, db}` |
@@ -85,8 +105,10 @@ What the Mac must know about `PUT /v1/buddies/me`:
   `Retry-After`, and counts nothing. Keep adding to `added` until a send
   gets 200.
 - **`xp_today` is the Mac's day's total, with `day`.** The server counts
-  only what's new since the last send for the same `day`, and at most 100
+  only what's new since the last send for the same `day`, and at most 300
   XP in a UTC day.
+- **`days_in_a_row` and `color`** (0 to 7) are what the buddy card shows.
+  Left out, the last ones stay.
 - **Counts are clamped** to what's plausible for the minutes since the last
   send. The response says what was counted (`counted`), what was clamped
   (`clamped`), how the name shows (`name`, `name_ok`, `name_reason`,
@@ -96,13 +118,17 @@ What the Mac must know about `PUT /v1/buddies/me`:
   `rewards`, as in the snapshot. A resend's reply (`duplicate`) does too; a
   429 does not. So a Mac that sends on change rarely needs to poll. The
   send the Mac makes as it quits adds `?keep_gestures=1`: its reply hands
-  out none, and they wait for the next launch's send or `GET`.
+  out none, and they wait for the next launch's send or `GET`. It also
+  carries `last_week`, the buddy's place in the week before, or null.
 
 A buddy not seen for 15 minutes counts as asleep in the snapshot.
 The snapshot's `regions` are always the three, in this order, from each
 buddy's offset: `americas` (UTC-12 to -2), `europe_africa` (-1h45 to +3)
 and `asia_oceania` (+3h15 to +14). A buddy with no offset is in none. The
-server's days are UTC. The numbers here are in `src/limits.ts`.
+server's days are UTC, and a league week runs from Monday 00:00 UTC. A week
+that has ended is closed at the first league request, send or profile
+after it, once: each buddy with XP gets its place, and the top three get
+medals. The numbers here are in `src/limits.ts`.
 
 ## What it keeps, and for how long
 
@@ -111,9 +137,11 @@ server's days are UTC. The numbers here are in `src/limits.ts`.
 | A buddy: a random id, its key's hash, name, level, UTC offset, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
 | What a buddy added each UTC day: XP, turns, tests passed, ships, lines changed | 400 days | Then summed with every other buddy's into one row a day (`totals_by_day`), with no buddy in it |
 | Who joined lately: each join's IP address as an HMAC-SHA256 with `IP_SALT`, never the address | An hour | At the next join, or by the cron |
-| Gestures, with the sender's region | Until delivered | A day after delivery, or after two days unread |
+| Gestures, with the sender and its region | Until delivered | A day after delivery, or after two days unread |
 | Name reports: who reported whom | While both buddies exist | When the name changes, or either buddy goes |
 | Goals | Always | |
+| A closed week's places: each buddy's place and XP | 12 weeks | Then deleted; or with the buddy |
+| Medals | While the buddy exists | With the buddy |
 
 It keeps no person, account, email, thread or project name, code or text.
 It never logs a key. Vercel's request logs record each request's path and

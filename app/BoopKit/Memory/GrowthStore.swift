@@ -2,9 +2,10 @@ import Foundation
 import MellowHarness
 
 /// Boop's growth as it's kept: every XP it's earned, today's ring and its
-/// day (Boop's, from 5:00), the last days' rings, the last event counted,
-/// the level last celebrated and the day the ring last closed, as `xp.` keys
-/// in the key-value store. It counts each event as it's logged, once: an
+/// day (Boop's, from 5:00) with what earned it, the last days' rings, the
+/// days in a row with a full ring, the last event counted, the level last
+/// celebrated and the day the ring last closed, as `xp.` keys in the
+/// key-value store. It counts each event as it's logged, once: an
 /// event at or before the last one counted is left alone. Touched only on
 /// `home`.
 public final class GrowthStore {
@@ -14,6 +15,11 @@ public final class GrowthStore {
     public static let lastSeqKey = "xp.last_seq"
     public static let celebratedKey = "xp.celebrated"
     public static let ringKey = "xp.ring_closed"
+    public static let todayByKey = "xp.today_by"
+    public static let rowKey = "xp.row"
+    /// A day with no full ring between two full ones keeps the days in a
+    /// row going; three don't. So a weekend never breaks it.
+    public static let graceDays = 2
     /// How many days' rings it keeps, today's included: the Boop tab's week.
     public static let keptDays = 7
     /// Days by their number, as a day is in UTC.
@@ -34,13 +40,29 @@ public final class GrowthStore {
     public private(set) var celebrated: Int
     /// The Boop day whose ring closing was last celebrated.
     public private(set) var ringCelebrated: String?
+    /// Today's XP by what earned it: how many, and their XP, after the limits.
+    public private(set) var todayBy: [Growth.Source: Earned]
+    /// The last events that earned, newest last: what a moment about one
+    /// shows on its sign. In memory only.
+    public private(set) var recent: [(seq: Int, source: Growth.Source, xp: Int)] = []
+    /// The days in a row with a full ring, as of the last one: its count and day.
+    public private(set) var row: (count: Int, day: String)?
+
+    /// What one source earned in a day.
+    public struct Earned: Equatable, Sendable {
+        public var n: Int
+        public var xp: Int
+        public init(n: Int = 0, xp: Int = 0) { self.n = n; self.xp = xp }
+    }
 
     public init(_ store: KeyValueStore, log: @escaping (String) -> Void = { _ in }) {
         self.store = store
         self.log = log
         let today = store.string(Self.todayKey)?.split(separator: " ")
         day = today?.first.map(String.init)
-        growth = Growth(xp: store.int(Self.xpKey) ?? 0, today: today?.dropFirst().first.flatMap { Int($0) } ?? 0)
+        todayBy = Self.readBy(store.string(Self.todayByKey))
+        growth = Growth(xp: store.int(Self.xpKey) ?? 0, today: today?.dropFirst().first.flatMap { Int($0) } ?? 0,
+                        care: todayBy[.care]?.xp ?? 0)
         past = (store.string(Self.daysKey) ?? "").split(separator: ",").compactMap {
             let p = $0.split(separator: " ")
             guard p.count == 2, let xp = Int(p[1]) else { return nil }
@@ -49,6 +71,40 @@ public final class GrowthStore {
         lastSeq = store.int(Self.lastSeqKey) ?? 0
         celebrated = store.int(Self.celebratedKey) ?? growth.level
         ringCelebrated = store.string(Self.ringKey)
+        let r = store.string(Self.rowKey)?.split(separator: " ")
+        if let r, r.count == 2, let n = Int(r[0]) { row = (n, String(r[1])) }
+    }
+
+    /// `turns 8 40,care 3 9` back to its sources.
+    static func readBy(_ s: String?) -> [Growth.Source: Earned] {
+        var by: [Growth.Source: Earned] = [:]
+        for part in (s ?? "").split(separator: ",") {
+            let p = part.split(separator: " ")
+            guard p.count == 3, let source = Growth.Source(rawValue: String(p[0])), let n = Int(p[1]), let xp = Int(p[2]) else { continue }
+            by[source] = Earned(n: n, xp: xp)
+        }
+        return by
+    }
+
+    /// What the event `seq` earned, if it's one of the last few that did.
+    public func earned(at seq: Int) -> (source: Growth.Source, xp: Int)? {
+        recent.last { $0.seq == seq }.map { ($0.source, $0.xp) }
+    }
+
+    /// What earned XP on Boop day `today`: none for another day.
+    public func todayBy(on today: String) -> [Growth.Source: Earned] { day == today ? todayBy : [:] }
+
+    /// The days in a row with a full ring, as they stand on Boop day
+    /// `today`: 0 once more than `graceDays` days have no full ring.
+    public func daysInARow(on today: String) -> Int {
+        guard let row, let gap = Self.days(from: row.day, to: today) else { return 0 }
+        return gap <= Self.graceDays + 1 ? row.count : 0
+    }
+
+    /// The days from `a` to `b`, Boop days as `yyyy-MM-dd`.
+    static func days(from a: String, to b: String) -> Int? {
+        guard let x = LocalTime.dayNumber(a), let y = LocalTime.dayNumber(b) else { return nil }
+        return y - x
     }
 
     /// The growth as it stands on Boop day `today`: a ring of a day before
@@ -78,23 +134,32 @@ public final class GrowthStore {
         save()
     }
 
-    /// Counts `e`, which earns `xp` before the day's cap, on Boop day
-    /// `today`, and returns the XP it added: none past the day's ring, which
-    /// writes nothing, as counting it again would add nothing either.
+    /// Counts `e`, which earns for `source` (nil for nothing), on Boop day
+    /// `today`, and returns the XP it added: none past the day's limits,
+    /// which writes nothing, as counting it again would add nothing either.
     @discardableResult
-    public func count(_ e: Event, xp: Int, today: String) -> Int {
-        guard e.seq > lastSeq, xp > 0 else { return 0 }
+    public func count(_ e: Event, _ source: Growth.Source?, today: String) -> Int {
+        guard e.seq > lastSeq, let source else { return 0 }
         lastSeq = e.seq
         // A day only moves on: a clock set back, or a flight west across
         // 5:00, counts on the day it's on, not a fresh ring of an old one.
         if day.map({ today > $0 }) ?? true {
             if let day { past = Array(([(day, growth.today)] + past).prefix(Self.keptDays - 1)) }
             day = today
-            growth.today = 0
+            growth = Growth(xp: growth.xp)
+            todayBy = [:]
         }
-        let added = Growth.capped(xp, today: growth.today)
+        let added = growth.adds(source)
         guard added > 0 else { return 0 }
-        growth = Growth(xp: growth.xp + added, today: growth.today + added)
+        let wasClosed = growth.ringClosed
+        growth = growth.adding(added, from: source)
+        recent = Array((recent + [(e.seq, source, added)]).suffix(16))
+        todayBy[source, default: Earned()].n += 1
+        todayBy[source, default: Earned()].xp += added
+        if growth.ringClosed, !wasClosed {
+            let before = daysInARow(on: today)
+            row = (before + 1, today)
+        }
         save()
         return added
     }
@@ -150,6 +215,9 @@ public final class GrowthStore {
             var values = [Self.xpKey: String(growth.xp), Self.lastSeqKey: String(lastSeq), Self.celebratedKey: String(celebrated),
                           Self.daysKey: past.map { "\($0.day) \($0.xp)" }.joined(separator: ",")]
             if let day { values[Self.todayKey] = "\(day) \(growth.today)" }
+            values[Self.todayByKey] = Growth.Source.allCases.compactMap { s in todayBy[s].map { "\(s.rawValue) \($0.n) \($0.xp)" } }
+                .joined(separator: ",")
+            if let row { values[Self.rowKey] = "\(row.count) \(row.day)" }
             if let ringCelebrated { values[Self.ringKey] = ringCelebrated }
             try store.set(values)
         } catch {

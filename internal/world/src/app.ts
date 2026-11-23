@@ -11,6 +11,7 @@ import { defaultDb, type Db } from "./db.js";
 import * as L from "./limits.js";
 import { checkName, shownName } from "./names.js";
 import { UTC_OFFSET_MAX, UTC_OFFSET_MIN, regionOf, validOffset } from "./regions.js";
+import { closeWeek, lastWeek, league, medalsOf, profile } from "./league.js";
 import {
   ACTIVITIES, COUNTS, METRICS, TODAY, checkGoal, currentRewards, deliverGestures, goalAdded, snapshot, type Count,
 } from "./world.js";
@@ -18,12 +19,14 @@ import {
 export const GESTURES = ["boop", "wave", "heart", "cheer"] as const;
 /** Every key a buddy may send in PUT /v1/buddies/me. Any other is refused. */
 export const STATE_KEYS = [
-  "seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added",
+  "seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added", "days_in_a_row", "color",
 ] as const;
 /** What a Mac built before Boop was one size still sends: taken and ignored. */
 export const IGNORED_KEYS = ["stage"] as const;
 
 export interface Options {
+  /** The time, in ms: the league's weeks go by it. Default: the clock. */
+  now?: () => number;
   /** Read on each request, so tests can set them. Default: the environment. */
   adminToken?: () => string | undefined;
   cronSecret?: () => string | undefined;
@@ -71,6 +74,7 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
   const adminToken = options.adminToken ?? (() => process.env.ADMIN_TOKEN);
   const cronSecret = options.cronSecret ?? (() => process.env.CRON_SECRET);
   const ipSalt = options.ipSalt ?? (() => process.env.IP_SALT);
+  const now = options.now ?? (() => Date.now());
   const app = new Hono<Env>();
 
   app.onError((err, c) => {
@@ -155,6 +159,12 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     if (body.level !== undefined && (!isInt(body.level) || body.level < 1)) throw new BadRequest("level must be a positive integer");
     if (body.day !== undefined && !validDate(body.day)) throw new BadRequest("day must be YYYY-MM-DD");
     if (body.xp_today !== undefined && (!isInt(body.xp_today) || body.day === undefined)) throw new BadRequest("xp_today must be an integer, with day");
+    if (body.days_in_a_row !== undefined && (!isInt(body.days_in_a_row) || body.days_in_a_row < 0)) {
+      throw new BadRequest("days_in_a_row must be a non-negative integer");
+    }
+    if (body.color !== undefined && (!isInt(body.color) || body.color < 0 || body.color >= L.COLORS)) {
+      throw new BadRequest(`color must be 0 to ${L.COLORS - 1}`);
+    }
     const utcOffset = offset(body.utc_offset);
     const added = body.added ?? {};
     if (!isObject(added)) throw new BadRequest("added must be an object");
@@ -230,13 +240,16 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
         `update buddies set last_seq = $2, sent_at = now(), seen_at = now(), activity = $3,
                 level = coalesce($4, level),
                 utc_offset = case when $5::boolean then $6::int else utc_offset end,
-                xp_day = $7::date, xp_today = $8
+                xp_day = $7::date, xp_today = $8,
+                days_in_a_row = coalesce($9, days_in_a_row), color = coalesce($10, color)
           where id = $1`,
         [
           id, seq, activity,
           body.level === undefined ? null : Math.min(body.level as number, L.LEVEL_MAX),
           "utc_offset" in body, utcOffset,
           xpDay, xpToday,
+          body.days_in_a_row === undefined ? null : Math.min(body.days_in_a_row as number, L.DAYS_IN_A_ROW_MAX),
+          body.color === undefined ? null : body.color,
         ],
       );
       if (clamped.length) console.warn(`buddy ${id}: clamped ${clamped.join(", ")}`);
@@ -248,6 +261,7 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       return c.json({ error: "too_soon", retry_after: result.retryAfter }, 429);
     }
     if (result.status === "ok") await checkGoal(c.var.db);
+    await closeWeek(c.var.db, now());
     const [me] = await c.var.db.query<{ name: string; name_ok: boolean; reports: number }>(
       "select name, name_ok, reports from buddies where id = $1",
       [id],
@@ -263,6 +277,10 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       goal_added: await goalAdded(c.var.db, id),
       // So a Mac that sends on change rarely needs to poll.
       rewards: await currentRewards(c.var.db),
+      // Last week's place, for Monday's moment, with no tab open.
+      last_week: await lastWeek(c.var.db, id, now()),
+      // The buddy's own medals, for its profile on the Mac.
+      medals: await medalsOf(c.var.db, id),
       // The Mac's last send before it quits keeps them for its next launch:
       // a reply it may not live to read would lose them.
       gestures: c.req.query("keep_gestures") === "1" ? [] : await deliverGestures(c.var.db, id),
@@ -283,6 +301,25 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     return c.json(await snapshot(c.var.db));
   });
 
+  // The week's league. With a buddy's key, its own place, the buddy just
+  // ahead and behind, and last week's place.
+  app.get("/v1/league", async (c) => {
+    const me = await buddyFor(c.var.db, bearer(c.req.header("authorization")));
+    c.header("Cache-Control", me ? "private, no-store" : `public, max-age=0, s-maxage=${L.SNAPSHOT_CACHE_SECONDS}`);
+    return c.json(await league(c.var.db, now(), me ?? undefined));
+  });
+
+  // One buddy's public profile. With a buddy's key, what's between the two.
+  app.get("/v1/buddies/:id", async (c) => {
+    const id = c.req.param("id");
+    if (!UUID.test(id)) return c.json({ error: "not_found" }, 404);
+    const viewer = await buddyFor(c.var.db, bearer(c.req.header("authorization")));
+    const p = await profile(c.var.db, id.toLowerCase(), now(), viewer ?? undefined);
+    if (!p) return c.json({ error: "not_found" }, 404);
+    c.header("Cache-Control", "private, no-store");
+    return c.json(p);
+  });
+
   app.post("/v1/gestures", buddy, async (c) => {
     const body = await json(c);
     const { to, kind } = body;
@@ -292,8 +329,10 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
     if (to.toLowerCase() === from) throw new BadRequest("a buddy can't gesture to itself");
     const sent = await c.var.db.transaction(async (tx) => {
       const [me] = await tx.query<{ utc_offset: number | null }>("select utc_offset from buddies where id = $1 for update", [from]);
-      const target = await tx.query("select 1 from buddies where id = $1", [to]);
+      const target = await tx.query<{ seed: boolean }>("select seed from buddies where id = $1", [to]);
       if (!target.length) return "not_found" as const;
+      // A seed has no Mac to tell: taken, and dropped.
+      if (target[0].seed) return "sent" as const;
       const [n] = await tx.query<{ total: number; one: number }>(
         `select count(*)::int as total, (count(*) filter (where to_buddy = $2))::int as one
            from gestures where from_buddy = $1 and created_at > now() - interval '1 hour'`,
@@ -371,7 +410,7 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
 export async function expire(db: Db) {
   return db.transaction(async (tx) => {
     const buddies = await tx.query(
-      "delete from buddies where seen_at < now() - make_interval(days => $1) returning id",
+      "delete from buddies where seen_at < now() - make_interval(days => $1) and not seed returning id",
       [L.BUDDY_EXPIRES_DAYS],
     );
     const old = `day < ${TODAY} - $1::int`;

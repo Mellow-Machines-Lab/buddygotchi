@@ -7,7 +7,8 @@
 import type { Db } from "./db.js";
 import { AWAKE_WITHIN_MS, GESTURES_PER_READ, SNAPSHOT_BUDDIES } from "./limits.js";
 import { shownName } from "./names.js";
-import { REGIONS, regionSql, type Region } from "./regions.js";
+import { REGIONS, regionOf, regionSql, type Region } from "./regions.js";
+import { seedActivity, seedDay } from "./seeds.js";
 
 export const ACTIVITIES = ["coding", "testing", "shipping", "waiting", "idle", "asleep"] as const;
 export type Activity = (typeof ACTIVITIES)[number];
@@ -147,6 +148,8 @@ export async function currentRewards(db: Db): Promise<Snapshot["rewards"]> {
 export interface Gesture {
   kind: string;
   from_region: string | null;
+  /** Who sent it, by name as the world shows it, so it can be answered; null once it's gone. */
+  from: { id: string; name: string } | null;
   at: string;
 }
 
@@ -156,30 +159,46 @@ export interface Gesture {
  * GET /v1/gestures and PUT /v1/buddies/me comes first.
  */
 export async function deliverGestures(db: Db, buddy: string): Promise<Gesture[]> {
-  return db.query<Gesture>(
+  const rows = await db.query<{ kind: string; from_region: string | null; at: string; from_id: string | null; name: string | null; name_ok: boolean | null; reports: number | null }>(
     `with handed as (
        update gestures set delivered_at = now()
         where id in (select id from gestures where to_buddy = $1 and delivered_at is null order by id limit $2 for update)
-       returning id, kind, from_region, created_at)
-     select kind, from_region, ${iso("created_at")} as at
-       from handed order by id`,
+       returning id, kind, from_region, from_buddy, created_at)
+     select h.kind, h.from_region, ${iso("h.created_at")} as at, b.id::text as from_id, b.name, b.name_ok, b.reports
+       from handed h left join buddies b on b.id = h.from_buddy order by h.id`,
     [buddy, GESTURES_PER_READ],
   );
+  return rows.map((r) => ({
+    kind: r.kind,
+    from_region: r.from_region,
+    from: r.from_id ? { id: r.from_id, name: shownName({ name: r.name ?? "", name_ok: r.name_ok ?? false, reports: r.reports ?? 0 }) } : null,
+    at: r.at,
+  }));
 }
 
-export async function snapshot(db: Db): Promise<Snapshot> {
+export async function snapshot(db: Db, nowMs: number = Date.now()): Promise<Snapshot> {
   const awakeSecs = AWAKE_WITHIN_MS / 1000;
   const [{ at }] = await db.query<{ at: string }>(`select ${iso("now()")} as at`);
 
   const doing = Object.fromEntries(ACTIVITIES.map((a) => [a, 0])) as Record<Activity, number>;
   const counted = await db.query<{ a: Activity; n: number }>(
-    `select ${SEEN_ACTIVITY} as a, count(*)::int as n from buddies group by 1`,
+    `select ${SEEN_ACTIVITY} as a, count(*)::int as n from buddies where not seed group by 1`,
     [awakeSecs],
   );
   for (const { a, n } of counted) if (a in doing) doing[a] += n;
+  // Seeds: what they do comes from the time (src/seeds.ts).
+  const seeds = (await db.query<{ id: string; name: string; level: number; utc_offset: number | null; seed_strength: number | null }>(
+    "select id::text as id, name, level, utc_offset, seed_strength from buddies where seed",
+  )).map((b) => ({ ...b, activity: seedActivity(b.id, b.utc_offset ?? 0, nowMs) }));
+  for (const s of seeds) doing[s.activity] += 1;
   const total = Object.values(doing).reduce((s, n) => s + n, 0);
 
   const today = await totalsSince(db, TODAY, TODAY);
+  const day = new Date(nowMs).toISOString().slice(0, 10);
+  for (const s of seeds) {
+    const d = seedDay(s.id, s.seed_strength ?? 300, s.utc_offset ?? 0, day, nowMs);
+    today.turns += d.turns, today.tests_passed += d.tests_passed, today.ships += d.ships;
+  }
   const year = await totalsSince(db, `date_trunc('year', ${TODAY})::date`, TODAY);
 
   // Every region, in REGIONS' order, with zeros where no buddy is.
@@ -187,11 +206,15 @@ export async function snapshot(db: Db): Promise<Snapshot> {
     `select ${regionSql("b.utc_offset")} as region, (count(*) filter (where ${SEEN_ACTIVITY} <> 'asleep'))::int as awake,
             coalesce(sum(d.turns), 0)::int as today_turns
        from buddies b left join buddy_days d on d.buddy = b.id and d.day = ${TODAY}
-      where b.utc_offset is not null
+      where b.utc_offset is not null and not b.seed
       group by 1`,
     [awakeSecs],
   );
-  const regions = REGIONS.map(({ region }) => byRegion.find((r) => r.region === region) ?? { region, awake: 0, today_turns: 0 });
+  const regions = REGIONS.map(({ region }) => ({ ...(byRegion.find((r) => r.region === region) ?? { region, awake: 0, today_turns: 0 }) }));
+  for (const s of seeds) {
+    const r = regions.find((x) => x.region === regionOf(s.utc_offset));
+    if (r && s.activity !== "asleep") r.awake += 1;
+  }
 
   const { goal } = await checkGoal(db);
 
@@ -199,12 +222,15 @@ export async function snapshot(db: Db): Promise<Snapshot> {
 
   const rows = await db.query<Snapshot["buddies"][number] & { name_ok: boolean; reports: number }>(
     `select id::text as id, name, name_ok, reports, level, utc_offset, ${SEEN_ACTIVITY} as activity
-       from buddies
+       from buddies where not seed
       order by (${SEEN_ACTIVITY} <> 'asleep') desc, seen_at desc
       limit $2`,
     [awakeSecs, SNAPSHOT_BUDDIES],
   );
   const buddies = rows.map(({ name_ok, reports, ...b }) => ({ ...b, name: shownName({ name: b.name, name_ok, reports }) }));
+  const seedRows = seeds.map((s) => ({ id: s.id, name: s.name, level: s.level, utc_offset: s.utc_offset, activity: s.activity }));
+  buddies.push(...seedRows.filter((s) => s.activity !== "asleep"), ...seedRows.filter((s) => s.activity === "asleep"));
+  buddies.splice(SNAPSHOT_BUDDIES);
 
   return { at, awake: total - doing.asleep, total, doing, today, year, regions, goal, rewards, buddies };
 }

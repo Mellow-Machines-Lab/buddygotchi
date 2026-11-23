@@ -1,0 +1,33 @@
+{
+  "id": "3f8c2a10-6b1e-4d6f-9a51-2c7e8b0d4f11",
+  "name": "Bean",
+  "level": 9,
+  "color": 3,
+  "region": "asia_oceania",
+  "utc_offset": 540,
+  "activity": "shipping",
+  "days_in_a_row": 21,
+  "medals": {
+    "gold": 3,
+    "silver": 1,
+    "bronze": 0
+  },
+  "week": {
+    "xp": 512,
+    "place": 1
+  },
+  "best_week": 640,
+  "today": {
+    "turns": 11,
+    "ships": 2,
+    "tests_passed": 4
+  },
+  "between": {
+    "from_them": {
+      "kind": "wave",
+      "at": "2026-11-22T16:58:12Z"
+    },
+    "from_you": null,
+    "you_beat_them": "2026-11-09"
+  }
+}

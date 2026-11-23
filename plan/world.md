@@ -274,6 +274,7 @@ and maybe one celebration design.
 | The buddy's name, level and stage | Thread or project names |
 | Country and time zone | Code, files, commands, tool output |
 | One of six activities | Prompts, what you said, agents' messages |
+| Days in a row and a colour (2026-11-22, plan/xp-league.md §9) | |
 | Counts: turns, tests passed, ships, lines changed; today's XP | Memory, notes, the dream |
 | Gestures you send | Anything when the world is off |
 

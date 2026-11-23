@@ -88,6 +88,11 @@ SceneState reactionFromName(const char* name);  // kNone for any other name
 enum class Outcome : uint8_t { kNone, kSuccess, kFailure };
 enum class StartCtx : uint8_t { kNone, kNewTask, kSession, kContinuation, kCompacted };
 Outcome outcomeFromName(const char* name);  // "success" or "failure"; kNone otherwise
+
+// What a celebration's gold has before its words (a `do`'s `mark`): a star,
+// a full ring for today's ring, or a medal for a league's place.
+enum class GoldMark : uint8_t { kStar, kRing, kGold, kSilver, kBronze };
+GoldMark goldMarkFromName(const char* name);  // "ring", "gold", "silver", "bronze"; kStar otherwise
 StartCtx ctxFromName(const char* name);     // "new_task", "session", "continuation" or "compacted"; kNone otherwise
 // What the needs-you request asks of you (`attn.kind`): a yes or no to a
 // call, a question to answer, or a plan to read; kNone when the Mac doesn't

@@ -39,6 +39,8 @@ public struct AppSettings: Codable, Equatable, Sendable {
     /// Onboarding's world screen has been shown: nothing goes to the world
     /// before it, even with `world` on.
     public var worldShown = false
+    /// The buddy's colour, 0 to 7 (`BuddyColor`): 0 is its own blue.
+    public var color = 0
 
     public init() {}
 
@@ -64,11 +66,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         anchor = try? c.decodeIfPresent(Anchor.self, forKey: .anchor)
         world = (try? c.decodeIfPresent(Bool.self, forKey: .world)) ?? true
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
+        color = max(0, min(BuddyColor.all.count - 1, (try? c.decodeIfPresent(Int.self, forKey: .color)) ?? 0))
     }
 
     // `noticesYou` keeps the key it had as "Types along".
     enum CodingKeys: String, CodingKey {
-        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown
+        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown, color
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -84,6 +87,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         if simulator { try c.encode(simulator, forKey: .simulator) }
         if !world { try c.encode(world, forKey: .world) }
         if worldShown { try c.encode(worldShown, forKey: .worldShown) }
+        if color != 0 { try c.encode(color, forKey: .color) }
     }
 
     public static let file = "settings.json"

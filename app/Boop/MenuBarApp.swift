@@ -79,7 +79,9 @@ final class AppModel: ObservableObject {
         }
     }
     /// The buddy whose card is open on the World tab, and what was sent it.
-    @Published var worldPick: String?
+    @Published var worldPick: String? {
+        didSet { if worldPick != oldValue { runtime?.worldOpen(worldPick) } }
+    }
     @Published var worldSent: [String: WorldSend] = [:]
     /// What was sent one buddy this launch: the kinds that went through,
     /// which stay sent (the world takes 3 gestures to a buddy an hour),
@@ -607,6 +609,12 @@ final class AppModel: ObservableObject {
     }
 
     // The switches show the change at once; the runtime's next status confirms it.
+
+    func setColor(_ color: Int) {
+        guard status?.snapshot.color != color else { return }
+        status?.snapshot.color = color
+        runtime?.setColor(color)
+    }
 
     func setVolume(_ volume: Int) {
         guard status?.snapshot.vol != volume else { return }

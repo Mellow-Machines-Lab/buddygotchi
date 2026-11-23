@@ -36,6 +36,10 @@ extension Runtime {
         public var micTrouble: String?
         /// Boop's XP, level and today's ring.
         public var growth: Growth?
+        /// Today's XP by what earned it.
+        public var todayBy: [Growth.Source: GrowthStore.Earned] = [:]
+        /// The days in a row with a full ring, as they stand today.
+        public var daysInARow = 0
         /// The last days' rings, oldest first, today's last: the Boop tab's week.
         public var week: [DayRing] = []
         /// The world of buddies; nil with no world server (tests).
@@ -163,6 +167,8 @@ extension Runtime {
         let wall = options.wallClock()
         status.daysOld = memory.longTerm.map { options.time.days(from: $0.hatched, to: wall) }
         let written = memory.written(), today = options.time.boopDay(wall)
+        status.todayBy = growth.todayBy(on: today)
+        status.daysInARow = growth.daysInARow(on: today)
         status.week = growth.week(to: today).map { Status.DayRing(day: $0.day, xp: $0.xp, today: today) }
         status.world = worldStatus()
         status.notes = written.notes

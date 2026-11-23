@@ -1,6 +1,6 @@
 # Boop v1: a status monitor, a friend, a buddy that grows, and a world
 
-Updated 2026-11-08. The owner agreed the direction on 2026-11-08, with XP kept
+Updated 2026-11-22. The owner agreed the direction on 2026-11-08, with XP kept
 simple; the world's build is in [world.md](world.md). Work goes on branch
 `main-v2`; `main` stays as it is. It comes from the owner's talk of 2026-11-08 and builds on main
 `b87a22c2`.
@@ -105,6 +105,8 @@ listening nod, and a plain reason for every reaction.
   tests overnight."
 
 ## 5. Tenet 3: a buddy that grows
+
+> Replaced on 2026-11-22 by [xp-league.md](xp-league.md) §2 and §3: four things earn XP, the ring is a goal that XP counts past (to 300 a day), a level is 500 XP, and days in a row count. The rest of this section is the earlier design.
 
 ### 5.1 The model
 

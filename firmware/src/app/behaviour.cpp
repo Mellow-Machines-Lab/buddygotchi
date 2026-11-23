@@ -171,7 +171,6 @@ void Behaviour::resync(uint32_t t) {
   if (sign_.text[0] && !signDue(t)) signGoes(signEnd());
   if (gone_.text[0] && !within(t, goneAt_, render::rig::kFadeMs)) gone_ = Sign{};
   if (blFade_ && !within(t, blAt_, kBacklightEaseMs)) blFade_ = false;
-  bar_.sweep(barHidden(model_, noApp(t), t), t);
   change(t, [&] {
     if (reaction_.anim != render::SceneState::kNone && !within(t, reaction_.at, reaction_.ms))
       reaction_.anim = render::SceneState::kNone;
@@ -255,7 +254,6 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     // A card rises as it comes; a picture rises once, as it first shows or
     // changes kind, and updates in place after.
     if (!m.card.same(model_.card) || m.pic.kind != model_.pic.kind) cardAt_ = t;
-    bar_.heard(m.xp, barHidden(m, back, t), t);
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
@@ -401,6 +399,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
     gold_ = Sign{};
     if (sign && in.gold[0]) {  // as a low sign's, and as long as the rest of it plays
       copyStr(gold_.text, sizeof(gold_.text), in.gold);
+      gold_.mark = in.goldMark;
       gold_.at = t;
       gold_.ms = kLowSignMinMs;
       if (anim && !listen) gold_.ms = std::max(gold_.ms, reaction_.ms);
@@ -411,6 +410,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       copyStr(sign_.text, sizeof(sign_.text), in.sign);
       sign_.reply = in.expr && in.reply[0];
       sign_.low = in.low;
+      sign_.xp = in.low ? in.xp : 0;
       sign_.at = t;
       sign_.ms = in.low ? kLowSignMinMs : kSignMinMs;
       if (anim && !listen) sign_.ms = std::max(sign_.ms, reaction_.ms);
@@ -468,6 +468,7 @@ bool Behaviour::play(const ReactionIn& in, uint32_t t) {
       copyStr(done_.agent, sizeof(done_.agent), in.whoAgent);
       copyStr(done_.thread, sizeof(done_.thread), in.whoThread);
       done_.outcome = anim ? reaction_.outcome : render::Outcome::kNone;
+      done_.xp = in.xp;
       done_.id = in.id, done_.key = in.key, done_.at = t;
       liftFinishSign(t);
     }
@@ -811,7 +812,7 @@ render::DoneShow Behaviour::done(uint32_t t) const {
   render::DoneShow d;
   if (!done_.agent[0] || noApp(t) || model_.attn) return d;
   if (done_.ending && !within(t, done_.endAt, done_.endMs)) return d;
-  d.agent = done_.agent, d.thread = done_.thread, d.outcome = done_.outcome;
+  d.agent = done_.agent, d.thread = done_.thread, d.outcome = done_.outcome, d.xp = done_.xp;
   d.ms = t - done_.at;
   d.leftMs = done_.ending ? int32_t(done_.endAt + done_.endMs - t) : -1;
   if (done_.signUp) d.signMs = int32_t(t - done_.signAt);
@@ -888,7 +889,6 @@ render::WishShow Behaviour::wishShow(uint32_t t) const {
   if (noApp(t)) return show;  // nothing waits on a Mac that isn't there
   if (wishPop_ != render::WishShow::kWaiting && t - wishPopAt_ < render::WishShow::kPopMs) {
     show.kind = lastWish_, show.pop = wishPop_, show.popAge = t - wishPopAt_;
-    show.flies = wishPop_ == render::WishShow::kMet && bar_.heart();
   } else {
     show.kind = model_.wish;
     show.how = model_.wishHow;
@@ -901,16 +901,6 @@ void Behaviour::wishPopped(bool met, uint32_t t) {
   if (lastWish_ == render::WishShow::kNone) return;
   wishPop_ = met ? render::WishShow::kMet : render::WishShow::kGone;
   wishPopAt_ = t;
-  if (!met) return;
-  bar_.heartComes(model_.xp, t);
-}
-
-bool Behaviour::barHidden(const Model& m, bool alone, uint32_t t) const {
-  return alone || m.attn || m.base == render::SceneState::kAsleep || faceDown_;
-}
-
-render::GrowthShow Behaviour::growthShow(uint32_t t) const {
-  return bar_.show(barHidden(model_, noApp(t), t), t);
 }
 
 // With no app, no `say` shows: it outranks the reactions.
@@ -974,10 +964,10 @@ render::SignShow Behaviour::sign(uint32_t t) const {
   render::SignShow s;
   if (noApp(t)) return s;
   if (goldOn(t) && !model_.attn)
-    s.gold = gold_.text, s.goldMs = t - gold_.at, s.goldLeftMs = int32_t(gold_.at + gold_.ms - t);
+    s.gold = gold_.text, s.goldMs = t - gold_.at, s.goldLeftMs = int32_t(gold_.at + gold_.ms - t), s.goldMark = gold_.mark;
   if (model_.attn && !(signOn(t) ? sign_ : gone_).reply) return s;
   if (signOn(t)) {
-    s.text = sign_.text, s.ms = t - sign_.at, s.low = sign_.low;
+    s.text = sign_.text, s.ms = t - sign_.at, s.low = sign_.low, s.xp = sign_.xp;
     if (sign_.low) s.leftMs = int32_t(sign_.at + sign_.ms - t);
   } else if (gone_.text[0] && !gone_.low && within(t, goneAt_, render::rig::kFadeMs)) {  // a low one has fallen away
     s.text = gone_.text, s.ms = t - gone_.at;

@@ -114,8 +114,9 @@ final class DaysTests: XCTestCase {
 
     /// A level-up is the rules' moment, not Jev's: its event, logged after
     /// the `state` with the new ring, and a face with `level 12!` held low
-    /// in gold, the same at every level. The ring closing holds up
-    /// `today's done!`; with a level at once, one moment shows both.
+    /// in gold, the same at every level. The ring closing holds low, in
+    /// gold behind a full ring, `100 XP today` and the days in a row; with a
+    /// level at once, one moment shows both.
     func testALevelUpIsTheRulesMoment() {
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
@@ -132,28 +133,31 @@ final class DaysTests: XCTestCase {
         XCTAssertNil(TranscriptView.wakes["growth"], "the rules play it: no pass")
         XCTAssertEqual(moments(core.grew([.level(15)], at: now)).map(\.mood), ["proud"], "no level is a bigger one")
         let ring = moments(core.grew([.ringClosed], at: now))
-        XCTAssertEqual(ring.map(\.sign), [Core.ringSign])
-        XCTAssertEqual(ring.map(\.gold), [nil])
-        XCTAssertEqual(Core.ringSign, "today's done!")
-        XCTAssertLessThanOrEqual(Core.ringSign.count, Signs.maxLength, "it fits a sign")
+        XCTAssertEqual(ring.map(\.gold), ["100 XP today"])
+        XCTAssertEqual(ring.map(\.mark), ["ring"])
+        XCTAssertEqual(ring.map(\.sign), [nil])
+        XCTAssertEqual(Core.ringSign(daysInARow: 1), "100 XP today", "no days in a row to tell")
+        XCTAssertEqual(Core.ringSign(daysInARow: 12), "100 XP today, day 12")
+        XCTAssertEqual(ring.first?.args["mark"], .string("ring"), "on the wire")
         XCTAssertLessThanOrEqual(Core.levelSign(999).count, Signs.maxLength, "and a level's fits")
     }
 
     /// The ring closing and a level reached at once are one moment, not
-    /// two, and neither is lost: Boop holds up `today's done!`, and the
-    /// level comes low in gold beside it; one `growth` event says both.
+    /// two, and neither is lost: the ring's words low in gold, and the
+    /// level held up; one `growth` event says both.
     func testTheRingAndALevelAreOneMoment() {
         let core = Core(config: .init(time: utc), lastActiveDay: "2026-10-22")
         let now = ms(2026, 10, 22, 10)
         core.setWallClock(now, at: now)
-        core.growth = { Growth(xp: 1_300, today: 100) }
+        core.growth = { Growth(xp: 6_000, today: 100) }
+        core.daysInARow = { 4 }
         let fx = core.grew([.ringClosed, .level(13)], at: now)
         let both = moments(fx)
         XCTAssertEqual(both.count, 1, "one moment")
-        XCTAssertEqual(both.first?.sign, "today's done!")
-        XCTAssertEqual(both.first?.gold, "level 13!")
+        XCTAssertEqual(both.first?.sign, "level 13!")
+        XCTAssertEqual(both.first?.gold, "100 XP today, day 4")
         XCTAssertEqual(both.first?.mood, "proud")
-        XCTAssertEqual(both.first?.args["gold"], .string("level 13!"), "on the wire")
+        XCTAssertEqual(both.first?.args["gold"], .string("100 XP today, day 4"), "on the wire")
         XCTAssertEqual(BoopDevice.play(both[0]), .next, "worth waiting its turn")
         let grew: [Event] = fx.compactMap { if case .record(let e) = $0, e.type == .growth { return e } else { return nil } }
         XCTAssertEqual(grew.count, 1, "one event")

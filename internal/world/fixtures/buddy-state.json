@@ -6,5 +6,12 @@
   "activity": "testing",
   "day": "2026-11-08",
   "xp_today": 82,
-  "added": { "turns": 3, "tests_passed": 2, "ships": 0, "lines_changed": 140 }
+  "added": {
+    "turns": 3,
+    "tests_passed": 2,
+    "ships": 0,
+    "lines_changed": 140
+  },
+  "days_in_a_row": 12,
+  "color": 0
 }

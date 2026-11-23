@@ -52,6 +52,9 @@ extension Runtime {
         /// What its picks of words start from: a launch's own, so no two
         /// launches say the same order. Evals give theirs.
         public var seed = Mind.launchSeed()
+        /// What the event of a `seq` earned (`GrowthStore.earned`), for its
+        /// moment's sign.
+        public var earned: (Int) -> (source: Growth.Source, xp: Int)? = { _ in nil }
         /// What it may bring up about you at a time (`Memory.felt`).
         public var felt: (Int64) -> [Memory.Felt] = { _ in [] }
         /// What it notices from, or nil for a buddy that doesn't: the days
@@ -284,6 +287,7 @@ extension Runtime {
         moodID: { [mood] log in MoodOutput.value(mood, log, pack: pack) },
         today: m.company, seed: m.seed)
         h.output(mood)
+        react.earned = { e in e.flatMap { m.earned($0.seq) } }
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
         // The Moments the rules make whole, with no pass: your bye at a
         // lock and your hello at an unlock, a working check-in, another

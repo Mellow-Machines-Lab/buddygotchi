@@ -27,6 +27,8 @@ import MellowHarness
 public final class Core {
     public struct Config: Sendable {
         public var volume: Int
+        /// The buddy's colour, 0 to 7 (`BuddyColor`), sent in `state`.
+        public var color = 0
         public var time: LocalTime
         /// Where this launch's request numbers start: the first request
         /// shown gets the one after it (`SessionTracker.nextRequest`). The
@@ -67,6 +69,8 @@ public final class Core {
     /// and CONTEXT its level. Nil for a demo and a core with no store: no
     /// bar.
     var growth: () -> Growth? = { nil }
+    /// The days in a row with a full ring today (`GrowthStore.daysInARow`).
+    var daysInARow: () -> Int = { 0 }
 
     /// Every agent session, what it's doing and who needs you.
     let tracker: SessionTracker
@@ -471,6 +475,13 @@ public final class Core {
         return fx
     }
 
+    public func setColor(_ color: Int, at now: Int64) -> [CoreEffect] {
+        config.color = max(0, min(BuddyColor.all.count - 1, color))
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
     public func setVolume(_ volume: Int, at now: Int64) -> [CoreEffect] {
         config.volume = max(0, min(10, volume))
         var fx: [CoreEffect] = []
@@ -498,21 +509,27 @@ public final class Core {
     /// event that says what happened, and one moment for it all.
     func recordGrowth(_ now: Int64, _ fx: inout [CoreEffect]) {
         guard !growthHeld.isEmpty, needsYouBlock == nil, !showsListening(at: now) else { return }
+        // Boop starts things only when idle: the ring waits for the turns to end.
+        if growthHeld == [.ringClosed], groups(at: now).working.count > 0 { return }
         let beats = growthHeld
         growthHeld = []
         // The last level, of one held past the next.
         let level = beats.compactMap { if case .level(let n) = $0 { n } else { nil } }.last
         let ring = beats.contains(.ringClosed)
         fx.append(.record(Self.growthEvent(level: level, ring: ring, at: now)))
-        // The ring closing: Boop holds up that today's done. A level: its
-        // words held low in gold, the rim glowing gold, with the ring's
-        // sign when both come at once.
-        guard let n = level else {
-            return play(Moment(mood: Self.ringFace, loops: 2, sign: Self.ringSign), for: nil, now, &fx)
+        // The ring closing: its XP and the days in a row, held low in gold
+        // behind a full ring. A level: its words held low in gold behind a
+        // star, the rim glowing gold; with the ring, held up on the sign.
+        let n = level
+        var m = Moment(mood: n != nil ? Self.levelFace : Self.ringFace, loops: 2,
+                       reason: n.map { Narration.fit(["level \($0)!"], name: config.pack.name) } ?? nil)
+        if ring {
+            m.gold = Self.ringSign(daysInARow: daysInARow())
+            m.mark = "ring"
+            m.sign = n.map(Self.levelSign)
+        } else if let n {
+            m.gold = Self.levelSign(n)
         }
-        var m = Moment(mood: Self.levelFace, loops: 2, sign: ring ? Self.ringSign : nil,
-                       reason: Narration.fit(["level \(n)!"], name: config.pack.name))
-        m.gold = Self.levelSign(n)
         play(m, for: nil, now, &fx)
     }
 
@@ -528,8 +545,11 @@ public final class Core {
     /// The level-up's words, held low in gold: `level 12!`, lower case, as
     /// everything Boop holds is.
     public static func levelSign(_ level: Int) -> String { "level \(level)!" }
-    /// What Boop holds up as today's ring closes.
-    public static let ringSign = "today's done!"
+    /// What Boop holds low as today's ring closes: `100 XP today, day 12`,
+    /// or with no days in a row to tell, `100 XP today`.
+    public static func ringSign(daysInARow: Int) -> String {
+        "\(Growth.perDay) XP today" + (daysInARow > 1 ? ", day \(daysInARow)" : "")
+    }
     /// The faces the growth moments play: a level, the ring.
     static let levelFace = "proud", ringFace = "happy"
 
@@ -629,7 +649,7 @@ public final class Core {
             StateSnapshot.WorkAct(kind: $0.kind, words: $0.words, result: $0.passed.map { $0 ? "p" : "f" })
         } : nil
         var snapshot = StateSnapshot(doing: base, activity: act, mood: mood(), attn: attn, working: working.count,
-                                     idle: rests.count, helpers: helpers, vol: config.volume,
+                                     idle: rests.count, helpers: helpers, vol: config.volume, color: config.color,
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct

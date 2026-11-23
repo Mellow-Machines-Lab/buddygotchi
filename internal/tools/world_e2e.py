@@ -144,6 +144,16 @@ def main(argv: list[str]) -> int:
             return ida in ids and idb in ids
         wait("both in the world's snapshot", both_seen, 90)
         print("world e2e: each sees the other in the world")
+
+        def both_ranked():
+            ids = {x["id"] for x in get(url + "/v1/league")["rows"]}
+            return ida in ids and idb in ids
+        wait("both in the week's league", both_ranked, 30)
+        req = urllib.request.Request(url + f"/v1/buddies/{idb}", headers={"Authorization": f"Bearer {a.identity()['key']}"})
+        with urllib.request.urlopen(req, timeout=15) as res:
+            card = json.load(res)
+        assert card["name"] == "Bean" and "between" in card, card
+        print("world e2e: both in the league, and Mochi opens Bean's card")
         a.dev({"tab": True})
         a.dev({"to": idb, "gesture": "boop"})
         b.dev({"to": ida, "gesture": "wave"})

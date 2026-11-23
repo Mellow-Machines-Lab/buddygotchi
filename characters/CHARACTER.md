@@ -387,14 +387,14 @@ Its `[world]` lines, and `[world boop]`, `[world wave]`, `[world heart]` and
 reaches out from the world (`Signs.world`): Jev picks one at the `world` event.
 A pack with none holds up nothing then. A level-up holds `level 12!` low in
 gold (the `do`'s `gold`; a face that holds nothing low holds it up as its
-sign), and today's ring closing holds up `today's done!`, one moment when
-both come at once: the rules' own, needing nothing of the pack's.
+sign), and today's ring closing holds `100 XP today, day 12` low in gold
+behind a full ring (the `do`'s `mark`: `ring`; `gold`, `silver` or `bronze`
+for a league's medal; none for a star), one moment when both come at once,
+the level then held up: the rules' own, needing nothing of the pack's.
 
-**Today's ring,** the gel's own bar (`render::GrowthShow`, `paintGrowthBar`),
-goes by `state.xp`, today's XP in percent: it shows when XP comes in, with the
-number after it, inside the panel's rounded corners, and sparkles once when
-it's full, or, filled while it couldn't show, the next time it can; while
-LISTENING has the top band it gives way. A face with no bar ignores it.
+**XP** shows only on low signs (plan/xp-league.md §5): a `do`'s `xp`, what its
+event earned, is a chip at the right end of the finish's sign or of a low
+sign, `+5 XP`. There is no bar: the board ignores `state.xp`, today's ring in percent, which the Mac still sends.
 
 - Each line is `- [tags] words`. The tags (optional) must all be on: the
   reading's kind, tone and length, `named` when you said this buddy's own

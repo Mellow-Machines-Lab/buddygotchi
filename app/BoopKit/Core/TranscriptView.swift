@@ -565,11 +565,15 @@ public final class TranscriptView {
         case .growth?:
             let level = e["level"]?.int.map(Int.init), ring = e["ring"]?.bool == true
             return Line(EventLine.grew(level: level, ring: ring, name: name), facts: level.map { ["level": .int(Int64($0))] } ?? [:])
+        case .world? where e.specificType == World.leagueKind:
+            guard let place = e["place"]?.int, let xp = e["xp"]?.int else { return nil }
+            return Line("Last week \(name) came \(World.ordinal(Int(place))) in the league, with \(xp) XP.",
+                        facts: ["world": .string(World.leagueKind), "place": .int(place), "xp": .int(xp)])
         case .world?:
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }
             return Line(World.sentence(counts, from: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
-                                       held: e["held"]?.bool == true, name: name),
+                                       by: e["from_name"]?.string, held: e["held"]?.bool == true, name: name),
                         facts: ["world": .string(kind.rawValue), "count": .int(Int64(count))])
         case .wish?:
             if e.phase == .start { return Core.WishKind(rawValue: e.specificType).map { Line(EventLine.wished($0, name: name)) } }

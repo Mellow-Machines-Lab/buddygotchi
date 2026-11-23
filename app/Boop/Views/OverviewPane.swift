@@ -859,7 +859,7 @@ struct SessionRow: View {
 /// the board doesn't caption: what its face is doing to pass the time,
 /// else why it's doing what it's doing. With none of those, nothing: the
 /// header already names the mood.
-private struct ReasonLines: View {
+struct ReasonLines: View {
     @ObservedObject var feed: SlimeFeed
     let name: String
     let mood: String

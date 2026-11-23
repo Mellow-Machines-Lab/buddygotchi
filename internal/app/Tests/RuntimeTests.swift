@@ -254,7 +254,7 @@ final class RuntimeTests: XCTestCase {
         XCTAssertTrue(HookSocket.send(hook("UserPromptSubmit"), to: socketPath))
         XCTAssertTrue(HookSocket.send(hook("PostToolUse", tool: "Bash"), to: socketPath))
         XCTAssertTrue(HookSocket.send(hook("Stop"), to: socketPath))
-        eventually("XP for a tool and a turn") { runtime!.home.sync { statuses.last?.growth?.xp == 6 } }
+        eventually("XP for a finished turn, none for its call") { runtime!.home.sync { statuses.last?.growth?.xp == 5 } }
         XCTAssertEqual(runtime!.home.sync { statuses.last?.growth?.level }, 1)
         runtime!.stop()
         runtime!.home.sync {}
@@ -266,7 +266,7 @@ final class RuntimeTests: XCTestCase {
         try again.start()
         defer { again.stop() }
         eventually("a status") { again.home.sync { !after.isEmpty } }
-        XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 6, today: 6))
+        XCTAssertEqual(again.home.sync { after.last?.growth }, Growth(xp: 5, today: 5))
     }
 
     /// A hook that earns XP and changes what the board shows is one `state`,
@@ -1347,7 +1347,7 @@ final class RuntimeTests: XCTestCase {
         let fields = try XCTUnwrap(o["status"] as? [String: Any])
         XCTAssertEqual(fields["mood_reason"] as? String, "Pip is lonely. You came back after 26 hours away.")
         XCTAssertEqual(fields["xp"] as? Int, 1234)
-        XCTAssertEqual(fields["level"] as? Int, 13)
+        XCTAssertEqual(fields["level"] as? Int, 3)
         XCTAssertEqual(fields["today_xp"] as? Int, 18)
         XCTAssertEqual(fields["today_cap"] as? Int, 100)
         XCTAssertNil(DebugLog.status(status, at: 6, last: &last), "unchanged")

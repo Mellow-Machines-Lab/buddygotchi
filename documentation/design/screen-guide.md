@@ -45,7 +45,7 @@ the agent does now.
 | 8 | Held picture | 24,158 · 454×188 | The work as a live picture | Agent | Rises from below. Put down when its data stops |
 | 9 | Pill | Centred, y 306 · 34 high | News from an agent you are not watching | For you | Rises, stays about 4 s, a tap goes there |
 | 10 | Show | 30,60 · 442×288. The agent's picture is 420×190 inside it | A result as a picture | For you | Rises, stays 30 s, folds into the low sign |
-| 11 | Low sign | 70,352 · 362×46 | A finished turn: green for done, clay for failed. A tap opens it | For you | Takes the strip's place |
+| 11 | Low sign | 70,352 · 362×46 | A finished turn: green for done, clay for failed. A tap opens it. What it earned rides at its right end as a chip, `+5 XP`. Also a ship or a fix with its chip, the ring full (`100 XP today, day 12`, gold, a ring mark) and last week's league place (gold, a medal) | For you | Takes the strip's place |
 
 The drawer and an ask keep their places of today: the drawer comes up from
 the strip to about y 150, and an ask sits over the strip with its two

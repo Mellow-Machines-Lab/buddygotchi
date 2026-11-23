@@ -122,8 +122,14 @@ public final class WorldClient: @unchecked Sendable {
         call("DELETE", "v1/buddies/me", key: key, as: Ok.self) { done($0.map { _ in () }) }
     }
 
-    public func world(_ done: @escaping (Result<World.Snapshot, Failure>) -> Void) {
-        call("GET", "v1/world", as: World.Snapshot.self, done)
+    /// The week's league; with the buddy's key, its own place too.
+    public func league(key: String?, _ done: @escaping (Result<World.League, Failure>) -> Void) {
+        call("GET", "v1/league", key: key, as: World.League.self, done)
+    }
+
+    /// One buddy's public profile; with the buddy's key, what's between the two.
+    public func profile(_ id: String, key: String?, _ done: @escaping (Result<World.Profile, Failure>) -> Void) {
+        call("GET", "v1/buddies/\(id)", key: key, as: World.Profile.self, done)
     }
 
     public func gestures(key: String, _ done: @escaping (Result<[World.Gesture], Failure>) -> Void) {

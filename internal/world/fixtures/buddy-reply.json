@@ -1,11 +1,43 @@
 {
   "ok": true,
-  "counted": { "xp": 82, "turns": 3, "tests_passed": 2, "ships": 0, "lines_changed": 140 },
+  "counted": {
+    "xp": 82,
+    "turns": 3,
+    "tests_passed": 2,
+    "ships": 0,
+    "lines_changed": 140
+  },
   "clamped": [],
   "name": "Mochi",
   "name_ok": true,
   "name_hidden": false,
   "goal_added": 2,
-  "rewards": [{ "tag": "worldparty", "until": "2026-11-11" }],
-  "gestures": [{ "kind": "boop", "from_region": "asia_oceania", "at": "2026-11-08T16:58:12Z" }]
+  "rewards": [
+    {
+      "tag": "worldparty",
+      "until": "2026-11-11"
+    }
+  ],
+  "gestures": [
+    {
+      "kind": "boop",
+      "from_region": "asia_oceania",
+      "at": "2026-11-08T16:58:12Z",
+      "from": {
+        "id": "9a1d4e22-7c3b-4b8e-8f20-5d6a1c9e7b02",
+        "name": "Bean"
+      }
+    }
+  ],
+  "last_week": {
+    "week": "2026-11-02",
+    "place": 2,
+    "xp": 512,
+    "of": 40
+  },
+  "medals": {
+    "gold": 1,
+    "silver": 2,
+    "bronze": 1
+  }
 }

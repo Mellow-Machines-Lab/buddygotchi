@@ -18,18 +18,18 @@ final class WorldTests: XCTestCase {
     static let state = World.State(seq: 1, name: "Mochi", level: 12, utcOffset: 60, activity: .testing,
                                    day: "2026-11-08", xpToday: 82, added: .init(turns: 3, testsPassed: 2, ships: 0, linesChanged: 140))
 
-    /// What leaves the Mac, and nothing else (plan/world.md §9): the name
-    /// and level, the UTC offset, one of six activities, the day's
-    /// XP, and the counts. A new field, kept or sent, fails here, whatever
+    /// What leaves the Mac, and nothing else (plan/world.md §9,
+    /// plan/xp-league.md §9): the name and level, the UTC offset, one of six
+    /// activities, the day's XP, the counts, the days in a row and the colour. A new field, kept or sent, fails here, whatever
     /// its coding key: no country, no time zone name, nothing of the work.
     func testOnlyTheseFieldsEverLeaveTheMac() throws {
         let sent = try JSONEncoder().encode(Self.state)
         let sentKeys = try keys(sent)
-        XCTAssertEqual(sentKeys, ["seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added"])
+        XCTAssertEqual(sentKeys, ["seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added", "days_in_a_row", "color"])
         let added = try XCTUnwrap((try JSONSerialization.jsonObject(with: sent) as? [String: Any])?["added"] as? [String: Any])
         XCTAssertEqual(Set(added.keys), ["turns", "tests_passed", "ships", "lines_changed"])
         XCTAssertEqual(Mirror(reflecting: Self.state).children.compactMap(\.label),
-                       ["seq", "name", "level", "utcOffset", "activity", "day", "xpToday", "added"])
+                       ["seq", "name", "level", "utcOffset", "activity", "day", "xpToday", "added", "daysInARow", "color"])
         XCTAssertEqual(Mirror(reflecting: World.Counts()).children.compactMap(\.label), ["turns", "testsPassed", "ships", "linesChanged"])
         XCTAssertEqual(World.Activity.allCases.map(\.rawValue), ["coding", "testing", "shipping", "waiting", "idle", "asleep"])
         // The server's example of a send has these keys exactly.
@@ -43,12 +43,25 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(state.utcOffset, 60)
         XCTAssertEqual(state.added.linesChanged, 140)
         let reply = try JSONDecoder().decode(World.Reply.self, from: fixture("buddy-reply.json"))
-        XCTAssertEqual(reply.gestures, [World.Gesture(kind: .boop, fromRegion: .asiaOceania, at: "2026-11-08T16:58:12Z")])
-        let world = try JSONDecoder().decode(World.Snapshot.self, from: fixture("world.json"))
-        XCTAssertEqual(world.awake, 214)
-        XCTAssertEqual(world.regions.map(\.region), [.americas, .europeAfrica, .asiaOceania])
-        XCTAssertEqual(world.buddies.map(\.utcOffset), [540, nil])
-        XCTAssertEqual(world.doing["coding"], 38)
+        XCTAssertEqual(reply.gestures, [World.Gesture(kind: .boop, fromRegion: .asiaOceania, at: "2026-11-08T16:58:12Z",
+                                                      from: .init(id: "9a1d4e22-7c3b-4b8e-8f20-5d6a1c9e7b02", name: "Bean"))])
+        // One gesture with its sender is said by name; several, as before.
+        let e = WorldGestures.event([(.wave, 1)], sender: .init(id: "b2", name: "Bean"), at: 0)
+        XCTAssertEqual(e["from_name"]?.string, "Bean")
+        XCTAssertEqual(World.sentence([(.wave, 1)], from: .europeAfrica, by: "Bean", held: false, name: "Mochi"), "Bean waved at Mochi.")
+        XCTAssertEqual(World.sentence([(.wave, 1)], from: .europeAfrica, held: false, name: "Mochi"), "Someone in Europe or Africa waved at Mochi.")
+        XCTAssertEqual(reply.lastWeek, World.Place(week: "2026-11-02", place: 2, xp: 512, of: 40))
+        let league = try JSONDecoder().decode(World.League.self, from: fixture("league.json"))
+        XCTAssertEqual(league.awake, 214)
+        XCTAssertEqual(league.rows.map(\.name), ["Bean", "Nori"])
+        XCTAssertEqual(league.me?.ahead?.by, 37)
+        XCTAssertEqual(league.lastWeek?.place, 2)
+        XCTAssertNotNil(league.ends)
+        let buddy = try JSONDecoder().decode(World.Profile.self, from: fixture("buddy.json"))
+        XCTAssertEqual(buddy.medals, .init(gold: 3, silver: 1, bronze: 0))
+        XCTAssertEqual(buddy.region, .asiaOceania)
+        XCTAssertEqual(buddy.between?.fromThem?.kind, "wave")
+        XCTAssertNil(buddy.between?.fromYou)
     }
 
     /// A server newer than this Mac: a gesture, activity or region it
@@ -59,14 +72,12 @@ final class WorldTests: XCTestCase {
              {"kind":"wave","from_region":"antarctica","at":"2026-11-08T16:59:00Z"}]}
             """#.utf8))
         XCTAssertEqual(reply.gestures, [World.Gesture(kind: .wave, fromRegion: nil, at: "2026-11-08T16:59:00Z")])
-        let world = try JSONDecoder().decode(World.Snapshot.self, from: Data(#"""
-            {"at":"2026-11-08T17:00:00Z","awake":2,"total":2,"doing":{"coding":1},
-             "today":{"turns":0,"tests_passed":0,"ships":0,"lines_changed":0},
-             "regions":[{"region":"americas","awake":1},{"region":"moon","awake":1}],
-             "buddies":[{"id":"a","name":"A","level":1,"activity":"dancing"},{"id":"b","name":"B","level":2,"activity":"coding"}]}
+        let league = try JSONDecoder().decode(World.League.self, from: Data(#"""
+            {"week":"2026-11-23","ends_at":"2026-11-30T00:00:00Z","total":2,"awake":1,"with_xp":2,
+             "rows":[{"place":1,"id":"a","name":"A","level":1,"color":0,"activity":"dancing","xp_week":9},
+                     {"place":2,"id":"b","name":"B","level":2,"color":0,"activity":"coding","xp_week":5}]}
             """#.utf8))
-        XCTAssertEqual(world.regions.map(\.region), [.americas])
-        XCTAssertEqual(world.buddies.map(\.id), ["b"])
+        XCTAssertEqual(league.rows.map(\.id), ["b"])
     }
 
     /// A send kept over a quit counted what this launch never had: what's
@@ -245,7 +256,7 @@ final class WorldTests: XCTestCase {
             case ("POST", "/v1/buddies"): (201, #"{"id":"b1","key":"k1","name":"Mochi","name_ok":true}"#)
             case ("PUT", "/v1/buddies/me"):
                 (200, #"{"ok":true,"name":"Mochi","name_ok":true,"name_hidden":false,"gestures":[{"kind":"boop","from_region":"americas","at":"x"}]}"#)
-            case ("GET", "/v1/world"): (200, String(data: try! Data(contentsOf: WorldTests.fixtures.appendingPathComponent("world.json")), encoding: .utf8)!)
+            case ("GET", "/v1/league"): (200, String(data: try! Data(contentsOf: WorldTests.fixtures.appendingPathComponent("league.json")), encoding: .utf8)!)
             default: (200, #"{"ok":true,"gestures":[]}"#)
             }
         }
@@ -260,6 +271,41 @@ final class WorldTests: XCTestCase {
     static let me = WorldLink.Now(name: "Mochi", level: 2, utcOffset: 60, activity: .coding, day: "2026-11-08", xpToday: 40)
 
     func settle() { for _ in 0..<50 { queue.sync {}; Thread.sleep(forTimeInterval: 0.01) } }
+
+    /// Last week's place comes in a send's reply and is told once, as a
+    /// `league` world event: not while quiet, and not again for the same week
+    /// (plan/xp-league.md §5.3).
+    func testLastWeeksPlaceIsToldOnce() throws {
+        Stub.answer = { method, path in
+            switch (method, path) {
+            case ("POST", "/v1/buddies"): (201, #"{"id":"b1","key":"k1","name":"Mochi","name_ok":true}"#)
+            case ("PUT", "/v1/buddies/me"):
+                (200, #"{"ok":true,"name":"Mochi","gestures":[],"last_week":{"week":"2026-11-16","place":2,"xp":512,"of":40}}"#)
+            default: (200, #"{"ok":true,"gestures":[]}"#)
+            }
+        }
+        let world = link()
+        var events: [Event] = []
+        world.onEvents = { events += $0 }
+        queue.sync { world.tick(Self.me, on: true, quiet: true, today: "2026-11-08", at: 0) }
+        settle()
+        queue.sync { world.tick(Self.me, on: true, quiet: true, today: "2026-11-08", at: 1_000) }
+        settle()
+        XCTAssertTrue(events.isEmpty, "quiet: it waits")
+        XCTAssertEqual(world.status.lastWeek?.place, 2)
+        var later = Self.me
+        later.activity = .testing
+        queue.sync { world.tick(later, on: true, quiet: false, today: "2026-11-08", at: 20_000) }
+        settle()
+        XCTAssertEqual(events.map(\.specificType), [World.leagueKind])
+        XCTAssertEqual(events.first?["place"]?.int, 2)
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 40_000) }
+        settle()
+        XCTAssertEqual(events.count, 1, "once a week")
+        XCTAssertEqual(World.leagueSign(place: 2, xp: 512), "2nd, 512 XP last week")
+        XCTAssertEqual([1, 2, 3, 4, 11, 22].map(World.ordinal), ["1st", "2nd", "3rd", "4th", "11th", "22nd"])
+        XCTAssertEqual([1, 2, 3, 4].map(World.medal), ["gold", "silver", "bronze", nil])
+    }
 
     /// Off, or before onboarding's world screen, nothing at all is sent;
     /// on, it joins, keeps its key readable only by you, and sends.
@@ -279,7 +325,7 @@ final class WorldTests: XCTestCase {
         let send = try XCTUnwrap(Stub.seen.last)
         XCTAssertEqual("\(send.method) \(send.path)", "PUT /v1/buddies/me")
         XCTAssertEqual(send.auth, "Bearer k1")
-        XCTAssertEqual(Set(send.body?.keys.map { $0 } ?? []), ["seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added"])
+        XCTAssertEqual(Set(send.body?.keys.map { $0 } ?? []), ["seq", "name", "level", "utc_offset", "activity", "day", "xp_today", "added", "days_in_a_row", "color"])
     }
 
     /// It sends on a change, not on a clock: the same state again waits for
@@ -342,16 +388,16 @@ final class WorldTests: XCTestCase {
         queue.sync { world.sleep(Self.me, on: true, at: 2_000) }
         settle()
         XCTAssertEqual(Stub.seen.last?.body?["activity"] as? String, "asleep")
-        XCTAssertFalse(Stub.seen.contains { $0.path == "/v1/world" })
+        XCTAssertFalse(Stub.seen.contains { $0.path == "/v1/league" })
         queue.sync { world.tab(open: true, at: 3_000) }
         settle()
-        XCTAssertEqual(world.status.snapshot?.awake, 214)
-        let fetched = Stub.seen.filter { $0.path == "/v1/world" }.count
+        XCTAssertEqual(world.status.league?.awake, 214)
+        let fetched = Stub.seen.filter { $0.path == "/v1/league" }.count
         queue.sync { world.tab(open: false, at: 4_000) }
         queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 100_000) }
         settle()
-        XCTAssertEqual(Stub.seen.filter { $0.path == "/v1/world" }.count, fetched, "closed: no fetch")
-        XCTAssertNil(world.status.snapshot, "closed: nothing stale kept")
+        XCTAssertEqual(Stub.seen.filter { $0.path == "/v1/league" }.count, fetched, "closed: no fetch")
+        XCTAssertNil(world.status.league, "closed: nothing stale kept")
         XCTAssertEqual(Stub.seen.filter { $0.method == "PUT" }.last?.body?["activity"] as? String, "asleep",
                        "still asleep while locked: a tick doesn't wake it")
         queue.sync { world.checkGestures(on: true, quiet: false, at: 110_000) }

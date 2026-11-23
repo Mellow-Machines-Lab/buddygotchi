@@ -378,6 +378,7 @@ public final class Runtime: @unchecked Sendable {
         // The core. The launch's read-back prunes the transcript, so today
         // isn't a new day.
         var config = Core.Config(volume: settings.volume, time: options.time, pack: buddy.pack, hatched: longTerm.hatched)
+        config.color = settings.color
         config.firstAsk = SessionTracker.randomFirstRequest()
         let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
         core.macSide = settings.anchor?.side
@@ -402,6 +403,7 @@ public final class Runtime: @unchecked Sendable {
         var queued: (Moment, Pending) -> Void = { _, _ in }
         var effected: ([CoreEffect]) -> Void = { _ in }
         let link = rig.link
+        var earnedNow: (Int) -> (source: Growth.Source, xp: Int)? = { _ in nil }
         var mind = Mind(buddy: buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued($0, $1) },
                         speaks: { (link.hello.map { DeviceInfo($0).hasTheVoice } ?? true) && !core.along.onCall && !core.along.speaking },
@@ -412,6 +414,7 @@ public final class Runtime: @unchecked Sendable {
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today })
         mind.swears = { swearsNow() }
+        mind.earned = { earnedNow($0) }
         mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
         mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
                                       onLately: { remembersNow()?.onLately($0) ?? false })
@@ -431,6 +434,7 @@ public final class Runtime: @unchecked Sendable {
             fellBack = true
         }
         growth = GrowthStore(values, log: log)
+        earnedNow = { [weak self] seq in self?.growth.earned(at: seq) }
         // The view and the cores pick up where the last launch left them.
         let pipeline = self.pipeline
         let read = home.sync { pipeline.readBack(now: now) }
@@ -465,6 +469,7 @@ public final class Runtime: @unchecked Sendable {
         }
         // The core reads today's ring where the growth store keeps it. Weak: the runtime holds the core.
         core.growth = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growthNow : nil } }
+        core.daysInARow = { [weak self] in self.map { $0.growth.daysInARow(on: $0.options.time.boopDay($0.options.wallClock())) } ?? 0 }
         core.pushToTalkWorks = options.pushToTalkWorks
         talkNow = { [weak self] in self?.talk ?? .default }
         swearsNow = { [weak self] in self.map { $0.options.swearing ?? $0.settings.swearing } ?? false }
@@ -896,7 +901,7 @@ public final class Runtime: @unchecked Sendable {
                 mic(on, by: by)
                 stateChanged = true
             case .reaction(let reaction):
-                if celebrating.isEmpty || (reaction.gold == nil && reaction.sign != Core.ringSign) {
+                if celebrating.isEmpty || reaction.gold == nil {
                     playRule(reaction)
                 } else {
                     playGrowth(reaction)
@@ -941,7 +946,8 @@ public final class Runtime: @unchecked Sendable {
     func grow(_ e: Event) {
         if growth.played(e) { celebrating.append(e) }
         let now = options.clock()
-        guard growth.count(e, xp: Growth.xp(for: e), today: options.time.boopDay(options.wallClock())) > 0 else { return }
+        let source = Growth.source(of: e, facts: harness.line(e.seq)?.facts)
+        guard growth.count(e, source, today: options.time.boopDay(options.wallClock())) > 0 else { return }
         grew = true
         if pipeline.step != nil { return growthDue = true }
         if !playGrowthDue(at: now) { publishXP(at: now) }
@@ -1032,6 +1038,16 @@ public final class Runtime: @unchecked Sendable {
     /// detector.
     public func presence(_ signal: PresenceDetector.Signal) {
         home.async { [self] in presenceSignal(signal) }
+    }
+
+    /// The buddy's colour, from Settings: on the board at once, kept, and
+    /// sent to the world with the next send.
+    public func setColor(_ color: Int) {
+        home.async { [self] in
+            run(core.setColor(color, at: options.clock()))
+            saveSettings { $0.color = core.config.color }
+            changed()
+        }
     }
 
     public func setVolume(_ volume: Int) {

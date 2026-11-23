@@ -32,9 +32,14 @@ public final class WorldLink {
         public var activity: World.Activity
         public var day: String
         public var xpToday: Int
+        public var daysInARow: Int
+        public var color: Int
         public var ringClosed: Bool { xpToday >= Growth.perDay }
 
-        public init(name: String, level: Int, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int) {
+        public init(name: String, level: Int, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int,
+                    daysInARow: Int = 0, color: Int = 0) {
+            self.daysInARow = daysInARow
+            self.color = color
             self.name = name
             self.level = level
             self.utcOffset = utcOffset
@@ -47,6 +52,7 @@ public final class WorldLink {
         /// what it's doing, a level, the ring closing, its name.
         func changes(from last: Now) -> Bool {
             activity != last.activity || level != last.level || name != last.name || utcOffset != last.utcOffset
+                || color != last.color
                 || (ringClosed && !last.ringClosed)
         }
     }
@@ -62,6 +68,8 @@ public final class WorldLink {
         var seq = 0
         var leaving: Bool? = nil
         var unanswered: Unanswered? = nil
+        /// The last league week whose place was told on the board.
+        var toldWeek: String? = nil
 
         struct Unanswered: Codable {
             var seq: Int
@@ -82,16 +90,22 @@ public final class WorldLink {
         public var shownName: String?
         public var nameHidden = false
         /// The world, as the World tab last fetched it.
-        public var snapshot: World.Snapshot?
+        public var league: World.League?
+        /// The buddy card open now, as the server last said.
+        public var profile: World.Profile?
+        /// Last week's place, from a send's reply: Monday's moment.
+        public var lastWeek: World.Place?
+        /// The buddy's own medals, from a send's reply.
+        public var medals: World.Profile.Medals?
         /// Why the world can't be reached now, in plain words.
         public var trouble: String?
         /// What other buddies did today, newest first.
         public var today: [Arrival] = []
 
-        public init(joined: Bool = false, shownName: String? = nil, snapshot: World.Snapshot? = nil, today: [Arrival] = []) {
+        public init(joined: Bool = false, shownName: String? = nil, league: World.League? = nil, today: [Arrival] = []) {
             self.joined = joined
             self.shownName = shownName
-            self.snapshot = snapshot
+            self.league = league
             self.today = today
         }
     }
@@ -103,6 +117,9 @@ public final class WorldLink {
         public var held: Bool
         public var plays: Bool
         public var at: Date
+        /// The buddy that sent it, when one did: its card's id and its name.
+        public var fromID: String?
+        public var fromName: String?
         public let id = UUID()
 
         public struct Count: Equatable, Sendable {
@@ -115,7 +132,10 @@ public final class WorldLink {
             }
         }
 
-        public init(counts: [Count], region: World.Region?, held: Bool = false, plays: Bool = true, at: Date) {
+        public init(counts: [Count], region: World.Region?, held: Bool = false, plays: Bool = true, at: Date,
+                    fromID: String? = nil, fromName: String? = nil) {
+            self.fromID = fromID
+            self.fromName = fromName
             self.counts = counts
             self.region = region
             self.held = held
@@ -125,7 +145,7 @@ public final class WorldLink {
 
         /// "Someone in the Americas booped Mochi."
         public func sentence(name: String) -> String {
-            World.sentence(counts.map { ($0.kind, $0.n) }, from: region, held: held, name: name)
+            World.sentence(counts.map { ($0.kind, $0.n) }, from: region, by: fromName, held: held, name: name)
         }
     }
 
@@ -284,7 +304,8 @@ public final class WorldLink {
         self.identity = identity
         save()
         let state = World.State(seq: sending.seq, name: me.name, level: me.level,
-                                utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: sending.added)
+                                utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: sending.added,
+                                daysInARow: me.daysInARow, color: me.color)
         busy = true
         client.send(state, key: identity.key) { [weak self] result in
             guard let self else { return }
@@ -309,6 +330,12 @@ public final class WorldLink {
                     status.trouble = nil
                     onChange()
                 }
+                if reply.lastWeek != status.lastWeek || (reply.medals != nil && reply.medals != status.medals) {
+                    status.lastWeek = reply.lastWeek
+                    status.medals = reply.medals ?? status.medals
+                    onChange()
+                }
+                tellLastWeek(reply.lastWeek, quiet: quiet, at: now)
                 arrived(reply.gestures ?? [], quiet: quiet, at: now)
             case .failure(let failure):
                 failed(failure, at: now)
@@ -334,13 +361,25 @@ public final class WorldLink {
         if !came.isEmpty { saveWaiting() }
     }
 
+    /// Last week's place, once a week: a `world` event of its own, which the
+    /// rules turn into Monday's moment. While quiet (night, away, needs you)
+    /// it waits for a later send's reply, which carries it again.
+    func tellLastWeek(_ place: World.Place?, quiet: Bool, at now: Int64) {
+        guard let place, !quiet, identity?.toldWeek != place.week else { return }
+        identity?.toldWeek = place.week
+        save()
+        onEvents([Event(at: now, source: .world, type: .world, specificType: World.leagueKind,
+                        data: ["place": .int(Int64(place.place)), "xp": .int(Int64(place.xp)), "of": .int(Int64(place.of)),
+                               "week": .string(place.week)])])
+    }
+
     func record(_ events: [Event]) {
         guard !events.isEmpty else { return }
         for e in events {
             status.today.insert(Arrival(counts: WorldGestures.counts(of: e).map { Arrival.Count(kind: $0.0, n: $0.1) },
                                         region: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
                                         held: e["held"]?.bool == true, plays: e["plays"]?.bool != false,
-                                        at: Date()), at: 0)
+                                        at: Date(), fromID: e["from_id"]?.string, fromName: e["from_name"]?.string), at: 0)
         }
         if status.today.count > Self.arrivalsKept { status.today.removeLast(status.today.count - Self.arrivalsKept) }
         if events.contains(where: { $0["held"]?.bool == true }) { saveWaiting() }
@@ -388,8 +427,9 @@ public final class WorldLink {
         guard open else {
             // Fetched afresh next time: nothing stale shows, or is kept.
             lastFetchAt = nil
-            if status.snapshot != nil {
-                status.snapshot = nil
+            if status.league != nil || status.profile != nil {
+                status.league = nil
+                status.profile = nil
                 onChange()
             }
             return
@@ -407,17 +447,30 @@ public final class WorldLink {
         guard tabOpen, !fetching, lastFetchAt.map({ now - $0 >= Self.fetchEveryMs }) ?? true else { return }
         fetching = true
         lastFetchAt = now
-        client.world { [weak self] result in
+        client.league(key: member?.key) { [weak self] result in
             guard let self else { return }
             fetching = false
             guard tabOpen else { return }
             switch result {
-            case .success(let snapshot):
-                status.snapshot = snapshot
+            case .success(let league):
+                status.league = league
                 if identity == nil || !busy { status.trouble = nil }
             case .failure:
                 status.trouble = Self.troubleWords
             }
+            onChange()
+        }
+    }
+
+    /// Opens a buddy's card: its profile, fetched; nil closes it.
+    public func open(_ id: String?) {
+        guard let id else {
+            if status.profile != nil { status.profile = nil; onChange() }
+            return
+        }
+        client.profile(id, key: member?.key) { [weak self] result in
+            guard let self, tabOpen, case .success(let profile) = result else { return }
+            status.profile = profile
             onChange()
         }
     }
@@ -451,7 +504,8 @@ public final class WorldLink {
         self.identity = identity
         save()
         let state = World.State(seq: identity.seq, name: me.name, level: me.level,
-                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added)
+                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added,
+                                daysInARow: me.daysInARow, color: me.color)
         guard client.sendNow(state, key: identity.key, timeout: Self.quitWait) else {
             return log("world: asleep didn't go before the quit")
         }
@@ -475,7 +529,7 @@ public final class WorldLink {
         leaving.leaving = true
         identity = leaving
         save()
-        status = Status(snapshot: status.snapshot)
+        status = Status(league: status.league)
         last = nil
         pending = World.Counts()
         pendingSince = nil

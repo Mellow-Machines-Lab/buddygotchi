@@ -249,7 +249,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
-| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a work act's words, a remembered line, a level in gold (`gel::LowSign`) | ticket | `low`, `gold` |
+| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a ship or a fix, a remembered line, a level or the ring in gold; with an XP chip, `+5 XP`, when its moment earned (`gel::LowSign`) | ticket | `low`, `gold`, `mark`, `xp` |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet or normal. "Shh", the hush reply and the popover's Hush make it quiet for half an hour, then it's the setting's again; talking to Boop ends that sooner (`Talk`, `Core.quiet`) | chattiness, mute (that's the volume), hush (as a state) | `talk` |
 | narration | The plain words for why, the Mac's and the gel's board's own for a touch, never Jev's or Boop's voice (`Narration`, `app/touch_reason.h`); on the board, the caption | explanation | `reason` |
@@ -284,9 +284,11 @@ things on three channels, **voice**, **sign** and **narration**.
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign as an idle beat, each line once in 14 days (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
-| XP | What Boop earns, a fixed amount for each thing the agents get done and each bit of your care, never lost (`Growth`, plan/v1-buddy.md §5) | points | |
-| the ring | Today's XP, up to 100 a Boop day: full, nothing more counts that day. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is the rules' moment, one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `xp` (today's percent), `growth` |
-| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
+| XP | What Boop earns, for four things you see happen: a turn whose finish is a success 5, a ship 10, a check passing after it failed 5, your time with Boop (a care touch, your words, a met wish) 3 and at most 30 a day; at most 300 a day in all; never lost (`Growth`, plan/xp-league.md §3) | points | |
+| the ring | Today's XP against 100, a Boop day's goal: XP counts past it, to the day's 300. On the board, no bar: a finish's or a ship's low sign carries what it earned, `+5 XP` (the `do`'s `xp`); its closing is the rules' moment, `100 XP today, day 12` low in gold behind a full ring (the `do`'s `mark`), one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `growth`, a `do`'s `xp` and `mark` |
+| level | 1 + every XP / 500, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
+| days in a row | The Boop days in a row with a full ring, kept through up to two days without one, so a weekend never breaks it (`GrowthStore.daysInARow`) | streak | `xp.row` |
+| colour | The buddy's colour, one of eight picked in Settings, at any level: the gel's material turned once in hue, saturation and brightness (`BuddyColor`, the gel's `bodyColor`); 0 is its own blue | skin, theme | `state.color`, the world's `color` |
 | special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 
@@ -295,7 +297,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
 | the world | Everyone's buddies together on one server (`internal/world/`), which Boop joins unless you keep it private; the Mac's client is `WorldLink` | map, network | |
-| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship; a `world` event, which the rules answer with a warm small face and one of the pack's signs for it, no pass (`MomentRule.world`). One reply's are one moment, at most 3 an hour; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
+| boop (from the world) | Another buddy's gesture for yours: a boop, a wave, a heart, or a cheer for your ship, named by its sender when one sent it (`from_name`) so it can be answered; a `world` event, which the rules answer with a warm small face and one of the pack's signs for it, no pass (`MomentRule.world`). One reply's are one moment, at most 3 an hour; at night they wait for the morning (`WorldGestures`) | ping, notification | `world` |
 | region | Where a buddy is, from its UTC offset only: the Americas, Europe and Africa, Asia and Oceania | country, location | `from_region` |
 
 ## Architecture rules
@@ -318,8 +320,8 @@ The rules that are easy to break, in full in
   scroll, copy or listen, never what, with no event, nothing in the
   transcript and nothing for the brain, the world or the daily counts.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
-  buddy's name and level, its UTC offset, one of six activities and
-  counts. Nothing before onboarding's world screen, nothing with it off.
+  buddy's name and level, its UTC offset, one of six activities,
+  counts, its days in a row and its colour. Nothing before onboarding's world screen, nothing with it off.
 - "Needs you" and the screen priority are plain rules in the core.
 - Jev is asked only where it earns its place: a Moment's move and size,
   and the whole Moment at your lock or unlock, a working check-in and a
@@ -335,7 +337,7 @@ The rules that are easy to break, in full in
 Every string a person reads, on the Mac or the board: short and warm, with
 no numbers that aren't needed. Talk like a friend, not a manual: "82
 today. Fill the ring and you're done for the day," not "A full ring is
-100. More doesn't count." No game jargon, no exclamation spam.
+100. More doesn't count." No game jargon but XP, the one unit people see, and no exclamation spam.
 
 ## Docs stay in sync
 

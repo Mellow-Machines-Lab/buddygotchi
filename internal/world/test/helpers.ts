@@ -72,7 +72,7 @@ export function world(): World {
   };
   beforeEach(async () => {
     w.db = await dbReady;
-    await w.db.query("truncate buddies, buddy_days, totals_by_day, goals, gestures, name_reports, joins restart identity cascade");
+    await w.db.query("truncate buddies, buddy_days, totals_by_day, goals, gestures, name_reports, joins, league_results, medals, league_weeks restart identity cascade");
   });
   after(async () => (await dbReady).close());
   return w;

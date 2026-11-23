@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <cstdio>
 
-#include "app/growth_bar.h"
 #include "linkkit/clock.h"
 #include "linkkit/limits.h"
 #include "render/face.h"
@@ -81,9 +80,6 @@ struct Model {
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)
-  // Today's ring, the day's XP in percent (`xp`), -1 for a Mac that sends
-  // none, which shows no bar.
-  int xp = -1;
   // Boop's energy (`energy`): the Mac's rule, which the face draws on its
   // lids and in its tempo (render::Energy).
   render::Energy energy = render::Energy::kNormal;
@@ -98,6 +94,9 @@ struct Model {
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;
+  // The buddy's colour (`color`), 0 to 7, 0 the face's own: the person's
+  // pick in Settings.
+  int color = 0;
   // The tags on now (`when`, render/tags.h): the part of the day, an
   // occasion, how busy the agents are. The face shows only the designs
   // whose tags are all on, and picks each look's variation itself.
@@ -226,7 +225,12 @@ struct ReactionIn {
   // A celebration's words held low in gold (`gold`: "level 13!"), the rim
   // glowing gold, beside or without the sign: "" for none. A face that
   // holds nothing low shows them as its sign when it has none.
-  char gold[kSignBytes] = "";
+  char gold[kSignTextBytes] = "";
+  // What the gold's words have before them (`mark`).
+  render::GoldMark goldMark = render::GoldMark::kStar;
+  // The XP its moment earned (`xp`): a finish's, or a low sign's, shows it
+  // as "+5 XP". 0 for none.
+  int xp = 0;
   // A greeting (`greeting`): the first moment of your day. Its sign waits
   // until its words end, and the work stream waits until it's over.
   bool greeting = false;
@@ -400,8 +404,6 @@ class Behaviour {
   // screen (needs you, listening, a Moment or its sign, face down, no Mac).
   render::CardShow cardShow(uint32_t t) const;
   void wishPopped(bool met, uint32_t t);
-  // The growth bar now (app/growth_bar.h).
-  render::GrowthShow growthShow(uint32_t t) const;
   // The `say`'s text in the bubble, or null: from the `say`'s start, which
   // can wait for its animation's voice window, to its bubble's end.
   const char* bubble(uint32_t t) const;
@@ -535,6 +537,7 @@ class Behaviour {
     uint32_t id = 0, key = 0, at = 0;
     bool ending = false, named = true;
     uint32_t endAt = 0, endMs = 0;
+    int xp = 0;  // what its turn earned, for its sign
     bool signUp = false;  // the face's sign is up, since signAt (kFinishSignByMs)
     uint32_t signAt = 0;
   };
@@ -556,6 +559,8 @@ class Behaviour {
     uint32_t key = 0;
     bool reply = false;  // a reply's to what you said: it shows over needs you
     bool low = false;    // held low, in the lane
+    int xp = 0;          // a low one's XP, "+5 XP" on it
+    render::GoldMark mark = render::GoldMark::kStar;  // a gold one's mark
   };
   using Source = render::FaceSource;
 
@@ -674,9 +679,7 @@ class Behaviour {
   uint32_t wishPopAt_ = 0;
   render::WishShow::Pop wishPop_ = render::WishShow::kWaiting;
   // Today's ring's bar, and a met wish's heart flying into it.
-  GrowthBar bar_;
   // Whether the screen is another's, or Boop's not looking: no bar then.
-  bool barHidden(const Model& m, bool alone, uint32_t t) const;
   // The reaction's reason (caption()), timed as its sign would be.
   Sign reason_;
   // The board's own last reason (touchCaption), and when.

@@ -28,26 +28,7 @@ struct WishShow {
   Pop pop = kWaiting;
   uint32_t popAge = 0;
   bool how = false;
-  bool flies = false;  // met, its heart leaves for the growth bar (GrowthShow)
   uint32_t ms = 0;  // the board's clock, for the icon's motion
-};
-
-// Today's ring, as a bar over the screen, as it should show now
-// (Behaviour::growthShow): it comes when the day's XP moves, and a met wish's
-// heart flies into it; full, it sparkles. Off, and with no heart, for a Mac
-// that sends no `xp`.
-struct GrowthShow {
-  // Sliding in, how long it stays once it's filled, and out; how long it
-  // fills. A met wish's heart stays in the bubble kHeartWaitMs from the pop,
-  // flies for kHeartFlyMs, and the bar gulps for kGulpMs as it lands, and
-  // fills from then. Filled to the end, it sparkles for kSparkleMs.
-  static constexpr uint32_t kInMs = 240, kHoldMs = 3000, kOutMs = 360, kFillMs = 700;
-  static constexpr uint32_t kHeartWaitMs = 420, kHeartFlyMs = 720, kGulpMs = 520, kSparkleMs = 1200;
-  int opacity = 0;       // how far it's in, 0 … 255
-  int fill = 0;          // how far along it's filled, 0 … 1000
-  int flight = -1;       // how far the heart has flown, 0 … 1000, -1 for none
-  int gulp = 0;          // how far the landing is through, 0 … 1000, 0 for none
-  int sparkle = 0;       // how far the full ring's sparkle is through, 0 … 1000, 0 for none
 };
 
 // What the face follows (Behaviour::sourceAt): the reaction playing, if any,
@@ -90,6 +71,12 @@ struct SignShow {
   const char* gold = nullptr;
   uint32_t goldMs = 0;
   int32_t goldLeftMs = -1;
+  // What the gold's words have before them (`mark`): a star, a full ring
+  // for today's ring, or a medal for a league's place.
+  GoldMark goldMark = GoldMark::kStar;
+  // The XP the low sign's moment earned (`xp`), shown on it as "+5 XP"; 0
+  // for none.
+  int xp = 0;
 };
 // The card an agent handed Boop to hold (the Mac's `state.card`,
 // Behaviour::cardShow): one main thing, read from a chair, and at most one
@@ -135,6 +122,8 @@ struct DoneShow {
   // (holdsUpFinish): -1 until the words end, or until a long cheer's
   // Behaviour::kFinishSignByMs.
   int32_t signMs = -1;
+  // The XP its turn earned (`xp`), shown on its sign as "+5 XP"; 0 for none.
+  int xp = 0;
   bool shows() const { return agent != nullptr; }
 };
 // How far a sign sits below its place `ms` after it went up, the same on
@@ -247,14 +236,15 @@ class Face {
   // The wish to show (WishShow), set before each frame: a face that draws
   // no thought bubble ignores it.
   virtual void wish(const WishShow& show) { (void)show; }
+  // The buddy's colour, 0 to 7, set before each frame: 0 is the face's own,
+  // and a face with one colour ignores it.
+  virtual void color(int index) { (void)index; }
   // The card to hold (CardShow), set before each frame, and whether the
   // canvas's (x, y) is on it as last drawn: a touch that starts there is the
   // card's (a swipe to the next, a tap to open it). A face that holds no
   // card draws none and has none to touch.
   virtual void card(const CardShow& show) { (void)show; }
   virtual bool cardAt(int x, int y) const { return (void)x, (void)y, false; }
-  // The growth bar to show, set before each frame: a face with no bar ignores it.
-  virtual void growth(const GrowthShow& show) { (void)show; }
   // A finger on the screen (down, at x, y on the 320 × 240 canvas) or
   // let go: a face may follow it, as the gel's dome leans into a stroke.
   virtual void finger(bool down, int x, int y) { (void)down, (void)x, (void)y; }

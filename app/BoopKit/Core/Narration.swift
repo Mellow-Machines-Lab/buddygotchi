@@ -98,14 +98,18 @@ public struct Narration: Equatable, Sendable {
             return Narration(cause: "You said \"\(Self.keep(words))\".")
         case .growth?:
             guard let level = e["level"]?.int else {
-                return Narration(cause: "Today's ring is full. Nice work.", fact: fit("today's done!"))
+                return Narration(cause: "Today's ring is full. Nice work.", fact: fit("\(Growth.perDay) XP today"))
             }
             return Narration(cause: EventLine.grew(level: Int(level), ring: e["ring"]?.bool == true, name: name), fact: fit("level \(level)!"))
+        case .world? where e.specificType == World.leagueKind:
+            guard let place = e["place"]?.int, let xp = e["xp"]?.int else { return nil }
+            return Narration(cause: "Last week \(name) came \(World.ordinal(Int(place))) in the league, with \(xp) XP.",
+                             fact: fit(World.leagueSign(place: Int(place), xp: Int(xp))))
         case .world?:
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }
             return Narration(cause: World.sentence(counts, from: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
-                                                   held: e["held"]?.bool == true, name: name),
+                                                   by: e["from_name"]?.string, held: e["held"]?.bool == true, name: name),
                              fact: Self.fit(World.facts(kind, count: count), name: name))
         case .wish? where e.phase == .start:
             return (Core.WishKind(rawValue: e.specificType)).map { wish($0, name: name) }
