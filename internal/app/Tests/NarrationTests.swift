@@ -387,7 +387,7 @@ final class ReasonsTests: XCTestCase {
         let body = String(face[face.range(of: "const char* GelFace::passing")!.lowerBound...].prefix(800))
         let said = try NSRegularExpression(pattern: #"return "([a-z-]+)";"#)
         let others = said.matches(in: body, range: NSRange(body.startIndex..., in: body)).map { String(body[Range($0.range(at: 1), in: body)!]) }
-        XCTAssertEqual(Set(others), ["along", "oncall", "reading", "video", "music"], "passing()'s own names")
+        XCTAssertEqual(Set(others), ["along", "oncall", "speaking", "reading", "video", "music"], "passing()'s own names")
         for n in names + others + ["to-work", "to-rest", "to-sleep"] {
             XCTAssertNotNil(pack.passing[n], "\(n) has no words in mac/passing.tsv")
         }

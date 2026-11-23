@@ -174,7 +174,8 @@ things on three channels, **voice**, **sign** and **narration**.
 | anchor | Where Boop sits beside your screen: the spot nearest it, shown once in Settings by pointing there and touching Boop ("Show Boop where it sits"); the side the screen is on comes from it, and up when it's in the middle third (`Anchor`) | calibration, position | `macleft`, `macright`, `macup` |
 | music | Sound another app plays, or a frontmost app that isn't a player, for 5 s and more (Core Audio's process objects, macOS 14.2+) | audio, song | `music` |
 | video | Sound the frontmost app itself plays, when it's a browser or a video player (`Along.players`) | watching | `video` |
-| on a call | A camera, or another app recording sound (never Boop's push-to-talk), on 5 s and more: Boop keeps still and silent, the board is sent no volume, no take is spoken and every Moment is small | meeting, call (that's a tool use) | `oncall` |
+| on a call | A camera on 5 s and more: Boop keeps still and silent, the board is sent no volume, no take is spoken and every Moment is small | meeting, call (that's a tool use) | `oncall` |
+| speaking | Another app recording sound with no camera (dictation, a voice prompt; never Boop's push-to-talk), on after 0.6 s and off 1.5 s after: Boop leans in with a hand cupped at its ear and rings pulsing by it, nods on a 1.6 s beat, and is silent; it wins over typing along (`Along.speaking`, the gel's `speak-along`) | listening (that's Boop hearing you), dictating | `speaking` |
 | lock, unlock | The Mac's screen locking and unlocking, every time however short; an away only after 10 min | | `lock_start`, `lock_end` |
 | button | BOOT: hands you the next agent in the line | press, hand-off | `press` |
 | dismiss | A finger held on the needs-you screen | | |

@@ -26,8 +26,10 @@ As of main `66d7fc1a`:
   the typing pose, and the strip's words (plain verbs, the 1 s hold, the
   time on a long call, "thinking"), and the cuts: no nightcap, no work
   pastime but the stretch, no copied pose; and energy (bright, normal,
-  tired) on the lids, the eyes and the idle tempo, with the popover's line.
-- Not built: going with you as a layer in every pose, speaking along, held
+  tired) on the lids, the eyes and the idle tempo, with the popover's line;
+  and speaking along (a camera alone is a call; another app recording with
+  none is you speaking).
+- Not built: going with you as a layer in every pose, held
   pictures in place of the text card, the show, the pips and the swipe
   between agents, the pill, "your turn" in the strip, energy in place of the
   nightcap and the tiers.

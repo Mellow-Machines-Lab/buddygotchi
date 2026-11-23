@@ -404,7 +404,7 @@ public final class Runtime: @unchecked Sendable {
         let link = rig.link
         var mind = Mind(buddy: buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued($0, $1) },
-                        speaks: { (link.hello.map { DeviceInfo($0).hasTheVoice } ?? true) && !core.along.onCall },
+                        speaks: { (link.hello.map { DeviceInfo($0).hasTheVoice } ?? true) && !core.along.onCall && !core.along.speaking },
                         talk: { talkNow() }, effects: { effected($0) },
                         memory: { memoryNow() },
                         askable: { now, questions in

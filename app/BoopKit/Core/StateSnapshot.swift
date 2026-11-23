@@ -325,6 +325,9 @@ public struct StateSnapshot: Equatable, Sendable {
 
     /// You're on a call (`Along`): Boop holds still and says nothing.
     public var onCall: Bool { when.contains("oncall") }
+    /// You're speaking to another app (`Along`): Boop nods along and says
+    /// nothing, so no dictation hears it.
+    public var speaking: Bool { when.contains("speaking") }
 
     /// How many sessions need you: `attn`'s and its `more`. The popover's
     /// headline; the message doesn't carry it.
@@ -362,8 +365,9 @@ public struct StateSnapshot: Equatable, Sendable {
         fields["busy"] = .int(working)  // the wire calls the count busy
         if idle > 0 { fields["idle"] = .int(idle) }
         if helpers > 0 { fields["helpers"] = .int(helpers) }
-        // On a call Boop is silent: the board plays no voice and no sound.
-        fields["vol"] = .int(onCall ? 0 : vol)
+        // On a call, or while you speak, Boop is silent: the board plays no
+        // voice and no sound.
+        fields["vol"] = .int(onCall || speaking ? 0 : vol)
         let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let pointer {

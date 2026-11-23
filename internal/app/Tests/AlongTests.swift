@@ -161,11 +161,13 @@ final class AlongTests: XCTestCase {
         XCTAssertEqual(call.tags, ["reading", "oncall"])
     }
 
-    /// Pins the call: a camera, or another app recording sound (never
-    /// Boop's own push-to-talk, which the Mac leaves out), on for 5 s; off
-    /// once both have been off 5 s.
-    func testACallFromTheCameraOrAnotherAppsMic() {
+    /// Pins the call: a camera on for 5 s; off once it has been off 5 s.
+    /// Another app recording with no camera isn't a call: it's you
+    /// speaking (dictation, a voice prompt), on after 0.6 s and off 1.5 s
+    /// after it stops; with a camera too, it's the call's.
+    func testACallIsTheCameraAndSpeakingIsAnotherAppsMic() {
         XCTAssertEqual([Along.callOnMs, Along.callOffMs], [5000, 5000])
+        XCTAssertEqual([Along.speakOnMs, Along.speakOffMs], [600, 1500])
         func with(camera: Bool = false, mic: Bool = false) -> (Int64) -> Along.Facts {
             { _ in var r = self.reading(); r.camera = camera; r.otherInput = mic; return r }
         }
@@ -175,7 +177,15 @@ final class AlongTests: XCTestCase {
         XCTAssertTrue(run(&camera, from: t0 + 5250, to: t0 + 9750, with()).onCall, "a moment off isn't the end")
         XCTAssertFalse(run(&camera, from: t0 + 10_000, to: t0 + 10_250, with()).onCall)
         var mic = Along()
-        XCTAssertTrue(run(&mic, from: t0, to: t0 + 6000, with(mic: true)).onCall)
+        XCTAssertFalse(run(&mic, from: t0, to: t0 + 500, with(mic: true)).speaking)
+        let speaking = run(&mic, from: t0 + 750, to: t0 + 6000, with(mic: true))
+        XCTAssertTrue(speaking.speaking && !speaking.onCall, "speaking, not a call")
+        XCTAssertTrue(speaking.tags.contains("speaking") && !speaking.tags.contains("oncall"))
+        XCTAssertTrue(run(&mic, from: t0 + 6250, to: t0 + 7250, with()).speaking, "a pause isn't the end")
+        XCTAssertFalse(run(&mic, from: t0 + 7500, to: t0 + 7750, with()).speaking)
+        var both = Along()
+        let call = run(&both, from: t0, to: t0 + 6000, with(camera: true, mic: true))
+        XCTAssertTrue(call.onCall && !call.speaking, "a camera too: the call's")
     }
 
     /// Pins the pointer's following: only with an anchor, only once it
@@ -293,7 +303,8 @@ final class AlongTests: XCTestCase {
         runtime.home.sync {}
         XCTAssertFalse(snapshot().when.contains { Tags.along.contains($0) })
         XCTAssertNil(snapshot().pointer)
-        XCTAssertEqual(Tags.board.suffix(7), ["scrolling", "typingfast", "music", "video", "oncall", "copied", "macup"],
+        XCTAssertFalse(snapshot().when.contains("speaking"))
+        XCTAssertEqual(Tags.board.suffix(8), ["scrolling", "typingfast", "music", "video", "oncall", "copied", "macup", "speaking"],
                        "the newest tags last, so no pack's numbering of the others moves")
     }
 

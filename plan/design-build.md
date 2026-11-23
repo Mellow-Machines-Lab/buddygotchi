@@ -96,7 +96,7 @@ The screen guide's "Energy".
 Done when: the owner can tell the three levels apart on the board from a
 chair, and the popover's line matches the board.
 
-### 4. Speaking along
+### 4. Speaking along ✓
 
 The screen guide's "Going with you".
 

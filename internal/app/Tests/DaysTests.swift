@@ -320,7 +320,7 @@ final class DaysTests: XCTestCase {
         let young = core.snapshot(at: ms(2026, 10, 22)).when
         core.growth = { Growth(xp: 2_900) }
         XCTAssertEqual(core.snapshot(at: ms(2026, 10, 22)).when, young)
-        XCTAssertEqual(Tags.board.suffix(12), ["tier3", "typing", "reading", "macleft", "macright"] + Tags.along + ["macup"],
+        XCTAssertEqual(Tags.board.suffix(13), ["tier3", "typing", "reading", "macleft", "macright"] + Tags.along + ["macup", "speaking"],
                        "no stage's tag after the tiers: the firmware's list ends the same way, after the two tiers and `hushed` it keeps for Pixel's numbering (render/tags.h)")
     }
 

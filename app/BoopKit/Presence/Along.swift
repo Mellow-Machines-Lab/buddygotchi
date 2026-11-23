@@ -151,6 +151,9 @@ public struct Along: Sendable {
         public var fast = false
         public var sound: Sound?
         public var onCall = false
+        /// You're speaking: another app records with no camera running
+        /// (dictation, a voice prompt). Boop leans in and nods along.
+        public var speaking = false
         public var pointer: Pointer?
 
         public init() {}
@@ -161,6 +164,7 @@ public struct Along: Sendable {
             if fast { on.append("typingfast") }
             if let sound { on.append(sound.rawValue) }
             if onCall { on.append("oncall") }
+            if speaking { on.append("speaking") }
             return on
         }
 
@@ -206,10 +210,15 @@ public struct Along: Sendable {
         "org.videolan.vlc",
     ]
 
-    /// A call starts once a camera, or another app's recording, has run
-    /// this long, and ends once both have been off this long.
+    /// A call starts once a camera has run this long, and ends once it has
+    /// been off this long.
     public static let callOnMs: Int64 = 5000
     public static let callOffMs: Int64 = 5000
+    /// Speaking starts once another app has recorded, with no camera, this
+    /// long, and ends once it has stopped this long: soon, as dictation is
+    /// short.
+    public static let speakOnMs: Int64 = 600
+    public static let speakOffMs: Int64 = 1500
 
     /// The pointer counts as moving for this long after it last moved.
     public static let pointerStillMs: Int64 = 3000
@@ -244,7 +253,7 @@ public struct Along: Sendable {
     var keySlots: [Int64] = []
     var fast = false
     var slowSince: Int64?
-    var sound = Held<Sound?>(nil), call = Held(false)
+    var sound = Held<Sound?>(nil), call = Held(false), speech = Held(false)
     var pointerAt: (x: Double, y: Double)?
     var movedAt: Int64?
 
@@ -256,7 +265,10 @@ public struct Along: Sendable {
         var out = Now()
         out.hands = f.keyIdleMs.flatMap { Hands.now(keyIdleMs: $0, scrollIdleMs: f.scrollIdleMs, idleMs: f.idleMs) }
         out.fast = typingFast(f, at: now) && out.hands == .typing
-        out.onCall = call.update(f.camera || f.otherInput, at: now, onMs: Self.callOnMs, offMs: Self.callOffMs)
+        // A camera is a call; another app recording with none is you speaking
+        // (documentation/design/screen-guide.md, "Going with you").
+        out.onCall = call.update(f.camera, at: now, onMs: Self.callOnMs, offMs: Self.callOffMs)
+        out.speaking = speech.update(f.otherInput && !f.camera, at: now, onMs: Self.speakOnMs, offMs: Self.speakOffMs)
         // A change of kind waits kindMs, the music's start soundOnMs and its end soundOffMs.
         let raw = Self.sound(f)
         let was = sound.value

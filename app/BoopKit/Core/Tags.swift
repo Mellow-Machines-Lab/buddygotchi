@@ -15,7 +15,8 @@ public enum Tags {
     /// agents are, the tiers, your hands, the Mac's side, then the rest
     /// of you at the Mac: in the board's order, the newest last, so no
     /// pack's numbering of the older ones moves.
-    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides + along + [Anchor.Side.up.tag]
+    public static let all = Days.calendarTags + ["busy", "frantic"] + tiers.map(\.tag) + hands + macSides + along
+        + [Anchor.Side.up.tag, "speaking"]
 
     /// Your hands at the Mac (`Hands`): the gel types along while you type,
     /// and watches the work with you while you read.
