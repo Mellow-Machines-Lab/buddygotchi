@@ -865,7 +865,8 @@ enum Snapshots {
                                             ahead: .init(id: "b-nori", name: "Nori", by: 37), behind: .init(id: "b-rex", name: "Rex", by: 41)))
         let today = Calendar.current.startOfDay(for: Date())
         var link = WorldLink.Status(joined: true, shownName: name, league: league, today: [
-            .init(counts: [.init(kind: .boop, n: 1)], region: .europeAfrica, at: today.addingTimeInterval(10 * 3600 + 42 * 60)),
+            .init(counts: [.init(kind: .wave, n: 1)], region: .asiaOceania, at: today.addingTimeInterval(10 * 3600 + 42 * 60),
+                  fromID: "b-bean", fromName: "Bean"),
             .init(counts: [.init(kind: .cheer, n: 3)], region: nil, at: today.addingTimeInterval(9 * 3600 + 15 * 60)),
             .init(counts: [.init(kind: .boop, n: 3), .init(kind: .wave, n: 1)], region: nil, plays: false,
                   at: today.addingTimeInterval(8 * 3600)),

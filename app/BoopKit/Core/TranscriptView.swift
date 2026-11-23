@@ -573,7 +573,7 @@ public final class TranscriptView {
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }
             return Line(World.sentence(counts, from: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
-                                       held: e["held"]?.bool == true, name: name),
+                                       by: e["from_name"]?.string, held: e["held"]?.bool == true, name: name),
                         facts: ["world": .string(kind.rawValue), "count": .int(Int64(count))])
         case .wish?:
             if e.phase == .start { return Core.WishKind(rawValue: e.specificType).map { Line(EventLine.wished($0, name: name)) } }

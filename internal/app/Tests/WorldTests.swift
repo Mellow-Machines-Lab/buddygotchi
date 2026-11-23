@@ -43,7 +43,13 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(state.utcOffset, 60)
         XCTAssertEqual(state.added.linesChanged, 140)
         let reply = try JSONDecoder().decode(World.Reply.self, from: fixture("buddy-reply.json"))
-        XCTAssertEqual(reply.gestures, [World.Gesture(kind: .boop, fromRegion: .asiaOceania, at: "2026-11-08T16:58:12Z")])
+        XCTAssertEqual(reply.gestures, [World.Gesture(kind: .boop, fromRegion: .asiaOceania, at: "2026-11-08T16:58:12Z",
+                                                      from: .init(id: "9a1d4e22-7c3b-4b8e-8f20-5d6a1c9e7b02", name: "Bean"))])
+        // One gesture with its sender is said by name; several, as before.
+        let e = WorldGestures.event([(.wave, 1)], sender: .init(id: "b2", name: "Bean"), at: 0)
+        XCTAssertEqual(e["from_name"]?.string, "Bean")
+        XCTAssertEqual(World.sentence([(.wave, 1)], from: .europeAfrica, by: "Bean", held: false, name: "Mochi"), "Bean waved at Mochi.")
+        XCTAssertEqual(World.sentence([(.wave, 1)], from: .europeAfrica, held: false, name: "Mochi"), "Someone in Europe or Africa waved at Mochi.")
         XCTAssertEqual(reply.lastWeek, World.Place(week: "2026-11-02", place: 2, xp: 512, of: 40))
         let league = try JSONDecoder().decode(World.League.self, from: fixture("league.json"))
         XCTAssertEqual(league.awake, 214)

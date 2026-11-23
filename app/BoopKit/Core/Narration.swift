@@ -109,7 +109,7 @@ public struct Narration: Equatable, Sendable {
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }
             return Narration(cause: World.sentence(counts, from: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
-                                                   held: e["held"]?.bool == true, name: name),
+                                                   by: e["from_name"]?.string, held: e["held"]?.bool == true, name: name),
                              fact: Self.fit(World.facts(kind, count: count), name: name))
         case .wish? where e.phase == .start:
             return (Core.WishKind(rawValue: e.specificType)).map { wish($0, name: name) }

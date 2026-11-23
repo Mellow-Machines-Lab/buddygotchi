@@ -82,7 +82,7 @@ All JSON. A buddy sends `Authorization: Bearer <key>`.
 | `GET /v1/league` | Anyone; a buddy's key adds `me` and `last_week` | The week's league (`fixtures/league.json`): the top 100 by the week's XP, a tie to the first joined; with a key, its place, the buddy just ahead and behind, its percent among those with XP, and last week's place |
 | `GET /v1/buddies/:id` | Anyone; a buddy's key adds `between` | A buddy's public profile (`fixtures/buddy.json`): name, level, colour, region, what it does now, days in a row, medals, the week's XP and place, its best week, today's counts; with a key, the newest gesture each way and the last week this one beat it |
 | `POST /v1/gestures` | A buddy | `{to, kind}`, with `kind` one of `boop`, `wave`, `heart`, `cheer` |
-| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, at}]}`, for a Mac that hasn't sent in a while. Each gesture is handed out once, here or in a send's reply |
+| `GET /v1/gestures` | A buddy | `{gestures: [{kind, from_region, from, at}]}`, `from` the sender's `{id, name}` as the world shows it (null once it's gone), so it can be answered, for a Mac that hasn't sent in a while. Each gesture is handed out once, here or in a send's reply |
 | `POST /v1/reports` | A buddy | `{buddy}`: reports a name. Three buddies' reports hide it |
 | `PUT /v1/admin/goal` | The owner, with `ADMIN_TOKEN` | Sets the goal. The newest goal is the current one |
 | `GET /v1/health` | Anyone | `{ok, db}` |
@@ -137,7 +137,7 @@ medals. The numbers here are in `src/limits.ts`.
 | A buddy: a random id, its key's hash, name, level, UTC offset, activity, when last seen | While it sends | 30 days after it was last seen, or at once when it leaves |
 | What a buddy added each UTC day: XP, turns, tests passed, ships, lines changed | 400 days | Then summed with every other buddy's into one row a day (`totals_by_day`), with no buddy in it |
 | Who joined lately: each join's IP address as an HMAC-SHA256 with `IP_SALT`, never the address | An hour | At the next join, or by the cron |
-| Gestures, with the sender's region | Until delivered | A day after delivery, or after two days unread |
+| Gestures, with the sender and its region | Until delivered | A day after delivery, or after two days unread |
 | Name reports: who reported whom | While both buddies exist | When the name changes, or either buddy goes |
 | Goals | Always | |
 | A closed week's places: each buddy's place and XP | 12 weeks | Then deleted; or with the buddy |

@@ -148,6 +148,8 @@ export async function currentRewards(db: Db): Promise<Snapshot["rewards"]> {
 export interface Gesture {
   kind: string;
   from_region: string | null;
+  /** Who sent it, by name as the world shows it, so it can be answered; null once it's gone. */
+  from: { id: string; name: string } | null;
   at: string;
 }
 
@@ -157,15 +159,21 @@ export interface Gesture {
  * GET /v1/gestures and PUT /v1/buddies/me comes first.
  */
 export async function deliverGestures(db: Db, buddy: string): Promise<Gesture[]> {
-  return db.query<Gesture>(
+  const rows = await db.query<{ kind: string; from_region: string | null; at: string; from_id: string | null; name: string | null; name_ok: boolean | null; reports: number | null }>(
     `with handed as (
        update gestures set delivered_at = now()
         where id in (select id from gestures where to_buddy = $1 and delivered_at is null order by id limit $2 for update)
-       returning id, kind, from_region, created_at)
-     select kind, from_region, ${iso("created_at")} as at
-       from handed order by id`,
+       returning id, kind, from_region, from_buddy, created_at)
+     select h.kind, h.from_region, ${iso("h.created_at")} as at, b.id::text as from_id, b.name, b.name_ok, b.reports
+       from handed h left join buddies b on b.id = h.from_buddy order by h.id`,
     [buddy, GESTURES_PER_READ],
   );
+  return rows.map((r) => ({
+    kind: r.kind,
+    from_region: r.from_region,
+    from: r.from_id ? { id: r.from_id, name: shownName({ name: r.name ?? "", name_ok: r.name_ok ?? false, reports: r.reports ?? 0 }) } : null,
+    at: r.at,
+  }));
 }
 
 export async function snapshot(db: Db, nowMs: number = Date.now()): Promise<Snapshot> {

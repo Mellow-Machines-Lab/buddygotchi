@@ -427,6 +427,13 @@ struct WorldPane: View {
                                     .font(.body)
                                     .fixedSize(horizontal: false, vertical: true)
                                 Spacer(minLength: 0)
+                                if let from = arrival.fromID, let kind = arrival.counts.first?.kind, model.status?.world?.on == true {
+                                    let back: World.GestureKind = kind == .cheer ? .heart : kind
+                                    let done = model.worldSent[from]?.sent.contains(back) == true
+                                    Button(done ? "Sent" : "\(Self.verb(back)) back") { model.sendGesture(back, to: from) }
+                                        .buttonStyle(.row).fixedSize()
+                                        .disabled(done || model.worldSending)
+                                }
                             }
                             .padding(.horizontal, Theme.gap).padding(.vertical, Theme.gapSnug)
                             .accessibilityElement(children: .combine)

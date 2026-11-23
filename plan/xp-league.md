@@ -563,7 +563,7 @@ sends a wave that arrives.
 Done when: with the server's clock moved past a Monday, the board plays
 the result once at the next hello.
 
-### 7. "You two"
+### 7. "You two" (built)
 
 - A gesture names its sender (§7, §9). `between` on the buddy's profile.
   "Wave back" on the card and on an arrival's row.

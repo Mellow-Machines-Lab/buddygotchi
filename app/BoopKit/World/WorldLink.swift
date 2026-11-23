@@ -117,6 +117,9 @@ public final class WorldLink {
         public var held: Bool
         public var plays: Bool
         public var at: Date
+        /// The buddy that sent it, when one did: its card's id and its name.
+        public var fromID: String?
+        public var fromName: String?
         public let id = UUID()
 
         public struct Count: Equatable, Sendable {
@@ -129,7 +132,10 @@ public final class WorldLink {
             }
         }
 
-        public init(counts: [Count], region: World.Region?, held: Bool = false, plays: Bool = true, at: Date) {
+        public init(counts: [Count], region: World.Region?, held: Bool = false, plays: Bool = true, at: Date,
+                    fromID: String? = nil, fromName: String? = nil) {
+            self.fromID = fromID
+            self.fromName = fromName
             self.counts = counts
             self.region = region
             self.held = held
@@ -139,7 +145,7 @@ public final class WorldLink {
 
         /// "Someone in the Americas booped Mochi."
         public func sentence(name: String) -> String {
-            World.sentence(counts.map { ($0.kind, $0.n) }, from: region, held: held, name: name)
+            World.sentence(counts.map { ($0.kind, $0.n) }, from: region, by: fromName, held: held, name: name)
         }
     }
 
@@ -373,7 +379,7 @@ public final class WorldLink {
             status.today.insert(Arrival(counts: WorldGestures.counts(of: e).map { Arrival.Count(kind: $0.0, n: $0.1) },
                                         region: (e["from_region"]?.string).flatMap(World.Region.init(rawValue:)),
                                         held: e["held"]?.bool == true, plays: e["plays"]?.bool != false,
-                                        at: Date()), at: 0)
+                                        at: Date(), fromID: e["from_id"]?.string, fromName: e["from_name"]?.string), at: 0)
         }
         if status.today.count > Self.arrivalsKept { status.today.removeLast(status.today.count - Self.arrivalsKept) }
         if events.contains(where: { $0["held"]?.bool == true }) { saveWaiting() }

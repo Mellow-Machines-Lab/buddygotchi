@@ -22,7 +22,11 @@
     {
       "kind": "boop",
       "from_region": "asia_oceania",
-      "at": "2026-11-08T16:58:12Z"
+      "at": "2026-11-08T16:58:12Z",
+      "from": {
+        "id": "9a1d4e22-7c3b-4b8e-8f20-5d6a1c9e7b02",
+        "name": "Bean"
+      }
     }
   ],
   "last_week": {

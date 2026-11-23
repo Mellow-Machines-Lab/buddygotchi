@@ -193,3 +193,14 @@ test("league.json has the shape of a real league", async () => {
   assert.deepEqual(keys(real.me.ahead), keys(example.me.ahead));
   assert.deepEqual(keys(real.last_week), keys(example.last_week));
 });
+
+test("a gesture names its sender, so it can be answered; a sender that left is nobody", async () => {
+  const a = await w.join("Ann", 0);
+  const b = await w.join("Bob", 0);
+  await w.json("POST", "/v1/gestures", { key: a.key, body: { to: b.id, kind: "wave" } });
+  const got = (await w.json("GET", "/v1/gestures", { key: b.key })).body.gestures;
+  assert.deepEqual(got[0].from, { id: a.id, name: "Ann" });
+  await w.json("POST", "/v1/gestures", { key: a.key, body: { to: b.id, kind: "heart" } });
+  await w.db.query("update gestures set from_buddy = null");
+  assert.equal((await w.json("GET", "/v1/gestures", { key: b.key })).body.gestures[0].from, null);
+});

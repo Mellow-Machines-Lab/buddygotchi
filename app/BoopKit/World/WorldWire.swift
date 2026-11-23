@@ -114,14 +114,23 @@ public enum World {
         public var kind: GestureKind
         public var fromRegion: Region?
         public var at: String
+        /// Who sent it, as the world shows them: so it can be answered.
+        public var from: Sender?
 
-        public init(kind: GestureKind, fromRegion: Region?, at: String) {
+        public struct Sender: Codable, Equatable, Sendable {
+            public var id: String
+            public var name: String
+            public init(id: String, name: String) { (self.id, self.name) = (id, name) }
+        }
+
+        public init(kind: GestureKind, fromRegion: Region?, at: String, from: Sender? = nil) {
             self.kind = kind
             self.fromRegion = fromRegion
             self.at = at
+            self.from = from
         }
 
-        enum CodingKeys: String, CodingKey { case kind, fromRegion = "from_region", at }
+        enum CodingKeys: String, CodingKey { case kind, fromRegion = "from_region", at, from }
 
         /// A region this Mac doesn't know yet is no region.
         public init(from decoder: Decoder) throws {
@@ -129,6 +138,7 @@ public enum World {
             kind = try c.decode(GestureKind.self, forKey: .kind)
             fromRegion = try? c.decodeIfPresent(Region.self, forKey: .fromRegion)
             at = try c.decode(String.self, forKey: .at)
+            from = try? c.decodeIfPresent(Sender.self, forKey: .from)
         }
     }
 
@@ -343,10 +353,11 @@ extension World {
     /// many of each kind, `region` the one buddy's, and `held` says they
     /// waited while you were away or for the morning: "While you were
     /// away, 3 buddies booped Mochi and 2 cheered your ship."
-    public static func sentence(_ counts: [(GestureKind, Int)], from region: Region?, held: Bool, name: String) -> String {
+    public static func sentence(_ counts: [(GestureKind, Int)], from region: Region?, by sender: String? = nil, held: Bool, name: String) -> String {
         let parts = counts.enumerated().map { i, c -> String in
             let (kind, count) = c
-            let who = i > 0 ? (count > 1 ? "\(count)" : "one") : count > 1 ? "\(count) buddies" : "someone" + (region.map { " " + $0.within } ?? "")
+            let who = i > 0 ? (count > 1 ? "\(count)" : "one") : count > 1 ? "\(count) buddies"
+                : sender ?? "someone" + (region.map { " " + $0.within } ?? "")
             let did = switch kind {
             case .boop: "booped \(name)"
             case .wave: "waved at \(name)"
@@ -356,7 +367,7 @@ extension World {
             return "\(who) \(did)"
         }
         let s = (parts.count > 1 ? parts.dropLast().joined(separator: ", ") + " and " + parts.last! : parts.first ?? "") + "."
-        return held ? "While you were away, " + s : s.prefix(1).uppercased() + s.dropFirst()
+        return held ? "While you were away, " + s : (sender != nil ? s : s.prefix(1).uppercased() + s.dropFirst())
     }
 
     /// The same, in the few characters of the board's lane, `{name}` for
