@@ -19,7 +19,7 @@ test('the board is asked for each state as the Mac asks for it', async () => {
   assert.throws(()=>wire({mood:'calm',state:'dancing'}),/no state dancing/);
   const only=cell=>wire(cell).steps.map(([ms,m])=>[ms,{...m,id:undefined}]);
   assert.deepEqual(only({mood:'calm',state:'idle'}),[[0,{t:'state',base:'idle',mood:'calm',vol:0,id:undefined}]]);
-  assert.deepEqual(wire({mood:'calm',state:'testing'}).steps[0][1],{t:'state',base:'working',busy:1,act:'testing',mood:'calm',vol:0},'what the agent does, while working');
+  assert.deepEqual(wire({mood:'calm',state:'testing'}).steps[0][1],{t:'state',base:'working',busy:1,act:'testing',calls:[[0,1,'running the tests']],mood:'calm',vol:0},'what the agent does, while working, and the strip says it');
   assert.deepEqual(acts.map(act=>wire({mood:'calm',state:act}).steps[0][1].act),acts,'each act the firmware draws');
   assert.equal(wire({mood:'calm',state:'needs_you'}).steps[0][1].attn.agent,'claude');
   const finish=wire({mood:'proud',state:'task_complete',outcome:'failure'}).steps;

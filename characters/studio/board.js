@@ -28,10 +28,11 @@
   // show it with nothing more said: no_app's window.
   function wiring({acts, tap}) {
     const WORKING = {base: 'working', busy: 1};
-    // A call's word for each activity, as the Mac sends one, so the strip's
-    // term shows (render/gel/lane.cpp's termSign).
-    const SAMPLE_WORDS = {tool_use: 'Core.swift', analyzing: 'maxWordBytes', searching: 'maxWordBytes',
-      terminal: 'make fw', testing: 'WorkStream', waiting: 'curl', planning: 'plan', delegating: 'helper'};
+    // What the agent is doing for each activity, as the Mac says it
+    // (WorkStream.doing), so the strip's term shows (render/gel/lane.cpp).
+    const SAMPLE_WORDS = {tool_use: 'editing Core.swift +12', analyzing: 'reading Core.swift', searching: 'searching TODO',
+      terminal: 'building', testing: 'running the tests', waiting: 'downloading', planning: 'planning',
+      delegating: 'sending a helper'};
     const LOOKS = {idle: {base: 'idle'}, asleep: {base: 'asleep'}, no_app: WORKING, working: WORKING,
       needs_you: {...WORKING, attn: {id: 1, agent: 'claude', project: 'Studio', more: 0}},
       ...Object.fromEntries(acts.map(act => [act, {...WORKING, act, calls: [[0, 1, SAMPLE_WORDS[act] || 'Core.swift']]}]))};
