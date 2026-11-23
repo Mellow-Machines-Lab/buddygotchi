@@ -198,7 +198,6 @@ extension Runtime {
         if let front = object["front"] as? String { r.front = front.isEmpty ? nil : front }
         if let on = object["camera"] as? Bool { r.camera = on }
         if let on = object["mic"] as? Bool { r.otherInput = on }
-        if object["copy"] as? Bool == true { r.copies = (r.copies ?? 0) + 1 }
         devAlong = r
         options.log("dev: along " + object.keys.filter { $0 != "dev" }.sorted().joined(separator: " "))
         handsTick()

@@ -57,7 +57,7 @@ The screen guide's section "The strip's words".
 Done when: in a real session, every phrase in the strip reads as a verb
 and its object, and nothing flickers.
 
-### 2. The cuts
+### 2. The cuts ✓
 
 The screen guide's "Small details: keep, fold or cut".
 

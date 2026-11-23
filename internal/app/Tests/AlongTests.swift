@@ -178,45 +178,6 @@ final class AlongTests: XCTestCase {
         XCTAssertTrue(run(&mic, from: t0, to: t0 + 6000, with(mic: true)).onCall)
     }
 
-    /// Pins a copy: from the next reading until a key or a click after it,
-    /// or 10 s; a copy within 2 s of the last is the same copying; the
-    /// count as first read is no copy.
-    func testACopyLastsUntilTheNextKeyOrClick() {
-        XCTAssertEqual([Along.copiedMs, Along.copyGapMs], [10_000, 2000])
-        var along = Along()
-        var r = reading(key: 60_000)
-        r.clickIdleMs = 60_000
-        r.copies = 41
-        XCTAssertFalse(along.read(r, anchor: nil, at: t0).copied, "the count as it was")
-        r.copies = 42
-        r.keyIdleMs = 100  // the copy's own keys
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 250).copied)
-        r.keyIdleMs = 350
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 500).copied, "no key since the copy")
-        XCTAssertEqual(along.read(r, anchor: nil, at: t0 + 500).tags, ["typing", "copied"])
-        r.keyIdleMs = 100  // the paste
-        XCTAssertFalse(along.read(r, anchor: nil, at: t0 + 1500).copied)
-        r.keyIdleMs = 60_000
-        r.copies = 43
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 5000).copied)
-        r.clickIdleMs = 200
-        XCTAssertFalse(along.read(r, anchor: nil, at: t0 + 6000).copied, "a click lets it go too")
-        r.clickIdleMs = 60_000
-        r.copies = 44
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 10_000).copied)
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 19_750).copied)
-        XCTAssertFalse(along.read(r, anchor: nil, at: t0 + 20_000).copied, "10 s")
-        r.copies = 45
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 30_000).copied)
-        r.keyIdleMs = 100
-        XCTAssertFalse(along.read(r, anchor: nil, at: t0 + 31_000).copied)
-        r.keyIdleMs = 60_000
-        r.copies = 46
-        XCTAssertFalse(along.read(r, anchor: nil, at: t0 + 31_500).copied, "1.5 s after the last copy")
-        r.copies = 47
-        XCTAssertTrue(along.read(r, anchor: nil, at: t0 + 34_000).copied)
-    }
-
     /// Pins the pointer's following: only with an anchor, only once it
     /// moves (2 points or more), and none 3 s after it stopped.
     func testThePointerIsFollowedWhileItMoves() {
@@ -290,8 +251,6 @@ final class AlongTests: XCTestCase {
         dev(runtime, #"{"dev":"along","scroll_idle_ms":60000,"sound":"other","front":"com.apple.Terminal"}"#)
         dev(runtime, #"{"dev":"advance","ms":5000}"#)
         XCTAssertTrue(snapshot().when.contains("music"))
-        dev(runtime, #"{"dev":"along","copy":true}"#)
-        XCTAssertTrue(snapshot().when.contains("copied"))
         // The pointer: none until Boop knows where it sits.
         dev(runtime, #"{"dev":"along","pointer":[700,500],"display":[0,0,1500,1000]}"#)
         dev(runtime, #"{"dev":"along","pointer":[900,500]}"#)

@@ -25,7 +25,9 @@ public enum Tags {
     /// so it's last of all.
     public static let macSides = [Anchor.Side.left, .right].map(\.tag)
     /// The rest of you at the Mac (`Along`): scrolling (`Hands`), typing
-    /// fast, music or a video playing, on a call, and a copy.
+    /// fast, music or a video playing, and on a call. `copied` is no longer
+    /// sent (documentation/design/screen-guide.md, "Small details"); it
+    /// keeps its place so no tag after it changes its number on the board.
     public static let along = ["scrolling", "typingfast", "music", "video", "oncall", "copied"]
 
     /// The tags the board reads, in its order: all of them.

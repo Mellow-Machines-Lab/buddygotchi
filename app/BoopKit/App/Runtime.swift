@@ -276,11 +276,7 @@ public final class Runtime: @unchecked Sendable {
     var devKeyIdleMs: Int64?
     /// The rest of the Mac's facts `{"dev":"along",…}` lines set, read in
     /// place of the Mac's when there's no `along` reader.
-    var devAlong: Along.Facts = {
-        var f = Along.Facts()
-        f.copies = 0  // the count as it was, so a dev line's first copy is one
-        return f
-    }()
+    var devAlong = Along.Facts()
     /// The anchor's display is gone or changed (`displaysChanged`): Boop
     /// follows nothing and turns nowhere until it's shown again.
     var anchorGone = false

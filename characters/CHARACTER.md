@@ -616,8 +616,8 @@ Besides drawing each mood and state, a face:
     Mac, `typing` or `reading` (`Hands`); the Mac's side, `macleft` or
     `macright` (from where Boop sits, `Anchor.side`); and, last in the table
     so no pack's numbering of the others moves, the rest of you at the Mac
-    (`Along`): `scrolling`, `typingfast`, `music` or `video`, `oncall` and
-    `copied`; and `macup`, the screen above the board (its anchor in the middle
+    (`Along`): `scrolling`, `typingfast`, `music` or `video` and `oncall`
+    (`copied` keeps its place but is no longer sent); and `macup`, the screen above the board (its anchor in the middle
     third of its display). Boop's level puts no tag on: its body is one
     size at every level. A board with no Mac keeps none of the Mac's tags,
     as they go stale.
@@ -636,9 +636,8 @@ Besides drawing each mood and state, a face:
   the Mac's popover (`Narration.Dressing`) agree. Pixel's face reads
   `render::outfitFor` (first that fits: Halloween's witch hat, a party hat,
   a nightcap at night, a bobble hat in winter) and `render::airFor` (snow,
-  confetti, hearts). The gel wears only its nightcap at night
-  (`gel::nightcapFor`), nothing for a special day, and has nothing in the
-  air. The gel draws its
+  confetti, hearts). The gel wears nothing, at night or on a special day,
+  and has nothing in the air: its lids say the night. The gel draws its
   dressing at the anchors its pose gives (`rig::Anchors`, §15), so it moves
   with the body, and through the rig's layer stack (§15).
 - **Times them.** Each design's loop length (`loopMs`), which sets how long
@@ -946,9 +945,8 @@ Some clips' ids mean something to a face:
   as the Moment starts. The gel's recipe for that state times it.
 - You at the Mac: the gel loops `type-along` while it types with you, and
   `type-along-fast` over it while you type fast; `read-along` (then
-  `read-along-settled`), `video`, `groove`, `on-call` and `copied`
-  while it's with you so (its `GelFace::showWithYou`); and once, `release`
-  as a copy is let go, `stretch` as a call ends, `look-around` as the
+  `read-along-settled`), `video`, `groove` and `on-call` while it's with
+  you so (its `GelFace::showWithYou`); and once, `stretch` as a call ends, `look-around` as the
   music stops.
 
 **`looks.json`**: for each look (§9), keys `clip`, `occasions`, `tiers` and

@@ -55,7 +55,6 @@ final class AlongSignals: @unchecked Sendable {
                 f.display = Self.rect(CGDisplayBounds(display))
             }
         }
-        f.copies = NSPasteboard.general.changeCount
         return f
     }
 

@@ -359,8 +359,8 @@ extension Narration {
     /// Why the board looks as it does now, for the popover: each reason, first
     /// every special day Boop is celebrating today, then the night, with
     /// what the board wears or shows for it. It chooses as the board does,
-    /// from the same tags. The gel wears a nightcap at night and nothing
-    /// for a day. A board that isn't the gel wears one hat, the first that
+    /// from the same tags. The gel wears nothing: at night its lids hang
+    /// lower, and nothing for a day. A board that isn't the gel wears one hat, the first that
     /// fits, of a witch hat at Halloween, a party hat, a nightcap at night
     /// and a bobble hat in the winter holidays, and has confetti at a party
     /// or New Year, snow in the winter holidays and hearts on Valentine's
@@ -384,7 +384,7 @@ extension Narration {
 
         /// The reasons on for `when` (the `state`'s tags) and today's
         /// `specialDays`, and `gel` for a board that draws the gel, which
-        /// wears only its nightcap and has nothing in the air.
+        /// wears nothing, its lids heavier at night, and has nothing in the air.
         public static func now(when: [String], specialDays: [Days.SpecialDay], gel: Bool) -> [Narration.Dressing] {
             let on = Set(when)
             let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
@@ -408,7 +408,7 @@ extension Narration {
                 return Narration.Dressing(kind: .specialDay, why: o.why, what: list(things))
             }
             if hat == "night" {
-                out.append(Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap"))
+                out.append(Narration.Dressing(kind: .night, why: "It's night", what: gel ? "heavy eyelids" : "a nightcap"))
             }
             return out
         }

@@ -175,7 +175,6 @@ things on three channels, **voice**, **sign** and **narration**.
 | music | Sound another app plays, or a frontmost app that isn't a player, for 5 s and more (Core Audio's process objects, macOS 14.2+) | audio, song | `music` |
 | video | Sound the frontmost app itself plays, when it's a browser or a video player (`Along.players`) | watching | `video` |
 | on a call | A camera, or another app recording sound (never Boop's push-to-talk), on 5 s and more: Boop keeps still and silent, the board is sent no volume, no take is spoken and every Moment is small | meeting, call (that's a tool use) | `oncall` |
-| copied | A copy, from the pasteboard's change count, until your next key or click or 10 s; never what was copied | clipboard, holding | `copied` |
 | lock, unlock | The Mac's screen locking and unlocking, every time however short; an away only after 10 min | | `lock_start`, `lock_end` |
 | button | BOOT: hands you the next agent in the line | press, hand-off | `press` |
 | dismiss | A finger held on the needs-you screen | | |
@@ -191,11 +190,11 @@ things on three channels, **voice**, **sign** and **narration**.
 | activity | How it's working, one of four the whole body shows (`Act`): typing (an edit, any other tool, a plan), looking (a read, a search, the web), running (a command, the tests, a build, helpers at work), waiting (a call gone quiet) | act | `act`: `tool_use`, `analyzing`, `terminal`, `waiting` |
 | tier | How long it's been working or resting: tier 1 at 1 min, tier 2 at 5 min, tier 3 at 15 min (`Tags.tiers`) | stage | `tier1`…`tier3` |
 | pastime | What Boop does to pass the time, by Doing and tier or wait: a move of the body and nothing beside it, none while something needs you (`render/gel/pastimes.h`) | gag (the gel's), idle gag, occasion (the rig's) | |
-| dressing | What's worn for the tags: on the gel, a nightcap at night and nothing for a special day, nothing in the sky or the air | outfit, layers, occasion (as a design) | |
+| dressing | What's worn for the tags: on the gel, nothing, not even at night (the night shows on its lids) and nothing for a special day, nothing in the sky or the air | outfit, layers, occasion (as a design) | |
 | pace | Working faster when busy or frantic | | `busy`, `frantic` |
 | gaze | Where Boop's eyes look by themselves: one thing at a time, held, then forward; at work only while it types, as the other activities' poses have the eyes (the gel's `render/gel/gaze.h`) | look (that's a Doing's art), attention | `macleft`, `macright`, `ptr` |
 | typing along | Boop typing while you do, a small sway over its keys, never a hop, quicker when you type fast, and a look up at you when a long stretch stops: at its desk at work while its own activity is typing, with its keyboard out when idle (`GelFace::showAlong`) | mirroring | `typing`, `typingfast` |
-| reading along | Boop turned to the screen while you scroll, its eyes going down a line at a time, settling in after two minutes (`GelFace::showWithYou`); its music, video, on-a-call and copied poses are the same function's | | `scrolling` |
+| reading along | Boop turned to the screen while you scroll, its eyes going down a line at a time, settling in after two minutes (`GelFace::showWithYou`); its music, video and on-a-call poses are the same function's | | `scrolling` |
 | tilt | How far the board is tipped against how it's been resting, which the body sloshes by (`app::Tilt`); no touch | hold (that's a finger's) | |
 | the work stream | Agents' calls as words: the newest call's doing first in the strip (the work's term), and the few that come forward from the desk's monitor and land on Boop: part of Doing, never a Moment | gag (the stream's), call forward, falling words | `call` |
 | work act | A command worth naming while it runs, the tests, the push or the build: on the gel, the monitor's icon (a flask for tests) and the strip's term say what's running, then a tick or a cross and `tests passed` or `tests failed`, never a card, and Boop hops or flinches at the result | act (that's the activity) | `wact` |

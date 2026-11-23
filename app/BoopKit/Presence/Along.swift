@@ -141,8 +141,6 @@ public struct Along: Sendable {
         /// Another app records sound: any input device, never Boop's own
         /// push-to-talk.
         public var otherInput = false
-        /// The general pasteboard's change count.
-        public var copies: Int?
 
         public init() {}
     }
@@ -153,7 +151,6 @@ public struct Along: Sendable {
         public var fast = false
         public var sound: Sound?
         public var onCall = false
-        public var copied = false
         public var pointer: Pointer?
 
         public init() {}
@@ -164,7 +161,6 @@ public struct Along: Sendable {
             if fast { on.append("typingfast") }
             if let sound { on.append(sound.rawValue) }
             if onCall { on.append("oncall") }
-            if copied { on.append("copied") }
             return on
         }
 
@@ -215,12 +211,6 @@ public struct Along: Sendable {
     public static let callOnMs: Int64 = 5000
     public static let callOffMs: Int64 = 5000
 
-    /// A copy is held until your next key or click after it, or this long.
-    public static let copiedMs: Int64 = 10_000
-    /// A copy this soon after the one before is the same copying: no new
-    /// one.
-    public static let copyGapMs: Int64 = 2000
-
     /// The pointer counts as moving for this long after it last moved.
     public static let pointerStillMs: Int64 = 3000
     /// It's moved when it's gone at least this far, in points.
@@ -255,9 +245,6 @@ public struct Along: Sendable {
     var fast = false
     var slowSince: Int64?
     var sound = Held<Sound?>(nil), call = Held(false)
-    var copies: Int?
-    var lastCopyAt: Int64?
-    var copiedAt: Int64?
     var pointerAt: (x: Double, y: Double)?
     var movedAt: Int64?
 
@@ -275,7 +262,6 @@ public struct Along: Sendable {
         let was = sound.value
         let held = sound.update(raw, at: now, onMs: was == nil ? Self.soundOnMs : Self.kindMs, offMs: Self.soundOffMs)
         out.sound = out.onCall ? nil : held
-        out.copied = copied(f, at: now)
         out.pointer = pointer(f, anchor: anchor, at: now)
         return out
     }
@@ -306,26 +292,6 @@ public struct Along: Sendable {
             if n <= Self.slowSlots || now - slowSince! >= Self.slowMs { fast = false; slowSince = nil }
         }
         return fast
-    }
-
-    mutating func copied(_ f: Facts, at now: Int64) -> Bool {
-        if let c = f.copies {
-            if let was = copies, c != was {
-                if lastCopyAt.map({ now - $0 >= Self.copyGapMs }) ?? true, copiedAt == nil { copiedAt = now }
-                lastCopyAt = now
-            }
-            copies = c
-        }
-        guard let at = copiedAt else { return false }
-        let since = now - at
-        // A key or a click after the copy (the copy's own came before it
-        // was seen) lets it go: the paste, or moving on.
-        let input = min(f.keyIdleMs ?? .max, f.clickIdleMs ?? .max)
-        if since >= Self.copiedMs || input + 50 < since {
-            copiedAt = nil
-            return false
-        }
-        return true
     }
 
     mutating func pointer(_ f: Facts, anchor: Anchor?, at now: Int64) -> Pointer? {
