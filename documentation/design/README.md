@@ -9,6 +9,7 @@ built yet; "What is built" below says what is.
 | [theory.md](theory.md) | The ideas: why Boop behaves as one thing in every state |
 | [animations.html](animations.html) | What to expect: every core state and event, moving. Open it in a browser |
 | [screen-guide.md](screen-guide.md) | How to build it: what sits where, sizes, shapes, colors, motion, what wins |
+| [brain.md](brain.md) | Who thinks for Boop: rules, the calling agent, the dream, babble, with no key. Not built |
 
 The order to build it in is [plan/design-build.md](../../plan/design-build.md).
 
