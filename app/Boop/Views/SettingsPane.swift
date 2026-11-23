@@ -97,7 +97,7 @@ struct SettingsPane: View {
     // MARK: The buddy
 
     /// Its name, how much it says, whether it swears, how loud, and the
-    /// falling words. Not running, none of it can change: one note says so.
+    /// work's words. Not running, none of it can change: one note says so.
     @ViewBuilder private var buddy: some View {
         if model.status == nil {
             NoteCard("\(model.name) isn't running, so its name, talk and sound can't change now.")

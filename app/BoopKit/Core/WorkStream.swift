@@ -2,13 +2,14 @@ import AgentHooks
 import Foundation
 import LinkKit
 
-/// The work stream: every tool call as a word that falls behind Boop from
-/// its agent's lane, and the few that come forward and hit it: a failure,
-/// a helper, a big edit, a turn's end. A plain rule, as "needs you" is: it
+/// The work stream: every tool call as a word, its agent's lane's latest,
+/// which the board shows as the work's term after the strip's count, and
+/// the few that come forward and hit Boop: a failure, a helper, a big
+/// edit, a turn's end. A plain rule, as "needs you" is: it
 /// reads each call's tool, topic, program, glimpse, size and result, never
 /// what the call said, and decides which word each call is and which calls
-/// come forward, one at a time, in which style. The board flies the words and
-/// plays each style; the brain hears none of it but the moments that hit
+/// come forward, one at a time, in which style. The board shows the newest word,
+/// flies those that come forward and plays each style; the brain hears none of it but the moments that hit
 /// (`TranscriptView`).
 struct WorkStream {
     /// A working session's lane on the board: its slot, which picks its
@@ -283,7 +284,7 @@ struct WorkStream {
         return nil
     }
 
-    /// A tool call ending: a failure or a big edit comes forward. Anything else is only its word, falling.
+    /// A tool call ending: a failure or a big edit comes forward. Anything else is only its word, in the strip.
     mutating func ended(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program)
         let slot = lanes[key]?.slot ?? freeSlot()

@@ -293,21 +293,21 @@ final class OnboardingModel: ObservableObject {
     var tours: Bool { hasBoard && app.status?.device?.drawsTheDrawer == true }
 
     /// The window's Boop after the hello: the board's own state, live, so
-    /// your agent's words fall past it too. No sound.
+    /// your agent's work shows on it too. No sound.
     var live: StateSnapshot {
         guard var snapshot = app.status?.snapshot else { return .onboarding(mood: "excited") }
         snapshot.vol = 0
         return snapshot
     }
 
-    /// The agent that said hi has a lane in the work stream: its words
-    /// are falling.
-    var wordsFalling: Bool {
+    /// The agent that said hi has a lane in the work stream: its word
+    /// shows.
+    var wordsShowing: Bool {
         guard let heard else { return false }
         return app.status?.sessions.contains { $0.agent == heard && $0.word != nil } == true
     }
 
-    /// The tour's first step, once the words fall.
+    /// The tour's first step, once its word shows.
     func sawWords() {
         var next = progress
         if next.did(.words) { toured(.words, next) }

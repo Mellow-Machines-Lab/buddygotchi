@@ -108,7 +108,7 @@ struct AgentsAct: View {
             + "follow: a session starting or ending, your prompt, each tool the agent uses, a request for your OK, "
             + "and the agent finishing. Each one runs agent-hook, which tells me here on this Mac what just happened, "
             + "with your prompt, the agent's last reply, and a glimpse of each tool call: the command's name, a file's "
-            + "name, a word it searched for, never anything shaped like a key. The glimpses fall past on my screen, "
+            + "name, a word it searched for, never anything shaped like a key. The newest shows at the bottom of my screen, "
             + "where anyone at your desk can read them. My brain only ever hears a short reading of your prompt and the "
             + "reply, never your code or the glimpses.",
         "Hooks only report: they never approve, deny or block anything, and when I'm not running, your agent "
@@ -189,7 +189,7 @@ struct AgentsAct: View {
         return VStack(spacing: touring ? Theme.gapSnug : Theme.gap) {
             HStack(spacing: Theme.gapSection) {
                 // After the hello, the board's own state, so your agent's
-                // words fall past it here too.
+                // work shows on it here too.
                 OnboardingBuddy(model: model, snapshot: heard == nil ? .onboarding(mood: "curious") : model.live,
                                 size: touring ? Self.touringFace : Self.helloFace)
                     // On the dark card the glass needs its edge in either appearance.
@@ -220,7 +220,7 @@ struct AgentsAct: View {
             if touring {
                 tourSteps
             } else if heard != nil {
-                Text("The words falling past me are what your agent works on: its files, searches and commands. Once we're done, click any agent in my menu up top to jump to its thread.")
+                Text("My little monitor shows what your agent is doing, and the word at the bottom is what it works on: a file, a search, a command. Once we're done, click any agent in my menu up top to jump to its thread.")
                     .font(.body).foregroundStyle(Theme.inkSoft).multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -228,9 +228,9 @@ struct AgentsAct: View {
                     .font(.body).foregroundStyle(Theme.inkSoft)
             }
         }
-        // The tour's first step: your agent's words falling past Boop.
-        .onChange(of: model.wordsFalling, initial: true) { _, falling in
-            if falling, model.tours { model.sawWords() }
+        // The tour's first step: your agent's work showing on Boop.
+        .onChange(of: model.wordsShowing, initial: true) { _, showing in
+            if showing, model.tours { model.sawWords() }
         }
         // Its second: Boop cheers for the finished turn until it's tapped.
         .task(id: model.tours && model.tourDue == .cheer) {
@@ -250,8 +250,8 @@ struct AgentsAct: View {
         }
         return VStack(spacing: Theme.gapTight) {
             step(.words, "Watch my screen", model.tour.contains(.words)
-                 ? "Those words are what your agent works on: the files it reads, its searches and commands."
-                 : "What your agent works on falls past me as words. Nothing yet? Ask it to list the files here.")
+                 ? "My monitor shows what your agent is doing, and the word at the bottom is what it works on."
+                 : "What your agent works on shows on my monitor and at the bottom. Nothing yet? Ask it to list the files here.")
             step(.cheer, "When I cheer, tap me", due == .cheer && model.finishedThread == nil
                  ? "When your agent finishes, I cheer and hold up its thread's name. A tap takes you there."
                  : "Your agent finished. A tap takes you to its thread.")

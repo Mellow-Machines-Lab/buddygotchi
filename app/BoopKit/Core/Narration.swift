@@ -163,7 +163,7 @@ public struct Narration: Equatable, Sendable {
         "dream": "Boop's own, and wakes no pass: the telling has its reason",
         "memory": "Boop's own, and wakes no pass",
         "last_message": "its finish says how the turn went (`outcome`)",
-        "tool start": "the work stream: a word falling, never a Moment",
+        "tool start": "the work stream: the strip's word, never a Moment",
         "session start": "a thread opening is no news, and has no line",
         "tool wait": "the needs-you screen says it",
         "card start": "log-only: Boop holds the card up, part of Doing", "card end": "log-only: the finish plays, then the card shows",

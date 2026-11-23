@@ -622,7 +622,7 @@ enum Snapshots {
         model.onboardingShown = true
         guard published == 3, model.status == model.latest else { fail("snapshots: onboarding showed a stale status") }
         // Onboarding's own slime is fed its snapshot, so it keeps the lanes:
-        // the agent's words fall past it after the hello.
+        // the agent's work shows on it after the hello.
         model.take(lanes(4))
         guard published == 4, model.status?.snapshot.calls.first?.count == 4 else {
             fail("snapshots: onboarding's status lost the work stream's lanes")

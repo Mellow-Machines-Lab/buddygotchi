@@ -1,8 +1,8 @@
-// The work stream (the Mac's WorkStream): each working agent's tool calls
-// as words falling past the buddy from its lane, and now and then one that
-// comes forward and hits it. The Mac decides which word comes forward and
-// as which style; the device keeps the words falling and times the flight,
-// and a face draws them. Fixed sizes, no heap.
+// The work stream (the Mac's WorkStream): each working agent's lane with
+// its latest call's word, the newest of them, which a face shows as the
+// work's term, and now and then a word that comes forward and hits the
+// buddy. The Mac decides which word comes forward and as which style; the
+// device times the flight, and a face draws it. Fixed sizes, no heap.
 #pragma once
 #include <cstdint>
 
@@ -36,8 +36,8 @@ enum class CallMove : uint8_t {
   kHit,      // between the eyes: knocked back, dizzy, stars
   kShrug,    // beside the head: a shrug
   kShatter,  // above the crown, bursting into bits it swallows
-  kDrop,     // the words falling drop, switched off
-  kGather,   // its lane's words gathered into its mouth
+  kDrop,     // its word drops, switched off
+  kGather,   // its word gulped down
 };
 CallMove callMove(CallStyle style);
 // How long its word flies before it lands, when the body answers: a
@@ -58,45 +58,18 @@ constexpr uint32_t kActLeadMs = 900, kActResultMs = 2600;
 struct Stream {
   static constexpr int kLanes = 4;        // WorkStream.maxLanes
   static constexpr int kWordBytes = 16;   // WorkStream.maxWordBytes, its end and a little room
-  static constexpr int kWords = 8;        // falling at once, at most: the frame rate's budget
-  // A word falls for this long, and at most this many drop for one `state`
-  // however many calls it counts: the state names only a lane's latest
-  // word, so a second would be the same word again. A word drops only once
-  // the newest of its
-  // lane has fallen kWordGapPx (a line of the large font and a little), and
-  // never falls faster, so a lane's words never overlap; one that would
-  // wait over kMostWaitMs for that isn't dropped: the lane is busy enough.
-  // Its middle keeps the whole word, in the large font, kWordEdgePx inside
-  // the screen's sides, however far its lane's column and its jitter put it
-  // out.
-  static constexpr uint32_t kFallMs = 3200;
-  static constexpr int kDropsPerState = 1;
-  static constexpr int kWordEdgePx = 12;
-  static constexpr int kWordGapPx = 36;
-  static constexpr uint32_t kMostWaitMs = 800;
   // A word forward: its flight, then what it does once it lands, all
   // gone by kCallMs.
   static constexpr uint32_t kCallMs = 2500;
-  // When the agents stop, the words on screen stay this long, and a word
-  // forward may still come (a turn's end gathers them); then they go.
+  // When the agents stop, a word forward may still come this long after
+  // (a turn's end); then the stream is gone.
   static constexpr uint32_t kEndMs = 1500;
-  // A word forward that takes the words falling (a gather, a drop) has
-  // them for this long, and then they're gone.
-  static constexpr uint32_t kTakeMs = 700;
 
   // A working session's lane, as the Mac's `state` says it.
   struct Lane {
     uint8_t slot = 0;
     uint16_t count = 0;
     char word[kWordBytes] = "";
-  };
-  struct Word {
-    char text[kWordBytes] = "";
-    uint8_t slot = 0;
-    int16_t x = 0;       // its middle, px on a 502-wide surface: its column's as it dropped, a little off
-    uint16_t speed = 0;  // px a second
-    uint32_t born = 0;
-    bool live = false;
   };
   struct Call {
     char text[kWordBytes] = "";
@@ -140,24 +113,22 @@ struct Stream {
   int laneCount = 0;
   // Whether the stream shows: the agents work and nothing needs you.
   bool on = false;
-  Word words[kWords];
+  // The newest call's word of any lane: the one whose count moved last,
+  // or a new lane's. A face shows it as the work's term.
+  char newest[kWordBytes] = "";
   Call call;
-  // The stream went off at endedAt, the agents done, its words lingering.
+  // The stream went off at endedAt, the agents done, a word forward may still come.
   bool ending = false;
   uint32_t endedAt = 0;
 
-  // The lanes from a `state`: a lane whose count moved drops words, up to
-  // kDropsPerState; a new lane drops its latest. A word keeps falling where
-  // it dropped, its lane gone or not. The stream off lets its words linger
+  // The lanes from a `state`: a lane whose count moved, or a new one, makes
+  // its word the newest. The stream off lets a word forward still come for
   // kEndMs, unless something needs you (`cleared`): then all goes at once.
   void setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t);
   // Whether a word may come forward at t: the stream on, or just ended.
   bool accepts(uint32_t t) const;
   // Whether anything of it is drawn at t.
   bool drawn(uint32_t t) const;
-  // Whether the word forward takes `w` (a gather its lane's, a drop all
-  // of them falling as it came).
-  bool taken(const Word& w) const;
   // A word comes forward at t (the `call` do).
   void startCall(const char* text, uint8_t slot, CallStyle style, uint32_t t);
   // Forgets what has finished by t.
@@ -167,14 +138,11 @@ struct Stream {
   int column(uint8_t slot) const;
   // Whether anything moves at t, so the face draws again.
   bool moving(uint32_t t) const;
-
- private:
-  void drop(const Lane& lane, int column, int columns, uint32_t t);
 };
 
 // Where lane `column` of `columns` sits across a 502-wide screen, the
-// middle its words fall from: off the middle, where the head and its hat
-// are. One lane
+// middle its word forward comes from: off the middle, where the head and
+// its hat are. One lane
 // on the left; two either side; three or four along both sides.
 inline int laneX(int column, int columns) {
   static constexpr int kXs[Stream::kLanes][Stream::kLanes] = {

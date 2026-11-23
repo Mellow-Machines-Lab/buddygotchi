@@ -242,8 +242,8 @@ final class AppModel: ObservableObject {
     /// A status from the runtime. The work stream's lanes are left out:
     /// they change every few hundred milliseconds while an agent works,
     /// and only the board's mirror shows them, which the board's own lines
-    /// feed. Onboarding keeps them: its own slime shows the agent's words
-    /// falling after the hello, fed its snapshot, not the board's lines.
+    /// feed. Onboarding keeps them: its own slime shows the agent's work
+    /// after the hello, fed its snapshot, not the board's lines.
     /// The views get it only when it changed and something shows it.
     func take(_ status: Runtime.Status) {
         var status = status
