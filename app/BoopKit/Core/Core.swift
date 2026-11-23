@@ -27,6 +27,8 @@ import MellowHarness
 public final class Core {
     public struct Config: Sendable {
         public var volume: Int
+        /// The buddy's colour, 0 to 7 (`BuddyColor`), sent in `state`.
+        public var color = 0
         public var time: LocalTime
         /// Where this launch's request numbers start: the first request
         /// shown gets the one after it (`SessionTracker.nextRequest`). The
@@ -471,6 +473,13 @@ public final class Core {
         return fx
     }
 
+    public func setColor(_ color: Int, at now: Int64) -> [CoreEffect] {
+        config.color = max(0, min(BuddyColor.all.count - 1, color))
+        var fx: [CoreEffect] = []
+        publish(now, &fx)
+        return fx
+    }
+
     public func setVolume(_ volume: Int, at now: Int64) -> [CoreEffect] {
         config.volume = max(0, min(10, volume))
         var fx: [CoreEffect] = []
@@ -638,7 +647,7 @@ public final class Core {
             StateSnapshot.WorkAct(kind: $0.kind, words: $0.words, result: $0.passed.map { $0 ? "p" : "f" })
         } : nil
         var snapshot = StateSnapshot(doing: base, activity: act, mood: mood(), attn: attn, working: working.count,
-                                     idle: rests.count, helpers: helpers, vol: config.volume,
+                                     idle: rests.count, helpers: helpers, vol: config.volume, color: config.color,
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct

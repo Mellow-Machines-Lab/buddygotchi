@@ -610,6 +610,12 @@ final class AppModel: ObservableObject {
 
     // The switches show the change at once; the runtime's next status confirms it.
 
+    func setColor(_ color: Int) {
+        guard status?.snapshot.color != color else { return }
+        status?.snapshot.color = color
+        runtime?.setColor(color)
+    }
+
     func setVolume(_ volume: Int) {
         guard status?.snapshot.vol != volume else { return }
         status?.snapshot.vol = volume

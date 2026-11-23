@@ -208,6 +208,7 @@ struct WorldPane: View {
             .buttonStyle(.row).fixedSize()
             HStack(alignment: .center, spacing: Theme.gap) {
                 BoopFace(mood: Self.face(activity), size: 44)
+                    .buddyColor(p?.color ?? row?.color ?? 0)
                 VStack(alignment: .leading, spacing: Theme.hair) {
                     Text(name).font(.boopTitle)
                     Text(Self.levelLine(level: p?.level ?? row?.level ?? 1, days: p?.daysInARow ?? 0))
@@ -489,5 +490,14 @@ struct MedalsRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Medals: \(medals.gold) gold, \(medals.silver) silver, \(medals.bronze) bronze")
+    }
+}
+
+extension View {
+    /// A face drawn in the buddy's colour (`BuddyColor`), turned as the gel's
+    /// material is: near enough for a small face.
+    func buddyColor(_ index: Int) -> some View {
+        let c = BuddyColor.of(index)
+        return hueRotation(.degrees(c.degrees)).saturation(c.saturation).brightness((c.brightness - 1) / 2)
     }
 }

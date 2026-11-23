@@ -287,6 +287,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | the ring | Today's XP against 100, a Boop day's goal: XP counts past it, to the day's 300. On the board, no bar: a finish's or a ship's low sign carries what it earned, `+5 XP` (the `do`'s `xp`); its closing is the rules' moment, `100 XP today, day 12` low in gold behind a full ring (the `do`'s `mark`), one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `growth`, a `do`'s `xp` and `mark` |
 | level | 1 + every XP / 500, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
 | days in a row | The Boop days in a row with a full ring, kept through up to two days without one, so a weekend never breaks it (`GrowthStore.daysInARow`) | streak | `xp.row` |
+| colour | The buddy's colour, one of eight picked in Settings, at any level: the gel's material turned once in hue, saturation and brightness (`BuddyColor`, the gel's `bodyColor`); 0 is its own blue | skin, theme | `state.color`, the world's `color` |
 | special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 

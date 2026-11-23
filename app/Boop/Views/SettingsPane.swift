@@ -114,6 +114,8 @@ struct SettingsPane: View {
                             .toggleStyle(.boop).labelsHidden()
                     }
                     RowDivider()
+                    colorRow
+                    RowDivider()
                     volumeRow
                     RowDivider()
                     SettingRow(icon: "keyboard", title: "Notices what you do at the Mac",
@@ -224,6 +226,28 @@ struct SettingsPane: View {
     }
 
 
+    /// Eight swatches: the buddy's colour, on the board and in the world.
+    private var colorRow: some View {
+        let now = model.status?.snapshot.color ?? 0
+        return SettingRow(icon: "paintpalette", title: "Colour",
+                          detail: "\(model.name) is \(BuddyColor.of(now).name.lowercased()). Others in the world see it too.") {
+            EmptyView()
+        } below: {
+            HStack(spacing: Theme.gapSnug) {
+                ForEach(BuddyColor.all) { c in
+                    Button { model.setColor(c.id) } label: {
+                        Circle().fill(Color(hex: c.hex)).frame(width: 22, height: 22)
+                            .overlay(Circle().strokeBorder(Theme.ink, lineWidth: c.id == now ? 2 : 0).padding(-3))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(c.name)
+                    .accessibilityAddTraits(c.id == now ? .isSelected : [])
+                }
+            }
+            .padding(.vertical, Theme.gapTight)
+        }
+    }
+
     private var volumeRow: some View {
         let vol = model.status?.snapshot.vol ?? 6
         return SettingRow(icon: vol == 0 ? "speaker.slash.fill" : "speaker.wave.2.fill", title: "Volume") {
@@ -324,7 +348,7 @@ struct SettingsPane: View {
                         .toggleStyle(.boop).labelsHidden()
                 }
             }
-            Text("Shares its name, level, time zone, what it's doing, and today's counts. Nothing you write.")
+            Text("Shares its name, level, colour, days in a row, time zone, what it's doing, today's counts and its XP in the weekly league. Nothing you write.")
                 .caption()
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, Theme.gap)

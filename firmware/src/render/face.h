@@ -236,6 +236,9 @@ class Face {
   // The wish to show (WishShow), set before each frame: a face that draws
   // no thought bubble ignores it.
   virtual void wish(const WishShow& show) { (void)show; }
+  // The buddy's colour, 0 to 7, set before each frame: 0 is the face's own,
+  // and a face with one colour ignores it.
+  virtual void color(int index) { (void)index; }
   // The card to hold (CardShow), set before each frame, and whether the
   // canvas's (x, y) is on it as last drawn: a touch that starts there is the
   // card's (a swipe to the next, a tap to open it). A face that holds no

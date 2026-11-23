@@ -55,7 +55,7 @@ extension Runtime {
         let g = growth.growth(on: day)
         return WorldLink.Now(name: name, level: g.level, utcOffset: utcOffset,
                              activity: worldActivity(at: now), day: day, xpToday: g.today,
-                             daysInARow: growth.daysInARow(on: day))
+                             daysInARow: growth.daysInARow(on: day), color: core.config.color)
     }
 
     func worldNow(at now: Int64) -> WorldLink.Now { worldNow(at: now, day: options.time.boopDay(options.wallClock())) }

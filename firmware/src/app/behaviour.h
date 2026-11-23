@@ -94,6 +94,9 @@ struct Model {
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;
+  // The buddy's colour (`color`), 0 to 7, 0 the face's own: the person's
+  // pick in Settings.
+  int color = 0;
   // The tags on now (`when`, render/tags.h): the part of the day, an
   // occasion, how busy the agents are. The face shows only the designs
   // whose tags are all on, and picks each look's variation itself.

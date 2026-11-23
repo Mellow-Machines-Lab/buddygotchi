@@ -378,6 +378,7 @@ public final class Runtime: @unchecked Sendable {
         // The core. The launch's read-back prunes the transcript, so today
         // isn't a new day.
         var config = Core.Config(volume: settings.volume, time: options.time, pack: buddy.pack, hatched: longTerm.hatched)
+        config.color = settings.color
         config.firstAsk = SessionTracker.randomFirstRequest()
         let core = Core(config: config, lastActiveDay: today, place: places.place, isRunning: Runtime.agentRuns)
         core.macSide = settings.anchor?.side
@@ -1030,6 +1031,16 @@ public final class Runtime: @unchecked Sendable {
     /// detector.
     public func presence(_ signal: PresenceDetector.Signal) {
         home.async { [self] in presenceSignal(signal) }
+    }
+
+    /// The buddy's colour, from Settings: on the board at once, kept, and
+    /// sent to the world with the next send.
+    public func setColor(_ color: Int) {
+        home.async { [self] in
+            run(core.setColor(color, at: options.clock()))
+            saveSettings { $0.color = core.config.color }
+            changed()
+        }
     }
 
     public func setVolume(_ volume: Int) {

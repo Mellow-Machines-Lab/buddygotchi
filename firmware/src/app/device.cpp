@@ -252,6 +252,7 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
              : !std::strcmp(energy, "tired") ? render::Energy::kTired
                                              : render::Energy::kNormal;
   m.vol = heldTo(doc["vol"], 0, 10, 6);
+  m.color = heldTo(doc["color"], 0, 7, 0);
   // A tag the board doesn't know is left out.
   for (JsonVariantConst tag : doc["when"].as<JsonArrayConst>()) m.when |= render::tagBit(tag.as<const char*>());
   m.when = render::reached(m.when) | render::busyTags(m.busy);
@@ -1157,6 +1158,7 @@ void Device::render(uint32_t t) {
     makeDrawer(t);
     b_.face().drawer(&drawer_);
     b_.face().wish(b_.wishShow(t));
+    b_.face().color(b_.model().color);
     b_.face().card(b_.cardShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))

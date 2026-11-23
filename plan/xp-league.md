@@ -571,7 +571,7 @@ the result once at the next hello.
 Done when: buddy A waves, buddy B sees "A waved at B" and waves back from
 that row.
 
-### 8. The colour
+### 8. The colour (built)
 
 - §8, in this order: the setting and the shared field; the Mac's faces;
   the gel's palettes and the goldens.

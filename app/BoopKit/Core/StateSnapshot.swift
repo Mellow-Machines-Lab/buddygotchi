@@ -172,6 +172,8 @@ public struct StateSnapshot: Equatable, Sendable {
     /// Helpers (subagents) working, over every session.
     public var helpers: Int
     public var vol: Int
+    /// The buddy's colour, 0 to 7 (`BuddyColor`): sent only when it isn't 0.
+    public var color = 0
     /// What's true now (`Tags`): the part of the day, a holiday, how
     /// busy the agents are. The device shows the designs whose tags are
     /// all on, and picks each look's variation itself.
@@ -315,7 +317,7 @@ public struct StateSnapshot: Equatable, Sendable {
     public static let maxTitleBytes = 30, maxProjectBytes = 22
 
     public init(doing: String, activity: String? = nil, mood: String, attn: Attention?, working: Int, idle: Int = 0, helpers: Int = 0,
-                vol: Int, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
+                vol: Int, color: Int = 0, when: [String] = [], todo: Todo? = nil, calls: [Call] = [], list: [Row]? = nil,
                 skip: Int = 0, unlisted: Int = 0) {
         self.doing = doing
         self.activity = activity
@@ -325,6 +327,7 @@ public struct StateSnapshot: Equatable, Sendable {
         self.idle = idle
         self.helpers = helpers
         self.vol = vol
+        self.color = color
         self.when = when
         self.todo = todo
         self.calls = calls
@@ -395,6 +398,7 @@ public struct StateSnapshot: Equatable, Sendable {
         // On a call, or while you speak, Boop is silent: the board plays no
         // voice and no sound.
         fields["vol"] = .int(onCall || speaking ? 0 : vol)
+        if color != 0 { fields["color"] = .int(color) }
         let tags = when.filter(Tags.board.contains)  // the tags the board reads
         if !tags.isEmpty { fields["when"] = .array(tags.map { .string($0) }) }
         if let pointer {
