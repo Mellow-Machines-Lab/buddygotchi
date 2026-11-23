@@ -1,8 +1,8 @@
 // Every cap and rate limit the server holds, in one place. The Mac's numbers
 // can be faked, so the server never trusts more than these.
 
-/** A buddy's XP in one day, the daily ring. */
-export const XP_PER_DAY = 100;
+/** A buddy's XP in one day: the ring is 100, and XP counts past it to this. */
+export const XP_PER_DAY = 300;
 
 /** The shortest time between two sends of a buddy's state: it sends on change. */
 export const SEND_EVERY_MS = 10_000;
@@ -53,3 +53,12 @@ export const GESTURE_UNREAD_KEPT_DAYS = 2;
 /** Bounds on what a buddy says about itself. */
 export const LEVEL_MAX = 1_000_000;
 export const REWARD_DAYS_MAX = 30;
+
+/** The league's list: the top this many, the Mac's own row besides. */
+export const LEAGUE_ROWS = 100;
+/** Closed weeks' places are kept this long; medals for ever. */
+export const RESULTS_KEPT_WEEKS = 12;
+/** What a buddy says of its days in a row, at most. */
+export const DAYS_IN_A_ROW_MAX = 100_000;
+/** The buddy colours: 0 is the blue of today. */
+export const COLORS = 8;

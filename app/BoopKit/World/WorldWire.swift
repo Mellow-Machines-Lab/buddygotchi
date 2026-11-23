@@ -98,9 +98,14 @@ public enum World {
         public var day: String
         public var xpToday: Int
         public var added: Counts
+        /// The days in a row with a full ring, and the buddy's colour, 0 to 7:
+        /// what its card shows others.
+        public var daysInARow: Int = 0
+        public var color: Int = 0
 
         enum CodingKeys: String, CodingKey {
             case seq, name, level, utcOffset = "utc_offset", activity, day, xpToday = "xp_today", added
+            case daysInARow = "days_in_a_row", color
         }
     }
 

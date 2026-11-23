@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { GESTURES, STATE_KEYS } from "../src/app.js";
+import { dayOf, weekOf } from "../src/league.js";
 import { REGIONS, validOffset } from "../src/regions.js";
 import { ACTIVITIES, COUNTS, METRICS } from "../src/world.js";
 import { ADMIN, fixture, world } from "./helpers.js";
@@ -28,6 +29,8 @@ test("buddy-reply.json has the shape of a real send's reply", async () => {
   const b = await w.join("Bean", 540);
   await w.json("PUT", "/v1/admin/goal", { key: ADMIN, body: { title: "Two tests", metric: "tests_passed", target: 2, ends: "2099-12-31", reward_tag: "worldparty" } });
   await w.json("POST", "/v1/gestures", { key: b.key, body: { to: a.id, kind: "boop" } });
+  // A place last week, for its last_week.
+  await w.db.query("insert into buddy_days (buddy, day, xp) values ($1, $2::date, 50)", [a.id, weekOf(dayOf(Date.now() - 7 * 86_400_000))]);
   const real = (await w.send(a, fixture("buddy-state.json"))).body;
   assert.deepEqual(shape(real), shape(example));
   assert.deepEqual(real.counted, example.counted);

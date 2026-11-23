@@ -370,8 +370,9 @@ The owner will seed the world with made-up buddies until real ones come.
   that day. It is random by a hash of `(id, day)`, so it is the same for
   every request. The league, the buddy card and the snapshot add seeds'
   values from this function.
-- The daily cron writes each seed's finished day into `buddy_days`, so
-  weeks close and medals work with no special case.
+- Built differently: nothing writes a seed's days. The league sums a
+  seed's week from the same function, so a week closes with seeds in it
+  and no cron job is needed for them.
 - A gesture to a seed is taken and dropped. A seed sends none.
 - `scripts/seed.ts N` makes N seeds; `scripts/seed.ts --remove` deletes
   every one (`delete from buddies where seed`), with their days, results
@@ -522,7 +523,7 @@ results shows its chip.
 
 Done when: the owner reads the tab and can say what earned today's XP.
 
-### 4. The league on the server
+### 4. The league on the server (built)
 
 - §6.2: the migration, the limits, the two new state keys, closing a week,
   `GET /v1/league`, `GET /v1/buddies/:id` without `between`, `last_week`

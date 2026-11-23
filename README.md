@@ -135,10 +135,11 @@ evals are in [CONTRIBUTING.md](CONTRIBUTING.md).
 ## What leaves your Mac
 
 To the world of buddies, unless you keep Boop private: your buddy's name,
-its level and size, your offset from UTC (not your country or time zone),
+its level, its days in a row and its colour, your offset from UTC (not your country or time zone),
 what it's doing in one word (coding, testing, shipping, waiting, idle,
 asleep), and counts: turns, tests passed, ships, lines changed, and today's
-XP. A random id and key, made when it joins, tell your buddy apart; nothing
+XP. Other buddies see these in the weekly league and on your buddy's card,
+with its week's XP, its place and its medals. A random id and key, made when it joins, tell your buddy apart; nothing
 about you does. The world server keeps it while your buddy sends, and
 forgets it 30 days after the last, or at once when you leave the world
 (internal/world/README.md). Nothing goes before onboarding's world screen,

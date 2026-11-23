@@ -318,8 +318,8 @@ The rules that are easy to break, in full in
   scroll, copy or listen, never what, with no event, nothing in the
   transcript and nothing for the brain, the world or the daily counts.
 - The world gets only `World.State`'s fields (`WorldTests` pins them): the
-  buddy's name and level, its UTC offset, one of six activities and
-  counts. Nothing before onboarding's world screen, nothing with it off.
+  buddy's name and level, its UTC offset, one of six activities,
+  counts, its days in a row and its colour. Nothing before onboarding's world screen, nothing with it off.
 - "Needs you" and the screen priority are plain rules in the core.
 - Jev is asked only where it earns its place: a Moment's move and size,
   and the whole Moment at your lock or unlock, a working check-in and a

@@ -18,7 +18,7 @@ struct WorldAct: View {
                 HStack(alignment: .top, spacing: Theme.gap) {
                     side("Others see", icon: "eye", lines: [
                         "My name and level", "Roughly where I am, by time zone", "What I'm doing, in one word",
-                        "Counts, like tests passed",
+                        "Counts, like tests passed", "My XP this week, in a league",
                     ])
                     side("Nobody sees", icon: "lock", lines: [
                         "Your name", "Your projects and code", "What you say", "What I remember about you",

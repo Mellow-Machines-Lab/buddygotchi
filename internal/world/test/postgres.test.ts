@@ -38,7 +38,7 @@ async function call(method: string, path: string, key?: string, body?: unknown) 
 }
 
 test("migrations apply through the driver, once", async () => {
-  assert.deepEqual(await migrate(db), ["001_world.sql", "002_utc_offset.sql", "003_joins.sql", "004_one_size.sql"]);
+  assert.deepEqual(await migrate(db), ["001_world.sql", "002_utc_offset.sql", "003_joins.sql", "004_one_size.sql", "005_league.sql"]);
   assert.deepEqual(await migrate(db), []);
 });
 

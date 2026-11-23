@@ -1,0 +1,48 @@
+{
+  "week": "2026-11-23",
+  "ends_at": "2026-11-30T00:00:00Z",
+  "total": 1302,
+  "awake": 214,
+  "with_xp": 1240,
+  "rows": [
+    {
+      "place": 1,
+      "id": "3f8c2a10-6b1e-4d6f-9a51-2c7e8b0d4f11",
+      "name": "Bean",
+      "level": 9,
+      "color": 3,
+      "activity": "shipping",
+      "xp_week": 512
+    },
+    {
+      "place": 2,
+      "id": "9a1d4e22-7c3b-4b8e-8f20-5d6a1c9e7b02",
+      "name": "Nori",
+      "level": 6,
+      "color": 0,
+      "activity": "coding",
+      "xp_week": 468
+    }
+  ],
+  "me": {
+    "place": 3,
+    "xp_week": 431,
+    "top_percent": 18,
+    "ahead": {
+      "id": "9a1d4e22-7c3b-4b8e-8f20-5d6a1c9e7b02",
+      "name": "Nori",
+      "by": 37
+    },
+    "behind": {
+      "id": "c4e9b7a3-2d1f-4a6c-b8e5-7f3a9d2c1e60",
+      "name": "Rex",
+      "by": 41
+    }
+  },
+  "last_week": {
+    "week": "2026-11-16",
+    "place": 2,
+    "xp": 512,
+    "of": 1280
+  }
+}

@@ -159,8 +159,8 @@ test(`XP counts at most ${XP_PER_DAY} a day`, async () => {
   r = await w.send(b, state({ seq: 2, day: "2026-11-08", xp_today: 82 }));
   assert.equal(r.body.counted.xp, 0, "the same XP again adds nothing");
   await w.rewind(b);
-  r = await w.send(b, state({ seq: 3, day: "2026-11-08", xp_today: 150 }));
-  assert.equal(r.body.counted.xp, 18, "past the ring, clamped");
+  r = await w.send(b, state({ seq: 3, day: "2026-11-08", xp_today: 350 }));
+  assert.equal(r.body.counted.xp, 218, "past the day's most, clamped");
   assert.deepEqual(r.body.clamped, ["xp_today"]);
   assert.equal((await today(b.id)).xp, XP_PER_DAY);
   await w.rewind(b);

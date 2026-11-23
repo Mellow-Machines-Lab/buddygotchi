@@ -27,8 +27,10 @@ policies: [agent-hooks](agent-hooks/SECURITY.md) and
 - **What goes to TypeSafe** with each brain call, when there's a key
   (the README's "What leaves your Mac").
 - **The world's server** (`internal/world/`), unless you keep Boop
-  private: the buddy's name, level and size, UTC offset, one of six
-  activities and counts (`World.State`, which a test pins), sent with a
+  private: the buddy's name, level, days in a row and colour, UTC offset,
+  one of six activities and counts (`World.State`, which a test pins).
+  Others see these, with the week's XP, its place and medals, in the
+  league and on the buddy's card. It's sent with a
   random key kept in `world.json` in the state folder, readable only by
   you, never in the Keychain. Anyone with that key can change or delete
   your buddy in the world, nothing more. Names are public, filtered by

@@ -32,9 +32,14 @@ public final class WorldLink {
         public var activity: World.Activity
         public var day: String
         public var xpToday: Int
+        public var daysInARow: Int
+        public var color: Int
         public var ringClosed: Bool { xpToday >= Growth.perDay }
 
-        public init(name: String, level: Int, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int) {
+        public init(name: String, level: Int, utcOffset: Int, activity: World.Activity, day: String, xpToday: Int,
+                    daysInARow: Int = 0, color: Int = 0) {
+            self.daysInARow = daysInARow
+            self.color = color
             self.name = name
             self.level = level
             self.utcOffset = utcOffset
@@ -47,6 +52,7 @@ public final class WorldLink {
         /// what it's doing, a level, the ring closing, its name.
         func changes(from last: Now) -> Bool {
             activity != last.activity || level != last.level || name != last.name || utcOffset != last.utcOffset
+                || color != last.color
                 || (ringClosed && !last.ringClosed)
         }
     }
@@ -284,7 +290,8 @@ public final class WorldLink {
         self.identity = identity
         save()
         let state = World.State(seq: sending.seq, name: me.name, level: me.level,
-                                utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: sending.added)
+                                utcOffset: me.utcOffset, activity: me.activity, day: me.day, xpToday: me.xpToday, added: sending.added,
+                                daysInARow: me.daysInARow, color: me.color)
         busy = true
         client.send(state, key: identity.key) { [weak self] result in
             guard let self else { return }
@@ -451,7 +458,8 @@ public final class WorldLink {
         self.identity = identity
         save()
         let state = World.State(seq: identity.seq, name: me.name, level: me.level,
-                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added)
+                                utcOffset: me.utcOffset, activity: .asleep, day: me.day, xpToday: me.xpToday, added: added,
+                                daysInARow: me.daysInARow, color: me.color)
         guard client.sendNow(state, key: identity.key, timeout: Self.quitWait) else {
             return log("world: asleep didn't go before the quit")
         }
