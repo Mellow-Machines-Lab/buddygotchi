@@ -126,6 +126,8 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
     // With no Jev key, the rules brain: every Boop has its personality.
     options.rules = true
+    // At a dream, your own agent tool writes the memory, if Settings allows.
+    options.agentTool = true
     if let ble = board as? BLETransport { options.chooseBoard = { ble.take(only: $0) } }
     options.log = { log.write($0) }
     options.pushToTalkWorks = { SpeechListener.allowed }

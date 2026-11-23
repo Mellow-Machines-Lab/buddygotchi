@@ -635,6 +635,13 @@ final class AppModel: ObservableObject {
         runtime?.showWhereBoopSits()
     }
 
+    /// Takes effect from the next dream.
+    func setAgentsThink(_ on: Bool) {
+        guard status?.agentsThink != on else { return }
+        status?.agentsThink = on
+        runtime?.setAgentsThink(on)
+    }
+
     /// Takes effect from the next event.
     func setSwearing(_ on: Bool) {
         guard status?.swearing != on else { return }

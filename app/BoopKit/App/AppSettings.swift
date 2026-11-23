@@ -41,6 +41,11 @@ public struct AppSettings: Codable, Equatable, Sendable {
     public var worldShown = false
     /// The buddy's colour, 0 to 7 (`BuddyColor`): 0 is its own blue.
     public var color = 0
+    /// Your own coding agent helps Boop think (documentation/design/
+    /// brain.md): at a dream, Claude Code or Codex writes the memory in
+    /// Apple Intelligence's place, on the plan you have. On unless you
+    /// turn it off.
+    public var agentsThink = true
 
     public init() {}
 
@@ -67,11 +72,12 @@ public struct AppSettings: Codable, Equatable, Sendable {
         world = (try? c.decodeIfPresent(Bool.self, forKey: .world)) ?? true
         worldShown = (try? c.decodeIfPresent(Bool.self, forKey: .worldShown)) ?? false
         color = max(0, min(BuddyColor.all.count - 1, (try? c.decodeIfPresent(Int.self, forKey: .color)) ?? 0))
+        agentsThink = (try? c.decodeIfPresent(Bool.self, forKey: .agentsThink)) ?? true
     }
 
     // `noticesYou` keeps the key it had as "Types along".
     enum CodingKeys: String, CodingKey {
-        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown, color
+        case talk, swearing, renamed, volume, board, onboarding, noticesYou = "typesAlong", anchor, simulator, world, worldShown, color, agentsThink
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -88,6 +94,7 @@ public struct AppSettings: Codable, Equatable, Sendable {
         if !world { try c.encode(world, forKey: .world) }
         if worldShown { try c.encode(worldShown, forKey: .worldShown) }
         if color != 0 { try c.encode(color, forKey: .color) }
+        if !agentsThink { try c.encode(agentsThink, forKey: .agentsThink) }
     }
 
     public static let file = "settings.json"

@@ -74,14 +74,23 @@ public struct MemoryRequest: Equatable, Sendable {
 /// the habits and sagas still come; the moments, the stories and anything
 /// else in your words wait.
 public struct MemoryPipelineWriter: MemoryWriter {
-    public init() {}
+    /// Your own agent tool, asked first at each dream when it gives one
+    /// (`AgentToolModel`): nil for none, as tests and headless have.
+    let agentTool: @Sendable () -> MemoryModel?
+
+    public init(agentTool: @escaping @Sendable () -> MemoryModel? = { nil }) {
+        self.agentTool = agentTool
+    }
+
+    /// The model this dream asks: your agent tool, else the Mac's.
+    var model: MemoryModel? { agentTool() ?? Self.model }
 
     public func write(_ request: MemoryRequest) async -> MemoryWriterReply {
-        .reply(await MemoryPipeline.write(request.pipeline, model: Self.model))
+        .reply(await MemoryPipeline.write(request.pipeline, model: model))
     }
 
     public func sign(for note: String) async -> MemoryWriterSign {
-        guard let model = Self.model else { return .noAnswer }
+        guard let model else { return .noAnswer }
         return await MemoryPipeline.sign(for: note, model: model)
     }
 }

@@ -116,6 +116,12 @@ struct SettingsPane: View {
                     RowDivider()
                     colorRow
                     RowDivider()
+                    SettingRow(icon: "sparkles", title: "Your agent helps \(model.name) think",
+                               detail: "As \(model.name) sleeps, Claude Code or Codex writes what it remembers of you, on your own plan.") {
+                        Toggle("Your agent helps", isOn: Binding(get: { model.status?.agentsThink ?? true }, set: { model.setAgentsThink($0) }))
+                            .toggleStyle(.boop).labelsHidden()
+                    }
+                    RowDivider()
                     volumeRow
                     RowDivider()
                     SettingRow(icon: "keyboard", title: "Notices what you do at the Mac",

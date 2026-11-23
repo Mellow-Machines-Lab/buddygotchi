@@ -164,6 +164,14 @@ counts them (how long, whether you said Boop's name, a "please", a
 what you say to Boop when you hold its button. Your files, commands and
 tool output never do.
 
+At each dream, while Settings' "Your agent helps Boop think" is on, Boop
+asks your own Claude Code or Codex the dream's small questions, on your
+plan: what you said to Boop since the last dream and the notes it may
+keep go to that agent's provider, the one that already has your prompts.
+It runs with no tools and no hooks, keeps no session, and never runs
+while a turn of yours does. Off, Apple Intelligence on your Mac asks them,
+or code alone.
+
 The notes and day lines in `memory.md` go to Jev as MEMORY with each
 request, with any words of yours and project names they quote, and a note's
 short line may go as an option for a sign. The digest of each dream

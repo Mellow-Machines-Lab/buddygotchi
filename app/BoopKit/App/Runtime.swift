@@ -30,6 +30,9 @@ public final class Runtime: @unchecked Sendable {
         /// (`RulesBrain`): the app and headless. Off, nothing wakes the brain
         /// with no key, as the tests and `--brain none` want.
         public var rules = false
+        /// The dream may run your own agent tool (`AgentToolModel`): the
+        /// app's. Tests and headless keep it off unless asked.
+        public var agentTool = false
         public var time = LocalTime()
         /// Milliseconds for every duration: a steady clock by default.
         public var clock: @Sendable () -> Int64 = Runtime.steadyClock()
@@ -458,7 +461,15 @@ public final class Runtime: @unchecked Sendable {
         // read as the day they came, then a dream not yet told logged again
         // if its event has left the log. Its days close from the next input.
         if !fellBack {
-            let remembers = Memory(store: values, time: options.time, writer: MemoryPipelineWriter(), files: memory,
+            // The dream's model: your own agent tool while Settings allows
+            // it, else Apple Intelligence, else code alone.
+            let dreamFolder = options.stateDir.appendingPathComponent("dream")
+            let stateDir = options.stateDir, mayRun = options.agentTool
+            let agentTool = { @Sendable () -> MemoryModel? in
+                guard mayRun, AppSettings.load(from: stateDir).agentsThink else { return nil }
+                return AgentToolModel.find(folder: dreamFolder)
+            }
+            let remembers = Memory(store: values, time: options.time, writer: MemoryPipelineWriter(agentTool: agentTool), files: memory,
                                    queue: home, note: log)
             remembers.follow(transcriptAt: transcript.lastSeq)
             let folder = options.stateDir.appendingPathComponent(Transcript.folderName)
@@ -1154,6 +1165,12 @@ public final class Runtime: @unchecked Sendable {
     /// Swearing on or off, kept in `settings.json`: read at each pass.
     public func setSwearing(_ on: Bool) {
         home.async { [self] in saveSettings { $0.swearing = on } }
+    }
+
+    /// Whether your own agent helps Boop think, kept in `settings.json`:
+    /// read at each dream.
+    public func setAgentsThink(_ on: Bool) {
+        home.async { [self] in saveSettings { $0.agentsThink = on } }
     }
 
     public func setTalk(_ talk: Talk) {

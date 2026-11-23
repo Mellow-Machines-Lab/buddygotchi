@@ -67,15 +67,16 @@ let usages: [(command: String, text: String)] = [
         --verbose every reading. Needs Apple Intelligence; exits 1 without it.
     """),
     ("memory", """
-    boopdev memory write [--fixture FILE] [--only TEXT]
+    boopdev memory write [--fixture FILE] [--only TEXT] [--model agent]
         Runs the dream's write with Apple Intelligence on this Mac, as the app does, over fixture nights
         (each a memory, CERTAIN, its RECENT lines and what a person would accept), and prints each night's reply,
         the edits applied, the refusals and the memory after it, for a person to judge the prompt by. FILE
         defaults to the repo's internal/app/Tests/Fixtures/memory-nights.json. Needs Apple Intelligence; exits 1
         without it.
-    boopdev memory gates
+    boopdev memory gates [--model agent] [--held-out]
         Scores each small yes-or-no question the write asks against labeled sentences (memory-gates.json). Needs
-        Apple Intelligence.
+        Apple Intelligence. --model agent asks your own Claude Code or Codex instead (AgentToolModel), as the
+        app's dream does when Settings lets your agent help: each answer is a run on your plan.
     """),
     ("hooks", """
     boopdev hooks status|install|remove [claude|codex] --home DIR [--hook PATH]
@@ -498,12 +499,25 @@ func readCheck(_ raw: [String]) async {
 
 /// `boopdev memory write`: the dream's write over fixture nights.
 func memory(_ raw: [String]) async {
-    if raw.first == "gates" {
-        guard #available(macOS 26.0, *), AppleIntelligenceLabeler.isAvailable else { fail("boopdev memory gates: Apple Intelligence isn't available on this Mac") }
+    // `--model agent`: your own agent tool (`AgentToolModel`) in Apple
+    // Intelligence's place, as the app's dream uses it.
+    let agent = raw.contains("--model") && raw.drop { $0 != "--model" }.dropFirst().first == "agent"
+    let heldOut = raw.contains("--held-out")
+    let rest = raw.filter { $0 != "--model" && $0 != "agent" && $0 != "--held-out" }
+    func agentModel() -> MemoryModel {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("boopdev-dream")
+        guard let model = AgentToolModel.find(folder: folder) else { fail("boopdev memory: no claude or codex found") }
+        print("the model: \(model.tool.rawValue) at \(model.executable)")
+        return model
+    }
+    if rest.first == "gates" {
         guard let file = findRepo()?.appendingPathComponent("internal/app/Tests/Fixtures/memory-gates.json") else { fail("boopdev memory gates: no repo here") }
-        await memoryGates(file)
+        if agent { return await memoryGates(file, model: agentModel(), heldOutOnly: heldOut) }
+        guard #available(macOS 26.0, *), AppleIntelligenceLabeler.isAvailable else { fail("boopdev memory gates: Apple Intelligence isn't available on this Mac") }
+        await memoryGates(file, model: AppleIntelligenceMemoryModel(), heldOutOnly: heldOut)
         return
     }
+    let raw = rest
     guard raw.first == "write" else { fail("boopdev memory: the command is write or gates\n\(usage)") }
     let args = arguments("memory", Array(raw.dropFirst()), options: ["--fixture", "--only"], flags: [])
     guard let file = args["--fixture"].map({ URL(fileURLWithPath: $0) })
@@ -512,10 +526,11 @@ func memory(_ raw: [String]) async {
           let nights = (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] else {
         fail("boopdev memory write: can't read the fixture; pass --fixture FILE")
     }
-    guard AppleIntelligenceLabeler.isAvailable else {
+    let model: MemoryModel? = agent ? agentModel() : nil
+    guard agent || AppleIntelligenceLabeler.isAvailable else {
         fail("boopdev memory write: Apple Intelligence isn't available on this Mac")
     }
-    let writer = MemoryPipelineWriter()
+    let writer = MemoryPipelineWriter(agentTool: { model })
     for night in nights {
         let name = night["name"] as? String ?? "?"
         if let only = args["--only"], !name.localizedCaseInsensitiveContains(only) { continue }

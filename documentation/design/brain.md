@@ -11,7 +11,13 @@ On the `brain` branch, not merged:
 - Built: layer 1, the rules brain (`RulesBrain`, `MoodMap`). With no Jev key
   it answers every pass, and the mood moves only as the mood files say. All
   30 must scenarios pass with it (`boopdev eval --brain rules`).
-- Not built: layers 2 to 4, and Jev composed on top of the rules.
+- Built: the dream by your own agent tool (`AgentToolModel`), behind
+  Settings' "Your agent helps Boop think", on by default. On held-out
+  questions it answered 61 of 64 right, against Apple Intelligence's 55
+  (`boopdev memory gates --held-out --model agent`).
+- Not built: layer 2 (it waits for the design build's card changes), the
+  dream writing tomorrow's lines, layer 4, and Jev composed on top of the
+  rules.
 
 ## The aim
 
