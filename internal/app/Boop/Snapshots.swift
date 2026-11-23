@@ -90,9 +90,19 @@ enum Snapshots {
                     gel.hooks[.claude] = .installed
                     shot("overview-gel", gel, pane: .overview)
                 }
-                // The Boop tab: the ring part full, full, and on the first day.
-                shot("boop", model(installer, status: status()), pane: .overview, tab: .boop)
-                shot("boop-ring-full", model(installer, status: status(growth: Growth(xp: 1_200, today: 100))), pane: .overview, tab: .boop)
+                // The Boop tab: the ring part full in two tints, full, past
+                // 100, and on the first day.
+                var part = status(growth: Growth(xp: 3_164, today: 64, care: 9))
+                part.todayBy = [.turns: .init(n: 8, xp: 40), .ships: .init(n: 1, xp: 10), .fixes: .init(n: 1, xp: 5), .care: .init(n: 3, xp: 9)]
+                part.daysInARow = 12
+                shot("boop", model(installer, status: part), pane: .overview, tab: .boop)
+                var full = status(growth: Growth(xp: 3_200, today: 100, care: 12))
+                full.todayBy = [.turns: .init(n: 16, xp: 80), .ships: .init(n: 1, xp: 10), .care: .init(n: 4, xp: 12)]
+                full.daysInARow = 13
+                shot("boop-ring-full", model(installer, status: full), pane: .overview, tab: .boop)
+                var past = status(growth: Growth(xp: 3_340, today: 240, care: 30))
+                past.todayBy = [.turns: .init(n: 36, xp: 180), .ships: .init(n: 3, xp: 30), .care: .init(n: 10, xp: 30)]
+                shot("boop-past-the-ring", model(installer, status: past), pane: .overview, tab: .boop)
                 var newborn = status(growth: Growth())
                 (newborn.notes, newborn.week, newborn.daysOld) = ([], [.init(day: "2026-11-08", xp: 0, today: "2026-11-08")], 0)
                 shot("boop-first-day", model(installer, status: newborn), pane: .overview, tab: .boop)
@@ -842,7 +852,7 @@ enum Snapshots {
         if snapshot.doing == "asleep" { status.doingReason = Narration.sleeping(noAgents: false, napping: false, dozeMs: 3_600_000, name: name) }
         status.daysOld = 47
         status.week = zip(["2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06", "2026-11-07", "2026-11-08"],
-                          [100, 64, 100, 100, 35, 100, growth?.today ?? 0]).map { .init(day: $0, xp: $1, today: "2026-11-08") }
+                          [100, 64, 100, 100, 0, 100, growth?.today ?? 0]).map { .init(day: $0, xp: $1, today: "2026-11-08") }
         status.world = world(name: name)
         status.recently = [.init(day: "2026-10-21", line: "A long day on \"api\"; the tests finally passed. You stroked \(name) 4 times.",
                                  today: "2026-10-22"),

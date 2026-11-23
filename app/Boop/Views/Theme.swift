@@ -78,6 +78,8 @@ enum Theme {
     /// Good as a shape: a full ring, a switch that's on.
     static let sageSignal = adaptive(Palette.sageSignalLight, Palette.sage)
     static let ring = adaptive(Palette.ringLight, Palette.ringDark)
+    /// Your time with Boop, in today's ring: the face's blush.
+    static let care = Color(hex: Palette.blush)
     static let controlOff = adaptive(Palette.controlOffLight, Palette.controlOffDark)
     static let lifted = adaptive(Palette.paperLight, Palette.liftedDark)
     static let amberInk = adaptive(Palette.amberInkLight, Palette.amberInkDark)

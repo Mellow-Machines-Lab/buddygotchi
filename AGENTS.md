@@ -335,7 +335,7 @@ The rules that are easy to break, in full in
 Every string a person reads, on the Mac or the board: short and warm, with
 no numbers that aren't needed. Talk like a friend, not a manual: "82
 today. Fill the ring and you're done for the day," not "A full ring is
-100. More doesn't count." No game jargon, no exclamation spam.
+100. More doesn't count." No game jargon but XP, the one unit people see, and no exclamation spam.
 
 ## Docs stay in sync
 

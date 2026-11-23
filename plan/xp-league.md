@@ -513,7 +513,7 @@ says, by hand count.
 Done when: on the simulator, no bar ever shows, and each of the three
 results shows its chip.
 
-### 3. The Boop tab
+### 3. The Boop tab (built)
 
 - `BoopPane.swift` as §4, with the Now tab's mood view shared.
 - Snapshots (`Boop --snapshots`): nothing yet, part-full with both tints,
