@@ -70,7 +70,7 @@ engine, for working on it.
 | 💻 **A Mac** | macOS 14 or later, with Command Line Tools 26 or later (`xcode-select --install`): Swift 6.2 and the macOS 26 SDK |
 | 🐍 **A newer Python** | For flashing the board, unless you already have PlatformIO's `pio`: `brew install python` ([why](firmware/README.md#build-and-flash)). PlatformIO installs itself |
 | 🟨 **A board** | One of the two below, and a USB cable that carries data |
-| 🔑 **A Jev key** | Optional. [Jev](https://docs.typesafe.ai/api) is TypeSafe's small hosted model, and it's what picks how Boop reacts. It needs a key from TypeSafe, which may cost money. Without one, Boop still shows what your agents are doing and when you're needed, but doesn't react or celebrate. Add it in Boop's Settings |
+| 🔑 **A Jev key** | Optional. [Jev](https://docs.typesafe.ai/api) is TypeSafe's small hosted model, and it's what picks how Boop reacts. It needs a key from TypeSafe, which may cost money. Without one, Boop's own rules pick how it reacts, on your Mac, with the same moods and the same celebrations. Add it in Boop's Settings |
 
 ### Supported boards
 
@@ -147,7 +147,7 @@ and nothing with the world off: then you can still look at the world, but
 you aren't in it and nobody can boop you. Your name, projects, code, what
 you say and Boop's memory never go.
 
-To Jev, nothing unless you add a Jev key. With one, each time Boop thinks, it
+To Jev, nothing unless you add a Jev key. Without one, Boop's rules decide on your Mac and nothing goes anywhere. With one, each time Boop thinks, it
 sends TypeSafe a short text: what's been happening, in lines like
 `claude started turn 1 on "landing".`, and Boop's personality, mood and
 memory (MEMORY).

@@ -131,15 +131,15 @@ td.where{font-size:13px;white-space:nowrap}
   <h2>The model: Doing, Mood, Moment</h2>
   <p>Everything Boop shows is one of three layers on the board, and everything it says goes out on one of three channels. The words here are the ones the code, the prompt and the docs use (the Words table in <code>CLAUDE.md</code> has each one, the words it replaced and the names kept on the wire).</p>
 <pre> The agents ─┐                         ┌─ DOING   what Boop is busy with      rules, at once
- You ────────┼─► the Mac (the mind) ──►├─ MOOD    how Boop feels, minutes      Jev
-             │                         └─ MOMENT  a beat on top, seconds       board, rules or Jev
+ You ────────┼─► the Mac (the mind) ──►├─ MOOD    how Boop feels, minutes      the brain
+             │                         └─ MOMENT  a beat on top, seconds       board, rules or the brain
              │
              └─ each dream: MEMORY      what Boop keeps of you                  the Mac</pre>
   <div class="scroll"><table>
     <thead><tr><th>Layer</th><th>What it is</th><th>Lasts</th><th>Decided by</th></tr></thead>
     <tbody>
       <tr><td><b>Doing</b></td><td>What Boop is busy with, from the facts: resting, working (and how: the activity), asleep, listening, no app. With no app the board rests with a plug and "no Mac" in its lane, sleeps after 5 minutes with no plug, answers a touch by itself and tells the Mac nothing of it. The needs-you screen sits on top of it</td><td>While the facts hold</td><td>The rules (<code>Core</code>), sent in every <code>state</code></td></tr>
-      <tr><td><b>Mood</b></td><td>How Boop feels: one of the pack's 7 lasting moods (calm, happy, focused, proud, cross, sad, lonely), the backdrop that shades Doing</td><td>Minutes</td><td>Jev (<code>MoodOutput</code>): it stays or moves to any other. Code fades it by the pack's minutes and counts how cross it is (<code>MoodOutput.fade</code>, <code>level</code>)</td></tr>
+      <tr><td><b>Mood</b></td><td>How Boop feels: one of the pack's 7 lasting moods (calm, happy, focused, proud, cross, sad, lonely), the backdrop that shades Doing</td><td>Minutes</td><td>The brain (<code>MoodOutput</code>): Jev with a key, which may move it to any other; else the rules brain, which moves it only as the pack's mood files say (<code>MoodMap</code>). Code fades it by the pack's minutes and counts how cross it is (<code>MoodOutput.fade</code>, <code>level</code>)</td></tr>
       <tr><td><b>Moment</b></td><td>A short beat on top when something happens: an event, an emotion, a size, and its voice and sign</td><td>Seconds</td><td>The board (a touch), the rules (a greeting, a level-up) or Jev (<code>MomentOutput</code>); a <code>do</code> on the wire</td></tr>
     </tbody>
   </table></div>
@@ -211,7 +211,7 @@ td.where{font-size:13px;white-space:nowrap}
     <li><b>Intake.</b> The Mac reads the agent's last message into a reading (its kind, tone, length and up to three short phrases) and lets the words go. The finish and the reading go into today's transcript file.</li>
     <li><b>The rules, at once.</b> The core updates the sessions and sends the board a new <code>state</code>: Doing, the mood, the counts, the to-do list and the tags. The work stream sends its own word for the finish ("done").</li>
     <li><b>The view.</b> <code>TranscriptView</code> writes the event as a line for the brain, counts runs (quick wins, failing checks) and decides whether it wakes the brain.</li>
-    <li><b>The brain, later.</b> Jev reads the prompt (below) and answers every question in one request: the mood, the emotion, the move, the size, what Boop says, and sometimes a sign. All multiple choice.</li>
+    <li><b>The brain, later.</b> Jev reads the prompt (below) and answers every question in one request: the mood, the emotion, the move, the size, what Boop says, and sometimes a sign. All multiple choice. With no Jev key the rules brain answers the same questions at once, with no network (<code>RulesBrain</code>): it reads the event's facts, not the prompt, moves the mood only by the pack's mood map (<code>MoodMap</code>), and never shows the same face twice running for one kind of moment.</li>
     <li><b>The outputs.</b> The mood output keeps or moves the mood. The react output applies its code rules (Talk, needs you), picks a recorded take, adds the narration, and sends a <code>do</code> to the board.</li>
     <li><b>The board.</b> LinkKit's queue plays it when the Moment before it ends. The board picks the design's variation, sizes a finish by the turn's length, plays the take, and reports <code>ended</code>. Between Moments it deals its pastimes by the tiers.</li>
   </ol>

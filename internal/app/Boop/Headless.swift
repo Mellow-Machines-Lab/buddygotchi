@@ -62,7 +62,8 @@ enum Headless {
         // shell must never use the owner's key from the Keychain.
         options.readJevKey = { _ in JevKey.environment() }
         if brain == "scripted" { options.brain = { _ in ScriptedBrain.pipelineCheck } }
-        if brain == "none" { options.brain = { _ in nil } }
+        if brain == "none" { options.brain = { _ in nil }; options.rules = false }
+        if brain == "rules" { options.brain = { _ in nil } }
         // `--record` listens from the start, so the recording opens with
         // how things stood when the demo began (DemoRecorder.begin).
         let recorder = args["--record"].map { _ in DemoRecorder() }

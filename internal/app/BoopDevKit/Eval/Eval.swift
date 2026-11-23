@@ -706,7 +706,7 @@ public struct Eval {
     public var debugLog: URL?
     /// Whether the whole-run checks on Jev's own choices (its variety, its
     /// mood's changes, what it says) are judged: not with a scripted brain.
-    public var judgesChoices: Bool { !(brain is ScenarioBrain) }
+    public var judgesChoices: Bool { !(brain is ScenarioBrain) || rules }
     /// Whether the expect brain answers every pass but those of a step that
     /// expects one, which `brain` answers (the quick level).
     public var scriptsSetup = false
@@ -716,6 +716,9 @@ public struct Eval {
     /// Hears each pass of a run with the step it came on (from 1), a
     /// check-in's on the way to the step included: `boopdev prompts`.
     public var onPass: ((_ step: Int, _ pass: Harness.Pass) -> Void)?
+    /// Each run answered by the rules brain (`RulesBrain`), built for its
+    /// own harness and mood: `--brain rules`, no Jev request.
+    public var rules = false
 
     public init(brain: any Brain, steering: Steering) {
         self.brain = brain
@@ -858,6 +861,10 @@ public struct Eval {
             harness.onPass = { pass in writer.pass(pass, launchOptions: [:], at: clock.now) }
         }
         func moodNow() -> String { home.sync { MoodOutput.value(mood, harness.log.view(now: clock.now)) } }
+        let brain: any Brain = !self.rules ? self.brain : RulesBrain(
+            seed: SplitMix64.seed(of: scenario.file), facts: { [weak harness] in harness?.line($0)?.facts },
+            mood: { log in (MoodOutput.value(mood, log), MoodOutput.level(mood, log)) },
+            working: { log in view.isWorking(at: clock.now, log) })
         home.sync {
             harness.use(brain)
             // The mood it starts in, as the dashboard would set it just before.

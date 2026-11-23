@@ -213,7 +213,7 @@ things on three channels, **voice**, **sign** and **narration**.
 
 | Word | Means | Not | On the wire |
 | --- | --- | --- | --- |
-| mood | One of the pack's 7 lasting moods: calm, happy, focused, proud, cross, sad, lonely (`CharacterPack.lasting`). Jev keeps it or moves it to any other; the wire carries the face it rests in | (a Moment's emotion) | `mood` |
+| mood | One of the pack's 7 lasting moods: calm, happy, focused, proud, cross, sad, lonely (`CharacterPack.lasting`). Jev keeps it or moves it to any other; with no key the rules brain moves it only as the pack's mood files say (`MoodMap`); the wire carries the face it rests in | (a Moment's emotion) | `mood` |
 | resting mood | Calm, where moods settle | default mood | |
 | level | How cross it is, 1 to 3, which code counts and Jev never picks: pokes and shakes in a row, failed checks and turns, rude words; a stroke takes it one down. It picks cross's resting face: annoyed, grumpy, angry (`MoodOutput.level`) | intensity, step | `level` (the transcript's) |
 | fade | A mood settling by itself after its minutes in `character.json`, to calm (proud to happy, cross a level down), run by code on the Mac's clock, never by Jev (`MoodOutput.fade`) | drift | `fade` (the transcript's) |
@@ -264,7 +264,8 @@ things on three channels, **voice**, **sign** and **narration**.
 | message | One JSON line on the wire: `hello`, `state`, `do`, `ev` | line | |
 | the prompt | What Jev reads: guide, PERSONALITY, MEMORY, MOOD (the mood's file, then cross's level now), CONTEXT, HISTORY, NOW | the state | |
 | CONTEXT | The prompt's section for how things stand: When, Talk, the buddy, you, the agents, the day so far (`ContextSection`) | NOW (that's the event), status | |
-| pass | One request to Jev: its mood, its emotion and what it says; to your words, its reply too; at some events a sign | | |
+| pass | One request to the brain: its mood, its emotion and what it says; to your words, its reply too; at some events a sign | | |
+| rules brain | The brain with no Jev key: the same questions answered by rules on the Mac, from the event's facts and the mood map, never the prompt's prose (`RulesBrain`, `MoodMap`) | rules engine | `rules` (the brain's id) |
 | wake, hold | Whether an event asks Jev at all. What wakes it: your prompt's reading, a finish, your words, a failed check or a fix, a touch, your coming back, an answered ask, a wish's end, a push's result, an answered request, and the idle check-in (`TranscriptView.wakes`). A turn's start, your lock and unlock, the working check-in, a boop from the world and Boop's growth never do | | |
 | check-in | Boop looking in by itself: working (during a turn), the rule's small Moment with a word about the work and no pass (`MomentRule.checkIn`); or idle (while you're here), where the idle beat is dealt and Jev picks the face | heartbeat | `check_in`, `working` |
 | output | What Jev's answers drive (MellowHarness's `Output`; Boop's `mood` and `react`) | action | |

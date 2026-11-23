@@ -18,16 +18,17 @@ let usage = """
                it lists in ~/.agent-hooks/sockets as dev-<folder>.sock. A first launch on a new folder is
                onboarding (make dev FRESH=1).
            Boop --headless --state-dir DIR [--link usb:SOCKET|none] [--socket PATH]
-                [--talk quiet|normal] [--brain jev|scripted|none] [--name NAME]
+                [--talk quiet|normal] [--brain jev|rules|scripted|none] [--name NAME]
                 [--no-open] [--debug] [--demo FILE|pack|pack:NAME [--live] [--record FILE]]
                No UI and no Bluetooth. The hook socket defaults to DIR/boop.sock. A new state directory
                is set up with --name (default Boop). --talk overrides the saved one for this run only.
                The world of buddies only with BOOP_WORLD_URL set: npm run dev in internal/world serves a
                fake one on http://localhost:8787.
                --brain jev (the default) asks Jev only when BOOP_JEV_KEY holds its key, since headless never
-               reads the Keychain; without it Boop does only its rule reactions. --brain scripted answers
-               every pass the same way without a network: an excited "Go", for pipeline checks. --brain none
-               asks no brain at all, even with a key: only the rules, and dev lines' answers. Your prompts are
+               reads the Keychain; without it the rules brain answers, with no network. --brain rules asks
+               the rules brain even with a key. --brain scripted answers every pass the same way without a
+               network: an excited "Go", for pipeline checks. --brain none asks no brain at all, even with a
+               key: only the rule reactions, and dev lines' answers. Your prompts are
                counted only, never read by Apple Intelligence.
                Stops cleanly on SIGINT or SIGTERM. {"dev":"advance","ms":N} on the socket moves the clock forward,
                and {"dev":"tap"} stands in for a tap on the board. A tap while something needs you opens that
@@ -123,6 +124,8 @@ func runtimeOptions(stateDir: URL, socketPath: String, link: LinkSetting, debug:
         AppModel.offersSimulator ? DeviceChooser(board: board, simulator: { BoardLink() }, log: { log.write($0) }) : board
     }
     var options = Runtime.Options(stateDir: stateDir, socketPath: socketPath, link: board.map { chooser($0) }, steering: bundledSteering())
+    // With no Jev key, the rules brain: every Boop has its personality.
+    options.rules = true
     if let ble = board as? BLETransport { options.chooseBoard = { ble.take(only: $0) } }
     options.log = { log.write($0) }
     options.pushToTalkWorks = { SpeechListener.allowed }

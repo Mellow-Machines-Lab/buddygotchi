@@ -13,6 +13,7 @@ let usages: [(command: String, text: String)] = [
     boopdev eval [--level quick|standard|full] [--runs N] [--only TEXT] [--always] [--labeler apple] [--timeline] [--scenarios DIR] [--steering DIR]
     boopdev eval --list [--level quick|standard|full] [--runs N] [--always] [--only TEXT] [--scenarios DIR] [--steering DIR]
     boopdev eval --scripted [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
+    boopdev eval --brain rules [--only TEXT] [--always] [--timeline] [--scenarios DIR] [--steering DIR]
         Runs the harness eval scenarios (internal/EVALS.md): hook-level steps on a virtual clock through a fresh
         pipeline, the real harness and outputs, and Jev, each pass checked against what it should come to (the
         reaction, what it says, how long the face holds and the mood), and each run against its whole-run
@@ -26,7 +27,8 @@ let usages: [(command: String, text: String)] = [
         Before asking Jev anything it counts the requests (each run's passes with the expect brain), and refuses
         the run if that's more than what's left of the day's limit across every command and worktree, kept in
         ~/.boopdev/jev-requests.json. A run that reaches the limit stops and reports what finished.
-        BOOP_JEV_OVER_LIMIT=1 goes past the limit, only when the owner says so. --labeler apple reads each prompt and last message with Apple Intelligence on
+        BOOP_JEV_OVER_LIMIT=1 goes past the limit, only when the owner says so. --brain rules runs every scenario
+        Jev would, once, with the rules brain (no key, no Jev request), and writes its trajectories for the judge. --labeler apple reads each prompt and last message with Apple Intelligence on
         this Mac, in place of the step's own reading, so a run checks the reading too. --always runs only
         the always scenarios, Boop's character. --timeline
         prints every pass of every run. --list prints each scenario at the level with its case, runs and
@@ -118,7 +120,7 @@ func findRepo() -> URL? {
 }
 
 func eval(_ raw: [String]) async {
-    let args = arguments("eval", raw, options: ["--level", "--runs", "--only", "--scenarios", "--steering", "--labeler"],
+    let args = arguments("eval", raw, options: ["--level", "--runs", "--only", "--scenarios", "--steering", "--labeler", "--brain"],
                          flags: ["--always", "--list", "--timeline", "--scripted"])
     // The pack in use's scenarios and steering (characters/CHARACTER.md §2), unless given.
     func path(_ option: String, _ inPack: String) -> URL {
@@ -138,8 +140,10 @@ func eval(_ raw: [String]) async {
     let named = args["--only"] != nil
     guard !list.isEmpty else { fail("no scenarios in \(scenarios.path)") }
     // A scripted scenario checks the code's rules: only the expect brain runs it.
-    let scripted = args.has("--scripted")
-    if !scripted {
+    let rules = args["--brain"] == "rules"
+    if let other = args["--brain"], other != "rules" { fail("boopdev eval: --brain is rules, not \(other)") }
+    let scripted = args.has("--scripted") || rules
+    if !scripted || rules {
         let forJev = list.filter { !$0.scripted }
         guard !forJev.isEmpty else { fail("\(list.map(\.file).joined(separator: ", ")): scripted, so run with --scripted") }
         if forJev.count < list.count, !args.has("--list") { print("\(list.count - forJev.count) scripted scenario\(list.count - forJev.count == 1 ? "" : "s") left out: --scripted runs them") }
@@ -216,6 +220,7 @@ func eval(_ raw: [String]) async {
         if allowance.overridden { print("\(JevAllowance.overrideVariable) is set: this run may pass today's limit of \(allowance.limit)") }
     }
     var runner = Eval(brain: brain, steering: steering)
+    runner.rules = rules
     switch args["--labeler"] {
     case nil: break
     case "apple":
@@ -226,7 +231,8 @@ func eval(_ raw: [String]) async {
     let log = evalDebugLog()
     DebugLog.start(log)
     runner.debugLog = log
-    print(scripted ? "\(plan.count) scenario\(plan.count == 1 ? "" : "s") with the expect brain"
+    print(rules ? "\(plan.count) scenario\(plan.count == 1 ? "" : "s") with the rules brain, no Jev request"
+        : scripted ? "\(plan.count) scenario\(plan.count == 1 ? "" : "s") with the expect brain"
         : "\(level.rawValue): \(plan.count) scenario\(plan.count == 1 ? "" : "s"), about \(estimate) Jev requests")
     print("every event, view event and pass goes to \(log.path)")
     var results: [[Eval.Result]] = []
@@ -243,7 +249,7 @@ func eval(_ raw: [String]) async {
                 stopped = why
                 return nil
             }
-            if !scripted { LineFile.append(JSONLine.encode(Eval.trajectory(result, scenario: scenario)), to: trajectories) }
+            if !scripted || rules { LineFile.append(JSONLine.encode(Eval.trajectory(result, scenario: scenario)), to: trajectories) }
             return result
         } catch {
             if let why = counted?.stopped {

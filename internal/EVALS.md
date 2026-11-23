@@ -1,6 +1,6 @@
 # Boop: harness evals
 
-Updated 2026-11-15. How we check that Jev decides as Boop should: short
+Updated 2026-11-22. How we check that Jev decides as Boop should: short
 scenarios of agent work, run through the real pipeline (the transcript,
 the core and the view), MellowHarness's `Harness` and Boop's outputs. A must
 scenario checks each pass exactly; a feel scenario goes to a judge (§4, §5).
@@ -143,6 +143,7 @@ BOOP_JEV_KEY=… .build/debug/boopdev eval --level standard   # before a branch 
 BOOP_JEV_OVER_LIMIT=1 BOOP_JEV_KEY=… make eval   # full: only when the owner asks, or before a release
 .build/debug/boopdev eval --list             # every scenario's case, runs and requests, the three levels' totals and today's count; no key needed
 .build/debug/boopdev eval --scripted         # every scenario with the expect brain: everything but Jev, free
+.build/debug/boopdev eval --brain rules      # every scenario Jev would get, with the rules brain: no key, free
 .build/debug/boopdev prompts                 # what Jev reads and is asked at every pass, as JSON; no key needed
 BOOP_JEV_KEY=… .build/debug/boopdev eval --only please --labeler apple   # the prompt read by Apple Intelligence, not the step's reading
 .build/debug/boopdev read-check              # Apple Intelligence's readings of sample prompts and last messages, scored; fails under its floors or on a leaked secret

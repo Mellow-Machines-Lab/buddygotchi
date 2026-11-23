@@ -47,12 +47,21 @@ extension Runtime {
 
     /// The brain for Jev's key as far as it's been read. On `home`.
     func useBrain() {
-        let brain = options.brain(jevKey ?? nil)
+        let brain = options.brain(jevKey ?? nil) ?? (options.rules ? rulesBrain() : nil)
         harness.use(brain)
         pipeline.brain = brain != nil
         trouble = nil
         droppedInARow = 0
         options.log("brain \(brain?.id ?? "none")" + (brain == nil ? ": no Jev key, so Boop does only its rule reactions" : ""))
+    }
+
+    /// The brain in the box, for this buddy: it reads each event's line
+    /// and the mood as a call is prepared. On `home`.
+    func rulesBrain() -> RulesBrain {
+        let h = harness, view = view, mood = rig.mood!, pack = core.config.pack
+        return RulesBrain(facts: { [weak h] in h?.line($0)?.facts },
+                          mood: { log in (MoodOutput.value(mood, log, pack: pack), MoodOutput.level(mood, log)) },
+                          working: { [weak h] log in view.isWorking(at: h?.clock.now() ?? 0, log) })
     }
 
     /// Reads Jev's key off `home`: a Keychain prompt

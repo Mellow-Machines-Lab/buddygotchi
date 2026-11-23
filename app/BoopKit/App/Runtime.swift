@@ -26,6 +26,10 @@ public final class Runtime: @unchecked Sendable {
         /// Builds the brain from Jev's key; nil for no brain. Tests pass
         /// their own.
         public var brain: @Sendable (String?) -> (any Brain)? = { key in key.map { JevBrain(key: $0) } }
+        /// With no brain from `brain` (no Jev key), the rules brain answers
+        /// (`RulesBrain`): the app and headless. Off, nothing wakes the brain
+        /// with no key, as the tests and `--brain none` want.
+        public var rules = false
         public var time = LocalTime()
         /// Milliseconds for every duration: a steady clock by default.
         public var clock: @Sendable () -> Int64 = Runtime.steadyClock()

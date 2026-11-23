@@ -2,9 +2,16 @@
 
 Updated 2026-11-22. How Boop decides what to feel, say and remember, with no
 key and no bill. It says what each layer is for and how Boop should behave;
-the code and [architecture.html](../architecture.html) say how. None of it is
-built yet: today one hosted model, Jev, makes these choices, and only for
-people who add a key.
+the code and [architecture.html](../architecture.html) say how.
+
+## What is built
+
+On the `brain` branch, not merged:
+
+- Built: layer 1, the rules brain (`RulesBrain`, `MoodMap`). With no Jev key
+  it answers every pass, and the mood moves only as the mood files say. All
+  30 must scenarios pass with it (`boopdev eval --brain rules`).
+- Not built: layers 2 to 4, and Jev composed on top of the rules.
 
 ## The aim
 
