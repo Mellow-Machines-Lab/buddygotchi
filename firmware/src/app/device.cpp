@@ -205,6 +205,26 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     c.over = (card["o"] | 0) != 0;
     c.count = heldTo(card["at"][1], 1, 9, 1), c.index = heldTo(card["at"][0], 1, c.count, 1);
   }
+  m.pic = Model::PicIn{};
+  if (JsonArrayConst pic = doc["pic"].as<JsonArrayConst>(); pic.size() >= 3) {
+    Model::PicIn& p = m.pic;
+    const char* kind = pic[0] | "";
+    p.kind = (kind[0] == 'p' || kind[0] == 'c' || kind[0] == 'h') ? kind[0] : 0;
+    p.slot = heldTo(pic[1], -1, render::Stream::kLanes - 1, render::CardShow::kNoSlot);
+    render::foldText(pic[2].as<const char*>(), render::CardShow::kAgentBytes - 1, p.agent, sizeof(p.agent));
+    if (p.kind == 'p') {
+      p.a = heldTo(pic[3], 0, 999, 0), p.b = heldTo(pic[4], 0, 999, 0);
+      render::foldText(pic[5].as<const char*>(), sizeof(p.step) - 1, p.step, sizeof(p.step));
+      p.left = pic.size() > 6 ? heldTo(pic[6], -999, 999, 0) : render::CardShow::kNoLeft;
+    } else if (p.kind == 'c') {
+      for (size_t i = 3; i + 2 < pic.size() && p.rows < render::CardShow::kRows; i += 3, ++p.rows) {
+        render::foldText(pic[i].as<const char*>(), sizeof(p.file[0]) - 1, p.file[p.rows], sizeof(p.file[0]));
+        p.added[p.rows] = heldTo(pic[i + 1], 0, 99999, 0), p.removed[p.rows] = heldTo(pic[i + 2], 0, 99999, 0);
+      }
+    } else if (p.kind == 'h') {
+      p.a = heldTo(pic[3], 0, 99, 0), p.b = heldTo(pic[4], 0, 99, 0);
+    }
+  }
   const char* wish = doc["wish"] | "";
   m.wish = !std::strcmp(wish, "pet")    ? render::WishShow::kPet
            : !std::strcmp(wish, "chat") ? render::WishShow::kChat

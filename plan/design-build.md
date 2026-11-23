@@ -165,7 +165,7 @@ Done when: with three sessions open, the owner can always tell which
 agent the screen shows, reach the others by swipe, and is told when
 another one finishes.
 
-### 8. Held pictures
+### 8. Held pictures ✓ (the meter and the number are not built)
 
 The screen guide's "Held pictures".
 

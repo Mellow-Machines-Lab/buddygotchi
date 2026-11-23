@@ -107,6 +107,17 @@ struct CardShow {
   const char* small = "";
   const char* agent = "";
   uint32_t ms = 0;
+  // A live picture of the work in place of words (the Mac's `pic`; the
+  // engine's documentation/design/screen-guide.md, "Held pictures"): 'p'
+  // the plan (a done of b, its step's words, `left` minutes left), 'c' the
+  // changes (a row a file, its lines added and removed), 'h' the helpers
+  // (a working, b done); 0 for none.
+  static constexpr int kRows = 3, kNoLeft = -1000;
+  char pic = 0;
+  int a = 0, b = 0, left = kNoLeft, rows = 0;
+  const char* step = "";
+  const char* file[kRows] = {"", "", ""};
+  int added[kRows] = {}, removed[kRows] = {};
 };
 // The finished turn the brain's reaction is about (its `who`), while the
 // reaction plays and lingers after (app/behaviour.h): whose turn, how it

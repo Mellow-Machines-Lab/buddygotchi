@@ -1,8 +1,11 @@
 # Agent cards
 
-> The design has moved on: a card becomes a live picture or a full-screen show
-> ([documentation/design/](../documentation/design/README.md)). This file still
-> describes what is built, and the trial of how agents send cards.
+> Since 2026-11-23 a status card no longer shows on the board: a working
+> agent's card is a held picture from the hooks (CLAUDE.md, "held picture";
+> [documentation/design/](../documentation/design/README.md)). A status's words
+> still show in the popover's row and as the plan's step. Results are as
+> below. The rest of this file is the first build and the trial of how agents
+> send cards.
 
 Updated 2026-11-15. An agent hands Boop a small card and Boop holds it up:
 what the agent is on now, and what its turn made. Built on the branch

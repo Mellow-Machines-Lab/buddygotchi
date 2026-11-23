@@ -68,6 +68,16 @@ struct Model {
              !std::strcmp(agent, o.agent);
     }
   } card;
+  // A live picture of the watched agent's work (`pic`), in place of a
+  // status card: render::CardShow's picture fields.
+  struct PicIn {
+    char kind = 0;
+    int slot = render::CardShow::kNoSlot, a = 0, b = 0, left = render::CardShow::kNoLeft, rows = 0;
+    char agent[render::CardShow::kAgentBytes] = "";
+    char step[28] = "";
+    char file[render::CardShow::kRows][18] = {};
+    int added[render::CardShow::kRows] = {}, removed[render::CardShow::kRows] = {};
+  } pic;
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)

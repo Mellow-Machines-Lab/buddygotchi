@@ -214,6 +214,8 @@ public final class Core {
     var unseen: [String: Int64] = [:]
     var pill: (key: String, text: String, at: Int64)?
     var pipSlots: [String: Int] = [:]
+    /// What each session's turn has done, for its held pictures.
+    var turnWork: [String: TurnWork] = [:]
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -247,6 +249,7 @@ public final class Core {
         // A turn with no call is a chat turn's, for the pill's words.
         let chat = !stream.called.contains(agentEvent.key)
         fold(agentEvent, ref: event.seq)
+        notePictures(agentEvent, at: now)
         if agentEvent.kind == .turn, agentEvent.phase == .end, agentEvent.notice == nil, agentEvent.hook != Core.agentGone {
             turnEndedElsewhere(agentEvent.key, chat: chat, at: now)
         }
@@ -637,10 +640,22 @@ public final class Core {
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
         }
-        if attn == nil, !drawer { snapshot.card = cardShow(at: now) }
+        if attn == nil, !drawer {
+            // A result is for you, and shows; a status is no card of words
+            // any more: the agent the screen follows holds a live picture of
+            // its work instead, while it works (`picture`).
+            if let card = cardShow(at: now), card.result {
+                snapshot.card = card
+            } else if base == "working", let key = watched(at: now), working.contains(where: { $0.key == key }),
+                      let picture = picture(for: key, at: now) {
+                snapshot.pic = StateSnapshot.PictureShow(slot: stream.lanes[key]?.slot ?? pipSlots[key] ?? -1,
+                                                         agent: sessions[key]?.agent.rawValue ?? "", picture: picture)
+            }
+        }
         // A line too long for the board loses the card's small line, then the card.
         if !snapshot.fits { snapshot.card?.small = nil }
         if !snapshot.fits { snapshot.card = nil }
+        if !snapshot.fits { snapshot.pic = nil }
         // Last: its rows are what gets cut to fit the board's line.
         if drawer { list(into: &snapshot, at: now) }
         return snapshot

@@ -190,24 +190,18 @@ final class CardsTests: XCTestCase {
 
     // MARK: Through the core
 
-    /// A status shows on the `state` while its turn runs, goes under
-    /// something that needs you and comes back after it.
-    func testAStatusCardShowsWhileItsTurnRunsAndUnderNothingThatNeedsYou() throws {
+    /// A status is no card of words on the `state` any more: Boop holds a
+    /// live picture of the work instead (`Core.picture`). Its words stay
+    /// in the popover's row, and become the plan's step.
+    func testAStatusIsNoCardOfWords() throws {
         let rig = CoreRig()
         rig.pipeline.card(status("fixing the overflow", step: 2, of: 5, minutes: 4), process: nil, at: rig.now)
         XCTAssertNil(rig.state.card, "no session at work: nobody's card")
         rig.send(.turnStart)
         rig.pipeline.card(status("fixing the overflow", step: 2, of: 5, minutes: 4), process: nil, at: rig.now)
-        let card = try XCTUnwrap(rig.state.card)
-        XCTAssertEqual([card.text, card.small], ["fixing the overflow", "2 of 5 · 4 min left"])
-        XCTAssertEqual([card.index, card.count], [1, 1])
-        XCTAssertFalse(card.result)
-        XCTAssertTrue(rig.state.jsonLine.contains(#""card":{"#), rig.state.jsonLine)
-        XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.card, "fixing the overflow, 2 of 5 · 4 min left")
-        rig.send(.needsYou, tool: "Bash")
         XCTAssertNil(rig.state.card)
-        rig.send(.activity, tool: "Bash")
-        XCTAssertNotNil(rig.state.card)
+        XCTAssertFalse(rig.state.jsonLine.contains(#""card":{"#), rig.state.jsonLine)
+        XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.card, "fixing the overflow, 2 of 5 · 4 min left")
     }
 
     /// The result waits for the turn's end, shows 15 s with nothing to put
@@ -218,7 +212,7 @@ final class CardsTests: XCTestCase {
         rig.pipeline.card(status("fixing the overflow"), process: nil, at: rig.now)
         rig.wait(5000)
         rig.pipeline.card(result("nav overflow fixed", detail: "3 files, 212 tests green"), process: nil, at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "fixing the overflow", "the result waits for the finish")
+        XCTAssertNil(rig.state.card, "the result waits for the finish")
         rig.send(.turnEnd)
         let card = try XCTUnwrap(rig.state.card)
         XCTAssertTrue(card.result)
@@ -255,14 +249,16 @@ final class CardsTests: XCTestCase {
         rig.pipeline.card(status("one"), process: AgentProcess(pid: 11, started: 1), at: rig.now)
         rig.wait(1000)
         rig.pipeline.card(status("two"), process: AgentProcess(pid: 22, started: 1), at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "two", "s2's: you prompted it last")
-        XCTAssertEqual(rig.state.card?.count, 2)
-        let first = try XCTUnwrap(rig.state.card?.index)
+        // A status is no card of words on the board (Core.picture); which
+        // session holds which card shows in the popover's rows and the focus.
+        func card(_ project: String) -> String? { rig.core.sessionList(at: rig.now).first { $0.project == project }?.card }
+        func focused() -> String? { rig.core.cards.focus.flatMap { rig.core.sessions[$0]?.project } }
+        XCTAssertEqual([card("s1"), card("s2")], ["one", "two"])
+        XCTAssertEqual(focused(), "s2", "s2's: you prompted it last")
         rig.pipeline.swipeCard(by: 1, at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "one")
-        XCTAssertNotEqual(rig.state.card?.index, first)
+        XCTAssertEqual(focused(), "s1")
         rig.pipeline.swipeCard(by: 1, at: rig.now)
-        XCTAssertEqual(rig.state.card?.text, "two")
+        XCTAssertEqual(focused(), "s2")
     }
 
     /// A tap opens the result's link, or with none the session's thread,
@@ -306,6 +302,8 @@ final class CardsTests: XCTestCase {
         rig.send(.turnStart, project: String(repeating: "p", count: 40))
         let words = String(repeating: "W", count: Card.textMost)
         rig.pipeline.card(status(words, step: 99, of: 99, minutes: 600), process: nil, at: rig.now)
+        rig.pipeline.card(result(words, detail: String(repeating: "D", count: Card.detailMost)), process: nil, at: rig.now)
+        rig.send(.turnEnd)
         XCTAssertTrue(rig.state.fits)
         XCTAssertEqual(rig.state.card?.text, words)
         XCTAssertLessThan(rig.state.jsonLine.utf8.count, Wire.maxLine)

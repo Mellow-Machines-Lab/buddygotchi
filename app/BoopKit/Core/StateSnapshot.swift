@@ -353,6 +353,15 @@ public struct StateSnapshot: Equatable, Sendable {
 
     /// The card Boop holds (`Cards`): whose it is, by its lane's slot (-1
     /// with no lane), what it says, and where it is among the cards showing.
+    /// The live picture Boop holds of the watched agent's work (`pic`,
+    /// `Core.picture`): its lane's slot and its agent, for its window.
+    public struct PictureShow: Equatable, Sendable {
+        public var slot: Int
+        public var agent: String
+        public var picture: Core.Picture
+    }
+    public var pic: PictureShow?
+
     public struct CardShow: Equatable, Sendable {
         public var slot: Int
         /// Whose it is, `claude` or `codex`: the board names the agent on
@@ -424,6 +433,23 @@ public struct StateSnapshot: Equatable, Sendable {
             if card.over { c["o"] = .int(1) }
             c["at"] = .array([.int(card.index), .int(card.count)])
             fields["card"] = .object(c)
+        }
+        if let pic {
+            // ["p", slot, agent, done, total, step, left] · ["c", slot,
+            // agent, file, added, removed, …] · ["h", slot, agent, working, done]
+            var p: [JSONObject.Value]
+            switch pic.picture {
+            case let .plan(done, total, step, left):
+                p = [.string("p"), .int(pic.slot), .string(pic.agent), .int(done), .int(total),
+                     .string(step.map { StateSnapshot.clip($0, max: 24) } ?? "")]
+                if let left { p.append(.int(left)) }
+            case let .changes(files):
+                p = [.string("c"), .int(pic.slot), .string(pic.agent)]
+                for f in files { p += [.string(StateSnapshot.clip(f.name, max: 16)), .int(f.added), .int(f.removed)] }
+            case let .helpers(working, done):
+                p = [.string("h"), .int(pic.slot), .string(pic.agent), .int(working), .int(done)]
+            }
+            fields["pic"] = .array(p)
         }
         if skip > 0 { fields["skip"] = .int(skip) }
         if unlisted > 0 { fields["unlisted"] = .int(unlisted) }

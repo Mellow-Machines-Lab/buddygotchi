@@ -31,9 +31,9 @@ As of main `66d7fc1a`:
   none is you speaking); and going with you as a layer: typing along sways
   the body in every work pose and with a card held, its paws and eyes the
   pose's; a chat turn's end: a look up at you and "your turn" low; and
-  several agents: the watched one, pips, the name chip, the swipe, the pill.
-- Not built: the lean under a finger with a card held, held pictures in
-  place of the text card, the show, the sideways slide on a switch, and
+  several agents: the watched one, pips, the name chip, the swipe, the pill;
+  and held pictures (plan, changes, helpers) in place of the text card.
+- Not built: the lean under a finger with a card held, the show, the sideways slide on a switch, and
   the arrows at the screen's sides. A finished turn of an agent you aren't
   watching still plays its finish as well as the pill.
 

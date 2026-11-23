@@ -252,7 +252,9 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     const bool back = noApp(t);
     bool look = back || m.attn != model_.attn || m.look() != model_.look();
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
-    if (!m.card.same(model_.card)) cardAt_ = t;
+    // A card rises as it comes; a picture rises once, as it first shows or
+    // changes kind, and updates in place after.
+    if (!m.card.same(model_.card) || m.pic.kind != model_.pic.kind) cardAt_ = t;
     bar_.heard(m.xp, barHidden(m, back, t), t);
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
@@ -870,6 +872,14 @@ render::CardShow Behaviour::cardShow(uint32_t t) const {
   show.result = c.result, show.over = c.over, show.slot = c.slot;
   show.index = c.index, show.count = c.count, show.text = c.text, show.small = c.small, show.agent = c.agent;
   show.ms = t - cardAt_;
+  // No card of words: the live picture of the work, under the same rules.
+  if (!c.on && model_.pic.kind) {
+    const Model::PicIn& p = model_.pic;
+    show.on = !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
+    show.pic = p.kind, show.slot = p.slot, show.agent = p.agent, show.a = p.a, show.b = p.b, show.left = p.left;
+    show.step = p.step, show.rows = p.rows;
+    for (int i = 0; i < p.rows; ++i) show.file[i] = p.file[i], show.added[i] = p.added[i], show.removed[i] = p.removed[i];
+  }
   return show;
 }
 
