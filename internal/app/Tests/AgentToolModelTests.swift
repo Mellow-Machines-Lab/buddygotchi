@@ -70,7 +70,28 @@ final class AgentToolModelTests: XCTestCase {
         let model = AgentToolModel(tool: .claude, executable: "/x/claude", folder: tempDir())
         let writer = MemoryPipelineWriter(agentTool: { model })
         let asked = writer.model
-        XCTAssertTrue(asked is AgentToolModel || (asked as? FallbackModel)?.first is AgentToolModel)
+        let capped = (asked as? CappedModel) ?? ((asked as? FallbackModel)?.first as? CappedModel)
+        XCTAssertTrue(capped?.model is AgentToolModel)
+        XCTAssertEqual(capped?.most, AgentToolModel.questionsADream)
+    }
+
+    /// A small model at low effort, never the newest: the budget is tight.
+    func testItAsksASmallModel() {
+        let claude = AgentToolModel(tool: .claude, executable: "/x/claude", folder: tempDir()).arguments(answerFile: URL(fileURLWithPath: "/tmp/a"))
+        XCTAssertEqual(claude.drop { $0 != "--model" }.dropFirst().first, "claude-sonnet-5-5")
+        XCTAssertTrue(claude.contains("--max-budget-usd"))
+        let codex = AgentToolModel(tool: .codex, executable: "/x/codex", folder: tempDir()).arguments(answerFile: URL(fileURLWithPath: "/tmp/a"))
+        XCTAssertEqual(codex.drop { $0 != "--model" }.dropFirst().first, "gpt-6-luna")
+    }
+
+    /// Past its cap a dream's questions go to the next model.
+    func testADreamAsksAtMostItsCap() async {
+        let bin = tempDir(), folder = tempDir()
+        let tool = AgentToolModel(tool: .claude, executable: fakeTool("claude", in: bin, answer: "yes").path, folder: folder)
+        let capped = CappedModel(tool, most: 2)
+        var answers: [Bool?] = []
+        for _ in 0..<3 { answers.append(await capped.yes("?", "x")) }
+        XCTAssertEqual(answers, [true, true, nil])
     }
 
     /// A question the agent tool leaves unanswered goes to the next model.

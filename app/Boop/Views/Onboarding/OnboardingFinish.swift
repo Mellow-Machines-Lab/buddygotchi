@@ -114,6 +114,10 @@ struct AgentsAct: View {
         "Hooks only report: they never approve, deny or block anything, and when I'm not running, your agent "
             + "carries on as usual. Your other hooks stay as they are, I keep a copy of each file before I change it, "
             + "and Uninstall in Settings takes mine out.",
+        "I also use your Claude Code or Codex myself, signed in as you and on your plan. While I sleep, I ask it a few "
+            + "short questions about what to remember of your day, on a small model (Sonnet, or Codex's fast one). And "
+            + "your agent hears who I am and what I remember, so it can hand me a line at the end of its turn. Settings "
+            + "turns both off: \"Your agent helps me think\".",
     ]
 
     /// One agent's entries: the file, its hooks, the ones that run only

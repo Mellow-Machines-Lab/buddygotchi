@@ -117,7 +117,7 @@ struct SettingsPane: View {
                     colorRow
                     RowDivider()
                     SettingRow(icon: "sparkles", title: "Your agent helps \(model.name) think",
-                               detail: "As \(model.name) sleeps, Claude Code or Codex writes what it remembers of you, on your own plan.") {
+                               detail: "\(model.name) uses your own Claude Code or Codex, signed in as you and on your plan: as it sleeps, a few short questions about what to remember, on a small model; and your agent hears who \(model.name) is and what it remembers, so it can offer a line. Off, neither.") {
                         Toggle("Your agent helps", isOn: Binding(get: { model.status?.agentsThink ?? true }, set: { model.setAgentsThink($0) }))
                             .toggleStyle(.boop).labelsHidden()
                     }

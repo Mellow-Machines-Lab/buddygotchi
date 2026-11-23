@@ -82,10 +82,13 @@ public struct MemoryPipelineWriter: MemoryWriter {
         self.agentTool = agentTool
     }
 
-    /// The model this dream asks: your agent tool, and the Mac's for any
-    /// question it leaves unanswered (not signed in, offline, too slow).
+    /// The model this dream asks: your agent tool, at most
+    /// `AgentToolModel.questionsADream` questions, and the Mac's for any
+    /// question it leaves unanswered (not signed in, offline, too slow, past
+    /// the cap).
     var model: MemoryModel? {
-        guard let agent = agentTool() else { return Self.model }
+        guard let tool = agentTool() else { return Self.model }
+        let agent = CappedModel(tool, most: AgentToolModel.questionsADream)
         return Self.model.map { FallbackModel(first: agent, then: $0) } ?? agent
     }
 

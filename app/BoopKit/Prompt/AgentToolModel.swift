@@ -16,6 +16,15 @@ public struct AgentToolModel: MemoryModel {
     /// trace in any project of yours.
     public let folder: URL
     public static let timeout: TimeInterval = 120
+    /// The models it asks: never the newest or the biggest, since each
+    /// question is small and runs on the person's own plan. Claude Code's
+    /// Sonnet, at low effort; Codex's fast, affordable one, reasoning low.
+    public static let claudeModel = "claude-sonnet-5-5", codexModel = "gpt-6-luna"
+    /// The most a question may spend where the plan is billed by use.
+    public static let budgetUSD = "0.05"
+    /// The most questions one dream asks the tool; past them, the next
+    /// model answers (`CappedModel`).
+    public static let questionsADream = 24
 
     public init(tool: Tool, executable: String, folder: URL) {
         self.tool = tool
@@ -50,10 +59,12 @@ public struct AgentToolModel: MemoryModel {
     func arguments(answerFile: URL) -> [String] {
         switch tool {
         case .claude:
-            ["-p", "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence", "--tools", "",
+            ["-p", "--model", Self.claudeModel, "--effort", "low", "--max-budget-usd", Self.budgetUSD,
+             "--setting-sources", "", "--strict-mcp-config", "--no-session-persistence", "--tools", "",
              "--output-format", "text"]
         case .codex:
-            ["exec", "--skip-git-repo-check", "--sandbox", "read-only", "--ephemeral", "-c", "features.hooks=false",
+            ["exec", "--model", Self.codexModel, "-c", "model_reasoning_effort=\"low\"", "--skip-git-repo-check",
+             "--sandbox", "read-only", "--ephemeral", "-c", "features.hooks=false",
              "--output-last-message", answerFile.path, "-"]
         }
     }
@@ -139,5 +150,35 @@ struct FallbackModel: MemoryModel {
     func yes(_ instructions: String, _ prompt: String) async -> Bool? {
         if let y = await first.yes(instructions, prompt) { return y }
         return await then.yes(instructions, prompt)
+    }
+}
+
+/// Answers at most `most` questions, then none, so the next model takes
+/// the rest: one dream's cap on the person's plan.
+final class CappedModel: MemoryModel, @unchecked Sendable {
+    let model: MemoryModel
+    let most: Int
+    private let lock = NSLock()
+    private var asked = 0
+
+    init(_ model: MemoryModel, most: Int) {
+        self.model = model
+        self.most = most
+    }
+
+    private func take() -> Bool {
+        lock.withLock {
+            guard asked < most else { return false }
+            asked += 1
+            return true
+        }
+    }
+
+    func text(_ instructions: String, _ prompt: String, tokens: Int) async -> String? {
+        take() ? await model.text(instructions, prompt, tokens: tokens) : nil
+    }
+
+    func yes(_ instructions: String, _ prompt: String) async -> Bool? {
+        take() ? await model.yes(instructions, prompt) : nil
     }
 }
