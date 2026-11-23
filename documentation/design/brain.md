@@ -140,6 +140,10 @@ so in words it did not have yesterday.
 
 ## Layer 4: babble
 
+> On hold: Boop's voice is being redesigned. Syllable babble was turned down
+> as uncanny; whole recorded lines of nonsense that end on a real word are
+> the likely direction. This layer will follow that design.
+
 Boop has a voice of its own, and it is not speech. When it holds up a line,
 it babbles it: one sound for each syllable, so a longer line babbles longer.
 The mood sets the pitch and the pace. The words are the caption.
