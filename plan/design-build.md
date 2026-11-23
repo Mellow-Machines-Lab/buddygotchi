@@ -39,7 +39,7 @@ its line in the design README from "Not built" to "Built".
 They go from small and safe to large. Steps 1 to 4 need no new messages on
 the link. Each step can ship alone.
 
-### 1. The strip's words
+### 1. The strip's words ✓
 
 The screen guide's section "The strip's words".
 

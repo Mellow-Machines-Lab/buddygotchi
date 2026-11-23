@@ -19,8 +19,48 @@ struct WorkStream {
     struct Lane: Equatable {
         var slot: Int
         var count: Int
+        /// What it's doing, as the strip shows it now.
         var word: String
+        /// When `word` began to show, and the next one waiting for it to
+        /// have shown `holdMs`: the words never flicker.
+        var since: Int64 = 0
+        var next: String?
+        /// Its calls still running, when the latest started, and when the
+        /// last one ended: a long call says how long, and a quiet spell
+        /// says "thinking".
+        var open: Int = 0
+        var callStart: Int64 = 0
+        var lastEnd: Int64 = 0
+
+        /// What the strip says for it at `now`: its word, the one waiting
+        /// once it may show, the time a long call has run, or "thinking"
+        /// when no call has run for `thinkingMs`.
+        func shown(at now: Int64) -> String {
+            if open == 0, lastEnd > 0, now - lastEnd >= WorkStream.thinkingMs { return "thinking" }
+            let phrase = next.flatMap { now - since >= WorkStream.holdMs ? $0 : nil } ?? word
+            guard open > 0, now - callStart >= WorkStream.longCallMs else { return phrase }
+            let tail = " · \((now - callStart) / 60_000) min"
+            return WorkStream.clip(phrase, WorkStream.maxDoingBytes - tail.utf8.count) + tail
+        }
+
+        /// Takes `phrase` as its word: at once when the last has shown
+        /// `holdMs`, else as the next, which shows when it has.
+        mutating func say(_ phrase: String, at now: Int64) {
+            if let next, now - since >= WorkStream.holdMs { (word, since, self.next) = (next, since + WorkStream.holdMs, nil) }
+            if now - since >= WorkStream.holdMs {
+                (word, since, next) = (phrase, now, nil)
+            } else if phrase != word {
+                next = phrase
+            }
+        }
     }
+
+    /// A phrase in the strip shows this long at least, however fast the
+    /// calls come; a call running this long says how long; a turn with
+    /// no call running for this long is "thinking".
+    static let holdMs: Int64 = 1000
+    static let longCallMs: Int64 = 60_000
+    static let thinkingMs: Int64 = 4000
 
     /// How sure a call is to come forward.
     enum Priority {
@@ -115,96 +155,41 @@ struct WorkStream {
 
     // MARK: Words
 
-    /// The word for a call, which its styles read:
-    /// its program, or a check's topic for a program alone (`make`,
-    /// `tests`); with a subcommand the program says more (`make fw-test`).
+    /// The word for a call that comes forward from the monitor: what it's
+    /// doing, cut at a word to `maxWordBytes`, so the words that fly say
+    /// the same as the strip and never a bare tool's name.
+    /// A command's "running" goes, so a failure that hits Boop names what
+    /// failed ("make", "tests").
     static func word(_ e: AgentEvent, program: String?) -> String {
-        let word: String
-        switch e.toolKind ?? .other {
-        case .shell:
-            let check = e.topic.flatMap { TranscriptView.checks.contains($0) ? $0 : nil }
-            word = program.flatMap { $0.contains(" ") || check == nil ? $0 : nil } ?? check ?? program ?? "bash"
-        case .edit:
-            if e.topic == "docs" {
-                word = "docs"
-            } else {
-                let added = e.linesAdded ?? 0, removed = e.linesRemoved ?? 0
-                word = (["edit"] + (added > 0 ? ["+\(added)"] : []) + (removed > 0 ? ["-\(removed)"] : [])).joined(separator: " ")
-            }
-        case .read: word = "read"
-        case .search: word = (e.tool ?? "grep").lowercased()
-        case .web: word = "web"
-        case .subagent: word = "helper"
-        case .planning: word = "plan"
-        case .mcp:
-            // `mcp__linear__create_issue`: the server you named.
-            let parts = (e.tool ?? "").components(separatedBy: "__")
-            word = parts.count > 1 && !parts[1].isEmpty ? parts[1] : "mcp"
-        case .other: word = spaced(e.tool ?? "tool")
+        var phrase = doing(e, program: program)
+        for lead in ["running the ", "running "] where phrase.hasPrefix(lead) && phrase.count > lead.count {
+            phrase = String(phrase.dropFirst(lead.count))
+            break
         }
-        return clip(word, WorkStream.maxWordBytes)
+        return clip(phrase, maxWordBytes)
     }
 
-    /// What the board shows for a call: its word, or one of the pieces of
-    /// its glimpse (`Core.swift`, `maxWordBytes`), each as likely, picked
-    /// by the call's ID so its start and end show the same. An edit shows
-    /// its file with its lines added when they fit (`Core +12`).
+    /// What a big edit says as it lands: its file and its lines added
+    /// when they fit (`Core +12`), else its word.
     static func shown(_ e: AgentEvent, word: String) -> String {
-        var pieces = (e.glimpse ?? "").split(separator: " ").map { fit(String($0)) }.filter { !$0.isEmpty }
-        if e.toolKind == .edit, let added = e.linesAdded, added > 0 {
-            pieces = pieces.map { piece in
-                let bare = (piece as NSString).deletingPathExtension, stem = bare.isEmpty ? piece : bare
-                let both = "\(stem) +\(added)"
-                return both.utf8.count <= maxWordBytes ? both : piece
-            }
-        }
-        guard !pieces.isEmpty else { return word }
-        let options = [word] + pieces
-        return options[Int(pick(e.toolUseID ?? "\(e.key)\(e.at)") % UInt64(options.count))]
+        guard e.toolKind == .edit, let added = e.linesAdded, added > 0,
+              let piece = (e.glimpse ?? "").split(separator: " ").first.map(String.init) else { return word }
+        let stem = (piece as NSString).deletingPathExtension, both = "\(stem.isEmpty ? piece : stem) +\(added)"
+        return both.utf8.count <= maxWordBytes ? both : word
     }
 
     /// The longest a lane's doing may be, in bytes: what the strip shows
     /// first, in its own font, with the counts as marks after it.
     static let maxDoingBytes = 24
 
-    /// What the agent is doing in a call, for its lane: a verb and what
-    /// it's done to, the first piece of its glimpse ("searching TODO",
-    /// "reading Core.swift", "editing Core +12", "running make test"), or
-    /// the verb alone. A search names its pattern, a glimpse's first piece,
-    /// never just the tool. Words forward keep the short `word`.
+    /// What the agent is doing in a call, for its lane: always a verb and
+    /// what it's done to, in plain words, never a bare tool's or file's
+    /// name ("searching TODO", "reading Core.swift", "editing Core.swift
+    /// +12", "running the tests", "committing"), cut to `maxDoingBytes`,
+    /// the object before the verb. A search names its pattern, never the
+    /// tool (documentation/design/screen-guide.md, "The strip's words").
     static func doing(_ e: AgentEvent, program: String?) -> String {
-        let first = (e.glimpse ?? "").split(separator: " ").first.map(String.init)
-        let verb: String
-        var what = first
-        switch e.toolKind ?? .other {
-        case .shell:
-            let searches: Set<String> = ["rg", "grep", "ag", "ack", "find", "fd", "git grep"]
-            if let check = e.topic.flatMap({ TranscriptView.checks.contains($0) ? $0 : nil }), program?.contains(" ") != true {
-                (verb, what) = ("running", check)
-            } else if let program, searches.contains(program) {
-                verb = "searching"
-            } else if e.topic == Topic.inspect, let first {
-                (verb, what) = ("looking at", first)
-            } else {
-                (verb, what) = ("running", program ?? "a command")
-            }
-        case .edit:
-            verb = "editing"
-            if e.topic == "docs", first == nil { what = "docs" }
-            if let piece = first, let added = e.linesAdded, added > 0 {
-                let bare = (piece as NSString).deletingPathExtension
-                what = "\(bare.isEmpty ? piece : bare) +\(added)"
-            }
-        case .read: verb = "reading"
-        case .search: verb = "searching"
-        case .web: verb = e.tool?.lowercased().contains("search") == true ? "searching" : "reading"
-        case .subagent: (verb, what) = ("sending a helper", nil)
-        case .planning: (verb, what) = ("planning", nil)
-        case .mcp:
-            let parts = (e.tool ?? "").components(separatedBy: "__")
-            (verb, what) = ("using", parts.count > 1 && !parts[1].isEmpty ? parts[1] : "a tool")
-        case .other: (verb, what) = (spaced(e.tool ?? "tool"), nil)
-        }
+        let (verb, what) = phrase(e, program: program)
         guard let what, !what.isEmpty else { return clip(verb, maxDoingBytes) }
         let room = maxDoingBytes - verb.utf8.count - 1
         guard room >= 4 else { return clip(verb, maxDoingBytes) }
@@ -213,6 +198,86 @@ struct WorkStream {
             return StateSnapshot.clip(stem.isEmpty ? what : stem, max: room)
         }()
         return "\(verb) \(piece)"
+    }
+
+    /// The commands whose verb says what they do: by the program and its
+    /// subcommand, as `program` gives them, else by the program alone.
+    /// Those that take an object take the glimpse's first piece.
+    static let commandVerbs: [String: (verb: String, object: Bool)] = [
+        "git commit": ("committing", false), "git push": ("pushing", false), "git pull": ("pulling", false),
+        "git fetch": ("fetching", false), "git merge": ("merging", false), "git rebase": ("rebasing", false),
+        "git checkout": ("switching branch", false), "git switch": ("switching branch", false),
+        "git clone": ("cloning", false), "git add": ("staging files", false), "git stash": ("stashing", false),
+        "git status": ("checking git", false), "git diff": ("reading the diff", false),
+        "git log": ("reading git history", false), "git show": ("reading a commit", false),
+        "git reset": ("resetting git", false), "git restore": ("restoring files", false),
+        "gh pr": ("on a pull request", false), "gh": ("using GitHub", false),
+        "npm install": ("installing packages", false), "npm i": ("installing packages", false),
+        "npm ci": ("installing packages", false), "yarn add": ("installing packages", false),
+        "yarn install": ("installing packages", false), "pnpm install": ("installing packages", false),
+        "pnpm add": ("installing packages", false), "bun install": ("installing packages", false),
+        "bun add": ("installing packages", false), "pip install": ("installing packages", false),
+        "pip3 install": ("installing packages", false), "uv add": ("installing packages", false),
+        "uv sync": ("installing packages", false), "uv pip": ("installing packages", false),
+        "poetry install": ("installing packages", false), "brew install": ("installing packages", false),
+        "cargo add": ("installing packages", false), "swift package": ("resolving packages", false),
+        "swiftc": ("compiling", true), "clang": ("compiling", true), "clang++": ("compiling", true),
+        "gcc": ("compiling", true), "g++": ("compiling", true), "cc": ("compiling", true),
+        "javac": ("compiling", true), "rustc": ("compiling", true),
+        "curl": ("downloading", false), "wget": ("downloading", false), "sleep": ("waiting", false),
+        "mkdir": ("making a folder", false), "rm": ("deleting", true), "mv": ("moving files", false),
+        "cp": ("copying files", false), "chmod": ("changing permissions", false), "open": ("opening", true),
+        "kill": ("stopping a process", false), "pkill": ("stopping a process", false),
+        "killall": ("stopping a process", false), "cat": ("reading", true), "head": ("reading", true),
+        "tail": ("reading", true), "less": ("reading", true), "ls": ("listing", true), "tree": ("listing", true),
+        "wc": ("counting", true), "diff": ("comparing", true),
+    ]
+    /// Programs that run a script: they name the script when the glimpse
+    /// starts with one.
+    static let interpreters: Set<String> = ["python", "python3", "node", "ruby", "bash", "sh", "zsh", "deno", "bun",
+                                            "tsx", "ts-node", "perl", "php", "swift", "uv run"]
+    /// What a check runs, in plain words.
+    static let checkVerbs = ["tests": "running the tests", "build": "building", "deploy": "deploying"]
+
+    /// The verb for a call and what it's done to, if anything.
+    static func phrase(_ e: AgentEvent, program: String?) -> (verb: String, what: String?) {
+        let first = (e.glimpse ?? "").split(separator: " ").first.map(String.init)
+        switch e.toolKind ?? .other {
+        case .shell:
+            let searches: Set<String> = ["rg", "grep", "ag", "ack", "find", "fd", "git grep"]
+            if let check = e.topic.flatMap({ checkVerbs[$0] }) { return (check, nil) }
+            guard let program else { return ("running a command", nil) }
+            if searches.contains(program) { return ("searching", first) }
+            let base = program.split(separator: " ").first.map(String.init) ?? program
+            if let known = commandVerbs[program] ?? commandVerbs[base] { return (known.verb, known.object ? first : nil) }
+            if interpreters.contains(program) || interpreters.contains(base) {
+                if let script = first, script.contains("."), !script.hasPrefix("-") {
+                    return ("running", (script as NSString).lastPathComponent)
+                }
+                return ("running", base)
+            }
+            if e.topic == Topic.inspect, let first { return ("looking at", first) }
+            return ("running", program)
+        case .edit:
+            guard let piece = first else {
+                if let added = e.linesAdded, added > 0, e.topic != "docs" { return ("editing", "+\(added)") }
+                return ("editing", e.topic == "docs" ? "docs" : nil)
+            }
+            guard let added = e.linesAdded, added > 0 else { return ("editing", piece) }
+            let tail = " +\(added)", room = maxDoingBytes - "editing ".utf8.count - tail.utf8.count
+            let stem = (piece as NSString).deletingPathExtension
+            let name = piece.utf8.count <= room ? piece : StateSnapshot.clip(stem.isEmpty ? piece : stem, max: max(room, 4))
+            return ("editing", name + tail)
+        case .read: return ("reading", first)
+        case .search: return ("searching", first)
+        case .web: return (e.tool?.lowercased().contains("search") == true ? "searching" : "reading", first)
+        case .subagent: return ("sending a helper", nil)
+        case .planning: return ("planning", nil)
+        case .mcp:
+            let parts = (e.tool ?? "").components(separatedBy: "__")
+            return ("using", parts.count > 1 && !parts[1].isEmpty ? parts[1] : "a tool")
+        case .other: return ("using", spaced(e.tool ?? "a tool"))
+        }
     }
 
     /// A glimpse's piece cut to fit a word: without its extension when
@@ -319,9 +384,11 @@ struct WorkStream {
         // A lane of its own while one is free: a fifth session gets none,
         // and no other's slot, until one frees; its words still come forward.
         let slot: Int
-        if var lane = lanes[key] ?? openSlot().map({ Lane(slot: $0, count: 0, word: shown) }) {
+        if var lane = lanes[key] ?? openSlot().map({ Lane(slot: $0, count: 0, word: shown, since: now - Self.holdMs) }) {
             lane.count = (lane.count + 1) % 1000
-            lane.word = shown
+            lane.say(shown, at: now)
+            lane.open += 1
+            lane.callStart = now
             lanes[key] = lane
             slot = lane.slot
         } else {
@@ -340,6 +407,11 @@ struct WorkStream {
     mutating func ended(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
         let key = e.key, word = Self.word(e, program: program)
         let slot = lanes[key]?.slot ?? freeSlot()
+        if var lane = lanes[key] {
+            lane.open = max(0, lane.open - 1)
+            lane.lastEnd = now
+            lanes[key] = lane
+        }
         if Self.climbs(e) {
             let recent = (failures[key] ?? []).filter { now - $0 < Self.ladderMs } + [now]
             failures[key] = recent
@@ -440,8 +512,8 @@ struct WorkStream {
     func freeSlot() -> Int { openSlot() ?? Self.maxLanes - 1 }
 
     /// The lanes of the sessions in `working` for `state`, by slot.
-    func calls(_ working: Set<String>) -> [StateSnapshot.Call] {
+    func calls(_ working: Set<String>, at now: Int64) -> [StateSnapshot.Call] {
         lanes.filter { working.contains($0.key) }.values.sorted { $0.slot < $1.slot }.prefix(Self.maxLanes)
-            .map { StateSnapshot.Call(slot: $0.slot, count: $0.count, word: $0.word) }
+            .map { StateSnapshot.Call(slot: $0.slot, count: $0.count, word: $0.shown(at: now)) }
     }
 }

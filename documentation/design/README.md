@@ -23,11 +23,12 @@ As of main `66d7fc1a`:
 - Built: the regions, the monitor's icon, the strip that leads with what the
   agent is doing, the agent's card as a window in its lane color, no finish
   for a chat turn, typing along and the other with-you poses when idle and in
-  the typing pose.
+  the typing pose, and the strip's words (plain verbs, the 1 s hold, the
+  time on a long call, "thinking").
 - Not built: going with you as a layer in every pose, speaking along, held
   pictures in place of the text card, the show, the pips and the swipe
   between agents, the pill, "your turn" in the strip, energy in place of the
-  nightcap and the tiers, and the newer rules for the strip's words.
+  nightcap and the tiers.
 
 ## Keeping it alive
 

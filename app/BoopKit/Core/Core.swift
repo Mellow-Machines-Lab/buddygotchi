@@ -602,7 +602,7 @@ public final class Core {
         // They wait while the drawer's open, which covers them.
         let drawer = drawerOpen(at: now)
         let calls = config.workStream && base == "working" && attn == nil && !drawer
-            ? stream.calls(Set(working.map(\.key))) : []
+            ? stream.calls(Set(working.map(\.key)), at: now) : []
         // An act in `state` while nothing else holds the screen: back when
         // that's over, where it got to.
         let workAct = config.workStream && attn == nil && !showsListening(at: now) ? stream.act.map {
@@ -892,7 +892,7 @@ public final class Core {
                 : status == .working ? s.turn.startedAt : s.turn.lastEndedAt ?? s.lastEventAt
             summary.since = since.map { Date(timeIntervalSince1970: Double(wall($0)) / 1000) }
             if status == .working, config.workStream, let lane = stream.lanes[s.key] {
-                summary.word = lane.word
+                summary.word = lane.shown(at: now)
                 summary.slot = lane.slot
             }
             if let card = cards.shown(s.key, at: now) { summary.card = [card.text, card.small].compactMap { $0 }.joined(separator: ", ") }

@@ -43,50 +43,29 @@ final class WorkStreamTests: XCTestCase {
         return sent
     }
 
-    /// A call shows its word or a piece of its glimpse, each as likely,
-    /// the same at its start and end; an edit shows its file and lines.
-    func testACallShowsItsWordOrAPieceOfItsGlimpse() {
-        let rig = CoreRig(workStream: true)
-        func shown(_ e: Event) -> String {
-            AgentEvent(e).map { WorkStream.shown($0, word: WorkStream.word($0, program: e["program"]?.string)) } ?? "?"
-        }
-        var seen: Set<String> = []
-        for id in 0..<40 {
-            let e = call(rig, "t\(id)", program: "sed", glimpse: "WorkStream.swift maxWordBytes")
-            seen.insert(shown(e))
-            XCTAssertEqual(shown(e), shown(call(rig, "t\(id)", program: "sed", glimpse: "WorkStream.swift maxWordBytes")))
-        }
-        XCTAssertEqual(seen, ["sed", "WorkStream", "maxWordBytes"], "a piece over 14 bytes loses its extension")
-        XCTAssertEqual(shown(call(rig, "1", program: "sed")), "sed", "no glimpse, the word")
-        let edits = Set((0..<20).map { shown(call(rig, "e\($0)", tool: "Edit", glimpse: "Core.swift", added: 12)) })
-        XCTAssertEqual(edits, ["edit +12", "Core +12"])
-        XCTAssertEqual(WorkStream.fit("averyveryverylongname.swift"), "averyveryveryl")
-    }
-
+    /// A word that comes forward says what the strip says, cut to 14
+    /// bytes at a word; a big edit lands as its file and lines.
     func testEachCallsWord() {
         let rig = CoreRig(workStream: true)
         func word(_ e: Event) -> String { AgentEvent(e).map { WorkStream.word($0, program: e["program"]?.string) } ?? "?" }
-        XCTAssertEqual(word(call(rig, "1", program: "git log")), "git log")
-        XCTAssertEqual(word(call(rig, "1")), "bash", "an older agent-hook names no program")
-        XCTAssertEqual(word(call(rig, "1", topic: "tests", program: "make")), "tests", "a check says its topic")
-        XCTAssertEqual(word(call(rig, "1", topic: "tests", program: "make fw-test")), "make fw-test",
-                       "unless its program says more")
-        XCTAssertEqual(word(call(rig, "1", tool: "Edit", added: 18, removed: 2)), "edit +18 -2")
-        XCTAssertEqual(word(call(rig, "1", tool: "Write", added: 40)), "edit +40")
-        XCTAssertEqual(word(call(rig, "1", tool: "Edit", added: 0, removed: 140)), "edit -140")
-        XCTAssertEqual(word(call(rig, "1", tool: "Edit", topic: "docs", added: 3)), "docs")
-        XCTAssertEqual(word(call(rig, "1", tool: "Read")), "read")
-        XCTAssertEqual(word(call(rig, "1", tool: "Grep")), "grep")
-        XCTAssertEqual(word(call(rig, "1", tool: "WebFetch")), "web")
-        XCTAssertEqual(word(call(rig, "1", tool: "Agent")), "helper")
-        XCTAssertEqual(word(call(rig, "1", tool: "mcp__linear__create_issue")), "linear", "the server you named")
-        XCTAssertEqual(word(call(rig, "1", tool: "SendMessage")), "send message", "a tool Boop doesn't know")
-        XCTAssertEqual(word(call(rig, "1", tool: "AskUserQuestion")), "ask user", "cut at a word, 14 bytes")
+        func shown(_ e: Event) -> String {
+            AgentEvent(e).map { WorkStream.shown($0, word: WorkStream.word($0, program: e["program"]?.string)) } ?? "?"
+        }
         XCTAssertEqual(WorkStream.maxWordBytes, 14)
+        XCTAssertEqual(word(call(rig, "1", program: "git log")), "reading git", "cut at a word")
+        XCTAssertEqual(word(call(rig, "1", topic: "tests", program: "make")), "tests")
+        XCTAssertEqual(word(call(rig, "1", tool: "Grep", glimpse: "TODO app")), "searching TODO")
+        XCTAssertEqual(word(call(rig, "1", tool: "Agent")), "sending a")
+        XCTAssertEqual(shown(call(rig, "1", tool: "Edit", glimpse: "Core.swift", added: 120)), "Core +120")
+        XCTAssertEqual(shown(call(rig, "1", tool: "Read", glimpse: "Core.swift")), word(call(rig, "1", tool: "Read", glimpse: "Core.swift")))
+        for e in [call(rig, "1", tool: "Grep"), call(rig, "1", tool: "Read"), call(rig, "1"), call(rig, "1", tool: "WebFetch")] {
+            XCTAssertFalse(["grep", "read", "bash", "web"].contains(word(e)), "never a bare tool's name: \(word(e))")
+        }
     }
 
-    /// What each call's lane says its agent is doing: a verb and what it's
-    /// done to, cut to `maxDoingBytes`; a search names its pattern.
+    /// What each call's lane says its agent is doing: always a verb and
+    /// what it's done to, in plain words, cut to `maxDoingBytes`
+    /// (documentation/design/screen-guide.md, "The strip's words").
     func testEachCallsDoing() {
         let rig = CoreRig(workStream: true)
         func doing(_ tool: String = "Bash", topic: String? = nil, program: String? = nil, glimpse: String? = nil,
@@ -99,19 +78,58 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(doing("Grep"), "searching")
         XCTAssertEqual(doing(topic: "inspect", program: "rg", glimpse: "maxWordBytes app"), "searching maxWordBytes")
         XCTAssertEqual(doing("Read", glimpse: "Core.swift"), "reading Core.swift")
-        XCTAssertEqual(doing("Edit", glimpse: "Core.swift", added: 12), "editing Core +12")
+        XCTAssertEqual(doing("Edit", glimpse: "Core.swift", added: 12), "editing Core.swift +12")
+        XCTAssertEqual(doing("Edit", glimpse: "TranscriptView.swift", added: 12), "editing TranscriptVi +12",
+                       "too long: the extension goes, then it's cut")
         XCTAssertEqual(doing("Edit", glimpse: "Core.swift"), "editing Core.swift")
-        XCTAssertEqual(doing(topic: "tests", program: "make"), "running tests")
-        XCTAssertEqual(doing(topic: "tests", program: "make fw-test"), "running make fw-test")
-        XCTAssertEqual(doing(program: "git push"), "running git push")
+        XCTAssertEqual(doing(topic: "tests", program: "make"), "running the tests")
+        XCTAssertEqual(doing(topic: "tests", program: "make fw-test"), "running the tests", "never the command line")
+        XCTAssertEqual(doing(topic: "build", program: "swift build"), "building")
+        XCTAssertEqual(doing(program: "git commit"), "committing")
+        XCTAssertEqual(doing(program: "git push"), "pushing")
+        XCTAssertEqual(doing(program: "npm install"), "installing packages")
+        XCTAssertEqual(doing(program: "swiftc", glimpse: "Core.swift"), "compiling Core.swift")
+        XCTAssertEqual(doing(program: "python3", glimpse: "tools/gen.py --all"), "running gen.py")
+        XCTAssertEqual(doing(program: "python3"), "running python3")
+        XCTAssertEqual(doing(program: "ffmpeg", glimpse: "-i in.mov"), "running ffmpeg", "no flags or paths")
         XCTAssertEqual(doing(), "running a command", "an older agent-hook names no program")
-        XCTAssertEqual(doing(topic: "inspect", program: "cat", glimpse: "README.md"), "looking at README.md")
+        XCTAssertEqual(doing(topic: "inspect", program: "cat", glimpse: "README.md"), "reading README.md")
+        XCTAssertEqual(doing(topic: "inspect", program: "stat", glimpse: "README.md"), "looking at README.md")
         XCTAssertEqual(doing("WebFetch", glimpse: "swift.org"), "reading swift.org")
         XCTAssertEqual(doing("WebSearch", glimpse: "hooks"), "searching hooks")
         XCTAssertEqual(doing("Agent"), "sending a helper")
         XCTAssertEqual(doing("mcp__linear__create_issue"), "using linear")
+        XCTAssertEqual(doing("SendMessage"), "using send message", "a tool Boop doesn't know")
         XCTAssertEqual(doing("Read", glimpse: "AVeryLongFileNameIndeed.swift"), "reading AVeryLongFileNam",
                        "too long: its extension goes, then it's cut")
+    }
+
+    /// A phrase holds the strip at least `holdMs`, so it never flickers; a
+    /// call running `longCallMs` says how long; no call for `thinkingMs`
+    /// is "thinking".
+    func testTheStripsWordsHoldAndTellTime() {
+        XCTAssertEqual(WorkStream.holdMs, 1000)
+        XCTAssertEqual(WorkStream.longCallMs, 60_000)
+        XCTAssertEqual(WorkStream.thinkingMs, 4000)
+        let rig = CoreRig(workStream: true)
+        rig.send(.turnStart)
+        rig.now += 1000
+        func word() -> String? { rig.core.stream.calls(Set(rig.core.stream.lanes.keys), at: rig.now).first?.word }
+        rig.send(call(rig, "1", tool: "Read", glimpse: "Core.swift"))
+        XCTAssertEqual(word(), "reading Core.swift", "the first shows at once")
+        rig.now += 300
+        rig.send(call(rig, "2", tool: "Grep", glimpse: "TODO"))
+        XCTAssertEqual(word(), "reading Core.swift", "the next waits")
+        rig.now += 700
+        XCTAssertEqual(word(), "searching TODO", "then shows")
+        rig.send(call(rig, "1", tool: "Read", glimpse: "Core.swift", failed: false))
+        rig.send(call(rig, "2", tool: "Grep", glimpse: "TODO", failed: false))
+        rig.now += 4000
+        XCTAssertEqual(word(), "thinking")
+        rig.send(call(rig, "3", topic: "build", program: "swift build"))
+        XCTAssertEqual(word(), "building")
+        rig.now += 130_000
+        XCTAssertEqual(word(), "building · 2 min")
     }
 
     /// Almost every call is only its word, falling: nothing comes forward.
@@ -124,7 +142,7 @@ final class WorkStreamTests: XCTestCase {
         }
         rig.now += 9000
         XCTAssertEqual(run(rig, "r", tool: "Read"), [])
-        XCTAssertEqual(rig.core.stream.calls(Set(rig.core.stream.lanes.keys)).first?.count, 6, "each counts for its word")
+        XCTAssertEqual(rig.core.stream.calls(Set(rig.core.stream.lanes.keys), at: rig.now).first?.count, 6, "each counts for its word")
     }
 
     /// A failure always comes forward. One session's failures within 2 minutes climb the ladder
@@ -155,7 +173,7 @@ final class WorkStreamTests: XCTestCase {
         rig.send(.turnStart)
         run(rig, "0", program: "ls")
         for (i, (topic, program, error, expected)) in [
-            ("inspect", "grep", "exit_code", "grep shrug"), (nil, "curl", "timeout", "timeout timeout"),
+            ("inspect", "grep", "exit_code", "searching shrug"), (nil, "curl", "timeout", "timeout timeout"),
             (nil, "rm", "denied", "NO no"),
                     ].enumerated() {
             rig.now += 3000
@@ -188,7 +206,7 @@ final class WorkStreamTests: XCTestCase {
         rig.now += 3000
         XCTAssertEqual(run(rig, "1", tool: "Edit", added: 2, removed: 400), ["-400 shatter"])
         rig.now += 3000
-        XCTAssertEqual(run(rig, "2", tool: "Write", added: 120), ["edit +120 land"])
+        XCTAssertEqual(run(rig, "2", tool: "Write", added: 120), ["editing +120 land"])
         rig.now += 3000
         XCTAssertEqual(run(rig, "3", tool: "Edit", added: 3), [], "a small edit is ambient, 3 s after the last")
     }
@@ -236,6 +254,8 @@ final class WorkStreamTests: XCTestCase {
         rig.now += 250
         let next = rig.send(call(rig, "21", program: "rg"))
         XCTAssertEqual(next.effects.filter { if case .state = $0 { true } else if case .sessions = $0 { true } else { false } }.count, 1)
+        XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.word, "running sed", "the first holds its second")
+        rig.now += WorkStream.holdMs
         XCTAssertEqual(rig.core.sessionList(at: rig.now).first?.word, "searching")
     }
 

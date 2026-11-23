@@ -245,9 +245,9 @@ Rules:
   word that comes forward, the drawer's rows. A bare word such as "grep" or
   "read" appears nowhere.
 
-Most of this is `WorkStream.doing` today. What is new: plain verbs for known
-commands (build, test, git, install), "using" for unknown tools, "thinking",
-the time on a long call, the 1 s hold, and no bare words coming forward.
+Built in `WorkStream`: `doing` and `phrase` for the words, `Lane.shown` for
+the hold, the time and "thinking", and `word` for what comes forward. A
+command Boop knows by name is in `WorkStream.commandVerbs`; add one there.
 
 ## Energy
 
