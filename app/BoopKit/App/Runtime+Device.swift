@@ -97,6 +97,14 @@ extension Runtime {
             case "open": run(pipeline.tapCard(at: now))
             default: break
             }
+        case "agent":
+            // A swipe across the desk: the next agent or the one before.
+            options.log("device: agent \(ev.did ?? "?")")
+            switch ev.did {
+            case "next": run(pipeline.swipeAgent(by: 1, at: now))
+            case "prev": run(pipeline.swipeAgent(by: -1, at: now))
+            default: break
+            }
         case "ask":
             // An ask's end, which the board decides: the question, its
             // words and the answer come back with it; whether Boop keeps

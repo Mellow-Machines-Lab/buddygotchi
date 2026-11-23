@@ -30,11 +30,12 @@ As of main `66d7fc1a`:
   and speaking along (a camera alone is a call; another app recording with
   none is you speaking); and going with you as a layer: typing along sways
   the body in every work pose and with a card held, its paws and eyes the
-  pose's; and a chat turn's end: a look up at you and "your turn" low.
-- Not built: the lean under a finger with a card held, held
-  pictures in place of the text card, the show, the pips and the swipe
-  between agents, the pill, energy in place of the
-  nightcap and the tiers.
+  pose's; a chat turn's end: a look up at you and "your turn" low; and
+  several agents: the watched one, pips, the name chip, the swipe, the pill.
+- Not built: the lean under a finger with a card held, held pictures in
+  place of the text card, the show, the sideways slide on a switch, and
+  the arrows at the screen's sides. A finished turn of an agent you aren't
+  watching still plays its finish as well as the pill.
 
 ## Keeping it alive
 

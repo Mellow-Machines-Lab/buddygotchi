@@ -224,7 +224,8 @@ final class WorkStreamTests: XCTestCase {
         let first = states(rig.send(call(rig, "1", program: "grep")))
         XCTAssertEqual(first.last?.calls, [StateSnapshot.Call(slot: 0, count: 1, word: "searching")])
         XCTAssertTrue(first.last!.jsonLine.contains(#""calls":[[0,1,"searching"]]"#), first.last!.jsonLine)
-        XCTAssertFalse(first.last!.jsonLine.contains("landing"), "no project's name")
+        XCTAssertFalse(first.last!.calls.contains { $0.word.contains("landing") }, "no project's name in a lane")
+        XCTAssertEqual(first.last!.watchName, "landing", "the agent the screen follows has its name, on the strip's chip")
         rig.now += 100
         XCTAssertEqual(states(rig.send(call(rig, "2", program: "sed", session: "s2"))), [], "100 ms after the last state")
         rig.now += 200

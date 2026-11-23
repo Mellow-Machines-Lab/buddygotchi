@@ -112,7 +112,9 @@ extension Core {
             shownAct = nil
             return
         }
-        let latest = working.filter { $0.held != nil }
+        // The agent the screen follows (`watched`), else the latest heard.
+        let watching = watched(at: now)
+        let latest = working.first { $0.s.key == watching && $0.held != nil } ?? working.filter { $0.held != nil }
             .max { ($0.s.lastEventAt, $0.s.order) < ($1.s.lastEventAt, $1.s.order) }
         shownAct = Core.settle(shownAct, latest?.held?.act, now: now, refresh: false)
     }

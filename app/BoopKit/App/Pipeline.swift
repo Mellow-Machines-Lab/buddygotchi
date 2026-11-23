@@ -278,6 +278,13 @@ public final class Pipeline {
         input(at: now) { run(core.swipeCard(by: by, at: now)) }
     }
 
+    /// Your swipe across the desk: the next agent (`by` 1) or the one
+    /// before, which the screen follows (`Core.swipeAgent`).
+    @discardableResult
+    public func swipeAgent(by: Int, at now: Int64) -> Step {
+        input(at: now) { run(core.swipeAgent(by: by, at: now)) }
+    }
+
     /// Your tap on the card Boop holds: the core opens its link or its
     /// thread on the Mac.
     @discardableResult

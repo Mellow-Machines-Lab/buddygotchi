@@ -833,6 +833,11 @@ render::Strip Behaviour::stripOf(const Model& m, bool noApp, const Done* finish)
   static constexpr const char* kWishWords[] = {nullptr, "pet", "chat", "work"};
   s.wish = kWishWords[m.wish];
   if (m.attn) s.agent = m.agent, s.project = m.project, s.name = m.name, s.more = m.more;
+  if (m.pipCount > 1 && !m.attn) {
+    s.pipCount = m.pipCount;
+    for (int i = 0; i < m.pipCount; ++i) s.pipKind[i] = m.pipKind[i], s.pipSlot[i] = m.pipSlot[i];
+    s.watch = m.watch, s.who = m.who, s.pillAt = m.pillAt, s.pill = m.pill;
+  }
   if (finish) s.doneAgent = finish->agent, s.doneThread = finish->thread, s.doneOutcome = finish->outcome;
   return s;
 }

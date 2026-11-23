@@ -207,6 +207,13 @@ public final class Core {
     public var lastInputAt: Int64?
     /// When you first showed up on the latest Boop day you did (`energy`).
     var firstShownUp: (day: String, at: Int64)?
+    /// The agent you swiped to, and when (`watched`); the agents whose turn
+    /// ended while you weren't watching, since when; the pill saying so.
+    var watchSwiped: String?
+    var watchSwipedAt: Int64?
+    var unseen: [String: Int64] = [:]
+    var pill: (key: String, text: String, at: Int64)?
+    var pipSlots: [String: Int] = [:]
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -237,7 +244,12 @@ public final class Core {
         guard let agentEvent = AgentEvent(event) else { return [] }
         let now = event.at
         var fx: [CoreEffect] = []
+        // A turn with no call is a chat turn's, for the pill's words.
+        let chat = !stream.called.contains(agentEvent.key)
         fold(agentEvent, ref: event.seq)
+        if agentEvent.kind == .turn, agentEvent.phase == .end, agentEvent.notice == nil, agentEvent.hook != Core.agentGone {
+            turnEndedElsewhere(agentEvent.key, chat: chat, at: now)
+        }
         startDayIfNew(now, &fx)
         let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
         let forward = actEnded ? nil : streamCall(agentEvent, program: agentEvent.program, at: now)
@@ -616,6 +628,7 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
+        watchFields(into: &snapshot, at: now)
         let energy = self.energy(at: now, workingSince: stretchStart(working, at: now))
         snapshot.energy = energy == .normal ? nil : energy.rawValue
         snapshot.pointer = along.pointer
@@ -1230,6 +1243,7 @@ public final class Core {
         var wordsOnly = false, listWordsOnly = false
         if var before = lastPublished, let at = lastPublishedAt, now - at < WorkStream.sendEveryMs {
             before.calls = snapshot.calls
+            before.pips = snapshot.pips  // a pip's colour comes with its lane
             wordsOnly = before == snapshot
         }
         if let at = lastSessionsAt, now - at < WorkStream.sendEveryMs {

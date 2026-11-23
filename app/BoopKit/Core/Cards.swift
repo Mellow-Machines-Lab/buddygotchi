@@ -161,6 +161,13 @@ public struct Cards: Sendable {
         take(key, at: now)
     }
 
+    /// You swiped to the agent `key` (`Core.swipeAgent`): Boop holds its
+    /// card, as a swipe on the card would.
+    mutating func hold(_ key: String, at now: Int64) {
+        swiped = key
+        take(key, at: now)
+    }
+
     /// What a session's card says now: its main thing, its small line, its
     /// step, and whether its guess has run out.
     struct Shown: Equatable, Sendable {

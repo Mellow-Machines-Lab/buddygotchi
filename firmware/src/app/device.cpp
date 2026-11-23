@@ -212,6 +212,22 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
                                         : render::WishShow::kNone;
   m.wishHow = doc["wish_how"] | false;
   m.xp = heldTo(doc["xp"], -1, 100, -1);
+  // Several agents: "w0i-c1", a kind and a slot ("-" for none) each.
+  {
+    const char* pips = doc["pips"] | "";
+    m.pipCount = 0;
+    for (const char* p = pips; p[0] && p[1] && m.pipCount < render::Strip::kPips; p += 2, ++m.pipCount) {
+      m.pipKind[m.pipCount] = std::strchr("wcia", p[0]) ? p[0] : 'i';
+      m.pipSlot[m.pipCount] = p[1] >= '0' && p[1] <= '9' ? int8_t(p[1] - '0') : int8_t(-1);
+    }
+    m.watch = heldTo(doc["watch"], -1, m.pipCount - 1, -1);
+    copyStr(m.who, sizeof(m.who), doc["who"] | "");
+    m.pillAt = -1, m.pill[0] = '\0';
+    if (JsonArrayConst pill = doc["pill"].as<JsonArrayConst>(); pill.size() == 2) {
+      m.pillAt = heldTo(pill[0], -1, m.pipCount - 1, -1);
+      render::foldText(pill[1].as<const char*>(), sizeof(m.pill) - 1, m.pill, sizeof(m.pill));
+    }
+  }
   const char* energy = doc["energy"] | "";
   m.energy = !std::strcmp(energy, "bright")  ? render::Energy::kBright
              : !std::strcmp(energy, "tired") ? render::Energy::kTired
@@ -746,10 +762,18 @@ void Device::readInputs(uint32_t t) {
           input("tap", t);
           b_.answer(live_.lastTouch.x0 < render::kWidth / 2 ? "a" : "b", t, live_.touchInjected);
           drain();
-        } else if (kind == TouchGesture::kTap || b_.held(t) || tapOnFinish)
+        } else if (kind == TouchGesture::kTap || b_.held(t) || tapOnFinish) {
           tapped(t, live_.touchInjected, false, kind == TouchGesture::kTap ? nullptr : live_.lastTouchWas);
-        else
+        } else if (kind == TouchGesture::kSwipe && b_.model().pipCount > 1 && !b_.model().attn) {
+          // Several agents: a swipe across the desk asks the Mac for the
+          // next one, or the one before, which the screen follows.
+          live_.lastTouchWas = "agent";
+          input("agent", t);
+          const int dx = live_.lastTouch.x - live_.lastTouch.x0;
+          kit().emit("agent", dx < 0 ? "next" : "prev", nullptr, live_.touchInjected);
+        } else {
           gestured(g, t, live_.touchInjected, kind == TouchGesture::kSwipe);
+        }
       }
     }
   }

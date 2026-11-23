@@ -77,6 +77,14 @@ struct Model {
   // Boop's energy (`energy`): the Mac's rule, which the face draws on its
   // lids and in its tempo (render::Energy).
   render::Energy energy = render::Energy::kNormal;
+  // Several agents (`pips`, `watch`, `who`, `pill`): render::Strip's.
+  int pipCount = 0;
+  char pipKind[render::Strip::kPips] = {};
+  int8_t pipSlot[render::Strip::kPips] = {};
+  int watch = -1;
+  char who[16] = "";
+  int pillAt = -1;
+  char pill[28] = "";
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;

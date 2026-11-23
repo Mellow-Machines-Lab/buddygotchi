@@ -140,7 +140,7 @@ The screen guide's "How a turn ends", the chat row.
 Done when: after an answer, one glance at the board tells you it is your
 move.
 
-### 7. Several agents
+### 7. Several agents ✓ (not yet: the slide on a switch, the side arrows, and a finish elsewhere being only a pill)
 
 The screen guide's map (5, 7, 9) and "Who wins the space".
 

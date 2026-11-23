@@ -44,8 +44,23 @@ struct Strip {
   // How strongly the lane draws it, 0 … 1000: it fades in as it comes and
   // out as it goes (Behaviour::strip).
   int opacity = 1000;
+  // Several agents (`state.pips`): a pip each on the strip's line, by its
+  // kind ('w' working, 'c' holding a card, 'i' idle, 'a' wanting you) and
+  // its lane's slot (-1 for none); which one the screen follows, and its
+  // name for the chip at the strip's right; a pill of news from another,
+  // by its pip ("api finished"). None with one agent.
+  static constexpr int kPips = 6;
+  int pipCount = 0;
+  char pipKind[kPips] = {};
+  int8_t pipSlot[kPips] = {};
+  int watch = -1;
+  const char* who = "";
+  int pillAt = -1;
+  const char* pill = "";
   // Anything to show; with nothing, the strip is bare glass.
-  bool shows() const { return agent || doneAgent || busy > 0 || idle > 0 || helpers > 0 || todoTotal > 0 || noApp; }
+  bool shows() const {
+    return agent || doneAgent || busy > 0 || idle > 0 || helpers > 0 || todoTotal > 0 || noApp || pipCount > 1;
+  }
 };
 
 // How many helpers the strip draws as minis; more show as +N.

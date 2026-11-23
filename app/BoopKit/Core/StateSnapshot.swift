@@ -211,6 +211,24 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
     public var wish: String?
+    /// One agent's pip on the strip's line (`Core.watchFields`): `w`
+    /// working, `c` holding a card, `i` idle, `a` wanting you (waiting on
+    /// you, or news you haven't seen); and its lane's slot, its colour.
+    public struct Pip: Equatable, Sendable {
+        public var kind: Character
+        public var slot: Int?
+    }
+    /// The pips, with two agents or more; none with one.
+    public var pips: [Pip] = []
+    /// Which pip the screen follows, and its name for the strip's chip.
+    public var watch: Int?
+    public var watchName: String?
+    /// A pill: news from an agent you aren't watching, by its pip.
+    public struct Pill: Equatable, Sendable {
+        public var at: Int
+        public var text: String
+    }
+    public var pill: Pill?
     /// Boop's energy when it isn't normal, `bright` or `tired` (`Energy`):
     /// the board draws it on the lids and in the tempo. Nil sends none.
     public var energy: String?
@@ -378,6 +396,13 @@ public struct StateSnapshot: Equatable, Sendable {
         if let buddy { fields["buddy"] = .string(buddy) }
         if let wish { fields["wish"] = .string(wish) }
         if let energy { fields["energy"] = .string(energy) }
+        if !pips.isEmpty {
+            // "w0", "i-": each pip its kind and its slot, "-" for none.
+            fields["pips"] = .string(pips.map { "\($0.kind)\($0.slot.map(String.init) ?? "-")" }.joined())
+            if let watch { fields["watch"] = .int(watch) }
+            if let watchName { fields["who"] = .string(watchName) }
+            if let pill { fields["pill"] = .array([.int(pill.at), .string(pill.text)]) }
+        }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }
