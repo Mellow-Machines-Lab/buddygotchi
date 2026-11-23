@@ -44,11 +44,18 @@ final class WorldTests: XCTestCase {
         XCTAssertEqual(state.added.linesChanged, 140)
         let reply = try JSONDecoder().decode(World.Reply.self, from: fixture("buddy-reply.json"))
         XCTAssertEqual(reply.gestures, [World.Gesture(kind: .boop, fromRegion: .asiaOceania, at: "2026-11-08T16:58:12Z")])
-        let world = try JSONDecoder().decode(World.Snapshot.self, from: fixture("world.json"))
-        XCTAssertEqual(world.awake, 214)
-        XCTAssertEqual(world.regions.map(\.region), [.americas, .europeAfrica, .asiaOceania])
-        XCTAssertEqual(world.buddies.map(\.utcOffset), [540, nil])
-        XCTAssertEqual(world.doing["coding"], 38)
+        XCTAssertEqual(reply.lastWeek, World.Place(week: "2026-11-02", place: 2, xp: 512, of: 40))
+        let league = try JSONDecoder().decode(World.League.self, from: fixture("league.json"))
+        XCTAssertEqual(league.awake, 214)
+        XCTAssertEqual(league.rows.map(\.name), ["Bean", "Nori"])
+        XCTAssertEqual(league.me?.ahead?.by, 37)
+        XCTAssertEqual(league.lastWeek?.place, 2)
+        XCTAssertNotNil(league.ends)
+        let buddy = try JSONDecoder().decode(World.Profile.self, from: fixture("buddy.json"))
+        XCTAssertEqual(buddy.medals, .init(gold: 3, silver: 1, bronze: 0))
+        XCTAssertEqual(buddy.region, .asiaOceania)
+        XCTAssertEqual(buddy.between?.fromThem?.kind, "wave")
+        XCTAssertNil(buddy.between?.fromYou)
     }
 
     /// A server newer than this Mac: a gesture, activity or region it
@@ -59,14 +66,12 @@ final class WorldTests: XCTestCase {
              {"kind":"wave","from_region":"antarctica","at":"2026-11-08T16:59:00Z"}]}
             """#.utf8))
         XCTAssertEqual(reply.gestures, [World.Gesture(kind: .wave, fromRegion: nil, at: "2026-11-08T16:59:00Z")])
-        let world = try JSONDecoder().decode(World.Snapshot.self, from: Data(#"""
-            {"at":"2026-11-08T17:00:00Z","awake":2,"total":2,"doing":{"coding":1},
-             "today":{"turns":0,"tests_passed":0,"ships":0,"lines_changed":0},
-             "regions":[{"region":"americas","awake":1},{"region":"moon","awake":1}],
-             "buddies":[{"id":"a","name":"A","level":1,"activity":"dancing"},{"id":"b","name":"B","level":2,"activity":"coding"}]}
+        let league = try JSONDecoder().decode(World.League.self, from: Data(#"""
+            {"week":"2026-11-23","ends_at":"2026-11-30T00:00:00Z","total":2,"awake":1,"with_xp":2,
+             "rows":[{"place":1,"id":"a","name":"A","level":1,"color":0,"activity":"dancing","xp_week":9},
+                     {"place":2,"id":"b","name":"B","level":2,"color":0,"activity":"coding","xp_week":5}]}
             """#.utf8))
-        XCTAssertEqual(world.regions.map(\.region), [.americas])
-        XCTAssertEqual(world.buddies.map(\.id), ["b"])
+        XCTAssertEqual(league.rows.map(\.id), ["b"])
     }
 
     /// A send kept over a quit counted what this launch never had: what's
@@ -245,7 +250,7 @@ final class WorldTests: XCTestCase {
             case ("POST", "/v1/buddies"): (201, #"{"id":"b1","key":"k1","name":"Mochi","name_ok":true}"#)
             case ("PUT", "/v1/buddies/me"):
                 (200, #"{"ok":true,"name":"Mochi","name_ok":true,"name_hidden":false,"gestures":[{"kind":"boop","from_region":"americas","at":"x"}]}"#)
-            case ("GET", "/v1/world"): (200, String(data: try! Data(contentsOf: WorldTests.fixtures.appendingPathComponent("world.json")), encoding: .utf8)!)
+            case ("GET", "/v1/league"): (200, String(data: try! Data(contentsOf: WorldTests.fixtures.appendingPathComponent("league.json")), encoding: .utf8)!)
             default: (200, #"{"ok":true,"gestures":[]}"#)
             }
         }
@@ -342,16 +347,16 @@ final class WorldTests: XCTestCase {
         queue.sync { world.sleep(Self.me, on: true, at: 2_000) }
         settle()
         XCTAssertEqual(Stub.seen.last?.body?["activity"] as? String, "asleep")
-        XCTAssertFalse(Stub.seen.contains { $0.path == "/v1/world" })
+        XCTAssertFalse(Stub.seen.contains { $0.path == "/v1/league" })
         queue.sync { world.tab(open: true, at: 3_000) }
         settle()
-        XCTAssertEqual(world.status.snapshot?.awake, 214)
-        let fetched = Stub.seen.filter { $0.path == "/v1/world" }.count
+        XCTAssertEqual(world.status.league?.awake, 214)
+        let fetched = Stub.seen.filter { $0.path == "/v1/league" }.count
         queue.sync { world.tab(open: false, at: 4_000) }
         queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 100_000) }
         settle()
-        XCTAssertEqual(Stub.seen.filter { $0.path == "/v1/world" }.count, fetched, "closed: no fetch")
-        XCTAssertNil(world.status.snapshot, "closed: nothing stale kept")
+        XCTAssertEqual(Stub.seen.filter { $0.path == "/v1/league" }.count, fetched, "closed: no fetch")
+        XCTAssertNil(world.status.league, "closed: nothing stale kept")
         XCTAssertEqual(Stub.seen.filter { $0.method == "PUT" }.last?.body?["activity"] as? String, "asleep",
                        "still asleep while locked: a tick doesn't wake it")
         queue.sync { world.checkGestures(on: true, quiet: false, at: 110_000) }

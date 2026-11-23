@@ -128,6 +128,11 @@ extension Runtime {
         home.async { [self] in world?.tab(open: open, at: options.clock()) }
     }
 
+    /// A buddy's card opened on the World tab, or closed (nil): its profile is fetched.
+    public func worldOpen(_ id: String?) {
+        home.async { [self] in world?.open(id) }
+    }
+
     /// A gesture for another buddy, from its card. `done`, on the main
     /// thread, says whether it went.
     public func sendGesture(_ kind: World.GestureKind, to buddy: String, done: @escaping @Sendable (Bool) -> Void) {

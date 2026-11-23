@@ -88,16 +88,20 @@ public final class WorldLink {
         public var shownName: String?
         public var nameHidden = false
         /// The world, as the World tab last fetched it.
-        public var snapshot: World.Snapshot?
+        public var league: World.League?
+        /// The buddy card open now, as the server last said.
+        public var profile: World.Profile?
+        /// Last week's place, from a send's reply: Monday's moment.
+        public var lastWeek: World.Place?
         /// Why the world can't be reached now, in plain words.
         public var trouble: String?
         /// What other buddies did today, newest first.
         public var today: [Arrival] = []
 
-        public init(joined: Bool = false, shownName: String? = nil, snapshot: World.Snapshot? = nil, today: [Arrival] = []) {
+        public init(joined: Bool = false, shownName: String? = nil, league: World.League? = nil, today: [Arrival] = []) {
             self.joined = joined
             self.shownName = shownName
-            self.snapshot = snapshot
+            self.league = league
             self.today = today
         }
     }
@@ -316,6 +320,10 @@ public final class WorldLink {
                     status.trouble = nil
                     onChange()
                 }
+                if reply.lastWeek != status.lastWeek {
+                    status.lastWeek = reply.lastWeek
+                    onChange()
+                }
                 arrived(reply.gestures ?? [], quiet: quiet, at: now)
             case .failure(let failure):
                 failed(failure, at: now)
@@ -395,8 +403,9 @@ public final class WorldLink {
         guard open else {
             // Fetched afresh next time: nothing stale shows, or is kept.
             lastFetchAt = nil
-            if status.snapshot != nil {
-                status.snapshot = nil
+            if status.league != nil || status.profile != nil {
+                status.league = nil
+                status.profile = nil
                 onChange()
             }
             return
@@ -414,17 +423,30 @@ public final class WorldLink {
         guard tabOpen, !fetching, lastFetchAt.map({ now - $0 >= Self.fetchEveryMs }) ?? true else { return }
         fetching = true
         lastFetchAt = now
-        client.world { [weak self] result in
+        client.league(key: member?.key) { [weak self] result in
             guard let self else { return }
             fetching = false
             guard tabOpen else { return }
             switch result {
-            case .success(let snapshot):
-                status.snapshot = snapshot
+            case .success(let league):
+                status.league = league
                 if identity == nil || !busy { status.trouble = nil }
             case .failure:
                 status.trouble = Self.troubleWords
             }
+            onChange()
+        }
+    }
+
+    /// Opens a buddy's card: its profile, fetched; nil closes it.
+    public func open(_ id: String?) {
+        guard let id else {
+            if status.profile != nil { status.profile = nil; onChange() }
+            return
+        }
+        client.profile(id, key: member?.key) { [weak self] result in
+            guard let self, tabOpen, case .success(let profile) = result else { return }
+            status.profile = profile
             onChange()
         }
     }
@@ -483,7 +505,7 @@ public final class WorldLink {
         leaving.leaving = true
         identity = leaving
         save()
-        status = Status(snapshot: status.snapshot)
+        status = Status(league: status.league)
         last = nil
         pending = World.Counts()
         pendingSince = nil

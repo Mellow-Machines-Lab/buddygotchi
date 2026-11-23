@@ -534,7 +534,7 @@ Done when: the owner reads the tab and can say what earned today's XP.
 Done when: `npm test` passes, and a local run (`npm run dev`) with 20
 seeds and two real state folders shows a list that changes through a day.
 
-### 5. The World tab
+### 5. The World tab (built)
 
 - §6.3: the client's calls and types (`WorldWire.swift`, `WorldClient.swift`,
   `WorldLink.swift`), the list, the rival line, the percent line. Remove

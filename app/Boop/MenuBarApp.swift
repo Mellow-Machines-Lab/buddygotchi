@@ -79,7 +79,9 @@ final class AppModel: ObservableObject {
         }
     }
     /// The buddy whose card is open on the World tab, and what was sent it.
-    @Published var worldPick: String?
+    @Published var worldPick: String? {
+        didSet { if worldPick != oldValue { runtime?.worldOpen(worldPick) } }
+    }
     @Published var worldSent: [String: WorldSend] = [:]
     /// What was sent one buddy this launch: the kinds that went through,
     /// which stay sent (the world takes 3 gestures to a buddy an hour),

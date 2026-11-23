@@ -112,37 +112,28 @@ enum Snapshots {
                 young.daysOld = 2
                 young.week = [("2026-11-06", 100), ("2026-11-07", 48), ("2026-11-08", 12)].map { .init(day: $0, xp: $1, today: "2026-11-08") }
                 shot("boop-third-day", model(installer, status: young), pane: .overview, tab: .boop)
-                // The World tab: the world, a buddy's card open, sent, and off;
-                // still loading, out of reach, and with no world at all.
+                // The World tab: the league; a buddy's card open, sent, sending
+                // and failed; your own; a small league; off.
                 shot("world", model(installer, status: status()), pane: .overview, tab: .world)
-                let card = model(installer, status: status())
+                var withCard = status()
+                withCard.world?.link.profile = Self.bean
+                let card = model(installer, status: withCard)
                 card.worldPick = "b-bean"
                 shot("world-card", card, pane: .overview, tab: .world)
-                card.worldSent["b-bean"] = .init(sent: [.boop])
+                card.worldSent["b-bean"] = .init(sent: [.wave])
                 shot("world-card-sent", card, pane: .overview, tab: .world)
-                // Say hi on its way: only its button dims. Then one that failed.
                 card.worldSent["b-bean"] = .init(sending: .boop)
                 shot("world-card-sending", card, pane: .overview, tab: .world)
                 card.worldSent["b-bean"] = .init(failed: .boop)
                 shot("world-card-failed", card, pane: .overview, tab: .world)
-                // A small world: the numbers as a sentence, names on the band, Bean's card open.
                 var small = status()
-                small.world?.link.snapshot = World.Snapshot(
-                    at: "2026-11-08T13:20:00Z", awake: 3, total: 5, doing: ["coding": 1, "testing": 1, "idle": 1],
-                    today: World.Counts(turns: 40, testsPassed: 12, ships: 0, linesChanged: 900),
-                    regions: try! JSONDecoder().decode([World.RegionCount].self, from: Data(#"""
-                        [{"region": "americas", "awake": 1}, {"region": "europe_africa", "awake": 2}, {"region": "asia_oceania", "awake": 0}]
-                        """#.utf8)),
-                    buddies: [World.Buddy(id: "b-pip", name: "Pip", level: 4, utcOffset: -300, activity: .coding),
-                              World.Buddy(id: "b-me", name: "Mochi", level: 12, utcOffset: 60, activity: .idle),
-                              World.Buddy(id: "b-nori", name: "Nori", level: 2, utcOffset: 120, activity: .testing),
-                              World.Buddy(id: "b-bean", name: "Bean", level: 7, utcOffset: 540, activity: .asleep),
-                              World.Buddy(id: "b-dot", name: "Dot", level: 1, utcOffset: 600, activity: .asleep)])
-                let smallWorld = model(installer, status: small)
-                shot("world-small", smallWorld, pane: .overview, tab: .world)
-                smallWorld.worldPick = "b-bean"
-                shot("world-small-card", smallWorld, pane: .overview, tab: .world)
-                // Your own dot: marked, its card with nothing to send.
+                small.world?.link.league = World.League(week: "2026-11-23", endsAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86_400 * 4)),
+                                                        total: 3, awake: 2, withXP: 2,
+                                                        rows: [.init(place: 1, id: "b-me", name: "Mochi", level: 2, color: 0, activity: .coding, xpWeek: 85),
+                                                               .init(place: 2, id: "b-pip", name: "Pip", level: 1, color: 0, activity: .idle, xpWeek: 40),
+                                                               .init(place: 3, id: "b-dot", name: "Dot", level: 1, color: 0, activity: .asleep, xpWeek: 0)],
+                                                        me: .init(place: 1, xpWeek: 85, topPercent: 50, ahead: nil, behind: .init(id: "b-pip", name: "Pip", by: 45)))
+                shot("world-small", model(installer, status: small), pane: .overview, tab: .world)
                 let mine = model(installer, status: status())
                 mine.worldPick = "b-me"
                 shot("world-card-you", mine, pane: .overview, tab: .world)
@@ -173,16 +164,6 @@ enum Snapshots {
                 joining.world?.inWorld = false
                 joining.world?.link.joined = false
                 shot("world-joining", model(installer, status: joining), pane: .overview, tab: .world)
-                let shipping = model(installer, status: status())
-                shipping.worldPick = "b-pip"
-                shot("world-card-shipping", shipping, pane: .overview, tab: .world)
-                // At its longest: the longest names, Boop's and another buddy's, its card open.
-                var longWorld = status(name: Long.name)
-                longWorld.world?.link.snapshot?.buddies.append(World.Buddy(id: "b-long", name: Long.name, level: 1234,
-                                                                           utcOffset: 330, activity: .waiting))
-                let long = model(installer, status: longWorld)
-                long.worldPick = "b-long"
-                shot("world-long", long, pane: .overview, tab: .world)
                 var away = status()
                 away.world?.on = false
                 away.world?.link.joined = false
@@ -192,7 +173,7 @@ enum Snapshots {
                 shot("world-off", offCard, pane: .overview, tab: .world)
                 shot("world-off-no-card", model(installer, status: away), pane: .overview, tab: .world)
                 var loading = status()
-                loading.world?.link.snapshot = nil
+                loading.world?.link.league = nil
                 loading.world?.link.today = []
                 shot("world-loading", model(installer, status: loading), pane: .overview, tab: .world)
                 loading.world?.link.trouble = "the world didn't answer"
@@ -868,33 +849,21 @@ enum Snapshots {
     /// time zones, and what two of them did for Boop today, with more that
     /// didn't play on the board.
     static func world(name: String) -> Runtime.WorldStatus {
-        let names = ["Bean", "Pip", "Mochi", "Tofu", "Nori", "Biscuit", "Pebble", "Dumpling", "Sprout", "Wobble", "Kiwi",
-                     "Noodle", "Sesame", "Clementine", "Fig", "Juniper", "Mallow", "Pudding", "Taro", "Yuzu"]
-        let activities: [World.Activity] = [.coding, .asleep, .idle, .coding, .testing, .asleep, .waiting, .coding, .asleep, .idle]
-        // Clustered where people are: the Americas, Europe and Africa, Asia.
-        let offsets = [-480, -420, -360, -300, -300, -240, -180, 0, 60, 60, 60, 120, 120, 180, 330, 480, 540, 540, 600, 720]
-        var buddies = (0..<40).map { i in
-            World.Buddy(id: "b-\(i)", name: names[(i * 7) % names.count], level: 1 + (i * 13) % 40,
-                        utcOffset: offsets[(i * 3) % offsets.count] + (i % 3 == 0 ? 60 : 0), activity: activities[i % activities.count])
-        }
-        buddies.append(World.Buddy(id: "b-bean", name: "Bean", level: 7, utcOffset: 540, activity: .asleep))
-        buddies.append(World.Buddy(id: "b-pip", name: "Pip", level: 23, utcOffset: -300, activity: .shipping))
-        // Boop itself, as the world sees it, and one with no time zone, off the band.
-        buddies.append(World.Buddy(id: "b-me", name: name, level: 12, utcOffset: 60, activity: .idle))
-        buddies.append(World.Buddy(id: "b-nowhere", name: "Moss", level: 3, utcOffset: nil, activity: .coding))
-        // As the server sends them: they're only ever read.
-        let regions = try! JSONDecoder().decode([World.RegionCount].self, from: Data(#"""
-            [{"region": "americas", "awake": 88, "today_turns": 2100},
-             {"region": "europe_africa", "awake": 97, "today_turns": 2400},
-             {"region": "asia_oceania", "awake": 29, "today_turns": 710}]
-            """#.utf8))
-        let snapshot = World.Snapshot(at: "2026-11-08T13:20:00Z", awake: 214, total: 386,
-                                      doing: ["coding": 38, "testing": 12, "shipping": 3, "waiting": 9, "idle": 152],
-                                      today: World.Counts(turns: 5_210, testsPassed: 12_400, ships: 61, linesChanged: 240_000),
-                                      regions: regions,
-                                      buddies: buddies)
+        let rows: [World.League.Row] = [
+            .init(place: 1, id: "b-bean", name: "Bean", level: 9, color: 3, activity: .shipping, xpWeek: 512),
+            .init(place: 2, id: "b-nori", name: "Nori", level: 6, color: 0, activity: .coding, xpWeek: 468),
+            .init(place: 3, id: "b-me", name: name, level: 7, color: 0, activity: .coding, xpWeek: 431),
+            .init(place: 4, id: "b-rex", name: "Rex", level: 11, color: 0, activity: .asleep, xpWeek: 390),
+            .init(place: 5, id: "b-tofu", name: "Tofu", level: 4, color: 0, activity: .testing, xpWeek: 344),
+            .init(place: 6, id: "b-pip", name: "Pip", level: 23, color: 0, activity: .shipping, xpWeek: 301),
+            .init(place: 7, id: "b-miso", name: "Miso", level: 2, color: 0, activity: .asleep, xpWeek: 255),
+        ]
+        let league = World.League(week: "2026-11-23", endsAt: ISO8601DateFormatter().string(from: Date().addingTimeInterval(2.5 * 86_400)),
+                                  total: 1_302, awake: 214, withXP: 1_240, rows: rows,
+                                  me: .init(place: 3, xpWeek: 431, topPercent: 18,
+                                            ahead: .init(id: "b-nori", name: "Nori", by: 37), behind: .init(id: "b-rex", name: "Rex", by: 41)))
         let today = Calendar.current.startOfDay(for: Date())
-        var link = WorldLink.Status(joined: true, shownName: name, snapshot: snapshot, today: [
+        var link = WorldLink.Status(joined: true, shownName: name, league: league, today: [
             .init(counts: [.init(kind: .boop, n: 1)], region: .europeAfrica, at: today.addingTimeInterval(10 * 3600 + 42 * 60)),
             .init(counts: [.init(kind: .cheer, n: 3)], region: nil, at: today.addingTimeInterval(9 * 3600 + 15 * 60)),
             .init(counts: [.init(kind: .boop, n: 3), .init(kind: .wave, n: 1)], region: nil, plays: false,
@@ -904,6 +873,13 @@ enum Snapshots {
         link.id = "b-me"
         return Runtime.WorldStatus(on: true, inWorld: true, utcOffset: 60, link: link)
     }
+
+    /// Bean's profile, as the server gives it to Mochi.
+    static let bean = World.Profile(id: "b-bean", name: "Bean", level: 9, color: 3, region: .asiaOceania, utcOffset: 540, activity: .shipping,
+                                    daysInARow: 21, medals: .init(gold: 3, silver: 1), week: .init(xp: 512, place: 1), bestWeek: 640,
+                                    today: .init(turns: 11, ships: 2, testsPassed: 4),
+                                    between: .init(fromThem: .init(kind: "wave", at: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86_400))),
+                                                   fromYou: nil, youBeatThem: "2026-11-09"))
 
     static func overviews(_ installer: HookInstaller) -> [(String, AppModel)] {
         [
