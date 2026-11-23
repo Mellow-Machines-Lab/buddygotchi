@@ -34,15 +34,16 @@ final class MomentRuleTests: XCTestCase {
         XCTAssertNil(move(finish("stopped")), "a stopped turn is just the face")
         XCTAssertEqual(move(finish(kind: "done")), "success")
         XCTAssertEqual(move(finish(kind: "stuck")), "failure", "done, but it says it couldn't finish")
-        // A chat turn plays nothing: its last message a question or an
-        // answer, or nothing called, no claim, over within the minute.
-        XCTAssertNil(move(finish(kind: "question")))
-        XCTAssertNil(move(finish(kind: "answer")))
-        XCTAssertNil(move(finish(tools: 0)), "back-and-forth")
+        // A chat turn plays no finish, only a look up at you: its last
+        // message a question or an answer, or nothing called, no claim,
+        // over within the minute.
+        XCTAssertEqual(move(finish(kind: "question")), "notice")
+        XCTAssertEqual(move(finish(kind: "answer")), "notice")
+        XCTAssertEqual(move(finish(tools: 0)), "notice", "back-and-forth")
         XCTAssertFalse(MomentRule.namesTurn(finish(kind: "question")), "and names no thread")
         XCTAssertTrue(MomentRule.namesTurn(finish("stopped")), "a stopped turn's face still does")
         XCTAssertEqual(move(finish(minutes: 1, tools: 0)), "success", "a minute or more of work is work")
-        XCTAssertNil(move(finish(tools: 0, kind: "other")))
+        XCTAssertEqual(move(finish(tools: 0, kind: "other")), "notice")
         XCTAssertEqual(move(finish(tools: 0, kind: "done")), "success", "it says the work is done")
         XCTAssertEqual(move(finish(kind: "other")), "success")
         XCTAssertEqual(MomentRule.move(event(.lastMessage, nil, "reading"), facts: finish("failed")), "failure", "a finish's reading is the finish")

@@ -34,8 +34,8 @@ public enum MomentRule {
     /// | --- | --- |
     /// | A turn finished, failed | failure |
     /// | A turn finished, done, its last message giving up | failure |
-    /// | A turn finished, done, its last message asking or only answering | none: a chat turn goes quiet |
-    /// | A turn finished, done, in under a minute with no tool calls and no claim it's done | none: a chat turn goes quiet |
+    /// | A turn finished, done, its last message asking or only answering | notice: a chat turn, a look up at you |
+    /// | A turn finished, done, in under a minute with no tool calls and no claim it's done | notice: a chat turn, a look up at you |
     /// | Any other turn finished, done | success |
     /// | A turn stopped | none |
     /// | You back after an hour or more | wake up |
@@ -46,7 +46,7 @@ public enum MomentRule {
             switch finish {
             case .failure: return "failure"
             case .success: return "success"
-            case .reply: return nil
+            case .reply: return "notice"
             case .stopped: return nil
             }
         }
@@ -56,8 +56,9 @@ public enum MomentRule {
     }
 
     /// How a finished turn ended, for the move and the size. A reply, a
-    /// chat turn, plays nothing and names no thread (`namesTurn`): the
-    /// strip's idle count already says it's your turn.
+    /// chat turn, plays no finish and names no thread (`namesTurn`): Boop
+    /// looks up at you once and holds "your turn" low, in the strip's place
+    /// (`MomentOutput.yourTurn`).
     enum Finish { case success, failure, reply, stopped }
 
     /// The finish a line's `facts` tell, or nil when they tell none: the

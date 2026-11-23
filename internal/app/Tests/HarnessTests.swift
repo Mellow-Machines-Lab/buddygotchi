@@ -225,10 +225,13 @@ final class HarnessTests: XCTestCase {
         starts(["react.face": a("pleased"), "say": a("none")], at: finish, "\(creature) had a pleased moment (small), playing a success.")
         XCTAssertEqual(sent.last?.say?.takes, [], "a face in silence")
         facts = finished("done", minutes: 2, tools: 0, kind: "answer")
-        starts(["react.face": a("curious"), "say": a("none")], at: finish, "\(creature) had a curious moment (small).")
+        starts(["react.face": a("curious"), "say": a("none")], at: finish, "\(creature) had a curious moment (small), playing a notice.")
         let reply = try XCTUnwrap(queued.last?.reaction)
-        XCTAssertNil(reply.anim, "a chat turn plays no finish")
-        XCTAssertNil(reply.who, "and names no thread: the strip's idle count says it's your turn")
+        XCTAssertEqual(reply.anim, "notice", "a chat turn plays no finish: a look up at you")
+        XCTAssertNil(reply.outcome)
+        XCTAssertNil(reply.who, "and names no thread")
+        XCTAssertEqual(reply.sign, MomentOutput.yourTurn, "it holds \"your turn\" low, in the strip's place")
+        XCTAssertTrue(reply.low)
         facts = ["away_ms": .int(2 * 60 * 60_000)]
         starts(["react.face": a("happy"), "say": a("hello")], at: back,
                #"\#(creature) had a happy moment (medium), playing a wake up, and said "SAID"."#)

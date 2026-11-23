@@ -129,7 +129,7 @@ Done when: the 15 clips pass at arm's length: four work poses and a held
 card, each with typing, fast typing and speaking. If a sway cannot be
 seen, make it bigger.
 
-### 6. The end of a chat turn
+### 6. The end of a chat turn ✓ ("your turn" is a low sign in the strip's place, held for the look's length)
 
 The screen guide's "How a turn ends", the chat row.
 

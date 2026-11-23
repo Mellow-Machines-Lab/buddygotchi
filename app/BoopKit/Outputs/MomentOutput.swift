@@ -408,6 +408,9 @@ public final class MomentOutput: Output {
     /// task_complete scene for a success or a failure, with that outcome,
     /// its wake_up for a wake up, and its notice for a notice. A chat
     /// turn plays none (`MomentRule.move`).
+    /// What a chat turn holds low (`MomentRule.Finish.reply`).
+    public static let yourTurn = "your turn"
+
     public static let scenes: [String: (anim: String, outcome: String?)] = [
         "success": ("task_complete", "success"), "failure": ("task_complete", "failure"),
         "wake up": ("wake_up", nil), "notice": ("notice", nil),
@@ -824,6 +827,16 @@ public final class MomentOutput: Output {
             // A face for a finished turn names it too: the device marks
             // the turn it's about while it plays. A chat turn's doesn't.
             reaction.who = who(about)
+        }
+        // A chat turn: a look up at you and "your turn" low, where the
+        // strip is, and nothing of the brain's; no thread named.
+        if MomentRule.finish(lineFacts) == .reply, noticing == nil, ruled == nil, !talk {
+            reaction.who = nil
+            reaction.turn = nil
+            reaction.sign = Self.yourTurn
+            reaction.low = true
+            reaction.ask = nil
+            asking = nil
         }
         // A finish that names its thread holds up nothing of the brain's:
         // the face holds up that name.
