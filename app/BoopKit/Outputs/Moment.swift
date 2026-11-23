@@ -111,6 +111,13 @@ public struct Moment: Equatable, Sendable {
     /// At most `Signs.maxLength` characters. A face that holds nothing low
     /// shows it as its sign. Nil sends none.
     public var gold: String?
+    /// What the gold's words have before them: `ring` for today's ring,
+    /// `gold`, `silver` or `bronze` for a league's medal. Nil sends none,
+    /// a star.
+    public var mark: String?
+    /// The XP the moment's event earned, shown on its low sign or its
+    /// finish's as "+5 XP". Nil sends none.
+    public var xp: Int?
     /// A clip of the pack's to play as its face starts, as a reply's does
     /// (`reply-<name>`), with none of a reply's rights. Nil sends none.
     public var clip: String?
@@ -168,6 +175,8 @@ public struct Moment: Equatable, Sendable {
         if greeting { args["greeting"] = true }
         if low { args["low"] = true }
         if let gold { args["gold"] = .string(gold) }
+        if let mark { args["mark"] = .string(mark) }
+        if let xp { args["xp"] = .int(xp) }
         if let clip { args["clip"] = .string(clip) }
         if let who { args["who"] = ["agent": .string(who.agent), "thread": .string(who.thread)] }
         if let say { args["say"] = say.json }

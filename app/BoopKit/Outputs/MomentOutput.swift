@@ -47,6 +47,9 @@ public final class MomentOutput: Output {
     /// (a poke, an idle check-in): a finish, or a face for a finished
     /// turn, names it on the device.
     let who: (Event?) -> Moment.Who?
+    /// What the event a moment is about earned, and for what: a finish
+    /// shows it on its sign, a ship or a fix on a low sign of its own.
+    public var earned: (Event?) -> (source: Growth.Source, xp: Int)? = { _ in nil }
     /// How long the turn that event finished ran, in ms, or nil when it
     /// finished none: a finish sends the tier it reached as its `turn`,
     /// which the device may size it by.
@@ -333,6 +336,8 @@ public final class MomentOutput: Output {
     /// The clip it plays bringing up what it remembers: the pack's
     /// `reply-remember`.
     public static let rememberClip = "remember"
+    /// The low signs a ship and a fix hold up, with what they earned.
+    public static let shippedSign = "shipped", fixedSign = "tests fixed"
 
     /// A move as a reply: to what you said, or a hello's or a bye's wave.
     struct Reply {
@@ -844,6 +849,21 @@ public final class MomentOutput: Output {
             reaction.sign = nil
             reaction.ask = nil
             asking = nil
+        }
+        // What it earned, on the sign that names it.
+        if let (source, xp) = earned(about) {
+            switch source {
+            case .turns where reaction.who != nil:
+                reaction.xp = xp
+            case .ships where reaction.who == nil && !reaction.low, .fixes where reaction.who == nil && !reaction.low:
+                reaction.low = true
+                reaction.sign = source == .ships ? Self.shippedSign : Self.fixedSign
+                reaction.ask = nil
+                asking = nil
+                reaction.xp = xp
+            default:
+                break
+            }
         }
         // Why, for the person: the board shows the fact in its lane, unless
         // the strip already names the finished turn it's about.

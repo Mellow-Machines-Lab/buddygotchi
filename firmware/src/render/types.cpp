@@ -71,6 +71,14 @@ Outcome outcomeFromName(const char* name) {
   return Outcome::kNone;
 }
 
+GoldMark goldMarkFromName(const char* name) {
+  static constexpr const char* kMarks[] = {"star", "ring", "gold", "silver", "bronze"};
+  for (int i = 1; name && i < int(sizeof(kMarks) / sizeof(kMarks[0])); ++i) {
+    if (!std::strcmp(name, kMarks[i])) return GoldMark(i);
+  }
+  return GoldMark::kStar;
+}
+
 namespace {
 constexpr const char* kAttnKinds[] = {nullptr, "approve", "question", "plan"};
 }

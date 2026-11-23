@@ -231,7 +231,6 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
            : !std::strcmp(wish, "work") ? render::WishShow::kWork
                                         : render::WishShow::kNone;
   m.wishHow = doc["wish_how"] | false;
-  m.xp = heldTo(doc["xp"], -1, 100, -1);
   // Several agents: "w0i-c1", a kind and a slot ("-" for none) each.
   {
     const char* pips = doc["pips"] | "";
@@ -361,7 +360,10 @@ ReactionIn Device::parse(const Do& c, uint32_t t) {
   render::foldText(args["sign"].as<const char*>(), mo.low ? kLowGlyphs : kSignGlyphs, mo.sign, sizeof(mo.sign));
   // A celebration's, held low in gold; a face that holds nothing low holds
   // it up as its sign, when it has none.
-  render::foldText(args["gold"].as<const char*>(), kSignGlyphs, mo.gold, sizeof(mo.gold));
+  render::foldText(args["gold"].as<const char*>(), kLowGlyphs, mo.gold, sizeof(mo.gold));
+  mo.goldMark = render::goldMarkFromName(args["mark"].as<const char*>());
+  // What it earned, "+5 XP" on its finish's or its low sign.
+  mo.xp = heldTo(args["xp"], 0, 999, 0);
   if (mo.gold[0] && !b_.face().holdsUpFinish()) {
     if (!mo.sign[0]) copyStr(mo.sign, sizeof(mo.sign), mo.gold);
     mo.gold[0] = 0;
@@ -1156,7 +1158,6 @@ void Device::render(uint32_t t) {
     b_.face().drawer(&drawer_);
     b_.face().wish(b_.wishShow(t));
     b_.face().card(b_.cardShow(t));
-    b_.face().growth(b_.growthShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;

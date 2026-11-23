@@ -98,7 +98,7 @@ public struct Narration: Equatable, Sendable {
             return Narration(cause: "You said \"\(Self.keep(words))\".")
         case .growth?:
             guard let level = e["level"]?.int else {
-                return Narration(cause: "Today's ring is full. Nice work.", fact: fit("today's done!"))
+                return Narration(cause: "Today's ring is full. Nice work.", fact: fit("\(Growth.perDay) XP today"))
             }
             return Narration(cause: EventLine.grew(level: Int(level), ring: e["ring"]?.bool == true, name: name), fact: fit("level \(level)!"))
         case .world?:

@@ -248,7 +248,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | take | One recorded clip; a lead sound may come first | line | `take` |
 | the voice file | `voice/voice.bin`, on the board's card | voice pack | |
 | sign | A caption Boop holds up, at most 18 characters (`Signs`, `signs.md`) | banner, label | `sign` |
-| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a work act's words, a remembered line, a level in gold (`gel::LowSign`) | ticket | `low`, `gold` |
+| low sign | A card Boop holds up in the strip's place, two lines at most, one under the rim's glow: a finish's thread, a ship or a fix, a remembered line, a level or the ring in gold; with an XP chip, `+5 XP`, when its moment earned (`gel::LowSign`) | ticket | `low`, `gold`, `mark`, `xp` |
 | bubble | The voice's words as text in the lane | | |
 | talk | How much Boop says: quiet or normal. "Shh", the hush reply and the popover's Hush make it quiet for half an hour, then it's the setting's again; talking to Boop ends that sooner (`Talk`, `Core.quiet`) | chattiness, mute (that's the volume), hush (as a state) | `talk` |
 | narration | The plain words for why, the Mac's and the gel's board's own for a touch, never Jev's or Boop's voice (`Narration`, `app/touch_reason.h`); on the board, the caption | explanation | `reason` |
@@ -284,7 +284,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign as an idle beat, each line once in 14 days (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
 | XP | What Boop earns, for four things you see happen: a turn whose finish is a success 5, a ship 10, a check passing after it failed 5, your time with Boop (a care touch, your words, a met wish) 3 and at most 30 a day; at most 300 a day in all; never lost (`Growth`, plan/xp-league.md §3) | points | |
-| the ring | Today's XP against 100, a Boop day's goal: XP counts past it, to the day's 300. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is the rules' moment, one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `xp` (today's percent), `growth` |
+| the ring | Today's XP against 100, a Boop day's goal: XP counts past it, to the day's 300. On the board, no bar: a finish's or a ship's low sign carries what it earned, `+5 XP` (the `do`'s `xp`); its closing is the rules' moment, `100 XP today, day 12` low in gold behind a full ring (the `do`'s `mark`), one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `growth`, a `do`'s `xp` and `mark` |
 | level | 1 + every XP / 500, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
 | days in a row | The Boop days in a row with a full ring, kept through up to two days without one, so a weekend never breaks it (`GrowthStore.daysInARow`) | streak | `xp.row` |
 | special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |

@@ -402,6 +402,7 @@ public final class Runtime: @unchecked Sendable {
         var queued: (Moment, Pending) -> Void = { _, _ in }
         var effected: ([CoreEffect]) -> Void = { _ in }
         let link = rig.link
+        var earnedNow: (Int) -> (source: Growth.Source, xp: Int)? = { _ in nil }
         var mind = Mind(buddy: buddy, steering: rig.steering,
                         reactions: rig.reactions, queue: { queued($0, $1) },
                         speaks: { (link.hello.map { DeviceInfo($0).hasTheVoice } ?? true) && !core.along.onCall && !core.along.speaking },
@@ -412,6 +413,7 @@ public final class Runtime: @unchecked Sendable {
                         }, answerTags: { remembersNow()?.answerTags(at: $0) ?? [] },
                         company: { remembersNow()?.today })
         mind.swears = { swearsNow() }
+        mind.earned = { earnedNow($0) }
         mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
         mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
                                       onLately: { remembersNow()?.onLately($0) ?? false })
@@ -431,6 +433,7 @@ public final class Runtime: @unchecked Sendable {
             fellBack = true
         }
         growth = GrowthStore(values, log: log)
+        earnedNow = { [weak self] seq in self?.growth.earned(at: seq) }
         // The view and the cores pick up where the last launch left them.
         let pipeline = self.pipeline
         let read = home.sync { pipeline.readBack(now: now) }
@@ -465,6 +468,7 @@ public final class Runtime: @unchecked Sendable {
         }
         // The core reads today's ring where the growth store keeps it. Weak: the runtime holds the core.
         core.growth = { [weak self] in self.flatMap { $0.showsGrowth ? $0.growthNow : nil } }
+        core.daysInARow = { [weak self] in self.map { $0.growth.daysInARow(on: $0.options.time.boopDay($0.options.wallClock())) } ?? 0 }
         core.pushToTalkWorks = options.pushToTalkWorks
         talkNow = { [weak self] in self?.talk ?? .default }
         swearsNow = { [weak self] in self.map { $0.options.swearing ?? $0.settings.swearing } ?? false }
@@ -889,7 +893,7 @@ public final class Runtime: @unchecked Sendable {
                 mic(on, by: by)
                 stateChanged = true
             case .reaction(let reaction):
-                if celebrating.isEmpty || (reaction.gold == nil && reaction.sign != Core.ringSign) {
+                if celebrating.isEmpty || reaction.gold == nil {
                     playRule(reaction)
                 } else {
                     playGrowth(reaction)

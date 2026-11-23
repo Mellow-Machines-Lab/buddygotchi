@@ -496,7 +496,7 @@ what the step adds.
 Done when: a headless day with real hook events gives the XP that §3.1
 says, by hand count.
 
-### 2. The board's signs, and the bar goes
+### 2. The board's signs, and the bar goes (built)
 
 - `Moment.xp` and the `do`'s `xp`; the chip on the finish's low sign and
   on a ship's and a fixed check's result (§5.1).

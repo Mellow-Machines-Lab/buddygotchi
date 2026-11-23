@@ -179,7 +179,7 @@ final class GrowthTests: XCTestCase {
     /// What growing sends through the runtime: a `state` with today's ring
     /// as a turn's XP moves it; at a level, a `level` event and its moment,
     /// `level 2!` held low in gold; at 100 today, the ring's, the same
-    /// moment holding up `today's done!`. A demo sends no ring.
+    /// moment, the ring's words held low in gold. A demo sends no ring.
     func testALevelUpAndTheRingThroughTheRuntime() throws {
         try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-grow-\(UUID().uuidString.prefix(8))")
@@ -275,6 +275,7 @@ final class GrowthTests: XCTestCase {
             // The board is out of reach: the level waits for it.
             turn()
             XCTAssertEqual(runtime.growth.growth.level, 2)
+            XCTAssertEqual(runtime.growth.earned(at: runtime.growth.lastSeq)?.xp, 5, "kept for its moment's sign")
             XCTAssertEqual(runtime.growth.levelDue, 2, "not celebrated with no board to play it")
             XCTAssertTrue(golds().isEmpty)
 

@@ -42,6 +42,9 @@ public final class GrowthStore {
     public private(set) var ringCelebrated: String?
     /// Today's XP by what earned it: how many, and their XP, after the limits.
     public private(set) var todayBy: [Growth.Source: Earned]
+    /// The last events that earned, newest last: what a moment about one
+    /// shows on its sign. In memory only.
+    public private(set) var recent: [(seq: Int, source: Growth.Source, xp: Int)] = []
     /// The days in a row with a full ring, as of the last one: its count and day.
     public private(set) var row: (count: Int, day: String)?
 
@@ -81,6 +84,11 @@ public final class GrowthStore {
             by[source] = Earned(n: n, xp: xp)
         }
         return by
+    }
+
+    /// What the event `seq` earned, if it's one of the last few that did.
+    public func earned(at seq: Int) -> (source: Growth.Source, xp: Int)? {
+        recent.last { $0.seq == seq }.map { ($0.source, $0.xp) }
     }
 
     /// What earned XP on Boop day `today`: none for another day.
@@ -145,6 +153,7 @@ public final class GrowthStore {
         guard added > 0 else { return 0 }
         let wasClosed = growth.ringClosed
         growth = growth.adding(added, from: source)
+        recent = Array((recent + [(e.seq, source, added)]).suffix(16))
         todayBy[source, default: Earned()].n += 1
         todayBy[source, default: Earned()].xp += added
         if growth.ringClosed, !wasClosed {
