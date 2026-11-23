@@ -101,6 +101,10 @@ public struct Narration: Equatable, Sendable {
                 return Narration(cause: "Today's ring is full. Nice work.", fact: fit("\(Growth.perDay) XP today"))
             }
             return Narration(cause: EventLine.grew(level: Int(level), ring: e["ring"]?.bool == true, name: name), fact: fit("level \(level)!"))
+        case .world? where e.specificType == World.leagueKind:
+            guard let place = e["place"]?.int, let xp = e["xp"]?.int else { return nil }
+            return Narration(cause: "Last week \(name) came \(World.ordinal(Int(place))) in the league, with \(xp) XP.",
+                             fact: fit(World.leagueSign(place: Int(place), xp: Int(xp))))
         case .world?:
             let counts = WorldGestures.counts(of: e)
             guard let (kind, count) = counts.first else { return nil }

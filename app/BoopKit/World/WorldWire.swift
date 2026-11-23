@@ -141,8 +141,10 @@ public enum World {
         public var duplicate: Bool?
         /// The buddy's place last week, or none.
         public var lastWeek: Place?
+        /// The buddy's own medals.
+        public var medals: Profile.Medals?
 
-        enum CodingKeys: String, CodingKey { case name, nameHidden = "name_hidden", gestures, duplicate, lastWeek = "last_week" }
+        enum CodingKeys: String, CodingKey { case name, nameHidden = "name_hidden", gestures, duplicate, lastWeek = "last_week", medals }
 
         public init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -151,6 +153,7 @@ public enum World {
             gestures = try c.lenient(Gesture.self, forKey: .gestures)
             duplicate = try c.decodeIfPresent(Bool.self, forKey: .duplicate)
             lastWeek = try? c.decodeIfPresent(Place.self, forKey: .lastWeek)
+            medals = try? c.decodeIfPresent(Profile.Medals.self, forKey: .medals)
         }
     }
 
@@ -317,6 +320,24 @@ public enum World {
 }
 
 extension World {
+    /// The `world` event's kind for last week's league place, told once.
+    public static let leagueKind = "league"
+
+    /// A medal's mark for a place: `gold`, `silver`, `bronze`, else nil.
+    public static func medal(_ place: Int) -> String? {
+        place >= 1 && place <= 3 ? ["gold", "silver", "bronze"][place - 1] : nil
+    }
+
+    /// "1st", "2nd", "23rd".
+    public static func ordinal(_ n: Int) -> String {
+        let tens = n % 100, ones = n % 10
+        let suffix = (11...13).contains(tens) ? "th" : ones == 1 ? "st" : ones == 2 ? "nd" : ones == 3 ? "rd" : "th"
+        return "\(n)\(suffix)"
+    }
+
+    /// What Boop holds low in gold for last week: "2nd, 512 XP last week".
+    public static func leagueSign(place: Int, xp: Int) -> String { "\(ordinal(place)), \(xp) XP last week" }
+
     /// What other buddies did, as a sentence: "Someone in Europe or
     /// Africa booped Mochi.", "3 buddies cheered your ship." `counts` is how
     /// many of each kind, `region` the one buddy's, and `held` says they

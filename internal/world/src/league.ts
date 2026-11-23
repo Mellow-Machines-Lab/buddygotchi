@@ -107,6 +107,18 @@ export async function closeWeek(db: Db, now: number): Promise<boolean> {
   return closed;
 }
 
+/** A buddy's medals: how many of each. */
+export async function medalsOf(db: Db, id: string) {
+  const medals = { gold: 0, silver: 0, bronze: 0 };
+  for (const m of await db.query<{ place: number; n: number }>(
+    "select place, count(*)::int as n from medals where buddy = $1 group by place",
+    [id],
+  )) {
+    medals[(["gold", "silver", "bronze"] as const)[m.place - 1]] = m.n;
+  }
+  return medals;
+}
+
 /** A buddy's place last week, if it had one. */
 export async function lastWeek(db: Db, buddy: string, now: number) {
   const week = addDays(weekOf(dayOf(now)), -7);
@@ -203,13 +215,7 @@ export async function profile(db: Db, id: string, now: number, viewer?: string):
   const all = await standings(db, week, now);
   const i = all.findIndex((s) => s.id === id);
   const s = all[i];
-  const medals = { gold: 0, silver: 0, bronze: 0 };
-  for (const m of await db.query<{ place: number; n: number }>(
-    "select place, count(*)::int as n from medals where buddy = $1 group by place",
-    [id],
-  )) {
-    medals[(["gold", "silver", "bronze"] as const)[m.place - 1]] = m.n;
-  }
+  const medals = await medalsOf(db, id);
   const [best] = await db.query<{ xp: number }>("select coalesce(max(xp), 0)::int as xp from league_results where buddy = $1", [id]);
   const today = dayOf(now);
   let counts = { turns: 0, ships: 0, tests_passed: 0 };

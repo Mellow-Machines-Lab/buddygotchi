@@ -68,6 +68,8 @@ public final class WorldLink {
         var seq = 0
         var leaving: Bool? = nil
         var unanswered: Unanswered? = nil
+        /// The last league week whose place was told on the board.
+        var toldWeek: String? = nil
 
         struct Unanswered: Codable {
             var seq: Int
@@ -93,6 +95,8 @@ public final class WorldLink {
         public var profile: World.Profile?
         /// Last week's place, from a send's reply: Monday's moment.
         public var lastWeek: World.Place?
+        /// The buddy's own medals, from a send's reply.
+        public var medals: World.Profile.Medals?
         /// Why the world can't be reached now, in plain words.
         public var trouble: String?
         /// What other buddies did today, newest first.
@@ -320,10 +324,12 @@ public final class WorldLink {
                     status.trouble = nil
                     onChange()
                 }
-                if reply.lastWeek != status.lastWeek {
+                if reply.lastWeek != status.lastWeek || (reply.medals != nil && reply.medals != status.medals) {
                     status.lastWeek = reply.lastWeek
+                    status.medals = reply.medals ?? status.medals
                     onChange()
                 }
+                tellLastWeek(reply.lastWeek, quiet: quiet, at: now)
                 arrived(reply.gestures ?? [], quiet: quiet, at: now)
             case .failure(let failure):
                 failed(failure, at: now)
@@ -347,6 +353,18 @@ public final class WorldLink {
     func arrived(_ came: [World.Gesture], quiet: Bool, at now: Int64) {
         record(gestures.arrived(came, quiet: quiet, at: now))
         if !came.isEmpty { saveWaiting() }
+    }
+
+    /// Last week's place, once a week: a `world` event of its own, which the
+    /// rules turn into Monday's moment. While quiet (night, away, needs you)
+    /// it waits for a later send's reply, which carries it again.
+    func tellLastWeek(_ place: World.Place?, quiet: Bool, at now: Int64) {
+        guard let place, !quiet, identity?.toldWeek != place.week else { return }
+        identity?.toldWeek = place.week
+        save()
+        onEvents([Event(at: now, source: .world, type: .world, specificType: World.leagueKind,
+                        data: ["place": .int(Int64(place.place)), "xp": .int(Int64(place.xp)), "of": .int(Int64(place.of)),
+                               "week": .string(place.week)])])
     }
 
     func record(_ events: [Event]) {

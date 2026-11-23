@@ -11,7 +11,7 @@ struct BoopPane: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.gapSection) {
             if let status = model.status {
-                if let growth = status.growth { who(growth, daysInARow: status.daysInARow) }
+                if let growth = status.growth { who(growth, daysInARow: status.daysInARow, medals: status.world?.link.medals) }
                 ReasonLines(feed: model.slime, name: model.name, mood: status.snapshot.mood, wish: status.wishing,
                             why: status.moodReason?.cause, doing: status.doingReason?.cause)
                 if let growth = status.growth {
@@ -30,12 +30,13 @@ struct BoopPane: View {
     // MARK: Who
 
     /// The level, the days in a row, and the bar to the next level.
-    private func who(_ growth: Growth, daysInARow: Int) -> some View {
+    private func who(_ growth: Growth, daysInARow: Int, medals: World.Profile.Medals?) -> some View {
         VStack(alignment: .leading, spacing: Theme.gapSnug) {
             Text("Level \(growth.level.formatted())").font(.boopTitle)
             if let days = Self.inARow(daysInARow) {
                 Text(days).font(.body).foregroundStyle(Theme.inkSoft)
             }
+            if let medals, medals.any { MedalsRow(medals: medals) }
             levelBar(growth)
         }
     }

@@ -190,6 +190,10 @@ moments that are already for you. Everything else is in the app.
   extra"). Its place in that order is first, on the one day it applies.
 - Tell it once: keep the told week on the Mac. At night it waits for the
   morning, as gestures do.
+- Built more simply: it plays at the first send's reply that carries last
+  week's place while you're there and nothing needs you (not quiet), which
+  is soon after you come back. A medal plays proud at the big size with the
+  gold sign; there is no finish animation for it.
 
 ### 5.4 What goes
 
@@ -548,7 +552,7 @@ Done when: the end-to-end script (`internal/tools/world_e2e.py`) joins two buddi
 sees the other in the league in order, and one opens the other's card and
 sends a wave that arrives.
 
-### 6. Medals and Monday's moment
+### 6. Medals and Monday's moment (built)
 
 - Medals on the Boop tab's header and on the card.
 - §5.3: the `world` event for a closed week, the hello's extra, the gold

@@ -11,7 +11,7 @@ import { defaultDb, type Db } from "./db.js";
 import * as L from "./limits.js";
 import { checkName, shownName } from "./names.js";
 import { UTC_OFFSET_MAX, UTC_OFFSET_MIN, regionOf, validOffset } from "./regions.js";
-import { closeWeek, lastWeek, league, profile } from "./league.js";
+import { closeWeek, lastWeek, league, medalsOf, profile } from "./league.js";
 import {
   ACTIVITIES, COUNTS, METRICS, TODAY, checkGoal, currentRewards, deliverGestures, goalAdded, snapshot, type Count,
 } from "./world.js";
@@ -279,6 +279,8 @@ export function createApp(getDb: () => Promise<Db> = defaultDb, options: Options
       rewards: await currentRewards(c.var.db),
       // Last week's place, for Monday's moment, with no tab open.
       last_week: await lastWeek(c.var.db, id, now()),
+      // The buddy's own medals, for its profile on the Mac.
+      medals: await medalsOf(c.var.db, id),
       // The Mac's last send before it quits keeps them for its next launch:
       // a reply it may not live to read would lose them.
       gestures: c.req.query("keep_gestures") === "1" ? [] : await deliverGestures(c.var.db, id),

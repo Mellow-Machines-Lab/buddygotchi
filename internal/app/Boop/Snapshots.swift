@@ -95,6 +95,7 @@ enum Snapshots {
                 var part = status(growth: Growth(xp: 3_164, today: 64, care: 9))
                 part.todayBy = [.turns: .init(n: 8, xp: 40), .ships: .init(n: 1, xp: 10), .fixes: .init(n: 1, xp: 5), .care: .init(n: 3, xp: 9)]
                 part.daysInARow = 12
+                part.world?.link.medals = .init(gold: 1, silver: 2, bronze: 1)
                 shot("boop", model(installer, status: part), pane: .overview, tab: .boop)
                 var full = status(growth: Growth(xp: 3_200, today: 100, care: 12))
                 full.todayBy = [.turns: .init(n: 16, xp: 80), .ships: .init(n: 1, xp: 10), .care: .init(n: 4, xp: 12)]

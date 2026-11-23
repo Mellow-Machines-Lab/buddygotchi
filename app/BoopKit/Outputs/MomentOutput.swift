@@ -647,6 +647,9 @@ public final class MomentOutput: Output {
         var word = false
         var sign: String?
         var wave: Reply?
+        /// Words held low in gold, and what's before them (`Moment.mark`).
+        var gold: String?
+        var mark: String?
     }
 
     /// The Moment the rules make at `e`, whose line has `facts`, or nil
@@ -679,6 +682,12 @@ public final class MomentOutput: Output {
             let rung = EventLine.rung(Int(facts["check_in"]?.int ?? 1), of: EventLine.round)
             let pick = MomentRule.checkIn(rung: rung, topic: facts["topic"]?.string, mood: mood, face: face)
             return Ruled(face: pick.face, size: MomentRule.small, say: pick.say, word: true)
+        case .world? where e.specificType == World.leagueKind:
+            // Last week's place, told once: a medal's cheer, or a small hello.
+            guard let place = facts["place"]?.int.map(Int.init), let xp = facts["xp"]?.int.map(Int.init) else { return nil }
+            let medal = place <= 3
+            return Ruled(face: medal ? "proud" : face, size: medal ? MomentRule.big : MomentRule.small, say: medal ? "glad" : nil,
+                         gold: World.leagueSign(place: place, xp: xp), mark: World.medal(place) ?? "star")
         case .world?:
             let kind = facts["world"]?.string ?? e.specificType
             let pick = MomentRule.world(kind: kind, mood: mood)
@@ -806,6 +815,8 @@ public final class MomentOutput: Output {
         }
         if case .day(let day)? = hello?.extra { sign = day }
         var reaction = Moment(say: say, mood: choice, loops: size.loops, sign: sign)
+        reaction.gold = ruled?.gold
+        reaction.mark = ruled?.mark
         if let sign { lastSign = sign }
         // An ask: the question is the sign, its answers the lane's targets.
         var asking = beat?.ask

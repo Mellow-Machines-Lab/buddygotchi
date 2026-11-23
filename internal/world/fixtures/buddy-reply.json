@@ -30,5 +30,10 @@
     "place": 2,
     "xp": 512,
     "of": 40
+  },
+  "medals": {
+    "gold": 1,
+    "silver": 2,
+    "bronze": 1
   }
 }

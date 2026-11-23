@@ -266,6 +266,41 @@ final class WorldTests: XCTestCase {
 
     func settle() { for _ in 0..<50 { queue.sync {}; Thread.sleep(forTimeInterval: 0.01) } }
 
+    /// Last week's place comes in a send's reply and is told once, as a
+    /// `league` world event: not while quiet, and not again for the same week
+    /// (plan/xp-league.md §5.3).
+    func testLastWeeksPlaceIsToldOnce() throws {
+        Stub.answer = { method, path in
+            switch (method, path) {
+            case ("POST", "/v1/buddies"): (201, #"{"id":"b1","key":"k1","name":"Mochi","name_ok":true}"#)
+            case ("PUT", "/v1/buddies/me"):
+                (200, #"{"ok":true,"name":"Mochi","gestures":[],"last_week":{"week":"2026-11-16","place":2,"xp":512,"of":40}}"#)
+            default: (200, #"{"ok":true,"gestures":[]}"#)
+            }
+        }
+        let world = link()
+        var events: [Event] = []
+        world.onEvents = { events += $0 }
+        queue.sync { world.tick(Self.me, on: true, quiet: true, today: "2026-11-08", at: 0) }
+        settle()
+        queue.sync { world.tick(Self.me, on: true, quiet: true, today: "2026-11-08", at: 1_000) }
+        settle()
+        XCTAssertTrue(events.isEmpty, "quiet: it waits")
+        XCTAssertEqual(world.status.lastWeek?.place, 2)
+        var later = Self.me
+        later.activity = .testing
+        queue.sync { world.tick(later, on: true, quiet: false, today: "2026-11-08", at: 20_000) }
+        settle()
+        XCTAssertEqual(events.map(\.specificType), [World.leagueKind])
+        XCTAssertEqual(events.first?["place"]?.int, 2)
+        queue.sync { world.tick(Self.me, on: true, quiet: false, today: "2026-11-08", at: 40_000) }
+        settle()
+        XCTAssertEqual(events.count, 1, "once a week")
+        XCTAssertEqual(World.leagueSign(place: 2, xp: 512), "2nd, 512 XP last week")
+        XCTAssertEqual([1, 2, 3, 4, 11, 22].map(World.ordinal), ["1st", "2nd", "3rd", "4th", "11th", "22nd"])
+        XCTAssertEqual([1, 2, 3, 4].map(World.medal), ["gold", "silver", "bronze", nil])
+    }
+
     /// Off, or before onboarding's world screen, nothing at all is sent;
     /// on, it joins, keeps its key readable only by you, and sends.
     func testNothingIsSentUntilItsOn() throws {
