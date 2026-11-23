@@ -25,7 +25,8 @@ As of main `66d7fc1a`:
   for a chat turn, typing along and the other with-you poses when idle and in
   the typing pose, and the strip's words (plain verbs, the 1 s hold, the
   time on a long call, "thinking"), and the cuts: no nightcap, no work
-  pastime but the stretch, no copied pose.
+  pastime but the stretch, no copied pose; and energy (bright, normal,
+  tired) on the lids, the eyes and the idle tempo, with the popover's line.
 - Not built: going with you as a layer in every pose, speaking along, held
   pictures in place of the text card, the show, the pips and the swipe
   between agents, the pill, "your turn" in the strip, energy in place of the

@@ -263,8 +263,11 @@ and at work.
 Energy never changes the monitor, the strip or a held picture, and it never
 slows a reaction to you.
 
-The Mac decides the level and sends it, so the board and the Mac app always
-agree. The popover says it in a few warm words under Boop's face when the
+The Mac decides the level and sends it as `state.energy`, so the board and
+the Mac app always agree (`Core.energy`; the board's `render::Energy`).
+Built: the lids, bright's wider eyes, the idle tempo (70% tired, 115%
+bright), a stretch at the day's first hello, and a yawn dealt when tired.
+Not built yet: the droop between calls at work. The popover says it in a few warm words under Boop's face when the
 level is not normal, such as "Boop's getting sleepy."
 
 ## Small details: keep, fold or cut

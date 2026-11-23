@@ -159,6 +159,7 @@ extension Core {
     @discardableResult
     public func presence(away: Bool, since: Int64? = nil, at now: Int64) -> [CoreEffect] {
         guard away != awayFromMac else { return [] }
+        if !away { shownUp(at: now) }
         guard wish != nil else {
             awayFromMac = away
             return []

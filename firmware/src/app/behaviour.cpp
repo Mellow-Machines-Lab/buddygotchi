@@ -715,6 +715,13 @@ render::FaceContext Behaviour::contextAt(uint32_t t) const {
     c.pointer = true, c.pointerNear = model_.pointer.near, c.pointerX = model_.pointer.x, c.pointerY = model_.pointer.y;
   c.lookMs = t - lookAt_;
   c.pace = c.working && look(t) != render::SceneState::kNeedsYou ? render::workPace(model_.busy) : 100;
+  // Energy: on the lids, and the idle look's tempo while nothing plays
+  // over it, so a reaction to you is never slowed.
+  c.energy = alone ? render::Energy::kNormal : model_.energy;
+  if (c.look == render::SceneState::kIdle && !reactionOn(t) && !exprOn(t))
+    c.pace = c.energy == render::Energy::kTired ? render::kTiredPace
+             : c.energy == render::Energy::kBright ? render::kBrightPace
+                                                   : c.pace;
   return c;
 }
 

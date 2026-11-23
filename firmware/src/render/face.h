@@ -139,6 +139,13 @@ inline int signLift(uint32_t ms, int rise, int bob) {
   return n < int(kSignBobMs) ? -4 * bob * n * (int(kSignBobMs) - n) / int(kSignBobMs * kSignBobMs) : 0;
 }
 // What the Mac last said, as far as a face may use it.
+// Boop's energy, the Mac's rule (`state.energy`, documentation/design/
+// screen-guide.md, "Energy"): a face draws it on its lids and in its tempo,
+// never on the work or a reaction to you.
+enum class Energy : uint8_t { kNormal, kBright, kTired };
+// How much quicker a look at rest plays for it, in percent: 100 for normal.
+constexpr int kBrightPace = 115, kTiredPace = 70;
+
 struct FaceContext {
   bool alone = false;  // no Mac: the rest is the board's own, not what the Mac said
   Mood mood = kStartupMood;
@@ -168,6 +175,8 @@ struct FaceContext {
   // screen nearest the board. Off with no Mac.
   bool pointer = false, pointerNear = false;
   int pointerX = 0, pointerY = 0;
+  // Boop's energy; normal with no Mac.
+  Energy energy = Energy::kNormal;
 };
 class Face {
  public:

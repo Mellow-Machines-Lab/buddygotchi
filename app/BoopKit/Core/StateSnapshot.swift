@@ -211,6 +211,9 @@ public struct StateSnapshot: Equatable, Sendable {
     /// The wish waiting, by its kind, while its wait counts: the board
     /// shows its icon then, and times nothing.
     public var wish: String?
+    /// Boop's energy when it isn't normal, `bright` or `tired` (`Energy`):
+    /// the board draws it on the lids and in the tempo. Nil sends none.
+    public var energy: String?
 
     /// What you call the buddy, when that isn't the pack's own name, which the
     /// board knows: its own captions say it. Nil sends none.
@@ -370,6 +373,7 @@ public struct StateSnapshot: Equatable, Sendable {
         if let todo { fields["todo"] = .object(["done": .int(todo.done), "total": .int(todo.total)]) }
         if let buddy { fields["buddy"] = .string(buddy) }
         if let wish { fields["wish"] = .string(wish) }
+        if let energy { fields["energy"] = .string(energy) }
         if !calls.isEmpty {
             fields["calls"] = .array(calls.map { .array([.int($0.slot), .int($0.count), .string($0.word)]) })
         }

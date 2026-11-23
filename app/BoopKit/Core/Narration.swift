@@ -356,11 +356,24 @@ public struct Narration: Equatable, Sendable {
 }
 
 extension Narration {
+    /// Boop's energy in a few warm words for the popover, under its mood,
+    /// when it isn't normal (`Energy`, the `state`'s `energy`): what the
+    /// board's lids and tempo show.
+    public static func energy(_ energy: String?, name: String) -> String? {
+        switch energy.flatMap(Energy.init(rawValue:)) {
+        case .tired?: "\(name)'s getting sleepy."
+        case .bright?: "\(name)'s wide awake."
+        default: nil
+        }
+    }
+}
+
+extension Narration {
     /// Why the board looks as it does now, for the popover: each reason, first
     /// every special day Boop is celebrating today, then the night, with
     /// what the board wears or shows for it. It chooses as the board does,
-    /// from the same tags. The gel wears nothing: at night its lids hang
-    /// lower, and nothing for a day. A board that isn't the gel wears one hat, the first that
+    /// from the same tags. The gel wears nothing, night or day: its energy
+    /// says the night (`energy`). A board that isn't the gel wears one hat, the first that
     /// fits, of a witch hat at Halloween, a party hat, a nightcap at night
     /// and a bobble hat in the winter holidays, and has confetti at a party
     /// or New Year, snow in the winter holidays and hearts on Valentine's
@@ -384,12 +397,11 @@ extension Narration {
 
         /// The reasons on for `when` (the `state`'s tags) and today's
         /// `specialDays`, and `gel` for a board that draws the gel, which
-        /// wears nothing, its lids heavier at night, and has nothing in the air.
+        /// wears nothing and has nothing in the air.
         public static func now(when: [String], specialDays: [Days.SpecialDay], gel: Bool) -> [Narration.Dressing] {
             let on = Set(when)
             let party = ["party", "newyear", "lunar", "programmers"].contains(where: on.contains)
-            let hat = on.contains("night") && gel ? "night"
-                : gel ? nil
+            let hat = gel ? nil
                 : on.contains("halloween") ? "halloween" : party ? "party" : on.contains("night") ? "night" : on.contains("winter") ? "winter" : nil
 
             var out: [Narration.Dressing] = specialDays.map { o in
@@ -408,7 +420,7 @@ extension Narration {
                 return Narration.Dressing(kind: .specialDay, why: o.why, what: list(things))
             }
             if hat == "night" {
-                out.append(Narration.Dressing(kind: .night, why: "It's night", what: gel ? "heavy eyelids" : "a nightcap"))
+                out.append(Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap"))
             }
             return out
         }

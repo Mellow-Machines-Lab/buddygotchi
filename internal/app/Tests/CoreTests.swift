@@ -1834,7 +1834,8 @@ final class CoreYouAndBoopTests: XCTestCase {
         let fx = rig.poke()
         XCTAssertEqual(woke(fx), ["You poked \(creature) while it slept."], "no session is open")
         XCTAssertEqual(rig.ruleActions, ["wiggle"])
-        XCTAssertEqual(states(fx), [], "the rules add no reaction: the device has already wiggled")
+        XCTAssertEqual(states(fx).map(\.energy), ["bright"],
+                       "the rules add no reaction (the device has already wiggled): only the day's first showing up, bright")
         XCTAssertEqual(opened(fx), [])
         rig.wait(5000)
         rig.send(.turnStart)

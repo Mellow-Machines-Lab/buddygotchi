@@ -212,6 +212,7 @@ things on three channels, **voice**, **sign** and **narration**.
 | level | How cross it is, 1 to 3, which code counts and Jev never picks: pokes and shakes in a row, failed checks and turns, rude words; a stroke takes it one down. It picks cross's resting face: annoyed, grumpy, angry (`MoodOutput.level`) | intensity, step | `level` (the transcript's) |
 | fade | A mood settling by itself after its minutes in `character.json`, to calm (proud to happy, cross a level down), run by code on the Mac's clock, never by Jev (`MoodOutput.fade`) | drift | `fade` (the transcript's) |
 | mood file | The steering for one mood (`steering/mood/`): what it is, how its faces lean, what moves it. No minutes: code fades it | | |
+| energy | How awake Boop is, one of three, a plain rule on the Mac, never Jev's: bright for an hour after you first show up on a Boop day, tired at night or after 15 minutes' working stretch, else normal. The board draws it on the lids and the eyes and in the idle tempo, never on the work or a reaction to you; the popover says it (`Energy`, `Core.energy`, `Narration.energy`) | sleepiness, nightcap | `energy` |
 
 **Moment**
 

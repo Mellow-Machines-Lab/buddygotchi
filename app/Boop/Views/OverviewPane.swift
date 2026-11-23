@@ -55,7 +55,8 @@ struct OverviewPane: View {
                 // In words, so a face never needs decoding; after the
                 // sessions, since what needs you outranks how it feels.
                 ReasonLines(feed: model.slime, name: model.name, mood: status.snapshot.mood, wish: status.wishing,
-                            why: moodWhy, doing: status.doingReason?.cause)
+                            why: moodWhy, doing: status.doingReason?.cause,
+                            energy: Narration.energy(status.snapshot.energy, name: model.name))
                 if !status.dressing.isEmpty {
                     PaneSection("Why it looks like this") { dressingCard(status.dressing) }
                 }
@@ -851,7 +852,7 @@ struct SessionRow: View {
 }
 
 /// How Boop feels and why, in plain words, so a face never needs decoding:
-/// the mood, then why it feels so, its wish, and what it's up to, which
+/// the mood, then why it feels so, how awake it is, its wish, and what it's up to, which
 /// the board doesn't caption: what its face is doing to pass the time,
 /// else why it's doing what it's doing. With none of those, nothing: the
 /// header already names the mood.
@@ -862,9 +863,10 @@ private struct ReasonLines: View {
     let wish: String?
     let why: String?
     let doing: String?
+    let energy: String?
 
     private var lines: [String] {
-        [why, wish, feed.passing.flatMap { Narration.passing($0, in: CharacterPack.active.named(name)) } ?? doing].compactMap { $0 }
+        [why, energy, wish, feed.passing.flatMap { Narration.passing($0, in: CharacterPack.active.named(name)) } ?? doing].compactMap { $0 }
     }
 
     var body: some View {

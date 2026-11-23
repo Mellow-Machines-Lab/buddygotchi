@@ -74,6 +74,9 @@ struct Model {
   // Today's ring, the day's XP in percent (`xp`), -1 for a Mac that sends
   // none, which shows no bar.
   int xp = -1;
+  // Boop's energy (`energy`): the Mac's rule, which the face draws on its
+  // lids and in its tempo (render::Energy).
+  render::Energy energy = render::Energy::kNormal;
   // 0–10; silent until the Mac's first state says otherwise, so a board
   // that restarts with the Mac asleep makes no sound the owner turned off.
   int vol = 0;

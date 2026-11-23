@@ -210,8 +210,8 @@ final class DaysTests: XCTestCase {
     }
 
     /// The popover's reasons choose as the board does
-    /// (firmware/src/render/tags.cpp). The gel wears nothing: at night its
-    /// lids are heavy, and nothing for a day, and has nothing in the sky or the air (its
+    /// (firmware/src/render/tags.cpp). The gel wears nothing, night or day
+    /// (its energy says the night), and has nothing in the sky or the air (its
     /// screen's rule); a board that isn't the gel still has one hat, the
     /// first that fits, and its confetti, snow and hearts.
     func testTheReasonsAreTheBoards() {
@@ -222,10 +222,10 @@ final class DaysTests: XCTestCase {
             return Narration.Dressing.now(when: when, specialDays: specialDays, gel: gel).map { $0.why + ": " + ($0.what ?? "-") }
         }
         XCTAssertEqual(reasons(2026, 10, 21), ["Pip is 50 days old today: -"])
-        XCTAssertEqual(reasons(2026, 10, 21, 23), ["Pip is 50 days old today: -", "It's night: heavy eyelids"])
+        XCTAssertEqual(reasons(2026, 10, 21, 23), ["Pip is 50 days old today: -"])
         XCTAssertEqual(reasons(2026, 10, 21, 23, gel: false), ["Pip is 50 days old today: a party hat and confetti"])
         XCTAssertEqual(reasons(2026, 10, 21, gel: false), ["Pip is 50 days old today: a party hat and confetti"])
-        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: -", "It's night: heavy eyelids"])
+        XCTAssertEqual(reasons(2026, 12, 25, 23), ["It's the winter holidays: -"])
         XCTAssertEqual(reasons(2026, 12, 25, 23, gel: false), ["It's the winter holidays: snow", "It's night: a nightcap"])
         XCTAssertEqual(reasons(2026, 12, 24), ["It's the winter holidays: -"])
         XCTAssertEqual(reasons(2026, 12, 24, gel: false), ["It's the winter holidays: a bobble hat and snow"])

@@ -75,7 +75,7 @@ The screen guide's "Small details: keep, fold or cut".
 Done when: the scenarios pass with those designs gone and no doc names
 them.
 
-### 3. Energy
+### 3. Energy ✓
 
 The screen guide's "Energy".
 

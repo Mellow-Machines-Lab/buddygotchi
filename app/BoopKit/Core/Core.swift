@@ -205,6 +205,8 @@ public final class Core {
     /// always did.
     public internal(set) var screenLocked = false
     public var lastInputAt: Int64?
+    /// When you first showed up on the latest Boop day you did (`energy`).
+    var firstShownUp: (day: String, at: Int64)?
 
     /// `lastActiveDay` is the day the app opened, which the launch has
     /// started already, or nil to make the first activity a new day.
@@ -422,6 +424,7 @@ public final class Core {
     public func poke(at now: Int64, seq: Int? = nil, finish: ThreadRef? = nil, touch: Bool = true) -> [CoreEffect] {
         var fx: [CoreEffect] = []
         touched(at: now)
+        if touch { shownUp(at: now) }
         advance(to: now)
         startDayIfNew(now, &fx)
         poked(now, seq: seq, finish: finish, touch: touch, &fx)
@@ -613,6 +616,8 @@ public final class Core {
                                      when: when(at: now, workingSince: stretchStart(working, at: now),
                                                 idleSince: working.isEmpty ? rests.max() : nil), todo: todo, calls: calls)
         snapshot.workAct = workAct
+        let energy = self.energy(at: now, workingSince: stretchStart(working, at: now))
+        snapshot.energy = energy == .normal ? nil : energy.rawValue
         snapshot.pointer = along.pointer
         snapshot.xp = growth()?.percent
         if config.pack.name != config.pack.ownName { snapshot.buddy = config.pack.name }
@@ -703,7 +708,10 @@ public final class Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         screenLocked = locked
-        if !locked { touched(at: now) }
+        if !locked {
+            touched(at: now)
+            shownUp(at: now)
+        }
         publish(now, &fx)
         return fx
     }
