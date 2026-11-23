@@ -23,6 +23,11 @@ public struct DayCounts: Codable, Equatable, Sendable {
     public var disconnects = 0, unpluggedMinutes = 0
     /// Turns and work acts that failed.
     public var failures = 0
+    /// XP the day earned by source, after the day's limits, and XP the
+    /// limits refused.
+    public var xpTurns = 0, xpShips = 0, xpFixes = 0, xpCare = 0, xpRefused = 0
+    /// The hour (local, 0 to 23) the day's ring closed, if it did.
+    public var ringHour: Int?
     /// Settings and growth as they last stood that day; nil on a day only
     /// read back from the transcript.
     public var quiet: Bool?, volume: Int?, level: Int?
@@ -42,6 +47,9 @@ public struct DayCounts: Codable, Equatable, Sendable {
         try read(.threadsOpened, &threadsOpened); try read(.needsYou, &needsYou); try read(.answered, &answered); try read(.answerMs, &answerMs)
         try read(.spoken, &spoken); try read(.hereMinutes, &hereMinutes); try read(.hushes, &hushes); try read(.faceDown, &faceDown)
         try read(.disconnects, &disconnects); try read(.unpluggedMinutes, &unpluggedMinutes); try read(.failures, &failures)
+        try read(.xpTurns, &xpTurns); try read(.xpShips, &xpShips); try read(.xpFixes, &xpFixes); try read(.xpCare, &xpCare)
+        try read(.xpRefused, &xpRefused)
+        ringHour = try c.decodeIfPresent(Int.self, forKey: .ringHour)
         quiet = try c.decodeIfPresent(Bool.self, forKey: .quiet)
         volume = try c.decodeIfPresent(Int.self, forKey: .volume)
         level = try c.decodeIfPresent(Int.self, forKey: .level)
@@ -68,6 +76,8 @@ public struct DayCounts: Codable, Equatable, Sendable {
             "face down: \(sum(\.faceDown))",
             "unplugged: \(sum(\.unpluggedMinutes)) min, on \(week.filter { $0.unpluggedMinutes > 0 }.count) day(s); disconnects: \(sum(\.disconnects))",
             "failures: \(sum(\.failures))",
+            "xp: \(sum(\.xpTurns)) turns, \(sum(\.xpShips)) ships, \(sum(\.xpFixes)) fixes, \(sum(\.xpCare)) care, \(sum(\.xpRefused)) past the limits",
+            "ring closed at: \(week.map { $0.ringHour.map { "\($0):00" } ?? "-" }.joined(separator: ", "))",
             "level: \(week.last?.level.map(String.init) ?? "-")",
             "",
             "day         touches  no-wish  made  met  gaveup  opened  needs  answered  spoken  here-min  hushes  facedown  unplugged  drops  failed",
@@ -98,6 +108,8 @@ public final class CountsReader: TranscriptReader {
         var downSince: Int64?
         /// The last event read.
         var lastAt: Int64?
+        /// The day's XP so far, for its limits; nil in a state kept before it.
+        var growth: Growth?
 
         /// Your time at the Mac ends at the last event read.
         mutating func leftTheMac() {
@@ -137,13 +149,25 @@ public final class CountsReader: TranscriptReader {
 
     public func read(_ e: Event, line: Line?, into s: inout State) -> Bool {
         let before = s
-        Self.count(e, into: &s)
+        Self.count(e, facts: line?.facts, into: &s)
         let changed = s != before
         s.lastAt = e.at
         return changed
     }
 
-    static func count(_ e: Event, into s: inout State) {
+    static func count(_ e: Event, facts: [String: JSONValue]? = nil, into s: inout State) {
+        if let source = Growth.source(of: e, facts: facts) {
+            let day = s.growth ?? Growth()
+            let added = day.adds(source)
+            s.growth = day.adding(added, from: source)
+            switch source {
+            case .turns: s.row.xpTurns += added
+            case .ships: s.row.xpShips += added
+            case .fixes: s.row.xpFixes += added
+            case .care: s.row.xpCare += added
+            }
+            s.row.xpRefused += Growth.xp(for: source) - added
+        }
         if e.type != .presence, let last = s.lastAt, e.at - last >= MemoryReader.breakGapMs { s.leftTheMac() }
         if Yours.touch(e) {
             s.row.touches += 1
@@ -180,7 +204,11 @@ public final class CountsReader: TranscriptReader {
         case .gesture? where Touch(e) == .facedown: s.row.faceDown += 1
         case .turn? where e.phase == .end && e["outcome"]?.string == "failed": s.row.failures += 1
         case .act? where e.phase == .end && e["passed"]?.bool == false: s.row.failures += 1
-        case .growth?: s.row.level = e["level"]?.int.map(Int.init) ?? s.row.level
+        case .growth?:
+            s.row.level = e["level"]?.int.map(Int.init) ?? s.row.level
+            if e["ring"]?.bool == true, s.row.ringHour == nil {
+                s.row.ringHour = Calendar.current.component(.hour, from: Date(timeIntervalSince1970: Double(e.at) / 1000))
+            }
         case .presence?:
             var away = AwayAndBack(since: s.away)
             switch away.fold(e) {

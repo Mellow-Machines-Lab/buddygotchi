@@ -934,7 +934,8 @@ public final class Runtime: @unchecked Sendable {
     func grow(_ e: Event) {
         if growth.played(e) { celebrating.append(e) }
         let now = options.clock()
-        guard growth.count(e, xp: Growth.xp(for: e), today: options.time.boopDay(options.wallClock())) > 0 else { return }
+        let source = Growth.source(of: e, facts: harness.line(e.seq)?.facts)
+        guard growth.count(e, source, today: options.time.boopDay(options.wallClock())) > 0 else { return }
         grew = true
         if pipeline.step != nil { return growthDue = true }
         if !playGrowthDue(at: now) { publishXP(at: now) }

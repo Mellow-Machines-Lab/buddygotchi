@@ -6,9 +6,9 @@ import XCTest
 @testable import BoopDevKit
 @testable import BoopKit
 
-/// XP kept simple (plan/v1-buddy.md §5): a fixed XP per thing, a ring of
-/// 100 a day, a level per 100, sizes at levels 5, 15 and 30, and how it's
-/// kept in `boop.sqlite`.
+/// XP (plan/xp-league.md §3): four things earn, the ring of 100, a day of
+/// 300 at most, a level per 500, days in a row, and how it's kept in
+/// `boop.sqlite`.
 final class GrowthTests: XCTestCase {
     var dir: URL!
 
@@ -27,90 +27,150 @@ final class GrowthTests: XCTestCase {
         return e
     }
 
-    /// A tool call that didn't fail 1, a helper back 2, a turn done 5;
-    /// nothing else, and nothing that isn't an agent's.
-    func testXPComesFromTheAgentsWorkByRule() {
-        XCTAssertEqual(Growth.xp(for: event(1, .tool, .end)), 1)
-        XCTAssertEqual(Growth.xp(for: event(1, .tool, .end, from: .codex)), 1)
-        XCTAssertEqual(Growth.xp(for: event(1, .tool, .end, ["failed": .bool(true)])), 0)
-        XCTAssertEqual(Growth.xp(for: event(1, .subagent, .end)), 2)
-        XCTAssertEqual(Growth.xp(for: event(1, .turn, .end, ["outcome": .string("done")])), 5)
-        XCTAssertEqual(Growth.xp(for: event(1, .turn, .end, ["outcome": .string("failed")])), 0)
-        XCTAssertEqual(Growth.xp(for: event(1, .tool, .start)), 0)
-        XCTAssertEqual(Growth.xp(for: event(1, .poke, from: .device)), 0)
-    }
+    /// A finish that plays as a success.
+    static let won: [String: JSONValue] = ["outcome": "done", "message": ["kind": "done"]]
 
-    /// Pins v1-buddy.md §5.2: a care touch 3, a word 3, an answered ask 5,
-    /// a met wish 20, coming back 2; a startle or a poke nothing.
-    func testCareEarnsXP() {
+    func turnEnd(_ seq: Int) -> Event { event(seq, .turn, .end, ["outcome": .string("done")]) }
+
+    /// Pins plan/xp-league.md §3.1: four things earn, each a thing the board
+    /// shows. A turn whose finish is a success 5 (a chat turn, a failure or
+    /// a stop nothing), read on the turn's end or its last message's
+    /// reading; a ship 10; a check passing after it failed 5; your time with
+    /// Boop 3. A call, a helper, coming back and an answered ask earn nothing.
+    func testXPComesFromFourThings() {
+        func src(_ e: Event, _ facts: [String: JSONValue]? = nil) -> Growth.Source? { Growth.source(of: e, facts: facts) }
+        XCTAssertEqual([Growth.turnXP, Growth.shipXP, Growth.fixXP, Growth.careXP], [5, 10, 5, 3])
+        XCTAssertEqual(src(turnEnd(1), Self.won), .turns)
+        XCTAssertEqual(src(Event(at: 1, source: .claude, type: .lastMessage, specificType: "x"), Self.won), .turns)
+        XCTAssertNil(src(turnEnd(1)), "no line, no finish: its reading follows")
+        XCTAssertNil(src(turnEnd(1), ["outcome": "done", "message": ["kind": "question"]]), "a chat turn")
+        XCTAssertNil(src(turnEnd(1), ["outcome": "done", "length_ms": 1_000, "tools": 0]), "quick, no calls: a chat turn")
+        XCTAssertEqual(src(turnEnd(1), ["outcome": "done", "length_ms": 120_000, "tools": 4]), .turns)
+        XCTAssertNil(src(turnEnd(1), ["outcome": "failed"]))
+        XCTAssertNil(src(turnEnd(1), ["outcome": "stopped"]))
+        XCTAssertNil(src(event(1, .prompt), Self.won), "only a finish's line")
+
+        let fixed: [String: JSONValue] = ["topic": "tests", "result": "ok", "failed_before": 2]
+        XCTAssertEqual(src(event(1, .tool, .end), fixed), .fixes)
+        XCTAssertNil(src(event(1, .tool, .end), ["topic": "tests", "result": "ok", "failed_before": 0]), "passing at once")
+        XCTAssertNil(src(event(1, .tool, .end), ["topic": "tests", "result": "failed", "failed_before": 2]))
+        XCTAssertNil(src(event(1, .tool, .end)), "a call")
+
+        var push = Event(at: 1, source: .claude, type: .act, phase: .end, specificType: "push", data: ["passed": true])
+        XCTAssertEqual(src(push), .ships)
+        push.data["passed"] = false
+        XCTAssertNil(src(push))
+
         func you(_ type: Event.Kind, _ specific: String, _ phase: Event.Phase? = nil) -> Event {
             Event(at: 1_000, source: .device, type: type, phase: phase, specificType: specific)
         }
-        XCTAssertEqual([Growth.turnXP, Growth.toolXP, Growth.helperXP], [5, 1, 2])
-        XCTAssertEqual([Growth.careXP, Growth.talkXP, Growth.answerXP, Growth.wishXP, Growth.backXP], [3, 3, 5, 20, 2])
-        XCTAssertEqual(Growth.xp(for: you(.gesture, "stroke")), 3)
-        XCTAssertEqual(Growth.xp(for: you(.said, "mic")), 3)
-        XCTAssertEqual(Growth.xp(for: you(.ask, "a")), 5)
-        XCTAssertEqual(Growth.xp(for: you(.ask, Asks.ignored)), 0)
-        XCTAssertEqual(Growth.xp(for: Event(at: 1, source: .mac, type: .presence, phase: .end, specificType: "unlocked")), 2)
-        XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)), 20)
-        XCTAssertEqual(Growth.xp(for: Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)), 0)
-        XCTAssertEqual(Growth.xp(for: you(.gesture, "swipe")), 0)
-        // Rough handling earns nothing (decided 2026-11-09): a shake.
-        XCTAssertEqual(Growth.xp(for: you(.gesture, "shake")), 0)
-        XCTAssertEqual(Set(Touch.allCases.filter(\.isRough)), [.shake])
-        XCTAssertEqual(Growth.xp(for: you(.poke, "input")), 0)
+        XCTAssertEqual(src(you(.gesture, "stroke")), .care)
+        XCTAssertEqual(src(you(.said, "mic")), .care)
+        XCTAssertEqual(src(Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.met.rawValue)), .care)
+        XCTAssertNil(src(Event(at: 0, source: .boop, type: .wish, phase: .end, specificType: Core.WishEnd.closed.rawValue)))
+        XCTAssertNil(src(you(.gesture, "shake")), "rough handling earns nothing")
+        XCTAssertNil(src(you(.gesture, "swipe")))
+        XCTAssertNil(src(you(.ask, "a")))
+        XCTAssertNil(src(Event(at: 1, source: .mac, type: .presence, phase: .end, specificType: "unlocked")))
+        XCTAssertNil(src(event(1, .subagent, .end)))
     }
 
-    /// Pins v1-buddy.md §5.3 and §5.4: level = 1 + XP / 100, no maximum;
-    /// the sizes at levels 1, 5, 15 and 30; the ring 100 a day.
-    func testLevelsAndSizes() {
-        XCTAssertEqual(Growth.perDay, 100)
-        XCTAssertEqual(Growth.perLevel, 100)
+    /// Pins plan/xp-league.md §3.2: the ring 100, a day 300 at most, care 30
+    /// of it at most, a level per 500, no maximum.
+    func testLevelsAndLimits() {
+        XCTAssertEqual([Growth.perDay, Growth.dayMost, Growth.careMost, Growth.perLevel], [100, 300, 30, 500])
         XCTAssertEqual(Growth(xp: 0).level, 1)
-        XCTAssertEqual(Growth(xp: 99).level, 1)
-        XCTAssertEqual(Growth(xp: 100).level, 2)
-        XCTAssertEqual(Growth(xp: 1_182).level, 12)
-        XCTAssertEqual(Growth(xp: 1_182).toNextLevel, 18)
-        XCTAssertEqual(Growth(xp: 1_000_000).level, 10_001, "no maximum")
+        XCTAssertEqual(Growth(xp: 499).level, 1)
+        XCTAssertEqual(Growth(xp: 500).level, 2)
+        XCTAssertEqual(Growth(xp: 3_182).level, 7)
+        XCTAssertEqual(Growth(xp: 3_182).toNextLevel, 318)
+        XCTAssertEqual(Growth(xp: 5_000_000).level, 10_001, "no maximum")
         XCTAssertEqual(Growth(today: 82).percent, 82)
-        XCTAssertEqual(Growth(today: 140).today, 100, "a ring holds 100")
+        XCTAssertEqual(Growth(today: 140).percent, 100, "the ring is full at 100")
+        XCTAssertEqual(Growth(today: 140).today, 140, "XP counts past it")
+        XCTAssertEqual(Growth(today: 400).today, 300)
         XCTAssertTrue(Growth(today: 100).ringClosed)
+        XCTAssertEqual(Growth(today: 64, care: 9).work, 55)
     }
 
     @discardableResult
-    func count(_ growth: GrowthStore, _ e: Event, day: String = "2026-10-22") -> Int {
-        growth.count(e, xp: Growth.xp(for: e), today: day)
+    func count(_ growth: GrowthStore, _ e: Event, _ facts: [String: JSONValue]? = GrowthTests.won, day: String = "2026-10-22") -> Int {
+        growth.count(e, Growth.source(of: e, facts: facts), today: day)
     }
 
-    /// The day's cap is the ring: past 100, nothing counts, from any source,
-    /// until Boop's next day.
-    func testTheDayIsCappedAtTheRing() throws {
-        let growth = GrowthStore(try KeyValueStore(directory: nil))
-        for seq in 1...19 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
-        XCTAssertEqual(growth.growth.today, 95)
-        XCTAssertEqual(count(growth, Event(seq: 20, at: 1, source: .device, type: .gesture, specificType: "stroke")), 3)
-        XCTAssertEqual(count(growth, event(21, .turn, .end, ["outcome": .string("done")])), 2, "only up to 100")
-        XCTAssertEqual(count(growth, event(22, .turn, .end, ["outcome": .string("done")])), 0)
-        XCTAssertEqual(growth.growth, Growth(xp: 100, today: 100))
-        XCTAssertEqual(count(growth, event(23, .turn, .end, ["outcome": .string("done")]), day: "2026-10-23"), 5, "a new day")
-        XCTAssertEqual(growth.growth, Growth(xp: 105, today: 5))
-        XCTAssertEqual(growth.growth(on: "2026-10-24"), Growth(xp: 105), "the next day's ring is empty")
-        XCTAssertEqual(count(growth, event(24, .turn, .end, ["outcome": .string("done")]), day: "2026-10-22"), 5,
-                       "a clock set back counts on the day it's on")
-        XCTAssertEqual(growth.growth, Growth(xp: 110, today: 10))
-        XCTAssertEqual(growth.week(to: "2026-10-23").map(\.xp).suffix(2), [100, 10], "no day twice")
+    func stroke(_ seq: Int) -> Event { Event(seq: seq, at: 1, source: .device, type: .gesture, specificType: "stroke") }
+
+    /// The day's limits: care stops at 30, everything at 300, until Boop's
+    /// next day. What earned is kept by source.
+    func testTheDayHasLimits() throws {
+        let growth = GrowthStore(try KeyValueStore(directory: dir))
+        for seq in 1...12 { count(growth, stroke(seq)) }
+        XCTAssertEqual(growth.growth.care, 30, "care stops at 30")
+        XCTAssertEqual(count(growth, stroke(13)), 0)
+        for seq in 14...68 { count(growth, turnEnd(seq)) }
+        XCTAssertEqual(growth.growth.today, 300)
+        XCTAssertEqual(count(growth, turnEnd(69)), 0, "nothing past 300")
+        XCTAssertEqual(growth.todayBy[.turns], .init(n: 54, xp: 270))
+        XCTAssertEqual(growth.todayBy[.care], .init(n: 10, xp: 30))
+        let again = GrowthStore(try KeyValueStore(directory: dir))
+        XCTAssertEqual(again.growth, Growth(xp: 300, today: 300, care: 30), "kept across opens")
+        XCTAssertEqual(again.todayBy, growth.todayBy)
+        XCTAssertEqual(count(growth, turnEnd(70), day: "2026-10-23"), 5, "a new day")
+        XCTAssertEqual(growth.growth, Growth(xp: 305, today: 5))
+        XCTAssertEqual(growth.todayBy, [.turns: .init(n: 1, xp: 5)])
+        XCTAssertEqual(growth.todayBy(on: "2026-10-24"), [:])
+        XCTAssertEqual(growth.growth(on: "2026-10-24"), Growth(xp: 305), "the next day's ring is empty")
+        XCTAssertEqual(count(growth, turnEnd(71), day: "2026-10-22"), 5, "a clock set back counts on the day it's on")
+        XCTAssertEqual(growth.week(to: "2026-10-23").map(\.xp).suffix(2), [300, 10], "no day twice")
+    }
+
+    /// Pins plan/xp-league.md §3.2's days in a row: a full ring adds one;
+    /// up to two days with none between keep it (a weekend), three start
+    /// it again; shown as 0 once three have passed.
+    func testDaysInARow() throws {
+        let growth = GrowthStore(try KeyValueStore(directory: dir))
+        var seq = 0
+        func fill(_ day: String) {
+            for _ in 0..<20 { seq += 1; count(growth, turnEnd(seq), day: day) }
+        }
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-02"), 0)
+        fill("2026-11-02")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-02"), 1)
+        fill("2026-11-03")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-03"), 2)
+        seq += 1; count(growth, turnEnd(seq), day: "2026-11-03")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-03"), 2, "once a day")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-06"), 2, "two days with no full ring")
+        fill("2026-11-06")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-06"), 3, "a weekend never breaks it")
+        try XCTAssertEqual(GrowthStore( KeyValueStore(directory: dir)).daysInARow(on: "2026-11-06"), 3, "kept across opens")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-10"), 0, "three days with none")
+        fill("2026-11-10")
+        XCTAssertEqual(growth.daysInARow(on: "2026-11-10"), 1, "and it starts again")
+    }
+
+    /// Pins plan/xp-league.md §10: the daily counts keep the XP by source
+    /// after the limits, what the limits refused, and the hour the ring
+    /// closed.
+    func testTheDailyCountsKeepTheXP() {
+        var s = CountsReader.State(row: DayCounts(day: "2026-10-22"))
+        for seq in 1...11 { CountsReader.count(stroke(seq), into: &s) }
+        CountsReader.count(turnEnd(12), facts: Self.won, into: &s)
+        XCTAssertEqual([s.row.xpCare, s.row.xpTurns, s.row.xpRefused], [30, 5, 3])
+        let at = Int64(Calendar.current.date(from: DateComponents(year: 2026, month: 10, day: 22, hour: 15, minute: 30))!.timeIntervalSince1970 * 1000)
+        CountsReader.count(Core.growthEvent(level: nil, ring: true, at: at), into: &s)
+        XCTAssertEqual(s.row.ringHour, 15)
     }
 
     /// The last 7 days' rings, oldest first, kept across opens; a day with
     /// none is 0.
     func testTheWeeksRingsAreKept() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        count(growth, event(1, .turn, .end, ["outcome": .string("done")]), day: "2026-10-20")
-        count(growth, event(2, .tool, .end), day: "2026-10-22")
-        count(growth, event(3, .tool, .end), day: "2026-10-22")
+        count(growth, turnEnd(1), day: "2026-10-20")
+        count(growth, stroke(2), day: "2026-10-22")
+        count(growth, stroke(3), day: "2026-10-22")
         let again = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(again.week(to: "2026-10-23").map(\.xp), [0, 0, 0, 5, 0, 2, 0])
+        XCTAssertEqual(again.week(to: "2026-10-23").map(\.xp), [0, 0, 0, 5, 0, 6, 0])
         XCTAssertEqual(again.week(to: "2026-10-23").map(\.day).last, "2026-10-23")
         XCTAssertEqual(again.week(to: "2026-10-23").map(\.day).first, "2026-10-17")
         XCTAssertEqual(again.week(to: "2024-03-01").map(\.day).suffix(2), ["2024-02-29", "2024-03-01"], "a leap day")
@@ -135,7 +195,7 @@ final class GrowthTests: XCTestCase {
         options.readJevKey = { _ in nil }
         do {
             let store = try KeyValueStore(directory: dir)
-            try store.set([GrowthStore.xpKey: "90", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 90"])
+            try store.set([GrowthStore.xpKey: "490", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 90"])
         }
         let runtime = try Runtime(options)
         let core = runtime.core
@@ -151,17 +211,18 @@ final class GrowthTests: XCTestCase {
         }
         func events(_ type: Event.Kind) -> [Event] { runtime.harness.log.view(now: now).events.filter { $0.type == type } }
         turn()
-        XCTAssertEqual(runtime.growth.growth.xp, 95)
+        XCTAssertEqual(runtime.growth.growth.xp, 495)
         XCTAssertEqual(core.snapshot(at: now).xp, 95)
         XCTAssertTrue(events(.growth).isEmpty)
         turn()
-        XCTAssertEqual(runtime.growth.growth, Growth(xp: 100, today: 100))
+        XCTAssertEqual(runtime.growth.growth, Growth(xp: 500, today: 100))
         XCTAssertEqual(events(.growth).map { [$0["level"]?.int, $0["ring"]?.bool == true ? 1 : 0] }, [[2, 1]],
                        "one event for the level and the ring that came together")
         XCTAssertTrue(runtime.harness.log.view(now: now).events.contains { $0.action == "react" && $0["by"]?.string == "rule" })
         turn()
         XCTAssertEqual(events(.growth).count, 1, "once a day")
-        XCTAssertEqual(runtime.growth.growth.xp, 100, "nothing past the ring")
+        XCTAssertEqual(runtime.growth.growth, Growth(xp: 505, today: 105), "XP counts past the ring")
+        XCTAssertEqual(core.snapshot(at: now).xp, 100)
 
         // Across 5:00, by the runtime's own clock: a new Boop day, an empty
         // ring, and yesterday's full one in the week.
@@ -169,10 +230,10 @@ final class GrowthTests: XCTestCase {
         while options.time.boopDay(clock.now) == yesterday { clock.now += 10 * 60_000 }
         XCTAssertEqual(core.snapshot(at: now).xp, 0, "the new day's ring")
         turn()
-        XCTAssertEqual(runtime.growth.growth, Growth(xp: 105, today: 5))
+        XCTAssertEqual(runtime.growth.growth, Growth(xp: 510, today: 5))
         XCTAssertEqual(core.snapshot(at: now).xp, 5)
         let week = runtime.growth.week(to: options.time.boopDay(clock.now))
-        XCTAssertEqual(week.suffix(2).map(\.xp), [100, 5])
+        XCTAssertEqual(week.suffix(2).map(\.xp), [105, 5])
         XCTAssertEqual(week.suffix(2).first?.day, yesterday)
 
         runtime.playingDemo = true
@@ -199,7 +260,7 @@ final class GrowthTests: XCTestCase {
         options.readJevKey = { _ in nil }
         do {
             let store = try KeyValueStore(directory: dir)
-            try store.set([GrowthStore.xpKey: "95", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 5"])
+            try store.set([GrowthStore.xpKey: "495", GrowthStore.todayKey: "\(options.time.boopDay(clock.now)) 5"])
         }
         let runtime = try Runtime(options)
         var now: Int64 { clock.now }
@@ -288,15 +349,15 @@ final class GrowthTests: XCTestCase {
     /// alone, so a launch's read-back can't count it again.
     func testEachEventCountsOnceAndIsKept() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(count(growth, event(1, .tool, .end)), 1)
+        XCTAssertEqual(count(growth, turnEnd(1)), 5)
         XCTAssertEqual(count(growth, event(2, .tool, .start)), 0)
-        XCTAssertEqual(count(growth, event(3, .turn, .end, ["outcome": .string("done")])), 5)
-        XCTAssertEqual(count(growth, event(3, .turn, .end, ["outcome": .string("done")])), 0)
-        XCTAssertEqual(count(growth, event(1, .tool, .end)), 0)
-        XCTAssertEqual(growth.growth.xp, 6)
+        XCTAssertEqual(count(growth, turnEnd(3)), 5)
+        XCTAssertEqual(count(growth, turnEnd(3)), 0)
+        XCTAssertEqual(count(growth, turnEnd(1)), 0)
+        XCTAssertEqual(growth.growth.xp, 10)
 
         let again = GrowthStore(try KeyValueStore(directory: dir))
-        XCTAssertEqual(again.growth, Growth(xp: 6, today: 6))
+        XCTAssertEqual(again.growth, Growth(xp: 10, today: 10))
         XCTAssertEqual(again.lastSeq, 3)
     }
 
@@ -305,9 +366,10 @@ final class GrowthTests: XCTestCase {
     /// quit while something needs you, or a demo, loses neither. Kept across
     /// opens.
     func testALevelIsCelebratedAsItPlays() throws {
+        try KeyValueStore(directory: dir).set([GrowthStore.xpKey: "400", GrowthStore.celebratedKey: "1"])
         let growth = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(growth.celebrated, 1)
-        for seq in 1...20 { count(growth, event(seq, .turn, .end, ["outcome": .string("done")])) }
+        for seq in 1...20 { count(growth, turnEnd(seq)) }
         let day = "2026-10-22"
         XCTAssertEqual(growth.due(today: day), [.level(2), .ringClosed])
         try XCTAssertEqual(GrowthStore(KeyValueStore(directory: dir)).due(today: day), [.level(2), .ringClosed], "still due after a quit")
@@ -323,13 +385,13 @@ final class GrowthTests: XCTestCase {
     /// follows it rather than skipping what's new.
     func testCountingFollowsATranscriptThatStartsAgain() throws {
         let growth = GrowthStore(try KeyValueStore(directory: dir))
-        count(growth, event(500, .tool, .end))
+        count(growth, turnEnd(500))
         growth.follow(transcriptAt: 600)
         XCTAssertEqual(growth.lastSeq, 500)
         growth.follow(transcriptAt: 0)
         let reopened = GrowthStore(try KeyValueStore(directory: dir))
         XCTAssertEqual(reopened.lastSeq, 0)
-        XCTAssertEqual(count(growth, event(1, .tool, .end)), 1)
-        XCTAssertEqual(growth.growth.xp, 2)
+        XCTAssertEqual(count(growth, turnEnd(1)), 5)
+        XCTAssertEqual(growth.growth.xp, 10)
     }
 }

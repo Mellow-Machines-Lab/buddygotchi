@@ -283,9 +283,10 @@ things on three channels, **voice**, **sign** and **narration**.
 | written memory | `memory.md`: You, Your work, You and Boop, Recently (`WrittenMemory`) | diary, memory file | |
 | remembered line | A note of the written memory in the pet's voice, at most 40 characters: what Boop brings up on the low sign as an idle beat, each line once in 14 days (`Memory.Felt`, `memory-days.json`) | | `low`, `felt` |
 | the dream's write | Code proposing the written memory's edits as Boop dreams, with Apple Intelligence answering small questions, and the checks holding each (`MemoryPipeline`, `MemoryProposer`, `MemoryEdits`) | the night's write | |
-| XP | What Boop earns, a fixed amount for each thing the agents get done and each bit of your care, never lost (`Growth`, plan/v1-buddy.md §5) | points | |
-| the ring | Today's XP, up to 100 a Boop day: full, nothing more counts that day. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is the rules' moment, one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `xp` (today's percent), `growth` |
-| level | 1 + every XP / 100, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
+| XP | What Boop earns, for four things you see happen: a turn whose finish is a success 5, a ship 10, a check passing after it failed 5, your time with Boop (a care touch, your words, a met wish) 3 and at most 30 a day; at most 300 a day in all; never lost (`Growth`, plan/xp-league.md §3) | points | |
+| the ring | Today's XP against 100, a Boop day's goal: XP counts past it, to the day's 300. On the board, a bar that shows only when XP comes in (`GrowthShow`), with a met wish's heart flying in; its closing is the rules' moment, one with a level reached at once, and one `growth` event for both | daily goal, progress bar | `xp` (today's percent), `growth` |
+| level | 1 + every XP / 500, no maximum, never down; a level-up is the rules' moment, `Level 12!` on the low sign, the same at every level: Boop's body is one size | stage, size (for growing) | `growth`'s `level` |
+| days in a row | The Boop days in a row with a full ring, kept through up to two days without one, so a weekend never breaks it (`GrowthStore.daysInARow`) | streak | `xp.row` |
 | special day | A holiday, a milestone day, Boop's birthday | occasion (for a day) | |
 | tag | A fact true now, sent to the board | flag, label | `when` |
 
