@@ -167,6 +167,45 @@ public enum CardTool {
         ],
     ] }
 
+    /// What the server adds to `instructions` while it offers `show`: as
+    /// firm as the rest, since "you may" got almost no cards in the first
+    /// trial (plan/agent-cards.md).
+    public static let showInstructions = """
+         And in every turn that used tools, call `show` once, right before `result`: one small picture that proves         what the turn made, found or decided, by the tool's rules. Bad news is worth showing too.
+        """
+
+    /// The `show` tool (documentation/design/screen-guide.md, "The show"),
+    /// offered only where `BOOP_CARDS_SHOW` is set, while the show is being
+    /// tried (internal/tools/cards/trial.py --show).
+    public static var showTool: [String: Any] { [
+        "name": "show",
+        "description": """
+            Put one picture on the person's desk companion when your turn made, found or decided something. Call it             once, right before your final message, in every turn that used tools. Skip it only for a plain chat answer.
+
+            headline: the conclusion in a few plain words, at most 28 characters: "search is 2.1x faster", not             "performance results".
+            svg: one picture that proves the headline. Or image: an absolute path to a PNG you made, such as a             screenshot.
+            link: optional. A URL or an absolute path to open on tap.
+
+            Rules for the svg:
+            - viewBox="0 0 420 190". The background is already dark; do not draw one.
+            - It is read from a chair, on a small screen. One idea. At most 12 words. Text at least 14 px, lines at             least 3 px.
+            - Use only these colors: ink #e8e6e0, dim #9aa0a8, good #5fae5a, bad #f08a6c, not checked #f0b56c, and             currentColor for your own accent.
+            - Shapes, lines and text only. No gradients, filters, images, scripts, styles or outside links. At most 4 kB.
+            - Show the bad news too: what failed, what you did not check.
+            - Pick the form that fits: bars for a before and after, a row of boxes for a chain or a flow, two frames             for a visual change, a short check list for done and not done.
+            """,
+        "inputSchema": [
+            "type": "object",
+            "properties": [
+                "headline": ["type": "string", "description": "The conclusion in a few plain words (at most 28 characters)."],
+                "svg": ["type": "string", "description": "One small SVG on viewBox 0 0 420 190, by the rules above."],
+                "image": ["type": "string", "description": "Or an absolute path to a PNG you made."],
+                "link": ["type": "string", "description": "A URL or an absolute path to open on tap."],
+            ],
+            "required": ["headline"],
+        ] as [String: Any],
+    ] }
+
     /// Opens what a result card links to, with `/usr/bin/open`: a web page
     /// in the browser; a file or folder shown in the Finder, never run or
     /// opened in an app. False when it isn't one of those or isn't there.

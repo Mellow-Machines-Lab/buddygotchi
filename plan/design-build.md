@@ -188,7 +188,12 @@ then nothing once the work stops.
 
 The screen guide's "The show". Do it in three parts, and stop after each.
 
-1. **Can agents draw?** Extend `internal/tools/cards/trial.py` with a
+1. ✓ (2026-11-23: opus, 5 tasks, told by the tool alone. Every turn that
+   used tools showed once; "explain" didn't, as the rules say. 4 of 9
+   calls were refused first, all for words over 12 or a 29-character
+   headline, and each was fixed on the next call. The pictures were true to
+   the turn and readable: mostly check lists, one flow. The owner looks
+   next.) **Can agents draw?** Extend `internal/tools/cards/trial.py` with a
    `show` tool that takes the guide's fields. Run fixed tasks through real
    sessions, save each picture, and score it: true to the turn, readable,
    inside the rules. View them on the Mac only. Show the owner the

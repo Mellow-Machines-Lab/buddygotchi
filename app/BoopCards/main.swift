@@ -42,7 +42,28 @@ func log(_ entry: [String: Any]) {
     }
 }
 
+/// The show, while it's tried: checked, logged and answered with what's
+/// wrong, and sent nowhere yet.
+let offersShow = environment["BOOP_CARDS_SHOW"] == "1"
+func show(_ args: [String: Any]) -> String {
+    let headline = (args["headline"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+    var problems: [String] = []
+    if headline.isEmpty { problems.append("show needs `headline`: the conclusion in a few plain words") }
+    if headline.count > Show.headlineMost { problems.append("the headline is \(headline.count) characters: at most \(Show.headlineMost)") }
+    if let svg = args["svg"] as? String {
+        problems += Show.problems(svg: svg)
+    } else if let image = args["image"] as? String {
+        if !image.hasPrefix("/") || !FileManager.default.fileExists(atPath: image) { problems.append("`image` must be an absolute path to a PNG that exists") }
+    } else {
+        problems.append("show needs `svg` or `image`")
+    }
+    log(["ts": Int64(Date().timeIntervalSince1970 * 1000), "tool": "show", "args": args, "kept": problems.isEmpty,
+         "problems": problems])
+    return problems.isEmpty ? "ok" : "not shown: " + problems.joined(separator: "; ") + ". Fix it and call show again."
+}
+
 func call(_ name: String, _ args: [String: Any]) -> String {
+    if name == "show", offersShow { return show(args) }
     guard let kind = Card.Kind(rawValue: name) else { return "no such tool" }
     let card = Card.make(kind, args)
     log(["ts": Int64(Date().timeIntervalSince1970 * 1000), "tool": name, "args": args, "kept": card != nil,
@@ -63,11 +84,11 @@ while let text = readLine(strippingNewline: true) {
         reply(id, result: ["protocolVersion": params["protocolVersion"] as? String ?? "2025-06-18",
                            "capabilities": ["tools": [String: Any]()],
                            "serverInfo": ["name": CardInstaller.name, "version": BoopVersion.current],
-                           "instructions": CardTool.instructions])
+                           "instructions": CardTool.instructions + (offersShow ? CardTool.showInstructions : "")])
     case "ping":
         reply(id, result: [:])
     case "tools/list":
-        reply(id, result: ["tools": CardTool.tools])
+        reply(id, result: ["tools": CardTool.tools + (offersShow ? [CardTool.showTool] : [])])
     case "tools/call":
         let said = call(params["name"] as? String ?? "", params["arguments"] as? [String: Any] ?? [:])
         reply(id, result: ["content": [["type": "text", "text": said]], "isError": said != "ok"])
