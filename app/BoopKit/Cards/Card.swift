@@ -190,8 +190,9 @@ public enum CardTool {
     /// in three; with this line in what the agent reads, every turn of work.
     public static let context = """
         The person you're working for has a desk companion called Boop that shows them what you're doing. Use the \
-        boop-cards status tool as you start and as you move between steps, and the boop-cards result tool once, just \
-        before your final message.
+        boop-cards status tool as you start and as you move between steps. In a turn that used tools, call the \
+        boop-cards show tool once with one small picture of what the turn made, found or decided, then the result \
+        tool once, just before your final message.
         """
     public static let contextFile = "agent-context.txt"
 
