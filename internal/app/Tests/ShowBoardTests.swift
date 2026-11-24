@@ -69,6 +69,14 @@ final class ShowBoardTests: XCTestCase {
         XCTAssertNotNil(rig.state.show)
         rig.wait(2_000)
         XCTAssertNil(rig.state.show, "30 s after its turn ended")
+        // Its agent quits right after: the show keeps its 30 s.
+        rig.core.queueBoardShow(Show(headline: "bye", svg: svg), key: a, agent: "claude", working: true, at: rig.now)
+        rig.send(.turnEnd, session: "a", project: "api")
+        rig.send(.sessionEnd, session: "a", project: "api")
+        rig.wait(20_000)
+        XCTAssertEqual(rig.state.show?.headline, "bye", "its session has gone")
+        rig.wait(11_000)
+        XCTAssertNil(rig.state.show)
         // Two at once: the first 8 s, then the next.
         let b = try XCTUnwrap(rig.core.sessions.values.first { $0.id == "b" }).key
         rig.core.queueBoardShow(Show(headline: "one", svg: svg), key: b, agent: "claude", working: false, at: rig.now)

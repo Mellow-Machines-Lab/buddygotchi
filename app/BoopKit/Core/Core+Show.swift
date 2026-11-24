@@ -79,9 +79,12 @@ extension Core {
     /// Puts down the shows that are over, and one that has been up its 8 s
     /// while another waits; the next one up starts its time.
     func tidyBoardShows(at now: Int64) {
-        boardShows.removeAll { show in
-            sessions[show.key] == nil || (show.endsAt.map { now >= $0 } ?? false) || now - show.at >= Self.boardShowMostMs
+        // A session that has gone keeps its show its 30 s: the agent that
+        // drew it may quit right after its last turn.
+        for i in boardShows.indices where sessions[boardShows[i].key] == nil && boardShows[i].endsAt == nil {
+            boardShows[i].endsAt = now + Self.boardShowMs
         }
+        boardShows.removeAll { show in (show.endsAt.map { now >= $0 } ?? false) || now - show.at >= Self.boardShowMostMs }
         while boardShows.count > 1, let front = boardShows[0].frontAt, now - front >= Self.boardShowLeastMs {
             boardShows.removeFirst()
         }
