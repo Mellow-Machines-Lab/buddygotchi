@@ -7,7 +7,7 @@
 > below. The rest of this file is the first build and the trial of how agents
 > send cards.
 
-Updated 2026-11-23. An agent hands Boop a small card and Boop holds it up:
+Updated 2026-11-24. An agent hands Boop a small card and Boop holds it up:
 what the agent is on now, and what its turn made. Built on the branch
 `agent-cards` (here and in SlimeBuddy), not merged. What's still the owner's
 to decide is at the end.
@@ -160,6 +160,13 @@ The server goes in and out with the hooks (`CardInstaller`):
 - Only the everyday Boop installs: `make dev`'s copy, on its own folder,
   hears the cards but never changes the agents' files.
 - Its failing is only logged: the hooks are what Boop needs.
+- Claude also reads one line at each session's start, telling it to use
+  the tools (`CardTool.context`): Boop's hooks run `agent-hook claude
+  --keep-text --context FILE`, and `agent-context.txt` in the state
+  folder is the line. On 2026-11-24 the tool server's own instructions
+  alone got a card from 2 of 6 turns of work in `claude -p` runs, and
+  about 1 turn in 7 in the owner's real sessions; with the line, 8 of 8
+  turns sent a status, a result and a show.
 
 There is no switch of its own: an agent that's connected gets cards.
 

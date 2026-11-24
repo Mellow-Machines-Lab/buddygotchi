@@ -377,7 +377,9 @@ final class AdapterTests: XCTestCase {
         let commands = groups.flatMap { ($0["hooks"] as? [[String: Any]] ?? []).compactMap { $0["command"] as? String } }
         XCTAssertEqual(Set(commands), [installer.command(.claude), theirs])
         XCTAssertEqual(commands.filter { $0 == installer.command(.claude) }.count, Mapping.claude.count)
-        XCTAssertTrue(installer.command(.claude).hasSuffix(" claude --keep-text"), installer.command(.claude))
+        let context = hook.deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent(CardTool.contextFile)
+        XCTAssertTrue(installer.command(.claude).hasSuffix(" claude --keep-text --context \"\(context.path)\""),
+                      "the card tools' few words for Claude, from the state folder: \(installer.command(.claude))")
     }
 }
 

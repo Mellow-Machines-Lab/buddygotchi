@@ -91,11 +91,15 @@ extension AgentEvent {
 
 extension HookInstaller {
     /// Boop's installer: its entries keep your prompt and
-    /// the agent's last message, the only words the brain hears, and
-    /// replace the entries Boop wrote before agent-hooks, which ran
-    /// `boop-hook` (and before that `~/.boop/boop-hook.sh`).
+    /// the agent's last message, the only words the brain hears, tell
+    /// Claude at a session's start to use Boop's card tools (`CardTool.context`,
+    /// in the state folder beside `bin/`), and replace the entries Boop wrote
+    /// before agent-hooks, which ran `boop-hook` (and before that
+    /// `~/.boop/boop-hook.sh`).
     public static func boop(home: URL, hookPath: String) -> HookInstaller {
-        HookInstaller(home: home, hookPath: hookPath, arguments: ["--keep-text"],
-                      formerClients: ["boop-hook", "/boop-hook.sh"])
+        let context = URL(fileURLWithPath: hookPath).deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent(CardTool.contextFile).path
+        return HookInstaller(home: home, hookPath: hookPath, arguments: ["--keep-text", "--context", "\"\(context)\""],
+                             formerClients: ["boop-hook", "/boop-hook.sh"])
     }
 }

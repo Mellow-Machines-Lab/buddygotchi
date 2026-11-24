@@ -760,6 +760,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         if model.ownsHooks {
             place(HookInstaller.client, at: model.installer.hookPath)
             place(CardInstaller.name, at: model.cards.serverPath)
+            // What Claude reads at each session's start (`CardTool.context`).
+            do {
+                try Data(CardTool.context.utf8).write(to: stateDir.appendingPathComponent(CardTool.contextFile), options: .atomic)
+            } catch {
+                log.write("cards: can't write \(CardTool.contextFile): \(error)")
+            }
             // agent-hook sends to every socket listed in agent-hooks' folder:
             // Boop's is listed as a link.
             do {

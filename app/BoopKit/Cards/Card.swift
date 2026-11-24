@@ -184,6 +184,17 @@ public enum CardTool {
         at once and need no reply.
         """ + showInstructions
 
+    /// The few words Claude reads at each session's start, from
+    /// `contextFile` in the state folder (`agent-hook --context`): the
+    /// tool server's own instructions alone got a card from about one turn
+    /// in three; with this line in what the agent reads, every turn of work.
+    public static let context = """
+        The person you're working for has a desk companion called Boop that shows them what you're doing. Use the \
+        boop-cards status tool as you start and as you move between steps, and the boop-cards result tool once, just \
+        before your final message.
+        """
+    public static let contextFile = "agent-context.txt"
+
     public static var tools: [[String: Any]] { cardTools + [showTool] }
 
     static var cardTools: [[String: Any]] { [

@@ -333,7 +333,7 @@ Boop did nothing on its own.</pre>
   <div class="flow">
   <ol class="hops" aria-label="One finished turn, piece by piece">
     <li class="hop">
-      <div class="box"><b>Claude Code</b><p>When a turn ends, Claude Code runs its <code>Stop</code> hook, which calls <code>agent-hook claude --keep-text</code>.</p></div>
+      <div class="box"><b>Claude Code</b><p>When a turn ends, Claude Code runs its <code>Stop</code> hook, which calls <code>agent-hook claude --keep-text --context FILE</code>.</p></div>
       <div class="pay"><span class="what">Hook JSON on stdin (trimmed)</span>
 <pre>{
   "hook_event_name": "Stop",
