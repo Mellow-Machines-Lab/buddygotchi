@@ -253,7 +253,9 @@ void Behaviour::onState(const Model& m, uint32_t t) {
     if (m.wish != render::WishShow::kNone) lastWish_ = m.wish;
     // A card rises as it comes; a picture rises once, as it first shows or
     // changes kind, and updates in place after.
-    if (!m.card.same(model_.card) || m.pic.kind != model_.pic.kind) cardAt_ = t;
+    if (!m.card.same(model_.card) || m.pic.kind != model_.pic.kind || m.show.on != model_.show.on ||
+        std::strcmp(m.show.headline, model_.show.headline))
+      cardAt_ = t;
     model_ = m;
     if (look) lookAt_ = t, face_->newLook();
     lastState_ = t;
@@ -873,6 +875,15 @@ render::CardShow Behaviour::cardShow(uint32_t t) const {
   show.result = c.result, show.over = c.over, show.slot = c.slot;
   show.index = c.index, show.count = c.count, show.text = c.text, show.small = c.small, show.agent = c.agent;
   show.ms = t - cardAt_;
+  // A show outranks both, under the same rules: its headline, and its
+  // picture once the device has it (Device::cardShow).
+  if (model_.show.on) {
+    const Model::ShowIn& w = model_.show;
+    show = render::CardShow{};
+    show.on = !noApp(t) && !held(t) && !faceDown_ && !reactionOn(t) && !signDue(t) && !goldOn(t) && !asking(t);
+    show.pic = 's', show.slot = w.slot, show.agent = w.agent, show.headline = w.headline, show.ms = t - cardAt_;
+    return show;
+  }
   // No card of words: the live picture of the work, under the same rules.
   if (!c.on && model_.pic.kind) {
     const Model::PicIn& p = model_.pic;

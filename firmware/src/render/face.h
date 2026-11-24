@@ -105,6 +105,14 @@ struct CardShow {
   const char* step = "";
   const char* file[kRows] = {"", "", ""};
   int added[kRows] = {}, removed[kRows] = {};
+  // A show (the Mac's `show`, pic 's'; the engine's documentation/design/
+  // screen-guide.md, "The show"): the agent's headline over its picture,
+  // kShowW by kShowH, run-length coded in kShowColours (render/show.h);
+  // no picture until its bytes have come, and the headline alone.
+  static constexpr int kShowW = 420, kShowH = 190, kHeadlineBytes = 40;
+  const char* headline = "";
+  const uint8_t* picture = nullptr;
+  size_t pictureBytes = 0;
 };
 // The finished turn the brain's reaction is about (its `who`), while the
 // reaction plays and lingers after (app/behaviour.h): whose turn, how it

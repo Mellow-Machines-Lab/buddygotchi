@@ -104,6 +104,7 @@ Device::Device(Hal& hal, uint8_t* pixels, std::unique_ptr<render::Face> face)
 }
 Device::~Device() {
   if (ownsCanvas_) hal_.releaseSurface(canvas_.pixels());
+  if (showRoom_) hal_.releaseSurface(showRoom_);
   if (!native_) return;
   if (native_->back().pixels) hal_.releaseSurface(native_->back().pixels);
   if (native_->front().pixels) hal_.releaseSurface(native_->front().pixels);
@@ -140,6 +141,7 @@ void Device::begin() {
 // the simulator.
 void Device::reset() {
   b_.reset(0, kit().rng());
+  showId_ = 0, showSize_ = 0;
   drain();
   hush();
   hal_.stopEffects();
@@ -168,6 +170,30 @@ void Device::drain() {
 void Device::input(const char* k, uint32_t t, int x, int y) {
   live_.last = {k, t, x, y};
   dirty_ = true;
+}
+
+// ---- The show's picture ----------------------------------------------------
+
+uint8_t* Device::blobRoom(int32_t id, size_t size) {
+  (void)id;
+  if (size > kShowBytes) return nullptr;
+  if (!showRoom_) showRoom_ = static_cast<uint8_t*>(hal_.allocateSurface(kShowBytes));
+  // The one kept is written over: it's no longer whole.
+  showId_ = 0, showSize_ = 0;
+  return showRoom_;
+}
+
+void Device::onBlob(int32_t id, size_t size, uint32_t t) {
+  (void)t;
+  showId_ = id, showSize_ = size;
+  dirty_ = true;
+}
+
+render::CardShow Device::cardShow(uint32_t t) const {
+  render::CardShow c = b_.cardShow(t);
+  const Model::ShowIn& w = b_.model().show;
+  if (c.pic == 's' && w.blob && w.blob == showId_ && showRoom_) c.picture = showRoom_, c.pictureBytes = showSize_;
+  return c;
 }
 
 // ---- The Mac's messages ----------------------------------------------------
@@ -224,6 +250,14 @@ void Device::onState(JsonObjectConst doc, uint32_t at) {
     } else if (p.kind == 'h') {
       p.a = heldTo(pic[3], 0, 99, 0), p.b = heldTo(pic[4], 0, 99, 0);
     }
+  }
+  if (JsonObjectConst show = doc["show"]; !show.isNull()) {
+    Model::ShowIn& w = m.show;
+    w.on = true;
+    w.slot = heldTo(show["a"], -1, render::Stream::kLanes - 1, render::CardShow::kNoSlot);
+    w.blob = int32_t(show["b"] | 0);
+    render::foldText(show["g"].as<const char*>(), render::CardShow::kAgentBytes - 1, w.agent, sizeof(w.agent));
+    render::foldText(show["h"].as<const char*>(), render::CardShow::kHeadlineBytes - 1, w.headline, sizeof(w.headline));
   }
   const char* wish = doc["wish"] | "";
   m.wish = !std::strcmp(wish, "pet")    ? render::WishShow::kPet
@@ -640,7 +674,7 @@ void Device::readInputs(uint32_t t) {
     live_.drawerTouch =
         faced && b_.face().hasDrawer() && !b_.noApp(t) && (open > 0 || (y >= kDrawerFromY && hasSessions()));
     // The face is told of the card as it is now: it may not have drawn it yet.
-    const render::CardShow held = b_.cardShow(t);
+    const render::CardShow held = cardShow(t);
     if (faced) b_.face().card(held);
     live_.cardTouch = faced && !live_.drawerTouch && open <= 0 && held.on && b_.face().cardAt(x, y);
     live_.drawerPulling = live_.scrolling = live_.touchSpent = false;
@@ -1159,7 +1193,7 @@ void Device::render(uint32_t t) {
     b_.face().drawer(&drawer_);
     b_.face().wish(b_.wishShow(t));
     b_.face().color(b_.model().color);
-    b_.face().card(b_.cardShow(t));
+    b_.face().card(cardShow(t));
     if (!b_.face().draw(canvas_, native ? &native->back() : nullptr, b_.show(t), t, b_.laneBubble(t), b_.caption(t), b_.sign(t),
                         b_.done(t), b_.strip(t), dirty_))
       return;

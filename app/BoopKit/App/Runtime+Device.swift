@@ -13,6 +13,7 @@ extension Runtime {
     func connection(_ up: Bool) {
         let now = options.clock()
         rig.link.connection(up, now: now)
+        showBlobs.forget()
         pipeline.harness.emit(Event(at: now, source: .device, type: .link, phase: up ? .start : .end, specificType: "board"))
         if !up { run(core.linkDown(at: now)) }
         changed()
@@ -138,7 +139,10 @@ extension Runtime {
     /// A snapshot for `rig`'s device.
     func show(_ snapshot: StateSnapshot) {
         rig.latest = snapshot
-        rig.link.update(state: snapshot.fields, now: options.clock())
+        let now = options.clock()
+        let fields = showBlobs.fields(snapshot.fields, show: snapshot.show == nil ? nil : core.boardShow, link: rig.link,
+                                      now: now, picture: ShowPicture.bytes)
+        rig.link.update(state: fields, now: now)
     }
 
     /// A rule's reaction: sent at once, after the

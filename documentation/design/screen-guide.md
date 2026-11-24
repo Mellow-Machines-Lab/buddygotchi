@@ -1,6 +1,6 @@
 # The screen guide
 
-Updated 2026-11-23. What takes which space on the gel's 502 by 410 screen,
+Updated 2026-11-24. What takes which space on the gel's 502 by 410 screen,
 how large it is, what shape it has, and what wins when two things want the
 same place. The why is in [theory.md](theory.md); each case moves in
 [animations.html](animations.html).
@@ -143,8 +143,11 @@ A picture that fails a rule goes back to the agent with what is wrong. If no
 good picture comes, the turn ends with the low sign alone.
 
 Built so far: the tool, its check (`Show.problems`) and the popover's card
-(`ShowCard`). The board doesn't draw a show yet: that needs a link message
-for the picture (part 3 of the build plan).
+(`ShowCard`), and the board (`Core.boardShow`, the gel's `paintShow`): the
+Mac draws the picture at the board's pixels in 16 colours (`ShowPicture`)
+and sends it as a blob (linkkit's SPEC.md §3), the headline showing
+alone until it arrives. As built, the finish's hop and low sign play
+first and the show comes up after them, held 30 s from the turn's end.
 
 The draft of the tool's instructions:
 

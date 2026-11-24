@@ -61,6 +61,19 @@ class App : public linkkit::App {
   int states = 0, ticks = 0, resets = 0, begun = 0;
   std::string lastState;
 
+  // Blobs: room for one up to `blobCap` bytes (0 refuses), and what came.
+  size_t blobCap = 0;
+  std::vector<uint8_t> blobRoomBytes;
+  std::vector<std::pair<int32_t, std::string>> blobs;
+  uint8_t* blobRoom(int32_t, size_t size) override {
+    if (size > blobCap) return nullptr;
+    blobRoomBytes.assign(size, 0);
+    return blobRoomBytes.data();
+  }
+  void onBlob(int32_t id, size_t size, uint32_t) override {
+    blobs.emplace_back(id, std::string(reinterpret_cast<const char*>(blobRoomBytes.data()), size));
+  }
+
   linkkit::Kit& k() { return kit(); }
 
   const char* name() const override { return "fake"; }

@@ -1,6 +1,6 @@
 # How LinkKit works
 
-Updated 2026-10-24. The tour of LinkKit: the four messages, the queue, and
+Updated 2026-11-24. The tour of LinkKit: the five messages, the queue, and
 each side's library. [README.md](README.md) is the short version;
 [SPEC.md](SPEC.md) has every rule exactly.
 
@@ -10,7 +10,7 @@ flowchart LR
     D -- "hello · ev" --> H
 ```
 
-## The four messages
+## The five messages
 
 Each is one line of JSON of at most 512 bytes, the same over Bluetooth and
 USB:
@@ -21,6 +21,7 @@ USB:
 | `do` | host → device | Please play this: a name the device plays, how it joins the queue (`play`), and the app's `args`. Exactly one `ended` comes back |
 | `hello` | device → host | Who it is (`app`, `id`, `fw`), the protocol's version (`kit`) and the names it plays (`does`). The host asks for it with a bare `{"t":"hello"}`, first on every link-up |
 | `ev` | device → host | Something happened: a tap, a held button, and how each `do` ended (`ended`) |
+| `blob` | host → device | Bytes too many for one message, such as a picture, in parts the host paces by the link's backlog (`DeviceLink.blob`); the device answers a whole one with an `ev` of kind `blob`, and the app names it in its `state` (SPEC.md §3) |
 
 ```json
 {"t":"state","base":"working","mood":"calm","busy":1,"vol":6}

@@ -219,6 +219,9 @@ public final class Core {
     var pill: (key: String, text: String, at: Int64)?
     /// The latest show an agent drew (`show`).
     var lastShow: Shown?
+    /// The shows for the board (`BoardShow`), and the last one's id.
+    var boardShows: [BoardShow] = []
+    var nextBoardShow = 0
     /// What each session's turn has done, for its held pictures.
     var turnWork: [String: TurnWork] = [:]
 
@@ -257,6 +260,7 @@ public final class Core {
         notePictures(agentEvent, at: now)
         if agentEvent.kind == .turn, agentEvent.phase == .end, agentEvent.notice == nil, agentEvent.hook != Core.agentGone {
             turnEndedElsewhere(agentEvent.key, chat: chat, at: now)
+            boardShowsTurnEnded(agentEvent.key, at: now)
         }
         startDayIfNew(now, &fx)
         let actEnded = streamAct(agentEvent, for: event.seq, now, &fx)
@@ -662,7 +666,11 @@ public final class Core {
         if wishCounts(dozed: dozed, attn: attn), let kind = wish?.kind {
             snapshot.wish = kind.rawValue
         }
-        if attn == nil, !drawer {
+        if attn == nil, !drawer, let up = boardShow {
+            // A show outranks a card and a live picture: the board holds it
+            // up for its 30 s, its agent's screen.
+            snapshot.show = StateSnapshot.ShowField(id: up.id, headline: up.show.headline, slot: slot(of: up.key), agent: up.agent)
+        } else if attn == nil, !drawer {
             // A result is for you, and shows; a status is no card of words
             // any more: the agent the screen follows holds a live picture of
             // its work instead, while it works (`picture`).
@@ -679,6 +687,7 @@ public final class Core {
             snapshot.card?.small = nil
             if !snapshot.fits { snapshot.card = nil }
             if !snapshot.fits { snapshot.pic = nil }
+            if !snapshot.fits { snapshot.show = nil }
         }
         // Last: its rows are what gets cut to fit the board's line.
         if drawer { list(into: &snapshot, at: now) }
@@ -1266,6 +1275,7 @@ public final class Core {
         tidyNotes()
         updateActs(now)
         tidyCards(now)
+        tidyBoardShows(at: now)
         let (shown, dismissed, active, _) = groups(at: now)
         let working = Set(active.map(\.key))
         stream.keep(working)

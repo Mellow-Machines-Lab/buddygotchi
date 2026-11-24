@@ -254,6 +254,14 @@ class Device : public linkkit::App {
   void state(JsonObject reply, uint32_t t) override;
   void reset() override;
   bool shot(linkkit::Shot& s, uint32_t t) override;
+  // A show's picture, the Mac's blob (linkkit/SPEC.md §3): kept in a room
+  // of kShowBytes taken once (Hal::allocateSurface), the latest whole one
+  // drawn while the `state`'s show names its id.
+  static constexpr size_t kShowBytes = 12 * 1024;
+  uint8_t* blobRoom(int32_t id, size_t size) override;
+  void onBlob(int32_t id, size_t size, uint32_t t) override;
+  // The card the behaviour shows, with the show's picture when it has come.
+  render::CardShow cardShow(uint32_t t) const;
 
  private:
   struct LastInput {
@@ -399,6 +407,11 @@ class Device : public linkkit::App {
   void tapDrawer(int x, int y, uint32_t t);
 
   Hal& hal_;
+  // The show's picture (blobRoom): its room, and the id and length of the
+  // one in it, 0 while none is whole.
+  uint8_t* showRoom_ = nullptr;
+  int32_t showId_ = 0;
+  size_t showSize_ = 0;
   render::Canvas canvas_;
   // dbg.pattern's canvas, had from the Hal for a face that draws natively.
   bool ownsCanvas_ = false;

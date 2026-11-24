@@ -52,6 +52,11 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     var framer = LineFramer()
     /// Lines waiting for CoreBluetooth to take them.
     var outbox = BLEOutbox()
+    /// What waits to go out, for `backlog`: lines handed to `send` and not
+    /// yet in the outbox, and the outbox's bytes.
+    let backlogLock = NSLock()
+    var lineBytes = 0, outboxBytes = 0
+    public var backlog: Int { backlogLock.withLock { lineBytes + outboxBytes } }
     var onLine: (@Sendable (String) -> Void)?
     var onConnection: (@Sendable (Bool) -> Void)?
     var running = false
@@ -95,7 +100,9 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
     /// them is given up instead (`BLEOutbox.stuck`), so the link fails the
     /// `do`s waiting on it at once rather than a minute later.
     public func send(_ line: String) {
+        backlogLock.withLock { lineBytes += line.utf8.count }
         queue.async { [self] in
+            defer { backlogLock.withLock { lineBytes -= line.utf8.count; outboxBytes = outbox.bytes } }
             guard up, let peripheral, rxCharacteristic != nil, peripheral.state == .connected else { return }
             outbox.add(line, size: peripheral.maximumWriteValueLength(for: .withoutResponse))
             drain()
@@ -111,6 +118,8 @@ public final class BLETransport: NSObject, Transport, @unchecked Sendable {
         while peripheral.canSendWriteWithoutResponse, let chunk = outbox.next() {
             peripheral.writeValue(chunk, for: rxCharacteristic, type: .withoutResponse)
         }
+        let waiting = outbox.bytes
+        backlogLock.withLock { outboxBytes = waiting }
     }
 
     /// Takes only the device named `name` from now on, or any with the
@@ -198,6 +207,7 @@ extension BLETransport {
         up = false
         framer = LineFramer()
         outbox = BLEOutbox()
+        backlogLock.withLock { outboxBytes = 0 }
         attempt += 1
         if wasUp { onConnection?(false) }
     }

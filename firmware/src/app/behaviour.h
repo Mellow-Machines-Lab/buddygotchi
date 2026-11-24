@@ -77,6 +77,17 @@ struct Model {
     char file[render::CardShow::kRows][18] = {};
     int added[render::CardShow::kRows] = {}, removed[render::CardShow::kRows] = {};
   } pic;
+  // A show (`show`): the agent's headline, whose it is (`a`, its lane's
+  // slot; `g`, its agent) and its picture's blob (`b`, 0 for none yet),
+  // which the device keeps (Device::blobRoom). It outranks the card and
+  // the live picture.
+  struct ShowIn {
+    bool on = false;
+    int slot = render::CardShow::kNoSlot;
+    int32_t blob = 0;
+    char agent[render::CardShow::kAgentBytes] = "";
+    char headline[render::CardShow::kHeadlineBytes] = "";
+  } show;
   // The wish waiting (`wish`), while its wait counts.
   render::WishShow::Kind wish = render::WishShow::kNone;
   bool wishHow = false;  // it shows how, its icon moving (`wish_how`)

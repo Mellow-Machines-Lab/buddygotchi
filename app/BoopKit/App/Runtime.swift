@@ -190,6 +190,8 @@ public final class Runtime: @unchecked Sendable {
     var server: HookServer?
     var timer: DispatchSourceTimer?
     var handsTimer: DispatchSourceTimer?
+    /// The show's picture on its way to the board.
+    var showBlobs = ShowBlobs()
     /// Keeps macOS from napping the app while it runs.
     var activity: NSObjectProtocol?
     let places = Places()
@@ -371,6 +373,13 @@ public final class Runtime: @unchecked Sendable {
                 // Mac: a `state` is logged without its pointer and the tags
                 // of what you play, record or copy, and one that changed
                 // only those isn't logged again.
+                // A show's picture goes to the board and its mirror, never to
+                // a log: its parts are logged without their bytes.
+                if line.hasPrefix(#"{"t":"blob""#), let cut = line.range(of: #","d":""#) {
+                    let kept = String(line[..<cut.lowerBound]) + "}"
+                    emit(DebugLog.sent(kept, by: sender, at: clock()))
+                    return
+                }
                 let kept = StateSnapshot.unnoticed(line)
                 let isState = line.hasPrefix(#"{"t":"state""#)
                 if isState, kept == lastState, line != lastSent { return lastSent = line }
@@ -505,8 +514,16 @@ public final class Runtime: @unchecked Sendable {
         rig.link.onEvent = { [weak self] ev in self?.deviceEvent(ev) }
         // A hello (the first on a link, or one that says something new):
         // log who the device is, and show it what's true now.
+        // The board has a show's picture: its state names it now.
+        rig.link.onBlob = { [weak self] id in
+            guard let self, showBlobs.arrived(id), let latest = rig.latest else { return }
+            options.log("device: has the show's picture (blob \(id))")
+            show(latest)
+        }
         rig.link.onHello = { [weak self] hello in
             DeviceInfo(hello).logLines.forEach(log)
+            // A board that says hello may have restarted: it has no picture.
+            self?.showBlobs.forget()
             if let self, let latest = rig.latest { self.show(latest) }
             self?.playGrowthDue(at: clock(), hello: true)
         }
@@ -789,6 +806,10 @@ public final class Runtime: @unchecked Sendable {
     /// nothing in the transcript.
     func handsTick() {
         let now = options.clock()
+        // A show's picture goes in parts, as fast as the link takes them,
+        // and again when it hasn't arrived.
+        rig.link.pump(now: now)
+        if showBlobs.due(at: now), !rig.link.sendingBlob, let latest = rig.latest { show(latest) }
         if let until = placing?.until, now >= until { stopPlacing(why: "no tap in time") }
         if let asked = placing?.asked, now - asked >= Self.placeAskEveryMs { askToPlace(at: now) }
         let there = settings.noticesYou && presence.lockedAt == nil && !core.awayFromMac
@@ -843,6 +864,7 @@ public final class Runtime: @unchecked Sendable {
         // The core follows the Mac's clock, set or moved.
         let now = options.clock(), wall = options.wallClock()
         core.setWallClock(wall, at: now)
+        if showBlobs.due(at: now), !rig.link.sendingBlob, let latest = rig.latest { show(latest) }
         // When you last touched the Mac, for Doing with no agent open.
         if let idle = options.idleMs?() ?? (devIdleSet ? devIdleMs : nil) {
             core.lastInputAt = max(core.lastInputAt ?? .min, now - max(0, idle))

@@ -14,7 +14,8 @@ extension Core {
     /// The sessions the pips show, in the popover's order.
     func pipOrder(at now: Int64) -> [String] { Array(cardOrder(at: now).prefix(Self.maxPips)) }
 
-    /// The session the screen follows now, by the rule: your swipe, kept
+    /// The session the screen follows now, by the rule: a show while it's
+    /// up; your swipe, kept
     /// while that agent still works or holds a card; else the one Boop
     /// holds a card for (a picture beats plain work); else the working one
     /// you last prompted; else the one whose turn ended last.
@@ -22,6 +23,8 @@ extension Core {
         let (shown, dismissed, working, idle) = groups(at: now)
         let all = shown + dismissed + working + idle
         guard !all.isEmpty else { return nil }
+        // A show takes the screen while it's up, once, then the screen returns.
+        if let up = boardShow?.key, all.contains(where: { $0.key == up }) { return up }
         if let swiped = watchSwiped, all.contains(where: { $0.key == swiped }),
            working.contains(where: { $0.key == swiped }) || cards.focus == swiped || watchSwipedAt.map({ now - $0 < 60_000 }) == true {
             return swiped

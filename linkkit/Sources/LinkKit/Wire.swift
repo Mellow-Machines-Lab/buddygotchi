@@ -119,6 +119,18 @@ public enum Wire {
     /// link, whether or not it already counts the host as there (SPEC.md §3).
     public static let hello = #"{"t":"hello"}"#
 
+    /// The most parts a blob has (SPEC.md §3), and the `ev` kind the kit
+    /// answers one with.
+    public static let maxBlobParts = 1024
+    public static let blobKind = "blob"
+
+    /// One part of a blob (SPEC.md §3): `size` only on part 0.
+    public static func blob(id: Int, part: Int, of: Int, size: Int?, data: Data) -> String {
+        var line = #"{"t":"blob","id":\#(id),"n":\#(part),"of":\#(of)"#
+        if let size { line += #","size":\#(size)"# }
+        return line + #","d":""# + data.base64EncodedString() + #""}"#
+    }
+
     /// A `state` message: `{"t":"state",` then the app's fields in their
     /// order. A `t` among them is left out, since it's the message's.
     public static func state(_ fields: JSONObject) -> String {

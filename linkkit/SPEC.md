@@ -1,7 +1,7 @@
 # LinkKit: the spec
 
-Updated 2026-11-16. The contract between a host (a Mac app) and a small
-device with a screen, a light or a speaker: four messages, how the device
+Updated 2026-11-24. The contract between a host (a Mac app) and a small
+device with a screen, a light or a speaker: five messages, how the device
 decides what plays when, and the rules both sides keep. It's language
 neutral: the Swift host library (`Sources/LinkKit`) and the C++ device
 library (`device/`) both implement it, and a port to another language
@@ -18,6 +18,7 @@ skip, or draw its own way.
 ```
 host → device    state   how things are now (sent whole, on every change and every 10 s)
                  do      please play this (exactly one answer comes back)
+                 blob    bytes too big for one message, in parts (a picture)
 device → host    hello   who I am and what I can play (a host's bare hello asks for it)
                  ev      something happened: a tap, a hold, how a `do` went
 ```
@@ -104,6 +105,38 @@ pointer moves): over Bluetooth a newer one replaces one not yet started
 | `ttl` | How long a `next` may wait in the queue, in ms, 1–60000. 5000 when missing. A host sends it only with `next`; the device ignores it otherwise |
 | `args` | The app's details, handed to its handler untouched. `{}` when missing |
 
+### `blob`: host → device
+
+```json
+{"t":"blob","id":7,"n":0,"of":12,"size":4321,"d":"AAEC…"}
+```
+
+Bytes too many for one message, such as a picture, sent in parts the app
+then names in its `state` (Boop's `show.b`). The kit puts them together;
+what they mean is the app's.
+
+| Field | Meaning |
+| --- | --- |
+| `id` | 1–2147483647, the host's pick for this blob, as for a `do`'s |
+| `n` | This part's index, from 0 |
+| `of` | How many parts, 1–1024 |
+| `size` | The whole blob's length in bytes, on part 0 |
+| `d` | This part's bytes in base64; each message stays within 512 bytes |
+
+- The parts go in order on one link. Part 0 starts a blob and drops any
+  blob half received; a part that isn't the next one expected, or whose
+  bytes would run past `size`, drops the blob being put together.
+- On part 0 the device asks the app for room for `size` bytes; an app
+  with no room, or none for blobs, refuses it, and the parts are dropped.
+- When the last part brings the blob to `size` bytes, the app gets it,
+  and the device answers on that link with
+  `{"t":"ev","kind":"blob","data":{"id":7,"size":4321}}`. The kit
+  reserves the `ev` kind `blob`, as it does `ended`. No answer means it
+  didn't arrive whole: the host may send it again.
+- The host paces the parts so a link's backlog stays small (§8): a
+  Bluetooth host sends the next part only while less than 1 KB waits to
+  go out. A device that restarted (§5) has lost its blobs.
+
 ### `ev`: device → host
 
 ```json
@@ -114,7 +147,7 @@ pointer moves): over Bluetooth a newer one replaces one not yet started
 
 | Field | Meaning |
 | --- | --- |
-| `kind` | What happened. The kit reserves `ended`; every other kind is the app's |
+| `kind` | What happened. The kit reserves `ended` and `blob`; every other kind is the app's |
 | `did` | Optional: what the device already did about it on its own |
 | `data` | Optional: the app's details, or `ended`'s |
 
@@ -302,6 +335,7 @@ a message came in on.
 | `do`s waiting | 4 |
 | `ttl` | 5000 ms by default, 1–60000 |
 | Ids | 1–2147483647 |
+| A blob's parts | 1–1024 |
 | `state` keepalive / host gone | 10 s / 30 s |
 | `hello` repeat | 60 s |
 | A host gives up on an `ended` | `ttl` + 60 s |

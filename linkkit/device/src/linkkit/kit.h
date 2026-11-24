@@ -139,6 +139,16 @@ class App {
   // Once per loop pass, after advance: read inputs, draw.
   virtual void tick(uint32_t t) { (void)t; }
 
+  // ---- blobs (§3): bytes too many for one message, in parts
+  // Room for blob `id` of `size` bytes, valid until onBlob or the next
+  // blob's part 0, or null to refuse it (the default: no blobs).
+  virtual uint8_t* blobRoom(int32_t id, size_t size) {
+    (void)id, (void)size;
+    return nullptr;
+  }
+  // Blob `id` arrived whole, in the room blobRoom gave.
+  virtual void onBlob(int32_t id, size_t size, uint32_t t) { (void)id, (void)size, (void)t; }
+
   // ---- dbg.* over USB (§7)
   // A dbg.* type the kit doesn't handle: true if it's the app's, which
   // replies with Kit::reply. An unknown one gets no reply.
@@ -258,6 +268,7 @@ class Kit {
   void fillHello(JsonDocument& d, bool kitOnly);
   void sendHello(Link to);
   void onDoLine(JsonObjectConst msg, Link from, uint32_t t);
+  void onBlobLine(JsonObjectConst msg, Link from, uint32_t t);
   void offer(const Do& c, uint32_t t);
   void take(const Do& c, uint32_t t);
   void enqueue(const Do& c, uint32_t t);
@@ -297,6 +308,15 @@ class Kit {
   char args_[kMaxWaiting][kMaxLine];  // waiting `do`s' args, as JSON
   uint8_t slotsUsed_ = 0;             // a bit per slot of args_
   uint32_t stepped_ = 0;              // the last instant the app was moved to
+  // The blob being put together (§3): its id (0 for none), the link it
+  // comes on, the next part expected of how many, and its room.
+  struct Blob {
+    int32_t id = 0;
+    Link from = Link::kNone;
+    uint16_t next = 0, of = 0;
+    size_t size = 0, got = 0;
+    uint8_t* room = nullptr;
+  } blob_;
   bool pumping_ = false;
 };
 

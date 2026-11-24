@@ -16,6 +16,10 @@ public protocol Transport: AnyObject, Sendable {
     /// Sends one line (without its newline). Dropped when not connected:
     /// the next `state` catches the device up.
     func send(_ line: String)
+    /// Bytes sent and not yet gone out, for pacing what's big (a blob's
+    /// parts, SPEC.md §3); 0 for a link that never holds them. Read from
+    /// any thread.
+    var backlog: Int { get }
     /// Drops the connection or attempt in progress and looks for the
     /// device again at once (a settings screen's Reconnect).
     func reconnect()
@@ -24,6 +28,7 @@ public protocol Transport: AnyObject, Sendable {
 
 extension Transport {
     public var trouble: TransportTrouble? { nil }
+    public var backlog: Int { 0 }
 }
 
 /// Why a transport can't look for the device: its cause, for an app to

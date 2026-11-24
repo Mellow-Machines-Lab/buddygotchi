@@ -6,6 +6,7 @@
 #include "voice_file.h"  // internal/firmware/
 #include "wrapped_face.h"  // internal/firmware/
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
@@ -18,6 +19,7 @@
 #include "linkkit/kit.h"
 #include "linkkit/line_reader.h"
 #include "render/palette.h"
+#include "render/show.h"
 #include "render/pixel/scene.h"
 #include "render/pixel/effect_track.h"
 #include "render/pixel/sounds.h"
@@ -3112,6 +3114,68 @@ static void test_a_firm_tap_doesnt_startle() {
   TEST_ASSERT_TRUE(has(r.usb.text, "\"did\":\"startle\""));
 }
 
+// A show's picture comes as a blob (linkkit/SPEC.md §3): the device keeps
+// it, and the card the face is told of carries it while the state's show
+// names that blob; another blob's name, or none, gives the headline alone.
+static void test_a_shows_picture_comes_as_a_blob() {
+  Rig r;
+  // One row of the lane's colour, then none: 420 + 420 * 189 pixels.
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0,\"show\":{\"i\":1,\"h\":\"tests pass\",\"a\":0,\"g\":\"claude\"}}");
+  render::CardShow c = r.dev.cardShow(r.kit.now());
+  TEST_ASSERT_EQUAL('s', c.pic);
+  TEST_ASSERT_EQUAL_STRING("tests pass", c.headline);
+  TEST_ASSERT_NULL(c.picture);
+  // A row of 420 of colour 6, then 79380 of none: runs of 271 each.
+  std::vector<uint8_t> bytes;
+  for (int n = 420; n > 0; n -= 271) bytes.push_back(0x6F), bytes.push_back(uint8_t(std::min(n, 271) - 16));
+  for (int n = 420 * 189; n > 0; n -= 271) {
+    const int k = std::min(n, 271);
+    if (k >= 16) bytes.push_back(0x0F), bytes.push_back(uint8_t(k - 16));
+    else bytes.push_back(uint8_t(k - 1));
+  }
+  // The bytes in base64, in parts of up to 324 bytes, as the Mac sends them.
+  static const char* b64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  auto encode = [&](size_t from, size_t to) {
+    std::string d;
+    for (size_t i = from; i < to; i += 3) {
+      uint32_t v = uint32_t(bytes[i]) << 16 | (i + 1 < to ? bytes[i + 1] << 8 : 0) | (i + 2 < to ? bytes[i + 2] : 0);
+      d += b64[v >> 18 & 63], d += b64[v >> 12 & 63];
+      d += i + 1 < to ? b64[v >> 6 & 63] : '=';
+      d += i + 2 < to ? b64[v & 63] : '=';
+    }
+    return d;
+  };
+  const size_t of = (bytes.size() + 323) / 324;
+  for (size_t n = 0; n < of; ++n) {
+    char line[600];
+    const std::string d = encode(n * 324, std::min(bytes.size(), (n + 1) * 324));
+    if (n == 0)
+      std::snprintf(line, sizeof(line), "{\"t\":\"blob\",\"id\":7,\"n\":0,\"of\":%u,\"size\":%u,\"d\":\"%s\"}", unsigned(of),
+                    unsigned(bytes.size()), d.c_str());
+    else
+      std::snprintf(line, sizeof(line), "{\"t\":\"blob\",\"id\":7,\"n\":%u,\"of\":%u,\"d\":\"%s\"}", unsigned(n), unsigned(of), d.c_str());
+    TEST_ASSERT_TRUE(std::strlen(line) <= linkkit::kMaxLine);
+    r.usbLine(line);
+  }
+  TEST_ASSERT_TRUE(has(r.usb.text, "{\"t\":\"ev\",\"kind\":\"blob\",\"data\":{\"id\":7,"));
+  TEST_ASSERT_NULL(r.dev.cardShow(r.kit.now()).picture);  // the state doesn't name it yet
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0,\"show\":{\"i\":1,\"h\":\"tests pass\",\"a\":0,\"g\":\"claude\",\"b\":7}}");
+  c = r.dev.cardShow(r.kit.now());
+  TEST_ASSERT_NOT_NULL(c.picture);
+  TEST_ASSERT_EQUAL(int(bytes.size()), int(c.pictureBytes));
+  int lit = 0;
+  TEST_ASSERT_TRUE(render::forEachShowRun(c.picture, c.pictureBytes, 420, 190, [&](int, int y, int n, int colour) {
+    TEST_ASSERT_EQUAL(0, y);
+    TEST_ASSERT_EQUAL(render::kShowLane, colour);
+    lit += n;
+  }));
+  TEST_ASSERT_EQUAL(420, lit);
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0,\"show\":{\"i\":2,\"h\":\"next\",\"a\":0,\"g\":\"claude\",\"b\":8}}");
+  TEST_ASSERT_NULL(r.dev.cardShow(r.kit.now()).picture);
+  r.usbLine("{\"t\":\"state\",\"base\":\"idle\",\"vol\":0}");
+  TEST_ASSERT_EQUAL(0, r.dev.cardShow(r.kit.now()).pic);
+}
+
 int main() {
   UNITY_BEGIN();
   if (!voicefile::open()) std::printf("no voice file: the chosen character pack has none\n");
@@ -3218,5 +3282,6 @@ int main() {
   RUN_TEST(test_a_wish_redraws_the_picture);
   RUN_TEST(test_latency_follows_each_event_to_its_frame);
   RUN_TEST(test_dbg_latency_times_inputs_and_messages);
+  RUN_TEST(test_a_shows_picture_comes_as_a_blob);
   return UNITY_END();
 }

@@ -452,6 +452,48 @@ static void test_the_lamp_example() {
   TEST_ASSERT_TRUE(has(usb.text, "{\"t\":\"ev\",\"kind\":\"press\",\"did\":\"stopped\"}\n"));
 }
 
+// §3: a blob comes in parts, in order on one link: the app gives room on
+// part 0, gets the bytes when the last part brings them to size, and the
+// device answers. Out of order, too long, or refused: nothing, no answer.
+static void test_a_blob_comes_in_parts() {
+  kitfake::Platform p;
+  kitfake::App app;
+  app.blobCap = 16;
+  linkkit::Kit kit(p, app, true);
+  kitfake::Capture usb;
+  kit.setOut(Link::kUsb, &usb);
+  auto line = [&](const std::string& s) { kit.handleLine(s.c_str(), s.size(), Link::kUsb); };
+  line("{\"t\":\"state\"}");
+  usb.text.clear();
+  // "hello world!" in two parts: "hello " and "world!".
+  line("{\"t\":\"blob\",\"id\":7,\"n\":0,\"of\":2,\"size\":12,\"d\":\"aGVsbG8g\"}");
+  TEST_ASSERT_EQUAL(0, int(app.blobs.size()));
+  line("{\"t\":\"blob\",\"id\":7,\"n\":1,\"of\":2,\"d\":\"d29ybGQh\"}");
+  TEST_ASSERT_EQUAL(1, int(app.blobs.size()));
+  TEST_ASSERT_EQUAL(7, app.blobs[0].first);
+  TEST_ASSERT_EQUAL_STRING("hello world!", app.blobs[0].second.c_str());
+  TEST_ASSERT_TRUE(has(usb.text, "{\"t\":\"ev\",\"kind\":\"blob\",\"data\":{\"id\":7,\"size\":12}}\n"));
+  // A part out of order drops it: the next part 1 finds nothing to join.
+  usb.text.clear();
+  line("{\"t\":\"blob\",\"id\":8,\"n\":0,\"of\":3,\"size\":12,\"d\":\"aGVs\"}");
+  line("{\"t\":\"blob\",\"id\":8,\"n\":2,\"of\":3,\"d\":\"bG8g\"}");
+  line("{\"t\":\"blob\",\"id\":8,\"n\":1,\"of\":3,\"d\":\"bG8g\"}");
+  TEST_ASSERT_EQUAL(1, int(app.blobs.size()));
+  // Short of its size at the last part, or bytes past it: dropped.
+  line("{\"t\":\"blob\",\"id\":9,\"n\":0,\"of\":1,\"size\":12,\"d\":\"aGVsbG8g\"}");
+  line("{\"t\":\"blob\",\"id\":10,\"n\":0,\"of\":1,\"size\":3,\"d\":\"aGVsbG8g\"}");
+  TEST_ASSERT_EQUAL(1, int(app.blobs.size()));
+  // No room (too big for the app): refused, and its parts go nowhere.
+  line("{\"t\":\"blob\",\"id\":11,\"n\":0,\"of\":1,\"size\":17,\"d\":\"aGVsbG8g\"}");
+  TEST_ASSERT_EQUAL(1, int(app.blobs.size()));
+  TEST_ASSERT_FALSE(has(usb.text, "\"kind\":\"blob\""));
+  // Part 0 again starts afresh.
+  line("{\"t\":\"blob\",\"id\":12,\"n\":0,\"of\":2,\"size\":6,\"d\":\"aGVs\"}");
+  line("{\"t\":\"blob\",\"id\":13,\"n\":0,\"of\":1,\"size\":3,\"d\":\"aGVs\"}");
+  TEST_ASSERT_EQUAL(2, int(app.blobs.size()));
+  TEST_ASSERT_EQUAL(13, app.blobs[1].first);
+}
+
 int main() {
   UNITY_BEGIN();
   RUN_TEST(test_the_limits);
@@ -476,5 +518,6 @@ int main() {
   RUN_TEST(test_the_apps_debug_messages);
   RUN_TEST(test_the_app_is_begun_and_ticked);
   RUN_TEST(test_the_lamp_example);
+  RUN_TEST(test_a_blob_comes_in_parts);
   return UNITY_END();
 }

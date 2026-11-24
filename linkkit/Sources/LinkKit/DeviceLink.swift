@@ -159,6 +159,8 @@ public final class DeviceLink {
     public var onConnection: ((Bool) -> Void)?
     /// Every message sent, with who asked for it.
     public var onSend: ((String, Sender) -> Void)?
+    /// A blob arrived whole on the device (SPEC.md §3): its id.
+    public var onBlob: ((Int) -> Void)?
 
     let log: (String) -> Void
     /// `state` as a message, and the last one sent and when.
@@ -175,6 +177,17 @@ public final class DeviceLink {
     var warnedLine: String?
     /// When the host last asked for the device's `hello`.
     var askedAt: Int64?
+    /// The blob being sent (SPEC.md §3): its id, its parts' lines, and the
+    /// next part to send. A new blob replaces one still going.
+    var blobId: Int?
+    var blobLines: [String] = []
+    var blobNext = 0
+    /// The next blob's id.
+    var nextBlobId = Int.random(in: 1...Wire.maxId)
+    /// A blob's bytes in each part: 432 in base64, so its line stays within a message with the largest id, part and size.
+    static let blobPartBytes = 324
+    /// Parts go only while less than this waits to go out on the link.
+    static let blobBacklog = 1024
 
     struct Waiting {
         let name: String
@@ -228,6 +241,7 @@ public final class DeviceLink {
         }
         if askedAt.map({ now - $0 >= Self.keepaliveMs }) ?? true { askHello(now: now) }
         if lastSentAt.map({ now - $0 >= Self.keepaliveMs }) ?? true { sendState(now: now) }
+        pump(now: now)
         for (_, w) in overdue { w.completion(.failed(.noAnswer)) }
     }
 
@@ -247,6 +261,49 @@ public final class DeviceLink {
         guard connected, hello == nil, trouble == nil else { return }
         askedAt = now
         send(Wire.hello, by: .link)
+    }
+
+    // MARK: - Blob
+
+    /// Sends `bytes` to the device as a blob (SPEC.md §3), in parts paced
+    /// by the link's backlog (`pump`), and returns its id, which the app
+    /// names in its `state`. A blob still going is dropped for this one.
+    /// `onBlob` says when it arrived whole; none, and the app may send it
+    /// again. Nil when there's nothing to send or the link is down.
+    @discardableResult
+    public func blob(_ bytes: Data, now: Int64) -> Int? {
+        guard connected, !bytes.isEmpty else { return nil }
+        let parts = stride(from: 0, to: bytes.count, by: Self.blobPartBytes).map {
+            bytes.subdata(in: $0..<min($0 + Self.blobPartBytes, bytes.count))
+        }
+        guard parts.count <= Wire.maxBlobParts else { return nil }
+        let id = nextBlobId
+        nextBlobId = Self.after(id)
+        blobLines = parts.enumerated().map { n, part in
+            Wire.blob(id: id, part: n, of: parts.count, size: n == 0 ? bytes.count : nil, data: part)
+        }
+        (blobId, blobNext) = (id, 0)
+        pump(now: now)
+        return id
+    }
+
+    /// Sends a blob's next parts while the link's backlog is small: call it
+    /// often (each `tick`, and more often while a blob goes).
+    public func pump(now: Int64) {
+        guard blobId != nil else { return }
+        guard connected else { return clearBlob() }
+        while blobNext < blobLines.count, (transport?.backlog ?? 0) < Self.blobBacklog {
+            send(blobLines[blobNext], by: .app)
+            blobNext += 1
+        }
+        if blobNext == blobLines.count { clearBlob() }
+    }
+
+    /// Whether a blob's parts still wait to go.
+    public var sendingBlob: Bool { blobId != nil }
+
+    func clearBlob() {
+        (blobId, blobLines, blobNext) = (nil, [], 0)
     }
 
     // MARK: - Do
@@ -330,6 +387,9 @@ public final class DeviceLink {
         case .ended(let ended):
             // One that isn't waiting was answered already or given up on.
             if let w = waiting.removeValue(forKey: ended.id) { w.completion(.ended(ended)) }
+        case .event(let event) where event.kind == Wire.blobKind:
+            // The kit's own answer to a blob (SPEC.md §3), never the app's.
+            if trouble == nil, let id = event.data["id"]?.int { onBlob?(Int(id)) }
         case .event(let event):
             if trouble == nil { onEvent?(event) }
         case .other:
@@ -353,6 +413,7 @@ public final class DeviceLink {
             hello = nil
             (trouble, misfit) = (nil, nil)
             dropped = takeWaiting()
+            clearBlob()
         }
         for w in dropped { w.completion(.failed(.disconnected)) }
         onConnection?(up)

@@ -67,7 +67,7 @@ The device library's README has a whole lamp that fits on a page.
 
 ## Learn more
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)**: the four messages, the queue,
+- **[ARCHITECTURE.md](ARCHITECTURE.md)**: the five messages, the queue,
   and driving a lamp from Swift.
 - **[device/README.md](device/README.md)**: the C++ side, and how your
   app plugs into it.

@@ -165,6 +165,8 @@ bool Kit::handleLine(const char* line, size_t n, Link from) {
     app_.onState(msg, at);
   } else if (!std::strcmp(t, "do")) {
     onDoLine(msg, from, at);
+  } else if (!std::strcmp(t, "blob")) {
+    onBlobLine(msg, from, at);
   } else if (!std::strcmp(t, "hello")) {
     if (!greeted) sendHello(from);  // §3: the host asks who the device is
   } else if (!std::strcmp(t, "dbg.ping")) {
@@ -177,6 +179,7 @@ bool Kit::handleLine(const char* line, size_t n, Link from) {
     sendClock(from, msg, real);
   } else if (!std::strcmp(t, "dbg.reset")) {
     resetQueue();
+    blob_ = Blob{};
     clock_.freeze(0);
     toolFrozen_ = true;
     rng_.seed(0);
@@ -188,6 +191,37 @@ bool Kit::handleLine(const char* line, size_t n, Link from) {
   }
   pump(stepped_);
   return debug;
+}
+
+// A blob's part (§3): part 0 asks the app for room, each next part is
+// decoded into it, and the last one that brings it to its size hands it
+// to the app and answers. Anything out of order drops the blob.
+void Kit::onBlobLine(JsonObjectConst msg, Link from, uint32_t t) {
+  const int32_t id = int32_t(intIn(msg["id"], 1, kMaxId));
+  const int64_t n = intIn(msg["n"], 0, 1023), of = intIn(msg["of"], 1, 1024);
+  const char* d = msg["d"];
+  if (!id || !msg["n"].is<int64_t>() || !of || !d || n >= of) return void(blob_ = Blob{});
+  if (n == 0) {
+    blob_ = Blob{};
+    const int64_t size = intIn(msg["size"], 1, 1 << 24);
+    if (size <= 0) return;
+    uint8_t* room = app_.blobRoom(id, size_t(size));
+    if (!room) return;
+    blob_ = Blob{id, from, 0, uint16_t(of), size_t(size), 0, room};
+  }
+  if (blob_.id != id || blob_.from != from || blob_.next != n || blob_.of != of) return void(blob_ = Blob{});
+  const long wrote = base64Decode(d, std::strlen(d), blob_.room + blob_.got, blob_.size - blob_.got);
+  if (wrote < 0) return void(blob_ = Blob{});
+  blob_.got += size_t(wrote);
+  if (++blob_.next < blob_.of) return;
+  const Blob whole = blob_;
+  blob_ = Blob{};
+  if (whole.got != whole.size) return;
+  app_.onBlob(whole.id, whole.size, t);
+  char buf[96];
+  const int k = std::snprintf(buf, sizeof(buf), "{\"t\":\"ev\",\"kind\":\"blob\",\"data\":{\"id\":%ld,\"size\":%lu}}",
+                              (long)whole.id, (unsigned long)whole.size);
+  if (k > 0 && size_t(k) < sizeof(buf)) reply(from, buf, size_t(k));
 }
 
 // §5: the host's first message on a link it wasn't live on (for Bluetooth,

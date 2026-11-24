@@ -7,6 +7,9 @@ final class FakeTransport: Transport, @unchecked Sendable {
     let lock = NSLock()
     var lines: [String] = []
     var name: String { "fake" }
+    /// What a test says waits to go out (`Transport.backlog`).
+    var waiting = 0
+    var backlog: Int { lock.withLock { waiting } }
 
     func start(onLine: @escaping @Sendable (String) -> Void, onConnection: @escaping @Sendable (Bool) -> Void) {}
     func send(_ line: String) { lock.withLock { lines.append(line) } }
@@ -461,5 +464,40 @@ func ended(_ id: Int, _ how: String, _ why: String? = nil) -> String {
         let id = link.do("react", now: 0) { _ in }!
         #expect(link.receive(ended(id, "cut", "now"), now: 1) == .ended(Ended(id: id, how: .cut, why: "now")))
         #expect(link.receive("boot noise", now: 1) == .other("boot noise"))
+    }
+}
+
+@Suite struct LinkBlobTests {
+    /// SPEC.md §3: a blob goes in parts within a message each, `size` on
+    /// part 0, in order, paced by the link's backlog; the kit's answer is
+    /// `onBlob`'s, never the app's `ev`; a new blob drops one still going,
+    /// and a drop drops it.
+    @Test func testABlobGoesInPacedParts() throws {
+        let (link, transport, _) = makeLink()
+        let got = Box<Int>(), events = Box<String>()
+        link.onBlob = { got.add($0) }
+        link.onEvent = { events.add($0.kind) }
+        let bytes = Data((0..<800).map { UInt8($0 % 251) })
+        transport.waiting = 2000  // the link is busy: nothing goes yet
+        let id = try #require(link.blob(bytes, now: 0))
+        #expect(transport.sent.isEmpty && link.sendingBlob)
+        transport.waiting = 0
+        link.pump(now: 10)
+        let parts = transport.sent.compactMap { JSON.parse($0)?.object }
+        #expect(parts.count == 3 && parts.allSatisfy { $0["t"] == "blob" && $0["id"]?.int == id && $0["of"]?.int == 3 })
+        #expect(parts.map { $0["n"]?.int } == [0, 1, 2])
+        #expect(parts[0]["size"]?.int == 800 && parts[1]["size"] == nil)
+        #expect(transport.sent.allSatisfy { $0.utf8.count <= Wire.maxLine })
+        let joined = parts.compactMap { $0["d"]?.string.flatMap { Data(base64Encoded: $0, options: []) } }.reduce(Data(), +)
+        #expect(joined == bytes)
+        #expect(!link.sendingBlob)
+        link.receive(#"{"t":"ev","kind":"blob","data":{"id":\#(id),"size":800}}"#, now: 20)
+        #expect(got.all == [id] && events.all.isEmpty)
+        // A drop forgets a blob still going; down, none starts.
+        transport.waiting = 2000
+        _ = link.blob(bytes, now: 30)
+        link.connection(false, now: 40)
+        #expect(!link.sendingBlob)
+        #expect(link.blob(bytes, now: 50) == nil)
     }
 }

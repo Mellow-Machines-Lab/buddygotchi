@@ -365,6 +365,17 @@ public struct StateSnapshot: Equatable, Sendable {
     }
     public var pic: PictureShow?
 
+    /// The show Boop holds up (`Core.boardShow`): which it is (`id`, the
+    /// core's, which the runtime turns into its picture's blob, `b`), its
+    /// headline, and whose it is.
+    public struct ShowField: Equatable, Sendable {
+        public var id: Int
+        public var headline: String
+        public var slot: Int
+        public var agent: String
+    }
+    public var show: ShowField?
+
     public struct CardShow: Equatable, Sendable {
         public var slot: Int
         /// Whose it is, `claude` or `codex`: the board names the agent on
@@ -454,6 +465,12 @@ public struct StateSnapshot: Equatable, Sendable {
                 p = [.string("h"), .int(pic.slot), .string(pic.agent), .int(working), .int(done)]
             }
             fields["pic"] = .array(p)
+        }
+        if let show {
+            // {"i": id, "h": headline, "a": slot, "g": agent}; the runtime
+            // adds the picture's blob, "b", once it has one.
+            fields["show"] = .object(["i": .int(show.id), "h": .string(StateSnapshot.clip(show.headline, max: 36)),
+                                      "a": .int(show.slot), "g": .string(show.agent)])
         }
         if skip > 0 { fields["skip"] = .int(skip) }
         if unlisted > 0 { fields["unlisted"] = .int(unlisted) }

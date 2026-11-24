@@ -203,7 +203,7 @@ The screen guide's "The show". Do it in three parts, and stop after each.
    checks the SVG against the rules, answers the agent with what is
    wrong, draws it to an image, and shows it in the popover with its
    headline. An `image` path is read the same way.
-3. **The board.** A new LinkKit message carries the picture
+3. ✓ (2026-11-24: a `blob` message in LinkKit, the picture run-length coded in 16 colours, about 1.5 KB for a chart. Built with these choices: the hop and the low sign play first and the show comes up after them, not before the sign; a show in a turn still working is held until 30 s after it ends; a PNG becomes greys and the rule colours; a picture over 12 KB coded goes with its headline alone.) **The board.** A new LinkKit message carries the picture
    (`linkkit/SPEC.md` first): 420 by 190 at 16 colours, packed. The gel
    draws the frame, the headline and the picture. The order of an ending
    is: the hop or flinch, the show for 30 s, then the low sign. A show
