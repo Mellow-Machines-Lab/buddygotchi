@@ -82,6 +82,9 @@ public struct Show: Equatable, Sendable {
         if let thin = check.thinLine { out.append("lines at least \(Int(lineLeast)) px: one is \(thin)") }
         if check.words > wordsMost { out.append("at most \(wordsMost) words: it has \(check.words)") }
         if check.links { out.append("no links or outside references") }
+        if let wide = check.tooWide {
+            out.append("the text \"\(wide)\" runs off the picture (\(width) px wide; a character is about 0.6 of its font-size): shorten it, move it or make it smaller")
+        }
         return out
     }
 
@@ -94,14 +97,25 @@ public struct Show: Equatable, Sendable {
         var thinLine: String?
         var words = 0
         var links = false
+        /// The first text that runs off the picture's sides, at the board's
+        /// mono face: about 0.6 of its font-size a character.
+        var tooWide: String?
         private var inText = false
+        private var text = "", x = 0.0, size = 16.0, anchor = "start"
 
         func parser(_ parser: XMLParser, didStartElement name: String, namespaceURI: String?, qualifiedName: String?,
                     attributes: [String: String] = [:]) {
             let tag = name.split(separator: ":").last.map(String.init)?.lowercased() ?? name
             if !Show.elements.contains(tag) { banned.insert(tag) }
             if tag == "svg" { viewBox = attributes["viewBox"]?.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
-            if tag == "text" || tag == "tspan" { inText = true }
+            if tag == "text" {
+                inText = true
+                text = ""
+                x = Double(attributes["x"] ?? "0") ?? 0
+                size = Double((attributes["font-size"] ?? "16").replacingOccurrences(of: "px", with: "")) ?? 16
+                anchor = attributes["text-anchor"] ?? "start"
+            }
+            if tag == "tspan" { inText = true }
             for (key, value) in attributes {
                 let k = key.lowercased(), v = value.trimmingCharacters(in: .whitespaces).lowercased()
                 if k == "href" || k.hasSuffix(":href") || v.contains("url(") { links = true }
@@ -118,11 +132,21 @@ public struct Show: Equatable, Sendable {
 
         func parser(_ parser: XMLParser, didEndElement name: String, namespaceURI: String?, qualifiedName: String?) {
             let tag = name.split(separator: ":").last.map(String.init)?.lowercased() ?? name
-            if tag == "text" { inText = false }
+            if tag == "text" {
+                inText = false
+                let w = Double(text.count) * size * 0.6
+                let (left, right) = anchor == "middle" ? (x - w / 2, x + w / 2) : anchor == "end" ? (x - w, x) : (x, x + w)
+                if tooWide == nil, left < -1 || right > Double(Show.width) + 1 {
+                    tooWide = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
         }
 
         func parser(_ parser: XMLParser, foundCharacters string: String) {
-            if inText { words += string.split(whereSeparator: \.isWhitespace).count }
+            if inText {
+                words += string.split(whereSeparator: \.isWhitespace).count
+                text += string
+            }
         }
     }
 }

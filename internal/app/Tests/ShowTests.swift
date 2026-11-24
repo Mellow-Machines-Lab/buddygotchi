@@ -31,6 +31,12 @@ final class ShowTests: XCTestCase {
         XCTAssertTrue(problems(good.replacingOccurrences(of: "</svg>", with: "<image href=\"x.png\"/></svg>")).contains("image"))
         XCTAssertTrue(problems(good.replacingOccurrences(of: "</svg>", with: "<script>x</script></svg>")).contains("script"))
         XCTAssertTrue(problems("<svg").contains("well-formed"))
+        // Text that runs off the side, as an agent's did on the board: 36
+        // characters at 18 px from x 40 reach about 429 px.
+        let long = ##"<text x="40" y="100" font-size="18" fill="#e8e6e0">2 slug tests fail (pre-existing bug)</text>"##
+        XCTAssertTrue(problems(good.replacingOccurrences(of: "</svg>", with: long + "</svg>")).contains("runs off"))
+        let fits = ##"<text x="210" y="100" font-size="18" text-anchor="middle" fill="#e8e6e0">2 old slug tests fail</text>"##
+        XCTAssertEqual(problems(good.replacingOccurrences(of: "</svg>", with: fits + "</svg>")), "")
         let wordy = good.replacingOccurrences(of: "p95 ms", with: String(repeating: "word ", count: 17))
         XCTAssertTrue(problems(wordy).contains("16 words"))
         XCTAssertTrue(problems(String(repeating: " ", count: 5000) + good).contains("4096"))
