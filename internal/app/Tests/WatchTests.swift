@@ -25,6 +25,26 @@ final class WatchTests: XCTestCase {
         XCTAssertTrue(s.jsonLine.contains(#""watch":"#))
     }
 
+    /// The board names an agent by its project; when two work in the same
+    /// project, by its thread's name, so "src" and "src" can be told apart.
+    func testTwoAgentsInOneFolderGoByTheirThreads() {
+        let rig = CoreRig()
+        func start(_ session: String, _ project: String, _ name: String) {
+            var e = rig.event(.turnStart, session: session, project: project)
+            e.data["name"] = .string(name)
+            rig.send(e)
+            rig.wait(1000)
+        }
+        start("a", "src", "Fix the login bug")
+        start("b", "api", "Write the docs")
+        XCTAssertEqual(rig.state.watchName, "api", "folders apart: the folder")
+        start("c", "src", "Test and polish Boop")
+        XCTAssertEqual(rig.state.watchName, "Test and..", "one folder: the thread's name, cut at a word")
+        XCTAssertLessThanOrEqual(rig.state.watchName?.utf8.count ?? 99, Core.maxLabelBytes)
+        rig.send(.turnEnd, session: "a", project: "src")
+        XCTAssertEqual(rig.state.pill?.text, "Fix the.. waits for you", "a chat turn, no calls")
+    }
+
     /// A swipe moves to the next agent and keeps it; a turn ending in one
     /// you aren't watching is a pill for 4 s and a pip that wants you.
     func testASwipeAndAPill() {

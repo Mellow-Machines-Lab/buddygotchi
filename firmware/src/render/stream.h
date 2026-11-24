@@ -114,16 +114,18 @@ struct Stream {
   int laneCount = 0;
   // Whether the stream shows: the agents work and nothing needs you.
   bool on = false;
-  // The newest call's word of any lane: the one whose count moved last,
-  // or a new lane's. A face shows it as the work's term.
+  // The newest call's word of any lane: the word, as it is now, of the lane
+  // whose count moved last or that came last; when that lane goes, the last
+  // lane left's. A face shows it as the work's term.
   char newest[kDoingBytes] = "";
+  int newestSlot = -1;
   Call call;
   // The stream went off at endedAt, the agents done, a word forward may still come.
   bool ending = false;
   uint32_t endedAt = 0;
 
   // The lanes from a `state`: a lane whose count moved, or a new one, makes
-  // its word the newest. The stream off lets a word forward still come for
+  // its word the newest, and keeps it up to date while no other moves. The stream off lets a word forward still come for
   // kEndMs, unless something needs you (`cleared`): then all goes at once.
   void setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_t t);
   // Whether a word may come forward at t: the stream on, or just ended.

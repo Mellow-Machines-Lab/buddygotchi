@@ -11,7 +11,19 @@ public enum Adapter {
     /// The raw event for a hook line, or nil for hooks agent-hooks ignores.
     /// Its `at` is when the app received it, or the line's own time.
     public static func event(from line: HookLine, receivedAt: Int64? = nil) -> Event? {
-        Mapping.event(from: line, receivedAt: receivedAt).map(Event.init)
+        if isBoopsOwnCall(line) { return nil }
+        return Mapping.event(from: line, receivedAt: receivedAt).map(Event.init)
+    }
+
+    /// A call to Boop's own tool server (`boop-cards`): how an agent tells
+    /// Boop what it does, not work. It never shows in the strip, comes
+    /// forward or counts as a failing call; the card it carries arrives on
+    /// its own. Its permission request still needs you, and Esc on it still
+    /// stops the turn.
+    static func isBoopsOwnCall(_ line: HookLine) -> Bool {
+        guard line.interrupt != true, let tool = line.tool, let kind = Mapping.kind(of: line), kind.0 == .tool, kind.1 != .wait else { return false }
+        let parts = tool.components(separatedBy: "__")
+        return parts.count >= 3 && parts[0] == "mcp" && parts[1] == CardInstaller.name
     }
 }
 

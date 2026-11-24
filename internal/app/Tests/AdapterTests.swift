@@ -15,6 +15,18 @@ final class AdapterTests: XCTestCase {
         Adapter.event(from: line(agent, hook, kind: k)).map { e in e.type!.rawValue + (e.phase.map { " " + $0.rawValue } ?? "") }
     }
 
+    func testBoopsOwnToolIsNotWork() {
+        for hook in ["PreToolUse", "PostToolUse", "PostToolUseFailure"] {
+            XCTAssertNil(Adapter.event(from: line("claude", hook, tool: "mcp__boop-cards__status")), hook)
+            XCTAssertNotNil(Adapter.event(from: line("claude", hook, tool: "mcp__linear__create_issue")), hook)
+        }
+        XCTAssertNotNil(Adapter.event(from: line("claude", "PermissionRequest", tool: "mcp__boop-cards__show")),
+                        "a request to use it still needs you")
+        var interrupted = line("claude", "PostToolUseFailure", tool: "mcp__boop-cards__result")
+        interrupted.interrupt = true
+        XCTAssertEqual(Adapter.event(from: interrupted)?.type, .turn, "Esc on it still stops the turn")
+    }
+
     func testClaudeMapping() {
         let table: [(String, String?)] = [
             ("SessionStart", "session start"), ("UserPromptSubmit", "turn start"), ("PreToolUse", "tool start"),

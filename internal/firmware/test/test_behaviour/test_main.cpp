@@ -3464,8 +3464,9 @@ static void test_listening_hides_an_act_and_it_resumes() {
 }
 
 // The work stream's model (render/stream.h): a lane whose count moves, or a
-// new lane, makes its word the newest, the work's term; the same count
-// leaves it; no lanes clear it. A word forward lasts kCallMs; the stream
+// new lane, makes its word the newest, the work's term, and its word as it
+// changes; the same counts leave it on that lane; its lane gone, the newest
+// is the last lane's; no lanes clear it. A word forward lasts kCallMs; the stream
 // off, one may still come for kEndMs; something needing you takes all at
 // once.
 static void test_the_work_streams_newest_word() {
@@ -3487,6 +3488,19 @@ static void test_the_work_streams_newest_word() {
   // The same counts: it stays.
   s.setLanes(lanes, 2, true, false, 300);
   TEST_ASSERT_EQUAL_STRING("Core.swift", s.newest);
+  // Its word changes at the same count, as the Mac's does after its hold
+  // ("thinking"): the newest follows it, not the other lane's.
+  std::strcpy(lanes[0].word, "thinking"), std::strcpy(lanes[1].word, "sed -n");
+  s.setLanes(lanes, 2, true, false, 350);
+  TEST_ASSERT_EQUAL_STRING("thinking", s.newest);
+  // Its lane goes: the newest is the word of the lane that's left.
+  render::Stream::Lane left[1] = {lanes[1]};
+  s.setLanes(left, 1, true, false, 360);
+  TEST_ASSERT_EQUAL_STRING("sed -n", s.newest);
+  s.setLanes(lanes, 2, true, false, 370);
+  TEST_ASSERT_EQUAL_STRING("thinking", s.newest);  // it came back: a new lane
+  std::strcpy(lanes[0].word, "Core.swift");
+  s.setLanes(lanes, 2, true, false, 380);
   s.startCall("make", 2, render::callStyleFromName("bonk"), 5000);
   TEST_ASSERT_TRUE(s.call.live && s.call.style == render::CallStyle::kBonk);
   TEST_ASSERT_EQUAL_STRING("bonk", render::callStyleName(s.call.style));

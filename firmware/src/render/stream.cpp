@@ -68,13 +68,25 @@ void Stream::setLanes(const Lane* in, int n, bool showing, bool cleared, uint32_
   if (showing) ending = false;
   on = showing;
   if (n > kLanes) n = kLanes;
+  int to = -1;  // the lane whose word is the newest now
   for (int i = 0; i < n; ++i) {
     const int was = column(in[i].slot);
-    if (was < 0 || in[i].count != lanes[was].count) std::snprintf(newest, sizeof(newest), "%s", in[i].word);
+    if (was < 0 || in[i].count != lanes[was].count) to = i;
+    else if (to < 0 && in[i].slot == newestSlot) to = i;
   }
+  // The lane that had it has gone: the last that's left.
+  if (to < 0 && n) to = n - 1;
   for (int i = 0; i < n; ++i) lanes[i] = in[i];
   laneCount = n;
-  if (!n) newest[0] = '\0';
+  // Its word as it is now: the Mac holds a word a moment, then changes it
+  // at the same count ("thinking", the time a long call takes).
+  if (to >= 0) {
+    std::snprintf(newest, sizeof(newest), "%s", lanes[to].word);
+    newestSlot = lanes[to].slot;
+  } else {
+    newest[0] = '\0';
+    newestSlot = -1;
+  }
   if (cleared) {
     call.live = false;
     ending = false;

@@ -58,8 +58,24 @@ extension Core {
     func turnEndedElsewhere(_ key: String, chat: Bool, at now: Int64) {
         guard let s = sessions[key], pipOrder(at: now).count > 1, watched(at: now) != key else { return }
         unseen[key] = now
-        let name = StateSnapshot.clip(s.project.isEmpty ? s.agent.rawValue : s.project, max: 12)
+        let name = label(of: key)
         pill = (key, chat ? "\(name) waits for you" : "\(name) finished", now)
+    }
+
+    /// The longest name the board gives an agent, in bytes.
+    static let maxLabelBytes = 12
+
+    /// What the board calls the agent `key`, at the strip's right and in a
+    /// pill: its project, else its agent. When another live agent works in
+    /// the same project (every thread in one folder), its thread's name, so
+    /// the two can be told apart.
+    func label(of key: String) -> String {
+        guard let s = sessions[key] else { return "" }
+        if let name = s.name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty,
+           sessions.contains(where: { $0.key != key && $0.value.project == s.project }) {
+            return StateSnapshot.clip(name, marked: true, max: Self.maxLabelBytes)
+        }
+        return StateSnapshot.clip(s.project.isEmpty ? s.agent.rawValue : s.project, max: Self.maxLabelBytes)
     }
 
     /// The colour `key` is drawn in: its lane's while it has one, else its
@@ -101,9 +117,9 @@ extension Core {
                 : showing.contains(key) ? "c" : busy.contains(key) ? "w" : "i"
             return StateSnapshot.Pip(kind: kind, slot: slot(of: key))
         }
-        if let w = watching, let at = order.firstIndex(of: w), let s = sessions[w] {
+        if let w = watching, let at = order.firstIndex(of: w), sessions[w] != nil {
             snapshot.watch = at
-            snapshot.watchName = StateSnapshot.clip(s.project.isEmpty ? s.agent.rawValue : s.project, max: 12)
+            snapshot.watchName = label(of: w)
         }
         if let p = pill, now - p.at < Self.pillMs, p.key != watching, let at = order.firstIndex(of: p.key) {
             snapshot.pill = StateSnapshot.Pill(at: at, text: p.text)

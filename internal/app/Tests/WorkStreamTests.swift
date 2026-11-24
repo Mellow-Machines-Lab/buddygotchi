@@ -92,6 +92,8 @@ final class WorkStreamTests: XCTestCase {
         XCTAssertEqual(doing(program: "python3", glimpse: "tools/gen.py --all"), "running gen.py")
         XCTAssertEqual(doing(program: "python3"), "running python3")
         XCTAssertEqual(doing(program: "ffmpeg", glimpse: "-i in.mov"), "running ffmpeg", "no flags or paths")
+        XCTAssertEqual(doing(program: "unittest discover", glimpse: "tests"), "running unittest",
+                       "a program's words cut at a word's end, never mid-word")
         XCTAssertEqual(doing(), "running a command", "an older agent-hook names no program")
         XCTAssertEqual(doing(topic: "inspect", program: "cat", glimpse: "README.md"), "reading README.md")
         XCTAssertEqual(doing(topic: "inspect", program: "stat", glimpse: "README.md"), "looking at README.md")

@@ -197,9 +197,11 @@ struct WorkStream {
         guard let what, !what.isEmpty else { return clip(verb, maxDoingBytes) }
         let room = maxDoingBytes - verb.utf8.count - 1
         guard room >= 4 else { return clip(verb, maxDoingBytes) }
+        // Cut at a word's end when it has words ("unittest discover" is
+        // "unittest", never "unittest discove").
         let piece = what.utf8.count <= room ? what : {
             let stem = (what as NSString).deletingPathExtension
-            return StateSnapshot.clip(stem.isEmpty ? what : stem, max: room)
+            return clip(stem.isEmpty ? what : stem, room)
         }()
         return "\(verb) \(piece)"
     }
