@@ -219,16 +219,18 @@ work pose and on a held picture.
 | --- | --- | --- | --- |
 | Type | `typing`, `typingfast` | Keyboard out, Boop types with you, and a key's tick bursts beside the paw that taps | The pose sways at your speed, and the same ticks burst beside it |
 | Speak | Another app records and no camera runs | One hand cups an ear, Boop leans in, rings pulse by the ear | The same, in the pose |
-| Scroll | `scrolling` | Reads along | Eyes step down |
+| Scroll | `scrolling` | Reads along, a page beside it on the Mac's side, its lines scrolling up as you scroll | The page beside the pose |
 | Move the pointer | `ptr` | Eyes follow | Eyes follow |
-| Play music | `music` | Grooves | A small bounce |
-| Watch a video | `video` | Watches | A glance, then back |
-| Take a call | A camera runs | Still and silent | Still and silent |
+| Play music | `music` | Headphones on; grooves, notes rising from them; rests with them still on | Headphones on, notes in the groove |
+| Watch a video | `video` | Watches a small screen beside it, a play mark on it; its light on Boop, a new colour every few seconds | The screen and its light |
+| Take a call | A camera runs | Still and silent, a muted mic by its ear | The same, in the pose |
 
 One rhythm at a time. If you type and speak together, speaking wins. Each
-of the two has a mark beside the body that reads from a chair (the ticks,
-the rings), since a sway alone is too small to see. A sign held up hides
-the ticks.
+has a mark on or beside the body that reads from a chair (the ticks, the
+rings, the headphones, the page, the screen, the muted mic), since a sway
+alone is too small to see. A sign held up hides the ticks. The page and
+the screen stand beside Boop, so they wait while its paws type along or a
+card is held; a call shows the muted mic and nothing else.
 
 ## The strip's words
 
