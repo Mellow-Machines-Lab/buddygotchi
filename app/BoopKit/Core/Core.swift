@@ -253,7 +253,7 @@ public final class Core {
         guard let agentEvent = AgentEvent(event) else { return [] }
         let now = event.at
         var fx: [CoreEffect] = []
-        // A turn with no call is a chat turn's, for the pill's words.
+        // A turn with no call but looks is a chat turn's, for the pill's words.
         let chat = !stream.called.contains(agentEvent.key)
         fold(agentEvent, ref: event.seq)
         notePictures(agentEvent, at: now)

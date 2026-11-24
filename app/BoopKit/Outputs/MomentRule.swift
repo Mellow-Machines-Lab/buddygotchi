@@ -36,6 +36,7 @@ public enum MomentRule {
     /// | A turn finished, done, its last message giving up | failure |
     /// | A turn finished, done, its last message asking or only answering | notice: a chat turn, a look up at you |
     /// | A turn finished, done, in under a minute with no tool calls and no claim it's done | notice: a chat turn, a look up at you |
+    /// | A turn finished, done, whose calls only looked (reads, searches) and no claim it's done | notice: a chat turn, a look up at you |
     /// | Any other turn finished, done | success |
     /// | A turn stopped | none |
     /// | You back after an hour or more | wake up |
@@ -77,9 +78,12 @@ public enum MomentRule {
         case .question?, .answer?: return .reply
         case .done?: return .success
         case .other?, nil:
-            // Back-and-forth: nothing called, and over within the minute.
+            // Back-and-forth: nothing called, and over within the minute;
+            // or every call only looked, so the turn answered and made nothing.
             let quick = Moment.turn(lengthMs: facts["length_ms"]?.int ?? 0) == 0
-            return quick && (facts["tools"]?.int ?? 0) == 0 ? .reply : .success
+            let tools = facts["tools"]?.int ?? 0
+            let lookedOnly = tools > 0 && (facts["looks"]?.int ?? 0) == tools
+            return (quick && tools == 0) || lookedOnly ? .reply : .success
         }
     }
 

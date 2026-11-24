@@ -154,7 +154,8 @@ struct WorkStream {
     var heldUntil: Int64 = .min
     var heldPriority = Priority.notable
     var failures: [String: [Int64]] = [:]
-    /// The sessions whose turn has had a call since it started.
+    /// The sessions whose turn has had a call since it started that did
+    /// more than look.
     var called: Set<String> = []
 
     // MARK: Words
@@ -402,7 +403,8 @@ struct WorkStream {
         }
         // The act it plays out is what shows, not a word forward.
         if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
-        called.insert(key)
+        // A turn whose calls only looked answered you, as a chat turn does.
+        if !TranscriptView.onlyLooks(e, topic: e.topic) { called.insert(key) }
         if e.toolKind == .subagent {
             return offer(Forward(slot: slot, word: word, style: "helper", priority: .notable), at: now)
         }

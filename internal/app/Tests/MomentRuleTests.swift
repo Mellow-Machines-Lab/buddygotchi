@@ -46,6 +46,15 @@ final class MomentRuleTests: XCTestCase {
         XCTAssertEqual(move(finish(tools: 0, kind: "other")), "notice")
         XCTAssertEqual(move(finish(tools: 0, kind: "done")), "success", "it says the work is done")
         XCTAssertEqual(move(finish(kind: "other")), "success")
+        // Every call only looked (an "explain this" turn): it answered.
+        var looked = finish(minutes: 3)
+        looked["looks"] = 3
+        XCTAssertEqual(move(looked), "notice", "it read and answered, and made nothing")
+        looked["message"] = .object(["kind": .string("done")])
+        XCTAssertEqual(move(looked), "success", "unless it says the work is done")
+        var mixed = finish()
+        mixed["looks"] = 2
+        XCTAssertEqual(move(mixed), "success", "one call that did something is work")
         XCTAssertEqual(MomentRule.move(event(.lastMessage, nil, "reading"), facts: finish("failed")), "failure", "a finish's reading is the finish")
 
         XCTAssertEqual(MomentRule.longAwayMs, 60 * min)

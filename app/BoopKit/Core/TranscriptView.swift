@@ -70,9 +70,11 @@ public final class TranscriptView {
     /// its tool calls, topics and checks, and each check's failures in a
     /// row.
     struct Counts {
-        /// This turn's tool calls, and how many failed.
+        /// This turn's tool calls, how many failed, and how many only
+        /// looked: a read, a search, the web, a command that only inspects.
         var tools = 0
         var toolsFailed = 0
+        var looks = 0
         /// The lines this turn's edits added and removed: counts, never
         /// the text.
         var linesAdded = 0, linesRemoved = 0
@@ -700,6 +702,7 @@ public final class TranscriptView {
     func resetCounts(_ c: inout Counts) {
         c.tools = 0
         c.toolsFailed = 0
+        c.looks = 0
         c.linesAdded = 0
         c.linesRemoved = 0
         c.topicStates = []
@@ -719,6 +722,7 @@ public final class TranscriptView {
         let tookMs = started.map { max(0, a.at - $0) }
         c.tools += 1
         if failed == true { c.toolsFailed += 1 }
+        if Self.onlyLooks(a, topic: topic) { c.looks += 1 }
         if failed != true { c.linesAdded += a.linesAdded ?? 0; c.linesRemoved += a.linesRemoved ?? 0 }
 
         var failedBefore = 0
@@ -799,9 +803,19 @@ public final class TranscriptView {
         return Line(text, facts: ["thread": threadFacts(t), "outcome": .string(outcome), "error": .of(error),
                             "length": .string(Band.length(ms: lengthMs)), "length_ms": .int(lengthMs),
                             "tools": .int(Int64(c.tools)), "tools_failed": .int(Int64(c.toolsFailed)),
-                            "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
+                            "looks": .int(Int64(c.looks)), "lines_added": .int(Int64(c.linesAdded)), "lines_removed": .int(Int64(c.linesRemoved)),
                             "checks_failed": .int(Int64(c.checksFailed)), "wins_in_a_row": .int(Int64(c.wins.count)),
                             "topics": .object(topicFacts), "comeback": .of(c.comeback), "reacted_to_fix": .bool(reactedToFix)])
+    }
+
+    /// Whether a call only looked: a read, a search, the web, or a command
+    /// that only inspects. A turn of these alone answered you; it made nothing.
+    static func onlyLooks(_ a: AgentEvent, topic: String?) -> Bool {
+        switch a.toolKind {
+        case .read?, .search?, .web?: return true
+        case .shell?: return topic == Topic.inspect
+        default: return false
+        }
     }
 
     /// The thread's facts.
