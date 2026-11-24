@@ -48,6 +48,9 @@ public struct Cards: Sendable {
     struct Guess: Equatable, Sendable {
         var minutes: Int
         var at: Int64
+
+        /// The minutes it leaves at `now`: below 0, over.
+        func left(at now: Int64) -> Int { minutes - Int((now - at) / 60_000) }
     }
 
     /// A result shows this long after its turn ends: the finish's few
@@ -190,7 +193,7 @@ public struct Cards: Sendable {
         var small: [String] = []
         if let step = status.step, let of = status.of { small.append("\(step) of \(of)") }
         if let guess = h.guess {
-            let left = guess.minutes - Int((now - guess.at) / 60_000)
+            let left = guess.left(at: now)
             small.append(Self.left(left))
             shown.over = left < 0
         }

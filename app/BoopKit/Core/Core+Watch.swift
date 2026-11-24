@@ -56,7 +56,7 @@ extension Core {
     /// A turn of `key` ended: news for you if you aren't watching it, a pill
     /// for `pillMs` and its pip pulsing until you look.
     func turnEndedElsewhere(_ key: String, chat: Bool, at now: Int64) {
-        guard let s = sessions[key], pipOrder(at: now).count > 1, watched(at: now) != key else { return }
+        guard sessions[key] != nil, pipOrder(at: now).count > 1, watched(at: now) != key else { return }
         unseen[key] = now
         let name = label(of: key)
         pill = (key, chat ? "\(name) waits for you" : "\(name) finished", now)
@@ -90,14 +90,13 @@ extension Core {
     /// other live sessions have, the lowest first.
     @discardableResult
     func colour(_ key: String) -> Int {
-        for k in colours.keys where sessions[k] == nil { colours[k] = nil }
-        if let c = colours[key] { stream.colours[key] = c; return c }
+        if let c = stream.colours[key] { return c }
+        for k in stream.colours.keys where sessions[k] == nil { stream.colours[k] = nil }
         var uses = [Int](repeating: 0, count: WorkStream.maxLanes)
-        for (k, c) in colours where k != key && c < uses.count { uses[c] += 1 }
+        for c in stream.colours.values where c < uses.count { uses[c] += 1 }
         for lane in stream.lanes.values where lane.slot < uses.count { uses[lane.slot] += 1 }
         let c = uses.indices.min { (uses[$0], $0) < (uses[$1], $1) } ?? 0
-        colours[key] = c
-        stream.colours = colours
+        stream.colours[key] = c
         return c
     }
 

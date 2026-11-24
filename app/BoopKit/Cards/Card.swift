@@ -306,27 +306,19 @@ public enum CardTool {
     /// finds the session. Boop holds it to the limits again as it reads it,
     /// since anything may write to the socket.
     public static func line(_ card: Card, process: AgentProcess?) -> Data {
-        var object: [String: Any] = ["card": card.kind.rawValue, "args": card.args]
-        if let process { object["process"] = ["pid": Int(process.pid), "started": process.started] }
-        return ((try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()) + Data("\n".utf8)
+        frame(["card": card.kind.rawValue, "args": card.args], process: process)
     }
 
     /// The line the tool server sends Boop for a show, as for a card.
     public static func line(_ show: Show, process: AgentProcess?) -> Data {
-        var object: [String: Any] = ["show": show.args]
-        if let process { object["process"] = ["pid": Int(process.pid), "started": process.started] }
-        return ((try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()) + Data("\n".utf8)
+        frame(["show": show.args], process: process)
     }
 
     /// A show from a line `line(_:process:)` wrote, checked again, and its
     /// agent's process; nil for any other line or one that fails the check.
     public static func readShow(_ object: [String: Any]) -> (show: Show, process: AgentProcess?)? {
         guard let args = object["show"] as? [String: Any], let show = Show.make(args).show else { return nil }
-        let from = object["process"] as? [String: Any]
-        let process = (from?["pid"] as? NSNumber).flatMap { pid in
-            (from?["started"] as? NSNumber).map { AgentProcess(pid: pid.int32Value, started: $0.int64Value) }
-        }
-        return (show, process)
+        return (show, process(in: object))
     }
 
     /// A card from a line `line` wrote, and its agent's process; nil for
@@ -335,10 +327,22 @@ public enum CardTool {
         guard let kind = (object["card"] as? String).flatMap(Card.Kind.init(rawValue:)),
               let card = Card.make(kind, object["args"] as? [String: Any] ?? [:],
                                    faces: Set(CharacterPack.active.faces.map(\.name))) else { return nil }
+        return (card, process(in: object))
+    }
+
+    /// A line on the wire: `object` with the agent's process, as one line
+    /// of JSON.
+    private static func frame(_ object: [String: Any], process: AgentProcess?) -> Data {
+        var object = object
+        if let process { object["process"] = ["pid": Int(process.pid), "started": process.started] }
+        return ((try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys])) ?? Data()) + Data("\n".utf8)
+    }
+
+    /// The agent's process a line names, if it names one.
+    private static func process(in object: [String: Any]) -> AgentProcess? {
         let from = object["process"] as? [String: Any]
-        let process = (from?["pid"] as? NSNumber).flatMap { pid in
+        return (from?["pid"] as? NSNumber).flatMap { pid in
             (from?["started"] as? NSNumber).map { AgentProcess(pid: pid.int32Value, started: $0.int64Value) }
         }
-        return (card, process)
     }
 }

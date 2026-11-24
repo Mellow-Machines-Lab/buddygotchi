@@ -165,8 +165,11 @@ struct WorkStream {
     /// the same as the strip and never a bare tool's name.
     /// A command's "running" goes, so a failure that hits Boop names what
     /// failed ("make", "tests").
-    static func word(_ e: AgentEvent, program: String?) -> String {
-        var phrase = doing(e, program: program)
+    static func word(_ e: AgentEvent, program: String?) -> String { word(doing: doing(e, program: program)) }
+
+    /// The word for a call whose `doing` is known.
+    static func word(doing: String) -> String {
+        var phrase = doing
         for lead in ["running the ", "running "] where phrase.hasPrefix(lead) && phrase.count > lead.count {
             phrase = String(phrase.dropFirst(lead.count))
             break
@@ -200,11 +203,7 @@ struct WorkStream {
         guard room >= 4 else { return clip(verb, maxDoingBytes) }
         // Cut at a word's end when it has words ("unittest discover" is
         // "unittest", never "unittest discove").
-        let piece = what.utf8.count <= room ? what : {
-            let stem = (what as NSString).deletingPathExtension
-            return clip(stem.isEmpty ? what : stem, room)
-        }()
-        return "\(verb) \(piece)"
+        return "\(verb) \(fit(what, room: room))"
     }
 
     /// The commands whose verb says what they do: by the program and its
@@ -243,6 +242,8 @@ struct WorkStream {
     /// starts with one.
     static let interpreters: Set<String> = ["python", "python3", "node", "ruby", "bash", "sh", "zsh", "deno", "bun",
                                             "tsx", "ts-node", "perl", "php", "swift", "uv run"]
+    /// Programs that search: they name what they look for.
+    static let searchPrograms: Set<String> = ["rg", "grep", "ag", "ack", "find", "fd", "git grep"]
     /// What a check runs, in plain words.
     static let checkVerbs = ["tests": "running the tests", "build": "building", "deploy": "deploying"]
 
@@ -251,10 +252,9 @@ struct WorkStream {
         let first = (e.glimpse ?? "").split(separator: " ").first.map(String.init)
         switch e.toolKind ?? .other {
         case .shell:
-            let searches: Set<String> = ["rg", "grep", "ag", "ack", "find", "fd", "git grep"]
             if let check = e.topic.flatMap({ checkVerbs[$0] }) { return (check, nil) }
             guard let program else { return ("running a command", nil) }
-            if searches.contains(program) { return ("searching", first) }
+            if searchPrograms.contains(program) { return ("searching", first) }
             let base = program.split(separator: " ").first.map(String.init) ?? program
             if let known = commandVerbs[program] ?? commandVerbs[base] { return (known.verb, known.object ? first : nil) }
             if interpreters.contains(program) || interpreters.contains(base) {
@@ -287,19 +287,13 @@ struct WorkStream {
         }
     }
 
-    /// A glimpse's piece cut to fit a word: without its extension when
-    /// it's too long with it (`TranscriptView.swift` is `TranscriptView`),
-    /// then clipped.
-    static func fit(_ piece: String) -> String {
-        guard piece.utf8.count > maxWordBytes else { return piece }
+    /// A glimpse's piece cut to fit `room` bytes: without its extension
+    /// when it's too long with it (`TranscriptView.swift` is
+    /// `TranscriptView`), then cut at a word's end when it can be.
+    static func fit(_ piece: String, room: Int) -> String {
+        guard piece.utf8.count > room else { return piece }
         let stem = (piece as NSString).deletingPathExtension
-        return clip(stem.isEmpty ? piece : stem, maxWordBytes)
-    }
-
-    /// A number from `text` that's the same on every launch (FNV-1a), to
-    /// pick by.
-    static func pick(_ text: String) -> UInt64 {
-        text.utf8.reduce(14_695_981_039_346_656_037 as UInt64) { ($0 ^ UInt64($1)) &* 1_099_511_628_211 }
+        return clip(stem.isEmpty ? piece : stem, room)
     }
 
     /// A tool's name as words: `SendMessage` and `send_message` are `send
@@ -387,7 +381,7 @@ struct WorkStream {
     /// A tool call starting in session `key`: its word joins its lane, and
     /// a helper going off may come forward.
     mutating func started(_ e: AgentEvent, program: String?, at now: Int64) -> Forward? {
-        let key = e.key, word = Self.word(e, program: program), shown = Self.doing(e, program: program)
+        let key = e.key, shown = Self.doing(e, program: program), word = Self.word(doing: shown)
         // A lane of its own while one is free: a fifth session gets none,
         // and no other's slot, until one frees; its words still come forward.
         let slot: Int

@@ -30,8 +30,7 @@ extension Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         let (_, _, working, _) = groups(at: now)
-        let owner = process.flatMap { p in sessions.values.first { $0.process == p } } ?? (working.count == 1 ? working[0] : nil)
-        guard let session = owner else { return fx }
+        guard let session = owner(of: process, working: working) else { return fx }
         lastShow = Shown(show: show, agent: session.agent.rawValue, project: session.project,
                          slot: slot(of: session.key), at: now)
         let data: [String: JSONValue] = ["agent": .string(session.agent.rawValue), "text": .string(show.headline),

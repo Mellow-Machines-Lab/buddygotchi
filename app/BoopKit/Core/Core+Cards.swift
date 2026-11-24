@@ -5,6 +5,12 @@ import MellowHarness
 // The cards agents hand Boop (`Card`, `Cards`): taking one in, which
 // session it's for, and what the `state` says of the one Boop holds.
 extension Core {
+    /// The session a tool server's call is from: its agent's process's,
+    /// else the only one at work.
+    func owner(of process: AgentProcess?, working: [Session]) -> Session? {
+        process.flatMap { p in sessions.values.first { $0.process == p } } ?? (working.count == 1 ? working[0] : nil)
+    }
+
     /// A card from the tool server, for the session whose agent's process
     /// is `process`: with none that matches, the only session at work, and
     /// with neither, nobody's, and it's dropped. A status needs its session
@@ -15,8 +21,8 @@ extension Core {
         var fx: [CoreEffect] = []
         advance(to: now)
         let (_, _, working, _) = groups(at: now)
-        let owner = process.flatMap { p in sessions.values.first { $0.process == p } } ?? (working.count == 1 ? working[0] : nil)
-        guard let session = owner, session.turn.startedAt != nil, working.contains(where: { $0.key == session.key }) else { return fx }
+        guard let session = owner(of: process, working: working), session.turn.startedAt != nil,
+              working.contains(where: { $0.key == session.key }) else { return fx }
         switch card.kind {
         case .status: cards.status(card, for: session.key, at: now)
         case .result: cards.result(card, for: session.key, at: now)

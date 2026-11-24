@@ -159,6 +159,10 @@ inline int laneX(int column, int columns) {
 // The lanes' colours by slot, RGB565, the same on the board, its mirror
 // and the lane: teal, rose, lilac, lime. Never amber, which is needs you's.
 constexpr uint16_t kLaneInk[Stream::kLanes] = {0x3E99, 0xFC5B, 0xB47F, 0x9F2C};
+// A lane's ink by its slot, or `none` for no lane (-1) or one out of range.
+constexpr uint16_t laneInkOr(int slot, uint16_t none) {
+  return slot >= 0 && slot < Stream::kLanes ? kLaneInk[slot] : none;
+}
 // A failure's word, a passing check's, and the stars.
 constexpr uint16_t kFailInk = 0xFAEB, kPassInk = 0x5F0F, kStarInk = 0xFF0C;
 

@@ -217,8 +217,6 @@ public final class Core {
     var watchSwipedAt: Int64?
     var unseen: [String: Int64] = [:]
     var pill: (key: String, text: String, at: Int64)?
-    /// Each session's own colour (`colour`).
-    var colours: [String: Int] = [:]
     /// The latest show an agent drew (`show`).
     var lastShow: Shown?
     /// What each session's turn has done, for its held pictures.
@@ -677,9 +675,11 @@ public final class Core {
             }
         }
         // A line too long for the board loses the card's small line, then the card.
-        if !snapshot.fits { snapshot.card?.small = nil }
-        if !snapshot.fits { snapshot.card = nil }
-        if !snapshot.fits { snapshot.pic = nil }
+        if !snapshot.fits {
+            snapshot.card?.small = nil
+            if !snapshot.fits { snapshot.card = nil }
+            if !snapshot.fits { snapshot.pic = nil }
+        }
         // Last: its rows are what gets cut to fit the board's line.
         if drawer { list(into: &snapshot, at: now) }
         return snapshot
