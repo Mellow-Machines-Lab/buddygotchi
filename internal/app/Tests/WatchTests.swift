@@ -28,7 +28,7 @@ final class WatchTests: XCTestCase {
     /// The board names an agent by its project; when two work in the same
     /// project, by its thread's name, so "src" and "src" can be told apart.
     func testTwoAgentsInOneFolderGoByTheirThreads() {
-        let rig = CoreRig()
+        let rig = CoreRig(workStream: true)
         func start(_ session: String, _ project: String, _ name: String) {
             var e = rig.event(.turnStart, session: session, project: project)
             e.data["name"] = .string(name)
@@ -43,6 +43,19 @@ final class WatchTests: XCTestCase {
         XCTAssertLessThanOrEqual(rig.state.watchName?.utf8.count ?? 99, Core.maxLabelBytes)
         rig.send(.turnEnd, session: "a", project: "src")
         XCTAssertEqual(rig.state.pill?.text, "Fix the.. waits for you", "a chat turn, no calls")
+        // A turn that only looked waits for you; one that ran the tests, its
+        // one call a work act, finished. Each ends while another is watched.
+        func turn(_ tool: String, topic: String? = nil) -> String? {
+            rig.wait(Core.pillMs + 1000)
+            rig.send(.turnStart, session: "a", project: "src")
+            rig.send(.activity, session: "a", project: "src", tool: tool, topic: topic, id: "t1")
+            rig.send(.activity, session: "a", project: "src", tool: tool, topic: topic, failed: false, id: "t1")
+            start("c", "src", "Test and polish Boop")
+            rig.send(.turnEnd, session: "a", project: "src")
+            return rig.state.pill?.text
+        }
+        XCTAssertEqual(turn("Read"), "Fix the.. waits for you", "it only read")
+        XCTAssertEqual(turn("Bash", topic: "tests"), "Fix the.. finished", "it ran the tests")
     }
 
     /// A swipe moves to the next agent and keeps it; a turn ending in one

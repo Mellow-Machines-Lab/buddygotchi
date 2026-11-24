@@ -395,10 +395,10 @@ struct WorkStream {
         } else {
             slot = freeSlot()
         }
-        // The act it plays out is what shows, not a word forward.
-        if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
         // A turn whose calls only looked answered you, as a chat turn does.
         if !TranscriptView.onlyLooks(e, topic: e.topic) { called.insert(key) }
+        // The act it plays out is what shows, not a word forward.
+        if let act, act.passed == nil, act.session == key, act.callID == e.toolUseID { return nil }
         if e.toolKind == .subagent {
             return offer(Forward(slot: slot, word: word, style: "helper", priority: .notable), at: now)
         }
