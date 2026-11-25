@@ -71,7 +71,9 @@ does: in order, with a `dbg.*` message ending the batch, so the messages
 after it wait for the next pass. Both builds run the same `Board` (`board.h`), so
 they show the same board: the hosted board itself (`hosted()`: its USB,
 its loop and its frames), with the simulator's card, sound and inputs
-on top.
+on top. A scenario or the Studio can play a move no Moment names yet with
+`{"t":"dbg.clip","name":"flop"}`, one of the pack's rig clips by its id
+(firmware/README.md, Hands, the glass and the knock).
 
 | Build | By | Runs | For |
 | --- | --- | --- | --- |

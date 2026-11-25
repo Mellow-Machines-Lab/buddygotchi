@@ -278,6 +278,13 @@ class Face {
     (void)name, (void)t;
     return false;
   }
+  // Plays the pack's rig clip `name` from t, over what's there: dbg.clip's,
+  // for scenarios and the Character Studio, for a move nothing on the wire
+  // names yet. False for one the pack hasn't, or a face that plays none.
+  virtual bool playClip(const char* name, uint32_t t) {
+    (void)name, (void)t;
+    return false;
+  }
   // The work stream to draw (render/stream.h), the device's, set before
   // each frame: a face that has no stream ignores it.
   virtual void watch(const Stream* stream) { (void)stream; }

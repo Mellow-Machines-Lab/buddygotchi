@@ -57,6 +57,21 @@ def all_scenarios() -> list[Path]:
     return sorted(scenario_dir().glob("*.jsonl"))
 
 
+def pinned_shots(path: Path) -> set[str]:
+    """The shots of a scenario that `sim` compares with a golden. The gel's set
+    is frozen small while its pictures are redesigned, so only a shot marked
+    "pin": true is; the rest are still taken, for a person to look at, the
+    mirror and the board. Every one of Pixel's shots is pinned."""
+    every = face() != "gel"
+    shots = set()
+    for raw in path.read_text().splitlines():
+        if raw.strip() and not raw.lstrip().startswith("//"):
+            step = json.loads(raw)
+            if "shot" in step and step.get("pin", every):
+                shots.add(step["shot"])
+    return shots
+
+
 def matches(expected: Any, actual: Any) -> bool:
     """Every key in `expected` must match; extra keys in `actual` are fine."""
     if isinstance(expected, dict):

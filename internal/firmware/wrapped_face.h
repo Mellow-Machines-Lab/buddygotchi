@@ -40,6 +40,7 @@ struct WrappedFace : render::Face {
   void newLook() override { f->newLook(); }
   bool showLookVariant(uint8_t v) override { return f->showLookVariant(v); }
   bool playPastime(const char* name, uint32_t t) override { return f->playPastime(name, t); }
+  bool playClip(const char* name, uint32_t t) override { return f->playClip(name, t); }
   void watch(const render::Stream* stream) override { f->watch(stream); }
   void finger(bool down, int x, int y) override { f->finger(down, x, y); }
   void letGo(int vx, int vy) override { f->letGo(vx, vy); }

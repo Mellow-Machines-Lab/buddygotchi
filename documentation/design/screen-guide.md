@@ -62,12 +62,38 @@ One picture-size thing at a time: a held picture, or a show, or neither.
 | Working, with a picture | No | Up, holding | Hidden | Yes | Doing now | Light; the picture bobs |
 | A failure lands | No | Flinch | Red, 2.5 s | Stays | Clay word | Light |
 | A turn finished | No | Hop or flinch, then to you | Dark | Replaced by a show | Low sign in its place | Light |
-| Needs you | Amber | To you | Stays | Put down | What it asks | Off |
+| Needs you | Amber | Knocks on the glass; climbs if nobody comes | Stays | Put down | What it asks | Off |
 | Listening | White | To you | Stays | Stays | Stays | Off |
 | On a call | No | Still and silent | Goes on | Stays, no bob | Goes on | Off |
 | Face down | Only needs you | Dimmed | Dimmed | Dimmed | Dimmed | Off |
 | Asleep | No | Dim, eyes closed | Dark | No | Empty | Off |
 | No Mac | No | Resting, then asleep | Dark | No | "no Mac" | Off |
+
+## Hands and the glass
+
+Boop has one pair of hands, gel stubs that are part of its body. They bud
+out of the dome when they act and sink back in; at rest none shows. Each
+is a ball, an open palm (at most three small fingertips) or a fist, and
+never grows fingers. The same two hands type on the keys, grip a card or
+a sign by its sides, hold the low sign by its top corners, cup an ear
+while you speak, hang over the drawer's edge, and act in a move: a palm on
+the glass, a fist knocking. Each frame one owner has each hand: a move
+first, then a sign, a card, the low sign, the ear, the keys.
+
+The glass is the screen, a pane Boop lives behind. Up at the glass the
+whole body is bigger, 1.15 at most. What touches it, a hand, a cheek, the
+forehead or the whole front, goes flat and shows a pale patch, like a paw
+on a window. A hit on it adds a ring and a small shake.
+
+| Move | When | What you see |
+| --- | --- | --- |
+| Palm up | The `win` skit's invite | A hop, then one palm flat on the glass beside its right eye, about 85 px across, the glow round it and "tap" under it. A tap: a ring, a hop and a wobble. No tap: it looks at its palm, lowers it and shrugs with both hands |
+| The lean | The `back` skit's invite | It perks up and rests its cheek on the glass, the patch glowing, "pet" beside it. A stroke: a fast small purr, eyes shut |
+| The knock | Needs you | A fist knocks twice on the glass at the body's upper right. If nobody comes it climbs: a bigger fist, three knocks; both fists by turns; then its forehead on the glass, palms sliding down |
+| The flop | A check passes after failing (not wired yet: no Moment names it) | Flat against the glass, both palms on it, sliding down, then peels off |
+
+The palm and the knock stay above the strip. Only the palm's glow asks
+for your touch, and only while nothing else does.
 
 ## Who wins the space
 
