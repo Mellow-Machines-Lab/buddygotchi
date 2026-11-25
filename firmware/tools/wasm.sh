@@ -2,16 +2,15 @@
 # Builds a board with no hardware (src/board/hosted/) to WebAssembly with
 # Emscripten: the hosted board and the firmware's portable code it runs,
 # as platformio.ini's [hosted] lists them for the native env too,
-# LinkKit's device library, ArduinoJson and a character pack's firmware,
+# LinkKit's device library, ArduinoJson and the staged character pack's
+# firmware (`python3 characters/charactergen.py --stage`),
 # with an entry's own sources and flags beside them. The Mac's mirror of
 # the board (tools/mirror.sh) and the simulator's page
 # (simulator/web/build.sh) build with it. Needs Emscripten
 # (`brew install emscripten`).
 #
-#   firmware/tools/wasm.sh [--pack PACK] [--board BOARD] OUT.js EM++ARG...
+#   firmware/tools/wasm.sh [--board BOARD] OUT.js EM++ARG...
 #
-#   --pack PACK    that pack, staged beside what's staged, which stays as
-#                  it is; without it, the staged pack
 #   --board BOARD  only the face the pack gives that board (character.json's
 #                  `faces`), as the board's own build takes it; without it,
 #                  every face, as the native env's
@@ -19,28 +18,15 @@
 set -eu
 cd "$(dirname "$0")/../.."
 
-PACK= BOARD=
-while :; do
-  case ${1:-} in
-    --pack) PACK=$2; shift 2 ;;
-    --board) BOARD=$2; shift 2 ;;
-    *) break ;;
-  esac
-done
+BOARD=
+if [ "${1:-}" = --board ]; then BOARD=$2; shift 2; fi
 OUT=$1
 shift
 command -v em++ >/dev/null || { echo "wasm: no em++ here. Install Emscripten: brew install emscripten" >&2; exit 1; }
 
 # The pack's firmware as staging makes it (moods.h, rig_tables.h, its faces).
-if [ -n "$PACK" ]; then
-  FW=.character-build/wasm/$PACK
-  python3 characters/charactergen.py --firmware-to="$FW" "characters/$PACK" >/dev/null
-  FW=$FW/firmware
-  PACKDIR=characters/$PACK
-else
-  FW=.character-build/firmware
-  PACKDIR=$(cat .character-build/pack)
-fi
+FW=.character-build/firmware
+PACKDIR=$(cat .character-build/pack)
 # Its sources: every face's, or the board's face's and none of the others'.
 PACKSRC=$(find "$FW/src" -name '*.cpp')
 if [ -n "$BOARD" ]; then

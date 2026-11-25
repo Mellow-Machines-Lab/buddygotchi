@@ -233,19 +233,6 @@ class StudioRuleTests(unittest.TestCase):
         self.assertEqual((gen.STAGE / "firmware-test" / "test_x" / "t.cpp").resolve(), (pack / "tests/firmware/test_x/t.cpp").resolve())
         self.assertEqual(sorted(p.name for p in gen.STAGE.iterdir()), ["firmware", "firmware-test", "pack", "packs", "staged"])
 
-    def test_firmware_to_lays_out_one_packs_firmware_and_stages_nothing(self):
-        """--firmware-to=DIR, for a second build beside the staged pack's (simulator/web/build.sh PACK): the firmware's files as staging lays them out, and nothing staged changes."""
-        pack = self.pack("user", [{"id": "calm", "meaning": "Settled."}], files=[("firmware/include/art.h", "a")])
-        stage, gen.STAGE = gen.STAGE, self.dir / "stage"
-        self.addCleanup(setattr, gen, "STAGE", stage)
-        out = self.dir / "out"
-        self.assertEqual(gen.firmware_to(pack, out), 0)
-        self.assertEqual(sorted(p.relative_to(out).as_posix() for p in out.rglob("*") if p.is_file()),
-                         ["firmware/include/art.h", "firmware/include/moods.h", "firmware/include/rig_tables.h",
-                          "firmware/src/render/face/face.cpp"])
-        self.assertIn('kPackId = "user"', (out / "firmware" / "include" / "moods.h").read_text())
-        self.assertFalse(gen.STAGE.exists())
-
     def test_each_board_has_a_face(self):
         """CHARACTER.md §9: `faces` names a face for some board, each a folder the pack has."""
         self.assertEqual(gen.pack_problems(self.pack("plain", [{"id": "calm", "meaning": "Settled."}]), gen.load(self.dir / "plain")), [])

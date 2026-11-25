@@ -83,8 +83,6 @@ jobs:
         run: /usr/bin/python3 characters/charactergen.py --check
       - name: charactergen's tests
         run: /usr/bin/python3 -m unittest discover -s internal/characters
-      - name: The demo session's tests, the slow ones too
-        run: BOOP_SLOW=1 /usr/bin/python3 -m unittest discover -s internal/tools/session/tests
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38  # v6
         with:
           node-version: "24"

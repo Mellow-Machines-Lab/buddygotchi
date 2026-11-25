@@ -28,8 +28,8 @@ export const TICKLE = Array.from({ length: 14 }, (_, i) => [160 + (i % 2 ? 8 : -
 /// How often a page keeping a board company says its `state` again, as the
 /// app does every 10 s, so the board never takes its Mac for gone.
 export const HEARTBEAT_MS = 8000;
-// Each build's WebAssembly, fetched and compiled once for every board that runs it.
-const compiled = {};
+// The build's WebAssembly, fetched and compiled once for every board that runs it.
+let compiled = null;
 
 /// One simulated board: the core, switched on and off, with its USB as
 /// lines in and out. A page can have several. It fires `power` (on or
@@ -44,18 +44,15 @@ export class Board extends EventTarget {
   frame = null;
   on = false;
 
-  /// `pack` is the character pack it was built for: `boop-sim-PACK.js`
-  /// (web/build.sh PACK), or with none the staged pack's `boop-sim.js`.
-  /// In a page, the build's WebAssembly is compiled once for all its boards.
-  static async make({ pack } = {}) {
-    if (pack && !/^[a-z0-9][a-z0-9_-]*$/.test(pack)) throw new Error(`no pack called ${pack}`);
-    const build = pack ? `boop-sim-${pack}` : 'boop-sim';
-    const { default: makeCore } = await import(`./${build}.js`);
+  /// The staged pack's build, `boop-sim.js` (web/build.sh). In a page,
+  /// its WebAssembly is compiled once for all its boards.
+  static async make() {
+    const { default: makeCore } = await import('./boop-sim.js');
     let options = {};
     if (typeof document !== 'undefined') {
-      compiled[build] ??= WebAssembly.compileStreaming(fetch(new URL(`${build}.wasm`, import.meta.url)))
-        .catch(error => { delete compiled[build]; throw error; });
-      const module = await compiled[build];
+      compiled ??= WebAssembly.compileStreaming(fetch(new URL('boop-sim.wasm', import.meta.url)))
+        .catch(error => { compiled = null; throw error; });
+      const module = await compiled;
       options = { instantiateWasm: (imports, receive) => { WebAssembly.instantiate(module, imports).then(receive); return {}; } };
     }
     const board = new Board();
@@ -376,8 +373,7 @@ const Element = globalThis.HTMLElement ?? class {};
 /// face down and up. `demo` is a
 /// recording to play (DemoPlayer), told as a story under the board: what
 /// happens, and what the creature does about it. `board-id` is the board's
-/// id, its hello's, so boards on one page differ; `pack` the character
-/// pack's build to run (Board.make).
+/// id, its hello's, so boards on one page differ.
 /// `element.board` is its Board, and `element.demo` its
 /// DemoPlayer, once `ready` has fired.
 export class BoopSimulator extends Element {
@@ -444,9 +440,9 @@ export class BoopSimulator extends Element {
     const card = voice ? fetch(voice).then(got => got.ok ? got.arrayBuffer() : null).catch(() => null) : null;
     let board;
     try {
-      board = this.board = await Board.make({ pack: this.getAttribute('pack') || undefined });
+      board = this.board = await Board.make();
     } catch {
-      this.#status.textContent = `no build for the pack ${this.getAttribute('pack')}: run simulator/web/build.sh ${this.getAttribute('pack')}`;
+      this.#status.textContent = 'no build of the board: run simulator/web/build.sh';
       return;
     }
     board.addEventListener('frame', e => this.#draw(e.detail));
@@ -482,7 +478,7 @@ export class BoopSimulator extends Element {
     // The backlight dims the panel; the firmware's pixels stay what they are.
     this.#canvas.style.filter = (p.backlight ?? 255) < 255 ? `brightness(${p.backlight / 255})` : '';
     const usb = this.hasAttribute('usb') ? ` · usb ${this.#plugged ? 'plugged in' : 'unplugged'}` : '';
-    const who = [this.getAttribute('board-id'), this.getAttribute('pack')].filter(Boolean).map(w => `${w} · `).join('');
+    const who = this.getAttribute('board-id') ? `${this.getAttribute('board-id')} · ` : '';
     this.#status.textContent = on ? `${who}gel${usb} · card: ${p.card ?? '…'} · sound ${this.board.audible ? 'on' : 'off'}` : 'off';
     for (const [button, words, call] of this.#labels) {
       button.textContent = words();

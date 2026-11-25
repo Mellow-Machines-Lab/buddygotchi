@@ -34,15 +34,14 @@
     });
   }
 
-  // A board running a pack's build with one of its faces: the staged pack's
-  // simulator/web/build.sh, or build.sh PACK for another, checked by its
-  // hello; with the simulator's script and wire(). The staged pack's has
-  // its voice on the card, which the server serves, so its takes play.
+  // A board running the staged pack's build (simulator/web/build.sh) with
+  // one of its faces, checked by its hello; with the simulator's script and
+  // wire(). Its voice is on the card, which the server serves, so its takes
+  // play.
   async function make(pack, face) {
-    const kit = await load(), staged = window.StudioData.staged === pack;
-    const build = `simulator/web/build.sh${staged ? '' : ' ' + pack}`;
-    const card = staged ? fetch('/voice.bin').then(r => r.ok ? r.arrayBuffer() : null).catch(() => null) : null;
-    const board = await kit.sim.Board.make(staged ? {} : {pack}).catch(() => { throw Error(`There's no build of ${pack} for the board: run ${build}.`); });
+    const kit = await load(), build = 'simulator/web/build.sh';
+    const card = fetch('/voice.bin').then(r => r.ok ? r.arrayBuffer() : null).catch(() => null);
+    const board = await kit.sim.Board.make().catch(() => { throw Error(`There's no build of the board: run ${build}.`); });
     const bytes = await card;
     if (bytes) board.insertCard(new Uint8Array(bytes));
     board.power(true);

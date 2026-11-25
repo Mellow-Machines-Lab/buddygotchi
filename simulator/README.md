@@ -131,12 +131,9 @@ itself to the board.
 | `motion` | Adds the motion sensor's buttons. The page's own `index.html` has them |
 | `demo` | A recording to play (below) |
 | `board-id` | The board's id, its `hello`'s, so boards on one page differ (`b00p-0000` without it) |
-| `pack` | The character pack whose build it runs, `boop-sim-PACK.js` (below); the staged pack's `boop-sim.js` without it |
 
-`web/build.sh` builds the staged pack. `web/build.sh PACK` builds a
-pack by its name in `characters/` beside it, as `boop-sim-PACK.js` and
-`.wasm`, and leaves what's staged alone (`charactergen.py --firmware-to`):
-`<boop-simulator pack="boop">` runs it. The demos play on these builds.
+`web/build.sh` builds the staged pack, `boop-sim.js` and `.wasm`, which
+every board on the page runs. The demos play on it.
 
 The element's `board` (once it has fired `ready`) is the board itself:
 `send(line)` is a host's message on USB, and it fires `line` for each the
