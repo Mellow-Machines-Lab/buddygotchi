@@ -817,9 +817,10 @@ the popover draws only the eyes (`BoopFace`).
 
 - `board.js`: the firmware for a board with no hardware
   (`firmware/src/board/mirror/`) with the face the pack gives the AMOLED, as
-  WebAssembly inside a script. Build it with `firmware/tools/mirror.sh`, and
-  rebuild it when what the board draws changes: `make -C internal mirror`
-  fails until it's the build of its sources.
+  WebAssembly inside a script. It's a build's output, not checked in:
+  `make -C internal build` and `app` build it when it's older than its
+  sources (`firmware/tools/mirror.sh --if-stale`), and `make bundle` fails
+  without it. It needs Emscripten.
 - `index.html`, `mirror.css` and `mirror.js`: the page, written by hand. The
   app hands it every line the board's link sends the board, and a tap on the
   board as a tap on the mirror's screen or BOOT (`SlimeFeed`). It makes no

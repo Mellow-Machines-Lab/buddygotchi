@@ -139,8 +139,8 @@ board's env doesn't build:
   gives the AMOLED, built by `tools/mirror.sh` (on `tools/wasm.sh`)
   into the pack's `mac/mirror/board.js`
   ([characters/CHARACTER.md](../characters/CHARACTER.md) §9);
-  `tools/mirror.sh --check` builds it again and checks it's the one
-  checked in.
+  it's a build's output, not checked in: `make -C internal build` and
+  `app` build it when it's stale (`tools/mirror.sh --if-stale`).
 
 ## Bringing up a board
 

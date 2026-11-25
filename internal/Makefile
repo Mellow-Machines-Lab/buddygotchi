@@ -21,6 +21,7 @@ PIO := firmware/tools/pio.sh
 SWIFT_CHECK := --explicit-target-dependency-import-check error
 build:
 	cd $(ROOT) && python3 characters/charactergen.py --stage
+	cd $(ROOT) && firmware/tools/mirror.sh --if-stale
 	cd $(ROOT) && python3 internal/app/tools/gen-test-runner.py
 	cd $(ROOT) && swift build $(SWIFT_CHECK)
 	cd $(ROOT) && for product in agent-hook mellowharness-emit beacon linkkit-bridge linkkit-flash boop-cards; do \
@@ -32,6 +33,7 @@ build:
 # change to what BoopKit declares. The root `make dev` builds with it.
 app:
 	cd $(ROOT) && python3 characters/charactergen.py --stage
+	cd $(ROOT) && firmware/tools/mirror.sh --if-stale
 	cd $(ROOT) && swift build $(SWIFT_CHECK) --product Boop
 	cd $(ROOT) && swift build $(SWIFT_CHECK) --product agent-hook
 	cd $(ROOT) && swift build $(SWIFT_CHECK) --product boopdev  # the doctor skill checks the hooks with it
@@ -140,15 +142,15 @@ sim-test:
 	cd $(ROOT) && simulator/web/build.sh
 	cd $(ROOT) && node --test simulator/tests/*.test.mjs
 
-# The Mac's mirror of the board (characters/CHARACTER.md §9): its page's
-# own tests, then every gel scenario played on it and on the native
-# simulator, each shot the same on both, pixel for pixel, then its
-# board.js built again and checked to be the one checked in (it needs
-# Emscripten and Node).
+# The Mac's mirror of the board (characters/CHARACTER.md §9): built when
+# it's stale (it's a build's output, not checked in), then its page's own
+# tests, then five gel scenarios played on it and on the native simulator,
+# each shot the same on both, pixel for pixel (`boopctl mirror --all` for
+# every one). It needs Emscripten and Node.
 mirror:
+	cd $(ROOT) && firmware/tools/mirror.sh --need
 	cd $(ROOT) && node --test characters/boop/tests/mirror/page.test.mjs
 	cd $(ROOT) && CHARACTER=boop internal/tools/boopctl mirror
-	cd $(ROOT) && firmware/tools/mirror.sh --check
 
 # Each pack's demos recorded again where the script has changed since its
 # recording, or has none (simulator/tools/demos.py record), several at

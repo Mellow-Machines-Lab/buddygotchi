@@ -88,12 +88,12 @@ final class CharacterPackTests: XCTestCase {
 
     /// CHARACTER.md §6: the pack stands alone, in a repository of its
     /// own: every file the engine reads is in its own folder, its voice
-    /// (the table and its pack) included, and the mirror of the board that
-    /// the popover shows.
+    /// (the table and its pack) included. The mirror of the board that the
+    /// popover shows is built into it (`firmware/tools/mirror.sh`).
     func testThePackStandsAlone() throws {
         try requirePack("boop")
         let folder = Self.repo.appendingPathComponent("characters/boop")
-        for path in ["mac/takes.tsv", "voice/voice.bin", "mac/mirror/board.js"] {
+        for path in ["mac/takes.tsv", "voice/voice.bin", "mac/mirror/index.html"] {
             XCTAssertTrue(FileManager.default.fileExists(atPath: folder.appendingPathComponent(path).path), path)
         }
         let pack = try CharacterPack(directory: folder)

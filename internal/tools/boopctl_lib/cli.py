@@ -206,11 +206,17 @@ def cmd_sim(args: argparse.Namespace) -> int:
     return 1 if failures or changed else 0
 
 
+MIRROR_SMOKE = ["states", "moods", "stream", "finish", "gestures"]
+
+
 def cmd_mirror(args: argparse.Namespace) -> int:
     """The gel face's scenarios on the Mac's mirror of the board (the pack's
     mac/mirror/board.js, under Node) and on the native simulator, each shot
-    the same on both, pixel for pixel. The mirror has no card, so the
-    simulator's is an empty one."""
+    the same on both, pixel for pixel: MIRROR_SMOKE's five unless some are
+    named or --all asks for every one. The mirror and the simulator are one
+    source built twice, so five scenarios across the states, the faces, the
+    work stream, a finish and the touches are enough to catch a build that
+    differs. The mirror has no card, so the simulator's is an empty one."""
     board = REPO / "characters" / "boop" / "mac" / "mirror" / "board.js"
     if not board.is_file():
         raise DeviceError(f"no mirror at {board.relative_to(REPO)}: build it with firmware/tools/mirror.sh")
@@ -219,7 +225,7 @@ def cmd_mirror(args: argparse.Namespace) -> int:
     failures = differ = shots = 0
     with tempfile.TemporaryDirectory() as card:
         os.environ["BOOP_SIM_CARD"] = card
-        for path in pick(args.scenario):
+        for path in pick(args.scenario or ([] if args.all else MIRROR_SMOKE)):
             out = {side: SIM_OUT / "mirror" / side / path.stem for side in ("native", "mirror")}
             for side, program in (("native", str(SIM_PROGRAM)), ("mirror", mirror)):
                 shutil.rmtree(out[side], ignore_errors=True)
@@ -1253,7 +1259,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_sim)
     p = sub.add_parser("mirror", help="play the gel scenarios on the Mac's mirror of the board and the simulator, and "
                                       "check every shot is the same, pixel for pixel")
-    p.add_argument("scenario", nargs="*", help="names or paths (default: all the gel face's)")
+    p.add_argument("scenario", nargs="*", help="names or paths (default: five, MIRROR_SMOKE)")
+    p.add_argument("--all", action="store_true", help="every gel scenario, not the five")
     p.set_defaults(func=cmd_mirror)
     p = sub.add_parser("run", help="play scenarios on the device and compare with the simulator (L2)")
     p.add_argument("scenario", nargs="*", help="names or paths (default: all)")

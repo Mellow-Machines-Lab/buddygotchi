@@ -183,8 +183,8 @@ The rules that are easy to break, in full in
   up (`IdleBeat`).
 - The device renders, reports and decides when a Moment plays, never what
   Boop does.
-- The Mac's face is the board's firmware: a change to what the gel draws
-  rebuilds the mirror (`firmware/tools/mirror.sh`).
+- The Mac's face is the board's firmware: the mirror is built from
+  it, not checked in (`firmware/tools/mirror.sh`, which the builds run).
 
 ## The UI's words
 

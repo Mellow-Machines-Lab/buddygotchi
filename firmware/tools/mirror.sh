@@ -7,32 +7,38 @@
 # ArduinoJson and the pack's firmware, which it stages first. Needs
 # Emscripten (`brew install emscripten`).
 #
-#   firmware/tools/mirror.sh            characters/boop/mac/mirror/board.js
-#   firmware/tools/mirror.sh --check    builds it again and checks it's the
-#                                       one checked in, byte for byte
+#   firmware/tools/mirror.sh             builds characters/boop/mac/mirror/board.js
+#   firmware/tools/mirror.sh --if-stale  builds it only when it's missing or older
+#                                        than its sources; with no Emscripten
+#                                        here it warns and goes on, so a build
+#                                        that doesn't show the face still works
+#   firmware/tools/mirror.sh --need      as --if-stale, but no Emscripten fails
+#
+# board.js is a build's output, not checked in (the pack's .gitignore).
 set -eu
 cd "$(dirname "$0")/../.."
 
-CHECK=
-if [ "${1:-}" = --check ]; then CHECK=1; fi
-
+MODE=${1:-}
 MIRROR=characters/boop/mac/mirror/board.js
 OUT=characters/boop/mac/mirror
-[ -n "$CHECK" ] && OUT=$(mktemp -d)
+
+if [ "$MODE" = --if-stale ] || [ "$MODE" = --need ]; then
+  if [ -f "$MIRROR" ] && [ -z "$(find firmware/src firmware/assets firmware/tools/wasm.sh firmware/tools/mirror.sh \
+      firmware/platformio.ini linkkit/device/src characters/boop/firmware characters/boop/character.json \
+      characters/boop/rig characters/charactergen.py -newer "$MIRROR" -type f 2>/dev/null | head -1)" ]; then
+    exit 0
+  fi
+  if ! command -v em++ >/dev/null; then
+    if [ "$MODE" = --need ]; then
+      echo "mirror: $MIRROR needs building and there's no em++ here: brew install emscripten" >&2; exit 1
+    fi
+    echo "mirror: no em++ here, so $MIRROR isn't built and the Mac shows no face: brew install emscripten" >&2
+    exit 0
+  fi
+fi
+
 python3 characters/charactergen.py --stage characters/boop >/dev/null
 # One file, the WebAssembly inside it, since the page can't fetch.
 firmware/tools/wasm.sh --board amoled206 "$OUT/board.js" firmware/src/board/mirror/mirror.cpp \
     -sEXPORT_NAME=BoopMirrorBoard -sSINGLE_FILE -sFILESYSTEM=0
-
-if [ -n "$CHECK" ]; then
-  if cmp -s "$OUT/board.js" "$MIRROR"; then
-    echo "MIRROR PASS: $MIRROR is the build of its sources"
-    rm -rf "$OUT"
-  else
-    echo "MIRROR FAIL: $MIRROR isn't the build of its sources: run firmware/tools/mirror.sh (emcc $(em++ -dumpversion))" >&2
-    rm -rf "$OUT"
-    exit 1
-  fi
-else
-  ls -l "$OUT/board.js"
-fi
+ls -l "$OUT/board.js"

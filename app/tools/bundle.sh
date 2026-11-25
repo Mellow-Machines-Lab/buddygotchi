@@ -29,6 +29,8 @@ if [ -n "$internal" ] && ! command -v emcc >/dev/null; then
 fi
 
 python3 characters/charactergen.py --stage
+# The face the popover shows: the board's firmware as WebAssembly, built here.
+firmware/tools/mirror.sh --need
 build="swift build -c release --arch arm64 --arch x86_64${internal:+ -Xswiftc -DBOOP_INTERNAL}"
 $build --product Boop
 $build --product agent-hook

@@ -82,7 +82,7 @@ agents use, run from the repo root as `make -C internal <target>`. Each target's
 | `make -C internal fw` | The firmware for every board the chosen pack has a face for (`charactergen.py --boards`) |
 | `make -C internal fw-test` | The firmware's unit tests on the Mac (env `native`): in one `pio test -e native`, the engine's suites in `internal/firmware/test/`, on the stub face (`internal/firmware/stub_face.h`), and the chosen pack's `tests/firmware/`, which staging links beside them; then LinkKit's device library's own (`pio test -d linkkit/device -e native`). `pio.sh test` keeps each project's tests in its `.pio/test`, apart from `pio run`'s `.pio/build` |
 | `make -C internal sim` | Every scenario in the simulator, against the goldens (L1): the gel face's, with Boop's pack, its pinned shots only (§4) |
-| `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), every gel scenario on it and on the native simulator, the same pixel for pixel (`internal/tools/boopctl mirror`), and its `board.js` built again and compared with the one checked in (`firmware/tools/mirror.sh --check`). It needs Emscripten and Node |
+| `make -C internal mirror` | The Mac's mirror of the board ([characters/CHARACTER.md](../characters/CHARACTER.md) §9): its page's tests (`node --test characters/boop/tests/mirror/page.test.mjs`), five gel scenarios on it and on the native simulator, the same pixel for pixel (`internal/tools/boopctl mirror`; `--all` for every one), after building its `board.js` when it's stale (`firmware/tools/mirror.sh --need`): it's a build's output, not checked in. It needs Emscripten and Node |
 | `make -C internal demos` | Records each demo whose script has changed since its recording, or has none, into `characters/PACK/demo/recordings/` (`simulator/tools/demos.py record`); `NAMES=…` records those again, `ALL=1` every one. It needs the app, PlatformIO's native env (built once) and no board |
 | `make -C internal sim-test` | The simulator's tests ([simulator/README.md](../simulator/README.md), Tests), with the page built for the staged pack (`simulator/web/build.sh`). It needs Emscripten and Node |
 | `make -C internal e2e` | `make -C internal build`, then the pipeline check (L4) |
@@ -405,10 +405,9 @@ Each suite says what it pins.
 3. Only then does `internal/tools/boopctl sim <scenario> --accept` update
    the pinned goldens and remove stale ones, with a one-line reason in the commit message (§7).
 
-4. When what the gel board draws changes, `firmware/tools/mirror.sh`
-   builds the Mac's mirror of the board again, and
-   `make -C internal mirror` checks it draws every scenario's shots as
-   the simulator does.
+4. When what the gel board draws changes, the next build makes the Mac's
+   mirror of the board again, and `make -C internal mirror` checks it
+   draws five scenarios' shots as the simulator does.
 
 **Pass:** every golden matches, or the changed ones were looked at and
 accepted; the mirror's shots, every one, are the simulator's.

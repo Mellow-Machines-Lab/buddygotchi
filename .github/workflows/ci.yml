@@ -2,8 +2,8 @@
 # (internal/VERIFICATION.md L0 and L1): Boop's Swift tests and the
 # packages', the Python tests that need only the standard library, then
 # the firmware's and LinkKit's device tests on the Mac, and the Mac's
-# mirror of the board against the simulator (with no Emscripten here, the
-# mirror checked in, not built again),
+# mirror of the board, built there with Emscripten, against the simulator
+# on five scenarios,
 # all as Boop, and the board's firmware: the AMOLED's with Boop's gel
 # face. Boop's pack is in a repository of its own (characters/packs.json),
 # and every job that needs it fetches it first, at the branch packs.json
@@ -107,10 +107,10 @@ jobs:
           key: pio-${{ runner.os }}-${{ hashFiles('firmware/platformio.ini', 'linkkit/device/platformio.ini') }}
       - name: The engine's firmware tests and Boop's pack's, then LinkKit's device tests
         run: make -C internal fw-test
-      - name: The Mac's mirror of the board, its page and every gel scenario's shots against the simulator
-        run: |
-          node --test characters/boop/tests/mirror/page.test.mjs
-          CHARACTER=boop internal/tools/boopctl mirror
+      - name: Install Emscripten, which builds the Mac's mirror of the board
+        run: brew install emscripten
+      - name: The Mac's mirror of the board, built, then its page and five gel scenarios' shots against the simulator
+        run: make -C internal mirror
 
   boards:
     name: Board build
