@@ -17,12 +17,6 @@ namespace app {
 using render::after;
 using render::within;
 
-namespace {
-
-constexpr uint32_t kAmberDim = 0x805800;  // needs you: amber at half
-
-}  // namespace
-
 const char* cutByName(CutBy c) {
   switch (c) {
     case CutBy::kTap: return "tap";
@@ -764,12 +758,6 @@ render::SceneShow Behaviour::show(uint32_t t) const {
 
 bool Behaviour::pressEasing(uint32_t t) const { return pressed_ && within(t, pressAt_, kPressEaseMs); }
 
-
-// Amber at half while something needs you; otherwise off.
-uint32_t Behaviour::led(uint32_t t) const {
-  if (noApp(t)) return 0;
-  return model_.attn ? kAmberDim : 0;
-}
 
 // Dims with the asleep look, eased over kBacklightEaseMs.
 uint8_t Behaviour::backlight(uint32_t t) const {

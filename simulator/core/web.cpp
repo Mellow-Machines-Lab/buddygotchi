@@ -57,7 +57,7 @@ const hosted::Board::Picture& picture() { return board ? board->hosted().picture
 
 extern "C" {
 
-// Before power-on: BOOP_SIM_FACE, BOOP_SIM_NATIVE, BOOP_SIM_ID (sim_hal.h).
+// Before power-on: BOOP_SIM_NATIVE, BOOP_SIM_ID (sim_hal.h).
 EMSCRIPTEN_KEEPALIVE void sim_env(const char* name, const char* value) { ::setenv(name, value, 1); }
 
 // Power: on makes a new board, as a reset does; off leaves nothing of it.

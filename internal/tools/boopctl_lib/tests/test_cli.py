@@ -11,10 +11,10 @@ from pathlib import Path
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "characters" / "pixel" / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[4] / "characters"))
 
 from boopctl_lib import cli, common  # noqa: E402
-from facegen import facegen  # noqa: E402
+import charactergen  # noqa: E402
 from fake_board import FakeBoard  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
@@ -126,10 +126,13 @@ class PlayTests(unittest.TestCase):
             cli.build_parser().parse_args(["play", "cheer", "--mood", "cheerful"])
 
     def test_the_moods_are_the_devices(self):
-        """The moods boopctl sends are facegen's, every mood the Pixel pack
-        has, which it writes into the pack's faces.h, in the pack's order."""
-        self.assertEqual(cli.MOODS, facegen.NAMES)
-        self.assertEqual(cli.MOODS, firmware_names("../../characters/pixel/firmware/include/faces.h", "kNames["))
+        """The moods boopctl sends are every mood Boop's pack has, in the
+        order staging writes them into the board's moods.h."""
+        pack = cli.REPO / "characters" / "boop"
+        moods_h = charactergen.moods_h(pack, charactergen.load(pack))
+        body = moods_h[moods_h.index("kMoodNames["):]
+        self.assertEqual(cli.MOODS, re.findall(r'"(\w+)"', body[:body.index("};")]))
+        self.assertIn("happy", cli.MOODS)
 
     def test_play_sends_just_the_animation_now(self):
         """A `do` with the animation's name, played `now` so it replaces
@@ -164,12 +167,11 @@ class PlayTests(unittest.TestCase):
     def test_the_animations_are_the_devices(self):
         """The names boopctl plays are the device's own, the names of the
         states whose designs they play (firmware/src/render/types.cpp
-        isMoment; faces.h names them), and all of them are in Boop's
+        isMoment; kStateNames names them), and all of them are in Boop's
         `hello.does`, but for a tap's and a gesture's, which the device
         plays itself. The
         older one is play's own, sent by today's name."""
-        names = firmware_names("../../characters/pixel/firmware/include/faces.h", "kStateNames[")
-        self.assertEqual(names, facegen.STATES)
+        names = firmware_names("render/types.cpp", "kStateNames[")
         states = dict(zip(firmware_names("render/types.h", "enum class SceneState", r"\bk\w+"), names))
         plays = firmware_names("render/types.cpp", "bool isMoment(SceneState s) {", r"case SceneState::(k\w+):",
                                end="\n}\n")
@@ -466,12 +468,12 @@ class PerfTests(unittest.TestCase):
     second and none over 40 ms. fps follows the design, so 6 a second, a
     second of the cheer, passes."""
 
-    def perf(self, fps: int, frame_us: int, face: str = "pixel", draw_us: int = 1000) -> dict:
+    def perf(self, fps: int, frame_us: int, draw_us: int = 1000) -> dict:
         up = [0]
 
         def answer(msg: dict) -> bytes:
             if msg["t"] == "hello":
-                reply = {"t": "hello", "kit": 1, "app": "boop", "face": face}
+                reply = {"t": "hello", "kit": 1, "app": "boop", "face": "gel"}
             elif msg["t"] == "dbg.ping":
                 up[0] += 1000
                 reply = {"t": "dbg.ping", "up": up[0], "heap": 74000, "heap_min": 73800, "fps": fps,
@@ -508,14 +510,13 @@ class PerfTests(unittest.TestCase):
     def test_a_slow_design_passes_and_a_stalled_or_slow_board_fails(self):
         self.assertTrue(self.perf(6, 14200)["ok"])
         self.assertFalse(self.perf(0, 14200)["ok"])  # nothing drawn in a second of motion
-        self.assertFalse(self.perf(20, 41000)["ok"])  # a frame over 40 ms
+        self.assertFalse(self.perf(20, 42000)["ok"])  # a frame over 40 ms
 
-    def test_a_gel_board_sends_while_it_draws(self):
+    def test_the_board_sends_while_it_draws(self):
         # The gel draws the next frame while the last is sent,
         # so a 30 ms draw and a 15 ms push take 30 ms, not 45.
-        self.assertTrue(self.perf(30, 45000, face="gel", draw_us=30000)["ok"])
-        self.assertFalse(self.perf(30, 45000, face="pixel", draw_us=30000)["ok"])
-        self.assertFalse(self.perf(20, 52000, face="gel", draw_us=41000)["ok"])  # its draw alone is over 40 ms
+        self.assertTrue(self.perf(30, 45000, draw_us=30000)["ok"])
+        self.assertFalse(self.perf(20, 52000, draw_us=41000)["ok"])  # its draw alone is over 40 ms
 
 
 @needs_voice

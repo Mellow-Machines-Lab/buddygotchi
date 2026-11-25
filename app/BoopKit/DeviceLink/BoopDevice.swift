@@ -113,30 +113,25 @@ public struct DeviceInfo: Equatable, Sendable {
     /// The version of the voice file on its card, `none`
     /// with no card or none readable, or nil from firmware that doesn't say.
     public var voice: String?
-    /// Which face it draws: the popover mirrors the gel one, and a demo
-    /// recording says which it was made on. Every face draws every mood.
-    public enum Face: String, Sendable { case pixel, gel }
-    public var face: Face
     /// The character pack its firmware was built with, as `id version`
-    /// (`pixel 0.1.0`), or nil from firmware that doesn't say.
+    /// (`boop 0.1.0`), or nil from firmware that doesn't say.
     public var pack: String?
     /// Why it last restarted, in a word (`power`, `watchdog`, `panic`…), or
     /// nil from firmware that doesn't say.
     public var reset: String?
-    /// Which board it is (`cyd24`, `amoled206`), or nil from firmware that
-    /// doesn't say (`BoardFirmware.board(of:)` works it out).
+    /// Which board it is (`amoled206`), or nil from firmware that doesn't
+    /// say (`BoardFirmware.board(of:)` works it out).
     public var board: String?
     /// Whether it plays a skit's invite (`Moment.invite`) and says how it
     /// ended (`ev invite`): its `"invites":1`. The Mac sends none to a
     /// board that doesn't say so.
     public var invites: Bool
 
-    public init(id: String, fw: String, voice: String? = nil, face: Face = .pixel, pack: String? = nil, reset: String? = nil,
+    public init(id: String, fw: String, voice: String? = nil, pack: String? = nil, reset: String? = nil,
                 board: String? = nil, invites: Bool = false) {
         self.id = id
         self.fw = fw
         self.voice = voice
-        self.face = face
         self.pack = pack
         self.reset = reset
         self.board = board
@@ -152,8 +147,7 @@ public struct DeviceInfo: Equatable, Sendable {
     public init(_ hello: Hello) {
         // `id version`; firmware from before says the version on its own.
         let pack = hello.fields["pack"]?.string.map { p in hello.fields["pack_version"]?.string.map { "\(p) \($0)" } ?? p }
-        self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string,
-                  face: hello.fields["face"]?.string.flatMap(Face.init(rawValue:)) ?? .pixel, pack: pack,
+        self.init(id: hello.id, fw: hello.fw, voice: hello.fields["voice"]?.string, pack: pack,
                   reset: hello.fields["reset"]?.string, board: hello.fields["board"]?.string,
                   invites: (hello.fields["invites"]?.int ?? 0) >= 1)
     }
@@ -174,10 +168,6 @@ public struct DeviceInfo: Equatable, Sendable {
     /// its version, or it doesn't say: then it draws what the app's
     /// mirror of the board draws.
     public var hasTheCharacter: Bool { pack.map { $0.split(separator: " ").first.map(String.init) == CharacterPack.active.id } ?? true }
-
-    /// Whether it draws the work stream and the agents' drawer: the AMOLED
-    /// does, whatever face it runs.
-    public var drawsTheDrawer: Bool { BoardFirmware.board(of: self) == "amoled206" }
 
     /// What the log says when it says hello: who it is, and when its
     /// character pack or its card's voice isn't the app's.

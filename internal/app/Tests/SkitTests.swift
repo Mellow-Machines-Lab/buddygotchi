@@ -10,7 +10,7 @@ final class SkitTests: XCTestCase {
     let skits = [Skit(id: "win", slots: [.doneLong, .doneVeryLong]),
                  Skit(id: "upset", slots: [.failed, .failedVeryLong, .gaveUp, .checkFailing]),
                  Skit(id: "fix", slots: [.checkFixed]), Skit(id: "back", slots: [.back, .backDays, .backAfterADay])]
-    /// The same, with the invites the packs give them (`InviteTests`).
+    /// The same, with the invites the pack gives them (`InviteTests`).
     let invited = [InviteTests.win, InviteTests.upset, Skit(id: "fix", slots: [.checkFixed]), InviteTests.back]
 
     func play(_ slot: RulesBrain.Slot, _ facts: [String: JSONValue] = [:], swears: Bool = true) -> String? {
@@ -61,13 +61,12 @@ final class SkitTests: XCTestCase {
         }
     }
 
-    /// Both packs have the four skits, each at the slots the skits' table
+    /// Boop's pack has the four skits, each at the slots the skits' table
     /// names, and three of them an invite.
     func testThePacksSkitsParse() throws {
-        for pack in try Self.packs() {
-            XCTAssertEqual(pack.skits, invited, pack.id)
-            XCTAssertEqual(pack.skits.map(\.slots), skits.map(\.slots), pack.id)
-        }
+        let pack = try Self.pack()
+        XCTAssertEqual(pack.skits, invited)
+        XCTAssertEqual(pack.skits.map(\.slots), skits.map(\.slots))
     }
 
     /// A pack's `skits` that isn't one doesn't load: a skit with no id, a
@@ -76,7 +75,7 @@ final class SkitTests: XCTestCase {
     func testABadSkitDoesntLoad() throws {
         func pack(_ skits: Any?) throws -> CharacterPack {
             var json: [String: Any] = ["id": "t", "name": "T", "version": "1", "default_mood": "calm",
-                                       "moods": [["id": "calm", "face": "Calm.", "meaning": "Settled."]]]
+                                       "moods": [["id": "calm", "face": "Calm."]], "lasting": [["id": "calm", "meaning": "Settled."]]]
             json["skits"] = skits
             return try CharacterPack(json: json, from: "t.json")
         }
@@ -97,34 +96,33 @@ final class SkitTests: XCTestCase {
         }
     }
 
-    /// A skit is never silent for want of a take: for both packs, every
+    /// A skit is never silent for want of a take: for Boop's pack, every
     /// face the rules brain gives a skit's slots, as the moods colour it
     /// (cross at each level, and sad), has a take of the skit; the upset
     /// skit's plain ones too, as it says them with no swear asked for or
     /// none in the face. The fix skit has every word that claims a fix.
     func testEverySkitHasATakeInEveryFaceItPlaysIn() throws {
-        for pack in try Self.packs() {
-            let takes = Take.all(in: pack).filter { $0.part == .skit }
-            XCTAssertFalse(takes.isEmpty, pack.id)
-            for skit in pack.skits {
-                let own = takes.filter { $0.meaning == skit.id }
-                XCTAssertTrue((8...16).contains(Set(own.map(\.text)).count), "\(pack.id) \(skit.id): \(Set(own.map(\.text)).sorted())")
-                XCTAssertTrue(own.contains { $0.kind == .word } && own.contains { $0.kind == .phrase }, "\(pack.id) \(skit.id): words and phrases")
-                for slot in skit.slots {
-                    for mood in [pack.defaultMood, "cross", "sad"] {
-                        for level in 1...3 {
-                            for face in RulesBrain.colour(RulesBrain.faces[slot] ?? [], mood: mood, level: level) {
-                                XCTAssertTrue(own.contains { $0.kind != .swear && $0.moods.contains(face) },
-                                              "\(pack.id): \(skit.id) at \(slot) says nothing in \(face)")
-                            }
+        let pack = try Self.pack()
+        let takes = Take.all(in: pack).filter { $0.part == .skit }
+        XCTAssertFalse(takes.isEmpty, pack.id)
+        for skit in pack.skits {
+            let own = takes.filter { $0.meaning == skit.id }
+            XCTAssertTrue((8...16).contains(Set(own.map(\.text)).count), "\(pack.id) \(skit.id): \(Set(own.map(\.text)).sorted())")
+            XCTAssertTrue(own.contains { $0.kind == .word } && own.contains { $0.kind == .phrase }, "\(pack.id) \(skit.id): words and phrases")
+            for slot in skit.slots {
+                for mood in [pack.defaultMood, "cross", "sad"] {
+                    for level in 1...3 {
+                        for face in RulesBrain.colour(RulesBrain.faces[slot] ?? [], mood: mood, level: level) {
+                            XCTAssertTrue(own.contains { $0.kind != .swear && $0.moods.contains(face) },
+                                          "\(pack.id): \(skit.id) at \(slot) says nothing in \(face)")
                         }
                     }
                 }
             }
-            let fix = Set(takes.filter { $0.meaning == "fix" }.map(\.text))
-            XCTAssertTrue(pack.claimsAFix.isSubset(of: fix), "\(pack.id): \(pack.claimsAFix) in fix")
-            XCTAssertEqual(Set(takes.filter { $0.kind == .swear }.map(\.meaning)), ["upset"], "\(pack.id): only upset swears")
         }
+        let fix = Set(takes.filter { $0.meaning == "fix" }.map(\.text))
+        XCTAssertTrue(pack.claimsAFix.isSubset(of: fix), "\(pack.id): \(pack.claimsAFix) in fix")
+        XCTAssertEqual(Set(takes.filter { $0.kind == .swear }.map(\.meaning)), ["upset"], "\(pack.id): only upset swears")
     }
 
     /// Through the pipeline, with the rules brain: three failed checks in
@@ -198,8 +196,8 @@ final class SkitTests: XCTestCase {
         return records.all
     }
 
-    /// Boop's pack and Pixel's, from the repository.
-    static func packs() throws -> [CharacterPack] {
-        try ["boop", "pixel"].map { try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/\($0)")) }
+    /// Boop's pack, from the repository.
+    static func pack() throws -> CharacterPack {
+        try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/boop"))
     }
 }

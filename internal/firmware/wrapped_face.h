@@ -1,5 +1,5 @@
-// A face for the engine's tests: the build's own (render::makeFace), which
-// it passes everything on to, and on top what a test needs that the pixel
+// A face for the engine's tests: the stub face (stub_face.h), which it
+// passes everything on to, and on top what a test needs that the stub
 // face hasn't: the context it was last synced to (FaceContext), and an
 // agents' drawer as the gel's works, rows kRowH tall from canvas y kRowsTop
 // down, pulled kTravel canvas px from shut to open; with `native`, a
@@ -10,12 +10,13 @@
 #include <memory>
 
 #include "render/face.h"
+#include "stub_face.h"
 
 namespace testface {
 
 struct WrappedFace : render::Face {
   static constexpr int kRowsTop = 40, kRowH = 30, kTravel = 160;
-  std::unique_ptr<render::Face> f = render::makeFace();
+  std::unique_ptr<render::Face> f = std::make_unique<StubFace>();
   render::FaceContext context;  // the last sync's
   bool drawers = true;          // it has a drawer
   bool native = false;          // it draws natively, and draws nothing

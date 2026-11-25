@@ -93,7 +93,7 @@ final class SkitTakeTests: XCTestCase {
         try FileManager.default.createDirectory(at: dir.appendingPathComponent("mac"), withIntermediateDirectories: true)
         try Data(#"""
             {"id": "one", "name": "One", "version": "1", "default_mood": "calm",
-             "moods": [{"id": "calm", "face": "Calm.", "meaning": "Settled."}],
+             "moods": [{"id": "calm", "face": "Calm."}], "lasting": [{"id": "calm", "meaning": "Settled."}],
              "skits": [{"id": "win", "slots": ["doneLong"]}]}
             """#.utf8).write(to: dir.appendingPathComponent("character.json"))
         try Data("1\nw1\tYes!\tskit\twin\tword\tcalm\t\t500\n".utf8).write(to: dir.appendingPathComponent("mac/takes.tsv"))

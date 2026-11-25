@@ -7,11 +7,11 @@
 // and how busy the agents are, which the board reads from `state.busy`
 // (busyTags). A design or a pastime that carries tags fits only while every
 // one of them is on (characters/CHARACTER.md §9). The Mac sends only these,
-// in this order (Tags.board, app/BoopKit/Core/Tags.swift), and
-// facegen numbers a design's tags by it. The Mac's tiers are three, a
+// in this order (Tags.board, app/BoopKit/Core/Tags.swift), and a pack
+// numbers its designs' tags by it. The Mac's tiers are three, a
 // minute, 5 and 15: `tier4`, `tier5` and `hushed` are never sent, and stay
-// only because Pixel's designs are numbered by this table. A new tag goes
-// at the end, so no pack's numbering of the others moves.
+// so the others keep their bits. A new tag goes at the end, so no pack's
+// numbering of the others moves.
 #pragma once
 #include <cstdint>
 
@@ -57,16 +57,5 @@ uint32_t busyTags(int working);
 // quicker while the agents are busy, and quicker again when frantic.
 constexpr int kBusyPace = 125, kFranticPace = 160;
 int workPace(int working);
-
-// What a face wears for the tags on, when it dresses for them (Pixel's
-// overlays; the gel wears only its nightcap, render/gel/layers.h): the first that fits, Halloween's witch hat,
-// a party hat (a party day, New Year's Day, Lunar New Year, Programmers'
-// Day), a nightcap at night, a bobble hat in winter; else none.
-enum class Outfit : uint8_t { kNone, kWitchHat, kPartyHat, kNightcap, kBobble };
-Outfit outfitFor(uint32_t when);
-// What's in the air for the tags on, as bits: snow in winter, confetti on
-// a party day or New Year's Day, hearts on Valentine's.
-enum Air : uint8_t { kNoAir = 0, kSnow = 1, kConfetti = 2, kHearts = 4 };
-uint8_t airFor(uint32_t when);
 
 }  // namespace render

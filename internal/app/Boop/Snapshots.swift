@@ -85,7 +85,7 @@ enum Snapshots {
                     // The one session its state's `busy` counts.
                     var gelStatus = status(sessions: [["claude", "jetpack", "work"]], mood: "happy")
                     gelStatus.snapshot = gelState
-                    gelStatus.device = DeviceInfo(id: "gel-fixture", fw: "snapshots", face: .gel)
+                    gelStatus.device = DeviceInfo(id: "gel-fixture", fw: "snapshots")
                     let gel = model(installer, status: gelStatus)
                     gel.hooks[.claude] = .installed
                     shot("overview-gel", gel, pane: .overview)
@@ -260,7 +260,7 @@ enum Snapshots {
                 shot("settings-login-unavailable", bare, pane: .settings)
                 // The board runs older firmware than the app carries, and then it's being written.
                 let behind = model(installer, status: status())
-                behind.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+                behind.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32s3, flashSize: 16 << 20, version: "1.1.0", sha: "abc1234")]
                 behind.advancedOpen = true
                 shot("settings-firmware-offer", behind, pane: .settings)
                 behind.firmwareWrite = .writing(0.42)
@@ -289,7 +289,7 @@ enum Snapshots {
                 longSettings.status?.board = "b00p-01dd"
                 longSettings.hookErrors[.claude] = Long.detail
                 longSettings.loginItemError = Long.detail
-                longSettings.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
+                longSettings.boardFirmware = [BoardFirmware(board: fixtureBoard, chip: .esp32s3, flashSize: 16 << 20, version: "1.1.0-rc.12+abcdef1234", sha: "abc1234")]
                 longSettings.firmwareWrite = .failed(Long.detail)
                 longSettings.advancedOpen = true
                 shot("settings-long", longSettings, pane: .settings)
@@ -387,7 +387,7 @@ enum Snapshots {
             onboarding.feed.stillImage = still(onboarding.look) ?? gel
             return onboarding
         }
-        let firmware = [BoardFirmware(board: fixtureBoard, chip: .esp32, flashSize: 4 << 20, version: "1.1.0", sha: "abc1234")]
+        let firmware = [BoardFirmware(board: fixtureBoard, chip: .esp32s3, flashSize: 16 << 20, version: "1.1.0", sha: "abc1234")]
         let behind = at(.body, status: status()) {
             $0.body = .joined
             $0.app.boardFirmware = firmware
@@ -497,20 +497,14 @@ enum Snapshots {
                 $0.connected = true
                 $0.progress.heard = "claude"
             }),
-            // A board that doesn't tour (no drawer): heard, and on its way.
-            ("6-agents-heard-no-tour", at(.agents, status: status(face: .pixel)) {
-                $0.connected = true
-                $0.progress.heard = "claude"
-            }),
-            // On a gel board, the tour: the words fell, and the turn finished.
-            ("6-agents-tour", at(.agents, status: status(base: "idle", sessions: [["claude", "landing", "idle", "Tidy the README"]],
-                                                         face: .gel)) {
+            // The tour: the words fell, and the turn finished.
+            ("6-agents-tour", at(.agents, status: status(base: "idle", sessions: [["claude", "landing", "idle", "Tidy the README"]])) {
                 $0.body = .joined
                 $0.connected = true
                 $0.progress.heard = "claude"
                 $0.progress.tour = [.words]
             }),
-            ("6-agents-tour-done", at(.agents, status: status(base: "idle", sessions: [["claude", "landing", "idle"]], face: .gel)) {
+            ("6-agents-tour-done", at(.agents, status: status(base: "idle", sessions: [["claude", "landing", "idle"]])) {
                 $0.body = .joined
                 $0.connected = true
                 $0.progress.heard = "claude"
@@ -570,10 +564,8 @@ enum Snapshots {
             ("8-world-unbroken", at(.world, status: status(name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
             ("9-finale-long", at(.finale, status: status(name: Long.name)) { $0.app.setup.name = Long.name }),
             ("9-finale-unbroken", at(.finale, status: status(connected: false, name: Long.unbroken)) { $0.app.setup.name = Long.unbroken }),
-            // A board with no drawer: the poke's tip.
-            ("9-finale", at(.finale, status: status(face: .pixel))),
-            // A gel board: the drawer's tip in the poke's place.
-            ("9-finale-gel", at(.finale, status: status(face: .gel))),
+            // A board: the drawer's tip.
+            ("9-finale", at(.finale, status: status())),
             // After "I don't have my Boop yet": the Mac's way of each tip.
             ("9-finale-no-board", at(.finale, status: status(connected: false))),
         ]
@@ -782,8 +774,7 @@ enum Snapshots {
                        mood: String = MoodOutput.initial, brainTrouble: BrainTrouble? = nil,
                        listening: Bool = false, micTrouble: String? = nil, voice: String? = nil,
                        linkTrouble: TransportTrouble? = nil, deviceTrouble: String? = nil,
-                       growth: Growth? = Growth(xp: 1_182, today: 82),
-                       face: DeviceInfo.Face = SlimeFeed.folder != nil ? .gel : .pixel) -> Runtime.Status {
+                       growth: Growth? = Growth(xp: 1_182, today: 82)) -> Runtime.Status {
         let statuses: [String: SessionSummary.Status] = ["wait": .waiting, "work": .working, "idle": .idle]
         // Each in its agent's own app, so its row opens it.
         // Each waited, worked or rested a few minutes more than the one
@@ -822,7 +813,7 @@ enum Snapshots {
             },
             working: sessions.filter { $0.status == .working }.count, vol: vol)
         var status = Runtime.Status(name: name, snapshot: snapshot, sessions: sessions, connected: connected,
-                              device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice, face: face) : nil,
+                              device: connected && deviceTrouble == nil ? DeviceInfo(id: "b00p-54fe", fw: "1.0.0", voice: voice) : nil,
                               linkTrouble: linkTrouble, deviceTrouble: deviceTrouble,
                               brain: brain, brainTrouble: brainTrouble,
                               listening: listening, micTrouble: micTrouble, growth: growth)
@@ -912,11 +903,10 @@ enum Snapshots {
                 ["claude", "buddygotchi-landing-page", "wait", "", "claude/very-long-branch-name-for-the-hero"],
                 ["codex", "jetpack", "wait"],
             ]))),
-            // Its 50th day, at night: why it wears a nightcap.
+            // Its 50th day.
             ("celebrating", {
                 var s = status(sessions: [["claude", "jetpack", "work"]])
-                s.dressing = [Narration.Dressing(kind: .specialDay, why: "Mochi is 50 days old today", what: nil),
-                              Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap")]
+                s.dressing = [Narration.Dressing(why: "Mochi is 50 days old today")]
                 return model(installer, status: s)
             }()),
             // An agent showed a picture of its result (the show).
@@ -1089,8 +1079,7 @@ enum Snapshots {
         s.wishing = "\(Long.name) wishes for \(Core.WishKind.work.words) (3 h 20 min)."
         s.moodReason = Long.told
         s.doingReason = Long.act
-        s.dressing = [Narration.Dressing(kind: .specialDay, why: "\(Long.name) became a Buddy today, and it's its birthday", what: "a witch hat, a party hat, confetti, snow and hearts"),
-                      Narration.Dressing(kind: .night, why: "It's night", what: "a nightcap")]
+        s.dressing = [Narration.Dressing(why: "\(Long.name) became a Buddy today, and it's its birthday")]
         s.growth = Growth(xp: 123_456)
         s.daysOld = 1_041
         s.notes = longNotes
@@ -1137,7 +1126,7 @@ enum Snapshots {
                 OpenDetails.shared.show(words(n))  // its words are behind Details
                 return s
             }),
-            ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(kind: .night, why: words(n), what: nil)]; return s }),
+            ("a dressing's reason", { n in var s = bare(); s.dressing = [.init(why: words(n))]; return s }),
         ]
         for (what, status) in values where height(status(20)) >= height(status(40)) {
             fail("snapshots: \(what) is cut off: twice the words leave the Overview no taller")
@@ -1238,8 +1227,8 @@ enum Snapshots {
     ]
 
     /// The board the fixtures' device is, so firmware offered for it is
-    /// offered: the gel's face is the AMOLED's (`BoardFirmware.board(of:)`).
-    static var fixtureBoard: String { SlimeFeed.folder != nil ? "amoled206" : "cyd24" }
+    /// offered: one that doesn't say is the AMOLED (`BoardFirmware.board(of:)`).
+    static let fixtureBoard = "amoled206"
 
     // MARK: Contrast
 

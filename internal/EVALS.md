@@ -308,8 +308,8 @@ the file and step.
 
 ## 4. The scenarios
 
-`boopdev eval --list` prints them all. They come in three groups. Pixel's
-packs keep strict scenarios of their own, in their words: a scenario with no
+`boopdev eval --list` prints them all. They come in three groups. A pack
+may keep strict scenarios of its own, in its words: a scenario with no
 brief is a must.
 
 - **Code checks** (`92`, `93`, `115`–`117`, `160`, `164`, `166`, `168`, `187`, `188`):

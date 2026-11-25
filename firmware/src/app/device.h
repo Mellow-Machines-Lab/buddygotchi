@@ -68,7 +68,6 @@ struct Hal : linkkit::Platform {
   // Touch calibration: the board applies it to touches and keeps it in NVS.
   virtual void setTouchCal(const TouchCal& c) { (void)c; }
   virtual TouchCal touchCal() { return {}; }
-  virtual void setLed(uint32_t rgb) { (void)rgb; }
   virtual void setBacklight(uint8_t level) { (void)level; }
   // The motion sensor's reading in milli-g (z out of the screen), if the
   // board has one; false for none.
@@ -77,15 +76,15 @@ struct Hal : linkkit::Platform {
     return false;
   }
   // The panel's own pixels, landscape, for a face that draws natively
-  // (render::Face::drawsNative), and its rounded corners: empty where the
-  // board pushes only the 8-bit canvas. The simulator's is the AMOLED's.
+  // (render::Face::drawsNative), and its rounded corners. The simulator's
+  // is the AMOLED's.
   // Such a face gets two surfaces of it (render::SurfacePair).
   virtual render::Size nativeSize() { return {502, 410, 110}; }
   virtual void* allocateSurface(size_t bytes) { return std::calloc(1, bytes); }
   virtual void releaseSurface(void* p) { std::free(p); }
   // A copy of read-only data, kept for good, where it's quicker to read
   // than where it's linked; none where there isn't such a place (the
-  // simulator's and the CYD's).
+  // simulator's).
   virtual const void* quickerCopy(const void* data, size_t bytes) { return (void)data, (void)bytes, nullptr; }
   virtual uint32_t heapFree() { return 0; }
   virtual uint32_t heapMin() { return 0; }
@@ -122,7 +121,7 @@ struct Hal : linkkit::Platform {
   // Why the board last restarted, in a word, for hello's `reset`: power,
   // button, software, panic, watchdog, brownout, sleep, usb or other.
   virtual const char* resetReason() { return "power"; }
-  // Which board it is, by its env's name (cyd24, amoled206), for hello's
+  // Which board it is, by its env's name (amoled206), for hello's
   // `board`; empty for none (the simulator, tests), which says nothing.
   virtual const char* boardName() { return ""; }
 };
@@ -417,8 +416,8 @@ class Device : public linkkit::App {
   render::Canvas canvas_;
   // dbg.pattern's canvas, had from the Hal for a face that draws natively.
   bool ownsCanvas_ = false;
-  // Made by the constructor only when the face draws natively, so a board
-  // without a native face (the CYD) spends no RAM on them.
+  // Made by the constructor only when the face draws natively, so a face
+  // that draws the canvas (the tests') spends no RAM on them.
   std::unique_ptr<render::SurfacePair> native_;
   Behaviour b_;
   Live live_;
@@ -445,7 +444,6 @@ class Device : public linkkit::App {
 
   // From each input or message to the frame that shows it (dbg.latency).
   Latency latency_;
-  uint32_t led_ = 0;
   uint8_t backlight_ = 255;
 };
 

@@ -2,7 +2,7 @@
 # rest for speed (-O2): the engine runs once a step through about 117 KB of
 # code, which -O2's inlining makes miss the ESP32-S3's 16 KB instruction
 # cache on nearly every line; at -Os it's 45 KB and takes half the time.
-# The pixel loops stay -O2. Only the board builds run this; the simulator's are unchanged.
+# Only the board builds run this; the simulator's are unchanged.
 # It runs before tools/pack_face.py, which builds the pack's sources.
 Import("env")
 

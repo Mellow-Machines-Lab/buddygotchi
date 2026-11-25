@@ -20,10 +20,6 @@ final class EvalTests: XCTestCase {
     static var fixtures: URL { CharacterPackTests.repo.appendingPathComponent("internal/app/Tests/Fixtures/evals") }
 
     func testEveryScenarioReads() throws {
-        // Pixel's own, which PixelBuddy's make eval runs, read too.
-        let pixel = try CharacterPack(directory: CharacterPackTests.repo.appendingPathComponent("characters/pixel"))
-        let pixels = try Scenario.load(directory: pixel.directory.appendingPathComponent("evals"), pack: pixel)
-        XCTAssertEqual(pixels.count, 6)
         let all = try Scenario.load(directory: try Self.scenarios())
         XCTAssertGreaterThanOrEqual(all.count, 7)
         XCTAssertTrue(all.allSatisfy { !$0.story.isEmpty }, "every scenario says its case in plain words")

@@ -8,9 +8,9 @@
 # characters/charactergen.py --stage`, which make does).
 #
 #   simulator/web/build.sh          the staged pack: boop-sim.js
-#   simulator/web/build.sh pixel    a pack by name, beside it: boop-sim-pixel.js,
-#                                   for <boop-simulator pack="pixel">. What's
-#                                   staged stays as it is.
+#   simulator/web/build.sh boop     a pack by name, beside it: boop-sim-boop.js,
+#                                   for <boop-simulator pack="boop">, as the
+#                                   demos build it. What's staged stays as it is.
 set -eu
 cd "$(dirname "$0")/../.."
 

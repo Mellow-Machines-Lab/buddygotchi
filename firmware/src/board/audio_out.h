@@ -1,7 +1,6 @@
-// Where each board's sound goes: the shared voice
-// task (board/audio.cpp) mixes a chunk at a time and hands it here. The
-// CYD's is its DAC (cyd24/audio_out.cpp), the AMOLED board's the ES8311
-// over I2S (amoled206/audio_out.cpp).
+// Where the board's sound goes: the voice task (board/audio.cpp) mixes a
+// chunk at a time and hands it here, the AMOLED board's ES8311 over I2S
+// (amoled206/audio_out.cpp).
 #pragma once
 #include <cstddef>
 #include <cstdint>

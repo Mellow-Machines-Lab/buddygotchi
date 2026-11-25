@@ -1,7 +1,5 @@
-// The screen: the face, drawn as its mood design, and in the bottom lane
-// the status strip, or the bubble while a `say` plays. The same drawing
-// serves the face, needs-you and no-app screens; only what it shows differs.
-// Pure drawing: the device core decides what to show and passes it in.
+// The screen's bottom lane: the status strip, or the bubble while a `say`
+// plays, as the device core decides it and a face draws it (Face::draw).
 #pragma once
 #include <cstdint>
 
@@ -10,11 +8,9 @@
 
 namespace render {
 
-// Screen bands on the 320×240 screen, in pixels. The animation bank's
-// designs leave the bottom 48 px, the lane, for text: the strip sits in it,
-// and the bubble takes the whole lane while a `say` plays, in the strip's
-// place. The first pack's looks and its successes for the finish draw into
-// the lane too; the bubble blanks it.
+// Screen bands on the 320×240 screen, in pixels: the lane at the bottom,
+// whose lower part is the strip; the bubble takes the whole lane while a
+// `say` plays, in the strip's place.
 constexpr int kLaneTop = 192;   // the bottom lane: the bubble's
 constexpr int kStripTop = 204;  // the status strip, the bottom 36 px
 
@@ -34,7 +30,7 @@ struct Strip {
   Outcome doneOutcome = Outcome::kNone;
   int busy = 0;     // sessions working (grey; hidden at zero)
   int idle = 0;     // sessions idle, waiting for your next prompt: a parcel each for BOOT (hidden at zero)
-  int helpers = 0;  // helpers at work: a mini each, up to kMinis, then +N (hidden at zero)
+  int helpers = 0;  // helpers at work (hidden at zero)
   // The working agent's to-do list, as "3/7" after the other counts
   // (hidden with no list).
   int todoDone = 0, todoTotal = 0;
@@ -62,13 +58,5 @@ struct Strip {
     return agent || doneAgent || busy > 0 || idle > 0 || helpers > 0 || todoTotal > 0 || noApp || pipCount > 1;
   }
 };
-
-// How many helpers the strip draws as minis; more show as +N.
-constexpr int kMinis = 4;
-
-// The bubble, or else the strip, at its opacity: while it fades, the
-// pixels of it an ordered dither draws (render/canvas.h's Dither).
-void drawLane(Canvas& c, const char* bubble, const Strip& s);
-void drawStrip(Canvas& c, const Strip& s);
 
 }  // namespace render

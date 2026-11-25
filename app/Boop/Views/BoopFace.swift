@@ -32,121 +32,49 @@ enum FaceMood: Hashable {
     }
 }
 
-/// Boop's face on a small black-glass tile: the face of the device's design
-/// for Boop's mood and look (FaceDesigns, which facegen writes from the same
-/// designs as the device's), at rest, without the props. It blinks now and
-/// then, and cross-fades into a new face when the mood or the look changes.
+/// Boop's face on a small black-glass tile, for a pack with no mirror of
+/// the board: the menu bar's eyes, at rest, for Boop's look. They blink now
+/// and then, and cross-fade into new ones when the look changes.
 struct BoopFace: View {
     var mood: FaceMood
-    /// Boop's mood, which picks the set of designs.
-    var design: String = MoodOutput.initial
     var size: CGFloat
 
     @ViewState private var blink = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.stillMotion) private var still
-    @Environment(\.displayScale) private var displayScale
 
     /// The board's dissolve between pictures: rig::kFadeMs, on its
     /// smoothstep ease, which this curve is exactly.
     private static let fade = Animation.timingCurve(1.0 / 3, 0, 2.0 / 3, 1, duration: 0.2)
 
-    /// The design the tile shows. Asleep and setup's previews are the
-    /// pack's startup mood's: the engine names no mood of its own.
-    private var key: String {
-        let startup = CharacterPack.active.startupMood
-        return switch mood {
-        case .asleep: "\(startup)/asleep"
-        case .stopped: "stopped"
-        case .idle: "\(design)/idle"
-        case .working: "\(design)/working"
-        case .needsYou: "\(design)/needs_you"
-        case .happy, .waking: "\(startup)/idle"
-        }
-    }
-
-    /// The key's face, else its mood's idle one, else the startup mood's,
-    /// else any: a pack's faces.json may not have every look.
-    private static func face(_ key: String) -> (open: [FaceRect], shut: [FaceRect]) {
-        let mood = key.split(separator: "/").first.map(String.init) ?? ""
-        return faces[key] ?? faces["\(mood)/idle"] ?? faces["\(CharacterPack.active.startupMood)/idle"]
-            ?? faces.sorted { $0.key < $1.key }.first?.value ?? (open: [], shut: [])
-    }
-
     var body: some View {
-        let key = key
-        let face = Self.face(key)
-        let rects = blink ? face.shut : face.open
         ZStack {
             TileShape(side: size).fill(Theme.glass)
             TileEdge(side: size, needsYou: mood == .needsYou)
-            // The old face and the new one add, as the board's dither mixes
-            // them: a pixel both light stays lit through the fade.
             ZStack {
                 Canvas { context, canvas in
-                    // Boop couldn't start, or the pack has no still faces:
-                    // the menu bar's eyes, so the tile is never blank.
-                    if mood == .stopped || Self.faces.isEmpty {
-                        for (path, stroke) in Self.eyes(mood, shut: blink, in: canvas) {
-                            if stroke {
-                                context.stroke(path, with: .color(Self.eyeInk),
-                                               style: StrokeStyle(lineWidth: canvas.width * 0.05, lineCap: .round))
-                            } else {
-                                context.fill(path, with: .color(mood == .asleep ? Self.eyeInk.opacity(0.7) : Self.eyeInk))
-                            }
+                    for (path, stroke) in Self.eyes(mood, shut: blink, in: canvas) {
+                        if stroke {
+                            context.stroke(path, with: .color(Self.eyeInk),
+                                           style: StrokeStyle(lineWidth: canvas.width * 0.05, lineCap: .round))
+                        } else {
+                            context.fill(path, with: .color(mood == .asleep ? Self.eyeInk.opacity(0.7) : Self.eyeInk))
                         }
-                        return
-                    }
-                    for (colour, path) in Self.paths(rects, in: canvas, scale: displayScale) {
-                        context.fill(path, with: .color(mood == .asleep ? colour.opacity(0.7) : colour))
                     }
                 }
-                .id(key)
+                .id(mood)
                 .transition(.opacity)
                 .blendMode(.plusLighter)
             }
             .compositingGroup()
         }
         .frame(width: size, height: size)
-        .animation(reduceMotion ? nil : Self.fade, value: key)
+        .animation(reduceMotion ? nil : Self.fade, value: mood)
         // Either motion setting changes the id, so an existing blink
-        // loop stops as soon as motion is turned off. A new face restarts
+        // loop stops as soon as motion is turned off. A new look restarts
         // it, its first blink seconds away, so none lands mid-fade.
-        .task(id: still || reduceMotion ? nil : key) { await live() }
+        .task(id: still || reduceMotion ? nil : mood) { await live() }
         .accessibilityHidden(true)
-    }
-
-    private struct FaceRect: Sendable {
-        let x, y, w, h: CGFloat
-        let colour: UInt8
-    }
-
-    /// The faces' colours, by a rectangle's colour byte, made once.
-    private static let palette: [Color] = FaceDesigns.colors.map { rgb in
-        Color(red: Double(rgb >> 16 & 0xFF) / 255, green: Double(rgb >> 8 & 0xFF) / 255, blue: Double(rgb & 0xFF) / 255)
-    }
-
-    /// `rects` fitted into `canvas`, one path for each run of a colour, in
-    /// order. A design pixel is a fraction of a point here, so each
-    /// rectangle filled on its own would smooth its edges, and two that
-    /// meet would leave a dark seam between them; filled as one path they
-    /// meet seamlessly, and every edge sits on the display's pixel grid
-    /// (`scale` pixels a point), so the outline is crisp.
-    private static func paths(_ rects: [FaceRect], in canvas: CGSize, scale: CGFloat) -> [(Color, Path)] {
-        guard !palette.isEmpty else { return [] }
-        let box = FaceDesigns.box
-        let s = 0.8 * canvas.width / box.width
-        let x0 = (canvas.width - box.width * s) / 2, y0 = (canvas.height - box.height * s) / 2
-        let scale = max(scale, 1)
-        func snap(_ v: CGFloat) -> CGFloat { (v * scale).rounded() / scale }
-        var runs: [(UInt8, Path)] = []
-        for r in rects {
-            let colour = Int(r.colour) < palette.count ? r.colour : 0
-            let left = snap(x0 + r.x * s), top = snap(y0 + r.y * s)
-            let rect = CGRect(x: left, y: top, width: snap(x0 + (r.x + r.w) * s) - left, height: snap(y0 + (r.y + r.h) * s) - top)
-            if runs.last?.0 == colour { runs[runs.count - 1].1.addRect(rect) } else { runs.append((colour, Path(rect))) }
-        }
-        return runs.map { (palette[Int($0.0)], $0.1) }
     }
 
     private static let eyeInk = Color(white: 0.92)
@@ -171,28 +99,6 @@ struct BoopFace: View {
                                               : CGRect(x: x, y: top, width: 4 * u, height: 6 * u)
             return (Path(roundedRect: eye, cornerRadius: min(eye.width, eye.height) / 2), false)
         }
-    }
-
-    /// The generated artwork never changes during a launch. Decode it
-    /// once instead of allocating bytes and rectangles on every status
-    /// update and every blink's two redraws.
-    private static let faces = FaceDesigns.faces.mapValues {
-        (open: rects($0.open), shut: rects($0.shut))
-    }
-
-    private static func rects(_ base64: String) -> [FaceRect] {
-        let b = [UInt8](Data(base64Encoded: base64) ?? Data())
-        // Five bytes a rectangle. A plain loop: older compilers time out
-        // type-checking this as one map expression.
-        var out: [FaceRect] = []
-        out.reserveCapacity(b.count / 5)
-        var i = 0
-        while i + 4 < b.count {
-            let x = CGFloat(b[i]), y = CGFloat(b[i + 1]), w = CGFloat(b[i + 2]), h = CGFloat(b[i + 3])
-            out.append(FaceRect(x: x, y: y, w: w, h: h, colour: b[i + 4]))
-            i += 5
-        }
-        return out
     }
 
     /// Blinks every few seconds.

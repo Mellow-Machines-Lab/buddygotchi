@@ -286,8 +286,8 @@ final class OnboardingModel: ObservableObject {
     // MARK: Act 6's tour
 
     /// Whether act 6 tours, once an agent says hi: Boop has its body, and
-    /// it draws the work stream and the agents' drawer (the AMOLED).
-    var tours: Bool { hasBoard && app.status?.device?.drawsTheDrawer == true }
+    /// it's said hello, so it draws the work stream and the agents' drawer.
+    var tours: Bool { hasBoard && app.status?.device != nil }
 
     /// The window's Boop after the hello: the board's own state, live, so
     /// your agent's work shows on it too. No sound.

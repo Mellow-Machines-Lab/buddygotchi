@@ -18,12 +18,11 @@
 </style>
 <!-- serve.py serves the Character Studio beside the board; its matrix marks what the board it names shows. -->
 <a class="matrix" href="characters/studio/#view=matrix" target="boop-matrix">Every mood and state ↗</a>
-<!-- The local page (simulator/web/serve.py, which make dev starts): one board with its controls. ?face=gel for Boop's own face;
-     ?demo=pixel/landing plays a recorded demo, its pack then its name, and ?demos=all every one, one after
+<!-- The local page (simulator/web/serve.py, which make dev starts): one board with its controls.
+     ?demo=boop/finishes plays a recorded demo, its pack then its name, and ?demos=all every one, one after
      another, with a list to jump to one (simulator/tools/demos.py lays them out in demo/).
      ?boards=left,right is a board for each of serve.py's cables (--cable NAME=SOCKET), side by side,
-     each with the id b00p-NAME; &packs=boop,pixel gives each its pack's build (build.sh PACK) and voice,
-     and &faces=gel,pixel each its face. -->
+     each with the id b00p-NAME. -->
 <script type="module">
   import './boop-simulator.js';
   const ask = new URLSearchParams(location.search);
@@ -37,21 +36,17 @@
   };
   const make = () => {
     const board = document.createElement('boop-simulator');
-    board.setAttribute('face', ask.get('face') || 'pixel');
     if (ask.get('zoom')) board.setAttribute('zoom', ask.get('zoom'));
     board.setAttribute('controls', '');
     board.setAttribute('motion', '');
     return board;
   };
   if (ask.get('boards')) {
-    const packs = (ask.get('packs') || '').split(','), faces = (ask.get('faces') || '').split(',');
-    window.simulators = ask.get('boards').split(',').map((name, i) => {
+    window.simulators = ask.get('boards').split(',').map(name => {
       const board = make();
       board.setAttribute('board-id', `b00p-${name}`);
       board.setAttribute('usb', `ws://${location.host}/usb/${name}`);
-      if (packs[i]) board.setAttribute('pack', packs[i]);
-      if (faces[i]) board.setAttribute('face', faces[i]);
-      board.setAttribute('voice', packs[i] ? `voice/${packs[i]}.bin` : 'voice.bin');
+      board.setAttribute('voice', 'voice.bin');
       document.body.append(board);
       return board;
     });

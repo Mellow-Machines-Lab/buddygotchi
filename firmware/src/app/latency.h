@@ -16,7 +16,7 @@ class Latency {
   // the next.
   enum Kind : uint8_t { kPress, kTap, kState, kDo, kFrame, kKinds };
   // The latest samples of each kind that p95 and max cover: 64 bytes a
-  // kind, which the CYD's RAM notices.
+  // kind.
   static constexpr int kWindow = 32;
   // Frames handed to the board and not yet on the panel: one being sent
   // and one waiting behind it. A frame more drops the oldest's events.

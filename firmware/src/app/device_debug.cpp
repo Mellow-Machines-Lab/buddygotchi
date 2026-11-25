@@ -305,9 +305,6 @@ void Device::state(JsonObject d, uint32_t t) {
   if (b_.blinking(t)) d["life"] = "blink";
   else d["life"] = nullptr;
   d["vol"] = m.vol;
-  char led[8];
-  std::snprintf(led, sizeof(led), "#%06lX", (unsigned long)(b_.led(t) & 0xFFFFFF));
-  d["led"] = led;
   d["audio"]["playing"] = b_.speaking(t);
   const char* take = b_.bubble(t) ? voice::takeId(b_.take()) : nullptr;
   if (take) d["audio"]["take"] = take;

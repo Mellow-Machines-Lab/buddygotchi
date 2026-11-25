@@ -104,11 +104,11 @@ void BoardHal::setTouchCal(const app::TouchCal& c) {
 void BoardHal::setBacklight(uint8_t level) { displayBacklight(level); }
 
 render::Size BoardHal::nativeSize() { return {kNativeWidth, kNativeHeight, kNativeCorner}; }
-// In PSRAM: the AMOLED's two native surfaces are 411 KB each. The CYD asks for none.
+// In PSRAM: the AMOLED's two native surfaces are 411 KB each.
 void* BoardHal::allocateSurface(size_t bytes) { return heap_caps_calloc(1, bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT); }
 // In PSRAM too, which the cache fills from faster than from flash: the gel's
 // material, 1 MB, read a texel a pixel, draws the body 4.5 ms quicker from
-// there. The CYD has none, and reads flash.
+// there.
 const void* BoardHal::quickerCopy(const void* data, size_t bytes) {
   void* copy = heap_caps_malloc(bytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
   if (copy) memcpy(copy, data, bytes);
@@ -116,8 +116,7 @@ const void* BoardHal::quickerCopy(const void* data, size_t bytes) {
 }
 
 // Internal RAM only: the AMOLED's 8 MB of PSRAM, where its surfaces live,
-// would hide what the heap budget is about. The CYD has
-// nothing else.
+// would hide what the heap budget is about.
 constexpr uint32_t kHeapCaps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
 
 uint32_t BoardHal::heapFree() { return heap_caps_get_free_size(kHeapCaps); }

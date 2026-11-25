@@ -19,8 +19,8 @@ cheap ESP32 board with a screen is the body.
 | How Boop works: the model (Doing, Mood, Moment), one turn through every piece, what Jev reads, memory, the rules | [documentation/architecture.html](documentation/architecture.html) |
 | How to build, test and work across the repositories | [CONTRIBUTING.md](CONTRIBUTING.md) |
 | How everything is checked, every make target and tool | [internal/VERIFICATION.md](internal/VERIFICATION.md), [internal/EVALS.md](internal/EVALS.md) |
-| What a character pack holds | [characters/CHARACTER.md](characters/CHARACTER.md), [characters/new-character-playbook.md](characters/new-character-playbook.md) |
-| The boards and flashing | [firmware/README.md](firmware/README.md) |
+| What a character pack holds | [characters/CHARACTER.md](characters/CHARACTER.md) |
+| The board and flashing | [firmware/README.md](firmware/README.md) |
 | The board with no board | [simulator/README.md](simulator/README.md) |
 | What's next | [plan/design-build.md](plan/design-build.md) (the design, step by step), [plan/TODO.md](plan/TODO.md), [plan/product-ideas.md](plan/product-ideas.md) |
 | Agents' cards: what one is, the rules, how agents did | [plan/agent-cards.md](plan/agent-cards.md) |
@@ -31,10 +31,10 @@ cheap ESP32 board with a screen is the body.
 | Path | What it is |
 | --- | --- |
 | `app/` | What ships on the Mac: the menu-bar app (`Boop`) and `BoopKit`, with the world's client in `app/BoopKit/World/`, and `boop-cards`, the tool server agents hand Boop cards through (`app/BoopCards/`) |
-| `firmware/` | PlatformIO firmware for the two boards |
+| `firmware/` | PlatformIO firmware for the board |
 | `linkkit/` | The device link, a package of its own: protocol, host library, device library ([SPEC](linkkit/SPEC.md)) |
 | `agent-hooks/`, `mellowharness/` | Submodules: reading agents' hooks, and the brain's harness. Each depends on nothing else here |
-| `characters/` | The pack contract, `charactergen.py`, the Studio; the packs are fetched into `characters/.repos/` (`boop`, `pixel`) |
+| `characters/` | The pack contract, `charactergen.py`, the Studio; the pack is fetched into `characters/.repos/` (`boop`) |
 | `simulator/` | The board with no board, for development, tests and demos |
 | `internal/` | Everything that doesn't ship: tests, evals, `boopdev`, tools (`boopctl`), skills ([README](internal/README.md)) |
 | `internal/world/` | The world's server: Hono on Vercel, Postgres, PGlite in its tests (`npm test` there; [README](internal/world/README.md)) |
@@ -54,8 +54,8 @@ the owner's. For agents:
 ```sh
 git submodule update --init && make -C internal packs  # first, in every new worktree
 make -C internal build                                # everything Swift
-make -C internal check                                # the tests that need no board, camera or Jev key; not the boards' builds
-make -C internal boards                               # both boards' firmware, as CI builds them
+make -C internal check                                # the tests that need no board, camera or Jev key; not the board's build
+make -C internal boards                               # the board's firmware, as CI builds it
 make -C internal test                                 # the Swift tests
 .build/debug/Boop --headless --state-dir DIR --debug  # the whole runtime with no UI or Bluetooth
 .build/debug/Boop --snapshots DIR                     # the popover and onboarding as PNGs, then exits
@@ -97,7 +97,7 @@ no check fails on a stale one, and `simulator/tools/demos.py check` lists them.
 
 ## Repositories
 
-Boop is five public repositories; the steps for working across them are in
+Boop is four public repositories, and a fifth is archived; the steps for working across them are in
 [CONTRIBUTING.md](CONTRIBUTING.md#working-across-the-repositories).
 
 | Repository | Here at | What goes in it |
@@ -106,13 +106,18 @@ Boop is five public repositories; the steps for working across them are in
 | Mellow-Machines-Lab/AgentHooks | `agent-hooks/` | Reading agents' hooks. Nothing of Boop |
 | Mellow-Machines-Lab/MellowHarness | `mellowharness/` | The generic multiple-choice brain. Nothing of Boop |
 | Mellow-Machines-Lab/SlimeBuddy | `characters/boop` | The gel slime's own words, art, engine, sounds and evals |
-| Mellow-Machines-Lab/PixelBuddy | `characters/pixel` | Pixel, the open example |
+| Mellow-Machines-Lab/PixelBuddy | (none) | Archived: Pixel, the second character |
+
+Boop is one character, the gel slime, on one board, the AMOLED
+(`amoled206`). Pixel and the CYD board (`cyd24`) are archived. Restore
+them from commit `c71ccc5e`, the last that has them. The PixelBuddy
+repository stays as it is, with its own pin.
 
 - Only what's a character's own goes in its repository; anything another
   character could use stays here. Anything another app could use about
   hooks goes in AgentHooks, about a personality brain in MellowHarness.
 - A change that spans repositories lands in this order: a package; the
-  character's content (this repo's CI fetches the packs' main); here; then
+  character's content (this repo's CI fetches the pack's main); here; then
   each character's `engine/` pin, to the commit here (its CI fails on the
   old pin until then). Never commit a pointer to a commit that isn't pushed.
 - Every repository squash-merges. **Only the owner pushes, tags or
@@ -365,7 +370,7 @@ updates it in the same commit. In a worktree, first check that
 | How the pieces join, which products Boop takes, `Package.swift` | `documentation/architecture.html`, `internal/README.md` |
 | What a pack holds or how the engine loads one | `characters/CHARACTER.md` |
 | A demo script or how one plays | `characters/DEMOS.md`, `internal/sessions/README.md` |
-| The boards, flashing | `firmware/README.md` |
+| The board, flashing | `firmware/README.md` |
 | `simulator/` | `simulator/README.md`, `internal/VERIFICATION.md` |
 | A make target, tool, test level or budget | `internal/VERIFICATION.md`, this file, `README.md`, `CONTRIBUTING.md` |
 | Evals | `internal/EVALS.md` |

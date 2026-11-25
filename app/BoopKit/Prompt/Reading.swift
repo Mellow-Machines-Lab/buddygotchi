@@ -46,7 +46,7 @@ public struct CountedText: Sendable {
     static func words(_ text: String) -> [String] { text.split { !$0.isLetter && !$0.isNumber }.map(String.init) }
 
     /// Whether it says `name` as words, in any case: each of a name's
-    /// words, one after another ("Pixel Left").
+    /// words, one after another ("Boop Left").
     func says(_ name: String) -> Bool {
         let parts = CountedText.words(name.lowercased())
         guard parts.count > 1 else { return parts.first.map(words.contains) ?? false }

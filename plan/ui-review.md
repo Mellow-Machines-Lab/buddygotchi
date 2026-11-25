@@ -1,6 +1,6 @@
 # A UI and UX review of Boop, down to the pixel
 
-Updated 2026-11-09. A review of how Boop looks and feels to use, on the Mac and on the board, at branch `v1-polish` (`548c6e03`). It changes no product code. Its brief was `plan/ui-review-prompt.md` (at commit `510a78ac`). It builds on [product-review.md](product-review.md) and fits the phases in [TODO.md](TODO.md) ("Plan, 2026-11-09"). It does not repeat that review's word fixes or its decided items; where a decided item needs a look, this review gives the look.
+Updated 2026-11-24. A review of how Boop looks and feels to use, on the Mac and on the board, at branch `v1-polish` (`548c6e03`). It changes no product code. Its brief was `plan/ui-review-prompt.md` (at commit `510a78ac`). It builds on [product-review.md](product-review.md) and fits the phases in [TODO.md](TODO.md) ("Plan, 2026-11-09"). It does not repeat that review's word fixes or its decided items; where a decided item needs a look, this review gives the look.
 
 > Its evidence folder, `plan/evidence/2026-11-09-ui-review/`, left the repository on 2026-11-14: read it at commit `510a78ac` (`git show 510a78ac:plan/evidence/2026-11-09-ui-review/…`). A copy, with the pictures, is in `~/.boopdev/ui-review-2026-11-09/` on the owner's Mac.
 
@@ -451,7 +451,7 @@ A change to what the gel draws rebuilds the mirror (`firmware/tools/mirror.sh`) 
 | Bug | Where | How it fails |
 | --- | --- | --- |
 | The firmware offer is never rendered in a snapshot | `internal/app/Boop/Snapshots.swift:207-213, :273-276`; `app/Boop/MenuBarApp.swift:259-262` | `settings-firmware-offer-*` is byte-identical to `settings-simulator-off-*`, and `onboarding-4-body-joined-hungry-*` to `…-joined-*`. The fixture's board does not match the fixture's device, so no offer is made. The row with "Update" has never been seen in a picture |
-| Four more snapshot pairs are byte-identical | `Snapshots.swift` | `9-finale-gel` = `9-finale`; `5-how-to-done` = `5-how-to-talk`; `6-agents-long` = `6-agents-heard`; `7-small-things-long` = `7-small-things` |
+| Three more snapshot pairs are byte-identical | `Snapshots.swift` | `5-how-to-done` = `5-how-to-talk`; `6-agents-long` = `6-agents-heard`; `7-small-things-long` = `7-small-things` |
 | Every big face in the snapshots is one still | `Snapshots.swift:270` | "Asleep", "listening" and "needs you" all show the same awake, happy face, so a wrong face would not be caught |
 | About 10 onboarding states have no snapshot | `OnboardingFinish.swift:24-28, :47-54, :346-348`; `OnboardingBrainKey.swift:32-33` | No agent found, hook errors, mic refused, key saved and failed, firmware writing |
 | The contrast check skips what fails | `Snapshots.swift:1036` | It tests 58 pairs of text on surfaces. It does not test `inkFaint`, any graphic colour, or opacity |

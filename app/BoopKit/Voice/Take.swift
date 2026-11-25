@@ -16,10 +16,8 @@ public struct Take: Equatable, Sendable {
     /// real wave (the `hello` and `bye` replies), its meaning the reply's
     /// name; or a skit's (`Skit`), its meaning the skit's id. Only a reply's
     /// and a skit's are said now.
-    /// Needs you's takes (`attention`) Boop never says: Boop's voice has
-    /// none now, and Pixel's older copy of it still lists them.
     public enum Part: String, CaseIterable, Sendable {
-        case feeling, about, reply, skit, attention
+        case feeling, about, reply, skit
     }
 
     /// The board's id for it, as `say.take` sends it. A take that's also a

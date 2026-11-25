@@ -21,22 +21,19 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from PIL import Image  # noqa: E402
 from rich.console import Console  # noqa: E402
 
 from boopctl_lib.common import REPO, send_line  # noqa: E402
 from boopctl_lib.dash import controls  # noqa: E402
 from boopctl_lib.dash.app import PREVIEW_RESEND_S, Dash, StateView  # noqa: E402
-from boopctl_lib.dash.face import CROP, NATIVE_BLOCK, SCALE, blocks, native_rows, render  # noqa: E402
+from boopctl_lib.dash.face import NATIVE_BLOCK, native_rows, render  # noqa: E402
 from boopctl_lib.dash import feed  # noqa: E402
 from boopctl_lib.dash.feed import STALE_S, Board, Follower, clock, kind  # noqa: E402
-from boopctl_lib.scenario import GOLDEN  # noqa: E402
 from pack import needs_voice  # noqa: E402
 
 FIXTURE = Path(__file__).parent / "fixtures" / "headless-debug.jsonl"
 COLUMNS = Path(__file__).parent / "fixtures" / "dash-columns.jsonl"
 MEMORY = Path(__file__).parent / "fixtures" / "dash-memory.jsonl"
-LANE_TOP = 192  # firmware/src/render/screens.h kLaneTop: the design is above it
 
 
 def fixture_lines(path: Path = FIXTURE) -> list[dict]:
@@ -463,34 +460,9 @@ class RestartTests(unittest.TestCase):
         self.assertEqual(follower.read(), (True, [{"questions": [], "received_at_ms": 5}]), "a new file")
 
 
-def golden_shot(path: Path) -> tuple[list[int], bytes, tuple[int, int]]:
-    """A golden PNG as a device screenshot: an RGB565 palette and indexes."""
-    image = Image.open(path).convert("RGB")
-    raw = image.tobytes()
-    colours: dict[bytes, int] = {}
-    indexes = bytes(colours.setdefault(raw[i : i + 3], len(colours)) for i in range(0, len(raw), 3))
-    palette = [((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3) for r, g, b in colours] + [0] * (256 - len(colours))
-    return palette, indexes, image.size
-
-
 class FaceTests(unittest.TestCase):
-    def test_the_sizes(self):
-        self.assertEqual(SCALE, 3)
-        shot = golden_shot(GOLDEN / "base" / "idle.png")
-        crop = render(shot).plain.split("\n")
-        self.assertEqual((len(crop[0]), len(crop)), (107, 32), "107×64 blocks, two per cell")
-
-    def test_each_block_is_its_most_common_colour(self):
-        # A 6×3 image: a block of five 1s and four 2s, then one of three
-        # each of 0, 1 and 2 (the first counted wins a tie).
-        pixels = bytes([1, 2, 1, 0, 1, 2,
-                        2, 1, 2, 1, 2, 0,
-                        1, 2, 1, 2, 0, 1])
-        self.assertEqual(blocks(pixels, 6, (0, 0, 6, 3)), [[1, 0]])
-        self.assertEqual(blocks(bytes(4), 2, (0, 0, 2, 2)), [[0]], "an edge block may be smaller")
-
     def test_a_native_face_draws_from_its_own_colours(self):
-        """The gel draws natively and sends its panel in RGB565 with no
+        """The gel sends its panel in RGB565 with no
         palette: the face is sampled from it, above the lane, and a frame
         like that used to kill the face's thread, leaving it "starting"."""
         import struct
@@ -504,28 +476,6 @@ class FaceTests(unittest.TestCase):
         self.assertEqual(rows[-1][0], blue)
         text = render((None, pixels, (w, h)))
         self.assertTrue(text.plain.startswith("▀"))
-
-    def test_the_face_stays_in_the_crop(self):
-        """Every golden frame's face (everything drawn above the bottom
-        lane) is inside the crop, in pixels and in the downsampled blocks,
-        so the crop loses none of it."""
-        x0, y0, x1, y1 = CROP
-        self.assertEqual(y1, LANE_TOP)
-        frames = [p for p in sorted(GOLDEN.rglob("*.png")) if p.parent.name != "pattern"]
-        self.assertTrue(frames, f"no golden frames in {GOLDEN}")
-        for path in frames:
-            with self.subTest(path.relative_to(GOLDEN)):
-                palette, indexes, (w, h) = shot = golden_shot(path)
-                background = indexes[0]
-                outside = [(x, y) for y in range(LANE_TOP) for x in range(w)
-                           if indexes[y * w + x] != background and not (x0 <= x < x1 and y0 <= y)]
-                self.assertEqual(outside, [])
-                grid = blocks(indexes, w, (0, 0, w, h))
-                for by, row in enumerate(grid[: LANE_TOP // SCALE]):
-                    for bx, index in enumerate(row):
-                        inside = x0 <= bx * SCALE < x1 and y0 <= by * SCALE
-                        self.assertTrue(inside or index == background, (bx, by))
-                render(shot)
 
 
 QUESTIONS = next(line["questions"] for line in fixture_lines() if "questions" in line)
@@ -714,7 +664,7 @@ class MemoryTests(unittest.TestCase):
         self.assertEqual(boop, ["calm", "happy", "focused", "proud", "cross", "sad", "lonely"])
         self.assertIn("lonely", boop)
         self.assertNotIn("wounded", boop, "a face only, which settles into sad")
-        self.assertEqual(len(MOODS), 42, "Preview keeps every face of the pixel face")
+        self.assertEqual(len(MOODS), 18, "Preview keeps every face of Boop's pack")
 
     def test_dreaming_now_lands_with_its_dream(self):
         pending = controls.Pending()

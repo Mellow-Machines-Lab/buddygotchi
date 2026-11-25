@@ -29,7 +29,15 @@ import script as scripts  # noqa: E402
 import session  # noqa: E402
 import term  # noqa: E402
 
-SESSIONS = HERE.parents[3] / "internal" / "sessions"
+# Five demo scripts and the projects their agents work in, kept here for
+# the tests alone: no pack's demo has a session project now.
+FIXTURES = HERE / "fixtures"
+SESSIONS = FIXTURES / "sessions"
+
+
+def find(name: str) -> Path:
+    """A fixture's demo script by name, as scripts.find finds a pack's."""
+    return FIXTURES / "demo" / f"{name}.jsonl"
 
 
 def write(folder: Path, lines: list) -> Path:
@@ -53,7 +61,7 @@ class ScriptTests(unittest.TestCase):
         for folder in sorted(SESSIONS.iterdir()):
             if not (folder / "workspace").is_dir():
                 continue
-            s = scripts.load(scripts.find(folder.name))
+            s = scripts.load(find(folder.name))
             replies = s.replies()
             self.assertTrue(replies, folder.name)
             for l in replies:
@@ -76,7 +84,7 @@ class ScriptTests(unittest.TestCase):
         self.assertEqual([scripts.said(l) for l in s.replies()], ["Reading.", None, "Done."])
 
     def test_claude_asks_only_about_what_the_script_asks_about(self):
-        s = scripts.load(scripts.find("landing"))
+        s = scripts.load(find("landing"))
         rules = session.permissions(s)
         self.assertIn("Bash(npm test)", rules["allow"])
         self.assertEqual(rules["ask"], ["Bash(npm run setup:browser)"])
@@ -85,21 +93,21 @@ class ScriptTests(unittest.TestCase):
     def test_the_project_is_named_as_the_player_with_no_agent_names_it(self):
         # The sign on the board shows the project, so a live run and the
         # recorded one must agree (Runtime+Demo's slug).
-        self.assertEqual("deploy-the-docs", scripts.load(scripts.find("hanging")).project)
-        self.assertEqual("keyboard-shortcuts", scripts.load(scripts.find("landing")).project)
+        self.assertEqual("deploy-the-docs", scripts.load(find("hanging")).project)
+        self.assertEqual("keyboard-shortcuts", scripts.load(find("landing")).project)
         self.assertEqual("a-b-2", scripts.Script(path=Path("x.jsonl"), title=" A, b--2! ").project)
         self.assertEqual("project", scripts.Script(path=Path("x.jsonl"), title="").project)
 
     def test_a_compact_plays_only_where_the_model_is_replayed(self):
         # A real model can't be made to fill its context on cue.
-        s = scripts.load(scripts.find("context-wall"))
+        s = scripts.load(find("context-wall"))
         self.assertIn("IN=simulated-claude-terminal", session.refusal(s, "claude", "desktop"))
         self.assertIsNone(session.refusal(s, "claude", "terminal"))
         self.assertIsNone(session.refusal(s, "codex", "terminal"))
-        self.assertIn("no subagents", session.refusal(scripts.load(scripts.find("landing")), "codex", "terminal"))
+        self.assertIn("no subagents", session.refusal(scripts.load(find("landing")), "codex", "terminal"))
 
     def test_the_demo_command_is_the_scripts_replies_in_order(self):
-        s = scripts.load(scripts.find("landing"))
+        s = scripts.load(find("landing"))
         text = desktop.script(s.replies(), s.title)
         main = [l for l in s.replies() if l.get("by") != "reviewer"]
         self.assertEqual(text.count("### Step "), len(main))
@@ -306,7 +314,7 @@ class ServerTests(unittest.TestCase):
 def play_project(case: unittest.TestCase, name: str, tests: str) -> list:
     """Plays a script's edits on a copy of its project, running `tests`
     with node at each `npm test` step: each run's exit code and last line."""
-    s = scripts.load(scripts.find(name))
+    s = scripts.load(find(name))
     with tempfile.TemporaryDirectory() as d:
         ws = Path(d) / "ws"
         shutil.copytree(SESSIONS / name / "workspace", ws)

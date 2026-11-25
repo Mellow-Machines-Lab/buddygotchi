@@ -1,6 +1,6 @@
 # Demos with a real agent
 
-Updated 2026-10-24. How a character pack's demo script plays through a
+Updated 2026-11-24. How a character pack's demo script plays through a
 real Claude Code or Codex with Boop watching, for recording videos
 (`make demo IN=…`; the commands are in
 [characters/DEMOS.md](../../characters/DEMOS.md), Play it). Here the
@@ -102,15 +102,17 @@ Each run keeps its logs in its `/tmp/boop-session-*` folder:
 
 `NAME/workspace/` here is the project the script's agent works in: its
 files, and tests that give the story's results when the script's edits are
-made (`hello`, `landing`, `context-wall`), or that runs the command it asks you about
-(`hanging`, whose story is the wait before you allow it). Its copy is
-named after the script's title (`deploy-the-docs`), as the player with
-no agent names its project, so the board shows the same either way.
-A real model reads what it runs, so the
-project and the script must agree, and the script must say only what's
-true: a reviewer asked to say "nothing else changed" when something did
-won't. `make -C internal tools-test` holds the landing and context-wall
-projects to their stories.
+made, or that runs the command it asks you about (a story of the wait
+before you allow it). Its copy is named after the script's title
+(`deploy-the-docs`), as the player with no agent names its project, so
+the board shows the same either way. A real model reads what it runs, so
+the project and the script must agree, and the script must say only
+what's true: a reviewer asked to say "nothing else changed" when
+something did won't. None of Boop's demos has a project yet. The session
+tool's own tests keep five scripts and their projects as fixtures
+(`internal/tools/session/tests/fixtures/`), and `make -C internal
+tools-test` holds two of them, landing and context-wall, to their
+stories.
 
 **When an agent changes,** a new Claude Code or Codex can name a tool, a
 hook or a dialog differently: `boop.log` says which step was left out or

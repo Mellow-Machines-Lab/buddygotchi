@@ -1,5 +1,4 @@
-// The touch controller: the CYD's XPT2046 on
-// bit-banged SPI (cyd24/touch.cpp), or the AMOLED board's FT3168 on I2C
+// The touch controller: the AMOLED board's FT3168 on I2C
 // (amoled206/touch.cpp).
 #pragma once
 #include <cstdint>
@@ -13,7 +12,7 @@ void touchRaw(int& x, int& y, int& z, bool& irq);
 // True once after the controller itself reported the finger lifted (the
 // AMOLED's FT3168: no point, or the point's lift-up event), so the touch
 // can end at once instead of waiting out the readings it might have
-// missed; never on the CYD, whose panel says nothing of a lift. How many
+// missed. How many
 // such lifts it has reported, for dbg.state.
 bool touchLifted();
 uint32_t touchLifts();

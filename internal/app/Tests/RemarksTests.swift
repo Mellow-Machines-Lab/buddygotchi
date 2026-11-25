@@ -162,19 +162,18 @@ final class RemarksTests: XCTestCase {
 
     // MARK: The pack
 
-    /// Both packs have words for every remark `Remarks` can return, each
+    /// Boop's pack has words for every remark `Remarks` can return, each
     /// fitting a sign once `{n}` is filled in.
     func testThePacksHaveEveryRemarksWords() throws {
-        for pack in try SkitTests.packs() {
-            let signs = try Steering(directory: pack.directory.appendingPathComponent("steering")).signs
-            for id in Remarks.all {
-                let lines = Signs.remark(signs, id, n: 10)
-                XCTAssertFalse(lines.isEmpty, "\(pack.id): no words for \(id)")
-                for line in lines { XCTAssertLessThanOrEqual(line.count, Signs.maxLength, "\(pack.id): \(line)") }
-            }
-            XCTAssertEqual(Signs.remark(signs, "run", n: 3).first, "3 in a row", pack.id)
-            XCTAssertEqual(Signs.remark(signs, "count", n: nil), [], "\(pack.id): a {n} line with no number is left out")
+        let pack = try SkitTests.pack()
+        let signs = try Steering(directory: pack.directory.appendingPathComponent("steering")).signs
+        for id in Remarks.all {
+            let lines = Signs.remark(signs, id, n: 10)
+            XCTAssertFalse(lines.isEmpty, "\(pack.id): no words for \(id)")
+            for line in lines { XCTAssertLessThanOrEqual(line.count, Signs.maxLength, "\(pack.id): \(line)") }
         }
+        XCTAssertEqual(Signs.remark(signs, "run", n: 3).first, "3 in a row", pack.id)
+        XCTAssertEqual(Signs.remark(signs, "count", n: nil), [], "\(pack.id): a {n} line with no number is left out")
     }
 
     // MARK: The Moment
@@ -213,7 +212,7 @@ final class RemarksTests: XCTestCase {
     /// finish may; its own record says it, and HISTORY's line for it holds
     /// up its sign. The invite rides that last Moment.
     func testAFastWinsRemarkIsALowMomentAfter() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let rig = rig()
         rig.inviting()
         let result = try XCTUnwrap(rig.run(Self.finish(), win(minutes: 2)))
@@ -242,7 +241,7 @@ final class RemarksTests: XCTestCase {
     /// says which): a board with another voice says nothing at a win, and
     /// the record still names the `win`, so your usual counts it.
     func testASkitThatSaysNothingIsStillNamed() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let quiet = MomentOutput(queue: { _, _ in }, blocked: { nil }, speaks: { false },
                                  line: { _ in Line("", facts: RemarksTests().win(minutes: 2)) })
         let result = try XCTUnwrap(quiet.run([MomentOutput.emotionKey: Answer(choice: "happy", probabilities: ["happy": 1])],
@@ -253,7 +252,7 @@ final class RemarksTests: XCTestCase {
 
     /// The agent's offered line wins: no remark after it.
     func testTheAgentsLineWins() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let rig = rig()
         var card = Card(kind: .result, text: "shipped the nav")
         card.lines = [Card.Line(says: "all green", feeling: "happy")]
@@ -269,7 +268,7 @@ final class RemarksTests: XCTestCase {
     /// otherwise as it was (the dream's still plays whole); a special day's
     /// sign wins over it.
     func testABacksRemarkIsItsSign() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let early = back(minutes: 600, first: true)
         let plain = rig()
         let result = try XCTUnwrap(plain.run(Self.cameBack(), early))
@@ -354,7 +353,7 @@ final class RemarksTests: XCTestCase {
     /// next win's `fast` plays; the next two skits carry none; and you back
     /// at 7:00, early, on a special day, keeps the day's sign.
     func testThroughTheRuntime() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-rem-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }

@@ -405,9 +405,6 @@ public final class MomentOutput: Output {
     /// The result card an agent handed in for the turn `now` finished, if
     /// any: its offered lines play after the finish (`MomentRule.offeredLine`).
     public var offered: (Event?) -> Card? = { _ in nil }
-    /// How long a line the board can hold low: the gel's low sign, or a
-    /// plain sign's room on a face that holds nothing low.
-    public var lineRoom: () -> Int = { MemoryPipeline.signMax }
 
     /// What a skit's invite is asked by, or nil for none ever (the evals',
     /// and most tests'): whether the board plays invites (its `hello`'s
@@ -941,7 +938,7 @@ public final class MomentOutput: Output {
         }
         if reaction.outcome != nil, ruled == nil, blocked() == nil, let card = offered(now),
            let line = MomentRule.offeredLine(card.lines, facts: lineFacts, face: choice, mood: moodID(log) ?? pack.defaultMood,
-                                             room: lineRoom()) {
+                                             room: MemoryPipeline.signMax) {
             spoken = behind(line.says)
             spoken?.reason = reaction.who.map { "\($0.agent) offered it" }
             after["offered_line"] = true

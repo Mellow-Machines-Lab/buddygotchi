@@ -100,7 +100,7 @@ struct MoodTile: View {
             .onAppear { stills.want([snapshot]) }
             .accessibilityHidden(true)
         } else {
-            BoopFace(mood: .idle, design: mood, size: size)
+            BoopFace(mood: .idle, size: size)
         }
     }
 }

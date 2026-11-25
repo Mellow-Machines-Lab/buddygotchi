@@ -28,7 +28,7 @@ public struct DemoRecording: Codable, Sendable, Equatable {
     /// The character pack it was played with, and what the creature is called.
     public var character: String
     public var name: String
-    /// The device's face it was recorded on: `pixel` or `gel`.
+    /// The device's face it was recorded on, as its `hello` says: `gel`.
     public var face: String
     /// How long it runs, in seconds.
     public var length: Double

@@ -23,12 +23,6 @@ sys.path.insert(0, str(REPO / "simulator" / "tools"))
 from voice_subset import chosen_voice  # noqa: E402
 sys.path.pop(0)
 VOICE = chosen_voice()
-# The face the core draws with no BOOP_SIM_FACE it can: the pixel face, or
-# the staged pack's own when it hasn't one (the gel).
-sys.path.insert(0, str(REPO / "characters"))
-import charactergen  # noqa: E402
-sys.path.pop(0)
-FACE = charactergen.sim_face(json.loads((charactergen.in_use() / "character.json").read_text()))
 
 WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 
@@ -36,9 +30,8 @@ WORKING = {"t": "state", "base": "working", "mood": "calm", "busy": 1, "vol": 6}
 class Board:
     """The native simulator, --live, with its serial port opened as a tool opens a board's."""
 
-    def __init__(self, face: str = "pixel", **env: str) -> None:
-        self.proc = subprocess.Popen([str(CORE), "--live"], stdout=subprocess.PIPE,
-                                     env={**os.environ, "BOOP_SIM_FACE": face, **env})
+    def __init__(self, **env: str) -> None:
+        self.proc = subprocess.Popen([str(CORE), "--live"], stdout=subprocess.PIPE, env={**os.environ, **env})
         said = self.proc.stdout.readline().decode().split()
         assert said[:1] == ["port"], f"the core didn't say where its port is: {said}"
         self.port = said[1]
@@ -92,8 +85,8 @@ class Board:
 
 @unittest.skipUnless(CORE.exists(), "the core isn't built: firmware/tools/pio.sh run -e native")
 class CoreTests(unittest.TestCase):
-    def board(self, *args: str, **env: str) -> Board:
-        board = Board(*args, **env)
+    def board(self, **env: str) -> Board:
+        board = Board(**env)
         self.addCleanup(board.close)
         # Up once it answers; a new build's first start is slow.
         for _ in range(50):
@@ -106,18 +99,16 @@ class CoreTests(unittest.TestCase):
     def test_it_says_hello_and_draws_in_real_time(self) -> None:
         board = self.board()
         hello = board.request({"t": "hello"})
-        self.assertEqual((hello["app"], hello["fw"], hello["face"]), ("boop", "sim", FACE))
+        self.assertEqual((hello["app"], hello["fw"], hello["face"]), ("boop", "sim", "gel"))
         board.send(WORKING)
         board.pump(1.5)
         self.assertGreater(board.request({"t": "dbg.ping"})["fps"], 0, "the working face moves on its own, with no line asking")
 
     def test_the_native_face_fills_the_panel_it_is_given(self) -> None:
-        board = self.board("gel")
-        if board.request({"t": "hello"})["face"] != "gel":
-            self.skipTest("this checkout's pack has only the pixel face")
+        board = self.board()
         shot = board.request({"t": "dbg.shot"}, 1.5)
         self.assertEqual((shot["w"], shot["h"]), (502, 410), "the AMOLED's panel, by default")
-        small = self.board("gel", BOOP_SIM_NATIVE="400x300")
+        small = self.board(BOOP_SIM_NATIVE="400x300")
         shot = small.request({"t": "dbg.shot"}, 1.5)
         self.assertEqual((shot["w"], shot["h"]), (400, 300))
 
@@ -157,9 +148,11 @@ class CoreTests(unittest.TestCase):
     def test_what_nobody_heard_is_forgotten(self) -> None:
         # Pins Port::kStaleMs: with nothing reading, what the board said
         # 500 ms ago is thrown away, so a tool that opens the port later
-        # hears only what's said from then on.
+        # hears only what's said from then on. A touch beside the nose, at
+        # work, is a poke: on it, it would be a nose boop.
         board = self.board()
-        board.send({"t": "dbg.touch", "x": 160, "y": 120, "ms": 100})
+        board.send(WORKING)
+        board.send({"t": "dbg.touch", "x": 80, "y": 120, "ms": 100})
         board.pump(0.01)
         board.unplug()
         board.pump(1.2)  # the tap happens, and is said, with nobody listening
@@ -169,7 +162,7 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(board.usb, b"")
         self.assertEqual(board.request({"t": "hello"})["app"], "boop")
         # Heard, when someone is there.
-        board.request({"t": "dbg.touch", "x": 160, "y": 120, "ms": 100})
+        board.request({"t": "dbg.touch", "x": 80, "y": 120, "ms": 100})
         board.pump(0.6)
         self.assertIn("tap", board.events())
 

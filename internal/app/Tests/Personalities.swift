@@ -3,8 +3,8 @@ import XCTest
 @testable import BoopKit
 
 /// The engine's tests run on whichever pack is chosen. The few that check a
-/// pack's own content (Boop's evals, goldens and 18 faces, Pixel's mood
-/// graph) need that pack, and skip when another is chosen.
+/// pack's own content (Boop's evals, goldens and 18 faces) need that pack,
+/// and skip when another is chosen.
 func requirePack(_ ids: String...) throws {
     try XCTSkipUnless(ids.contains(CharacterPack.active.id),
                       "needs the \(ids.joined(separator: " or ")) character pack, and \(CharacterPack.active.id) is chosen")

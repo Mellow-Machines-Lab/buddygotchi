@@ -19,21 +19,20 @@ final class InviteTests: XCTestCase {
 
     // MARK: The pack
 
-    /// Both packs: the win holds up a palm for a tap and high-fives, the
+    /// Boop's pack: the win holds up a palm for a tap and high-fives, the
     /// upset turns its back for a stroke and sighs, the back leans in for a
     /// stroke and purrs, and the fix invites nothing.
     func testThePacksInvitesParse() throws {
-        for pack in try SkitTests.packs() {
-            let invites = Dictionary(uniqueKeysWithValues: pack.skits.map { ($0.id, $0.invite) })
-            XCTAssertEqual(invites["win"], Self.win.invite, pack.id)
-            XCTAssertEqual(invites["upset"], Self.upset.invite, pack.id)
-            XCTAssertEqual(invites["back"], Self.back.invite, pack.id)
-            XCTAssertEqual(invites["fix"], .some(nil), "\(pack.id): the fix invites nothing")
-            // The words by the place to touch are the pack's.
-            let signs = try Steering(directory: pack.directory.appendingPathComponent("steering")).signs
-            XCTAssertEqual(Signs.invite(signs, touch: .tap), "tap", pack.id)
-            XCTAssertEqual(Signs.invite(signs, touch: .stroke), "pet", pack.id)
-        }
+        let pack = try SkitTests.pack()
+        let invites = Dictionary(uniqueKeysWithValues: pack.skits.map { ($0.id, $0.invite) })
+        XCTAssertEqual(invites["win"], Self.win.invite, pack.id)
+        XCTAssertEqual(invites["upset"], Self.upset.invite, pack.id)
+        XCTAssertEqual(invites["back"], Self.back.invite, pack.id)
+        XCTAssertEqual(invites["fix"], .some(nil), "\(pack.id): the fix invites nothing")
+        // The words by the place to touch are the pack's.
+        let signs = try Steering(directory: pack.directory.appendingPathComponent("steering")).signs
+        XCTAssertEqual(Signs.invite(signs, touch: .tap), "tap", pack.id)
+        XCTAssertEqual(Signs.invite(signs, touch: .stroke), "pet", pack.id)
     }
 
     /// An invite that isn't one doesn't load: a pose, a touch or a payoff
@@ -41,7 +40,7 @@ final class InviteTests: XCTestCase {
     func testABadInviteDoesntLoad() throws {
         func pack(_ invite: Any) throws -> CharacterPack {
             try CharacterPack(json: ["id": "t", "name": "T", "version": "1", "default_mood": "calm",
-                                     "moods": [["id": "calm", "face": "Calm.", "meaning": "Settled."]],
+                                     "moods": [["id": "calm", "face": "Calm."]], "lasting": [["id": "calm", "meaning": "Settled."]],
                                      "skits": [["id": "win", "slots": ["doneLong"], "invite": invite]]], from: "t.json")
         }
         let fine = try pack(["pose": "palm", "touch": "tap", "payoff": "highfive"])
@@ -272,7 +271,7 @@ final class InviteTests: XCTestCase {
     /// skit's pose, touch and payoff, the pack's word, care's XP while it
     /// has room, and the record says the pose, and HISTORY reads it.
     func testAWinInvites() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let rig = InviteRig()
         rig.inviting()
         let result = try XCTUnwrap(rig.run(Self.finish, Self.won))
@@ -302,7 +301,7 @@ final class InviteTests: XCTestCase {
     /// 10, with no ledger, or with nothing to ask it by; one blocked plays
     /// nothing at all. The Moment is then as it was.
     func testWhenNoInviteIsAsked() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         // A rig of its own each time: the same takes, from the same seed.
         func played(_ setUp: (InviteRig) -> Void) -> (Moment?, OutputResult?) {
             let rig = InviteRig()
@@ -343,7 +342,7 @@ final class InviteTests: XCTestCase {
     /// its own, which says the invite and the line; the finish's says
     /// neither, and HISTORY's line for the agent's has none of its words.
     func testTheInviteFollowsTheAgentsLine() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let rig = InviteRig()
         rig.inviting()
         var card = Card(kind: .result, text: "shipped the nav")
@@ -490,7 +489,7 @@ final class InviteTests: XCTestCase {
     /// has the ledger's count moved; a miss then a late answer earns once;
     /// a stroke answering an invite soothes cross a level.
     func testThroughTheRuntime() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-inv-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -576,7 +575,7 @@ extension InviteTests {
     /// leaves it out, so the next is still the very first. (A Moment behind
     /// a finish, with its own record, is `RemarksTests.testThroughTheRuntime`'s.)
     func testASkippedMomentAsksNoInvite() throws {
-        try requirePack("boop", "pixel")
+        try requirePack("boop")
         let dir = URL(fileURLWithPath: "/tmp/boop-skp-\(UUID().uuidString.prefix(8))")
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }

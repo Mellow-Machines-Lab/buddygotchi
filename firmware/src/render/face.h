@@ -395,6 +395,6 @@ class Face {
     return 0;
   }
 };
-// The only build-time selection point. Native tests default to pixel.
+// The only build-time selection point: the staged pack's make_face.cpp.
 std::unique_ptr<Face> makeFace();
 }  // namespace render

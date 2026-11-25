@@ -436,8 +436,7 @@ public final class Runtime: @unchecked Sendable {
                         company: { remembersNow()?.today })
         mind.swears = { swearsNow() }
         mind.earned = { earnedNow($0) }
-        mind.felt = { remembersNow()?.felt(at: $0, longest: MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face })) ?? [] }
-        mind.lineRoom = { MemoryPipeline.signRoom(face: link.hello.map { DeviceInfo($0).face }) }
+        mind.felt = { remembersNow()?.felt(at: $0) ?? [] }
         // A skit's invite: only to a board that plays them, by the
         // memory's ledger, and with care's XP while it has room.
         let time = options.time
@@ -689,8 +688,7 @@ public final class Runtime: @unchecked Sendable {
     /// look up holding a sign, so you know which board to tap; Boop waking
     /// into its body once it's paired; a finish that stands out, held
     /// twice, for the first hook; and a big one for the finale, held three
-    /// times in a happy face, its first design (the gel's Gold Rush,
-    /// Pixel's trophy).
+    /// times in a happy face, its first design (the gel's Gold Rush).
     public enum Greeting: Sendable {
         case beckon, wake, hello, finale
         var reaction: Moment {

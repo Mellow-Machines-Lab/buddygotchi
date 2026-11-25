@@ -6,7 +6,6 @@
     characters/charactergen.py --firmware-to=DIR [PACK]
     characters/charactergen.py --which
     characters/charactergen.py --boards [PACK]
-    characters/charactergen.py --sim-face [PACK]
 
 --check checks that a pack builds: its character.json has the moods and
 the startup mood moods.h needs, and an id and version that fit the board's hello (§10); and its rig/
@@ -28,9 +27,7 @@ build beside the staged pack's (simulator/web/build.sh PACK).
 after a build reads (in_use()).
 
 --boards prints the boards a pack has a face for (its `faces`), the
-envs its firmware builds for; --sim-face, the face the simulator draws
-for it unless BOOP_SIM_FACE says: the pixel face if it has one, else its
-first. Both read the chosen pack without PACK.
+envs its firmware builds for. It reads the chosen pack without PACK.
 
 Every form but --which and --firmware-to also checks the board's states
 against CHARACTER.md §9, each pack's studio entry (§12) and references
@@ -86,12 +83,6 @@ def chosen() -> Path:
         name = saved.read_text().strip()
         return own_folder(ROOT / name) if "/" in name else CHARACTERS / name
     return CHARACTERS / "boop"
-
-
-def sim_face(character: dict) -> str:
-    """The face the simulator draws for a pack unless BOOP_SIM_FACE says."""
-    faces = list(dict.fromkeys(character.get("faces", {}).values()))
-    return "pixel" if "pixel" in faces or not faces else faces[0]
 
 
 def staged() -> Path | None:
@@ -240,30 +231,13 @@ def tag_names(source: Path = TAGS_H) -> list[str]:
     return re.findall(r'"(\w+)"', match.group(1))
 
 
-PIXEL_FACES = "firmware/include/faces.h"  # the pixel face's art, which facegen writes
-
-
-def drawn_styles(pack: Path) -> list[str]:
-    """The styles an expression may wear: the moods the pixel face the pack
-    has draws, whose eyes and mouth are its art (faces.h's
-    kMoodNames); none without one."""
-    faces = pack / PIXEL_FACES
-    match = faces.is_file() and re.search(r"kMoodNames\[\d+\] = \{([^}]*)\}", faces.read_text())
-    return re.findall(r'"(\w+)"', match.group(1)) if match else []
-
-
-def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | None = None) -> tuple[dict, list[str]]:
+def read_rig(pack: Path, states: list[str] | None = None) -> tuple[dict, list[str]]:
     """A pack's rig/ (CHARACTER.md §15) as rig_tables.h has it, and what's
     wrong with it, each problem with its file and key. Every file is
     optional, and one that's missing is empty."""
-    if moods is None:  # the pack's own, as its character.json names them
-        moods = [m.get("id") for m in load(pack).get("moods", [])] if (pack / "character.json").exists() else []
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
-    drawn = drawn_styles(pack)
-    a_style = Rule(f"isn't a mood the pixel face draws ({', '.join(drawn) or 'the pack has no pixel face'})",
-                   lambda v: v in drawn)
-    rig = {"expressions": [], "clips": [], "looks": []}
+    rig = {"clips": [], "looks": []}
     # Each name a file may set, with its channel's range: eyeOpen sets both eyes.
     ranges = {**{c: (lo, hi) for c, (lo, hi, _) in channels.items()}, "eyeOpen": channels["eyeOpenL"][:2]}
 
@@ -286,12 +260,6 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     def named(name):
         """The channels a name in a file sets."""
         return ["eyeOpenL", "eyeOpenR"] if name == "eyeOpen" else [name]
-
-    rel = "expressions.json"
-    for mood, styles in read(rel, {m: dict for m in moods}, unknown="isn't a mood").items():
-        styles = check(rel, styles, {"eyes": a_style, "mouth": a_style}, at=mood, required=("eyes", "mouth"))
-        if len(styles) == 2:
-            rig["expressions"].append({"mood": mood, **styles})
 
     clips = sorted((folder / "clips").glob("*.json")) if (folder / "clips").is_dir() else []
     if len(clips) > MOST:
@@ -429,9 +397,8 @@ def rig_h(pack: Path, rig: dict) -> str:
     table("Key", "kKeys", keys)
     table("Track", "kTracks", tracks)
     table("Cue", "kCues", cues)
-    lists = [table("Expression", "kExpressions", ["{" + ", ".join(json.dumps(e[k]) for k in ("mood", "eyes", "mouth")) + "}"
-                                                  for e in rig["expressions"]]),
-             table("Clip", "kClips", clips)]
+    # The rig's expressions are none: only the pixel face drew them.
+    lists = ["{}", table("Clip", "kClips", clips)]
     table("Occasion", "kOccasions", occasions)
     table("TierClip", "kTiers", tiers)
     table("ActClip", "kActs", acts)
@@ -466,7 +433,7 @@ MEDIA = {".png": "still", ".jpg": "still", ".jpeg": "still", ".webp": "still", "
 REFERENCE_FOLDER = re.compile(r"\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*")
 KINDS = ("inspiration", "direct")
 STATUSES = ("new", "read", "translated", "in review", "approved")
-BECOMES = ("clip", "expression", "art")
+BECOMES = ("clip",)
 
 
 def reference_folders(pack: Path) -> list[Path]:
@@ -500,8 +467,7 @@ def reference_problems(folder: Path, moods: set[str], states: list[str], rig: di
     problems = []
     ref = fields(rel, raw, {"kind": KINDS, "note": TEXT, "status": STATUSES, "became": list, "show": dict,
                             "frames": (0, None), "ms": (0, None)}, problems, required=("kind", "note", "status"))
-    made = {"clip": {c["id"] for c in rig["clips"]}, "expression": {e["mood"] for e in rig["expressions"]},
-            "art": {e[k] for e in rig["expressions"] for k in ("eyes", "mouth")}}
+    made = {"clip": {c["id"] for c in rig["clips"]}}
     for i, b in enumerate(ref.get("became", [])):
         b = fields(rel, b, {"what": BECOMES, "id": A_NAME}, problems, at=f"became[{i}]", required=("what", "id"))
         if len(b) == 2 and b["id"] not in made[b["what"]]:
@@ -614,8 +580,8 @@ def firmware_acts(source: Path = FIRMWARE_ACTS) -> list[str]:
 
 def wears(pack: Path, entry: dict) -> dict[str, str]:
     """The moods a studio preview has no art of its own for, each with the
-    mood whose art it shows instead: its `wears` file's `borrows` table
-    (Pixel's temporary one), or none."""
+    mood whose art it shows instead: its `wears` file's `borrows` table,
+    or none."""
     if not entry.get("wears"):
         return {}
     return json.loads((pack / entry["wears"]).read_text())["borrows"]
@@ -977,9 +943,6 @@ def main(argv: list[str]) -> int:
         return 0
     if "--boards" in argv:
         print(" ".join(load(pack).get("faces", {})))
-        return 0
-    if "--sim-face" in argv:
-        print(sim_face(load(pack)))
         return 0
     reads = Reads()  # each pack's rig/, read once this run
     if "--stage" in argv:

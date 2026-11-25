@@ -172,8 +172,7 @@ struct OverviewPane: View {
             SlimeFace(feed: model.slime, snapshot: model.status?.snapshot ?? Self.waking, live: model.shown, size: faceSize,
                       needsYou: FaceMood(model.status) == .needsYou)
         } else {
-            BoopFace(mood: model.startError == nil ? FaceMood(model.status) : .stopped, design: model.status?.snapshot.mood ?? MoodOutput.initial,
-                     size: faceSize)
+            BoopFace(mood: model.startError == nil ? FaceMood(model.status) : .stopped, size: faceSize)
         }
     }
 
@@ -334,34 +333,21 @@ struct OverviewPane: View {
 
     // MARK: Why it looks like this
 
-    /// What Boop is celebrating today, and the night: each reason, and what
-    /// the board wears or shows for it.
+    /// What Boop is celebrating today: each reason.
     private func dressingCard(_ reasons: [Narration.Dressing]) -> some View {
         Card {
             VStack(alignment: .leading, spacing: Theme.gapSnug) {
                 ForEach(reasons) { reason in
                     HStack(alignment: .firstTextBaseline, spacing: Theme.gapSnug) {
-                        Image(systemName: symbol(reason.kind)).font(.body).foregroundStyle(Theme.inkSoft)
+                        Image(systemName: "party.popper").font(.body).foregroundStyle(Theme.inkSoft)
                             .frame(width: Theme.iconColumn)
-                        VStack(alignment: .leading, spacing: Theme.hair) {
-                            Text(reason.why).font(.bodyStrong)
-                            if let what = reason.what {
-                                Text(what.prefix(1).uppercased() + what.dropFirst()).caption()
-                            }
-                        }
-                        .fixedSize(horizontal: false, vertical: true)
+                        Text(reason.why).font(.bodyStrong)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
         }
         .accessibilityElement(children: .combine)
-    }
-
-    private func symbol(_ kind: Narration.Dressing.Kind) -> String {
-        switch kind {
-        case .specialDay: "party.popper"
-        case .night: "moon.stars"
-        }
     }
 
     // MARK: Needs you

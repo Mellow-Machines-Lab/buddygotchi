@@ -21,11 +21,12 @@ changes), and Node, to test them (`brew install emscripten node`). The
 first firmware build downloads the ESP32 toolchain into the checkout,
 which takes about five minutes.
 
-The characters are each in a repository of their own, SlimeBuddy and
-PixelBuddy, and the checks here use both: `make -C internal packs`
-fetches them into `characters/` (`--update` pulls them again). A change
-to a character is a pull request in its repository; making its art or
-voice again is a target of that repository's `Makefile`.
+The character is in a repository of its own, SlimeBuddy, and the checks
+here use it: `make -C internal packs` fetches it into `characters/`
+(`--update` pulls it again). Pixel, the second character, is archived
+(CLAUDE.md, Repositories). A change to the character is a pull request
+in its repository; making its art or voice again is a target of that
+repository's `Makefile`.
 
 `agent-hooks/` and `mellowharness/` are submodules, each a repository
 of its own: clone with `--recurse-submodules`, or run
@@ -39,7 +40,7 @@ make bundle                # Boop.app as it ships, in .build/Boop.app
 make bundle INTERNAL=1     # the internal build, with the simulator in a window of its own, in .build/internal/Boop.app
 make -C internal build     # the Mac app, the dev tools and the hook client
 make -C internal check     # the tests that need no board: the Swift, firmware and tools' tests, the goldens, the mirror
-make -C internal boards    # both boards' firmware, as CI builds them
+make -C internal boards    # the board's firmware, as CI builds it
 make -C internal test      # Boop's Swift tests, then each package's
 make -C internal sim-test  # the simulator: its core on the Mac, and in a browser's WebAssembly
 ```
@@ -130,7 +131,6 @@ alias that can write to the organisation:
 git -C agent-hooks remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/AgentHooks.git
 git -C mellowharness remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/MellowHarness.git
 git -C characters/.repos/SlimeBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/SlimeBuddy.git
-git -C characters/.repos/PixelBuddy remote set-url --push origin git@github-fdsa:Mellow-Machines-Lab/PixelBuddy.git
 ```
 
 **Changing a package.** A submodule is checked out on no branch, and a

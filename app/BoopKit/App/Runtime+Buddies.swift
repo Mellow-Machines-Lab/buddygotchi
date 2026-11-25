@@ -57,9 +57,6 @@ extension Runtime {
         public var earned: (Int) -> (source: Growth.Source, xp: Int)? = { _ in nil }
         /// What it may bring up about you at a time (`Memory.felt`).
         public var felt: (Int64) -> [Memory.Felt] = { _ in [] }
-        /// How long a line the board holds low: the gel's low sign's room,
-        /// or a plain sign's on a face that holds nothing low.
-        public var lineRoom: () -> Int = { MemoryPipeline.signMax }
         /// What a skit's invite is asked by (`MomentOutput.Inviting`), or
         /// nil for none ever.
         public var inviting: MomentOutput.Inviting?
@@ -304,7 +301,6 @@ extension Runtime {
             guard let h, let now, let key = TranscriptView.about(now, facts: h.line(now.seq)?.facts) else { return nil }
             return core.result(for: key)
         }
-        react.lineRoom = m.lineRoom
         react.inviting = m.inviting
         react.remarking = m.remarking
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)

@@ -20,8 +20,8 @@ struct Font {
   const uint8_t* data;  // 4-bit coverage, high nibble first, row by row
 };
 
-extern const Font& kSmall;  // 8 × 18 cells: the CYD's strip; on the gel, art only, never words to read
-extern const Font& kLarge;  // 13 × 30 cells: the CYD's bubble; on the gel, a second line, the narration
+extern const Font& kSmall;  // 8 × 18 cells: on the gel, art only, never words to read
+extern const Font& kLarge;  // 13 × 30 cells: on the gel, a second line, the narration
 extern const Font& kSign;   // 17 × 38 cells, for a reaction's sign, the needs-you screen's thread and the gel's lane
 
 // Draws `text` with its cell's top-left at (x, y). Returns the x after it.

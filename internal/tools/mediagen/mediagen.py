@@ -5,7 +5,7 @@ mellowharness-emit (README.md here).
 
     internal/tools/.venv/bin/python internal/tools/mediagen/mediagen.py [--out DIR] [boop moods popover watch beacon]
 
-The face's pictures are the pack in use's (CHARACTER=pixel picks one), its
+The face's pictures are the pack in use's (CHARACTER=boop picks one), its
 name in the captions; --out puts them and the popover's somewhere else
 than documentation/media/, a character repository's media/ (its make media).
 """
@@ -86,15 +86,14 @@ def record(steps: list[tuple[int, dict | None]]) -> list[Image.Image]:
 
 
 def device(screen: Image.Image, caption: str, pad: int = 22) -> Image.Image:
-    """The screen on a rounded bezel, with a caption under it: the CYD's
-    small screen twice its size, the AMOLED's as it is."""
-    scale = 2 if screen.width <= 320 else 1
-    sw, sh = screen.width * scale, screen.height * scale
+    """The screen on a rounded bezel, with a caption under it: the AMOLED's
+    as it is."""
+    sw, sh = screen.width, screen.height
     W, H = sw + pad * 2, sh + pad * 2 + 46
     img = Image.new("RGB", (W, H), KEY)
     d = ImageDraw.Draw(img)
     d.rounded_rectangle((0, 0, W - 1, H - 1), radius=34, fill=BEZEL)
-    img.paste(screen.resize((sw, sh), Image.Resampling.NEAREST), (pad, pad))
+    img.paste(screen, (pad, pad))
     f = font(22, True)
     d.text(((W - d.textlength(caption, font=f)) / 2, pad + sh + 8), caption, font=f, fill=(235, 235, 235))
     return img
@@ -105,8 +104,7 @@ def faces() -> list[str]:
     return [m["id"] for m in json.loads((chosen_pack() / "character.json").read_text())["moods"]]
 
 
-# The working face: a pack's `focused`, or `engaged` for one that still has it.
-WORKING_FACE = "focused" if "focused" in faces() else "engaged"
+WORKING_FACE = "focused"
 
 STORY = [  # (at ms, message, caption from then on; {name} is the pack's)
     (0, {"t": "state", "base": "asleep", "busy": 0}, "no agents: napping"),

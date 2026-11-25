@@ -172,10 +172,6 @@ bool displayBegin() {
   return xTaskCreatePinnedToCore(pushTask, "push", kPushStack, nullptr, kPushPriority, &pusher, 0) == pdPASS;
 }
 
-// The gel, the only face this board draws, draws natively: frames go by
-// the other push, the test pattern included (render::blit).
-void displayPush(const render::Canvas&) {}
-
 bool displayPush(render::SurfacePair& frames) {
   if (!frames.ready() || frames.front().width != kNativeWidth || frames.front().height != kNativeHeight) return false;
   xSemaphoreTake(idle, portMAX_DELAY);  // the frame before has gone: its surface is the next back()
@@ -197,7 +193,5 @@ void displayBacklight(uint8_t level) {
   PanelHeld held;
   lcd.setBrightness(level);
 }
-
-void displayFailed() {}  // an AMOLED has no backlight to leave on
 
 }  // namespace board

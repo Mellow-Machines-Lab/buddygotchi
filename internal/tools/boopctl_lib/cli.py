@@ -157,7 +157,7 @@ def sim_all(paths: list[Path]) -> tuple[int, dict[str, Path]]:
     build_sim()
     failures, dirs = 0, {}
     for path in paths:
-        out = SIM_OUT / scenario.face() / path.stem
+        out = SIM_OUT / "gel" / path.stem
         shutil.rmtree(out, ignore_errors=True)
         with Sim(str(SIM_PROGRAM)) as sim:
             failures += len(scenario.play(sim, path, out))
@@ -166,8 +166,6 @@ def sim_all(paths: list[Path]) -> tuple[int, dict[str, Path]]:
 
 
 def cmd_sim(args: argparse.Namespace) -> int:
-    if args.face:
-        os.environ["BOOP_SIM_FACE"] = args.face
     paths = pick(args.scenario)
     failures, dirs = sim_all(paths)
     pins = {path.stem: scenario.pinned_shots(path) for path in paths}
@@ -176,7 +174,7 @@ def cmd_sim(args: argparse.Namespace) -> int:
         for png in sorted(out.glob("*.png")):
             if png.name.endswith(".diff.png"):
                 continue
-            golden = scenario.golden_dir() / name / png.name
+            golden = scenario.GOLDEN / name / png.name
             if png.stem not in pins[name]:
                 print(f"taken {png} (not pinned)")
                 continue
@@ -194,7 +192,7 @@ def cmd_sim(args: argparse.Namespace) -> int:
             else:
                 print(f"same  {png}")
         # A golden whose shot isn't pinned would be kept but never compared.
-        for golden in sorted((scenario.golden_dir() / name).glob("*.png")):
+        for golden in sorted((scenario.GOLDEN / name).glob("*.png")):
             if golden.stem in pins[name]:
                 continue
             if args.accept:
@@ -213,7 +211,6 @@ def cmd_mirror(args: argparse.Namespace) -> int:
     mac/mirror/board.js, under Node) and on the native simulator, each shot
     the same on both, pixel for pixel. The mirror has no card, so the
     simulator's is an empty one."""
-    os.environ["BOOP_SIM_FACE"] = "gel"
     board = REPO / "characters" / args.pack / "mac" / "mirror" / "board.js"
     if not board.is_file():
         raise DeviceError(f"no mirror at {board.relative_to(REPO)}: build it with firmware/tools/mirror.sh {args.pack}")
@@ -240,8 +237,6 @@ def cmd_mirror(args: argparse.Namespace) -> int:
 def cmd_run(args: argparse.Namespace) -> int:
     failures = differ = 0
     with Device(args.port) as dev:
-        hello = dev.request({"t": "hello"})
-        os.environ["BOOP_SIM_FACE"] = "gel" if hello.get("face") == "gel" else "pixel"
         if dev.request({"t": "dbg.state"}).get("face_down"):
             # Face down is do not disturb: no Moments, no bar, so every shot
             # with one would differ from the simulator's for no fault of the code.
@@ -252,7 +247,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         _, sim_dirs = sim_all(paths)
         try:
             for path in paths:
-                out = RUN_OUT / scenario.face() / path.stem
+                out = RUN_OUT / "gel" / path.stem
                 shutil.rmtree(out, ignore_errors=True)
                 failures += len(scenario.play(dev, path, out))
                 for png in sorted(out.glob("*.png")):
@@ -268,12 +263,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     return 1 if failures or differ else 0
 
 
-def frame_us(sample: dict, overlapped: bool) -> int:
-    """How long a frame took: drawing then pushing, or, where the push runs
-    while the next frame draws (the gel's double buffer), the longer."""
-    if overlapped:
-        return max(sample["draw_us"], sample["push_us"])
-    return sample["draw_us"] + sample["push_us"]
+def frame_us(sample: dict) -> int:
+    """How long a frame took: the push runs while the next frame draws (the
+    gel's double buffer), so the longer of the two."""
+    return max(sample["draw_us"], sample["push_us"])
 
 
 # perf --scenes (internal/VERIFICATION.md §8): each scene's state, the
@@ -547,9 +540,8 @@ def cmd_perf(args: argparse.Namespace) -> int:
     designs step a few times a second, so fps follows the design, and a
     second of a slow one draws only a few frames. So in motion it asks that
     the board drew in every second, and its frame time says how fast it
-    draws: draw_us + push_us, or on a board whose hello says
-    `gel` the larger of the two, since it sends a frame while it draws the
-    next. Each animation is a `do` played `now`, so it replaces the last at
+    draws: the larger of draw_us and push_us, since it sends a frame while
+    it draws the next. Each animation is a `do` played `now`, so it replaces the last at
     once. With --scenes, perf_scenes instead."""
     if args.scenes:
         return perf_scenes(args)
@@ -558,7 +550,6 @@ def cmd_perf(args: argparse.Namespace) -> int:
     samples = []
     working = {"t": "state", "base": "working", "busy": 1, "vol": 0}  # muted: a missing vol is 6
     with Device(args.port) as dev:
-        overlapped = dev.request({"t": "hello"}).get("face") == "gel"
         simulated = dev.request({"t": "dbg.ping"}).get("sha") == "sim"
         dev.request({"t": "dbg.clock", "run": True})
         dev.send(working)
@@ -577,7 +568,7 @@ def cmd_perf(args: argparse.Namespace) -> int:
         "samples": len(samples),
         "fps_min": min(fps),
         "fps_mean": round(sum(fps) / len(fps), 1),
-        "frame_ms_max": round(max(frame_us(s, overlapped) for s in samples) / 1000, 1),
+        "frame_ms_max": round(max(frame_us(s) for s in samples) / 1000, 1),
         # A simulator has no heap to report (its sha is "sim").
         "heap_min": None if simulated else min(s["heap_min"] for s in samples),
         "reset": restarted([s["up"] for s in samples]),
@@ -650,7 +641,7 @@ def cmd_latency(args: argparse.Namespace) -> int:
     device: dict[str, list[float]] = {k: [] for k in LATENCY_BUDGETS}
     lost = 0
     with Device(args.port) as dev:
-        face = dev.request({"t": "hello"}).get("face", "pixel")
+        face = dev.request({"t": "hello"}).get("face", "gel")
         dev.request({"t": "dbg.reset"})
         dev.request({"t": "dbg.clock", "run": True})
         dev.send({"t": "state", "base": "working", "busy": 1, "mood": MOODS[1], "vol": 0})  # muted: taps poke
@@ -1269,7 +1260,6 @@ def build_parser() -> argparse.ArgumentParser:
     p.set_defaults(func=cmd_card)
     p = sub.add_parser("sim", help="play scenarios in the simulator and compare with the goldens (L1)")
     p.add_argument("scenario", nargs="*", help="names or paths (default: all)")
-    p.add_argument("--face", choices=["pixel", "gel"], help="native face (default: BOOP_SIM_FACE, else pixel)")
     p.add_argument("--accept", action="store_true", help="copy the pinned pictures into the goldens, and remove any golden whose "
                                                           "shot isn't pinned (after looking!)")
     p.set_defaults(func=cmd_sim)

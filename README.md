@@ -34,7 +34,7 @@ it never approves, denies or blocks anything an agent does.
 > [let us know →](https://tally.so/r/ZjprM5?src=readme)
 
 <p align="center">
-  <img src="documentation/media/moods.gif" width="720" alt="Eight moods on the pixel face, each labelled: excited, proud, curious, calm, grumpy, sad, tired and wounded">
+  <img src="documentation/media/moods.gif" width="720" alt="Boop in eight of its moods, each labelled">
 </p>
 
 A menu-bar app on your Mac does the thinking, and a cheap ESP32 board
@@ -49,14 +49,13 @@ with a screen is the body:
 
 ## Pick a character
 
-Boop is the engine; a character is who lives on the board. Each one has
-a repository of its own, with everything to run it and this repository
-inside it as its engine. Start from the one for your board:
+Boop is the engine; a character is who lives on the board. The
+character has a repository of its own, with everything to run it and
+this repository inside it as its engine:
 
 | | Character | Board |
 | --- | --- | --- |
 | <img src="https://raw.githubusercontent.com/Mellow-Machines-Lab/SlimeBuddy/main/media/boop.gif" width="260" alt="The gel slime on the AMOLED board"> | **[SlimeBuddy](https://github.com/Mellow-Machines-Lab/SlimeBuddy)**: a gel slime, Boop's own. Overconfident, theatrical and easily wounded, and always on your side | Waveshare ESP32-S3-Touch-AMOLED-2.06 |
-| <img src="https://raw.githubusercontent.com/Mellow-Machines-Lab/PixelBuddy/main/media/boop.gif" width="260" alt="Pixel's face on the Cheap Yellow Display"> | **[PixelBuddy](https://github.com/Mellow-Machines-Lab/PixelBuddy)**: Pixel, a pixel-art face. Friendly, curious and a little dramatic, and the example to copy for a character of your own | Cheap Yellow Display |
 
 The rest of this page runs Boop from this repository, which is the same
 engine, for working on it.
@@ -69,17 +68,16 @@ engine, for working on it.
 | --- | --- |
 | 💻 **A Mac** | macOS 14 or later, with Command Line Tools 26 or later (`xcode-select --install`): Swift 6.2 and the macOS 26 SDK |
 | 🐍 **A newer Python** | For flashing the board, unless you already have PlatformIO's `pio`: `brew install python` ([why](firmware/README.md#build-and-flash)). PlatformIO installs itself |
-| 🟨 **A board** | One of the two below, and a USB cable that carries data |
+| 🟨 **A board** | The one below, and a USB cable that carries data |
 | 🔑 **A Jev key** | Optional. Boop's own rules always pick how it reacts, on your Mac, with the same moods and the same celebrations. [Jev](https://docs.typesafe.ai/api), TypeSafe's small hosted model, can pick a finer mood, face, reply or word on top, when it answers in time. It needs a key from TypeSafe, which may cost money. Add it in Boop's Settings, under Advanced |
 
-### Supported boards
+### Supported board
 
 | Board | Screen | Touch | Connects over |
 | --- | --- | --- | --- |
-| **Cheap Yellow Display**<br>MicroTech MTR024QV01A-V1 | 2.4" IPS, 320×240 | Resistive | Bluetooth, USB |
 | **Waveshare ESP32-S3-Touch-AMOLED-2.06** | 2.06" AMOLED, 410×502 | Capacitive | Bluetooth, USB |
 
-The CYD runs Pixel, and the AMOLED the gel slime.
+The AMOLED runs the gel slime.
 
 Pins, parts and quirks are in [the firmware's README](firmware/README.md).
 
@@ -93,7 +91,7 @@ git clone --recurse-submodules https://github.com/Mellow-Machines-Lab/buddygotch
 ```
 
 1. **Flash it.** Plug the board in over USB and run `make flash`. It
-   works out which board it is, and fetches the character's pack the
+   finds the board, and fetches the character's pack the
    first time. The first time, it installs PlatformIO
    and the ESP32 toolchain inside the checkout, which takes a few
    minutes; a `pio` already on your `PATH` is used instead.
@@ -111,11 +109,9 @@ and it opens that agent on the Mac; with nobody waiting, BOOT pokes it
 too.
 
 **Which character.** A clone runs Boop's own character, the gel slime,
-on the AMOLED board. For the CYD, run Pixel: put `pixel` in a file named
-`.character` at the repository's root before you flash and run
-([characters/CHARACTER.md](characters/CHARACTER.md) §2). Each pack is
-fetched from its repository into `characters/` the first time it's
-used.
+on the AMOLED board ([characters/CHARACTER.md](characters/CHARACTER.md)
+§2). Its pack is fetched from its repository into `characters/` the
+first time it's used.
 
 ### Everyday commands
 
@@ -228,7 +224,7 @@ useful on its own:
 - **[architecture.html](https://htmlpreview.github.io/?https://github.com/Mellow-Machines-Lab/buddygotchi/blob/main/documentation/architecture.html)**:
   how Boop fits together, following one finished turn through every piece.
 - **[characters/CHARACTER.md](characters/CHARACTER.md)**: what a
-  character pack holds, and how to make your own.
+  character pack holds.
 - **[characters/DEMOS.md](characters/DEMOS.md)**: how to write and
   record a demo, and play it in the browser, on a board or with a real
   agent.

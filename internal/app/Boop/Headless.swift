@@ -133,7 +133,7 @@ enum Headless {
                 recorder?.happened(cause, input: step.input)
             }, done: {
                 if let recorder, let file {
-                    let face = runtime.link.hello.map { DeviceInfo($0).face.rawValue } ?? "pixel"
+                    let face = runtime.link.hello?.fields["face"]?.string ?? "gel"
                     let encoder = JSONEncoder()
                     encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
                     do {

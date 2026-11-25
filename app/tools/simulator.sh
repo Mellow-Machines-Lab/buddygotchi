@@ -15,5 +15,5 @@ cp simulator/web/dist/app.html simulator/web/dist/boop-simulator.js simulator/we
 pack=$(python3 characters/charactergen.py --which)
 rm -f "$dest/voice.bin"
 [ -f "$pack/voice/voice.bin" ] && cp "$pack/voice/voice.bin" "$dest/voice.bin"
-python3 -c 'import json,sys; faces = json.load(open(sys.argv[1])).get("faces", {}); print(faces.get("amoled206") or "pixel")' \
+python3 -c 'import json,sys; faces = json.load(open(sys.argv[1])).get("faces", {}); print(faces.get("amoled206", "gel"))' \
   "$pack/character.json" > "$dest/face"

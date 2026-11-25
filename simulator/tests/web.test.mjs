@@ -24,10 +24,9 @@ const WORKING = { t: 'state', base: 'working', mood: 'calm', busy: 1, vol: 6 };
 const QUIET = { ...WORKING, base: 'idle', busy: 0 };  // a face that makes no sound of its own
 const GO = { t: 'do', id: 1, name: 'react', play: 'now', args: { say: { take: 'previous.go' } } };
 
-/// The core, with what the page's script does around it. `build` is a
-/// build in dist/: the staged pack's, or one pack's (build.sh PACK).
-async function board(face = 'pixel', env = {}, build = 'boop-sim.js') {
-  const { default: make } = await import(path.join(dist, build));
+/// The core, with what the page's script does around it: the staged pack's build in dist/.
+async function board(env = {}) {
+  const { default: make } = await import(path.join(dist, 'boop-sim.js'));
   const core = await make();
   const setenv = core.cwrap('sim_env', null, ['string', 'string']);
   const usb = core.cwrap('sim_usb', null, ['string']);
@@ -35,7 +34,6 @@ async function board(face = 'pixel', env = {}, build = 'boop-sim.js') {
     core, frames: [], lines: [], parts: {},
     input: core.cwrap('sim_input', null, ['string']),
     power(on) {
-      setenv('BOOP_SIM_FACE', face);
       for (const [k, v] of Object.entries(env)) setenv(k, v);
       core._sim_power(on ? 1 : 0);
     },
@@ -78,41 +76,33 @@ async function board(face = 'pixel', env = {}, build = 'boop-sim.js') {
 }
 
 test('it says hello and draws in real time', { skip }, async () => {
-  // On the pixel face: Pixel's build, beside the staged pack's, when that's a gel pack's.
-  const b = await board('pixel', {}, existsSync(path.join(dist, 'boop-sim-pixel.js')) ? 'boop-sim-pixel.js' : 'boop-sim.js');
+  const b = await board();
   const hello = await b.request({ t: 'hello' });
-  assert.deepEqual([hello.app, hello.fw, hello.face], ['boop', 'sim', 'pixel']);
+  assert.deepEqual([hello.app, hello.fw, hello.face], ['boop', 'sim', 'gel']);
   b.send(WORKING);
   await b.run(1000);
   assert.ok(b.frames.length > 0, 'the working face moves on its own');
-  assert.deepEqual([...new Set(b.frames.map(String))], ['320,240']);
   assert.equal(b.parts.backlight, 255);
   assert.equal(b.core._sim_parts(), 0, 'parts are told once, until one changes');
 });
 
-test('a native face fills the panel it is given', { skip }, async () => {
-  const b = await board('gel');
-  if ((await b.request({ t: 'hello' })).face !== 'gel') return;  // a checkout without Boop's pack has only the pixel face
+test('the face fills the panel it is given', { skip }, async () => {
+  const b = await board();
   b.send(WORKING);
   await b.run(300);
   assert.deepEqual([...new Set(b.frames.map(String))], ['502,410'], "the AMOLED's panel, by default");
-  const small = await board('gel', { BOOP_SIM_NATIVE: '400x300' });
+  const small = await board({ BOOP_SIM_NATIVE: '400x300' });
   small.send(WORKING);
   await small.run(300);
   assert.deepEqual([...new Set(small.frames.map(String))], ['400,300']);
 });
 
-// Boards side by side (the page's ?boards=…) each say their own id, and a
-// board built for one pack (build.sh PACK) says that pack, beside the staged one.
-test('boards side by side differ: each its own id, and its own pack', { skip }, async () => {
-  const left = await board('pixel', { BOOP_SIM_ID: 'b00p-left' }), right = await board('pixel', { BOOP_SIM_ID: 'b00p-right' });
+// Boards side by side (the page's ?boards=…) each say their own id.
+test('boards side by side differ: each its own id', { skip }, async () => {
+  const left = await board({ BOOP_SIM_ID: 'b00p-left' }), right = await board({ BOOP_SIM_ID: 'b00p-right' });
   const [l, r] = [await left.request({ t: 'hello' }), await right.request({ t: 'hello' })];
   assert.deepEqual([l.id, r.id], ['b00p-left', 'b00p-right']);
   assert.equal((await (await board()).request({ t: 'hello' })).id, 'b00p-0000', 'the id with none given');
-  if (!existsSync(path.join(dist, 'boop-sim-pixel.js'))) return;  // only the staged pack is built
-  const pixel = await board('gel', {}, 'boop-sim-pixel.js');
-  const hello = await pixel.request({ t: 'hello' });
-  assert.deepEqual([hello.pack, hello.face], ['pixel', 'pixel'], "Pixel's build, which has only the pixel face");
   const { Board } = await import(path.join(dist, 'boop-simulator.js'));
   await assert.rejects(Board.make({ pack: '../x' }), /no pack called/);
 });
@@ -157,16 +147,13 @@ test('the motion sensor: a shake is a gesture, and face down and up again', { sk
   assert.deepEqual(did, ['dizzy', 'facedown', 'peekaboo']);
 });
 
-// A native face is the AMOLED board's, so the board is that one: no LED,
-// its motion sensor there from power-on, flat on the desk, and a finger's
-// lift ending its touch at once, as the touch chip reports it. The pixel
-// face's board is the CYD's, with an LED and no sensor.
-test('the gel is on the AMOLED board: no LED, a motion sensor, a lift ends a touch', { skip }, async () => {
-  const b = await board('gel');
-  if ((await b.request({ t: 'hello' })).face !== 'gel') return;  // a checkout without Boop's pack has only the pixel face
+// The AMOLED board: its motion sensor there from power-on, flat on the
+// desk, and a finger's lift ending its touch at once, as the touch chip reports it.
+test('the board is the AMOLED: a motion sensor, a lift ends a touch', { skip }, async () => {
+  const b = await board();
   b.send(QUIET);
   await b.run(100);
-  assert.ok(!('led' in b.parts) && 'backlight' in b.parts, 'no LED among its parts');
+  assert.ok('backlight' in b.parts);
   assert.deepEqual((await b.request({ t: 'dbg.state' })).imu, [0, 0, 1000], 'flat on the desk, untouched');
   b.input('touch 60 120');
   await b.run(200);
@@ -175,11 +162,6 @@ test('the gel is on the AMOLED board: no LED, a motion sensor, a lift ends a tou
   await b.run(10);
   const touch = (await b.request({ t: 'dbg.state' }, 10)).touch;
   assert.deepEqual([touch.down, touch.lifts], [false, 1], 'let go is lifted, so the touch ends on the next look');
-  const cyd = await board('pixel', {}, existsSync(path.join(dist, 'boop-sim-pixel.js')) ? 'boop-sim-pixel.js' : 'boop-sim.js');
-  cyd.send(QUIET);
-  await cyd.run(100);
-  assert.ok('led' in cyd.parts);
-  assert.equal((await cyd.request({ t: 'dbg.state' })).imu, null, 'no sensor until something tilts it');
 });
 
 test('a line plays for as long as its samples last, from the card in the slot', { skip: needsVoice }, async () => {
@@ -456,7 +438,7 @@ test("a demo's answer taps its side of the lane", { skip }, async () => {
 test('a recording plays into the board in order, and knows nothing of what its lines mean', { skip }, async () => {
   const { DemoPlayer } = await import(path.join(dist, 'boop-simulator.js'));
   const recording = {
-    version: 1, character: 'pixel', name: 'Pip', face: 'pixel', length: 0.4, takes: ['t.go'],
+    version: 1, character: 'boop', name: 'Pip', face: 'gel', length: 0.4, takes: ['t.go'],
     events: [
       { at: 0, line: '{"t":"state","base":"working"}' },
       { at: 0.05, cause: { kind: 'prompt', text: 'You ask Claude: “Fix it”' } },

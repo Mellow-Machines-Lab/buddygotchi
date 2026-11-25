@@ -152,8 +152,7 @@ public struct Moment: Equatable, Sendable {
     /// A celebration's words, held low in gold with the rim glowing gold
     /// (`level 13!`), beside its `sign` or alone, so one moment shows two
     /// things: today's ring closing on the sign, the level on the gold.
-    /// At most `Signs.maxLength` characters. A face that holds nothing low
-    /// shows it as its sign. Nil sends none.
+    /// At most `Signs.maxLength` characters. Nil sends none.
     public var gold: String?
     /// What the gold's words have before them: `ring` for today's ring,
     /// `gold`, `silver` or `bronze` for a league's medal. Nil sends none,

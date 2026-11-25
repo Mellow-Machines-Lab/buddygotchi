@@ -2,8 +2,7 @@
 // face's clips to the voice. Pure C++: the board mixes into the DAC's
 // samples, and tests render into memory. Which clips there are is the
 // face's (render::Face::clips, voice/clips.h), and when each plays is the
-// face's too (the pixel face's render/pixel/effect_track.h, the gel's
-// contact cues).
+// face's too (the gel's contact cues).
 #pragma once
 #include <cstddef>
 #include <cstdint>
@@ -11,7 +10,7 @@
 namespace voice {
 
 // A sound the face hands over: a clip of its bank at a time into its
-// design's loop (the pixel timelines' `atMs`; 0 for one due now).
+// design's loop (`atMs`; 0 for one due now).
 struct FxEvent {
   uint16_t atMs = 0;
   uint8_t clip = 0;

@@ -1827,27 +1827,23 @@ final class RuntimeTests: XCTestCase {
 
     /// linkkit/SPEC.md §5: a
     /// reaction held longest, in the design with the longest loop of any of
-    /// the moods and any look, or with the longest line after the latest
-    /// voice window and its bubble, ends on the device before the link
+    /// the moods and any look, or with the longest line inside that loop
+    /// and its bubble, ends on the device before the link
     /// gives up on its `ended` (60 s after it could start playing at the
     /// latest), and the link gives up before the harness's ceiling would
-    /// end it. The loops and voice windows are the ones the Pixel pack's
-    /// faces.h (`kScenes`' `loopMs`) and sfx.h (`kScore`'s `voiceMs`) give
-    /// the device, so a new design with a long loop fails here rather than
-    /// in HISTORY: wounded's 14.3 s of nodding off, held four times, is
-    /// 57.2 s.
+    /// end it. The loops are the gel's recipes (`gelLongestLoopMs`), and a
+    /// take starts inside a loop, at its reveal, so a new recipe with a long
+    /// loop fails here rather than in HISTORY.
     func testAReactionEndsBeforeTheHarnessCeiling() throws {
         let held = Int64(MomentOutput.sizes.map(\.loops).max() ?? 0)
-        let longestLoop = try FirmwareTables.pixelLongestLoopMs()
-        let latestVoice = try FirmwareTables.pixelLatestVoiceMs()
-        XCTAssertEqual(longestLoop, 14_300)
+        let longestLoop = try FirmwareTables.gelLongestLoopMs()
         // A reaction says one take, or a sound and a word within maxSayMs.
         let longestLine = Int64(max(Take.all.map(\.ms).max() ?? 0, Voice.maxSayMs))
         // The bubble stays up after the take (firmware `Behaviour::kBubbleReadMs`).
         let bubbleRead = try FirmwareTables.bubbleReadMs()
         XCTAssertEqual(bubbleRead, 1200)
-        let longestPlay = max(held * longestLoop, latestVoice + longestLine + bubbleRead)
-        XCTAssertGreaterThan(longestPlay, 30_000)
+        let longestPlay = max(held * longestLoop, longestLoop + longestLine + bubbleRead)
+        XCTAssertGreaterThan(longestPlay, 15_000)
         XCTAssertLessThan(longestPlay, DeviceLink.answerGraceMs)
         XCTAssertLessThan(Int64(BoopDevice.reactionTTL) + DeviceLink.answerGraceMs, MomentOutput.openForMs)
     }

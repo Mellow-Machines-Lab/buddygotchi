@@ -23,17 +23,6 @@ enum FirmwareTables {
             .compactMap { Double(table[Range($0.range(at: 1), in: table)!]).map { Int64($0.rounded(.up)) } }.max() ?? 0
     }
 
-    /// Pixel's longest design loop, of every mood and state.
-    static func pixelLongestLoopMs() throws -> Int64 {
-        try longest("characters/pixel/firmware/include/faces.h", "static const Scene kScenes[",
-                    #"\{\d+, \d+, (\d+), -?\d+, -?\d+, \d+, \d+, \d+\}"#)
-    }
-
-    /// When Pixel's latest sound starts in a loop.
-    static func pixelLatestVoiceMs() throws -> Int64 {
-        try longest("characters/pixel/firmware/include/sfx.h", "static const Score kScore[] = {", #"\{k\w+, \d+, \w+, \d+, \d+, (\d+)\},"#)
-    }
-
     /// The gel's longest loop: every recipe of the slime (each mood's
     /// takes, the gestures', the pastimes') and of its big finishes. A take
     /// starts inside a loop, at its reveal. Needs you's row is left out:

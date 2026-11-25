@@ -310,11 +310,10 @@ public final class Memory: @unchecked Sendable {
         }
     }
 
-    /// What Boop may bring up at `ms`: the lines that fit `longest`
-    /// characters (`MemoryPipeline.signRoom`), those shown longest ago
-    /// first, none shown in `feltAgainDays`. When one comes is the idle
+    /// What Boop may bring up at `ms`: the lines that fit the low sign
+    /// (`MemoryPipeline.signMax` characters), those shown longest ago first, none shown in `feltAgainDays`. When one comes is the idle
     /// beat's (`IdleBeat`).
-    public func felt(at ms: Int64, longest: Int = MemoryPipeline.signMax) -> [Felt] {
+    public func felt(at ms: Int64) -> [Felt] {
         guard let files else { return [] }
         let signs = files.days().signs
         guard !signs.isEmpty else { return [] }
@@ -322,7 +321,7 @@ public final class Memory: @unchecked Sendable {
         guard let now = LocalTime.dayNumber(today) else { return [] }
         func age(_ line: String) -> Int { shown[line].flatMap(LocalTime.dayNumber).map { now - $0 } ?? .max }
         return files.written().notes.compactMap { n in
-            signs[n.text].flatMap { $0.isEmpty || $0.count > longest || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
+            signs[n.text].flatMap { $0.isEmpty || $0.count > MemoryPipeline.signMax || age($0) < Self.feltAgainDays ? nil : Felt(line: $0, note: n.text) }
         }.sorted { age($0.line) > age($1.line) }
     }
 

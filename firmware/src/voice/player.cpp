@@ -29,8 +29,8 @@ struct VoiceFile {
   uint32_t count = 0, indexAt = 0;
   // Every record's id, read once as the file opens, so a lookup on the
   // main loop searches memory and reads the card once, for its take's
-  // mouth, not a dozen times. Null where there's no room for them (the
-  // CYD: 2722 takes' ids are 196 KB), which searches the card instead.
+  // mouth, not a dozen times. Null where there's no room for them (2722
+  // takes' ids are 196 KB), which searches the card instead.
   char* ids = nullptr;
 };
 VoiceFile file;

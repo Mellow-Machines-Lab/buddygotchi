@@ -76,46 +76,6 @@ static void test_triangle_fills_inside_only() {
   TEST_ASSERT_EQUAL_UINT8(0, at(c, 100, 61));  // below the base
 }
 
-static void test_hash_tracks_changes() {
-  std::vector<uint8_t> buf(render::kWidth * render::kHeight, 0);
-  Canvas c(buf.data());
-  uint32_t before = c.hash(0, 5, render::kWidth, 1);
-  TEST_ASSERT_EQUAL_UINT32(before, c.hash(0, 6, render::kWidth, 1));
-  c.fillRect(render::kWidth - 1, 5, 1, 1, 1);
-  TEST_ASSERT_NOT_EQUAL(before, c.hash(0, 5, render::kWidth, 1));
-  TEST_ASSERT_EQUAL_UINT32(before, c.hash(0, 6, render::kWidth, 1));
-  // Two pixels that each change only a word's top bit don't cancel out.
-  uint32_t tile = c.hash(32, 12, 32, 6);
-  c.fillRect(35, 12, 1, 1, 0x80);
-  c.fillRect(39, 12, 1, 1, 0x80);
-  TEST_ASSERT_NOT_EQUAL(tile, c.hash(32, 12, 32, 6));
-}
-
-// Only the changed tiles' columns of a band are pushed.
-static void test_changes_find_the_columns_to_push() {
-  std::vector<uint8_t> buf(render::kWidth * render::kHeight, 0);
-  Canvas c(buf.data());
-  render::Changes ch;
-  for (int b = 0; b < render::kHeight / render::kBand; ++b) {  // everything, the first time
-    render::Span s = ch.band(c, b);
-    TEST_ASSERT_EQUAL_INT(0, s.x0);
-    TEST_ASSERT_EQUAL_INT(render::kWidth, s.x1);
-  }
-  TEST_ASSERT_TRUE(ch.band(c, 3).empty());  // then nothing, until something changes
-  c.fillRect(100, 50, 1, 1, 7);                // band 8, tile 3
-  c.fillRect(250, 51, 1, 1, 7);                // band 8, tile 7
-  render::Span s = ch.band(c, 50 / render::kBand);
-  TEST_ASSERT_EQUAL_INT(96, s.x0);
-  TEST_ASSERT_EQUAL_INT(256, s.x1);
-  TEST_ASSERT_TRUE(ch.band(c, 50 / render::kBand).empty());
-  TEST_ASSERT_TRUE(ch.band(c, 50 / render::kBand + 1).empty());
-  c.fillRect(0, render::kHeight - 1, 1, 1, 7);  // the corners
-  c.fillRect(render::kWidth - 1, render::kHeight - 1, 1, 1, 7);
-  s = ch.band(c, render::kHeight / render::kBand - 1);
-  TEST_ASSERT_EQUAL_INT(0, s.x0);
-  TEST_ASSERT_EQUAL_INT(render::kWidth, s.x1);
-}
-
 static void test_pattern_blocks_have_their_colours() {
   std::vector<uint8_t> buf(render::kWidth * render::kHeight, 0);
   Canvas c(buf.data());
@@ -143,8 +103,6 @@ int main() {
   RUN_TEST(test_fill_covers_everything);
   RUN_TEST(test_a_mask_draws_the_dithers_pixels);
   RUN_TEST(test_triangle_fills_inside_only);
-  RUN_TEST(test_hash_tracks_changes);
-  RUN_TEST(test_changes_find_the_columns_to_push);
   RUN_TEST(test_pattern_blocks_have_their_colours);
   return UNITY_END();
 }

@@ -42,8 +42,7 @@ enum Palette {
     static let clayInkLight = "#9C3B2E", clayInkDark = "#F09384"
 
     /// The device's black glass, the oat of its text, and the designs' coral
-    /// cheeks (the popover's tile takes the rest of the face's colours from
-    /// FaceDesigns). Glass with an oat label is the filled button on light
+    /// cheeks. Glass with an oat label is the filled button on light
     /// paper; on dark paper it's the other way round.
     static let glass = "#000000", glassPressed = "#2A2620", oat = "#E8DCC4", oatPressed = "#CFC2A8"
     static let blush = "#F1787D"

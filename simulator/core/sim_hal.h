@@ -1,5 +1,5 @@
 // The simulated board's side of app::Hal: the host's clock, and whatever
-// stands in for its finger, button, speaker, light, backlight and card.
+// stands in for its finger, button, speaker, motion sensor, backlight and card.
 #pragma once
 #include <atomic>
 #include <chrono>
@@ -97,8 +97,7 @@ struct SimHal : app::Hal {
     booted = false;
     return was;
   }
-  // The motion sensor, once something has tilted it: until then the board
-  // has none, as the CYD hasn't. The AMOLED's lies flat from power-on (amoled()).
+  // The motion sensor, which lies flat on the desk from power-on.
   void setMotion(int x, int y, int z) { tilt[0] = x, tilt[1] = y, tilt[2] = z, tilted = true; }
   bool motion(int& ax, int& ay, int& az) override {
     if (!tilted) return false;
@@ -113,18 +112,11 @@ struct SimHal : app::Hal {
   }
 
   int tilt[3] = {0, 0, 1000};
-  bool tilted = false;
+  bool tilted = true;
 
-  // The board a native face is drawn for, the AMOLED's: its motion sensor
-  // lies flat on the desk from power-on, and it has no LED.
-  void amoled() { tilted = true, hasLed = false; }
-
-  // The light, the backlight and the amp, to be shown.
-  bool hasLed = true;
-  uint32_t led = 0;
+  // The backlight and the amp, to be shown.
   uint8_t backlight = 255;
   std::atomic<bool> amp{false};
-  void setLed(uint32_t rgb) override { led = rgb; }
   void setBacklight(uint8_t level) override { backlight = level; }
   bool ampOn() override { return amp; }
 

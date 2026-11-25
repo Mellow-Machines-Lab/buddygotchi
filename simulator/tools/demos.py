@@ -16,7 +16,7 @@ The page plays a demo from its recording, which is checked in beside its
 script (characters/PACK/demo/recordings/NAME.json), so it starts at once.
 A recording is every message the app sent the board, made by playing the
 script through the real headless app with the simulator's board as its
-device, on the face the pack gives the AMOLED board. It keeps the hash of
+device. It keeps the hash of
 the script it was made from, and it's out of date when the script changes.
 CHARACTER=<pack> picks one where two packs have a demo of the
 same name. The standard library only, for the Mac's own Python.
@@ -158,12 +158,6 @@ def find(name: str) -> Demo:
     return found[0]
 
 
-def face(pack: str) -> str:
-    """The face the pack gives the AMOLED board, else the CYD's."""
-    faces = json.loads((CHARACTERS / pack / "character.json").read_text()).get("faces", {})
-    return faces.get("amoled206") or faces.get("cyd24") or "pixel"
-
-
 def creature(pack: str) -> str:
     return json.loads((CHARACTERS / pack / "character.json").read_text())["name"]
 
@@ -175,7 +169,7 @@ def table(all_demos: List[Demo], numbered: bool) -> None:
     title = max(len(d.title) for d in all_demos)
     n = 0
     for pack in sorted({d.pack for d in all_demos}, key=lambda p: (p != "boop", p)):
-        print(f"\n  {creature(pack)}'s demos ({face(pack)} face)")
+        print(f"\n  {creature(pack)}'s demos")
         for d in (d for d in all_demos if d.pack == pack):
             n += 1
             where = "with an agent too" if len(d.places()) > 2 else ""
@@ -311,7 +305,7 @@ def record_one(d: Demo, core: Path) -> Optional[str]:
     tail if it fails, else None."""
     # Short, for the sockets' sake: a Unix socket's path has room for 103 bytes.
     work = Path(tempfile.mkdtemp(prefix="boop-rec.", dir="/tmp"))
-    env = dict(os.environ, BOOP_SIM_FACE=face(d.pack), BOOP_SIM_PORT=str(work / "port"))
+    env = dict(os.environ, BOOP_SIM_PORT=str(work / "port"))
     children = []
     try:
         children.append(subprocess.Popen([str(core), "--live"], env=env, stdout=subprocess.DEVNULL,
