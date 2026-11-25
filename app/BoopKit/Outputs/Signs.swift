@@ -52,6 +52,16 @@ public enum Signs {
         lines.first { $0.tags == ["invite", touch.rawValue] && $0.text.count <= maxLength }?.text
     }
 
+    /// What it may hold up for the remark `id` (`Remarks`): `signs.md`'s
+    /// `[remark fast]` lines, `{n}` filled in with `n`, each at most
+    /// `maxLength`. A line with `{n}` and no number is left out.
+    public static func remark(_ lines: [TaggedLine], _ id: String, n: Int? = nil) -> [String] {
+        lines.filter { $0.tags == ["remark", id] }.compactMap { line -> String? in
+            if line.text.contains("{n}"), n == nil { return nil }
+            return drawn(line.text.replacingOccurrences(of: "{n}", with: n.map(String.init) ?? "")).flatMap { $0.count <= maxLength ? $0 : nil }
+        }
+    }
+
     /// What it may hold up for the notice `kind`: `signs.md`'s `[notice
     /// waiting]` lines, `{agent}` filled in, each at most `maxLength`, without
     /// the last one held up while another fits.

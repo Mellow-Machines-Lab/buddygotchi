@@ -5,7 +5,8 @@ import MellowHarness
 /// every event as it's logged with the line Jev read for it, the day's
 /// (`MemoryReader`: CONTEXT's Today row and the XP caps), the dream's
 /// (`DreamReader`: everything since the last dream), the daily counts'
-/// (`CountsReader`) and the invites' (`InviteReader`). A dream updates the
+/// (`CountsReader`), the invites' (`InviteReader`) and your usual's
+/// (`NormalsReader`). A dream updates the
 /// memory from everything since its checkpoint: it makes the dream (tags
 /// and a sentence, for the telling), runs the dream's write to
 /// `memory.md`, and starts the span again. It dreams when you press `d`
@@ -31,6 +32,8 @@ public final class Memory: @unchecked Sendable {
     public var countsSample: (() -> (quiet: Bool, volume: Int, level: Int))?
     /// What Boop knows of its invites (`InviteLedger`).
     public let invites: Checkpointed<InviteReader>
+    /// Your usual, which remarks compare now with (`Normals`).
+    public let normals: Checkpointed<NormalsReader>
     private var countsWrittenAt: Int64?
     private var countsWritten: DayCounts?
     /// The digests as read, so a check-in doesn't decode the file each time
@@ -90,6 +93,7 @@ public final class Memory: @unchecked Sendable {
             do { try files?.keep(row) } catch { note("memory: can't write the daily counts: \(error)") }
         }, store: store, time: time, note: note)
         invites = Checkpointed(InviteReader(), store: store, time: time, note: note)
+        normals = Checkpointed(NormalsReader(), store: store, time: time, note: note)
         // A memory from before dreams had spans starts its span where the
         // day's reader is, so the first dream covers what comes after.
         if dreams.state == nil, let day = runner.day { dreams.begin(at: runner.seq, day: day, state: DreamReader.Span()) }
@@ -97,6 +101,8 @@ public final class Memory: @unchecked Sendable {
         if counts.state == nil, let day = runner.day { counts.begin(at: runner.seq, day: day, state: counts.reader.open(day: day, carry: nil)) }
         // And the invites.
         if invites.state == nil, let day = runner.day { invites.begin(at: runner.seq, day: day, state: InviteLedger()) }
+        // And your usual.
+        if normals.state == nil, let day = runner.day { normals.begin(at: runner.seq, day: day, state: normals.reader.open(day: day, carry: nil)) }
     }
 
     /// What the dream's writer was asked, and its reply.
@@ -235,6 +241,7 @@ public final class Memory: @unchecked Sendable {
         runner.feed(e, line: line)
         counts.feed(e, line: line)
         invites.feed(e, line: line)
+        normals.feed(e, line: line)
     }
 
     // MARK: Memory you feel
@@ -418,6 +425,7 @@ public final class Memory: @unchecked Sendable {
         dreams.tick(wall: wall)
         counts.tick(wall: wall)
         invites.tick(wall: wall)
+        normals.tick(wall: wall)
         keepCounts(wall: wall)
         let now = harness?.clock.now() ?? wall
         let sleeping = asleep()
@@ -526,6 +534,7 @@ public final class Memory: @unchecked Sendable {
             if e.seq > dreams.seq { dreams.feed(e, line: nil, live: false) }
             if e.seq > counts.seq { counts.feed(e, line: nil, live: false) }
             if e.seq > invites.seq { invites.feed(e, line: nil, live: false) }
+            if e.seq > normals.seq { normals.feed(e, line: nil, live: false) }
         }
     }
 
@@ -539,8 +548,8 @@ public final class Memory: @unchecked Sendable {
     }
 
     /// Where the readers read from, the earliest of their checkpoints.
-    public var seq: Int { min(runner.seq, dreams.seq, counts.seq, invites.seq) }
-    public var from: String { [runner.day, dreams.day, counts.day, invites.day].compactMap { $0 }.min() ?? "" }
+    public var seq: Int { min(runner.seq, dreams.seq, counts.seq, invites.seq, normals.seq) }
+    public var from: String { [runner.day, dreams.day, counts.day, invites.day, normals.day].compactMap { $0 }.min() ?? "" }
 
     /// The transcript starting again, its files gone: all its checkpoints
     /// follow it back.
@@ -549,6 +558,7 @@ public final class Memory: @unchecked Sendable {
         dreams.follow(transcriptAt: seq)
         counts.follow(transcriptAt: seq)
         invites.follow(transcriptAt: seq)
+        normals.follow(transcriptAt: seq)
     }
 
     /// At launch: a dream not yet told whose event has left the log is

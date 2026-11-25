@@ -20,7 +20,8 @@ On the `brain` branch, not merged:
   after the finish (`MomentRule.offeredLine`), the read of you as a mood
   fact, and the note judged by the dream.
 - Built: layer 4, skits (`Skits`, the pack's `skits`). It replaces the
-  babble plan.
+  babble plan. With them the invite (`InviteLedger`) and the remark
+  (`Remarks`, against your usual, `Normals`).
 - Not built: the dream writing tomorrow's lines, and Jev composed on top
   of the rules.
 
@@ -183,8 +184,8 @@ stroke (it purrs). You never talk back.
 
 - It is part of the Moment's `do`: the board plays the body and the take,
   then the pose and the wait, then the payoff or a shrug, and only then
-  ends the `do`. With the agent's offered line after a finish, it rides
-  that second Moment, so the pose comes after the line.
+  ends the `do`. With the agent's offered line or a remark after a
+  finish, it rides that second Moment, so the pose comes after the line.
 - Code asks it, no brain: only of a board that says it plays invites,
   never on a call or while something needs you, at most 10 a Boop day,
   and after 3 misses in a row of a pose only every second time
@@ -197,6 +198,30 @@ stroke (it purrs). You never talk back.
   a miss, it does what that touch does, once (care XP shown as "+3 XP", a
   pet wish met, a stroke's soothing). HISTORY reads how it ended as one
   plain line; it wakes no pass.
+
+### The remark
+
+Boop knows you when it notices how now differs from your own usual, many
+times a day: "that was fast", "you're early", "5 today". Code counts your
+usual (`Normals`, a fold of the transcript: your turns' lengths, the hour
+you first show up, your breaks, your wins a day and your best run), and a
+plain rule picks the one remark (`Remarks.pick`). No model is involved.
+
+| Remark | On the skit | When |
+| --- | --- | --- |
+| `fast`, `slow` | `win` | The turn took under half your median, or over twice it (10 turns kept) |
+| `run` | `win` | The 3rd win in a row, or a new best run of 4 or more |
+| `count` | `win` | Today's wins just reached 5 or 10, or passed your best day of the last 14 (5 days kept) |
+| `early`, `late` | `back` | Your first time today, 45 minutes or more off your median first hour (5 days kept) |
+| `soon`, `longBreak` | `back` | Away under half your median break, or over twice it and under 4 hours (5 breaks kept) |
+
+- It rides a skit that plays anyway, so it adds no interruption: at most
+  one skit in three carries one, `upset` and `fix` never, none on Quiet,
+  and none while your usual is empty.
+- It's text, the pack's words (`signs.md`'s `[remark …]`): on a `win` a
+  low Moment after the finish, unless the agent offered a line, which
+  wins; on a `back` the sign, unless the hello holds up one of its own. No
+  take says these words yet.
 
 ## Jev, on top
 

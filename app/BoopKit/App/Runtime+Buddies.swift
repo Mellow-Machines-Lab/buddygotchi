@@ -63,6 +63,9 @@ extension Runtime {
         /// What a skit's invite is asked by (`MomentOutput.Inviting`), or
         /// nil for none ever.
         public var inviting: MomentOutput.Inviting?
+        /// What a skit's remark is picked by (`MomentOutput.Remarking`), or
+        /// nil for none ever.
+        public var remarking: MomentOutput.Remarking?
         /// What it notices from, or nil for a buddy that doesn't: the days
         /// kept, when each notice last played, and whether a thread had a
         /// turn since the last dream (`Memory`).
@@ -303,6 +306,7 @@ extension Runtime {
         }
         react.lineRoom = m.lineRoom
         react.inviting = m.inviting
+        react.remarking = m.remarking
         h.output(react, openFor: MomentOutput.openForMs, keepOpen: TranscriptView.heldByPokes)
         // The Moments the rules make whole, with no pass: your bye at a
         // lock and your hello at an unlock, a working check-in, another

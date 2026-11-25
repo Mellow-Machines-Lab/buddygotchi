@@ -21,7 +21,9 @@ import MellowHarness
 /// facts, never guessed. At an idle check-in the one thing it may hold up
 /// is dealt by code (`IdleBeat`), and the sign's question is only whether.
 /// After a skit it may invite one touch, on the last Moment it queues, as
-/// the invite ledger allows (`invite(for:at:)`, `InviteLedger`).
+/// the invite ledger allows (`invite(for:at:)`, `InviteLedger`). A skit
+/// may carry a remark too, as text: how now differs from your usual
+/// (`remark(for:about:facts:)`, `Remarks`).
 /// The Moments with no pass (your lock or unlock, a working check-in, a
 /// boop from the world) are made here too, from the rule's picks (`ruled`,
 /// `play`). It waits in the device's queue until
@@ -438,6 +440,34 @@ public final class MomentOutput: Output {
                              xp: inviting.careRoom() ? Growth.careXP : nil)
     }
 
+    /// What a skit's remark is picked by, or nil for none ever (the evals',
+    /// and most tests'): your usual (`Normals`, nil for none) and a time's
+    /// minutes after 5:00, when Boop's day starts.
+    public struct Remarking {
+        public var normals: () -> Normals?
+        public var minutes: (Int64) -> Int
+
+        public init(normals: @escaping () -> Normals?, minutes: @escaping (Int64) -> Int) {
+            self.normals = normals
+            self.minutes = minutes
+        }
+    }
+    public var remarking: Remarking?
+
+    /// The remark on `skit` at `about`, whose line has `facts`, and its
+    /// words, or nil: the rule's pick against your usual before it
+    /// (`Remarks.pick`), in one of the pack's lines for it (`Signs.remark`),
+    /// not the last sign held up while another fits.
+    func remark(for skit: Skit, about: Event, facts: [String: JSONValue]) -> (id: String, words: String)? {
+        guard let remarking, let normals = remarking.normals() else { return nil }
+        let usual = normals.usual(before: about.seq, minutes: remarking.minutes)
+        guard let id = Remarks.pick(skit: skit.id, facts: facts, usual: usual, minutes: remarking.minutes(about.at), quiet: talk() == .quiet)
+        else { return nil }
+        let lines = Self.unrepeated(Signs.remark(signs, id, n: Remarks.number(id, facts: facts, usual: usual)), last: lastSign)
+        guard !lines.isEmpty else { return nil }
+        return (id, lines[takes.int(in: 0...(lines.count - 1))])
+    }
+
     /// Below this, Jev is guessing at what you meant, and a `huh` beats a
     /// guessed reply.
     public static let replyFloor = 0.35
@@ -836,15 +866,34 @@ public final class MomentOutput: Output {
             m.reason = reaction.who.map { "\($0.agent) offered it" }
             spoken = m
         }
+        let offeredLine = spoken != nil
+        // A remark on the skit, as text: a finish names its thread and holds
+        // up nothing else, so it's a low Moment after it, unless the agent
+        // offered a line; any other skit holds it up as its sign, unless it
+        // holds up one already, a hello's own among them.
+        var remarked: String?
+        let finishing = reaction.outcome != nil
+        let room = finishing ? spoken == nil : reaction.sign == nil && hello?.extra == nil && asking == nil && !reaction.low
+        if let skit, let about, room, let (id, words) = remark(for: skit.skit, about: about, facts: lineFacts) {
+            remarked = id
+            if finishing {
+                var m = Moment(say: Moment.Say(takes: []), mood: choice, loops: 1, sign: words)
+                m.low = true
+                spoken = m
+            } else {
+                reaction.sign = words
+            }
+            sign = words
+            lastSign = words
+        }
         // A skit's invite, on the last Moment queued, so the pose comes
-        // after the agent's line.
+        // after the agent's line or the remark.
         let invited = skit.map { invite(for: $0.skit, at: at) } ?? .nothing
         if case .asks(let invite) = invited {
             if spoken != nil { spoken?.invite = invite } else { reaction.invite = invite }
         }
         queue(reaction, pending)
         if let spoken { queue(spoken, Pending()) }
-        let offeredLine = spoken != nil
         // Asked to hush: quiet for a while, from here on.
         if reply == Self.hushReply { quiet(at) }
         if replied?.naps == true { nap(at) }
@@ -876,6 +925,8 @@ public final class MomentOutput: Output {
         }
         if let remembering { facts["felt"] = .string(remembering.line) }
         if offeredLine { facts["offered_line"] = true }
+        // A remark that showed: what your usual counts the skits since by.
+        if let remarked { facts[Normals.remarkFact] = .string(remarked) }
         // An invite asked, or skipped for the misses: what the ledger and
         // HISTORY read.
         switch invited {

@@ -118,6 +118,13 @@ public struct LocalTime: Sendable {
         return day(Int64(before.timeIntervalSince1970 * 1000))
     }
 
+    /// How far into Boop's day `ms` is, in minutes after 5:00: 0 at 5:00,
+    /// 1439 at 4:59.
+    public func minutesIntoBoopDay(_ ms: Int64) -> Int {
+        let c = calendar.dateComponents([.hour, .minute], from: date(ms))
+        return ((c.hour ?? 0) * 60 + (c.minute ?? 0) - Self.boopDayStartHour * 60 + 1440) % 1440
+    }
+
     /// The weekday Boop's day `day` (`yyyy-MM-dd`) falls on: `Monday`.
     public func weekday(of day: String) -> String { Self.weekday(of: day) ?? "" }
 

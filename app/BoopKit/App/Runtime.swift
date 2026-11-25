@@ -441,6 +441,9 @@ public final class Runtime: @unchecked Sendable {
                                               ledger: { remembersNow().map { $0.invites.state ?? InviteLedger() } },
                                               sameDay: { time.boopDay(core.wall($0)) == time.boopDay(core.wall($1)) },
                                               careRoom: { core.growth().map { $0.adds(.care) > 0 } ?? false })
+        // A skit's remark: against your usual, the memory's.
+        mind.remarking = MomentOutput.Remarking(normals: { remembersNow()?.normals.state },
+                                                minutes: { time.minutesIntoBoopDay(core.wall($0)) })
         mind.noticing = Mind.Noticing(digests: { remembersNow()?.digests ?? [] }, shown: { remembersNow()?.noticesShown() ?? [:] },
                                       onLately: { remembersNow()?.onLately($0) ?? false })
         rig.mood = Runtime.brain(pipeline, mind)

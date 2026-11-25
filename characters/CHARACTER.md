@@ -387,6 +387,15 @@ by the place to touch when a skit invites that touch (`Signs.invite`, the
 first of each; Boop's and Pixel's say `tap` and `pet`). A pack with none
 shows the glow alone.
 
+Its `[remark fast]`, `[remark slow]`, `[remark run]`, `[remark count]`,
+`[remark early]`, `[remark late]`, `[remark soon]` and `[remark longBreak]`
+lines are what it holds up for a remark: how now differs from your usual,
+which code picks, no brain (`Remarks`, `Signs.remark`). `{n}` is the run
+for `run` and today's wins for `count`. A remark shows as text only: on a
+`win` a low Moment after the finish, on a `back` the Moment's sign. A pack
+with no line for a remark shows none; Boop's and Pixel's have the same
+lines, one each ("that was fast", "{n} in a row", "you're early").
+
 Its `[world]` lines, and `[world boop]`, `[world wave]`, `[world heart]` and
 `[world cheer]`, the kind's first, are what it may hold up when another buddy
 reaches out from the world (`Signs.world`): Jev picks one at the `world` event.
@@ -528,6 +537,9 @@ failed turn, the agent giving up, or the third failed check in a row ("Oh
 no", "Not again"), `fix` a check passing after it failed ("Phew...",
 "Fixed"), and `back` you back at the Mac after a break ("Hello", "Hey").
 Every other moment has none.
+
+A `win` or a `back` may also carry a remark, the pack's `[remark …]` line
+in `signs.md` (`Remarks`): text, never a take, at most one skit in three.
 
 - `voice/voice.bin` is the voice file, for the board's microSD card.
 - `mac/takes.tsv` is its table, which the Mac reads to pick a take: the
