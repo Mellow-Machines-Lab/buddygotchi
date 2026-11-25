@@ -365,7 +365,7 @@ static void test_the_glass_and_the_hands_are_channels() {
     TEST_ASSERT_EQUAL_INT(0, kRest[c]);
   TEST_ASSERT_EQUAL_INT(int(Channel::kHandLX), int(hand(0, HandPart::kX)));
   TEST_ASSERT_EQUAL_INT(int(Channel::kHandRY), int(hand(1, HandPart::kY)));
-  TEST_ASSERT_EQUAL_INT(kChannelCount, int(hand(1, HandPart::kGlass)) + 1);  // the right hand's glass, the last
+  TEST_ASSERT_EQUAL_INT(int(Channel::kTurn), int(hand(1, HandPart::kGlass)) + 1);  // the right hand's glass, then the turn
   TEST_ASSERT_EQUAL_STRING("handRShape", kChannelInfo[int(Channel::kHandRShape)].name);
   TEST_ASSERT_EQUAL_INT(-1000, kChannelInfo[int(Channel::kHandRShape)].lo);  // a fist
   TEST_ASSERT_EQUAL_INT(1000, kChannelInfo[int(Channel::kHandRShape)].hi);   // an open palm
@@ -394,6 +394,43 @@ static void test_the_glass_and_the_hands_are_channels() {
   m.stop(kPalm);
   m.advance(Mixer::kSettledMs);
   for (int c = 0; c < kChannelCount; ++c) TEST_ASSERT_EQUAL_INT(kRest.v[c], m.channels().v[c]);
+}
+
+// The turn is a channel like the others: at rest the body faces you (0);
+// it reaches two whole turns either way, in thousandths of a turn, so a
+// clip can spin all the way round (1000) and on, and the mixer holds it
+// in that range however far a clip and an impulse carry it.
+static void test_the_turn_is_a_channel() {
+  TEST_ASSERT_EQUAL_INT(kChannelCount, int(Channel::kTurn) + 1);  // the last
+  TEST_ASSERT_EQUAL_STRING("turn", kChannelInfo[int(Channel::kTurn)].name);
+  TEST_ASSERT_EQUAL_INT(0, kRest[Channel::kTurn]);
+  TEST_ASSERT_EQUAL_INT(-2000, kChannelInfo[int(Channel::kTurn)].lo);
+  TEST_ASSERT_EQUAL_INT(2000, kChannelInfo[int(Channel::kTurn)].hi);
+  TEST_ASSERT_FALSE(body(Channel::kTurn));
+  static constexpr Key kRound[] = {{0, 0, Ease::kLinear}, {400, 1000, Ease::kOut}};
+  static constexpr Key kFar[] = {{0, 0, Ease::kLinear}, {100, 3000, Ease::kOut}};
+  static constexpr Track kSpinTracks[] = {{Channel::kTurn, {kRound, 2}}};
+  static constexpr Track kFarTracks[] = {{Channel::kTurn, {kFar, 2}}};
+  static constexpr Clip kSpin = {"spin", 800, true, true, {kSpinTracks, 1}};
+  static constexpr Clip kTooFar = {"far", 200, true, true, {kFarTracks, 1}};
+  Mixer m;
+  m.reset(0, 0, nullptr);
+  m.play(kSpin);
+  m.advance(200);
+  const int half = m.channels()[Channel::kTurn];
+  TEST_ASSERT_TRUE(half > 500 && half < 1000);
+  m.advance(300);
+  TEST_ASSERT_EQUAL_INT(1000, m.channels()[Channel::kTurn]);  // all the way round
+  m.stop(kSpin);
+  m.play(kTooFar);
+  m.advance(150);
+  TEST_ASSERT_TRUE(m.channels()[Channel::kTurn] <= 2000);
+  m.impulse(Channel::kTurn, -900000);
+  m.advance(16);
+  TEST_ASSERT_TRUE(m.channels()[Channel::kTurn] >= -2000 && m.channels()[Channel::kTurn] <= 2000);
+  m.stop(kTooFar);
+  m.advance(Mixer::kSettledMs);
+  TEST_ASSERT_EQUAL_INT(0, m.channels()[Channel::kTurn]);
 }
 
 // With kPlays playing, the oldest gives way but the look's own clip: a
@@ -551,6 +588,7 @@ int main() {
   RUN_TEST(test_the_mixer_is_deterministic_and_bounded);
   RUN_TEST(test_a_full_mixer_keeps_its_look);
   RUN_TEST(test_the_glass_and_the_hands_are_channels);
+  RUN_TEST(test_the_turn_is_a_channel);
   RUN_TEST(test_a_ramp_eases_over_200_ms_and_turns_back_smoothly);
   RUN_TEST(test_a_layer_fades_and_a_new_content_waits_its_turn);
   RUN_TEST(test_the_staged_rig_is_whole);

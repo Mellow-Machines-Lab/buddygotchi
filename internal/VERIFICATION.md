@@ -1,6 +1,6 @@
 # Boop: verification
 
-Updated 2026-11-24. How we check that Boop works, including what's on its
+Updated 2026-11-25. How we check that Boop works, including what's on its
 screen, without a person watching, and every tool that does it.
 
 ## 1. The loop
@@ -319,7 +319,7 @@ gets at least one scenario. Their pictures are the golden images in
 `characters/boop/tests/golden-gel/<scenario>/` for gel. Every one of
 Pixel's shots has a golden. The gel's set is frozen small on purpose
 while its pictures are redesigned: each gel scenario pins one or two
-shots, the ones that say the most about it (`"pin": true`), 60 in all,
+shots, the ones that say the most about it (`"pin": true`), 69 in all,
 and only those have a golden (`test_pins` holds it to that). Its other
 shots are still taken, for a person to look at, the mirror and the board
 (L1, L2), and every `expect` still runs. When the redesign settles, a new
@@ -330,7 +330,10 @@ stage `dbg.state`'s `invite` says, and `missed-high-five` catches the
 palm's miss partway. The engine's own rules for it, with a
 face that draws invites, are `test_device`'s invite tests. `knock` shows
 each step of needs you's climbing knock, and `flop` the flop of relief,
-which `dbg.clip` plays.
+which `dbg.clip` plays. `back` and `spin` show the rig's turn: the upset
+skit's back with its look over the shoulder, and the high five's spin.
+`meme-deadpan-side-eye`, `meme-squint-smug` and `meme-scream-faint` show
+the six meme faces at rest and in their moves, which `dbg.clip` plays.
 
 ## 5. The levels in detail
 

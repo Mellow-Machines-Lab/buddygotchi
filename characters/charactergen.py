@@ -120,12 +120,19 @@ def camel(mood: str) -> str:
     return "k" + "".join(part.capitalize() for part in mood.split("_"))
 
 
+def board_moods(character: dict) -> list[str]:
+    """Every face the board draws by name, the firmware's Mood order: the
+    pack's `moods`, then its `board_faces`, which the Mac doesn't read, so
+    no rule or brain picks one yet (§4)."""
+    return [m.get("id") for m in character.get("moods", []) + character.get("board_faces", [])]
+
+
 def moods_h(pack: Path, character: dict) -> str:
     """The firmware's moods.h, which staging writes: the mood list in the
     pack's order with the board's startup mood, and the pack's id and
     version for the board's hello. The app's loader checks the moods
     themselves (boopdev check); pack_problems() that there are some."""
-    moods = [m["id"] for m in character["moods"]]
+    moods = board_moods(character)
     startup = character.get("startup_mood", character["default_mood"])
     source = f"characters/{pack.name}/character.json"
     rows = ",\n".join(f"  {camel(m)}" for m in moods)
@@ -257,7 +264,7 @@ def read_rig(pack: Path, moods: list[str] | None = None, states: list[str] | Non
     wrong with it, each problem with its file and key. Every file is
     optional, and one that's missing is empty."""
     if moods is None:  # the pack's own, as its character.json names them
-        moods = [m.get("id") for m in load(pack).get("moods", [])] if (pack / "character.json").exists() else []
+        moods = board_moods(load(pack)) if (pack / "character.json").exists() else []
     states = firmware_states() if states is None else states
     channels, folder, problems = rig_channels(), pack / "rig", []
     drawn = drawn_styles(pack)
@@ -767,6 +774,13 @@ def pack_problems(pack: Path, character: dict, reads: Reads | None = None) -> li
     if character.get("startup_mood", character.get("default_mood")) not in [m.get("id") for m in character.get("moods", [])]:
         problems.append("its startup_mood, else its default_mood, isn't one of its moods")
     faces = {m.get("id") for m in character.get("moods", [])}
+    drawn = board_moods(character)
+    if not all(drawn) or len(drawn) != len(set(drawn)):
+        problems.append("moods and board_faces name a face twice, or one without an id")
+    lasting_ids = [m.get("id") for m in character.get("lasting", [])]
+    for m in character.get("board_faces", []):
+        if m.get("settles") not in lasting_ids:
+            problems.append(f"board face {m.get('id')} settles into no lasting mood")
     for m in character.get("lasting", []):
         missing = [f for f in m.get("levels") or [m.get("id")] if f not in faces]
         if missing:

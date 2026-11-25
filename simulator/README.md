@@ -73,7 +73,7 @@ they show the same board: the hosted board itself (`hosted()`: its USB,
 its loop and its frames), with the simulator's card, sound and inputs
 on top. A scenario or the Studio can play a move no Moment names yet with
 `{"t":"dbg.clip","name":"flop"}`, one of the pack's rig clips by its id
-(firmware/README.md, Hands, the glass and the knock), and turn a rule of
+(firmware/README.md, Hands, the glass, turning round and the knock), and turn a rule of
 the gel's motion layer off with `{"t":"dbg.motion","rule":"face","on":false}`.
 
 | Build | By | Runs | For |

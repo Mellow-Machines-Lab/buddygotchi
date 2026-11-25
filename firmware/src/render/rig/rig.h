@@ -42,6 +42,7 @@ enum class Channel : uint8_t {
   kHandRSize,
   kHandRShape,
   kHandRGlass,
+  kTurn,
   kCount
 };
 constexpr int kChannelCount = int(Channel::kCount);
@@ -67,8 +68,14 @@ constexpr int kChannelCount = int(Channel::kCount);
 // middle of the body's front low down, where it holds things (Anchors'
 // handF); size in thousandths of a whole hand, as big again at 2000;
 // shape a fist (-1000), a ball (0) or an open palm (1000), and between;
-// and glass, how flat on the glass it's pressed (1000). A face may draw
-// only some: Pixel's draws neither x, reach, melt, the glass nor the hands.
+// and glass, how flat on the glass it's pressed (1000).
+//
+// turn: how far round the body has turned, in thousandths of a whole turn,
+// to its right for more than 0: 250 a quarter, its face at its rim; 500
+// its back to you; 1000 all the way round, a spin, as at rest. Only what's
+// on the body's front moves round it; its outline stays. A face may draw
+// only some: Pixel's draws neither x, reach, melt, the glass, the hands
+// nor turn.
 // charactergen.py reads this table to check a pack's files.
 struct ChannelInfo {
   const char* name;
@@ -86,7 +93,8 @@ constexpr ChannelInfo kChannelInfo[kChannelCount] = {{"squash", -1000, 1000, 0},
                                                      {"handLSize", 0, 2000, 0},      {"handLShape", -1000, 1000, 0},
                                                      {"handLGlass", 0, 1000, 0},     {"handRX", -400, 400, 0},
                                                      {"handRY", -240, 240, 0},       {"handRSize", 0, 2000, 0},
-                                                     {"handRShape", -1000, 1000, 0}, {"handRGlass", 0, 1000, 0}};
+                                                     {"handRShape", -1000, 1000, 0}, {"handRGlass", 0, 1000, 0},
+                                                     {"turn", -2000, 2000, 0}};
 // The body's channels, whose springs are slower than the face's.
 constexpr bool body(Channel c) { return c <= Channel::kMelt; }
 // The hands' channels: a hand's, `side` 0 the left and 1 the right, by

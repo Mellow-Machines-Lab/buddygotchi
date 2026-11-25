@@ -213,7 +213,8 @@ Boop's, cut to two of its 7 lasting moods and two of its 18 faces:
 | `startup_mood` | no | What the board shows before the Mac sends a mood, and for a name it doesn't know. Without it, `default_mood` |
 | `claims_a_fix` | no | The words of its voice that say something was fixed. Boop says one only on a turn that got past a failed check, or at the check passing again |
 | `skits` | no | The few moments that always speak, each from takes of its own, by the slots they play at (§8). Without it, its Moments say nothing but your replies' and its waves' words |
-| `moods` | yes | Every face the pack draws, once (§5). Its order is the firmware's `Mood` order |
+| `moods` | yes | Every face the Mac may ask for, once (§5). Its order is the firmware's `Mood` order |
+| `board_faces` | no | Faces only the board draws so far, after `moods` in the firmware's `Mood` order, each with `id`, `face`, `settles` and `family` as in `moods` (§5). The Mac doesn't read it, so no rule or brain picks one; a `do`, a `state` or a scenario may name one, and the board draws it |
 | `lasting` | no | The moods the buddy settles into, with their fades (§5). Without it (Pixel's, from before), the faces with a `meaning` are its lasting moods, and none fades by itself |
 | `acts` | no | What the pack draws for each work act, as Jev reads it: by kind (`push`, `tests`, `build`), then by `start`, `pass` and `fail`, a sentence with `{name}` for the creature's name. The engine says what the agent did and adds this. Without it, Jev reads the agent's clause alone |
 | `studio` | no | The pack's preview in the Character Studio (§12). Only the studio reads it |
@@ -224,8 +225,11 @@ Unknown keys are ignored, so a newer pack still loads in an older engine.
 ## 5. Moods
 
 A pack names its own faces and its own moods; the engine names none. Boop
-has 18 faces and 7 lasting moods, and `character.json` is the one place
-that says which: read it there. Pixel keeps the 42 faces and 16 moods it
+has 18 faces the Mac picks from, six more only its board draws (its meme
+faces, `board_faces`: deadpan, side_eye, squint, smug, silent_scream,
+faint), and 7 lasting moods, and `character.json` is the one place that
+says which: read it there. For a rule or the brain to pick a board face,
+move it into `moods`; the Mac's tests pin Boop's 18. Pixel keeps the 42 faces and 16 moods it
 had.
 
 **A face** (`moods`) is what the board draws under one name: the emotion a
@@ -963,12 +967,15 @@ the pale patch where the body touches it, `patch` (its size), `patchX` and
 `patchY`; and two hands, part of the body, hidden in it at rest:
 `handLX`, `handLY`, `handLSize`, `handLShape` (a fist, a ball or an open
 palm) and `handLGlass` (pressed flat on the glass), and the right's the
-same. Each is a whole number, in thousandths but for `lift`, `x` and the
+same; and `turn`, how far round the body has turned, in thousandths of a
+whole turn (500 its back to you, 1000 all the way round, a spin), which
+moves only what's on its front round it, its outline staying. Each is a
+whole number, in thousandths but for `lift`, `x` and the
 hands' `X` and `Y` (px), with a range and a value at rest, where a face
 draws its art as drawn: `kChannelInfo` in `rig.h` says what each means,
 and `charactergen.py` checks the files by it. In the files, `eyeOpen` sets
 both eyes. A face may draw only some: the gel draws them all, and Pixel's
-neither `x`, `reach`, `melt`, the glass nor the hands.
+neither `x`, `reach`, `melt`, the glass, the hands nor `turn`.
 
 A face also has two **styles**, the eyes' and the mouth's: which of its
 drawings it draws, for the shapes no channel reaches (hearts, X eyes). A new
@@ -1024,10 +1031,14 @@ Some clips' ids mean something to a face:
   invite's pose, `invite-<payoff>` for the touch, `invite-<pose>-miss` and
   `invite-<pose>-late`; `knock` as something needs you and `knock-climb`
   when nobody comes. Their cues are where something hits the glass, which
-  rings there. A pose or payoff with no clip is drawn in code.
+  rings there. A pose or payoff with no clip doesn't move the body. Boop's
+  back (`invite-back`…) and the high five's spin are on `turn`.
 - `idle-<mood>`, one for each lasting mood (§7): the gel's idle move for
   that mood, which it plays now and then in idle, each face its lasting
   mood's (slimegen's `kIdleMoves`); slimegen fails without one.
+- `face-<face>` (a face's `_` a `-`): a face's own move, which the gel
+  plays in idle in place of its mood's, and once as a Moment shows the
+  face; Boop's six meme faces have one each (`face-deadpan`…).
 - `reply-wave`: the gel plays it for a small wave at your lock or unlock
   of the Mac, a slighter motion than `reply-bye` or `reply-hello`.
 - `reply-<name>`: the gel plays it for that reply, one for each of

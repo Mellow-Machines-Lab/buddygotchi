@@ -1,6 +1,6 @@
 """VERIFICATION.md L1: which shots `sim` compares with a golden. The gel's
 set is frozen small while its pictures are redesigned: one or two pinned
-shots a scenario, about 60 in all, and a golden for each and no other."""
+shots a scenario, about 70 in all, and a golden for each and no other."""
 import json
 import os
 import tempfile

@@ -221,20 +221,23 @@ cut before it). `dbg.state`'s `invite` says how it stands: `stage`
 (`ahead`, `pose`, `payoff`, `shrug`, `window` or `late`), `ms` since the
 pose began, and the `pose` while one shows.
 
-What the gel draws for it is the pack's: its palm and lean, their payoffs,
-misses and late returns are rig clips with the two hands and the glass
-(`render/gel/moves.h`, the pack's CONTINUITY.md, Hands and the glass);
-its back is drawn in code until the turn is built. The state machine, the
-wire and `test_device`'s tests are the same for every face.
+What the gel draws for it is the pack's: every pose, payoff, miss and
+late return is a rig clip, the palm and the lean with the two hands and
+the glass, the back and the high five's spin with `turn`
+(`render/gel/moves.h`, the pack's CONTINUITY.md, Hands and the glass, and
+Turning round). The state machine, the wire and `test_device`'s tests are the
+same for every face.
 
-## Hands, the glass and the knock
+## Hands, the glass, turning round and the knock
 
 The rig has channels for the glass, the screen as a pane Boop lives
 behind (`glass`, how close the body is to it, and the patch where it
 touches it), and for two hands, each `X`, `Y`, `Size`, `Shape` (a fist, a
 ball, an open palm) and `Glass` (`render/rig/rig.h`). A face that draws
 them (the gel) brings the whole body up to the glass at 1.15 its size at
-most. Pixel's draws none of them.
+most. A `turn` channel (thousandths of a whole turn) moves only the face
+round the gel's dome: half a turn is its back, a whole one a spin. Pixel's
+draws none of them.
 
 While something needs you the gel's fist knocks on the glass, the same
 move for every mood; if nobody comes it climbs in three more steps to its
@@ -245,7 +248,8 @@ place; the body no longer dips.
 
 `dbg.clip` plays one of the pack's rig clips by its id over what shows
 (`{"t":"dbg.clip","name":"flop"}`), for scenarios and the Studio: the
-gel's flop of relief, which no Moment names yet.
+gel's flop of relief, which no Moment names yet, and its meme faces'
+moves (`face-deadpan`…).
 
 The gel runs a motion layer under every clip (motion V2: the slime's
 `CONTINUITY.md`, The motion layer): stretch with speed, overshoot and

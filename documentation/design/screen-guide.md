@@ -69,7 +69,7 @@ One picture-size thing at a time: a held picture, or a show, or neither.
 | Asleep | No | Dim, eyes closed | Dark | No | Empty | Off |
 | No Mac | No | Resting, then asleep | Dark | No | "no Mac" | Off |
 
-## Hands and the glass
+## Hands, the glass and turning round
 
 Boop has one pair of hands, gel stubs that are part of its body. They bud
 out of the dome when they act and sink back in; at rest none shows. Each
@@ -91,6 +91,13 @@ on a window. A hit on it adds a ring and a small shake.
 | The lean | The `back` skit's invite | It perks up and rests its cheek on the glass, the patch glowing, "pet" beside it. A stroke: a fast small purr, eyes shut |
 | The knock | Needs you | A fist knocks twice on the glass at the body's upper right. If nobody comes it climbs: a bigger fist, three knocks; both fists by turns; then its forehead on the glass, palms sliding down |
 | The flop | A check passes after failing (not wired yet: no Moment names it) | Flat against the glass, both palms on it, sliding down, then peels off |
+| The back | The `upset` skit's invite | A stomp, then it turns its back, "pet" under the glow on its back. Now and then it looks over its shoulder, one eye at the rim in side-eye, and turns away again. A stroke: a sigh as it comes round. No stroke: a huff, and it comes round by itself |
+| The spin | The high five | All the way round during its hop |
+
+Turning round: the dome is round, so turning moves only the face across it, and
+the eye nearer the rim narrows on its own as it goes round. Turned half
+way, one eye shows at the rim; all the way, the face is gone: the back.
+The outline and the dome's light never move.
 
 The palm and the knock stay above the strip. Only the palm's glow asks
 for your touch, and only while nothing else does.
@@ -244,6 +251,22 @@ and the face trails the body by a few px and catches up. Until V2 the face
 never moved on the body by itself; now it does, on purpose, only while
 the body moves, and it's still again at rest. Each rule has a switch
 (`dbg.motion`) to judge it on the board.
+
+## Meme faces
+
+Six faces past the 18, each with one body move that sells it, in the
+gel's face language: solid dark eyes, no whites, one small mouth, the
+lids and the gaze doing the acting. The board draws them; no rule or brain
+on the Mac picks one yet, but the back wears side-eye.
+
+| Face | Looks | Its move |
+| --- | --- | --- |
+| Deadpan | Flat lids half down, a flat mouth | One slow blink, nothing else |
+| Side-eye | A flat lid across each eye, the eye pressed to one end | The body stays; only the eyes go |
+| Squint | One eye a slit, the other under a flat lid, a wobbly mouth | It comes to the glass to doubt you |
+| Smug | Half lids, a glance aside, a cat's w, pink cheeks | A tilt of the whole body, chin up |
+| Silent scream | Tall eyes, a tall open oval mouth | Tall and shaking, palms on its cheeks, no sound |
+| Faint | Crosses for eyes, a wobbly mouth | It tips over and melts |
 
 ## Going with you
 
